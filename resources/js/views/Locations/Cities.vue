@@ -1,0 +1,73 @@
+<template>
+    <div>
+        <loading v-if="loading" :active.sync="loading" :is-full-page="true" />
+
+        <section v-else class="hero is-primary is-medium">
+            <div class="hero-body">
+                <div class="container">
+                    <div class="columns">
+                        <div class="column is-half">
+                            <h1 class="title is-1">{{ country }}</h1>
+                            <h1 class="subtitle is-3">{{ state }}</h1>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section v-if="! loading" class="hero is-success is-medium">
+            <sort-locations type="city" />
+        </section>
+    </div>
+</template>
+
+<script>
+import SortLocations from './SortLocations'
+import Loading from 'vue-loading-overlay'
+import 'vue-loading-overlay/dist/vue-loading.css'
+
+export default {
+    name: 'Cities',
+    async created ()
+    {
+        this.loading = true;
+        await this.$store.dispatch('GET_CITIES', {
+            country: window.location.href.split('/')[4],
+            state: window.location.href.split('/')[5]
+        });
+        this.loading = false;
+    },
+    components: {
+        SortLocations,
+        Loading
+    },
+    data ()
+    {
+        return {
+            loading: true
+        };
+    },
+    computed: {
+
+        /**
+         * The parent Country
+         */
+        country ()
+        {
+            return this.$store.state.locations.country;
+        },
+
+        /**
+         * The parent State
+         */
+        state ()
+        {
+            return this.$store.state.locations.state;
+        }
+    }
+}
+</script>
+
+<style scoped>
+
+</style>

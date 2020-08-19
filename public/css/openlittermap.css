@@ -1,0 +1,123 @@
+#app .wow {
+	visibility: hidden;
+}
+
+.app-icon {
+	cursor: pointer;
+	max-height: 10em;
+	margin-top: -2em;
+	margin-bottom: -2em;
+}
+
+.flex {
+	display: flex;
+}
+
+.flex-1 {
+	flex: 1;
+}
+
+.fullheight {
+	min-height: calc(100vh - 82px);
+}
+
+.hov {
+	transition-duration: 0.3s;
+}
+
+.hov:hover {
+	box-shadow: 0 20px 30px -11px rgba(31,35,65,0.37);
+	transform: translate(0px, -5px);
+}
+
+.ma {
+	margin: auto;
+}
+
+.mb1em {
+	margin-bottom: 1em !important;
+}
+
+.mb2 {
+	margin-bottom: 2em !important;
+}
+
+.mb2r {
+	margin-bottom: 2rem !important;
+}
+
+.mb3 {
+	margin-bottom: 3em !important;
+}
+
+.mb5em {
+	margin-bottom: 5em !important;
+}
+
+.mt5em {
+	margin-top: 5em !important;
+}
+
+.pb1em {
+	padding-bottom: 1em;
+}
+
+.pr1em {
+	padding-right: 1em;
+}
+
+.pr2em {
+	padding-right: 2em;
+}
+
+.show-mobile {
+	display: none;
+}
+
+/* Desktop view */
+@media (min-width: 1024px) {
+	.navbar-item {
+		color: white;
+	}
+}
+
+/* Mobile view */
+@media (max-width: 1024px) {
+	.navbar-item {
+		color: black;
+	}
+}
+
+/* Mobile view */
+@media (max-width: 768px) {
+
+	/* Profile - LitterPicker */
+	.pagination {
+		display: flex;
+	}
+
+	.page-item {
+		flex: 1;
+	}
+
+	#image-metadata, #image-counts {
+		display: none;
+	}
+
+	.expand-mobile {
+		flex: 1;
+	}
+
+	.mobile-litter-box {
+		width: 50%;
+		margin-left: 25%;
+	}
+
+	#photo-id {
+		display: none;
+	}
+
+	.show-mobile {
+		display: block;
+	}
+}
