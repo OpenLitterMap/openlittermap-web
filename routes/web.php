@@ -5,8 +5,9 @@ use Illuminate\Support\Facades\Route;
 // Route::get('test', 'TestController@getTest');
 // Route::post('test', 'TestController@postTest');
 
+use App\User;
+
 // use App\Photo;
-//use App\User;
 // Route::get('test', function() {
 // 	$user = \App\User::first();
 // 	return view('emails.update17', compact('user'));
@@ -16,6 +17,7 @@ use Illuminate\Support\Facades\Route;
 // Route::get('sean', 'TotalDataController@getCSV');
 
 Route::get('/', 'HomeController@index');
+Route::post('subscribe', 'SubscribersController@create');
 Route::get('/about', 'HomeController@index');
 Route::get('/world', 'HomeController@index');
 

@@ -232,8 +232,8 @@ class PhotosController extends Controller
               $user->has_uploaded_counter++;
               if ($user->has_uploaded_counter == 7)
               {
-                $user->littercoin_allowance++;
-                $user->has_uploaded_counter = 0;
+                  $user->littercoin_allowance++;
+                  $user->has_uploaded_counter = 0;
               }
               $user->save();
         }
