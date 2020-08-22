@@ -28,6 +28,14 @@ let routes = [
 		path: '/join/:plan?',
 		component: require('./views/Auth/Subscribe').default
 	},
+    {
+        path: '/terms',
+        component: require('./views/general/Terms').default
+    },
+    {
+        path: '/privacy',
+        component: require('./views/general/Privacy').default
+    },
 	// Countries
 	{
 		path: '/world',

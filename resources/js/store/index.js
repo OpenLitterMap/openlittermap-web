@@ -2,6 +2,7 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 
 import { admin } from './modules/admin'
+import { createaccount } from './modules/createaccount'
 import { donate } from './modules/donate'
 import { globalmap } from './modules/globalmap'
 import { locations } from './modules/locations'
@@ -16,6 +17,7 @@ Vue.use(Vuex)
 export default new Vuex.Store({
     modules: {
         admin,
+        createaccount,
         donate,
         globalmap,
         locations,

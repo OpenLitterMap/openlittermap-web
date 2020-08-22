@@ -58,12 +58,20 @@
 	margin-bottom: 5em !important;
 }
 
+.mt2 {
+    margin-top: 2em;
+}
+
 .mt5em {
 	margin-top: 5em !important;
 }
 
 .pb1em {
 	padding-bottom: 1em;
+}
+
+.pb2 {
+    padding-bottom: 2em;
 }
 
 .pr1em {

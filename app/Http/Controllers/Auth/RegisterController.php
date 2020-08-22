@@ -52,7 +52,7 @@ class RegisterController extends Controller
      * @param  array  $data
      * @return User
      */
-    protected function create(array $data)
+    protected function create (array $data)
     {
         return User::create([
             'name' => $data['name'],
@@ -68,7 +68,7 @@ class RegisterController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function register(Request $request)
+    public function register (Request $request)
     {
         $this->validate($request, [
             'name' => 'required|min:3|max:25',
@@ -79,48 +79,34 @@ class RegisterController extends Controller
         ]);
 
         $email = $request->email;
-        $token = $request->token; // ?
 
         event(new Registered($user = $this->create($request->all())));
 
-        if(app()->environment('production')) {
+        if (app()->environment('production'))
+        {
             Mail::to($email)->send(new NewUserRegMail($user));
         }
 
-        // todo, find users IP and location. Pass location through.
         event(new UserSignedUp(now()));
-        // A new User has signed up from ... Cork, Ireland
 
-        // Update Free users images here. Paid accounts updated onSuccess-fulPayment
         $user->images_remaining = 1000;
-        $user->verify_remaining = 500;
+        $user->verify_remaining = 5000;
         $user->save();
 
         return ['user_id' => $user->id, 'email' => $user->email];
     }
-               
-
-    /**
-     * Show the application registration form.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function showRegistrationForm()
-    {
-        $plans = App\Plan::all();
-        return view('pages.orders.subscribe', compact('plans', 'selectedPlan'));
-        // return view('auth.register');
-    }
-
 
    /**
     * The user clicks the confirm email link
     */
-    public function confirmEmail($token) {
+    public function confirmEmail ($token)
+    {
         // a dynamic / magic method:
         $user = User::whereToken($token)->firstOrFail()->confirmEmail();
+
         session()->flash('emailconfirmed', 'Your email has been confirmed. You may now Log in.');
-        return redirect("/");
+
+        return redirect('/');
     }
 
 
