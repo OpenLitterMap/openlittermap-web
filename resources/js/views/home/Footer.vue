@@ -51,27 +51,27 @@
                 <div class="column is-2">
                     <p class="olm-subtitle">READ</p>
 
-                    <p class="footer-text" @click="open('https://medium.com/@littercoin')">Blog</p>
-                    <p class="footer-text" @click="open('https://opengeospatialdata.springeropen.com/articles/10.1186/s40965-018-0050-y')">Research Paper</p>
+                    <p class="footer-link" @click="open('https://medium.com/@littercoin')">Blog</p>
+                    <p class="footer-link" @click="open('https://opengeospatialdata.springeropen.com/articles/10.1186/s40965-018-0050-y')">Research Paper</p>
                 </div>
 
                 <div class="column is-2">
                     <p class="olm-subtitle">WATCH</p>
 
-                    <p class="footer-text" @click="open('https://www.youtube.com/watch?v=my7Cx-kZhT4')">TEDx 2017</p>
-                    <p class="footer-text" @click="open('https://www.youtube.com/watch?v=E_qhEhHwUGM')">State of the Map 2019</p>
-                    <p class="footer-text" @click="open('https://www.youtube.com/watch?v=T8rGf1ScR1I')">Datapub 2020</p>
+                    <p class="footer-link" @click="open('https://www.youtube.com/watch?v=my7Cx-kZhT4')">TEDx 2017</p>
+                    <p class="footer-link" @click="open('https://www.youtube.com/watch?v=E_qhEhHwUGM')">State of the Map 2019</p>
+                    <p class="footer-link" @click="open('https://www.youtube.com/watch?v=T8rGf1ScR1I')">Datapub 2020</p>
                 </div>
 
                 <div class="column is-2">
                     <p class="olm-subtitle">HELP</p>
 
-                    <p class="footer-text">Create Account</p>
-                    <p class="footer-text" @click="open('https://angel.co/openlittermap/jobs')">Apply For Position</p>
-                    <p class="footer-text" @click="open('https://join.slack.com/t/openlittermap/shared_invite/zt-fdctasud-mu~OBQKReRdC9Ai9KgGROw')">Join Slack</p>
-                    <p class="footer-text" @click="open('https://www.facebook.com/pg/openlittermap/groups/')">Facebook Group</p>
-                    <router-link to="/donate" class="footer-text">Single Donation</router-link>
-                    <router-link to="/join" class="footer-text">Weekly Crowdfunding</router-link>
+                    <p class="footer-link">Create Account</p>
+                    <p class="footer-link" @click="open('https://angel.co/openlittermap/jobs')">Join the Team</p>
+                    <p class="footer-link" @click="open('https://join.slack.com/t/openlittermap/shared_invite/zt-fdctasud-mu~OBQKReRdC9Ai9KgGROw')">Join Slack</p>
+                    <p class="footer-link" @click="open('https://www.facebook.com/pg/openlittermap/groups/')">Facebook Group</p>
+                    <router-link to="/donate" class="footer-link">Single Donation</router-link>
+                    <router-link to="/signup" class="footer-link">Crowdfunding</router-link>
                 </div>
             </div>
         </div>
@@ -194,6 +194,7 @@ export default {
     .footer-icon {
         max-height: 2em;
         margin-right: 1em;
+        cursor: pointer;
     }
 
     .footer-success {
@@ -203,10 +204,14 @@ export default {
 
     .footer-text {
         color: #94afe3;
+    }
+
+    .footer-link {
+        color: #94afe3;
         cursor: pointer;
     }
 
-    .footer-text:hover {
+    .footer-link:hover {
         color: white;
     }
 

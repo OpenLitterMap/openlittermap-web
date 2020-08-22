@@ -3,7 +3,7 @@
 		<div class="container">
 
 			<h1 class="title">Ready to join the geospatial revolution?</h1>
-			<h2 class="subtitle">If you think this is important, OpenLitterMap could use your help.</h2>
+			<h2 class="subtitle">If you like our work, OpenLitterMap could really use your help.</h2>
 
 			<div class="columns">
 				<div class="column wow bounceInRight">
@@ -13,10 +13,10 @@
 						</p>
 						<div class="content">
 						  <ul>
-							<li>Upload 1000 images per day.</li>
-							<li>Verify 1000 images per day.</li>
-							<li>Mine Littercoin.</li>
-							<li>Compete in multiple different leaderboards.</li>
+							<li>Upload 1000 images per day</li>
+							<li>Unlock Badges + Rewards</li>
+							<li>Earn Littercoin</li>
+							<li>Compete in multiple different leaderboards</li>
 						  </ul>
 						</div>
 						<div style="text-align: center;">
@@ -115,3 +115,10 @@
 		</div>
 	</section>
 </template>
+
+<style scoped>
+
+    .box {
+        min-height: 100%;
+    }
+</style>
