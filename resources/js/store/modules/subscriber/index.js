@@ -2,7 +2,8 @@ import { actions } from './actions'
 import { mutations } from './mutations'
 
 const state = {
-    // email: ''
+    errors: {},
+    just_subscribed: false // show Success notification when just subscribed
 };
 
 export const subscriber = {

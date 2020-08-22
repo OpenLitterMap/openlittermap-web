@@ -34,6 +34,10 @@
 	margin: auto;
 }
 
+.mb1 {
+    margin-bottom: 1em;
+}
+
 .mb1em {
 	margin-bottom: 1em !important;
 }

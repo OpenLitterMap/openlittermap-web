@@ -38,7 +38,7 @@
                 <h1 class="main-title">Why should we collect data?</h1>
 
                 <div class="columns welcome-mb">
-                    <div class="column is-one-quarter m-c">
+                    <div class="column is-one-quarter icon-center">
                         <img src="/assets/icons/home/world.png" class="about-icon" />
                     </div>
 
@@ -49,7 +49,7 @@
                 </div>
 
                 <div class="columns welcome-mb">
-                    <div class="column is-one-quarter m-c">
+                    <div class="column is-one-quarter icon-center">
                         <img src="/assets/icons/home/microscope.png" class="about-icon" />
                     </div>
 
@@ -60,7 +60,7 @@
                 </div>
 
                 <div class="columns welcome-mb">
-                    <div class="column is-one-quarter m-c">
+                    <div class="column is-one-quarter icon-center">
                         <img src="/assets/icons/home/tree.png" class="about-icon" />
                     </div>
 
@@ -76,7 +76,7 @@
                 <h1 class="main-title">How does it work?</h1>
 
                 <div class="columns welcome-mb">
-                    <div class="column is-one-quarter m-c">
+                    <div class="column is-one-quarter icon-center">
                         <img src="/assets/icons/home/camera.png" class="about-icon" />
                     </div>
 
@@ -87,7 +87,7 @@
                 </div>
 
                 <div class="columns welcome-mb">
-                    <div class="column is-one-quarter m-c">
+                    <div class="column is-one-quarter icon-center">
                         <img src="/assets/icons/home/phone.png" class="about-icon" />
                     </div>
 
@@ -98,7 +98,7 @@
                 </div>
 
                 <div class="columns welcome-mb">
-                    <div class="column is-one-quarter m-c">
+                    <div class="column is-one-quarter icon-center">
                         <img src="/assets/icons/twitter2.png" class="about-icon" />
                     </div>
 
@@ -181,6 +181,10 @@ export default {
         margin-bottom: 1em;
     }
 
+    .icon-center {
+        margin: auto;
+    }
+
     .welcome-mb {
         margin-bottom: 5em;
     }
@@ -224,7 +228,7 @@ export default {
             font-size: 3rem;
         }
 
-        .m-c {
+        .icon-center {
             text-align: center;
             margin-bottom: 2em;
         }
