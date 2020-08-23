@@ -69,15 +69,15 @@
 	class Errors {
 
 		/**
-		 * Create a new errors instance 
-		 */ 
+		 * Create a new errors instance
+		 */
 		constructor() {
 			this.errors = {};
 		}
 
 		/**
 		 * Get the error message for a field
-		 */ 
+		 */
 		get(field){
 			if(this.errors[field]){
 				return this.errors[field][0];
@@ -86,33 +86,33 @@
 
 		/**
 		 * Determine if an error exists for a given field
-		 */ 
+		 */
 		has(field){
 			return this.errors.hasOwnProperty(field);
 		}
 
 		/**
-		 * Record the new errors 
-		 */ 
+		 * Record the new errors
+		 */
 		record(errors){
 			this.errors = errors;
 		}
 
 		/**
 		 * Clear one or all error fields
-		 */ 
+		 */
 		clear(field){
-			if (field) { 
+			if (field) {
 				delete this.errors[field];
 				return;
 			}
-			// else 
+			// else
 			this.errors = {};
 		}
 
 		/**
-		 * Determine if we have any errors 
-		 */ 
+		 * Determine if we have any errors
+		 */
 		any(){
 			console.log(this);
 			return Object.keys(this.errors).length > 0;
@@ -123,7 +123,7 @@
 
 		/**
 		 * Create a new Form instance
-		 */ 
+		 */
 		constructor(data) {
 			this.originalData = data;
 
@@ -137,11 +137,11 @@
 
 		/**
 		 * Fetch relevant data for the form
-		 */ 
+		 */
 		data() {
-			// // clone the object  old way 
+			// // clone the object  old way
 			// let data = Object.assign({}, this);
-			// // delete unnecessary data 
+			// // delete unnecessary data
 			// delete data.originalData;
 			// delete data.errors;
 			// return data;
@@ -155,7 +155,7 @@
 
 		/**
 		 * Reset the form fields
-		 */ 
+		 */
 		reset() {
 			for(let field in this.originalData){
 				this[field] = '';
@@ -165,14 +165,14 @@
 
 		/**
 		 * Submit the form
-		 */ 
+		 */
 		submit(requestType, url) {
 
 			// return a set up a promise
 			return new Promise((resolve, reject) => {
 				// submit the ajax request
 				axios[requestType](url, this.data())
-				  // 200 
+				  // 200
 				 .then(response => {
 				 	console.log('first');
 				 	// use local onSuccess method then trigger Vue method with resolve
@@ -193,7 +193,7 @@
 
 		/**
 		 * Handle a successful form submission
-		 */ 
+		 */
 		onSuccess(data){
 		 	console.log('second');
 			// this.reset();
@@ -201,49 +201,49 @@
 
 		/**
 		 * Handle a failed form submission
-		 */ 
+		 */
 		onFail(errors) {
 			console.log(errors);
 			this.errors.record(errors);
 		}
 	}
 
-	export default {
-		props: ['avatar', 'id', 'usersname', 'username', 'email', 'subscription'],
-		data() {
-			return {
-				image: '',
-				errormessage: '',
-				successmessage: '',
-				form: new Form({
-					oldpassword: '',
-					password: '',
-					password_confirmation: '',
-				}),
+export default {
+    name: 'Password',
+    data() {
+        return {
+            image: '',
+            errormessage: '',
+            successmessage: '',
+            form: new Form({
+                oldpassword: '',
+                password: '',
+                password_confirmation: '',
+            }),
 
-			};
-		},
+        };
+    },
 
-		methods: {
-			changepw() {
-				this.form.submit('patch', '/en/settings/details/password')
-				 .then(response => { 
-				 	// console.log(response);
-				 	this.successmessage = response.message;
-				 })
-				 .catch(error => {
-				 	// console.log(error);
-				 	this.errormessage = response.message;
-				 });
-			}
-		},
-		computed: {
-			userImage() {
-				return '/uploads/' + this.id +  '/avatar/' + this.avatar;
-			},
-			csrfToken() {
-        		return OLM.csrfToken;
-			}
-		}
-	}
+    methods: {
+        changepw() {
+            this.form.submit('patch', '/en/settings/details/password')
+             .then(response => {
+                // console.log(response);
+                this.successmessage = response.message;
+             })
+             .catch(error => {
+                // console.log(error);
+                this.errormessage = response.message;
+             });
+        }
+    },
+    computed: {
+        userImage() {
+            return '/uploads/' + this.id +  '/avatar/' + this.avatar;
+        },
+        csrfToken() {
+            return OLM.csrfToken;
+        }
+    }
+}
 </script>

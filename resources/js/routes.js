@@ -83,8 +83,7 @@ let routes = [
 		component: require('./views/general/Profile').default
 	},
 	{
-		path: '/*/settings',
-		name: 'settings',
+		path: '/settings',
 		component: require('./views/Settings').default,
 		children: [
 			{

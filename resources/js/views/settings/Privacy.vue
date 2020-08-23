@@ -19,14 +19,14 @@
 				    </label>
 				    <br>
 				    <br>
-				    <h1 class="title is-6" 
+				    <h1 class="title is-6"
 				    	v-show="this.user.show_name_maps == 1"
 				    	style="margin-bottom: 5px;">
 						<strong style="color: green;">
 							Your name is set to appear on each of the images you upload to the maps.
 						</strong>
 					</h1>
-					<h1 class="title is-6" 
+					<h1 class="title is-6"
 						v-show="this.user.show_username_maps == 1">
 						<strong style="color: green;">
 							Your username is set to appear on each of the images you upload to the maps.
@@ -54,14 +54,14 @@
 				    </label>
 				    <br>
 				    <br>
-				    <h1 class="title is-6" 
+				    <h1 class="title is-6"
 				    	v-show="this.user.show_name == 1"
 				    	style="margin-bottom: 5px;">
 						<strong style="color: green;">
 							Your name is set to appear in any leaderboards you qualify for.
 						</strong>
 					</h1>
-					<h1 class="title is-6" 
+					<h1 class="title is-6"
 						v-show="this.user.show_username == 1">
 						<strong style="color: green;">
 							Your username is set to appear in any leaderboards you qualify for.
@@ -89,14 +89,14 @@
 				    </label>
 				    <br>
 				    <br>
-					<h1 class="title is-6" 
+					<h1 class="title is-6"
 				    	v-show="this.user.show_name_createdby == 1"
 				    	style="margin-bottom: 5px;">
 						<strong style="color: green;">
 							Your name is set to appear on any locations you create.
 						</strong>
 					</h1>
-					<h1 class="title is-6" 
+					<h1 class="title is-6"
 						v-show="this.user.show_username_createdby == 1"
 						style="margin-bottom: 5px;">
 						<strong style="color: green;">
@@ -119,9 +119,11 @@
 </template>
 
 <script>
-	export default {
-		props: ['user'],
-		created() {
+export default {
+    props: ['user'],
+    name: 'Privacy',
+    created ()
+    {
 			// this.currentUser = JSON.parse(this.user);
 
 			// Maps

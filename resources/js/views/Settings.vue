@@ -1,88 +1,102 @@
 <template>
-	<div class="container">
-	<br>
+	<div class="container mt5">
 		<div class="columns">
 			<div class="column is-2">
 				<aside id="panel" class="menu">
-				  <p class="menu-label">
-				    General
-				  </p>
-				  <ul class="menu-list">
-				  	<!-- Todo - translate settigns -->
-				    <li>
-				    	<router-link to="/en/settings/password">
-				    		Password
-				    	</router-link>
-				    </li>
-				    <li>
-				    	<router-link to="/en/settings/details" exact>
-				    		Personal Details
-				    	</router-link>
-				    </li>
-				    <li>
-				    	<router-link to="/en/settings/account" exact>
-				    		My Account
-				    	</router-link>
-				    </li>
-				    <li>
-				    	<router-link to="/en/settings/payments" exact>
-				    		My Payments
-				    	</router-link>
-				    </li>
-				    <li>
-				    	<router-link to="/en/settings/privacy" exact>
-				    		Privacy 
-				    	</router-link>
-				    </li>
-				    <li>
-				    	<router-link to="/en/settings/littercoin" exact>
-				    		Littercoin (LTRX)
-				    	</router-link>
-				    </li>
-				    <li>
-				    	<router-link to="/en/settings/presence" exact>
-				    		Presence
-				    	</router-link>
-				    </li>
-				    <li>
-				    	<router-link to="/en/settings/email" exact>
-				    		Emails
-				    	</router-link>
-				    </li>
-				    <li>
-				    	<router-link to="/en/settings/show-flag">
-				    		Show Flag
-				    	</router-link>
-				    </li>
-				  </ul>
+				    <p class="menu-label">
+				        General
+				    </p>
+				    <ul class="menu-list">
+				        <li v-for="link in links">
+				    	    <router-link :to="'/settings/' + link" @click.native="change(link)">
+                                {{ translate(link) }}
+				    	    </router-link>
+				        </li>
+				    </ul>
 				</aside>
 			</div>
 			<div class="column is-three-quarters is-offset-1">
-				<br>
-		    	<router-view
-		    		:user="user"
-    				:plan="this.plan"
-    				:isvalid="this.isvalid"
-    				:ongraceperiod="this.ongraceperiod"
-    				:ends_at="this.ends_at"
-    				:plans="this.plans"
-    				:countries="this.countries"
-		    	></router-view>
+                <component :is="this.types[this.link]" />
 			</div>
 		</div>
 	</div>
 </template>
 
 <script>
-	export default {
-		props: [
-		  'user',
-		  'plan',
-		  'isvalid',
-		  'ongraceperiod',
-		  'ends_at',
-		  'plans',
-		  'countries'
-		]
-	}
+import Password from './settings/Password'
+import Details from './settings/Details'
+import Account from './settings/Account'
+import Payments from './settings/Payments'
+import Privacy from './settings/Privacy'
+import Presence from './settings/Presence'
+import Emails from './settings/Emails'
+import GlobalFlag from './settings/GlobalFlag'
+
+export default {
+    name: 'Settings',
+    components: {
+        Password,
+        Details,
+        Account,
+        Payments,
+        Privacy,
+        Presence,
+        Emails,
+        GlobalFlag
+    },
+    created ()
+    {
+        if (window.location.href.split('/')[4])
+        {
+            this.link = window.location.href.split('/')[4];
+        }
+    },
+    data ()
+    {
+        return {
+            links: [
+                'password',
+                'details',
+                'account',
+                'payments',
+                'privacy',
+                'littercoin',
+                'presence',
+                'email',
+                'show-flag'
+            ],
+            link: 'password',
+            types: {
+                'password': 'Password',
+                'details': 'Details',
+                'account': 'Account',
+                'payments': 'Payments',
+                'privacy': 'Privacy',
+                'littercoin': 'Littercoin',
+                'presence': 'Presence',
+                'email': 'Email',
+                'show-flag': 'GlobalFlag'
+            }
+        }
+    },
+    methods: {
+
+        /**
+         * Change link = view different component
+         */
+        change (link)
+        {
+            console.log({ link });
+            this.link = link;
+        },
+
+        /**
+         * Get translated text for this link
+         */
+        translate (link)
+        {
+            return this.$t('settings.' + link);
+        }
+    }
+}
 </script>

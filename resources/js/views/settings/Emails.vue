@@ -18,32 +18,33 @@
 </template>
 
 <script>
-	export default {
-		props: ['user'],
-		methods: {
-			async toggle() {
-				await axios.post('/en/settings/email/toggle')
-				.then(response => {
-					// console.log(response);
-					if (response.data.sub) {
-						alert("You are re-subscribed to the updates and good news. Welcome back!");
-					} else {
-						alert("You have unsubscribed. You will no longer recieve the good news!");
-					}
-					window.location.href = window.location.href;
-				})
-				.catch(error => {
-					console.log(error);
-				})
-			}
-		},
-		computed: {
-			color() {
-				return this.user.emailsub == 1 ? "color: green" : "color: red";
-			},
-			computedPresence() {
-				return this.user.emailsub == 1 ? "Subscribed" : "Unsubscribed";
-			}
-		}
-	}
+export default {
+    props: ['user'],
+    name: 'Emails',
+    methods: {
+        async toggle() {
+            await axios.post('/en/settings/email/toggle')
+            .then(response => {
+                // console.log(response);
+                if (response.data.sub) {
+                    alert("You are re-subscribed to the updates and good news. Welcome back!");
+                } else {
+                    alert("You have unsubscribed. You will no longer recieve the good news!");
+                }
+                window.location.href = window.location.href;
+            })
+            .catch(error => {
+                console.log(error);
+            })
+        }
+    },
+    computed: {
+        color() {
+            return this.user.emailsub == 1 ? "color: green" : "color: red";
+        },
+        computedPresence() {
+            return this.user.emailsub == 1 ? "Subscribed" : "Unsubscribed";
+        }
+    }
+}
 </script>

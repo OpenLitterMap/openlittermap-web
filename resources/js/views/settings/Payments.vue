@@ -95,15 +95,15 @@
 class Errors {
 
 	/**
-	 * Create a new errors instance 
-	 */ 
+	 * Create a new errors instance
+	 */
 	constructor() {
 		this.errors = {};
 	}
 
 	/**
 	 * Get the error message for a field
-	 */ 
+	 */
 	get(field){
 		if(this.errors[field]){
 			return this.errors[field][0];
@@ -112,33 +112,33 @@ class Errors {
 
 	/**
 	 * Determine if an error exists for a given field
-	 */ 
+	 */
 	has(field){
 		return this.errors.hasOwnProperty(field);
 	}
 
 	/**
-	 * Record the new errors 
-	 */ 
+	 * Record the new errors
+	 */
 	record(errors){
 		this.errors = errors;
 	}
 
 	/**
 	 * Clear one or all error fields
-	 */ 
+	 */
 	clear(field){
-		if (field) { 
+		if (field) {
 			delete this.errors[field];
 			return;
 		}
-		// else 
+		// else
 		this.errors = {};
 	}
 
 	/**
-	 * Determine if we have any errors 
-	 */ 
+	 * Determine if we have any errors
+	 */
 	any(){
 		console.log(this);
 		return Object.keys(this.errors).length > 0;
@@ -149,7 +149,7 @@ class Form {
 
 	/**
 	 * Create a new Form instance
-	 */ 
+	 */
 	constructor(data) {
 		this.originalData = data;
 
@@ -163,11 +163,11 @@ class Form {
 
 	/**
 	 * Fetch relevant data for the form
-	 */ 
+	 */
 	data() {
-		// // clone the object  old way 
+		// // clone the object  old way
 		// let data = Object.assign({}, this);
-		// // delete unnecessary data 
+		// // delete unnecessary data
 		// delete data.originalData;
 		// delete data.errors;
 		// return data;
@@ -181,7 +181,7 @@ class Form {
 
 	/**
 	 * Reset the form fields
-	 */ 
+	 */
 	reset() {
 		for(let field in this.originalData){
 			this[field] = '';
@@ -191,14 +191,14 @@ class Form {
 
 	/**
 	 * Submit the form
-	 */ 
+	 */
 	submit(requestType, url) {
 
 		// return a set up a promise
 		return new Promise((resolve, reject) => {
 			// submit the ajax request
 			axios[requestType](url, this.data())
-			  // 200 
+			  // 200
 			 .then(response => {
 			 	console.log('first');
 			 	// use local onSuccess method then trigger Vue method with resolve
@@ -215,10 +215,10 @@ class Form {
 			 });
 		});
 	}
-		
+
 	/**
 	 * Handle a successful form submission
-	 */ 
+	 */
 	onSuccess(data){
 	 	console.log('second');
 		// this.reset();
@@ -226,7 +226,7 @@ class Form {
 
 	/**
 	 * Handle a failed form submission
-	 */ 
+	 */
 	onFail(errors) {
 		console.log(errors);
 		this.errors.record(errors);
@@ -234,7 +234,8 @@ class Form {
 }
 
 export default {
-	props: ['user', 'subscription', 'plan', 'isvalid', 'ongraceperiod', 'ends_at', 'plans'],
+	// props: ['user', 'subscription', 'plan', 'isvalid', 'ongraceperiod', 'ends_at', 'plans'],
+    name: 'Payments',
 	data() {
 		return {
 			// form manages errors
@@ -266,16 +267,16 @@ export default {
 				panelLabel: "Subscribe For",
 				email: this.email,
 
-				// RESPONSE FROM STRIPE MODAL INPUT 
+				// RESPONSE FROM STRIPE MODAL INPUT
 				// Submit the stripe form
 				// The callback to invoke the payment once the checkout process has been complete
 				// func ( token, args )
-				// token.id can be used to create a charge or can be attacted to a customer 
+				// token.id can be used to create a charge or can be attacted to a customer
 				// token.email contains the email addresses entered by the user
 				// args contain billing + shipping info if enabled
 
-				// Callback 1 from Stripe with token object -> user has been created? 
-				// get a token object in response to the forms ajax request 
+				// Callback 1 from Stripe with token object -> user has been created?
+				// get a token object in response to the forms ajax request
 				token: (token) => { // use the arrow ES15 syntax to make this local
 					console.log(token);
 					// input the token id into the form for submission
@@ -284,15 +285,15 @@ export default {
 					// console.log(this);
 					axios.post('/change', this.$data)
 
-						// respond immediately 
-						 .then(response => { 
+						// respond immediately
+						 .then(response => {
 						 	this.submitting = false;
 						 	// this.form.reset();
 						 	alert('Congratulations! You are now subscribed. Remember to verify your email to enable login.');
 			 				window.location.href = window.location.href;
 						 	// console.log(response);
 						 })
-						 // once alert closes, the response comes in 
+						 // once alert closes, the response comes in
 
 						 .catch(error => {
 						 	// console.log('errors');
@@ -302,9 +303,9 @@ export default {
 						 	// this.form.reset();
 						 	// this.status = 'Sorry, but your card was declined. A free account was created for you but you will need to log in after verifying your email to update your account subscription in the settings panel.';
 						 });
-				} // end token 
+				} // end token
 			});
-			// Stripe setup 2: Open the modal when 
+			// Stripe setup 2: Open the modal when
 			this.stripe.open({
 				name: newplan.name,
 				description: newplan.description,
@@ -315,12 +316,12 @@ export default {
 		cancelStripe() {
 			this.submitting = true;
 			axios({
-                method: 'post', 
-                url: '/en/settings/payments/cancel', 
+                method: 'post',
+                url: '/en/settings/payments/cancel',
                 data: { password: this.cancelform.password }
             })
-			.then(response => { 
-				// if you get  message, the password was wrong 
+			.then(response => {
+				// if you get  message, the password was wrong
 			 	if (response.data) {
 			 		this.submitting = false;
 			 		this.msg_password = response.data.message;
@@ -332,7 +333,7 @@ export default {
 			 .catch(error => {
 			 	console.log(error.response.data);
 			 });
-			// call back will then cancel on our end 
+			// call back will then cancel on our end
 		},
 		clearErrors() {
 			this.msg_password = '';
@@ -340,11 +341,11 @@ export default {
 		reactivate() {
 			this.submitting = true;
 			axios({
-                method: 'post', 
-                url: '/en/settings/payments/reactivate', 
+                method: 'post',
+                url: '/en/settings/payments/reactivate',
             })
 
-			.then(response => { 
+			.then(response => {
 			 	console.log(response);
 			 	this.submitting = false;
 			 	this.msg_status = response.data.message;

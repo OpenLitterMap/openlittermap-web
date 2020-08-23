@@ -31,15 +31,15 @@
 class Errors {
 
 	/**
-	 * Create a new errors instance 
-	 */ 
+	 * Create a new errors instance
+	 */
 	constructor() {
 		this.errors = {};
 	}
 
 	/**
 	 * Get the error message for a field
-	 */ 
+	 */
 	get(field){
 		if(this.errors[field]){
 			return this.errors[field][0];
@@ -48,33 +48,33 @@ class Errors {
 
 	/**
 	 * Determine if an error exists for a given field
-	 */ 
+	 */
 	has(field){
 		return this.errors.hasOwnProperty(field);
 	}
 
 	/**
-	 * Record the new errors 
-	 */ 
+	 * Record the new errors
+	 */
 	record(errors){
 		this.errors = errors;
 	}
 
 	/**
 	 * Clear one or all error fields
-	 */ 
+	 */
 	clear(field){
-		if (field) { 
+		if (field) {
 			delete this.errors[field];
 			return;
 		}
-		// else 
+		// else
 		this.errors = {};
 	}
 
 	/**
-	 * Determine if we have any errors 
-	 */ 
+	 * Determine if we have any errors
+	 */
 	any(){
 		console.log(this);
 		return Object.keys(this.errors).length > 0;
@@ -85,7 +85,7 @@ class Form {
 
 	/**
 	 * Create a new Form instance
-	 */ 
+	 */
 	constructor(data) {
 		this.originalData = data;
 
@@ -99,11 +99,11 @@ class Form {
 
 	/**
 	 * Fetch relevant data for the form
-	 */ 
+	 */
 	data() {
-		// // clone the object  old way 
+		// // clone the object  old way
 		// let data = Object.assign({}, this);
-		// // delete unnecessary data 
+		// // delete unnecessary data
 		// delete data.originalData;
 		// delete data.errors;
 		// return data;
@@ -117,7 +117,7 @@ class Form {
 
 	/**
 	 * Reset the form fields
-	 */ 
+	 */
 	reset() {
 		for(let field in this.originalData){
 			this[field] = '';
@@ -127,14 +127,14 @@ class Form {
 
 	/**
 	 * Submit the form
-	 */ 
+	 */
 	submit(requestType, url) {
 
 		// return a set up a promise
 		return new Promise((resolve, reject) => {
 			// submit the ajax request
 			axios[requestType](url, this.data())
-			  // 200 
+			  // 200
 			 .then(response => {
 			 	console.log('first');
 			 	// use local onSuccess method then trigger Vue method with resolve
@@ -151,10 +151,10 @@ class Form {
 			 });
 		});
 	}
-		
+
 	/**
 	 * Handle a successful form submission
-	 */ 
+	 */
 	onSuccess(data){
 	 	console.log('second');
 		// this.reset();
@@ -162,7 +162,7 @@ class Form {
 
 	/**
 	 * Handle a failed form submission
-	 */ 
+	 */
 	onFail(errors) {
 		console.log(errors);
 		this.errors.record(errors);
@@ -170,12 +170,13 @@ class Form {
 }
 
 export default {
-	props: ['avatar', 'id', 'usersname', 'username', 'email', 'subscription'],
+	// props: ['avatar', 'id', 'usersname', 'username', 'email', 'subscription'],
+    name: 'Account',
 	data() {
 		return {
 			message: '',
 			submitting: false,
-			deleteform: new Form({	
+			deleteform: new Form({
 				password: ''
 			}),
 		};
@@ -192,7 +193,7 @@ export default {
 				}
 			})
 
-			.then(response => { 
+			.then(response => {
 			 	console.log(response);
 			 	this.submitting = false;
 			 	this.message = response.data.message;
@@ -206,7 +207,7 @@ export default {
 		clearError() {
 			this.message = '';
 		},
-	
+
 	},
 
 	computed: {

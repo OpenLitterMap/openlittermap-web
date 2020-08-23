@@ -174,8 +174,6 @@ class PhotosController extends Controller
         $location = array_values($addressArray)[0];
         $road = array_values($addressArray)[1];
 
-        \Log::info(['address', $addressArray]);
-
         // todo- check all locations for "/" and replace with "-"
         // todo - return country/state/city without having to check again
         // todo - process this as a job when request is made to get reverse geocoded data

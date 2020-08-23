@@ -18,34 +18,35 @@
 </template>
 
 <script>
-	export default {
-		props: ['user'],
-		mounted() {
-			this.$store.commit('initPresence', parseInt(this.user.items_remaining));
-		},
-		methods: {
-			toggle() {
-				axios.post('/en/settings/toggle')
-				.then(response => {
-					console.log(response);
-					window.location.href = window.location.href;
-				})
-				.catch(error => {
-					console.log(error);
-				})
-			}
-		},
+export default {
+    name: 'Presence',
+    mounted ()
+    {
+        this.$store.commit('initPresence', parseInt(this.user.items_remaining));
+    },
+    methods: {
+        toggle() {
+            axios.post('/en/settings/toggle')
+            .then(response => {
+                console.log(response);
+                window.location.href = window.location.href;
+            })
+            .catch(error => {
+                console.log(error);
+            })
+        }
+    },
 
-		computed: {
-			presence() {
-				return this.$store.state.presence;
-			},
-			color() {
-				return this.presence ? 'color:red' : 'color:green';
-			},
-			computedPresence() {
-				return this.presence == 0 ? "Your litter is logged as picked up." : "Your litter is logged as not picked up.";
-			}
-		}
-	}
+    computed: {
+        presence() {
+            return this.$store.state.presence;
+        },
+        color() {
+            return this.presence ? 'color:red' : 'color:green';
+        },
+        computedPresence() {
+            return this.presence == 0 ? "Your litter is logged as picked up." : "Your litter is logged as not picked up.";
+        }
+    }
+}
 </script>

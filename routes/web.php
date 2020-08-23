@@ -89,18 +89,18 @@ Route::post('/profile/photos/delete', 'PhotosController@deleteImage');
 /**
  * USER SETTINGS
  */
-Route::get('/settings', 'UsersController@settings');
-Route::get('/settings/password', 'UsersController@settings');
-Route::get('/settings/details', 'UsersController@settings');
-Route::get('/settings/account', 'UsersController@settings');
-Route::get('/settings/payments', 'UsersController@settings');
-Route::get('/settings/privacy', 'UsersController@settings');
-Route::get('/settings/littercoin', 'UsersController@settings');
-Route::get('/settings/phone', 'UsersController@settings');
-Route::get('/settings/teams', 'UsersController@settings');
-Route::get('/settings/presence', 'UsersController@settings');
-Route::get('/settings/email', 'UsersController@settings');
-Route::get('/settings/show-flag', 'UsersController@settings');
+Route::get('/settings', 'HomeController@index');
+Route::get('/settings/password', 'HomeController@index');
+Route::get('/settings/details', 'HomeController@index');
+Route::get('/settings/account', 'HomeController@index');
+Route::get('/settings/payments', 'HomeController@index');
+Route::get('/settings/privacy', 'HomeController@index');
+Route::get('/settings/littercoin', 'HomeController@index');
+Route::get('/settings/phone', 'HomeController@index');
+Route::get('/settings/teams', 'HomeController@index');
+Route::get('/settings/presence', 'HomeController@index');
+Route::get('/settings/email', 'HomeController@index');
+Route::get('/settings/show-flag', 'HomeController@index');
 
 // Game settings @ SettingsController
 // Toggle Presense of a piece of litter

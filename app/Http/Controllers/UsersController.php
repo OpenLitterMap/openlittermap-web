@@ -26,14 +26,14 @@ class UsersController extends Controller
 {
     /*
     * Apply middleware to all of these routes
-    */ 
+    */
     public function __construct() {
     	return $this->middleware('auth');
     	parent::__construct();
 	}
 
     /*
-     * TEST ROUTE 
+     * TEST ROUTE
      */
     public function test() {
         $visits = Redis::incr('vists');;
@@ -41,9 +41,10 @@ class UsersController extends Controller
     }
 
     /**
-    * Get the settings page 
+    * Get the settings page
     */
-    public function settings() {
+    public function settings ()
+    {
         $user = Auth::user();
 
         $plan = '';
@@ -51,7 +52,7 @@ class UsersController extends Controller
         $onGracePeriod = '';
         $ends_at = '';
 
-        // If the user does not have a Stripe ID they are on a Free Plan 
+        // If the user does not have a Stripe ID they are on a Free Plan
         if (! $user->stripe_id) {
             $plan = 'Free';
         } else {
@@ -87,22 +88,22 @@ class UsersController extends Controller
         $lang = \App::getLocale();
         $countries = \App\Country::where('manual_verify', 1)->orWhere('shortcode', 'pr')->orderBy('country', 'asc')->get()->pluck('country', 'shortcode');
 
-        return view('user.settings', [
+        return [
             'user' => $user,
-            'plan' => $plan, 
+            'plan' => $plan,
             'isValid' => $isValid,
             'ongraceperiod' => $onGracePeriod,
             'ends_at' => $ends_at,
             'plans' => $plans,
             'countries' => $countries // for flags
-        ]);
+        ];
     }
 
     /**
      * Pass the authenticated user details to the view 'user.profile'
      */
     public function getProfile() {
-        
+
         $locale = \App::getLocale();
 
         // Limit selection of columns
@@ -115,7 +116,7 @@ class UsersController extends Controller
             $subscription = $user->subscriptions->name;
         }
 
-        // Check the users level, update xp bar 
+        // Check the users level, update xp bar
         $levels = Level::all();
         foreach($levels as $level) {
             if ($user->xp > $level->xp) {
@@ -130,15 +131,15 @@ class UsersController extends Controller
         } else {
             // How much XP is needed for the next level?
             $xpNeeded = $levels[$user->level]['xp'];
-            // Previous XP for 0-1 effect 
+            // Previous XP for 0-1 effect
             $startingXP = $levels[$user->level-1]['xp'];
         }
 
-        // Get the photos as pagination x 1 
+        // Get the photos as pagination x 1
         $photos = $user->photos()->where([
             ['verified', 0],
             ['verification', 0]
-        ])->paginate(1); // length aware paginator class 
+        ])->paginate(1); // length aware paginator class
 
         $littercoin = 0;
 
@@ -147,13 +148,13 @@ class UsersController extends Controller
             $littercoin += $user->littercoin_owed;
         }
 
-        // littercoin earned by producing open data        
+        // littercoin earned by producing open data
         if ($user->littercoin_allowance) {
             $littercoin += $user->littercoin_allowance;
         }
 
         return view('user.profile', [
-            'user' => $user, 
+            'user' => $user,
             'photos' => $photos,
             // 'tasks' => $tasks,
             'xpNeeded' => $xpNeeded,
@@ -169,7 +170,7 @@ class UsersController extends Controller
 
     /*
     * Change the avatar image of the authenticated user ( & pass in the photos again )
-    */ 
+    */
     // public function update_avatar(Request $request) {
     //     // Handle the user upload of avatar
 
@@ -259,12 +260,12 @@ class UsersController extends Controller
         // Get the currently authenticated user (who is logged in)
         $user = Auth::user();
 
-        // validate the request, some fields MUST be filled in 
+        // validate the request, some fields MUST be filled in
         $this->validate($request, [
             'oldpassword' => 'required',
             'password' => 'required|confirmed|min:6|case_diff|numbers|letters|symbols'
         ]);
-        // Check the old password is the same if so, save the new one 
+        // Check the old password is the same if so, save the new one
         if (\Hash::check($request->input('oldpassword'), $user->password)) {
             $user->password = $request->password;
             $user->save();
@@ -319,7 +320,7 @@ class UsersController extends Controller
             $user->items_remaining = false;
             $user->save();
         }
-        
+
         return redirect('/settings#/general');
     }
 
@@ -332,11 +333,11 @@ class UsersController extends Controller
         $this->validate($request, [
             'password' => 'required'
         ]);
-        
+
         $user = Auth::user();
 
-        // Remove from any Redis instances 
-        
+        // Remove from any Redis instances
+
 
         if (\Hash::check($request->input('password'), $user->password)) {
             $user->delete();
@@ -355,7 +356,7 @@ class UsersController extends Controller
      * todo - move this to SettingsController.
      */
     public function togglePrivacy(Request $request) {
-        
+
         $user = Auth::user();
 
         if ($request->mapsName) {
@@ -401,12 +402,12 @@ class UsersController extends Controller
 
 	/*
     * Redirect the authenticated user to the submit page
-    */ 
+    */
     public function submit() {
     	$user = Auth::user();
     	return view('pages.submit', compact('user'));
     }
-    
+
     /*
     * Log the user out
     * -> probably an improved way of doing this but it works
@@ -424,8 +425,8 @@ class UsersController extends Controller
     }
 
     /**
-     * Update the users phone number 
-     */ 
+     * Update the users phone number
+     */
     public function phone(Request $request) {
         $phoneNumber = $request['phonenumber'];
         $user = Auth::user();
@@ -433,8 +434,8 @@ class UsersController extends Controller
         $user->save();
     }
 
-    /** 
-     * Remove a users phone number from the database 
+    /**
+     * Remove a users phone number from the database
      */
     public function removePhone(Request $request) {
         $user = Auth::user();
@@ -442,7 +443,7 @@ class UsersController extends Controller
         $user->save();
     }
 
-    /** 
+    /**
      * Toggle the users items_remaining value (Default = True == Remaining)
      */
     public function togglePresence(Request $request) {

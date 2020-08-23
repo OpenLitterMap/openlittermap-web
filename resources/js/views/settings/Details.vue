@@ -67,38 +67,38 @@
 
 <script>
 	class Errors {
-		/** Create a new errors instance */ 
+		/** Create a new errors instance */
 		constructor() {
 			this.errors = {};
 		}
-		/**  Get the error message for a field */ 
+		/**  Get the error message for a field */
 		get(field){
 			if(this.errors[field]){
 				return this.errors[field][0];
 			}
 		}
 
-		/** Determine if an error exists for a given field */ 
+		/** Determine if an error exists for a given field */
 		has(field){
 			return this.errors.hasOwnProperty(field);
 		}
 
-		/** Record the new errors */ 
+		/** Record the new errors */
 		record(errors){
 			this.errors = errors;
 		}
 
-		/** Clear one or all error fields */ 
+		/** Clear one or all error fields */
 		clear(field){
-			if (field) { 
+			if (field) {
 				delete this.errors[field];
 				return;
 			}
-			// else 
+			// else
 			this.errors = {};
 		}
 
-		/** Determine if we have any errors */ 
+		/** Determine if we have any errors */
 		any(){
 			console.log(this);
 			return Object.keys(this.errors).length > 0;
@@ -107,7 +107,7 @@
 
 	class Form {
 
-		/** Create a new Form instance */ 
+		/** Create a new Form instance */
 		constructor(data) {
 			this.originalData = data;
 
@@ -119,7 +119,7 @@
 			this.errors = new Errors();
 		}
 
-		/** Fetch relevant data for the form */ 
+		/** Fetch relevant data for the form */
 		data() {
 			let data = {};
 			// filter through the original data
@@ -129,7 +129,7 @@
 			return data;
 		}
 
-		/** Reset the form fields */ 
+		/** Reset the form fields */
 		reset() {
 			for(let field in this.originalData){
 				this[field] = '';
@@ -137,13 +137,13 @@
 			this.errors.clear();
 		}
 
-		/** Submit the form */ 
+		/** Submit the form */
 		submit(requestType, url) {
 			// return a set up a promise
 			return new Promise((resolve, reject) => {
 				// submit the ajax request
 				axios[requestType](url, this.data())
-				  // 200 
+				  // 200
 				 .then(response => {
 				 	console.log('first');
 				 	// use local onSuccess method then trigger Vue method with resolve
@@ -159,55 +159,62 @@
 				 	reject(error.response.data);
 				 });
 			});
-		}			
+		}
 
-		/** Handle a successful form submission */ 
+		/** Handle a successful form submission */
 		onSuccess(data){
 		 	console.log('second');
 			// this.reset();
 		};
 
-		/** Handle a failed form submission */ 
+		/** Handle a failed form submission */
 		onFail(errors) {
 			console.log(errors);
 			this.errors.record(errors);
 		}
 	}
 
-	export default {
-		props: ['user', 'subscription'],
-		data() {
-			return {
-				image: '',
-				message: '',
-				nameform: new Form({
-					name: '',
-					username: '',
-					email: '',
-					password: '',
-				}),
-			};
-		},
-		methods: {
-			changeName() {
-				this.nameform.submit('patch', '/en/settings/details')
-				.then(response => { 
-				 	console.log(response);
-				 	this.message = response.message;
-				 	window.location.href = window.location.href;
-				 })
-				 .catch(error => {
-				 	console.log(error);
-				 });
-			}
-		},
-		computed: {
-			userImage() {
-				return '/uploads/' + this.id +  '/avatar/' + this.avatar;
-			},
-			csrfToken() {
-        		return OLM.csrfToken;
-			}
-		}
-	}
+export default {
+    name: 'Details',
+    data ()
+    {
+        return {
+            image: '',
+            message: '',
+            nameform: new Form({
+                name: '',
+                username: '',
+                email: '',
+                password: '',
+            }),
+        };
+    },
+    methods: {
+
+        changeName ()
+        {
+            this.nameform.submit('patch', '/en/settings/details')
+            .then(response => {
+                console.log(response);
+                this.message = response.message;
+                window.location.href = window.location.href;
+             })
+             .catch(error => {
+                console.log(error);
+             });
+        }
+    },
+    computed: {
+
+        userImage ()
+        {
+            return '/uploads/' + this.id +  '/avatar/' + this.avatar;
+        },
+
+        csrfToken ()
+        {
+            return OLM.csrfToken;
+        }
+    }
+}
 </script>

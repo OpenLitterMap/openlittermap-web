@@ -27,7 +27,7 @@
 					</vue-simple-suggest>
 
 					<button
-						:disabled="processing" 
+						:disabled="processing"
 						:class="checkLoading"
 						@click="save"
 					>Save Flag</button>
@@ -38,78 +38,88 @@
 </template>
 
 <script>
-	import VueSimpleSuggest from 'vue-simple-suggest'
-	import 'vue-simple-suggest/dist/styles.css'
+import VueSimpleSuggest from 'vue-simple-suggest'
+import 'vue-simple-suggest/dist/styles.css'
 
-	export default {
-		name: "GlobalFlag",
-		props: ['countries', 'user'],
-		components: { VueSimpleSuggest },
-		data() {
-			return {
-				country: '',
-				autoCompleteStyle: {
-					vueSimpleSuggest: "position-relative width-50",
-	          		inputWrapper: "",
-	          		defaultInput : "input",
-	          		suggestions: "position-absolute list-group z-1000 custom-class-overflow width-50",
-	          		suggestItem: "list-group-item"
-				},
-				processing: false,
-				defaultClass: 'button mt20 is-primary is-medium'
-			};
-		},
-		methods: {
-			getCountries() {
-				return Object.values(this.countries);
-			},
-			getSelected() {
-				if (this.user.global_flag) {
-					return this.countries[this.user.global_flag];
-				}
+export default {
+    name: 'GlobalFlag',
+    props: ['countries', 'user'],
+    components: { VueSimpleSuggest },
+    data ()
+    {
+        return {
+            country: '',
+            autoCompleteStyle: {
+                vueSimpleSuggest: "position-relative width-50",
+                inputWrapper: "",
+                defaultInput : "input",
+                suggestions: "position-absolute list-group z-1000 custom-class-overflow width-50",
+                suggestItem: "list-group-item"
+            },
+            processing: false,
+            defaultClass: 'button mt20 is-primary is-medium'
+        };
+    },
+    methods: {
 
-				return false;
-			},
-			save() {
-				this.processing = true;
+        getCountries() {
+            return Object.values(this.countries);
+        },
 
-				let selected = Object.keys(this.countries).find(key => this.countries[key] === this.country);
+        getSelected() {
+            if (this.user.global_flag) {
+                return this.countries[this.user.global_flag];
+            }
 
-				axios.post('/en/settings/save-flag', {
-					country: selected
-				})
-				.then(response => {
-					console.log(response);
-					if (response.status == 200) {
-						window.location.href = window.location.href;
-					}
-				})
-				.catch(error => {
-					console.log(error);
-				});
-			}
-		},
-		computed: {
-			checkLoading() {
-				return this.processing ? this.defaultClass + ' is-loading' : this.defaultClass;
-			},
-		}
-	}
+            return false;
+        },
+
+        save() {
+            this.processing = true;
+
+            let selected = Object.keys(this.countries).find(key => this.countries[key] === this.country);
+
+            axios.post('/en/settings/save-flag', {
+                country: selected
+            })
+            .then(response => {
+                console.log(response);
+                if (response.status == 200) {
+                    window.location.href = window.location.href;
+                }
+            })
+            .catch(error => {
+                console.log(error);
+            });
+        }
+    },
+    computed: {
+
+        checkLoading() {
+            return this.processing ? this.defaultClass + ' is-loading' : this.defaultClass;
+        },
+    }
+}
 </script>
 
 <style lang="scss">
+
 	.mb20 {
 		margin-bottom: 20px;
 	}
+
 	.mt20 {
 		margin-top: 20px;
 	}
+
 	.green {
 		color: #2ecc71;
 	}
+
 	.strong {
 		font-weight: 600;
 	}
+
 	.width-50 {
 		width: 50%;
 	}
