@@ -74,8 +74,7 @@ class PhotosController extends Controller
         {
             header('HTTP/1.1 500 Internal Server Error');
             header('Content-type: text/plain');
-            $msg = "Sorry, no GPS on this one";
-            exit ($msg);
+            exit ("Sorry, no GPS on this one");
         }
 
         $dateTime = '';
@@ -174,6 +173,8 @@ class PhotosController extends Controller
         // dd($addressArray);
         $location = array_values($addressArray)[0];
         $road = array_values($addressArray)[1];
+
+        \Log::info(['address', $addressArray]);
 
         // todo- check all locations for "/" and replace with "-"
         // todo - return country/state/city without having to check again

@@ -2,7 +2,8 @@ import { actions } from './actions'
 import { mutations } from './mutations'
 
 const state = {
-	auth: false
+	auth: false,
+    errorLogin: ''
 };
 
 export const user = {

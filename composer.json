@@ -9,13 +9,22 @@
     "license": "MIT",
     "require": {
         "php": "^7.2.5",
+        "beyondcode/laravel-websockets": "^1.6",
         "doctrine/dbal": "^2.10",
         "fideloper/proxy": "^4.2",
         "fruitcake/laravel-cors": "^2.0",
         "guzzlehttp/guzzle": "^6.3",
+        "intervention/image": "^2.5",
         "laravel/framework": "^7.24",
+        "laravel/helpers": "^1.2",
+        "laravel/horizon": "^4.3",
+        "laravel/passport": "^9.3",
         "laravel/tinker": "^2.0",
-        "laravel/ui": "^2.1"
+        "laravel/ui": "^2.1",
+        "maatwebsite/excel": "^3.1",
+        "predis/predis": "^1.1",
+        "schuppo/password-strength": "^2.1",
+        "stripe/stripe-php": "^7.49"
     },
     "require-dev": {
         "facade/ignition": "^2.0",

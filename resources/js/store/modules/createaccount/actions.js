@@ -14,11 +14,17 @@ export const actions = {
             g_recaptcha_response: payload.recaptcha
         })
         .then(response => {
-            console.log('create_account', response);
+            console.log('create_account', response); // user_id, email
 
             // check response
 
             // CHECK PLAN
+            if (payload.plan == 1)
+            {
+                alert('Congratulations! Your free account has been created. Please verify your email to activate login');
+                // login
+                // reload page
+            }
 
             // show stripe
 
@@ -28,6 +34,7 @@ export const actions = {
             console.log('error.create_account', error);
 
             // populate errors
+            context.commit('createAccountErrors', error.response.data.errors);
         });
     }
 };

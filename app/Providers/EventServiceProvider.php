@@ -18,6 +18,52 @@ class EventServiceProvider extends ServiceProvider
         Registered::class => [
             SendEmailVerificationNotification::class,
         ],
+
+        'App\Events\NewCountryAdded' => [
+            'App\Listeners\UpdateCountriesTable',
+            // 'App\Listeners\GenerateLitterCoin',
+            // 'App\Listeners\SendNewCountryEmail',
+            // 'App\Listeners\UpdateSlackChannel',
+        ],
+        'App\Events\NewStateAdded' => [
+            'App\Listeners\UpdateStatesTable',
+            // 'App\Listeners\GenerateLitterCoin',
+        ],
+        'App\Events\NewCityAdded' => [
+            'App\Listeners\UpdateCitiesTable',
+            // 'App\Listeners\GenerateLitterCoin',
+            // 'App\Listeners\SendNewCityEmail'
+        ],
+        // 'App\Events\DynamicUpdate' => [
+        //     'App\Listeners\UpdateUsersTotals',
+        // ],
+
+//       stage-1 verification is not up to date
+        'App\Events\PhotoVerifiedByUser' => [
+            'App\Listeners\UpdateUsersTotals',
+            'App\Listeners\UpdateCitiesTotals',
+            'App\Listeners\UpdateStatesTotals',
+            'App\Listeners\UpdateCountriesTotals',
+            'App\Listeners\UpdateLeaderboards',
+        ],
+        'App\Events\PhotoVerifiedByAdmin' => [
+            'App\Listeners\UpdateUsersAdmin',
+            'App\Listeners\UpdateCitiesAdmin',
+            'App\Listeners\UpdateStatesAdmin',
+            'App\Listeners\UpdateCountriesAdmin',
+            // 'App\Listeners\UpdateLocationsAdmin', // todo
+            // 'App\Listeners\GenerateLitterCoin',
+            'App\Listeners\UpdateLeaderboardsAdmin',
+            'App\Listeners\CompileResultsString'
+        ],
+        'App\Events\UserSignedUp' => [
+            'App\Listeners\SendNewUserEmail'
+        ],
+        'App\Events\Photo\IncrementPhotoMonth' => [
+            'App\Listeners\Photo\IncrementCountryMonth',
+            'App\Listeners\Photo\IncrementStateMonth',
+            'App\Listeners\Photo\IncrementCityMonth',
+        ]
     ];
 
     /**

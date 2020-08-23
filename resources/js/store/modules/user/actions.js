@@ -20,7 +20,9 @@ export const actions = {
             routes.push({ path: '/submit' });
         })
         .catch(error => {
-            console.log('error.login', error);
+            console.log('error.login', error.response.data);
+
+            context.commit('errorLogin', error.response.data.email);
         });
     },
 

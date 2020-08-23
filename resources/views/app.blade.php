@@ -7,14 +7,9 @@
     <meta name="description" content="Join the community mapping and sharing data on plastic pollution">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <script>
-        window.OLM = <?php echo json_encode([
-            // var olm = {
-            'csrfToken' => csrf_token(),
-            'stripeKey' => config('services.stripe.key'),
-            'user' => Auth::user()
-        ]);?>
+        window.OLM = <?php echo json_encode(['stripeKey' => config('services.stripe.key')]);?>
 
-            window.PUSHER_APP_KEY = '{{ config('broadcasting.connections.pusher.key') }}';
+        window.PUSHER_APP_KEY = '{{ config('broadcasting.connections.pusher.key') }}';
         window.APP_DEBUG      = '{{ config('app.debug') ? 'true' : 'false' }}';
     </script>
     <title>OpenLitterMap</title>
@@ -51,7 +46,6 @@
 
         @media (max-width: 1024px) { #welcome { font-size: 60px; } }
     </style>
-    <script src='https://www.google.com/recaptcha/api.js'></script>
 </head>
 <body>
 <div id="app">
@@ -63,6 +57,6 @@
     var wow = new WOW();
     wow.init();
 </script>
-<script src="https://checkout.stripe.com/checkout.js"></script>
+<script src="https://js.stripe.com/v3"></script>
 </body>
 </html>

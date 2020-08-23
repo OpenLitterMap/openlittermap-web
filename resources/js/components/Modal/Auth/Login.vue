@@ -1,6 +1,6 @@
 <template>
 	<div>
-		<p v-show="this.error" style="color: red;">{{ this.errormessage }}</p>
+		<p v-show="errorLogin" style="color: red;">{{ errorLogin }}</p>
 
 		<form role="form" method="post" @submit.prevent="login" style="padding-top: 1em; padding-bottom: 1em;">
 
@@ -11,7 +11,7 @@
 				name="email"
 				required
 				v-model="email"
-				@keydown="this.error = false;"
+				@keydown="clearLoginError"
 				autocomplete="email"
 			/>
 
@@ -39,8 +39,6 @@ export default {
 		return {
 			email: '',
 			password: '',
-			error: true,
-			errormessage: '',
 			disabled: false,
 			processing: false,
 			btn: 'button is-medium is-primary'
@@ -49,14 +47,30 @@ export default {
 	computed: {
 
 		/**
-		 * Add "is-loading" when processing is true
+		 * Add ' is-loading' when processing is true
 		 */
 		button ()
 		{
 			return this.processing ? this.btn + ' is-loading' : this.btn;
-		}
+		},
+
+        /**
+         * Get errors from login (email)
+         */
+        errorLogin ()
+        {
+            return this.$store.state.user.errorLogin;
+        }
 	},
 	methods: {
+
+	    /**
+         *
+         */
+        clearLoginError ()
+        {
+            this.$store.commit('errorLogin', '');
+        },
 
 		/**
 		 * Try to log the user in

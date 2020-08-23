@@ -46,6 +46,7 @@
                         @click="open(s.url)"
                         class="footer-icon"
                     />
+
                 </div>
 
                 <div class="column is-2">
@@ -91,11 +92,11 @@ export default {
         return {
             email: '',
             socials: [
-                { icon: 'facebook2.png', url: 'https://facebook.com/openlittermap' },
-                { icon: 'ig2.png', url: 'https://instagram.com/openlittermap' },
-                { icon: 'twitter2.png', url: 'https://twitter.com/openlittermap' },
-                { icon: 'reddit.png', url: 'https://reddit.com/r/openlittermap' },
-                { icon: 'tumblr.png', url: 'https://tumblr.com/openlittermap' },
+                { icon: 'facebook2.png', url: 'https://facebook.com/openlittermap' }, // 0
+                { icon: 'ig2.png', url: 'https://instagram.com/openlittermap' }, // 1
+                { icon: 'twitter2.png', url: 'https://twitter.com/openlittermap' }, // 2
+                { icon: 'reddit.png', url: 'https://reddit.com/r/openlittermap' }, // 3
+                { icon: 'tumblr.png', url: 'https://tumblr.com/openlittermap' }, // 4
             ]
         };
     },
@@ -220,6 +221,7 @@ export default {
         border-radius: 1em;
         margin-bottom: 1.5em;
         width: 50%;
+        border: none;
     }
 
     .inner-footer-container {

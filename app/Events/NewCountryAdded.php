@@ -1,6 +1,6 @@
 <?php
 
-// A data container which holds the information related to the event 
+// A data container which holds the information related to the event
 namespace App\Events;
 
 use App\Country;
@@ -24,7 +24,7 @@ class NewCountryAdded implements ShouldBroadcast
      *
      * @return void
      */
-    public function __construct($country, $countryCode, $now)
+    public function __construct ($country, $countryCode, $now)
     {
         $this->country = $country;
         $this->countryCode = $countryCode;

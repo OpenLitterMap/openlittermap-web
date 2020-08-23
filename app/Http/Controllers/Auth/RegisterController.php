@@ -27,8 +27,6 @@ class RegisterController extends Controller
     |
     */
 
-    // use RegistersUsers;
-
     /**
      * Where to redirect users after registration.
      *
@@ -41,7 +39,7 @@ class RegisterController extends Controller
      *
      * @return void
      */
-    public function __construct()
+    public function __construct ()
     {
         $this->middleware('guest');
     }
@@ -78,13 +76,11 @@ class RegisterController extends Controller
             'g_recaptcha_response' => 'required'
         ]);
 
-        $email = $request->email;
-
         event(new Registered($user = $this->create($request->all())));
 
         if (app()->environment('production'))
         {
-            Mail::to($email)->send(new NewUserRegMail($user));
+            Mail::to($request->email)->send(new NewUserRegMail($user));
         }
 
         event(new UserSignedUp(now()));

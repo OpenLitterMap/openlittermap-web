@@ -14,7 +14,8 @@ class SubscriptionsController extends Controller
 {
 
 	// reg form will - check auth + validation rules
-    public function store(Request $request) {
+    public function store (Request $request)
+    {
     	// we will only get here is form is valid + authorized
 
         $plan = Plan::find($request->plan);
@@ -34,18 +35,17 @@ class SubscriptionsController extends Controller
     		return response()->json(['status' => $e->getMessage()], 422);
     	}
 
-        $user->newSubscription($plan->name, $plan->name)->create($request->stripeToken); 
+        $user->newSubscription($plan->name, $plan->name)->create($request->stripeToken);
         // could pass more args here as second item ($token, []..);
 
     	// return ['status' => 'Success!'];
     }
 
-
-
     /**
-     * The user is logged in on Free and wants to upgrade 
+     * The user is logged in on Free and wants to upgrade
      */
-    public function change(Request $request) {
+    public function change (Request $request)
+    {
 
         $plan = Plan::find($request->myplan);
 
@@ -63,16 +63,17 @@ class SubscriptionsController extends Controller
             return response()->json(['status' => $e->getMessage()], 422);
         }
 
-        $user->newSubscription($plan->name, $plan->name)->create($request->stripeToken); 
+        $user->newSubscription($plan->name, $plan->name)->create($request->stripeToken);
     }
-    
+
 
     /**
      * Cancel a users subscription (at the end of their subscription) or when they cancel it
      */
-    public function destroy(Request $request){
-        // check password, 
-        
+    public function destroy (Request $request)
+    {
+        // check password,
+
         $this->validate($request, [
             'password' => 'required'
         ]);
@@ -83,10 +84,10 @@ class SubscriptionsController extends Controller
             // $user->subscriptions[0]->cancel();
 
             foreach($user->subscriptions as $sub) {
-                if ( 
-                    ($sub->name == 'Startup') || 
-                    ($sub->name == 'Basic') || 
-                    ($sub->name == 'Advanced') || 
+                if (
+                    ($sub->name == 'Startup') ||
+                    ($sub->name == 'Basic') ||
+                    ($sub->name == 'Advanced') ||
                     ($sub->name == 'Pro')
                 ) {
                     // $plan = Plan::where('name', $sub->name)->first();
@@ -96,11 +97,11 @@ class SubscriptionsController extends Controller
 
             $user->save();
         } else {
-            // alert 
+            // alert
             return ['message' => 'Invalid password. Please try again.'];
         }
 
-        // redirect with flash 
+        // redirect with flash
         return ['status' => 'Subscription deleted'];
     }
 
@@ -109,21 +110,24 @@ class SubscriptionsController extends Controller
     /**
      * Resume a Users Subscription
      */
-    public function resume(Request $request) {
-        
-        $user = Auth::user(); 
+    public function resume (Request $request)
+    {
+        $user = Auth::user();
         // $user->subscriptions[0]->resume();
-        foreach($user->subscriptions as $sub) {
-            if ( 
-                ($sub->name == 'Startup') || 
-                ($sub->name == 'Basic') || 
-                ($sub->name == 'Advanced') || 
+        foreach ($user->subscriptions as $sub)
+        {
+            if (
+                ($sub->name == 'Startup') ||
+                ($sub->name == 'Basic') ||
+                ($sub->name == 'Advanced') ||
                 ($sub->name == 'Pro')
             ) {
                 $sub->resume();
             }
         }
+
         $user->save();
+
         return ['message' => 'Subscription Reactivated!'];
     }
 

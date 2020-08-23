@@ -1,14 +1,11 @@
 <template>
-    <section class="section hero fullheight is-warning is-bold">
+    <section class="section hero fullheight is-warning is-bold" style="padding: 5em;">
 
-        <div class="container ma has-text-centered">
+        <div class="container ma has-text-centered" style="flex-grow: 0; width: 100%;">
 
             <h1 class="title is-1 drop-title">Click to upload or drop your photos</h1>
 
-            <vue-dropzone
-                class="mb3"
-                :options="options"
-            />
+            <vue-dropzone id="dropzone" class="mb3" :options="options" />
 
             <h2 class="title is-2">Thank you!</h2>
 

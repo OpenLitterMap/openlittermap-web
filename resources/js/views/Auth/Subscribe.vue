@@ -14,7 +14,7 @@
         </section>
 
         <section>
-            <checkout-form :plan="plan" />
+            <create-account :plan="plan" />
         </section>
     </div>
 </template>
@@ -22,12 +22,12 @@
 <script>
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
-import CheckoutForm from '../../components/CheckoutForm'
+import CreateAccount from '../../components/CreateAccount'
 
 export default {
     name: 'Subscribe',
     components: {
-        CheckoutForm,
+        CreateAccount,
         Loading
     },
     created ()
