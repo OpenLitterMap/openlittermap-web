@@ -15,40 +15,24 @@
                     :is="modalTypes[type]"
                 />
 
-                <footer class="modal-card-foot" style="height: 50px;">
-                    <div class="column is-half">
-                        <a href="/signup">Sign up</a>
-                    </div>
-
-                    <div class="column is-half">
-                        <a href="/password/reset" class="has-text-right">Forgot Password?</a>
-                    </div>
-                </footer>
-
-                <!-- Footer -->
-<!--                <div>-->
-<!--                    <button-->
-<!--                        class="button is-medium"-->
-<!--                        @click="close"-->
-<!--                    >Cancel</button>-->
-
-<!--                    <button-->
-<!--                        :class="button"-->
-<!--                        :disabled="disabled"-->
-<!--                        @click="action"-->
-<!--                    >Submit</button>-->
-<!--                </div>-->
             </div>
         </div>
     </transition>
 </template>
 
 <script>
+/* Auth */
 import Login from './Auth/Login'
+
+/* Payments */
+import CreditCard from './Payments/CreditCard'
 
 export default {
     name: 'Modal',
-    components: { Login },
+    components: {
+        Login,
+        CreditCard
+    },
     mounted ()
     {
         // Close modal with 'esc' key
@@ -66,7 +50,8 @@ export default {
             disabled: false,
             processing: false,
             modalTypes: {
-                'Login': 'Login'
+                'Login': 'Login',
+                'CreditCard': 'CreditCard'
             }
         };
     },

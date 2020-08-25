@@ -1,15 +1,5 @@
 <template>
 	<div class="container">
-
-        <stripe-elements
-            ref="elementsRef"
-            :pk="publishableKey"
-            :amount="amount"
-            locale="en"
-            @token="tokenCreated"
-            @loading="stripeLoading"
-        />
-
 		<div class="columns" style="padding-top: 5em; margin-bottom: 2em;">
 			<div class="column is-two-thirds is-offset-2">
 				<div class="has-text-centered">
@@ -29,6 +19,8 @@
 				</div>
 			</div>
 		</div>
+
+        <button @click="loadStripe">Load Stripe</button>
 
 		<div class="signup-container">
 
@@ -199,12 +191,11 @@
 
 <script>
 import VueRecaptcha from 'vue-recaptcha'
-import { StripeCheckout } from 'vue-stripe-checkout'
 
 export default {
 	name: 'CreateAccount',
 	props: ['plan'],
-    components: { StripeCheckout, VueRecaptcha },
+    components: { VueRecaptcha },
 	created ()
 	{
 		if (this.plan)
@@ -235,22 +226,10 @@ export default {
 			planInt: 1,
 			status: '',
 			selectedPlan: '',
-            // stripe new
-            publishableKey: process.env.MIX_STRIPE_KEY,
 		};
 	},
 
 	computed: {
-
-	    /**
-         *
-         */
-	    amount ()
-        {
-            console.log('get_amount');
-
-            return 500;
-        },
 
 	    /**
          * Add ' is-loading' when processing
@@ -336,9 +315,11 @@ export default {
          */
 		loadStripe ()
 		{
-            let stripe = Stripe(process.env.MIX_STRIPE_KEY);
+            this.$store.commit('showModal', {
+                type: 'CreditCard'
+            });
 
-            console.log(stripe);
+            // old way..
 
             // stripe.redirectToCheckout({
             //     lineItems: [{
@@ -438,25 +419,11 @@ export default {
 
             if (this.planInt > 1)
             {
-                this.loadStripe();
+                this.$store.commit('showModal', {
+                    modalType: 'StripeCheckout'
+                });
             }
         },
-
-        /**
-         *
-         */
-        stripeLoading ()
-        {
-            console.log('stripe loading');
-        },
-
-        /**
-         *
-         */
-        tokenCreated ()
-        {
-            console.log('token created');
-        }
     }
 }
 </script>

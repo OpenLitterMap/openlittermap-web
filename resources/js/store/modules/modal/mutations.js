@@ -13,11 +13,10 @@ export const mutations = {
      */
     showModal (state, payload)
     {
-        console.log(payload);
-        state.show = true;
         state.type = payload.type;
         state.title = payload.title;
         state.action = payload.action;
+        state.show = true;
     },
 
 };

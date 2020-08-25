@@ -28,6 +28,16 @@
 
 			<button :class="button" :disabled="disabled">Login</button>
 		 </form>
+
+        <footer class="modal-card-foot" style="height: 50px;">
+            <div class="column is-half">
+                <a href="/signup">Sign up</a>
+            </div>
+
+            <div class="column is-half">
+                <a href="/password/reset" class="has-text-right">Forgot Password?</a>
+            </div>
+        </footer>
 	 </div>
 </template>
 

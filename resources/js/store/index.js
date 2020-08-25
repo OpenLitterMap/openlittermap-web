@@ -8,6 +8,7 @@ import { globalmap } from './modules/globalmap'
 import { locations } from './modules/locations'
 import { litter } from './modules/litter'
 import { modal } from './modules/modal'
+import { payments } from './modules/payments'
 import { plans } from './modules/plans'
 import { subscriber} from './modules/subscriber'
 import { user } from './modules/user'
@@ -23,6 +24,7 @@ export default new Vuex.Store({
         locations,
         litter,
         modal,
+        payments,
         plans,
         subscriber,
         user
