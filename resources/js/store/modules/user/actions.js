@@ -55,11 +55,12 @@ export const actions = {
      */
     async LOGOUT (context)
     {
-        await axios.post('logout')
+        await axios.get('logout')
         .then(response => {
             console.log('logout', response);
 
             context.commit('logout');
+            window.location.href = '/';
         })
         .catch(error => {
             console.log('error.logout', error);

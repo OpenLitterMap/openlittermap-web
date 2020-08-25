@@ -407,12 +407,13 @@ class UsersController extends Controller
     	return view('pages.submit', compact('user'));
     }
 
-    /*
-    * Log the user out
-    * -> probably an improved way of doing this but it works
-    */
-    public function logout() {
+    /**
+     * Log the user out
+     */
+    public function logout ()
+    {
         Auth::logout();
+
         return redirect('/');
     }
 
