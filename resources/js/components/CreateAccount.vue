@@ -1,11 +1,21 @@
 <template>
 	<div class="container">
+
+        <stripe-elements
+            ref="elementsRef"
+            :pk="publishableKey"
+            :amount="amount"
+            locale="en"
+            @token="tokenCreated"
+            @loading="stripeLoading"
+        />
+
 		<div class="columns" style="padding-top: 5em; margin-bottom: 2em;">
 			<div class="column is-two-thirds is-offset-2">
 				<div class="has-text-centered">
 					<h3 class="pb2">Concerned Citizen</h3>
 
-					<strong>Please consider supporting the development of open data on plastic pollution by crowdfunding OpenLitterMap with as little as 6 cents a day with a monthly subscription to help grow and develop this important platform.</strong>
+					<strong>Please consider supporting our work by crowdfunding OpenLitterMap with as little as 6 cents a day with a monthly subscription to help grow and develop this important platform.</strong>
 
 					<div class="control mt2">
 						<div class="select">
@@ -189,11 +199,12 @@
 
 <script>
 import VueRecaptcha from 'vue-recaptcha'
+import { StripeCheckout } from 'vue-stripe-checkout'
 
 export default {
 	name: 'CreateAccount',
 	props: ['plan'],
-    components: { VueRecaptcha },
+    components: { StripeCheckout, VueRecaptcha },
 	created ()
 	{
 		if (this.plan)
@@ -224,10 +235,22 @@ export default {
 			planInt: 1,
 			status: '',
 			selectedPlan: '',
+            // stripe new
+            publishableKey: process.env.MIX_STRIPE_KEY,
 		};
 	},
 
 	computed: {
+
+	    /**
+         *
+         */
+	    amount ()
+        {
+            console.log('get_amount');
+
+            return 500;
+        },
 
 	    /**
          * Add ' is-loading' when processing
@@ -317,17 +340,17 @@ export default {
 
             console.log(stripe);
 
-            stripe.redirectToCheckout({
-                lineItems: [{
-                    // Define the product and price in the Dashboard first, and use the price
-                    // ID in your client-side code.
-                    price: this.plans[this.planInt -1].name,
-                    quantity: 1
-                }],
-                mode: 'subscription',
-                successUrl: 'https://www.example.com/success',
-                cancelUrl: 'https://www.example.com/cancel'
-            });
+            // stripe.redirectToCheckout({
+            //     lineItems: [{
+            //         // Define the product and price in the Dashboard first, and use the price
+            //         // ID in your client-side code.
+            //         price: this.plans[this.planInt -1].name,
+            //         quantity: 1
+            //     }],
+            //     mode: 'subscription',
+            //     successUrl: 'https://www.example.com/success',
+            //     cancelUrl: 'https://www.example.com/cancel'
+            // });
 
             // Configure Stripe step 1
 			// called handler in the docs
@@ -413,13 +436,26 @@ export default {
 
             this.processing = false;
 
-            console.log('after submit');
-
             if (this.planInt > 1)
             {
                 this.loadStripe();
             }
+        },
 
+        /**
+         *
+         */
+        stripeLoading ()
+        {
+            console.log('stripe loading');
+        },
+
+        /**
+         *
+         */
+        tokenCreated ()
+        {
+            console.log('token created');
         }
     }
 }

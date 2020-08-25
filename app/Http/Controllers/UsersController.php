@@ -252,28 +252,27 @@ class UsersController extends Controller
         // return redirect()->back();
     }
 
-    /*
-    * Update the users password
-    */
-    public function changePassword(Request $request) {
-
-        // Get the currently authenticated user (who is logged in)
-        $user = Auth::user();
-
-        // validate the request, some fields MUST be filled in
+    /**
+     * Update the users password
+     */
+    public function changePassword (Request $request)
+    {
         $this->validate($request, [
             'oldpassword' => 'required',
             'password' => 'required|confirmed|min:6|case_diff|numbers|letters|symbols'
         ]);
-        // Check the old password is the same if so, save the new one
-        if (\Hash::check($request->input('oldpassword'), $user->password)) {
+
+        $user = Auth::user();
+
+        if (\Hash::check($request->input('oldpassword'), $user->password))
+        {
             $user->password = $request->password;
             $user->save();
+
             return ['message' => 'Success! Your password has been updated.'];
-        } else {
-            // Error (200)
-            return ['message' => 'You have entered an incorrect password. Please try again.'];
         }
+
+        return ['message' => 'You have entered an incorrect password. Please try again.'];
     }
 
     /*

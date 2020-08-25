@@ -9,6 +9,14 @@ export const mutations = {
     },
 
     /**
+     * Todo - refactor all user errors (Login, Signup, Settings) to this.
+     */
+    errors (state, payload)
+    {
+        state.errors = payload;
+    },
+
+    /**
      * The user has been authenticated
      */
     login (state)

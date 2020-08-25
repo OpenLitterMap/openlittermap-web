@@ -3,6 +3,30 @@ import routes from '../../../routes'
 export const actions = {
 
     /**
+     *
+     */
+    async CHANGE_PASSWORD (context, payload)
+    {
+        await axios.patch('/settings/details/password', {
+            oldpassword: payload.oldpassword,
+            password: payload.password,
+            password_confirmation: payload.password_confirmation
+        })
+        .then(response => {
+            console.log('change_password', response);
+
+            // success
+        })
+        .catch(error => {
+            console.log('error.change_password', error.response.data);
+
+            // update errors
+
+        });
+    },
+
+
+    /**
      * Try to log the user in
      */
     async LOGIN (context, payload)

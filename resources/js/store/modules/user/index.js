@@ -3,7 +3,8 @@ import { mutations } from './mutations'
 
 const state = {
 	auth: false,
-    errorLogin: ''
+    errorLogin: '',
+    errors: {}
 };
 
 export const user = {
