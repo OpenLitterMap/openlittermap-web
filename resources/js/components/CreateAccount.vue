@@ -20,7 +20,7 @@
 					<div class="control mt2">
 						<div class="select">
 							<select v-model="planInt">
-								<option v-for="plan in plans" :value="plan.id">
+								<option v-for="plan of plans" :key="plan" :value="plan.id">
 									{{ plan.name }} &mdash; €{{ plan.price / 100 }}
 								</option>
 							</select>
