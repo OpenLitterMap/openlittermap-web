@@ -1,22 +1,20 @@
 <template>
 	<div class="container">
-		<div class="columns" style="padding-top: 5em; margin-bottom: 2em;">
-			<div class="column is-two-thirds is-offset-2">
-				<div class="has-text-centered">
-					<h3 class="pb2">Concerned Citizen</h3>
+		<div class="call-container">
+            <div class="has-text-centered">
+                <h3 class="pb2">Concerned Citizen</h3>
 
-					<strong>Please consider supporting our work by crowdfunding OpenLitterMap with as little as 6 cents a day with a monthly subscription to help grow and develop this important platform.</strong>
+                <strong>Please consider supporting our work by crowdfunding OpenLitterMap with as little as 6 cents a day with a monthly subscription to help grow and develop this important platform.</strong>
 
-					<div class="control mt2">
-						<div class="select">
-							<select v-model="planInt">
-								<option v-for="plan in plans" :value="plan.id">
-									{{ plan.name }} &mdash; €{{ plan.price / 100 }}
-								</option>
-							</select>
-						</div>
-					</div>
-				</div>
+                <div class="control mt2">
+                    <div class="select">
+                        <select v-model="planInt">
+                            <option v-for="plan in plans" :value="plan.id">
+                                {{ plan.name }} &mdash; €{{ plan.price / 100 }}
+                            </option>
+                        </select>
+                    </div>
+                </div>
 			</div>
 		</div>
 
@@ -154,7 +152,7 @@
                 </div>
 
                 <!-- CHECKBOX, T+C -->
-                <p>
+                <p class="mtb1">
                     <input
                         type="checkbox"
                         class="filled-in"
@@ -311,76 +309,13 @@ export default {
         },
 
         /**
-         *
+         * Load Stripe CreditCard Modal
          */
 		loadStripe ()
 		{
             this.$store.commit('showModal', {
                 type: 'CreditCard'
             });
-
-            // old way..
-
-            // stripe.redirectToCheckout({
-            //     lineItems: [{
-            //         // Define the product and price in the Dashboard first, and use the price
-            //         // ID in your client-side code.
-            //         price: this.plans[this.planInt -1].name,
-            //         quantity: 1
-            //     }],
-            //     mode: 'subscription',
-            //     successUrl: 'https://www.example.com/success',
-            //     cancelUrl: 'https://www.example.com/cancel'
-            // });
-
-            // Configure Stripe step 1
-			// called handler in the docs
-			// this.stripe = StripeCheckout.configure({
-			// 	key: OLM.stripeKey,
-			// 	image: "https://stripe.com/img/documentation/checkout/marketplace.png",
-			// 	locale: "auto",
-			// 	panelLabel: "Subscribe For",
-			// 	email: this.email,
-            //
-			// 	// RESPONSE FROM STRIPE MODAL INPUT
-			// 	// Submit the stripe form
-			// 	// The callback to invoke the payment once the checkout process has been complete
-			// 	// func ( token, args )
-			// 	// token.id can be used to create a charge or can be attached to a customer
-			// 	// token.email contains the email addresses entered by the user
-			// 	// args contain billing + shipping info if enabled
-            //
-			// 	// Callback 1 from Stripe with token object -> user has been created?
-			// 	// get a token object in response to the forms ajax request
-			// 	token: (token) => { // use the arrow ES15 syntax to make this local
-			// 		// input the token id into the form for submission
-			// 		this.stripeToken = token.id,
-			// 		this.stripeEmail = token.email;
-			// 		// console.log(this);
-			// 		axios.post('/join', this.$data)
-			// 			// if 200
-			// 			 .then(response => {
-			// 				this.submitting = false;
-			// 				this.form.reset();
-			// 				alert('Congratulations! You are now subscribed. Remember to verify your email to enable login.');
-			// 			 })
-			// 			 // once alert closes, the response comes in
-			// 			 .catch(error => {
-			// 				// console.log(error);
-			// 				this.submitting = false;
-			// 				this.form.reset();
-			// 				this.status = 'Sorry, but your card was declined. A free account was created for you but you will need to log in after verifying your email to update your account subscription in the settings panel.';
-			// 			 });
-			// 	} // end token
-			// });
-            //
-			// // Stripe setup 2: Open the modal when
-			// this.stripe.open({
-			// 	name: plan.name,
-			// 	description: plan.description,
-			// 	zipCode: false,
-			// 	amount: plan.price
-			// });
 		},
 
         /**
@@ -435,6 +370,11 @@ export default {
         justify-content: center;
     }
 
+    .call-container {
+        padding-top: 5em;
+        margin-bottom: 2em;
+    }
+
     .field {
         padding-top: 0.5em;
     }
@@ -450,6 +390,19 @@ export default {
     .signup-container {
         margin: auto;
         width: 35em;
+    }
+
+    /* Small screens */
+    @media only screen and (max-width: 600px)
+    {
+        .call-container {
+            padding: 2em 1em;
+            margin-bottom: 0 !important;
+        }
+
+        .signup-container {
+            width: 20em;
+        }
     }
 
 </style>

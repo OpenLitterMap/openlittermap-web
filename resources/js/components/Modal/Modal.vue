@@ -1,12 +1,12 @@
 <template>
     <transition name="modal">
         <div @click="close" class="modal-mask modal-flex">
-            <div @click.stop class="modal-container">
+            <div @click.stop :class="container">
 
                 <!-- Header -->
-                <header class="modal-card-head">
+                <header :class="header">
                     <p class="modal-card-title">{{ title }}</p>
-                    <i class="fa fa-times" />
+                    <i v-show="showIcon" class="fa fa-times" />
                 </header>
 
                 <!-- Main content -->
@@ -78,7 +78,29 @@ export default {
          */
         container ()
         {
+            if (this.type == 'CreditCard') return 'transparent-container';
+
             return 'modal-container';
+        },
+
+        /**
+         * What header class to show
+         */
+        header ()
+        {
+            if (this.type == 'CreditCard') return '';
+
+            return 'modal-card-head';
+        },
+
+        /**
+         * Return false to hide the X close icon
+         */
+        showIcon ()
+        {
+            if (this.type == 'CreditCard') return false;
+
+            return true;
         },
 
         /**
@@ -237,9 +259,19 @@ export default {
         margin-top: 1.75em;
     }
 
-    @media only screen and (max-width: 600px) {
+    @media only screen and (max-width: 600px)
+    {
         .mobile-only {
             padding-bottom: 0px;
+        }
+
+        .inner-modal-container  {
+            padding: 1em;
+        }
+
+        .transparent-container {
+            padding: 15em 0 0 0;
+            width: 100%;
         }
     }
 </style>

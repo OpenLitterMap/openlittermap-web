@@ -27,7 +27,7 @@
 
                 <!-- Card Number -->
                 <div class="card-input margin-mobile">
-                    <label for="cardNumber" class="card-input__label" :class="errorsExist('cc_number') ? 'label-danger' : ''">{{ $t('credit-card.card-number') }}</label>
+                    <label for="cardNumber" class="card-input__label" :class="errorsExist('cc_number') ? 'label-danger' : ''">{{ $t('creditcard.card-number') }}</label>
 
                     <input
                         type="text"
@@ -40,7 +40,7 @@
                         :blur="blurInput"
                         data-ref="cardNumber"
                         autocomplete="off"
-                        :placeholder="this.$t('credit-card.placeholders.card-number')"
+                        :placeholder="this.$t('creditcard.placeholders.card-number')"
                         @input="clearErrors('cc_number')"
                     />
 
@@ -51,7 +51,7 @@
 
                 <!-- Card Name -->
                 <div class="card-input">
-                    <label for="cardName" class="card-input__label" :class="errorsExist('cc_name') ? 'label-danger' : ''">{{ $t('credit-card.card-holder') }}</label>
+                    <label for="cardName" class="card-input__label" :class="errorsExist('cc_name') ? 'label-danger' : ''">{{ $t('creditcard.card-holder') }}</label>
 
                     <input
                         type="text"
@@ -63,7 +63,7 @@
                         :blur="blurInput"
                         data-ref="cardName"
                         autocomplete="off"
-                        :placeholder="this.$t('credit-card.placeholders.card-holder')"
+                        :placeholder="this.$t('creditcard.placeholders.card-holder')"
                         @input="clearErrors('cc_name')"
                     />
 
@@ -78,7 +78,7 @@
                         <div class="card-form__group">
 
                             <!-- Card Month -->
-                            <label for="cardMonth" class="card-input__label">{{ $t('credit-card.exp') }}</label>
+                            <label for="cardMonth" class="card-input__label">{{ $t('creditcard.exp') }}</label>
 
                             <select
                                 class="card-input__input -select"
@@ -89,7 +89,7 @@
                                 data-ref="cardDate"
                                 @change="clearErrors('cc_exp_month')"
                             >
-                                <option value="" disabled selected>{{ $t('credit-card.placeholders.exp-month') }}</option>
+                                <option value="" disabled selected>{{ $t('creditcard.placeholders.exp-month') }}</option>
                                 <option v-bind:value="n < 10 ? '0' + n : n" v-for="n in 12" v-bind:disabled="n < minCardMonth" v-bind:key="n">
                                     {{n < 10 ? '0' + n : n}}
                                 </option>
@@ -109,7 +109,7 @@
                                 data-ref="cardDate"
                                 @change="clearErrors('cc_exp_year')"
                             >
-                                <option value="" disabled selected>{{ $t('credit-card.placeholders.exp-year') }}</option>
+                                <option value="" disabled selected>{{ $t('creditcard.placeholders.exp-year') }}</option>
                                 <option v-bind:value="$index + minCardYear" v-for="(n, $index) in 12" :key="n">
                                     {{$index + minCardYear}}
                                 </option>
@@ -124,7 +124,7 @@
                     <!-- 3-digits -->
                     <div class="card-form__col -cvv">
                         <div class="card-input" style="position: relative;">
-                            <label for="cardCvv" class="card-input__label">{{ $t('credit-card.cvv') }}</label>
+                            <label for="cardCvv" class="card-input__label">{{ $t('creditcard.cvv') }}</label>
                             <input
                                 type="text"
                                 class="card-input__input"
@@ -135,7 +135,7 @@
                                 v-on:focus="flipCard(true)"
                                 v-on:blur="flipCard(false)"
                                 autocomplete="off"
-                                :placeholder="this.$t('credit-card.placeholders.cvv')"
+                                :placeholder="this.$t('creditcard.placeholders.cvv')"
                                 @input="clearErrors('cc_cvc')"
                             />
 
@@ -149,225 +149,233 @@
                 <button :class="button" @click="submit" :disabled="disabled">
                     {{ $t('common.submit') }}
                 </button>
-                <button class="mobile-only button is-medium invisable-button-border-mobile"
-                        @click="close">
-                    {{ $t('common.cancel') }}
-                </button>
             </div>
         </div>
     </div>
 </template>
 
 <script>
-    import Card from './Card'
+import Card from './Card'
 
-    export default {
-        name: 'CreditCard',
-        components: { Card },
-        data ()
+export default {
+    name: 'CreditCard',
+    components: { Card },
+    data ()
+    {
+        return {
+            btn: 'card-form__button button',
+            disabled: false,
+            processing: false,
+            currentCardBackground: Math.floor(Math.random()* 25 + 1), // just for fun :D
+            cardName: "",
+            cardNumber: "",
+            cardMonth: "",
+            cardYear: "",
+            cardCvv: "",
+            minCardYear: new Date().getFullYear(),
+            amexCardMask: "#### ###### #####",
+            otherCardMask: "#### #### #### ####",
+            cardNumberTemp: "",
+            isCardFlipped: false,
+            focusElementStyle: null,
+            isInputFocused: false
+        };
+    },
+
+    mounted ()
+    {
+        this.cardNumberTemp = this.otherCardMask;
+
+        document.getElementById("cardNumber").focus();
+    },
+
+    computed: {
+
+        /**
+         * Add ' is-loading' when processing
+         */
+        button ()
         {
-            return {
-                btn: 'card-form__button button',
-                disabled: false,
-                processing: false,
-                currentCardBackground: Math.floor(Math.random()* 25 + 1), // just for fun :D
-                cardName: "",
-                cardNumber: "",
-                cardMonth: "",
-                cardYear: "",
-                cardCvv: "",
-                minCardYear: new Date().getFullYear(),
-                amexCardMask: "#### ###### #####",
-                otherCardMask: "#### #### #### ####",
-                cardNumberTemp: "",
-                isCardFlipped: false,
-                focusElementStyle: null,
-                isInputFocused: false
-            };
+            return this.processing ? this.btn + ' is-loading' : this.btn;
         },
 
-        mounted ()
+        /**
+         * Any errors from backend form validation
+         */
+        errors ()
         {
-            this.cardNumberTemp = this.otherCardMask;
-
-            document.getElementById("cardNumber").focus();
+            return this.$store.state.payments.errors;
         },
 
-        computed: {
-
-            /**
-             * Add ' is-loading' when processing
-             */
-            button ()
-            {
-                return this.processing ? this.btn + ' is-loading' : this.btn;
-            },
-
-            /**
-             * Any errors from backend form validation
-             */
-            errors ()
-            {
-                return this.$store.state.payments.errors;
-            },
-
-            /**
-             *
-             */
-            generateCardNumberMask ()
-            {
-                return this.getCardType === "amex" ? this.amexCardMask : this.otherCardMask;
-            },
-
-            /**
-             * Return card issuer depending on first few digits
-             */
-            getCardType ()
-            {
-                let number = this.cardNumber;
-                let re = new RegExp("^4");
-                if (number.match(re) != null) return "visa";
-
-                re = new RegExp("^(34|37)");
-                if (number.match(re) != null) return "amex";
-
-                re = new RegExp("^5[1-5]");
-                if (number.match(re) != null) return "mastercard";
-
-                re = new RegExp("^6011");
-                if (number.match(re) != null) return "discover";
-
-                re = new RegExp('^9792')
-                if (number.match(re) != null) return 'troy'
-
-                return "visa"; // default type
-            },
-
-            /**
-             *
-             */
-            minCardMonth ()
-            {
-                if (this.cardYear === this.minCardYear) return new Date().getMonth() + 1;
-
-                return 1;
-            }
+        /**
+         *
+         */
+        generateCardNumberMask ()
+        {
+            return this.getCardType === "amex" ? this.amexCardMask : this.otherCardMask;
         },
-        watch: {
-            /**
-             *
-             */
-            cardYear ()
-            {
-                if (this.cardMonth < this.minCardMonth)
-                {
-                    this.cardMonth = "";
-                }
-            }
+
+        /**
+         * Return card issuer depending on first few digits
+         */
+        getCardType ()
+        {
+            let number = this.cardNumber;
+            let re = new RegExp("^4");
+            if (number.match(re) != null) return "visa";
+
+            re = new RegExp("^(34|37)");
+            if (number.match(re) != null) return "amex";
+
+            re = new RegExp("^5[1-5]");
+            if (number.match(re) != null) return "mastercard";
+
+            re = new RegExp("^6011");
+            if (number.match(re) != null) return "discover";
+
+            re = new RegExp('^9792')
+            if (number.match(re) != null) return 'troy'
+
+            return "visa"; // default type
         },
-        methods: {
 
-            /**
-             *
-             */
-            blurInput ()
-            {
-                let vm = this;
-                setTimeout(() => {
-                    if (!vm.isInputFocused) {
-                        vm.focusElementStyle = null;
-                    }
-                }, 300);
-                vm.isInputFocused = false;
-            },
+        /**
+         *
+         */
+        minCardMonth ()
+        {
+            if (this.cardYear === this.minCardYear) return new Date().getMonth() + 1;
 
-            /**
-             *
-             */
-            flipCard (status)
-            {
-                if (this.getCardType !== "amex") this.isCardFlipped = status;
-            },
-
-            /**
-             *
-             */
-            focusInput (e)
-            {
-                this.isInputFocused = true;
-                let targetRef = e.target.dataset.ref;
-                let target = this.$refs[targetRef];
-                this.focusElementStyle = {
-                    width: `${target.offsetWidth}px`,
-                    height: `${target.offsetHeight}px`,
-                    transform: `translateX(${target.offsetLeft}px) translateY(${target.offsetTop}px)`
-                }
-            },
-
-            /**
-             * The user wants to save these card details
-             */
-            submit ()
-            {
-                console.log('todo - submit')
-            },
-
-            /**
-             * Clear any errors
-             */
-            clearErrors (key)
-            {
-                this.$store.commit('clearCustomerCenterErrors', key);
-
-                this.checkForErrors();
-            },
-
-            /**
-             * Disable the submit button if errors exist
-             */
-            checkForErrors ()
-            {
-                // Checking for (typeof this.errors.main == 'undefined') because we don't want to disable submit if card declined
-                // In case user wants to try the same card again
-                if (Object.keys(this.errors).length > 0 && (typeof this.errors.main == 'undefined')) this.disabled = true;
-
-                else this.disabled = false;
-            },
-
-            /**
-             * Check if any errors exist for this key
-             */
-            errorsExist (key)
-            {
-                return this.errors.hasOwnProperty(key);
-            },
-
-            /**
-             * Get specific errors for this error key
-             */
-            getFirstError (key)
-            {
-                return this.errors[key][0];
-            },
-
-            /**
-             * Boolean result for if a given key has an error
-             */
-            hasError (key)
-            {
-                return (typeof this.errors[key] !== 'undefined');
-            },
-
-            /**
-             * Close the modal
-             */
-            close ()
-            {
-                this.$store.commit('hideModal');
-            },
-
+            return 1;
         }
+    },
+    watch: {
+        /**
+         *
+         */
+        cardYear ()
+        {
+            if (this.cardMonth < this.minCardMonth)
+            {
+                this.cardMonth = "";
+            }
+        }
+    },
+    methods: {
+
+        /**
+         *
+         */
+        blurInput ()
+        {
+            let vm = this;
+            setTimeout(() => {
+                if (!vm.isInputFocused) {
+                    vm.focusElementStyle = null;
+                }
+            }, 300);
+            vm.isInputFocused = false;
+        },
+
+        /**
+         *
+         */
+        flipCard (status)
+        {
+            if (this.getCardType !== "amex") this.isCardFlipped = status;
+        },
+
+        /**
+         *
+         */
+        focusInput (e)
+        {
+            this.isInputFocused = true;
+            let targetRef = e.target.dataset.ref;
+            let target = this.$refs[targetRef];
+            this.focusElementStyle = {
+                width: `${target.offsetWidth}px`,
+                height: `${target.offsetHeight}px`,
+                transform: `translateX(${target.offsetLeft}px) translateY(${target.offsetTop}px)`
+            }
+        },
+
+        /**
+         * The user wants to save these card details
+         */
+        submit ()
+        {
+            const stripe = Stripe(process.env.MIX_STRIPE_KEY)
+
+            stripe.redirectToCheckout({
+                lineItems: [{
+                    // Define the product and price in the Dashboard first, and use the price
+                    // ID in your client-side code.
+                    price: 'Startup',
+                    quantity: 1
+                }],
+                mode: 'subscription',
+                successUrl: 'https://www.example.com/success',
+                cancelUrl: 'https://www.example.com/cancel'
+            });
+        },
+
+        /**
+         * Clear any errors
+         */
+        clearErrors (key)
+        {
+            this.$store.commit('clearCustomerCenterErrors', key);
+
+            this.checkForErrors();
+        },
+
+        /**
+         * Disable the submit button if errors exist
+         */
+        checkForErrors ()
+        {
+            // Checking for (typeof this.errors.main == 'undefined') because we don't want to disable submit if card declined
+            // In case user wants to try the same card again
+            if (Object.keys(this.errors).length > 0 && (typeof this.errors.main == 'undefined')) this.disabled = true;
+
+            else this.disabled = false;
+        },
+
+        /**
+         * Check if any errors exist for this key
+         */
+        errorsExist (key)
+        {
+            return this.errors.hasOwnProperty(key);
+        },
+
+        /**
+         * Get specific errors for this error key
+         */
+        getFirstError (key)
+        {
+            return this.errors[key][0];
+        },
+
+        /**
+         * Boolean result for if a given key has an error
+         */
+        hasError (key)
+        {
+            return (typeof this.errors[key] !== 'undefined');
+        },
+
+        /**
+         * Close the modal
+         */
+        close ()
+        {
+            this.$store.commit('hideModal');
+        },
+
     }
+}
 </script>
 
 <style lang="scss" scoped>
