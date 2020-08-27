@@ -11,7 +11,7 @@
 
                 <!-- Main content -->
                 <component
-                    class="inner-modal-container"
+                    :class="inner_container"
                     :is="modalTypes[type]"
                 />
 
@@ -91,6 +91,16 @@ export default {
             if (this.type == 'CreditCard') return '';
 
             return 'modal-card-head';
+        },
+
+        /**
+         * What inner-modal-container class to show
+         */
+        inner_container ()
+        {
+            if (this.type == 'Login') return 'inner-login-container';
+
+            return 'inner-modal-container';
         },
 
         /**
@@ -183,6 +193,10 @@ export default {
 
     .inner-modal-container {
         padding: 1em 2em;
+    }
+
+    .inner-login-container {
+        padding-top: 1em;
     }
 
     .modal-container {

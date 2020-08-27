@@ -2,7 +2,7 @@
 	<div>
 		<p v-show="errorLogin" style="color: red;">{{ errorLogin }}</p>
 
-		<form role="form" method="post" @submit.prevent="login" style="padding-top: 1em; padding-bottom: 1em;">
+		<form role="form" method="post" @submit.prevent="login" style="padding: 1em 2em;">
 
 			<input
 				class="input mb1em fs125"
