@@ -18,8 +18,6 @@
 			</div>
 		</div>
 
-        <button @click="loadStripe">Load Stripe</button>
-
 		<div class="signup-container">
 
             <h3 class="title is-3">Create your account</h3>
@@ -244,7 +242,9 @@ export default {
         {
             if (this.processing) return true
 
-            if (Object.keys(this.errors).length > 0) return true;
+            // todo - disable the button when there are errors
+            // and disable it when all errors have been cleared
+            // if (Object.keys(this.errors).length > 0) return true;
 
             return false;
         },
@@ -278,7 +278,7 @@ export default {
 		 */
 		plans ()
 		{
-			return this.$store.state.plans.plans;
+			return this.$store.state.createaccount.plans;
 		}
 	},
 
@@ -313,10 +313,27 @@ export default {
          */
 		loadStripe ()
 		{
-            this.$store.commit('showModal', {
-                type: 'CreditCard'
+		    // our modal for payments, needs stripe integration
+            // this.$store.commit('showModal', {
+            //     type: 'CreditCard'
+            // });
+
+            // Redirect to stripe checkout
+            const stripe = Stripe(process.env.MIX_STRIPE_KEY);
+
+            let successUrl = window.location.href + '&status=success';
+            let cancelUrl = window.location.href + '&status=error';
+
+            stripe.redirectToCheckout({
+                lineItems: [{
+                    price: 'plan_E579ju4xamcU41', // 1 = startup
+                    quantity: 1
+                }],
+                mode: 'subscription',
+                successUrl,
+                cancelUrl
             });
-		},
+3		},
 
         /**
          * Google re-captcha has been verified
@@ -373,6 +390,9 @@ export default {
     .call-container {
         padding-top: 5em;
         margin-bottom: 2em;
+        margin-left: auto;
+        margin-right: auto;
+        max-width: 50em;
     }
 
     .field {

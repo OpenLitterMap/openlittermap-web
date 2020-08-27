@@ -14,5 +14,13 @@ export const mutations = {
     createAccountErrors (state, payload)
     {
         state.errors = payload;
+    },
+
+    /**
+     * The plans have been retrieved from the database
+     */
+    setPlans (state, payload)
+    {
+        state.plans = payload;
     }
 };

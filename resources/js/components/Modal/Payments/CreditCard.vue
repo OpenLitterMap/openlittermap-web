@@ -137,6 +137,7 @@
                                 autocomplete="off"
                                 :placeholder="this.$t('creditcard.placeholders.cvv')"
                                 @input="clearErrors('cc_cvc')"
+                                style="text-align: center;"
                             />
 
                             <div v-if="hasError('cc_cvc')" :class="errorsExist('cc_cvc') ? 'error-message error-cvc' : ''">
@@ -311,7 +312,7 @@ export default {
                 lineItems: [{
                     // Define the product and price in the Dashboard first, and use the price
                     // ID in your client-side code.
-                    price: 'Startup',
+                    price: 'plan_E579ju4xamcU41',
                     quantity: 1
                 }],
                 mode: 'subscription',
