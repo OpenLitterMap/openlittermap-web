@@ -22,6 +22,7 @@ export const mutations = {
     login (state)
     {
         state.auth = true;
+        // update user
     },
 
     /**

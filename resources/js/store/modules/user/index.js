@@ -4,7 +4,8 @@ import { mutations } from './mutations'
 const state = {
 	auth: false,
     errorLogin: '',
-    errors: {}
+    errors: {},
+    user: {}
 };
 
 export const user = {
