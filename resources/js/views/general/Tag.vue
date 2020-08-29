@@ -1,5 +1,5 @@
 <template>
-    <section class="hero is-fullheight is-primary is-bold" style="padding-left: 15px; padding-right: 15px; padding-bottom: 20px;">
+    <section class="hero fullheight is-primary is-bold" style="padding: 1em 5em;">
 
         <loading v-if="loading" :active.sync="loading" :is-full-page="true" />
 
