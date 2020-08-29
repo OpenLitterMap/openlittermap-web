@@ -80,9 +80,8 @@ Route::get('photos', 'PhotosController@unverified');
 
 Route::post('/profile/upload-profile-photo', 'UsersController@uploadProfilePhoto');
 
-// The user can add attributes to image records in the db and submit it for verification
-// photos = where verification = 0 && where verified != 1
-Route::post('/profile/{id}', 'PhotosController@dynamicUpdate');
+// The user can add tags to image
+Route::post('/add-tags', 'PhotosController@addTags');
 
 // The user can change Remaining bool of a photo in Profile
 Route::post('/profile/photos/remaining/{id}', 'PhotosController@remaining');

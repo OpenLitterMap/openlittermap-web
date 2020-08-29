@@ -35,7 +35,7 @@
 }
 
 .mb1 {
-    margin-bottom: 1em;
+    margin-bottom: 1em !important;
 }
 
 .mb1em {

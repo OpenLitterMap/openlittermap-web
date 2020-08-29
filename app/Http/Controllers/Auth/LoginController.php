@@ -128,12 +128,6 @@ class LoginController extends Controller
         ];
     }
 
-    // protected function oldcredentials(Request $request)
-    // {
-    //     return $request->only($this->username(), 'password');
-    // }
-
-
     /**
      * Send the response after the user was authenticated.
      *

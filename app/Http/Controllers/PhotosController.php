@@ -14,12 +14,7 @@ use Carbon\Carbon;
 use App\CheckLocations;
 
 use App\Litterrata;
-use App\LitterGerman;
-use App\LitterES;
-use App\LitterFrench;
-use App\LitterItalian;
-use App\LitterMalay;
-use App\LitterTurkish;
+use App\Models\LitterTags;
 
 use Illuminate\Http\Request;
 use App\Events\DynamicUpdate;
@@ -270,53 +265,49 @@ class PhotosController extends Controller
     }
 
     /**
-     * Dynamically add attributes to an image
+     * Dynamically add tags to an image
+     *
+     * Note! The $column passed through must match the column name on the table.
+     * eg 'butts' must be a column on the smoking table.
+     *
+     * We use the $schema json object from LitterTags to get our class references
+     *
+     * If the user is new, we submit the image for verification.
+     * If the user is trusted, we can update OLM.
      */
-    public function dynamicUpdate (Request $request, $id)
+    public function addTags (Request $request)
     {
         $user = Auth::user();
-        $photo = Photo::findOrFail($id);
-        if ($photo->verified == 1) return redirect()->back();
+        $photo = Photo::findOrFail($request->photo_id);
+        if ($photo->verified > 0) return redirect()->back();
 
-        $lang = \App::getLocale();
-        // todo - make this dynamic for all languages
-        // we can do this by giving all litter an "id" instead of using name string.
-        if      ($lang == "de") $jsonDecoded = LitterGerman::INSTANCE()->getDecodedJSON();
-        else if ($lang == "en") $jsonDecoded = Litterrata::INSTANCE()->getDecodedJSON();
-        else if ($lang == "es") $jsonDecoded = LitterES::INSTANCE()->getDecodedJSON();
-        else if ($lang == "fr") $jsonDecoded = LitterFrench::INSTANCE()->getDecodedJSON();
-        else if ($lang == "it") $jsonDecoded = LitterItalian::INSTANCE()->getDecodedJSON();
-        else if ($lang == "ms") $jsonDecoded = LitterMalay::INSTANCE()->getDecodedJSON();
-        else if ($lang == "tk") $jsonDecoded = LitterTurkish::INSTANCE()->getDecodedJSON();
+        $schema = LitterTags::INSTANCE()->getDecodedJSON();
 
-        // return json_encode($jsonDecoded);
         $litterTotal = 0;
-        // for each categories as category => values eg. Smoking => { Butts: 3 }
-        foreach ($request['categories'] as $category => $values)
+        foreach ($request['tags'] as $category => $items)
         {
-            foreach ($values as $item => $quantity) // Butts => 3
+            foreach ($items as $column => $quantity)
             {
-                // \Log::info([$category, $item, $quantity]);
-                // reference column on the photos table to update eg. smoking_id
-                $id     = $jsonDecoded->$category->id;
-                // The current dynamic Class as a string
-                $clazz  = $jsonDecoded->$category->class;
-                // Reference the name of the column we want to edit
-                $col    = $jsonDecoded->$category->types->$item->col;
-                // Get the Class: App\Smoking
-                $dynamicClassName = 'App\\Categories\\'.$clazz;
-                // Does the photos table have a reference to the dynamic row id yet?
-                if (is_null($photo->$id))
+                // Column on photos table to make a relationship with this category eg smoking_id
+                $id_table = $schema->$category->id_table;
+
+                // Full class path
+                $class = 'App\\Categories\\'.$schema->$category->class;
+
+                // Does the photos table have a reference to $id_table yet?
+                if (is_null($photo->$id_table))
                 {
-                    $row = $dynamicClassName::create();
-                    $photo->$id = $row->id;
+                    $row = $class::create();
+                    $photo->$id_table = $row->id;
                     $photo->save();
                 } else {
-                    $row = $dynamicClassName::find($photo->$id);
+                    $row = $class::find($photo->$id_table);
                 }
-                // Update the quantity on the dynamic table and save
-                $row->$col = $quantity;
+
+                // Update the quantity on the category table and save
+                $row->$column = $quantity;
                 $row->save();
+
                 // TODO - Only reward XP on verification.
                 $user->xp += $quantity;
                 $user->save();
@@ -332,23 +323,29 @@ class PhotosController extends Controller
                     Redis::zadd($country->country.':'.$state->state.':'.$city->city.':Leaderboard', $user->xp, $user->id);
                 }
                 $litterTotal += $quantity;
-            } // end foreach item
-        } // end foreach categories as category
-        $photo->remaining = $request->presence;
-        $photo->total_litter = $litterTotal;
-
-        // Check if the User is a trusted user => photos do not require verification.
-        if ($user->verification_required == 0)
-        {
-            $photo->verification = 1;
-            $photo->verified = 2;
-            event(new PhotoVerifiedByAdmin($photo->id));
-        } else {
-            // Bring the photo to an initial state of verification
-            /* 0 for testing, 0.1 for production */
-            $photo->verification = 0.1;
+            }
         }
-        $photo->save();
+
+
+
+
+//            } // end foreach item
+//        } // end foreach categories as category
+//        $photo->remaining = $request->presence;
+//        $photo->total_litter = $litterTotal;
+//
+//        // Check if the User is a trusted user => photos do not require verification.
+//        if ($user->verification_required == 0)
+//        {
+//            $photo->verification = 1;
+//            $photo->verified = 2;
+//            event(new PhotoVerifiedByAdmin($photo->id));
+//        } else {
+//            // Bring the photo to an initial state of verification
+//            /* 0 for testing, 0.1 for production */
+//            $photo->verification = 0.1;
+//        }
+//        $photo->save();
     }
 
     /**
@@ -389,8 +386,6 @@ class PhotosController extends Controller
     public function unverified ()
     {
         $user = Auth::user();
-
-        \Log::info(['user.id', $user->id]);
 
         $photos = Photo::where([
             'user_id' => $user->id,

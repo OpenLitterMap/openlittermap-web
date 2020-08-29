@@ -6,6 +6,7 @@ import location from './location.json'
 import profile from './profile.json'
 import settings from './settings.json'
 import signup from './signup.json'
+import tags from './tags.json'
 
 export const en = {
     about,
@@ -15,5 +16,6 @@ export const en = {
     location,
     profile,
     settings,
-    signup
+    signup,
+    tags
 }

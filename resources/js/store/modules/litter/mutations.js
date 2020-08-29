@@ -8,14 +8,11 @@ export const mutations = {
     /**
      * Add a Tag.
      *
-     * This will set Category => Tag.id => Tag.key, Tag.quantity
+     * This will set Category => Tag.key: Tag.quantity
      *
      * state.tags = {
      *     category.key = {
-     *         tag.id: {
-     *             tag.key,
-     *             tag.quantity
-     *         }
+     *         tag.key: tag.quantity
      *     }
      * }
      */
@@ -29,10 +26,7 @@ export const mutations = {
             ...tags,
             [payload.category.key]: {
                 ...tags[payload.category.key],
-                [payload.item.id]: {
-                    key: payload.item.key,
-                    q: payload.quantity,
-                }
+                [payload.item.key]: payload.quantity
             }
         };
 
@@ -75,7 +69,7 @@ export const mutations = {
     },
 
     /**
-     * Change the currently seleted item. Category -> item
+     * Change the currently selected item. Category -> item
      */
     changeItem (state, payload)
     {
@@ -115,7 +109,8 @@ export const mutations = {
     },
 
     /**
-     *
+     * The users default presence of the litter they pick up
+     * Some people leave it there, others usually pick it up
      */
     initPresence (state, payload)
     {
@@ -123,15 +118,25 @@ export const mutations = {
     },
 
     /**
-     *
+     * Remove a tag from tags
+     * If category is empty, delete category
      */
-    removeItem (state, payload)
+    removeTag (state, payload)
     {
-        Vue.delete(state.items, payload.item);
-        Vue.delete(state.categories[payload.category], payload.item);
+        let tags = Object.assign({}, state.tags);
+
+        delete tags[payload.category][payload.tag_key];
+
+        if (Object.keys(tags[payload.category]).length == 0)
+        {
+            delete tags[payload.category];
+        }
+
+        state.tags = tags;
     },
 
     /**
+     * Admin
      * Change category[tag] = 0;
      */
     resetTag (state, payload)

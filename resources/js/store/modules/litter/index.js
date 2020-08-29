@@ -13,22 +13,6 @@ const state = {
     loading: false,
     photos: {}, // paginated photos object
     tags: {}, // added tags go here -> { smoking: { butts: q, lighters: q }, alcohol: { beer_cans: q } ... };
-    // oldtags: {
-    //     'Alcohol': {},
-    //     'Art': {},
-    //     'Brands': {},
-    //     'Coastal': {},
-    //     'Coffee': {},
-    //     'Dumping': {},
-    //     'Drugs': {},
-    //     'Food': {},
-    //     'Industrial': {},
-    //     'Other': {},
-    //     'Sanitary': {},
-    //     'Smoking': {},
-    //     'SoftDrinks': {},
-    //     'TrashDog': {}
-    // },
     submitting: false
 }
 

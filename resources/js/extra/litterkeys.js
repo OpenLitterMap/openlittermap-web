@@ -1,5 +1,6 @@
 // Here we create the reverse of column_name -> Frontend string to display
-// Currently, the extract string is needed to verify the data
+// These keys have to match the database column on the correct table
+// ID not really needed, yet
 export const litterkeys = {
     smoking: [
         { id: 0, key: 'butts' },            // Cigarette/Butts

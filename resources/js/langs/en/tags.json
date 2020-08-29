@@ -1,0 +1,15 @@
+{
+    "address": "Address",
+    "add-tag": "Add Tag",
+    "coordinates": "Coordinates",
+    "device": "Device",
+    "no-tags": "You don't have anything to tag at the moment.",
+    "picked-up-title": "Picked Up?",
+    "please-upload": "Please upload some photos",
+    "removed": "The litter has been removed",
+    "still-there": "The litter is still there",
+    "taken": "Taken",
+    "to-tag": "Images left to tag",
+    "total-uploaded": "Total images uploaded",
+    "uploaded": "Uploaded"
+}

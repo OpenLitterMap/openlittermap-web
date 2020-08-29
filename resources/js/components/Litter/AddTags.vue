@@ -38,7 +38,7 @@
 		<button
 			class="button is-medium is-info"
 			@click="addTag"
-		>Add Tag</button>
+		>{{ $t('tags.add-tag') }}</button>
 
 		<button
 			:disabled="checkIncr"
@@ -50,17 +50,15 @@
 		<br>
 
 		<button
-			id="submitbutton"
 			:disabled="checkItems"
-			class="button is-medium is-success"
+			:class="button"
 			@click="submit"
-			:class="[{ 'is-loading': submitting }, 'is-primary' ]"
 		>submit</button>
 
 		<!-- Only show these on mobile <= 768px -->
 		<div class="show-mobile">
 			<br>
-			<show-tags />
+			<tags />
 
 			<div class="custom-buttons">
 				<profile-delete :photoid="id" />
@@ -71,33 +69,18 @@
 </template>
 
 <script>
-
-/****
- *** Import Litter in Various Langauges
- **   === Todo - Make this dynamic for all languages ===
- */
-// eg - import { this.locale } from './langs/' . { this.locale } . 'js';
-// import { en } from './langs/en.js'
-// import { de } from './langs/de.js'
-// import { es } from './langs/es.js'
-// import { fr } from './langs/fr.js'
-// import { it } from './langs/it.js'
-// import { ms } from './langs/ms.js'
-// import { tk } from './langs/tk.js'
-
-import { categories } from '../../extra/categories'
-
+import Tags from './Tags'
 import Presence from './Presence'
 import ProfileDelete from './ProfileDelete'
-import ShowTags from './ShowTags'
+import { categories } from '../../extra/categories'
 
 export default {
     name: 'AddTags',
 	props: ['id'], // photo.id
 	components: {
+        Tags,
         Presence,
-        ProfileDelete,
-        ShowTags
+        ProfileDelete
 	},
 	created ()
     {
@@ -118,8 +101,9 @@ export default {
 	data ()
     {
 		return {
+		    btn: 'button is-medium is-success',
 			quantity: 1,
-    		submitting: false,
+    		processing: false,
 	        integers: [
 	            1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
 	            11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
@@ -137,6 +121,14 @@ export default {
     computed: {
 
         /**
+         * Add ' is-loading' when processing
+         */
+        button ()
+        {
+            return this.processing ? this.btn + ' is-loading' : this.btn;
+        },
+
+        /**
          * Get / Set the current category
          *
          * @value { id: 0, key: 'category', title: 'Translated Category' };
@@ -147,6 +139,7 @@ export default {
             },
             set (cat) {
                 this.$store.commit('changeCategory', cat);
+                this.quantity = 1;
             }
         },
 
@@ -191,19 +184,7 @@ export default {
         },
 
         /**
-         *
-         */
-        lang: {
-            set() {
-                return this.locale;
-            },
-            get() {
-                return this.locale;
-            }
-        },
-
-        /**
-         *
+         * Has the litter been picked up, or is it still there?
          */
         presence ()
         {
@@ -211,7 +192,7 @@ export default {
         },
 
         /**
-         *
+         * Disable decrement if true
          */
         checkDecr ()
         {
@@ -219,7 +200,7 @@ export default {
         },
 
         /**
-         *
+         * Disable increment if true
          */
         checkIncr ()
         {
@@ -227,7 +208,7 @@ export default {
         },
 
         /**
-         *
+         * Disable button if true
          */
         checkItems ()
         {
@@ -263,36 +244,21 @@ export default {
         		quantity: this.quantity,
         	});
 
-            // var button = document.getElementById('submitbutton');
-            // button.disabled = false;
-            // this.quantity = "1";
+            this.quantity = 1;
+            // this.disabled = false
         },
 
         /**
          * Submit the image for verification
+         * litter/actions.js
          */
         async submit ()
         {
-            this.submitting = true;
-            let id = document.getElementsByClassName('photoid')[0].id;
+            this.processing = true;
 
-            await axios.post('profile/' + id, {
-             	'categories': this.categories,
-              	'presence': this.presence
-            })
-            .then(response => {
-                // console.log(response);
-                if (response.status == 200) {
-                    this.submitting = false;
-                    // todo - update XP bar
-                    // ProgressBar.vue
-                    alert('Excellent work! This image has been submitted for verification. THANK YOU FOR HELPING TO KEEP OUR PLANET CLEAN! WELL DONE.');
-                    window.location.href = window.location.href;
-                } else {
-                    alert('There was a problem attributing this image. Please try again');
-                }
-            })
-            .catch(error => console.log(error));
+            await this.$store.dispatch('ADD_TAGS_TO_IMAGE');
+
+            this.processing = false;
         },
 	}
 }
