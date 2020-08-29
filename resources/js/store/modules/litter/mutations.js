@@ -1,17 +1,42 @@
 import Vue from 'vue'
+import i18n from '../../../i18n'
 import { categories } from '../../../extra/categories'
 import { litterkeys } from '../../../extra/litterkeys'
 
 export const mutations = {
 
     /**
-     * Add a new item to the collection
+     * Add a Tag.
+     *
+     * This will set Category => Tag.id => Tag.key, Tag.quantity
+     *
+     * state.tags = {
+     *     category = {
+     *         id: {
+     *             key,
+     *             quantity
+     *         }
+     *     }
+     * }
      */
-    addItem (state, payload)
+    addTag (state, payload)
     {
         state.hasAddedNewTag = true; // Enable the Update Button
-        Vue.set(state.items, payload.item, payload.quantity); // native name
-        Vue.set(state.categories[payload.reverse], payload.item, payload.quantity); // Reverse = English name for Category
+
+        let tags = Object.assign({}, state.tags);
+
+        tags = {
+            ...tags,
+            [payload.category.key]: {
+                ...tags[payload.category.key],
+                [payload.item.id]: {
+                    key: payload.item.key,
+                    q: payload.quantity,
+                }
+            }
+        };
+
+        state.tags = tags;
     },
 
     /**
@@ -42,7 +67,11 @@ export const mutations = {
 
         state.items = litterkeys[payload.key];
 
-        state.item = litterkeys[payload.key][0]; // does not contain translated title
+        state.item = {
+            id: litterkeys[payload.key][0].id,
+            key: litterkeys[payload.key][0].key,
+            title: i18n.t('litter.' + payload.key + '.' + litterkeys[payload.key][0].key)
+        }
     },
 
     /**

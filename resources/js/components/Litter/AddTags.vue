@@ -37,7 +37,7 @@
 
 		<button
 			class="button is-medium is-info"
-			@click="plus"
+			@click="addTag"
 		>Add Tag</button>
 
 		<button
@@ -190,14 +190,6 @@ export default {
             });
         },
 
-        // /**
-        //  * Current items, without categories
-        //  */
-        // items ()
-        // {
-        //     return this.$store.state.litter.items;
-        // },
-
         /**
          *
          */
@@ -210,14 +202,6 @@ export default {
             }
         },
 
-        // /**
-        //  * current language of litter types
-        //  */
-        // litterlang ()
-        // {
-        //     return this.$store.state.litter.litterlang;
-        // },
-
         /**
          *
          */
@@ -225,14 +209,6 @@ export default {
         {
             return this.$store.state.litter.presence;
         },
-
-        /**
-         * Data to pass to backend
-         * { Alcohol: { BeerCans: 1 }, Smoking: { CigaretteButts: 2 } }
-         */
-        // categories () {
-        //     return this.$store.state.litter.categories;
-        // },
 
         /**
          *
@@ -279,42 +255,22 @@ export default {
 		/**
 		 * Add data to the collection
 		 */
-        plus ()
+        addTag ()
 		{
-        	// Need the Key "Smoking" when Value = "Fumar"
-        	let reverse;
-        	if (this.lang == "en") {
-        		reverse = this.category;
-        	}
+            console.log('addTag');
+            console.log('category', this.category);
+            console.log('item', this.item);
+            console.log('q', this.quantity);
 
-        	if (this.lang == "de") {
-        		reverse = de.reverse[this.category];
-        	}
-        	if (this.lang == "es") {
-        		reverse = es.reverse[this.category];
-        	}
-        	if (this.lang == "fr") {
-        		reverse = fr.reverse[this.category];
-        	}
-        	if (this.lang == "it") {
-        		reverse = it.reverse[this.category];
-        	}
-        	if (this.lang == "ms") {
-        		reverse = ms.reverse[this.category];
-        	}
-        	if (this.lang == "tk") {
-        		reverse = tk.reverse[this.category];
-        	}
-        	// console.log(reverse);
-        	this.$store.commit('addItem', {
+        	this.$store.commit('addTag', {
         		category: this.category,
         		item: this.item,
         		quantity: this.quantity,
-        		reverse
         	});
-            var button = document.getElementById('submitbutton');
-            button.disabled = false;
-            this.quantity = "1";
+
+            // var button = document.getElementById('submitbutton');
+            // button.disabled = false;
+            // this.quantity = "1";
         },
 
         /**

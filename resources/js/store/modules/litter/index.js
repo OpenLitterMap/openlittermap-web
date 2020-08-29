@@ -12,22 +12,23 @@ const state = {
     items: [], // items for the currently selected category
     loading: false,
     photos: {}, // paginated photos object
-    tags: {
-        'Alcohol': {},
-        'Art': {},
-        'Brands': {},
-        'Coastal': {},
-        'Coffee': {},
-        'Dumping': {},
-        'Drugs': {},
-        'Food': {},
-        'Industrial': {},
-        'Other': {},
-        'Sanitary': {},
-        'Smoking': {},
-        'SoftDrinks': {},
-        'TrashDog': {}
-    },
+    tags: {}, // added tags go here -> { smoking: { butts: q, lighters: q }, alcohol: { beer_cans: q } ... };
+    // oldtags: {
+    //     'Alcohol': {},
+    //     'Art': {},
+    //     'Brands': {},
+    //     'Coastal': {},
+    //     'Coffee': {},
+    //     'Dumping': {},
+    //     'Drugs': {},
+    //     'Food': {},
+    //     'Industrial': {},
+    //     'Other': {},
+    //     'Sanitary': {},
+    //     'Smoking': {},
+    //     'SoftDrinks': {},
+    //     'TrashDog': {}
+    // },
     submitting: false
 }
 
