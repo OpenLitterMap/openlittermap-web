@@ -7,40 +7,46 @@ export const mutations = {
     /**
      * Add a new item to the collection
      */
-    addItem (state, payload) {
+    addItem (state, payload)
+    {
         state.hasAddedNewTag = true; // Enable the Update Button
-        Vue.set(state.items, payload.item, payload.quantity); // native name 
+        Vue.set(state.items, payload.item, payload.quantity); // native name
         Vue.set(state.categories[payload.reverse], payload.item, payload.quantity); // Reverse = English name for Category
     },
 
     /**
-     * 
+     *
      */
-    adminCreated (state, payload) {
+    adminCreated (state, payload)
+    {
         Vue.set(state.items, payload.item, payload.quantity);
         Vue.set(state.categories[payload.category], payload.item, payload.quantity);
     },
 
     /**
-     * 
+     *
      */
-    clearItems (state) {
+    clearItems (state)
+    {
         state.items = {};
     },
 
     /**
-     * 
+     * Update the index of the currently selected category
      */
-    changeCategory (state, payload) {
-        state.litterlang = payload.litterlang;
-      	state.currentCategory = payload.cat;
-      	state.currentItem = payload.currentItem;
+    changeCategory (state, payload)
+    {
+        state.category = payload;
+
+        // update itemKeys
+        state.itemKeys = litterKeys[payload];
     },
 
     /**
-     * 
+     *
      */
-    changeItem (state, payload) {
+    changeItem (state, payload)
+    {
         state.currentItem = payload.i;
     },
 
@@ -69,16 +75,18 @@ export const mutations = {
     },
 
     /**
-     * 
+     *
      */
-    initPresence (state, payload) {
+    initPresence (state, payload)
+    {
         state.presence = payload;
     },
 
     /**
-     * 
+     *
      */
-    removeItem (state, payload) {
+    removeItem (state, payload)
+    {
         Vue.delete(state.items, payload.item);
         Vue.delete(state.categories[payload.category], payload.item);
     },
@@ -99,7 +107,8 @@ export const mutations = {
     /**
     * Reset empty state
     */
-    resetLitter (state) {
+    resetLitter (state)
+    {
         state.items = {};
         state.categories = {
             'Alcohol': {},
@@ -122,7 +131,8 @@ export const mutations = {
    /**
     * Set all existing items to 0
     */
-    setAllItemsToZero (state) {
+    setAllItemsToZero (state)
+   {
         let categories = Object.assign({}, state.categories);
 
         Object.entries(categories).map(keys => {
@@ -141,9 +151,10 @@ export const mutations = {
     },
 
     /**
-     * 
+     *
      */
-    setLang(state, payload) {
+    setLang (state, payload)
+    {
       	state.categoryNames = payload.categoryNames;
       	state.currentCategory = payload.currentCategory;
       	state.currentItem = payload.currentItem;
@@ -151,16 +162,18 @@ export const mutations = {
     },
 
     /**
-     * 
+     *
      */
-    togglePresence(state) {
+    togglePresence (state)
+    {
         state.presence = ! state.presence;
     },
 
     /**
-     * 
+     *
      */
-    toggleSubmit(state) {
+    toggleSubmit (state)
+    {
   	    state.submitting = ! state.submitting;
     }
 

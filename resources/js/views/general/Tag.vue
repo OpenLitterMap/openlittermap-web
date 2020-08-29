@@ -66,7 +66,7 @@
 
                 <div class="columns">
                     <div class="column is-10 is-offset-1">
-                        <profile-add :id="photo.id" :itemsr="user.items_remaining" />
+                        <add-tags :id="photo.id" />
                     </div>
                 </div>
                 <br>
@@ -87,9 +87,9 @@
 import moment from 'moment'
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
+import AddTags from '../../components/Litter/AddTags'
 import AddedItems from '../../components/Litter/AddedItems'
 import ProfileDelete from '../../components/Litter/ProfileDelete'
-import ProfileAdd from '../../components/Litter/ProfileAdd'
 import Presence from '../../components/Litter/Presence'
 
 export default {
@@ -97,8 +97,8 @@ export default {
     components: {
         Loading,
         AddedItems,
+        AddTags,
         ProfileDelete,
-        ProfileAdd,
         Presence
     },
     async created ()

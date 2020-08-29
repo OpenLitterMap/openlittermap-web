@@ -2,17 +2,19 @@
 // Currently, the extract string is needed to verify the data
 export const litterkeys = {
 	// Smoking
-	butts: 'Cigarettes/Butts',
-	lighters: 'Lighters',
-	cigaretteBox: 'Cigarette Box',
-	tobaccoPouch: 'Tobacco Pouch',
-	skins: 'Rolling Papers',
-	smoking_plastic: 'Plastic Packaging',
-	filters: 'Filters',
-	filterbox: 'Filter Box',
-	smokingOther: 'Smoking-Other',
-	vape_pen: 'Vape pen',
-	vape_oil: 'Vape oil',
+    smoking: [
+        { id: 0, key: 'butts' },            // Cigarette/Butts
+        { id: 1, key: 'lighters' },         // Lighters
+        { id: 2, key: 'cigaretteBox' },     // Cigarette Box
+        { id: 3, key: 'tobaccoPouch' },     // Tobacco Pouch
+        { id: 4, key: 'skins' },            // Rolling Papers
+        { id: 5, key: 'smoking_plastic' },  // Plastic Packaging
+        { id: 6, key: 'filters' },          // Filters
+        { id: 7, key: 'filterbox' },        // Filter Box
+        { id: 8, key: 'smokingOther' },     // Smoking-Other
+        { id: 9, key: 'vape_pen' },         // Vape pen
+        { id: 10, key: 'vape_oil' },        // Vape oil
+    ],
 	// Alcohol
 	beerBottle: 'Beer Bottles',
 	spiritBottle: 'Spirit Bottles',
