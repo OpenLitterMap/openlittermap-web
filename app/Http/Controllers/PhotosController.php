@@ -382,4 +382,32 @@ class PhotosController extends Controller
 
         return [$lat, $long];
     }
+
+    /**
+     * Get unverified photos for tagging
+     */
+    public function unverified ()
+    {
+        $user = Auth::user();
+
+        $photos = Photo::where([
+            'user_id' => $user->id,
+            'verified' => 0,
+            'verification' => 0
+        ])->simplePaginate(1);
+
+        $remaining = Photo::where([
+            'user_id' => $user->id,
+            'verified' => 0,
+            'verification' => 0
+        ])->count();
+
+        $total = Photo::where('user_id', $user->id)->count();
+
+        return [
+            'photos' => $photos,
+            'remaining' => $remaining,
+            'total' => $total
+        ];
+    }
 }

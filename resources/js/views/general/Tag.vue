@@ -1,6 +1,9 @@
 <template>
     <section class="hero is-fullheight is-primary is-bold" style="padding-left: 15px; padding-right: 15px; padding-bottom: 20px;">
-        <div id="image">
+
+        <loading v-if="loading" :active.sync="loading" :is-full-page="true" />
+
+        <div v-else id="image">
             <div v-if="photos.length == 0" class="hero-body">
                 <div class="container has-text-centered">
                     <h3 class="subtitle is-1">You don't have anything to tag at the moment.</h3>
@@ -32,7 +35,7 @@
                             <!-- Presence button -->
                             <div id="removed">
                                 <strong>{{ $t('profile.profile8') }}</strong>
-                                <presence-button :itemsr="user.items_remaining" />
+                                <presence :itemsr="user.items_remaining" />
                             </div>
                             <br>
                             <!-- Model of the device -->
@@ -82,17 +85,60 @@
 
 <script>
 import moment from 'moment'
+import Loading from 'vue-loading-overlay'
+import 'vue-loading-overlay/dist/vue-loading.css'
+import AddedItems from '../../components/Litter/AddedItems'
+import ProfileDelete from '../../components/Litter/ProfileDelete'
+import ProfileAdd from '../../components/Litter/ProfileAdd'
+import Presence from '../../components/Litter/Presence'
 
 export default {
     name: 'Tag',
+    components: {
+        Loading,
+        AddedItems,
+        ProfileDelete,
+        ProfileAdd,
+        Presence
+    },
+    async created ()
+    {
+        this.loading = true;
+
+        await this.$store.dispatch('GET_PHOTOS_FOR_TAGGING');
+
+        this.loading = false;
+    },
+    data ()
+    {
+        return {
+            loading: true
+        };
+    },
     computed: {
 
         /**
-         * Paginated array of the users photos with verification = 0
+         * Paginated array of the users photos where verification = 0
          */
         photos ()
         {
-            return [];
+            return this.$store.state.photos.photos.data;
+        },
+
+        /**
+         * Number of photos the user has left to verify. Verification = 0
+         */
+        remaining ()
+        {
+            return this.$store.state.photos.remaining;
+        },
+
+        /**
+         * Total number of photos the user has uploaded. Verification = 0-3
+         */
+        total ()
+        {
+            return this.$store.state.photos.total;
         },
 
         /**

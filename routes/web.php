@@ -36,6 +36,7 @@ Route::get('/world/{country}/{state}/{city?}/{id?}', 'HomeController@index');
 Route::get('/world/{country}/{state}/{city}/city_hex_map/{minfilter?}/{maxfilter?}/{hex?}', 'HomeController@index');
 Route::get('/world/{country}/{state}/{city?}/download/get', 'DownloadsController@getDataByCity');
 
+// "maps" was used before "world". We will keep this for now to keep old links active.
 // Todo - make this dynamic for wildcart routes prefixed by "/{lang}/maps"
 Route::get('/maps', 'MapController@getCountries');
 Route::get('/maps/{country}/litter', 'MapController@getCountries');
@@ -73,6 +74,9 @@ Route::get('tag', 'HomeController@index');
 
 // The users profile
 Route::get('profile', 'HomeController@index');
+
+// Get unverified paginated photos for tagging
+Route::get('photos', 'PhotosController@unverified');
 
 Route::post('/profile/upload-profile-photo', 'UsersController@uploadProfilePhoto');
 

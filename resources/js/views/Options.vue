@@ -2,13 +2,13 @@
 	<div>
 		<h3 class="title is-3">Filter temporally:</h3>
 		<br>
-		<vue-slider 
+		<vue-slider
 			:id="getSliderName"
 			:data="this.dates"
 			ref="sliderDates"
 			:value="[this.dates[0], this.dates[this.dates.length-1]]"
 			@drag-end="getValues"
-		></vue-slider>
+		/>
 		<br>
 		<h3 class="title is-3">Choose a hex size (meters):</h3>
 		<vue-slider
@@ -16,7 +16,7 @@
 			:min="10"
 			:value="100"
 			@drag-end="getHex"
-		></vue-slider>
+		/>
 	</div>
 </template>
 

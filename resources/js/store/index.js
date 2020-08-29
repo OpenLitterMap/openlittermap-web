@@ -9,6 +9,7 @@ import { locations } from './modules/locations'
 import { litter } from './modules/litter'
 import { modal } from './modules/modal'
 import { payments } from './modules/payments'
+import { photos } from './modules/photos'
 import { subscriber} from './modules/subscriber'
 import { user } from './modules/user'
 
@@ -24,6 +25,7 @@ export default new Vuex.Store({
         litter,
         modal,
         payments,
+        photos,
         subscriber,
         user
     }
