@@ -32,25 +32,25 @@ export const mutations = {
     },
 
     /**
-     * Update the index of the currently selected category
-     *
-     * @payload is the index of categoryKeys
+     * Update the currently selected category
+     * Update the items for that category
+     * Select the first item
      */
     changeCategory (state, payload)
     {
         state.category = payload;
 
-        let category = state.categoryKeys[payload];
+        state.items = litterkeys[payload.key];
 
-        state.litterKeys = litterkeys[category];
+        state.item = litterkeys[payload.key][0]; // does not contain translated title
     },
 
     /**
-     *
+     * Change the currently seleted item. Category -> item
      */
     changeItem (state, payload)
     {
-        state.currentItem = payload.i;
+        state.item = payload;
     },
 
     /**
@@ -75,6 +75,14 @@ export const mutations = {
                 });
             }
         });
+    },
+
+    /**
+     * When AddTags has been created, we need to initialize the correct translated values
+     */
+    initLitter (state, payload)
+    {
+        console.log('initLitter', payload);
     },
 
     /**

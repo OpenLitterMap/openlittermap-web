@@ -145,16 +145,16 @@ export const litterkeys = {
         { id: 18, key: 'coastal_other' }            // Coastal (other
     ],
 	brands: [
-        { id: 0, key: 'adidas' },           // Adidas
-        { id: 1, key: 'amazon' },           // Amazon
-        { id: 2, key: 'apple' },            // Apple
-        { id: 3, key: 'budweiser' },        // Budweiser
-        { id: 4, key: 'camel' },            // Camel
-        { id: 5, key: 'coke' },             // Coca-Cola
-        { id: 6, key: 'colgate' },          // Colgate
-        { id: 7, key: 'corona' },           // Corona
-        { id: 8, key: 'costa' },            // Costa
-        { id: 9, key: 'doritos' },          // Doritos
+        { id: 0, key: 'adidas' },            // Adidas
+        { id: 1, key: 'amazon' },            // Amazon
+        { id: 2, key: 'apple' },             // Apple
+        { id: 3, key: 'budweiser' },         // Budweiser
+        { id: 4, key: 'camel' },             // Camel
+        { id: 5, key: 'coke' },              // Coca-Cola
+        { id: 6, key: 'colgate' },           // Colgate
+        { id: 7, key: 'corona' },            // Corona
+        { id: 8, key: 'costa' },             // Costa
+        { id: 9, key: 'doritos' },           // Doritos
         { id: 10, key: 'drpepper' },         // DrPepper
         { id: 11, key: 'dunnes' },           // Dunnes
         { id: 12, key: 'duracell' },         // Duracell

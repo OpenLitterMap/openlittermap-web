@@ -390,6 +390,8 @@ class PhotosController extends Controller
     {
         $user = Auth::user();
 
+        \Log::info(['user.id', $user->id]);
+
         $photos = Photo::where([
             'user_id' => $user->id,
             'verified' => 0,

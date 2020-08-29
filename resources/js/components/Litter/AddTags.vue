@@ -1,40 +1,54 @@
 <template>
     <div class="control has-text-centered">
+
+        <!-- Categories -->
     	<div class="select" id="litter-items">
 			<select v-model="category">
-				<option v-for="cat, i in categories" :value="i">{{ cat }}</option>
+				<option v-for="cat in categories" :value="cat">{{ cat.title }}</option>
 			</select>
 		</div>
+
 		<br class="hide-br" />
+
+        <!-- Items -->
 	    <div class="select" id="litter-category">
 			<select v-model="item">
-				<option v-for="i in items">{{ i }}</option>
+				<option v-for="i in items" :value="i">{{ i.title }}</option>
 			</select>
 		</div>
+
 		<br class="hide-br" />
+
+        <!-- Quantity -->
     	<div class="select" id="int">
 			<select v-model="quantity">
 				<option v-for="int in integers">{{ int }}</option>
 			</select>
 		</div>
+
 		<br>
 		<br>
+
 		<button
 			:disabled="checkDecr"
 			class="button is-medium is-danger"
 			@click="decr"
 		>-</button>
+
 		<button
 			class="button is-medium is-info"
 			@click="plus"
 		>Add Tag</button>
+
 		<button
 			:disabled="checkIncr"
 			class="button is-medium is-dark"
 			@click="incr"
 		>+</button>
+
 		<br>
 		<br>
+
 		<button
 			id="submitbutton"
 			:disabled="checkItems"
@@ -71,6 +85,8 @@
 // import { ms } from './langs/ms.js'
 // import { tk } from './langs/tk.js'
 
+import { categories } from '../../extra/categories'
+
 import Presence from './Presence'
 import ProfileDelete from './ProfileDelete'
 import AddedItems from './AddedItems'
@@ -85,8 +101,20 @@ export default {
 	},
 	created ()
     {
-        //
-	},
+        // We need to initialize with translated title
+        this.$store.commit('changeCategory', {
+            id: 11,
+            key: 'smoking',
+            title: this.$i18n.t('litter.categories.smoking')
+        });
+
+        // We need to initialize with translated title
+        this.$store.commit('changeItem', {
+            id: 0,
+            key: 'butts',
+            title: this.$i18n.t('litter.smoking.butts')
+        });
+    },
 	data ()
     {
 		return {
@@ -110,8 +138,8 @@ export default {
 
         /**
          * Get / Set the current category
-         * this.category is an index that we use to get the key from categories[key]
-         * we use this key to return the translated value from litter[category]
+         *
+         * @value { id: 0, key: 'category', title: 'Translated Category' };
          */
         category: {
             get () {
@@ -123,24 +151,28 @@ export default {
         },
 
         /**
-         * Use litter.categoryKeys to return translated values
+         * Categories is imported and the key is used to return the translated title
          */
         categories ()
         {
-            return this.$store.state.litter.categoryKeys.map(cat => {
-                return this.$i18n.t('litter.categories.' + cat);
+            return categories.map(cat => {
+                return {
+                    id: cat.id,
+                    key: cat.key,
+                    title: this.$i18n.t('litter.categories.' + cat.key)
+                };
             });
         },
 
         /**
-         * Get / Set the current item
+         * Get / Set the current item (category -> item)
          */
         item: {
-            get() {
-                return this.$store.state.litter.currentItem;
+            get () {
+                return this.$store.state.litter.item;
             },
-            set(i) {
-                this.$store.commit('changeItem', {i});
+            set (i) {
+                this.$store.commit('changeItem', i);
             }
         },
 
@@ -149,10 +181,12 @@ export default {
          */
         items ()
         {
-            let category = this.$store.state.litter.categoryKeys[this.category]; // use index to get category key
-
-            return this.$store.state.litter.litterKeys.map(item => {
-               return this.$i18n.t('litter.' + category + '.' + item.key );
+            return this.$store.state.litter.items.map(item => {
+               return {
+                   id: item.id,
+                   key: item.key,
+                   title: this.$i18n.t('litter.' + this.category.key + '.' + item.key )
+               };
             });
         },
 

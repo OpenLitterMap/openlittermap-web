@@ -20,7 +20,9 @@ export default {
          */
         addedItems ()
         {
-            return this.$store.state.litter.items;
+            return [];
+
+            // return this.$store.state.litter.tags; // was, .items
         },
 
         /**
@@ -28,7 +30,7 @@ export default {
          */
         category ()
         {
-            return this.$store.state.litter.currentCategory;
+            return this.$store.state.litter.category; // was, .selectedCategory
         }
     },
     methods: {
