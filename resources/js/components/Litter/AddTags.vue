@@ -60,7 +60,7 @@
 		<!-- Only show these on mobile <= 768px -->
 		<div class="show-mobile">
 			<br>
-			<added-items />
+			<show-tags />
 
 			<div class="custom-buttons">
 				<profile-delete :photoid="id" />
@@ -89,7 +89,7 @@ import { categories } from '../../extra/categories'
 
 import Presence from './Presence'
 import ProfileDelete from './ProfileDelete'
-import AddedItems from './AddedItems'
+import ShowTags from './ShowTags'
 
 export default {
     name: 'AddTags',
@@ -97,7 +97,7 @@ export default {
 	components: {
         Presence,
         ProfileDelete,
-        AddedItems
+        ShowTags
 	},
 	created ()
     {
@@ -257,11 +257,6 @@ export default {
 		 */
         addTag ()
 		{
-            console.log('addTag');
-            console.log('category', this.category);
-            console.log('item', this.item);
-            console.log('q', this.quantity);
-
         	this.$store.commit('addTag', {
         		category: this.category,
         		item: this.item,

@@ -60,7 +60,7 @@
                         </div>
                         <h3 style="text-align: center;">{{ $t('profile.profile16') }}:</h3>
 
-                        <added-items />
+                        <show-tags />
                     </div>
                 </div>
 
@@ -88,18 +88,18 @@ import moment from 'moment'
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
 import AddTags from '../../components/Litter/AddTags'
-import AddedItems from '../../components/Litter/AddedItems'
 import ProfileDelete from '../../components/Litter/ProfileDelete'
 import Presence from '../../components/Litter/Presence'
+import ShowTags from '../../components/Litter/ShowTags'
 
 export default {
     name: 'Tag',
     components: {
         Loading,
-        AddedItems,
         AddTags,
         ProfileDelete,
-        Presence
+        Presence,
+        ShowTags
     },
     async created ()
     {

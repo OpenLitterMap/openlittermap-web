@@ -11,10 +11,10 @@ export const mutations = {
      * This will set Category => Tag.id => Tag.key, Tag.quantity
      *
      * state.tags = {
-     *     category = {
-     *         id: {
-     *             key,
-     *             quantity
+     *     category.key = {
+     *         tag.id: {
+     *             tag.key,
+     *             tag.quantity
      *         }
      *     }
      * }

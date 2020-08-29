@@ -5,7 +5,7 @@
 			<li v-for="category in tags" class='admin-item'>
 				<span class="category">{{ category['category'] }}:</span>
 				<br>
-				<span 
+				<span
 					v-for="tags in Object.entries(category['tags'])"
 					v-html="getTags(tags)"
 					class="tag is-large is-info litter-tag"
