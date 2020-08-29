@@ -27,7 +27,7 @@ const state = {
     hasAddedNewTag: false, // Has the admin added a new tag yet? If FALSE, disable "Update With New Tags button"
     litterlang: null, //  "Cigarette Butts, Lighters" in language
     presence: null, // true = remaining
-    itemKeys: [], // items for currently selected category index
+    litterKeys: [], // items for currently selected category index
     items: {},
     language: "en",
     loading: false,

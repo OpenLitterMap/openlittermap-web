@@ -128,7 +128,7 @@ export default {
         categories ()
         {
             return this.$store.state.litter.categoryKeys.map(cat => {
-                return this.$i18n.t('litter.' + cat);
+                return this.$i18n.t('litter.categories.' + cat);
             });
         },
 
@@ -149,7 +149,11 @@ export default {
          */
         items ()
         {
-            return [];
+            let category = this.$store.state.litter.categoryKeys[this.category]; // use index to get category key
+
+            return this.$store.state.litter.litterKeys.map(item => {
+               return this.$i18n.t('litter.' + category + '.' + item.key );
+            });
         },
 
         // /**

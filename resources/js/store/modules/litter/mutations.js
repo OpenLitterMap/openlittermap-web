@@ -33,13 +33,16 @@ export const mutations = {
 
     /**
      * Update the index of the currently selected category
+     *
+     * @payload is the index of categoryKeys
      */
     changeCategory (state, payload)
     {
         state.category = payload;
 
-        // update itemKeys
-        state.itemKeys = litterKeys[payload];
+        let category = state.categoryKeys[payload];
+
+        state.litterKeys = litterkeys[category];
     },
 
     /**
