@@ -1,10 +1,10 @@
-import Router from 'vue-router'
+import VueRouter from 'vue-router'
 import store from './store'
 import auth from './middleware/auth'
 import middlewarePipeline from './middleware/middlewarePipeline'
 
 // The earlier a route is defined, the higher its priority.
-const router = new Router({
+const router = new VueRouter({
     mode: 'history',
     // base: process.env.BASE_URL, // not sure if we need this?
     linkActiveClass: 'is-active',
@@ -95,9 +95,9 @@ const router = new Router({
         {
             path: '/tag',
             component: require('./views/general/Tag').default,
-            meta: {
-                middleware: [ auth ]
-            }
+            // meta: {
+            //     middleware: [ auth ]
+            // }
         },
         {
             path: '/profile',
@@ -165,12 +165,12 @@ const router = new Router({
 /**
  * Pipeline for multiple middleware
  */
-router.beforeEach(async (to, from, next) => {
+router.beforeEach((to, from, next) => {
 
     if (! to.meta.middleware) return next();
 
-    // this allows store to init before router finishes and returns with auth false
-    await store.dispatch('CHECK_AUTH');
+    // testing --- this allows store to init before router finishes and returns with auth false
+    // await store.dispatch('CHECK_AUTH');
 
     const middleware = to.meta.middleware
 

@@ -34,7 +34,7 @@ export const mutations = {
     },
 
     /**
-     *
+     * todo - refactor
      */
     adminCreated (state, payload)
     {
@@ -43,11 +43,11 @@ export const mutations = {
     },
 
     /**
-     *
+     * Clear the tags object (When we click next/previous image on pagination)
      */
-    clearItems (state)
+    clearTags (state)
     {
-        state.items = {};
+        state.tags = Object.assign({});
     },
 
     /**
@@ -98,14 +98,6 @@ export const mutations = {
                 });
             }
         });
-    },
-
-    /**
-     * When AddTags has been created, we need to initialize the correct translated values
-     */
-    initLitter (state, payload)
-    {
-        console.log('initLitter', payload);
     },
 
     /**

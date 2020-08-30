@@ -8,16 +8,12 @@
 			</select>
 		</div>
 
-		<br class="hide-br" />
-
         <!-- Items -->
 	    <div class="select" id="litter-category">
 			<select v-model="item">
 				<option v-for="i in items" :value="i">{{ i.title }}</option>
 			</select>
 		</div>
-
-		<br class="hide-br" />
 
         <!-- Quantity -->
     	<div class="select" id="int">

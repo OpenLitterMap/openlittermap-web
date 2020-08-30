@@ -9,6 +9,7 @@ import i18n from './i18n'
 import VueLocalStorage from 'vue-localstorage'
 import VueSweetalert2 from 'vue-sweetalert2'
 import 'sweetalert2/dist/sweetalert2.min.css'
+import VueToastify from 'vue-toastify'
 
 import RootContainer from './views/RootContainer'
 
@@ -18,6 +19,7 @@ window.axios = axios
 Vue.use(VueRouter)
 Vue.use(VueLocalStorage)
 Vue.use(VueSweetalert2)
+Vue.use(VueToastify)
 
 // Format a number with commas: "10,000"
 Vue.filter('commas', value => {
@@ -26,8 +28,8 @@ Vue.filter('commas', value => {
 
 const vm = new Vue({
     el: '#app',
-    router,
     store,
+    router,
     i18n,
     created ()
     {

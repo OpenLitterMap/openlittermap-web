@@ -1,9 +1,9 @@
 <template>
-    <section class="hero fullheight is-primary is-bold" style="padding: 2em 5em 0em 5em;">
+    <section class="hero fullheight is-primary is-bold tag-container">
 
         <loading v-if="loading" :active.sync="loading" :is-full-page="true" />
 
-        <div v-else>
+        <div v-else style="padding-top: 2em;">
 
             <!-- No Image available for tagging -->
             <div v-if="photos.length == 0" class="hero-body">
@@ -22,8 +22,8 @@
 
                 <div v-for="photo in photos" class="mb2">
 
-                    <h2 class="title is-2 mb1 has-text-centered">
-                        <strong>#{{ photo.id }}</strong>
+                    <h2 class="taken">
+                        <strong style="color: #fff;">#{{ photo.id }}</strong>
                         <!-- was profile.profile5 "Uploaded". now "taken on" -->
                         {{ $t('tags.taken') }}: {{ getDate(photo.created_at) }}
                     </h2>
@@ -55,7 +55,7 @@
                         <!-- The Image, Middle -->
                         <div class="column is-6" style="text-align: center;">
                             <!-- The Image -->
-                            <img :src="photo.filename" style="max-height: 30em;" />
+                            <img :src="photo.filename" class="img" />
                         </div>
 
                         <!-- Info, Tags, Right -->
@@ -71,6 +71,7 @@
                         </div>
                     </div>
 
+                    <!-- Add & Submit Tags -->
                     <div class="columns">
                         <div class="column is-10 is-offset-1">
                             <add-tags :id="photo.id" />
@@ -78,10 +79,20 @@
                     </div>
                     <br>
 
+                    <!-- Previous, Next Image-->
                     <div class="column" style="text-align: center;">
-                        <!-- if($photos->total() > 1)-->
-                        <!-- paginator -->
-                        <!-- {{ $photos }}-->
+                        <div class="has-text-centered mt3em">
+                            <a
+                                v-show="show_current_page"
+                                class="pagination-previous"
+                                @click="previousImage"
+                            >{{ $t('tags.previous') }}</a>
+                            <a
+                                v-show="show_next_page"
+                                class="pagination-next"
+                                @click="nextImage"
+                            >{{ $t('tags.next') }}</a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -140,6 +151,23 @@ export default {
         },
 
         /**
+         * Only show Previous button if current page is greater than 1
+         * If current page is 1, then we don't need to show the previous page button.
+         */
+        show_current_page ()
+        {
+            return this.$store.state.photos.photos.current_page > 1;
+        },
+
+        /**
+         * Only show Previous button if next_page_url exists
+         */
+        show_next_page ()
+        {
+            return this.$store.state.photos.photos.next_page_url;
+        },
+
+        /**
          * Total number of photos the user has uploaded. Verification = 0-3
          */
         total ()
@@ -164,11 +192,59 @@ export default {
         getDate (date)
         {
             return moment(date).format('LLL');
-        }
+        },
+
+        /**
+         * Load the next image
+         */
+        nextImage ()
+        {
+            this.$store.dispatch('NEXT_IMAGE');
+        },
+
+        /**
+         * Load the previous page
+         */
+        previousImage ()
+        {
+            this.$store.dispatch('PREVIOUS_IMAGE');
+        },
     }
 }
 </script>
 
 <style scoped>
+
+    .img {
+        max-height: 30em;
+    }
+
+    .tag-container {
+        padding: 0 5em;
+    }
+
+    .taken {
+        color: #fff;
+        font-weight: 600;
+        font-size: 2.5rem;
+        line-height: 1.25;
+        margin-bottom: 1em;
+        text-align: center;
+    }
+
+    @media screen and (max-width: 768px)
+    {
+        .img {
+            max-height: 15em;
+        }
+
+        .tag-container {
+            padding: 0 1em;
+        }
+
+        .taken {
+            display: none;
+        }
+    }
 
 </style>

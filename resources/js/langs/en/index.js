@@ -3,6 +3,7 @@ import common from './common.json'
 import creditcard from './creditcard.json'
 import litter from './litter.json'
 import location from './location.json'
+import notifications from './notifications.json'
 import profile from './profile.json'
 import settings from './settings.json'
 import signup from './signup.json'
@@ -14,6 +15,7 @@ export const en = {
     creditcard,
     litter,
     location,
+    notifications,
     profile,
     settings,
     signup,
