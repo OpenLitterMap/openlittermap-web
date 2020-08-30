@@ -42,6 +42,10 @@
 <script>
 export default {
     name: 'Account',
+    async created ()
+    {
+        await this.$store.dispatch('GET_PLANS');
+    },
 	data ()
     {
 		return {
@@ -66,6 +70,14 @@ export default {
         errors ()
         {
             return this.$store.state.user.errors;
+        },
+
+        /**
+         * Array of plans from the database
+         */
+        plans ()
+        {
+            return this.$store.state.createaccount.plans;
         }
     },
 	methods: {

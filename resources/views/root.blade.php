@@ -2,6 +2,6 @@
 @section('content')
     <Root-Container
         auth="{{ $auth }}"
-        :user="{{ $user }}"
+        user="{{ $user }}"
     />
 @stop

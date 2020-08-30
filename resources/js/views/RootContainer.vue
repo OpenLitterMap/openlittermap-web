@@ -24,7 +24,7 @@ export default {
         if (this.auth)
         {
             this.$store.commit('login');
-            this.$store.commit('initUser', this.user);
+            this.$store.commit('initUser', JSON.parse(this.user));
         }
     },
     computed: {

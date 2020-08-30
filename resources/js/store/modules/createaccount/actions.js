@@ -43,7 +43,7 @@ export const actions = {
      */
     async GET_PLANS (context)
     {
-        await axios.get(window.location.origin + '/plans')
+        await axios.get('/plans')
             .then(response => {
                 console.log('get_plans', response);
 

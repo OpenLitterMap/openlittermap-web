@@ -58,10 +58,11 @@ export const actions = {
 
     /**
      * Try to log the user in
+     * Todo - return the user object
      */
     async LOGIN (context, payload)
     {
-        await axios.post('login', {
+        await axios.post('/login', {
             email: payload.email,
             password: payload.password
         })
@@ -85,7 +86,7 @@ export const actions = {
      */
     async LOGOUT (context)
     {
-        await axios.get('logout')
+        await axios.get('/logout')
             .then(response => {
                 console.log('logout', response);
 
