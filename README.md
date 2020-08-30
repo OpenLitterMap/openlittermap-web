@@ -36,7 +36,7 @@ folders:
       to: /home/vagrant/Code
 
 sites:
-    - map: olmbulma.test
+    - map: olm.test
       to: /home/vagrant/Code/openlittermap-web/public
 
 databases:
@@ -44,6 +44,8 @@ databases:
 
 ...
 ```
+
+<p>You might also want to update your hosts file at /etc/hosts with 192.169.10.10 olm.test</p>
 
 <br>
 <p>- When you want to boot up the VM, cd into this folder and run `vagrant up`</p>
