@@ -116,9 +116,9 @@ Route::post('/settings/payments/reactivate', 'SubscriptionsController@resume');
 
 // User settings @ UsersController
 // The user can update their name, username and/or email
-Route::patch('/settings/details', 'UsersController@updateProfile');
+Route::patch('/settings/details', 'UsersController@details');
 
-// The user can update their password
+// Change password
 Route::patch('/settings/details/password', 'UsersController@changePassword');
 
 // The user can delete their profile, and all associated records.

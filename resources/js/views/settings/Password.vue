@@ -37,8 +37,8 @@
 						<label for="password">Enter new password</label>
 
                         <span
-                            v-if="form.errors.has('password')"
-                            v-text="form.errors.get('password')"
+                            v-if="errorExists('password')"
+                            v-text="getFirstError('password')"
                             class="red"
                         />
 						<div class="field">
@@ -61,8 +61,8 @@
 						<label for="password_confirmation">Confirm your new password</label>
 
                         <span
-                            v-if="form.errors.has('password_confirmation')"
-                            v-text="form.errors.get('password_confirmation')"
+                            v-if="errorExists('password_confirmation')"
+                            v-text="getFirstError('password_confirmation')"
                             class="red"
                         />
 
@@ -80,9 +80,6 @@
 		    					</span>
 							</div>
 						</div>
-
-<!--                        <p v-show="this.successmessage">{{ this.successmessage }}</p>-->
-<!--						<p v-show="this.errormessage" style="color: red;">{{ this.errormessage }}</p>-->
 
 						<div class="col-md-12" style="text-align: center;">
 							<button :class="button" :disabled="processing">Update Password</button>
@@ -115,17 +112,47 @@ export default {
         button ()
         {
             return this.processing ? this.btn + ' is-loading' : this.btn;
+        },
+
+        /**
+         *
+         */
+        errors ()
+        {
+            return this.$store.state.user.errors;
         }
     },
     methods: {
+
+        /**
+         * Clear an error with this key
+         */
+        clearError (key)
+        {
+            if (this.errors[key]) this.$store.commit('clearCreateAccountError', key);
+        },
+
+        /**
+         * Get the first error from errors object
+         */
+        getFirstError (key)
+        {
+            return this.errors[key][0];
+        },
+
+        /**
+         * Check if any errors exist for this key
+         */
+        errorExists (key)
+        {
+            return this.errors.hasOwnProperty(key);
+        },
 
         /**
          * Request to update the users password
          */
         async submit ()
         {
-            // action="/settings/general/update"
-
             this.processing = true;
 
             await this.$store.dispatch('CHANGE_PASSWORD', {
@@ -135,16 +162,6 @@ export default {
             });
 
             this.processing = false;
-
-            // this.form.submit('patch', '/en/settings/details/password')
-            //  .then(response => {
-            //     // console.log(response);
-            //     this.successmessage = response.message;
-            //  })
-            //  .catch(error => {
-            //     // console.log(error);
-            //     this.errormessage = response.message;
-            //  });
         }
     },
 }

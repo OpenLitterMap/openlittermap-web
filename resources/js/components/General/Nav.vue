@@ -54,10 +54,10 @@
                                         Tag Litter
                                     </router-link>
 
-                                    <!-- Profile -->
-                                    <router-link to="/profile" class="navbar-item drop-item">
-                                        Profile
-                                    </router-link>
+                                    <!-- Todo - Profile -->
+<!--                                    <router-link to="/profile" class="navbar-item drop-item">-->
+<!--                                        Profile-->
+<!--                                    </router-link>-->
 
                                     <!-- Settings -->
                                     <router-link to="/settings/password" class="navbar-item drop-item">

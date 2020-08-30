@@ -1,4 +1,6 @@
 import routes from '../../../routes'
+import Vue from "vue";
+import i18n from "../../../i18n";
 
 export const actions = {
 
@@ -34,6 +36,27 @@ export const actions = {
     },
 
     /**
+     *
+     */
+    async DELETE_ACCOUNT (context, payload)
+    {
+        await axios.post('/settings/delete', {
+            password: payload
+        })
+        .then(response => {
+            console.log('delete_account', response);
+
+            // success
+        })
+        .catch(error => {
+            console.log('error.delete_account', error.response.data);
+
+            // update errors
+
+        });
+    },
+
+    /**
      * Try to log the user in
      */
     async LOGIN (context, payload)
@@ -63,14 +86,43 @@ export const actions = {
     async LOGOUT (context)
     {
         await axios.get('logout')
-        .then(response => {
-            console.log('logout', response);
+            .then(response => {
+                console.log('logout', response);
 
-            context.commit('logout');
-            window.location.href = '/';
+                context.commit('logout');
+                window.location.href = '/';
+            })
+            .catch(error => {
+                console.log('error.logout', error);
+            });
+    },
+
+    /**
+     * The user wants to update name, email, username
+     */
+    async UPDATE_DETAILS (context)
+    {
+        let title = i18n.t('notifications.success');
+        // todo - translate this
+        let body  = 'Your infomration have been updated'
+
+        await axios.post('/settings/details', {
+            name: context.state.user.name,
+            email: context.state.user.email,
+            username: context.state.user.username
         })
-        .catch(error => {
-            console.log('error.logout', error);
-        });
+            .then(response => {
+                console.log('update_details', response);
+
+                /* improve this */
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                    position: 'top-right'
+                });
+            })
+            .catch(error => {
+                console.log('error.update_details', error);
+            });
     }
 };

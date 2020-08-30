@@ -196,60 +196,38 @@ class UsersController extends Controller
     // }
 
 
-    /*
-    * Update the users name, username and email
-    */
-    public function updateProfile(Request $request) {
+    /**
+     * Update the users name, username and email
+     */
+    public function details (Request $request)
+    {
+        $this->validate($request, [
+            'name'     => 'min:3|max:25',
+            'email'    => 'email|max:75|unique:users',
+            'username' => 'max:75|unique:users',
+        ]);
 
         $user = Auth::user();
 
-        if ($request['name']) {
-            $this->validate($request, [
-                    'name' => 'min:3|max:25',
-                'password' => 'required|min:6|case_diff|numbers|letters|symbols',
-            ]);
+        $email_changed = false;
+
+        $user->name = $request->name;
+        $user->username = $request->username;
+
+        if ($request->email != $user->email)
+        {
+            $email_changed = true;
+            $user->email = $request->email;
+            // todo
+//            $user->verified = 0;
+//            $user->token = str_random(30);
+            // Mail::to($request->email)->send(new NewUserRegMail($user));
         }
 
-        if ($request['email']) {
-            $this->validate($request, [
-                   'email' => 'email|max:75|unique:users',
-                'password' => 'required|min:6|case_diff|numbers|letters|symbols',
-            ]);
-        }
+        $user->save();
 
-        if ($request['username']) {
-            $this->validate($request, [
-                'username' => 'max:75|unique:users',
-                'password' => 'required|min:6|case_diff|numbers|letters|symbols',
-            ]);
-        }
-
-        if (\Hash::check($request->input('password'), $user->password)) {
-
-            if ($request->has('name')) {
-                $user->name = $request->name;
-                $user->save();
-                return ['message' => 'Success! Your name has been updated.'];
-            }
-            if ($request->has('username')) {
-                $user->username = $request->username;
-                $user->save();
-                return ['message' => 'Success! Your username has been updated.'];
-            }
-            if ($request->has('email')) {
-                $user->email = $request->email;
-                $user->verified = 0;
-                $user->token = str_random(30);
-                $user->save();
-                return ['message' => 'Success! Your email has been updated.'];
-                // Mail::to($request->email)->send(new NewUserRegMail($user));
-            }
-        } else {
-            // flash: Wrong password
-            return ['message' => 'Invalid password. Please try again.'];
-        }
-        // return ['message' => 'Sorry, there was a problem. Please try again.'];
-        // return redirect()->back();
+        /* If email_changed, we need to tell the user to verify their new email address */
+        return ['message' => 'success', 'email_changed' => $email_changed];
     }
 
     /**
@@ -269,10 +247,10 @@ class UsersController extends Controller
             $user->password = $request->password;
             $user->save();
 
-            return ['message' => 'Success! Your password has been updated.'];
+            return ['message' => 'success'];
         }
 
-        return ['message' => 'You have entered an incorrect password. Please try again.'];
+        return ['message' => 'fail'];
     }
 
     /*
@@ -324,30 +302,28 @@ class UsersController extends Controller
     }
 
 
-    /*
-    * The user can delete their profile and all associated records.
-    */
-    public function destroy(Request $request) {
-
+    /**
+     * The user can delete their profile and all associated records.
+     */
+    public function destroy (Request $request)
+    {
         $this->validate($request, [
             'password' => 'required'
         ]);
 
         $user = Auth::user();
 
-        // Remove from any Redis instances
+        // Remove user.id from redis leaderboards
 
-
-        if (\Hash::check($request->input('password'), $user->password)) {
+        if (\Hash::check($request->password, $user->password))
+        {
+            // delete their photos, etc
+            // maybe don't delete, but remove all personal information and keep user.id
             $user->delete();
-            return ['message' => 'Your account has been deleted.'];
-        } else {
-            return ['message' => 'Invalid password. Please try again.'];
+            return ['message' => 'success'];
         }
 
-        $user->delete();
-        // Auth::logout();
-        return view('pages.locations.welcome');
+        else return ['message' => 'password'];
     }
 
     /**

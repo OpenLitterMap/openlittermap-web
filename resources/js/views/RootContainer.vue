@@ -14,14 +14,18 @@ import Modal from '../components/Modal/Modal'
 
 export default {
     name: 'RootContainer',
-    props: ['auth'],
+    props: ['auth', 'user'],
     components: {
         Nav,
         Modal
     },
     created ()
     {
-        if (this.auth) this.$store.commit('login');
+        if (this.auth)
+        {
+            this.$store.commit('login');
+            this.$store.commit('initUser', this.user);
+        }
     },
     computed: {
 

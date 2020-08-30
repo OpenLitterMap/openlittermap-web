@@ -1,6 +1,30 @@
 export const mutations = {
 
     /**
+     * Settings.details
+     */
+    changeUserEmail (state, payload)
+    {
+        state.user.email = payload;
+    },
+
+    /**
+     * Settings.details
+     */
+    changeUserName (state, payload)
+    {
+        state.user.name = payload;
+    },
+
+    /**
+     * Settings.details
+     */
+    changeUserUsername (state, payload)
+    {
+        state.user.username = payload;
+    },
+
+    /**
      * An error has been received when making a login request
      */
     errorLogin (state, payload)
@@ -14,6 +38,14 @@ export const mutations = {
     errors (state, payload)
     {
         state.errors = payload;
+    },
+
+    /**
+     * User object from HomeController@index if auth
+     */
+    initUser (state, payload)
+    {
+        state.user = payload;
     },
 
     /**
