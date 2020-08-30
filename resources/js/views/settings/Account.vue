@@ -31,7 +31,7 @@
                             </div>
                         </div>
 
-                        <button class="button">Delete My Account</button>
+                        <button :class="button">Delete My Account</button>
                     </form>
                 </div>
             </div>

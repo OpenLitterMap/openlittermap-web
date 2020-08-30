@@ -13,19 +13,25 @@
 					<div v-if="this.ongraceperiod">
 						<p>Status: Your subscription has been cancelled.</p>
 						<p>You have paid until: {{ this.ends_at }}.</p>
-						<p v-show="this.msg_status" class="is-success">{{ this.msg_status }}</p>
 						<br>
-						<button class="button is-success" @click="reactivate" :class="[{ 'is-loading': submitting }, 'is-primary' ]">Reactivate My Subscription</button>
+						<button class="button is-success" @click="reactivate">Reactivate My Subscription</button>
 					</div>
 
 					<div v-else>
 						<p>Status: Active.</p>
 						<p>Do you want to cancel your subscription?</p>
-						<!-- <p v-show="this.msg_password" class="is-danger">{{ this.msg_password }}</p> -->
-						<p v-show="this.msg_status" class="is-danger">{{ this.msg_status }}</p>
-						<form method="POST" action="/cancel" role="form" @submit.prevent="cancelStripe">
-							<input type="password" name="password" id="password" placeholder="******" v-model="cancelform.password" required @keydown="clearErrors" />
-							<button class="button is-danger" :class="[{ 'is-loading': submitting }, 'is-success' ]">Cancel My Subscription</button>
+
+						<form method="POST" @submit.prevent="cancelStripe">
+							<input
+                                type="password"
+                                name="password"
+                                id="password"
+                                placeholder="******"
+                                v-model="cancelform.password"
+                                required
+                                @keydown="clearErrors"
+                            />
+							<button class="button is-danger">Cancel My Subscription</button>
 						</form>
 					</div>
 
@@ -74,7 +80,7 @@
 							<p><strong style="color: #22C65B;">Please help finance the development of OpenLitterMap with a monthly subscription starting at €5 per month (€0.06 per day)</strong></p>
 							<ul>
 								<li>- Support Open Data on Plastic Pollution</li>
-								<li>- Help cover the server costs</li>
+								<li>- Help cover our costs</li>
 								<li>- Hire developers, designers & graduates</li>
 								<li>- Produce videos</li>
 								<li>- Write papers</li>
@@ -92,156 +98,17 @@
 
 <script>
 
-class Errors {
-
-	/**
-	 * Create a new errors instance
-	 */
-	constructor() {
-		this.errors = {};
-	}
-
-	/**
-	 * Get the error message for a field
-	 */
-	get(field){
-		if(this.errors[field]){
-			return this.errors[field][0];
-		}
-	}
-
-	/**
-	 * Determine if an error exists for a given field
-	 */
-	has(field){
-		return this.errors.hasOwnProperty(field);
-	}
-
-	/**
-	 * Record the new errors
-	 */
-	record(errors){
-		this.errors = errors;
-	}
-
-	/**
-	 * Clear one or all error fields
-	 */
-	clear(field){
-		if (field) {
-			delete this.errors[field];
-			return;
-		}
-		// else
-		this.errors = {};
-	}
-
-	/**
-	 * Determine if we have any errors
-	 */
-	any(){
-		console.log(this);
-		return Object.keys(this.errors).length > 0;
-	}
-}
-
-class Form {
-
-	/**
-	 * Create a new Form instance
-	 */
-	constructor(data) {
-		this.originalData = data;
-
-		// create data objects on the form
-		for(let field in data) {
-			this[field] = data[field];
-		}
-
-		this.errors = new Errors();
-	}
-
-	/**
-	 * Fetch relevant data for the form
-	 */
-	data() {
-		// // clone the object  old way
-		// let data = Object.assign({}, this);
-		// // delete unnecessary data
-		// delete data.originalData;
-		// delete data.errors;
-		// return data;
-		let data = {};
-		// filter through the original data
-		for (let property in this.originalData){
-			data[property] = this[property];
-		}
-		return data;
-	}
-
-	/**
-	 * Reset the form fields
-	 */
-	reset() {
-		for(let field in this.originalData){
-			this[field] = '';
-		}
-		this.errors.clear();
-	}
-
-	/**
-	 * Submit the form
-	 */
-	submit(requestType, url) {
-
-		// return a set up a promise
-		return new Promise((resolve, reject) => {
-			// submit the ajax request
-			axios[requestType](url, this.data())
-			  // 200
-			 .then(response => {
-			 	console.log('first');
-			 	// use local onSuccess method then trigger Vue method with resolve
-			 	console.log(response.data); // .email | .user_id
-			 	// this.onSuccess(response.data);
-			 	// callback with the data
-			 	resolve(response.data);
-			 	console.log('third')
-			 })
-			  // not 200
-			 .catch(error => {
-			 	this.onFail(error.response.data);
-			 	reject(error.response.data);
-			 });
-		});
-	}
-
-	/**
-	 * Handle a successful form submission
-	 */
-	onSuccess(data){
-	 	console.log('second');
-		// this.reset();
-	};
-
-	/**
-	 * Handle a failed form submission
-	 */
-	onFail(errors) {
-		console.log(errors);
-		this.errors.record(errors);
-	}
-}
-
 export default {
 	// props: ['user', 'subscription', 'plan', 'isvalid', 'ongraceperiod', 'ends_at', 'plans'],
     name: 'Payments',
-	data() {
+    created ()
+    {
+        console.log('todo - get user stripe customer data');
+    },
+	data ()
+    {
 		return {
-			// form manages errors
-			cancelform: new Form({
-				password: '',
-			}),
+            password: '',
 			error: '',
 			msg_password: '',
 			submitting: false,
@@ -252,8 +119,13 @@ export default {
 			stripe: null
 		};
 	},
-	methods: {
-		subscribe() {
+    computed: {
+
+    },
+    methods: {
+
+		subscribe ()
+        {
 			if (this.myplan == 1) {
 				return alert("You are already on the free plan. Please consider financing the development Open Litter Map with a monthly subscription starting as little as ~6 cents / p a day. You can unsubscribe or resubscribe at a click! It's easy.");
 			}
@@ -313,7 +185,12 @@ export default {
 				amount: newplan.price
 			});
 		},
-		cancelStripe() {
+
+        /**
+         *
+         */
+		cancelStripe ()
+        {
 			this.submitting = true;
 			axios({
                 method: 'post',
@@ -335,10 +212,20 @@ export default {
 			 });
 			// call back will then cancel on our end
 		},
-		clearErrors() {
+
+        /**
+         *
+         */
+		clearErrors ()
+        {
 			this.msg_password = '';
 		},
-		reactivate() {
+
+        /**
+         *
+         */
+		reactivate ()
+        {
 			this.submitting = true;
 			axios({
                 method: 'post',
@@ -354,12 +241,6 @@ export default {
 			 .catch(error => {
 			 	console.log(error);
 			 });
-		}
-	},
-	computed: {
-		csrfToken() {
-			// console.log($('meta[name="csrf-token"]').attr('content'));
-    		return $('meta[name="csrf-token"]').attr('content');
 		}
 	}
 }
