@@ -294,26 +294,23 @@ class PhotosController extends Controller
                 // Full class path
                 $class = 'App\\Categories\\'.$schema->$category->class;
 
-                // Does the photos table have a reference to $id_table yet?
+                // Create reference to category.$id_table on photos if it does not exist
                 if (is_null($photo->$id_table))
                 {
                     $row = $class::create();
                     $photo->$id_table = $row->id;
                     $photo->save();
-                } else {
-                    $row = $class::find($photo->$id_table);
                 }
+
+                else $row = $class::find($photo->$id_table);
 
                 // Update the quantity on the category table and save
                 $row->$column = $quantity;
                 $row->save();
 
-                // TODO - Only reward XP on verification.
-                $user->xp += $quantity;
-                $user->save();
-                // Update Leaderboards if user has changed privacy settings
-                // todo - create different settings for maps
-                if (($user->show_name == 1) || ($user->show_username == 1))
+                // Update Leaderboards if user has public privacy settings
+                // todo - save data per leaderboard
+                if (($user->show_name) || ($user->show_username))
                 {
                     $country = Country::find($photo->country_id);
                     $state = State::find($photo->state_id);
@@ -322,30 +319,34 @@ class PhotosController extends Controller
                     Redis::zadd($country->country.':'.$state->state.':Leaderboard', $user->xp, $user->id);
                     Redis::zadd($country->country.':'.$state->state.':'.$city->city.':Leaderboard', $user->xp, $user->id);
                 }
+
                 $litterTotal += $quantity;
             }
         }
 
+        $user->xp += $litterTotal;
+        $user->save();
 
+        $photo->remaining = $request->presence;
+        $photo->total_litter = $litterTotal;
 
+        if ($user->verification_required)
+        {
+            /* Bring the photo to an initial state of verification */
+            /* 0 for testing, 0.1 for production */
+            $photo->verification = 0.1;
+        }
 
-//            } // end foreach item
-//        } // end foreach categories as category
-//        $photo->remaining = $request->presence;
-//        $photo->total_litter = $litterTotal;
-//
-//        // Check if the User is a trusted user => photos do not require verification.
-//        if ($user->verification_required == 0)
-//        {
-//            $photo->verification = 1;
-//            $photo->verified = 2;
-//            event(new PhotoVerifiedByAdmin($photo->id));
-//        } else {
-//            // Bring the photo to an initial state of verification
-//            /* 0 for testing, 0.1 for production */
-//            $photo->verification = 0.1;
-//        }
-//        $photo->save();
+        else // the user is trusted. Dispatch event to update OLM.
+        {
+            $photo->verification = 1;
+            $photo->verified = 2;
+            event(new PhotoVerifiedByAdmin($photo->id));
+        }
+
+        $photo->save();
+
+        return ['msg' => 'success'];
     }
 
     /**

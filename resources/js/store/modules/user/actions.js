@@ -30,7 +30,7 @@ export const actions = {
      */
     CHECK_AUTH (context)
     {
-        console.log('CHECK AUTH');
+        // console.log('CHECK AUTH');
     },
 
     /**
