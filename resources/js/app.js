@@ -31,6 +31,7 @@ const vm = new Vue({
     i18n,
     created ()
     {
+        console.log('APP CREATED');
         // ProgressBar
         this.$on('percent', function(pcnt) {
             this.progressPercent = pcnt;
@@ -39,33 +40,6 @@ const vm = new Vue({
     components: {
         RootContainer
     },
-    data: {
-        stripeEmail: '',
-        stripeToken: '',
-        plan: 1,
-        status: '',
-        selectedPlan: '',
-        isAuth: false,
-        users: [],
-
-		showLoginModal: false,
-		showSignupModal: false,
-		show: true,
-
-        // empty objects for collection
-        categories: {},
-        photoid: '',
-
-        // buttons for verification
-        disabled: false,
-
-        // email subscription
-        emailsub: '',
-
-        // percentage progress bar completed
-        progressPercent: 0,
-    },
-
     methods: {
 
         /**

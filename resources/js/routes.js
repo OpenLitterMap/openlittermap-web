@@ -1,7 +1,6 @@
 import Router from 'vue-router'
 import store from './store'
 import auth from './middleware/auth'
-// todo - define and import admin middleware
 import middlewarePipeline from './middleware/middlewarePipeline'
 
 // The earlier a route is defined, the higher its priority.
@@ -68,14 +67,14 @@ const router = new Router({
             path: '/admin/photos',
             component: require('./views/admin/VerifyPhotos').default,
             meta: {
-                middleware: [auth]
+                middleware: [ auth ]
             }
         },
         {
             path: '/admin/bbox',
             component: require('./views/admin/BoundingBox').default,
             meta: {
-                middleware: [auth]
+                middleware: [ auth ]
             }
         },
         // AUTH ROUTES
@@ -83,35 +82,35 @@ const router = new Router({
             path: '/upload',
             component: require('./views/general/Upload').default,
             meta: {
-                middleware: [auth]
+                middleware: [ auth ]
             }
         },
         {
             path: '/submit', // old route
             component: require('./views/general/Upload').default,
             meta: {
-                middleware: [auth]
+                middleware: [ auth ]
             }
         },
         {
             path: '/tag',
             component: require('./views/general/Tag').default,
             meta: {
-                middleware: [auth]
+                middleware: [ auth ]
             }
         },
         {
             path: '/profile',
             component: require('./views/general/Profile').default,
             meta: {
-                middleware: [auth]
+                middleware: [ auth ]
             }
         },
         {
             path: '/settings',
             component: require('./views/Settings').default,
             meta: {
-                middleware: [auth]
+                middleware: [ auth ]
             },
             children: [
                 {
@@ -166,9 +165,12 @@ const router = new Router({
 /**
  * Pipeline for multiple middleware
  */
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
 
     if (! to.meta.middleware) return next();
+
+    // this allows store to init before router finishes and returns with auth false
+    await store.dispatch('CHECK_AUTH');
 
     const middleware = to.meta.middleware
 
@@ -177,7 +179,7 @@ router.beforeEach((to, from, next) => {
     return middleware[0]({
         ...context,
         next: middlewarePipeline(context, middleware, 1)
-    })
+    });
 
 });
 

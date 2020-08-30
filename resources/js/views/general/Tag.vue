@@ -67,7 +67,7 @@
                             </div>
 
                             <!-- These are the tags the user has added -->
-                            <tags />
+                            <Tags />
                         </div>
                     </div>
 
@@ -77,7 +77,6 @@
                         </div>
                     </div>
                     <br>
-                    <!-- <h4 style="color: green;">This image has been verified! No further action is required.</h4>-->
 
                     <div class="column" style="text-align: center;">
                         <!-- if($photos->total() > 1)-->

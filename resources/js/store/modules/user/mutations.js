@@ -21,6 +21,7 @@ export const mutations = {
      */
     login (state)
     {
+        console.log('LOGIN COMMIT');
         state.auth = true;
         // update user
     },

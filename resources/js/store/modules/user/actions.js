@@ -25,6 +25,13 @@ export const actions = {
         });
     },
 
+    /**
+     * Throwing an await method here from router.beforeEach allows Vuex to init before vue-router returns auth false.
+     */
+    CHECK_AUTH (context)
+    {
+        console.log('CHECK AUTH');
+    },
 
     /**
      * Try to log the user in

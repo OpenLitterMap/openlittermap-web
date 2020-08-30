@@ -53,7 +53,7 @@
 			:disabled="checkItems"
 			:class="button"
 			@click="submit"
-		>submit</button>
+		>{{ $t('common.submit') }}</button>
 
 		<!-- Only show these on mobile <= 768px -->
 		<div class="show-mobile">
@@ -61,7 +61,7 @@
 			<tags />
 
 			<div class="custom-buttons">
-				<profile-delete :photoid="id" />
+				<profile-delete :photoid="  id" />
     	    	<presence :itemsr="true" />
     	    </div>
     	</div>
