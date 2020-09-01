@@ -231,7 +231,8 @@ class UsersController extends Controller
     }
 
     /**
-     * Update the users password
+     * The user wants to change their password
+     * Todo - Add custom validation to check users password matches before the rest of the validation
      */
     public function changePassword (Request $request)
     {

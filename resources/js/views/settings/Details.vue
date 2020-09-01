@@ -67,7 +67,7 @@
                         v-text="getFirstError('email')"
                     />
 
-                    <div class="field">
+                    <div class="field mb2">
                         <div class="control has-icons-left">
                             <input
                                 type="email"

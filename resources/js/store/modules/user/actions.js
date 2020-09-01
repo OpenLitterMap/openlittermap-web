@@ -5,7 +5,10 @@ import i18n from "../../../i18n";
 export const actions = {
 
     /**
-     *
+     * The user wants to change their password
+     * 1. Validate old password
+     * 2. Validate new password
+     * 3. Change password & return success
      */
     async CHANGE_PASSWORD (context, payload)
     {
@@ -22,8 +25,8 @@ export const actions = {
         .catch(error => {
             console.log('error.change_password', error.response.data);
 
-            // update errors
-
+            // update errors. user.js
+            context.commit('errors', error.response.data.errors);
         });
     },
 

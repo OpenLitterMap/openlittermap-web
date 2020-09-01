@@ -25,6 +25,14 @@ export const mutations = {
     },
 
     /**
+     * Settings
+     */
+    deleteUserError (state, payload)
+    {
+        delete state.errors[payload];
+    },
+
+    /**
      * An error has been received when making a login request
      */
     errorLogin (state, payload)
@@ -33,7 +41,7 @@ export const mutations = {
     },
 
     /**
-     * Todo - refactor all user errors (Login, Signup, Settings) to this.
+     * Todo - refactor all user errors (Login, Signup, Settings)
      */
     errors (state, payload)
     {
