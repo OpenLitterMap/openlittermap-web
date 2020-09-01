@@ -2,19 +2,17 @@
 	<div style="padding-left: 1em; padding-right: 1em;">
 		<h1 class="title is-4">Change Personal Details</h1>
 		<hr>
-		<p>You can update any one of these at a time</p>
 		<br>
 		<div class="columns">
 			<div class="column is-one-third is-offset-1">
-				<form
-                      method="POST"
-                      @submit.prevent="submit"
-                      @keydown="clearError($event.target.name)"
-                >
+
+                <form @submit.prevent="submit" @keydown="clearError($event.target.name)">
+
+                    <!-- The users name -->
                     <label for="name">Your name</label>
 
                     <span
-                        class="is-danger"
+                        class="error"
                         v-if="errorExists('name')"
                         v-text="getFirstError('name')"
                     />
@@ -27,6 +25,7 @@
                                 id="name"
                                 class="input"
                                 :placeholder="name"
+                                required
                                 v-model="name"
                             />
                             <span class="icon is-small is-left">
@@ -35,10 +34,11 @@
                         </div>
                     </div>
 
+                    <!-- The users username-->
                     <label for="username">Unique Identifier</label>
 
                     <span
-                        class="is-danger"
+                        class="error"
                         v-if="errorExists('username')"
                         v-text="getFirstError('username')"
                     />
@@ -51,6 +51,7 @@
                                 id="username"
                                 class="input"
                                 :placeholder="username"
+                                required
                                 v-model="username"
                             />
                             <span class="icon is-small is-left">
@@ -59,10 +60,11 @@
                         </div>
                     </div>
 
+                    <!-- The users email -->
                     <label for="email">Email</label>
 
                     <span
-                        class="is-danger"
+                        class="error"
                         v-if="errorExists('email')"
                         v-text="getFirstError('email')"
                     />
@@ -75,6 +77,7 @@
                                 id="email"
                                 class="input"
                                 :placeholder="email"
+                                required
                                 v-model="email"
                             />
                             <span class="icon is-small is-left">
@@ -169,7 +172,7 @@ export default {
          */
         clearError (key)
         {
-            if (this.errors[key]) this.$store.commit('clearCreateAccountError', key);
+            if (this.errors[key]) this.$store.commit('deleteUserError', key);
         },
 
         /**

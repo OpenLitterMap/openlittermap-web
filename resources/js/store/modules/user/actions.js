@@ -115,18 +115,21 @@ export const actions = {
             email: context.state.user.email,
             username: context.state.user.username
         })
-            .then(response => {
-                console.log('update_details', response);
+        .then(response => {
+            console.log('update_details', response);
 
-                /* improve this */
-                Vue.$vToastify.success({
-                    title,
-                    body,
-                    position: 'top-right'
-                });
-            })
-            .catch(error => {
-                console.log('error.update_details', error);
+            /* improve this */
+            Vue.$vToastify.success({
+                title,
+                body,
+                position: 'top-right'
             });
+        })
+        .catch(error => {
+            console.log('error.update_details', error);
+
+            // update errors. user.js
+            context.commit('errors', error.response.data.errors);
+        });
     }
 };

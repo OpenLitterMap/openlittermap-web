@@ -198,6 +198,10 @@ class UsersController extends Controller
 
     /**
      * Update the users name, username and email
+     *
+     * Todo - invalidate email
+     *      - send new email
+     *      - notify the user
      */
     public function details (Request $request)
     {
@@ -219,8 +223,8 @@ class UsersController extends Controller
             $email_changed = true;
             $user->email = $request->email;
             // todo
-//            $user->verified = 0;
-//            $user->token = str_random(30);
+            // $user->verified = 0;
+            // $user->token = str_random(30);
             // Mail::to($request->email)->send(new NewUserRegMail($user));
         }
 

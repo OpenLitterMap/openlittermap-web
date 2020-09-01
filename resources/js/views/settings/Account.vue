@@ -87,7 +87,7 @@ export default {
          */
         clearError (key)
         {
-            if (this.errors[key]) this.$store.commit('clearCreateAccountError', key);
+            if (this.errors[key]) this.$store.commit('deleteUserError', key);
         },
 
         /**

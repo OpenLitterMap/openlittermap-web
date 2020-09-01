@@ -9,6 +9,11 @@
 	margin-bottom: -2em;
 }
 
+.error {
+    color: #e74c3c;
+    font-weight: 600;
+}
+
 .flex {
 	display: flex;
 }

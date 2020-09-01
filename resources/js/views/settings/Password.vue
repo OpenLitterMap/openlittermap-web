@@ -15,7 +15,7 @@
                     <span
                         v-if="errorExists('oldpassword')"
                         v-text="getFirstError('oldpassword')"
-                        class="red"
+                        class="error"
                     />
 
                     <div class="field">
@@ -40,7 +40,7 @@
                     <span
                         v-if="errorExists('password')"
                         v-text="getFirstError('password')"
-                        class="red"
+                        class="error"
                     />
                     <div class="field">
                         <div class="control has-icons-left">
@@ -65,7 +65,7 @@
                     <span
                         v-if="errorExists('password_confirmation')"
                         v-text="getFirstError('password_confirmation')"
-                        class="red"
+                        class="error"
                     />
 
                     <div class="field mb2">
@@ -168,11 +168,3 @@ export default {
     },
 }
 </script>
-
-<style>
-
-    .red {
-        color: #e74c3c;
-        font-weight: 600;
-    }
-</style>
