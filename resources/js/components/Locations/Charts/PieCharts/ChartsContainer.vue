@@ -4,13 +4,13 @@
 			<div class="level-item">
 				<litter-chart
 				  :width="300" :height="300"
-		          :litter="this.litterData"
+		          :litter="this.litter_data"
 		        />
 			</div>
-			<div class="level-item" v-show="this.totalbrands">
+			<div class="level-item" v-show="this.total_brands">
 				<brands-chart
 				  :width="300" :height="300"
-		          :brands="this.brandsData"
+		          :brands="this.brands_data"
 		        />
 			</div>
 		</nav>
@@ -22,14 +22,15 @@ import LitterChart from './LitterChart'
 import BrandsChart from './BrandsChart'
 
 export default {
+    name: 'ChartsContainer',
 	components: {
 		LitterChart,
 		BrandsChart
 	},
 	props: [
-		'litterData',
-		'brandsData',
-		'totalbrands'
+		'litter_data',
+		'brands_data',
+		'total_brands'
 	]
 }
 </script>

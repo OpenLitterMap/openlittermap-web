@@ -31,7 +31,7 @@ class MapController extends Controller
 		$littercoin = '2,950';
 
 		/**
-		 *  Todo 
+		 *  Todo
 		 	1. save user_id in country created_by column
 		 	2. Find out how to get top-10 more efficiently
             3. Paginate
@@ -82,7 +82,7 @@ class MapController extends Controller
         							   $country['litter_data']['industrial'];
 
         	$country['avg_litter_per_user'] = round($country->total_litter / $country->total_contributors, 2);
-        	
+
         	$total_litter += $country['total_litter'];
         	$total_photos += $country->total_images;
 
@@ -99,7 +99,7 @@ class MapController extends Controller
         /**
          * Global levels
          *
-         * todo - improve this and make it more dynamic
+         * todo - Make this dynamic
          * See: GlobalLevels.php global_levels table
          */
         // level 0
@@ -142,13 +142,13 @@ class MapController extends Controller
             $nextXp = 1000000; // 500,000
         }
 
-        /**
-         * GLOBAL LITTER MAPPERS
-         * todo - Load top-10 users where show_name or show_username is true
-         */
+        /** GLOBAL LITTER MAPPERS */
 	    $users = User::where('xp', '>', 8000)
             ->orderBy('xp', 'desc')
-            ->get(10);
+            ->where('show_name', 1)
+            ->orWhere('show_username', 1)
+            ->limit(10)
+            ->get();
 
 	    $newIndex = 0;
 	    $globalLeaders = [];
@@ -156,16 +156,11 @@ class MapController extends Controller
 	    {
         	$name = '';
         	$username = '';
-        	if (($user->show_name == 1) | ($user->show_username == 1))
+        	if (($user->show_name) | ($user->show_username))
         	{
-        		if ($user->show_name == 1)
-        		{
-        			$name = $user->name;
-        		}
-        		if ($user->show_username == 1)
-        		{
-        			$username = '@'.$user->username;
-        		}
+        		if ($user->show_name) $name = $user->name;
+
+        		if ($user->show_username) $username = '@'.$user->username;
 
 	        	$globalLeaders[$newIndex] = [
 	        		'position' => $newIndex,
@@ -487,7 +482,7 @@ class MapController extends Controller
 				  'remaining' => $c["remaining"],
 			   'display_name' => $c["display_name"],
 
-					// data 
+					// data
 					'smoking' => $c->smoking,
 					   'food' => $c->food,
 					 'coffee' => $c->coffee,
@@ -506,7 +501,7 @@ class MapController extends Controller
 			   'total_litter' => $c->total_litter
 				)
 			);
-			
+
 			if ($c->owner)
 			{
 				if ($c->owner->show_name_maps) {
@@ -568,7 +563,7 @@ class MapController extends Controller
 
 		else return 'come back later!';
 
-		// create FC object 
+		// create FC object
 		$geojson = array(
    			'type'      => 'FeatureCollection',
    			'features'  => array()
@@ -604,7 +599,7 @@ class MapController extends Controller
 						    'lon' => $c["lon"],
 				  'result_string' => $c["result_string"],
 
-						// data 
+						// data
 							// 'art' => $art,
 					   // 'trashdog' => $trashdog,
 				)

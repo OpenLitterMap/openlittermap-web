@@ -2,7 +2,7 @@
 import { Doughnut } from 'vue-chartjs'
 
 export default {
-    extends: 'Doughnut',
+    extends: Doughnut,
     name: 'BrandsChart',
     props: ['brands'],
     data ()

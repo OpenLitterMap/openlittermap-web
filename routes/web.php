@@ -2,12 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-// Route::get('test', 'TestController@getTest');
-// Route::post('test', 'TestController@postTest');
-
-use App\User;
-
-// use App\Photo;
+// use App\User;
 // Route::get('test', function() {
 // 	$user = \App\User::first();
 // 	return view('emails.update17', compact('user'));
@@ -17,12 +12,14 @@ use App\User;
 // Route::get('sean', 'TotalDataController@getCSV');
 
 Route::get('/', 'HomeController@index');
-Route::post('subscribe', 'SubscribersController@create');
 Route::get('/about', 'HomeController@index');
 Route::get('/world', 'HomeController@index');
 
 // Registration
 Route::get('/signup', 'HomeController@index');
+
+// Monthly subscription
+Route::post('subscribe', 'SubscribersController@create');
 
 /* Stripe Webhooks - excluded from CSRF protection */
 Route::post('/stripe/customer-created', 'StripeController@create');
@@ -231,37 +228,7 @@ Route::get('logout', 'UsersController@logout');
 // Register, Login
 Auth::routes();
 
-// test event
-// use App\Events\ImageUploaded;
-// Route::get('/testing', function() {
-
-// 	// 1. Publish event with Redis
-// 	$data = [
-// 		'id' => '2',
-// 		'total' => '2',
-// 		'Address' => [
-// 			'city' => 'Dublin',
-// 			'country' => 'Ireland'
-// 		]
-// 	];
-
-// 	// // old way
-// 	// Redis::publish('test-channel', );
-
-// 	json_encode($data);
-// 	// new way
-// 	event(new ImageUploaded($data));
-
-// 	// return 'done';
-
-// 	// 2. Node.js + Redis subscribes to the event
-// 	// 3. Use socket.io to emit to all clients
-
-// });
-
-/**
- * PAYMENTS
- */
+/** PAYMENTS */
 Route::get('/join/{plan?}', 'HomeController@index');
 
 Route::get('plans', function () {
@@ -277,7 +244,7 @@ Route::post('/change', 'SubscriptionsController@change');
 /**
  * Instructions / navigation
  */
-Route::get('/nav', function() {
+Route::get('/nav', function () {
     return view('pages.navigation');
 });
 
@@ -285,7 +252,7 @@ Route::get('/nav', function() {
  * ADMIN
  */
 
-Route::group(['prefix' => '/admin'], function() {
+Route::group(['prefix' => '/admin'], function () {
 
     Route::get('/photos', 'AdminController@index');
 

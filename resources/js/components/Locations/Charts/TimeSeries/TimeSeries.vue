@@ -2,7 +2,7 @@
 import { Bar } from 'vue-chartjs'
 
 export default {
-    extends: 'Bar',
+    extends: Bar,
     name: 'TimeSeries',
     props: ['ppm'],
     data ()

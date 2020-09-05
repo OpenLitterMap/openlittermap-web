@@ -6,14 +6,14 @@
 					<br>
 					<div class="select">
 						<select v-model="category">
-							<option v-for="cat, i in catnames">{{ cat }}</option>
+							<option v-for="cat in catnames">{{ cat }}</option>
 						</select>
 					</div>
 				</div>
 			</div>
 
 			<section v-for="location, index in orderedBy">
-				
+
 				<div v-show="category != 'A-Z'">
 					<br>
 			 		<h1 style="text-align: center; color: #34495e;" class="title is-1">
@@ -35,7 +35,7 @@
 				    			<h2 :class="textSize">
 				    				<router-link :to="goTo(index)" :id="location[type]" class="green has-text-centered">
 				    					<span v-show="category != 'A-Z' && index < 30">
-				    					{{ positions(index) }} - 
+				    					{{ positions(index) }} -
 				    					</span>
 				    					{{ getName(location) }}
 				    				</router-link>
@@ -91,9 +91,9 @@
 
 							<component
 								:is="tabs[tab]"
-								:litterData="location.litter_data"
-								:brandsData="location.brands_data"
-								:totalbrands="location.total_brands"
+								:litter_data="location.litter_data"
+								:brands_data="location.brands_data"
+								:total_brands="location.total_brands"
 								:ppm="location.photos_per_month"
 								:leaderboard="location.leaderboard"
 							/>
