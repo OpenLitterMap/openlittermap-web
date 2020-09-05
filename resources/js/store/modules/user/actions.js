@@ -60,6 +60,22 @@ export const actions = {
     },
 
     /**
+     *
+     */
+    async GET_CURRENT_USER (context)
+    {
+        await axios.get('/current-user')
+        .then(response => {
+            console.log('get_current_user', response);
+
+            context.commit('initUser', response.data);
+        })
+        .catch(error => {
+            console.log('error.get_current_user', error);
+        });
+    },
+
+    /**
      * Try to log the user in
      * Todo - return the user object
      */

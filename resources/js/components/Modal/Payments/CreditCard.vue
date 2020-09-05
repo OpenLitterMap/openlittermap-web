@@ -17,6 +17,8 @@
                 :amexCardMask="amexCardMask"
             />
 
+            <div id="card-element" />
+
             <!-- Inputs -->
             <div class="card-form__inner">
 
@@ -179,12 +181,23 @@ export default {
             cardNumberTemp: "",
             isCardFlipped: false,
             focusElementStyle: null,
-            isInputFocused: false
+            isInputFocused: false,
+
+            stripe: '',
+            elements: '',
+            card: '',
+            intentToken: ''
         };
     },
-
     mounted ()
     {
+        /** Includes Stripe.js dynamically */
+        this.includeStripe('js.stripe.com/v3/', function () {
+            this.configureStripe();
+        }.bind(this));
+
+        this.loadIntent();
+
         this.cardNumberTemp = this.otherCardMask;
 
         document.getElementById("cardNumber").focus();
@@ -279,6 +292,59 @@ export default {
         },
 
         /**
+         * Disable the submit button if errors exist
+         */
+        checkForErrors ()
+        {
+            // Checking for (typeof this.errors.main == 'undefined') because we don't want to disable submit if card declined
+            // In case user wants to try the same card again
+            if (Object.keys(this.errors).length > 0 && (typeof this.errors.main == 'undefined')) this.disabled = true;
+
+            else this.disabled = false;
+        },
+
+        /**
+         * Clear any errors
+         */
+        clearErrors (key)
+        {
+            this.$store.commit('clearCustomerCenterErrors', key);
+
+            this.checkForErrors();
+        },
+
+        /**
+         * Close the modal
+         */
+        close ()
+        {
+            this.$store.commit('hideModal');
+        },
+
+        /**
+         * Configures Stripe by setting up the elements and
+         * creating the card element.
+         */
+        configureStripe ()
+        {
+            // stripe public key
+            this.stripe = Stripe(process.env.MIX_STRIPE_KEY);
+
+            this.elements = this.stripe.elements();
+            this.card = this.elements.create('card'); // accepts 2nd arg for styles object https://stripe.com/docs/stripe-js#elements
+
+            this.card.mount('#card-element');
+        },
+
+        /**
+         * Check if any errors exist for this key
+         */
+        errorsExist (key)
+        {
+            return this.errors.hasOwnProperty(key);
+        },
+
+        /**
          *
          */
         flipCard (status)
@@ -302,6 +368,47 @@ export default {
         },
 
         /**
+         * Get specific errors for this error key
+         */
+        getFirstError (key)
+        {
+            return this.errors[key][0];
+        },
+
+        /**
+         * Boolean result for if a given key has an error
+         */
+        hasError (key)
+        {
+            return (typeof this.errors[key] !== 'undefined');
+        },
+
+        /**
+         * Include stripe.js dynamically
+         */
+        includeStripe (URL, callback)
+        {
+            let documentTag = document,
+                tag = 'script',
+                object = documentTag.createElement(tag),
+                scriptTag = documentTag.getElementsByTagName(tag)[0];
+            object.src = '//' + URL;
+            if (callback) { object.addEventListener('load', function (e) { callback(null, e); }, false); }
+            scriptTag.parentNode.insertBefore(object, scriptTag);
+        },
+
+        /**
+         * Loads the payment intent key for the user to pay.
+         */
+        async loadIntent ()
+        {
+            await axios.get('/api/v1/user/setup-intent')
+            .then(response => {
+                this.intentToken = response.data;
+            }); // .bind(this);
+        },
+
+        /**
          * The user wants to save these card details
          */
         submit ()
@@ -319,60 +426,6 @@ export default {
                 successUrl: 'https://www.example.com/success',
                 cancelUrl: 'https://www.example.com/cancel'
             });
-        },
-
-        /**
-         * Clear any errors
-         */
-        clearErrors (key)
-        {
-            this.$store.commit('clearCustomerCenterErrors', key);
-
-            this.checkForErrors();
-        },
-
-        /**
-         * Disable the submit button if errors exist
-         */
-        checkForErrors ()
-        {
-            // Checking for (typeof this.errors.main == 'undefined') because we don't want to disable submit if card declined
-            // In case user wants to try the same card again
-            if (Object.keys(this.errors).length > 0 && (typeof this.errors.main == 'undefined')) this.disabled = true;
-
-            else this.disabled = false;
-        },
-
-        /**
-         * Check if any errors exist for this key
-         */
-        errorsExist (key)
-        {
-            return this.errors.hasOwnProperty(key);
-        },
-
-        /**
-         * Get specific errors for this error key
-         */
-        getFirstError (key)
-        {
-            return this.errors[key][0];
-        },
-
-        /**
-         * Boolean result for if a given key has an error
-         */
-        hasError (key)
-        {
-            return (typeof this.errors[key] !== 'undefined');
-        },
-
-        /**
-         * Close the modal
-         */
-        close ()
-        {
-            this.$store.commit('hideModal');
         },
 
     }

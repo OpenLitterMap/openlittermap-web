@@ -19,15 +19,15 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 trait Billable
 {
 
-    // CUSTOMER FUNCS FIRST 
+    // CUSTOMER FUNCS FIRST
 
     /**
-     * Relationship to Payments 
+     * Relationship to Payments
      */
-    public function payments() {
+    public function payments()
+    {
         return $this->hasMany('App\Billing\Payment');
     }
-    
 
     /**
      * The Stripe API key.
@@ -45,7 +45,7 @@ trait Billable
      *
      * @throws \Stripe\Error\Card
      */
-    public function charge($amount, array $options = [])
+    public function charge ($amount, array $options = [])
     {
         $options = array_merge([
             'currency' => $this->preferredCurrency(),
@@ -73,7 +73,7 @@ trait Billable
      *
      * @throws \Stripe\Error\Refund
      */
-    public function refund($charge, array $options = [])
+    public function refund ($charge, array $options = [])
     {
         $options['charge'] = $charge;
 
@@ -85,7 +85,7 @@ trait Billable
      *
      * @return bool
      */
-    public function hasCardOnFile()
+    public function hasCardOnFile ()
     {
         return (bool) $this->card_brand;
     }
@@ -100,9 +100,10 @@ trait Billable
      *
      * @throws \Stripe\Error\Card
      */
-    public function tab($description, $amount, array $options = [])
+    public function tab ($description, $amount, array $options = [])
     {
-        if (! $this->stripe_id) {
+        if (! $this->stripe_id)
+        {
             throw new InvalidArgumentException(class_basename($this).' is not a Stripe customer. See the createAsStripeCustomer method.');
         }
 
@@ -128,7 +129,7 @@ trait Billable
      *
      * @throws \Stripe\Error\Card
      */
-    public function invoiceFor($description, $amount, array $options = [])
+    public function invoiceFor ($description, $amount, array $options = [])
     {
         $this->tab($description, $amount, $options);
 
@@ -142,8 +143,9 @@ trait Billable
      * @param  string  $plan
      * @return \Laravel\Cashier\SubscriptionBuilder
      */
-    public function newSubscription($subscription, $plan)
-    { // owner, name / 'main' , plan / 'monthly'
+    public function newSubscription ($subscription, $plan)
+    {
+        // owner, name / 'main' , plan / 'monthly'
         // return [$this, $subscription, $plan];
         return new SubscriptionBuilder($this, $subscription, $plan);
     }
@@ -188,7 +190,7 @@ trait Billable
      * @param  string|null  $plan
      * @return bool
      */
-    public function subscribed($subscription = 'default', $plan = null)
+    public function subscribed ($subscription = 'default', $plan = null)
     {
         $subscription = $this->subscription($subscription);
 
@@ -210,7 +212,7 @@ trait Billable
      * @param  string  $subscription
      * @return \Laravel\Cashier\Subscription|null
      */
-    public function subscription($subscription = 'default')
+    public function subscription ($subscription = 'default')
     {
         return $this->subscriptions->sortByDesc(function ($value) {
             return $value->created_at->getTimestamp();
@@ -225,7 +227,7 @@ trait Billable
      *
      * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function subscriptions()
+    public function subscriptions ()
     {
         return $this->hasMany(Subscription::class, $this->getForeignKey())->orderBy('created_at', 'desc');
     }
@@ -235,7 +237,7 @@ trait Billable
      *
      * @return StripeInvoice|bool
      */
-    public function invoice()
+    public function invoice ()
     {
         if ($this->stripe_id) {
             try {
@@ -253,7 +255,7 @@ trait Billable
      *
      * @return \Laravel\Cashier\Invoice|null
      */
-    public function upcomingInvoice()
+    public function upcomingInvoice ()
     {
         try {
             $stripeInvoice = StripeInvoice::upcoming(

@@ -2,17 +2,17 @@
     <div class='credit-card-inputs'>
 
         <Card
-         cardNumber
-         cardName
-         cardMonth
-         cardYear
-         cardCvv
-         isCardFlipped
-         focusElementStyle
-         currentCardBackground
-         getCardType
-         otherCardMask
-         amexCardMa
+             cardNumber
+             cardName
+             cardMonth
+             cardYear
+             cardCvv
+             isCardFlipped
+             focusElementStyle
+             currentCardBackground
+             getCardType
+             otherCardMask
+             amexCardMa
         />
 
 <!--        <card-number class='stripe-element card-number'-->

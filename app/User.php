@@ -3,7 +3,8 @@
 namespace App;
 
 use App\Role;
-use App\Billing\Billable;
+//use App\Billing\Billable;
+use Laravel\Cashier\Billable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Passport\HasApiTokens;
@@ -23,17 +24,9 @@ class User extends Authenticatable
         parent::boot();
 
         // listen for model events
-        // eg. in the process of creating a record
         // eg. after a record has been created
-        // eg. updating, saving, etc. // review -> documentation for big list of events that are fired
 
-        // when new user is being created:
-        // set token = random str
-        // saving
-        // updating
-        // post-update
-
-        // For the model, Listen for new user creation and give token column a random string
+        // When a user is created, add token
         // function accepts the user
         static::creating(function($user) {
             $user->token = str_random(30);

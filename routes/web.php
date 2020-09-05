@@ -25,6 +25,11 @@ Route::post('subscribe', 'SubscribersController@create');
 Route::post('/stripe/customer-created', 'StripeController@create');
 Route::post('/stripe/payment-success', 'StripeController@payment_success');
 
+/* Stripe - API. */
+// Check the users current subscription
+Route::get('/stripe/check', 'StripeController@check');
+Route::post('/stripe/delete', 'StripeController@delete');
+
 Route::get('countries', 'MapController@getCountries');
 Route::get('states', 'MapController@getStates');
 Route::get('cities', 'MapController@getCities');
@@ -63,6 +68,9 @@ Route::get('global', 'HomeController@index');
 Route::get('global-data', 'MapController@getGlobalData');
 
 /** Auth Routes */
+// Get currently auth user when logged in
+Route::get('/current-user', 'UsersController@getAuthUser');
+
 // Upload page
 Route::get('submit', 'HomeController@index'); // old route
 Route::get('upload', 'HomeController@index');

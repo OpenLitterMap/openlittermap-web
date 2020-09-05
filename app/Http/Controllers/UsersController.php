@@ -27,17 +27,17 @@ class UsersController extends Controller
     /*
     * Apply middleware to all of these routes
     */
-    public function __construct() {
+    public function __construct () {
     	return $this->middleware('auth');
     	parent::__construct();
 	}
 
-    /*
-     * TEST ROUTE
+    /**
+     * Get the currently authenticated user on login
      */
-    public function test() {
-        $visits = Redis::incr('vists');;
-        return view('pages.test', ['visits' => $visits]);
+    public function getAuthUser ()
+    {
+        return Auth::user();
     }
 
     /**

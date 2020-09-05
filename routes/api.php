@@ -21,6 +21,16 @@ use Illuminate\Support\Facades\Auth;
 |
 */
 
+
+///* Our Stripe API */
+//Route::group(['prefix' => 'v1', 'middleware' => 'auth:api'], function(){
+//
+//    Route::get('/user/setup-intent', 'API\UserController@getSetupIntent');
+//
+//});
+
+/* Mobile App */
+
 // Check if current token is valid
 Route::post('/validate-token', function(Request $request) {
     return ['message' => 'valid'];

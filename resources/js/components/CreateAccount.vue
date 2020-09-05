@@ -326,12 +326,7 @@ export default {
          */
 		loadStripe ()
 		{
-		    // our modal for payments, needs stripe integration
-            // this.$store.commit('showModal', {
-            //     type: 'CreditCard'
-            // });
-
-            // Redirect to stripe checkout
+            // Redirect to stripe checkout. public key.
             const stripe = Stripe(process.env.MIX_STRIPE_KEY);
 
             let successUrl = window.location.href + '&status=success';
@@ -354,6 +349,13 @@ export default {
         recaptcha (response)
         {
             this.g_recaptcha_response = response;
+        },
+
+        showStripe ()
+        {
+            this.$store.commit('showModal', {
+                type: 'CreditCard'
+            });
         },
 
         /**
@@ -384,9 +386,12 @@ export default {
 
             if (this.planInt > 1)
             {
-                // this.$store.commit('showModal', { // todo - our own custom modal
+                // Todo - Our own custom stripe modal
+                // this.$store.commit('showModal', {
                 //     modalType: 'StripeCheckout'
                 // });
+
+                // For now - stripes checkout page
                 this.loadStripe();
             }
         },
