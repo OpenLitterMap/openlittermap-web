@@ -104,6 +104,10 @@
 	display: none;
 }
 
+.w100 {
+    width: 100%;
+}
+
 /* Desktop view */
 @media (min-width: 1024px) {
 	.navbar-item {

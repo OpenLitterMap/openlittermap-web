@@ -1,8 +1,8 @@
 <template>
 	<div>
 		<section class="hero is-medium is-success">
-			<div class="container">
-				<div class="control has-text-right">
+			<div class="container w100">
+				<div class="control locations-control">
 					<br>
 					<div class="select">
 						<select v-model="category">
@@ -306,6 +306,10 @@ export default {
 		background-color: white;
 	}
 
+    .locations-control {
+        text-align: right;
+    }
+
 	.l-tab {
 
 	}
@@ -313,5 +317,14 @@ export default {
 	.l-tab.is-active {
 		border-bottom: 2px solid white !important;
 	}
+
+    /* Small devices */
+    @media screen and (max-width: 768px)
+    {
+
+        .locations-control {
+            text-align: center;
+        }
+    }
 
 </style>
