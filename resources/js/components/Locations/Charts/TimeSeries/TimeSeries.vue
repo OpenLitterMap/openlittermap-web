@@ -39,34 +39,36 @@ export default {
                 }
             ]
         },
-
         {
             // options
-            responsive: false,
+            responsive: true,
             maintainAspectRatio: false,
-
             legend: {
                 labels: {
                     fontColor: '#000000'
                 }
             },
-
             scales: {
                 xAxes:[{
                     gridLines:{
-                        color:"rgba(255,255,255,0.5)"
+                        color: "rgba(255,255,255,0.5)",
+                        display: true,
+                        drawBorder: true,
+                        drawOnChartArea: false
                     },
                     ticks: {
                         fontColor: '#000000'
                     },
                 }],
-
                 yAxes:[{
                     gridLines:{
-                        color:"rgba(255,255,255,0.5)",
+                        color: "rgba(255,255,255,0.5)",
+                        display: true,
+                        drawBorder: true,
+                        drawOnChartArea: false
                     },
                     ticks: {
-                        fontColor: '#000000'
+                        fontColor: '#000000',
                     },
                 }],
             }

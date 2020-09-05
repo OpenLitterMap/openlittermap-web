@@ -48,7 +48,7 @@ export default {
 
         // options
         {
-            responsive: false,
+            responsive: true,
             maintainAspectRatio: true,
             legend: {
                 labels: {
