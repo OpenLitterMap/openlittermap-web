@@ -20,7 +20,7 @@
 						  </ul>
 						</div>
 						<div style="text-align: center;">
-							<router-link :to="'/join'">
+							<router-link :to="'/join?plan=free'">
 								<button class="button is-primary is-center" style="margin-top: -10px;">I'm in</button>
 							</router-link>
 						</div>

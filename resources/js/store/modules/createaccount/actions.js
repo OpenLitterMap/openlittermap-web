@@ -21,6 +21,7 @@ export const actions = {
             // CHECK PLAN
             if (payload.plan == 1)
             {
+                // translate
                 alert('Congratulations! Your free account has been created. Please verify your email to activate login');
                 // login
                 // reload page

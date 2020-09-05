@@ -24,6 +24,10 @@ Route::get('/world', 'HomeController@index');
 // Registration
 Route::get('/signup', 'HomeController@index');
 
+/* Stripe Webhooks - excluded from CSRF protection */
+Route::post('/stripe/customer-created', 'StripeController@create');
+Route::post('/stripe/payment-success', 'StripeController@payment_success');
+
 Route::get('countries', 'MapController@getCountries');
 Route::get('states', 'MapController@getStates');
 Route::get('cities', 'MapController@getCities');
@@ -267,9 +271,6 @@ Route::get('plans', function () {
 // Pay
 Route::post('/join', 'SubscriptionsController@store');
 Route::post('/change', 'SubscriptionsController@change');
-// Dynamically handle incoming webhooks from Stripe
-// Homestead = '\Laravel\Cashier\Http\Controllers\WebhookController@handleWebhook'
-Route::post('/stripe/webhook', 'WebhookController@handleWebhook');
 
 // Route::get('/profile/awards', 'AwardsController@getAwards');
 
@@ -314,7 +315,6 @@ Route::group(['prefix' => '/admin'], function() {
     Route::get('bbox', 'AdminController@index');
 
     Route::get('next-bb-image', 'BoundingBoxController@index');
-
 });
 
 /**

@@ -14,8 +14,7 @@ class UpdateUsersStripeId extends Migration
     public function up()
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->integer('stripe_id')->unsigned()->nullable();
-            $table->foreign('stripe_id')->references('id')->on('stripe');
+            $table->string('stripe_id')->nullable();
         });
     }
 

@@ -8,7 +8,7 @@
 
                 <div class="control mt2">
                     <div class="select">
-                        <select v-model="planInt">
+                        <select v-model="planInt" @change="changeUrl">
                             <option v-for="plan in plans" :value="plan.id">
                                 {{ plan.name }} &mdash; €{{ plan.price / 100 }}
                             </option>
@@ -293,6 +293,19 @@ export default {
         },
 
         /**
+         * Update query string in the url bar
+         */
+        changeUrl (e)
+        {
+            let plan = this.plans[e.target.value -1].name.toLowerCase();
+
+            this.$router.push({
+                path: 'join',
+                query: { plan }
+            });
+        },
+
+        /**
          * Get the first error from errors object
          */
         getFirstError (key)
@@ -371,9 +384,10 @@ export default {
 
             if (this.planInt > 1)
             {
-                this.$store.commit('showModal', {
-                    modalType: 'StripeCheckout'
-                });
+                // this.$store.commit('showModal', { // todo - our own custom modal
+                //     modalType: 'StripeCheckout'
+                // });
+                this.loadStripe();
             }
         },
     }
