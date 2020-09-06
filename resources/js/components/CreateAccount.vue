@@ -205,9 +205,10 @@ export default {
 	data ()
 	{
 		return {
-            processing: false,
             btn: 'button is-medium is-primary mb1',
-			// REGISTRATION
+            planInt: 1,
+            processing: false,
+            // REGISTRATION
             name: '',
             username: '',
             email: '',
@@ -215,13 +216,6 @@ export default {
             checkbox: false,
             password_confirmation: '',
             g_recaptcha_response: '',
-			// STRIPE
-			user_id: '',
-			stripeEmail: '',
-			stripeToken: '',
-			planInt: 1,
-			status: '',
-			selectedPlan: '',
 		};
 	},
 
@@ -253,7 +247,7 @@ export default {
 		 * Key to return for google-recaptcha
          * @olmbulma.test (old) 6Lfd4HMUAAAAAMZBVUIpBJI7OfwtPcbqR6kGndSE
          * @olm.test (new) 6LcvHsIZAAAAAOG0q9-1vY3uWqu0iFvUC3tCNhID
-         * @production 6LciihwUAAAAADsZr0CYUoLPSMOIiwKvORj8AD9m
+         * @production 6LciihwUAAAAADsZr0CYUoLPSMOIiwKvORj8AD9m // todo - put this on .env
 		 */
 		computedKey ()
 		{
@@ -266,11 +260,11 @@ export default {
 		},
 
         /**
-         * Errors object from createaccount.js
+         * Errors object from plans
          */
         errors ()
         {
-            return this.$store.state.createaccount.errors;
+            return this.$store.state.plans.errors;
         },
 
 		/**
@@ -278,7 +272,7 @@ export default {
 		 */
 		plans ()
 		{
-			return this.$store.state.createaccount.plans;
+			return this.$store.state.plans.plans;
 		}
 	},
 
@@ -322,19 +316,20 @@ export default {
         },
 
         /**
-         * Load Stripe CreditCard Modal
+         * Redirect to stripe checkout. public key.
          */
 		loadStripe ()
 		{
-            // Redirect to stripe checkout. public key.
             const stripe = Stripe(process.env.MIX_STRIPE_KEY);
 
             let successUrl = window.location.href + '&status=success';
             let cancelUrl = window.location.href + '&status=error';
 
+            let price = this.plans[this.planInt -1].plan_id; // the price is defined by plan_id
+
             stripe.redirectToCheckout({
                 lineItems: [{
-                    price: 'plan_E579ju4xamcU41', // 1 = startup
+                    price, // plans.plan_id
                     quantity: 1
                 }],
                 mode: 'subscription',

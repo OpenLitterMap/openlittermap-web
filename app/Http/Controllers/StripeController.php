@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use DB;
 use App\Plan;
 use Auth;
 use App\User;
@@ -11,47 +12,13 @@ use Illuminate\Http\Request;
 class StripeController extends Controller
 {
     /**
-     * Get the stripe customer object
-     * Incl. active subscriptions, etc
+     * Get the users first (and only) subscription (active/inactive)
      */
-    public function check ()
+    public function subscriptions ()
     {
-        $stripe_id = Auth::user()->stripe_id;
+        $subs = Auth::user()->subscriptions;
 
-        $customer = Cashier::findBillable($stripe_id)->asStripeCustomer();;
-
-        return ['customer' => $customer];
-    }
-
-
-    /**
-     * Webhook - A customer has been created
-     */
-    public function create (Request $request)
-    {
-        if ($user = User::where('email', $request['data']['object']['email'])->first())
-        {
-            $user->stripe_id = $request['data']['object']['id'];
-            $user->save();
-
-            // we need to get the name of the plan from the customer ?
-            $customer = $user->asStripeCustomer();
-            $name = $customer->subscriptions->first()->plan->nickname;
-
-            // Doing this manually because laravel cashier is actually a pain
-            // and I used this table incorrectly to begin with so it needs to be updated.
-            $user->subscriptions()->create([
-                'name' => $name,
-                'stripe_id' => $customer->subscriptions->data[0]->id, // sub_id
-                'stripe_plan' => $name,
-                'quantity' => 1,
-                'ends_at' => now()->addMonths(1),
-                'stripe_active' => 1,
-                'stripe_status' => 'active'
-            ]);
-
-            return ['status' => 'success'];
-        }
+        return ['sub' => $subs[0]];
     }
 
     /**
@@ -59,22 +26,28 @@ class StripeController extends Controller
      */
     public function delete (Request $request)
     {
-        if ($user = Auth::user()->asStripeCustomer())
+        if ($user = Auth::user())
         {
+            $name = $user->subscriptions->first()->name;
 
+            $user->subscription($name)->cancelNow();
         }
+
+        return ['status' => 'success'];
     }
 
     /**
-     * Webhook - A payment has been successful
+     * The user already has stripe_id and is a Stripe Customer
+     * We want to re-activate their subscription
      */
-    public function payment_success (Request $request)
+    public function resubscribe (Request $request)
     {
-        if ($user = User::where('email', $request['data']['object']['customer_email'])->first())
+        if ($user = Auth::user())
         {
-            $user->payments()->create(['amount' => $request['data']['object']['amount_paid'], 'stripe_id' => $user->stripe_id]);
+            // delete old, cancelled subscription
+            DB::table('subscriptions')->where('user_id', $user->id)->delete();
 
-            return ['status' => 'success'];
+
         }
     }
 }

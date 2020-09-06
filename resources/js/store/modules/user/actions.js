@@ -88,8 +88,8 @@ export const actions = {
         .then(response => {
             console.log('login_success', response);
 
-            context.commit('login');
             context.commit('hideModal');
+            context.commit('login');
 
             routes.push({ path: '/submit' });
         })

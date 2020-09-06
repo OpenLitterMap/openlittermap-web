@@ -1,24 +1,6 @@
 export const actions = {
 
     /**
-     * Check a users subscription
-     */
-    async CHECK_CURRENT_SUBSCRIPTION (context)
-    {
-        // We make the request on the backend as this uses stripe secret key
-        await axios.get('/stripe/check')
-            .then(response => {
-                console.log('check_current_subscription', response);
-
-                // There is more data here that we are not yet using
-                context.commit('current_subscription', response.data.customer.subscriptions.data[0]);
-            })
-            .catch(error => {
-                console.log('error.check_current_subscription', error);
-            });
-    },
-
-    /**
      * The user wants to cancel their current subscription.
      * We must also delete any pending invoices.
      */
@@ -27,10 +9,48 @@ export const actions = {
         await axios.post('/stripe/delete')
             .then(response => {
                 console.log('delete_active_subscription', response);
+
+                // show success notification
+
+                // update user/subscriber data
             })
             .catch(error => {
                 console.log('error.delete_active_subscription');
             });
+    },
+
+    /**
+     * Check a users subscription
+     */
+    async GET_USERS_SUBSCRIPTIONS (context)
+    {
+        // Get user.subscriptions
+        await axios.get('/stripe/subscriptions')
+            .then(response => {
+                console.log('check_current_subscription', response);
+
+                // There is more data here that we are not yet using
+                context.commit('subscription', response.data.sub);
+            })
+            .catch(error => {
+                console.log('error.check_current_subscription', error);
+            });
+    },
+
+    /**
+     * The user cancelled and wants to sign up again
+     */
+    async RESUBSCRIBE (context, payload)
+    {
+        await axios.post('/stripe/resubscribe', {
+            plan: payload
+        })
+        .then(response => {
+            console.log('resubscribe', response);
+        })
+        .catch(error => {
+            console.log('error.resubscribe', error);
+        });
     },
 
     /**

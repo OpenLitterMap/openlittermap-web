@@ -10,103 +10,57 @@
             <div v-else class="column one-third is-offset-1">
 
                 <div v-if="! check_for_stripe_id">
-                    <p>Create first subscription</p>
+                    <p>We need your help.</p>
+
+                    <ul>
+                        <li>- Support Open Data on Plastic Pollution</li>
+                        <li>- Help cover our costs</li>
+                        <li>- Hire developers, designers & graduates</li>
+                        <li>- Produce videos</li>
+                        <li>- Write papers</li>
+                        <li>- Conferences & outreach</li>
+                        <li>- Incentivize data collection with Littercoin</li>
+                        <li>- More exciting updates coming soon</li>
+                    </ul>
+
+                    <!-- Show list of plans -->
+
+                    <button class="button is-medium is-primary" @click="subscribe">Click here to support</button>
                 </div>
 
                 <!-- The user has already subscribed -->
                 <div v-else>
 
-                    <div v-if="current_plan.active">
+                    <div v-if="subscription.stripe_status === 'active'">
 
-                        <p>You are currently subscribed to the <strong class="green">{{ current_plan.nickname }}</strong> plan</p>
-                        <p class="mb1">For €{{ current_plan.amount / 100 }} per month</p>
+                        <p>You are currently subscribed to the <strong class="green">{{ subscription.name }}</strong></p>
+<!--                        <p class="mb1">For €{{ current_plan.amount / 100 }} per month</p>-->
                         <p>Thank you for helping the development of OpenLitterMap!</p>
                         <p class="mb1">You can change or cancel your subscription at any time.</p>
 
                         <button @click="cancel_active_subscription" class="button is-medium is-danger">Cancel Subscription</button>
                     </div>
 
-                    <!-- Inactive subscription -->
+                    <!-- Cancelled subscription -->
                     <div v-else>
 
-                        <p>Inactive plan</p>
+                        <p class="mb1">You have unsubscribed from <strong class="green">{{ subscription.name }}</strong></p>
+                        <p class="mb1">Thank you for supporting the development of OpenLitterMap</p>
+
+                        <!-- Show list of plans -->
+                        <div class="control mb1">
+                            <div class="select">
+                                <select v-model="plan">
+                                    <option v-for="plan in plans" :value="plan.name">
+                                        {{ plan.name }} &mdash; €{{ plan.price / 100 }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button class="button is-medium is-primary" @click="resubscribe">Click here to resubscribe</button>
                     </div>
                 </div>
-
-<!--				<div v-if="has_valid_subscription">-->
-
-<!--					<p>Current Subscription: <strong>{{ this.plan }}</strong></p>-->
-<!--                    <p>Status: Active.</p>-->
-<!--                    <p>Do you want to cancel your subscription?</p>-->
-
-<!--                    <form method="POST" @submit.prevent="cancelStripe">-->
-<!--                        <input-->
-<!--                            type="password"-->
-<!--                            name="password"-->
-<!--                            id="password"-->
-<!--                            placeholder="******"-->
-<!--                            v-model="cancelform.password"-->
-<!--                            required-->
-<!--                            @keydown="clearErrors"-->
-<!--                        />-->
-<!--                        <button class="button is-danger">Cancel My Subscription</button>-->
-<!--                    </form>-->
-<!--				</div>-->
-
-<!--				&lt;!&ndash; Not Valid &ndash;&gt;-->
-<!--				<div v-else>-->
-
-<!--					&lt;!&ndash; Todo - fix this &ndash;&gt;-->
-<!--					&lt;!&ndash; <div v-if="this.user">-->
-<!--						<p>Your previous subscription and the grace period for 1-click reactivation has ended. Would you like to sign up again?</p>-->
-<!--						<br>-->
-<!--					</div> &ndash;&gt;-->
-
-<!--					&lt;!&ndash; <div v-else> &ndash;&gt;-->
-<!--						<p>Time to sign up?</p>-->
-<!--					&lt;!&ndash; </div> &ndash;&gt;-->
-
-<!--					<div class="columns">-->
-<!--						<div class="column is-one-quarter">-->
-<!--							<br>-->
-<!--							<div class="control">-->
-<!--								<div class="select">-->
-<!--									<select name="plans" v-model="myplan">-->
-<!--										<option v-for="plan in this.plans" id="options" :value="plan.id">-->
-<!--											{{ plan.name }} &mdash; €{{ plan.price / 100}}-->
-<!--										</option>-->
-<!--									</select>-->
-<!--								</div>-->
-<!--							</div>-->
-<!--							<br>-->
-<!--							<button class="button is-large is-success" @click="subscribe">I want to subscribe.</button>-->
-<!--							<br>-->
-<!--							<br>-->
-<!--							<p>We use <a href="https://stripe.com">Stripe</a> to securely handle payments & subscriptions over an encrypted https network.</p>-->
-<!--						</div>-->
-
-<!--						<div class="column is-half is-offset-1">-->
-<!--							<p><strong style="color: #3273dc;">Free</strong></p>-->
-<!--							<ul>-->
-<!--								<li>- Upload 1000 images per day</li>-->
-<!--								<li>- All users can earn Littercoin</li>-->
-<!--								<li>- Your free account costs us money!</li>-->
-<!--							</ul>-->
-<!--							<br>-->
-<!--							<p><strong style="color: #22C65B;">Please help finance the development of OpenLitterMap with a monthly subscription starting at €5 per month (€0.06 per day)</strong></p>-->
-<!--							<ul>-->
-<!--								<li>- Support Open Data on Plastic Pollution</li>-->
-<!--								<li>- Help cover our costs</li>-->
-<!--								<li>- Hire developers, designers & graduates</li>-->
-<!--								<li>- Produce videos</li>-->
-<!--								<li>- Write papers</li>-->
-<!--								<li>- Conferences & outreach</li>-->
-<!--								<li>- Incentivize data collection with Littercoin</li>-->
-<!--								<li>- More exciting updates coming soon</li>-->
-<!--							</ul>-->
-<!--						</div>-->
-<!--					</div>-->
-<!--				</div>-->
 			</div>
 		</div>
 	</div>
@@ -123,11 +77,14 @@ export default {
     {
         this.loading = true;
 
-        await this.$store.dispatch('GET_PLANS');
+        if (this.$store.state.plans.plans.length === 0)
+        {
+            await this.$store.dispatch('GET_PLANS');
+        }
 
         if (this.$store.state.user.user.stripe_id)
         {
-            await this.$store.dispatch('CHECK_CURRENT_SUBSCRIPTION');
+            await this.$store.dispatch('GET_USERS_SUBSCRIPTIONS');
         }
 
         this.loading = false;
@@ -136,16 +93,7 @@ export default {
     {
 		return {
 		    loading: true,
-            password: '',
-			error: '',
-			msg_password: '',
-			submitting: false,
-			msg_status: '',
-			myplan: 1,
-			stripeToken: '',
-			stripeEmail: '',
-			stripe: null,
-            has_valid_subscription: false
+            plan: 'Startup'
 		};
 	},
     computed: {
@@ -159,27 +107,19 @@ export default {
         },
 
         /**
-         * If user.stripe_id exists, the active/inactive plan is here
-         */
-        current_plan ()
-        {
-            return this.current_subscription.plan;
-        },
-
-        /**
-         * If user.stripe_id exists, the current active/inactive subscription is here
-         */
-        current_subscription ()
-        {
-            return this.$store.state.subscriber.current_subscription;
-        },
-
-        /**
          * Array of plans from the database
          */
         plans ()
         {
-            return this.$store.state.createaccount.plans;
+            return this.$store.state.plans.plans;
+        },
+
+        /**
+         * If user.stripe_id exists, the active/inactive plan is here
+         */
+        subscription ()
+        {
+            return this.$store.state.subscriber.subscription;
         }
     },
     methods: {
@@ -193,60 +133,11 @@ export default {
         },
 
         /**
-         * Cancel subscription
+         * The user already has a Stripe customer account / user.stripe_id and wants to resubscribe
          */
-        cancelStripe ()
+        async resubscribe ()
         {
-            this.submitting = true;
-            axios({
-                method: 'post',
-                url: '/en/settings/payments/cancel',
-                data: { password: this.cancelform.password }
-            })
-                .then(response => {
-                    // if you get  message, the password was wrong
-                    if (response.data) {
-                        this.submitting = false;
-                        this.msg_password = response.data.message;
-                        this.msg_status = response.data.status;
-                        this.cancelform.password = '';
-                        window.location.href = window.location.href;
-                    }
-                })
-                .catch(error => {
-                    console.log(error.response.data);
-                });
-            // call back will then cancel on our end
-        },
-
-        /**
-         *
-         */
-        clearErrors ()
-        {
-            console.log('todo - clear errors');
-        },
-
-        /**
-         * Reactiviate an existing subscription
-         */
-        reactivate ()
-        {
-            this.submitting = true;
-            axios({
-                method: 'post',
-                url: '/en/settings/payments/reactivate',
-            })
-
-                .then(response => {
-                    console.log(response);
-                    this.submitting = false;
-                    this.msg_status = response.data.message;
-                    // window.location.href = window.location.href;
-                })
-                .catch(error => {
-                    console.log(error);
-                });
+            await this.$store.dispatch('RESUBSCRIBE', this.plan);
         },
 
         /**
@@ -254,13 +145,6 @@ export default {
          */
 		subscribe ()
         {
-			if (this.myplan == 1)
-			{
-				return alert("You are already on the free plan. Please consider financing the development Open Litter Map with a monthly subscription starting as little as ~6 cents / p a day. You can unsubscribe or resubscribe at a click! It's easy.");
-			}
-
-			let newplan = this.plans[this.myplan - 1];
-
             console.log('todo - load stripe');
 		}
 	}

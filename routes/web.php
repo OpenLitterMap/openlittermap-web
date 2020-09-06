@@ -22,13 +22,14 @@ Route::get('/signup', 'HomeController@index');
 Route::post('subscribe', 'SubscribersController@create');
 
 /* Stripe Webhooks - excluded from CSRF protection */
-Route::post('/stripe/customer-created', 'StripeController@create');
-Route::post('/stripe/payment-success', 'StripeController@payment_success');
+Route::post('/stripe/webhook', 'WebhookController@handleWebhook')->name('webhook');
+//Route::post('/stripe/customer-created', 'StripeController@create');
+//Route::post('/stripe/payment-success', 'StripeController@payment_success');
 
 /* Stripe - API. */
-// Check the users current subscription
-Route::get('/stripe/check', 'StripeController@check');
+Route::get('/stripe/subscriptions', 'StripeController@subscriptions');
 Route::post('/stripe/delete', 'StripeController@delete');
+Route::post('/stripe/resubscribe', 'StripeController@resubscribe');
 
 Route::get('countries', 'MapController@getCountries');
 Route::get('states', 'MapController@getStates');

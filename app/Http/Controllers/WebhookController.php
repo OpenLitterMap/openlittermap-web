@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\User;
 use App\Plan;
 use Exception;
-use App\Billing\Payments;
+// use App\Billing\Payments;
 use Illuminate\Http\Request;
-use Stripe\Event as StripeEvent;
+// use Stripe\Event as StripeEvent;
 use Illuminate\Routing\Controller;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -15,124 +15,81 @@ class WebhookController extends Controller
 {
     /**
      * Handle a Stripe webhook call.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Symfony\Component\HttpFoundation\Response
      */
-    public function handleWebhook(Request $request)
+    public function handleWebhook (Request $request)
     {
+        // $payload = json_decode($request->getContent(), true);
 
-        // dd($request->all());
+        $method = 'handle'.studly_case(str_replace('.', '_', $request->type));
 
-        $payload = json_decode($request->getContent(), true);
+        if (method_exists($this, $method)) return $this->{$method}($request->all());
 
-        // return $payload;
-
-        // if (! $this->isInTestingEnvironment() && ! $this->eventExistsOnStripe($payload['id'])) {
-        //     return;
-        // }
-
-        $method = 'handle'.studly_case(str_replace('.', '_', $payload['type']));
-
-        // return $method;
-
-        if (method_exists($this, $method)) {
-            return $this->{$method}($payload);
-        } else {
-            return $this->missingMethod();
-        }
+        else return $this->missingMethod();
     }
 
-    // CUSTOM EVENTS 
-
-    // 1. When a new user signs up 
-    // handleCustomerCreated()
-    // object['id'] = customer_id
-    // currency
-    // email 
-    // object['sources']['data'] is empty
-
-    // handleCustomerUpdated()
-    // object['id'] = cus_id
-    // object['data']['id'] = card id 
-    // object['subscriptions'] == empty 
-
-    // handleCustomerSourceCreated() 
-    // object['id'] // card_id 
-    // object['customer'] // customer_id
-    // object['cvc_pass'] = true 
-    // object['name'] = email 
-
-    // handleCustomerUpdated() 
-    // object['subscriptions']['data']['id'] = subscription_id 
-    // object['subscriptions']['data']['current_period_end'] = unix timestamp
-    // object['subscriptions']['data']['current_period_start'] = unix timestamp
-    // object['subscriptions']['data']['customer'] = customer_id 
-    // object['subscriptions']['data']['items']['data']['id'] = subscription item id 
-    // object['subscriptions']['data']['items']['data']['object'] = subscription item
-    // object['subscriptions']['data']['items']['data']['plan']['id'] = Advanced
-    // object['subscriptions']['data']['items']['data']['plan']['object'] = plan
-    // object['subscriptions']['data']['items']['data']['plan']['amount'] = 2000
-    // object['subscriptions']['data']['items']['data']['plan']['currency'] = eur
-    // object['subscriptions']['data']['items']['data']['plan']['interval'] = month
-    // object['subscriptions']['data']['items']['data']['plan']['name'] = Advanced
-    // object['subscriptions']['data']['items']['data']['plan']['statement_descriptor'] = 20 per month
-
-    // handleInvoiceCreated()
-    // object['id'] = invoice_id
-    // object['object'] = invoice
-    // object['amount_due'] = 2000
-    // object['attempted'] = true
-    // object['charge'] = charge_id
-    // object['customer'] = customer_id
-    // object['lines']['data']['period']['start']
-    // object['lines']['data']['period']['end']
-    // object['lines']['data']['plan']['id'] = Advanced // links to the actual plan
-    // object['lines']['data']['plan']['amount'] = 2000
-    // object['lines']['data']['plan']['name'] = Advanced
-
-    // handleInvoicePaymentSucceeded() 
-    // object['id'] = invoice id 
-    // object['amount_due']
-    // object['charge'] = charge_id 
-    // object['customer'] = customer_id 
-    // etc 
-
-    // protected function handleCustomerSubscriptionUpdated(array $payload) {
-    //     // 
-    // }
-
-
     /**
-     * Handle a successful payment 
+     * Handle a successful payment
      */
-    protected function handleChargeSucceeded(array $payload) {
-
-        $user = $this->getUserByStripeId($payload['data']['object']['customer']);
+    protected function handleChargeSucceeded (array $payload)
+    {
+        $user = $this->getUserByStripeId($payload['data']['object']['id']);
 
         $plans = Plan::all();
 
-        // Set max image upload
-        $amount = 0; // payment info 
-        foreach ($plans as $index => $plan) {
-            if ($user->onPlan($plan->name)) {
-                $user->images_remaining = $plan->images;
-                $user->verify_remaining = $plan->verify;
-                $user->save();
+        $amount = 0; // payment info
+        foreach ($plans as $index => $plan)
+        {
+            if ($user->onPlan($plan->name))
+            {
+                // set user limitations
                 $amount = $plan->price;
             }
         }
 
-        // Update the payments table 
-        $user->payments()->create(['amount' => $amount, 'stripe_id' => $user->stripe_id]);  
+        // Update the payments table
+        $user->payments()->create(['amount' => $amount, 'stripe_id' => $user->stripe_id]);
 
-        // Calculate tax, revenue 
+        // Calculate tax, revenue
         return ['status' => 'New Subscription Created'];
-
     }
 
+    /**
+     * A new customer has been created
+     */
+    protected function handleCustomerCreated ($request)
+    {
+        \Log::info(['customer.created', $request]);
+        if ($user = User::where('email', $request['data']['object']['email'])->first())
+        {
+            $user->stripe_id = $request['data']['object']['id'];
+            $user->save();
 
-    
+            // we need to get the name of the plan from the customer ?
+            $customer = $user->asStripeCustomer();
+            \Log::info(['customer', $customer]);
+            $name = $customer->subscriptions->first()->plan->nickname;
+            $plan = $customer->subscriptions->first()->plan->id;
+
+            \Log::info(['name', $name]); // null
+            \Log::info(['plan', $plan]); // Pro
+
+            // Doing this manually because
+            // 1. laravel cashier is actually a pain to get right
+            // 2. and I used this table incorrectly to begin with so it needs to be updated.
+            $user->subscriptions()->create([
+                'name' => $name, // Startup, Advanced, Pro.
+                'stripe_id' => $customer->subscriptions->data[0]->id, // sub_id
+                'stripe_plan' => $plan, // plan_id
+                'quantity' => 1,
+                'ends_at' => now()->addMonths(1),
+                'stripe_active' => 1,
+                'stripe_status' => 'active'
+            ]);
+
+            return ['status' => 'success'];
+        }
+    }
+
     // END CUSTOM EVENTS
 
     /**
@@ -141,9 +98,8 @@ class WebhookController extends Controller
      * @param  array  $payload
      * @return \Symfony\Component\HttpFoundation\Response
      */
-    protected function handleCustomerSubscriptionDeleted(array $payload)
+    protected function handleCustomerSubscriptionDeleted (array $payload)
     {
-        
         $user = $this->getUserByStripeId($payload['data']['object']['customer']);
 
         if ($user) {
@@ -163,7 +119,7 @@ class WebhookController extends Controller
      * @param  string  $stripeId
      * @return \Laravel\Cashier\Billable
      */
-    protected function getUserByStripeId($stripeId)
+    protected function getUserByStripeId ($stripeId)
     {
         $model = getenv('STRIPE_MODEL') ?: config('services.stripe.model');
         return (new $model)->where('stripe_id', $stripeId)->first();
@@ -175,7 +131,7 @@ class WebhookController extends Controller
      * @param  string  $id
      * @return bool
      */
-    protected function eventExistsOnStripe($id)
+    protected function eventExistsOnStripe ($id)
     {
         try {
             return ! is_null(StripeEvent::retrieve($id, config('services.stripe.secret')));
@@ -189,7 +145,7 @@ class WebhookController extends Controller
      *
      * @return bool
      */
-    protected function isInTestingEnvironment()
+    protected function isInTestingEnvironment ()
     {
         return getenv('CASHIER_ENV') === 'testing';
     }
@@ -200,7 +156,7 @@ class WebhookController extends Controller
      * @param  array   $parameters
      * @return mixed
      */
-    public function missingMethod($parameters = [])
+    public function missingMethod ($parameters = [])
     {
         return new Response;
     }

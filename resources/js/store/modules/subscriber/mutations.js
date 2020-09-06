@@ -9,11 +9,11 @@ export const mutations = {
     },
 
     /**
-     * If user.stripe_id exists, we put the users subscription here
+     * If user.stripe_id exists, we put the users subscriptions here
      */
-    current_subscription (state, payload)
+    subscription (state, payload)
     {
-        state.current_subscription = payload;
+        state.subscription = payload;
     },
 
 

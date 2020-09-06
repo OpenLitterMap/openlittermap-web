@@ -2,6 +2,7 @@
 
 namespace App;
 
+use App\Payment;
 use App\Role;
 //use App\Billing\Billable;
 use Laravel\Cashier\Billable;
@@ -104,6 +105,14 @@ class User extends Authenticatable
     protected $guarded = [
         'role_id'
     ];
+
+    /**
+     *
+     */
+    public function payments ()
+    {
+        return $this->hasMany(Payment::class);
+    }
 
     /**
      * The user has many photos
