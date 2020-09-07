@@ -6,7 +6,7 @@
                 <!-- Header -->
                 <header :class="header">
                     <p class="modal-card-title">{{ title }}</p>
-                    <i v-show="showIcon" class="fa fa-times" style="padding: 0.5em; cursor: pointer;" @click="close" />
+                    <i v-show="showIcon" class="fa fa-times close-login" @click="close" />
                 </header>
 
                 <!-- Main content -->
@@ -165,6 +165,11 @@ export default {
 </script>
 
 <style scoped lang="scss">
+
+    .close-login {
+        padding: 0.5em;
+        cursor: pointer;
+    }
 
     .my-class {
         background-color: red;
