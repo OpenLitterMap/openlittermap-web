@@ -169,7 +169,7 @@ export default {
 		 */
 		isAuth ()
 		{
-			return OLM.user;
+			return this.$store.state.user.auth;
 		},
 
 		/**
