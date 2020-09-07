@@ -6,7 +6,7 @@
                 <!-- Header -->
                 <header :class="header">
                     <p class="modal-card-title">{{ title }}</p>
-                    <i v-show="showIcon" class="fa fa-times" />
+                    <i v-show="showIcon" class="fa fa-times" style="padding: 0.5em; cursor: pointer;" @click="close" />
                 </header>
 
                 <!-- Main content -->
