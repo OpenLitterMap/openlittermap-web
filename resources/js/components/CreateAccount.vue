@@ -196,10 +196,10 @@ export default {
 	{
 		if (this.plan)
 		{
-			if (this.plan == 'startup') this.planInt = 2;
-			if (this.plan == 'basic') this.planInt = 3;
-			if (this.plan == 'advanced') this.planInt = 4;
-			if (this.plan == 'professional') this.planInt = 5;
+			if (this.plan === 'startup') this.planInt = 2;
+			else if (this.plan === 'basic') this.planInt = 3;
+			else if (this.plan === 'advanced') this.planInt = 4;
+			else if (this.plan === 'pro') this.planInt = 5;
 		}
 	},
 	data ()
@@ -316,29 +316,6 @@ export default {
         },
 
         /**
-         * Redirect to stripe checkout. public key.
-         */
-		loadStripe ()
-		{
-            const stripe = Stripe(process.env.MIX_STRIPE_KEY);
-
-            let successUrl = window.location.href + '&status=success';
-            let cancelUrl = window.location.href + '&status=error';
-
-            let price = this.plans[this.planInt -1].plan_id; // the price is defined by plan_id
-
-            stripe.redirectToCheckout({
-                lineItems: [{
-                    price, // plans.plan_id
-                    quantity: 1
-                }],
-                mode: 'subscription',
-                successUrl,
-                cancelUrl
-            });
-3		},
-
-        /**
          * Google re-captcha has been verified
          */
         recaptcha (response)
@@ -367,6 +344,8 @@ export default {
 
             this.processing = true;
 
+            let plan_id = this.plans[this.planInt -1].plan_id;
+
             await this.$store.dispatch('CREATE_ACCOUNT', {
                 name: this.name,
                 username: this.username,
@@ -374,21 +353,11 @@ export default {
                 password: this.password,
                 password_confirmation: this.password_confirmation,
                 recaptcha: this.g_recaptcha_response,
-                plan: this.planInt
+                plan: this.planInt,
+                plan_id
             });
 
             this.processing = false;
-
-            if (this.planInt > 1)
-            {
-                // Todo - Our own custom stripe modal
-                // this.$store.commit('showModal', {
-                //     modalType: 'StripeCheckout'
-                // });
-
-                // For now - stripes checkout page
-                this.loadStripe();
-            }
         },
     }
 }

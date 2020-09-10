@@ -15,11 +15,10 @@ class WebhookController extends Controller
 {
     /**
      * Handle a Stripe webhook call.
+     * Change "customer.created" to handleCustomerCreated
      */
     public function handleWebhook (Request $request)
     {
-        // $payload = json_decode($request->getContent(), true);
-
         $method = 'handle'.studly_case(str_replace('.', '_', $request->type));
 
         if (method_exists($this, $method)) return $this->{$method}($request->all());
@@ -28,66 +27,68 @@ class WebhookController extends Controller
     }
 
     /**
-     * Handle a successful payment
-     */
-    protected function handleChargeSucceeded (array $payload)
-    {
-        $user = $this->getUserByStripeId($payload['data']['object']['id']);
-
-        $plans = Plan::all();
-
-        $amount = 0; // payment info
-        foreach ($plans as $index => $plan)
-        {
-            if ($user->onPlan($plan->name))
-            {
-                // set user limitations
-                $amount = $plan->price;
-            }
-        }
-
-        // Update the payments table
-        $user->payments()->create(['amount' => $amount, 'stripe_id' => $user->stripe_id]);
-
-        // Calculate tax, revenue
-        return ['status' => 'New Subscription Created'];
-    }
-
-    /**
      * A new customer has been created
+     *
+     * @param $request
+     * @return string[]
      */
-    protected function handleCustomerCreated ($request)
+    protected function handleCustomerCreated ($request) // second
     {
-        \Log::info(['customer.created', $request]);
+        \Log::info('handleCustomerCreated', $request);
+
         if ($user = User::where('email', $request['data']['object']['email'])->first())
         {
             $user->stripe_id = $request['data']['object']['id'];
             $user->save();
 
-            // we need to get the name of the plan from the customer ?
-            $customer = $user->asStripeCustomer();
-            \Log::info(['customer', $customer]);
-            $name = $customer->subscriptions->first()->plan->nickname;
-            $plan = $customer->subscriptions->first()->plan->id;
+            return ['status' => 'success'];
+        }
+    }
 
-            \Log::info(['name', $name]); // null
-            \Log::info(['plan', $plan]); // Pro
+    /**
+     * Handle a successful payment
+     */
+    protected function handleChargeSucceeded (array $payload) // first
+    {
+        \Log::info(['handleChargeSucceeded', $payload]);
 
-            // Doing this manually because
-            // 1. laravel cashier is actually a pain to get right
-            // 2. and I used this table incorrectly to begin with so it needs to be updated.
+        if ($user = User::where('email', $payload['data']['object']['billing_details']['email'])->first())
+        {
+            $user->payments()->create(['amount' => $payload['data']['object']['amount'], 'stripe_id' => $user->stripe_id]);
+        }
+
+        return ['status' => 'success'];
+    }
+
+    /**
+     *
+     */
+    protected function handleCustomerSubscriptionCreated (array $payload) // third
+    {
+        \Log::info(['handleSubscriptionCreated', $payload]);
+
+        if ($user = User::where('stripe_id', $payload['data']['object']['customer'])->first())
+        {
+            \Log::info(['user.id', $user->id]);
+
+            $name = $payload['data']['object']['items']['data'][0]['plan']['nickname'];
+            $sub_id = $payload['data']['object']['id']; // sub_id
+            $plan_id =  $payload['data']['object']['items']['data'][0]['plan']['id'];
+
+            if (is_null($name)) $name = $payload['data']['object']['items']['data'][0]['plan']['id'];
+
             $user->subscriptions()->create([
-                'name' => $name, // Startup, Advanced, Pro.
-                'stripe_id' => $customer->subscriptions->data[0]->id, // sub_id
-                'stripe_plan' => $plan, // plan_id
+                'name' => $name ?: '', // Startup, Advanced, Pro.
+                'stripe_id' => $sub_id,
+                'stripe_plan' => $plan_id,
                 'quantity' => 1,
                 'ends_at' => now()->addMonths(1),
                 'stripe_active' => 1,
                 'stripe_status' => 'active'
             ]);
-
-            return ['status' => 'success'];
         }
+
+        return ['status' => 'success'];
     }
 
     // END CUSTOM EVENTS

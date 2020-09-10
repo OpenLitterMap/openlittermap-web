@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 
-// use App\User;
 // Route::get('test', function() {
 // 	$user = \App\User::first();
 // 	return view('emails.update17', compact('user'));

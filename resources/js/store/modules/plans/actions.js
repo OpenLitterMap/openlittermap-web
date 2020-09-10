@@ -5,6 +5,8 @@ export const actions = {
      */
     async CREATE_ACCOUNT (context, payload)
     {
+        console.log('CREATE_ACCOUNT', payload);
+
         await axios.post('/register', {
             name: payload.name,
             username: payload.username,
@@ -18,16 +20,39 @@ export const actions = {
 
             // check response
 
-            // CHECK PLAN
-            if (payload.plan == 1)
+            // Free account
+            if (payload.plan === 1)
             {
                 // translate
                 alert('Congratulations! Your free account has been created. Please verify your email to activate login');
+
                 // login
-                // reload page
             }
 
-            // show stripe
+            // Load stripe for a subscription
+            else if (payload.plan > 1)
+            {
+                // Todo - Our own custom stripe modal
+                // this.$store.commit('showModal', {
+                //     modalType: 'StripeCheckout'
+                // });
+
+                // For now - stripes checkout page
+                const stripe = Stripe(process.env.MIX_STRIPE_KEY);
+
+                let successUrl = window.location.href + '&status=success';
+                let cancelUrl = window.location.href + '&status=error';
+
+                stripe.redirectToCheckout({
+                    lineItems: [{
+                        price: payload.plan_id, // the price is defined by plan_id
+                        quantity: 1
+                    }],
+                    mode: 'subscription',
+                    successUrl,
+                    cancelUrl
+                });
+            }
 
             // log the user in
         })
