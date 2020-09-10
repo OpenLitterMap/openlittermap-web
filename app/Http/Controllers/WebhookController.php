@@ -86,9 +86,11 @@ class WebhookController extends Controller
                 'stripe_active' => 1,
                 'stripe_status' => 'active'
             ]);
+
+            return ['status' => 'success'];
         }
 
-        return ['status' => 'success'];
+        return false;
     }
 
     // END CUSTOM EVENTS
