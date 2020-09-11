@@ -33,8 +33,8 @@
 
                     <div v-if="subscription.stripe_status === 'active'">
 
-                        <p>You are currently subscribed to the <strong class="green">{{ subscription.name }}</strong></p>
-<!--                        <p class="mb1">For €{{ current_plan.amount / 100 }} per month</p>-->
+                        <p>You are currently subscribed to the <strong class="green">{{ subscription.name }}</strong> plan</p>
+                        <p class="mb1">Helping us with <strong class="green">€{{ current_plan.price / 100 }}</strong> per month</p>
                         <p>Thank you for helping the development of OpenLitterMap!</p>
                         <p class="mb1">You can change or cancel your subscription at any time.</p>
 
@@ -47,18 +47,20 @@
                         <p class="mb1">You have unsubscribed from <strong class="green">{{ subscription.name }}</strong></p>
                         <p class="mb1">Thank you for supporting the development of OpenLitterMap</p>
 
-                        <!-- Show list of plans -->
-                        <div class="control mb1">
-                            <div class="select">
-                                <select v-model="plan">
-                                    <option v-for="plan in plans" :value="plan.name">
-                                        {{ plan.name }} &mdash; €{{ plan.price / 100 }}
-                                    </option>
-                                </select>
-                            </div>
-                        </div>
 
-                        <button class="button is-medium is-primary" @click="resubscribe">Click here to resubscribe</button>
+                        <p>Please contact us if you would like to resubscribe, or else create a new account. Thanks!</p>
+                        <!-- Show list of plans -->
+<!--                        <div class="control mb1">-->
+<!--                            <div class="select">-->
+<!--                                <select v-model="plan">-->
+<!--                                    <option v-for="plan in plans" :value="plan.name">-->
+<!--                                        {{ plan.name }} &mdash; €{{ plan.price / 100 }}-->
+<!--                                    </option>-->
+<!--                                </select>-->
+<!--                            </div>-->
+<!--                        </div>-->
+
+<!--                        <button class="button is-medium is-primary" @click="resubscribe">Click here to resubscribe</button>-->
                     </div>
                 </div>
 			</div>
@@ -104,6 +106,14 @@ export default {
         check_for_stripe_id ()
         {
             return this.$store.state.user.user.stripe_id;
+        },
+
+        /**
+         * The current plan the user is subscribed to, if any
+         */
+        current_plan ()
+        {
+            return this.plans.find(plan => plan.name === this.subscription.name);
         },
 
         /**

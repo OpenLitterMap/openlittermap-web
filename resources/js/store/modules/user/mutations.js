@@ -70,6 +70,14 @@ export const mutations = {
     logout (state)
     {
         state.auth = false;
+    },
+
+    /**
+     *
+     */
+    show_name_createdby (state, payload)
+    {
+        state.user.show_name_createdby = payload;
     }
 
 };

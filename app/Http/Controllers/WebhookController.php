@@ -29,12 +29,14 @@ class WebhookController extends Controller
     /**
      * A new customer has been created
      *
+     * This happens second.
+     *
      * @param $request
      * @return string[]
      */
-    protected function handleCustomerCreated ($request) // second
+    protected function handleCustomerCreated ($request)
     {
-        \Log::info('handleCustomerCreated', $request);
+        // \Log::info('handleCustomerCreated', $request);
 
         if ($user = User::where('email', $request['data']['object']['email'])->first())
         {
@@ -47,10 +49,11 @@ class WebhookController extends Controller
 
     /**
      * Handle a successful payment
+     * Not sure why this comes before customer.created, but this is first
      */
-    protected function handleChargeSucceeded (array $payload) // first
+    protected function handleChargeSucceeded (array $payload)
     {
-        \Log::info(['handleChargeSucceeded', $payload]);
+        // \Log::info(['handleChargeSucceeded', $payload]);
 
         if ($user = User::where('email', $payload['data']['object']['billing_details']['email'])->first())
         {
@@ -61,16 +64,14 @@ class WebhookController extends Controller
     }
 
     /**
-     *
+     * Third
      */
-    protected function handleCustomerSubscriptionCreated (array $payload) // third
+    protected function handleCustomerSubscriptionCreated (array $payload)
     {
-        \Log::info(['handleSubscriptionCreated', $payload]);
+        // \Log::info(['handleSubscriptionCreated', $payload]);
 
         if ($user = User::where('stripe_id', $payload['data']['object']['customer'])->first())
         {
-            \Log::info(['user.id', $user->id]);
-
             $name = $payload['data']['object']['items']['data'][0]['plan']['nickname'];
             $sub_id = $payload['data']['object']['id']; // sub_id
             $plan_id =  $payload['data']['object']['items']['data'][0]['plan']['id'];

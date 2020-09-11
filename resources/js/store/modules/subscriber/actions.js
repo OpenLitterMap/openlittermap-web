@@ -1,3 +1,6 @@
+import Vue from "vue";
+import i18n from "../../../i18n";
+
 export const actions = {
 
     /**
@@ -6,13 +9,22 @@ export const actions = {
      */
     async DELETE_ACTIVE_SUBSCRIPTION (context)
     {
+        let title = i18n.t('notifications.success');
+        let body  = i18n.t('notifications.subscription-cancelled');
+
         await axios.post('/stripe/delete')
             .then(response => {
                 console.log('delete_active_subscription', response);
 
-                // show success notification
+                /* improve css */
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                    position: 'top-right'
+                });
 
                 // update user/subscriber data
+                context.commit('reset_subscriber');
             })
             .catch(error => {
                 console.log('error.delete_active_subscription');
@@ -39,6 +51,8 @@ export const actions = {
 
     /**
      * The user cancelled and wants to sign up again
+     *
+     * https://stripe.com/docs/api/subscriptions/create
      */
     async RESUBSCRIBE (context, payload)
     {

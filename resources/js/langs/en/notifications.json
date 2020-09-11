@@ -1,4 +1,5 @@
 {
     "success": "Success",
-    "tags-added": "Success! Your tags have been added"
+    "tags-added": "Success! Your tags have been added",
+    "subscription-cancelled": "Your subscription has been cancelled"
 }
