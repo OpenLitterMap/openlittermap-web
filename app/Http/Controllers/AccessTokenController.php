@@ -3,7 +3,7 @@ namespace App\Http\Controllers;
 
 use Log;
 use Response;
-use App\User;
+use App\Models\User\User;
 use Exception;
 use Psr\Http\Message\ServerRequestInterface;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -59,7 +59,7 @@ class AccessTokenController extends ATC
         }
         catch (OAuthServerException $e) { //password not correct..token not granted
             // return error message
-            return response(["message" => 
+            return response(["message" =>
             	"The user credentials were incorrect.', 6, 'invalid_credentials"
             ], 500);
         }

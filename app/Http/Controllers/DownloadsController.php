@@ -3,27 +3,27 @@
 namespace App\Http\Controllers;
 
 use Excel;
-use App\Categories\Smoking;
-use App\Categories\Alcohol;
-use App\Categories\Coffee;
-use App\Categories\Food;
-use App\Categories\SoftDrinks;
-use App\Categories\Drugs;
-use App\Categories\Sanitary;
-use App\Categories\Other;
-use App\Categories\Coastal;
-use App\Categories\Pathway;
-use App\Categories\Art;
-use App\Categories\Brand;
-use App\Categories\TrashDog;
-use App\Categories\Dumping;
-use App\Categories\Industrial;
+use App\Models\Litter\Categories\Smoking;
+use App\Models\Litter\Categories\Alcohol;
+use App\Models\Litter\Categories\Coffee;
+use App\Models\Litter\Categories\Food;
+use App\Models\Litter\Categories\SoftDrinks;
+use App\Models\Litter\Categories\Drugs;
+use App\Models\Litter\Categories\Sanitary;
+use App\Models\Litter\Categories\Other;
+use App\Models\Litter\Categories\Coastal;
+use App\Models\Litter\Categories\Pathway;
+use App\Models\Litter\Categories\Art;
+use App\Models\Litter\Categories\Brand;
+use App\Models\Litter\Categories\TrashDog;
+use App\Models\Litter\Categories\Dumping;
+use App\Models\Litter\Categories\Industrial;
 
-use App\Photo;
+use App\Models\Photo;
 
-use App\Country;
-use App\State;
-use App\City;
+use App\Models\Location\Country;
+use App\Models\Location\State;
+use App\Models\Location\City;
 use Illuminate\Http\Request;
 
 class DownloadsController extends Controller
@@ -31,7 +31,7 @@ class DownloadsController extends Controller
 
    /**
     * Apply middleware to all of these routes
-    */ 
+    */
 	// public function __construct() {
 	//   	return $this->middleware('auth');
 	//   	parent::__construct();
@@ -42,8 +42,8 @@ class DownloadsController extends Controller
     	// return [$country, $state, $city];
 
     	if($state) {
-    		// State only 
-    		// need to pass the variable down the chain 
+    		// State only
+    		// need to pass the variable down the chain
 	    	Excel::create('Open Litter Map', function($excel) use ($state) {
 
 	    		$excel->sheet('OLM', function($sheet) use ($state) {
@@ -128,7 +128,7 @@ class DownloadsController extends Controller
 			    		$export[$index]['ice_tea_can'] = 0;
 			    		$export[$index]['energy_can'] = 0;
 			    		$export[$index]['softDrinkOther'] = 0;
-			    		
+
 			    		$export[$index]['gloves'] = 0;
 			    		$export[$index]['facemasks'] = 0;
 			    		$export[$index]['condoms'] = 0;
@@ -208,7 +208,7 @@ class DownloadsController extends Controller
 			    		$export[$index]['dunnes'] = 0;
 			    		$export[$index]['duracell'] = 0;
 			    		$export[$index]['durex'] = 0;
-			    		
+
 			    		$export[$index]['esquires'] = 0;
 
 			    		$export[$index]['frank_and_honest'] = 0;
@@ -220,12 +220,12 @@ class DownloadsController extends Controller
 
 			    		$export[$index]['haribo'] = 0;
 			    		$export[$index]['heineken'] = 0;
-			    		
+
 			    		$export[$index]['insomnia'] = 0;
 
 			    		$export[$index]['kellogs'] = 0;
 			    		$export[$index]['kfc'] = 0;
-			    		
+
 			    		$export[$index]['lego'] = 0;
 			    		$export[$index]['lidl'] = 0;
 			    		$export[$index]['lindenvillage'] = 0;
@@ -242,7 +242,7 @@ class DownloadsController extends Controller
 			    		$export[$index]['mcdonalds'] = 0;
 
 			    		$export[$index]['nike'] = 0;
-			    		
+
 			    		$export[$index]['obriens'] = 0;
 
 			    		$export[$index]['pepsi'] = 0;
@@ -262,7 +262,7 @@ class DownloadsController extends Controller
 			    		$export[$index]['tayto'] = 0;
 			    		$export[$index]['tesco'] = 0;
 			    		$export[$index]['thins'] = 0;
-			    		
+
 			    		$export[$index]['volvic'] = 0;
 
 			    		$export[$index]['waitrose'] = 0;
@@ -270,7 +270,7 @@ class DownloadsController extends Controller
 			    		$export[$index]['woolworths'] = 0;
 			    		$export[$index]['wilde_and_greene'] = 0;
 			    		$export[$index]['wrigleys'] = 0;
-			    		
+
 			    		if($photo['smoking_id']) {
 			    			$smoking = Smoking::find($photo['smoking_id']);
 			    			if($smoking['butts']) {
@@ -307,7 +307,7 @@ class DownloadsController extends Controller
 			    			if($food['sweetWrappers']) {
 			    				$export[$index]['sweetWrappers'] = $food['sweetWrappers'];
 			    			}
-			    			// these 2 need to be merged 
+			    			// these 2 need to be merged
 			    			if($food['cardboardFoodPackaging']) {
 			    				$export[$index]['cardboardFoodPackaging'] = $food['cardboardFoodPackaging'];
 			    			}
@@ -436,7 +436,7 @@ class DownloadsController extends Controller
 			    			}
 			    		}
 
-			    		if($photo["sanitary_id"]){ 
+			    		if($photo["sanitary_id"]){
 			    			$sanitary = Sanitary::find($photo["sanitary_id"]);
 			    			if ($sanitary['gloves']) {
 			    				$export[$index]['gloves'] = $sanitary['gloves'];
@@ -645,8 +645,8 @@ class DownloadsController extends Controller
 	 * Export Excel data from Verification Stage One to theauthenticated user
 	 */
     public function getDataByCountry($country) {
-		// Country only 
-		// need to pass the variable down the chain 
+		// Country only
+		// need to pass the variable down the chain
     	Excel::create('Open Litter Map', function($excel) use ($country) {
 
     		$excel->sheet('OLM', function($sheet) use ($country) {
@@ -733,7 +733,7 @@ class DownloadsController extends Controller
 		    		$export[$index]['energy_can'] = 0;
 		    		$export[$index]['softDrinkOther'] = 0;
 
-		    		
+
 		    		$export[$index]['gloves'] = 0;
 		    		$export[$index]['facemasks'] = 0;
 		    		$export[$index]['condoms'] = 0;
@@ -778,7 +778,7 @@ class DownloadsController extends Controller
 		    		$export[$index]['lego'] = 0;
 		    		$export[$index]['shotgun_cartridges'] = 0;
 		    		$export[$index]['coastal_other'] = 0;
-		    		
+
 		    		$export[$index]['art'] = 0;
 
 		    		$export[$index]['adidas'] = 0;
@@ -814,7 +814,7 @@ class DownloadsController extends Controller
 		    		$export[$index]['dunnes'] = 0;
 		    		$export[$index]['duracell'] = 0;
 		    		$export[$index]['durex'] = 0;
-		    		
+
 		    		$export[$index]['esquires'] = 0;
 
 		    		$export[$index]['frank_and_honest'] = 0;
@@ -826,12 +826,12 @@ class DownloadsController extends Controller
 
 		    		$export[$index]['haribo'] = 0;
 		    		$export[$index]['heineken'] = 0;
-		    		
+
 		    		$export[$index]['insomnia'] = 0;
 
 		    		$export[$index]['kellogs'] = 0;
 		    		$export[$index]['kfc'] = 0;
-		    		
+
 		    		$export[$index]['lego'] = 0;
 		    		$export[$index]['lidl'] = 0;
 		    		$export[$index]['lindenvillage'] = 0;
@@ -848,7 +848,7 @@ class DownloadsController extends Controller
 		    		$export[$index]['mcdonalds'] = 0;
 
 		    		$export[$index]['nike'] = 0;
-		    		
+
 		    		$export[$index]['obriens'] = 0;
 
 		    		$export[$index]['pepsi'] = 0;
@@ -868,7 +868,7 @@ class DownloadsController extends Controller
 		    		$export[$index]['tayto'] = 0;
 		    		$export[$index]['tesco'] = 0;
 		    		$export[$index]['thins'] = 0;
-		    		
+
 		    		$export[$index]['volvic'] = 0;
 
 		    		$export[$index]['waitrose'] = 0;
@@ -913,7 +913,7 @@ class DownloadsController extends Controller
 		    			if($food['sweetWrappers']) {
 		    				$export[$index]['sweetWrappers'] = $food['sweetWrappers'];
 		    			}
-		    			// these 2 need to be merged 
+		    			// these 2 need to be merged
 		    			if($food['cardboardFoodPackaging']) {
 		    				$export[$index]['cardboardFoodPackaging'] = $food['cardboardFoodPackaging'];
 		    			}
@@ -1042,7 +1042,7 @@ class DownloadsController extends Controller
 		    			}
 		    		}
 
-		    		if($photo["sanitary_id"]){ 
+		    		if($photo["sanitary_id"]){
 		    			$sanitary = Sanitary::find($photo["sanitary_id"]);
 		    			if ($sanitary['gloves']) {
 		    				$export[$index]['gloves'] = $sanitary['gloves'];
@@ -1422,11 +1422,11 @@ class DownloadsController extends Controller
 
     public function getDataByCity($country, $state, $city) {
     	if($city) {
-    		// City only 
-    		// need to pass the variable down the chain 
+    		// City only
+    		// need to pass the variable down the chain
 	    	Excel::create('Open Litter Map', function($excel) use ($city) {
 	    		$excel->sheet('OLM', function($sheet) use ($city) {
-	    			
+
 	    			$theCity = City::where('city', $city)->first();
 			    	$photos = Photo::where([
 			    		['city_id', $theCity->id],
@@ -1507,7 +1507,7 @@ class DownloadsController extends Controller
 			    		$export[$index]['energy_can'] = 0;
 			    		$export[$index]['softDrinkOther'] = 0;
 
-			    		
+
 			    		$export[$index]['gloves'] = 0;
 			    		$export[$index]['facemasks'] = 0;
 			    		$export[$index]['condoms'] = 0;
@@ -1588,7 +1588,7 @@ class DownloadsController extends Controller
 			    		$export[$index]['dunnes'] = 0;
 			    		$export[$index]['duracell'] = 0;
 			    		$export[$index]['durex'] = 0;
-			    		
+
 			    		$export[$index]['esquires'] = 0;
 
 			    		$export[$index]['frank_and_honest'] = 0;
@@ -1600,12 +1600,12 @@ class DownloadsController extends Controller
 
 			    		$export[$index]['haribo'] = 0;
 			    		$export[$index]['heineken'] = 0;
-			    		
+
 			    		$export[$index]['insomnia'] = 0;
 
 			    		$export[$index]['kellogs'] = 0;
 			    		$export[$index]['kfc'] = 0;
-			    		
+
 			    		$export[$index]['lego'] = 0;
 			    		$export[$index]['lidl'] = 0;
 			    		$export[$index]['lindenvillage'] = 0;
@@ -1622,7 +1622,7 @@ class DownloadsController extends Controller
 			    		$export[$index]['mcdonalds'] = 0;
 
 			    		$export[$index]['nike'] = 0;
-			    		
+
 			    		$export[$index]['obriens'] = 0;
 
 			    		$export[$index]['pepsi'] = 0;
@@ -1642,7 +1642,7 @@ class DownloadsController extends Controller
 			    		$export[$index]['tayto'] = 0;
 			    		$export[$index]['tesco'] = 0;
 			    		$export[$index]['thins'] = 0;
-			    		
+
 			    		$export[$index]['volvic'] = 0;
 
 			    		$export[$index]['waitrose'] = 0;
@@ -1650,7 +1650,7 @@ class DownloadsController extends Controller
 			    		$export[$index]['woolworths'] = 0;
 			    		$export[$index]['wilde_and_greene'] = 0;
 			    		$export[$index]['wrigleys'] = 0;
-			    		
+
 
 			    		if($photo['smoking_id']) {
 			    			$smoking = Smoking::find($photo['smoking_id']);
@@ -1688,7 +1688,7 @@ class DownloadsController extends Controller
 			    			if($food['sweetWrappers']) {
 			    				$export[$index]['sweetWrappers'] = $food['sweetWrappers'];
 			    			}
-			    			// these 2 need to be merged 
+			    			// these 2 need to be merged
 			    			if($food['cardboardFoodPackaging']) {
 			    				$export[$index]['cardboardFoodPackaging'] = $food['cardboardFoodPackaging'];
 			    			}
@@ -1817,7 +1817,7 @@ class DownloadsController extends Controller
 			    			}
 			    		}
 
-			    		if($photo["sanitary_id"]){ 
+			    		if($photo["sanitary_id"]){
 			    			$sanitary = Sanitary::find($photo["sanitary_id"]);
 			    			if ($sanitary['gloves']) {
 			    				$export[$index]['gloves'] = $sanitary['gloves'];

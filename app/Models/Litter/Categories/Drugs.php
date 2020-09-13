@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Categories;
+namespace App\Models\Litter\Categories;
 
 use Illuminate\Database\Eloquent\Model;
 
@@ -12,15 +12,15 @@ class Drugs extends Model
     protected $fillable = [
         'id',
     	'photo_id',
-    	'needles', 
-    	'wipes', 
-    	'tops', 
-    	'packaging', 
-    	'waterbottle', 
-    	'spoons', 
-    	'needlebin', 
-    	'usedtinfoil', 
-    	'barrels', 
+    	'needles',
+    	'wipes',
+    	'tops',
+    	'packaging',
+    	'waterbottle',
+    	'spoons',
+    	'needlebin',
+    	'usedtinfoil',
+    	'barrels',
     	'fullpackage',
         'baggie',
         'crack_pipes',
@@ -30,7 +30,7 @@ class Drugs extends Model
 
     // define a one to one relationship
     public function photo() {
-    	return $this->hasOne('App\Photo');
+    	return $this->hasOne('App\Models\Photo');
     }
 
 

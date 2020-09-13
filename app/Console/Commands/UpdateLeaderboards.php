@@ -4,11 +4,11 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 
-use App\User;
-use App\Photo;
-use App\Country;
-use App\State;
-use App\City;
+use App\Models\User\User;
+use App\Models\Photo;
+use App\Models\Location\Country;
+use App\Models\Location\State;
+use App\Models\Location\City;
 use Illuminate\Support\Facades\Redis;
 
 //  DOES NOT WORK
@@ -50,7 +50,7 @@ class UpdateLeaderboards extends Command
      */
     public function handle()
     {
-        
+
         $users = User::where([
             ['has_uploaded', 1],
             ['show_name', 1],

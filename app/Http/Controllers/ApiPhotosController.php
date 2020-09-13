@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Country;
-use App\State;
-use App\City;
+use App\Models\Location\Country;
+use App\Models\Location\State;
+use App\Models\Location\City;
 
 use App\CheckLocations;
 use Carbon\Carbon;
@@ -35,7 +35,7 @@ class ApiPhotosController extends Controller
 
 		$user = Auth::guard('api')->user();
 
-		$file = $request->file('photo'); 
+		$file = $request->file('photo');
 		$filename = $file->getClientOriginalName();
 
 		$lat  = $request['lat'];
@@ -151,7 +151,7 @@ class ApiPhotosController extends Controller
         $photos = $user->photos()->where('verification', 0)->select('id', 'filename')->get();
 
         if ($photos) return ['photos' => $photos];
-        
+
         return ['photos' => 'none'];
     }
 }

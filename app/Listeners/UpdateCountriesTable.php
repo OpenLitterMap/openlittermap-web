@@ -2,7 +2,7 @@
 
 namespace App\Listeners;
 
-use App\Country;
+use App\Models\Location\Country;
 use App\Events\NewCountryAdded;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;

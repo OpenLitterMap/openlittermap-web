@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\User;
+use App\Models\User\User;
 use App\Mail\SmallUpdate;
 use Illuminate\Console\Command;
 
@@ -43,7 +43,7 @@ class SendEmailToAll extends Command
             'emailsub' => 1
         ])->get();
 
-        foreach ($users as $user) 
+        foreach ($users as $user)
         {
             echo "user.id " . $user->id . " \n \n";
             \Mail::to($user->email)->send(new SmallUpdate($user));

@@ -2,20 +2,20 @@
 
 namespace App\Console\Commands;
 
-use App\City;
-use App\Categories\Smoking;
-use App\Categories\Alcohol;
-use App\Categories\Coffee;
-use App\Categories\Food;
-use App\Categories\SoftDrinks;
-use App\Categories\Drugs;
-use App\Categories\Sanitary;
-use App\Categories\Other;
-use App\Categories\Coastal;
-use App\Categories\Pathway;
-use App\Categories\Art;
-use App\Categories\Brand;
-use App\Categories\TrashDog;
+use App\Models\Location\City;
+use App\Models\Litter\Categories\Smoking;
+use App\Models\Litter\Categories\Alcohol;
+use App\Models\Litter\Categories\Coffee;
+use App\Models\Litter\Categories\Food;
+use App\Models\Litter\Categories\SoftDrinks;
+use App\Models\Litter\Categories\Drugs;
+use App\Models\Litter\Categories\Sanitary;
+use App\Models\Litter\Categories\Other;
+use App\Models\Litter\Categories\Coastal;
+use App\Models\Litter\Categories\Pathway;
+use App\Models\Litter\Categories\Art;
+use App\Models\Litter\Categories\Brand;
+use App\Models\Litter\Categories\TrashDog;
 use Illuminate\Console\Command;
 
 class UpdateCities extends Command
@@ -53,21 +53,21 @@ class UpdateCities extends Command
     {
         // Get all countries that have 2+ images
         $cities = City::where('total_images', '>=', 2)->get();
-        
+
         // loop
-        foreach($cities as $city) { 
-            // get photos           
+        foreach($cities as $city) {
+            // get photos
             $photos = Photo::where([
                 ['city_id', $city->id],
                 ['verified', '>', 0],
             ])->get();
-            
+
             // count contributors
             $users = [];
 
             $smokingTotal = 0;
             $cigaretteTotal = 0;
-            
+
             $foodTotal = 0;
 
             $softDrinksTotal = 0;
@@ -172,9 +172,9 @@ class UpdateCities extends Command
                     $otherTotal += $other['dump'];
                     $otherTotal += $other['metal'];
                     $otherTotal += $other['other'];
-                } // end other 
+                } // end other
 
-            } // end for each photos 
+            } // end for each photos
 
             $city->total_cigaretteButts = $cigaretteTotal;
             $city->total_smoking = $smokingTotal;
@@ -191,5 +191,5 @@ class UpdateCities extends Command
             $city->total_contributors = $sizeOfUsers;
             $city->save();
 
-    } // end for each cities 
+    } // end for each cities
 }

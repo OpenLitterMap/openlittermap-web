@@ -8,7 +8,7 @@ use Auth;
 use Input;
 use JWTAuth;
 use Validator;
-use App\User;
+use App\Models\User\User;
 use App\Http\Requests;
 use App\Mail\NewUserRegMail;
 use Illuminate\Http\Request;
@@ -18,9 +18,9 @@ use Tymon\JWTAuth\Exceptions\JWTException;
 
 class iOSAuthController extends Controller
 {
-    
+
     /**
-    * Show Login 
+    * Show Login
     */
     protected function showLoginApp() {
         return "login screen txt";
@@ -31,7 +31,7 @@ class iOSAuthController extends Controller
     * Verify email and password
     */
     public function authenticate(Request $request) {
-    
+
     // return ["anything" => "something"];
 
         // return response()->json([
@@ -71,8 +71,8 @@ class iOSAuthController extends Controller
 
 
     /**
-     * If the user is logged in, return their information 
-     * TODO: Create a controller or a function to filter the data sent 
+     * If the user is logged in, return their information
+     * TODO: Create a controller or a function to filter the data sent
      */
     public function getUser() {
 
@@ -96,8 +96,8 @@ class iOSAuthController extends Controller
 
         }
 
-        // the token is valid and we have found the user via the sub claim  
-        return compact('user');      
+        // the token is valid and we have found the user via the sub claim
+        return compact('user');
     }
 
     /**
@@ -163,7 +163,7 @@ class iOSAuthController extends Controller
     public function confirmEmail($token) {
         // a dynamic / magic method:
         $user = User::whereToken($token)->firstOrFail()->confirmEmail();
-        // sline it 
+        // sline it
         // flash()->success('Your email is now confirmed.', 'You may now login.');
         // return view('auth.login');
     }

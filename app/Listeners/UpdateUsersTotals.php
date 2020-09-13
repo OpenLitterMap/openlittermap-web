@@ -2,8 +2,8 @@
 
 namespace App\Listeners;
 
-use App\User;
-use App\Photo;
+use App\Models\User\User;
+use App\Models\Photo;
 use App\Events\PhotoVerifiedByUser;
 use App\Events\DynamicUpdate;
 use Illuminate\Queue\InteractsWithQueue;
@@ -34,7 +34,7 @@ class UpdateUsersTotals
         $user = User::find($photo["user_id"]);
 
         $userPhotos = $user->photos()->where('verified', '<=', 1)->get();
-        // update total images that are verified 
+        // update total images that are verified
         $user->total_verified = $userPhotos->count();
         $user->save();
 

@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Categories;
+namespace App\Models\Litter\Categories;
 
 use Illuminate\Database\Eloquent\Model;
 
 class Sanitary extends Model
 {
 	protected $table = 'sanitary';
-	
+
 	/*
 	* Only these categories can be edited in the photo model
 	*/
@@ -27,7 +27,7 @@ class Sanitary extends Model
     ];
 
     public function photo () {
-    	return $this->hasOne('App\Photo');
+    	return $this->hasOne('App\Models\Photo');
     }
 
 }

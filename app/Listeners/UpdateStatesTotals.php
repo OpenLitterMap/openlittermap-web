@@ -2,24 +2,24 @@
 
 namespace App\Listeners;
 
-use App\Categories\Smoking;
-use App\Categories\Alcohol;
-use App\Categories\Coffee;
-use App\Categories\Food;
-use App\Categories\SoftDrinks;
-use App\Categories\Drugs;
-use App\Categories\Sanitary;
-use App\Categories\Other;
-use App\Categories\Coastal;
-use App\Categories\Pathway;
-use App\Categories\Art;
-use App\Categories\Brand;
-use App\Categories\TrashDog;
+use App\Models\Litter\Categories\Smoking;
+use App\Models\Litter\Categories\Alcohol;
+use App\Models\Litter\Categories\Coffee;
+use App\Models\Litter\Categories\Food;
+use App\Models\Litter\Categories\SoftDrinks;
+use App\Models\Litter\Categories\Drugs;
+use App\Models\Litter\Categories\Sanitary;
+use App\Models\Litter\Categories\Other;
+use App\Models\Litter\Categories\Coastal;
+use App\Models\Litter\Categories\Pathway;
+use App\Models\Litter\Categories\Art;
+use App\Models\Litter\Categories\Brand;
+use App\Models\Litter\Categories\TrashDog;
 
-use App\City;
-use App\State;
-use App\Country;
-use App\Photo;
+use App\Models\Location\City;
+use App\Models\Location\State;
+use App\Models\Location\Country;
+use App\Models\Photo;
 use App\Events\PhotoVerifiedByUser;
 use App\Events\DynamicUpdate;
 use Illuminate\Queue\InteractsWithQueue;
@@ -49,7 +49,7 @@ class UpdateStatesTotals
         $photo = Photo::find($photoId);
         $state = State::find($photo->city_id);
 
-        // Get all verified photos for that state 
+        // Get all verified photos for that state
         $statePhotos = Photo::where([
             ['state_id', $photo->state_id],
             ['verified', '>', 0]
@@ -79,7 +79,7 @@ class UpdateStatesTotals
             $cigaretteTotal = 0;
             foreach($smokingPhotos as $smokingPhoto) {
 
-                $smoking = App\Categories\Smoking::find($smokingPhoto['smoking_id']);
+                $smoking = App\Models\Litter\Categories\Smoking::find($smokingPhoto['smoking_id']);
 
                 $cigaretteTotal += $smoking['butts'];
                   $smokingTotal += $smoking['butts'];
@@ -106,7 +106,7 @@ class UpdateStatesTotals
             $foodTotal = 0;
             foreach($foodPhotos as $foodPhoto) {
 
-                $food = App\Categories\Food::find($foodPhoto['food_id']);
+                $food = App\Models\Litter\Categories\Food::find($foodPhoto['food_id']);
 
                 $foodTotal += $food['sweetWrappers'];
                 $foodTotal += $food['paperFoodPackaging'];
@@ -136,7 +136,7 @@ class UpdateStatesTotals
             $plasticBottleTotal = 0;
             foreach($softdrinkPhotos as $softdrinkPhoto) {
 
-                $softdrink = App\Categories\SoftDrinks::find($softdrinkPhoto['softdrinks_id']);
+                $softdrink = App\Models\Litter\Categories\SoftDrinks::find($softdrinkPhoto['softdrinks_id']);
 
                $plasticBottleTotal += $softdrink['waterBottle'];
                 $softDrinksTotal += $softdrink['waterBottle'];
@@ -177,7 +177,7 @@ class UpdateStatesTotals
 
             foreach($alcoholPhotos as $alcoholPhoto){
 
-                $alcohol = App\Categories\Alcohol::find($alcoholPhoto['alcohol_id']);
+                $alcohol = App\Models\Litter\Categories\Alcohol::find($alcoholPhoto['alcohol_id']);
 
                 $alcoholTotal += $alcohol['beerBottle'];
                 $alcoholTotal += $alcohol['spiritBottle'];
@@ -203,7 +203,7 @@ class UpdateStatesTotals
             $coffeeTotal = 0;
             foreach($coffeePhotos as $coffeePhoto){
 
-                $coffee = App\Categories\Coffee::find($coffeePhoto['coffee_id']);
+                $coffee = App\Models\Litter\Categories\Coffee::find($coffeePhoto['coffee_id']);
 
                 $coffeeTotal += $coffee['coffeeCups'];
                 $coffeeTotal += $coffee['coffeeLids'];
@@ -224,7 +224,7 @@ class UpdateStatesTotals
             $needlesTotal = 0;
             foreach($drugsPhotos as $drugPhoto){
 
-                $drugs = App\Categories\Drugs::find($drugPhoto['drugs_id']);
+                $drugs = App\Models\Litter\Categories\Drugs::find($drugPhoto['drugs_id']);
 
               $needlesTotal += $drugs['needles'];
                 $drugsTotal += $drugs['needles'];
@@ -256,7 +256,7 @@ class UpdateStatesTotals
             $sanitaryTotal = 0;
             foreach($sanitaryPhotos as $sanitaryPhoto){
 
-                $sanitary = App\Categories\Sanitary::find($sanitaryPhoto['sanitary_id']);
+                $sanitary = App\Models\Litter\Categories\Sanitary::find($sanitaryPhoto['sanitary_id']);
 
                 $sanitaryTotal += $sanitary['condoms'];
                 $sanitaryTotal += $sanitary['nappies'];
@@ -282,7 +282,7 @@ class UpdateStatesTotals
             $otherTotal = 0;
             foreach($otherPhotos as $otherPhoto){
 
-                $other = App\Categories\Other::find($otherPhoto['other_id']);
+                $other = App\Models\Litter\Categories\Other::find($otherPhoto['other_id']);
 
                 $otherTotal += $other['dogshit'];
                 $otherTotal += $other['plastic'];
@@ -313,7 +313,7 @@ class UpdateStatesTotals
 
             $coastalTotal = 0;
             foreach($coastalPhotos as $coastalPhoto){
-                $coastal = App\Categories\Coastal::find($coastalPhoto['coastal_id']);
+                $coastal = App\Models\Litter\Categories\Coastal::find($coastalPhoto['coastal_id']);
 
                 $coastalTotal += $coastal['microplastics'];
                 $coastalTotal += $coastal['mediumplastics'];
@@ -345,7 +345,7 @@ class UpdateStatesTotals
 
             $pathwayTotal = 0;
             foreach($pathwayPhotos as $pathwayPhoto) {
-                $pathway = App\Categories\Pathway::find($pathwayPhoto['pathway_id']);
+                $pathway = App\Models\Litter\Categories\Pathway::find($pathwayPhoto['pathway_id']);
 
                 $pathwayTotal += $pathway['gutter'];
                 $pathwayTotal += $pathway['gutter_long'];
@@ -366,7 +366,7 @@ class UpdateStatesTotals
 
             $artTotal = 0;
             foreach($artPhotos as $artPhoto) {
-                $pathway = App\Categories\Art::find($artPhoto['art_id']);
+                $pathway = App\Models\Litter\Categories\Art::find($artPhoto['art_id']);
 
                 $artTotal += $pathway['item'];
             }

@@ -2,8 +2,8 @@
 
 namespace App\Listeners;
 
-use App\Photo;
-use App\User;
+use App\Models\Photo;
+use App\Models\User\User;
 use App\Events\PhotoVerifiedByAdmin;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -32,7 +32,7 @@ class GenerateLitterCoin
         $photo = Photo::find($photoId);
         $user = User::find($photo->user_id);
         if($user->eth_wallet) {
-            
+
         }
     }
 }

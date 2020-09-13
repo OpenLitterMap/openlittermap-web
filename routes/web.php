@@ -170,6 +170,8 @@ Route::post('/settings/toggle', 'UsersController@togglePresence');
 // Toggle Email Subscription
 Route::post('/settings/email/toggle', 'EmailSubController@toggleEmailSub');
 
+// Get list of available countries for flag options
+Route::get('/settings/flags/countries', 'SettingsController@getCountries');
 // Save Country Flag for top 10
 Route::post('/settings/save-flag', 'SettingsController@saveFlag');
 

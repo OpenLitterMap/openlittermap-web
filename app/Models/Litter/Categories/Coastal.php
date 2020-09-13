@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Categories;
+namespace App\Models\Litter\Categories;
 
 use Illuminate\Database\Eloquent\Model;
 
@@ -36,6 +36,6 @@ class Coastal extends Model
 
 	// define a one to one relationship
     public function photo() {
-    	return $this->hasOne('App\Photo');
+    	return $this->hasOne('App\Models\Photo');
     }
 }

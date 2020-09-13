@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Photo;
+use App\Models\Photo;
 
 class ResetResultString extends Command
 {

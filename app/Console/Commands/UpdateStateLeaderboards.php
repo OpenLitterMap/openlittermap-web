@@ -2,10 +2,10 @@
 
 namespace App\Console\Commands;
 
-use App\User;
-use App\State;
-use App\Photo;
-use App\Country;
+use App\Models\User\User;
+use App\Models\Location\State;
+use App\Models\Photo;
+use App\Models\Location\Country;
 use Illuminate\Support\Facades\Redis;
 
 use Illuminate\Console\Command;

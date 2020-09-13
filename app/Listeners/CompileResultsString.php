@@ -5,20 +5,20 @@ namespace App\Listeners;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-use App\Photo;
-use App\Categories\Smoking as Smoking;
-use App\Categories\Alcohol as Alcohol;
-use App\Categories\Coffee as Coffee;
-use App\Categories\Food as Food;
-use App\Categories\SoftDrinks as SoftDrinks;
-use App\Categories\Sanitary as Sanitary;
-use App\Categories\Other as Other;
-use App\Categories\Coastal as Coastal;
-use App\Categories\Art as Art;
-use App\Categories\Brand as Brand;
-use App\Categories\TrashDog as TrashDog;
-use App\Categories\Dumping as Dumping;
-use App\Categories\Industrial as Industrial;
+use App\Models\Photo;
+use App\Models\Litter\Categories\Smoking as Smoking;
+use App\Models\Litter\Categories\Alcohol as Alcohol;
+use App\Models\Litter\Categories\Coffee as Coffee;
+use App\Models\Litter\Categories\Food as Food;
+use App\Models\Litter\Categories\SoftDrinks as SoftDrinks;
+use App\Models\Litter\Categories\Sanitary as Sanitary;
+use App\Models\Litter\Categories\Other as Other;
+use App\Models\Litter\Categories\Coastal as Coastal;
+use App\Models\Litter\Categories\Art as Art;
+use App\Models\Litter\Categories\Brand as Brand;
+use App\Models\Litter\Categories\TrashDog as TrashDog;
+use App\Models\Litter\Categories\Dumping as Dumping;
+use App\Models\Litter\Categories\Industrial as Industrial;
 
 class CompileResultsString
 {
@@ -125,12 +125,12 @@ class CompileResultsString
             if ($food->aluminium_foil) {
                 $food_string .= ' Aluminium Foil: ' . $food->aluminium_foil;
             }
-            
+
             $result_string .= $food_string;
         }
 
         if ($photo->coffee_id)
-        {    
+        {
             $coffee_string = '';
             $coffee = Coffee::find($photo->coffee_id);
 
@@ -148,7 +148,7 @@ class CompileResultsString
         }
 
         if ($photo->softdrinks_id)
-        {    
+        {
             $softdrinks_string = '';
             $softdrinks = SoftDrinks::find($photo->softdrinks_id);
 
@@ -203,7 +203,7 @@ class CompileResultsString
             if ($softdrinks->energy_can) {
                 $softdrinks_string .= ' Energy Can: ' . $softdrinks->energy_can;
             }
-           
+
             $result_string .= $softdrinks_string;;
         }
 
@@ -242,7 +242,7 @@ class CompileResultsString
             if ($alcohol->alcoholOther) {
                 $alcohol_string .= ' Alcohol (other): ' . $alcohol->alcoholOther;
             }
-            
+
             $result_string .= $alcohol_string;
         }
 
@@ -278,7 +278,7 @@ class CompileResultsString
             if ($sanitary->sanitaryOther) {
                 $sanitary_string .= ' Sanitary (other): ' . $sanitary->sanitaryOther;
             }
-            
+
             $result_string .= $sanitary_string;
         }
 
@@ -519,12 +519,12 @@ class CompileResultsString
             if ($brand->wilde_and_greene) {
                 $brands_string .= ' Wilde & Greene: ' . $brand->wilde_and_greene;
             }
-            
+
             $result_string .= $brands_string;
         }
 
         if ($photo->dumping_id)
-        {    
+        {
             $dumping_string = '';
             $dumping = Dumping::find($photo->dumping_id);
 
@@ -542,7 +542,7 @@ class CompileResultsString
         }
 
         if ($photo->industrial_id)
-        {    
+        {
             $industrial_string = '';
             $industrial = Industrial::find($photo->industrial_id);
 

@@ -12,32 +12,32 @@
 <script>
 export default {
     name: 'Presence',
-    // Accept users db value. Is their litter usually picked up (0), or still there (1)?
-    props: ['itemsr'], // itemsremaining
-    mounted() {
-        // only do this once. seems to be logging twice and itemsr is `null` on second iteration
-        let x = null;
-        if (this.itemsr == "0") {
-            x = true;
-        } else {
-            x = false;
-        }
+    computed: {
 
-        if (this.$store.state.litter.presence == null) {
-            this.$store.commit('initPresence', x);
+        /**
+         * Change setting name to "picked_up"
+         */
+        remaining ()
+        {
+            return this.$store.state.litter.presence;
+        },
+
+        /**
+         *
+         */
+        remainingText ()
+        {
+            return this.$store.state.litter.presence ? "It's gone." : "The litter is still there!";
         }
     },
     methods: {
-        togglePresence() {
+
+        /**
+         *
+         */
+        toggle ()
+        {
             this.$store.commit('togglePresence');
-        }
-    },
-    computed: {
-        remaining() {
-            return this.$store.state.litter.presence;
-        },
-        remainingText() {
-            return this.$store.state.litter.presence ? "It's gone." : "The litter is still there!";
         }
     }
 }

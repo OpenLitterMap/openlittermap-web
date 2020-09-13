@@ -1,6 +1,6 @@
 <?php
 
-namespace App;
+namespace App\Models\Location;
 
 use Illuminate\Database\Eloquent\Model;
 
@@ -8,7 +8,7 @@ class City extends Model
 {
 
 	protected $fillable = [
-		'id', 
+		'id',
 		'city',
 		'country_id',
 		'created_at',
@@ -62,7 +62,7 @@ class City extends Model
 
     /**
      * @return 'brands_data' column
-     * Todo - organize this by country 
+     * Todo - organize this by country
      *      - every country should have a different list of brands associated with it
      */
     public function getBrandsDataAttribute()
@@ -122,7 +122,7 @@ class City extends Model
         'total_sanitary',
         'total_other',
         'total_coastal',
-        // todo - remove these 
+        // todo - remove these
         'total_cigaretteButts',
         'total_plasticBottles',
         'total_drugs',
@@ -170,27 +170,25 @@ class City extends Model
         'total_wilde_and_greene'
     ];
 
-
-		
 	public function creator()
 	{
-		return $this->belongsTo('App\User', 'created_by');
+		return $this->belongsTo('App\Models\User\User', 'created_by');
 	}
 
     public function country() {
-    	return $this->belongsTo('App\Country');
+    	return $this->belongsTo('App\Models\Location\Country');
     }
 
     public function state() {
-    	return $this->belongsTo('App\State');
+    	return $this->belongsTo('App\Models\Location\State');
     }
 
     public function photos() {
-    	return $this->hasMany('App\Photo');
+    	return $this->hasMany('App\Models\Photo');
     }
 
     public function users() {
-    	return $this->hasMany('App\User');
+    	return $this->hasMany('App\Models\User\User');
     }
 
 }

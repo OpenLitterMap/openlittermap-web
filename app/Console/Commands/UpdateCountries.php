@@ -2,22 +2,22 @@
 
 namespace App\Console\Commands;
 
-use App\Country;
-use App\Photo;
+use App\Models\Location\Country;
+use App\Models\Photo;
 
-use App\Categories\Smoking;
-use App\Categories\Alcohol;
-use App\Categories\Coffee;
-use App\Categories\Food;
-use App\Categories\SoftDrinks;
-use App\Categories\Drugs;
-use App\Categories\Sanitary;
-use App\Categories\Other;
-use App\Categories\Coastal;
-use App\Categories\Pathway;
-use App\Categories\Art;
-use App\Categories\Brand;
-use App\Categories\TrashDog;
+use App\Models\Litter\Categories\Smoking;
+use App\Models\Litter\Categories\Alcohol;
+use App\Models\Litter\Categories\Coffee;
+use App\Models\Litter\Categories\Food;
+use App\Models\Litter\Categories\SoftDrinks;
+use App\Models\Litter\Categories\Drugs;
+use App\Models\Litter\Categories\Sanitary;
+use App\Models\Litter\Categories\Other;
+use App\Models\Litter\Categories\Coastal;
+use App\Models\Litter\Categories\Pathway;
+use App\Models\Litter\Categories\Art;
+use App\Models\Litter\Categories\Brand;
+use App\Models\Litter\Categories\TrashDog;
 use Illuminate\Console\Command;
 
 class UpdateCountries extends Command
@@ -55,21 +55,21 @@ class UpdateCountries extends Command
     {
         // Get all countries that have 2+ images
         $countries = Country::where('total_images', '>', 2)->get();
-        
+
         // loop
-        foreach($countries as $country) { 
-            // get photos           
+        foreach($countries as $country) {
+            // get photos
             $photos = Photo::where([
                 ['country_id', $country->id],
                 ['verified', '>', 0],
             ])->get();
-            
+
             // count contributors
             $users = [];
 
             $smokingTotal = 0;
             $cigaretteTotal = 0;
-            
+
             $foodTotal = 0;
 
             $softDrinksTotal = 0;
@@ -88,10 +88,10 @@ class UpdateCountries extends Command
             foreach($photos as $photo) {
                 $users[$photo->user_id] = $photo->user_id;
 
-                // Check the photo for foreign keys, count and update them on the Country 
+                // Check the photo for foreign keys, count and update them on the Country
                 if($photo['smoking_id']) {
-                    
-                    // find each instance in the smoking table 
+
+                    // find each instance in the smoking table
                     $smoking = Smoking::find($photo['smoking_id']);
                     // count totals
                     $cigaretteTotal += $smoking['butts'];
@@ -116,7 +116,7 @@ class UpdateCountries extends Command
                 }
 
                 if($photo['softdrinks_id']) {
-                   
+
                     $softdrink = SoftDrinks::find($photo['softdrinks_id']);
 
                     $plasticBottleTotal += $softdrink['waterBottle'];
@@ -155,7 +155,7 @@ class UpdateCountries extends Command
                 }
 
                 if($photo['drugs_id']) {
-                    
+
                     $drugs = Drugs::find($photo['drugs_id']);
                       $needlesTotal += $drugs['needles'];
                         $drugsTotal += $drugs['needles'];
@@ -186,7 +186,7 @@ class UpdateCountries extends Command
                 }
 
                 if($photo['other_id']) {
-                    
+
                     $other = Other::find($photo['other_id']);
 
                     $otherTotal += $other['dogshit'];
@@ -194,9 +194,9 @@ class UpdateCountries extends Command
                     $otherTotal += $other['dump'];
                     $otherTotal += $other['metal'];
                     $otherTotal += $other['other'];
-                } // end other 
+                } // end other
 
-            } // end for each photos 
+            } // end for each photos
 
             $country->total_cigaretteButts = $cigaretteTotal;
             $country->total_smoking = $smokingTotal;
@@ -213,5 +213,5 @@ class UpdateCountries extends Command
             $country->total_contributors = $sizeOfUsers;
             $country->save();
 
-    } // end for each countries 
+    } // end for each countries
 }

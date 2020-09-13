@@ -2,15 +2,19 @@
 	<div style="padding-left: 1em; padding-right: 1em;">
 		<h1 class="title is-4">Toggle Litter Presence</h1>
 		<hr>
-		<p>By default we assume that all litter is still remaining. However if you pick up as you go, change this default value and we will record your litter as picked up.</p>
-		<p>You can also change the value of each litter item when you are tagging them.</p>
+        <p class="mb1">Do you pick up the litter or leave it there?</p>
+        <p class="mb1">You can save your default setting here</p>
+		<p>You can also change the value of each litter item as you are tagging them.</p>
+
+        <br>
+        <p><b>Current Status:</b></p>
+        <p><b :style="picked_up ? 'color: green' : 'color: red'">{{ this.text }}</b></p>
 		<br>
-		<p><b>Current Status:</b></p><p><b :style="this.color">{{ this.computedPresence }}</b></p>
-		<br>
+
 		<div class="columns">
 			<div class="column is-one-third is-offset-1">
 				<div class="row">
-					<button class="button is-info" @click="toggle">Toggle Presence</button>
+					<button :class="button" :disabled="processing" @click="toggle">Toggle Presence</button>
 				</div>
 			</div>
 		</div>
@@ -20,32 +24,55 @@
 <script>
 export default {
     name: 'Presence',
-    mounted ()
+    data ()
     {
-        this.$store.commit('initPresence', parseInt(this.user.items_remaining));
+        return {
+            processing: false
+        };
     },
     methods: {
-        toggle() {
-            axios.post('/en/settings/toggle')
-            .then(response => {
-                console.log(response);
-                window.location.href = window.location.href;
-            })
-            .catch(error => {
-                console.log(error);
-            })
+
+        /**
+         * Dispatch action to save default setting value
+         */
+        async toggle ()
+        {
+            this.processing = true;
+
+            await this.$store.dispatch('TOGGLE_LITTER_PICKED_UP_SETTING');
+
+            this.processing = false;
         }
     },
 
     computed: {
-        presence() {
-            return this.$store.state.presence;
+
+        /**
+         * Dynamic button class
+         */
+        button ()
+        {
+            return this.processing ? 'button is-info is-loading' : 'button is-info';
         },
-        color() {
-            return this.presence ? 'color:red' : 'color:green';
+
+        /**
+         * Todo: move the value to the new user_settings table and use the column "picked_up"
+         *
+         * if items_remaining is true, the litter is not picked up
+         */
+        picked_up ()
+        {
+            return ! this.$store.state.user.user.items_remaining;
         },
-        computedPresence() {
-            return this.presence == 0 ? "Your litter is logged as picked up." : "Your litter is logged as not picked up.";
+
+        /**
+         *
+         */
+        text ()
+        {
+            return this.picked_up
+                ? "Your litter will be logged as picked up."
+                : "Your litter is logged as not picked up.";
         }
     }
 }

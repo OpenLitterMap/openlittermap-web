@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\State;
+use App\Models\Location\State;
 use Illuminate\Console\Command;
 
 class UpdateStatesCreatedby extends Command
@@ -39,9 +39,9 @@ class UpdateStatesCreatedby extends Command
     public function handle()
     {
         $states = State::where('manual_verify', 1)->get();
-        foreach($states as $state) { 
-            if(is_null($state->created_by)) { 
-                $state['created_by'] = $state->photos()->first()->user_id; 
+        foreach($states as $state) {
+            if(is_null($state->created_by)) {
+                $state['created_by'] = $state->photos()->first()->user_id;
                 $state->save();
             }
         }

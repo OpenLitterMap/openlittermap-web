@@ -3,7 +3,7 @@
 // A data container which holds the information related to the event
 namespace App\Events;
 
-use App\Country;
+use App\Models\Location\Country;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Broadcasting\PrivateChannel;

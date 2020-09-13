@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\User;
-use App\Photo;
-use App\City;
-use App\State;
-use App\Country;
+use App\Models\User\User;
+use App\Models\Photo;
+use App\Models\Location\City;
+use App\Models\Location\State;
+use App\Models\Location\Country;
 use App\DynamicLoading;
 
 use Log;
@@ -573,12 +573,12 @@ class MapController extends Controller
 		foreach($data as $c)
 		{
 			// if($c['art_id']) {
-			// 	$art = \App\Categories\Art::find($c['art_id']);
+			// 	$art = \App\Models\Litter\Categories\Art::find($c['art_id']);
 			// } else {
 			// 	$art = 'null';
 			// }
 			// if($c['trashdog_id']) {
-			// 	$trashdog = \App\Categories\TrashDog::find($c['trashdog_id']);
+			// 	$trashdog = \App\Models\Litter\Categories\TrashDog::find($c['trashdog_id']);
 			// } else {
 			// 	$trashdog = 'null';
 			// }

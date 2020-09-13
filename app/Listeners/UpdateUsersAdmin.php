@@ -2,8 +2,8 @@
 
 namespace App\Listeners;
 
-use App\User;
-use App\Photo;
+use App\Models\User\User;
+use App\Models\Photo;
 use App\Events\PhotoVerifiedByAdmin;
 use App\Events\DynamicUpdate;
 use Illuminate\Queue\InteractsWithQueue;
@@ -40,8 +40,8 @@ class UpdateUsersAdmin
         }
         $user->count_correctly_verified += 1;
 
-        // TODO : 
-        // Update total column on Photos for each Category on this photo 
+        // TODO :
+        // Update total column on Photos for each Category on this photo
 
         $userPhotos = $user->photos()->where('verified', '>=', 1)->get();
         $user->total_verified = $userPhotos->count();

@@ -2,7 +2,7 @@
 
 namespace App\Listeners\Photo;
 
-use App\Country;
+use App\Models\Location\Country;
 use Carbon\Carbon;
 use App\Events\Photo\IncrementPhotoMonth;
 use Illuminate\Queue\InteractsWithQueue;

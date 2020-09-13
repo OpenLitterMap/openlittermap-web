@@ -76,6 +76,22 @@ export const actions = {
     },
 
     /**
+     *
+     */
+    async GET_COUNTRIES_FOR_FLAGS (context)
+    {
+        await axios.get('/settings/flags/countries')
+            .then(response => {
+                console.log('flags_countries', response);
+
+                context.commit('flags_countries', response.data);
+            })
+            .catch(error => {
+                console.log('error.flags_countries', error);
+            });
+    },
+
+    /**
      * Try to log the user in
      * Todo - return the user object
      */
@@ -118,13 +134,113 @@ export const actions = {
     },
 
     /**
+     * Save all privacy settings on Privacy.vue
+     */
+    async SAVE_PRIVACY_SETTINGS (context)
+    {
+        let title = i18n.t('notifications.success');
+        let body  = i18n.t('notifications.privacy-updated');
+
+        await axios.post('/settings/privacy/update', {
+            show_name_maps: context.state.user.show_name_maps,
+            show_username_maps: context.state.user.show_username_maps,
+            show_name: context.state.user.show_name,
+            show_username: context.state.user.show_username,
+            show_name_createdby: context.state.user.show_name_createdby,
+            show_username_createdby:  context.state.user.show_username_createdby
+        })
+        .then(response => {
+            console.log('save_privacy_settings', response);
+
+            /* improve css */
+            Vue.$vToastify.success({
+                title,
+                body,
+                position: 'top-right'
+            });
+        })
+        .catch(error => {
+            console.log('error.save_privacy_settings', error);
+        });
+    },
+
+    /**
+     * Change value of user wants to receive emails eg updates
+     */
+    async TOGGLE_EMAIL_SUBSCRIPTION (context)
+    {
+        let title = i18n.t('notifications.success');
+        let sub = i18n.t('notifications.settings.subscribed');
+        let unsub = i18n.t('notifications.settings.unsubscribed');
+
+        await axios.post('/settings/email/toggle')
+            .then(response => {
+                console.log('toggle_email_subscription', response);
+
+                if (response.data.sub)
+                {
+                    /* improve css */
+                    Vue.$vToastify.success({
+                        title,
+                        body: sub,
+                        position: 'top-right'
+                    });
+                }
+
+                else
+                {
+                    /* improve css */
+                    Vue.$vToastify.success({
+                        title,
+                        body: unsub,
+                        position: 'top-right'
+                    });
+                }
+
+                context.commit('toggle_email_sub', response.data.sub);
+            })
+            .catch(error => {
+                console.log(error);
+            })
+    },
+
+    /**
+     * Toggle the setting of litter picked up or still there
+     */
+    async TOGGLE_LITTER_PICKED_UP_SETTING (context)
+    {
+        let title = i18n.t('notifications.success');
+        let body  = i18n.t('notifications.litter-toggled');
+
+        await axios.post('/settings/toggle')
+            .then(response => {
+                console.log('toggle_litter', response);
+
+                if (response.data.message === 'success')
+                {
+                    context.commit('toggle_litter_picked_up', response.data.value);
+
+                    /* improve css */
+                    Vue.$vToastify.success({
+                        title,
+                        body,
+                        position: 'top-right'
+                    });
+                }
+            })
+            .catch(error => {
+                console.log(error);
+            });
+    },
+
+    /**
      * The user wants to update name, email, username
      */
     async UPDATE_DETAILS (context)
     {
         let title = i18n.t('notifications.success');
         // todo - translate this
-        let body  = 'Your infomration have been updated'
+        let body  = 'Your information has been updated'
 
         await axios.post('/settings/details', {
             name: context.state.user.name,
@@ -146,6 +262,32 @@ export const actions = {
 
             // update errors. user.js
             context.commit('errors', error.response.data.errors);
+        });
+    },
+
+    /**
+     * Update the flag the user can show on the Global leaderboard
+     */
+    async UPDATE_GLOBAL_FLAG (context, payload)
+    {
+        let title = i18n.t('notifications.success');
+        let body  = i18n.t('notifications.settings.flag-updated');
+
+        await axios.post('/settings/save-flag', {
+            country: payload
+        })
+        .then(response => {
+            console.log(response);
+
+            /* improve this */
+            Vue.$vToastify.success({
+                title,
+                body,
+                position: 'top-right'
+            });
+        })
+        .catch(error => {
+            console.log(error);
         });
     }
 };

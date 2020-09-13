@@ -2,7 +2,7 @@
 
 namespace App\Mail;
 
-use App\User;
+use App\Models\User\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
@@ -14,7 +14,7 @@ class NewUserRegMail extends Mailable
 
     // protected $_token;
     // protected $email;
-    
+
     public $user;
     // pass in User to construct
 

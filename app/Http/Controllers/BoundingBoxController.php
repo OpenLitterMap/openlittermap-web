@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Photo;
+use App\Models\Photo;
 use Illuminate\Http\Request;
 
 class BoundingBoxController extends Controller

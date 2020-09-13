@@ -2,11 +2,11 @@
 
 namespace App\Listeners;
 
-use App\Photo;
-use App\User;
-use App\City;
-use App\State;
-use App\Country;
+use App\Models\Photo;
+use App\Models\User\User;
+use App\Models\Location\City;
+use App\Models\Location\State;
+use App\Models\Location\Country;
 use App\Events\PhotoVerifiedByUser;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -32,11 +32,11 @@ class UpdateLeaderboards
      */
     public function handle(PhotoVerifiedByUser $event)
     {
-        // find the user who uploaded the photo 
+        // find the user who uploaded the photo
         $photoId = $event->photoId;
         $photo = Photo::find($photoId);
         $user = User::find($photo->user_id);
-        // get their xp 
+        // get their xp
         $user->xp += 1;
         $user->save();
 

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\User;
+use App\Models\User\User;
 use App\Events\UserSignedUp;
 use Exception;
 use App\Mail\NewUserRegMail;

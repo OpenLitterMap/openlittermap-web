@@ -5,20 +5,20 @@ namespace App\Http\Controllers;
 use Auth;
 use Image;
 use JWTAuth;
-use App\User;
+use App\Models\User\User;
 use Illuminate\Http\Request;
 use Tymon\JWTAuth\Exceptions\JWTException;
 
 class iOSImageController extends Controller
 {
-    
+
 
     /*
-     * Store an image and its attributes from an iOS post request 
-     */ 
+     * Store an image and its attributes from an iOS post request
+     */
     public function store(Request $request) {
 
-    	// verify jwt 
+    	// verify jwt
 
         try {
 
@@ -69,18 +69,18 @@ class iOSImageController extends Controller
     	// return $json;
 
 
-        // Get the Array of Dictionaries from the request 
-        // each array of dicts represents 1 image 
+        // Get the Array of Dictionaries from the request
+        // each array of dicts represents 1 image
         // the user may upload multiple images
         // this gets passed in as a String
         $arrayOfDictString = $request["myJson"];
 
-        // explode the above string by -> [" 
-        // eg the string is 
+        // explode the above string by -> ["
+        // eg the string is
         // [["lat": 53.1, "lon": -8.0], ["lat": 52.4, "lon": -8.3]...]
         $phpArray = explode('[', $arrayOfDictString);
 
-        // the array might have some 
+        // the array might have some
 
         $newArray = [];
 
@@ -90,7 +90,7 @@ class iOSImageController extends Controller
         // 					   int,   string
         foreach ($phpArray as $key => $value) {
 
-        	// remove 
+        	// remove
         	if ($value != "") {
         		$newArray[$key] = $value;
         	}
@@ -193,7 +193,7 @@ class iOSImageController extends Controller
         		}
 
         	}
-        	// return [$lat, $long, $dateTime, $needles]; // works 
+        	// return [$lat, $long, $dateTime, $needles]; // works
 
 	        // // reverse geocode
 	        // $apiKey = "052c068e4a9306e34c87";

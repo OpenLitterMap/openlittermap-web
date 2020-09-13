@@ -2,24 +2,24 @@
 
 namespace App\Listeners;
 
-use App\Categories\Art as Art;
-use App\Categories\Alcohol as Alcohol;
-use App\Categories\Brand as Brand;
-use App\Categories\Coastal as Coastal;
-use App\Categories\Coffee as Coffee;
-use App\Categories\Dumping as Dumping;
-// use App\Categories\Drugs;
-use App\Categories\Food as Food;
-use App\Categories\Industrial as Industrial;
-use App\Categories\Other as Other;
-// use App\Categories\Pathway as Pathway;
-use App\Categories\SoftDrinks as SoftDrinks;
-use App\Categories\Sanitary as Sanitary;
-use App\Categories\Smoking as Smoking;
-use App\Categories\TrashDog as TrashDog;
+use App\Models\Litter\Categories\Art as Art;
+use App\Models\Litter\Categories\Alcohol as Alcohol;
+use App\Models\Litter\Categories\Brand as Brand;
+use App\Models\Litter\Categories\Coastal as Coastal;
+use App\Models\Litter\Categories\Coffee as Coffee;
+use App\Models\Litter\Categories\Dumping as Dumping;
+// use App\Models\Litter\Categories\Drugs;
+use App\Models\Litter\Categories\Food as Food;
+use App\Models\Litter\Categories\Industrial as Industrial;
+use App\Models\Litter\Categories\Other as Other;
+// use App\Models\Litter\Categories\Pathway as Pathway;
+use App\Models\Litter\Categories\SoftDrinks as SoftDrinks;
+use App\Models\Litter\Categories\Sanitary as Sanitary;
+use App\Models\Litter\Categories\Smoking as Smoking;
+use App\Models\Litter\Categories\TrashDog as TrashDog;
 
-use App\City;
-use App\Photo;
+use App\Models\Location\City;
+use App\Models\Photo;
 
 use App\Events\PhotoVerifiedByAdmin;
 use App\Events\DynamicUpdate;
@@ -50,7 +50,7 @@ class UpdateCitiesAdmin
         $photo = Photo::find($photoId);
         $city = City::find($photo->city_id);
 
-        // Get all verified photos for that City 
+        // Get all verified photos for that City
         $cityPhotos = Photo::where([
             ['city_id', $photo->city_id],
             ['verified', '>', 0]
@@ -272,7 +272,7 @@ class UpdateCitiesAdmin
                 $industrialTotal += $industrial->bricks;
                 $industrialTotal += $industrial->tape;
                 $industrialTotal += $industrial->industrial_other;
-                
+
             }
             $city->total_industrial = $industrialTotal;
             $city->save();

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Auth;
-use App\User;
+use App\Models\User\User;
 use App\Plan;
 use Exception;
 use Illuminate\Http\Request;
@@ -28,7 +28,7 @@ class SubscriptionsController extends Controller
                        'plan' => 'required'
             ]);
 
-            $user = \App\User::find($request->form['user_id']);
+            $user = \App\Models\User\User::find($request->form['user_id']);
 
     	} catch(Exception $e) {
     		// return $e->getMessage();

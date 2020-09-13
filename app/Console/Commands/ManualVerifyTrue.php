@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands;
 
-use App\Country;
-use App\State;
-use App\City;
+use App\Models\Location\Country;
+use App\Models\Location\State;
+use App\Models\Location\City;
 use Illuminate\Console\Command;
 
 class ManualVerifyTrue extends Command
@@ -39,7 +39,7 @@ class ManualVerifyTrue extends Command
      * @return mixed
      */
     public function handle()
-    {   
+    {
 
         $countries = Country::all();
         foreach($countries as $country) {

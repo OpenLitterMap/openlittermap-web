@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Categories;
+namespace App\Models\Litter\Categories;
 
 use Illuminate\Database\Eloquent\Model;
 
@@ -8,7 +8,7 @@ class Other extends Model
 {
 
     protected $table = 'others';
-    
+
 	/*
 	* Only these categories can be edited in the photo model
 	*/
@@ -40,7 +40,7 @@ class Other extends Model
     ];
 
     public function photo () {
-    	return $this->hasOne('App\Photo');
+    	return $this->hasOne('App\Models\Photo');
     }
 
 }

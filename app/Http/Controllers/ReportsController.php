@@ -2,26 +2,26 @@
 
 namespace App\Http\Controllers;
 
-use App\User;
-use App\Photo;
+use App\Models\User\User;
+use App\Models\Photo;
 use App\Suburb;
-use App\City;
-use App\State;
-use App\Country;
+use App\Models\Location\City;
+use App\Models\Location\State;
+use App\Models\Location\Country;
 
-use App\Categories\Smoking;
-use App\Categories\Alcohol;
-use App\Categories\Coffee;
-use App\Categories\Food;
-use App\Categories\SoftDrinks;
-use App\Categories\Drugs;
-use App\Categories\Sanitary;
-use App\Categories\Other;
-use App\Categories\Coastal;
-use App\Categories\Pathway;
-use App\Categories\Art;
-use App\Categories\Brand;
-use App\Categories\TrashDog;
+use App\Models\Litter\Categories\Smoking;
+use App\Models\Litter\Categories\Alcohol;
+use App\Models\Litter\Categories\Coffee;
+use App\Models\Litter\Categories\Food;
+use App\Models\Litter\Categories\SoftDrinks;
+use App\Models\Litter\Categories\Drugs;
+use App\Models\Litter\Categories\Sanitary;
+use App\Models\Litter\Categories\Other;
+use App\Models\Litter\Categories\Coastal;
+use App\Models\Litter\Categories\Pathway;
+use App\Models\Litter\Categories\Art;
+use App\Models\Litter\Categories\Brand;
+use App\Models\Litter\Categories\TrashDog;
 
 use JavaScript;
 use Illuminate\Http\Request;
@@ -65,7 +65,7 @@ class ReportsController extends Controller
 			  'remaining' => $needlephoto["remaining"],
 		   'display_name' => $needlephoto["display_name"],
 
-				// data 
+				// data
 			 'drugs' => $druglitter,
 			)
 		);
@@ -74,7 +74,7 @@ class ReportsController extends Controller
 
 		json_encode($suburblitter, JSON_NUMERIC_CHECK);
 
-		// Todo - reformat these into 1 function 
+		// Todo - reformat these into 1 function
 		$citylitter = self::buildCityLitter();
 		$citylatlong =  $citylitter["latlong"];
 		$citylitter = $citylitter[0];
@@ -115,13 +115,13 @@ class ReportsController extends Controller
 
 
     protected function buildCityLitter() {
-		// get data 
+		// get data
 		$data = Photo::where([
 			['verified', '>', 0],
 			['city_id', 3] // 1
 		])->orderBy('datetime', 'asc')->get();
 
-		$randomPhoto = $data->random(); 
+		$randomPhoto = $data->random();
 
 		$lat = (double)$randomPhoto->lat;
 		$lon = (double)$randomPhoto->lon;
@@ -129,7 +129,7 @@ class ReportsController extends Controller
 		$latlong[0] = $lat;
 		$latlong[1] = $lon;
 
-		// create FC object 
+		// create FC object
 		$geojson = array(
    			'type'      => 'FeatureCollection',
    			'features'  => array()
@@ -209,7 +209,7 @@ class ReportsController extends Controller
 					  'remaining' => $c["remaining"],
 				   'display_name' => $c["display_name"],
 
-						// data 
+						// data
 						'smoking' => $smoking,
 						   'food' => $food,
 						 'coffee' => $coffee,
@@ -223,7 +223,7 @@ class ReportsController extends Controller
 				   'total_litter' => $litterTotal
 					)
 				);
-			
+
 				if (User::findOrFail($c["user_id"])->show_name == 1) {
 					$user = User::findOrFail($c["user_id"]);
 					$feature["properties"]["fullname"] = $user->name;;
@@ -244,13 +244,13 @@ class ReportsController extends Controller
 
 
     protected function buildStateLitter() {
-		// get data 
+		// get data
 		$data = Photo::where([
 			['verified', '>', 0],
 			['state_id', 1] // 6
 		])->orderBy('datetime', 'asc')->get();
 
-		$randomPhoto = $data->random(); 
+		$randomPhoto = $data->random();
 
 		$lat = (double)$randomPhoto->lat;
 		$lon = (double)$randomPhoto->lon;
@@ -258,7 +258,7 @@ class ReportsController extends Controller
 		$latlong[0] = $lat;
 		$latlong[1] = $lon;
 
-		// create FC object 
+		// create FC object
 		$geojson = array(
    			'type'      => 'FeatureCollection',
    			'features'  => array()
@@ -338,7 +338,7 @@ class ReportsController extends Controller
 					  'remaining' => $c["remaining"],
 				   'display_name' => $c["display_name"],
 
-						// data 
+						// data
 						'smoking' => $smoking,
 						   'food' => $food,
 						 'coffee' => $coffee,
@@ -352,7 +352,7 @@ class ReportsController extends Controller
 				   'total_litter' => $litterTotal
 					)
 				);
-			
+
 				if (User::findOrFail($c["user_id"])->show_name == 1) {
 					$user = User::findOrFail($c["user_id"]);
 					$feature["properties"]["fullname"] = $user->name;;
@@ -372,13 +372,13 @@ class ReportsController extends Controller
     }
 
     protected function buildCountryLitter() {
-		// get data 
+		// get data
 		$data = Photo::where([
 			['verified', '>', 0],
 			['country_id', 3] // 6
 		])->orderBy('datetime', 'asc')->get();
 
-		$randomPhoto = $data->random(); 
+		$randomPhoto = $data->random();
 
 		$lat = (double)$randomPhoto->lat;
 		$lon = (double)$randomPhoto->lon;
@@ -386,7 +386,7 @@ class ReportsController extends Controller
 		$latlong[0] = $lat;
 		$latlong[1] = $lon;
 
-		// create FC object 
+		// create FC object
 		$geojson = array(
    			'type'      => 'FeatureCollection',
    			'features'  => array()
@@ -466,7 +466,7 @@ class ReportsController extends Controller
 					  'remaining' => $c["remaining"],
 				   'display_name' => $c["display_name"],
 
-						// data 
+						// data
 						'smoking' => $smoking,
 						   'food' => $food,
 						 'coffee' => $coffee,
@@ -480,7 +480,7 @@ class ReportsController extends Controller
 				   'total_litter' => $litterTotal
 					)
 				);
-			
+
 				if (User::findOrFail($c["user_id"])->show_name == 1) {
 					$user = User::findOrFail($c["user_id"]);
 					$feature["properties"]["fullname"] = $user->name;;
@@ -501,13 +501,13 @@ class ReportsController extends Controller
 
 
     protected function buildGlobalLitter() {
-		// get data 
+		// get data
 		$data = Photo::where([
 			['verified', '>', 0],
 			['country_id', 3] // 6
 		])->orderBy('datetime', 'asc')->get();
 
-		$randomPhoto = $data->random(); 
+		$randomPhoto = $data->random();
 
 		$lat = (double)$randomPhoto->lat;
 		$lon = (double)$randomPhoto->lon;
@@ -515,7 +515,7 @@ class ReportsController extends Controller
 		$latlong[0] = $lat;
 		$latlong[1] = $lon;
 
-		// create FC object 
+		// create FC object
 		$geojson = array(
    			'type'      => 'FeatureCollection',
    			'features'  => array()
@@ -595,7 +595,7 @@ class ReportsController extends Controller
 					  'remaining' => $c["remaining"],
 				   'display_name' => $c["display_name"],
 
-						// data 
+						// data
 						'smoking' => $smoking,
 						   'food' => $food,
 						 'coffee' => $coffee,
@@ -609,7 +609,7 @@ class ReportsController extends Controller
 				   'total_litter' => $litterTotal
 					)
 				);
-			
+
 				if (User::findOrFail($c["user_id"])->show_name == 1) {
 					$user = User::findOrFail($c["user_id"]);
 					$feature["properties"]["fullname"] = $user->name;;

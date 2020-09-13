@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Country;
-use App\Photo;
+use App\Models\Location\Country;
+use App\Models\Photo;
 use Illuminate\Console\Command;
 
 class UpdateCountryCreatedby extends Command
@@ -40,9 +40,9 @@ class UpdateCountryCreatedby extends Command
     public function handle()
     {
         $countries = Country::where('manual_verify', 1)->get();
-        foreach($countries as $country) { 
-            if(is_null($country->created_by)) { 
-                $country['created_by'] = $country->photos()->first()->user_id; 
+        foreach($countries as $country) {
+            if(is_null($country->created_by)) {
+                $country['created_by'] = $country->photos()->first()->user_id;
                 $country->save();
             }
         }

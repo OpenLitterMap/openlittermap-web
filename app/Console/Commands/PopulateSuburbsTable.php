@@ -3,10 +3,10 @@
 namespace App\Console\Commands;
 
 use App\Suburb;
-use App\City;
-use App\State;
-use App\Country;
-use App\Photo;
+use App\Models\Location\City;
+use App\Models\Location\State;
+use App\Models\Location\Country;
+use App\Models\Photo;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Console\Command;
 
@@ -47,7 +47,7 @@ class PopulateSuburbsTable extends Command
         $photos = Photo::where('verified', '>', 0)->get();
         foreach($photos as $photo) {
             if($photo->suburb != "null") {
-                // check if suburb exists 
+                // check if suburb exists
                 $suburb = $photo->suburb;
                 if (!Redis::sismember('suburbs', $suburb)) {
                     Redis::sadd('suburbs', $suburb);

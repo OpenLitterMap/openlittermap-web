@@ -2,30 +2,30 @@
 
 namespace App\Http\Controllers;
 
-use App\User;
+use App\Models\User\User;
 use Illuminate\Http\Request;
 
 use DB;
 use Auth;
 use Carbon\Carbon;
-use App\Photo;
-use App\City;
-use App\State;
-use App\Country;
+use App\Models\Photo;
+use App\Models\Location\City;
+use App\Models\Location\State;
+use App\Models\Location\Country;
 
-use App\Categories\Smoking;
-use App\Categories\Alcohol;
-use App\Categories\Coffee;
-use App\Categories\Food;
-use App\Categories\SoftDrinks;
-use App\Categories\Drugs;
-use App\Categories\Sanitary;
-use App\Categories\Other;
-use App\Categories\Coastal;
-use App\Categories\Pathway;
-use App\Categories\Art;
-use App\Categories\Brand;
-use App\Categories\TrashDog;
+use App\Models\Litter\Categories\Smoking;
+use App\Models\Litter\Categories\Alcohol;
+use App\Models\Litter\Categories\Coffee;
+use App\Models\Litter\Categories\Food;
+use App\Models\Litter\Categories\SoftDrinks;
+use App\Models\Litter\Categories\Drugs;
+use App\Models\Litter\Categories\Sanitary;
+use App\Models\Litter\Categories\Other;
+use App\Models\Litter\Categories\Coastal;
+use App\Models\Litter\Categories\Pathway;
+use App\Models\Litter\Categories\Art;
+use App\Models\Litter\Categories\Brand;
+use App\Models\Litter\Categories\TrashDog;
 
 use DateTime;
 use JavaScript;
@@ -64,7 +64,7 @@ class TestController extends Controller
 //         // return view('emails.smallupdate', compact('user'));
 //     }
 
-// // 
+// //
 //     public function tasdest() {
 
 //         $countries = Country::where([
@@ -79,7 +79,7 @@ class TestController extends Controller
 //         $arrayOfCreated = [];
 //         // organize photo counts for each country by month
 //         foreach($countries as $country) {
-//             // create empty array for each country 
+//             // create empty array for each country
 //             $photosPerMonth = [];
 //             // group the photos by month
 //             $photos = Photo::where([

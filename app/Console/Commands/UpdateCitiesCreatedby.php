@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\City;
+use App\Models\Location\City;
 use Illuminate\Console\Command;
 
 class UpdateCitiesCreatedby extends Command
@@ -43,9 +43,9 @@ class UpdateCitiesCreatedby extends Command
             ['total_contributors', '>', 1],
             ['total_images', '>', 0]
         ])->get();
-        foreach($cities as $city) { 
-            if(is_null($city->created_by)) { 
-                $city['created_by'] = $city->photos()->first()->user_id; 
+        foreach($cities as $city) {
+            if(is_null($city->created_by)) {
+                $city['created_by'] = $city->photos()->first()->user_id;
                 $city->save();
             }
         }

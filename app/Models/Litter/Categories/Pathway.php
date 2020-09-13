@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Categories;
+namespace App\Models\Litter\Categories;
 
 use Illuminate\Database\Eloquent\Model;
 
@@ -9,7 +9,7 @@ class Pathway extends Model
     protected $table = 'pathways';
 
     public function photo() {
-    	return $this->hasOne('App\Photo');
+    	return $this->hasOne('App\Models\Photo');
     }
 
     protected $fillable = [

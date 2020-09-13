@@ -23,8 +23,8 @@ class CreateUsersTable extends Migration
             $table->string('password');
             $table->string('token')->nullable();
 
-            $table->string('show_name')->default(0);
-            $table->string('show_username')->default(0);
+            $table->boolean('show_name')->default(0);
+            $table->boolean('show_username')->default(0);
             $table->string('items_remaining')->default(1);
 
             $table->integer('role_id')->index()->unsigned()->nullable();

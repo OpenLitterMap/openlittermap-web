@@ -2,7 +2,7 @@
 
 namespace App\Events;
 
-use App\Photo;
+use App\Models\Photo;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Broadcasting\PrivateChannel;

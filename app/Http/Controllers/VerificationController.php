@@ -3,22 +3,22 @@
 namespace App\Http\Controllers;
 
 use Auth;
-use App\User;
-use App\Photo;
+use App\Models\User\User;
+use App\Models\Photo;
 use JavaScript;
-use App\Categories\Smoking;
-use App\Categories\Alcohol;
-use App\Categories\Coffee;
-use App\Categories\Food;
-use App\Categories\SoftDrinks;
-use App\Categories\Drugs;
-use App\Categories\Sanitary;
-use App\Categories\Other;
-use App\Categories\Coastal;
-use App\Categories\Pathway;
-use App\Categories\Art;
-use App\Categories\Brand;
-use App\Categories\TrashDog;
+use App\Models\Litter\Categories\Smoking;
+use App\Models\Litter\Categories\Alcohol;
+use App\Models\Litter\Categories\Coffee;
+use App\Models\Litter\Categories\Food;
+use App\Models\Litter\Categories\SoftDrinks;
+use App\Models\Litter\Categories\Drugs;
+use App\Models\Litter\Categories\Sanitary;
+use App\Models\Litter\Categories\Other;
+use App\Models\Litter\Categories\Coastal;
+use App\Models\Litter\Categories\Pathway;
+use App\Models\Litter\Categories\Art;
+use App\Models\Litter\Categories\Brand;
+use App\Models\Litter\Categories\TrashDog;
 use App\Litterrata;
 use Illuminate\Http\Request;
 use App\Events\PhotoVerifiedByUser;
@@ -27,7 +27,7 @@ class VerificationController extends Controller
 {
 	 /**
 	  * Apply middleware to all of these routes
-	  */ 
+	  */
 	public function __construct() {
 	  	return $this->middleware('auth');
 	  	parent::__construct();
@@ -35,7 +35,7 @@ class VerificationController extends Controller
 
   //   public function getPending() {
   //       $user = Auth::user();
-  //       $photos = $user->photos()->where('verification', 0.1)->paginate(1); // length aware paginator class 
+  //       $photos = $user->photos()->where('verification', 0.1)->paginate(1); // length aware paginator class
 
   //       $photodata = [];
 
@@ -46,7 +46,7 @@ class VerificationController extends Controller
   //           ['Verify someone elses image', false]
   //       ];
 
-  //       // todo: Remove null values from the final request 
+  //       // todo: Remove null values from the final request
   //       foreach ($photos as $photo) {
 
   //       	if ($photo['smoking_id']) {
@@ -95,7 +95,7 @@ class VerificationController extends Controller
 		// ]);
 
   //       return view('user.pending', [
-  //           'user' => $user, 
+  //           'user' => $user,
   //           'photos' => $photos,
   //           // 'photodata' => $photodata,
   //           'tasks' => $tasks
@@ -105,7 +105,7 @@ class VerificationController extends Controller
   //   }
 
     /**
-    * Get a random photo needed for verification + its contents 
+    * Get a random photo needed for verification + its contents
     */
     public function getVerification() {
 
@@ -123,15 +123,15 @@ class VerificationController extends Controller
         $photosNotVerifiedCount = Photo::where('verified', 0)->get()->count();
         $hasUploadedCount = User::where('has_uploaded', 1)->get()->count();
 
-        // avg photo 
+        // avg photo
         $allPhotoCount = (int)$photosVerifiedCount + (int)$photosNotVerifiedCount;
         $avgPhotoPerUser = $allPhotoCount / $hasUploadedCount;
 
-        // contributor rankings 
-        // move to Redis 
+        // contributor rankings
+        // move to Redis
 
         // Get a random photo between submitted for verification + almost verified
-        // join columns with the 'and' condition 
+        // join columns with the 'and' condition
         $photosToVerify = Photo::where([
             ['verified', 0],
             ['user_id', '!=', $user->id],
@@ -209,7 +209,7 @@ class VerificationController extends Controller
         ]);
 
 
-        // todo: Include uploaded by 
+        // todo: Include uploaded by
         $uploader = User::find($photo->user_id);
 
         $uploaderString = '';
@@ -226,21 +226,21 @@ class VerificationController extends Controller
           $uploaderString = 'anon';
         }
         // todo
-        // Total verified images 
+        // Total verified images
         // $totalVerifiedImages = Photo::where(['verified', 1])->get()->count();
 
-        // Total veririfed litter 
+        // Total veririfed litter
 
         return view('pages.forms.verify', compact('user', 'photosVerifiedCount', 'photosNotVerifiedCount', 'hasUploadedCount', 'avgPhotoPerUser', 'photo', 'photosToVerifyCount', 'subscription', 'uploaderString'));
 
     }
 
     /**
-    * Post True or False for verification 
+    * Post True or False for verification
     */
     public function verify(Request $request) {
 
-        // true of false? 
+        // true of false?
         $status = $request->status;
 
         // id of the image
@@ -253,7 +253,7 @@ class VerificationController extends Controller
         $user->save();
 
 
-        // decrement 
+        // decrement
         if ($status == 0) {
 
             if ($photo->verification == 0.1) {
@@ -273,7 +273,7 @@ class VerificationController extends Controller
             }
         }
 
-        // increment 
+        // increment
         if ($status == 1) {
             $photo->verification += 0.1;
             $photo->save();
@@ -287,12 +287,12 @@ class VerificationController extends Controller
                 // user who confirms the image gets 1 xp
                 $user->xp += 1;
                 $user->save();
-                
-                // The photo has been verified! 
-                // Update cities totals 
-                // Update countries totals 
-                // Update leaderboards 
-                // Generate litter coin 
+
+                // The photo has been verified!
+                // Update cities totals
+                // Update countries totals
+                // Update leaderboards
+                // Generate litter coin
                 // Share between the uploader (50%), the verifiers (25%) and us (25%);
                 // Reward the user more as the level up
                 event(new PhotoVerifiedByUser($photo->id));

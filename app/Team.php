@@ -21,16 +21,16 @@ class Team extends Model
      * Relationships
      */
     public function users() {
-    	return $this->belongsToMany('App\User');
+    	return $this->belongsToMany('App\Models\User\User');
     }
 
     public function leader() {
-    	return $this->hasOne('App\User');
+    	return $this->hasOne('App\Models\User\User');
     }
 
-    // double check this 
+    // double check this
     public function photos() {
-        return $this->hasManyThrough('App\User', 'App\Photo');
+        return $this->hasManyThrough('App\Models\User\User', 'App\Models\Photo');
     }
 
 }

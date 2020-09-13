@@ -5,11 +5,11 @@ namespace App\Http\Controllers;
 use Log;
 use Auth;
 use Image;
-use App\City;
-use App\State;
-use App\Photo;
+use App\Models\Location\City;
+use App\Models\Location\State;
+use App\Models\Photo;
 use App\Totals;
-use App\Country;
+use App\Models\Location\Country;
 use Carbon\Carbon;
 use App\CheckLocations;
 

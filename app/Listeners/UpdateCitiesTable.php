@@ -3,9 +3,9 @@
 namespace App\Listeners;
 
 use DB;
-use App\City;
-use App\State;
-use App\Country;
+use App\Models\Location\City;
+use App\Models\Location\State;
+use App\Models\Location\Country;
 use App\Events\NewCityAdded;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;

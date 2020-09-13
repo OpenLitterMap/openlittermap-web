@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\User;
+use App\Models\User\User;
 use App\Plan;
 use Exception;
 // use App\Billing\Payments;

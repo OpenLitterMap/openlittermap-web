@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Auth;
-use App\User;
+use App\Models\User\User;
 use App\Team;
 use App\TeamType;
 use App\Mail\NewTeamCreated;
@@ -24,7 +24,7 @@ class TeamController extends Controller
 
 
 	/**
-	 * Create and register a new Team 
+	 * Create and register a new Team
 	 */
     public function create(Request $request) {
 
@@ -39,14 +39,14 @@ class TeamController extends Controller
                        'team' => 'required'
             ]);
 
-            $user = \App\User::where('email', $request->stripeEmail)->first();
+            $user = \App\Models\User\User::where('email', $request->stripeEmail)->first();
 
     	} catch(Exception $e) {
     		// return $e->getMessage();
     		return response()->json(['status' => $e->getMessage()], 422);
     	}
 
-        $user->newSubscription($teamtype->team, $teamtype->team)->create($request->stripeToken); 
+        $user->newSubscription($teamtype->team, $teamtype->team)->create($request->stripeToken);
         // could pass more args here as second item ($token, []..);
         $team = Team::create([
         	'name' => $request->teamname,
@@ -63,7 +63,7 @@ class TeamController extends Controller
     }
 
     /**
-     * Request to join a new team 
+     * Request to join a new team
      */
     public function request(Request $request) {
         $this->validate($request, [
@@ -88,7 +88,7 @@ class TeamController extends Controller
 
 
     /**
-     * Change active team 
+     * Change active team
      */
     public function change(Request $request) {
         $user = Auth::user();

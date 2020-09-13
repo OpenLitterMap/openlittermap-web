@@ -2,11 +2,11 @@
 
 namespace App\Console\Commands\Photos;
 
-use App\Photo;
+use App\Models\Photo;
 
-use App\City;
-use App\State;
-use App\Country;
+use App\Models\Location\City;
+use App\Models\Location\State;
+use App\Models\Location\Country;
 
 use Carbon\Carbon;
 use Illuminate\Console\Command;

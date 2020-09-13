@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands;
 
-use App\Photo;
-use App\City;
-use App\State;
+use App\Models\Photo;
+use App\Models\Location\City;
+use App\Models\Location\State;
 use App\Events\NewStateAdded;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Redis;

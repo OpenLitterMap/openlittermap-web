@@ -1,6 +1,6 @@
 <?php
 
-namespace App;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
@@ -10,22 +10,22 @@ class Photo extends Model
 	* Only these categories can be edited in the database
 	*/
     protected $fillable = [
-    	'filename', 
-    	'model', 
-    	'datetime', 
-    	'lat', 'lon', 
+    	'filename',
+    	'model',
+    	'datetime',
+    	'lat', 'lon',
         'verification',
         'result_string',
 
-    	'display_name', 
-    	'location', 
-    	'road', 
-    	'suburb', 
-    	'city', 
-    	'county', 
-    	'state_district', 
-    	'country', 
-    	'country_code', 
+    	'display_name',
+    	'location',
+    	'road',
+    	'suburb',
+    	'city',
+    	'county',
+    	'state_district',
+    	'country',
+    	'country_code',
 
         'city_id',
         'state_id',
@@ -82,70 +82,70 @@ class Photo extends Model
     }
 
     public function country () {
-    	return $this->hasOne('App\Country');
+    	return $this->hasOne('App\Models\Location\Country');
     }
 
     public function state () {
-        return $this->hasOne('App\State');
+        return $this->hasOne('App\Models\Location\State');
     }
-    
+
     public function city () {
-    	return $this->hasOne('App\City');
+    	return $this->hasOne('App\Models\Location\City');
     }
 
     public function smoking () {
-    	return $this->hasOne('App\Categories\Smoking', 'id', 'smoking_id');
+    	return $this->hasOne('App\Models\Litter\Categories\Smoking', 'id', 'smoking_id');
     }
 
     public function food () {
-    	return $this->hasOne('App\Categories\Food', 'id', 'food_id');
+    	return $this->hasOne('App\Models\Litter\Categories\Food', 'id', 'food_id');
     }
 
     public function coffee () {
-    	return $this->hasOne('App\Categories\Coffee', 'id', 'coffee_id');
+    	return $this->hasOne('App\Models\Litter\Categories\Coffee', 'id', 'coffee_id');
     }
 
     public function softdrinks () {
-    	return $this->hasOne('App\Categories\SoftDrinks', 'id', 'softdrinks_id');
+    	return $this->hasOne('App\Models\Litter\Categories\SoftDrinks', 'id', 'softdrinks_id');
 	}
 
 	public function alcohol () {
-		return $this->hasOne('App\Categories\Alcohol', 'id', 'alcohol_id');
+		return $this->hasOne('App\Models\Litter\Categories\Alcohol', 'id', 'alcohol_id');
 	}
 
 	public function sanitary () {
-		return $this->hasOne('App\Categories\Sanitary', 'id', 'sanitary_id');
+		return $this->hasOne('App\Models\Litter\Categories\Sanitary', 'id', 'sanitary_id');
 	}
 
     public function dumping () {
-        return $this->hasOne('App\Categories\Dumping', 'id', 'dump_id');
+        return $this->hasOne('App\Models\Litter\Categories\Dumping', 'id', 'dump_id');
     }
 
 	public function other () {
-		return $this->hasOne('App\Categories\Other', 'id', 'other_id');
+		return $this->hasOne('App\Models\Litter\Categories\Other', 'id', 'other_id');
 	}
 
     public function industrial () {
-        return $this->hasOne('App\Categories\Industrial', 'id', 'industrial_id');
+        return $this->hasOne('App\Models\Litter\Categories\Industrial', 'id', 'industrial_id');
     }
 
     public function coastal () {
-        return $this->hasOne('App\Categories\Coastal', 'id', 'coastal_id');
+        return $this->hasOne('App\Models\Litter\Categories\Coastal', 'id', 'coastal_id');
     }
 
     public function art () {
-        return $this->hasOne('App\Categories\Art', 'id', 'art_id');
+        return $this->hasOne('App\Models\Litter\Categories\Art', 'id', 'art_id');
     }
 
     public function brands () {
-        return $this->hasOne('App\Categories\Brand', 'id', 'brands_id');
+        return $this->hasOne('App\Models\Litter\Categories\Brand', 'id', 'brands_id');
     }
 
     public function trashdog () {
-        return $this->hasOne('App\Categories\TrashDog', 'id', 'trashdog_id');
+        return $this->hasOne('App\Models\Litter\Categories\TrashDog', 'id', 'trashdog_id');
     }
 
     // public function politics() {
-    //     return $this->hasOne('App\Categories\Politicals', 'id', 'political_id');
+    //     return $this->hasOne('App\Models\Litter\Categories\Politicals', 'id', 'political_id');
     // }
 }

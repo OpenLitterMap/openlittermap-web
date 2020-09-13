@@ -2,28 +2,28 @@
 
 namespace App\Listeners;
 
-use App\Categories\Smoking as Smoking;
-use App\Categories\Alcohol as Alcohol;
-use App\Categories\Coffee as Coffee;
-use App\Categories\Food as Food;
-use App\Categories\SoftDrinks as SoftDrinks;
-// use App\Categories\Drugs;
-use App\Categories\Sanitary as Sanitary;
-use App\Categories\Other as Other;
-use App\Categories\Coastal as Coastal;
-use App\Categories\Pathway as Pathway;
-use App\Categories\Art as Art;
-use App\Categories\Brand as Brand;
-use App\Categories\TrashDog as TrashDog;
-use App\Categories\Dumping as Dumping;
-use App\Categories\Industrial as Industrial;
+use App\Models\Litter\Categories\Smoking as Smoking;
+use App\Models\Litter\Categories\Alcohol as Alcohol;
+use App\Models\Litter\Categories\Coffee as Coffee;
+use App\Models\Litter\Categories\Food as Food;
+use App\Models\Litter\Categories\SoftDrinks as SoftDrinks;
+// use App\Models\Litter\Categories\Drugs;
+use App\Models\Litter\Categories\Sanitary as Sanitary;
+use App\Models\Litter\Categories\Other as Other;
+use App\Models\Litter\Categories\Coastal as Coastal;
+use App\Models\Litter\Categories\Pathway as Pathway;
+use App\Models\Litter\Categories\Art as Art;
+use App\Models\Litter\Categories\Brand as Brand;
+use App\Models\Litter\Categories\TrashDog as TrashDog;
+use App\Models\Litter\Categories\Dumping as Dumping;
+use App\Models\Litter\Categories\Industrial as Industrial;
 
 use Illuminate\Support\Facades\Log;
 
-use App\Country;
-use App\State;
-use App\City;
-use App\Photo;
+use App\Models\Location\Country;
+use App\Models\Location\State;
+use App\Models\Location\City;
+use App\Models\Photo;
 
 use App\Events\PhotoVerifiedByAdmin;
 use App\Events\DynamicUpdate;
@@ -80,11 +80,11 @@ class UpdateLocationsAdmin
 
         /**
          * Update total counts for each category
-         * Check the photo for foreign keys, count and update them on the Country 
+         * Check the photo for foreign keys, count and update them on the Country
          */
         if ($photo->smoking_id)
         {
-            // get all verified photos for that country where smoking id not null 
+            // get all verified photos for that country where smoking id not null
             $smokingPhotos = Photo::where([
                 ['country_id', $photo->country_id],
                 ['verified', '>', 0],
@@ -93,7 +93,7 @@ class UpdateLocationsAdmin
 
             $smokingTotal = 0;
             $cigaretteTotal = 0;
-            // for each of these photos 
+            // for each of these photos
             foreach ($smokingPhotos as $smokingPhoto)
             {
                 $smoking = Smoking::find($smokingPhoto['smoking_id']);
@@ -296,7 +296,7 @@ class UpdateLocationsAdmin
         //     $needlesTotal = 0;
         //     foreach($drugsPhotos as $drugPhoto){
 
-        //         $drugs = \App\Categories\Drugs::find($drugPhoto['drugs_id']);
+        //         $drugs = \App\Models\Litter\Categories\Drugs::find($drugPhoto['drugs_id']);
 
         //       $needlesTotal += $drugs['needles'];
         //         $drugsTotal += $drugs['needles'];
@@ -329,7 +329,7 @@ class UpdateLocationsAdmin
             $sanitaryTotal = 0;
             foreach ($sanitaryPhotos as $sanitaryPhoto)
             {
-                $sanitary = \App\Categories\Sanitary::find($sanitaryPhoto['sanitary_id']);
+                $sanitary = \App\Models\Litter\Categories\Sanitary::find($sanitaryPhoto['sanitary_id']);
 
                 $sanitaryTotal += $sanitary['gloves'];
                 $sanitaryTotal += $sanitary['facemask'];
@@ -357,7 +357,7 @@ class UpdateLocationsAdmin
             $otherTotal = 0;
             foreach ($otherPhotos as $otherPhoto)
             {
-                $other = \App\Categories\Other::find($otherPhoto['other_id']);
+                $other = \App\Models\Litter\Categories\Other::find($otherPhoto['other_id']);
 
                 $otherTotal += $other['dogshit'];
                 $otherTotal += $other['plastic'];
@@ -391,7 +391,7 @@ class UpdateLocationsAdmin
 
         //     $pathwayTotal = 0;
         //     foreach($pathwayPhotos as $pathwayPhoto) {
-        //         $pathway = \App\Categories\Pathway::find($pathwayPhoto['pathway_id']);
+        //         $pathway = \App\Models\Litter\Categories\Pathway::find($pathwayPhoto['pathway_id']);
 
         //         $pathwayTotal += $pathway['gutter'];
         //         $pathwayTotal += $pathway['gutter_long'];
@@ -414,7 +414,7 @@ class UpdateLocationsAdmin
             $artTotal = 0;
             foreach ($artPhotos as $artPhoto)
             {
-                $pathway = \App\Categories\Art::find($artPhoto['art_id']);
+                $pathway = \App\Models\Litter\Categories\Art::find($artPhoto['art_id']);
                 $artTotal += $pathway['item'];
             }
             $country->total_art = $artTotal;
@@ -431,7 +431,7 @@ class UpdateLocationsAdmin
 
             $coastalTotal = 0;
             foreach($coastalPhotos as $coastalPhoto) {
-                $coastal = \App\Categories\Coastal::find($coastalPhoto['coastal_id']);
+                $coastal = \App\Models\Litter\Categories\Coastal::find($coastalPhoto['coastal_id']);
                 $coastalTotal += $coastal['microplastics'];
                 $coastalTotal += $coastal['mediumplastics'];
                 $coastalTotal += $coastal['macroplastics'];
@@ -507,7 +507,7 @@ class UpdateLocationsAdmin
             $wilde_and_greene = 0;
 
             foreach($brandsPhotos as $brandPhoto) {
-                $brand = \App\Categories\Brand::find($brandPhoto['brands_id']);
+                $brand = \App\Models\Litter\Categories\Brand::find($brandPhoto['brands_id']);
                 if($brand->adidas) {
                     $adidas += $brand->adidas;
                     $brandsTotal += $brand->adidas;

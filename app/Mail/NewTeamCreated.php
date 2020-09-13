@@ -2,7 +2,7 @@
 
 namespace App\Mail;
 
-use App\User;
+use App\Models\User\User;
 use App\Team;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -32,7 +32,7 @@ class NewTeamCreated extends Mailable
      *
      * @return $this
 
-     // different emails per team 
+     // different emails per team
 
      */
     public function build()

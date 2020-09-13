@@ -49,6 +49,14 @@ export const mutations = {
     },
 
     /**
+     * List of countries to choose global flag in settings
+     */
+    flags_countries (state, payload)
+    {
+        state.countries = payload;
+    },
+
+    /**
      * User object from HomeController@index if auth
      */
     initUser (state, payload)
@@ -73,11 +81,27 @@ export const mutations = {
     },
 
     /**
-     *
+     * The user wants to change a privacy setting
      */
-    show_name_createdby (state, payload)
+    privacy (state, payload)
     {
-        state.user.show_name_createdby = payload;
+        state.user[payload.column] = payload.v;
+    },
+
+    /**
+     * Does the user want to receive emails? Data from backend
+     */
+    toggle_email_sub (state, payload)
+    {
+        state.user.emailsub = payload;
+    },
+
+    /**
+     * Default value of litter picked up from backend
+     */
+    toggle_litter_picked_up (state, payload)
+    {
+        state.user.items_remaining = payload;
     }
 
 };

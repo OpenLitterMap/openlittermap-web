@@ -2,24 +2,24 @@
 
 namespace App\Listeners;
 
-use App\Categories\Art as Art;
-use App\Categories\Alcohol as Alcohol;
-use App\Categories\Brand as Brand;
-use App\Categories\Coastal as Coastal;
-use App\Categories\Coffee as Coffee;
-use App\Categories\Dumping as Dumping;
-// use App\Categories\Drugs;
-use App\Categories\Food as Food;
-use App\Categories\Industrial as Industrial;
-use App\Categories\Other as Other;
-// use App\Categories\Pathway as Pathway;
-use App\Categories\SoftDrinks as SoftDrinks;
-use App\Categories\Sanitary as Sanitary;
-use App\Categories\Smoking as Smoking;
-use App\Categories\TrashDog as TrashDog;
+use App\Models\Litter\Categories\Art as Art;
+use App\Models\Litter\Categories\Alcohol as Alcohol;
+use App\Models\Litter\Categories\Brand as Brand;
+use App\Models\Litter\Categories\Coastal as Coastal;
+use App\Models\Litter\Categories\Coffee as Coffee;
+use App\Models\Litter\Categories\Dumping as Dumping;
+// use App\Models\Litter\Categories\Drugs;
+use App\Models\Litter\Categories\Food as Food;
+use App\Models\Litter\Categories\Industrial as Industrial;
+use App\Models\Litter\Categories\Other as Other;
+// use App\Models\Litter\Categories\Pathway as Pathway;
+use App\Models\Litter\Categories\SoftDrinks as SoftDrinks;
+use App\Models\Litter\Categories\Sanitary as Sanitary;
+use App\Models\Litter\Categories\Smoking as Smoking;
+use App\Models\Litter\Categories\TrashDog as TrashDog;
 
-use App\Country;
-use App\Photo;
+use App\Models\Location\Country;
+use App\Models\Photo;
 
 use App\Events\PhotoVerifiedByAdmin;
 use App\Events\DynamicUpdate;
@@ -76,11 +76,11 @@ class UpdateCountriesAdmin
 
         /**
          * Update total counts for each category
-         * Check the photo for foreign keys, count and update them on the Country 
+         * Check the photo for foreign keys, count and update them on the Country
          */
         if ($photo->smoking_id)
         {
-            // get all verified photos for that country where smoking id not null 
+            // get all verified photos for that country where smoking id not null
             $smokingPhotos = Photo::where([
                 ['country_id', $photo->country_id],
                 ['verified', '>', 0],
@@ -89,7 +89,7 @@ class UpdateCountriesAdmin
 
             $smokingTotal = 0;
             $cigaretteTotal = 0;
-            // for each of these photos 
+            // for each of these photos
             foreach ($smokingPhotos as $smokingPhoto)
             {
                 $smoking = Smoking::find($smokingPhoto['smoking_id']);
@@ -296,7 +296,7 @@ class UpdateCountriesAdmin
         //     $needlesTotal = 0;
         //     foreach($drugsPhotos as $drugPhoto){
 
-        //         $drugs = \App\Categories\Drugs::find($drugPhoto['drugs_id']);
+        //         $drugs = \App\Models\Litter\Categories\Drugs::find($drugPhoto['drugs_id']);
 
         //       $needlesTotal += $drugs['needles'];
         //         $drugsTotal += $drugs['needles'];
@@ -396,7 +396,7 @@ class UpdateCountriesAdmin
 
         //     $pathwayTotal = 0;
         //     foreach($pathwayPhotos as $pathwayPhoto) {
-        //         $pathway = \App\Categories\Pathway::find($pathwayPhoto['pathway_id']);
+        //         $pathway = \App\Models\Litter\Categories\Pathway::find($pathwayPhoto['pathway_id']);
 
         //         $pathwayTotal += $pathway['gutter'];
         //         $pathwayTotal += $pathway['gutter_long'];

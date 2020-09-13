@@ -2,21 +2,21 @@
 
 namespace App\Console\Commands;
 
-use App\User;
-use App\Photo;
-use App\Categories\Smoking;
-use App\Categories\Alcohol;
-use App\Categories\Coffee;
-use App\Categories\Food;
-use App\Categories\SoftDrinks;
-use App\Categories\Drugs;
-use App\Categories\Sanitary;
-use App\Categories\Other;
-use App\Categories\Coastal;
-use App\Categories\Pathway;
-use App\Categories\Art;
-use App\Categories\Brand;
-use App\Categories\TrashDog;
+use App\Models\User\User;
+use App\Models\Photo;
+use App\Models\Litter\Categories\Smoking;
+use App\Models\Litter\Categories\Alcohol;
+use App\Models\Litter\Categories\Coffee;
+use App\Models\Litter\Categories\Food;
+use App\Models\Litter\Categories\SoftDrinks;
+use App\Models\Litter\Categories\Drugs;
+use App\Models\Litter\Categories\Sanitary;
+use App\Models\Litter\Categories\Other;
+use App\Models\Litter\Categories\Coastal;
+use App\Models\Litter\Categories\Pathway;
+use App\Models\Litter\Categories\Art;
+use App\Models\Litter\Categories\Brand;
+use App\Models\Litter\Categories\TrashDog;
 
 use Illuminate\Console\Command;
 
@@ -166,7 +166,7 @@ class UpdateUsersTotals extends Command
                     $otherTotal += $other['other'];
                     $litterTotal += $otherTotal;
                 }
-            } // end photos loop 
+            } // end photos loop
             $user->total_litter = $litterTotal;
             $user->total_smoking = $smokingTotal;
             $user->total_cigaretteButts = $cigarettesTotal;
@@ -175,7 +175,7 @@ class UpdateUsersTotals extends Command
             $user->total_plasticBottles = $plasticBottleTotal;
             $user->total_smoking = $smokingTotal;
             $user->save();
-        } // end users loop 
+        } // end users loop
     }
 }
 

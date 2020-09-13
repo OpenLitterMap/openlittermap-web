@@ -1,116 +1,158 @@
 <template>
 	<div style="padding-left: 1em; padding-right: 1em;">
-			<h1 class="title is-4">Show Country Flag</h1>
-			<hr>
-			<br>
-			<div class="columns">
-				<div class="column is-offset-1">
+        <h1 class="title is-4">Show Country Flag</h1>
+        <hr>
+        <br>
 
-					<p class="title is-5 mb20 green">Top 10 Global OpenLitterMap Leaders only!</p>
+        <loading v-if="loading" :active.sync="loading" :is-full-page="true" />
 
-					<div v-show="this.user.global_flag" class="mb20">
-						<p class="strong">Selected: {{ this.getSelected() }}</p>
-					</div>
+        <div v-else class="columns">
+            <div class="column is-offset-1">
 
-					<p class="mb20">If you can make the top 10, you can represent your country!</p>
-					<p class="mb20">Type or scroll to select from the list</p>
+                <p class="title is-5 mb20 green">Top 10 Global OpenLitterMap Leaders only!</p>
 
-					<vue-simple-suggest
-					    :filter-by-query="true"
-					    :list="getCountries()"
-					    :min-length="0"
-					    :max-suggestions="0"
-					    mode="select"
-					    placeholder="Select your country"
-					    :styles="autoCompleteStyle"
-					    v-model="country">
-					</vue-simple-suggest>
+                <div v-show="this.$store.state.user.user.global_flag" class="mb20">
+                    <p class="strong">Selected: {{ this.getSelected() }}</p>
+                </div>
 
-					<button
-						:disabled="processing"
-						:class="checkLoading"
-						@click="save"
-					>Save Flag</button>
-				</div>
-			</div>
-		</div>
-	</div>
+                <p class="mb20">If you can make the top 10, you can represent your country!</p>
+                <p class="mb20">Type or scroll to select from the list</p>
+
+                <vue-simple-suggest
+                    ref="vss"
+                    :filter-by-query="true"
+                    :list="getCountries()"
+                    :min-length="0"
+                    :max-suggestions="0"
+                    mode="select"
+                    placeholder="Select your country"
+                    :styles="autoCompleteStyle"
+                    v-model="country"
+                    @focus="onFocus()"
+                    @suggestion-click="onSuggestion()"
+                />
+
+                <button
+                    :disabled="processing"
+                    :class="button"
+                    @click="save"
+                >Save Flag</button>
+            </div>
+        </div>
+    </div>
 </template>
 
 <script>
+import Loading from 'vue-loading-overlay'
+import 'vue-loading-overlay/dist/vue-loading.css'
+
 import VueSimpleSuggest from 'vue-simple-suggest'
 import 'vue-simple-suggest/dist/styles.css'
 
 export default {
     name: 'GlobalFlag',
-    props: ['countries', 'user'],
-    components: { VueSimpleSuggest },
+    components: { Loading, VueSimpleSuggest },
+    async created ()
+    {
+        this.loading = true;
+
+        await this.$store.dispatch('GET_COUNTRIES_FOR_FLAGS');
+
+        this.loading = false;
+    },
     data ()
     {
         return {
+            btn: 'button mt1 is-primary is-medium',
             country: '',
+            processing: false,
+            loading: true,
             autoCompleteStyle: {
                 vueSimpleSuggest: "position-relative width-50",
                 inputWrapper: "",
                 defaultInput : "input",
                 suggestions: "position-absolute list-group z-1000 custom-class-overflow width-50",
                 suggestItem: "list-group-item"
-            },
-            processing: false,
-            defaultClass: 'button mt20 is-primary is-medium'
+            }
         };
+    },
+    computed: {
+
+        /**
+         * Dynamic button class
+         */
+        button ()
+        {
+            return this.processing ? this.btn + ' is-loading' : this.btn;
+        },
+
+        /**
+         *
+         */
+        countries ()
+        {
+            return this.$store.state.user.countries;
+        }
     },
     methods: {
 
-        getCountries() {
+        /**
+         * List of available countries to choose flag from
+         */
+        getCountries ()
+        {
             return Object.values(this.countries);
         },
 
-        getSelected() {
-            if (this.user.global_flag) {
-                return this.countries[this.user.global_flag];
-            }
+        /**
+         * Currently selected flag, if choosen
+         */
+        getSelected ()
+        {
+            if (this.$store.state.user.user.global_flag) return this.countries[this.$store.state.user.user.global_flag];
 
             return false;
         },
 
-        save() {
+        /**
+         * Show all suggestions (not just ones filtered by text input)
+         */
+        onFocus ()
+        {
+            this.$refs.vss.suggestions = this.$refs.vss.list;
+        },
+
+        /**
+         * Hacky solution. Waiting on fix. https://github.com/KazanExpress/vue-simple-suggest/issues/311
+         * An item has been selected from the list. Blur the input focus.
+         */
+        onSuggestion ()
+        {
+            this.$nextTick(function() {
+                Array.prototype.forEach.call(document.getElementsByClassName('input'), function(el) {
+                    el.blur();
+                });
+            });
+        },
+
+        /**
+         * Dispatch request to save selected flag
+         */
+        async save ()
+        {
             this.processing = true;
 
             let selected = Object.keys(this.countries).find(key => this.countries[key] === this.country);
 
-            axios.post('/en/settings/save-flag', {
-                country: selected
-            })
-            .then(response => {
-                console.log(response);
-                if (response.status == 200) {
-                    window.location.href = window.location.href;
-                }
-            })
-            .catch(error => {
-                console.log(error);
-            });
-        }
-    },
-    computed: {
+            await this.$store.dispatch('UPDATE_GLOBAL_FLAG', selected);
 
-        checkLoading() {
-            return this.processing ? this.defaultClass + ' is-loading' : this.defaultClass;
-        },
+            this.processing = false;
+        }
     }
 }
 </script>
 
 <style lang="scss">
-
-	.mb20 {
-		margin-bottom: 20px;
-	}
-
-	.mt20 {
-		margin-top: 20px;
-	}
 
 	.green {
 		color: #2ecc71;

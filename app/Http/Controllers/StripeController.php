@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use DB;
 use App\Plan;
 use Auth;
-use App\User;
+use App\Models\User\User;
 use Laravel\Cashier\Cashier;
 use Illuminate\Http\Request;
 

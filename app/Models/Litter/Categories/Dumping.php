@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Categories;
+namespace App\Models\Litter\Categories;
 
 use Illuminate\Database\Eloquent\Model;
 
@@ -15,6 +15,6 @@ class Dumping extends Model
     protected $table = 'dumping';
 
     public function photo () {
-    	return $this->belongsTo('App\Photo');
+    	return $this->belongsTo('App\Models\Photo');
     }
 }

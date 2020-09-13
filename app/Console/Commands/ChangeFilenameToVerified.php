@@ -3,8 +3,8 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\User;
-use App\Photo;
+use App\Models\User\User;
+use App\Models\Photo;
 
 class ChangeFilenameToVerified extends Command
 {

@@ -5,12 +5,12 @@ namespace App\Http\Controllers;
 use Alert;
 use Auth;
 use Image;
-use App\User;
+use App\Models\User\User;
 // use App\Award;
 use App\Plan;
 use App\Team;
 use Validator;
-use App\Photo;
+use App\Models\Photo;
 use App\Level;
 use App\TeamType;
 use JavaScript;
@@ -86,7 +86,7 @@ class UsersController extends Controller
 
         $plans = Plan::all();
         $lang = \App::getLocale();
-        $countries = \App\Country::where('manual_verify', 1)->orWhere('shortcode', 'pr')->orderBy('country', 'asc')->get()->pluck('country', 'shortcode');
+        $countries = \App\Models\Location\Country::where('manual_verify', 1)->orWhere('shortcode', 'pr')->orderBy('country', 'asc')->get()->pluck('country', 'shortcode');
 
         return [
             'user' => $user,
@@ -333,59 +333,24 @@ class UsersController extends Controller
 
     /**
      * Toggle a Users privacy
-     * todo - move this to SettingsController.
      */
-    public function togglePrivacy(Request $request) {
-
+    public function togglePrivacy (Request $request)
+    {
         $user = Auth::user();
 
-        if ($request->mapsName) {
-            $user->show_name_maps = true;
-        } else {
-            $user->show_name_maps = false;
-        }
+        /* Show on maps */
+        $user->show_name_maps = $request->show_name_maps;
+        $user->show_username_maps = $request->show_username_maps;
 
-        if ($request->mapsUsername) {
-            $user->show_username_maps = true;
-        } else {
-            $user->show_username_maps = false;
-        }
+        /* Show on leaderboards */
+        $user->show_name = $request->show_name;
+        $user->show_username = $request->show_username;
 
-        if ($request->leaderboardsName) {
-            $user->show_name = true;
-        } else {
-            $user->show_name = false;
-        }
-
-        if ($request->leaderboardsUsername) {
-            $user->show_username = true;
-        } else {
-            $user->show_username = false;
-        }
-
-        if ($request->createdByName) {
-            $user->show_name_createdby = true;
-        } else {
-            $user->show_name_createdby = false;
-        }
-
-        if ($request->createdByUsername) {
-            $user->show_username_createdby = true;
-        } else {
-            $user->show_username_createdby = false;
-        }
-
+        /* Show on createdBy sections of locations the user has added when uploading */
+        $user->show_name_createdby = $request->show_name_createdby;
+        $user->show_username_createdby = $request->show_username_createdby;
 
         $user->save();
-    }
-
-
-	/*
-    * Redirect the authenticated user to the submit page
-    */
-    public function submit() {
-    	$user = Auth::user();
-    	return view('pages.submit', compact('user'));
     }
 
     /**
@@ -398,17 +363,21 @@ class UsersController extends Controller
         return redirect('/');
     }
 
-    public function unsubscribeEmail($token){
+    public function unsubscribeEmail  ($token)
+    {
         $user = User::whereToken($token)->firstOrFail();
+
         $user->emailsub = 0;
         $user->save();
+
         Alert::message('You are now unsubscribed');
     }
 
     /**
      * Update the users phone number
      */
-    public function phone(Request $request) {
+    public function phone (Request $request)
+    {
         $phoneNumber = $request['phonenumber'];
         $user = Auth::user();
         $user->phone = $phoneNumber;
@@ -418,7 +387,8 @@ class UsersController extends Controller
     /**
      * Remove a users phone number from the database
      */
-    public function removePhone(Request $request) {
+    public function removePhone (Request $request)
+    {
         $user = Auth::user();
         $user->phone = '';
         $user->save();
@@ -426,18 +396,26 @@ class UsersController extends Controller
 
     /**
      * Toggle the users items_remaining value (Default = True == Remaining)
+     *
+     * Todo - move settings to new table
+     * and use new picked_up column
      */
-    public function togglePresence(Request $request) {
+    public function togglePresence (Request $request)
+    {
         $user = Auth::user();
         $user->items_remaining = ! $user->items_remaining;
         $user->save();
-        // return $user->items_remaining;
+
+        return [
+            'message' => 'success',
+            'value'   => $user->items_remaining
+        ];
     }
 
     /**
      * Upload a users profile photo
      */
-    public function uploadProfilePhoto(Request $request)
+    public function uploadProfilePhoto (Request $request)
     {
         $file = $request->file('file'); // -> /tmp/php7S8v..
 
@@ -458,8 +436,5 @@ class UsersController extends Controller
             $s3->put($filepath, file_get_contents($file), 'public');
             $imageName = $s3->url($filepath);
         }
-
-
     }
-
 }

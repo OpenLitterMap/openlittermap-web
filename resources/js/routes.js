@@ -115,7 +115,7 @@ const router = new VueRouter({
             children: [
                 {
                     path: 'password',
-                    component: require('./views/settings/Password').default,
+                    component: require('./views/Settings').default,
                     meta: {
                         middleware: [ auth ]
                     },
@@ -163,7 +163,7 @@ const router = new VueRouter({
                     },
                 },
                 {
-                    path: 'email',
+                    path: 'emails',
                     component: require('./views/settings/Emails').default,
                     meta: {
                         middleware: [ auth ]

@@ -1,40 +1,48 @@
 <?php
 
-namespace App;
+namespace App\Models\Location;
 
 use Illuminate\Database\Eloquent\Model;
 
-class State extends Model
+class Country extends Model
 {
-    protected $fillable = [
-		'id', 
-		'state',
-		'country_id',
-		'created_at',
-		'updated_at',
-		'total_images',
-		'total_smoking',
-		'total_cigaretteButts',
+    /**
+     * Properties that are mass assignable
+     */
+	protected $fillable = [
+        'id',
+        'country',
+        'shortcode',
+        'created_at',
+        'updated_at',
+        'total_images',
+        'total_smoking',
+        'total_cigaretteButts',
+        'total_plasticBottles',
+        'total_alcohol',
+        'total_coffee',
         'total_dumping',
         'total_industrial',
-		'total_food',
-		'total_softDrinks',
-		'total_plasticBottles',
-		'total_alcohol',
-		'total_coffee',
-		'total_drugs',
-		'total_needles',
-		'total_sanitary',
-		'total_other',
-		'total_coastal',
-		'total_pathways',
-		'total_art',
-		'manual_verify',
+        'total_food',
+        'total_softdrinks',
+        'total_sanitary',
+        'total_other',
+        'total_coastal',
+        'total_art',
+        'total_contributors',
+        'manual_verify',
+        'countrynameb',
         'littercoin_paid',
-        'created_by'
-	];
+        'created_by',
+        'photos_per_month'
+    ];
 
-	/**
+    public function getRouteKeyName()
+    {
+        return 'country';
+    }
+
+    /**
      * Extra columns on our Country model
      */
     protected $appends = [
@@ -63,7 +71,7 @@ class State extends Model
 
     /**
      * @return 'brands_data' column
-     * Todo - organize this by country 
+     * Todo - organize this by country
      *      - every country should have a different list of brands associated with it
      */
     public function getBrandsDataAttribute()
@@ -123,7 +131,7 @@ class State extends Model
         'total_sanitary',
         'total_other',
         'total_coastal',
-        // todo - remove these 
+        // todo - remove these
         'total_cigaretteButts',
         'total_plasticBottles',
         'total_drugs',
@@ -171,20 +179,26 @@ class State extends Model
         'total_wilde_and_greene'
     ];
 
-
-	public function creator () {
-		return $this->belongsTo('App\User', 'created_by');
+    /**
+     * Define relationships
+     */
+	public function photos () {
+		return $this->hasMany('App\Models\Photo');
 	}
 
-	public function country () {
-		return $this->belongsTo('App\Country');
-	}
-		
-    public function cities () {
-    	return $this->hasMany('App\City');
+    public function creator () {
+        return $this->belongsTo('App\Models\User\User', 'created_by');
     }
 
-    public function photos () {
-    	return $this->hasMany('App\Photo');
+    public function states () {
+        return $this->hasMany('App\Models\Location\State');
+    }
+
+    public function cities () {
+    	return $this->hasMany('App\Models\Location\City');
+    }
+
+    public function users () {
+    	return $this->hasMany('App\Models\User\User');
     }
 }

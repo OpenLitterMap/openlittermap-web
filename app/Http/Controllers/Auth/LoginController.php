@@ -182,7 +182,7 @@ class LoginController extends Controller
         $errors = [$this->username() => trans('auth.failed')];
 
         // Load user
-        $user = \App\User::where($this->username(), $request->{$this->username()})->first();
+        $user = \App\Models\User\User::where($this->username(), $request->{$this->username()})->first();
 
         // Check if user was successfully loaded, that the password matches
         // and active is not 1. If so, override the default error message.

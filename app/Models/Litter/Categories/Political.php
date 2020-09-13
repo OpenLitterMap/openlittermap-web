@@ -1,6 +1,6 @@
 <?php
 
-namespace App;
+namespace App\Models\Litter\Categories;
 
 use Illuminate\Database\Eloquent\Model;
 

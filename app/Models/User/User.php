@@ -1,7 +1,8 @@
 <?php
 
-namespace App;
+namespace App\Models\User;
 
+use App\Models\Photo;
 use App\Payment;
 use App\Role;
 //use App\Billing\Billable;
@@ -187,57 +188,57 @@ class User extends Authenticatable
      */
     public function smoking ()
     {
-        return $this->hasManyThrough('App\Smoking', 'App\Photo');
+        return $this->hasManyThrough('App\Smoking', 'App\Models\Photo');
     }
 
     public function alcohol ()
     {
-        return $this->hasManyThrough('App\Alcohol', 'App\Photo');
+        return $this->hasManyThrough('App\Alcohol', 'App\Models\Photo');
     }
 
     public function coffee ()
     {
-        return $this->hasManyThrough('App\Coffee', 'App\Photo');
+        return $this->hasManyThrough('App\Coffee', 'App\Models\Photo');
     }
 
     public function food ()
     {
-        return $this->hasManyThrough('App\Food', 'App\Photo');
+        return $this->hasManyThrough('App\Food', 'App\Models\Photo');
     }
 
     public function softdrinks ()
     {
-        return $this->hasManyThrough('App\SoftDrinks', 'App\Photo');
+        return $this->hasManyThrough('App\SoftDrinks', 'App\Models\Photo');
     }
 
     public function drugs ()
     {
-        return $this->hasManyThrough('App\Drugs', 'App\Photo');
+        return $this->hasManyThrough('App\Drugs', 'App\Models\Photo');
     }
 
     public function sanitary ()
     {
-        return $this->hasManyThrough('App\Sanitary', 'App\Photo');
+        return $this->hasManyThrough('App\Sanitary', 'App\Models\Photo');
     }
 
     public function other ()
     {
-        return $this->hasManyThrough('App\Other', 'App\Photo');
+        return $this->hasManyThrough('App\Other', 'App\Models\Photo');
     }
 
     public function coastal ()
     {
-        return $this->hasManyThrough('App\Coastal', 'App\Photo');
+        return $this->hasManyThrough('App\Coastal', 'App\Models\Photo');
     }
 
     public function pathway ()
     {
-        return $this->hasManyThrough('App\Pathway', 'App\Photo');
+        return $this->hasManyThrough('App\Pathway', 'App\Models\Photo');
     }
 
     public function art ()
     {
-        return $this->hasManyThrough('App\Art', 'App\Photo');
+        return $this->hasManyThrough('App\Art', 'App\Models\Photo');
     }
 
 
@@ -246,7 +247,7 @@ class User extends Authenticatable
      ** - Get a list of all locations a User has created.
      */
     // public function locations_created() {
-    //     $countries = \App\Country::where('manual_verify', 1)->get();
+    //     $countries = \App\Models\Location\Country::where('manual_verify', 1)->get();
     //     $countries_created = [];
     //     foreach($countries as $country) {
     //         if($country->photos->first()->user_id == $this->id) {

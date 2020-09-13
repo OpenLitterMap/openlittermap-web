@@ -103,7 +103,7 @@
 				</div>
 
                 <br>
-				<button class="button is-medium is-danger" @click="toggle">Update</button>
+				<button :class="button" :disabled="processing" @click="submit">Update</button>
 			</div>
 		</div>
 	</div>
@@ -112,77 +112,111 @@
 <script>
 export default {
     name: 'Privacy',
+    data ()
+    {
+        return {
+            btn: 'button is-medium is-info',
+            processing: false
+        };
+    },
     computed: {
 
+
         /**
-         *
+         * Add ' is-loading' when processing
+         */
+        button ()
+        {
+            return this.processing ? this.btn + ' is-loading' : this.btn;
+        },
+
+        /**
+         * Show personal name on the createdBy sections of any locations the user added
          */
         createdby_name: {
             get () {
                 return this.user.show_name_createdby;
             },
             set (v) {
-                this.$store.commit('show_name_createdby', v);
+                this.$store.commit('privacy', {
+                    column: 'show_name_createdby',
+                    v
+                });
             }
         },
 
         /**
-         *
+         * Show username on the createdBy sections of any locations the user added
          */
         createdby_username: {
             get () {
                 return this.user.show_username_createdby;
             },
             set (v) {
-                this.$store.commit('show_username_createdby', v);
+                this.$store.commit('privacy', {
+                    column: 'show_username_createdby',
+                    v
+                });
             }
         },
 
         /**
-         *
+         * Show personal name on any leaderboard the user qualifies for
          */
         leaderboard_name: {
             get () {
                 return this.user.show_name;
             },
             set (v) {
-                this.$store.commit('show_name', v);
+                this.$store.commit('privacy', {
+                    column: 'show_name',
+                    v
+                });
             }
         },
 
         /**
-         *
+         * Show username on any leaderboard the user qualifies for
          */
         leaderboard_username: {
             get () {
                 return this.user.show_username;
             },
             set (v) {
-                this.$store.commit('show_username', v);
+                this.$store.commit('privacy', {
+                    column: 'show_username',
+                    v
+                });
             }
         },
 
         /**
-         *
+         * Show personal name on any datapoints on any maps the user uploads data to
          */
         maps_name: {
             get () {
                 return this.user.show_name_maps;
             },
             set (v) {
-                this.$store.commit('show_name_maps', v);
+                this.$store.commit('privacy', {
+                    column: 'show_name_maps',
+                    v
+                });
             }
         },
 
         /**
-         *
+         * Show username on any datapoints on any maps the user uploads data to
          */
         maps_username: {
             get () {
                 return this.user.show_username_maps;
             },
             set (v) {
-                this.$store.commit('show_username_maps', v);
+                this.$store.commit('privacy', {
+                    column: 'show_username_maps',
+                    v
+                });
             }
         },
 
@@ -197,31 +231,15 @@ export default {
     methods: {
 
         /**
-         *
+         * Dispatch request to save all settings
          */
-        toggle ()
+        async submit ()
         {
-            console.log('toggle');
-            // axios({
-            //     method: 'POST',
-            //     url: '/en/settings/privacy/update',
-            //     data: {
-            //         mapsName: this.mapsName,
-            //         mapsUsername: this.mapsUsername,
-            //         leaderboardsName: this.leaderboardsName,
-            //         leaderboardsUsername: this.leaderboardsUsername,
-            //         createdByName: this.createdByName,
-            //         createdByUsername: this.createdByUsername
-            //         // insta: this.vsocialmedia
-            //     }
-            // })
-            // .then(response => {
-            //     // console.log(response);
-            //     // window.location.href = window.location.href;
-            // })
-            // .catch(error => {
-            //     console.log(error);
-            // });
+            this.processing = true;
+
+            await this.$store.dispatch('SAVE_PRIVACY_SETTINGS');
+
+            this.processing = false;
         }
     }
 }

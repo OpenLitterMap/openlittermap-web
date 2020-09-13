@@ -2,11 +2,11 @@
 
 namespace App\Jobs;
 
-use App\User;
-use App\Photo;
-use App\Country;
-use App\State;
-use App\City;
+use App\Models\User\User;
+use App\Models\Photo;
+use App\Models\Location\Country;
+use App\Models\Location\State;
+use App\Models\Location\City;
 use App\Litterrata;
 use App\Events\ImageUploaded;
 use App\Events\PhotoVerifiedByAdmin;

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Categories;
+namespace App\Models\Litter\Categories;
 
 use Illuminate\Database\Eloquent\Model;
 
@@ -24,7 +24,7 @@ class Coffee extends Model
     ];
 
     public function photo() {
-    	return $this->belongsTo('App\Photo');
+    	return $this->belongsTo('App\Models\Photo');
     }
 
 }

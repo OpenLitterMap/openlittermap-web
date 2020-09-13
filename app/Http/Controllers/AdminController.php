@@ -5,24 +5,24 @@ namespace App\Http\Controllers;
 use Log;
 use Auth;
 use File;
-use App\User;
-use App\Photo;
+use App\Models\User\User;
+use App\Models\Photo;
 
-use App\Categories\Smoking as Smoking;
-use App\Categories\Alcohol as Alcohol;
-use App\Categories\Coffee as Coffee;
-use App\Categories\Food as Food;
-use App\Categories\SoftDrinks as SoftDrinks;
-use App\Categories\Drugs as Drugs;
-use App\Categories\Sanitary as Sanitary;
-use App\Categories\Other as Other;
-use App\Categories\Coastal as Coastal;
-use App\Categories\Pathway as Pathway;
-use App\Categories\Art as Art;
-use App\Categories\Brand as Brand;
-use App\Categories\TrashDog as TrashDog;
-use App\Categories\Dumping as Dumping;
-use App\Categories\Industrial as Industrial;
+use App\Models\Litter\Categories\Smoking as Smoking;
+use App\Models\Litter\Categories\Alcohol as Alcohol;
+use App\Models\Litter\Categories\Coffee as Coffee;
+use App\Models\Litter\Categories\Food as Food;
+use App\Models\Litter\Categories\SoftDrinks as SoftDrinks;
+use App\Models\Litter\Categories\Drugs as Drugs;
+use App\Models\Litter\Categories\Sanitary as Sanitary;
+use App\Models\Litter\Categories\Other as Other;
+use App\Models\Litter\Categories\Coastal as Coastal;
+use App\Models\Litter\Categories\Pathway as Pathway;
+use App\Models\Litter\Categories\Art as Art;
+use App\Models\Litter\Categories\Brand as Brand;
+use App\Models\Litter\Categories\TrashDog as TrashDog;
+use App\Models\Litter\Categories\Dumping as Dumping;
+use App\Models\Litter\Categories\Industrial as Industrial;
 
 use App\Litterrata;
 use App\LitterES;
@@ -37,7 +37,7 @@ class AdminController extends Controller
 {
     /**
      * Apply IsAdmin middleware to all of these routes
-     */ 
+     */
     public function __construct ()
     {
     	return $this->middleware('admin');
@@ -63,7 +63,7 @@ class AdminController extends Controller
             ->orWhere('name', 'default')
             ->get()
             ->sortBy('created_at');
-        
+
         $totalUsers = $users->count();
 
         $users = $users->groupBy(function($val) {
@@ -88,7 +88,7 @@ class AdminController extends Controller
         $usersUploaded = $usersUploaded->groupBy(function($val) {
             return Carbon::parse($val->created_at)->format('m-y');
         });;
-        
+
         $uupm = [];
         foreach($usersUploaded as $index => $userUploaded)
         {
@@ -106,7 +106,7 @@ class AdminController extends Controller
 
 
     /**
-     * Get Photos @ 0.1 - 1 verification 
+     * Get Photos @ 0.1 - 1 verification
      */
     // public function getPhotos() {
         // Get the first photo submitted for verification
@@ -131,7 +131,7 @@ class AdminController extends Controller
         // note - not using this anymore, todo - write smart contracts and automate Littercoin distribution
         // Check if the Users Ltrx allowance is Greater than 0
         // if ($userWhoUploaded->littercoin_allowance > 0) {
-        //     // check if user has a wallet id 
+        //     // check if user has a wallet id
         //     if ($userWhoUploaded->eth_wallet) {
         //         // if so, display the ltrx button
         //         $eth_wallet = $userWhoUploaded->eth_wallet;
@@ -144,8 +144,8 @@ class AdminController extends Controller
         // }
 
     //     return view('admin.newphototool', compact(
-    //         'photo', 
-    //         'photosCount', 
+    //         'photo',
+    //         'photosCount',
     //         'photosNotProcessedCount',
     //         'userWhoUploaded',
     //         'eth_wallet',
@@ -155,7 +155,7 @@ class AdminController extends Controller
     // }
 
     /**
-     * Verify an image, delete the image 
+     * Verify an image, delete the image
      ** todo - fix this with correct AWS permissions
      */
     // public function verify(Request $request) {
@@ -173,8 +173,8 @@ class AdminController extends Controller
     // }
 
     /**
-     * Verify an image - keep the image 
-     */ 
+     * Verify an image - keep the image
+     */
     public function verifykeepimage (Request $request)
     {
       $photo = Photo::find($request->photoId);
@@ -191,10 +191,10 @@ class AdminController extends Controller
     /**
      * Incorrect image - reset verification to 0
      */
-    public function incorrect (Request $request) 
+    public function incorrect (Request $request)
     {
         $this->reset($request->photoId);
-        
+
         $user = Auth::user();
         $user->xp -= 1;
         $user->count_correctly_verified = 0;
@@ -220,7 +220,7 @@ class AdminController extends Controller
             $photo->save();
             Smoking::find($smoking_id)->delete();
         }
-        
+
         if ($photo["food_id"])
         {
             $food_id = $photo["food_id"];
@@ -228,7 +228,7 @@ class AdminController extends Controller
             $photo->save();
             Food::find($food_id)->delete();
         }
-        
+
         if ($photo["coffee_id"])
         {
             $coffee_id = $photo["coffee_id"];
@@ -236,7 +236,7 @@ class AdminController extends Controller
             $photo->save();
             Coffee::find($coffee_id)->delete();
         }
-        
+
         if ($photo["softdrinks_id"])
         {
             $softdrinks_id = $photo["softdrinks_id"];
@@ -244,7 +244,7 @@ class AdminController extends Controller
             $photo->save();
             SoftDrinks::find($softdrinks_id)->delete();
         }
-        
+
         if ($photo["alcohol_id"])
         {
             $alcohol_id = $photo["alcohol_id"];
@@ -252,7 +252,7 @@ class AdminController extends Controller
             $photo->save();
             Alcohol::find($alcohol_id)->delete();
         }
-        
+
         if ($photo["other_id"])
         {
             $other_id = $photo["other_id"];
@@ -260,7 +260,7 @@ class AdminController extends Controller
             $photo->save();
             Other::find($other_id)->delete();
         }
-        
+
         if ($photo["sanitary_id"])
         {
             $sanitary_id = $photo["sanitary_id"];
@@ -268,7 +268,7 @@ class AdminController extends Controller
             $photo->save();
             Sanitary::find($sanitary_id)->delete();
         }
-        
+
         if ($photo["coastal_id"])
         {
             $coastal_id = $photo["coastal_id"];
@@ -276,7 +276,7 @@ class AdminController extends Controller
             $photo->save();
             Coastal::find($coastal_id)->delete();
         }
-        
+
         if ($photo["art_id"])
         {
             $art_id = $photo["art_id"];
@@ -284,7 +284,7 @@ class AdminController extends Controller
             $photo->save();
             Art::find($art_id)->delete();
         }
-        
+
         if ($photo["trashdog_id"])
         {
             $trashdog_id = $photo["trashdog_id"];
@@ -333,7 +333,7 @@ class AdminController extends Controller
     }
 
     /**
-      * Update the contents of an Image, Delete the image 
+      * Update the contents of an Image, Delete the image
      */
     public function updateDelete (Request $request)
     {
@@ -371,11 +371,11 @@ class AdminController extends Controller
                 // Check if photo id already exists in the dynamic table
                 // .... not actually sure if this 2-way binding this necessary
                 if (!$dynamicClassName::where(['photo_id' => $photo->id])->first()){
-                    // if not, create it 
+                    // if not, create it
                     $dynamicClassName::create(['photo_id' => $photo->id]);
                 }
 
-                // Get the row (id) in the dynamic class we are currently working on 
+                // Get the row (id) in the dynamic class we are currently working on
                 $row = $dynamicClassName::where(['photo_id' => $photo->id])->first();
                 // was previously named type
 
@@ -387,8 +387,8 @@ class AdminController extends Controller
                 }
 
                 // Now that the tables are linked, update the dynamic row/col quantity and save
-                // row = id, photo id, all attriubutes for that specific row 
-                // col == butts 
+                // row = id, photo id, all attriubutes for that specific row
+                // col == butts
                 $row->$col = $quantity;
                 $row->save();
 
@@ -396,7 +396,7 @@ class AdminController extends Controller
 
             } // end foreach item
 
-        } // end foreach categories as category 
+        } // end foreach categories as category
 
         $photo->total_litter = $litterTotal;
         $photo->save();
@@ -407,7 +407,7 @@ class AdminController extends Controller
 
 
     /**
-     * Update the contents of an Image, Keep the image 
+     * Update the contents of an Image, Keep the image
      * Image was not correctly inputted! LitterCorrectlyCount = 0.
      */
     public function updateKeep (Request $request)
@@ -423,15 +423,15 @@ class AdminController extends Controller
         $photo->total_litter = 0;
 
         $litterTotal = 0;
-      
+
         $jsonDecoded = Litterrata::INSTANCE()->getDecodedJSON();
-        
+
         // for each categories as category => values eg. Smoking, Butts: 3;
         foreach ($request['categories'] as $category => $values)
         {
             // \Log::info(['category', $category]);
             // \Log::info(['values', $values]);
-            
+
             // if there are no values, set the smoking_id, coffee_id to null
             // Todo - check if all values are 0 and set to null
             if (sizeof($values) == 0) {
@@ -450,10 +450,10 @@ class AdminController extends Controller
                 $col         = $jsonDecoded->$category->types->$item->col;
                 // return [$id, $clazz, $col, $att];
                 $dynamicClassName = 'App\\Categories\\'.$clazz;
-              
+
                 // Create and select new row in the dynamic table
                 // $row = $dynamicClassName::create();
-              
+
                 // Does the photos table have a reference to the dynamic row id yet?
                 if (is_null($photo->$id)) {
                     // \Log::info('photo->$id is null...');
@@ -464,16 +464,16 @@ class AdminController extends Controller
                     // \Log::info('photo->$id is NOT null...');
                     $row = $dynamicClassName::find($photo->$id);
                 }
-                
+
                 // Now that the tables are linked, update the dynamic row/col quantity and save
-                // row = id, photo id, all attriubutes for that specific row 
-                // col == butts 
+                // row = id, photo id, all attriubutes for that specific row
+                // col == butts
                 $row->$col = $quantity;
                 $row->save();
                 $litterTotal += $quantity;
             } // end foreach item
-        } // end foreach categories as category 
-        
+        } // end foreach categories as category
+
         // photo->verified_by ;
         $photo->total_litter = $litterTotal;
         $photo->result_string = null;

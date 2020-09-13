@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Response;
-use App\Photo;
+use App\Models\Photo;
 use App\Http\Requests;
 use Illuminate\Http\Request;
 use Acme\Transformers\PhotoTransformer;
@@ -30,7 +30,7 @@ class DataController extends ApiController
 
         // set limit or default to 3
         $limit = request()->limit ?: 3;
-        $photos = Photo::paginate($limit); 
+        $photos = Photo::paginate($limit);
         // dd(get_class_methods($photos)); // array = 42
         // $transformedCollection = $this->photoTransformer->transformCollection($photos->getCollection());
         // $photos->setCollection($transformedCollection);

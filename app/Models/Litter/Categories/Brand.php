@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Categories;
+namespace App\Models\Litter\Categories;
 
 use Illuminate\Database\Eloquent\Model;
 
@@ -8,7 +8,7 @@ class Brand extends Model
 {
     protected $fillable = [
         'photo_id',
-        
+
     	'adidas',
     	'amazon',
         'aldi',
@@ -16,7 +16,7 @@ class Brand extends Model
         'applegreen',
         'asahi',
         'avoca',
-        
+
         'ballygowan',
         'bewleys',
         'brambles',

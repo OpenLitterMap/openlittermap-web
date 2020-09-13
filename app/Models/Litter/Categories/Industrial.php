@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Categories;
+namespace App\Models\Litter\Categories;
 
 use Illuminate\Database\Eloquent\Model;
 
@@ -18,6 +18,6 @@ class Industrial extends Model
     protected $table = 'industrial';
 
     public function photo () {
-    	return $this->belongsTo('App\Photo');
+    	return $this->belongsTo('App\Models\Photo');
     }
 }

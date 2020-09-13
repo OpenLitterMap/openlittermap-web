@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\User;
+use App\Models\User\User;
 use Illuminate\Console\Command;
 
 class ResetBasicNew extends Command
@@ -38,7 +38,7 @@ class ResetBasicNew extends Command
      */
     public function handle()
     {
-        // Set all Paid Startup Users daily allowance to 5 
+        // Set all Paid Startup Users daily allowance to 5
         $startupUsers = User::where([
             ['stripe_id', '!=', null],
         ])->get();
@@ -73,7 +73,7 @@ class ResetBasicNew extends Command
                     $user->verify_remaining = 999; //4
                 }
                 if (($user->level == 8) || ($user->level == 9)) {
-                    $user->images_remaining = 999; //2 
+                    $user->images_remaining = 999; //2
                     $user->verify_remaining = 999; //6
                 }
                 if ($user->level >= 10) {
