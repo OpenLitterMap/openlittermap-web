@@ -154,42 +154,38 @@ class MapController extends Controller
 	    $globalLeaders = [];
 	    foreach ($users as $user)
 	    {
-        	$name = '';
-        	$username = '';
-        	if (($user->show_name) | ($user->show_username))
-        	{
-        		if ($user->show_name) $name = $user->name;
+            $name = '';
+            $username = '';
+            if (($user->show_name) | ($user->show_username)) {
+                if ($user->show_name) $name = $user->name;
 
-        		if ($user->show_username) $username = '@'.$user->username;
+                if ($user->show_username) $username = '@' . $user->username;
 
-	        	$globalLeaders[$newIndex] = [
-	        		'position' => $newIndex,
-	        		'name' => $name,
-	        		'username' => $username,
-	        		'xp' => number_format($user->xp),
-	        		'flag' => $user->global_flag
-	        		// 'level' => $user->level,
-	        		// 'linkinsta' => $user->link_instagram
-        		];
-        		$newIndex++;
-        	}
+                $globalLeaders[$newIndex] = [
+                    'position' => $newIndex,
+                    'name' => $name,
+                    'username' => $username,
+                    'xp' => number_format($user->xp),
+                    'flag' => $user->global_flag
+                    // 'level' => $user->level,
+                    // 'linkinsta' => $user->link_instagram
+                ];
+                $newIndex++;
+            }
+        }
 
-	    	if (sizeof($globalLeaders) == 10)
-	    	{
-	    		$globalLeadersString = json_encode($globalLeaders);
+        $globalLeadersString = json_encode($globalLeaders);
 
-				return [
-				    'countries' => $countries,
-                    'total_litter' => $total_litter,
-                    'total_photos' => $total_photos,
-                    'globalLeaders' => $globalLeadersString,
-                    'previousXp' => $previousXp,
-                    'nextXp' => $nextXp,
-                    'littercoinPaid' => $littercoin,
-                    'owed' => 0
-				];
-	    	}
-	    }
+        return [
+            'countries' => $countries,
+            'total_litter' => $total_litter,
+            'total_photos' => $total_photos,
+            'globalLeaders' => $globalLeadersString,
+            'previousXp' => $previousXp,
+            'nextXp' => $nextXp,
+            'littercoinPaid' => $littercoin,
+            'owed' => 0
+        ];
     }
 
 	/**

@@ -1,5 +1,5 @@
 <template>
-    <div style="height: 100vh;">
+    <div class="root-container">
         <Nav />
 
         <Modal v-show="modal" />
@@ -41,5 +41,9 @@ export default {
 </script>
 
 <style scoped>
+
+    .root-container {
+        height: calc(100vh - 10px);
+    }
 
 </style>

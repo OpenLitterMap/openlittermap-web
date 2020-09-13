@@ -11,17 +11,20 @@
 				</thead>
 				<tbody>
 					<tr v-for="leader, i in leaders" class="wow slideInLeft">
-						<td style="color:white; position:relative;">
+						<td style="color :white; position: relative; width: 20%;">
 							{{ positions[i] }}
 							<!-- if mobile -->
 							<img v-show="leader.flag" :src="getCountryFlag(leader.flag)" class="leader-flag" />
 						</td>
+
+                        <!-- Todo .... trail characters after max-width reached -->
+                        <!-- Todo .... number animation per user -->
 						<td style="color:white;">
-							{{ leader.name }} 
+							{{ leader.name }}
 							{{ leader.username }}
 							<!-- if desktop -->
 						</td>
-						<td style="color:white;">{{ leader.xp }}</td>
+						<td style="color:white; width: 20%;">{{ leader.xp }}</td>
 					</tr>
 				</tbody>
 			</table>
@@ -59,6 +62,7 @@ export default {
 			if (country)
 			{
 				country = country.toLowerCase();
+
 				return this.dir + country + '.png';
 			}
 
@@ -68,11 +72,19 @@ export default {
 }
 </script>
 
-<style lang="scss">
+<style scoped>
+
 	.leader-flag {
 		height: 1em !important;
 		position: absolute;
 		left: 50%;
 		top: 30%;
 	}
+
+    @media screen and (max-width: 678px)
+    {
+        td {
+            padding: 0.5em;
+        }
+    }
 </style>

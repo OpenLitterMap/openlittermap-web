@@ -1,13 +1,17 @@
 <template>
     <div>
+
+        <!-- Cigarette Butts -->
         <section class="section">
             <div class="columns">
                 <div class="column is-one-third is-offset-1" style="text-align: center;">
-                    <img src="/assets/butts.jpg" style="border: 50%;">
+                    <img src="/assets/butts.jpg" />
                 </div>
 
-                <div class="column is-half">
-                    <h2 id="butts1txt" class="title is-2" style="color: red; text-align: center;"><strong>~{{ $t('about.about2') }}</strong></h2>
+                <div class="column cig-2">
+                    <h2 id="butts1txt" class="title is-2" style="color: red; text-align: center;">
+                        <strong>{{ $t('about.about2') }}</strong>
+                    </h2>
                 </div>
             </div>
             <br>
@@ -23,13 +27,13 @@
                     <p class="subtitle is-3">{{ $t('about.about6') }}</p>
                 </div>
 
-                <div class="column is-offset-1">
+                <div class="column is-offset-1" style="text-align: center; padding-right: 5em;">
                     <img src="/assets/cigbutts_jar.jpg" style="height: 600px;">
                 </div>
             </div>
-
         </section>
 
+        <!-- Call to action -->
         <section class="hero is-success">
             <div class="hero-body">
                 <div class="container has-text-centered">
@@ -45,13 +49,14 @@
                     </h2>
                 </div>
                 <div class="has-text-centered" style="padding-top: 2em;">
-                    <form action="/signup">
-                        <button class="button is-large is-primary">{{ $t('about.about9') }}</button>
-                    </form>
+                    <router-link to="/signup">
+                        <button class="button is-large is-info hov">{{ $t('about.about9') }}</button>
+                    </router-link>
                 </div>
             </div>
         </section>
 
+        <!-- Plastic from land to sea -->
         <section>
             <div class="columns" style="padding-top: 4em; padding-bottom: 4em;">
                 <div class="column is-one-third is-offset-1" style="padding-left: 2em; margin:auto;">
@@ -66,6 +71,7 @@
             </div>
         </section>
 
+        <!-- The illusion of urban cleaning -->
         <section class="hero is-warning">
             <div class="hero-body">
                 <div class="container">
@@ -82,6 +88,7 @@
             </div>
         </section>
 
+        <!-- More info -->
         <div class="hero-body">
             <div class="container">
                 <div class="tile is-ancestor">
@@ -110,7 +117,7 @@
                                     <!-- </figure> -->
                                     <br>
                                     <br>
-                                    <p class="subtitle">Want to download the data? Alright cool</p>
+                                    <p class="subtitle">Want to download the data?</p>
                                     <a href="https://openlittermap.com/maps/The%20Netherlands/Zuid-Holland/Wassenaar/download">https://openlittermap.com/maps/The%20Netherlands/Zuid-Holland/Wassenaar/download</a>
                                     <br>
                                 </article>
@@ -130,7 +137,6 @@
                         <article class="tile is-child is-10 notification is-success">
                             <div class="content">
                                 <p class="title">{{ $t('about.about22') }}</p>
-                                <p class="subtitle">{{ $t('about.about23') }}</p>
                                 <div class="content">
                                     <ul>
                                         <li>{{ $t('about.about24') }}</li>
@@ -148,7 +154,6 @@
                 </div>
             </div>
         </div>
-        </section>
 
         <div>
             <br>
@@ -198,7 +203,7 @@
             <br>
             <div class="has-text-centered" style="padding-top: 2em;">
                 <form action="/signup">
-                    <button class="button is-large is-primary">{{ $t('about.about35') }}</button>
+                    <button class="button is-large is-primary hov">{{ $t('about.about35') }}</button>
                 </form>
             </div>
             <br>
@@ -210,12 +215,9 @@
 
                 <div class="content has-text-centered">
                     <p>
-                        <strong>Open Litter Map</strong> by <a href="https://ie.linkedin.com/in/seanlynchgis">Seán Lynch, M.Sc, M.Sc., B.A.</a>
+                        <strong>OpenLitterMap</strong> by <a href="https://ie.linkedin.com/in/seanlynchgis">Seán Lynch, M.Sc, M.Sc., B.A.</a>
                         <br>
                     <p>info@openlittermap.com</p>
-                    </p>
-                    <p>
-                    </p>
                 </div>
             </div>
         </footer>
@@ -230,4 +232,9 @@ export default {
 
 <style scoped>
 
+    .cig-2 {
+        align-items: center;
+        display: flex;
+        padding: 5em;
+    }
 </style>

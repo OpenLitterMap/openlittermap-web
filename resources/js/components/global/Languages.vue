@@ -81,8 +81,6 @@ export default {
 		 */
 		getFlag (lang)
 		{
-			console.log('getFlag', lang);
-
 			if (lang == 'en') return this.dir + 'gb.png'; // english
 			if (lang == 'ms') return this.dir + 'my.png'; // malaysian
 			if (lang == 'tk')  return this.dir + 'tr.png'; // turkish
@@ -133,7 +131,7 @@ export default {
 	}
 
 	.global-langs {
-		position: absolute; 
+		position: absolute;
 		z-index: 999;
 		left: 3em;
 		top: 0;

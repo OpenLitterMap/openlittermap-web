@@ -7,19 +7,24 @@
                 <h1 class="title is-1" style="text-align: center; padding-bottom: 10px;">
                     {{ $t('location.maps1') }}
                 </h1>
+
+                <!-- Todo - Click here to read why -->
                 <h2 class="subtitle is-4" style="text-align: center;">
                     {{ $t('location.maps2') }}
                 </h2>
-                <div class="container" style="padding-top: 20px;">
+
+                <!-- Global Leaderboard -->
+                <div class="container mt3">
                     <h3 class="title is-4 has-text-centered">{{ $t('location.maps4') }}</h3>
 
                     <loading v-if="loading" :active.sync="loading" :is-full-page="true" />
 
                     <!-- Top-10 Leaderboard-->
                     <global-leaders v-else />
-
                 </div>
-                <div class="container" v-if="! loading">
+
+                <!-- Progress -->
+                <div class="container mt2" v-if="! loading">
                     <div class="columns">
                         <div class="column is-half is-offset-3">
                             <!-- XP bar variables -->
@@ -62,7 +67,17 @@
                                             {{ $t('location.maps10') }}
                                         </strong>
                                     </h1>
-                                    <h1 class="title is-2" style="text-align: center;"><strong>{{ this.total_litter }}</strong></h1>
+                                    <h1 class="title is-2" style="text-align: center;">
+                                        <strong>
+                                            <number
+                                                :from="previous_total_litter"
+                                                :to="total_litter"
+                                                :duration="3"
+                                                :delay="1"
+                                                easing="Power1.easeOut"
+                                            />
+                                        </strong>
+                                    </h1>
                                 </div>
 
                                 <div class="column is-one-third">
@@ -71,7 +86,17 @@
                                             {{ $t('location.maps11') }}
                                         </strong>
                                     </h1>
-                                    <h1 class="title is-2" style="text-align: center;"><strong>{{ this.total_photos }}</strong></h1>
+                                    <h1 class="title is-2" style="text-align: center;">
+                                        <strong>
+                                            <number
+                                                :from="previous_total_photos"
+                                                :to="total_photos"
+                                                :duration="3"
+                                                :delay="1"
+                                                easing="Power1.easeOut"
+                                            />
+                                        </strong>
+                                    </h1>
                                 </div>
 
                                 <div class="column is-one-third">
@@ -81,7 +106,9 @@
                                         </strong>
                                     </h1>
                                     <h1 class="title is-2" style="text-align: center;">
-                                        <strong>{{ this.littercoinPaid }}</strong>
+                                        <strong>
+                                            {{ this.littercoinPaid }}
+                                        </strong>
                                     </h1>
                                 </div>
                             </div>
@@ -116,7 +143,9 @@ export default {
     async created ()
     {
         this.loading = true;
+
         await this.$store.dispatch('GET_COUNTRIES');
+
         this.loading = false;
     },
     data ()
@@ -138,6 +167,42 @@ export default {
         nextXp ()
         {
             return this.$store.state.locations.level.nextXp;
+        },
+
+        /**
+         * The last total_litter the user has seen (saved in browser cache)
+         * Update to latest value once called
+         */
+        previous_total_litter ()
+        {
+            let prev_total = 0;
+
+            if (this.$localStorage.get('total_litter'))
+            {
+                prev_total = this.$localStorage.get('total_litter');
+            }
+
+            this.$localStorage.set('total_litter', this.total_litter);
+
+            return prev_total;
+        },
+
+        /**
+         * The last total_photos the user has seen (saved in browser cache)
+         * Update to latest value once called
+         */
+        previous_total_photos ()
+        {
+            let prev_photos = 0;
+
+            if (this.$localStorage.get('total_photos'))
+            {
+                prev_photos = this.$localStorage.get('total_photos');
+            }
+
+            this.$localStorage.set('total_photos', this.total_photos);
+
+            return prev_photos;
         },
 
         /**

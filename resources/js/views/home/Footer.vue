@@ -62,6 +62,7 @@
                     <p class="footer-link" @click="open('https://www.youtube.com/watch?v=my7Cx-kZhT4')">TEDx 2017</p>
                     <p class="footer-link" @click="open('https://www.youtube.com/watch?v=E_qhEhHwUGM')">State of the Map 2019</p>
                     <p class="footer-link" @click="open('https://www.youtube.com/watch?v=T8rGf1ScR1I')">Datapub 2020</p>
+                    <p class="footer-link" @click="open('https://www.youtube.com/watch?v=5HuaQNeHuZ8')">ESA PhiWeek 2020</p>
                 </div>
 
                 <div class="column is-2">
@@ -79,7 +80,7 @@
 
         <!-- Very bottom section -->
         <div class="footer-bottom">
-            <p class="footer-text">OpenLitterMap is a product of GeoTech Innovations Ltd., a startup in Ireland #650323</p>
+            <p class="footer-text">OpenLitterMap is a flagship product of GeoTech Innovations Ltd., a startup in Ireland pioneering essential citizen science services #650323</p>
         </div>
     </footer>
 </template>
@@ -183,7 +184,7 @@ export default {
     .footer-bottom {
         position: absolute;
         bottom: 0;
-        left: 33%;
+        left: 25%;
         border-top: 1px solid #3c6fcd;
         padding: 1em 0;
     }

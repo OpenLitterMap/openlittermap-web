@@ -11,6 +11,7 @@ import VueSweetalert2 from 'vue-sweetalert2'
 import 'sweetalert2/dist/sweetalert2.min.css'
 import VueToastify from 'vue-toastify'
 // import VueMask from 'v-mask' // needed to cancel some error on CreditCard.vue which we are not yet using
+import VueNumber from 'vue-number-animation'
 
 import RootContainer from './views/RootContainer'
 
@@ -22,6 +23,7 @@ Vue.use(VueLocalStorage)
 Vue.use(VueSweetalert2)
 Vue.use(VueToastify)
 // Vue.use(VueMask)
+Vue.use(VueNumber)
 
 // Format a number with commas: "10,000"
 Vue.filter('commas', value => {
