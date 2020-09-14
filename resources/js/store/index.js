@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
+import createPersistedState from 'vuex-persistedstate'
 
 import { admin } from './modules/admin'
 import { donate } from './modules/donate'
@@ -16,6 +17,7 @@ import { user } from './modules/user'
 Vue.use(Vuex)
 
 export default new Vuex.Store({
+    plugins: [createPersistedState()],
     modules: {
         admin,
         donate,

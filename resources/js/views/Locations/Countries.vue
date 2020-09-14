@@ -33,13 +33,13 @@
                                     <h4 class="flex-1">
                                         Previous Target:
                                         <br>
-                                        <strong>
+                                        <strong style="color: white;">
                                             {{ this.previousXp | commas }} {{ $t('location.maps9') }}
                                         </strong>
                                     </h4>
                                     <h4>{{ $t('location.maps8') }}:
                                         <br>
-                                        <strong>
+                                        <strong style="color: white;">
                                             {{ this.nextXp | commas }} {{ $t('location.maps9') }}
                                         </strong>
                                     </h4>

@@ -95,9 +95,9 @@ const router = new VueRouter({
         {
             path: '/tag',
             component: require('./views/general/Tag').default,
-            // meta: {
-            //     middleware: [ auth ]
-            // }
+            meta: {
+                middleware: [ auth ]
+            }
         },
         {
             path: '/profile',
@@ -116,65 +116,38 @@ const router = new VueRouter({
                 {
                     path: 'password',
                     component: require('./views/Settings').default,
-                    meta: {
-                        middleware: [ auth ]
-                    },
                 },
                 {
                     path: 'details',
                     component: require('./views/settings/Details').default,
-                    meta: {
-                        middleware: [ auth ]
-                    },
                 },
                 {
                     path: 'account',
                     component: require('./views/settings/Account').default,
-                    meta: {
-                        middleware: [ auth ]
-                    },
                 },
                 {
                     path: 'payments',
                     component: require('./views/settings/Payments').default,
-                    meta: {
-                        middleware: [ auth ]
-                    },
                 },
                 {
                     path: 'privacy',
                     component: require('./views/settings/Privacy').default,
-                    meta: {
-                        middleware: [ auth ]
-                    },
                 },
                 {
                     path: 'littercoin',
                     component: require('./views/settings/Littercoin').default,
-                    meta: {
-                        middleware: [ auth ]
-                    },
                 },
                 {
                     path: 'presence',
                     component: require('./views/settings/Presence').default,
-                    meta: {
-                        middleware: [ auth ]
-                    },
                 },
                 {
                     path: 'emails',
                     component: require('./views/settings/Emails').default,
-                    meta: {
-                        middleware: [ auth ]
-                    },
                 },
                 {
                     path: 'show-flag',
                     component: require('./views/settings/GlobalFlag').default,
-                    meta: {
-                        middleware: [ auth ]
-                    },
                 }
                 // {
                 // 	path: 'teams',
