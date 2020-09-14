@@ -106,7 +106,7 @@ export default {
 		};
 	},
 	computed: {
-		
+
 		/**
 		 * Return true if disabled is true
 		 * Return true if no new tags exist
@@ -119,7 +119,7 @@ export default {
 		},
 
 		/**
-		 * 
+		 *
 		 */
 		computeDeleteButton ()
 		{
@@ -127,7 +127,7 @@ export default {
 		},
 
 		/**
-		 * 
+		 *
 		 */
 		computeDeleteVerify ()
 		{
@@ -135,7 +135,7 @@ export default {
 		},
 
 		/**
-		 * 
+		 *
 		 */
 		computeVerifyButton ()
 		{
@@ -143,7 +143,7 @@ export default {
 		},
 
 		/**
-		 * 
+		 *
 		 */
 		getVerifyClass ()
 		{
@@ -151,7 +151,7 @@ export default {
 		},
 
 		/**
-		 * 
+		 *
 		 */
 		uploadedTime ()
 		{
@@ -167,11 +167,11 @@ export default {
 		{
 			this.disabled = true;
 			this.processing = true;
-    		
-    		await axios.post('/admin/destroy', { 
+
+    		await axios.post('/admin/destroy', {
         		photoId: this.photo.id
     		})
-    		.then(async response => { 
+    		.then(async response => {
       			await this.getData();
 			}).catch(error => {
         		console.log(error);
@@ -188,16 +188,16 @@ export default {
 		},
 
 		/**
-		 * Get the next image & tags to verify 
+		 * Get the next image & tags to verify
 		 */
 		async getData ()
 		{
 			this.loading = true;
-			
+
 			// clear previous input
 			this.$store.commit('resetLitter');
 
-			await axios.get(window.location.origin + '/admin/get-image')
+			await axios.get('/admin/get-image')
 			.then(resp => {
 				console.log('get_data', resp);
 				this.photo = resp.data.photo;
@@ -221,15 +221,15 @@ export default {
 		/**
 		 * Send the image back to the use
 		 */
-  		async incorrect () 
+  		async incorrect ()
   		{
 			this.disabled = true;
 			this.processing = true;
 
-		    await axios.post(window.location.origin + '/admin/incorrect', { 
-		    	photoId: this.photo.id 
+		    await axios.post('/admin/incorrect', {
+		    	photoId: this.photo.id
 		    })
-		    .then(response => { 
+		    .then(response => {
 		    	if (response.status == 200) this.getData();
 		    }).catch(error => {
 		      	console.log(error);
@@ -237,7 +237,7 @@ export default {
 		    });
 		  },
 
-		
+
 		/**
 		 * The users tags were correct !
 		 */
@@ -246,8 +246,8 @@ export default {
 			this.disabled = true;
 			this.processing = true;
 
-			await axios.post(window.location.origin + '/admin/verifykeepimage', { 
-				photoId: this.photo.id 
+			await axios.post('/admin/verifykeepimage', {
+				photoId: this.photo.id
 			})
 			.then(resp => {
 				console.log(resp);
@@ -258,15 +258,15 @@ export default {
 			});
 		},
 
-		// Verify an updated image and delete the image 
+		// Verify an updated image and delete the image
 		async verifyDelete ()
 		{
 			this.disabled = true;
 			this.processing = true;
-    		
-    		await axios.post(window.location.origin + './admin/contentsupdatedelete', {
- 				photoId: id, categories: categories 
- 			}).then(response => { 
+
+    		await axios.post('/admin/contentsupdatedelete', {
+ 				photoId: id, categories: categories
+ 			}).then(response => {
  				if (response.status == 200) this.getData();
     		}).catch(error => {
        			console.log(error);
@@ -282,10 +282,10 @@ export default {
 			this.disabled = true;
 			this.processing = true;
 
-    		await axios.post(window.location.origin + '/admin/contentsupdatekeep', {
+    		await axios.post('/admin/contentsupdatekeep', {
       			photoId: this.photo.id,
       			categories: this.$store.state.litter.categories
-    		}).then(response => { 
+    		}).then(response => {
     			if (response.status == 200) this.getData();
     		}).catch(error => {
       			console.log(error);
@@ -297,22 +297,29 @@ export default {
 </script>
 
 <style lang="scss">
-.flex {
-  display: flex;
-}
-.flex-1 {
-  flex: 1;
-}
-.mt4pc {
-  margin-top: 4%;
-}
-.mb1em {
-  margin-bottom: 1em;
-}
-.mb20 {
-  margin-bottom: 20px;
-}
-.strong {
-  font-weight: 600;
-}
+
+    .flex {
+        display: flex;
+    }
+
+    .flex-1 {
+        flex: 1;
+    }
+
+    .mt4pc {
+        margin-top: 4%;
+    }
+
+    .mb1em {
+        margin-bottom: 1em;
+    }
+
+    .mb20 {
+        margin-bottom: 20px;
+    }
+
+    .strong {
+        font-weight: 600;
+    }
+
 </style>

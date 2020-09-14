@@ -218,5 +218,9 @@
         "trashdog": "TrashDog",
         "littercat": "LitterCat",
         "duck": "LitterDuck"
+    },
+    "presence": {
+        "picked-up": "I picked it up!",
+        "still-there": "It's still there."
     }
 }

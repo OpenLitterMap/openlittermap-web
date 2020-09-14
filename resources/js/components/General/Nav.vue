@@ -1,6 +1,6 @@
 <template>
     <div>
-        <div style="height: 1px; background-color: #00CBAB;"></div>
+        <div style="height: 1px; background-color: #00CBAB;" />
         <nav class="navbar main-nav">
             <div class="container">
                 <div class="navbar-brand">
@@ -19,6 +19,11 @@
 
                 <div :class="nav">
                     <div class="navbar-end">
+
+                        <!-- Admin -->
+                        <router-link v-if="admin" to="/admin/photos" class="navbar-item">
+                            Admin
+                        </router-link>
 
                         <!-- About -->
                         <router-link to="/about" class="navbar-item">
@@ -100,7 +105,15 @@ export default {
     computed: {
 
         /**
-         * Return bool if the user is authenticated or not
+         * Return true if the user is admin
+         */
+        admin ()
+        {
+            return this.$store.state.user.admin;
+        },
+
+        /**
+         * Return true if the user is logged in
          */
         auth ()
         {

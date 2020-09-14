@@ -2,9 +2,10 @@
     <div class="expand-mobile">
         <strong :style="{ color: remaining ? 'green' : 'red' }"><slot>{{ remainingText }}</slot></strong>
         <br>
-        <button class="button" :class="{ 'is-danger': remaining, 'is-success': ! remaining }" @click="togglePresence">
-            <slot v-if="remaining">It's still there.</slot>
-            <slot v-else>I picked it up!</slot>
+        <button :class="toggle_class" @click="toggle">
+            <slot v-if="remaining">{{ $t('litter.presence.still-there') }}</slot>
+
+            <slot v-else>{{ $t('litter.presence.picked-up') }}</slot>
         </button>
     </div>
 </template>
@@ -28,12 +29,20 @@ export default {
         remainingText ()
         {
             return this.$store.state.litter.presence ? "It's gone." : "The litter is still there!";
+        },
+
+        /**
+         * Class to show if litter is still there, or picked up
+         */
+        toggle_class ()
+        {
+            return this.remaining ? 'button is-danger' : 'button is-success';
         }
     },
     methods: {
 
         /**
-         *
+         * Toggle the presense of the litter
          */
         toggle ()
         {

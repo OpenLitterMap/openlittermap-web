@@ -264,7 +264,7 @@ Route::get('/nav', function () {
 
 Route::group(['prefix' => '/admin'], function () {
 
-    Route::get('/photos', 'AdminController@index');
+    Route::get('/photos', 'AdminController@getImage');
 
     Route::get('get-image', 'AdminController@getImage');
 

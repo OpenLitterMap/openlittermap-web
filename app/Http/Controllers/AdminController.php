@@ -41,16 +41,17 @@ class AdminController extends Controller
     public function __construct ()
     {
     	return $this->middleware('admin');
+
     	parent::__construct();
 	}
 
-    /**
-     * Load vue-router admin tool
-     */
-    public function index ()
-    {
-      return view('layouts.admin');
-    }
+//    /**
+//     * Load vue-router admin tool
+//     */
+//    public function index ()
+//    {
+//        return view('layouts.admin');
+//    }
 
     public function getUserCount ()
     {

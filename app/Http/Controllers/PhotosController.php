@@ -292,9 +292,10 @@ class PhotosController extends Controller
                 $id_table = $schema->$category->id_table;
 
                 // Full class path
-                $class = 'App\\Categories\\'.$schema->$category->class;
+                $class = 'App\\Models\\Litter\\Categories\\'.$schema->$category->class;
 
                 // Create reference to category.$id_table on photos if it does not exist
+                // dynamic $id_table is intentional
                 if (is_null($photo->$id_table))
                 {
                     $row = $class::create();
@@ -388,11 +389,12 @@ class PhotosController extends Controller
     {
         $user = Auth::user();
 
-        $photos = Photo::where([
-            'user_id' => $user->id,
-            'verified' => 0,
-            'verification' => 0
-        ])->simplePaginate(1);
+        $photos = Photo::select('id', 'filename', 'lat', 'lon', 'model', 'remaining', 'display_name', 'datetime')
+            ->where([
+                'user_id' => $user->id,
+                'verified' => 0,
+                'verification' => 0
+            ])->simplePaginate(1);
 
         $remaining = Photo::where([
             'user_id' => $user->id,

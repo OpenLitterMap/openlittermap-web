@@ -1,6 +1,7 @@
 import VueRouter from 'vue-router'
 import store from './store'
 import auth from './middleware/auth'
+import admin from './middleware/admin'
 import middlewarePipeline from './middleware/middlewarePipeline'
 
 // The earlier a route is defined, the higher its priority.
@@ -62,19 +63,19 @@ const router = new VueRouter({
             path: '/world/:country/:state/:city/map',
             component: require('./views/Locations/CityMap').default
         },
-        // Admin todo - apply middleware
+        // Admin
         {
             path: '/admin/photos',
             component: require('./views/admin/VerifyPhotos').default,
             meta: {
-                middleware: [ auth ]
+                middleware: [auth, admin]
             }
         },
         {
             path: '/admin/bbox',
             component: require('./views/admin/BoundingBox').default,
             meta: {
-                middleware: [ auth ]
+                middleware: [auth, admin]
             }
         },
         // AUTH ROUTES
