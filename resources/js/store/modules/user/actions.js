@@ -126,6 +126,10 @@ export const actions = {
                 console.log('logout', response);
 
                 context.commit('logout');
+
+                context.commit('resetUser');
+                // reset more state
+
                 window.location.href = '/';
             })
             .catch(error => {

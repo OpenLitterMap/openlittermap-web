@@ -493,7 +493,8 @@ class AdminController extends Controller
             $photoData = $this->getPhotoData($photo);
         }
 
-        else {
+        else
+        {
             $photo = Photo::where([
                 ['verification', 0],
                 // ['user_id', '!=', 1]

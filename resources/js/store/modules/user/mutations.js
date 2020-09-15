@@ -1,3 +1,5 @@
+import { init } from './init'
+
 export const mutations = {
 
     /**
@@ -80,6 +82,7 @@ export const mutations = {
     logout (state)
     {
         state.auth = false;
+        state.admin = false;
     },
 
     /**
@@ -88,6 +91,14 @@ export const mutations = {
     privacy (state, payload)
     {
         state.user[payload.column] = payload.v;
+    },
+
+    /**
+     * Reset the user object (when we logout)
+     */
+    resetUser (state)
+    {
+        Object.assign(state, init);
     },
 
     /**

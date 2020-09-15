@@ -27,8 +27,10 @@ class UsersController extends Controller
     /*
     * Apply middleware to all of these routes
     */
-    public function __construct () {
+    public function __construct ()
+    {
     	return $this->middleware('auth');
+
     	parent::__construct();
 	}
 
