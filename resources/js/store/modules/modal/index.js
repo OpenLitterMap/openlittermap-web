@@ -1,15 +1,11 @@
-// import { actions } from './actions'
+import { init } from './init'
+import { actions } from './actions'
 import { mutations } from './mutations'
 
-const state = {
-    action: '', // action to dispatch
-    button: '', // text on the button to display
-    show: false,
-    title: '',
-    type: '',
-}
+const state = Object.assign({}, init);
 
 export const modal = {
     state,
+    actions,
     mutations
 }

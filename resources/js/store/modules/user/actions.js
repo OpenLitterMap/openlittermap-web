@@ -127,8 +127,8 @@ export const actions = {
 
                 context.commit('logout');
 
-                context.commit('resetUser');
-                // reset more state
+                // this will reset state for all objects
+                context.commit('resetState');
 
                 window.location.href = '/';
             })

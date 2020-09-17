@@ -1,3 +1,5 @@
+import { init } from './init'
+
 export const mutations = {
 
     /**
@@ -15,7 +17,15 @@ export const mutations = {
     adminLoading (state, payload)
     {
         state.loading = payload
-    }
+    },
+
+    /**
+     * Reset the user object (when we logout)
+     */
+    resetState (state)
+    {
+        Object.assign(state, init);
+    },
 
     // adminCreated(state, payload) {
   //   Vue.set(state.items, payload.item, payload.quantity);

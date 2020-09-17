@@ -1,14 +1,9 @@
+import { init } from './init'
 import { actions } from './actions'
 import { mutations } from './mutations'
 
-// maybe this should be on user
-const state = {
-    // current_plan: {},
-    // current_subscription: {},
-    errors: {},
-    just_subscribed: false, // show Success notification when just subscribed
-    subscription: {}
-};
+// maybe this should be on user.subscriber
+const state = Object.assign({}, init);
 
 export const subscriber = {
     state,

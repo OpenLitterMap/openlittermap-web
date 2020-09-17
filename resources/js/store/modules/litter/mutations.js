@@ -2,6 +2,7 @@ import Vue from 'vue'
 import i18n from '../../../i18n'
 import { categories } from '../../../extra/categories'
 import { litterkeys } from '../../../extra/litterkeys'
+import { init } from './init'
 
 export const mutations = {
 
@@ -142,8 +143,16 @@ export const mutations = {
     },
 
     /**
-    * Reset empty state
-    */
+     * Reset the user object (when we logout)
+     */
+    resetState (state)
+    {
+        Object.assign(state, init);
+    },
+
+    /**
+     * Reset empty state
+     */
     resetLitter (state)
     {
         state.items = {};

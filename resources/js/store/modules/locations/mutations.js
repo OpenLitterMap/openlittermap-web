@@ -1,4 +1,14 @@
+import { init } from './init'
+
 export const mutations = {
+
+    /**
+     * Reset state, when the user logs out
+     */
+    resetLocations (state)
+    {
+        Object.assign(state, init);
+    },
 
     /**
      * Update countries + global metadata

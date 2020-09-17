@@ -94,9 +94,9 @@ export const mutations = {
     },
 
     /**
-     * Reset the user object (when we logout)
+     * Reset state, when the user logs out
      */
-    resetUser (state)
+    resetState (state)
     {
         Object.assign(state, init);
     },

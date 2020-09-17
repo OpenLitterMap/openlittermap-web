@@ -1,30 +1,47 @@
+import { init } from './init'
+
 export const mutations = {
 
-	closeDatesButton (state) {
+	closeDatesButton (state)
+    {
 		state.datesOpen = false;
 	},
 
-	closeLangsButton (state) {
+	closeLangsButton (state)
+    {
 		state.langsOpen = false;
 	},
 
-	globalLoading (state, payload) {
+	globalLoading (state, payload)
+    {
 		state.loading = payload;
 	},
 
-	toggleLangsButton (state) {
+    /**
+     * Reset the state, when the user logs out.
+     */
+    resetState (state)
+    {
+        Object.assign(state, init);
+    },
+
+	toggleLangsButton (state)
+    {
 		state.langsOpen = ! state.langsOpen;
 	},
 
-	toggleGlobalDates (state) {
+	toggleGlobalDates (state)
+    {
 		state.datesOpen = ! state.datesOpen;
 	},
 
-	// updateCurrentGlobalDate (state, payload) {
+	// updateCurrentGlobalDate (state, payload)
+    // {
 	// 	state.currentDate = payload;
 	// },
 
-	updateGlobalData (state, payload) {
+	updateGlobalData (state, payload)
+    {
 		state.globalMapData = payload;
 	}
 

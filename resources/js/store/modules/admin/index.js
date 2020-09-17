@@ -1,12 +1,8 @@
+import { init } from './init'
 import { actions } from './actions'
 import { mutations } from './mutations'
 
-const state = {
-	id: '',
-	filename: '',
-	items: {},
-	loading: true, // spinner
-};
+const state = Object.assign({}, init);
 
 export const admin = {
 	state,

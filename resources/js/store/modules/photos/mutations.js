@@ -1,3 +1,5 @@
+import { init } from './init'
+
 export const mutations = {
 
     /**
@@ -8,5 +10,13 @@ export const mutations = {
         state.photos = payload.photos;
         state.remaining = payload.remaining;
         state.total = payload.total;
-    }
+    },
+
+    /**
+     * Reset state, when the user logs out
+     */
+    resetState (state)
+    {
+        Object.assign(state, init);
+    },
 }

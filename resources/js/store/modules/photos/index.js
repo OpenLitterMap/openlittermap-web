@@ -1,11 +1,8 @@
+import { init } from './init'
 import { actions } from './actions'
 import { mutations } from './mutations'
 
-const state = {
-    photos: {},
-    remaining: 0,
-    total: 0
-};
+const state = Object.assign({}, init);
 
 export const photos = {
     state,

@@ -1,3 +1,5 @@
+import { init } from './init'
+
 export const mutations = {
 
     /**
@@ -14,6 +16,14 @@ export const mutations = {
     createAccountErrors (state, payload)
     {
         state.errors = payload;
+    },
+
+    /**
+     * Reset state, when the user logs out
+     */
+    resetState (state)
+    {
+        Object.assign(state, init);
     },
 
     /**

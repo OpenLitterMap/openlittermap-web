@@ -1,3 +1,5 @@
+import { init } from './init'
+
 export const mutations = {
 
     /**
@@ -6,6 +8,14 @@ export const mutations = {
     hideModal (state)
     {
         state.show = false;
+    },
+
+    /**
+     * Reset state, when the user logs out
+     */
+    resetState (state)
+    {
+        Object.assign(state, init);
     },
 
     /**
