@@ -274,7 +274,7 @@ Route::group(['prefix' => '/admin'], function () {
     // Route::get('/users', 'AdminController@getUserCount');
     // Get a list of photos that need to be verified
     // Route::get('/photos', 'AdminController@getPhotos');
-    
+
     // Verify an image - delete
     Route::post('/verify', 'AdminController@verify');
     // Verify an image - keep

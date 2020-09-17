@@ -1,5 +1,5 @@
 <template>
-	<div class="container mt4pc">
+	<div class="container mt3">
 
 		<loading v-if="loading" :active.sync="loading" :is-full-page="true" />
 
@@ -27,12 +27,12 @@
 
 						<div style="padding-top: 20%;">
 							<p>Accept data, verify, but delete the image.</p>
-					    <button :class="computeDeleteVerify" @click="verifyDelete" :disabled="disabled">
+					    <button :class="delete_verify_button" @click="verifyDelete" :disabled="processing">
 					    	Verify & Delete
 					    </button>
 
 					    <p>Delete the image.</p>
-					    <button :class="computeDeleteButton" @click="adminDelete" :disabled="disabled">
+					    <button :class="delete_button" @click="adminDelete" :disabled="processing">
 					    	DELETE
 					    </button>
 						</div>
@@ -45,7 +45,9 @@
 
 				  	<!-- Right - data -->
 				  	<div class="column has-text-centered" style="position: relative;">
-						<admin-items />
+
+                        <!-- The list of tags associated with this image-->
+                        <Tags />
 
 						<div style="padding-top: 3em;">
 							<button class="button is-medium is-dark" @click="clearItems">Clear user input</button>
@@ -54,17 +56,18 @@
 				  	</div>
 				</div>
 
-		    	<div class="has-text-centered mb1em">
-					<button :class="getVerifyClass" :disabled="disabled" @click="verifyCorrect">VERIFY CORRECT</button>
-					<button class="button is-large is-danger" :disabled="disabled" @click="incorrect">FALSE</button>
+		    	<div class="has-text-centered mb1">
+					<button :class="verify_correct_button" :disabled="processing" @click="verifyCorrect">VERIFY CORRECT</button>
+
+					<button class="button is-large is-danger" :disabled="processing" @click="incorrect">FALSE</button>
 				</div>
 
-				<!-- Add new items into the collection -->
-				<admin-add />
+				<!-- Add / edit tags -->
+                <add-tags />
 
 				<div style="padding-top: 1em; text-align: center;">
 					<p class="strong">Update the image and save the new data</p>
-					<button :class="computeVerifyButton" @click="verifyKeep" :disabled="checkUpdateTagsDisabled">
+					<button :class="update_new_tags_button" @click="verifyKeep" :disabled="checkUpdateTagsDisabled">
 						Update with new tags
 					</button>
 				</div>
@@ -77,42 +80,42 @@
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
 
-import AdminItems from '../../components/AdminItems'
-import AdminAdd from '../../components/AdminAdd'
+import AddTags from '../../components/Litter/AddTags'
+import Tags from '../../components/Litter/Tags'
 
 import moment from 'moment'
 
 export default {
 	name: 'VerifyPhotos',
-	components: { Loading, AdminItems, AdminAdd },
+	components: { Loading, AddTags, Tags },
 	async created ()
 	{
 	    this.loading = true;
 
-        await this.getData();
+        this.$store.dispatch('GET_NEXT_ADMIN_PHOTO');
+
+        this.loading = false;
 	},
 	data ()
 	{
 		return {
-			disabled: false,
 			loading: true,
 			processing: false,
-			button: 'button is-large is-success',
+			btn: 'button is-large is-success',
 			// button classes
-			deleteButtonClass: 'button is-large is-danger',
-			deleteVerifyClass: 'button is-large is-warning mb20',
-			verifyClass: 'button is-large is-success mb20',
+			deleteButton: 'button is-large is-danger',
+			deleteVerify: 'button is-large is-warning mb1',
+			verifyClass: 'button is-large is-success mb1',
 		};
 	},
 	computed: {
 
 		/**
-		 * Return true if disabled is true
-		 * Return true if no new tags exist
+		 * Return true to disable when processing or if no new tags exist
 		 */
 		checkUpdateTagsDisabled ()
 		{
-			if (this.disabled || this.$store.state.litter.hasAddedNewTag === false) return true;
+			if (this.processing || this.$store.state.litter.hasAddedNewTag === false) return true;
 
 			return false;
 		},
@@ -120,23 +123,23 @@ export default {
 		/**
 		 *
 		 */
-		computeDeleteButton ()
+		delete_button ()
 		{
-			return this.processing ? this.deleteButtonClass + ' is-loading' : this.deleteButtonClass;
+			return this.processing ? this.deleteButton + ' is-loading' : this.deleteButton;
 		},
 
 		/**
 		 *
 		 */
-		computeDeleteVerify ()
+		delete_verify_button ()
 		{
-			return this.processing ? this.deleteVerifyClass + ' is-loading' : this.deleteVerifyClass;
+			return this.processing ? this.deleteVerify + ' is-loading' : this.deleteVerify;
 		},
 
 		/**
 		 *
 		 */
-		computeVerifyButton ()
+		update_new_tags_button ()
 		{
 			return this.processing ? this.verifyClass + ' is-loading' : this.verifyClass;
 		},
@@ -144,9 +147,9 @@ export default {
 		/**
 		 *
 		 */
-		getVerifyClass ()
+		verify_correct_button ()
 		{
-			return this.processing ? this.button + ' is-loading' : this.button;
+			return this.processing ? this.btn + ' is-loading' : this.btn;
 		},
 
         /**
@@ -158,7 +161,7 @@ export default {
         },
 
         /**
-         * Total number of photos that are not yet processed
+         * Total number of photos that are uploaded and not tagged
          */
         photosNotProcessed ()
         {
@@ -188,18 +191,11 @@ export default {
 		 */
 		async adminDelete (id)
 		{
-			this.disabled = true;
 			this.processing = true;
 
-    		await axios.post('/admin/destroy', {
-        		photoId: this.photo.id
-    		})
-    		.then(async response => {
-      			await this.getData();
-			}).catch(error => {
-        		console.log(error);
-        		alert('Error!');
-    		});
+			await this.$store.dispatch('ADMIN_DELETE_IMAGE');
+
+    		this.processing = false;
 		},
 
 		/**
@@ -211,71 +207,37 @@ export default {
 		},
 
 		/**
-		 * Get the next image & tags to verify
-		 */
-		async getData ()
-		{
-			this.loading = true;
-
-            this.$store.dispatch('GET_NEXT_ADMIN_PHOTO');
-
-			this.loading = false;
-		},
-
-		/**
 		 * Send the image back to the use
 		 */
   		async incorrect ()
   		{
-			this.disabled = true;
 			this.processing = true;
 
-		    await axios.post('/admin/incorrect', {
-		    	photoId: this.photo.id
-		    })
-		    .then(response => {
-		    	if (response.status == 200) this.getData();
-		    }).catch(error => {
-		      	console.log(error);
-		      	alert('Error! Please try again');
-		    });
-		  },
+			await this.$store.dispatch('ADMIN_RESET_TAGS');
 
+			this.processing = false;
+        },
 
 		/**
 		 * The users tags were correct !
 		 */
 		async verifyCorrect ()
 		{
-			this.disabled = true;
 			this.processing = true;
 
-			await axios.post('/admin/verifykeepimage', {
-				photoId: this.photo.id
-			})
-			.then(resp => {
-				console.log(resp);
-				if (resp.status == 200) this.getData();
-			})
-			.catch(err => {
-				console.error(err);
-			});
+			await this.$store.dispatch('ADMIN_VERIFY_CORRECT');
+
+			this.processing = false;
 		},
 
 		// Verify an updated image and delete the image
 		async verifyDelete ()
 		{
-			this.disabled = true;
 			this.processing = true;
 
-    		await axios.post('/admin/contentsupdatedelete', {
- 				photoId: id, categories: categories
- 			}).then(response => {
- 				if (response.status == 200) this.getData();
-    		}).catch(error => {
-       			console.log(error);
-       			alert('Error! Please try again');
-    		});
+    		await this.$store.dispatch('ADMIN_VERIFY_DELETE');
+
+    		this.processing = false;
   		},
 
 		/**
@@ -283,44 +245,17 @@ export default {
 		 */
 		async verifyKeep (id)
 		{
-			this.disabled = true;
 			this.processing = true;
 
-    		await axios.post('/admin/contentsupdatekeep', {
-      			photoId: this.photo.id,
-      			categories: this.$store.state.litter.categories
-    		}).then(response => {
-    			if (response.status == 200) this.getData();
-    		}).catch(error => {
-      			console.log(error);
-      			alert('Error! Please try again');
-    		});
+            await this.$store.dispatch('ADMIN_VERIFY_KEEP');
+
+            this.processing = false;
   		}
 	}
 }
 </script>
 
-<style lang="scss">
-
-    .flex {
-        display: flex;
-    }
-
-    .flex-1 {
-        flex: 1;
-    }
-
-    .mt4pc {
-        margin-top: 4%;
-    }
-
-    .mb1em {
-        margin-bottom: 1em;
-    }
-
-    .mb20 {
-        margin-bottom: 20px;
-    }
+<style scoped>
 
     .strong {
         font-weight: 600;

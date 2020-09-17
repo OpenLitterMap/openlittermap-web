@@ -1,6 +1,95 @@
 export const actions = {
 
     /**
+     * Delete an image and its records
+     */
+    async ADMIN_DELETE_IMAGE (context)
+    {
+        await axios.post('/admin/destroy', {
+            photoId: context.state.photo.id
+        })
+        .then(response => {
+            console.log('admin_delete_image', response);
+
+            context.dispatch('GET_NEXT_ADMIN_PHOTO');
+        })
+        .catch(error => {
+            console.log(error);
+        });
+    },
+
+    /**
+     * Reset the tags + verification on an image
+     */
+    async ADMIN_RESET_TAGS (context)
+    {
+        await axios.post('/admin/incorrect', {
+            photoId: this.photo.id
+        })
+        .then(response => {
+            console.log('admin_reset_tags', response);
+
+            context.dispatch('GET_NEXT_ADMIN_PHOTO');
+        }).catch(error => {
+            console.log(error);
+        });
+    },
+
+    /**
+     * Verify the image as correct (stage 2)
+     */
+    async ADMIN_VERIFY_CORRECT (context)
+    {
+        await axios.post('/admin/verifykeepimage', {
+            photoId: context.state.photo.id
+        })
+        .then(resp => {
+            console.log('admin_verifiy_correct', resp);
+
+            context.dispatch('GET_NEXT_ADMIN_PHOTO');
+        })
+        .catch(err => {
+            console.error(err);
+        });
+    },
+
+    /**
+     * Verify tags and delete the image
+     */
+    async ADMIN_VERIFY_DELETE (context)
+    {
+        await axios.post('/admin/contentsupdatedelete', {
+            photoId: context.state.photo.id,
+            // categories: categories todo
+        }).then(response => {
+            console.log('admin_verify_delete', response);
+
+            context.dispatch('GET_NEXT_ADMIN_PHOTO');
+        }).catch(error => {
+            console.log(error);
+        });
+    },
+
+    /**
+     * Verify the previous + new tags
+     */
+    async ADMIN_VERIFY_KEEP (context)
+    {
+        await axios.post('/admin/contentsupdatekeep', {
+            photoId: context.state.photo.id,
+            // categories: this.$store.state.litter.categories // todo
+        })
+        .then(response => {
+            console.log('admin_verify_keep', response);
+
+            context.dispatch('GET_NEXT_ADMIN_PHOTO');
+        })
+        .catch(error => {
+            console.log(error);
+        });
+    },
+
+    /**
      * Get the next photo to verify on admin account
      */
     async GET_NEXT_ADMIN_PHOTO (context)
