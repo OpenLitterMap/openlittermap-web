@@ -48,12 +48,6 @@ export default {
     },
     async created ()
     {
-        // user object is not passed when the user logs in. We need to get it here
-        if (Object.keys(this.$store.state.user.user).length == 0)
-        {
-            await this.$store.dispatch('GET_CURRENT_USER');
-        }
-
         if (window.location.href.split('/')[4])
         {
             this.link = window.location.href.split('/')[4];

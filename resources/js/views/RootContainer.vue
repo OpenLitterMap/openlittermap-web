@@ -24,7 +24,9 @@ export default {
         if (this.auth)
         {
             this.$store.commit('login');
-            this.$store.commit('initUser', JSON.parse(this.user));
+
+            // user object is passed when the page is refreshed
+            if (this.user) this.$store.commit('initUser', JSON.parse(this.user));
         }
     },
     computed: {

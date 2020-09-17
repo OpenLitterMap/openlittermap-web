@@ -264,14 +264,17 @@ Route::get('/nav', function () {
 
 Route::group(['prefix' => '/admin'], function () {
 
-    Route::get('/photos', 'AdminController@getImage');
+    // route
+    Route::get('photos', 'HomeController@index');
 
+    // get the data
     Route::get('get-image', 'AdminController@getImage');
 
     // Get a list of recently registered users
     // Route::get('/users', 'AdminController@getUserCount');
     // Get a list of photos that need to be verified
     // Route::get('/photos', 'AdminController@getPhotos');
+    
     // Verify an image - delete
     Route::post('/verify', 'AdminController@verify');
     // Verify an image - keep

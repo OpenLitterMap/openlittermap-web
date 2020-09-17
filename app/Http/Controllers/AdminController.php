@@ -488,6 +488,7 @@ class AdminController extends Controller
      */
     public function getImage ()
     {
+        \Log::info('getimage');
         if ($photo = Photo::where('verification', 0.1)->first())
         {
             $photoData = $this->getPhotoData($photo);
@@ -496,7 +497,7 @@ class AdminController extends Controller
         else
         {
             $photo = Photo::where([
-                ['verification', 0],
+                'verification' => 0,
                 // ['user_id', '!=', 1]
             ])->first();
             $photoData = null;
@@ -507,6 +508,7 @@ class AdminController extends Controller
                 ['verification', 0],
                 // ['user_id', '!=', 1]
             ])->count();
+
         // Count photos submitted for verification
         $photosAwaitingVerification = Photo::where([
             ['verified', '<', 2], // not verified

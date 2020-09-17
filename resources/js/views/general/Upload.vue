@@ -24,6 +24,11 @@ export default {
     components: {
         vueDropzone: vue2Dropzone
     },
+    async created ()
+    {
+        // user object is not passed when the user logs in. We need to get it here
+        if (Object.keys(this.$store.state.user.user.length === 0)) await this.$store.dispatch('GET_CURRENT_USER');
+    },
     data ()
     {
         return {
@@ -53,7 +58,7 @@ export default {
 }
 </script>
 
-<style scoped lang="scss">
+<style scoped>
 
     .drop-title {
         margin-bottom: 1.5em;

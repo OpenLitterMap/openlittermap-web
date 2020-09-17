@@ -5,7 +5,7 @@
 
 	    <div v-else>
 
-	    	<div v-if="this.photosAwaitingVerification == 0 && this.photosNotProcessed == 0">
+	    	<div v-if="this.photosAwaitingVerification === 0 && this.photosNotProcessed === 0">
 	    		<p class="title is-3">All done.</p>
 	    	</div>
 
@@ -87,7 +87,9 @@ export default {
 	components: { Loading, AdminItems, AdminAdd },
 	async created ()
 	{
-		await this.getData();
+	    this.loading = true;
+
+        await this.getData();
 	},
 	data ()
 	{
@@ -96,9 +98,6 @@ export default {
 			loading: true,
 			processing: false,
 			button: 'button is-large is-success',
-			photo: {},
-			photosNotProcessed: 0,
-			photosAwaitingVerification: 0,
 			// button classes
 			deleteButtonClass: 'button is-large is-danger',
 			deleteVerifyClass: 'button is-large is-warning mb20',
@@ -113,7 +112,7 @@ export default {
 		 */
 		checkUpdateTagsDisabled ()
 		{
-			if (this.disabled || this.$store.state.litter.hasAddedNewTag == false) return true;
+			if (this.disabled || this.$store.state.litter.hasAddedNewTag === false) return true;
 
 			return false;
 		},
@@ -149,6 +148,30 @@ export default {
 		{
 			return this.processing ? this.button + ' is-loading' : this.button;
 		},
+
+        /**
+         * The photo we are verifying
+         */
+        photo ()
+        {
+            return this.$store.state.admin.photo;
+        },
+
+        /**
+         * Total number of photos that are not yet processed
+         */
+        photosNotProcessed ()
+        {
+            return this.$store.state.admin.not_processed;
+        },
+
+        /**
+         * Total number of photos that are waiting to be verified
+         */
+        photosAwaitingVerification ()
+        {
+            return this.$store.state.admin.awaiting_verification;
+        },
 
 		/**
 		 *
@@ -194,28 +217,9 @@ export default {
 		{
 			this.loading = true;
 
-			// clear previous input
-			this.$store.commit('resetLitter');
+            this.$store.dispatch('GET_NEXT_ADMIN_PHOTO');
 
-			await axios.get('/admin/get-image')
-			.then(resp => {
-				console.log('get_data', resp);
-				this.photo = resp.data.photo;
-				if (resp.data.photoData) {
-					this.$store.commit('initAdminItems', JSON.parse(resp.data.photoData));
-				}
-				this.photosNotProcessed = resp.data.photosNotProcessed;
-				this.photosAwaitingVerification = resp.data.photosAwaitingVerification
-				this.disabled = false;
-				this.processing = false;
-				this.loading = false;
-				// console.log('photo', this.photo);
-			})
-			.catch(err => {
-				console.error(err);
-			});
-
-			// this.loading = false;
+			this.loading = false;
 		},
 
 		/**
