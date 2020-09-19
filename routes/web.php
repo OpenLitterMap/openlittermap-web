@@ -58,6 +58,9 @@ Route::get('/maps/{country}/{state}/{city?}/{id?}', 'MapController@getCities');
 Route::get('/maps/{country}/{state}/{city}/city_hex_map/{minfilter?}/{maxfilter?}/{hex?}', 'MapController@getCity');
 Route::get('/maps/{country}/{state}/{city?}/download/get', 'DownloadsController@getDataByCity');
 
+// new
+Route::get('city', 'MapController@getCity');
+
 // Donation page
 Route::get('donate', 'HomeController@index');
 Route::get('donate/amounts', 'DonateController@index');

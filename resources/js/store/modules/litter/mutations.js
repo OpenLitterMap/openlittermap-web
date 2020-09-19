@@ -197,6 +197,15 @@ export const mutations = {
     },
 
     /**
+     * When the user object is created (page refresh or login), we set the users default presence value here
+     * Presence = Is the litter picked up, or is it still there
+     */
+    set_default_litter_presence (state, payload)
+    {
+        state.presence = payload;
+    },
+
+    /**
      *
      */
     setLang (state, payload)

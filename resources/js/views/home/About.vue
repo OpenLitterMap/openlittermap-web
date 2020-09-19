@@ -52,10 +52,41 @@
             </div>
         </section>
 
-        <!-- Todo -->
         <!-- 1. Just take a photo -->
+        <div class="has-text-centered pt3">
+            <h1 class="title is-1">1. Just take a photo</h1>
+
+            <img src="/assets/about/iphone.PNG" />
+        </div>
+
         <!-- 2. Tag it with our app -->
+        <div class="has-text-centered pt3">
+            <h1 class="title is-1">2. Tag the litter</h1>
+
+            <img src="/assets/about/facemask-tag.PNG" />
+        </div>
+
         <!-- 3. Upload it -->
+        <div class="has-text-centered pt3">
+            <h1 class="title is-1">3. Upload it</h1>
+
+            <img src="/assets/about/facemask-map.PNG" />
+        </div>
+
+        <!-- Download app icons -->
+        <div class="flex jc pt3">
+            <img
+                src="/assets/icons/ios.png"
+                class="app-icon"
+                style="margin-right: 1em;"
+                @click="ios"
+            />
+            <img
+                src="/assets/icons/android.png"
+                class="app-icon"
+                @click="android"
+            />
+        </div>
 
         <!-- Plastic from land to sea -->
         <section>
@@ -227,7 +258,24 @@
 
 <script>
 export default {
-    name: 'About'
+    name: 'About',
+    methods: {
+        /**
+         * Open Google Play store download page
+         */
+        android ()
+        {
+            window.open('https://play.google.com/store/apps/details?id=com.geotech.openlittermap', '_blank');
+        },
+
+        /**
+         * Open App Store download page
+         */
+        ios ()
+        {
+            window.open('https://apps.apple.com/us/app/openlittermap/id1475982147', '_blank');
+        }
+    }
 }
 </script>
 

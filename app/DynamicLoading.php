@@ -2,8 +2,8 @@
 
 namespace App;
 
-use Carbon\Carbon;
 use Log;
+use Carbon\Carbon;
 
 trait DynamicLoading
 {
@@ -42,7 +42,7 @@ trait DynamicLoading
 	}
 
 	/**
-	 * Get the leaderboard for this location 
+	 * Get the leaderboard for this location
 	 * @return array position, name || username & xp
 	 */
 	protected function getLeaders ($leaders)
@@ -80,7 +80,7 @@ trait DynamicLoading
 	}
 
 	/**
-	 * 
+	 *
 	 */
 	protected function getInitialPhotoLatLon ($photoData)
 	{

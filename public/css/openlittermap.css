@@ -35,6 +35,10 @@
 	transform: translate(0px, -5px);
 }
 
+.jc {
+    justify-content: center;
+}
+
 .ma {
 	margin: auto;
 }
@@ -110,6 +114,18 @@
 
 .pr2em {
 	padding-right: 2em;
+}
+
+.pt1 {
+    padding-top: 1em;
+}
+
+.pt2 {
+    padding-top: 2em;
+}
+
+.pt3 {
+    padding-top: 3em;
 }
 
 .show-mobile {

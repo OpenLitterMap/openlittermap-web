@@ -2,8 +2,6 @@
 	<div class="container">
 		<div class="call-container">
             <div class="has-text-centered">
-                <h3 class="pb2">Concerned Citizen</h3>
-
                 <strong>Please consider supporting our work by crowdfunding OpenLitterMap with as little as 6 cents a day with a monthly subscription to help grow and develop this important platform.</strong>
 
                 <div class="control mt2">

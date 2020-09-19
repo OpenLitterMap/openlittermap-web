@@ -21,7 +21,7 @@ class SoftDrinks extends Model
     	'bottleLabel',
     	'tinCan',
     	'sportsDrink',
-        'staws',
+        'straws',
         'plastic_cups',
         'plastic_cup_tops',
         'milk_bottle',

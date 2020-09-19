@@ -30,6 +30,7 @@ class Other extends Model
         'ear_plugs',
     	'other',
         'batteries',
+        'balloons',
         'elec_small',
         'elec_large',
         'random_litter',

@@ -26,7 +26,12 @@ export default {
             this.$store.commit('login');
 
             // user object is passed when the page is refreshed
-            if (this.user) this.$store.commit('initUser', JSON.parse(this.user));
+            if (this.user)
+            {
+                const u = JSON.parse(this.user);
+                this.$store.commit('initUser', u);
+                this.$store.commit('set_default_litter_presence', u.items_remaining);
+            }
         }
     },
     computed: {

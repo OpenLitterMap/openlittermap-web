@@ -60,7 +60,7 @@ export const actions = {
     },
 
     /**
-     *
+     * When we log in, we need to dispatch a request to get the current user
      */
     async GET_CURRENT_USER (context)
     {
@@ -69,6 +69,7 @@ export const actions = {
             console.log('get_current_user', response);
 
             context.commit('initUser', response.data);
+            context.commit('set_default_litter_presence', response.data.items_remaining);
         })
         .catch(error => {
             console.log('error.get_current_user', error);

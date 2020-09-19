@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\User\User;
 use Illuminate\Database\Eloquent\Model;
 
 class Photo extends Model
@@ -77,71 +78,88 @@ class Photo extends Model
         });
     }
 
-    public function owner () {
+    public function owner ()
+    {
     	return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function country () {
+    public function country ()
+    {
     	return $this->hasOne('App\Models\Location\Country');
     }
 
-    public function state () {
+    public function state ()
+    {
         return $this->hasOne('App\Models\Location\State');
     }
 
-    public function city () {
+    public function city ()
+    {
     	return $this->hasOne('App\Models\Location\City');
     }
 
-    public function smoking () {
+    public function smoking ()
+    {
     	return $this->hasOne('App\Models\Litter\Categories\Smoking', 'id', 'smoking_id');
     }
 
-    public function food () {
+    public function food ()
+    {
     	return $this->hasOne('App\Models\Litter\Categories\Food', 'id', 'food_id');
     }
 
-    public function coffee () {
+    public function coffee ()
+    {
     	return $this->hasOne('App\Models\Litter\Categories\Coffee', 'id', 'coffee_id');
     }
 
-    public function softdrinks () {
+    public function softdrinks ()
+    {
     	return $this->hasOne('App\Models\Litter\Categories\SoftDrinks', 'id', 'softdrinks_id');
 	}
 
-	public function alcohol () {
+	public function alcohol ()
+    {
 		return $this->hasOne('App\Models\Litter\Categories\Alcohol', 'id', 'alcohol_id');
 	}
 
-	public function sanitary () {
+	public function sanitary ()
+    {
 		return $this->hasOne('App\Models\Litter\Categories\Sanitary', 'id', 'sanitary_id');
 	}
 
-    public function dumping () {
+    public function dumping ()
+    {
         return $this->hasOne('App\Models\Litter\Categories\Dumping', 'id', 'dump_id');
     }
 
-	public function other () {
+	public function other ()
+    {
 		return $this->hasOne('App\Models\Litter\Categories\Other', 'id', 'other_id');
 	}
 
-    public function industrial () {
+    public function industrial ()
+    {
         return $this->hasOne('App\Models\Litter\Categories\Industrial', 'id', 'industrial_id');
     }
 
-    public function coastal () {
+    public function coastal ()
+    {
         return $this->hasOne('App\Models\Litter\Categories\Coastal', 'id', 'coastal_id');
     }
 
-    public function art () {
+    public function art ()
+    {
         return $this->hasOne('App\Models\Litter\Categories\Art', 'id', 'art_id');
     }
 
-    public function brands () {
+    public function brands ()
+    {
         return $this->hasOne('App\Models\Litter\Categories\Brand', 'id', 'brands_id');
     }
 
-    public function trashdog () {
+    public function trashdog ()
+    {
         return $this->hasOne('App\Models\Litter\Categories\TrashDog', 'id', 'trashdog_id');
     }
 

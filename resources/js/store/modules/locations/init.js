@@ -13,5 +13,5 @@ export const init = {
     states: [],
     totalLitterInt: 0,
     total_litter: 0,
-    total_photos: 0
+    total_photos: 0,
 };

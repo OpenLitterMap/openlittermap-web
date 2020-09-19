@@ -346,12 +346,14 @@ class MapController extends Controller
 	 */
 	public function getCity ()
     {
-        $country = urldecode(request()->country);
-        $state = urldecode(request()->state);
+        // $country = urldecode(request()->country);
+        // $state = urldecode(request()->state);
         $city = urldecode(request()->city);
         $minFilt = null;
         $maxFilt = null;
         $hex = 100;
+
+        \Log::info(['city', $city]);
 
 //		if ($minfilter) {
 //			$minFilt = str_replace('-', ':', $minfilter);
@@ -369,25 +371,15 @@ class MapController extends Controller
 		   'litterGeojson' => $litterGeojson,
 				   	 'hex' => $hex
 		];
-
-//		if ($this->photoCount == 1)
-//		{
-//            return view('layouts.justmap');
-//        }
-//
-//		else
-//        {
-//            return view('layouts.map');
-//        }
 	}
 
 
 	/**
 	 * Dynamically build GeoJSON data for web-mapping
 	 */
-	private function buildGeojson ($location, $minfilter = null, $maxfilter = null)
+	private function buildGeojson ($city, $minfilter = null, $maxfilter = null)
 	{
-		$cityId = City::where('city', $location)->first()->id;
+		$cityId = City::where('city', $city)->first()->id;
 
 		if ($minfilter)
 		{
@@ -511,6 +503,7 @@ class MapController extends Controller
 			// Add features to feature collection array
 			array_push($geojson["features"], $feature);
 		}
+
 		json_encode($geojson, JSON_NUMERIC_CHECK);
 
 		return $geojson;

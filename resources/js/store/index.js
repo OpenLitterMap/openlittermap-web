@@ -4,6 +4,7 @@ import createPersistedState from 'vuex-persistedstate'
 
 import { admin } from './modules/admin'
 import { donate } from './modules/donate'
+import { citymap } from './modules/citymap'
 import { globalmap } from './modules/globalmap'
 import { locations } from './modules/locations'
 import { litter } from './modules/litter'
@@ -17,10 +18,11 @@ import { user } from './modules/user'
 Vue.use(Vuex)
 
 export default new Vuex.Store({
-    plugins: [createPersistedState()],
+    // plugins: [createPersistedState()],
     modules: {
         admin,
         donate,
+        citymap,
         globalmap,
         locations,
         litter,
