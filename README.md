@@ -1,4 +1,5 @@
 <p>Welcome to OpenLitterMap</p>
+<p>Arbitary Update </p>
 <hr>
 <p>Built with Laravel, Vue and Bulma</p>
 <br>
