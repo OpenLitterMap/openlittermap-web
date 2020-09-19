@@ -42,11 +42,7 @@
                             {{ $t('about.about7') }}
                         </strong>
                     </h1>
-                    <h2 class="subtitle">
-                        <strong>
-                            {{ $t('about.about8') }}
-                        </strong>
-                    </h2>
+                    <!-- subtitle about.8 removed -->
                 </div>
                 <div class="has-text-centered" style="padding-top: 2em;">
                     <router-link to="/signup">
@@ -55,6 +51,11 @@
                 </div>
             </div>
         </section>
+
+        <!-- Todo -->
+        <!-- 1. Just take a photo -->
+        <!-- 2. Tag it with our app -->
+        <!-- 3. Upload it -->
 
         <!-- Plastic from land to sea -->
         <section>
@@ -107,7 +108,7 @@
                             </div>
                             <div class="tile is-parent">
                                 <article class="tile is-child notification is-info">
-                                    <p class="title">All Data is mapped by Space, Time, Location, and Behaviour by Design.</p>
+                                    <p class="title">Our data is mapped by Space, Time, Location, and Behaviour.</p>
                                     <p class="subtitle">Check out this incredible stretch of Free and Open Data on the pollution being caused by the products of a handful of global corporations</p>
                                     <!-- <figure class="image is-4by3"> -->
                                     <a href="https://openlittermap.com/maps/The%20Netherlands/Zuid-Holland/Wassenaar/map">https://openlittermap.com/maps/The%20Netherlands/Zuid-Holland/Wassenaar/map</a>
