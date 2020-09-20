@@ -119,10 +119,6 @@ class PhotosController extends Controller
         $filepath = $y.'/'.$m.'/'.$d.'/'.$filename;
         $imageName = '';
 
-        // if (app()->environment('local', 'testing')) {
-        //     $file->move($filepath, $filename);
-        //     $imageName = $filepath.$filename;
-        // }
         // Upload the image to AWS
         if (app()->environment('production'))
         {
@@ -154,7 +150,8 @@ class PhotosController extends Controller
 
         // todo - let horizon process address details as a Job.
         // Reverse Geocode = 10,000 - 30,000 requests per day
-        $apiKey = env('LOCATE_API_KEY');
+        $apiKey = config('services.location.secret');
+        \Log::info(['apikey', $apiKey]);
         $url =  "https://locationiq.org/v1/reverse.php?format=json&key=".$apiKey."&lat=".$latitude."&lon=".$longitude."&zoom=20";
 
         // The entire reverse geocoded result
