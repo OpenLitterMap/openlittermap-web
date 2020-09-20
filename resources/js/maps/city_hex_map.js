@@ -16,20 +16,20 @@ L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: 'Map data &copy; ' + mapLink + ' & Contributors',
     maxZoom: 20,
     minZoom: 1,
-    // todo: maxBounds: bounds -> import from MapController -> not yet configured 
+    // todo: maxBounds: bounds -> import from MapController -> not yet configured
 }).addTo(map);
 
 map.attributionControl.addAttribution('Litter data &copy; OpenLitterMap & Contributors ' + year);
 
 /*
  * Step 2 - Add hex / shapefile grid
- */ 
+ */
 
 // 2.1 Characterize hex grid
 var cellWidth = hex;
 var units = 'meters';
 
-// 2.1.1 create a bounding box from a set of features 
+// 2.1.1 create a bounding box from a set of features
 var bbox = turf.bbox(litterGeojson);
 // also turf.bboxPolygon
 
@@ -44,12 +44,12 @@ var hexgrid = turf.hexGrid(bbox, cellWidth, units);
 
 // [1. polygons, 2. points, 3. ["Item" to count], 4. [attach 'values' to the hex input]]
 // this annotates the input variable (eg. adminZone, hexgrid) with a new property Array(n) "values" counting "Item"
-// hexgrid will get an extra array, "values" with counts of "Item" that fall within the polygon of input paramater
+// hexgrid will get an extra array, "values" with counts of "Item" that fall within the polygon of input parameter
 var aggregate = turf.collect(hexgrid, litterGeojson, 'total_litter', 'values');
-// console.log(aggregate); // size of grid = 100 
+// console.log(aggregate); // size of grid = 100
 // console.log(aggregate.features);
 // console.log(aggregate.features[0]);
-var aggredatedValues = aggregate.features[0].properties.values; // array of hex grid values
+// var aggredatedValues = aggregate.features[0].properties.values; // array of hex grid values
 // console.log(aggredatedValues);
 
 // 2.2 Filter Hex Grid polygons
@@ -110,7 +110,7 @@ info.update = function (props) {
 info.addTo(map);
 
 function highlightFeature (e) {
-    
+
     var layer = e.target;
 
     layer.setStyle({
@@ -221,9 +221,9 @@ for (var i = 0; i < litterGeojson["features"].length; i++ )
         userfullname = "Anonymous";
     }
 
-    // Extract Features 
+    // Extract Features
     // Check if smoking exists and add to smoking object for map toggle
-    // then check if anything else exists on the image and add it into smoking 
+    // then check if anything else exists on the image and add it into smoking
     // repeat for all categories, for each image :-/
     if (litterGeojson["features"][i]["properties"]["smoking"])
     {
@@ -265,7 +265,7 @@ for (var i = 0; i < litterGeojson["features"].length; i++ )
             + '<p>By: ' + userfullname + userName+'</p>'
         );
     }
-        
+
     if (litterGeojson["features"][i]["properties"]["food"]) {
 
         // console.log('food is not null');
@@ -312,14 +312,14 @@ for (var i = 0; i < litterGeojson["features"].length; i++ )
            + '<p>Taken on ' + litterGeojson["features"][i]["properties"]["datetime"] + ' With a ' + litterGeojson["features"][i]["properties"]["model"] + '</p>'
             + '<img style="height: 150px;" src="' + litterGeojson["features"][i]["properties"]["filename"] + '"/>'
             + '<p>Lat, Lon: ' + litterGeojson["features"][i]["properties"]["lat"] + ', '
-            + litterGeojson["features"][i]["properties"]["lon"] + '</p>' 
+            + litterGeojson["features"][i]["properties"]["lon"] + '</p>'
             + '<p>By: ' + userfullname + userName+'</p>'
         );
     } // end food not null
 
     var coffeeString = '';
     if (litterGeojson["features"][i]["properties"]["coffee"]) {
-        // there is also food 
+        // there is also food
         // extractFood();
         var coffee = litterGeojson["features"][i]["properties"]["coffee"];
         if (coffee['coffeeCups']) {
@@ -336,15 +336,15 @@ for (var i = 0; i < litterGeojson["features"].length; i++ )
             + '<p>Taken on ' + litterGeojson["features"][i]["properties"]["datetime"] + ' With a ' + litterGeojson["features"][i]["properties"]["model"] + '</p>'
             + '<img style="height: 150px;" src="' + litterGeojson["features"][i]["properties"]["filename"] + '"/>'
             + '<p>Lat, Lon: ' + litterGeojson["features"][i]["properties"]["lat"] + ', '
-            + litterGeojson["features"][i]["properties"]["lon"] + '</p>' 
+            + litterGeojson["features"][i]["properties"]["lon"] + '</p>'
             + '<p>By: ' + userfullname + userName+'</p>'
         );
-    } // end coffee not null 
+    } // end coffee not null
 
-    // check if the image with smoking has anything else 
+    // check if the image with smoking has anything else
     var alcoholString = '';
     if (litterGeojson["features"][i]["properties"]["alcohol"]) {
-        // there is also alcohol 
+        // there is also alcohol
         // extractAlcohol();
         var alcohol = litterGeojson["features"][i]["properties"]["alcohol"];
         if (alcohol['beerBottle']) {
@@ -378,14 +378,14 @@ for (var i = 0; i < litterGeojson["features"].length; i++ )
             + '<p>Taken on ' + litterGeojson["features"][i]["properties"]["datetime"] + ' With a ' + litterGeojson["features"][i]["properties"]["model"] + '</p>'
             + '<img style="height: 150px;" src="' + litterGeojson["features"][i]["properties"]["filename"] + '"/>'
             + '<p>Lat, Lon: ' + litterGeojson["features"][i]["properties"]["lat"] + ', '
-            + litterGeojson["features"][i]["properties"]["lon"] + '</p>' 
+            + litterGeojson["features"][i]["properties"]["lon"] + '</p>'
             + '<p>By: ' + userfullname + userName+'</p>'
         );
     }
 
     var softdrinksString = '';
     if (litterGeojson["features"][i]["properties"]["softdrinks"]) {
-        // there is also softdrinks 
+        // there is also softdrinks
         // extractsoftdrinks();
         var softdrinks = litterGeojson["features"][i]["properties"]["softdrinks"];
 
@@ -453,15 +453,15 @@ for (var i = 0; i < litterGeojson["features"].length; i++ )
             + '<p>Taken on ' + litterGeojson["features"][i]["properties"]["datetime"] + ' With a ' + litterGeojson["features"][i]["properties"]["model"] + '</p>'
             + '<img style="height: 150px;" src="' + litterGeojson["features"][i]["properties"]["filename"] + '"/>'
             + '<p>Lat, Lon: ' + litterGeojson["features"][i]["properties"]["lat"] + ', '
-            + litterGeojson["features"][i]["properties"]["lon"] + '</p>' 
+            + litterGeojson["features"][i]["properties"]["lon"] + '</p>'
             + '<p>By: ' + userfullname + userName+'</p>'
         );
     }
 
     // var drugsString = '';
-    // // check if the image with smoking contains soft drinks 
+    // // check if the image with smoking contains soft drinks
     // if (litterGeojson["features"][i]["properties"]["drugs"]) {
-    //     // there is also drugs 
+    //     // there is also drugs
     //     // extractDrugs();
     //     var drugs = litterGeojson["features"][i]["properties"]["drugs"];
 
@@ -520,15 +520,15 @@ for (var i = 0; i < litterGeojson["features"].length; i++ )
     //         + '<p>Taken on ' + litterGeojson["features"][i]["properties"]["datetime"] + ' With a ' + litterGeojson["features"][i]["properties"]["model"] + '</p>'
     //         + '<img style="height: 150px;" src="' + litterGeojson["features"][i]["properties"]["filename"] + '"/>'
     //         + '<p>Lat, Lon: ' + litterGeojson["features"][i]["properties"]["lat"] + ', '
-    //         + litterGeojson["features"][i]["properties"]["lon"] + '</p>' 
+    //         + litterGeojson["features"][i]["properties"]["lon"] + '</p>'
     //         + '<p>By: ' + userfullname + userName+'</p>'
     //     );
     // }
 
     var sanitaryString = '';
-    // check if the image with smoking contains soft drinks 
+    // check if the image with smoking contains soft drinks
     if (litterGeojson["features"][i]["properties"]["sanitary"]) {
-        // there is also sanitary 
+        // there is also sanitary
         // extractSanitary();
         var sanitary = litterGeojson["features"][i]["properties"]["sanitary"];
 
@@ -560,16 +560,16 @@ for (var i = 0; i < litterGeojson["features"].length; i++ )
             + '<p>Taken on ' + litterGeojson["features"][i]["properties"]["datetime"] + ' With a ' + litterGeojson["features"][i]["properties"]["model"] + '</p>'
             + '<img style="height: 150px;" src="' + litterGeojson["features"][i]["properties"]["filename"] + '"/>'
             + '<p>Lat, Lon: ' + litterGeojson["features"][i]["properties"]["lat"] + ', '
-            + litterGeojson["features"][i]["properties"]["lon"] + '</p>' 
+            + litterGeojson["features"][i]["properties"]["lon"] + '</p>'
             + '<p>By: ' + userfullname + userName+'</p>'
         );
     }
 
     var otherString = '';
     var dogshitString = '';
-    // check if the image with smoking contains soft drinks 
+    // check if the image with smoking contains soft drinks
     if (litterGeojson["features"][i]["properties"]["other"]) {
-        // there is also other 
+        // there is also other
         // extractSanitary();
         var other = litterGeojson["features"][i]["properties"]["other"];
         if (other['dogshit']) {
@@ -579,7 +579,7 @@ for (var i = 0; i < litterGeojson["features"].length; i++ )
             + '<p>Taken on ' + litterGeojson["features"][i]["properties"]["datetime"] + ' With a ' + litterGeojson["features"][i]["properties"]["model"] + '</p>'
             + '<img style="height: 150px;" src="' + litterGeojson["features"][i]["properties"]["filename"] + '"/>'
             + '<p>Lat, Lon: ' + litterGeojson["features"][i]["properties"]["lat"] + ', '
-            + litterGeojson["features"][i]["properties"]["lon"] + '</p>' 
+            + litterGeojson["features"][i]["properties"]["lon"] + '</p>'
             + '<p>By: ' + userfullname + userName+'</p>'
         );
         }
@@ -638,7 +638,7 @@ for (var i = 0; i < litterGeojson["features"].length; i++ )
             + '<p>Taken on ' + litterGeojson["features"][i]["properties"]["datetime"] + ' With a ' + litterGeojson["features"][i]["properties"]["model"] + '</p>'
             + '<img style="height: 150px;" src="' + litterGeojson["features"][i]["properties"]["filename"] + '"/>'
             + '<p>Lat, Lon: ' + litterGeojson["features"][i]["properties"]["lat"] + ', '
-            + litterGeojson["features"][i]["properties"]["lon"] + '</p>' 
+            + litterGeojson["features"][i]["properties"]["lon"] + '</p>'
             + '<p>By: ' + userfullname + userName+'</p>'
         );
     }
@@ -708,7 +708,7 @@ for (var i = 0; i < litterGeojson["features"].length; i++ )
             + '<p>Taken on ' + litterGeojson["features"][i]["properties"]["datetime"] + ' With a ' + litterGeojson["features"][i]["properties"]["model"] + '</p>'
             + '<img style="height: 150px;" src="' + litterGeojson["features"][i]["properties"]["filename"] + '"/>'
             + '<p>Lat, Lon: ' + litterGeojson["features"][i]["properties"]["lat"] + ', '
-            + litterGeojson["features"][i]["properties"]["lon"] + '</p>' 
+            + litterGeojson["features"][i]["properties"]["lon"] + '</p>'
             + '<p>By: ' + userfullname + userName+'</p>'
         );
     }
@@ -736,7 +736,7 @@ for (var i = 0; i < litterGeojson["features"].length; i++ )
     //         + '<p>Taken on ' + litterGeojson["features"][i]["properties"]["datetime"] + ' With a ' + litterGeojson["features"][i]["properties"]["model"] + '</p>'
     //         + '<img style="height: 150px;" src="' + litterGeojson["features"][i]["properties"]["filename"] + '"/>'
     //         + '<p>Lat, Lon: ' + litterGeojson["features"][i]["properties"]["lat"] + ', '
-    //         + litterGeojson["features"][i]["properties"]["lon"] + '</p>' 
+    //         + litterGeojson["features"][i]["properties"]["lon"] + '</p>'
     //         + '<p>By: ' + userfullname + userName+'</p>'
     //     );
     // }
@@ -752,7 +752,7 @@ for (var i = 0; i < litterGeojson["features"].length; i++ )
     //         + '<p>Taken on ' + litterGeojson["features"][i]["properties"]["datetime"] + ' With a ' + litterGeojson["features"][i]["properties"]["model"] + '</p>'
     //         + '<img style="height: 150px;" src="' + litterGeojson["features"][i]["properties"]["filename"] + '"/>'
     //         + '<p>Lat, Lon: ' + litterGeojson["features"][i]["properties"]["lat"] + ', '
-    //         + litterGeojson["features"][i]["properties"]["lon"] + '</p>' 
+    //         + litterGeojson["features"][i]["properties"]["lon"] + '</p>'
     //         + '<p>By: ' + userfullname + userName+'</p>'
     //     );
     // }
@@ -768,7 +768,7 @@ for (var i = 0; i < litterGeojson["features"].length; i++ )
     //         + '<p>Taken on ' + litterGeojson["features"][i]["properties"]["datetime"] + ' With a ' + litterGeojson["features"][i]["properties"]["model"] + '</p>'
     //         + '<img style="height: 150px;" src="' + litterGeojson["features"][i]["properties"]["filename"] + '"/>'
     //         + '<p>Lat, Lon: ' + litterGeojson["features"][i]["properties"]["lat"] + ', '
-    //         + litterGeojson["features"][i]["properties"]["lon"] + '</p>' 
+    //         + litterGeojson["features"][i]["properties"]["lon"] + '</p>'
     //         + '<p>By: ' + userfullname + userName+'</p>'
     //     );
     // }
@@ -864,7 +864,7 @@ for (var i = 0; i < litterGeojson["features"].length; i++ )
             + '<p>Taken on ' + litterGeojson["features"][i]["properties"]["datetime"] + ' With a ' + litterGeojson["features"][i]["properties"]["model"] + '</p>'
             + '<img style="height: 150px;" src="' + litterGeojson["features"][i]["properties"]["filename"] + '"/>'
             + '<p>Lat, Lon: ' + litterGeojson["features"][i]["properties"]["lat"] + ', '
-            + litterGeojson["features"][i]["properties"]["lon"] + '</p>' 
+            + litterGeojson["features"][i]["properties"]["lon"] + '</p>'
             + '<p>By: ' + userfullname + userName+'</p>'
         );
     }
@@ -887,7 +887,7 @@ for (var i = 0; i < litterGeojson["features"].length; i++ )
             + '<p>Taken on ' + litterGeojson["features"][i]["properties"]["datetime"] + ' With a ' + litterGeojson["features"][i]["properties"]["model"] + '</p>'
             + '<img style="height: 150px;" src="' + litterGeojson["features"][i]["properties"]["filename"] + '"/>'
             + '<p>Lat, Lon: ' + litterGeojson["features"][i]["properties"]["lat"] + ', '
-            + litterGeojson["features"][i]["properties"]["lon"] + '</p>' 
+            + litterGeojson["features"][i]["properties"]["lon"] + '</p>'
             + '<p>By: ' + userfullname + userName + '</p>'
         );
     }
@@ -919,7 +919,7 @@ for (var i = 0; i < litterGeojson["features"].length; i++ )
             + '<p>Taken on ' + litterGeojson["features"][i]["properties"]["datetime"] + ' With a ' + litterGeojson["features"][i]["properties"]["model"] + '</p>'
             + '<img style="height: 150px;" src="' + litterGeojson["features"][i]["properties"]["filename"] + '"/>'
             + '<p>Lat, Lon: ' + litterGeojson["features"][i]["properties"]["lat"] + ', '
-            + litterGeojson["features"][i]["properties"]["lon"] + '</p>' 
+            + litterGeojson["features"][i]["properties"]["lon"] + '</p>'
             + '<p>By: ' + userfullname + userName + '</p>'
         );
     }
@@ -950,7 +950,7 @@ var overlays = {
 // // 4.4 - Add null basemaps and overlays to the map
 L.control.layers(null, overlays).addTo(map);
 
-// Step 5: Timeslider 
+// Step 5: Timeslider
 // var testlayer = smokingGroup;
 // console.log(testlayer);
 // var sliderControl = L.control.sliderControl({position: "bottomleft", layer: testlayer, range: true});

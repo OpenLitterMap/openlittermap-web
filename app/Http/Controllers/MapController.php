@@ -353,8 +353,6 @@ class MapController extends Controller
         $maxFilt = null;
         $hex = 100;
 
-        \Log::info(['city', $city]);
-
 //		if ($minfilter) {
 //			$minFilt = str_replace('-', ':', $minfilter);
 //			$maxFilt = str_replace('-', ':', $maxfilter);
