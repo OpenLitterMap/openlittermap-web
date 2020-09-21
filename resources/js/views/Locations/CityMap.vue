@@ -8,16 +8,49 @@
 
             <l-geo-json :geojson="aggregate" :options="options" />
 
+            <!-- Top Right - Show polygon count -->
             <l-control class="info leaflet-control">
                 <p class="info-title">{{ this.hex }} meter hex grid</p>
-                <strong>Hover over grid to count</strong>
+                <!-- Todo - pluralize with filter -->
+                <strong v-if="isHover">{{ this.display_count }} images</strong>
+                <strong v-else>Hover over grid to count</strong>
+            </l-control>
+
+
+            <!-- Top Right - Control Layers -->
+            <l-control-layers position="topright" @ready="addDataToLayerGroups" />
+
+            <l-layer-group
+                ref="groups"
+                layer-type="overlay"
+                v-for="cat in categories"
+                :name="cat.name"
+                :key="cat.id"
+                :checked="cat.selected"
+            />
+
+            <!-- Bottom Left - Legend -->
+            <l-control class="info legend" position="bottomleft">
+                <span v-for="grade, index in grades" class="flex">
+                    <i :style="getGradeColor(grade)" />
+                    <p v-html="getGradeText(index)" />
+                </span>
             </l-control>
         </l-map>
     </div>
 </template>
 
 <script>
-import { LMap, LTileLayer, LMarker, LPopup, LGeoJson, LControl } from 'vue2-leaflet'
+import {
+    LMap,
+    LTileLayer,
+    LMarker,
+    LPopup,
+    LGeoJson,
+    LControl,
+    LControlLayers,
+    LLayerGroup
+} from 'vue2-leaflet'
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
 // import bbox from '@turf/bbox' // todo - import functions instead of *
@@ -41,13 +74,16 @@ const hoverStyle = {
 
 function onEachFeature (feature, layer)
 {
-    // layer.on('click', () => ..... open popup with statistics
+    // todo - layer.on('click', () => ..... open popup with statistics
 
-    layer.on('mouseover', () => {
+    layer.on('mouseover', (e) => {
+        this.isHover = true;
+        this.display_count = e.sourceTarget.feature.properties.total;
         layer.setStyle(hoverStyle);
     });
 
     layer.on('mouseout', () => {
+        this.isHover = false;
         layer.setStyle(defaultStyle);
     });
 }
@@ -61,6 +97,8 @@ export default {
         LPopup,
         LGeoJson,
         LControl,
+        LControlLayers,
+        LLayerGroup,
         Loading
     },
     async created ()
@@ -75,6 +113,8 @@ export default {
     data ()
     {
         return {
+            display_count: 0,
+            grades: [1, 3, 6, 10, 20], // todo - generate these numbers dynamically
             isHover: false, // is the grid being hovered
             loading: true,
             url:'https://{s}.tile.osm.org/{z}/{x}/{y}.png',
@@ -95,7 +135,21 @@ export default {
                 },
                 onEachFeature: onEachFeature.bind(this),
                 style: this.style,
-            }
+            },
+            categories: [
+                { id: 1,  name: 'Smoking', selected: false },
+                { id: 2,  name: 'Food', selected: false },
+                { id: 3,  name: 'Alcohol', selected: false },
+                { id: 4,  name: 'Coffee', selected: false },
+                { id: 5,  name: 'SoftDrinks', selected: true },
+                { id: 6,  name: 'Sanitary', selected: false },
+                { id: 7,  name: 'Other', selected: false },
+                { id: 8,  name: 'Coastal', selected: false },
+                { id: 9,  name: 'Brands', selected: false },
+                { id: 10, name: 'Dumping', selected: false },
+                { id: 11, name: 'PetSurprise', selected: false },
+                { id: 12, name: 'Industrial', selected: false }
+            ]
         };
     },
     computed: {
@@ -158,9 +212,21 @@ export default {
     methods: {
 
         /**
+         *
+         */
+        addDataToLayerGroups ()
+        {
+            console.log('add_data_to_layer_groups', this.$refs.groups);
+
+            this.$refs.groups.map(group => {
+                console.log(group.name);
+            });
+        },
+
+        /**
          * Get colour for hex grid
          */
-        getColour (n)
+        getColor (n)
         {
             return n > 60 ? '#800026' :
                 n > 20 ? '#BD0026' :
@@ -171,27 +237,48 @@ export default {
         },
 
         /**
-         *
+         * Return the colour for each grade
          */
-        highlightFeature (e)
+        getGradeColor (i)
         {
-            console.log('highlight', e);
-
-            let layer = e.target;
-
-            layer.setStyle({
-                weight: 5,
-                color: '#666',
-                dashArray: '',
-                fillOpacity: 0.7
-            });
-
-            // if (! L.Browser.ie && ! L.Browser.opera && ! L.Browser.edge) {
-            //     layer.bringToFront();
-            // }
-
-            // info.update(layer.feature.properties);
+            return 'background:' + this.getColor(i);
         },
+
+        /**
+         * Return the text for each grade
+         */
+        getGradeText (i)
+        {
+            let from = this.grades[i];
+            let to = this.grades[i + 1];
+
+            if (to) return from + '&ndash;' + to;
+
+            return from + '+';
+        },
+
+        // /**
+        //  *
+        //  */
+        // highlightFeature (e)
+        // {
+        //     console.log('highlight', e);
+        //
+        //     let layer = e.target;
+        //
+        //     layer.setStyle({
+        //         weight: 5,
+        //         color: '#666',
+        //         dashArray: '',
+        //         fillOpacity: 0.7
+        //     });
+        //
+        //     // if (! L.Browser.ie && ! L.Browser.opera && ! L.Browser.edge) {
+        //     //     layer.bringToFront();
+        //     // }
+        //
+        //     // info.update(layer.feature.properties);
+        // },
 
         /**
          *
@@ -217,7 +304,7 @@ export default {
                 color: 'white',
                 dashArray: '3',
                 fillOpacity: 0.7,
-                fillColor: this.getColour(feature.properties.total)
+                fillColor: this.getColor(feature.properties.total)
             };
         },
 
