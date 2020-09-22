@@ -16,31 +16,42 @@
                 <strong v-else>Hover over grid to count</strong>
             </l-control>
 
-
             <!-- Top Right - Control Layers -->
-            <l-control-layers position="topright" @ready="addDataToLayerGroups" />
+            <!--  @ready="addDataToLayerGroups" -->
+            <l-control-layers position="topright" />
 
             <l-layer-group
                 ref="groups"
                 layer-type="overlay"
-                v-for="cat in categories"
-                :name="cat.name"
-                :key="cat.id"
-                :checked="cat.selected"
-            />
+                v-for="category, ii) in categories"
+                :name="category.name"
+                :key="category.id"
+                :visible="category.selected"
+                @click="toggleLayer(ii)"
+            >
+                <l-marker
+                    v-if="category.data.length > 0"
+                    v-for="i, index in category.data"
+                    :lat-lng="getCoords(i.data)"
+                    :key="category + index"
+                />
+            </l-layer-group>
 
-            <!-- Bottom Left - Legend -->
+                <!-- Bottom Left - Legend -->
             <l-control class="info legend" position="bottomleft">
                 <span v-for="grade, index in grades" class="flex">
                     <i :style="getGradeColor(grade)" />
                     <p v-html="getGradeText(index)" />
                 </span>
             </l-control>
+
+
         </l-map>
     </div>
 </template>
 
 <script>
+import L from 'leaflet'
 import {
     LMap,
     LTileLayer,
@@ -108,6 +119,8 @@ export default {
         let city = window.location.href.split('/')[6];
         await this.$store.dispatch('GET_CITY_DATA', city);
 
+        this.addDataToLayerGroups();
+
         this.loading = false;
     },
     data ()
@@ -137,18 +150,18 @@ export default {
                 style: this.style,
             },
             categories: [
-                { id: 1,  name: 'Smoking', selected: false },
-                { id: 2,  name: 'Food', selected: false },
-                { id: 3,  name: 'Alcohol', selected: false },
-                { id: 4,  name: 'Coffee', selected: false },
-                { id: 5,  name: 'SoftDrinks', selected: true },
-                { id: 6,  name: 'Sanitary', selected: false },
-                { id: 7,  name: 'Other', selected: false },
-                { id: 8,  name: 'Coastal', selected: false },
-                { id: 9,  name: 'Brands', selected: false },
-                { id: 10, name: 'Dumping', selected: false },
-                { id: 11, name: 'PetSurprise', selected: false },
-                { id: 12, name: 'Industrial', selected: false }
+                // { id: 1,  selected: false, data: [], name: 'Smoking' },
+                // { id: 2,  selected: false, data: [], name: 'Food' },
+                // { id: 3,  selected: false, data: [], name: 'Alcohol' },
+                // { id: 4,  selected: false, data: [], name: 'Coffee' },
+                // { id: 5,  selected: true,  data: [], name: 'SoftDrinks' },
+                // { id: 6,  selected: false, data: [], name: 'Sanitary' },
+                { id: 7,  selected: true, data: [], name: 'Other' },
+                // { id: 8,  selected: false, data: [], name: 'Coastal' },
+                // { id: 9,  selected: false, data: [], name: 'Brands' },
+                // { id: 10, selected: false, data: [], name: 'Dumping' },
+                // { id: 11, selected: false, data: [], name: 'PetSurprise' },
+                // { id: 12, selected: false, data: [], name: 'Industrial' }
             ]
         };
     },
@@ -216,11 +229,30 @@ export default {
          */
         addDataToLayerGroups ()
         {
-            console.log('add_data_to_layer_groups', this.$refs.groups);
+            this.geojson.features.map(i => {
+                console.log(i);
 
-            this.$refs.groups.map(group => {
-                console.log(group.name);
+                const lat = i.properties.lat;
+                const lng = i.properties.lon;
+
+                if (i.properties.other)
+                {
+                    let other_string = '';
+                    const other_index = 0;
+
+                    if (i.properties.other.random_litter)
+                    {
+                        other_string += '<br>Random Litter ' + i.properties.other.random_litter;
+
+                        this.categories[other_index].data.push({
+                            latLng: { lat, lng },
+                            value: other_string
+                        });
+                    }
+                }
             });
+
+            this.loading = false;
         },
 
         /**
@@ -234,6 +266,18 @@ export default {
                 n > 4  ? '#FD8D3C' :
                 n > 2  ? '#FED976' :
                 '#FFEDA0';
+        },
+
+        /**
+         * Return the coordinates for a point if it exists
+         */
+        getCoords (point)
+        {
+            console.log({ point });
+
+            if (point) return point.data.latLng;
+
+            return { lat: 0, lng: 0 };
         },
 
         /**
@@ -297,7 +341,7 @@ export default {
          */
         style (feature)
         {
-            console.log({ feature });
+            // console.log({ feature });
             return {
                 weight: 2,
                 opacity: 1,
@@ -306,6 +350,14 @@ export default {
                 fillOpacity: 0.7,
                 fillColor: this.getColor(feature.properties.total)
             };
+        },
+
+        /**
+         *
+         */
+        toggleLayer (i)
+        {
+            console.log(i);
         },
 
         /**

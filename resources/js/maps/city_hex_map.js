@@ -11,7 +11,7 @@ const year = date.getFullYear();
 // console.log(litterGeojson);
 
 // 1.2 Add tiles, attribution, set limits
-mapLink = '<a href="http://openstreetmap.org">OpenStreetMap</a>';
+let mapLink = '<a href="http://openstreetmap.org">OpenStreetMap</a>';
 L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: 'Map data &copy; ' + mapLink + ' & Contributors',
     maxZoom: 20,

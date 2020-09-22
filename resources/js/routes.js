@@ -61,7 +61,7 @@ const router = new VueRouter({
         // City - Map
         {
             path: '/world/:country/:state/:city/map',
-            component: require('./views/Locations/CityMap').default
+            component: require('./views/Locations/OldCityMap').default
         },
         // Admin
         {
