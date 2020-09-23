@@ -292,8 +292,8 @@ export default {
                 {
                     let smoking = '';
 
-                    if (i.properties.smoking.butts)         smoking += 'Cigarette Butts: '       + i.properties.smoking.butts;
-                    if (i.properties.smoking.lighters)      smoking += '<br>Lighters: '          + i.properties.smoking.lighters;
+                    if (i.properties.smoking.butts)         smoking += this.$t('litter.smoking.butts') + ': ' + i.properties.smoking.butts;
+                    if (i.properties.smoking.lighters)      smoking += '<br>' + this.$t('litter.smoking.lighters') + ': ' + i.properties.smoking.lighters;
                     if (i.properties.smoking.cigaretteBox)  smoking += '<br>Cigarette Box: '     + i.properties.smoking.cigaretteBox;
                     if (i.properties.smoking.skins)         smoking += '<br>Rolling Papers: '    + i.properties.smoking.skins;
                     if (i.properties.smoking.tobaccoPouch)  smoking += '<br>Tobacco Pouch: '     + i.properties.smoking.tobaccoPouch;
