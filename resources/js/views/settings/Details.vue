@@ -1,6 +1,6 @@
 <template>
 	<div style="padding-left: 1em; padding-right: 1em;">
-		<h1 class="title is-4">Change Personal Details</h1>
+		<h1 class="title is-4">{{ $t('settings.details1')}}</h1>
 		<hr>
 		<br>
 		<div class="columns">
@@ -9,7 +9,7 @@
                 <form @submit.prevent="submit" @keydown="clearError($event.target.name)">
 
                     <!-- The users name -->
-                    <label for="name">Your name</label>
+                    <label for="name">{{ $t('settings.details2')}}</label>
 
                     <span
                         class="error"
@@ -35,7 +35,7 @@
                     </div>
 
                     <!-- The users username-->
-                    <label for="username">Unique Identifier</label>
+                    <label for="username">{{ $t('settings.details3')}}</label>
 
                     <span
                         class="error"
@@ -61,7 +61,7 @@
                     </div>
 
                     <!-- The users email -->
-                    <label for="email">Email</label>
+                    <label for="email">{{ $t('settings.details4')}}</label>
 
                     <span
                         class="error"
@@ -86,7 +86,7 @@
                         </div>
                     </div>
 
-                    <button :class="button" :disabled="processing">Update Details</button>
+                    <button :class="button" :disabled="processing">{{ $t('settings.details5')}}</button>
 				</form>
 			</div>
 		</div>

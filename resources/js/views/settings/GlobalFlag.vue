@@ -1,6 +1,6 @@
 <template>
 	<div style="padding-left: 1em; padding-right: 1em;">
-        <h1 class="title is-4">Show Country Flag</h1>
+        <h1 class="title is-4">{{ $t('settings.global-flag1') }}</h1>
         <hr>
         <br>
 
@@ -9,14 +9,14 @@
         <div v-else class="columns">
             <div class="column is-offset-1">
 
-                <p class="title is-5 mb20 green">Top 10 Global OpenLitterMap Leaders only!</p>
+                <p class="title is-5 mb20 green">{{ $t('settings.global-flag2') }}</p>
 
                 <div v-show="this.$store.state.user.user.global_flag" class="mb20">
-                    <p class="strong">Selected: {{ this.getSelected() }}</p>
+                    <p class="strong">{{ $t('settings.global-flag3') }}: {{ this.getSelected() }}</p>
                 </div>
 
-                <p class="mb20">If you can make the top 10, you can represent your country!</p>
-                <p class="mb20">Type or scroll to select from the list</p>
+                <p class="mb20">{{ $t('settings.global-flag4') }}</p>
+                <p class="mb20">{{ $t('settings.global-flag5') }}</p>
 
                 <vue-simple-suggest
                     ref="vss"
@@ -36,7 +36,7 @@
                     :disabled="processing"
                     :class="button"
                     @click="save"
-                >Save Flag</button>
+                >{{ $t('settings.global-flag6') }}</button>
             </div>
         </div>
     </div>

@@ -4,7 +4,7 @@
 			<div class="column is-2">
 				<aside id="panel" class="menu">
 				    <p class="menu-label">
-				        General
+				        {{ $t('settings.general') }}
 				    </p>
 				    <ul class="menu-list">
 				        <li v-for="link in links">
