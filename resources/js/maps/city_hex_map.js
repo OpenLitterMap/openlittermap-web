@@ -315,7 +315,7 @@ for (var i = 0; i < litterGeojson["features"].length; i++ )
             + litterGeojson["features"][i]["properties"]["lon"] + '</p>'
             + '<p>By: ' + userfullname + userName+'</p>'
         );
-    } // end food not null
+    }
 
     var coffeeString = '';
     if (litterGeojson["features"][i]["properties"]["coffee"]) {
@@ -339,7 +339,7 @@ for (var i = 0; i < litterGeojson["features"].length; i++ )
             + litterGeojson["features"][i]["properties"]["lon"] + '</p>'
             + '<p>By: ' + userfullname + userName+'</p>'
         );
-    } // end coffee not null
+    }
 
     // check if the image with smoking has anything else
     var alcoholString = '';
