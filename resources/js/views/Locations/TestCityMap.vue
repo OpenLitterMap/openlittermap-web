@@ -84,7 +84,6 @@ function zoomToFeature (e)
     map.fitBounds(e.target.getBounds());
 }
 
-
 export default {
     name: "TestCityMap",
     mounted ()
@@ -190,7 +189,7 @@ export default {
         this.addDataToLayerGroups();
 
         /** 8. Create overlays toggle menu */
-        var overlays = {
+        let overlays = {
             Alcohol: alcoholGroup,
             // Art: artGroup,
             Brands: brandsGroup,
@@ -236,7 +235,7 @@ export default {
             hexgrid = JSON.parse(JSON.stringify(hexgrid));
 
             // To filter the hexgrid, we need to find hex values with point in polygon and remove 0 values
-            // 1. Hexgrid, 2. Points, 3. Our column value, 4. New value will be appended to the hexgrid
+            // "values" will be appended to the hexgrid
             return turf.collect(hexgrid, this.geojson, 'total_litter', 'values');
         },
 
@@ -276,7 +275,8 @@ export default {
     methods: {
 
         /**
-         *
+         * Loop over the geojson,
+         * Add translated "String: Value" to the correct group
          */
         addDataToLayerGroups ()
         {
@@ -285,7 +285,7 @@ export default {
                 const lat = i.properties.lat;
                 const lon = i.properties.lon;
 
-                let userfullname = '';
+                let userfullname = ''; // todo
                 let userName = '';
 
                 if (i.properties.smoking)
@@ -433,7 +433,7 @@ export default {
                     let dogshit = '';
                     let dumping = '';
 
-                    // some older items were mapped on Other but have since moved to separate categories
+                    // some older items were saved on Other but have since moved to separate categories
 
                     if (i.properties.other.dogshit)
                     {
