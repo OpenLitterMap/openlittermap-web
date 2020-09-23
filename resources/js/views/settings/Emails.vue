@@ -1,16 +1,16 @@
 <template>
 	<div style="padding: 0 1em;">
-		<h1 class="title is-4">Toggle Email Subscription</h1>
+		<h1 class="title is-4">{{ $t('settings.email1') }}</h1>
 		<hr>
-		<p>Occasionally, we send out emails with updates and good news.</p>
-		<p>You can subscribe or unsubscribe to our emails here.</p>
+		<p>{{ $t('settings.email2') }}</p>
+		<p>{{ $t('settings.email3') }}</p>
 		<br>
-		<p><b>Current Status:</b></p>
+		<p><b>{{ $t('settings.email4') }}:</b></p>
         <p><b :style="color">{{ this.computedPresence }}</b></p>
 		<br>
 		<div class="columns">
 			<div class="column is-one-third is-offset-1">
-                <button :class="button" :disabled="processing" @click="toggle">Toggle Email Subscription</button>
+                <button :class="button" :disabled="processing" @click="toggle">{{ $t('settings.email1') }}</button>
 			</div>
 		</div>
 	</div>

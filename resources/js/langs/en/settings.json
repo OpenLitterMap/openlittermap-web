@@ -7,5 +7,87 @@
     "littercoin": "Littercoin (LTRX)",
     "presence": "Presence",
     "emails": "Emails",
-    "show-flag": "Show Flag"
+    "show-flag": "Show Flag",
+    "general": "General",
+    "password1": "Change My Password",
+    "password2": "Enter old password",
+    "password3": "Enter new password",
+    "password4": "Enter a strong password",
+    "password5": "Confirm your new password",
+    "password6": "Repeat your strong password",
+    "password7": "Update Password",
+    "details1": "Change Personal Details",
+    "details2": "Your name",
+    "details3": "Unique Identifier",
+    "details4": "Email",
+    "details5": "Update Details",
+    "account1": "Delete My Account",
+    "account2": "Do you want to delete your account?",
+    "account3": "Enter your password",
+    "payments1": "Finance the development of OpenLitterMap",
+    "payments2": "We need your help.",
+    "payments3": "Support Open Data on Plastic Pollution",
+    "payments4": "Help cover our costs",
+    "payments5": "Hire developers, designers & graduates",
+    "payments6": "Produce videos",
+    "payments7": "Write papers",
+    "payments8": "Conferences & outreach",
+    "payments9": "Incentivize data collection with Littercoin",
+    "payments10": "More exciting updates coming soon",
+    "payments11": "Click here to support",
+    "payments12": "Finance the development of OpenLitterMap",
+    "privacy1": "Change My Privacy",
+    "privacy2": "Maps",
+    "privacy3": "Credit my name",
+    "privacy4": "Credit my username",
+    "privacy5": "Your name is set to appear on each of the images you upload to the maps.",
+    "privacy6": "Your username is set to appear on each of the images you upload to the maps.",
+    "privacy7": "Your name and username will not appear on the maps.",
+    "privacy8": "Leaderboards",
+    "privacy9": "Credit my name",
+    "privacy10": "Credit my username",
+    "privacy11": "Your name is set to appear in any leaderboards you qualify for.",
+    "privacy12": "Your username is set to appear in any leaderboards you qualify for.",
+    "privacy13": "Your name and username will not appear on the Leaderboards.",
+    "privacy14": "Created By",
+    "privacy15": "Your name is set to appear on any locations you create.",
+    "privacy16": "Your username is set to appear on any locations you create.",
+    "privacy17": "Your name and username will not appear in the Created By section of any locations you add to the database.",
+    "privacy18": "Update",
+    "littercoin1": "If you want to just claim your tokens and access your wallet from elsewhere, enter your wallet ID and you will be sent your earnings.",
+    "presence1": "Do you pick up the litter or leave it there?",
+    "presence2": "You can save your default setting here.",
+    "presence3": "You can also change the value of each litter item as you are tagging them.",
+    "presence4": "Current Status",
+    "presence5": "Toggle Presence",
+    "presence6": "Pick up?",
+    "email1": "Toggle Email Subscription",
+    "email2": "Occasionally, we send out emails with updates and good news.",
+    "email3": "You can subscribe or unsubscribe to our emails here.",
+    "email4": "Current Status",
+    "global-flag1": "Show Country Flag",
+    "global-flag2": "Top 10 Global OpenLitterMap Leaders only!",
+    "global-flag3": "If you can make the top 10, you can represent your country!",
+    "global-flag4": "Type or scroll to select from the list",
+    "global-flag5": "Select your country",
+    "global-flag6": "Save Flag"
 }
+
+
+
+
+
+
+
+
+
+
+	
+
+	
+    	
+        
+        	
+            	
+                
+                

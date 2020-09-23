@@ -1,6 +1,6 @@
 <template>
 	<div style="padding-left: 1em; padding-right: 1em;">
-		<h1 class="title is-4">Change My Password</h1>
+		<h1 class="title is-4">{{ translate('password1') }}</h1>
 		<hr>
 		<br>
 		<div class="columns">
@@ -10,7 +10,7 @@
                 <form method="POST" @submit.prevent="submit" @keydown="clearError($event.target.name)">
 
                     <!-- Old Password -->
-                    <label for="oldpassword">Enter old password</label>
+                    <label for="oldpassword">{{ translate('password2') }}</label>
 
                     <span
                         v-if="errorExists('oldpassword')"
@@ -35,7 +35,7 @@
                     </div>
 
                     <!-- New Password -->
-                    <label for="password">Enter new password</label>
+                    <label for="password">{{ translate('password3') }}</label>
 
                     <span
                         v-if="errorExists('password')"
@@ -49,7 +49,7 @@
                                 type="password"
                                 name="password"
                                 class="input"
-                                placeholder="Enter a strong password"
+                                :placeholder="translate('password4')"
                                 v-model="password"
                                 required
                             />
@@ -60,7 +60,7 @@
                     </div>
 
                     <!-- Repeat Password -->
-                    <label for="password_confirmation">Confirm your new password</label>
+                    <label for="password_confirmation">{{ translate('password5') }}</label>
 
                     <span
                         v-if="errorExists('password_confirmation')"
@@ -74,7 +74,7 @@
                                 type="password"
                                 name="password_confirmation"
                                 class="input"
-                                placeholder="Repeat your strong password"
+                                :placeholder="translate('password6')"
                                 v-model="password_confirmation"
                                 required
                             />
@@ -85,7 +85,7 @@
                     </div>
 
                     <div class="col-md-12" style="text-align: center;">
-                        <button :class="button" :disabled="processing">Update Password</button>
+                        <button :class="button" :disabled="processing">{{ translate('password7') }}</button>
                     </div>
                 </form>
 			</div>
@@ -164,6 +164,13 @@ export default {
             });
 
             this.processing = false;
+        },
+        /**
+         * Get translated text 
+         */
+        translate (text)
+        {
+            return this.$t('settings.' + text);
         }
     },
 }
