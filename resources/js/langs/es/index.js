@@ -1,5 +1,5 @@
-import settings from './settings.json'
+import { settings } from './settings/index'
 
 export const es = {
-    settings,
+    settings
 }

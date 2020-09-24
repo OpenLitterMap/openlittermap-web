@@ -1,6 +1,6 @@
 <template>
 	<div style="padding-left: 1em; padding-right: 1em;">
-        <h1 class="title is-4">{{ $t('settings.global-flag1') }}</h1>
+        <h1 class="title is-4">{{ $t('settings.globalFlag.global-flag1') }}</h1>
         <hr>
         <br>
 
@@ -9,14 +9,14 @@
         <div v-else class="columns">
             <div class="column is-offset-1">
 
-                <p class="title is-5 mb20 green">{{ $t('settings.global-flag2') }}</p>
+                <p class="title is-5 mb20 green">{{ $t('settings.globalFlag.global-flag2') }}</p>
 
                 <div v-show="this.$store.state.user.user.global_flag" class="mb20">
-                    <p class="strong">{{ $t('settings.global-flag3') }}: {{ this.getSelected() }}</p>
+                    <p class="strong">{{ $t('settings.globalFlag.global-flag3') }}: {{ this.getSelected() }}</p>
                 </div>
 
-                <p class="mb20">{{ $t('settings.global-flag4') }}</p>
-                <p class="mb20">{{ $t('settings.global-flag5') }}</p>
+                <p class="mb20">{{ $t('settings.globalFlag.global-flag4') }}</p>
+                <p class="mb20">{{ $t('settings.globalFlag.global-flag5') }}</p>
 
                 <vue-simple-suggest
                     ref="vss"
@@ -36,7 +36,7 @@
                     :disabled="processing"
                     :class="button"
                     @click="save"
-                >{{ $t('settings.global-flag6') }}</button>
+                >{{ $t('settings.globalFlag.global-flag6') }}</button>
             </div>
         </div>
     </div>
