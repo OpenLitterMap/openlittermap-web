@@ -26,7 +26,7 @@
 				autocomplete="current-password"
 			/>
 
-			<button :class="button" :disabled="disabled">Login</button>
+			<button :class="button" :disabled="processing">Login</button>
 		 </form>
 
         <footer class="modal-card-foot" style="height: 50px;">
@@ -49,7 +49,6 @@ export default {
 		return {
 			email: '',
 			password: '',
-			disabled: false,
 			processing: false,
 			btn: 'button is-medium is-primary'
 		};
@@ -87,17 +86,14 @@ export default {
 		 */
 		async login ()
 		{
-			this.disabled = true;
 			this.processing = true;
 
-			// do request
 			await this.$store.dispatch('LOGIN', {
 				email: this.email,
 				password: this.password
 			});
 
 			this.disabled = false;
-			this.processing = false;
         },
 
 		/**
