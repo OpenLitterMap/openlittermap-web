@@ -1,121 +1,106 @@
 <template>
-	<div>
-		<section class="hero is-medium is-success">
-			<div class="container w100">
-				<div class="control locations-control">
-					<br>
-					<div class="select">
-						<select v-model="category">
-							<option v-for="cat in catnames">{{ cat }}</option>
-						</select>
-					</div>
-				</div>
-			</div>
+    <section :class="container" style="background-color: #48c774;">
+        <div class="container w100">
+            <div class="control locations-control">
+                <br>
+                <div class="select">
+                    <select v-model="category">
+                        <option v-for="cat in catnames">{{ cat }}</option>
+                    </select>
+                </div>
+            </div>
+        </div>
 
-			<section v-for="location, index in orderedBy">
+        <section v-for="location, index in orderedBy">
+            <div v-show="category !== 'A-Z'">
+                <br>
+                <h1 style="text-align: center; color: #34495e;" class="title is-1">
+                    #LitterWorldCup
+                </h1>
+            </div>
 
-				<div v-show="category != 'A-Z'">
-					<br>
-			 		<h1 style="text-align: center; color: #34495e;" class="title is-1">
-						#LitterWorldCup
-					</h1>
-				</div>
+            <div class="hero-body" style="padding-top: 5rem; margin-bottom: 1em;">
+                <div class="columns">
+                    <div class="column is-3">
+                        <!-- Flag -->
+                        <div style="display: flex; padding-bottom: 1em;">
+                            <img v-if="type === 'country' && category !== 'A-Z'"
+                                 height="15"
+                                 style="padding-right: 1.5em; border-radius: 1px; flex: 0.1;"
+                                 :src="getCountryFlag(location.shortcode)"
+                            />
 
-			 	<div class="hero-body" style="padding-top: 5rem; margin-bottom: 1em;">
-			    	<div class="columns">
-			    		<div class="column is-3">
-			    			<!-- Flag -->
-			    			<div style="display: flex; padding-bottom: 1em;">
-				    			<img v-if="type == 'country' && category != 'A-Z'"
-									 height="15"
-	                   				 style="padding-right: 1.5em; border-radius: 1px; flex: 0.1;"
-	                   				 :src="getCountryFlag(location.shortcode)"
-								/>
+                            <h2 :class="textSize">
+                                <router-link :to="goTo(index)" :id="location[type]" class="green has-text-centered">
+                                    <span v-show="category != 'A-Z' && index < 30">
+                                    {{ positions(index) }} -
+                                    </span>
+                                    {{ getName(location) }}
+                                </router-link>
+                            </h2>
+                        </div>
 
-				    			<h2 :class="textSize">
-				    				<router-link :to="goTo(index)" :id="location[type]" class="green has-text-centered">
-				    					<span v-show="category != 'A-Z' && index < 30">
-				    					{{ positions(index) }} -
-				    					</span>
-				    					{{ getName(location) }}
-				    				</router-link>
-				    			</h2>
-	              			</div>
+                        <!-- Location metadata -->
+                        <div class="panel">
+                            <div class="panel-block">{{ $t('location.maps10') }}: <strong class="green">&nbsp; {{ location['total_litter'].toLocaleString() }}</strong></div>
+                            <div class="panel-block">{{ $t('location.maps11') }}: <strong class="green">&nbsp; {{ location['total_images'].toLocaleString() }}</strong></div>
+                            <div class="panel-block">{{ $t('location.maps12') }}: <strong class="green">&nbsp; {{ location['diffForHumans'] }}</strong></div>
+                            <div class="panel-block">{{ $t('location.maps13') }}: <strong class="green">&nbsp; {{ location['total_contributors'].toLocaleString() }}</strong></div>
+                            <div class="panel-block">{{ $t('location.maps14') }}: <strong class="green">&nbsp; {{ location['avg_photo_per_user'].toLocaleString() }}</strong></div>
+                            <div class="panel-block">{{ $t('location.maps15') }}: <strong class="green">&nbsp; {{ location['avg_litter_per_user'].toLocaleString() }}</strong></div>
+                            <div class="panel-block">{{ $t('location.maps16') }}: <strong class="green">&nbsp; {{ location['created_by_name'] }} {{ location['created_by_username'] }}</strong></div>
+                        </div>
+                    </div>
 
-							<!-- Location metadata -->
-							<div class="panel">
-								<div class="panel-block">{{ $t('location.maps10') }}: <strong class="green">&nbsp; {{ location['total_litter'].toLocaleString() }}</strong></div>
-								<div class="panel-block">{{ $t('location.maps11') }}: <strong class="green">&nbsp; {{ location['total_images'].toLocaleString() }}</strong></div>
-								<div class="panel-block">{{ $t('location.maps12') }}: <strong class="green">&nbsp; {{ location['diffForHumans'] }}</strong></div>
-								<div class="panel-block">{{ $t('location.maps13') }}: <strong class="green">&nbsp; {{ location['total_contributors'].toLocaleString() }}</strong></div>
-								<div class="panel-block">{{ $t('location.maps14') }}: <strong class="green">&nbsp; {{ location['avg_photo_per_user'].toLocaleString() }}</strong></div>
-								<div class="panel-block">{{ $t('location.maps15') }}: <strong class="green">&nbsp; {{ location['avg_litter_per_user'].toLocaleString() }}</strong></div>
-								<div class="panel-block">{{ $t('location.maps16') }}: <strong class="green">&nbsp; {{ location['created_by_name'] }} {{ location['created_by_username'] }}</strong></div>
-							</div>
-						</div>
+                    <div class="column is-half is-offset-1">
 
-						<div class="column is-half is-offset-1">
+                        <p class="show-mobile">Drag these across for more options</p>
 
-							<p class="show-mobile">Drag these across for more options</p>
+                        <div class="tabs is-center">
+                            <!-- Litter Chart -->
+                            <a @click="loadTab(index, 'litter')" :class="tabClass('litter')">
+                                {{ $t('location.maps9') }}
+                            </a>
 
-							<div class="tabs is-center">
-					      		<!-- Litter Chart -->
-								<a @click="loadTab(index, 'litter')" :class="tabClass('litter')">
-									{{ $t('location.maps9') }}
-						    	</a>
+                            <!-- Leaderboard -->
+                            <a @click="loadTab(index, 'leaderboard')" :class="tabClass('leaderboard')">
+                                {{ $t('location.maps17') }}
+                            </a>
 
-								<!-- Leaderboard -->
-								<a @click="loadTab(index, 'leaderboard')" :class="tabClass('leaderboard')">
-						      		{{ $t('location.maps17') }}
-						    	</a>
+                            <!-- Time-series -->
+                            <a @click="loadTab(index, 'time_series')" :class="tabClass('time_series')">
+                                {{ $t('location.maps18') }}
+                            </a>
 
-								<!-- Time-series -->
-								<a @click="loadTab(index, 'time_series')" :class="tabClass('time_series')">
-						      		{{ $t('location.maps18') }}
-						    	</a>
+                            <!-- Options (City only) -->
+                            <a
+                                v-show="type === 'city'"
+                                @click="loadTab(index, 'options')" :class="tabClass('options')">
+                                Options
+                            </a>
 
-								<!-- Options (City only) -->
-								<a
-									v-show="type == 'city'"
-									@click="loadTab(index, 'options')" :class="tabClass('options')">
-									Options
-								</a>
+                            <!-- Download (Auth only) -->
+                            <a
+                                v-show="isAuth"
+                                @click="loadTab(index, 'download')" :class="tabClass('download')">
+                                {{ $t('location.maps19') }}
+                            </a>
+                        </div>
 
-								<!-- Download (Auth only) -->
-								<a
-						    		v-show="isAuth"
-						    		@click="loadTab(index, 'download')" :class="tabClass('download')">
-									{{ $t('location.maps19') }}
-						    	</a>
-							</div>
+                        <component
+                            :is="tabs[tab]"
+                            :litter_data="location.litter_data"
+                            :brands_data="location.brands_data"
+                            :total_brands="location.total_brands"
+                            :ppm="location.photos_per_month"
+                            :leaderboard="location.leaderboard"
+                        />
 
-							<component
-								:is="tabs[tab]"
-								:litter_data="location.litter_data"
-								:brands_data="location.brands_data"
-								:total_brands="location.total_brands"
-								:ppm="location.photos_per_month"
-								:leaderboard="location.leaderboard"
-							/>
-
-<!--							<router-view-->
-<!--								:litterData="location['litter_data']"-->
-<!--								:brandsData="location['brands_data']"-->
-<!--								:totalbrands="location['total_brands']"-->
-<!--								:ppm="location['photos_per_month']"-->
-<!--								:leaderboard="location['leaderboard']"-->
-<!--								:time="location['time']"-->
-<!--								:country="country"-->
-<!--								:state="state"-->
-<!--								:city="location['city']"-->
-<!--								@dateschanged="updateUrl"-->
-<!--							/>-->
-						</div>
-				  	</div>
-			 	</div>
-			</section>
-		</section>
-	</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </section>
 </template>
 
 <script>
@@ -155,6 +140,14 @@ export default {
 		};
 	},
 	computed: {
+
+	    /**
+         * Expand container to fullscreen when orderedBy is empty/loading
+         */
+	    container ()
+        {
+            return this.orderedBy.length === 0 ? 'vh65' : '';
+        },
 
 		/**
 		 * Name of the country (if we are viewing States, Cities)
