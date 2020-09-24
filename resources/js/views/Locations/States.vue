@@ -1,8 +1,6 @@
 <template>
     <div>
-        <loading v-if="loading" :active.sync="loading" :is-full-page="true" />
-
-        <section v-else class="hero is-info is-medium">
+        <section class="hero is-info is-medium">
             <div class="hero-body">
                 <div class="container">
                     <div class="columns">
@@ -14,9 +12,7 @@
             </div>
         </section>
 
-        <section v-if="! loading" class="hero is-primary">
-            <sort-locations type="state" />
-        </section>
+        <sort-locations type="state" />
     </div>
 </template>
 

@@ -26,6 +26,10 @@
 	min-height: calc(100vh - 82px);
 }
 
+.h100 {
+    height: 100%;
+}
+
 .hov {
 	transition-duration: 0.3s;
 }
@@ -130,6 +134,14 @@
 
 .show-mobile {
 	display: none;
+}
+
+.vh100 {
+    height: 100vh;
+}
+
+.vh65 {
+    height: 65vh;
 }
 
 .w100 {

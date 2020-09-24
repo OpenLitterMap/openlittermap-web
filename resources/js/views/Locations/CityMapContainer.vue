@@ -2,20 +2,21 @@
     <div>
         <loading v-if="loading" :active.sync="loading" :is-full-page="true" />
 
-        <TestCityMap v-else />
+        <CityMap v-else />
     </div>
 </template>
 
 <script>
+/* We need to wrap the map in a container */
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
-import TestCityMap from "./TestCityMap";
+import CityMap from './CityMap'
 
 export default {
-    name: 'OldCityMap',
+    name: 'CityMapContainer',
     components: {
         Loading,
-        TestCityMap
+        CityMap
     },
     data ()
     {
