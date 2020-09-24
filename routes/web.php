@@ -76,7 +76,7 @@ Route::get('/current-user', 'UsersController@getAuthUser');
 
 // Upload page
 Route::get('submit', 'HomeController@index'); // old route
-Route::get('upload', 'HomeController@index');
+Route::get('upload', 'HomeController@index')->name('upload');
 
 // Upload the image, extract lat long, reverse geocode to address
 Route::post('submit', 'PhotosController@store');
