@@ -4,6 +4,7 @@
 
 <script>
 import * as turf from '@turf/turf'
+import moment from 'moment'
 
 var info;
 var hexFiltered;
@@ -313,28 +314,33 @@ export default {
                 const lat = i.properties.lat;
                 const lon = i.properties.lon;
 
-                let userfullname = ''; // todo
-                let userName = '';
+                console.log(i);
+
+                let name = '';
+                let username = ''; // todo
+
+                if (i.properties.name) name = i.properties.name;
+                if (i.properties.username) username = ' @' + i.properties.username;
+                if (name === '' && username === '') name = 'Anonymous';
 
                 if (i.properties.smoking)
                 {
                     let smoking = '';
 
-                    if (i.properties.smoking.butts)         smoking += this.$t('litter.smoking.butts')          + ': ' + i.properties.smoking.butts + '<br>';
-                    if (i.properties.smoking.lighters)      smoking += this.$t('litter.smoking.lighters')       + ': ' + i.properties.smoking.lighters + '<br>';
-                    if (i.properties.smoking.cigaretteBox)  smoking += this.$t('litter.smoking.cigaretteBox')   + ': ' + i.properties.smoking.cigaretteBox + '<br>';
-                    if (i.properties.smoking.skins)         smoking += this.$t('litter.smoking.skins')          + ': ' + i.properties.smoking.skins + '<br>';
-                    if (i.properties.smoking.tobaccoPouch)  smoking += this.$t('litter.smoking.tobaccoPouch')   + ': ' + i.properties.smoking.tobaccoPouch + '<br>';
-                    if (i.properties.smoking.plastic)       smoking += this.$t('litter.smoking.plastic')        + ': ' + i.properties.smoking.plastic + '<br>';
-                    if (i.properties.smoking.filters)       smoking += this.$t('litter.smoking.filters')        + ': ' + i.properties.smoking.filters + '<br>';
-                    if (i.properties.smoking.filterbox)     smoking += this.$t('litter.smoking.filterbox')      + ': ' + i.properties.smoking.filterbox + '<br>';
-                    if (i.properties.smoking.smokingOther)  smoking += this.$t('litter.smoking.smokingOther')   + ': ' + i.properties.smoking.smokingOther + '<br>';
+                    if (i.properties.smoking.butts)         smoking += this.$t('litter.smoking.butts')        + ': ' + i.properties.smoking.butts + '<br>';
+                    if (i.properties.smoking.lighters)      smoking += this.$t('litter.smoking.lighters')     + ': ' + i.properties.smoking.lighters + '<br>';
+                    if (i.properties.smoking.cigaretteBox)  smoking += this.$t('litter.smoking.cigaretteBox') + ': ' + i.properties.smoking.cigaretteBox + '<br>';
+                    if (i.properties.smoking.skins)         smoking += this.$t('litter.smoking.skins')        + ': ' + i.properties.smoking.skins + '<br>';
+                    if (i.properties.smoking.tobaccoPouch)  smoking += this.$t('litter.smoking.tobaccoPouch') + ': ' + i.properties.smoking.tobaccoPouch + '<br>';
+                    if (i.properties.smoking.plastic)       smoking += this.$t('litter.smoking.plastic')      + ': ' + i.properties.smoking.plastic + '<br>';
+                    if (i.properties.smoking.filters)       smoking += this.$t('litter.smoking.filters')      + ': ' + i.properties.smoking.filters + '<br>';
+                    if (i.properties.smoking.filterbox)     smoking += this.$t('litter.smoking.filterbox')    + ': ' + i.properties.smoking.filterbox + '<br>';
+                    if (i.properties.smoking.smokingOther)  smoking += this.$t('litter.smoking.smokingOther') + ': ' + i.properties.smoking.smokingOther + '<br>';
 
                     L.marker([lat, lon]).addTo(smokingGroup).bindPopup(smoking
-                        + '<p>Taken on ' + i.properties.datetime + ' With a ' + i.properties.model + '</p>'
-                        + '<img style="height: 150px;" src="' + i.properties.filename + '"/>'
-                        + '<p>Lat, Lon: ' + lat + ', ' + lon + '</p>'
-                        + '<p>By: ' + userfullname + userName+'</p>'
+                        + '<img style="max-width: 100%;" src="' + i.properties.filename + '"/>'
+                        + '<p>Taken on ' + moment(i.properties.datetime).format('LLL') + ' With a ' + i.properties.model + '</p>'
+                        + '<p>By: ' + name + username + '</p>'
                     );
                 }
 
@@ -356,10 +362,9 @@ export default {
                     if (i.properties.food.foodOther)            food += this.$t('litter.food.foodOther')            + ': ' + i.properties.food.foodOther + '<br>';
 
                     L.marker([lat, lon]).addTo(foodGroup).bindPopup(food +'<br>'
-                        + '<p>Taken on ' + i.properties.datetime + ' With a ' + i.properties.model + '</p>'
-                        + '<img style="height: 150px;" src="' + i.properties.filename + '"/>'
-                        + '<p>Lat, Lon: ' + lat + ', ' + lon + '</p>'
-                        + '<p>By: ' + userfullname + userName+'</p>'
+                        + '<img style="max-width: 100%;" src="' + i.properties.filename + '"/>'
+                        + '<p>Taken on ' + moment(i.properties.datetime).format('LLL') + ' With a ' + i.properties.model + '</p>'
+                        + '<p>By: ' + name + username + '</p>'
                     );
                 }
 
@@ -367,15 +372,14 @@ export default {
                 {
                     let coffee = '';
 
-                    if (i.properties.coffee.coffeeCups)  coffee += '<br>Coffee Cups: '    + i.properties.coffee.coffeeCups;
-                    if (i.properties.coffee.coffeeLids)  coffee += '<br>Coffee Lids: '    + i.properties.coffee.coffeeLids;
-                    if (i.properties.coffee.coffeeOther) coffee += '<br>Other (coffee): ' + i.properties.coffee.coffeeOther;
+                    if (i.properties.coffee.coffeeCups)  coffee += this.$t('litter.coffee.coffeeCups')  + ': ' + i.properties.coffee.coffeeCups + '<br>';
+                    if (i.properties.coffee.coffeeLids)  coffee += this.$t('litter.coffee.coffeeLids')  + ': ' + i.properties.coffee.coffeeLids + '<br>';
+                    if (i.properties.coffee.coffeeOther) coffee += this.$t('litter.coffee.coffeeOther') + ': ' + i.properties.coffee.coffeeOther + '<br>';
 
                     L.marker([lat, lon]).addTo(coffeeGroup).bindPopup(coffee +'<br>'
-                        + '<p>Taken on ' + i.properties.datetime + ' With a ' + i.properties.model + '<p>'
-                        + '<img style="height: 150px;" src="' + i.properties.filename + '/>'
-                        + '<p>Lat, Lon: ' + lat + ', ' + lon + '</p>'
-                        + '<p>By: ' + userfullname + userName+'</p>'
+                        + '<p>Taken on ' + moment(i.properties.datetime).format('LLL') + ' With a ' + i.properties.model + '<p>'
+                        + '<img style="max-width: 100%;" src="' + i.properties.filename + '/>'
+                        + '<p>By: ' + name + username + '</p>'
                     );
                 }
 
@@ -394,10 +398,9 @@ export default {
                     if (i.properties.alcohol.alcoholOther)              alcohol += '<br>Other (alcohol): ' + i.properties.alcohol.alcoholOther;
 
                     L.marker([lat, lon]).addTo(alcoholGroup).bindPopup(alcohol +'<br>'
-                        + '<p>Taken on ' + i.properties.datetime + ' With a ' + i.properties.model + '</p>'
-                        + '<img style="height: 150px;" src="' + i.properties.filename + '"/>'
-                        + '<p>Lat, Lon: ' + i.properties.lat + ', ' + i.properties.lon + '</p>'
-                        + '<p>By: ' + userfullname + userName+'</p>'
+                        + '<img style="max-width: 100%;" src="' + i.properties.filename + '"/>'
+                        + '<p>Taken on ' + moment(i.properties.datetime).format('LLL') + ' With a ' + i.properties.model + '</p>'
+                        + '<p>By: ' + name + username + '</p>'
                     );
                 }
 
@@ -427,10 +430,9 @@ export default {
                     if (i.properties.softdrinks.softDrinkOther)     softdrinks += '<br>Other (soft drink): ' + i.properties.softdrinks.softDrinkOther;
 
                     L.marker([lat, lon]).addTo(softdrinksGroup).bindPopup(softdrinks +'<br>'
-                        + '<p>Taken on ' + i.properties.datetime + ' With a ' + i.properties.model + '</p>'
-                        + '<img style="height: 150px;" src="' + i.properties.filename + '"/>'
-                        + '<p>Lat, Lon: ' + lat + ', ' + lon + '</p>'
-                        + '<p>By: ' + userfullname + userName+'</p>'
+                        + '<img style="max-width: 100%;" src="' + i.properties.filename + '"/>'
+                        + '<p>Taken on ' + moment(i.properties.datetime).format('LLL') + ' With a ' + i.properties.model + '</p>'
+                        + '<p>By: ' + name + username + '</p>'
                     );
                 }
 
@@ -450,10 +452,9 @@ export default {
                     if (i.properties.sanitary.sanitaryOther) sanitary += '<br>Other (sanitary): ' + i.properties.sanitary.sanitaryOther;
 
                     L.marker([lat, lon]).addTo(sanitaryGroup).bindPopup(sanitary +'<br>'
-                        + '<p>Taken on ' + i.properties.datetime + ' With a ' + i.properties.model + '</p>'
-                        + '<img style="height: 150px;" src="' + i.properties.filename + '"/>'
-                        + '<p>Lat, Lon: ' + lat + ', ' + lon + '</p>'
-                        + '<p>By: ' + userfullname + userName+'</p>'
+                        + '<img style="max-width: 100%;" src="' + i.properties.filename + '"/>'
+                        + '<p>Taken on ' + moment(i.properties.datetime).format('LLL') + ' With a ' + i.properties.model + '</p>'
+                        + '<p>By: ' + name + username + '</p>'
                     );
                 }
 
@@ -469,10 +470,9 @@ export default {
                     {
                         dogshit += '<br>Pet Surprise: ' + i.properties.other.dogshit;
                         L.marker([lat, lon]).addTo(dogshitGroup).bindPopup(dogshit + '<br>'
-                            + '<p>Taken on ' + i.properties.datetime + ' With a ' + i.properties.model + '</p>'
-                            + '<img style="height: 150px;" src="' + i.properties.filename + '"/>'
-                            + '<p>Lat, Lon: ' + lat + ', ' + lon + '</p>'
-                            + '<p>By: ' + userfullname + userName + '</p>'
+                            + '<img style="max-width: 100%;" src="' + i.properties.filename + '"/>'
+                            + '<p>Taken on ' + moment(i.properties.datetime).format('LLL') + ' With a ' + i.properties.model + '</p>'
+                            + '<p>By: ' + name + username + '</p>'
                         );
                     }
 
@@ -480,10 +480,9 @@ export default {
                     {
                         dumping += '<br>Illegal Dumping: ' + i.properties.other.dump;
                         L.marker([lat, lon]).addTo(dumpingGroup).bindPopup(dumping + '<br>'
-                            + '<p>Taken on ' + i.properties.datetime + ' With a ' + i.properties.model + '</p>'
-                            + '<img style="height: 150px;" src="' + i.properties.filename + '"/>'
-                            + '<p>Lat, Lon: ' + lat + ', ' + lon + '</p>'
-                            + '<p>By: ' + userfullname + userName + '</p>'
+                            + '<img style="max-width: 100%;" src="' + i.properties.filename + '"/>'
+                            + '<p>Taken on ' + moment(i.properties.datetime).format('LLL') + ' With a ' + i.properties.model + '</p>'
+                            + '<p>By: ' + name + username + '</p>'
                         );
                     }
 
@@ -506,10 +505,9 @@ export default {
                     if (i.properties.other.other)            other += '<br>Unidentified item: '       + i.properties.other.other;
 
                     L.marker([lat, lon]).addTo(otherGroup).bindPopup(other +'<br>'
-                        + '<p>Taken on ' + i.properties.datetime + ' With a ' + i.properties.model + '</p>'
-                        + '<img style="height: 150px;" src="' + i.properties.filename + '"/>'
-                        + '<p>Lat, Lon: ' + lat + ', ' + lon + '</p>'
-                        + '<p>By: ' + userfullname + userName+'</p>'
+                        + '<img style="max-width: 100%;" src="' + i.properties.filename + '"/>'
+                        + '<p>Taken on ' + moment(i.properties.datetime).format('LLL') + ' With a ' + i.properties.model + '</p>'
+                        + '<p>By: ' + name + username + '</p>'
                     );
                 }
 
@@ -538,10 +536,9 @@ export default {
                     if (i.properties.coastal.coastal_other)          coastal += '<br>Coastal (other): ' + i.properties.coastal.coastal_other;
 
                     L.marker([lat, lon]).addTo(coastalGroup).bindPopup(coastal +'<br>'
-                        + '<p>Taken on ' + i.properties.datetime + ' With a ' + i.properties.model + '</p>'
-                        + '<img style="height: 150px;" src="' + i.properties.filename + '"/>'
-                        + '<p>Lat, Lon: ' + lat + ', ' + lon + '</p>'
-                        + '<p>By: ' + userfullname + userName+'</p>'
+                        + '<img style="max-width: 100%;" src="' + i.properties.filename + '"/>'
+                        + '<p>Taken on ' + moment(i.properties.datetime).format('LLL') + ' With a ' + i.properties.model + '</p>'
+                        + '<p>By: ' + name + username + '</p>'
                     );
                 }
 
@@ -577,10 +574,9 @@ export default {
                     if (i.properties.brands.tayto)      brands += '<br>Tayto: '     + i.properties.brands.tayto;
 
                     L.marker([lat, lon]).addTo(brandsGroup).bindPopup(brands +'<br>'
-                        + '<p>Taken on ' + i.properties.datetime + ' With a ' + i.properties.model + '</p>'
-                        + '<img style="height: 150px;" src="' + i.properties.filename + '"/>'
-                        + '<p>Lat, Lon: ' + lat + ', ' + lon + '</p>'
-                        + '<p>By: ' + userfullname + userName+'</p>'
+                        + '<img style="max-width: 100%;" src="' + i.properties.filename + '"/>'
+                        + '<p>Taken on ' + moment(i.properties.datetime).format('LLL') + ' With a ' + i.properties.model + '</p>'
+                        + '<p>By: ' + name + username + '</p>'
                     );
                 }
 
@@ -593,10 +589,9 @@ export default {
                     if (i.properties.dumping.large)  dumping += '<br>Dumping (large): '  + i.properties.dumping.large;
 
                     L.marker([lat, lon]).addTo(dumpingGroup).bindPopup(dumping +'<br>'
-                        + '<p>Taken on ' + i.properties.datetime + ' With a ' + i.properties.model + '</p>'
-                        + '<img style="height: 150px;" src="' + i.properties.filename + '"/>'
-                        + '<p>Lat, Lon: ' + lat + ', ' + lon + '</p>'
-                        + '<p>By: ' + userfullname + userName + '</p>'
+                        + '<img style="max-width: 100%;" src="' + i.properties.filename + '"/>'
+                        + '<p>Taken on ' + moment(i.properties.datetime).format('LLL') + ' With a ' + i.properties.model + '</p>'
+                        + '<p>By: ' + name + username + '</p>'
                     );
                 }
 
@@ -612,11 +607,9 @@ export default {
                     if (i.properties.industrial.other)    industrial += '<br>Other: '    + i.properties.industrial.other;
 
                     L.marker([lat, lon]).addTo(dumpingGroup).bindPopup(industrial +'<br>'
-                        + '<p>Taken on ' + i.properties.datetime + ' With a ' + i.properties.model + '</p>'
-                        + '<img style="height: 150px;" src="' + i.properties.filename + '"/>'
-                        + '<p>Lat, Lon: ' + i.properties.lat + ', '
-                        + i.properties.lon + '</p>'
-                        + '<p>By: ' + userfullname + userName + '</p>'
+                        + '<img style="max-width: 100%;" src="' + i.properties.filename + '"/>'
+                        + '<p>Taken on ' + moment(i.properties.datetime).format('LLL') + ' With a ' + i.properties.model + '</p>'
+                        + '<p>By: ' + name + username + '</p>'
                     );
                 }
             });
@@ -638,6 +631,10 @@ export default {
         right: 8px !important;
         height: 18px !important;
         padding: 1px !important;
+    }
+
+    .leaflet-popup-content {
+        margin: 0 20px !important;
     }
 
 </style>
