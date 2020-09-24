@@ -1,6 +1,6 @@
 <template>
 	<div style="padding-left: 1em; padding-right: 1em;">
-		<h1 class="title is-4">{{ $t('settings.payments1') }}</h1>
+		<h1 class="title is-4">{{ $t('settings.payments.payments1') }}</h1>
 		<hr>
 		<br>
 		<div class="columns">
@@ -10,22 +10,22 @@
             <div v-else class="column one-third is-offset-1">
 
                 <div v-if="! check_for_stripe_id">
-                    <p>{{ $t('settings.payments2') }}</p>
+                    <p>{{ $t('settings.payments.payments2') }}</p>
 
                     <ul>
-                        <li>- {{ $t('settings.payments3') }}</li>
-                        <li>- {{ $t('settings.payments4') }}</li>
-                        <li>- {{ $t('settings.payments5') }}</li>
-                        <li>- {{ $t('settings.payments6') }}</li>
-                        <li>- {{ $t('settings.payments7') }}</li>
-                        <li>- {{ $t('settings.payments8') }}</li>
-                        <li>- {{ $t('settings.payments9') }}</li>
-                        <li>- {{ $t('settings.payments10') }}</li>
+                        <li>- {{ $t('settings.payments.payments3') }}</li>
+                        <li>- {{ $t('settings.payments.payments4') }}</li>
+                        <li>- {{ $t('settings.payments.payments5') }}</li>
+                        <li>- {{ $t('settings.payments.payments6') }}</li>
+                        <li>- {{ $t('settings.payments.payments7') }}</li>
+                        <li>- {{ $t('settings.payments.payments8') }}</li>
+                        <li>- {{ $t('settings.payments.payments9') }}</li>
+                        <li>- {{ $t('settings.payments.payments10') }}</li>
                     </ul>
 
                     <!-- Show list of plans -->
 
-                    <button class="button is-medium is-primary" @click="subscribe">{{ $t('settings.payments11') }}</button>
+                    <button class="button is-medium is-primary" @click="subscribe">{{ $t('settings.payments.payments11') }}</button>
                 </div>
 
                 <!-- The user has already subscribed -->

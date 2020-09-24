@@ -5,9 +5,10 @@ import litter from './litter.json'
 import location from './location.json'
 import notifications from './notifications.json'
 import profile from './profile.json'
-import settings from './settings.json'
+import { settings } from './settings/index'
 import signup from './signup.json'
 import tags from './tags.json'
+
 
 export const en = {
     about,

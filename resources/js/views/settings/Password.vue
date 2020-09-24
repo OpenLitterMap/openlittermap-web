@@ -1,6 +1,6 @@
 <template>
 	<div style="padding-left: 1em; padding-right: 1em;">
-		<h1 class="title is-4">{{ translate('password1') }}</h1>
+		<h1 class="title is-4"> {{ $t('settings.password.change-password') }}</h1>
 		<hr>
 		<br>
 		<div class="columns">
@@ -10,7 +10,7 @@
                 <form method="POST" @submit.prevent="submit" @keydown="clearError($event.target.name)">
 
                     <!-- Old Password -->
-                    <label for="oldpassword">{{ translate('password2') }}</label>
+                    <label for="oldpassword"> {{ $t('settings.password.enter-old-password') }}</label>
 
                     <span
                         v-if="errorExists('oldpassword')"
@@ -35,7 +35,7 @@
                     </div>
 
                     <!-- New Password -->
-                    <label for="password">{{ translate('password3') }}</label>
+                    <label for="password">{{ $t('settings.password.enter-new-password') }}</label>
 
                     <span
                         v-if="errorExists('password')"
@@ -49,7 +49,7 @@
                                 type="password"
                                 name="password"
                                 class="input"
-                                :placeholder="translate('password4')"
+                                :placeholder="translate('password.enter-strong-password')"
                                 v-model="password"
                                 required
                             />
@@ -60,7 +60,7 @@
                     </div>
 
                     <!-- Repeat Password -->
-                    <label for="password_confirmation">{{ translate('password5') }}</label>
+                    <label for="password_confirmation">{{ $t('settings.password.confirm-new-password') }}</label>
 
                     <span
                         v-if="errorExists('password_confirmation')"
@@ -74,7 +74,7 @@
                                 type="password"
                                 name="password_confirmation"
                                 class="input"
-                                :placeholder="translate('password6')"
+                                :placeholder="translate('password.repeat-strong-password')"
                                 v-model="password_confirmation"
                                 required
                             />
@@ -85,7 +85,7 @@
                     </div>
 
                     <div class="col-md-12" style="text-align: center;">
-                        <button :class="button" :disabled="processing">{{ translate('password7') }}</button>
+                        <button :class="button" :disabled="processing">{{ $t('settings.password.update-password') }}</button>
                     </div>
                 </form>
 			</div>

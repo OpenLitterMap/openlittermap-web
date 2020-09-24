@@ -7,12 +7,12 @@
 
 				<div class="column is-two-thirds is-offset-1">
 
-                    <p v-if="true">This will be back later</p>
+                    <p v-if="true">{{ $t('settings.littercoin.littercoin2') }}</p>
 
                     <div v-else>
 
                         <div v-if="!this.web3exists">
-                            <p>{{ $t('settings.littercoin1') }}</p>
+                            <p>{{ $t('settings.littercoin.littercoin3') }}</p>
                             <div class="columns">
                                 <div class="column is-half">
                                     <br>
