@@ -32,7 +32,7 @@ class LoginController extends Controller
      *
      * @var string
      */
-    protected $redirectTo = '/submit';
+    protected $redirectTo = '/upload';
 
     /**
      * Create a new controller instance.
@@ -44,7 +44,6 @@ class LoginController extends Controller
         $this->middleware('guest', ['except' => 'logout']);
     }
 
-    // NEW
     /**
      * Show the application's login form.
      *
@@ -151,13 +150,12 @@ class LoginController extends Controller
      */
     public function redirectPath ()
     {
-        if (method_exists($this, 'redirectTo')) {
+        if (method_exists($this, 'redirectTo'))
+        {
             return $this->redirectTo();
         }
-        return property_exists($this, 'redirectTo') ? $this->redirectTo : '/submit';
+        return property_exists($this, 'redirectTo') ? $this->redirectTo : '/upload';
     }
-
-
 
     /**
      * The user has been authenticated.

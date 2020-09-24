@@ -108,7 +108,7 @@ export const actions = {
             context.commit('hideModal');
             context.commit('login');
 
-            routes.push({ path: '/submit' });
+            // window.location.href = '/upload'; // we need to force page refresh to put CSRF token in the sessiob
         })
         .catch(error => {
             console.log('error.login', error.response.data);

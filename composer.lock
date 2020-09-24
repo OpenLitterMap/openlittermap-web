@@ -60,16 +60,16 @@
         },
         {
             "name": "aws/aws-sdk-php",
-            "version": "3.155.1",
+            "version": "3.155.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/aws/aws-sdk-php.git",
-                "reference": "575430a46c329a2a3723cdcb2d30df390f434ba1"
+                "reference": "5a3afb3b3171a133a491d3457e1e7dcaa45ac954"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/575430a46c329a2a3723cdcb2d30df390f434ba1",
-                "reference": "575430a46c329a2a3723cdcb2d30df390f434ba1",
+                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/5a3afb3b3171a133a491d3457e1e7dcaa45ac954",
+                "reference": "5a3afb3b3171a133a491d3457e1e7dcaa45ac954",
                 "shasum": ""
             },
             "require": {
@@ -141,7 +141,7 @@
                 "s3",
                 "sdk"
             ],
-            "time": "2020-09-23T18:11:33+00:00"
+            "time": "2020-09-24T18:13:54+00:00"
         },
         {
             "name": "beyondcode/laravel-websockets",
@@ -5741,16 +5741,16 @@
         },
         {
             "name": "stripe/stripe-php",
-            "version": "v7.53.1",
+            "version": "v7.54.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/stripe/stripe-php.git",
-                "reference": "6c8718a209947bf4d9d5ba7b467f858af00cb313"
+                "reference": "3a5cff6ce6f5f2f0fc75164d3677bd5dc3e96fe3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/6c8718a209947bf4d9d5ba7b467f858af00cb313",
-                "reference": "6c8718a209947bf4d9d5ba7b467f858af00cb313",
+                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/3a5cff6ce6f5f2f0fc75164d3677bd5dc3e96fe3",
+                "reference": "3a5cff6ce6f5f2f0fc75164d3677bd5dc3e96fe3",
                 "shasum": ""
             },
             "require": {
@@ -5794,7 +5794,7 @@
                 "payment processing",
                 "stripe"
             ],
-            "time": "2020-09-22T14:23:02+00:00"
+            "time": "2020-09-23T21:48:00+00:00"
         },
         {
             "name": "swiftmailer/swiftmailer",

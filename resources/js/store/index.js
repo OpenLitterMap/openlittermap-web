@@ -18,7 +18,11 @@ import { user } from './modules/user'
 Vue.use(Vuex)
 
 export default new Vuex.Store({
-    // plugins: [createPersistedState()],
+    plugins: [
+        createPersistedState({
+            paths: ['user']
+        })
+    ],
     modules: {
         admin,
         donate,
