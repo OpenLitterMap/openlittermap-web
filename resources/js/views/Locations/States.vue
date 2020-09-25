@@ -26,12 +26,14 @@ export default {
     async created ()
     {
         this.loading = true;
+
         await this.$store.dispatch('GET_STATES', window.location.href.split('/')[4]);
+
         this.loading = false;
     },
     components: {
-        SortLocations,
-        Loading
+        Loading,
+        SortLocations
     },
     data ()
     {

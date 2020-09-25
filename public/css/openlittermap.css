@@ -2,6 +2,10 @@
 	visibility: hidden;
 }
 
+html {
+    height: 100vh;
+}
+
 .app-icon {
 	cursor: pointer;
 	max-height: 10em;
