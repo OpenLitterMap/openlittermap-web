@@ -153,21 +153,28 @@ html {
 }
 
 /* Desktop view */
-@media (min-width: 1024px) {
+@media (min-width: 1024px)
+{
 	.navbar-item {
 		color: white;
 	}
 }
 
 /* Mobile view */
-@media (max-width: 1024px) {
+@media (max-width: 1024px)
+{
 	.navbar-item {
 		color: black;
 	}
 }
 
 /* Mobile view */
-@media (max-width: 768px) {
+@media (max-width: 768px)
+{
+
+    .app-icon {
+        max-height: 9em !important;
+    }
 
 	/* Profile - LitterPicker */
 	.pagination {

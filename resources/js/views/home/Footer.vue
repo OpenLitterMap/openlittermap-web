@@ -249,4 +249,35 @@ export default {
         font-size: 2.5em;
         margin-bottom: 1.25em;
     }
+
+
+    /* Mobile view */
+    @media (max-width: 768px)
+    {
+
+        .foot {
+            padding: 2em;
+            background-image: radial-gradient(circle at 1% 1%,#328bf2,#1644ad);
+            height: 195vh;
+            position: relative;
+        }
+
+        .f-input {
+            width: 80%;
+        }
+
+        .footer-bottom {
+            left: 10%;
+            right: 10%;
+        }
+
+        .foot-container-left {
+            padding-right: 0;
+        }
+
+        .inner-footer-container {
+            padding-left: 0;
+            padding-right: 0;
+        }
+    }
 </style>
