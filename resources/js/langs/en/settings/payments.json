@@ -1,13 +1,13 @@
 {
-    "payments1": "Finance the development of OpenLitterMap",
-    "payments2": "We need your help.",
-    "payments3": "Support Open Data on Plastic Pollution",
-    "payments4": "Help cover our costs",
-    "payments5": "Hire developers, designers & graduates",
-    "payments6": "Produce videos",
-    "payments7": "Write papers",
-    "payments8": "Conferences & outreach",
-    "payments9": "Incentivize data collection with Littercoin",
-    "payments10": "More exciting updates coming soon",
-    "payments11": "Click here to support"
+    "finance": "Finance the development of OpenLitterMap",
+    "help": "We need your help.",
+    "support": "Support Open Data on Plastic Pollution",
+    "help-costs": "Help cover our costs",
+    "help-hire": "Hire developers, designers & graduates",
+    "help-produce": "Produce videos",
+    "help-write": "Write papers",
+    "help-outreach": "Conferences & outreach",
+    "help-incentivize": "Incentivize data collection with Littercoin",
+    "more-soon": "More exciting updates coming soon",
+    "click-to-support": "Click here to support"
 }

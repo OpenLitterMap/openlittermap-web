@@ -1,20 +1,20 @@
 <template>
 	<div style="padding-left: 1em; padding-right: 1em;">
-		<h1 class="title is-4">{{ $t('settings.presence.presence1') }}</h1>
+		<h1 class="title is-4">{{ $t('settings.presence.do-you-pickup') }}</h1>
 		<hr>
-        <p class="mb1">{{ $t('settings.presence.presence2') }}</p>
-        <p class="mb1">{{ $t('settings.presence.presence3') }}</p>
-		<p>{{ $t('settings.presence.presence4') }}</p>
+        <p class="mb1">{{ $t('settings.presence.save-def-settings') }}</p>
+        <p class="mb1">{{ $t('settings.presence.change-value-of-litter') }}</p>
+		<p>{{ $t('settings.presence.status') }}</p>
 
         <br>
-        <p><b>{{ $t('settings.presence.presence5') }}:</b></p>
+        <p><b>{{ $t('settings.presence.toggle-presence') }}:</b></p>
         <p><b :style="picked_up ? 'color: green' : 'color: red'">{{ this.text }}</b></p>
 		<br>
 
 		<div class="columns">
 			<div class="column is-one-third is-offset-1">
 				<div class="row">
-					<button :class="button" :disabled="processing" @click="toggle">{{ $t('settings.presence.presence6') }}</button>
+					<button :class="button" :disabled="processing" @click="toggle">{{ $t('settings.presence.pickup?') }}</button>
 				</div>
 			</div>
 		</div>
