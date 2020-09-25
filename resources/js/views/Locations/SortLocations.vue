@@ -1,5 +1,5 @@
 <template>
-    <section :class="container" style="background-color: #48c774;">
+    <section :class="container" style="background-color: #23d160;">
         <div class="container w100">
             <div class="control locations-control">
                 <br>
@@ -19,7 +19,7 @@
                 </h1>
             </div>
 
-            <div class="hero-body" style="padding-top: 5rem; margin-bottom: 1em;">
+            <div class="hero-body location-container">
                 <div class="columns">
                     <div class="column is-3">
                         <!-- Flag -->
@@ -236,17 +236,17 @@ export default {
 		 */
 		goTo (index)
 		{
-			if (this.type == 'country')
+			if (this.type === 'country')
 			{
 				return '/world/' + this.orderedBy[index].country;
 			}
 
-			else if (this.type == 'state')
+			else if (this.type === 'state')
 			{
 				return '/world/' + this.country + '/' + this.orderedBy[index].state;
 			}
 
-			else if (this.type == 'city')
+			else if (this.type === 'city')
 			{
 				return '/world/' + this.country + '/' + this.state + '/' + this.orderedBy[index].city + '/map';
 			}
@@ -298,6 +298,11 @@ export default {
 		color: black;
 		background-color: white;
 	}
+
+    .location-container {
+        padding-top: 3em;
+        padding-bottom: 5em;
+    }
 
     .locations-control {
         text-align: right;
