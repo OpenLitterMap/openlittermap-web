@@ -1,8 +1,8 @@
 {
-    "global-flag1": "Show Country Flag",
-    "global-flag2": "Top 10 Global OpenLitterMap Leaders only!",
-    "global-flag3": "If you can make the top 10, you can represent your country!",
-    "global-flag4": "Type or scroll to select from the list",
-    "global-flag5": "Select your country",
-    "global-flag6": "Save Flag"
+    "show-flag": "Show Country Flag",
+    "top-10": "Top 10 Global OpenLitterMap Leaders only!",
+    "top-10-challenge": "If you can make the top 10, you can represent your country!",
+    "action-select": "Type or scroll to select from the list",
+    "select-country": "Select your country",
+    "save-flag": "Save Flag"
 }
