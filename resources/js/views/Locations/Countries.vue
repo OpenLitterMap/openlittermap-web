@@ -118,9 +118,7 @@
             </section>
         </section>
 
-        <section class="hero is-primary">
-            <sort-locations type="country" />
-        </section>
+        <sort-locations type="country" />
     </div>
 </template>
 

@@ -13,6 +13,12 @@ html {
 	margin-bottom: -2em;
 }
 
+.country-back {
+    font-size: 0.3em;
+    margin: auto 0;
+    padding-right: 1em;
+}
+
 .error {
     color: #e74c3c;
     font-weight: 600;
@@ -45,6 +51,10 @@ html {
 
 .jc {
     justify-content: center;
+}
+
+.leaflet-popup-close-button  {
+    display: none !important;
 }
 
 .ma {
@@ -114,6 +124,10 @@ html {
 
 .pb2 {
     padding-bottom: 2em;
+}
+
+.pointer {
+    cursor: pointer;
 }
 
 .pr1em {

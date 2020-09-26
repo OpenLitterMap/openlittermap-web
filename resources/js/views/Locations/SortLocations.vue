@@ -21,9 +21,14 @@
 
             <div class="hero-body location-container">
                 <div class="columns">
+
+                    <!-- Left column (metadata) -->
                     <div class="column is-3">
-                        <!-- Flag -->
+
+                        <!-- Name, Position and Flag-->
                         <div style="display: flex; padding-bottom: 1em;">
+
+                            <!-- Flag -->
                             <img v-if="type === 'country' && category !== 'A-Z'"
                                  height="15"
                                  style="padding-right: 1.5em; border-radius: 1px; flex: 0.1;"
@@ -31,11 +36,11 @@
                             />
 
                             <h2 :class="textSize">
-                                <router-link :to="goTo(index)" :id="location[type]" class="green has-text-centered">
-                                    <span v-show="category != 'A-Z' && index < 30">
-                                    {{ positions(index) }} -
-                                    </span>
-                                    {{ getName(location) }}
+                                <router-link :to="goTo(index)" :id="location[type]" class="is-link has-text-centered location-title">
+                                    <!-- Position -->
+                                    <span v-show="category !== 'A-Z' && index < 30">{{ positions(index) }} -</span>
+                                    <!-- Name -->
+                                    <span>{{ getName(location) }}</span>
                                 </router-link>
                             </h2>
                         </div>
@@ -52,12 +57,14 @@
                         </div>
                     </div>
 
+                    <!-- Charts -->
                     <div class="column is-half is-offset-1">
 
                         <p class="show-mobile">Drag these across for more options</p>
 
                         <div class="tabs is-center">
-                            <!-- Litter Chart -->
+
+                            <!-- Pie Charts -->
                             <a @click="loadTab(index, 'litter')" :class="tabClass('litter')">
                                 {{ $t('location.maps9') }}
                             </a>
@@ -238,12 +245,20 @@ export default {
 		{
 			if (this.type === 'country')
 			{
-				return '/world/' + this.orderedBy[index].country;
+			    let country = this.orderedBy[index].country;
+
+			    this.$store.commit('setCountry', country);
+
+				return '/world/' + country;
 			}
 
 			else if (this.type === 'state')
 			{
-				return '/world/' + this.country + '/' + this.orderedBy[index].state;
+			    let state = this.orderedBy[index].state;
+
+			    this.$store.commit('setState', state);
+
+				return '/world/' + this.country + '/' + state;
 			}
 
 			else if (this.type === 'city')
@@ -308,9 +323,10 @@ export default {
         text-align: right;
     }
 
-	.l-tab {
-
-	}
+    .location-title:hover {
+        color: green !important;
+        border-bottom: 1px solid green;
+    }
 
 	.l-tab.is-active {
 		border-bottom: 2px solid white !important;

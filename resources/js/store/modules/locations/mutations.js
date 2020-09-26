@@ -24,6 +24,22 @@ export const mutations = {
     },
 
     /**
+     * Set the country (when clicking into it)
+     */
+    setCountry (state, payload)
+    {
+        state.country = payload;
+    },
+
+    /**
+     * Set the state (when clicking into it)
+     */
+    setState (state, payload)
+    {
+        state.state = payload;
+    },
+
+    /**
      * Update States + parent country
      */
     setStates (state, payload)

@@ -35,7 +35,8 @@ export default {
                     backgroundColor: '#FF0000',
                     data: values,
                     fill: false,
-                    borderColor: 'red'
+                    borderColor: 'red',
+                    maxBarThickness: '50'
                 }
             ]
         },
@@ -68,7 +69,7 @@ export default {
                         drawOnChartArea: false
                     },
                     ticks: {
-                        fontColor: '#000000',
+                        fontColor: '#000000'
                     },
                 }],
             }

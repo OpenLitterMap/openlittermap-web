@@ -626,13 +626,6 @@ export default {
         position: relative;
     }
 
-    a.leaflet-popup-close-button  {
-        top: 8px !important;
-        right: 8px !important;
-        height: 18px !important;
-        padding: 1px !important;
-    }
-
     .leaflet-popup-content {
         margin: 0 20px !important;
     }
