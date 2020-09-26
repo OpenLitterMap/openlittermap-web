@@ -1,8 +1,8 @@
 <template>
 	<div style="padding-left: 1em; padding-right: 1em;">
-        <h1 class="title is-4">Delete My Account</h1>
+        <h1 class="title is-4">{{ $t('settings.account.delete-account') }}</h1>
         <hr>
-        <p>Do you want to delete your account?</p>
+        <p>{{ $t('settings.account.delete-account') }}</p>
         <br>
         <div class="columns">
             <div class="column is-one-third is-offset-1">
@@ -11,7 +11,7 @@
                           @submit.prevent="submit"
                           @keydown="clearError($event.target.name)"
                     >
-                        <label for="password">Enter your password</label>
+                        <label for="password">{{ $t('settings.account.delete-account?') }}</label>
                         <span
                             class="is-danger"
                             v-if="errorExists('password')"
@@ -31,7 +31,7 @@
                             </div>
                         </div>
 
-                        <button :class="button">Delete My Account</button>
+                        <button :class="button">{{ $t('settings.account.enter-password') }}</button>
                     </form>
                 </div>
             </div>

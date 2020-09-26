@@ -1,6 +1,6 @@
 <template>
 	<div style="padding-left: 1em; padding-right: 1em;">
-		<h1 class="title is-4">Finance the development of OpenLitterMap</h1>
+		<h1 class="title is-4">{{ $t('settings.payments.finance') }}</h1>
 		<hr>
 		<br>
 		<div class="columns">
@@ -10,22 +10,22 @@
             <div v-else class="column one-third is-offset-1">
 
                 <div v-if="! check_for_stripe_id">
-                    <p>We need your help.</p>
+                    <p>{{ $t('settings.payments.help') }}</p>
 
                     <ul>
-                        <li>- Support Open Data on Plastic Pollution</li>
-                        <li>- Help cover our costs</li>
-                        <li>- Hire developers, designers & graduates</li>
-                        <li>- Produce videos</li>
-                        <li>- Write papers</li>
-                        <li>- Conferences & outreach</li>
-                        <li>- Incentivize data collection with Littercoin</li>
-                        <li>- More exciting updates coming soon</li>
+                        <li>- {{ $t('settings.payments.support') }}</li>
+                        <li>- {{ $t('settings.payments.help-costs') }}</li>
+                        <li>- {{ $t('settings.payments.help-hire') }}</li>
+                        <li>- {{ $t('settings.payments.help-produce') }}</li>
+                        <li>- {{ $t('settings.payments.help-write') }}</li>
+                        <li>- {{ $t('settings.payments.help-outreach') }}</li>
+                        <li>- {{ $t('settings.payments.help-incentivize') }}</li>
+                        <li>- {{ $t('settings.payments.more-soon') }}</li>
                     </ul>
 
                     <!-- Show list of plans -->
 
-                    <button class="button is-medium is-primary" @click="subscribe">Click here to support</button>
+                    <button class="button is-medium is-primary" @click="subscribe">{{ $t('settings.payments.click-to-support') }}</button>
                 </div>
 
                 <!-- The user has already subscribed -->

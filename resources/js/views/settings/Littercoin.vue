@@ -1,18 +1,18 @@
 <template>
 	<div style="padding-left: 1em; padding-right: 1em;">
-			<h1 class="title is-4">Littercoin (LTRX)</h1>
+			<h1 class="title is-4"> {{ $t('settings.littercoin.littercoin-header') }}</h1>
 			<hr>
 			<br>
 			<div class="columns">
 
 				<div class="column is-two-thirds is-offset-1">
 
-                    <p v-if="true">This will be back later</p>
+                    <p v-if="true">{{ $t('settings.littercoin.back-later') }}</p>
 
                     <div v-else>
 
                         <div v-if="!this.web3exists">
-                            <p>If you want to just claim your tokens and access your wallet from elsewhere, enter your wallet ID and you will be sent your earnings.</p>
+                            <p>{{ $t('settings.littercoin.claim-tokens') }}</p>
                             <div class="columns">
                                 <div class="column is-half">
                                     <br>
