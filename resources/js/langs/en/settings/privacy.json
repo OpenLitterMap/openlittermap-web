@@ -1,0 +1,20 @@
+{
+    "change-privacy": "Change My Privacy",
+    "maps": "Maps",
+    "credit-name": "Credit my name",
+    "credit-username": "Credit my username",
+    "name-imgs-yes": "Your name is set to appear on each of the images you upload to the maps.",
+    "username-imgs-yes": "Your username is set to appear on each of the images you upload to the maps.",
+    "name-username-map-no": "Your name and username will not appear on the maps.",
+    "leaderboards": "Leaderboards",
+    "credit-my-name": "Credit my name",
+    "credit-my-username": "Credit my username",
+    "name-leaderboards-yes": "Your name is set to appear in any leaderboards you qualify for.",
+    "username-leaderboards-yes": "Your username is set to appear in any leaderboards you qualify for.",
+    "name-username-leaderboards-no": "Your name and username will not appear on the Leaderboards.",
+    "created-by": "Created By",
+    "name-locations-yes": "Your name is set to appear on any locations you create.",
+    "username-locations-yes": "Your username is set to appear on any locations you create.",
+    "name-username-locations-yes": "Your name and username will not appear in the Created By section of any locations you add to the database.",
+    "update": "Update"
+}

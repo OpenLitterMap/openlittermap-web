@@ -4,7 +4,7 @@
 			<div class="column is-2">
 				<aside id="panel" class="menu">
 				    <p class="menu-label">
-				        General
+				        {{ $t('settings.common.general') }}
 				    </p>
 				    <ul class="menu-list">
 				        <li v-for="link in links">
@@ -96,7 +96,7 @@ export default {
          */
         translate (link)
         {
-            return this.$t('settings.' + link);
+            return this.$t('settings.common.' + link);
         }
     }
 }

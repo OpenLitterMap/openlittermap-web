@@ -1,6 +1,6 @@
 <template>
 	<div style="padding-left: 1em; padding-right: 1em;">
-		<h1 class="title is-4">Change My Privacy</h1>
+		<h1 class="title is-4">{{ $t('settings.privacy.change-privacy') }}</h1>
 		<hr>
 		<br>
 		<div class="columns">
@@ -8,57 +8,57 @@
 				<div class="field">
 
                     <!-- Maps -->
-					<h1 class="title is-4">Maps:</h1>
+					<h1 class="title is-4">{{ $t('settings.privacy.maps') }}:</h1>
 				    <label class="checkbox">
 				    	<input type="checkbox" v-model="maps_name" />
-				      	Credit my name
+				      	{{ $t('settings.privacy.credit-name') }}
 				    </label>
 				    <br>
 				    <label class="checkbox">
 				    	<input type="checkbox" v-model="maps_username" />
-				    	Credit my username
+				    	{{ $t('settings.privacy.credit-username') }}
 				    </label>
 				    <br>
 				    <br>
 				    <h1 class="title is-6" v-show="maps_name" style="margin-bottom: 5px;">
 						<strong style="color: green;">
-							Your name is set to appear on each of the images you upload to the maps.
+							{{ $t('settings.privacy.name-imgs-yes') }}.
 						</strong>
 					</h1>
 					<h1 class="title is-6" v-show="maps_username">
 						<strong style="color: green;">
-							Your username is set to appear on each of the images you upload to the maps.
+							{{ $t('settings.privacy.username-imgs-yes') }}.
 						</strong>
 					</h1>
 					<br v-show="maps_name || maps_username">
 
 					<h1 class="title is-6" v-show="! maps_name && ! maps_username">
 						<strong style="color: red;">
-							Your name and username will not appear on the maps.
+							{{ $t('settings.privacy.name-username-map-no') }}.
 						</strong>
 					</h1>
 
 					<!-- Leaderboards -->
-					<h1 class="title is-4">Leaderboards:</h1>
+					<h1 class="title is-4">{{ $t('settings.privacy.leaderboards') }}:</h1>
 				    <label class="checkbox">
 				    	<input type="checkbox" v-model="leaderboard_name" />
-				      	Credit my name
+				      {{ $t('settings.privacy.credit-my-name') }}
 				    </label>
 				    <br>
 				    <label class="checkbox">
 				    	<input type="checkbox" v-model="leaderboard_username" />
-				    	Credit my username
+				    	{{ $t('settings.privacy.credit-my-username') }}
 				    </label>
 				    <br>
 				    <br>
 				    <h1 class="title is-6" v-show="leaderboard_name" style="margin-bottom: 5px;">
 						<strong style="color: green;">
-							Your name is set to appear in any leaderboards you qualify for.
+							{{ $t('settings.privacy.name-leaderboards-yes') }}.
 						</strong>
 					</h1>
 					<h1 class="title is-6" v-show="leaderboard_username">
 						<strong style="color: green;">
-							Your username is set to appear in any leaderboards you qualify for.
+							{{ $t('settings.privacy.username-leaderboards-yes') }}.
 						</strong>
 					</h1>
 					<br v-show="leaderboard_name || leaderboard_username">
@@ -66,44 +66,44 @@
 					<h1 class="title is-6"
 						v-show="! leaderboard_name && ! leaderboard_username">
 						<strong style="color: red;">
-							Your name and username will not appear on the Leaderboards.
+							{{ $t('settings.privacy.name-username-leaderboards-no') }}.
 						</strong>
 					</h1>
 
 					<!-- Created By -->
-					<h1 class="title is-4">Created By:</h1>
+					<h1 class="title is-4">{{ $t('settings.privacy.created-by') }}:</h1>
 				    <label class="checkbox">
 				    	<input type="checkbox" v-model="createdby_name" />
-				      	Credit my name
+				      	{{ $t('settings.privacy.name-locations-yes') }}
 				    </label>
 				    <br>
 				    <label class="checkbox">
 				    	<input type="checkbox" v-model="createdby_username" />
-				    	Credit my username
+				    	{{ $t('settings.privacy.username-locations-yes') }}
 				    </label>
 				    <br>
 				    <br>
 					<h1 class="title is-6" v-show="createdby_name" style="margin-bottom: 5px;">
 						<strong style="color: green;">
-							Your name is set to appear on any locations you create.
+							{{ $t('settings.privacy.name-username-locations-yes') }}
 						</strong>
 					</h1>
 					<h1 class="title is-6" v-show="createdby_username" style="margin-bottom: 5px;">
 						<strong style="color: green;">
-							Your username is set to appear on any locations you create.
+							{{ $t('settings.privacy.name-username-locations-yes') }}.
 						</strong>
 					</h1>
 					<br v-show="createdby_name || createdby_username">
 					<h1 class="title is-6"
 						v-show="! createdby_name && ! createdby_username">
 						<strong style="color: red;">
-							Your name and username will not appear in the Created By section of any locations you add to the database.
+							{{ $t('settings.privacy.name-username-locations-yes') }}.
 						</strong>
 					</h1>
 				</div>
 
                 <br>
-				<button :class="button" :disabled="processing" @click="submit">Update</button>
+				<button :class="button" :disabled="processing" @click="submit">{{ $t('settings.privacy.update') }}</button>
 			</div>
 		</div>
 	</div>

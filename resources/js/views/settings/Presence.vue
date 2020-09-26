@@ -1,20 +1,20 @@
 <template>
 	<div style="padding-left: 1em; padding-right: 1em;">
-		<h1 class="title is-4">Toggle Litter Presence</h1>
+		<h1 class="title is-4">{{ $t('settings.presence.do-you-pickup') }}</h1>
 		<hr>
-        <p class="mb1">Do you pick up the litter or leave it there?</p>
-        <p class="mb1">You can save your default setting here</p>
-		<p>You can also change the value of each litter item as you are tagging them.</p>
+        <p class="mb1">{{ $t('settings.presence.save-def-settings') }}</p>
+        <p class="mb1">{{ $t('settings.presence.change-value-of-litter') }}</p>
+		<p>{{ $t('settings.presence.status') }}</p>
 
         <br>
-        <p><b>Current Status:</b></p>
+        <p><b>{{ $t('settings.presence.toggle-presence') }}:</b></p>
         <p><b :style="picked_up ? 'color: green' : 'color: red'">{{ this.text }}</b></p>
 		<br>
 
 		<div class="columns">
 			<div class="column is-one-third is-offset-1">
 				<div class="row">
-					<button :class="button" :disabled="processing" @click="toggle">Toggle Presence</button>
+					<button :class="button" :disabled="processing" @click="toggle">{{ $t('settings.presence.pickup?') }}</button>
 				</div>
 			</div>
 		</div>
