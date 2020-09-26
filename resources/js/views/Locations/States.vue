@@ -4,9 +4,11 @@
             <div class="hero-body">
                 <div class="container">
                     <div class="columns">
-                        <div class="column is-half">
-                            <h1 class="title is-1">{{ country }}</h1>
+                        <div class="column is-2">
+                            <h1 class="title is-1 flex pointer" @click="goBack"><i v-show="! loading" class="fa fa-chevron-left country-back" /> {{ country }}</h1>
                         </div>
+
+                        <!-- Todo - put country metadata here -->
                     </div>
                 </div>
             </div>
@@ -49,6 +51,16 @@ export default {
         country ()
         {
             return this.$store.state.locations.country;
+        }
+    },
+    methods: {
+
+        /**
+         * Return to countries
+         */
+        goBack ()
+        {
+            this.$router.push({ path: '/world' });
         }
     }
 }

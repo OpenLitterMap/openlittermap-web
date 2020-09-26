@@ -202,10 +202,16 @@ export default {
         color: white;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 768px)
+    {
 
         .flex-not-mobile {
             display: block;
+        }
+
+        .nav-title {
+            font-size: 2rem;
+            padding-left: 0.25em;
         }
 
     }
