@@ -6,6 +6,7 @@ import location from './location.json'
 import notifications from './notifications.json'
 import profile from './profile.json'
 import { settings } from './settings/index'
+import { locations } from './locations/index'
 import signup from './signup.json'
 import tags from './tags.json'
 
@@ -16,6 +17,7 @@ export const en = {
     creditcard,
     litter,
     location,
+    locations,
     notifications,
     profile,
     settings,
