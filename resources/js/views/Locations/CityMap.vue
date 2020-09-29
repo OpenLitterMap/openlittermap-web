@@ -160,10 +160,15 @@ export default {
         };
 
         // Get Counts
+        let meterHexGrids = this.$t('locations.cityVueMap.meter-hex-grids');
+        let hoverToCount = this.$t('locations.cityVueMap.hover-to-count');
+        let piecesOfLitter = this.$t('locations.cityVueMap.pieces-of-litter');
+        let hoverOverPolygonsToCount = this.$t('locations.cityVueMap.hover-polygons-to-count');
+
         info.update = function (props) {
-            this._div.innerHTML = '<h4>' + this.hex + ' meter hex grids</h4>' +  (props ?
-                '<b>Hover over to count'+'</b><br />' + props.total + ' pieces of litter'
-                : 'Hover over polygons to count.');
+            this._div.innerHTML = '<h4>' + this.hex + ` ${meterHexGrids}</h4>` +  (props ?
+                `<b>${hoverToCount} </b><br />` + props.total + ` ${piecesOfLitter}`
+                : `${hoverOverPolygonsToCount}.`);
         };
         info.addTo(map);
 
@@ -336,7 +341,7 @@ export default {
 
                 // Dynamically add items to the groups + add markers
                 categories.map(category => {
-
+                       
                     if (i.properties[category.key])
                     {
                         let string = '';
@@ -351,8 +356,8 @@ export default {
                                     .addTo(groups[category.key])
                                     .bindPopup(string
                                         + '<img style="max-width: 100%; padding-top: 1em;" src="'+ i.properties.filename + '"/>'
-                                        + '<p>Taken on ' + moment(i.properties.datetime).format('LLL') + ' With a ' + i.properties.model + '</p>'
-                                        + '<p>By: ' + name + username + '</p>'
+                                        + '<p>' + this.$t('locations.cityVueMap.taken-on') + moment(i.properties.datetime).format('LLL') + ' ' + this.$t('locations.cityVueMap.with-a') + ' ' + i.properties.model + '</p>'
+                                        + '<p>' + this.$t('locations.cityVueMap.by') + ': ' + name + username + '</p>'
                                     );
                             }
                         });
