@@ -22,41 +22,41 @@
 
                         <!-- Admin -->
                         <router-link v-if="admin" to="/admin/photos" class="navbar-item">
-                            Admin
+                            {{ $t('nav.admin')}}
                         </router-link>
 
                         <!-- About -->
                         <router-link to="/about" class="navbar-item">
-                            About
+                              {{ $t('nav.about')}}
                         </router-link>
 
                         <!-- Global Map -->
                         <router-link to="/global" class="navbar-item">
-                            Global Map
+                             {{ $t('nav.global-map')}}
                         </router-link>
 
                         <!-- World Cup -->
                         <router-link to="/world" class="navbar-item">
-                            World Cup
+                             {{ $t('nav.world-cup')}}
                         </router-link>
 
                         <!-- if auth -->
                         <div v-if="auth" class="flex-not-mobile">
 
                             <router-link to="/upload" class="navbar-item">
-                                Upload
+                                 {{ $t('nav.upload')}}
                             </router-link>
 
                             <!-- Dropdown toggle -->
                             <div class="navbar-item has-dropdown is-hoverable">
                                 <!-- "More" -->
-                                <a id="more" class="navbar-item">More</a>
+                                <a id="more" class="navbar-item"> {{ $t('nav.more')}}</a>
                                 <!-- Dropdown menu -->
                                 <div class="navbar-dropdown" style="z-index: 9999;">
 
                                     <!-- Tag Litter -->
                                     <router-link to="/tag" class="navbar-item drop-item">
-                                        Tag Litter
+                                         {{ $t('nav.tag-litter')}}
                                     </router-link>
 
                                     <!-- Todo - Profile -->
@@ -66,11 +66,11 @@
 
                                     <!-- Settings -->
                                     <router-link to="/settings/password" class="navbar-item drop-item">
-                                        Settings
+                                         {{ $t('nav.settings')}}
                                     </router-link>
 
                                     <!-- Logout -->
-                                    <a class="navbar-item drop-item" @click="logout">Logout</a>
+                                    <a class="navbar-item drop-item" @click="logout"> {{ $t('nav.logout')}}</a>
                                 </div>
                             </div>
                         </div>
@@ -78,11 +78,11 @@
                         <!-- The user is not authenticated -->
                         <div v-else class="flex-not-mobile">
                             <!-- Login -->
-                            <a class="navbar-item" @click="login">Login</a>
+                            <a class="navbar-item" @click="login"> {{ $t('nav.login')}}</a>
 
                             <!-- Signup -->
                             <router-link to="/signup" class="navbar-item">
-                                Sign Up
+                                 {{ $t('nav.signup')}}
                             </router-link>
                         </div>
                     </div>
