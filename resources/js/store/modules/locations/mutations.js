@@ -56,6 +56,20 @@ export const mutations = {
         state.locations = payload.cities;
         state.country = payload.country;
         state.state = payload.state;
+    },
+
+    /**
+     * When a slider on city/options moves, update the min-date, max-date and hex-size
+     */
+    updateCitySlider (state, payload)
+    {
+        let locations = [...state.locations];
+
+        locations[payload.index].minDate = payload.dates[0];
+        locations[payload.index].maxDate = payload.dates[1];
+        locations[payload.index].hex = payload.hex;
+
+        state.locations = locations;
     }
 
 
