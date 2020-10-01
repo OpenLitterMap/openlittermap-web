@@ -103,6 +103,7 @@
                             :leaderboard="location.leaderboard"
                             :time="location.time"
                             @dateschanged="updateUrl"
+                            :index="index"
                         />
 
                     </div>
@@ -268,6 +269,13 @@ export default {
 
 			else if (this.type === 'city')
 			{
+			    // if the object has "hex" key, the slider has updated
+                if (this.orderedBy[index].hasOwnProperty('hex'))
+                {
+                    return '/world/' + this.country + '/' + this.state + '/' + this.orderedBy[index].city + '/map/'
+                        + this.orderedBy[index].minDate + '/' + this.orderedBy[index].maxDate + '/' + this.orderedBy[index].hex;
+                }
+
 				return '/world/' + this.country + '/' + this.state + '/' + this.orderedBy[index].city + '/map';
 			}
 		},
