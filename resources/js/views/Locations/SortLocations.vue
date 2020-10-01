@@ -101,6 +101,8 @@
                             :total_brands="location.total_brands"
                             :ppm="location.photos_per_month"
                             :leaderboard="location.leaderboard"
+                            :time="location.time"
+                            @dateschanged="updateUrl"
                         />
 
                     </div>
@@ -117,6 +119,7 @@ let sortBy = require('lodash.sortby')
 import ChartsContainer from '../../components/Locations/Charts/PieCharts/ChartsContainer'
 import TimeSeriesContainer from '../../components/Locations/Charts/TimeSeries/TimeSeriesContainer'
 import Leaderboard from '../../components/Locations/Charts/Leaderboard/Leaderboard'
+import Options from '../../components/Locations/Charts/Options/Options'
 
 export default {
 	props: ['type'], // country, state, or city
@@ -124,7 +127,8 @@ export default {
 	components: {
 		ChartsContainer,
 		TimeSeriesContainer,
-		Leaderboard
+		Leaderboard,
+        Options
 	},
 	data ()
 	{
@@ -142,7 +146,8 @@ export default {
 			tabs: {
 				litter: 'ChartsContainer',
 				time_series: 'TimeSeriesContainer',
-				leaderboard: 'Leaderboard'
+				leaderboard: 'Leaderboard',
+                options: 'Options'
 			}
 		};
 	},
@@ -288,7 +293,7 @@ export default {
 		 */
 		tabClass (tab)
 		{
-			return tab == this.tab ? 'l-tab is-active' : 'l-tab';
+			return tab === this.tab ? 'l-tab is-active' : 'l-tab';
 		},
 
 		/**
@@ -296,8 +301,7 @@ export default {
 		 */
 		updateUrl (url)
 		{
-			// console.log('-- updated url --');
-			// console.log(url);
+            console.log({ url });
 		}
 	}
 }
