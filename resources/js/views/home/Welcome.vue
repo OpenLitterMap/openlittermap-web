@@ -44,7 +44,7 @@
 
                     <div class="column ma">
                         <h2 class="main-subtitle">1. Visibility</h2>
-                        <h3 class="welcome-subtitle mb1em">Our maps reveal what has become normal and invisible. This has the potential to change our relationship with waste.</h3>
+                        <h3 class="welcome-subtitle mb1em">Our maps reveal what has become normal and invisible. This education is important to give visibility to litter.</h3>
                     </div>
                 </div>
 
@@ -55,7 +55,7 @@
 
                     <div class="column ma">
                         <h2 class="main-subtitle">2. Science</h2>
-                        <h3 class="welcome-subtitle mb1em">Our data is open and accessible, allowing anyone to participate in any kind of research.</h3>
+                        <h3 class="welcome-subtitle mb1em">Our data is open and accessible. Anyone can download our data and use it, for any purpose.</h3>
                     </div>
                 </div>
 
@@ -93,7 +93,7 @@
 
                     <div class="column ma">
                         <h2 class="main-subtitle">2. Tag the litter</h2>
-                        <h3 class="welcome-subtitle mb1em">By tagging litter you are helping us develop computer vision algorithms. You can tag if the litter has been picked up or if it's still there!</h3>
+                        <h3 class="welcome-subtitle mb1em">Just tag what litter you see in the photo. You can tag if the litter has been picked up or if it's still there!</h3>
                     </div>
                 </div>
 

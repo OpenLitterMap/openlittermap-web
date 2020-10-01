@@ -299,7 +299,8 @@ class MapController extends Controller
                 });
 
                 // Determine images per day (for time slider)
-                foreach ($myPhotos as $key => $value) {
+                foreach ($myPhotos as $key => $value)
+                {
                     $time[$key] = $value->count();
                 }
                 $city['time'] = json_encode($time);
