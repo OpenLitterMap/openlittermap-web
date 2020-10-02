@@ -4,7 +4,7 @@
             <div class="hero-body">
                 <div class="container">
                     <div class="columns">
-                        <div class="column is-2">
+                        <div class="column is-4">
                             <h1 class="title is-1 flex pointer" @click="goBack"><i v-show="! loading" class="fa fa-chevron-left country-back" /> {{ country }}</h1>
                             <h1 class="subtitle is-3">{{ state }}</h1>
                         </div>

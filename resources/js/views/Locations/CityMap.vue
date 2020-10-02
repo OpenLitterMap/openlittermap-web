@@ -153,19 +153,21 @@ export default {
 
         /** 4. Add info/control to the Top-Right */
         info = L.control();
-        info.onAdd = function (map) {
+        info.onAdd = function (map)
+        {
             this._div = L.DomUtil.create('div', 'info');
             this.update();
             return this._div;
         };
 
         // Get Counts
-        let meterHexGrids = this.$t('locations.cityVueMap.meter-hex-grids');
-        let hoverToCount = this.$t('locations.cityVueMap.hover-to-count');
-        let piecesOfLitter = this.$t('locations.cityVueMap.pieces-of-litter');
-        let hoverOverPolygonsToCount = this.$t('locations.cityVueMap.hover-polygons-to-count');
+        const meterHexGrids = this.$t('locations.cityVueMap.meter-hex-grids');
+        const hoverToCount = this.$t('locations.cityVueMap.hover-to-count');
+        const piecesOfLitter = this.$t('locations.cityVueMap.pieces-of-litter');
+        const hoverOverPolygonsToCount = this.$t('locations.cityVueMap.hover-polygons-to-count');
 
-        info.update = function (props) {
+        info.update = function (props)
+        {
             this._div.innerHTML = '<h4>' + this.hex + ` ${meterHexGrids}</h4>` +  (props ?
                 `<b>${hoverToCount} </b><br />` + props.total + ` ${piecesOfLitter}`
                 : `${hoverOverPolygonsToCount}.`);
@@ -341,7 +343,7 @@ export default {
 
                 // Dynamically add items to the groups + add markers
                 categories.map(category => {
-                       
+
                     if (i.properties[category.key])
                     {
                         let string = '';

@@ -60,7 +60,7 @@ const router = new VueRouter({
         },
         // City - Map
         {
-            path: '/world/:country/:state/:city/map',
+            path: '/world/:country/:state/:city/map/:minDate?/:maxDate?/:hex?',
             component: require('./views/Locations/CityMapContainer').default
         },
         // Admin

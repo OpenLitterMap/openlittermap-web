@@ -347,20 +347,19 @@ class MapController extends Controller
 	 */
 	public function getCity ()
     {
-        // $country = urldecode(request()->country);
-        // $state = urldecode(request()->state);
+        $country = urldecode(request()->country);
+        $state = urldecode(request()->state);
         $city = urldecode(request()->city);
+
         $minFilt = null;
         $maxFilt = null;
         $hex = 100;
 
-//		if ($minfilter) {
-//			$minFilt = str_replace('-', ':', $minfilter);
-//			$maxFilt = str_replace('-', ':', $maxfilter);
-//		} else {
-//			$minFilt = null;
-//			$maxFilt = null;
-//		}
+		if (request()->min)
+		{
+			$minFilt = str_replace('-', ':', request()->min);
+			$maxFilt = str_replace('-', ':', request()->max);
+		}
 
 		$litterGeojson = self::buildGeojson($city, $minFilt, $maxFilt);
 
