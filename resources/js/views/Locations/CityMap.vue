@@ -2,8 +2,10 @@
     <div id="map" ref="map" />
 </template>
 
+
 <script>
-import * as turf from '@turf/turf'
+import * as turf from '../../../../public/js/turf.js'
+
 import moment from 'moment'
 
 import { categories } from '../../extra/categories'
@@ -165,17 +167,18 @@ export default {
         const hoverToCount = this.$t('locations.cityVueMap.hover-to-count');
         const piecesOfLitter = this.$t('locations.cityVueMap.pieces-of-litter');
         const hoverOverPolygonsToCount = this.$t('locations.cityVueMap.hover-polygons-to-count');
+        const hex = this.hex;
 
         info.update = function (props)
         {
-            this._div.innerHTML = '<h4>' + this.hex + ` ${meterHexGrids}</h4>` +  (props ?
+            this._div.innerHTML = '<h4>' + hex + ` ${meterHexGrids}</h4>` +  (props ?
                 `<b>${hoverToCount} </b><br />` + props.total + ` ${piecesOfLitter}`
                 : `${hoverOverPolygonsToCount}.`);
         };
         info.addTo(map);
 
         /** 5. Style the legend */
-        // needs to dynamically and statistically significantly reflect the range of available values
+        // Todo - we need to dynamically and statistically reflect the range of available values
         let legend = L.control({ position: 'bottomleft' });
 
         legend.onAdd = function (map)
@@ -202,14 +205,14 @@ export default {
         legend.addTo(map);
 
         /** 6. Create Groups */
-        smokingGroup = new L.LayerGroup();
+        smokingGroup = new L.LayerGroup().addTo(map);
         foodGroup = new L.LayerGroup();
         coffeeGroup = new L.LayerGroup();
-        alcoholGroup = new L.LayerGroup();
+        alcoholGroup = new L.LayerGroup().addTo(map);
         // drugsGroup = new L.LayerGroup();
         softdrinksGroup = new L.LayerGroup().addTo(map);
-        sanitaryGroup = new L.LayerGroup();
-        otherGroup = new L.LayerGroup();
+        sanitaryGroup = new L.LayerGroup().addTo(map);
+        otherGroup = new L.LayerGroup().addTo(map);
         coastalGroup = new L.LayerGroup();
         // pathwayGroup = new L.LayerGroup();
         // artGroup = new L.LayerGroup();
@@ -262,7 +265,7 @@ export default {
             let bbox = turf.bbox(this.geojson);
 
             // Create a hexgrid from our data. This needs to be filtered to only show relevant data.
-            let hexgrid = turf.hexGrid(bbox, 50, { units: 'meters' });
+            let hexgrid = turf.hexGrid(bbox, this.hex, 'meters');
 
             // we need to parse here to avoid copying the object as shallow copies
             // see https://github.com/Turfjs/turf/issues/1914
@@ -310,11 +313,8 @@ export default {
 
         /**
          * Loop over the geojson,
-         * TODO - Add translated "String: Value" to the correct group
          * note - these have all been defined already based on the column on each category table eg `smoking.butts`
          * note - some of these columns have to merged and simplified
-         * TODO - Move <br> from the start to the end of the string
-         * TODO - Apply name, username Or anonymous
          */
         addDataToLayerGroups ()
         {
@@ -360,6 +360,8 @@ export default {
                                         + '<img style="max-width: 100%; padding-top: 1em;" src="'+ i.properties.filename + '"/>'
                                         + '<p>' + this.$t('locations.cityVueMap.taken-on') + moment(i.properties.datetime).format('LLL') + ' ' + this.$t('locations.cityVueMap.with-a') + ' ' + i.properties.model + '</p>'
                                         + '<p>' + this.$t('locations.cityVueMap.by') + ': ' + name + username + '</p>'
+                                        + '<p>' + i.properties.lat + " " + i.properties.lon + '</p>'
+                                        + '<p>' + i.properties.total_litter + '</p>'
                                     );
                             }
                         });

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Route;
 
 // only turn this on in limited circumstances
 // Route::get('sean', 'TotalDataController@getCSV');
+Route::get('test', 'MapController@getCity');
 
 Route::get('/', 'HomeController@index');
 Route::get('/about', 'HomeController@index');
