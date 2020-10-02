@@ -20,6 +20,7 @@
         "vue-template-compiler": "^2.6.11"
     },
     "dependencies": {
+        "@turf/hex-grid": "^6.0.2",
         "@turf/turf": "^5.1.6",
         "animate.css": "^4.1.0",
         "animated-number-vue": "^1.0.0",
