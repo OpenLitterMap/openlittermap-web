@@ -30,6 +30,7 @@ Route::get('/stripe/subscriptions', 'StripeController@subscriptions');
 Route::post('/stripe/delete', 'StripeController@delete');
 Route::post('/stripe/resubscribe', 'StripeController@resubscribe');
 
+/* Locations */
 Route::get('countries', 'MapController@getCountries');
 Route::get('states', 'MapController@getStates');
 Route::get('cities', 'MapController@getCities');
@@ -39,7 +40,7 @@ Route::get('/world/{country}/{state}', 'HomeController@index');
 Route::get('/world/{country}/{state}/{city?}/{id?}', 'HomeController@index');
 // Route::get('/world/{country}/{city}/city_hex_map', 'MapController@getCity');
 // Similarly, get the city and pass the world dynamically
-Route::get('/world/{country}/{state}/{city}/city_hex_map/{minfilter?}/{maxfilter?}/{hex?}', 'HomeController@index');
+Route::get('/world/{country}/{state}/{city}/map/{minfilter?}/{maxfilter?}/{hex?}', 'HomeController@index');
 Route::get('/world/{country}/{state}/{city?}/download/get', 'DownloadsController@getDataByCity');
 
 // "maps" was used before "world". We will keep this for now to keep old links active.

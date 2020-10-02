@@ -7,7 +7,10 @@ export const actions = {
     {
         await axios.get('/city', {
             params: {
-                city: payload
+                city: payload.city,
+                min: payload.min,
+                max: payload.max,
+                hex: payload.hex
             }
         })
         .then(response => {

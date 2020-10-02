@@ -28,8 +28,25 @@ export default {
     {
         this.loading = true;
 
-        let city = window.location.href.split('/')[6];
-        await this.$store.dispatch('GET_CITY_DATA', city);
+        let split = window.location.href.split('/'); // [6];
+
+        let min = null;
+        let max = null;
+        let hex = null;
+
+        if (split.length === 11)
+        {
+            min = split[8];
+            max = split[9];
+            hex = split[10];
+        }
+
+        await this.$store.dispatch('GET_CITY_DATA', {
+            city: split[6],
+            min,
+            max,
+            hex
+        });
 
         this.loading = false;
     }

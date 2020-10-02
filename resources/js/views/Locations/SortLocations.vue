@@ -1,5 +1,5 @@
 <template>
-    <section :class="container" style="background-color: #23d160;">
+    <section :class="container" style="background-color: #23d160; height: 100%;">
         <div class="container w100">
             <div class="control locations-control">
                 <br>
@@ -316,6 +316,10 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+
+    .h65pc {
+        height: 65%;
+    }
 
 	.green {
 		color: green !important;
