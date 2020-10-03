@@ -135,84 +135,82 @@ export default {
         map.attributionControl.addAttribution('Litter data &copy; OpenLitterMap & Contributors ' + year);
 
         /** 3. Create hex grid using aggregated data */
-        hexFiltered = L.geoJson(this.aggregate, {
-            style,
-            onEachFeature,
-            filter: function(feature, layer)
-            {
-                if (feature.properties.values.length > 0)
-                {
-                    let sum = 0;
+        console.log('geojson.test', this.geojson);
+        if (this.geojson)
+        {
+            hexFiltered = L.geoJson(this.aggregate, {
+                style,
+                onEachFeature,
+                filter: function (feature, layer) {
+                    if (feature.properties.values.length > 0) {
+                        let sum = 0;
 
-                    for (let i=0; i < feature.properties.values.length; i++) sum += feature.properties.values[i]
+                        for (let i = 0; i < feature.properties.values.length; i++) sum += feature.properties.values[i]
 
-                    feature.properties.total = sum;
+                        feature.properties.total = sum;
+                    }
+
+                    return feature.properties.values.length > 0;
+                }
+            }).addTo(map);
+
+            /** 4. Add info/control to the Top-Right */
+            info = L.control();
+            info.onAdd = function (map) {
+                this._div = L.DomUtil.create('div', 'info');
+                this.update();
+                return this._div;
+            };
+
+            // Get Counts
+            const meterHexGrids = this.$t('locations.cityVueMap.meter-hex-grids');
+            const hoverToCount = this.$t('locations.cityVueMap.hover-to-count');
+            const piecesOfLitter = this.$t('locations.cityVueMap.pieces-of-litter');
+            const hoverOverPolygonsToCount = this.$t('locations.cityVueMap.hover-polygons-to-count');
+            const hex = this.hex;
+
+            info.update = function (props) {
+                this._div.innerHTML = '<h4>' + hex + ` ${meterHexGrids}</h4>` + (props ?
+                    `<b>${hoverToCount} </b><br />` + props.total + ` ${piecesOfLitter}`
+                    : `${hoverOverPolygonsToCount}.`);
+            };
+            info.addTo(map);
+
+            /** 5. Style the legend */
+            // Todo - we need to dynamically and statistically reflect the range of available values
+            let legend = L.control({position: 'bottomleft'});
+
+            legend.onAdd = function (map) {
+                let div = L.DomUtil.create('div', 'info legend'),
+                    grades = [1, 3, 6, 10, 20],
+                    labels = [],
+                    from, to;
+
+                for (let i = 0; i < grades.length; i++) {
+                    from = grades[i];
+                    to = grades[i + 1];
+
+                    labels.push(
+                        '<i style="background:' + getColor(from + 1) + '"></i> ' +
+                        from + (to ? '&ndash;' + to : '+')
+                    );
                 }
 
-                return feature.properties.values.length > 0;
-            }
-        }).addTo(map);
-
-        /** 4. Add info/control to the Top-Right */
-        info = L.control();
-        info.onAdd = function (map)
-        {
-            this._div = L.DomUtil.create('div', 'info');
-            this.update();
-            return this._div;
-        };
-
-        // Get Counts
-        const meterHexGrids = this.$t('locations.cityVueMap.meter-hex-grids');
-        const hoverToCount = this.$t('locations.cityVueMap.hover-to-count');
-        const piecesOfLitter = this.$t('locations.cityVueMap.pieces-of-litter');
-        const hoverOverPolygonsToCount = this.$t('locations.cityVueMap.hover-polygons-to-count');
-        const hex = this.hex;
-
-        info.update = function (props)
-        {
-            this._div.innerHTML = '<h4>' + hex + ` ${meterHexGrids}</h4>` +  (props ?
-                `<b>${hoverToCount} </b><br />` + props.total + ` ${piecesOfLitter}`
-                : `${hoverOverPolygonsToCount}.`);
-        };
-        info.addTo(map);
-
-        /** 5. Style the legend */
-        // Todo - we need to dynamically and statistically reflect the range of available values
-        let legend = L.control({ position: 'bottomleft' });
-
-        legend.onAdd = function (map)
-        {
-            let div = L.DomUtil.create('div', 'info legend'),
-                grades = [1, 3, 6, 10, 20],
-                labels = [],
-                from, to;
-
-            for (let i = 0; i < grades.length; i++)
-            {
-                from = grades[i];
-                to = grades[i + 1];
-
-                labels.push(
-                    '<i style="background:' + getColor(from + 1) + '"></i> ' +
-                    from + (to ? '&ndash;' + to : '+')
-                );
-            }
-
-            div.innerHTML = labels.join('<br>');
-            return div;
-        };
-        legend.addTo(map);
+                div.innerHTML = labels.join('<br>');
+                return div;
+            };
+            legend.addTo(map);
+        }
 
         /** 6. Create Groups */
-        smokingGroup = new L.LayerGroup().addTo(map);
+        smokingGroup = new L.LayerGroup();
         foodGroup = new L.LayerGroup();
         coffeeGroup = new L.LayerGroup();
-        alcoholGroup = new L.LayerGroup().addTo(map);
+        alcoholGroup = new L.LayerGroup();
         // drugsGroup = new L.LayerGroup();
         softdrinksGroup = new L.LayerGroup().addTo(map);
-        sanitaryGroup = new L.LayerGroup().addTo(map);
-        otherGroup = new L.LayerGroup().addTo(map);
+        sanitaryGroup = new L.LayerGroup();
+        otherGroup = new L.LayerGroup();
         coastalGroup = new L.LayerGroup();
         // pathwayGroup = new L.LayerGroup();
         // artGroup = new L.LayerGroup();
@@ -357,11 +355,9 @@ export default {
                                 L.marker([i.properties.lat, i.properties.lon])
                                     .addTo(groups[category.key])
                                     .bindPopup(string
-                                        + '<img style="max-width: 100%; padding-top: 1em;" src="'+ i.properties.filename + '"/>'
-                                        + '<p>' + this.$t('locations.cityVueMap.taken-on') + moment(i.properties.datetime).format('LLL') + ' ' + this.$t('locations.cityVueMap.with-a') + ' ' + i.properties.model + '</p>'
+                                        + '<img class="lim" src="'+ i.properties.filename + '"/>'
+                                        + '<p>' + this.$t('locations.cityVueMap.taken-on') + ' ' + moment(i.properties.datetime).format('LLL') + ' ' + this.$t('locations.cityVueMap.with-a') + ' ' + i.properties.model + '</p>'
                                         + '<p>' + this.$t('locations.cityVueMap.by') + ': ' + name + username + '</p>'
-                                        + '<p>' + i.properties.lat + " " + i.properties.lon + '</p>'
-                                        + '<p>' + i.properties.total_litter + '</p>'
                                     );
                             }
                         });
@@ -383,6 +379,11 @@ export default {
 
     .leaflet-popup-content {
         margin: 0 20px !important;
+    }
+
+    .lim {
+        max-width: 100%;
+        padding-top: 1em;
     }
 
 </style>

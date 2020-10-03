@@ -359,6 +359,7 @@ class MapController extends Controller
 		{
 			$minFilt = str_replace('-', ':', request()->min);
 			$maxFilt = str_replace('-', ':', request()->max);
+			$hex = request()->hex;
 		}
 
 		$litterGeojson = self::buildGeojson($city, $minFilt, $maxFilt);
@@ -381,14 +382,14 @@ class MapController extends Controller
 
 		if ($minfilter)
 		{
-			$minTime = \DateTime::createFromFormat('d:m:Y', $minfilter)->format('Y-m-d 00:00:00');
+			$minTime = \DateTime::createFromFormat('d:m:Y', $minfilter)->format('Y-m-d 00:00:00'); // 0018-mm-dd 00:00:00
 			$maxTime = \DateTime::createFromFormat('d:m:Y', $maxfilter)->format('Y-m-d 23:59:59');
-			// return [$minTime, $maxTime]; // 0018-mm-dd 00:00:00
-		    $minTime = substr_replace($minTime,'2',0,1);
+
+			$minTime = substr_replace($minTime,'2',0,1); //  2018-mm-dd hh:mm:ss
 		    $maxTime = substr_replace($maxTime,'2',0,1);
-			// return [$minTime, $maxTime]; // 2018-mm-dd hh:mm:ss
-			$newMin = str_replace('-', ':', $minTime);
-			$newMax = str_replace('-', ':', $maxTime);
+
+			\Log::info(['$minTime', $minTime]);
+			\Log::info(['$maxTime', $maxTime]);
 
 			$photoData = Photo::with([
 				'smoking',
@@ -405,12 +406,13 @@ class MapController extends Controller
 //				 'art',
 				'trashdog',
 				'owner' => function ($q) {
-					$q->where('show_name_maps', true)->orWhere('show_username_maps', true);
+					$q->where('show_name_maps', true)
+                      ->orWhere('show_username_maps', true);
 				}])->where([
                     ['city_id', $cityId],
                     ['verified', '>', 0],
-                    ['datetime', '>=', $newMin],
-                    ['datetime', '<=', $newMax]
+                    ['datetime', '>=', $minTime],
+                    ['datetime', '<=', $maxTime]
 			])->orderBy('datetime', 'asc')->get();
 
 			$this->getInitialPhotoLatLon($photoData[0]);

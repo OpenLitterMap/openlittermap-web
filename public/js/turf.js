@@ -723,8 +723,6 @@
  * @returns {number} distance
  */
         module.exports.radiansToDistance = function (radians, units) {
-            console.log({ radians });
-            console.log({ units });
             var factor = factors[units || 'kilometers'];
             if (factor === undefined) throw new Error('Invalid unit');
 
