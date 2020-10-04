@@ -28,19 +28,19 @@ import Echo from 'laravel-echo';
 
 window.Pusher = require('pusher-js');
 
-// // let useTLSOverride = process.env.MIX_WEBSOCKET_USE_TLS == "true" ? true : false
-// // if( !useTLSOverride){
-// //     window.Pusher.Runtime.getProtocol = function() {return 'http:';}
-// // }
+// let useTLSOverride = process.env.MIX_WEBSOCKET_USE_TLS == "true" ? true : false
+// if( !useTLSOverride){
+//     window.Pusher.Runtime.getProtocol = function() {return 'http:';}
+// }
 
 window.Echo = new Echo({
     broadcaster: 'pusher',
     key: 'a228fd841042d8837268',
     wsHost: window.location.hostname,
     wssHost: window.location.hostname,
-    wsPort: 6001, // window.APP_DEBUG ? 6001 : 6002,
-    wssPort: 6001, // window.APP_DEBUG ? 6001 : 6002,
+    wsPort: 6001,
+    wssPort: 6001,
     disableStats: true,
-    encrypted: window.APP_DEBUG ? false : true,
+    // encrypted: window.APP_DEBUG ? false : true,
     enabledTransports: ['ws', 'wss'],
 });
