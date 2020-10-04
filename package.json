@@ -31,7 +31,7 @@
         "leaflet": "^1.6.0",
         "lodash.sortby": "^4.7.0",
         "moment": "^2.27.0",
-        "pusher-js": "^7.0.0",
+        "pusher-js": "^4.4.0",
         "v-mask": "^2.2.3",
         "vue": "^2.6.11",
         "vue-chartjs": "^3.5.0",

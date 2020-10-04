@@ -22,10 +22,6 @@
 <script>
 export default {
 	name: 'Languages',
-	created ()
-	{
-
-	},
 	data ()
 	{
 		return {
@@ -81,9 +77,9 @@ export default {
 		 */
 		getFlag (lang)
 		{
-			if (lang == 'en') return this.dir + 'gb.png'; // english
-			if (lang == 'ms') return this.dir + 'my.png'; // malaysian
-			if (lang == 'tk')  return this.dir + 'tr.png'; // turkish
+			if (lang === 'en') return this.dir + 'gb.png'; // english
+			if (lang === 'ms') return this.dir + 'my.png'; // malaysian
+			if (lang === 'tk')  return this.dir + 'tr.png'; // turkish
 
 			return this.dir + lang.toLowerCase() + '.png';
 		},

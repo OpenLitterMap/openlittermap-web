@@ -37,18 +37,18 @@ export default {
 					text: 'One week',
 					url: 'one-week'
 				},
-				// {
-				// 	text: 'One month',
-				// 	url: 'one-month'
-				// },
-				// {
-				// 	text: 'One year',
-				// 	url: 'one-year'
-				// },
-				// {
-				// 	text: 'All time',
-				// 	url: 'all-time'
-				// }
+				{
+					text: 'One month',
+					url: 'one-month'
+				},
+				{
+					text: 'One year',
+					url: 'one-year'
+				},
+				{
+					text: 'All time',
+					url: 'all-time'
+				}
 			]
 		};
 	},
@@ -88,11 +88,11 @@ export default {
 	.dropdown-item {
 		border-bottom: 1px solid #dbdbdb;
 		color: black !important;
-		padding: 1em; 
+		padding: 1em;
 	}
 
 	.global-dates {
-		position: absolute; 
+		position: absolute;
 		left: 11em;
 		top:0;
 		z-index: 999;
