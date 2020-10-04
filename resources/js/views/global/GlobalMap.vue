@@ -93,6 +93,7 @@ export default {
 		height: calc(100% - 72px);
 		margin: 0;
 		position: relative;
+        z-index: 1;
 	}
 
 	.leaflet-popup-content {

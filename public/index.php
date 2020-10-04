@@ -9,6 +9,20 @@
 
 define('LARAVEL_START', microtime(true));
 
+
+/*
+|--------------------------------------------------------------------------
+| Maintenance Mode Updates - added manually after updating from Laravel 7 - 8
+|--------------------------------------------------------------------------
+|
+| Pre-rendering the maintenance mode template is now supported
+|
+*/
+
+if (file_exists(__DIR__.'/../storage/framework/maintenance.php')) {
+    require __DIR__.'/../storage/framework/maintenance.php';
+}
+
 /*
 |--------------------------------------------------------------------------
 | Register The Auto Loader

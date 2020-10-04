@@ -52,7 +52,7 @@
                                 <!-- "More" -->
                                 <a id="more" class="navbar-item"> {{ $t('nav.more')}}</a>
                                 <!-- Dropdown menu -->
-                                <div class="navbar-dropdown" style="z-index: 9999;">
+                                <div class="navbar-dropdown" style="z-index: 2;">
 
                                     <!-- Tag Litter -->
                                     <router-link to="/tag" class="navbar-item drop-item">

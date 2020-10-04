@@ -2,8 +2,9 @@
     <div id="map" ref="map" />
 </template>
 
-
 <script>
+// error when importing Turf from '@turf/turf' and using bbox + aggregate
+// https://github.com/Turfjs/turf/issues/1952
 import * as turf from '../../../../public/js/turf.js'
 
 import moment from 'moment'
