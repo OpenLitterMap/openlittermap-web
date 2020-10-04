@@ -6,6 +6,8 @@ use App\User;
 use Faker\Generator as Faker;
 use Illuminate\Support\Str;
 
+// NOTE!!! Laravel8 - https://laravel.com/docs/8.x/upgrade#model-factories
+
 /*
 |--------------------------------------------------------------------------
 | Model Factories

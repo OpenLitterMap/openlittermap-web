@@ -1,5 +1,7 @@
 <?php
 
+namespace Database\Seeders; // With laravel 8+, seeders are now namespaced
+
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder

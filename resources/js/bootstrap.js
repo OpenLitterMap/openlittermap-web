@@ -35,11 +35,12 @@ window.Pusher = require('pusher-js');
 
 window.Echo = new Echo({
     broadcaster: 'pusher',
-    key: 'aa1eecefcf9deb983617',
+    key: 'a228fd841042d8837268',
     wsHost: window.location.hostname,
-    wsPort: window.APP_DEBUG ? 6001 : 6002,
-    wssPort: window.APP_DEBUG ? 6001 : 6002,
-    disableStats: false,
+    wssHost: window.location.hostname,
+    wsPort: 6001, // window.APP_DEBUG ? 6001 : 6002,
+    wssPort: 6001, // window.APP_DEBUG ? 6001 : 6002,
+    disableStats: true,
     encrypted: window.APP_DEBUG ? false : true,
     enabledTransports: ['ws', 'wss'],
 });

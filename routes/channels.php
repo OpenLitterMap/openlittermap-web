@@ -25,3 +25,7 @@ Broadcast::channel('App.User.{id}', function ($user, $id) {
 Broadcast::channel('home', function (){
     return true;
 });
+
+Broadcast::channel('main', function (){
+    return true;
+});
