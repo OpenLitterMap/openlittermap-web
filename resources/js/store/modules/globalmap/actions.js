@@ -9,7 +9,7 @@ export const actions = {
     {
         context.commit('globalLoading', true);
 
-        await axios.get(window.location.origin + '/global-data', {
+        await axios.get('/global-data', {
             params: {
                 date: payload
             }
@@ -18,6 +18,7 @@ export const actions = {
             console.log('global_map_data', resp);
 
             let locations = [];
+
             resp.data.geojson.features.map(i => {
                 locations.push({
                     id: i.properties.photo_id,

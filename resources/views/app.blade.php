@@ -20,6 +20,8 @@
     <!-- CSS -->
     <link rel="stylesheet" type="text/css" href="/css/bulma.css" />
     <link rel="stylesheet" type="text/css" href="/css/openlittermap.css" />
+    <!-- extra leaflet styles -->
+    <link ref="stylesheet" type="text/css" href="/css/leaflet.css" />
 
     <!-- code to rotate an img -->
     <style type="text/css">

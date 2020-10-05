@@ -1,8 +1,10 @@
 <template>
-    <div id="map" ref="map" />
+    <div id="hexmap" ref="map" />
 </template>
 
 <script>
+import L from 'leaflet'
+
 // error when importing Turf from '@turf/turf' and using bbox + aggregate
 // https://github.com/Turfjs/turf/issues/1952
 import * as turf from '../../../../public/js/turf.js'
@@ -77,7 +79,7 @@ function onEachFeature(feature, layer)
  */
 function highlightFeature (e)
 {
-    var layer = e.target;
+    let layer = e.target;
 
     layer.setStyle({
         weight: 5,
@@ -136,7 +138,6 @@ export default {
         map.attributionControl.addAttribution('Litter data &copy; OpenLitterMap & Contributors ' + year);
 
         /** 3. Create hex grid using aggregated data */
-        console.log('geojson.test', this.geojson);
         if (this.geojson)
         {
             hexFiltered = L.geoJson(this.aggregate, {
@@ -157,7 +158,8 @@ export default {
 
             /** 4. Add info/control to the Top-Right */
             info = L.control();
-            info.onAdd = function (map) {
+            info.onAdd = function (map)
+            {
                 this._div = L.DomUtil.create('div', 'info');
                 this.update();
                 return this._div;
@@ -370,10 +372,10 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 
-    #map {
-        height: calc(100vh - 82px);
+    #hexmap {
+        height: 100%;
         margin: 0;
         position: relative;
     }
