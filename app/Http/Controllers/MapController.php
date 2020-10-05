@@ -519,7 +519,7 @@ class MapController extends Controller
 		if ($date == 'today')
 		{
 			$data = Photo::where('verified', '>', 0)
-//				->whereDate('created_at', Carbon::today())
+				->whereDate('created_at', Carbon::today())
 				->get();
 		}
 
@@ -530,25 +530,25 @@ class MapController extends Controller
 				->get();
 		}
 
-//		else if ($date == 'one-month')
-//		{
-//			$data = Photo::where('verified', '>', 0)
-//				->whereDate('created_at', '>', Carbon::today()->subMonths(1))
-//				->get();
-//		}
-//
-//		else if ($date == 'one-year')
-//		{
-//			$data = Photo::where('verified', '>', 0)
-//				->whereDate('created_at', '>', Carbon::today()->subYear(1))
-//				->get();
-//		}
-//
-//		else if ($date == 'all-time')
-//		{
-//			// all time
-//			$data = Photo::where('verified', '>', 0)->get();
-//		}
+		else if ($date == 'one-month')
+		{
+			$data = Photo::where('verified', '>', 0)
+				->whereDate('created_at', '>', Carbon::today()->subMonths(1))
+				->get();
+		}
+
+		else if ($date == 'one-year')
+		{
+			$data = Photo::where('verified', '>', 0)
+				->whereDate('created_at', '>', Carbon::today()->subYear(1))
+				->get();
+		}
+
+		else if ($date == 'all-time')
+		{
+			// all time
+			$data = Photo::where('verified', '>', 0)->get();
+		}
 
 		else return 'come back later!';
 

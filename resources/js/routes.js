@@ -25,7 +25,7 @@ const router = new VueRouter({
         },
         {
             path: '/global',
-            component: require('./views/global/GlobalMap').default
+            component: require('./views/global/GlobalMapContainer').default
         },
         {
             path: '/signup',

@@ -1,41 +1,24 @@
 <template>
-	<div class="global-map-container" @click="closeButtons">
-		<l-map :zoom="zoom" :center="center" :minZoom="1" ref="map">
-		  	<l-tile-layer :url="url" :attribution="attribution" />
+    <div style="height: 100%;" @click="closeButtons">
+        <div id="globalmap" ref="map" />
 
-			<v-marker-cluster>
-				<l-marker v-for="c in this.$store.state.globalmap.globalMapData" :lat-lng="c.latlng" :key="c.id">
-					<l-popup :content="c.text" />
-				</l-marker>
-			</v-marker-cluster>
-		</l-map>
+        <!-- Change language -->
+        <Languages />
 
-		<!-- Change language -->
-		<Languages />
+        <!-- Load / change data -->
+        <!-- First request made here -->
+        <global-dates />
 
-		<!-- Load / change data -->
-		<!-- First request made here -->
-		<global-dates />
+        <!-- Call to Action -->
+        <global-info />
 
-		<!-- Call to Action -->
-		<global-info />
+        <!-- Live Events -->
+        <live-events />
 
-		<!-- Live Events -->
-		<live-events />
-	</div>
-
-<!--	<v-prune-cluster-->
-<!--			:items="this.$store.state.globalmap.globalMapData"-->
-<!--			:mapRef="this.$refs"-->
-<!--			@clickOnItem="doWhateverYouWant"-->
-<!--	/>-->
+    </div>
 </template>
 
 <script>
-import { LMap, LTileLayer, LMarker, LIcon, LPopup } from 'vue2-leaflet'
-
-import Vue2LeafletMarkerCluster from 'vue2-leaflet-markercluster'
-
 import Languages from '../../components/global/Languages'
 import GlobalDates from '../../components/global/GlobalDates'
 
@@ -43,104 +26,108 @@ import LiveEvents from '../../components/LiveEvents'
 import GlobalInfo from '../../components/global/GlobalInfo'
 
 export default {
-	name: 'GlobalMap',
-	components: {
-		LMap,
-   		LTileLayer,
-   		LMarker,
-   		Languages,
-   		LPopup,
-        LIcon,
-   		GlobalDates,
-   		LiveEvents,
-   		GlobalInfo,
-		'v-marker-cluster': Vue2LeafletMarkerCluster,
-	},
-	created ()
-	{
-		this.attribution += new Date().getFullYear();
-	},
-	data ()
-	{
-		return {
-			zoom: 2,
-			center: L.latLng(0,0),
-			url:'https://{s}.tile.osm.org/{z}/{x}/{y}.png',
-			attribution:'Map Data &copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors, Litter data &copy OpenLitterMap & Contributors '
-		};
-	},
-	methods: {
+    name: 'GlobalMap',
+    components: {
+        Languages,
+        GlobalDates,
+        LiveEvents,
+        GlobalInfo
+    },
+    mounted ()
+    {
+        /** 1. Create map object */
+        const map = L.map(this.$refs.map, {
+            center: [0,0],
+            zoom: 1,
+        });
 
-		/**
-		 * Close dates and language dropdowns
-		 */
-		closeButtons ()
-		{
-			this.$store.commit('closeDatesButton');
-			this.$store.commit('closeLangsButton');
-		},
+        const date = new Date();
+        const year = date.getFullYear();
 
-	}
+        /** 2. Add tiles, attribution, set limits */
+        const mapLink = '<a href="http://openstreetmap.org">OpenStreetMap</a>';
+        L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: 'Map data &copy; ' + mapLink + ' & Contributors',
+            maxZoom: 18,
+            minZoom: 2,
+        }).addTo(map);
+        map.attributionControl.addAttribution('Litter data &copy OpenLitterMap & Contributors ' + year);
+
+
+        // Create groups
+        // let artGroup = new L.LayerGroup();
+
+        // Create clusters object
+        // let clusters = L.markerClusterGroup().addTo(map);
+        //
+        // // Loop over points : // can we vectorize this with numpy integration?
+        // for (let i = 0; i < global.features.length; i++)
+        // {
+        //     const lat = global.features[i].geometry.coordinates[1];
+        //     const lon = global.features[i].geometry.coordinates[0];
+        //
+        //     let a = '';
+        //
+        //     // Default global marker
+        //     L.marker([lat, lon]).addTo(clusters).bindPopup(a + ' '
+        //         + '<p>' + global.features[i].properties.result_string + '</p>'
+        //         + '<p>Taken on ' + moment(global.features[i].properties.datetime).format('LLL') + '</p>'
+        //         + '<img style="height: 100px;" src="' + global.features[i].properties.filename + '"/>'
+        //         + '<p>Lat, Lon: ' + lat + ', ' + lon + '</p>'
+        //     );
+        //
+        //     // todo - Extract Specific Features (art)
+        //     // let artString = '';
+        //     // if(global.features[i].properties.art != 'null') {
+        //     //     L.marker([lat, lon]).addTo(artGroup).bindPopup('Litter Art!' + '<br>'
+        //     //         + '<p>Taken on ' + global.features[i].properties.datetime + '</p>'
+        //     //         + '<img style="height: 100px;" src="' + global.features[i].properties.filename + '"/>'
+        //     //         + '<p>Lat, Lon: ' + lat + ', ' + lon + '</p>'
+        //     //     );
+        //     // }
+        // }
+
+        // todo - Add the cluster & overlays to the map
+        // let overlays = {
+        //     Global: clusters,
+        //     Art: artGroup,
+        // };
+
+        // map.addLayer(clusters);
+    },
+
+    computed: {
+
+        /**
+         * All global map data
+         */
+        global ()
+        {
+            return this.$store.state.globalmap.globalMapData;
+        }
+    },
+
+    methods: {
+
+        /**
+         * Close dates and language dropdowns
+         */
+        closeButtons ()
+        {
+            this.$store.commit('closeDatesButton');
+            this.$store.commit('closeLangsButton');
+        },
+
+    }
 }
 </script>
 
-<style>
-@import "~leaflet/dist/leaflet.css";
-@import "~leaflet.markercluster/dist/MarkerCluster.css";
-@import "~leaflet.markercluster/dist/MarkerCluster.Default.css";
+<style scoped>
 
-	.global-map-container {
-		height: calc(100% - 72px);
-		margin: 0;
-		position: relative;
-        z-index: 1;
-	}
-
-	.leaflet-popup-content {
-		width: 180px !important;
-	}
-
-	.lealet-popup {
-		left: -106px !important;
-	}
-
-	.info {
-		padding: 6px 8px;
-		font: 14px/16px Arial, Helvetica, sans-serif;
-		background: white;
-		background: rgba(255,255,255,0.8);
-		box-shadow: 0 0 15px rgba(0,0,0,0.2);
-		border-radius: 5px;
-	}
-
-	.info h4 {
-		margin: 0 0 5px;
-		color: #777;
-	}
-
-	.legend {
-		text-align: left;
-		line-height: 18px;
-		color: #555;
-	}
-
-	.legend i {
-		width: 18px;
-		height: 18px;
-		float: left;
-		margin-right: 8px;
-		opacity: 0.7;
-	}
-
-    .leaflet-pane .leaflet-shadow-pane {
-        display: none;
+    #globalmap {
+        height: 100%;
+        margin: 0;
+        position: relative;
     }
 
-	/*.leaflet-default-icon-path {*/
-	/*	background-image: url('/images/vendor/leaflet/dist/marker-icon.png');*/
-	/*}*/
-
-	/*.leaflet-default-shadow-path {*/
-	/*	background-image: none*/
-	/*}*/
 </style>

@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="cmc">
         <loading v-if="loading" :active.sync="loading" :is-full-page="true" />
 
         <CityMap v-else />
@@ -55,4 +55,7 @@ export default {
 
 <style scoped>
 
+    .cmc {
+        height: calc(100vh - 82px);
+    }
 </style>

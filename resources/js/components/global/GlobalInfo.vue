@@ -1,9 +1,11 @@
 <template>
 	<div class="global-info-box" :style="checkSession">
+
 		<div class="flex">
 			<p class="welcome-title is-dark">Welcome to OpenLitterMap!</p>
 			<p class="welcome-close" @click="close">x</p>
 		</div>
+
 		<p class="welcome-subtitle pb1em">OpenLitterMap is a map of the world's litter, created by people like you.</p>
 
 		<p class="welcome-subtitle pb1em">Our data is free and open for anyone to download and use for any purpose, without restriction.</p>
@@ -85,10 +87,12 @@ export default {
 		right: 0;
 	}
 
-	@media screen and (max-width: 500px){
+	@media screen and (max-width: 500px)
+    {
 		.global-info-box {
 			width: 75%;
 		}
+
 		.welcome-close {
 			padding: 1em;
 		}
