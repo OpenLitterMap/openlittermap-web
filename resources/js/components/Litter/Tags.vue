@@ -1,6 +1,6 @@
 <template>
 	<div>
-        <ul>
+        <ul class="container">
             <li v-for="category in categories" class='admin-item'>
 
                 <!-- Translated Category Title -->
@@ -78,7 +78,15 @@ export default {
 </script>
 
 <style scoped>
-
+    @media only screen and (max-width: 900px) {
+        .container {
+            display: flex;
+            overflow-x: auto;
+        }
+        .admin-item {
+            padding: 10px;
+        }
+    }
     .category {
         font-size: 1.25em;
         display: flex;
