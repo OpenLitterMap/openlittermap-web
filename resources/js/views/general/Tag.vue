@@ -94,6 +94,14 @@
                             >{{ $t('tags.next') }}</a>
                         </div>
                     </div>
+                    <!-- Pagination -->
+                    <nav class="pagination" role="navigation" aria-label="pagination">
+                    <ul class="pagination-list">
+                        <li  v-for="i in remaining" :key="i">
+                            <a :class="(i === current_page ? 'pagination-link is-current': 'pagination-link')" :aria-label="page + current_page" aria-current="page"> {{ i }}</a>
+                        </li>   
+                    </ul>
+                    </nav>
                 </div>
             </div>
         </div>
@@ -133,7 +141,6 @@ export default {
         };
     },
     computed: {
-
         /**
          * Paginated array of the users photos where verification = 0
          */
@@ -141,7 +148,9 @@ export default {
         {
             return this.$store.state.photos.photos.data;
         },
-
+        current_page () {
+            return this.$store.state.photos.photos.current_page;
+        },
         /**
          * Number of photos the user has left to verify. Verification = 0
          */
