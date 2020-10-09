@@ -6,10 +6,10 @@
             <div class="columns c-1">
                 <div class="column is-half">
                     <h1 class="main-title">
-                        Plastic pollution is out of control.
+                        {{ $t('home.welcome.plastic-pollution-out-of-control') }}.
                     </h1>
                     <h2 class="subtitle is-3 home-img-padding">
-                        Help us create the world's most advanced open database on litter, brands & plastic pollution.
+                        {{ $t('home.welcome.help-us') }}.
                     </h2>
 
                     <!-- Download app icons -->
@@ -35,7 +35,7 @@
 
             <!-- Why its important -->
             <div class="why-container">
-                <h1 class="main-title">Why should we collect data?</h1>
+                <h1 class="main-title">{{ $t('home.welcome.why-collect-data') }}?</h1>
 
                 <div class="columns welcome-mb">
                     <div class="column is-one-quarter icon-center">
@@ -43,8 +43,8 @@
                     </div>
 
                     <div class="column ma">
-                        <h2 class="main-subtitle">1. Visibility</h2>
-                        <h3 class="welcome-subtitle mb1em">Our maps reveal what has become normal and invisible. This education is important to give visibility to litter.</h3>
+                        <h2 class="main-subtitle">1. {{ $t('home.welcome.visibility') }}</h2>
+                        <h3 class="welcome-subtitle mb1em">{{ $t('home.welcome.our-maps-reveal-litter-normality') }}.</h3>
                     </div>
                 </div>
 
@@ -54,8 +54,8 @@
                     </div>
 
                     <div class="column ma">
-                        <h2 class="main-subtitle">2. Science</h2>
-                        <h3 class="welcome-subtitle mb1em">Our data is open and accessible. Anyone can download our data and use it, for any purpose.</h3>
+                        <h2 class="main-subtitle">2. {{ $t('home.welcome.science') }}</h2>
+                        <h3 class="welcome-subtitle mb1em">{{ $t('home.welcome.our-data-open-source') }}.</h3>
                     </div>
                 </div>
 
@@ -65,15 +65,15 @@
                     </div>
 
                     <div class="column ma">
-                        <h2 class="main-subtitle">3. Community</h2>
-                        <h3 class="welcome-subtitle">Only by working together can we create a huge shift in how we understand and respond to pollution.</h3>
+                        <h2 class="main-subtitle">3. {{ $t('home.welcome.community') }}</h2>
+                        <h3 class="welcome-subtitle">{{ $t('home.welcome.must-work-together') }}.</h3>
                     </div>
                 </div>
             </div>
 
             <!-- How does it work -->
             <div>
-                <h1 class="main-title">How does it work?</h1>
+                <h1 class="main-title">{{ $t('home.welcome.how-does-it-work') }}?</h1>
 
                 <div class="columns welcome-mb">
                     <div class="column is-one-quarter icon-center">
@@ -81,8 +81,8 @@
                     </div>
 
                     <div class="column ma">
-                        <h2 class="main-subtitle">1. Take a photo</h2>
-                        <h3 class="welcome-subtitle mb1em">Your device can capture valuable information about the location, time, object, material and brand.</h3>
+                        <h2 class="main-subtitle">1. {{ $t('home.welcome.how-does-it-work') }}</h2>
+                        <h3 class="welcome-subtitle mb1em">{{ $t('home.welcome.device-captures-info') }}</h3>
                     </div>
                 </div>
 
@@ -92,8 +92,8 @@
                     </div>
 
                     <div class="column ma">
-                        <h2 class="main-subtitle">2. Tag the litter</h2>
-                        <h3 class="welcome-subtitle mb1em">Just tag what litter you see in the photo. You can tag if the litter has been picked up or if it's still there!</h3>
+                        <h2 class="main-subtitle">2. {{ $t('home.welcome.device-captures-info') }}</h2>
+                        <h3 class="welcome-subtitle mb1em">{{ $t('home.welcome.tag-litter-you-see') }}!</h3>
                     </div>
                 </div>
 
@@ -103,8 +103,8 @@
                     </div>
 
                     <div class="column ma">
-                        <h2 class="main-subtitle">3. Share your results</h2>
-                        <h3 class="welcome-subtitle">Share the maps or download our data. Let's show everyone how badly polluted the world really is!</h3>
+                        <h2 class="main-subtitle">3. {{ $t('home.welcome.share-results') }}</h2>
+                        <h3 class="welcome-subtitle">{{ $t('home.welcome.share') }}!</h3>
                     </div>
                 </div>
             </div>
