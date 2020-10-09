@@ -51,4 +51,21 @@ export const actions = {
                 console.log('error.next_image', error);
             });
     },
+     /**
+     * Select page from pagination
+     */
+    async SELECT_IMAGE (context, pageSelected)
+    {
+        //get env url?
+        const url = `http://olm.test/photos?page=${pageSelected}`;
+        await axios.get(url)
+            .then(response => {
+                console.log('select_img', response);
+                context.commit('clearTags');
+                context.commit('photosForTagging', response.data);
+            })
+            .catch(error => {
+                console.log('res', error);
+            });
+    },
 }

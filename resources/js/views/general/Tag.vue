@@ -78,30 +78,37 @@
                         </div>
                     </div>
                     <br>
-
                     <!-- Previous, Next Image-->
                     <div class="column" style="text-align: center;">
                         <div class="has-text-centered mt3em">
                             <a
-                                v-show="show_current_page"
-                                class="pagination-previous"
+                                :disabled="current_page <= 1"
+                                class="pagination-previous has-background-link has-text-white"
                                 @click="previousImage"
                             >{{ $t('tags.previous') }}</a>
                             <a
-                                v-show="show_next_page"
-                                class="pagination-next"
+                                :disabled="current_page >= remaining"
+                                class="pagination-next has-background-link has-text-white"
                                 @click="nextImage"
                             >{{ $t('tags.next') }}</a>
                         </div>
-                    </div>
+                    </div>   
                     <!-- Pagination -->
-                    <nav class="pagination" role="navigation" aria-label="pagination">
-                    <ul class="pagination-list">
-                        <li  v-for="i in remaining" :key="i">
-                            <a :class="(i === current_page ? 'pagination-link is-current': 'pagination-link')" :aria-label="page + current_page" aria-current="page"> {{ i }}</a>
-                        </li>   
-                    </ul>
-                    </nav>
+                    <div class="column">
+                        <nav class="pagination is-centered" role="navigation" aria-label="pagination">
+                        <ul class="pagination-list">
+                            <li  v-for="i in remaining" :key="i">
+                                <a 
+                                    :class="(i === current_page ? 'pagination-link is-current': 'pagination-link')" 
+                                    :aria-label="'page' + current_page" 
+                                    :aria-current="current_page"
+                                    @click="goToPage(i)"
+                                > {{ i }}    
+                                </a>
+                            </li>   
+                        </ul>
+                        </nav>
+                    </div>
                 </div>
             </div>
         </div>
@@ -218,6 +225,13 @@ export default {
         {
             this.$store.dispatch('PREVIOUS_IMAGE');
         },
+        /**
+         * Load a specific page
+         */
+        goToPage (i)
+        {
+            this.$store.dispatch('SELECT_IMAGE', i);
+        }
     }
 }
 </script>
