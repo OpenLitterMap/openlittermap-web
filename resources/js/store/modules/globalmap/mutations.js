@@ -2,16 +2,25 @@ import { init } from './init'
 
 export const mutations = {
 
+    /**
+     *
+     */
 	closeDatesButton (state)
     {
 		state.datesOpen = false;
 	},
 
+    /**
+     *
+     */
 	closeLangsButton (state)
     {
 		state.langsOpen = false;
 	},
 
+    /**
+     * When changing dates
+     */
 	globalLoading (state, payload)
     {
 		state.loading = payload;
@@ -25,11 +34,17 @@ export const mutations = {
         Object.assign(state, init);
     },
 
+    /**
+     *
+     */
 	toggleLangsButton (state)
     {
 		state.langsOpen = ! state.langsOpen;
 	},
 
+    /**
+     *
+     */
 	toggleGlobalDates (state)
     {
 		state.datesOpen = ! state.datesOpen;
@@ -40,9 +55,12 @@ export const mutations = {
 	// 	state.currentDate = payload;
 	// },
 
+    /**
+     *
+     */
 	updateGlobalData (state, payload)
     {
-		state.globalMapData = payload;
+		state.geojson = payload;
 	}
 
 };

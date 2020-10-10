@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1608b7f585423564e7ea98f3f9bfe1bd",
+    "content-hash": "5728605c0ac7ed115fa5eb8ee9ba1abc",
     "packages": [
         {
             "name": "asm89/stack-cors",
@@ -8410,6 +8410,52 @@
                 }
             ],
             "time": "2020-07-22T23:32:04+00:00"
+        },
+        {
+            "name": "youthage/laravel-geohash",
+            "version": "3.1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/heyhip/Laravel-GeoHash.git",
+                "reference": "e07a6e0b0ad8750ddadeeac797e33897cedac5c8"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/heyhip/Laravel-GeoHash/zipball/e07a6e0b0ad8750ddadeeac797e33897cedac5c8",
+                "reference": "e07a6e0b0ad8750ddadeeac797e33897cedac5c8",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.6"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Geohash\\GeoHashProvider"
+                    ],
+                    "aliases": {
+                        "GeoHash": "Geohash\\GeoHashFacade"
+                    }
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Geohash\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "YouthAge",
+                    "email": "myouthage@gmail.com"
+                }
+            ],
+            "description": "LBS地理位置距离计算方法geohash，将一个经纬度信息，转换成一个可以排序，可以比较的字符串编码，用于高效搜索",
+            "time": "2019-12-24T02:37:49+00:00"
         }
     ],
     "packages-dev": [

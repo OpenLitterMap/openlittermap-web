@@ -71,6 +71,7 @@ Route::post('donate', 'DonateController@submit');
 // Get different global data
 Route::get('global', 'HomeController@index');
 Route::get('global-data', 'MapController@getGlobalData');
+Route::get('/global/bbox', 'GlobalMapController@clusters');
 
 /** Auth Routes */
 // Get currently auth user when logged in
