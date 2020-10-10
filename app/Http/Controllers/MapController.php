@@ -450,7 +450,7 @@ class MapController extends Controller
    			'features'  => array()
 		);
 
-		foreach($photoData as $c)
+		foreach ($photoData as $c)
 		{
 			$feature = array(
 				'type' => 'Feature',

@@ -4,7 +4,7 @@
 		  	<l-tile-layer :url="url" :attribution="attribution" />
 
 			<v-marker-cluster>
-				<l-marker v-for="c in this.$store.state.globalmap.globalMapData" :lat-lng="c.latlng" :key="c.id">
+				<l-marker v-for="c in this.$store.state.globalmap.geojson" :lat-lng="c.latlng" :key="c.id">
 					<l-popup :content="c.text" />
 				</l-marker>
 			</v-marker-cluster>
@@ -70,6 +70,15 @@ export default {
 		};
 	},
 	methods: {
+
+        /**
+         * Close dates and language dropdowns
+         */
+        closeButtons ()
+        {
+            this.$store.commit('closeDatesButton');
+            this.$store.commit('closeLangsButton');
+        },
 
 	}
 }
