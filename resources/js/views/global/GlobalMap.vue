@@ -26,34 +26,10 @@ import GlobalInfo from '../../components/global/GlobalInfo'
 import L from 'leaflet' // make sure to load leaflet before marker-cluster
 import 'leaflet.markercluster'
 
-// import Supercluster from 'supercluster'
 import moment from 'moment'
 
 var map;
 var clusters = L.markerClusterGroup(); // .addTo(map);
-
-// var index;
-// var markers;
-//
-// function createClusterIcon (feature, latlng)
-// {
-//     console.log({ feature })
-//     if (! feature.properties.cluster) return L.marker(latlng);
-//
-//     let count = feature.properties.point_count;
-//     let size = count < 100 ? 'small' : count < 1000 ? 'medium' : 'large';
-//
-//     let icon = L.divIcon({
-//         html: '<div class="mi"><span class="ma">' + feature.properties.point_count_abbreviated + '</span></div>',
-//         // className: 'marker-cluster marker-et-' + size,
-//         className: 'marker-cluster-' + size,
-//         iconSize: L.point(40, 40)
-//     });
-//
-//     return L.marker(latlng, {
-//         icon: icon
-//     });
-// }
 
 /**
  * Get data within the bounding box
@@ -67,38 +43,52 @@ async function update ()
     let bbox = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()];
     let zoom = map.getZoom();
 
-    await axios.get('/global/bbox', {
-        params: {
-            top: bbox[3], // top
-            bottom: bbox[1], // bottom
-            left: bbox[0], // west
-            right: bbox[2], // east
-            zoom
-        }
-    })
-    .then(response => {
-        console.log('update_global_map', response.data);
+    // At zoom 17, we want to get the geojson object with individual points
+    console.log({ zoom });
 
-        clusters.clearLayers();
-
-        // Loop over points
-        response.data.geojson.features.map(i => {
-            let a = '';
-            // Default global marker
-            L.marker([i.properties.lat, i.properties.lon]).addTo(clusters).bindPopup(a + ' '
-                + '<p>' + i.properties.result_string + '</p>'
-                + '<p>Taken on ' + moment(i.properties.datetime).format('LLL') + '</p>'
-                + '<img style="height: 100px;" src="' + i.properties.filename + '"/>'
-                + '<p>Lat, Lon: ' + i.properties.lat + ', ' + i.properties.lon + '</p>'
-            );
-        });
-
-        // clusters.addLayers(response.data.geojson);
-
-    })
-    .catch(error => {
-        console.log('error.update_global_map', error);
-    });
+    //  backend clustering
+    // await axios.get('/global/clusters', {
+    //     params: {
+    //         top: bbox[3], // top
+    //         bottom: bbox[1], // bottom
+    //         left: bbox[0], // west
+    //         right: bbox[2], // east
+    //         zoom
+    //     }
+    // })
+    // .then(async response => {
+    //     console.log('update_global_map', response.data);
+    //
+    //     clusters.clearLayers();
+    //
+    //     clusters = L.markerClusterGroup({
+    //         maxClusterRadius: 120,
+    //         iconCreateFunction: function (cluster) {
+    //
+    //             let markers = cluster.getAllChildMarkers();
+    //
+    //             let n = markers[0].options.title;
+    //
+    //             return L.divIcon({ html: n, className: 'mycluster', iconSize: L.point(40, 40) });
+    //         },
+    //         //Disable all of the defaults:
+    //         spiderfyOnMaxZoom: false, showCoverageOnHover: false, zoomToBoundsOnClick: false
+    //     });
+    //
+    //     // don't know why this is async, but empty hulls are throwing errors without await
+    //     for await (let i of response.data.hulls)
+    //     {
+    //         if (i.hasOwnProperty('lat'))
+    //         {
+    //             L.marker([i.lat, i.lon], {title: i.count}).addTo(clusters);
+    //         }
+    //     }
+    //
+    //     map.addLayer(clusters);
+    // })
+    // .catch(error => {
+    //     console.log('error.update_global_map', error);
+    // });
 
 }
 
@@ -131,24 +121,9 @@ export default {
 
         map.attributionControl.addAttribution('Litter data &copy OpenLitterMap & Contributors ' + year);
 
-        // Create groups
+        // Later - Create groups
         // let artGroup = new L.LayerGroup();
 
-        // Create clusters object
-        // index = new Supercluster({
-        //     radius: 40,
-        //     maxZoom: 16
-        // });
-        //
-        // index.load(this.geojson.features);
-        // // index.getClusters([-180, -85, 180, 85], 2);
-        // console.log({ index });
-        //
-        // // Empty Layer Group that will receive the clusters data on the fly.
-        // markers = L.geoJSON(null, {
-        //     pointToLayer: createClusterIcon
-        // }).addTo(map);
-        //
         // Update the displayed clusters after user pan / zoom.
         map.on('moveend', function () {
             update();
@@ -197,14 +172,6 @@ export default {
         {
             this.$store.commit('closeDatesButton');
             this.$store.commit('closeLangsButton');
-        },
-
-        /**
-         *
-         */
-        vue_update ()
-        {
-            console.log('ASDASD');
         }
     }
 }
@@ -224,6 +191,12 @@ export default {
         display: flex;
         justify-content: center;
         border-radius: 20px;
+    }
+
+    .mycluster {
+        background-color: green !important;
+        height: 2em !important;
+        width: 2em !important;
     }
 
 </style>
