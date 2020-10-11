@@ -101,7 +101,7 @@ class GlobalMapController extends Controller
     }
 
     /**
-     * Query database by geohash
+     * Query database spatially by geohash
      */
     public function clusters ()
     {
@@ -109,39 +109,61 @@ class GlobalMapController extends Controller
         $center_lat = (request()->top + request()->bottom) / 2;
         $center_lon = (request()->left + request()->right) / 2;
 
-        // Get the center of the bounding box, as a geohash
+        // zoom level will determine what level of geohash precision to use
         $precision = $this->zoomToGeoHashPrecision[request()->zoom];
-        // \Log::info(['precision', $precision]);
 
+        // Get the center of the bounding box, as a geohash
         $center_geohash = GeoHash::encode($center_lat, $center_lon, $precision); // precision 0 will return the full geohash
         // \Log::info(['center_geohash', $center_geohash]);
 
         $geos = [];
-        $ns = $this->neighbors($center_geohash); // get the neighbour geohashes from our center geohash
-        foreach ($ns as $n) array_push($geos, $n);
+
+        if (request()->zoom > 3)
+        {
+            // get the neighbour geohashes from our center geohash
+            $ns = $this->neighbors($center_geohash);
+            foreach ($ns as $n) array_push($geos, $n);
+        }
+
+        // global keys
+        else $geos = ['c', 'f', 'g', 'u', 'v', 'y', 'z', '9', 'd', 'e', 's', 't', 'w', 'x', '6', 'k', 'q', 'r'];
         \Log::info(['geos', $geos]);
 
-        $photos = Photo::select('lat', 'lon')
-            ->where(function ($q) use ($geos)
-            {
-                 foreach ($geos as $geo)
-                 {
-                     $q->orWhere([
-                         'verified' => 2,
-                         ['geohash', 'like', $geo . '%'] // starts with
-                     ]);
-                 }
-            })
-            ->get()
-            ->toArray();
+        $hulls = [];
+        foreach ($geos as $geo)
+        {
+            $photos = Photo::select('lat', 'lon')
+                ->where([
+                    'verified' => 2,
+                    ['geohash', 'like', $geo . '%'] // starts with
+                ])
+                ->get()
+                ->toArray();
 
-        $hull = $this->convexHull($photos)
+            $hull = $this->convexHull($photos); // returns the centroid of the hull
 
+            array_push($hulls, $hull);
+        }
+
+//        When zoom is 17+, we want to get individual coordinates and show points
+//        $photos = Photo::select('lat', 'lon')
+//            ->where(function ($q) use ($geos)
+//            {
+//                 foreach ($geos as $geo)
+//                 {
+//                     $q->orWhere([
+//                         'verified' => 2,
+//                         ['geohash', 'like', $geo . '%'] // starts with
+//                     ]);
+//                 }
+//            })
+//            ->get()
+//
 //        $geojson = [
 //            'type'      => 'FeatureCollection',
 //            'features'  => []
 //        ];
-
+//
 //        foreach ($photos as $photo)
 //        {
 //            $feature = [
@@ -165,14 +187,15 @@ class GlobalMapController extends Controller
 //
 //        json_encode($geojson, JSON_NUMERIC_CHECK);
 
-        return ['geojson' => $hull];
+        return ['hulls' => $hulls];
     }
 
     private function convexHull ($points)
     {
         /* Ensure point doesn't rotate the incorrect direction as we process the hull halves */
         $cross = function($o, $a, $b) {
-            return ($a[0] - $o[0]) * ($b[1] - $o[1]) - ($a[1] - $o[1]) * ($b[0] - $o[0]);
+             // return ($a[0] - $o[0]) * ($b[1] - $o[1]) - ($a[1] - $o[1]) * ($b[0] - $o[0]);
+             return ($a['lon'] - $o['lon']) * ($b['lat'] - $o['lat']) - ($a['lat'] - $o['lat']) * ($b['lon'] - $o['lon']);
         };
 
         $pointCount = count($points);
@@ -180,13 +203,13 @@ class GlobalMapController extends Controller
 
         if ($pointCount > 1)
         {
-
             $n = $pointCount;
             $k = 0;
             $h = array();
 
             /* Build lower portion of hull */
-            for ($i = 0; $i < $n; ++$i) {
+            for ($i = 0; $i < $n; ++$i)
+            {
                 while ($k >= 2 && $cross($h[$k - 2], $h[$k - 1], $points[$i]) <= 0)
                     $k--;
                 $h[$k++] = $points[$i];
@@ -207,7 +230,25 @@ class GlobalMapController extends Controller
                 $h = array_splice($h, 0, $k);
             }
 
-            return $h;
+            // We now have the outer vertices of the convex hull $h
+            // We want to average them to get the center
+            $lat = 0.0;
+            $lon = 0.0;
+            $count = 0;
+
+            foreach ($h as $v)
+            {
+                $lat += $v['lat'];
+                $lon += $v['lon'];
+                $count++;
+            }
+
+            $lat = $lat / $count;
+            $lon = $lon / $count;
+
+            return ['lat' => $lat, 'lon' => $lon, 'count' => $n];
+
+            // return $h; -> all vertices for the hull
         }
 
         else if ($pointCount <= 1) return $points;
