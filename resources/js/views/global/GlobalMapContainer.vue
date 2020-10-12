@@ -2,24 +2,25 @@
     <div class="global-map-container">
         <loading v-if="loading" :active.sync="loading" :is-full-page="true" />
 
-        <global-map v-else />
+        <supercluster v-else />
     </div>
 </template>
 
 <script>
 import GlobalMap from './GlobalMap'
 // import OldGlobalMap from './OldGlobalMap'
-import Mapbox from "./Mapbox";
+// import Mapbox from "./Mapbox";
+import Supercluster from './Supercluster'
 
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
 
 export default {
     name: 'GlobalMapContainer',
-    components: { Loading, GlobalMap, Mapbox },
+    components: { Loading, GlobalMap, Supercluster },
     created ()
     {
-        this.$store.dispatch('GLOBAL_MAP_DATA', 'one-week');
+        this.$store.dispatch('GLOBAL_MAP_DATA', 'one-year'); // today, one-week
     },
     computed: {
 

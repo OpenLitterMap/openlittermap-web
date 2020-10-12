@@ -47,48 +47,48 @@ async function update ()
     console.log({ zoom });
 
     //  backend clustering
-    // await axios.get('/global/clusters', {
-    //     params: {
-    //         top: bbox[3], // top
-    //         bottom: bbox[1], // bottom
-    //         left: bbox[0], // west
-    //         right: bbox[2], // east
-    //         zoom
-    //     }
-    // })
-    // .then(async response => {
-    //     console.log('update_global_map', response.data);
-    //
-    //     clusters.clearLayers();
-    //
-    //     clusters = L.markerClusterGroup({
-    //         maxClusterRadius: 120,
-    //         iconCreateFunction: function (cluster) {
-    //
-    //             let markers = cluster.getAllChildMarkers();
-    //
-    //             let n = markers[0].options.title;
-    //
-    //             return L.divIcon({ html: n, className: 'mycluster', iconSize: L.point(40, 40) });
-    //         },
-    //         //Disable all of the defaults:
-    //         spiderfyOnMaxZoom: false, showCoverageOnHover: false, zoomToBoundsOnClick: false
-    //     });
-    //
-    //     // don't know why this is async, but empty hulls are throwing errors without await
-    //     for await (let i of response.data.hulls)
-    //     {
-    //         if (i.hasOwnProperty('lat'))
-    //         {
-    //             L.marker([i.lat, i.lon], {title: i.count}).addTo(clusters);
-    //         }
-    //     }
-    //
-    //     map.addLayer(clusters);
-    // })
-    // .catch(error => {
-    //     console.log('error.update_global_map', error);
-    // });
+    await axios.get('/global/clusters', {
+        params: {
+            top: bbox[3], // top
+            bottom: bbox[1], // bottom
+            left: bbox[0], // west
+            right: bbox[2], // east
+            zoom
+        }
+    })
+    .then(async response => {
+        console.log('update_global_map', response.data);
+
+        clusters.clearLayers();
+
+        clusters = L.markerClusterGroup({
+            maxClusterRadius: 120,
+            iconCreateFunction: function (cluster) {
+
+                let markers = cluster.getAllChildMarkers();
+
+                let n = markers[0].options.title;
+
+                return L.divIcon({ html: n, className: 'mycluster', iconSize: L.point(40, 40) });
+            },
+            //Disable all of the defaults:
+            spiderfyOnMaxZoom: false, showCoverageOnHover: false, zoomToBoundsOnClick: false
+        });
+
+        // don't know why this is async, but empty hulls are throwing errors without await
+        for await (let i of response.data.hulls)
+        {
+            if (i.hasOwnProperty('lat'))
+            {
+                L.marker([i.lat, i.lon], {title: i.count}).addTo(clusters);
+            }
+        }
+
+        map.addLayer(clusters);
+    })
+    .catch(error => {
+        console.log('error.update_global_map', error);
+    });
 
 }
 
