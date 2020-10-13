@@ -57,7 +57,7 @@ export const actions = {
     async SELECT_IMAGE (context, pageSelected)
     {
         //get env url?
-        const url = `http://olm.test/photos?page=${pageSelected}`;
+        const url = `/photos?page=${pageSelected}`;
         await axios.get(url)
             .then(response => {
                 console.log('select_img', response);

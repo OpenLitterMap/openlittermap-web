@@ -155,6 +155,9 @@ export default {
         {
             return this.$store.state.photos.photos.data;
         },
+         /**
+         * Get the current page the user in on
+         */
         current_page () {
             return this.$store.state.photos.photos.current_page;
         },
