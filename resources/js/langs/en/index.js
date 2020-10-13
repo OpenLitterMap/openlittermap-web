@@ -1,4 +1,3 @@
-import about from './about.json'
 import common from './common.json'
 import creditcard from './creditcard.json'
 import litter from './litter.json'
@@ -14,7 +13,6 @@ import nav from './nav.json'
 
 
 export const en = {
-    about,
     common,
     creditcard,
     home,
