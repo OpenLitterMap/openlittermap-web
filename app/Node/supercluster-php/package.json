@@ -1,0 +1,19 @@
+{
+  "name": "supercluster-php",
+  "version": "1.0.0",
+  "description": "Run supercluster from php",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "http-server"
+  },
+  "author": "OpenLitterMap",
+  "license": "ISC",
+  "dependencies": {
+    "fs": "0.0.1-security",
+    "supercluster": "^7.1.0"
+  },
+  "devDependencies": {
+    "http-server": "^0.12.3"
+  }
+}

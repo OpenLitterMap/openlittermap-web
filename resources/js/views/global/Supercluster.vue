@@ -23,10 +23,8 @@ import LiveEvents from '../../components/LiveEvents'
 import GlobalInfo from '../../components/global/GlobalInfo'
 
 import L from 'leaflet' // make sure to load leaflet before marker-cluster
-import Supercluster from 'supercluster'
 
 var map;
-var index;
 var markers;
 
 const single_icon = L.icon({
@@ -53,17 +51,29 @@ function createClusterIcon (feature, latlng)
 /**
  * The user dragged or zoomed the map
  */
-function update ()
+async function update ()
 {
     const bounds = map.getBounds();
 
     let bbox = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()];
     let zoom = map.getZoom();
 
-    let clusters = index.getClusters(bbox, zoom)
+    console.log({ zoom });
 
-    markers.clearLayers();
-    markers.addData(clusters);
+    await axios.get('clusters', {
+        params: {
+            zoom, bbox
+        }
+    })
+    .then(response => {
+        console.log('get_clusters.update', response);
+
+        markers.clearLayers();
+        markers.addData(response.data);
+    })
+    .catch(error => {
+        console.error('get_clusters.update', error);
+    });
 }
 
 export default {
@@ -100,18 +110,22 @@ export default {
             pointToLayer: createClusterIcon
         }).addTo(map);
 
-        // Create clusters object
-        index = new Supercluster({
-            log: true,
-            radius: 40,
-            maxZoom: 16
-        });
+        // // Create clusters object
+        // index = new Supercluster({
+        //     log: true,
+        //     radius: 40,
+        //     maxZoom: 16
+        // });
+        //
+        // console.log('loading...');
+        //
+        // index.load(this.$store.state.globalmap.geojson.features);
+        //
+        // let clusters = index.getClusters([-180, -85, 180, 85], 2);
+        //
+        // markers.addData(clusters);
 
-        index.load(this.$store.state.globalmap.geojson.features);
-
-        let clusters = index.getClusters([-180, -85, 180, 85], 2);
-
-        markers.addData(clusters);
+        markers.addData(this.$store.state.globalmap.geojson.features);
 
         map.on('moveend', function () {
             update();

@@ -3,6 +3,29 @@ import moment from 'moment';
 export const actions = {
 
     /**
+     * Get clusters for the global map
+     */
+    async GET_CLUSTERS (context, payload)
+    {
+        await axios.get('clusters', {
+            params: {
+                zoom: payload,
+                bbox: null
+            }
+        })
+        .then(response => {
+            console.log('get_clusters', response);
+
+            context.commit('updateGlobalData', response.data);
+
+            context.commit('globalLoading', false);
+        })
+        .catch(error => {
+            console.error('get_clusters', error);
+        });
+    },
+
+    /**
      * Get data for the global map
      */
     async GLOBAL_MAP_DATA (context, payload)
