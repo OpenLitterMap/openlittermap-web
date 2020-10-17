@@ -72,6 +72,7 @@ Route::post('donate', 'DonateController@submit');
 Route::get('global', 'HomeController@index');
 Route::get('global-data', 'MapController@getGlobalData');
 Route::get('/global/clusters', 'GlobalMapController@clusters');
+Route::get('clusters', 'ClusterController@index');
 
 /** Auth Routes */
 // Get currently auth user when logged in

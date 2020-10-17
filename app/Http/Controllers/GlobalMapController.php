@@ -127,7 +127,7 @@ class GlobalMapController extends Controller
 
         // global keys
         else $geos = ['c', 'f', 'g', 'u', 'v', 'y', 'z', '9', 'd', 'e', 's', 't', 'w', 'x', '6', 'k', 'q', 'r'];
-        \Log::info(['geos', $geos]);
+//        \Log::info(['geos', $geos]);
 
         $hulls = [];
         foreach ($geos as $geo)

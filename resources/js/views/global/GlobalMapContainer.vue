@@ -18,12 +18,12 @@ import 'vue-loading-overlay/dist/vue-loading.css'
 export default {
     name: 'GlobalMapContainer',
     components: { Loading, GlobalMap, Supercluster },
-    created ()
+    async created ()
     {
-        this.$store.dispatch('GLOBAL_MAP_DATA', 'one-year'); // today, one-week
+        // this.$store.dispatch('GLOBAL_MAP_DATA', 'one-month'); // today, one-week
+        await this.$store.dispatch('GET_CLUSTERS', 2);
     },
     computed: {
-
         /**
          * Show loading when changing dates
          */

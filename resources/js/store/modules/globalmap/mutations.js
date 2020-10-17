@@ -23,6 +23,7 @@ export const mutations = {
      */
 	globalLoading (state, payload)
     {
+        console.log('globalLoading', payload);
 		state.loading = payload;
 	},
 
