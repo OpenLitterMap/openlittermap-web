@@ -73,6 +73,7 @@ Route::get('global', 'HomeController@index');
 Route::get('global-data', 'MapController@getGlobalData');
 Route::get('/global/clusters', 'GlobalMapController@clusters');
 Route::get('clusters', 'ClusterController@index');
+Route::get('global-points', 'GlobalMapController@index');
 
 /** Auth Routes */
 // Get currently auth user when logged in
