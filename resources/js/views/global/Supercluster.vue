@@ -58,9 +58,9 @@ function createClusterIcon (feature, latlng)
  */
 function onEachFeature (feature, layer)
 {
-    if (feature.properties.cluster) console.log(layer);
+    // todo - on cluster, zoom on click
 
-    else
+    if (! feature.properties.cluster)
     {
         layer.bindPopup(
             '<p class="mb5p">' + feature.properties.result_string + ' </p>'
