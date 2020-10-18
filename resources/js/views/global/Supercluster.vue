@@ -26,6 +26,7 @@ import L from 'leaflet' // make sure to load leaflet before marker-cluster
 
 var map;
 var markers;
+var prevZoom = 2;
 
 const single_icon = L.icon({
     iconUrl: './images/vendor/leaflet/dist/dot.png',
@@ -55,25 +56,52 @@ async function update ()
 {
     const bounds = map.getBounds();
 
-    let bbox = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()];
+    let bbox = {'left': bounds.getWest(), 'bottom': bounds.getSouth(), 'right': bounds.getEast(), 'top': bounds.getNorth()};
     let zoom = map.getZoom();
 
     console.log({ zoom });
 
-    await axios.get('clusters', {
-        params: {
-            zoom, bbox
-        }
-    })
-    .then(response => {
-        console.log('get_clusters.update', response);
+    // We don't want to make a request at zoom level 2-5 if the user is just panning
+    // At these levels, we just load all global data for now
+    if (zoom === 2 && zoom === prevZoom) return;
+    if (zoom === 3 && zoom === prevZoom) return;
+    if (zoom === 4 && zoom === prevZoom) return;
+    if (zoom === 5 && zoom === prevZoom) return;
 
-        markers.clearLayers();
-        markers.addData(response.data);
-    })
-    .catch(error => {
-        console.error('get_clusters.update', error);
-    });
+    prevZoom = zoom; // hold previous zoom
+
+    // If the zoom is less than 17, we want to load cluster data
+    if (zoom < 17)
+    {
+        await axios.get('clusters', {
+            params: {zoom, bbox}
+        })
+            .then(response => {
+                console.log('get_clusters.update', response);
+
+                markers.clearLayers();
+                markers.addData(response.data);
+            })
+            .catch(error => {
+                console.error('get_clusters.update', error);
+            });
+    }
+
+    else
+    {
+        axios.get('global-points', {
+            params: { zoom, bbox }
+        })
+        .then(response => {
+            console.log('get_global_points', response);
+
+            markers.clearLayers();
+            markers.addData(response.data);
+        })
+        .catch(error => {
+            console.error('get_global_points', error);
+        });
+    }
 }
 
 export default {
