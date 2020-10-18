@@ -5,24 +5,25 @@
         <!-- Change language -->
         <Languages />
 
-        <!-- Load / change data -->
-        <!-- First request made here -->
-        <global-dates />
+        <!-- Change data -->
+        <!-- <global-dates />-->
 
         <!-- Call to Action -->
         <global-info />
 
         <!-- Live Events -->
         <live-events />
-    </div></template>
+    </div>
+</template>
 
 <script>
 import Languages from '../../components/global/Languages'
-import GlobalDates from '../../components/global/GlobalDates'
+// import GlobalDates from '../../components/global/GlobalDates'
 import LiveEvents from '../../components/LiveEvents'
 import GlobalInfo from '../../components/global/GlobalInfo'
 
 import L from 'leaflet' // make sure to load leaflet before marker-cluster
+import moment from 'moment'
 
 var map;
 var markers;
@@ -33,6 +34,9 @@ const single_icon = L.icon({
     iconSize: [10, 10]
 });
 
+/**
+ * Create the cluster or point icon to display for each feature
+ */
 function createClusterIcon (feature, latlng)
 {
     if (! feature.properties.cluster) return L.marker(latlng, { icon: single_icon });
@@ -50,6 +54,23 @@ function createClusterIcon (feature, latlng)
 }
 
 /**
+ * On each feature, perform this action
+ */
+function onEachFeature (feature, layer)
+{
+    if (feature.properties.cluster) console.log(layer);
+
+    else
+    {
+        layer.bindPopup(
+            '<p class="mb5p">' + feature.properties.result_string + ' </p>'
+            + '<img src= "' + feature.properties.filename + '" class="mw100" />'
+            + '<p>Taken on ' + moment(feature.properties.datetime).format('LLL') +'</p>'
+        );
+    }
+}
+
+/**
  * The user dragged or zoomed the map
  */
 async function update ()
@@ -61,7 +82,7 @@ async function update ()
 
     console.log({ zoom });
 
-    // We don't want to make a request at zoom level 2-5 if the user is just panning
+    // We don't want to make a request at zoom level 2-5 if the user is just panning the map.
     // At these levels, we just load all global data for now
     if (zoom === 2 && zoom === prevZoom) return;
     if (zoom === 3 && zoom === prevZoom) return;
@@ -74,22 +95,22 @@ async function update ()
     if (zoom < 17)
     {
         await axios.get('clusters', {
-            params: {zoom, bbox}
+            params: { zoom, bbox }
         })
-            .then(response => {
-                console.log('get_clusters.update', response);
+        .then(response => {
+            console.log('get_clusters.update', response);
 
-                markers.clearLayers();
-                markers.addData(response.data);
-            })
-            .catch(error => {
-                console.error('get_clusters.update', error);
-            });
+            markers.clearLayers();
+            markers.addData(response.data);
+        })
+        .catch(error => {
+            console.error('get_clusters.update', error);
+        });
     }
 
     else
     {
-        axios.get('global-points', {
+        await axios.get('global-points', {
             params: { zoom, bbox }
         })
         .then(response => {
@@ -108,7 +129,7 @@ export default {
     name: 'Supercluster',
     components: {
         Languages,
-        GlobalDates,
+        // GlobalDates,
         LiveEvents,
         GlobalInfo
     },
@@ -131,27 +152,13 @@ export default {
             minZoom: 2
         }).addTo(map);
 
-        map.attributionControl.addAttribution('Litter data &copy OpenLitterMap & Contributors ' + year);
+        map.attributionControl.addAttribution('Litter data &copy OpenLitterMap & Contributors ' + year + ' Clustering @ MapBox');
 
         // Empty Layer Group that will receive the clusters data on the fly.
         markers = L.geoJSON(null, {
-            pointToLayer: createClusterIcon
+            pointToLayer: createClusterIcon,
+            onEachFeature: onEachFeature
         }).addTo(map);
-
-        // // Create clusters object
-        // index = new Supercluster({
-        //     log: true,
-        //     radius: 40,
-        //     maxZoom: 16
-        // });
-        //
-        // console.log('loading...');
-        //
-        // index.load(this.$store.state.globalmap.geojson.features);
-        //
-        // let clusters = index.getClusters([-180, -85, 180, 85], 2);
-        //
-        // markers.addData(clusters);
 
         markers.addData(this.$store.state.globalmap.geojson.features);
 
@@ -186,6 +193,14 @@ export default {
 
     .leaflet-marker-icon {
         border-radius: 20px;
+    }
+
+    .mb5p {
+        margin-bottom: 5px;
+    }
+
+    .mw100 {
+        max-width: 100%;
     }
 
     .mi {

@@ -7,17 +7,13 @@
 </template>
 
 <script>
-import GlobalMap from './GlobalMap'
-// import OldGlobalMap from './OldGlobalMap'
-// import Mapbox from "./Mapbox";
-import Supercluster from './Supercluster'
-
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
+import Supercluster from './Supercluster'
 
 export default {
     name: 'GlobalMapContainer',
-    components: { Loading, GlobalMap, Supercluster },
+    components: { Loading, Supercluster },
     async created ()
     {
         // this.$store.dispatch('GLOBAL_MAP_DATA', 'one-month'); // today, one-week

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use GeoHash;
 use App\Models\Location\Country;
 use App\Models\Location\State;
 use App\Models\Location\City;
@@ -110,8 +111,9 @@ class ApiPhotosController extends Controller
             'state_id' => $stateId,
             'city_id' => $cityId,
             'remaining' => $request['remaining'],
-            'platform' => 'mobile'
-		]);
+            'platform' => 'mobile',
+            'geohash' => GeoHash::encode($lat, $lon)
+        ]);
 
         event (new ImageUploaded($this->city, $this->state, $this->country, $imageName));
 

@@ -42,6 +42,7 @@ class GenerateClusters extends Command
      * Todo - Append to file instead of re-writing it
      * Todo - Split file into multiple files
      * Todo - Find a way to update clusters instead of deleting all and re-writing all every time..
+     * Todo - Cluster data by "today", "one-week", "one-month", "one-year"
      */
     public function handle()
     {
@@ -114,5 +115,7 @@ class GenerateClusters extends Command
                 }
             }
         }
+
+        // Remove "compiling data" from global map
     }
 }
