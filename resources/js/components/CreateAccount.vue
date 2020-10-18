@@ -355,6 +355,11 @@ export default {
                 plan_id
             });
 
+            this.name = '';
+            this.username = '';
+            this.email = '';
+            this.password = '';
+
             this.processing = false;
         },
     }

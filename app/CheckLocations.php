@@ -17,6 +17,9 @@ trait CheckLocations
     protected $city;
     protected $suburb;
 
+    /**
+     * Check addressArray for Country value
+     */
     protected function checkCountry ($addressArray)
     {
         if ($this->country) return $this->country;
@@ -37,16 +40,19 @@ trait CheckLocations
 
         if ($this->country != 'error_country' && $this->countryCode != 'error')
         {
-            \Log::info(['check_country', $this->country]);
             if (! Redis::sismember('countries', $this->country))
             {
-                \Log::info('not_found');
                 Redis::sadd('countries', $this->country);
+
+                // Broadcast event and update countries table
                 event(new NewCountryAdded($this->country, $this->countryCode, now()));
             }
         }
     }
 
+    /**
+     * Check addressArray for State value
+     */
     protected function checkState ($addressArray)
     {
         if ($this->state) return $this->state;
@@ -88,7 +94,9 @@ trait CheckLocations
         }
     }
 
-    // check for state_district, postcode, zip
+    /**
+     * Check addressArray for state_district, postcode, zip
+     */
     protected function checkDistrict ($addressArray)
     {
         if ($this->district) return $this->district;
@@ -120,6 +128,9 @@ trait CheckLocations
         }
     }
 
+    /**
+     * Check addressArray for city, town, district value
+     */
     protected function checkCity ($addressArray)
     {
         if ($this->city) return $this->city;
@@ -195,6 +206,9 @@ trait CheckLocations
         }
     }
 
+    /**
+     * Check addressArray for suburb
+     */
     protected function checkSuburb ($addressArray)
     {
         // check for suburb, locality, quarter, borough, neighbourhood, city_block

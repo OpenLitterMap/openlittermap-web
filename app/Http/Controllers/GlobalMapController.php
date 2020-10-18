@@ -14,6 +14,8 @@ class GlobalMapController extends Controller
 
     /**
      * Get photos point data at zoom levels 16 or above
+     *
+     * Todo - Load unverified images + change image to grey/unverified when verification !== 2
      */
     public function index ()
     {

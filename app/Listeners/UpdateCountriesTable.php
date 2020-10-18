@@ -27,15 +27,9 @@ class UpdateCountriesTable
      */
     public function handle (NewCountryAdded $event)
     {
-        $new = $event->country;
-        $newCode = $event->countryCode;
-        $countries = Country::all(); // not sure why we are checking this twice!
-        if (! array_key_exists($new, $countries))
-        {
-            $country = new Country;
-            $country->country = $new;
-            $country->shortcode = $newCode;
-            $country->save();
-        }
+        Country::create([
+            'country' => $event->country,
+            'shortcode' => $event->countryCode
+        ]);
     }
 }
