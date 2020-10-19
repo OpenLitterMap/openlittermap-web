@@ -228,7 +228,7 @@ export default {
          */
         total_litter ()
         {
-            return this.$store.state.locations.total_litter;
+            return this.$store.state.locations.total_litter.toLocaleString();
         },
 
         /**
@@ -236,7 +236,7 @@ export default {
          */
         total_photos ()
         {
-            return this.$store.state.locations.total_photos;
+            return this.$store.state.locations.total_photos.toLocaleString();
         }
     }
 }
