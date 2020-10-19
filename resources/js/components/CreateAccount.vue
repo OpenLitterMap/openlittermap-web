@@ -249,8 +249,13 @@ export default {
 		 */
 		computedKey ()
 		{
-			if (process.env.NODE_ENV === "development")
+
+            return "6LciihwUAAAAADsZr0CYUoLPSMOIiwKvORj8AD9m" // production
+
+    
+            if (process.env.NODE_ENV === "development")
 			{
+                console.log('dev;')
                 return "6LcvHsIZAAAAAOG0q9-1vY3uWqu0iFvUC3tCNhID"; // olm.test
 			}
 
