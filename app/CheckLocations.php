@@ -2,10 +2,12 @@
 
 namespace App;
 
-use Log;
 use App\Events\NewCityAdded;
 use App\Events\NewStateAdded;
 use App\Events\NewCountryAdded;
+use App\Models\Location\Country;
+
+use App\Models\Location\State;
 use Illuminate\Support\Facades\Redis;
 
 trait CheckLocations
@@ -40,11 +42,15 @@ trait CheckLocations
 
         if ($this->country != 'error_country' && $this->countryCode != 'error')
         {
-            if (! Redis::sismember('countries', $this->country))
+//            if (! Redis::sismember('countries', $this->country))
+//            {
+//                Redis::sadd('countries', $this->country);
+//
+//                // Broadcast event and update countries table
+//                event(new NewCountryAdded($this->country, $this->countryCode, now()));
+//            }
+            if (! Country::where('country', $this->country)->orWhere('countrynameb')->orWhere('countrynamec')->first())
             {
-                Redis::sadd('countries', $this->country);
-
-                // Broadcast event and update countries table
                 event(new NewCountryAdded($this->country, $this->countryCode, now()));
             }
         }
@@ -85,9 +91,14 @@ trait CheckLocations
 
         if ($this->state != 'error_state')
         {
-            if(! Redis::sismember('states', $this->state))
+//            if(! Redis::sismember('states', $this->state))
+//            {
+//                Redis::sadd('states', $this->state);
+//                $this->checkCountry($addressArray);
+//                event(new NewStateAdded($this->state, $this->country, now()));
+//            }
+            if (! State::where('state', $this->state)->orWhere('statenameb', $this->state)->first())
             {
-                Redis::sadd('states', $this->state);
                 $this->checkCountry($addressArray);
                 event(new NewStateAdded($this->state, $this->country, now()));
             }
@@ -196,9 +207,15 @@ trait CheckLocations
 
         if ($this->city != 'error_city')
         {
-            if (! Redis::sismember('cities', $this->city))
+//            if (! Redis::sismember('cities', $this->city))
+//            {
+//                Redis::sadd('cities', $this->city);
+//                $this->checkCountry($addressArray);
+//                $this->checkState($addressArray);
+//                event(new NewCityAdded($this->city, $this->state, $this->country, now()));
+//            }
+            if (City::where('city', $this->city)->first())
             {
-                Redis::sadd('cities', $this->city);
                 $this->checkCountry($addressArray);
                 $this->checkState($addressArray);
                 event(new NewCityAdded($this->city, $this->state, $this->country, now()));
