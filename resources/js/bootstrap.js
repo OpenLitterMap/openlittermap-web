@@ -33,9 +33,12 @@ window.Pusher = require('pusher-js');
 //     window.Pusher.Runtime.getProtocol = function() {return 'http:';}
 // }
 
+// dev = 'a228fd841042d8837268'
+// production = 'aa1eecefcf9deb983617'
+
 window.Echo = new Echo({
     broadcaster: 'pusher',
-    key: 'a228fd841042d8837268',
+    key: 'aa1eecefcf9deb983617',
     wsHost: window.location.hostname,
     wssHost: window.location.hostname,
     wsPort: 6001, // window.APP_DEBUG ? 6001 : 6002,
