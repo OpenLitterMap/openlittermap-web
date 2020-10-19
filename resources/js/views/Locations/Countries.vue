@@ -54,7 +54,7 @@
                                 class="mb1em"
                             />
 
-<!--                            <p class="has-text-centered mb2em">{{ this.progress }}%</p>-->
+                            <p class="has-text-centered mb2em">{{ this.progress }}%</p>
                         </div>
                     </div>
 
@@ -228,7 +228,7 @@ export default {
          */
         total_litter ()
         {
-            return this.$store.state.locations.total_litter.toLocaleString();
+            return this.$store.state.locations.total_litter;
         },
 
         /**
@@ -236,7 +236,7 @@ export default {
          */
         total_photos ()
         {
-            return this.$store.state.locations.total_photos.toLocaleString();
+            return this.$store.state.locations.total_photos;
         }
     }
 }
