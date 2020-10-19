@@ -55,7 +55,7 @@ class UploadData implements ShouldQueue
             $id     = $jsonDecoded->$category->id;
             $clazz  = $jsonDecoded->$category->class;
             $col    = $jsonDecoded->$category->types->$item->col;
-            $dynamicClassName = 'App\\Categories\\'.$clazz;
+            $dynamicClassName = 'App\\Models\\Litter\\Categories\\'.$clazz;
 
             if (is_null($photo->$id)) {
                 $row = $dynamicClassName::create();
