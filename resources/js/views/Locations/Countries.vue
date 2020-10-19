@@ -154,7 +154,7 @@ export default {
             previousLevelInt: 0,
             nextLevelInt: 1,
             progressPercent: 50,
-            littercoinPaid: 100,
+            littercoinPaid: 2950,
         };
     },
     computed: {
