@@ -145,7 +145,7 @@ export default {
         const year = date.getFullYear();
 
         /** 2. Add tiles, attribution, set limits */
-        const mapLink = '<a href="http://openstreetmap.org">OpenStreetMap</a>';
+        const mapLink = '<a href="https://openstreetmap.org">OpenStreetMap</a>';
         L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: 'Map data &copy; ' + mapLink + ' & Contributors',
             maxZoom: 18,
