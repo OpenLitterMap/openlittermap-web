@@ -218,7 +218,7 @@ export default {
          */
         progress ()
         {
-            let range = this.nextXp - this.total_litter;
+            let range = this.nextXp - this.previousXp;
 
             let startVal = this.total_litter - this.previousXp;
 
