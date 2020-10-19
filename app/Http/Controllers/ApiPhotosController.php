@@ -24,6 +24,8 @@ class ApiPhotosController extends Controller
      */
     public function store (Request $request)
     {
+        \Log::info(['app.upload', $request->all()]);
+
         if ($request->has('model'))
         {
             $model = $request->model;
@@ -136,6 +138,7 @@ class ApiPhotosController extends Controller
      */
     public function dynamicUpdate (Request $request)
     {
+        \Log::info(['dynamicUpdate', $request->all()]);
 		$userId = Auth::guard('api')->user()->id;
 
         dispatch (new UploadData($request->all(), $userId));
