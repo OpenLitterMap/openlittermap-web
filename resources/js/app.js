@@ -39,9 +39,8 @@ const vm = new Vue({
     i18n,
     created ()
     {
-        console.log('App created');
         // ProgressBar
-        this.$on('percent', function(pcnt) {
+        this.$on('percent', function (pcnt) {
             this.progressPercent = pcnt;
         });
     },

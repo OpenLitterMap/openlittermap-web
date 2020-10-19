@@ -127,8 +127,8 @@ export default {
         const date = new Date();
         const year = date.getFullYear();
 
-        let mapLink = '<a href="http://openstreetmap.org">OpenStreetMap</a>';
-        L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        let mapLink = '<a href="https://openstreetmap.org">OpenStreetMap</a>';
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: 'Map data &copy; ' + mapLink + ' & Contributors',
             maxZoom: 20,
             minZoom: 1,
