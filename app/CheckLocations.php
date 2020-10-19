@@ -5,9 +5,11 @@ namespace App;
 use App\Events\NewCityAdded;
 use App\Events\NewStateAdded;
 use App\Events\NewCountryAdded;
-use App\Models\Location\Country;
 
+use App\Models\Location\Country;
 use App\Models\Location\State;
+use App\Models\Location\City;
+
 use Illuminate\Support\Facades\Redis;
 
 trait CheckLocations
