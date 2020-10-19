@@ -26,6 +26,7 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
+        Passport::routes();
         Passport::tokensExpireIn(now()->addDays(365));
         Passport::refreshTokensExpireIn(now()->addDays(365));
 
@@ -34,5 +35,6 @@ class AuthServiceProvider extends ServiceProvider
                 'seanlynch@umail.ucc.ie',
                 'info@openlittermap.com'
             ]);
-        });    }
+        });
+    }
 }
