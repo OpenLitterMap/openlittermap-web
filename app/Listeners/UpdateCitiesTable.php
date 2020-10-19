@@ -30,9 +30,8 @@ class UpdateCitiesTable
      */
     public function handle (NewCityAdded $event)
     {
-        $city = City::create([
-           'city' => $event->city
-        ]);
+        $city = new City;
+        $city->city = $event->city;
 
         $state_id = State::where('state', $event->state)->orWhere('statenameb', $event->state)->first()->id;
         $city->state_id = $state_id;

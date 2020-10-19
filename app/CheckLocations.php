@@ -216,6 +216,8 @@ trait CheckLocations
 //                $this->checkState($addressArray);
 //                event(new NewCityAdded($this->city, $this->state, $this->country, now()));
 //            }
+
+            \Log::info(['City', $this->city]);
             if (City::where('city', $this->city)->first())
             {
                 $this->checkCountry($addressArray);
