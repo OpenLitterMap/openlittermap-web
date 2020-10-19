@@ -29,7 +29,7 @@ Vue.use(VueEcho, window.Echo)
 
 // Format a number with commas: "10,000"
 Vue.filter('commas', value => {
-    return parseInt(`${Number(value).toLocaleString()}`);
+    return parseInt(value).toLocaleString();
 });
 
 const vm = new Vue({

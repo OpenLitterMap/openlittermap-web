@@ -115,34 +115,33 @@ class MapController extends Controller
             $nextXp = 10000; // 10,000
         }
 
-        // level 3 - target, 100,000
+        // level 2 - target, 100,000
     	else if ($total_litter <= 100000)
     	{
     		$previousXp = 10000; // 10,000
     		$nextXp = 100000; // 100,000
     	}
 
-    	// level 4 - target 250,000
+    	// level 3 - target 250,000
         else if ($total_litter <= 250000)
         {
             $previousXp = 100000; // 100,000
             $nextXp = 250000; // 250,000
         }
 
+        // level 4 500,000
         else if ($total_litter <= 500000)
         {
             $previousXp = 250000; // 250,000
             $nextXp = 500000; // 500,000
         }
 
+        // level 5, 1M
         else if ($total_litter <= 1000000)
         {
             $previousXp = 250000; // 250,000
             $nextXp = 1000000; // 500,000
         }
-
-        \Log::info(['previous_xp', $previousXp]);
-        \Log::info(['next_xp', $nextXp]);
 
         /** GLOBAL LITTER MAPPERS */
 	    $users = User::where('xp', '>', 8000)
