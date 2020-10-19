@@ -54,7 +54,7 @@
                                 class="mb1em"
                             />
 
-<!--                            <p class="has-text-centered mb2em">{{ this.progress }}%</p>-->
+                            <p class="has-text-centered mb2em">{{ this.progress }}%</p>
                         </div>
                     </div>
 
