@@ -46,7 +46,6 @@ class MapController extends Controller
 		->where('manual_verify', '1')
 		->orderBy('country', 'asc')
         ->get();
-//        ->simplePaginate(15);
 
 		$total_litter = 0;
 		$total_photos = 0;
@@ -142,6 +141,9 @@ class MapController extends Controller
             $nextXp = 1000000; // 500,000
         }
 
+        \Log::info(['previous_xp', $previousXp]);
+        \Log::info(['next_xp', $nextXp]);
+
         /** GLOBAL LITTER MAPPERS */
 	    $users = User::where('xp', '>', 8000)
             ->orderBy('xp', 'desc')
@@ -178,8 +180,8 @@ class MapController extends Controller
 
         return [
             'countries' => $countries,
-            'total_litter' => $total_litter,
-            'total_photos' => $total_photos,
+            'total_litter' => number_format($total_litter),
+            'total_photos' => number_format($total_photos),
             'globalLeaders' => $globalLeadersString,
             'previousXp' => $previousXp,
             'nextXp' => $nextXp,
