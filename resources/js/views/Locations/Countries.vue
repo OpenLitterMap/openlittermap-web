@@ -75,6 +75,7 @@
                                                 :duration="3"
                                                 :delay="1"
                                                 easing="Power1.easeOut"
+                                                :format="commas"
                                             />
                                         </strong>
                                     </h1>
@@ -94,6 +95,7 @@
                                                 :duration="3"
                                                 :delay="1"
                                                 easing="Power1.easeOut"
+                                                :format="commas"
                                             />
                                         </strong>
                                     </h1>
@@ -237,6 +239,17 @@ export default {
         total_photos ()
         {
             return this.$store.state.locations.total_photos;
+        }
+    },
+
+    methods: {
+
+        /**
+         * Format number value
+         */
+        commas (n)
+        {
+            return parseInt(n).toLocaleString();
         }
     }
 }
