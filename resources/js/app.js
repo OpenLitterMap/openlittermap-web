@@ -29,7 +29,7 @@ Vue.use(VueEcho, window.Echo)
 
 // Format a number with commas: "10,000"
 Vue.filter('commas', value => {
-    return typeof(value) == 'number' ? `${Number(value).toLocaleString()}` : value;
+    return parseInt(`${Number(value).toLocaleString()}`);
 });
 
 const vm = new Vue({
@@ -53,31 +53,9 @@ const vm = new Vue({
         /**
          * Delete the welcome div when a user verifies their email address
          */
-        deleteEmailSession() {
+        deleteEmailSession ()
+        {
             document.getElementById('#emaildiv').delay(500).slideUp(300);
-        },
-
-        /**
-         * For admins
-         */
-        verifyImage(photoId, status) {
-            this.disabled = true;
-            axios({
-                method: 'post',
-                url: '/verify',
-                data: {
-                    photoId: photoId,
-                    status: status
-                }
-            }).then(response => {
-                // this.verification = response.data.newVerification;
-                alert('Thank you. The image has been updated.');
-                this.status = response.data.status;
-                window.location.href = window.location.href
-            }).catch(error => {
-                console.log(error);
-                alert('Error! Please try again');
-             });
         },
     }
 });
