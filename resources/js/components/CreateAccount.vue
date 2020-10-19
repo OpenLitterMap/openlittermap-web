@@ -254,6 +254,8 @@ export default {
                 return "6LcvHsIZAAAAAOG0q9-1vY3uWqu0iFvUC3tCNhID"; // olm.test
 			}
 
+            console.log('production');
+
 			return "6LciihwUAAAAADsZr0CYUoLPSMOIiwKvORj8AD9m" // production
 		},
 
