@@ -249,10 +249,9 @@ export default {
 		 */
 		computedKey ()
 		{
-
             return "6LciihwUAAAAADsZr0CYUoLPSMOIiwKvORj8AD9m" // production
 
-    
+
             if (process.env.NODE_ENV === "development")
 			{
                 console.log('dev;')
