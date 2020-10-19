@@ -180,8 +180,8 @@ class MapController extends Controller
 
         return [
             'countries' => $countries,
-            'total_litter' => number_format($total_litter),
-            'total_photos' => number_format($total_photos),
+            'total_litter' => $total_litter,
+            'total_photos' => $total_photos,
             'globalLeaders' => $globalLeadersString,
             'previousXp' => $previousXp,
             'nextXp' => $nextXp,
