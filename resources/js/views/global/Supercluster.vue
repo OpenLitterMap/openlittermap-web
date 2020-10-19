@@ -3,7 +3,7 @@
         <div id="super" ref="super" />
 
         <!-- Change language -->
-        <Languages />
+        <!-- <Languages />-->
 
         <!-- Change data -->
         <!-- <global-dates />-->
