@@ -104,8 +104,6 @@ export const actions = {
 
                 console.log('get_next_admin_photo', resp);
 
-                this.photo = resp.data.photo;
-
                 // init photo data (admin.js)
                 context.commit('initAdminPhoto', resp.data.photo);
 
