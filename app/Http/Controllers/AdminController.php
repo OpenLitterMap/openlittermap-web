@@ -488,7 +488,6 @@ class AdminController extends Controller
      */
     public function getImage ()
     {
-        \Log::info('getimage');
         if ($photo = Photo::where('verification', 0.1)->first())
         {
             $photoData = $this->getPhotoData($photo);
@@ -531,71 +530,84 @@ class AdminController extends Controller
     {
         $photodata = [];
 
-        if ($photo->smoking_id) {
-            $photodata['Smoking'] = Smoking::find($photo->smoking_id);
+        if ($photo->smoking_id)
+        {
+            $photodata['smoking'] = Smoking::find($photo->smoking_id);
         }
 
-        if ($photo->coffee_id) {
-            $photodata['Coffee'] = Coffee::find($photo->coffee_id);
+        if ($photo->coffee_id)
+        {
+            $photodata['coffee'] = Coffee::find($photo->coffee_id);
         }
 
-        if ($photo->food_id) {
-            $photodata['Food'] = Food::find($photo->food_id);
+        if ($photo->food_id)
+        {
+            $photodata['food'] = Food::find($photo->food_id);
         }
 
-        if ($photo->alcohol_id) {
-            $photodata['Alcohol'] = Alcohol::find($photo->alcohol_id);
+        if ($photo->alcohol_id)
+        {
+            $photodata['alcohol'] = Alcohol::find($photo->alcohol_id);
         }
 
-        if ($photo->softdrinks_id) {
-            $photodata['SoftDrinks'] = SoftDrinks::find($photo->softdrinks_id);
+        if ($photo->softdrinks_id)
+        {
+            $photodata['softdrinks'] = SoftDrinks::find($photo->softdrinks_id);
         }
 
-        // if ($photo['drugs_id']) {
+        // if ($photo['drugs_id'])
+        //{
         //     $drugs = Drugs::find($photo['drugs_id']);
         //     $photodata['Drugs'] = $drugs;
         // }
 
-        if ($photo->sanitary_id) {
-            $photodata['Sanitary'] = Sanitary::find($photo->sanitary_id);
+        if ($photo->sanitary_id)
+        {
+            $photodata['sanitary'] = Sanitary::find($photo->sanitary_id);
         }
 
-        if ($photo->other_id) {
-            $photodata['Other'] = Other::find($photo->other_id);
+        if ($photo->other_id)
+        {
+            $photodata['other'] = Other::find($photo->other_id);
         }
 
-        if ($photo->coastal_id) {
-            $photodata['Coastal'] = Coastal::find($photo->coastal_id);
+        if ($photo->coastal_id)
+        {
+            $photodata['coastal'] = Coastal::find($photo->coastal_id);
         }
 
-        // if ($photo['pathways_id']) {
+        // if ($photo['pathways_id'])
+        //{
         //     $pathway = Pathway::find($photo['pathways_id']);
         //     $photodata['Pathway'] = $pathway;
         // }
 
-        if ($photo->art_id) {
-            $photodata['Art'] = Art::find($photo->art_id);
+        if ($photo->art_id)
+        {
+            $photodata['art'] = Art::find($photo->art_id);
         }
 
-        if ($photo->trashdog_id) {
-            $photodata['TrashDog'] = TrashDog::find($photo->trashdog_id);
+        if ($photo->trashdog_id)
+        {
+            $photodata['trashdog'] = TrashDog::find($photo->trashdog_id);
         }
 
-        if ($photo->brands_id) {
-            $photodata['Brands'] = Brand::find($photo->brands_id);
+        if ($photo->brands_id)
+        {
+            $photodata['brands'] = Brand::find($photo->brands_id);
         }
 
-        if ($photo->dumping_id) {
-            $photodata['Dumping'] = Dumping::find($photo->dumping_id);
+        if ($photo->dumping_id)
+        {
+            $photodata['dumping'] = Dumping::find($photo->dumping_id);
         }
 
-         if ($photo->industrial_id) {
-            $photodata['Industrial'] = Industrial::find($photo->industrial_id);
+        if ($photo->industrial_id)
+        {
+            $photodata['industrial'] = Industrial::find($photo->industrial_id);
         }
 
-        // \Log::info(['photodata', $photodata]);
-
-        return json_encode($photodata);
+        return $photodata;
     }
 
 }
