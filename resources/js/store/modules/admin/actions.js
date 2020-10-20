@@ -97,8 +97,6 @@ export const actions = {
         // clear previous input on litter.js
         context.commit('resetLitter');
 
-        console.log('get_next_admin_photo...');
-
         await axios.get('/admin/get-image')
             .then(resp => {
 
