@@ -106,7 +106,7 @@ export const actions = {
                 context.commit('initAdminPhoto', resp.data.photo);
 
                 // init litter data for verification (litter.js)
-                if (resp.data.photoData) context.commit('initAdminItems', JSON.parse(resp.data.photoData));
+                if (resp.data.photoData) context.commit('initAdminItems', resp.data.photoData);
 
                 context.commit('initAdminMetadata', {
                     not_processed: resp.data.photosNotProcessed,

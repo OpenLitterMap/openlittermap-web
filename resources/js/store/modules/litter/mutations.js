@@ -83,22 +83,29 @@ export const mutations = {
      */
     initAdminItems (state, payload)
     {
+        console.log({ payload });
+        let tags = {};
+
         categories.map(category => {
-            if (payload.hasOwnProperty(category))
+            if (payload.hasOwnProperty(category.key) && payload[category.key])
             {
-                Object.entries(payload[category]).map(items => {
-                    if (items[1])
+                litterkeys[category.key].map(item => {
+
+                    if (payload[category.key][item.key])
                     {
-                        let name = litterkeys[items[0]];
-                        if (name)
-                        {
-                            Vue.set(state.items, name, items[1]);
-                            Vue.set(state.categories[category], name, items[1]);
-                        }
+                        tags = {
+                            ...tags,
+                            [category.key]: {
+                                ...tags[category.key],
+                                [item.key]: payload[category.key][item.key]
+                            }
+                        };
                     }
                 });
             }
         });
+
+        state.tags = tags;
     },
 
     /**
