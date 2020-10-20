@@ -120,7 +120,7 @@ export const mutations = {
 
         delete tags[payload.category][payload.tag_key];
 
-        if (Object.keys(tags[payload.category]).length == 0)
+        if (Object.keys(tags[payload.category]).length === 0)
         {
             delete tags[payload.category];
         }
