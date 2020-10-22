@@ -41,6 +41,10 @@ class UpdateCitiesAdmin
     /**
      * Handle the event.
      *
+     * Needs Refactor
+     * Instead of looping here,
+     * Get the total counts when we Add / Update tags for each category and update the locations from there
+     *
      * @param  DynamicUpdate  $event
      * @return void
      */
