@@ -48,12 +48,12 @@ class EventServiceProvider extends ServiceProvider
         ],
         'App\Events\PhotoVerifiedByAdmin' => [
             'App\Listeners\UpdateUsersAdmin',
-            'App\Listeners\UpdateCitiesAdmin',
-            'App\Listeners\UpdateStatesAdmin',
-            'App\Listeners\UpdateCountriesAdmin',
+            'App\Listeners\UpdateCitiesAdmin', // Needs refactor
+            'App\Listeners\UpdateStatesAdmin', // Needs refactor
+            'App\Listeners\UpdateCountriesAdmin', // Needs refactor
             // 'App\Listeners\UpdateLocationsAdmin', // todo
             // 'App\Listeners\GenerateLitterCoin',
-            'App\Listeners\UpdateLeaderboardsAdmin',
+            // 'App\Listeners\UpdateLeaderboardsAdmin', happens on AddTagsTrait
             'App\Listeners\CompileResultsString'
         ],
         'App\Events\UserSignedUp' => [

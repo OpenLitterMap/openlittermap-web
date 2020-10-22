@@ -5,6 +5,7 @@
 
 	    <div v-else>
 
+            <!-- Todo , add extra loaded statement here -->
 	    	<div v-if="this.photosAwaitingVerification === 0 && this.photosNotProcessed === 0">
 	    		<p class="title is-3">All done.</p>
 	    	</div>
@@ -67,7 +68,7 @@
 
 				<div style="padding-top: 1em; text-align: center;">
 					<p class="strong">Update the image and save the new data</p>
-					<button :class="update_new_tags_button" @click="verifyKeep" :disabled="checkUpdateTagsDisabled">
+					<button :class="update_new_tags_button" @click="updateNewTags" :disabled="checkUpdateTagsDisabled">
 						Update with new tags
 					</button>
 				</div>
@@ -243,11 +244,11 @@ export default {
 		/**
 		 * Update the data and keep the image
 		 */
-		async verifyKeep (id)
+		async updateNewTags ()
 		{
 			this.processing = true;
 
-            await this.$store.dispatch('ADMIN_VERIFY_KEEP');
+            await this.$store.dispatch('ADMIN_NEW_TAGS');
 
             this.processing = false;
   		}

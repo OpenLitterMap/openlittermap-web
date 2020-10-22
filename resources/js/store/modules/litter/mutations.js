@@ -35,15 +35,6 @@ export const mutations = {
     },
 
     /**
-     * todo - refactor
-     */
-    adminCreated (state, payload)
-    {
-        Vue.set(state.items, payload.item, payload.quantity);
-        Vue.set(state.categories[payload.category], payload.item, payload.quantity);
-    },
-
-    /**
      * Clear the tags object (When we click next/previous image on pagination)
      */
     clearTags (state)
@@ -83,7 +74,6 @@ export const mutations = {
      */
     initAdminItems (state, payload)
     {
-        console.log({ payload });
         let tags = {};
 
         categories.map(category => {
@@ -141,11 +131,12 @@ export const mutations = {
      */
     resetTag (state, payload)
     {
+        console.log('resetTag');
         let categories = Object.assign({}, state.categories);
 
         categories[payload.category][payload.tag] = 0;
 
-        state.categories = categories;
+        // state.categories = categories;
         state.hasAddedNewTag = true; // activate update_with_new_tags button
     },
 
@@ -162,6 +153,7 @@ export const mutations = {
      */
     resetLitter (state)
     {
+        console.log('resetLitter');
         state.items = {};
         state.categories = {
             'Alcohol': {},
@@ -186,6 +178,8 @@ export const mutations = {
     */
     setAllItemsToZero (state)
    {
+       console.log('setAllItemsToZero');
+
         let categories = Object.assign({}, state.categories);
 
         Object.entries(categories).map(keys => {

@@ -37,6 +37,8 @@ class CompileResultsString
      * We save the metadata on the photos table to speed up page load
      * and avoid additional requests
      *
+     * Todo - Save these keys in 1 php file, import it and loop over them
+     *
      * @param  object  $event
      * @return void
      */

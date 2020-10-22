@@ -3,13 +3,12 @@
 use Illuminate\Support\Facades\Route;
 
 // Route::get('test', function() {
-// 	$user = \App\User::first();
-// 	return view('emails.update17', compact('user'));
+// 	$user = \App\Models\User\User::first();
+// 	return view('emails.update19', compact('user'));
 // });
 
 // only turn this on in limited circumstances
 // Route::get('sean', 'TotalDataController@getCSV');
-Route::get('test', 'MapController@getCity');
 
 Route::get('/', 'HomeController@index');
 Route::get('/about', 'HomeController@index');
@@ -291,8 +290,10 @@ Route::group(['prefix' => '/admin'], function () {
     Route::post('/incorrect', 'AdminController@incorrect');
     // Contents of an image updated, Delete the image
     Route::post('/contentsupdatedelete', 'AdminController@updateDelete');
+
     // Contents of an image updated, Keep the image
-    Route::post('/contentsupdatekeep', 'AdminController@updateKeep');
+    Route::post('/update-tags', 'AdminController@updateTags');
+
     // Delete an image and its record
     Route::post('/destroy', 'AdminController@destroy');
     // LTRX
