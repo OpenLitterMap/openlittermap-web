@@ -26,7 +26,7 @@
                             <p style="font-family: sans-serif; font-size: 18px;">Today, we are launching a GoFundMe to try and bring OpenLitterMap to the next stage.</p>
                             <ul style="font-family: sans-serif; font-size: 19px;">
                                 <li>
-                                   <a href="gf.me/u/y5tv89">Here is a link to the  GoFundMe Campaign</a>
+                                   <a href="https://www.gf.me/u/y5tv89">Here is a link to the  GoFundMe Campaign</a>
                                 </li>
                                 <br>
                                 <li>
