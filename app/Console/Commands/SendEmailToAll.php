@@ -40,6 +40,7 @@ class SendEmailToAll extends Command
     public function handle()
     {
         $users = User::where([
+            ['id', '>', 60],
             'emailsub' => 1
         ])->get();
 
