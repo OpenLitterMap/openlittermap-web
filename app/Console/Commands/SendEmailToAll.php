@@ -39,16 +39,14 @@ class SendEmailToAll extends Command
      */
     public function handle()
     {
-//        $users = User::where([
-//            'emailsub' => 1
-//        ])->get();
+        $users = User::where([
+            'emailsub' => 1
+        ])->get();
 
-        $user = User::first();
-
-//        foreach ($users as $user)
-//        {
-//            echo "user.id " . $user->id . " \n \n";
+        foreach ($users as $user)
+        {
+            echo "user.id " . $user->id . " \n \n";
             \Mail::to($user->email)->send(new SmallUpdate($user));
-//        }
+        }
     }
 }
