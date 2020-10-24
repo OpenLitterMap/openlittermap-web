@@ -33,6 +33,10 @@ export default {
                 this.$store.commit('set_default_litter_presence', u.items_remaining);
             }
         }
+
+        // This is needed to invalidate user.auth = true
+        // which is persisted and not updated if the authenticated user forgets to manually log out
+        else this.$store.commit('resetState');
     },
     computed: {
 
