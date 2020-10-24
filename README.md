@@ -1,5 +1,4 @@
-<p>Welcome to OpenLitterMap</p>
-<p>Arbitary Update </p>
+<p>Welcome to OpenLitterMap-web</p>
 <hr>
 <p>Built with Laravel, Vue and Bulma</p>
 <br>
@@ -41,7 +40,7 @@ sites:
       to: /home/vagrant/Code/openlittermap-web/public
 
 databases:
-    - olmbulma
+    - olm
 
 ...
 ```
