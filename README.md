@@ -13,9 +13,9 @@
 <p>The source code for the mobile app (React Native) will launch soon, followed by the OpenLitterAI and our smart contacts.</p>
 <p>OpenLitterMap is the first project in the world that rewards users with cryptocurrency for the production of geographic information. By using the app, and "doing the work", users are "mining" Littercoin which we are experimenting with to reward and incentive the sharing of geospatial data on plastic pollution.</p>
 <br>
-<p>OpenLitterMap-web is built with <a href="https://laravel.com">Laravel</a>, <a href="http://vuejs.org/">Vue.js</a> and <a href="https://bulma.io">Bulma</a></p>
 <p>STAY TUNED FOR LOTS OF EXCITING UPDATES</p>
 <hr>
+<p>OpenLitterMap-web is built with <a href="https://laravel.com">Laravel</a>, <a href="http://vuejs.org/">Vue.js</a> and <a href="https://bulma.io">Bulma</a></p>
 <p>To install this project locally on your machine, download and install <a href="https://laravel.com/docs/5.8/homestead">Homestead</a></p>
 <p>First, download <a href="https://www.virtualbox.org/wiki/Downloads">Virtual box</a> which will give you a Virtual Machine. This is used to give us all the same development environment. Alternatively, if you use mac, you can use <a href="https://laravel.com/docs/5.8/valet">Laravel Valet</a></p>
 <p>Second, you are going to need to download <a href="https://www.vagrantup.com/downloads.html">Vagrant</a> which you will use to provision, turn on and shut down your VM.</p>
