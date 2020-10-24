@@ -1,4 +1,4 @@
-<p>Welcome to OpenLitterMap-web</p>
+<p>Welcome to OpenLitterMap-web (v2.0)</p>
 <hr>
 <p>Built with Laravel, Vue and Bulma</p>
 <br>
