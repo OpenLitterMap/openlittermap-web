@@ -1,4 +1,4 @@
-<img src="https://openlittermap.com/assets/OLM_Logo.jpg" />
+<img src="https://openlittermap.com/assets/logo_small.jpg" />
 <h3>About OpenLitterMap</h3>
 <hr>
 <p>OpenLitterMap is an open, interactive, and accessible database of the world's litter.</p>
@@ -6,7 +6,7 @@
 <p>We believe that science on pollution should be an open, transparent and democratic process- not limited or controlled by anyone or any group.</p>
 <p>If you would like to help shape the future of OpenLitterMap, we would love to have you in our <a href="https://join.slack.com/t/openlittermap/shared_invite/zt-fdctasud-mu~OBQKReRdC9Ai9KgGROw">Slack Channel</a></p>
 <p>Every Thursday, 6pm Irish time, we run a community zoom call for ~1 hour where anyone interested in OpenLitterMap can listen in to learn more, and share ideas to help the future direction of the platform.</p>
-<p>OpenLitterMap is underdeveloped, but we are a community of over 3,600 contriburs who have crowdsourced more than 100,000 uploads from 80 countries.</p>
+<p>OpenLitterMap is underdeveloped, but we are a community of over 3,600 contributors who have crowdsourced more than 100,000 uploads from 80 countries.</p>
 <p>All of our data is available to explore on the <a href="https://openlittermap.com/global">Global Map</a>, more sophisticated <a href="https://openlittermap.com/world/The%20Netherlands/Zuid-Holland/Wassenaar/map">"city grid maps"</a> are also available to explore. And, anyone can download all of our data for free (Unfortunately this feature is currently broken since we migrated to v2.0 but hopefully we will get it fixed this weekend!)</p>
 <hr>
 <p>We have just launched a <a href="https://www.gofundme.com/f/openlittermap-a-revolutionary-app-to-map-litter">GoFundMe</a> which includes our first promotional video and a new demo video showing how to use our app</p>
