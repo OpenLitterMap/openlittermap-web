@@ -1,7 +1,7 @@
 <img src="https://openlittermap.com/assets/logo_small.png" />
 <h3>About OpenLitterMap</h3>
 <hr>
-<p>OpenLitterMap is an open, interactive, and accessible database of the world's litter.</p>
+<p>OpenLitterMap is an open, interactive, and accessible database of the world's litter and plastic pollution.</p>
 <p>We are building a fun data-collection experience to harness the unprecedented potential of citizen scientists around the world.</p>
 <p>We believe that science on pollution should be an open, transparent and democratic process- not limited or controlled by anyone or any group.</p>
 <p>If you would like to help shape the future of OpenLitterMap, we would love to have you in our <a href="https://join.slack.com/t/openlittermap/shared_invite/zt-fdctasud-mu~OBQKReRdC9Ai9KgGROw">Slack Channel</a></p>
