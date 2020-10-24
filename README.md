@@ -1,4 +1,4 @@
-<img src="https://openlittermap.com/assets/logo_small.jpg" />
+<img src="https://openlittermap.com/assets/logo_small.png" />
 <h3>About OpenLitterMap</h3>
 <hr>
 <p>OpenLitterMap is an open, interactive, and accessible database of the world's litter.</p>
