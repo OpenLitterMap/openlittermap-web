@@ -152,11 +152,7 @@ export default {
     {
         return {
             loading: true,
-            // dummy data for now
-            previousLevelInt: 0,
-            nextLevelInt: 1,
-            progressPercent: 50,
-            littercoinPaid: 2950,
+            littercoinPaid: 2950, // hard-coded for now
         };
     },
     computed: {

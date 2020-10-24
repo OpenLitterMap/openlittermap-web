@@ -143,7 +143,7 @@ export default {
 			'openDataOrder': null,
 			'mostLitterPP': null,
 			dir: '/assets/icons/flags/',
-			tab: 'litter',
+			tab: '',
 			tabs: {
 				litter: 'ChartsContainer',
 				time_series: 'TimeSeriesContainer',
