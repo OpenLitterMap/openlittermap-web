@@ -9,7 +9,7 @@
         <!-- <global-dates />-->
 
         <!-- Call to Action -->
-        <global-info />
+        <!-- <global-info />-->
 
         <!-- Live Events -->
         <live-events />
@@ -20,7 +20,7 @@
 import Languages from '../../components/global/Languages'
 // import GlobalDates from '../../components/global/GlobalDates'
 import LiveEvents from '../../components/LiveEvents'
-import GlobalInfo from '../../components/global/GlobalInfo'
+// import GlobalInfo from '../../components/global/GlobalInfo'
 
 import L from 'leaflet' // make sure to load leaflet before marker-cluster
 import moment from 'moment'
@@ -131,7 +131,7 @@ export default {
         Languages,
         // GlobalDates,
         LiveEvents,
-        GlobalInfo
+        // GlobalInfo
     },
     mounted ()
     {

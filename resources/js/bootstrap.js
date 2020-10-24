@@ -34,11 +34,11 @@ window.Pusher = require('pusher-js');
 // }
 
 // dev = 'a228fd841042d8837268'
-// production = 'aa1eecefcf9deb983617'
+// production = 'aa1eecefcf9deb983617' // currently not working on production
 
 window.Echo = new Echo({
     broadcaster: 'pusher',
-    key: 'aa1eecefcf9deb983617',
+    key: 'a228fd841042d8837268',
     wsHost: window.location.hostname,
     wssHost: window.location.hostname,
     wsPort: 6001, // window.APP_DEBUG ? 6001 : 6002,
