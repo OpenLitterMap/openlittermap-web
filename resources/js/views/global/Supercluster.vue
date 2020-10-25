@@ -22,7 +22,7 @@ import Languages from '../../components/global/Languages'
 import LiveEvents from '../../components/LiveEvents'
 // import GlobalInfo from '../../components/global/GlobalInfo'
 
-import L from 'leaflet' // make sure to load leaflet before marker-cluster
+import L from 'leaflet'
 import moment from 'moment'
 
 var map;

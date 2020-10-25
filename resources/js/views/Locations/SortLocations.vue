@@ -104,6 +104,7 @@
                             :time="location.time"
                             @dateschanged="updateUrl"
                             :index="index"
+                            :type="type"
                         />
 
                     </div>
@@ -121,6 +122,7 @@ import ChartsContainer from '../../components/Locations/Charts/PieCharts/ChartsC
 import TimeSeriesContainer from '../../components/Locations/Charts/TimeSeries/TimeSeriesContainer'
 import Leaderboard from '../../components/Locations/Charts/Leaderboard/Leaderboard'
 import Options from '../../components/Locations/Charts/Options/Options'
+import Download from '../../components/Locations/Charts/Download/Download'
 
 export default {
 	props: ['type'], // country, state, or city
@@ -129,7 +131,8 @@ export default {
 		ChartsContainer,
 		TimeSeriesContainer,
 		Leaderboard,
-        Options
+        Options,
+        Download
 	},
 	data ()
 	{
@@ -148,7 +151,8 @@ export default {
 				litter: 'ChartsContainer',
 				time_series: 'TimeSeriesContainer',
 				leaderboard: 'Leaderboard',
-                options: 'Options'
+                options: 'Options',
+                download: 'Download'
 			}
 		};
 	},
