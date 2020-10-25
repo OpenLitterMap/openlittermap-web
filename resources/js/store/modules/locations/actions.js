@@ -1,6 +1,27 @@
 export const actions = {
 
     /**
+     * Download data for a location
+     *
+     * @payload (type|string) is location_type. eg 'country', 'state' or 'city'
+     */
+    async DOWNLOAD_DATA (context, payload)
+    {
+        await axios.post('download', {
+            type: payload,
+            country: context.state.country,
+            state: context.state.state,
+            city: context.state.city
+        })
+        .then(response => {
+            console.log('download_data', response);
+        })
+        .catch(error => {
+            console.error('download_data', error);
+        });
+    },
+
+    /**
      * Get all countries data + global metadata
      */
     async GET_COUNTRIES (context)

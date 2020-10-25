@@ -35,6 +35,9 @@ Route::get('countries', 'MapController@getCountries');
 Route::get('states', 'MapController@getStates');
 Route::get('cities', 'MapController@getCities');
 
+/* Download data */
+Route::post('download', 'DownloadControllerNew@index');
+
 Route::get('/world/{country}', 'HomeController@index');
 Route::get('/world/{country}/{state}', 'HomeController@index');
 Route::get('/world/{country}/{state}/{city?}/{id?}', 'HomeController@index');
