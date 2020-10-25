@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 
 // Route::get('test', function() {
 // 	$user = \App\Models\User\User::first();
-// 	return view('emails.update19', compact('user'));
+// 	return view('emails.update20', compact('user'));
 // });
 
 // only turn this on in limited circumstances
@@ -44,7 +44,7 @@ Route::get('/world/{country}/{state}/{city}/map/{minfilter?}/{maxfilter?}/{hex?}
 Route::get('/world/{country}/{state}/{city?}/download/get', 'DownloadsController@getDataByCity');
 
 // "maps" was used before "world". We will keep this for now to keep old links active.
-// Todo - make this dynamic for wildcart routes prefixed by "/{lang}/maps"
+// Todo - make this dynamic for wildcard routes prefixed by "/{lang}/maps"
 Route::get('/maps', 'MapController@getCountries');
 Route::get('/maps/{country}/litter', 'MapController@getCountries');
 Route::get('/maps/{country}/leaderboard', 'MapController@getCountries');

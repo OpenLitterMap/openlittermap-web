@@ -60,9 +60,9 @@ databases:
 ...
 ```
 
-<p>You might also want to update your hosts file (sudo nano /etc/hosts) with</p>
+<p>Next, update your hosts file (sudo nano /etc/hosts) and include:</p>
 
-`192.169.10.10 olm.test`
+`192.168.10.10 olm.test`
 
 <p>When you want to boot up the VM, cd into the Homestead folder and run</p>
 
@@ -72,7 +72,7 @@ databases:
 
 `~/Users/You/Code/openlittermap-web`
 
-<p>If this is your first time installing, you also need to run</p>
+<p>If this is your first time installing, you need to run</p>
 
 `vagrant provision` 
 
@@ -80,7 +80,13 @@ databases:
 
 `olm.test`
 
-<p>You might notice there are some websocket errors in the browser. Some operations like adding photos and creating new users broadcast events to the client. It's easy to get websockets set up to resolve this.</p>
+<p>You also need to install composer and npm dependencies.</p>
+<p>Locally, run "npm install"</p>
+<p>SSH into the VM with "vagrant ssh". cd into Code/olm, and then run "composer install"</p>
+<p>You can migrate the tables with "php artisan migrate"</p>
+<p>If you would like to contribute something, make a new branch locally "git checkout -b feature/my-new-feature". We would love to see your pull requests!</p>
+
+<p>You might notice there are some websocket errors in the browser. Some operations like adding photos broadcast live events to the client. It's easy to get websockets set up to resolve this.</p>
 
 ```
 In your .env file, add "WEBSOCKET_BROADCAST_HOST=192.168.10.10"
@@ -90,9 +96,5 @@ Then, in another window, run `art horizon`
 To test it's working, open another window. Open tinker and run event new(\App\Events\UserSignedUp(1));
 ```
 
-<p>When you can access olm.test in the browser, you will need to install composer and npm dependencies.</p>
-<p>Locally, run npm install</p>
-<p>SSH into the VM with vagrant ssh. cd into Code/olm, and then run composer install</p>
-<p>You can migrate the tables with php artisan migrate</p>
 <p>You are now ready to get started!</p>
 <p>Have fun and thanks for taking an interest in OpenLitterMap</p>
