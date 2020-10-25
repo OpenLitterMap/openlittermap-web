@@ -49,8 +49,8 @@ class DownloadControllerNew extends Controller
         }
 
 
-        (new CreateCSVExport($email))
-            ->queue($path, 's3')->chain([
+        (new CreateCSVExport($email))->queue($path, 's3')
+            ->chain([
                 // These jobs are executed when above is finished.
                 new EmailUserExportCompleted($email, $path)
                 // new ....job

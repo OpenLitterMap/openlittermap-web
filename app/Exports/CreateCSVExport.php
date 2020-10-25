@@ -2,6 +2,8 @@
 
 namespace App\Exports;
 
+use App\Models\Photo;
+
 use Illuminate\Bus\Queueable;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -23,7 +25,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
      */
     public function __construct ($email)
     {
-        $this->email    = $email;
+        $this->email = $email;
     }
 
     /**
@@ -32,7 +34,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
     public function headings(): array
     {
         return [
-            "number",
+            "id"
         ];
     }
 
@@ -43,7 +45,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
     public function map ($row): array
     {
         return [
-            'a'
+            $row->id
         ];
     }
 
@@ -53,6 +55,6 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
      */
     public function query ()
     {
-        return '';
+        return Photo::where('id', 1);
     }
 }
