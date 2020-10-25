@@ -53,7 +53,7 @@
                                 <li>
                                     Reminder that every Thursday, 6pm Irish time, we run a community zoom call for an hour.
                                     <br><br>
-                                    On the next call, we will show participants how to set up your local development environment and how to start contributing to OpenLitterMap. These free coding tutorials will likely continue for a while. We might to find time for a second community call!
+                                    On the next call, we will show participants how to set up your local development environment and how to start contributing to OpenLitterMap. These free coding tutorials will likely continue for a while. We might need to find time for a second community call!
                                 </li>
                                 <br>
                                 <li>
