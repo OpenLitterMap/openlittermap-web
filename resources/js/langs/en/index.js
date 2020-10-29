@@ -10,7 +10,7 @@ import { locations } from './locations/index'
 import signup from './signup.json'
 import tags from './tags.json'
 import nav from './nav.json'
-
+import welcome from './welcome.json'
 
 export const en = {
     about,
@@ -24,5 +24,6 @@ export const en = {
     profile,
     settings,
     signup,
-    tags
+    tags,
+    welcome
 }

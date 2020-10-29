@@ -12,7 +12,7 @@
 	    	<div class="dropdown-content" style="padding: 0;">
 	      		<div v-for="lang in langs" @click="reload(lang.url)" class="dropdown-item hoverable flex p1em">
 	      			<img :src="getFlag(lang.url)" class="lang-flag" />
-	      			<p>{{ getLang(lang.url) }}</p>
+	      			<p>{{ lang.name }}</p>
 	      		</div>
 			</div>
 	  	</div>
@@ -29,26 +29,32 @@ export default {
 			dir: '/assets/icons/flags/',
 			langs: [
 				{
-					url: 'en'
+					url: 'en',
+                    name: 'English'
 				},
 				{
-					url: 'de'
+					url: 'de',
+                    name: 'German'
 				},
-				{
-					url: 'es'
-				},
-				{
-					url: 'fr'
-				},
-				{
-					url: 'it'
-				},
-				{
-					url: 'ms'
-				},
-				{
-					url: 'tk'
-				}
+                {
+                    url: 'ie',
+                    name: 'Ireland'
+                }
+				// {
+				// 	url: 'es'
+				// },
+				// {
+				// 	url: 'fr'
+				// },
+				// {
+				// 	url: 'it'
+				// },
+				// {
+				// 	url: 'ms'
+				// },
+				// {
+				// 	url: 'tk'
+				// }
 			]
 		};
 	},
@@ -106,7 +112,7 @@ export default {
 		 */
 		reload (lang)
 		{
-			window.location.href = window.location.origin + '/' + lang;
+			this.$i18n.locale(lang);
 		}
 	}
 }

@@ -6,11 +6,13 @@
             <div class="columns c-1">
                 <div class="column is-half">
                     <h1 class="main-title">
-                        Plastic pollution is out of control.
+                        {{ $t('welcome.title') }}
                     </h1>
                     <h2 class="subtitle is-3 home-img-padding">
                         Help us create the world's most advanced open database on litter, brands & plastic pollution.
                     </h2>
+
+                    <Languages />
 
                     <!-- Download app icons -->
                     <div class="flex">
@@ -118,11 +120,12 @@
 </template>
 
 <script>
+import Languages from '../../components/global/Languages'
 import Footer from './Footer'
 
 export default {
     name: 'Welcome',
-    components: { Footer },
+    components: { Footer, Languages },
     computed: {
 
         /**
