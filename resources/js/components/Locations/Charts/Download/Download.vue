@@ -20,7 +20,6 @@ export default {
         };
     },
     methods: {
-
         /**
          * Download request
          *
@@ -31,7 +30,6 @@ export default {
          */
         async download ()
         {
-            // window.location.href = window.location.href + '/' + this.$store.state.locations.country + '/download';
             await this.$store.dispatch('DOWNLOAD_DATA', this.type);
         },
     },
