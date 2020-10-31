@@ -49,7 +49,8 @@ class Photo extends Model
         'trashdog_id',
         'total_litter',
         'platform',
-        'bounding_box'
+        'bounding_box',
+        'geohash'
     ];
 
     /**

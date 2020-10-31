@@ -5,6 +5,7 @@
 
 	    <div v-else>
 
+            <!-- Todo , add extra loaded statement here -->
 	    	<div v-if="this.photosAwaitingVerification === 0 && this.photosNotProcessed === 0">
 	    		<p class="title is-3">All done.</p>
 	    	</div>
@@ -43,11 +44,11 @@
 			      		<img :src="this.photo.filename" width="300" height="250" />
 			    	</div>
 
-				  	<!-- Right - data -->
+				  	<!-- Right - Tags -->
 				  	<div class="column has-text-centered" style="position: relative;">
 
                         <!-- The list of tags associated with this image-->
-                        <Tags />
+                        <Tags :admin="true" />
 
 						<div style="padding-top: 3em;">
 							<button class="button is-medium is-dark" @click="clearItems">Clear user input</button>
@@ -63,11 +64,11 @@
 				</div>
 
 				<!-- Add / edit tags -->
-                <add-tags />
+                <add-tags :admin="true" />
 
 				<div style="padding-top: 1em; text-align: center;">
 					<p class="strong">Update the image and save the new data</p>
-					<button :class="update_new_tags_button" @click="verifyKeep" :disabled="checkUpdateTagsDisabled">
+					<button :class="update_new_tags_button" @click="updateNewTags" :disabled="checkUpdateTagsDisabled">
 						Update with new tags
 					</button>
 				</div>
@@ -136,22 +137,6 @@ export default {
 			return this.processing ? this.deleteVerify + ' is-loading' : this.deleteVerify;
 		},
 
-		/**
-		 *
-		 */
-		update_new_tags_button ()
-		{
-			return this.processing ? this.verifyClass + ' is-loading' : this.verifyClass;
-		},
-
-		/**
-		 *
-		 */
-		verify_correct_button ()
-		{
-			return this.processing ? this.btn + ' is-loading' : this.btn;
-		},
-
         /**
          * The photo we are verifying
          */
@@ -179,9 +164,25 @@ export default {
 		/**
 		 *
 		 */
-		uploadedTime ()
+		update_new_tags_button ()
 		{
-			return moment(this.photo.created_at).format('LLL');
+			return this.processing ? this.verifyClass + ' is-loading' : this.verifyClass;
+		},
+
+        /**
+         *
+         */
+        uploadedTime ()
+        {
+            return moment(this.photo.created_at).format('LLL');
+        },
+
+		/**
+		 *
+		 */
+		verify_correct_button ()
+		{
+			return this.processing ? this.btn + ' is-loading' : this.btn;
 		},
 	},
 	methods: {
@@ -243,11 +244,11 @@ export default {
 		/**
 		 * Update the data and keep the image
 		 */
-		async verifyKeep (id)
+		async updateNewTags ()
 		{
 			this.processing = true;
 
-            await this.$store.dispatch('ADMIN_VERIFY_KEEP');
+            await this.$store.dispatch('ADMIN_NEW_TAGS');
 
             this.processing = false;
   		}

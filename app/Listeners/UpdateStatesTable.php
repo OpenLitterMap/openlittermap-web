@@ -28,15 +28,14 @@ class UpdateStatesTable
      * @param  NewStateAdded  $event
      * @return void
      */
-    public function handle(NewStateAdded $event)
+    public function handle (NewStateAdded $event)
     {
-        $newState = $event->state;
-        $country = $event->country;
-        $state = new State;
-        $state->state = $newState;
+        $state = State::create([
+            'state' => $event->state
+        ]);
 
-        $country = Country::where('country', $country)->orWhere('countrynameb', $country)->first();
-        $state->country_id = $country->id;
+        $country_id = Country::where('country', $event->country)->orWhere('countrynameb', $event->country)->first()->id;
+        $state->country_id = $country_id;
 
         $state->save();
     }

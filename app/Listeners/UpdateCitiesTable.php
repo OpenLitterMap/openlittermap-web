@@ -30,17 +30,14 @@ class UpdateCitiesTable
      */
     public function handle (NewCityAdded $event)
     {
-        $newCity = $event->city;
-        $country = $event->country;
         $city = new City;
-        $city->city = $newCity;
+        $city->city = $event->city;
 
-        $state = $event->state;
-        $theState = State::where('state', $state)->orWhere('statenameb', $state)->first();
-        $city->state_id = $theState->id;
+        $state_id = State::where('state', $event->state)->orWhere('statenameb', $event->state)->first()->id;
+        $city->state_id = $state_id;
 
-        $country = Country::where('country', $country)->orWhere('countrynameb', $country)->first();
-        $city->country_id = $country->id;
+        $country_id = Country::where('country', $event->country)->orWhere('countrynameb', $event->country)->first()->id;
+        $city->country_id = $country_id;
 
         $city->save();
     }

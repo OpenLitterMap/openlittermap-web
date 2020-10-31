@@ -46,7 +46,8 @@ export const litterkeys = {
         { id: 8, key: 'sauce_packet' },         // Sauce Packet
         { id: 9, key: 'glass_jar' },            // Glass Jar
         { id: 10, key: 'glass_jar_lid' },       // Glass Jar Lid
-        { id: 11, key: 'foodOther' }            // Food-other
+        { id: 11, key: 'foodOther' },           // Food-other
+        { id: 12, key: 'aluminium_foil' }       // Aluminium Foil
     ],
 	softdrinks: [
         { id: 0, key: 'waterBottle' },      // Plastic Water bottle

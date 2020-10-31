@@ -31,7 +31,7 @@ class ResetPasswordController extends Controller
      *
      * @var string
      */
-    protected $redirectTo = '/submit';
+    protected $redirectTo = '/';
 
     /**
      * Create a new controller instance.
@@ -200,7 +200,7 @@ class ResetPasswordController extends Controller
             return $this->redirectTo();
         }
 
-        return property_exists($this, 'redirectTo') ? $this->redirectTo : '/submit';
+        return property_exists($this, 'redirectTo') ? $this->redirectTo : '/';
     }
-    
+
 }

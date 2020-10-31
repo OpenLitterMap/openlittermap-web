@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use GeoHash;
 use App\Models\Location\Country;
 use App\Models\Location\State;
 use App\Models\Location\City;
@@ -23,6 +24,8 @@ class ApiPhotosController extends Controller
      */
     public function store (Request $request)
     {
+        \Log::info(['app.upload', $request->all()]);
+
         if ($request->has('model'))
         {
             $model = $request->model;
@@ -110,8 +113,9 @@ class ApiPhotosController extends Controller
             'state_id' => $stateId,
             'city_id' => $cityId,
             'remaining' => $request['remaining'],
-            'platform' => 'mobile'
-		]);
+            'platform' => 'mobile',
+            'geohash' => GeoHash::encode($lat, $lon)
+        ]);
 
         event (new ImageUploaded($this->city, $this->state, $this->country, $imageName));
 
@@ -134,6 +138,7 @@ class ApiPhotosController extends Controller
      */
     public function dynamicUpdate (Request $request)
     {
+        \Log::info(['dynamicUpdate', $request->all()]);
 		$userId = Auth::guard('api')->user()->id;
 
         dispatch (new UploadData($request->all(), $userId));

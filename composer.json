@@ -27,7 +27,8 @@
         "predis/predis": "^1.1",
         "pusher/pusher-php-server": "~3.0",
         "schuppo/password-strength": "^2.1",
-        "stripe/stripe-php": "^7.49"
+        "stripe/stripe-php": "^7.49",
+        "youthage/laravel-geohash": "^3.1"
     },
     "require-dev": {
         "facade/ignition": "^2.3.6",

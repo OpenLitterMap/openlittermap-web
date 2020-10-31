@@ -3,13 +3,12 @@
 use Illuminate\Support\Facades\Route;
 
 // Route::get('test', function() {
-// 	$user = \App\User::first();
-// 	return view('emails.update17', compact('user'));
+// 	$user = \App\Models\User\User::first();
+// 	return view('emails.update20', compact('user'));
 // });
 
 // only turn this on in limited circumstances
 // Route::get('sean', 'TotalDataController@getCSV');
-Route::get('test', 'MapController@getCity');
 
 Route::get('/', 'HomeController@index');
 Route::get('/about', 'HomeController@index');
@@ -36,6 +35,9 @@ Route::get('countries', 'MapController@getCountries');
 Route::get('states', 'MapController@getStates');
 Route::get('cities', 'MapController@getCities');
 
+/* Download data */
+Route::post('download', 'DownloadControllerNew@index');
+
 Route::get('/world/{country}', 'HomeController@index');
 Route::get('/world/{country}/{state}', 'HomeController@index');
 Route::get('/world/{country}/{state}/{city?}/{id?}', 'HomeController@index');
@@ -45,7 +47,7 @@ Route::get('/world/{country}/{state}/{city}/map/{minfilter?}/{maxfilter?}/{hex?}
 Route::get('/world/{country}/{state}/{city?}/download/get', 'DownloadsController@getDataByCity');
 
 // "maps" was used before "world". We will keep this for now to keep old links active.
-// Todo - make this dynamic for wildcart routes prefixed by "/{lang}/maps"
+// Todo - make this dynamic for wildcard routes prefixed by "/{lang}/maps"
 Route::get('/maps', 'MapController@getCountries');
 Route::get('/maps/{country}/litter', 'MapController@getCountries');
 Route::get('/maps/{country}/leaderboard', 'MapController@getCountries');
@@ -71,6 +73,9 @@ Route::post('donate', 'DonateController@submit');
 // Get different global data
 Route::get('global', 'HomeController@index');
 Route::get('global-data', 'MapController@getGlobalData');
+Route::get('/global/clusters', 'GlobalMapController@clusters');
+Route::get('clusters', 'ClusterController@index');
+Route::get('global-points', 'GlobalMapController@index');
 
 /** Auth Routes */
 // Get currently auth user when logged in
@@ -288,8 +293,10 @@ Route::group(['prefix' => '/admin'], function () {
     Route::post('/incorrect', 'AdminController@incorrect');
     // Contents of an image updated, Delete the image
     Route::post('/contentsupdatedelete', 'AdminController@updateDelete');
+
     // Contents of an image updated, Keep the image
-    Route::post('/contentsupdatekeep', 'AdminController@updateKeep');
+    Route::post('/update-tags', 'AdminController@updateTags');
+
     // Delete an image and its record
     Route::post('/destroy', 'AdminController@destroy');
     // LTRX

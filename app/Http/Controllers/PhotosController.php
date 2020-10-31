@@ -5,19 +5,19 @@ namespace App\Http\Controllers;
 use Log;
 use Auth;
 use Image;
-use App\Models\Location\City;
-use App\Models\Location\State;
-use App\Models\Photo;
-use App\Totals;
-use App\Models\Location\Country;
+use GeoHash;
+
 use Carbon\Carbon;
 use App\CheckLocations;
 
-use App\Litterrata;
+use App\Models\Photo;
+use App\Models\Location\City;
+use App\Models\Location\State;
+use App\Models\Location\Country;
+
 use App\Models\LitterTags;
 
 use Illuminate\Http\Request;
-use App\Events\DynamicUpdate;
 use App\Events\ImageUploaded;
 use App\Events\PhotoVerifiedByAdmin;
 use App\Events\Photo\IncrementPhotoMonth;
@@ -102,11 +102,14 @@ class PhotosController extends Controller
         // Check if the user has already uploaded this image
         // todo - load error automatically without clicking it
         // todo - translate
-        if (Photo::where(['user_id' => $user->id, 'datetime' => $dateTime])->first())
+        if (app()->environment() === 'production')
         {
-            header('HTTP/1.1 500 Internal Server Error');
-            header('Content-type: text/plain');
-            exit ("You have already uploaded this file!");
+            if (Photo::where(['user_id' => $user->id, 'datetime' => $dateTime])->first())
+            {
+                header('HTTP/1.1 500 Internal Server Error');
+                header('Content-type: text/plain');
+                exit ("You have already uploaded this file!");
+            }
         }
 
         // Create dir/filename and move to AWS S3
@@ -183,6 +186,8 @@ class PhotosController extends Controller
 
         $cityId = City::where('city', $this->city)->first()->id;
 
+        $geohash = GeoHash::encode($latlong[0], $latlong[1]);
+
         $user->photos()->create([
             'filename' => $imageName,
             'datetime' => $dateTime,
@@ -201,19 +206,22 @@ class PhotosController extends Controller
             'country_id' => $countryId,
             'state_id' => $stateId,
             'city_id' => $cityId,
-            'platform' => 'web'
+            'platform' => 'web',
+            'geohash' => $geohash
         ]);
 
         // $user->images_remaining -= 1;
+
         $user->xp += 1;
-        $totalImages = $user->photos->sum('verified');
-        $user->total_images = $totalImages;
+//        $totalImages = 0; // $user->photos->sum('verified'); this is failing locally since upgraded from Laravel 5 to 8
+//        $user->total_images = $totalImages;
         $user->save();
 
         // Broadcast this event to anyone viewing the global map
         event (new ImageUploaded($this->city, $this->state, $this->country, $imageName));
 
         // Increment the { Month-Year: int } value for each location
+        // Todo - this needs debugging
         event (new IncrementPhotoMonth($countryId, $stateId, $cityId, $dateTime));
 
         if ($user->has_uploaded_today == 0)
@@ -228,7 +236,7 @@ class PhotosController extends Controller
               $user->save();
         }
 
-        return redirect()->back();
+        return ['msg' => 'success'];
     }
 
     /**
@@ -284,14 +292,13 @@ class PhotosController extends Controller
         {
             foreach ($items as $column => $quantity)
             {
-                // Column on photos table to make a relationship with this category eg smoking_id
+                // Column on photos table to make a relationship with current category eg smoking_id
                 $id_table = $schema->$category->id_table;
 
                 // Full class path
                 $class = 'App\\Models\\Litter\\Categories\\'.$schema->$category->class;
 
                 // Create reference to category.$id_table on photos if it does not exist
-                // dynamic $id_table is intentional
                 if (is_null($photo->$id_table))
                 {
                     $row = $class::create();
@@ -299,9 +306,10 @@ class PhotosController extends Controller
                     $photo->save();
                 }
 
+                // If it does exist, get it
                 else $row = $class::find($photo->$id_table);
 
-                // Update the quantity on the category table and save
+                // Update quantity on the category table
                 $row->$column = $quantity;
                 $row->save();
 

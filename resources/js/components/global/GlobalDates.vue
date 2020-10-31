@@ -20,11 +20,8 @@
 <script>
 export default {
 	name: 'GlobalDates',
-	created ()
-	{
-		this.$store.dispatch('GLOBAL_MAP_DATA', 'today');
-	},
-	data() {
+	data ()
+    {
 		return {
 			button: 'dropdown navbar-item pointer global-dates',
 			currentDate: 'today',

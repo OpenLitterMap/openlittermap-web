@@ -53,7 +53,7 @@
 					</div>
 				</div>
 
-				<div v-else></div>
+				<div v-else />
 			</span>
 		</transition-group>
 	</div>
@@ -104,27 +104,30 @@ export default {
 			})
 		}
 	},
-	data() {
+	data ()
+    {
 		return {
 			events: []
 		};
 	},
 	methods: {
+
+        /**
+         * Return a unique key for each event
+         */
 		getKey (event)
 		{
-			if (event.type === 'image') {
-				return event.type + event.imageName;
-			} else if (event.type === 'country') {
-				return event.type + event.countryId;
-			} else if (event.type === 'state') {
-				return event.type + event.stateId;
-			} else if (event.type === 'city') {
-				return event.type + event.cityId;
-			} else if (event.type === 'new-user') {
-				return event.type + event.now;
-			} else {
-				return this.events.length;
-			}
+			if (event.type === 'image') return event.type + event.imageName;
+
+			else if (event.type === 'country') return event.type + event.countryId;
+
+			else if (event.type === 'state') return event.type + event.stateId;
+
+			else if (event.type === 'city') return event.type + event.cityId;
+
+			else if (event.type === 'new-user') return event.type + event.now;
+
+			return this.events.length;
 		}
 	}
 }
