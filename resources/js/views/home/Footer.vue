@@ -3,7 +3,7 @@
         <div class="container">
             <!-- Top Section -->
             <div class="inner-footer-container has-text-centered">
-                <p class="top-footer-title">Want us to email you occasionally with good news?</p>
+                <p class="top-footer-title">{{ $t('home.footer.email-you') }}?</p>
 
                 <!-- Errors -->
                 <div v-if="hasErrors" class="notification is-danger mb1em">
@@ -16,7 +16,7 @@
 
                     <input
                         class="input f-input"
-                        placeholder="Enter your email address"
+                        :placeholder="$t('home.footer.enter-email')"
                         required
                         type="email"
                         v-model="email"
@@ -25,10 +25,10 @@
 
                     <br>
 
-                    <button class="button is-medium is-primary hov mb2">Subscribe</button>
+                    <button class="button is-medium is-primary hov mb2">{{ $t('home.footer.subscribe') }}</button>
 
                     <p v-show="subscribed" class="footer-success">
-                        You have been subscribed to the good news! You can unsubscribe at any time.
+                        {{ $t('home.footer.subscribed-success-msg') }}.
                     </p>
                 </form>
             </div>
@@ -38,7 +38,7 @@
                 <div class="column is-half foot-container-left">
                     <p class="olm-title">#OpenLitterMap</p>
 
-                    <p class="footer-text mb1">We need your help to create the world's most advanced and accessible database on pollution.</p>
+                    <p class="footer-text mb1">{{ $t('home.footer.need-your-help') }}.</p>
 
                     <img
                         v-for="s in socials"
@@ -50,14 +50,14 @@
                 </div>
 
                 <div class="column is-2">
-                    <p class="olm-subtitle">READ</p>
+                    <p class="olm-subtitle">{{ $t('home.footer.read') }}</p>
 
-                    <p class="footer-link" @click="open('https://medium.com/@littercoin')">Blog</p>
-                    <p class="footer-link" @click="open('https://opengeospatialdata.springeropen.com/articles/10.1186/s40965-018-0050-y')">Research Paper</p>
+                    <p class="footer-link" @click="open('https://medium.com/@littercoin')">{{ $t('home.footer.blog') }}</p>
+                    <p class="footer-link" @click="open('https://opengeospatialdata.springeropen.com/articles/10.1186/s40965-018-0050-y')">{{ $t('home.footer.research-paper') }}</p>
                 </div>
 
                 <div class="column is-2">
-                    <p class="olm-subtitle">WATCH</p>
+                    <p class="olm-subtitle">{{ $t('home.footer.watch') }}</p>
 
                     <p class="footer-link" @click="open('https://www.youtube.com/watch?v=my7Cx-kZhT4')">TEDx 2017</p>
                     <p class="footer-link" @click="open('https://www.youtube.com/watch?v=E_qhEhHwUGM')">State of the Map 2019</p>
@@ -66,21 +66,21 @@
                 </div>
 
                 <div class="column is-2">
-                    <p class="olm-subtitle">HELP</p>
+                    <p class="olm-subtitle">{{ $t('home.footer.help') }}</p>
 
-                    <p class="footer-link">Create Account</p>
-                    <p class="footer-link" @click="open('https://angel.co/openlittermap/jobs')">Join the Team</p>
-                    <p class="footer-link" @click="open('https://join.slack.com/t/openlittermap/shared_invite/zt-fdctasud-mu~OBQKReRdC9Ai9KgGROw')">Join Slack</p>
-                    <p class="footer-link" @click="open('https://www.facebook.com/pg/openlittermap/groups/')">Facebook Group</p>
-                    <router-link to="/donate" class="footer-link">Single Donation</router-link>
-                    <router-link to="/signup" class="footer-link">Crowdfunding</router-link>
+                    <p class="footer-link">{{ $t('home.footer.create-account') }}</p>
+                    <p class="footer-link" @click="open('https://angel.co/openlittermap/jobs')">{{ $t('home.footer.join-the-team') }}</p>
+                    <p class="footer-link" @click="open('https://join.slack.com/t/openlittermap/shared_invite/zt-fdctasud-mu~OBQKReRdC9Ai9KgGROw')">{{ $t('home.footer.join-slack') }}</p>
+                    <p class="footer-link" @click="open('https://www.facebook.com/pg/openlittermap/groups/')">{{ $t('home.footer.fb-group') }}</p>
+                    <router-link to="/donate" class="footer-link">{{ $t('home.footer.single-donation') }}</router-link>
+                    <router-link to="/signup" class="footer-link">{{ $t('home.footer.crowdfunding') }}</router-link>
                 </div>
             </div>
         </div>
 
         <!-- Very bottom section -->
         <div class="footer-bottom">
-            <p class="footer-text">OpenLitterMap is a flagship product of GeoTech Innovations Ltd., a startup in Ireland pioneering essential citizen science services #650323</p>
+            <p class="footer-text">{{ $t('home.footer.olm-is-flagship') }}</p>
         </div>
     </footer>
 </template>
