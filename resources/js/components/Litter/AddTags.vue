@@ -49,6 +49,7 @@
 			:disabled="checkItems"
 			:class="button"
 			@click="submit"
+            v-show="! admin"
 		>{{ $t('common.submit') }}</button>
 
 		<!-- Only show these on mobile <= 768px -->
@@ -72,7 +73,7 @@ import { categories } from '../../extra/categories'
 
 export default {
     name: 'AddTags',
-	props: ['id'], // photo.id
+	props: ['id', 'admin'], // photo.id, bool
 	components: {
         Tags,
         Presence,

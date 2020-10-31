@@ -174,7 +174,7 @@ class AdminController extends Controller
     // }
 
     /**
-     * Verify an image - keep the image
+     * The image and the tags are correct
      */
     public function verifykeepimage (Request $request)
     {
@@ -182,10 +182,11 @@ class AdminController extends Controller
         $photo->verified = 2;
         $photo->verification = 1;
         $photo->save();
+
         $user = User::find($photo->user_id);
         $user->xp += 1;
         $user->save();
-        // todo - horizon
+
         event(new PhotoVerifiedByAdmin($photo->id));
     }
 
@@ -418,8 +419,7 @@ class AdminController extends Controller
         $photo->verification = 1;
         $photo->verified = 2;
         $photo->total_litter = 0;
-
-        \Log::info(['photo', $photo]);
+        $photo->save();
 
         $user = User::find($photo->user_id);
         $user->count_correctly_verified = 0; // At 100, the user earns a Littercoin
