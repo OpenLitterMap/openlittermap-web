@@ -1,5 +1,5 @@
 <template>
-    <section :class="container" style="background-color: #23d160; height: 100%;">
+    <section :class="container" style="background-color: #23d160; min-height: 100%;">
         <div class="container w100">
             <div class="control locations-control">
                 <br>
