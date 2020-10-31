@@ -5,6 +5,10 @@ namespace App\Http\Controllers;
 use App\Exports\CreateCSVExport;
 use App\Jobs\EmailUserExportCompleted;
 
+use App\Models\Location\Country;
+use App\Models\Location\State;
+use App\Models\Location\City;
+
 use Illuminate\Http\Request;
 
 class DownloadControllerNew extends Controller
@@ -19,7 +23,7 @@ class DownloadControllerNew extends Controller
      */
     public function index (Request $request)
     {
-        \Log::info(['download', $request->all()]);
+        // \Log::info(['download', $request->all()]);
 
         $email = auth()->user()->email;
 
@@ -33,30 +37,59 @@ class DownloadControllerNew extends Controller
 
         $path = $year.'/'.$month.'/'.$day.'/'.$unix.'/';  // 2020/10/25/unix/
 
-        if ($request->type === 'country')
+        $country_id = null;
+        $state_id = null;
+        $city_id = null;
+
+        try
         {
-            $path .= $request->country.'_OpenLitterMap.csv';
+            $country_id = Country::where('country', $request->country)
+                ->orWhere('countrynameb', $request->country)
+                ->orWhere('countrynamec', $request->country)
+                ->first()
+                ->id;
+
+            if ($request->type === 'country')
+            {
+                $path .= $request->country.'_OpenLitterMap.csv';
+            }
+
+            else if ($request->type === 'state')
+            {
+                $path .= $request->country.'/'.$request->state.'_OpenLitterMap.csv';
+
+                $state_id = State::where(['state' => $request->state, 'country_id' => $country_id])
+                    ->orWhere(['statenameb' => $request->state, 'country_id' => $country_id])
+                    ->first()
+                    ->id;
+            }
+
+            else if ($request->type === 'city')
+            {
+                $path .= $request->country.'/'.$request->state.'/'.$request->city.'_OpenLitterMap.csv';
+
+                $city_id = City::where(['city', $request->city, 'country_id', $country_id])
+                    ->first()
+                    ->id;
+            }
+
+            (new CreateCSVExport($country_id, $state_id, $city_id))
+                ->queue($path, 's3', null, ['visibility' => 'public'])
+                ->chain([
+                    // These jobs are executed when above is finished.
+                    new EmailUserExportCompleted($email, $path)
+                    // new ....job
+                ]);
+            // ->allOnQueue('exports');
+
+            return ['success' => true];
         }
 
-        else if ($request->type === 'state')
+        catch (\Exception $e)
         {
-            $path .= $request->country.'/'.$request->state.'_OpenLitterMap.csv';
+            \Log::info(['download failed', $e->getMessage()]);
+
+            return ['success' => false];
         }
-
-        else if ($request->type === 'city')
-        {
-            $path .= $request->country.'/'.$request->state.'/'.$request->city.'_OpenLitterMap.csv';
-        }
-
-
-        (new CreateCSVExport($email))
-            ->queue($path, 's3')->chain([
-                // These jobs are executed when above is finished.
-                new EmailUserExportCompleted($email, $path)
-                // new ....job
-            ]);
-//        ->allOnQueue('exports');
-
-        //\Log::info(['csv']);
     }
 }
