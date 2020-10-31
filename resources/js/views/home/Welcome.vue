@@ -81,7 +81,7 @@
                     </div>
 
                     <div class="column ma">
-                        <h2 class="main-subtitle">1. {{ $t('home.welcome.how-does-it-work') }}</h2>
+                        <h2 class="main-subtitle">1. {{ $t('home.welcome.take-a-photo') }}</h2>
                         <h3 class="welcome-subtitle mb1em">{{ $t('home.welcome.device-captures-info') }}</h3>
                     </div>
                 </div>
@@ -92,7 +92,7 @@
                     </div>
 
                     <div class="column ma">
-                        <h2 class="main-subtitle">2. {{ $t('home.welcome.device-captures-info') }}</h2>
+                        <h2 class="main-subtitle">2. {{ $t('home.welcome.tag-the-litter') }}</h2>
                         <h3 class="welcome-subtitle mb1em">{{ $t('home.welcome.tag-litter-you-see') }}!</h3>
                     </div>
                 </div>
