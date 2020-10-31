@@ -35,7 +35,7 @@ class ExportWithLink extends Mailable
             ->subject('OpenLitterMap Data')
             ->view('emails.downloads.opendata_link')
             ->with([
-                'url' => "http://s3.olm.aws.com/" . $this->path, // filepath
+                'url' => "https://olm-s3.s3.eu-west-1.amazonaws.com/" . $this->path, // filepath
             ]);
     }
 }
