@@ -10,7 +10,7 @@
 
                 <div class="column cig-2">
                     <h2 id="butts1txt" class="title is-2" style="color: red; text-align: center;">
-                        <strong>{{ $t('home.home.about.what-about-litter') }}</strong>
+                        <strong>{{ $t('home.about.about2') }}</strong>
                     </h2>
                 </div>
             </div>
@@ -39,7 +39,7 @@
                 <div class="container has-text-centered">
                     <h1 class="title">
                         <strong>
-                            {{ $t('home.about7') }}
+                            {{ $t('home.about.about7') }}
                         </strong>
                     </h1>
                     <!-- subtitle removed -->
