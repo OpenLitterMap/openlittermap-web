@@ -1,3 +1,6 @@
+import Vue from 'vue'
+import i18n from '../../../i18n'
+
 export const actions = {
 
     /**
@@ -7,6 +10,9 @@ export const actions = {
      */
     async DOWNLOAD_DATA (context, payload)
     {
+        let title = i18n.t('notifications.success');
+        let body  = 'Your download is being processed and will be emailed to you soon';
+
         await axios.post('download', {
             type: payload,
             country: context.state.country,
@@ -15,6 +21,28 @@ export const actions = {
         })
         .then(response => {
             console.log('download_data', response);
+
+            if (response.data.success)
+            {
+                // not showing?
+                /* improve this */
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                    position: 'top-right'
+                });
+            }
+
+            else {
+                /* improve this */
+                Vue.$vToastify.success({
+                    title: 'Error',
+                    body: 'Sorry, there was an error with the download. Please contact support',
+                    position: 'top-right'
+                });
+            }
+
+
         })
         .catch(error => {
             console.error('download_data', error);
