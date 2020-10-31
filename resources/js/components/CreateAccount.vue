@@ -249,10 +249,16 @@ export default {
 		 */
 		computedKey ()
 		{
-			if (process.env.NODE_ENV === "development")
+            return "6LciihwUAAAAADsZr0CYUoLPSMOIiwKvORj8AD9m" // production
+
+
+            if (process.env.NODE_ENV === "development")
 			{
+                console.log('dev;')
                 return "6LcvHsIZAAAAAOG0q9-1vY3uWqu0iFvUC3tCNhID"; // olm.test
 			}
+
+            console.log('production');
 
 			return "6LciihwUAAAAADsZr0CYUoLPSMOIiwKvORj8AD9m" // production
 		},
@@ -354,6 +360,11 @@ export default {
                 plan: this.planInt,
                 plan_id
             });
+
+            this.name = '';
+            this.username = '';
+            this.email = '';
+            this.password = '';
 
             this.processing = false;
         },

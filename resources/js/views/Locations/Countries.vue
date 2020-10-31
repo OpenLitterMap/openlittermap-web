@@ -75,6 +75,7 @@
                                                 :duration="3"
                                                 :delay="1"
                                                 easing="Power1.easeOut"
+                                                :format="commas"
                                             />
                                         </strong>
                                     </h1>
@@ -94,6 +95,7 @@
                                                 :duration="3"
                                                 :delay="1"
                                                 easing="Power1.easeOut"
+                                                :format="commas"
                                             />
                                         </strong>
                                     </h1>
@@ -150,11 +152,7 @@ export default {
     {
         return {
             loading: true,
-            // dummy data for now
-            previousLevelInt: 0,
-            nextLevelInt: 1,
-            progressPercent: 50,
-            littercoinPaid: 100,
+            littercoinPaid: 2950, // hard-coded for now
         };
     },
     computed: {
@@ -216,7 +214,7 @@ export default {
          */
         progress ()
         {
-            let range = this.nextXp - this.total_litter;
+            let range = this.nextXp - this.previousXp;
 
             let startVal = this.total_litter - this.previousXp;
 
@@ -237,6 +235,17 @@ export default {
         total_photos ()
         {
             return this.$store.state.locations.total_photos;
+        }
+    },
+
+    methods: {
+
+        /**
+         * Format number value
+         */
+        commas (n)
+        {
+            return parseInt(n).toLocaleString();
         }
     }
 }

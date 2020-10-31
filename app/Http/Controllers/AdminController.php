@@ -5,8 +5,14 @@ namespace App\Http\Controllers;
 use Log;
 use Auth;
 use File;
-use App\Models\User\User;
+
+use App\Models\LitterTags;
+use App\Models\Location\City;
+use App\Models\Location\Country;
+use App\Models\Location\State;
+
 use App\Models\Photo;
+use App\Models\User\User;
 
 use App\Models\Litter\Categories\Smoking as Smoking;
 use App\Models\Litter\Categories\Alcohol as Alcohol;
@@ -24,17 +30,19 @@ use App\Models\Litter\Categories\TrashDog as TrashDog;
 use App\Models\Litter\Categories\Dumping as Dumping;
 use App\Models\Litter\Categories\Industrial as Industrial;
 
-use App\Litterrata;
-use App\LitterES;
-use App\Events\PhotoVerifiedByAdmin;
-use Carbon\Carbon;
+use App\Traits\AddTagsTrait;
 
-use App\Http\Requests;
+use Carbon\Carbon;
+use App\Events\PhotoVerifiedByAdmin;
+
+// use App\Http\Requests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
 
 class AdminController extends Controller
 {
+    use AddTagsTrait;
+
     /**
      * Apply IsAdmin middleware to all of these routes
      */
@@ -44,14 +52,6 @@ class AdminController extends Controller
 
     	parent::__construct();
 	}
-
-//    /**
-//     * Load vue-router admin tool
-//     */
-//    public function index ()
-//    {
-//        return view('layouts.admin');
-//    }
 
     public function getUserCount ()
     {
@@ -174,19 +174,20 @@ class AdminController extends Controller
     // }
 
     /**
-     * Verify an image - keep the image
+     * The image and the tags are correct
      */
     public function verifykeepimage (Request $request)
     {
-      $photo = Photo::find($request->photoId);
-      $photo->verified = 2;
-      $photo->verification = 1;
-      $photo->save();
-      $user = User::find($photo->user_id);
-      $user->xp += 1;
-      $user->save();
-      // todo - horizon
-      event(new PhotoVerifiedByAdmin($photo->id));
+        $photo = Photo::find($request->photoId);
+        $photo->verified = 2;
+        $photo->verification = 1;
+        $photo->save();
+
+        $user = User::find($photo->user_id);
+        $user->xp += 1;
+        $user->save();
+
+        event(new PhotoVerifiedByAdmin($photo->id));
     }
 
     /**
@@ -408,77 +409,24 @@ class AdminController extends Controller
 
 
     /**
-     * Update the contents of an Image, Keep the image
+     * Verify the image
+     * Keep the image
      * Image was not correctly inputted! LitterCorrectlyCount = 0.
      */
-    public function updateKeep (Request $request)
+    public function updateTags (Request $request)
     {
         $photo = Photo::find($request->photoId);
-        $user = User::find($photo->user_id);
-
-        $user->count_correctly_verified = 0;
-        $user->save();
-
         $photo->verification = 1;
         $photo->verified = 2;
         $photo->total_litter = 0;
-
-        $litterTotal = 0;
-
-        $jsonDecoded = Litterrata::INSTANCE()->getDecodedJSON();
-
-        // for each categories as category => values eg. Smoking, Butts: 3;
-        foreach ($request['categories'] as $category => $values)
-        {
-            // \Log::info(['category', $category]);
-            // \Log::info(['values', $values]);
-
-            // if there are no values, set the smoking_id, coffee_id to null
-            // Todo - check if all values are 0 and set to null
-            if (sizeof($values) == 0) {
-                $id = $jsonDecoded->$category->id;
-                $photo->$id = null;
-            }
-
-            $total = 0;
-            foreach ($values as $item => $quantity)
-            {
-                // reference the dynamic id on the photos table eg. smoking_id
-                $id          = $jsonDecoded->$category->id;
-                // The current Class as a string
-                $clazz       = $jsonDecoded->$category->class;
-                // Reference the name of the column we want to edit
-                $col         = $jsonDecoded->$category->types->$item->col;
-                // return [$id, $clazz, $col, $att];
-                $dynamicClassName = 'App\\Categories\\'.$clazz;
-
-                // Create and select new row in the dynamic table
-                // $row = $dynamicClassName::create();
-
-                // Does the photos table have a reference to the dynamic row id yet?
-                if (is_null($photo->$id)) {
-                    // \Log::info('photo->$id is null...');
-                    $row = $dynamicClassName::create();
-                    $photo->$id = $row->id;
-                    $photo->save();
-                } else {
-                    // \Log::info('photo->$id is NOT null...');
-                    $row = $dynamicClassName::find($photo->$id);
-                }
-
-                // Now that the tables are linked, update the dynamic row/col quantity and save
-                // row = id, photo id, all attriubutes for that specific row
-                // col == butts
-                $row->$col = $quantity;
-                $row->save();
-                $litterTotal += $quantity;
-            } // end foreach item
-        } // end foreach categories as category
-
-        // photo->verified_by ;
-        $photo->total_litter = $litterTotal;
-        $photo->result_string = null;
         $photo->save();
+
+        $user = User::find($photo->user_id);
+        $user->count_correctly_verified = 0; // At 100, the user earns a Littercoin
+        $user->save();
+        // Todo - Decrement user.total_litter by amount on the photo before verification
+
+        $this->addTags($request->tags, $request->photoId);
 
         event(new PhotoVerifiedByAdmin($photo->id));
     }
@@ -488,7 +436,6 @@ class AdminController extends Controller
      */
     public function getImage ()
     {
-        \Log::info('getimage');
         if ($photo = Photo::where('verification', 0.1)->first())
         {
             $photoData = $this->getPhotoData($photo);
@@ -531,71 +478,84 @@ class AdminController extends Controller
     {
         $photodata = [];
 
-        if ($photo->smoking_id) {
-            $photodata['Smoking'] = Smoking::find($photo->smoking_id);
+        if ($photo->smoking_id)
+        {
+            $photodata['smoking'] = Smoking::find($photo->smoking_id);
         }
 
-        if ($photo->coffee_id) {
-            $photodata['Coffee'] = Coffee::find($photo->coffee_id);
+        if ($photo->coffee_id)
+        {
+            $photodata['coffee'] = Coffee::find($photo->coffee_id);
         }
 
-        if ($photo->food_id) {
-            $photodata['Food'] = Food::find($photo->food_id);
+        if ($photo->food_id)
+        {
+            $photodata['food'] = Food::find($photo->food_id);
         }
 
-        if ($photo->alcohol_id) {
-            $photodata['Alcohol'] = Alcohol::find($photo->alcohol_id);
+        if ($photo->alcohol_id)
+        {
+            $photodata['alcohol'] = Alcohol::find($photo->alcohol_id);
         }
 
-        if ($photo->softdrinks_id) {
-            $photodata['SoftDrinks'] = SoftDrinks::find($photo->softdrinks_id);
+        if ($photo->softdrinks_id)
+        {
+            $photodata['softdrinks'] = SoftDrinks::find($photo->softdrinks_id);
         }
 
-        // if ($photo['drugs_id']) {
+        // if ($photo['drugs_id'])
+        //{
         //     $drugs = Drugs::find($photo['drugs_id']);
         //     $photodata['Drugs'] = $drugs;
         // }
 
-        if ($photo->sanitary_id) {
-            $photodata['Sanitary'] = Sanitary::find($photo->sanitary_id);
+        if ($photo->sanitary_id)
+        {
+            $photodata['sanitary'] = Sanitary::find($photo->sanitary_id);
         }
 
-        if ($photo->other_id) {
-            $photodata['Other'] = Other::find($photo->other_id);
+        if ($photo->other_id)
+        {
+            $photodata['other'] = Other::find($photo->other_id);
         }
 
-        if ($photo->coastal_id) {
-            $photodata['Coastal'] = Coastal::find($photo->coastal_id);
+        if ($photo->coastal_id)
+        {
+            $photodata['coastal'] = Coastal::find($photo->coastal_id);
         }
 
-        // if ($photo['pathways_id']) {
+        // if ($photo['pathways_id'])
+        //{
         //     $pathway = Pathway::find($photo['pathways_id']);
         //     $photodata['Pathway'] = $pathway;
         // }
 
-        if ($photo->art_id) {
-            $photodata['Art'] = Art::find($photo->art_id);
+        if ($photo->art_id)
+        {
+            $photodata['art'] = Art::find($photo->art_id);
         }
 
-        if ($photo->trashdog_id) {
-            $photodata['TrashDog'] = TrashDog::find($photo->trashdog_id);
+        if ($photo->trashdog_id)
+        {
+            $photodata['trashdog'] = TrashDog::find($photo->trashdog_id);
         }
 
-        if ($photo->brands_id) {
-            $photodata['Brands'] = Brand::find($photo->brands_id);
+        if ($photo->brands_id)
+        {
+            $photodata['brands'] = Brand::find($photo->brands_id);
         }
 
-        if ($photo->dumping_id) {
-            $photodata['Dumping'] = Dumping::find($photo->dumping_id);
+        if ($photo->dumping_id)
+        {
+            $photodata['dumping'] = Dumping::find($photo->dumping_id);
         }
 
-         if ($photo->industrial_id) {
-            $photodata['Industrial'] = Industrial::find($photo->industrial_id);
+        if ($photo->industrial_id)
+        {
+            $photodata['industrial'] = Industrial::find($photo->industrial_id);
         }
 
-        // \Log::info(['photodata', $photodata]);
-
-        return json_encode($photodata);
+        return $photodata;
     }
 
 }

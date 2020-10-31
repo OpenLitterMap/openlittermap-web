@@ -35,15 +35,6 @@ export const mutations = {
     },
 
     /**
-     * todo - refactor
-     */
-    adminCreated (state, payload)
-    {
-        Vue.set(state.items, payload.item, payload.quantity);
-        Vue.set(state.categories[payload.category], payload.item, payload.quantity);
-    },
-
-    /**
      * Clear the tags object (When we click next/previous image on pagination)
      */
     clearTags (state)
@@ -83,22 +74,28 @@ export const mutations = {
      */
     initAdminItems (state, payload)
     {
+        let tags = {};
+
         categories.map(category => {
-            if (payload.hasOwnProperty(category))
+            if (payload.hasOwnProperty(category.key) && payload[category.key])
             {
-                Object.entries(payload[category]).map(items => {
-                    if (items[1])
+                litterkeys[category.key].map(item => {
+
+                    if (payload[category.key][item.key])
                     {
-                        let name = litterkeys[items[0]];
-                        if (name)
-                        {
-                            Vue.set(state.items, name, items[1]);
-                            Vue.set(state.categories[category], name, items[1]);
-                        }
+                        tags = {
+                            ...tags,
+                            [category.key]: {
+                                ...tags[category.key],
+                                [item.key]: payload[category.key][item.key]
+                            }
+                        };
                     }
                 });
             }
         });
+
+        state.tags = tags;
     },
 
     /**
@@ -111,7 +108,7 @@ export const mutations = {
     },
 
     /**
-     * Remove a tag from tags
+     * Remove a tag from a category
      * If category is empty, delete category
      */
     removeTag (state, payload)
@@ -120,7 +117,7 @@ export const mutations = {
 
         delete tags[payload.category][payload.tag_key];
 
-        if (Object.keys(tags[payload.category]).length == 0)
+        if (Object.keys(tags[payload.category]).length === 0)
         {
             delete tags[payload.category];
         }
@@ -134,11 +131,11 @@ export const mutations = {
      */
     resetTag (state, payload)
     {
-        let categories = Object.assign({}, state.categories);
+        let tags = Object.assign({}, state.tags);
 
-        categories[payload.category][payload.tag] = 0;
+        tags[payload.category][payload.tag_key] = 0;
 
-        state.categories = categories;
+        state.tags = tags;
         state.hasAddedNewTag = true; // activate update_with_new_tags button
     },
 
@@ -155,6 +152,7 @@ export const mutations = {
      */
     resetLitter (state)
     {
+        console.log('resetLitter');
         state.items = {};
         state.categories = {
             'Alcohol': {},
@@ -179,6 +177,8 @@ export const mutations = {
     */
     setAllItemsToZero (state)
    {
+       console.log('setAllItemsToZero');
+
         let categories = Object.assign({}, state.categories);
 
         Object.entries(categories).map(keys => {

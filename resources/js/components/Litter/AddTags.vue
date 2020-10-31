@@ -49,6 +49,7 @@
 			:disabled="checkItems"
 			:class="button"
 			@click="submit"
+            v-show="! admin"
 		>{{ $t('common.submit') }}</button>
 
 		<!-- Only show these on mobile <= 768px -->
@@ -72,7 +73,7 @@ import { categories } from '../../extra/categories'
 
 export default {
     name: 'AddTags',
-	props: ['id'], // photo.id
+	props: ['id', 'admin'], // photo.id, bool
 	components: {
         Tags,
         Presence,
@@ -192,7 +193,7 @@ export default {
          */
         checkDecr ()
         {
-            return this.quantity == 1 ? true : false;
+            return this.quantity === 1 ? true : false;
         },
 
         /**
@@ -200,7 +201,7 @@ export default {
          */
         checkIncr ()
         {
-            return this.quantity == 100 ? true : false;
+            return this.quantity === 100 ? true : false;
         },
 
         /**
@@ -208,7 +209,7 @@ export default {
          */
         checkItems ()
         {
-            return Object.keys(this.$store.state.litter.items).length == 0 ? true : false;
+            return Object.keys(this.$store.state.litter.items).length === 0 ? true : false;
         }
     },
     methods: {

@@ -1,7 +1,14 @@
 /* @preserve
- * Leaflet 1.6.0, a JS library for interactive maps. http://leafletjs.com
+ * Leaflet 1.7.1, a JS library for interactive maps. http://leafletjs.com
  * (c) 2010-2019 Vladimir Agafonkin, (c) 2010-2011 CloudMade
  */
+
+/*!
+	 * The buffer module from node.js, for the browser.
+	 *
+	 * @author   Feross Aboukhadijeh <feross@feross.org> <http://feross.org>
+	 * @license  MIT
+	 */
 
 /*!
  * Chart.js v2.9.3
@@ -11,10 +18,10 @@
  */
 
 /*!
- * Pusher JavaScript Library v7.0.0
+ * Pusher JavaScript Library v4.4.0
  * https://pusher.com/
  *
- * Copyright 2020, Pusher
+ * Copyright 2017, Pusher
  * Released under the MIT licence.
  */
 
@@ -113,6 +120,20 @@
  * (c) 2020 Evan You
  * @license MIT
  */
+
+/**
+         * @license get-closest https://github.com/cosmosio/get-closest
+         *
+         * The MIT License (MIT)
+         *
+         * Copyright (c) 2014 Olivier Scherrer <pode.fr@gmail.com>
+         */
+
+/**
+  * vue-class-component v7.0.1
+  * (c) 2015-present Evan You
+  * @license MIT
+  */
 
 /**
  * @license

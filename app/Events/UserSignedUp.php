@@ -24,7 +24,7 @@ class UserSignedUp implements ShouldBroadcast
      *
      * @return void
      */
-    public function __construct($now)
+    public function __construct ($now)
     {
         // $this->username = $username;
         $this->now = $now;

@@ -71,13 +71,13 @@ export const actions = {
     },
 
     /**
-     * Verify the previous + new tags
+     * Verify the image, and update with new tags
      */
-    async ADMIN_VERIFY_KEEP (context)
+    async ADMIN_NEW_TAGS (context)
     {
-        await axios.post('/admin/contentsupdatekeep', {
+        await axios.post('/admin/update-tags', {
             photoId: context.state.photo.id,
-            // categories: this.$store.state.litter.categories // todo
+            tags: context.rootState.litter.tags
         })
         .then(response => {
             console.log('admin_verify_keep', response);
@@ -94,32 +94,32 @@ export const actions = {
      */
     async GET_NEXT_ADMIN_PHOTO (context)
     {
+        // admin loading = true
+
         // clear previous input on litter.js
         context.commit('resetLitter');
 
-        console.log('get_next_admin_photo...');
-
         await axios.get('/admin/get-image')
-            .then(resp => {
+        .then(resp => {
 
-                console.log('get_next_admin_photo', resp);
+            console.log('get_next_admin_photo', resp);
 
-                this.photo = resp.data.photo;
+            // init photo data (admin.js)
+            context.commit('initAdminPhoto', resp.data.photo);
 
-                // init photo data (admin.js)
-                context.commit('initAdminPhoto', resp.data.photo);
+            // init litter data for verification (litter.js)
+            if (resp.data.photoData) context.commit('initAdminItems', resp.data.photoData);
 
-                // init litter data for verification (litter.js)
-                if (resp.data.photoData) context.commit('initAdminItems', JSON.parse(resp.data.photoData));
-
-                context.commit('initAdminMetadata', {
-                    not_processed: resp.data.photosNotProcessed,
-                    awaiting_verification: resp.data.photosAwaitingVerification
-                });
-            })
-            .catch(err => {
-                console.error(err);
+            context.commit('initAdminMetadata', {
+                not_processed: resp.data.photosNotProcessed,
+                awaiting_verification: resp.data.photosAwaitingVerification
             });
+        })
+        .catch(err => {
+            console.error(err);
+        });
+
+        // admin loading = false
     },
 
     /**
