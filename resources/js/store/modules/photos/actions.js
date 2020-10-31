@@ -51,16 +51,18 @@ export const actions = {
                 console.log('error.next_image', error);
             });
     },
-     /**
+
+    /**
      * Select page from pagination
+     *
+     * @payload = pageSelected
      */
-    async SELECT_IMAGE (context, pageSelected)
+    async SELECT_IMAGE (context, payload)
     {
-        //get env url?
-        const url = `/photos?page=${pageSelected}`;
-        await axios.get(url)
+        await axios.get(`/photos?page=${payload}`)
             .then(response => {
                 console.log('select_img', response);
+
                 context.commit('clearTags');
                 context.commit('photosForTagging', response.data);
             })
