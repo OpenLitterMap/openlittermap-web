@@ -63,7 +63,6 @@ export const mutations = {
      */
     initUser (state, payload)
     {
-        console.log('initUser', payload);
         state.user = payload;
 
         if (payload.id === 1) state.admin = true;
