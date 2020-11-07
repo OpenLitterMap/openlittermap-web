@@ -16,16 +16,12 @@ export const actions = {
         await axios.post('download', {
             type: payload.type,
             locationId: payload.locationId
-            // country: context.state.country,
-            // state: context.state.state,
-            // city: context.state.city
         })
         .then(response => {
             console.log('download_data', response);
 
             if (response.data.success)
             {
-                // not showing?
                 /* improve this */
                 Vue.$vToastify.success({
                     title,
