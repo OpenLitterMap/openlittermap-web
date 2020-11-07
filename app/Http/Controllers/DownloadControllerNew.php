@@ -36,51 +36,45 @@ class DownloadControllerNew extends Controller
         $unix  = now()->timestamp;
 
         $path = $year.'/'.$month.'/'.$day.'/'.$unix.'/';  // 2020/10/25/unix/
-
-        $country_id = null;
-        $state_id = null;
-        $city_id = null;
+        $location_id = 0;
 
         try
         {
-            $country_id = Country::where('country', $request->country)
-                ->orWhere('countrynameb', $request->country)
-                ->orWhere('countrynamec', $request->country)
-                ->first()
-                ->id;
-
-            if ($request->type === 'country')
+            if ($request->type === 'city')
             {
-                $path .= $request->country.'_OpenLitterMap.csv';
+                if ($city = City::find($request->locationId))
+                {
+                    $path .= $city->city . '_OpenLitterMap.csv';
+                    $location_id = $city->id;
+                }
             }
 
             else if ($request->type === 'state')
             {
-                $path .= $request->country.'/'.$request->state.'_OpenLitterMap.csv';
-
-                $state_id = State::where(['state' => $request->state, 'country_id' => $country_id])
-                    ->orWhere(['statenameb' => $request->state, 'country_id' => $country_id])
-                    ->first()
-                    ->id;
+                if ($state = State::find($request->locationId))
+                {
+                    $path .= $state->state . '_OpenLitterMap.csv';
+                    $location_id = $state->id;
+                }
             }
 
-            else if ($request->type === 'city')
+            else if ($request->type === 'country')
             {
-                $path .= $request->country.'/'.$request->state.'/'.$request->city.'_OpenLitterMap.csv';
-
-                $city_id = City::where(['city', $request->city, 'country_id', $country_id])
-                    ->first()
-                    ->id;
+                if ($country = Country::find($request->locationId))
+                {
+                    $path .= $country->country . '_OpenLitterMap.csv';
+                    $location_id = $country->id;
+                }
             }
 
-            (new CreateCSVExport($country_id, $state_id, $city_id))
+            /* Dispatch job to create CSV file for export */
+            (new CreateCSVExport($request->type, $location_id))
                 ->queue($path, 's3', null, ['visibility' => 'public'])
                 ->chain([
                     // These jobs are executed when above is finished.
                     new EmailUserExportCompleted($email, $path)
                     // new ....job
                 ]);
-            // ->allOnQueue('exports');
 
             return ['success' => true];
         }

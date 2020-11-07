@@ -18,16 +18,15 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
 {
     use Exportable, Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $country_id, $state_id, $city_id;
+    public $location_type, $location_id;
 
     /**
      * Init args
      */
-    public function __construct ($country_id, $state_id, $city_id)
+    public function __construct ($location_type, $location_id)
     {
-        $this->country_id = $country_id;
-        $this->state_id = $state_id;
-        $this->city_id = $city_id;
+        $this->location_type = $location_type;
+        $this->location_id = $location_id;
     }
 
     /**
@@ -501,20 +500,20 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
      */
     public function query ()
     {
-        if ($this->city_id)
+        if ($this->location_type === 'city')
         {
             return Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands'])
                 ->where([
-                    'city_id' => $this->city_id,
+                    'city_id' => $this->location_id,
                     'verified' => 2
                 ]);
         }
 
-        else if ($this->state_id)
+        else if ($this->location_type === 'state')
         {
             return Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands'])
                 ->where([
-                    'state_id' => $this->state_id,
+                    'state_id' => $this->location_id,
                     'verified' => 2
                 ]);
         }
@@ -523,7 +522,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
         {
             return Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands'])
                 ->where([
-                    'country_id' => $this->country_id,
+                    'country_id' => $this->location_id,
                     'verified' => 2
                 ]);
         }

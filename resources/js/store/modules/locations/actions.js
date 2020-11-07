@@ -14,10 +14,11 @@ export const actions = {
         let body  = 'Your download is being processed and will be emailed to you soon';
 
         await axios.post('download', {
-            type: payload,
-            country: context.state.country,
-            state: context.state.state,
-            city: context.state.city
+            type: payload.type,
+            locationId: payload.locationId
+            // country: context.state.country,
+            // state: context.state.state,
+            // city: context.state.city
         })
         .then(response => {
             console.log('download_data', response);
@@ -33,7 +34,8 @@ export const actions = {
                 });
             }
 
-            else {
+            else
+            {
                 /* improve this */
                 Vue.$vToastify.success({
                     title: 'Error',

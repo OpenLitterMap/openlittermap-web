@@ -12,7 +12,7 @@
 <script>
 export default {
     name: 'Download',
-    props: ['type'], // country, state or city
+    props: ['type', 'locationId'], // country, state or city
     data ()
     {
         return {
@@ -30,7 +30,10 @@ export default {
          */
         async download ()
         {
-            await this.$store.dispatch('DOWNLOAD_DATA', this.type);
+            await this.$store.dispatch('DOWNLOAD_DATA', {
+                type: this.type,
+                locationId: this.locationId
+            });
         },
     },
 }
