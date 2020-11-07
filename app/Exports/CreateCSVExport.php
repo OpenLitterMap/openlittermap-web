@@ -520,11 +520,18 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
 
         else
         {
-            return Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands'])
+            \Log::info(['location.id', $this->location_id]);
+            $data = Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands'])
                 ->where([
                     'country_id' => $this->location_id,
                     'verified' => 2
                 ]);
+
+            $size = $data->count();
+
+            \Log::info(['sizeof.data', $size]);
+
+            return $data;
         }
     }
 }
