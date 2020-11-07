@@ -32,6 +32,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
     /**
      * Define column titles
      *
+     * Todo - Add Country / State / City name
      * Todo - Allow the user to determine what data they want on the frontend
      * Todo - Import these from elsewhere
      * Todo - Separate brands by country
@@ -45,9 +46,9 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             'datetime',
             'lat',
             'lon',
-            'city',
-            'state',
-            'country',
+//            'city',
+//            'state',
+//            'country',
             'remaining_beta',
             'address',
             'total_litter',
@@ -270,14 +271,14 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
     {
         return [
             $row->id,
-            $row->verification,
-            $row->phone,
+            $row->verified,
+            $row->model,
             $row->datetime,
             $row->lat,
             $row->lon,
-            $row->city_id, // todo -> name
-            $row->state_id, // todo -> name
-            $row->country_id, // todo -> name
+//            $row->city_id, // todo -> name
+//            $row->state_id, // todo -> name
+//            $row->country_id, // todo -> name
             $row->remaining_beta,
             $row->address,
             $row->total_litter,
@@ -520,18 +521,11 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
 
         else
         {
-            \Log::info(['location.id', $this->location_id]);
-            $data = Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands'])
+            return Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands'])
                 ->where([
                     'country_id' => $this->location_id,
                     'verified' => 2
                 ]);
-
-            $size = $data->count();
-
-            \Log::info(['sizeof.data', $size]);
-
-            return $data;
         }
     }
 }

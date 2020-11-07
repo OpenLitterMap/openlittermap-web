@@ -23,8 +23,6 @@ class DownloadControllerNew extends Controller
      */
     public function index (Request $request)
     {
-        // \Log::info(['download', $request->all()]);
-
         $email = auth()->user()->email;
 
         $x     = new \DateTime();
