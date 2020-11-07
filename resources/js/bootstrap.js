@@ -44,6 +44,6 @@ window.Echo = new Echo({
     wsPort:  window.APP_DEBUG ? 6001 : 6002,
     wssPort: window.APP_DEBUG ? 6001 : 6002,
     disableStats: true,
-    // encrypted: window.APP_DEBUG ? false : true,
+    encrypted: window.APP_DEBUG ? false : true,
     enabledTransports: ['ws', 'wss'],
 });
