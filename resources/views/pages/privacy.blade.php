@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('app')
 
 @section('content')
 	<div class="container">
@@ -17,7 +17,7 @@
 		<br>
 		<br>
 		<br>
-		This Privacy Policy describes how and when we collect, share and use your information across the website. By using this website, you authorize us to store and use your information in accordance with this privacy policy. This policy will change from time to time and we will do our best to notify you of these changes and updates once you log into the website and through our social media campaigns @OpenLitterMap (Twitter).</p>		
+		This Privacy Policy describes how and when we collect, share and use your information across the website. By using this website, you authorize us to store and use your information in accordance with this privacy policy. This policy will change from time to time and we will do our best to notify you of these changes and updates once you log into the website and through our social media campaigns @OpenLitterMap (Twitter).</p>
 		<br>
 		<br>
 		<h3>People under the age of 13</h3>
