@@ -105,6 +105,7 @@
                             @dateschanged="updateUrl"
                             :index="index"
                             :type="type"
+                            :locationId="location.id"
                         />
 
                     </div>
