@@ -119,6 +119,8 @@ return [
 
     'redis' => [
 
+        'read_write_timeout' => 0,
+
         'client' => env('REDIS_CLIENT', 'predis'), // was phpredis
 
         'options' => [
