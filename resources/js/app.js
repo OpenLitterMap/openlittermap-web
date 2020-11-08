@@ -25,7 +25,7 @@ Vue.use(VueSweetalert2)
 Vue.use(VueToastify)
 // Vue.use(VueMask)
 Vue.use(VueNumber)
-// Vue.use(VueEcho, window.Echo)
+Vue.use(VueEcho, window.Echo)
 
 // Format a number with commas: "10,000"
 Vue.filter('commas', value => {
