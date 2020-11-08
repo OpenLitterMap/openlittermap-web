@@ -2,9 +2,9 @@
 
 namespace App\Models\Litter\Categories;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Models\Litter\LitterCategory;
 
-class Smoking extends Model
+class Smoking extends LitterCategory
 {
     protected $table = 'smoking';
 
@@ -24,8 +24,29 @@ class Smoking extends Model
         'vape_pen'
     ];
 
+    /**
+     * The photo where this
+     */
     public function photo () {
     	return $this->belongsTo('App\Models\Photo');
+    }
+
+    /**
+     * Pre-defined litter types available on this class
+     */
+    public function types ()
+    {
+        return [
+            'butts',
+            'lighters',
+            'cigaretteBox',
+            'tobaccoPouch',
+            'skins',
+            'smokingOther',
+            'smoking_plastic',
+            'filters',
+            'filterbox'
+        ];
     }
 
 }

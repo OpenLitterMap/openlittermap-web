@@ -175,6 +175,8 @@ class AdminController extends Controller
 
     /**
      * The image and the tags are correct
+     *
+     * Updates Country, State + City table
      */
     public function verifykeepimage (Request $request)
     {
@@ -412,6 +414,10 @@ class AdminController extends Controller
      * Verify the image
      * Keep the image
      * Image was not correctly inputted! LitterCorrectlyCount = 0.
+     *
+     * We need to Update the Country, State and City model
+     * - remove previous tag counts
+     * - add new tag counts
      */
     public function updateTags (Request $request)
     {
@@ -428,7 +434,9 @@ class AdminController extends Controller
 
         $this->addTags($request->tags, $request->photoId);
 
-        event(new PhotoVerifiedByAdmin($photo->id));
+        // todo - event new (PhotoTagsUpdatedByAdmin($photo->id));
+
+        // was...event(new PhotoVerifiedByAdmin($photo->id)); // this needs a different event type
     }
 
     /**

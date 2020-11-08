@@ -2,9 +2,9 @@
 
 namespace App\Models\Litter\Categories;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Models\Litter\LitterCategory;
 
-class Dumping extends Model
+class Dumping extends LitterCategory
 {
     public $fillable = [
     	'small',
@@ -16,5 +16,17 @@ class Dumping extends Model
 
     public function photo () {
     	return $this->belongsTo('App\Models\Photo');
+    }
+
+    /**
+     * Pre-defined litter types available on this class
+     */
+    public function types ()
+    {
+        return [
+            'small',
+            'medium',
+            'large'
+        ];
     }
 }
