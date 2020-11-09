@@ -51,15 +51,18 @@ class EventServiceProvider extends ServiceProvider
             'App\Listeners\IncrementCityAdmin',
             'App\Listeners\IncrementStateAdmin',
             'App\Listeners\IncrementCountryAdmin',
-
 //            'App\Listeners\UpdateCitiesAdmin', // Needs refactor
 //            'App\Listeners\UpdateStatesAdmin', // Needs refactor
 //            'App\Listeners\UpdateCountriesAdmin', // Needs refactor
-            // 'App\Listeners\UpdateLocationsAdmin', // todo
-
             // 'App\Listeners\GenerateLitterCoin',
             // 'App\Listeners\UpdateLeaderboardsAdmin', happens on AddTagsTrait
             'App\Listeners\CompileResultsString'
+        ],
+        'App\Events\ResetTagsCountAdmin' => [
+            // 'App\Listeners\DecrementUserTags', Add this in when we update UpdateUserTags
+            'App\Listeners\DecrementCityTags',
+            'App\Listeners\DecrementStateTags',
+            'App\Listeners\DecrementCountryTags',
         ],
         'App\Events\UserSignedUp' => [
             'App\Listeners\SendNewUserEmail'

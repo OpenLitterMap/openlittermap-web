@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\PhotoTagsUpdatedByAdmin;
+use App\Events\ResetTagsCountAdmin;
 use Log;
 use Auth;
 use File;
@@ -357,17 +359,17 @@ class AdminController extends Controller
         $jsonDecoded = Litterrata::INSTANCE()->getDecodedJSON();
 
         // for each categories as category => values eg. Smoking, Butts: 3;
-        foreach ($request['categories'] as $category => $values){
+        foreach ($request['categories'] as $category => $values)
+        {
             $total = 0;
-            foreach ($values as $item => $quantity){
-                // return [$item, $quantity];
+            foreach ($values as $item => $quantity)
+            {
                 // reference the dynamic id on the photos table eg. smoking_id
                 $id          = $jsonDecoded->$category->id;
                 // The current Class as a string
                 $clazz       = $jsonDecoded->$category->class;
                 // Reference the name of the column we want to edit
                 // $col         = $jsonDecoded->$category->types->$item->att;
-
                 $col         = $jsonDecoded->$category->types->$item->col;
 
                 $dynamicClassName = 'App\\Categories\\'.$clazz;
@@ -398,9 +400,8 @@ class AdminController extends Controller
 
                 $litterTotal += $quantity;
 
-            } // end foreach item
-
-        } // end foreach categories as category
+            }
+        }
 
         $photo->total_litter = $litterTotal;
         $photo->save();
@@ -430,13 +431,15 @@ class AdminController extends Controller
         $user = User::find($photo->user_id);
         $user->count_correctly_verified = 0; // At 100, the user earns a Littercoin
         $user->save();
+
         // Todo - Decrement user.total_litter by amount on the photo before verification
+        // Decrement total_category and total_litter on city, state, country
+        event (new ResetTagsCountAdmin($photo->id));
 
         $this->addTags($request->tags, $request->photoId);
 
-        // todo - event new (PhotoTagsUpdatedByAdmin($photo->id));
-
-        // was...event(new PhotoVerifiedByAdmin($photo->id)); // this needs a different event type
+        // todo - dispatch event via horizon
+        event (new PhotoTagsUpdatedByAdmin($photo->id));
     }
 
     /**
