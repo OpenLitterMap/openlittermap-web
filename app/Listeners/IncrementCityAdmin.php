@@ -29,27 +29,29 @@ class IncrementCityAdmin
     public function handle (PhotoVerifiedByAdmin $event)
     {
         $photo = Photo::find($event->photoId);
-        $city = City::find($photo->city_id);
 
-        $total_count = 0;
-
-        // this is going to be the same for each location
-        foreach ($photo->categories() as $category)
+        if ($city = City::find($photo->city_id))
         {
-            if ($photo->$category)
+            $total_count = 0;
+
+            // this is going to be the same for each location
+            foreach ($photo->categories() as $category)
             {
-                $total = $photo->$category->total();
+                if ($photo->$category)
+                {
+                    $total = $photo->$category->total();
 
-                $total_string = "total_" . $category; // total_smoking, total_food...
+                    $total_string = "total_" . $category; // total_smoking, total_food...
 
-                $city->$total_string += $total;
+                    $city->$total_string += $total;
 
-                $total_count += $total; // total counts of all categories
+                    $total_count += $total; // total counts of all categories
+                }
             }
-        }
 
-        $city->total_litter += $total_count;
-        $city->total_images++;
-        $city->save();
+            $city->total_litter += $total_count;
+            $city->total_images++;
+            $city->save();
+        }
     }
 }
