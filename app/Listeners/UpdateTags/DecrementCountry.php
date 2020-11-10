@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Listeners;
+namespace App\Listeners\UpdateTags;
 
 use App\Events\ResetTagsCountAdmin;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 
-class DecrementCountryTags
+class DecrementCountry
 {
     /**
      * Create the event listener.

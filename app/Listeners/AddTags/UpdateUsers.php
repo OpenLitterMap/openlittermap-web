@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Listeners;
+namespace App\Listeners\AddTags;
 
 use App\Models\User\User;
 use App\Models\Photo;
@@ -9,7 +9,7 @@ use App\Events\DynamicUpdate;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class UpdateUsersAdmin
+class UpdateUsers
 {
     /**
      * Create the event listener.
