@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Listeners;
+namespace App\Listeners\AddTags;
 
-use App\Events\ResetTagsCountAdmin;
-use App\Models\Location\City;
+use App\Events\PhotoVerifiedByAdmin;
+use App\Models\Location\Country;
 use App\Models\Photo;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 
-class DecrementCityTags
+class IncrementCountry
 {
     /**
      * Create the event listener.
@@ -23,14 +23,14 @@ class DecrementCityTags
     /**
      * Handle the event.
      *
-     * @param  ResetTagsCountAdmin  $event
+     * @param  PhotoVerifiedByAdmin  $event
      * @return void
      */
-    public function handle (ResetTagsCountAdmin $event)
+    public function handle(PhotoVerifiedByAdmin $event)
     {
-        $photo = Photo::find($event->photo_id);
+        $photo = Photo::find($event->photoId);
 
-        if ($city = City::find($photo->city_id))
+        if ($country = Country::find($photo->country_id))
         {
             $total_count = 0;
 
@@ -43,15 +43,15 @@ class DecrementCityTags
 
                     $total_string = "total_" . $category; // total_smoking, total_food...
 
-                    $city->$total_string -= $total;
+                    $country->$total_string += $total;
 
                     $total_count += $total; // total counts of all categories
                 }
             }
 
-            $city->total_litter -= $total_count;
-            $city->total_images--;
-            $city->save();
+            $country->total_litter += $total_count;
+            $country->total_images++;
+            $country->save();
         }
     }
 }

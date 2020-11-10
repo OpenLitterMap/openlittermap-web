@@ -20,17 +20,17 @@ class EventServiceProvider extends ServiceProvider
         ],
 
         'App\Events\NewCountryAdded' => [
-            'App\Listeners\UpdateCountriesTable',
+            'App\Listeners\AddLocation\UpdateCountriesTable',
             // 'App\Listeners\GenerateLitterCoin',
             // 'App\Listeners\SendNewCountryEmail',
             // 'App\Listeners\UpdateSlackChannel',
         ],
         'App\Events\NewStateAdded' => [
-            'App\Listeners\UpdateStatesTable',
+            'App\Listeners\AddLocation\UpdateStatesTable',
             // 'App\Listeners\GenerateLitterCoin',
         ],
         'App\Events\NewCityAdded' => [
-            'App\Listeners\UpdateCitiesTable',
+            'App\Listeners\AddLocation\UpdateCitiesTable',
             // 'App\Listeners\GenerateLitterCoin',
             // 'App\Listeners\SendNewCityEmail'
         ],
@@ -47,30 +47,27 @@ class EventServiceProvider extends ServiceProvider
             'App\Listeners\UpdateLeaderboards',
         ],
         'App\Events\PhotoVerifiedByAdmin' => [
-            'App\Listeners\UpdateUsersAdmin',
-            'App\Listeners\IncrementCityAdmin',
-            'App\Listeners\IncrementStateAdmin',
-            'App\Listeners\IncrementCountryAdmin',
-//            'App\Listeners\UpdateCitiesAdmin', // Needs refactor
-//            'App\Listeners\UpdateStatesAdmin', // Needs refactor
-//            'App\Listeners\UpdateCountriesAdmin', // Needs refactor
+            'App\Listeners\AddTags\UpdateUsers',
+            'App\Listeners\AddTags\IncrementCity',
+            'App\Listeners\AddTags\IncrementState',
+            'App\Listeners\AddTags\IncrementCountry',
             // 'App\Listeners\GenerateLitterCoin',
             // 'App\Listeners\UpdateLeaderboardsAdmin', happens on AddTagsTrait
-            'App\Listeners\CompileResultsString'
+            'App\Listeners\AddTags\CompileResultsString'
         ],
         'App\Events\ResetTagsCountAdmin' => [
             // 'App\Listeners\DecrementUserTags', Add this in when we update UpdateUserTags
-            'App\Listeners\DecrementCityTags',
-            'App\Listeners\DecrementStateTags',
-            'App\Listeners\DecrementCountryTags',
+            'App\Listeners\UpdateTags\DecrementCity',
+            'App\Listeners\UpdateTags\DecrementState',
+            'App\Listeners\UpdateTags\DecrementCountry',
         ],
         'App\Events\UserSignedUp' => [
             'App\Listeners\SendNewUserEmail'
         ],
         'App\Events\Photo\IncrementPhotoMonth' => [
-            'App\Listeners\Photo\IncrementCountryMonth',
-            'App\Listeners\Photo\IncrementStateMonth',
-            'App\Listeners\Photo\IncrementCityMonth',
+            'App\Listeners\UpdateTimes\IncrementCountryMonth',
+            'App\Listeners\UpdateTimes\IncrementStateMonth',
+            'App\Listeners\UpdateTimes\IncrementCityMonth',
         ]
     ];
 

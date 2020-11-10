@@ -1,14 +1,13 @@
 <?php
 
-namespace App\Listeners;
+namespace App\Listeners\AddTags;
 
 use App\Events\PhotoVerifiedByAdmin;
-use App\Models\Location\City;
 use App\Models\Photo;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 
-class IncrementCityAdmin
+class IncrementState
 {
     /**
      * Create the event listener.
@@ -26,11 +25,11 @@ class IncrementCityAdmin
      * @param  PhotoVerifiedByAdmin  $event
      * @return void
      */
-    public function handle (PhotoVerifiedByAdmin $event)
+    public function handle(PhotoVerifiedByAdmin $event)
     {
         $photo = Photo::find($event->photoId);
 
-        if ($city = City::find($photo->city_id))
+        if ($state = State::find($photo->state_id))
         {
             $total_count = 0;
 
@@ -43,15 +42,15 @@ class IncrementCityAdmin
 
                     $total_string = "total_" . $category; // total_smoking, total_food...
 
-                    $city->$total_string += $total;
+                    $state->$total_string += $total;
 
                     $total_count += $total; // total counts of all categories
                 }
             }
 
-            $city->total_litter += $total_count;
-            $city->total_images++;
-            $city->save();
+            $state->total_litter += $total_count;
+            $state->total_images++;
+            $state->save();
         }
     }
 }
