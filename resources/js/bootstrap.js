@@ -18,7 +18,6 @@ if (token) {
     console.error('CSRF token not found: https://laravel.com/docs/csrf#csrf-x-csrf-token');
 }
 
-
 /**
  * Echo exposes an expressive API for subscribing to channels and listening
  * for events that are broadcast by Laravel. Echo and event broadcasting
@@ -39,10 +38,9 @@ window.Echo = new Echo({
     key: 'aa1eecefcf9deb983617',
     wsHost: window.location.hostname,
     wssHost: window.location.hostname,
-    wsPort:  window.APP_DEBUG ? 6001 : 6002,
-    wssPort: window.APP_DEBUG ? 6001 : 6002,
+    wsPort:  window.APP_DEBUG === "true" ? 6001 : 6002,
+    wssPort: window.APP_DEBUG === "true" ? 6001 : 6002,
     disableStats: false,
-    encrypted: window.APP_DEBUG ? false : true,
-    enabledTransports: ['ws', 'wss'],
-    transports: ['websocket']
+    encrypted: false,
+    enabledTransports: ['ws', 'wss']
 });
