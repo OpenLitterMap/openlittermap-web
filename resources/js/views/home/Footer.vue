@@ -71,6 +71,7 @@
                     <p class="footer-link">{{ $t('home.footer.create-account') }}</p>
                     <p class="footer-link" @click="open('https://angel.co/openlittermap/jobs')">{{ $t('home.footer.join-the-team') }}</p>
                     <p class="footer-link" @click="open('https://join.slack.com/t/openlittermap/shared_invite/zt-fdctasud-mu~OBQKReRdC9Ai9KgGROw')">{{ $t('home.footer.join-slack') }}</p>
+                    <p class="footer-link" @click="open('https://github.com/openlittermap')">GitHub</p>
                     <p class="footer-link" @click="open('https://www.facebook.com/pg/openlittermap/groups/')">{{ $t('home.footer.fb-group') }}</p>
                     <router-link to="/donate" class="footer-link">{{ $t('home.footer.single-donation') }}</router-link>
                     <router-link to="/signup" class="footer-link">{{ $t('home.footer.crowdfunding') }}</router-link>
