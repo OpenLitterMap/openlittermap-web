@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Events\TagsVerifiedByAdmin;
 use App\Models\User\User;
 use App\Models\Photo;
 use App\Models\Location\Country;
@@ -90,7 +91,7 @@ class UploadData implements ShouldQueue
         if ($user->verification_required == 0) {
             $photo->verification = 1;
             $photo->verified = 2;
-            event(new PhotoVerifiedByAdmin($photo->id));
+            event(new TagsVerifiedByAdmin($photo->id));
         } else {
             // Bring the photo to an initial state of verification
             /* 0 for testing, 0.1 for production */
