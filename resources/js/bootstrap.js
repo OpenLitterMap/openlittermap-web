@@ -18,6 +18,7 @@ if (token) {
     console.error('CSRF token not found: https://laravel.com/docs/csrf#csrf-x-csrf-token');
 }
 
+
 /**
  * Echo exposes an expressive API for subscribing to channels and listening
  * for events that are broadcast by Laravel. Echo and event broadcasting
@@ -32,9 +33,6 @@ window.Pusher = require('pusher-js');
 // if( !useTLSOverride){
 //     window.Pusher.Runtime.getProtocol = function() {return 'http:';}
 // }
-//
-// dev = 'a228fd841042d8837268'
-// production = 'aa1eecefcf9deb983617' // currently not working on production
 
 window.Echo = new Echo({
     broadcaster: 'pusher',
