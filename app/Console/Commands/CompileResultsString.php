@@ -45,9 +45,9 @@ class CompileResultsString extends Command
     }
 
     /**
-     * Execute the console command.
+     * Save string to text column
      *
-     * @return mixed
+     * Todo - save translation keys
      */
     public function handle()
     {

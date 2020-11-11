@@ -32,7 +32,8 @@ class City extends Model
 		'total_art',
 		'manual_verify',
 		'littercoin_paid',
-		'created_by'
+		'created_by',
+        'total_litter'
 	];
 
 	/**

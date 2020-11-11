@@ -15,14 +15,14 @@ class PhotoVerifiedByAdmin
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $photoId;
-    
+
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct($photoId)
-    {   
+    public function __construct ($photoId)
+    {
         $this->photoId = $photoId;
     }
 
