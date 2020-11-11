@@ -37,8 +37,7 @@ class EventServiceProvider extends ServiceProvider
         // 'App\Events\DynamicUpdate' => [
         //     'App\Listeners\UpdateUsersTotals',
         // ],
-
-//       stage-1 verification is not up to date
+        // stage-1 verification is not up to date
         'App\Events\PhotoVerifiedByUser' => [
             'App\Listeners\UpdateUsersTotals',
             'App\Listeners\UpdateCitiesTotals',
@@ -46,7 +45,7 @@ class EventServiceProvider extends ServiceProvider
             'App\Listeners\UpdateCountriesTotals',
             'App\Listeners\UpdateLeaderboards',
         ],
-        'App\Events\PhotoVerifiedByAdmin' => [
+        'App\Events\TagsVerifiedByAdmin' => [
             'App\Listeners\AddTags\UpdateUsers',
             'App\Listeners\AddTags\IncrementCity',
             'App\Listeners\AddTags\IncrementState',
@@ -55,11 +54,12 @@ class EventServiceProvider extends ServiceProvider
             // 'App\Listeners\UpdateLeaderboardsAdmin', happens on AddTagsTrait
             'App\Listeners\AddTags\CompileResultsString'
         ],
-        'App\Events\ResetTagsCountAdmin' => [
+        'App\Events\ResetTagsCountAdmin' => [ // not using this yet. Need to add a new Reset + Update tags button
             // 'App\Listeners\DecrementUserTags', Add this in when we update UpdateUserTags
             'App\Listeners\UpdateTags\DecrementCity',
             'App\Listeners\UpdateTags\DecrementState',
             'App\Listeners\UpdateTags\DecrementCountry',
+            'App\Listeners\UpdateTags\ResetCompileString',
         ],
         'App\Events\UserSignedUp' => [
             'App\Listeners\SendNewUserEmail'

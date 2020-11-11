@@ -42,9 +42,9 @@ class CompileResultsString
      * @param  object  $event
      * @return void
      */
-    public function handle($event)
+    public function handle ($event)
     {
-        $photo = Photo::find($event->photoId);
+        $photo = Photo::find($event->photo_id);
         $result_string = '';
 
         if ($photo->smoking_id)

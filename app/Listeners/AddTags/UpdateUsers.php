@@ -2,10 +2,10 @@
 
 namespace App\Listeners\AddTags;
 
-use App\Models\User\User;
 use App\Models\Photo;
-use App\Events\PhotoVerifiedByAdmin;
-use App\Events\DynamicUpdate;
+use App\Models\User\User;
+use App\Events\TagsVerifiedByAdmin;
+
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
@@ -24,12 +24,12 @@ class UpdateUsers
     /**
      * Handle the event.
      *
-     * @param  DynamicUpdate  $event
+     * @param  TagsVerifiedByAdmin  $event
      * @return void
      */
-    public function handle (PhotoVerifiedByAdmin $event)
+    public function handle (TagsVerifiedByAdmin $event)
     {
-        $photo = Photo::find($event->photoId);
+        $photo = Photo::find($event->photo_id);
         $user = User::find($photo->user_id);
 
         if ($user->count_correctly_verified == 100)

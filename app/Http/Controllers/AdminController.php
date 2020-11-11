@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\PhotoTagsUpdatedByAdmin;
+
 use App\Events\ResetTagsCountAdmin;
 use Log;
 use Auth;
@@ -35,11 +35,13 @@ use App\Models\Litter\Categories\Industrial as Industrial;
 use App\Traits\AddTagsTrait;
 
 use Carbon\Carbon;
-use App\Events\PhotoVerifiedByAdmin;
 
 // use App\Http\Requests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
+
+use App\Events\TagsVerifiedByAdmin;
+
 
 class AdminController extends Controller
 {
@@ -172,7 +174,7 @@ class AdminController extends Controller
     //     $user = User::find($photo->user_id);
     //     $user->xp += 1;
     //     $user->save();
-    //     event(new PhotoVerifiedByAdmin($photo->id));
+    //     event(new TagsVerifiedByAdmin($photo->id));
     // }
 
     /**
@@ -187,11 +189,8 @@ class AdminController extends Controller
         $photo->verification = 1;
         $photo->save();
 
-        $user = User::find($photo->user_id);
-        $user->xp += 1;
-        $user->save();
-
-        event(new PhotoVerifiedByAdmin($photo->id));
+        // todo - dispatch via horizon
+        event(new TagsVerifiedByAdmin($photo->id));
     }
 
     /**
@@ -202,7 +201,6 @@ class AdminController extends Controller
         $this->reset($request->photoId);
 
         $user = Auth::user();
-        $user->xp -= 1;
         $user->count_correctly_verified = 0;
         $user->save();
     }
@@ -407,7 +405,7 @@ class AdminController extends Controller
         $photo->save();
 
         // todo - horizon
-        event(new PhotoVerifiedByAdmin($photo->id));
+        event(new TagsVerifiedByAdmin($photo->id));
     }
 
 
@@ -432,14 +430,13 @@ class AdminController extends Controller
         $user->count_correctly_verified = 0; // At 100, the user earns a Littercoin
         $user->save();
 
-        // Todo - Decrement user.total_litter by amount on the photo before verification
-        // Decrement total_category and total_litter on city, state, country
-        event (new ResetTagsCountAdmin($photo->id));
+        // this event is needed if the photo is already verified
+        // event (new ResetTagsCountAdmin($photo->id));
 
         $this->addTags($request->tags, $request->photoId);
 
         // todo - dispatch event via horizon
-        event (new PhotoTagsUpdatedByAdmin($photo->id));
+        event (new TagsVerifiedByAdmin($photo->id));
     }
 
     /**
