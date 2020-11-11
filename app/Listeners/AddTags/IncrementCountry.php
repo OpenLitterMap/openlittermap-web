@@ -2,7 +2,7 @@
 
 namespace App\Listeners\AddTags;
 
-use App\Events\PhotoVerifiedByAdmin;
+use App\Events\TagsVerifiedByAdmin;
 use App\Models\Location\Country;
 use App\Models\Photo;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -23,12 +23,12 @@ class IncrementCountry
     /**
      * Handle the event.
      *
-     * @param  PhotoVerifiedByAdmin  $event
+     * @param  TagsVerifiedByAdmin  $event
      * @return void
      */
-    public function handle(PhotoVerifiedByAdmin $event)
+    public function handle (TagsVerifiedByAdmin $event)
     {
-        $photo = Photo::find($event->photoId);
+        $photo = Photo::find($event->photo_id);
 
         if ($country = Country::find($photo->country_id))
         {

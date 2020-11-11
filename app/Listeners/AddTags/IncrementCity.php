@@ -2,9 +2,10 @@
 
 namespace App\Listeners\AddTags;
 
-use App\Events\PhotoVerifiedByAdmin;
-use App\Models\Location\City;
 use App\Models\Photo;
+use App\Models\Location\City;
+use App\Events\TagsVerifiedByAdmin;
+
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 
@@ -26,9 +27,9 @@ class IncrementCity
      * @param  PhotoVerifiedByAdmin  $event
      * @return void
      */
-    public function handle (PhotoVerifiedByAdmin $event)
+    public function handle (TagsVerifiedByAdmin $event)
     {
-        $photo = Photo::find($event->photoId);
+        $photo = Photo::find($event->photo_id);
 
         if ($city = City::find($photo->city_id))
         {
