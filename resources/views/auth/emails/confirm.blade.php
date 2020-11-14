@@ -345,9 +345,28 @@
     <tr>
         <td bgcolor="#ffffff" align="center" style="padding: 25px 15px 70px 15px;" class="section-padding">
             <table border="0" cellpadding="0" cellspacing="0" width="500" class="responsive-table">
+
+                {{-- Verify Your Email --}}
                 <tr>
                     <td align="center" style="border-radius: 3px;" bgcolor="#2ecc71"><a href="https://openlittermap.com/confirm/email/{{$user->token}}" target="_blank" style="font-size: 16px; font-family: Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; color: #000000; text-decoration: none; border-radius: 3px; padding: 15px 25px; display: inline-block;" class="mobile-button">Verify Your Email Address and Log In &rarr;</a></td>
                 </tr>
+
+                {{-- Slack and Community Info --}}
+                <tr>
+                    <td align="center">
+                        <p style="margin-top: 3em; font-family: Helvetica, Arial, sans-serif;">Want to become more active in the OpenLitterMap community?</p>
+                        <br>
+                        <p style=" font-family: Helvetica, Arial, sans-serif;">We use the Slack app to chat. We would love if you could join us to share ideas about the future direction of OpenLitterMap!</p>
+                        <br>
+                        <p style=" font-family: Helvetica, Arial, sans-serif;">Nearly every week, we hold a community zoom calls for an hour where we discuss a different aspect of OpenLitterMap from presentations, to app design and functionality, to grant applications and just getting to know each other! These typically take place at 6pm Irish time. You will find more information on slack.</p>
+                        <br>
+                        <a href="https://join.slack.com/t/openlittermap/shared_invite/zt-fdctasud-mu~OBQKReRdC9Ai9KgGROw">Click here to join us on Slack</a>
+                        <br>
+                        <br>
+                    </td>
+                </tr>
+
+                {{-- Copyright --}}
                 <tr>
                     <td width="75%" align="center">
                         <br>
@@ -356,6 +375,8 @@
                         <br/>
                     </td>
                 </tr>
+
+                {{-- Links to Social Media --}}
                 <tr>
                     <td align="center">
                         <table border="0" cellpadding="0" cellspacing="0">
