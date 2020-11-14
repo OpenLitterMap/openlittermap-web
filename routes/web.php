@@ -7,6 +7,12 @@ use Illuminate\Support\Facades\Route;
 // 	return view('emails.update20', compact('user'));
 // });
 
+Route::get('hi', function () {
+    $token = 'asd';
+    $user = \App\Models\User\User::first();
+    return view('auth.emails.confirm', compact('token', 'user'));
+});
+
 // only turn this on in limited circumstances
 // Route::get('sean', 'TotalDataController@getCSV');
 
