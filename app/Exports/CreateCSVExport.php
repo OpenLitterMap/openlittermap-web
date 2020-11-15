@@ -348,7 +348,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
 
             // Sanitary
             $row->sanitary ? $row->sanitary->gloves : null,
-            $row->sanitary ? $row->sanitary->facemasks : null,
+            $row->sanitary ? $row->sanitary->facemask : null,
             $row->sanitary ? $row->sanitary->condoms : null,
             $row->sanitary ? $row->sanitary->mental : null,
             $row->sanitary ? $row->sanitary->deodorant : null,
