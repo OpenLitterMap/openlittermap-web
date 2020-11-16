@@ -1,9 +1,8 @@
 <template>
     <div class="root-container">
         <Nav />
-
+        <div v-show="showEmailConfirmedBanner"><WelcomeBanner /></div> 
         <Modal v-show="modal" />
-
         <router-view />
     </div>
 </template>
@@ -11,13 +10,21 @@
 <script>
 import Nav from '../components/General/Nav'
 import Modal from '../components/Modal/Modal'
+import WelcomeBanner from '../components/WelcomeBanner'
 
 export default {
     name: 'RootContainer',
-    props: ['auth', 'user'],
+    props: ['auth', 'user', 'verified'],
     components: {
         Nav,
-        Modal
+        Modal,
+        WelcomeBanner
+    },
+    data ()
+    {
+        return {
+            showEmailConfirmedBanner: true
+        }
     },
     created ()
     {
@@ -37,6 +44,10 @@ export default {
         // This is needed to invalidate user.auth = true
         // which is persisted and not updated if the authenticated user forgets to manually log out
         else this.$store.commit('resetState');
+        // If Account Verified 
+        if(this.verified){
+            this.showEmailConfirmedBanner = true;
+        }
     },
     computed: {
 

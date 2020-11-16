@@ -210,9 +210,9 @@ export default {
             name: '',
             username: '',
             email: '',
-            password: '',
+            password: '!',
             checkbox: false,
-            password_confirmation: '',
+            password_confirmation: '!',
             g_recaptcha_response: '',
 		};
 	},
@@ -249,7 +249,7 @@ export default {
 		 */
 		computedKey ()
 		{
-            return "6LciihwUAAAAADsZr0CYUoLPSMOIiwKvORj8AD9m" // production
+            return "6LcvHsIZAAAAAOG0q9-1vY3uWqu0iFvUC3tCNhID" // production
 
 
             if (process.env.NODE_ENV === "development")

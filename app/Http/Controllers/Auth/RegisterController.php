@@ -97,12 +97,14 @@ class RegisterController extends Controller
     */
     public function confirmEmail ($token)
     {
-        // a dynamic / magic method:
-        $user = User::whereToken($token)->firstOrFail()->confirmEmail();
-
-        session()->flash('emailconfirmed', 'Your email has been confirmed. You may now Log in.');
-
-        return redirect('/');
+        // a dynamic / magic method
+        // bool
+        $verified = User::whereToken($token)->firstOrFail()->confirmEmail();
+        // \Log::info(['verified', $verified]);
+        $auth = Auth::check();
+        $user = null;
+        if ($auth) $user = Auth::user();
+        return view('root', compact('auth', 'user', 'verified'));
     }
 
 
