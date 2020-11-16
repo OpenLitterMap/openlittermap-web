@@ -58,7 +58,7 @@ export default {
         {
             return this.$store.state.modal.show;
         }
-    },
+    }
 }
 </script>
 
