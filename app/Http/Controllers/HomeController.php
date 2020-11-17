@@ -19,7 +19,7 @@ class HomeController extends Controller
 
         $user = null;
         if ($auth) $user = Auth::user();
-
+        \Log::info('test');
         // // We set this to true when user verifies their email
         $verified = false;
         return view('root', compact('auth', 'user', 'verified'));

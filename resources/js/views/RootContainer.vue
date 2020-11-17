@@ -1,7 +1,7 @@
 <template>
     <div class="root-container">
         <Nav />
-        <div v-show="showEmailConfirmedBanner"><WelcomeBanner /></div> 
+        <WelcomeBanner v-show="showEmailConfirmedBanner" />
         <Modal v-show="modal" />
         <router-view />
     </div>
@@ -45,9 +45,7 @@ export default {
         // which is persisted and not updated if the authenticated user forgets to manually log out
         else this.$store.commit('resetState');
         // If Account Verified 
-        if(this.verified){
-            this.showEmailConfirmedBanner = true;
-        }
+        if(this.verified) this.showEmailConfirmedBanner = true;
     },
     computed: {
 

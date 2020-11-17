@@ -101,7 +101,7 @@ class RegisterController extends Controller
         // bool
         $verified = User::whereToken($token)->firstOrFail()->confirmEmail();
         // \Log::info(['verified', $verified]);
-        $auth = Auth::check();
+        $auth = false;
         $user = null;
         if ($auth) $user = Auth::user();
         return view('root', compact('auth', 'user', 'verified'));

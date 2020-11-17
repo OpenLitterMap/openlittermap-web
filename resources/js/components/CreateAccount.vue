@@ -210,9 +210,9 @@ export default {
             name: '',
             username: '',
             email: '',
-            password: '!',
+            password: '',
             checkbox: false,
-            password_confirmation: '!',
+            password_confirmation: '',
             g_recaptcha_response: '',
 		};
 	},

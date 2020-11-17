@@ -1,12 +1,10 @@
 <template name="anonymous-presence">
-    <div id="emaildiv" class="notification is-success columns is-vcentered" style="margin-bottom: -20px; z-index: 999; text-align: center;">      
-        <div class="column"></div>
-        <div class="column is-three-quarters">{{ $t('home.welcome.verified') }}</div>
-        <div class="column">
-        <div>
+    <div id="emaildiv" class="notification is-success" style="margin-bottom: -20px; z-index: 999; text-align: center;">
+        <div class="welcome-msg">{{ $t('home.welcome.verified') }} </div>
+        <div class=""> 
             <span class="icon is-small mt-1" @click="deleteEmailSession">
                 <a class="delete"></a>
-            </span></div>
+            </span> 
         </div>  
     </div>
 </template>
@@ -26,3 +24,13 @@
         }
     }
 </script>
+
+<style scoped>
+ #emaildiv {
+     display: flex;
+     justify-content: center;
+ }
+ .welcome-msg {
+     margin-right: 10px;
+ }
+</style>
