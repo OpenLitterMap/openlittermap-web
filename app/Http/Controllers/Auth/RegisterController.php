@@ -100,7 +100,6 @@ class RegisterController extends Controller
         // a dynamic / magic method
         // bool
         $verified = User::whereToken($token)->firstOrFail()->confirmEmail();
-        // \Log::info(['verified', $verified]);
         $auth = false;
         $user = null;
         if ($auth) $user = Auth::user();
