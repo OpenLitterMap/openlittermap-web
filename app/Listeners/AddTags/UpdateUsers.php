@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Listeners;
+namespace App\Listeners\AddTags;
 
-use App\Models\User\User;
 use App\Models\Photo;
-use App\Events\PhotoVerifiedByAdmin;
-use App\Events\DynamicUpdate;
+use App\Models\User\User;
+use App\Events\TagsVerifiedByAdmin;
+
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class UpdateUsersAdmin
+class UpdateUsers
 {
     /**
      * Create the event listener.
@@ -24,12 +24,12 @@ class UpdateUsersAdmin
     /**
      * Handle the event.
      *
-     * @param  DynamicUpdate  $event
+     * @param  TagsVerifiedByAdmin  $event
      * @return void
      */
-    public function handle (PhotoVerifiedByAdmin $event)
+    public function handle (TagsVerifiedByAdmin $event)
     {
-        $photo = Photo::find($event->photoId);
+        $photo = Photo::find($event->photo_id);
         $user = User::find($photo->user_id);
 
         if ($user->count_correctly_verified == 100)
@@ -37,10 +37,11 @@ class UpdateUsersAdmin
             $user->littercoin_allowance += 1;
             $user->count_correctly_verified = 0;
         }
-        $user->count_correctly_verified += 1;
+
+        else $user->count_correctly_verified += 1;
 
         // TODO :
-        // Update total column on Photos for each Category on this photo
+        // Update user.total_column_for_each_category_tagged_on_this_photo
 
         $user->total_verified += 1;
         $user->total_verified_litter += $photo->total_litter;

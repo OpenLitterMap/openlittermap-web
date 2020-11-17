@@ -20,25 +20,24 @@ class EventServiceProvider extends ServiceProvider
         ],
 
         'App\Events\NewCountryAdded' => [
-            'App\Listeners\UpdateCountriesTable',
+            'App\Listeners\AddLocation\UpdateCountriesTable',
             // 'App\Listeners\GenerateLitterCoin',
             // 'App\Listeners\SendNewCountryEmail',
             // 'App\Listeners\UpdateSlackChannel',
         ],
         'App\Events\NewStateAdded' => [
-            'App\Listeners\UpdateStatesTable',
+            'App\Listeners\AddLocation\UpdateStatesTable',
             // 'App\Listeners\GenerateLitterCoin',
         ],
         'App\Events\NewCityAdded' => [
-            'App\Listeners\UpdateCitiesTable',
+            'App\Listeners\AddLocation\UpdateCitiesTable',
             // 'App\Listeners\GenerateLitterCoin',
             // 'App\Listeners\SendNewCityEmail'
         ],
         // 'App\Events\DynamicUpdate' => [
         //     'App\Listeners\UpdateUsersTotals',
         // ],
-
-//       stage-1 verification is not up to date
+        // stage-1 verification is not up to date
         'App\Events\PhotoVerifiedByUser' => [
             'App\Listeners\UpdateUsersTotals',
             'App\Listeners\UpdateCitiesTotals',
@@ -46,23 +45,29 @@ class EventServiceProvider extends ServiceProvider
             'App\Listeners\UpdateCountriesTotals',
             'App\Listeners\UpdateLeaderboards',
         ],
-        'App\Events\PhotoVerifiedByAdmin' => [
-            'App\Listeners\UpdateUsersAdmin',
-            'App\Listeners\UpdateCitiesAdmin', // Needs refactor
-            'App\Listeners\UpdateStatesAdmin', // Needs refactor
-            'App\Listeners\UpdateCountriesAdmin', // Needs refactor
-            // 'App\Listeners\UpdateLocationsAdmin', // todo
+        'App\Events\TagsVerifiedByAdmin' => [
+            'App\Listeners\AddTags\UpdateUsers',
+            'App\Listeners\AddTags\IncrementCity',
+            'App\Listeners\AddTags\IncrementState',
+            'App\Listeners\AddTags\IncrementCountry',
             // 'App\Listeners\GenerateLitterCoin',
             // 'App\Listeners\UpdateLeaderboardsAdmin', happens on AddTagsTrait
-            'App\Listeners\CompileResultsString'
+            'App\Listeners\AddTags\CompileResultsString'
+        ],
+        'App\Events\ResetTagsCountAdmin' => [ // not using this yet. Need to add a new Reset + Update tags button
+            // 'App\Listeners\DecrementUserTags', Add this in when we update UpdateUserTags
+            'App\Listeners\UpdateTags\DecrementCity',
+            'App\Listeners\UpdateTags\DecrementState',
+            'App\Listeners\UpdateTags\DecrementCountry',
+            'App\Listeners\UpdateTags\ResetCompileString',
         ],
         'App\Events\UserSignedUp' => [
             'App\Listeners\SendNewUserEmail'
         ],
         'App\Events\Photo\IncrementPhotoMonth' => [
-            'App\Listeners\Photo\IncrementCountryMonth',
-            'App\Listeners\Photo\IncrementStateMonth',
-            'App\Listeners\Photo\IncrementCityMonth',
+            'App\Listeners\UpdateTimes\IncrementCountryMonth',
+            'App\Listeners\UpdateTimes\IncrementStateMonth',
+            'App\Listeners\UpdateTimes\IncrementCityMonth',
         ]
     ];
 

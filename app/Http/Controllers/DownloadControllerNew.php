@@ -5,6 +5,10 @@ namespace App\Http\Controllers;
 use App\Exports\CreateCSVExport;
 use App\Jobs\EmailUserExportCompleted;
 
+use App\Models\Location\Country;
+use App\Models\Location\State;
+use App\Models\Location\City;
+
 use Illuminate\Http\Request;
 
 class DownloadControllerNew extends Controller
@@ -19,8 +23,6 @@ class DownloadControllerNew extends Controller
      */
     public function index (Request $request)
     {
-        \Log::info(['download', $request->all()]);
-
         $email = auth()->user()->email;
 
         $x     = new \DateTime();
@@ -32,31 +34,54 @@ class DownloadControllerNew extends Controller
         $unix  = now()->timestamp;
 
         $path = $year.'/'.$month.'/'.$day.'/'.$unix.'/';  // 2020/10/25/unix/
+        $location_id = 0;
 
-        if ($request->type === 'country')
+        try
         {
-            $path .= $request->country.'_OpenLitterMap.csv';
+            if ($request->type === 'city')
+            {
+                if ($city = City::find($request->locationId))
+                {
+                    $path .= $city->city . '_OpenLitterMap.csv';
+                    $location_id = $city->id;
+                }
+            }
+
+            else if ($request->type === 'state')
+            {
+                if ($state = State::find($request->locationId))
+                {
+                    $path .= $state->state . '_OpenLitterMap.csv';
+                    $location_id = $state->id;
+                }
+            }
+
+            else if ($request->type === 'country')
+            {
+                if ($country = Country::find($request->locationId))
+                {
+                    $path .= $country->country . '_OpenLitterMap.csv';
+                    $location_id = $country->id;
+                }
+            }
+
+            /* Dispatch job to create CSV file for export */
+            (new CreateCSVExport($request->type, $location_id))
+                ->queue($path, 's3', null, ['visibility' => 'public'])
+                ->chain([
+                    // These jobs are executed when above is finished.
+                    new EmailUserExportCompleted($email, $path)
+                    // new ....job
+                ]);
+
+            return ['success' => true];
         }
 
-        else if ($request->type === 'state')
+        catch (\Exception $e)
         {
-            $path .= $request->country.'/'.$request->state.'_OpenLitterMap.csv';
+            \Log::info(['download failed', $e->getMessage()]);
+
+            return ['success' => false];
         }
-
-        else if ($request->type === 'city')
-        {
-            $path .= $request->country.'/'.$request->state.'/'.$request->city.'_OpenLitterMap.csv';
-        }
-
-
-        (new CreateCSVExport($email))
-            ->queue($path, 's3')->chain([
-                // These jobs are executed when above is finished.
-                new EmailUserExportCompleted($email, $path)
-                // new ....job
-            ]);
-//        ->allOnQueue('exports');
-
-        //\Log::info(['csv']);
     }
 }

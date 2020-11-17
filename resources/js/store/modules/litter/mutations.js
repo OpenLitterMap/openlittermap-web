@@ -108,7 +108,7 @@ export const mutations = {
     },
 
     /**
-     * Remove a tag from tags
+     * Remove a tag from a category
      * If category is empty, delete category
      */
     removeTag (state, payload)
@@ -131,12 +131,11 @@ export const mutations = {
      */
     resetTag (state, payload)
     {
-        console.log('resetTag');
-        let categories = Object.assign({}, state.categories);
+        let tags = Object.assign({}, state.tags);
 
-        categories[payload.category][payload.tag] = 0;
+        tags[payload.category][payload.tag_key] = 0;
 
-        // state.categories = categories;
+        state.tags = tags;
         state.hasAddedNewTag = true; // activate update_with_new_tags button
     },
 

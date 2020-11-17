@@ -2,9 +2,9 @@
 
 namespace App\Models\Litter\Categories;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Models\Litter\LitterCategory;
 
-class Industrial extends Model
+class Industrial extends LitterCategory
 {
     public $fillable = [
     	'oil',
@@ -19,5 +19,20 @@ class Industrial extends Model
 
     public function photo () {
     	return $this->belongsTo('App\Models\Photo');
+    }
+
+    /**
+     * Pre-defined litter types available on this class
+     */
+    public function types ()
+    {
+        return [
+            'oil',
+            'chemical',
+            'plastic',
+            'bricks',
+            'tape',
+            'other'
+        ];
     }
 }

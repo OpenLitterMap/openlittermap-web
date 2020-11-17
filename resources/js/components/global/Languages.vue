@@ -10,7 +10,7 @@
 
 		<div class="dropdown-menu">
 	    	<div class="dropdown-content" style="padding: 0;">
-	      		<div v-for="lang in langs" @click="reload(lang.url)" class="dropdown-item hoverable flex p1em">
+	      		<div v-for="lang in langs" @click="language(lang.url)" class="dropdown-item hoverable flex p1em">
 	      			<img :src="getFlag(lang.url)" class="lang-flag" />
 	      			<p>{{ getLang(lang.url) }}</p>
 	      		</div>
@@ -25,37 +25,25 @@ export default {
 	data ()
 	{
 		return {
-			button: 'dropdown navbar-item pointer global-langs',
+			button: 'dropdown navbar-item pointer',
 			dir: '/assets/icons/flags/',
 			langs: [
-				{
-					url: 'en'
-				},
-				{
-					url: 'de'
-				},
-				{
-					url: 'es'
-				},
-				{
-					url: 'fr'
-				},
-				{
-					url: 'it'
-				},
-				{
-					url: 'ms'
-				},
-				{
-					url: 'tk'
-				}
+				{ url: 'en' }, // We have these languages mostly done but they are in php code with the old keys
+				// { url: 'de' },
+				{ url: 'es' },
+				// { url: 'fr' },
+				// { url: 'it' },
+				// { url: 'ms' },
+				// { url: 'tk' }
 			]
 		};
 	},
 	computed: {
 
 		/**
-		 *
+		 * Todo - change where langsOpen lives
+         * We need it on vuex to close it whenever we click outside of this component
+         * Todo - close when click outside of this component
 		 */
 		checkOpen ()
 		{
@@ -73,7 +61,7 @@ export default {
 	methods: {
 
 		/**
-		 *
+		 * Return filepath for country flag
 		 */
 		getFlag (lang)
 		{
@@ -85,28 +73,28 @@ export default {
 		},
 
 		/**
-		 *
+		 * Return translated country string
 		 */
 		getLang (lang)
 		{
-			return this[lang];
+			return this.$t('locations.countries.' + lang + '.lang');
 		},
+
+        /**
+         * Change the currently active language
+         */
+        language (lang)
+        {
+            this.$i18n.locale = lang;
+        },
 
 		/**
 		 *
 		 */
 		toggleOpen ()
 		{
-		  this.$store.commit('closeDatesButton');
-		  this.$store.commit('toggleLangsButton');
-		},
-
-		/**
-		 *
-		 */
-		reload (lang)
-		{
-			window.location.href = window.location.origin + '/' + lang;
+		    this.$store.commit('closeDatesButton');
+		    this.$store.commit('toggleLangsButton');
 		}
 	}
 }
@@ -124,13 +112,6 @@ export default {
 
 	.hoverable:hover {
 		background-color: whitesmoke;
-	}
-
-	.global-langs {
-		position: absolute;
-		z-index: 999;
-		left: 3em;
-		top: 0;
 	}
 
 	.p1em {

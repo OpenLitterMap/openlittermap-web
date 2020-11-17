@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Listeners\Photo;
+namespace App\Listeners\UpdateTimes;
 
-use App\Models\Location\City;
+use App\Models\Location\Country;
 use Carbon\Carbon;
 use App\Events\Photo\IncrementPhotoMonth;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class IncrementCityMonth
+class IncrementCountryMonth
 {
     /**
      * Create the event listener.
@@ -23,14 +23,14 @@ class IncrementCityMonth
     /**
      * Handle the event.
      *
-     * @param  IncrementPhotoMonth  $event
+     * @param  ImageUploaded  $event
      * @return void
      */
     public function handle (IncrementPhotoMonth $event)
     {
-        if ($city = City::find($event->city_id))
+        if ($country = Country::find($event->country_id))
         {
-            $ppm = json_decode($city->photos_per_month, true);
+            $ppm = json_decode($country->photos_per_month, true);
 
             $date = Carbon::parse($event->created_at)->format('m-y');
 
@@ -38,6 +38,7 @@ class IncrementCityMonth
             {
                 $ppm[$date]++;
             }
+
             else
             {
                 $ppm[$date] = 1;
@@ -45,9 +46,9 @@ class IncrementCityMonth
 
             $ppm = json_encode($ppm);
 
-            $city->photos_per_month = $ppm;
+            $country->photos_per_month = $ppm;
 
-            $city->save();
+            $country->save();
         }
     }
 }

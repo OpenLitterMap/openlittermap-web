@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+
+use App\Events\ResetTagsCountAdmin;
 use Log;
 use Auth;
 use File;
@@ -33,11 +35,13 @@ use App\Models\Litter\Categories\Industrial as Industrial;
 use App\Traits\AddTagsTrait;
 
 use Carbon\Carbon;
-use App\Events\PhotoVerifiedByAdmin;
 
 // use App\Http\Requests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
+
+use App\Events\TagsVerifiedByAdmin;
+
 
 class AdminController extends Controller
 {
@@ -170,11 +174,13 @@ class AdminController extends Controller
     //     $user = User::find($photo->user_id);
     //     $user->xp += 1;
     //     $user->save();
-    //     event(new PhotoVerifiedByAdmin($photo->id));
+    //     event(new TagsVerifiedByAdmin($photo->id));
     // }
 
     /**
-     * Verify an image - keep the image
+     * The image and the tags are correct
+     *
+     * Updates Country, State + City table
      */
     public function verifykeepimage (Request $request)
     {
@@ -182,11 +188,9 @@ class AdminController extends Controller
         $photo->verified = 2;
         $photo->verification = 1;
         $photo->save();
-        $user = User::find($photo->user_id);
-        $user->xp += 1;
-        $user->save();
-        // todo - horizon
-        event(new PhotoVerifiedByAdmin($photo->id));
+
+        // todo - dispatch via horizon
+        event(new TagsVerifiedByAdmin($photo->id));
     }
 
     /**
@@ -197,7 +201,6 @@ class AdminController extends Controller
         $this->reset($request->photoId);
 
         $user = Auth::user();
-        $user->xp -= 1;
         $user->count_correctly_verified = 0;
         $user->save();
     }
@@ -354,17 +357,17 @@ class AdminController extends Controller
         $jsonDecoded = Litterrata::INSTANCE()->getDecodedJSON();
 
         // for each categories as category => values eg. Smoking, Butts: 3;
-        foreach ($request['categories'] as $category => $values){
+        foreach ($request['categories'] as $category => $values)
+        {
             $total = 0;
-            foreach ($values as $item => $quantity){
-                // return [$item, $quantity];
+            foreach ($values as $item => $quantity)
+            {
                 // reference the dynamic id on the photos table eg. smoking_id
                 $id          = $jsonDecoded->$category->id;
                 // The current Class as a string
                 $clazz       = $jsonDecoded->$category->class;
                 // Reference the name of the column we want to edit
                 // $col         = $jsonDecoded->$category->types->$item->att;
-
                 $col         = $jsonDecoded->$category->types->$item->col;
 
                 $dynamicClassName = 'App\\Categories\\'.$clazz;
@@ -395,15 +398,14 @@ class AdminController extends Controller
 
                 $litterTotal += $quantity;
 
-            } // end foreach item
-
-        } // end foreach categories as category
+            }
+        }
 
         $photo->total_litter = $litterTotal;
         $photo->save();
 
         // todo - horizon
-        event(new PhotoVerifiedByAdmin($photo->id));
+        event(new TagsVerifiedByAdmin($photo->id));
     }
 
 
@@ -411,6 +413,10 @@ class AdminController extends Controller
      * Verify the image
      * Keep the image
      * Image was not correctly inputted! LitterCorrectlyCount = 0.
+     *
+     * We need to Update the Country, State and City model
+     * - remove previous tag counts
+     * - add new tag counts
      */
     public function updateTags (Request $request)
     {
@@ -418,17 +424,19 @@ class AdminController extends Controller
         $photo->verification = 1;
         $photo->verified = 2;
         $photo->total_litter = 0;
-
-        \Log::info(['photo', $photo]);
+        $photo->save();
 
         $user = User::find($photo->user_id);
         $user->count_correctly_verified = 0; // At 100, the user earns a Littercoin
         $user->save();
-        // Todo - Decrement user.total_litter by amount on the photo before verification
+
+        // this event is needed if the photo is already verified
+        // event (new ResetTagsCountAdmin($photo->id));
 
         $this->addTags($request->tags, $request->photoId);
 
-        event(new PhotoVerifiedByAdmin($photo->id));
+        // todo - dispatch event via horizon
+        event (new TagsVerifiedByAdmin($photo->id));
     }
 
     /**

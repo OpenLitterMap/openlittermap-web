@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Listeners;
+namespace App\Listeners\AddLocation;
 
 use App\Models\Location\Country;
 use App\Events\NewCountryAdded;

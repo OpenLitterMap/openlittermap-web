@@ -2,11 +2,10 @@
 
 namespace App\Models\Litter\Categories;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Models\Litter\LitterCategory;
 
-class Coffee extends Model
+class Coffee extends LitterCategory
 {
-
     protected $table = 'coffee';
 
 	/*
@@ -23,8 +22,20 @@ class Coffee extends Model
 
     ];
 
-    public function photo() {
+    public function photo () {
     	return $this->belongsTo('App\Models\Photo');
     }
 
+    /**
+     * Pre-defined litter types available on this class
+     */
+    public function types ()
+    {
+        return [
+            'coffeeCups',
+            'coffeeLids',
+            'coffeeOther'
+        ];
+    }
 }
+

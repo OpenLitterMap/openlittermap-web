@@ -2,9 +2,9 @@
 
 namespace App\Models\Litter\Categories;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Models\Litter\LitterCategory;
 
-class Sanitary extends Model
+class Sanitary extends LitterCategory
 {
 	protected $table = 'sanitary';
 
@@ -23,11 +23,32 @@ class Sanitary extends Model
 	    'tooth_brush',
 	    'sanitaryOther',
         'gloves',
-        'facemask'
+        'facemask',
+        'wetwipes'
     ];
 
     public function photo () {
     	return $this->hasOne('App\Models\Photo');
+    }
+
+    /**
+     * Pre-defined litter types available on this class
+     */
+    public function types ()
+    {
+        return [
+            'condoms',
+            'nappies',
+            'menstral',
+            'deodorant',
+            'earswabs',
+            'tooth_pick',
+            'tooth_brush',
+            'sanitaryOther',
+            'gloves',
+            'facemask',
+            'wetwipes'
+        ];
     }
 
 }

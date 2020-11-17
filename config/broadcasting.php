@@ -37,8 +37,8 @@ return [
             'app_id' => env('PUSHER_APP_ID'),
             'options' => [
                 'cluster' => env('PUSHER_APP_CLUSTER'),
-                'useTLS' => true,
-                'encrypted'  => true, // was commented out
+                'useTLS' => false,
+                'encrypted'  => false, // was commented out
                 'host'       => env('WEBSOCKET_BROADCAST_HOST'),
                 'port'       => 6001,
                 'scheme'     => 'http'

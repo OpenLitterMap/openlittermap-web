@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Listeners;
+namespace App\Listeners\AddLocation;
 
 use DB;
 use App\Models\Location\City;
