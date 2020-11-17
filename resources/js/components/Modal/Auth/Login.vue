@@ -93,7 +93,7 @@ export default {
 				password: this.password
 			});
 
-			this.disabled = false;
+			this.processing = false;
         },
 
 		/**

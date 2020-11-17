@@ -54,6 +54,26 @@ class Photo extends Model
     ];
 
     /**
+     * Category types available on each photo
+     */
+    public function categories ()
+    {
+        return [
+            'smoking',
+            'food',
+            'coffee',
+            'softdrinks',
+            'alcohol',
+            'other',
+            'coastal',
+            'sanitary',
+            'dumping',
+            'industrial',
+            'brands'
+        ];
+    }
+
+    /**
      * Observe when this model is being updated
        - onDelete, also delete relationships
        - onDelete->cascade not working

@@ -119,6 +119,7 @@ return [
 
     'redis' => [
 
+
         'client' => env('REDIS_CLIENT', 'predis'), // was phpredis
 
         'options' => [
@@ -132,6 +133,7 @@ return [
             'password' => env('REDIS_PASSWORD', null),
             'port' => env('REDIS_PORT', '6379'),
             'database' => env('REDIS_DB', '1'),
+            // 'read_write_timeout' => 0,
         ],
 
         'cache' => [

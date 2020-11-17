@@ -1,9 +1,9 @@
 <template>
     <section class="section hero is-fullheight is-primary is-bold">
-        <h3 class="title is-3">OpenLitterMap is currently entirely dependent on donations.</h3>
+        <h3 class="title is-3">{{ $t('home.donate.olm-dependent-on-donations') }}</h3>
         <br>
         <img src="/assets/IMG_0556.JPG" style="height: 450px; display: block; margin: auto;">
-        <p style="text-align: center;">It's important</p>
+        <p style="text-align: center;">{{ $t('home.donate.its-important') }}</p>
         <br>
         <p>Bitcoin: 3Cvyhhec777Dnc6a5QHZ1S8DZpL3nodZ2K</p>
         <p>Bitcoin Cash: 14FEA8ckGiTf5HvYhANBAEpmvawdJpFFU6</p>

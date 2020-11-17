@@ -44,11 +44,11 @@
 			      		<img :src="this.photo.filename" width="300" height="250" />
 			    	</div>
 
-				  	<!-- Right - data -->
+				  	<!-- Right - Tags -->
 				  	<div class="column has-text-centered" style="position: relative;">
 
                         <!-- The list of tags associated with this image-->
-                        <Tags />
+                        <Tags :admin="true" />
 
 						<div style="padding-top: 3em;">
 							<button class="button is-medium is-dark" @click="clearItems">Clear user input</button>
@@ -64,7 +64,7 @@
 				</div>
 
 				<!-- Add / edit tags -->
-                <add-tags />
+                <add-tags :admin="true" />
 
 				<div style="padding-top: 1em; text-align: center;">
 					<p class="strong">Update the image and save the new data</p>
@@ -137,22 +137,6 @@ export default {
 			return this.processing ? this.deleteVerify + ' is-loading' : this.deleteVerify;
 		},
 
-		/**
-		 *
-		 */
-		update_new_tags_button ()
-		{
-			return this.processing ? this.verifyClass + ' is-loading' : this.verifyClass;
-		},
-
-		/**
-		 *
-		 */
-		verify_correct_button ()
-		{
-			return this.processing ? this.btn + ' is-loading' : this.btn;
-		},
-
         /**
          * The photo we are verifying
          */
@@ -180,9 +164,25 @@ export default {
 		/**
 		 *
 		 */
-		uploadedTime ()
+		update_new_tags_button ()
 		{
-			return moment(this.photo.created_at).format('LLL');
+			return this.processing ? this.verifyClass + ' is-loading' : this.verifyClass;
+		},
+
+        /**
+         *
+         */
+        uploadedTime ()
+        {
+            return moment(this.photo.created_at).format('LLL');
+        },
+
+		/**
+		 *
+		 */
+		verify_correct_button ()
+		{
+			return this.processing ? this.btn + ' is-loading' : this.btn;
 		},
 	},
 	methods: {

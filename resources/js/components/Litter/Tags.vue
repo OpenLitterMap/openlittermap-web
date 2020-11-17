@@ -1,6 +1,6 @@
 <template>
 	<div>
-        <ul>
+        <ul class="container">
             <li v-for="category in categories" class='admin-item'>
 
                 <!-- Translated Category Title -->
@@ -22,6 +22,7 @@
 /*** Tags (previously AddedItems) is quite similar to AdminItems except here we remove the tag, on AdminItems we reset the tag.*/
 export default {
     name: 'Tags',
+    props: ['admin'], // bool
     computed: {
 
         /**
@@ -65,10 +66,18 @@ export default {
         /**
          * Remove tag from this category
          * If all tags have been removed, delete the category
+         *
+         * If Admin, we want to reset the tag.quantity to 0 instead of deleting it
+         * This is used to pick up the change on the backend
          */
         removeTag (category, tag_key)
         {
-            this.$store.commit('removeTag', {
+            let commit = '';
+
+            if (this.admin)  commit = 'resetTag';
+            else commit = 'removeTag';
+
+            this.$store.commit(commit, {
                 category,
                 tag_key
             });
@@ -78,7 +87,15 @@ export default {
 </script>
 
 <style scoped>
-
+    @media only screen and (max-width: 900px) {
+        .container {
+            display: flex;
+            overflow-x: auto;
+        }
+        .admin-item {
+            padding: 10px;
+        }
+    }
     .category {
         font-size: 1.25em;
         display: flex;

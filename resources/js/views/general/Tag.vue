@@ -6,7 +6,7 @@
         <div v-else style="padding-top: 2em;">
 
             <!-- No Image available for tagging -->
-            <div v-if="photos.length == 0" class="hero-body">
+            <div v-if="photos.length === 0" class="hero-body">
                 <div class="container has-text-centered">
                     <h3 class="subtitle is-1">{{ $t('tags.no-tags') }}</h3>
                     <h3 class="subtitle is-3">
@@ -77,22 +77,40 @@
                             <add-tags :id="photo.id" />
                         </div>
                     </div>
+
                     <br>
 
                     <!-- Previous, Next Image-->
                     <div class="column" style="text-align: center;">
                         <div class="has-text-centered mt3em">
                             <a
-                                v-show="show_current_page"
-                                class="pagination-previous"
+                                v-show="current_page > 1"
+                                class="pagination-previous has-background-link has-text-white"
                                 @click="previousImage"
                             >{{ $t('tags.previous') }}</a>
                             <a
-                                v-show="show_next_page"
-                                class="pagination-next"
+                                v-show="remaining > current_page"
+                                class="pagination-next has-background-link has-text-white"
                                 @click="nextImage"
                             >{{ $t('tags.next') }}</a>
                         </div>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="column">
+                        <nav class="pagination is-centered" role="navigation" aria-label="pagination">
+                            <ul class="pagination-list">
+                                <li v-for="i in remaining" :key="i">
+                                    <a
+                                        :class="(i === current_page ? 'pagination-link is-current': 'pagination-link')"
+                                        :aria-label="'page' + current_page"
+                                        :aria-current="current_page"
+                                        @click="goToPage(i)"
+                                    > {{ i }}
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
                     </div>
                 </div>
             </div>
@@ -133,6 +151,14 @@ export default {
         };
     },
     computed: {
+
+        /**
+         * Get the current page the user in on
+         */
+        current_page ()
+        {
+            return this.$store.state.photos.photos.current_page;
+        },
 
         /**
          * Paginated array of the users photos where verification = 0
@@ -195,6 +221,14 @@ export default {
         },
 
         /**
+         * Load a specific page
+         */
+        goToPage (i)
+        {
+            this.$store.dispatch('SELECT_IMAGE', i);
+        },
+
+        /**
          * Load the next image
          */
         nextImage ()
@@ -208,7 +242,7 @@ export default {
         previousImage ()
         {
             this.$store.dispatch('PREVIOUS_IMAGE');
-        },
+        }
     }
 }
 </script>
