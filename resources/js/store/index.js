@@ -13,6 +13,7 @@ import { payments } from './modules/payments'
 import { photos } from './modules/photos'
 import { plans } from './modules/plans'
 import { subscriber} from './modules/subscriber'
+import { teams } from './modules/teams'
 import { user } from './modules/user'
 
 Vue.use(Vuex)
@@ -35,6 +36,7 @@ export default new Vuex.Store({
         photos,
         plans,
         subscriber,
+        teams,
         user
     }
 });

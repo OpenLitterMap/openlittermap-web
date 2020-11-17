@@ -91,7 +91,8 @@ class User extends Authenticatable
         'littercoin_owed',
         'littercoin_paid',
         'count_correctly_verified',
-        'previous_tags'
+        'previous_tags',
+        'remaining_teams'
     ];
 
     /**

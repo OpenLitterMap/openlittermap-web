@@ -149,11 +149,11 @@ const router = new VueRouter({
                 {
                     path: 'show-flag',
                     component: require('./views/settings/GlobalFlag').default,
-                }
-                // {
-                // 	path: 'teams',
-                // 	component: require('./views/Teams').default
-                // },
+                },
+                {
+                	path: 'teams',
+                	component: require('./views/settings/Teams').default
+                },
                 // {
                 // 	path: 'phone',
                 // 	component: require('./views/Phone').default
