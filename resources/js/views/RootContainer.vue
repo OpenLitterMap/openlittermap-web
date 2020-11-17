@@ -23,7 +23,7 @@ export default {
     data ()
     {
         return {
-            showEmailConfirmedBanner: true
+            showEmailConfirmedBanner: false
         }
     },
     created ()
