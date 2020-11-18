@@ -41,9 +41,9 @@ class IncrementCountry
                 {
                     $total = $photo->$category->total();
 
-                    $total_string = "total_" . $category; // total_smoking, total_food...
+                    $total_category = "total_" . $category; // total_smoking, total_food...
 
-                    $country->$total_string += $total;
+                    $country->$total_category += $total;
 
                     $total_count += $total; // total counts of all categories
                 }
