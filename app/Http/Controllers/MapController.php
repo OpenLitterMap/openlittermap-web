@@ -269,6 +269,8 @@ class MapController extends Controller
 			['total_images', '!=', null]
 		])->first();
 
+		\Log::info(['getCities', $country->id, $state_name]);
+
         /**
          * todo
          * Instead of loading the photos here on the city model,
