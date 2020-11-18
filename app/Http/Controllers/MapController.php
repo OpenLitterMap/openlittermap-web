@@ -285,7 +285,8 @@ class MapController extends Controller
 			   ->where('verified', '>=', 1)->orderBy('datetime', 'asc');
 		}])->where([
 			['state_id', $state->id],
-			['total_images', '>', 0]
+			['total_images', '>', 0],
+            ['total_litter', '>', 0]
 		])->orderBy('city', 'asc')->get();
 
 		// return $cities;
