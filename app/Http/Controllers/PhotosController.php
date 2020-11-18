@@ -63,6 +63,8 @@ class PhotosController extends Controller
         $file = $request->file('file'); // -> /tmp/php7S8v..
         $exif = Image::make($file)->exif();
 
+        \Log::info(['exif', $exif]);
+
         // Check if the EXIF has GPS data
         // todo - make this error appear on the frontend dropzone.js without clicking it
         if (! array_key_exists("GPSLatitudeRef", $exif))
