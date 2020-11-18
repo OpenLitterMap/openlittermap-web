@@ -315,7 +315,6 @@ class MapController extends Controller
                 + $city->total_dumping
                 + $city->total_industrial;
 
-
             $city['avg_litter_per_user'] = round($city->total_litter / $city->total_contributors, 2);
 
             $city['diffForHumans'] = $city->created_at->diffForHumans();
