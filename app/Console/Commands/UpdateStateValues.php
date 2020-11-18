@@ -232,7 +232,7 @@ class UpdateStateValues extends Command
             $state->total_cigaretteButts = $cigaretteTotal;
             $state->total_smoking = $smokingTotal;
             $state->total_food = $foodTotal;
-            $state->total_softDrinks = $softDrinksTotal;
+            $state->total_softdrinks = $softDrinksTotal;
             $state->total_plasticBottles = $plasticBottleTotal;
             $state->total_coffee = $coffeeTotal;
             $state->total_alcohol = $alcoholTotal;

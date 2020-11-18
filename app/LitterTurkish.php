@@ -140,7 +140,7 @@ final class LitterTurkish{
         "id": "softdrinks_id",
         "table": "soft_drinks",
         "class": "SoftDrinks",
-        "total": "total_softDrinks",
+        "total": "total_softdrinks",
         "types": {
             "Plastik su şişesi": {
                 "col": "waterBottle"
@@ -627,10 +627,10 @@ final class LitterTurkish{
         if ($inst === null) $inst = new LitterTurkish();
         return $inst;
     }
-    
+
     public function __construct(){
         $this->jsonDecoded = json_decode($this->json);
-        
+
     }
-    public function getDecodedJSON(){ return $this->jsonDecoded; } 
+    public function getDecodedJSON(){ return $this->jsonDecoded; }
 }

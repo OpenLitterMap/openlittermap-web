@@ -164,7 +164,7 @@ final class Litterrata{
         "id": "softdrinks_id",
         "table": "soft_drinks",
         "class": "SoftDrinks",
-        "total": "total_softDrinks",
+        "total": "total_softdrinks",
         "types": {
             "Plastic Water bottle": {
                 "col": "waterBottle"
@@ -872,9 +872,9 @@ final class Litterrata{
         if ($inst === null) $inst = new Litterrata();
         return $inst;
     }
-    
+
     public function __construct(){
         $this->jsonDecoded = json_decode($this->json);
     }
-    public function getDecodedJSON(){ return $this->jsonDecoded; } 
+    public function getDecodedJSON(){ return $this->jsonDecoded; }
 }

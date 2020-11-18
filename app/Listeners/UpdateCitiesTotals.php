@@ -159,7 +159,7 @@ class UpdateCitiesTotals
                 $softDrinksTotal += $softdrink['energy_can'];
                 $softDrinksTotal += $softdrink['softDrinkOther'];
             }
-            $city->total_softDrinks = $softDrinksTotal;
+            $city->total_softdrinks = $softDrinksTotal;
             $city->total_plasticBottles = $plasticBottleTotal;
             $city->save();
         }
