@@ -170,7 +170,7 @@ class UpdateStatesAdmin
                 $softDrinksTotal    += $softdrink->styro_cup;
                 $softDrinksTotal    += $softdrink->softDrinkOther;
             }
-            $state->total_softDrinks = $softDrinksTotal;
+            $state->total_softdrinks = $softDrinksTotal;
             $state->total_plasticBottles = $plasticBottleTotal;
             $state->save();
         }

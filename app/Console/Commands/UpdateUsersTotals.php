@@ -171,7 +171,7 @@ class UpdateUsersTotals extends Command
             $user->total_smoking = $smokingTotal;
             $user->total_cigaretteButts = $cigarettesTotal;
             $user->total_food = $foodTotal;
-            $user->total_softDrinks = $softDrinksTotal;
+            $user->total_softdrinks = $softDrinksTotal;
             $user->total_plasticBottles = $plasticBottleTotal;
             $user->total_smoking = $smokingTotal;
             $user->save();

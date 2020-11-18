@@ -167,7 +167,7 @@ class UpdateCountriesTotals
                     $softDrinksTotal += $softdrink['energy_can'];
                    $softDrinksTotal += $softdrink['softDrinkOther'];
             }
-            $country->total_softDrinks = $softDrinksTotal;
+            $country->total_softdrinks = $softDrinksTotal;
             $country->total_plasticBottles = $plasticBottleTotal;
             $country->save();
         }
