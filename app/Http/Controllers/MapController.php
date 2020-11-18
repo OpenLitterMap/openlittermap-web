@@ -264,12 +264,12 @@ class MapController extends Controller
 
         $country = Country::where('country', $country_name)->first();
 
+        \Log::info(['getCities', $country->id, $state_name]);
+
 		$state = State::where([
 			['state', $state_name],
 			['total_images', '!=', null]
 		])->first();
-
-		\Log::info(['getCities', $country->id, $state_name]);
 
         /**
          * todo
