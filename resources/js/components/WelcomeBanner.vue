@@ -16,7 +16,6 @@
             hideEmailConfirmedBanner ()
             {
                 this.showEmailConfirmedBanner = false;
-
             }
         }
     }

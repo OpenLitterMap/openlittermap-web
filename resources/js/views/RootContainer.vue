@@ -1,7 +1,7 @@
 <template>
     <div class="root-container">
         <Nav />
-        <WelcomeBanner showEmailConfirmedBanner="showEmailConfirmedBanner" />
+        <WelcomeBanner v-bind:showEmailConfirmedBanner="showEmailConfirmedBanner" />
         <Modal v-show="modal" />
         <router-view />
     </div>
@@ -28,9 +28,11 @@ export default {
     },
     created ()
     {
+        console.log(this.showEmailConfirmedBanner);
         if (this.auth)
         {
             this.$store.commit('login');
+            
 
             // user object is passed when the page is refreshed
             if (this.user)
