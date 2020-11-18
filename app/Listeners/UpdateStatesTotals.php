@@ -161,7 +161,7 @@ class UpdateStatesTotals
                 $softDrinksTotal += $softdrink['energy_can'];
                 $softDrinksTotal += $softdrink['softDrinkOther'];
             }
-            $state->total_softDrinks = $softDrinksTotal;
+            $state->total_softdrinks = $softDrinksTotal;
             $state->total_plasticBottles = $plasticBottleTotal;
             $state->save();
         }

@@ -179,7 +179,7 @@ class UpdateCities extends Command
             $city->total_cigaretteButts = $cigaretteTotal;
             $city->total_smoking = $smokingTotal;
             $city->total_food = $foodTotal;
-            $city->total_softDrinks = $softDrinksTotal;
+            $city->total_softdrinks = $softDrinksTotal;
             $city->total_plasticBottles = $plasticBottleTotal;
             $city->total_coffee = $coffeeTotal;
             $city->total_alcohol = $alcoholTotal;

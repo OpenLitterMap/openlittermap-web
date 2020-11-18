@@ -52,8 +52,8 @@ class UpdateUsersTotals
             if($userPhoto["total_food"]) {
                 $totalVerifiedLitter += $userPhoto["total_food"];
             }
-            if($userPhoto["total_softDrinks"]) {
-                $totalVerifiedLitter += $userPhoto["total_softDrinks"];
+            if($userPhoto["total_softdrinks"]) {
+                $totalVerifiedLitter += $userPhoto["total_softdrinks"];
             }
             if($userPhoto["total_drugs"]) {
                 $totalVerifiedLitter += $userPhoto["total_drugs"];

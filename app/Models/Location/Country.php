@@ -58,7 +58,7 @@ class Country extends Model
         return [
             'smoking' => $this->total_smoking,
                'food' => $this->total_food,
-         'softdrinks' => $this->total_softDrinks,
+         'softdrinks' => $this->total_softdrinks,
             'alcohol' => $this->total_alcohol,
              'coffee' => $this->total_coffee,
            'sanitary' => $this->total_sanitary,
@@ -126,7 +126,7 @@ class Country extends Model
         'total_smoking',
         'total_food',
         'total_alcohol',
-        'total_softDrinks',
+        'total_softdrinks',
         'total_coffee',
         'total_sanitary',
         'total_other',
