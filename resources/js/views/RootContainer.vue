@@ -1,7 +1,7 @@
 <template>
     <div class="root-container">
         <Nav />
-        <WelcomeBanner v-show="showEmailConfirmedBanner" />
+        <WelcomeBanner showEmailConfirmedBanner="showEmailConfirmedBanner" />
         <Modal v-show="modal" />
         <router-view />
     </div>
@@ -23,7 +23,7 @@ export default {
     data ()
     {
         return {
-            showEmailConfirmedBanner: false
+            showEmailConfirmedBanner: true
         }
     },
     created ()
