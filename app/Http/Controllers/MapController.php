@@ -315,12 +315,6 @@ class MapController extends Controller
                 + $city->total_dumping
                 + $city->total_industrial;
 
-            if ($city['total_litter'] === 0)
-            {
-                unset($city);
-                continue;
-            }
-
 
             $city['avg_litter_per_user'] = round($city->total_litter / $city->total_contributors, 2);
 
