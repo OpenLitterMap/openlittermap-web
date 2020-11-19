@@ -24,12 +24,12 @@ class MapController extends Controller
     /**
      * Apply Firewall to these routes to block spammer
      */
-    public function __construct ()
-    {
-        return $this->middleware('fw-block-blacklisted');
-
-        parent::__construct();
-    }
+//    public function __construct ()
+//    {
+//        return $this->middleware('fw-block-blacklisted');
+//
+//        parent::__construct();
+//    }
 
 	/**
 	 * Get the Maps & Data page, incl all Countries metadata
