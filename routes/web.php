@@ -49,7 +49,7 @@ Route::get('/world/{country}/{state}/{city?}/download/get', 'DownloadsController
 // "maps" was used before "world". We will keep this for now to keep old links active.
 // Todo - make this dynamic for wildcard routes prefixed by "/{lang}/maps"
 
-//Route::group(['middleware' => 'fw-block-blacklisted'], function () {
+Route::group(['middleware' => 'fw-block-blacklisted'], function () {
     Route::get('/maps', 'MapController@getCountries');
     Route::get('/maps/{country}/litter', 'MapController@getCountries');
     Route::get('/maps/{country}/leaderboard', 'MapController@getCountries');
@@ -66,7 +66,7 @@ Route::get('/world/{country}/{state}/{city?}/download/get', 'DownloadsController
 
     // new
     Route::get('city', 'MapController@getCity');
-//});
+});
 
 // Donation page
 Route::get('donate', 'HomeController@index');
