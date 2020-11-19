@@ -48,22 +48,26 @@ Route::get('/world/{country}/{state}/{city?}/download/get', 'DownloadsController
 
 // "maps" was used before "world". We will keep this for now to keep old links active.
 // Todo - make this dynamic for wildcard routes prefixed by "/{lang}/maps"
-Route::get('/maps', 'MapController@getCountries');
-Route::get('/maps/{country}/litter', 'MapController@getCountries');
-Route::get('/maps/{country}/leaderboard', 'MapController@getCountries');
-Route::get('/maps/{country}/time-series', 'MapController@getCountries');
-// Route::get('/maps/total/download', 'MapController@getCountries');
 
-Route::get('/maps/{country}', 'MapController@getStates');
-Route::get('/maps/{country}/{state}', 'MapController@getCities');
-Route::get('/maps/{country}/{state}/{city?}/{id?}', 'MapController@getCities');
-// Route::get('/maps/{country}/{city}/city_hex_map', 'MapController@getCity');
-// Similarly, get the city and pass the maps dynamically
-Route::get('/maps/{country}/{state}/{city}/city_hex_map/{minfilter?}/{maxfilter?}/{hex?}', 'MapController@getCity');
-Route::get('/maps/{country}/{state}/{city?}/download/get', 'DownloadsController@getDataByCity');
+Route::group(['middleware' => 'fw-block-blacklisted'], function ()
+{
+    Route::get('/maps', 'MapController@getCountries');
+    Route::get('/maps/{country}/litter', 'MapController@getCountries');
+    Route::get('/maps/{country}/leaderboard', 'MapController@getCountries');
+    Route::get('/maps/{country}/time-series', 'MapController@getCountries');
+    // Route::get('/maps/total/download', 'MapController@getCountries');
 
-// new
-Route::get('city', 'MapController@getCity');
+    Route::get('/maps/{country}', 'MapController@getStates');
+    Route::get('/maps/{country}/{state}', 'MapController@getCities');
+    Route::get('/maps/{country}/{state}/{city?}/{id?}', 'MapController@getCities');
+    // Route::get('/maps/{country}/{city}/city_hex_map', 'MapController@getCity');
+    // Similarly, get the city and pass the maps dynamically
+    Route::get('/maps/{country}/{state}/{city}/city_hex_map/{minfilter?}/{maxfilter?}/{hex?}', 'MapController@getCity');
+    Route::get('/maps/{country}/{state}/{city?}/download/get', 'DownloadsController@getDataByCity');
+
+    // new
+    Route::get('city', 'MapController@getCity');
+}
 
 // Donation page
 Route::get('donate', 'HomeController@index');
