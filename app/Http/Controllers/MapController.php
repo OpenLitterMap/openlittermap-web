@@ -232,7 +232,7 @@ class MapController extends Controller
         	$state->avg_photo_per_user = round($state->total_images / $state->total_contributors, 2);
         	$state->total_litter = $state->total_smoking
                 + $state->total_food
-                + $state->total_softdrinks
+                + $state->total_softDrinks
                 + $state->total_alcohol
                 + $state->total_coffee
                 + $state->total_sanitary
@@ -264,7 +264,7 @@ class MapController extends Controller
 
         $country = Country::where('country', $country_name)->first();
 
-        \Log::info(['getCities', $country->id, $state_name]);
+        \Log::info(['getCities', $country->id, $state_name, request()->ip()]);
 
 		$state = State::where([
 			['state', $state_name],
@@ -306,7 +306,7 @@ class MapController extends Controller
             // Todo - save + update total_litter on the model
             $city['total_litter'] = $city->total_smoking
                 + $city->total_food
-                + $city->total_softdrinks
+                + $city->total_softDrinks
                 + $city->total_alcohol
                 + $city->total_coffee
                 + $city->total_sanitary
