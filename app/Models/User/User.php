@@ -3,6 +3,7 @@
 namespace App\Models\User;
 
 use App\Models\Photo;
+use App\Models\Teams\Team;
 use App\Payment;
 use App\Role;
 //use App\Billing\Billable;
@@ -41,8 +42,12 @@ class User extends Authenticatable
         static::addGlobalScope('photosCount', function($builder) {
             $builder->withCount('photos'); // photos_count
         });
-
     }
+
+    /**
+     * Eager load by default
+     */
+    protected $with = ['team'];
 
     /**
      * The attributes that are mass assignable.
@@ -268,11 +273,19 @@ class User extends Authenticatable
 //    }
 
     /**
+     * Currently active team
+     */
+    public function team ()
+    {
+        return $this->belongsTo(Team::class, 'active_team', 'id');
+    }
+
+    /**
      * Team Relationships
      */
     public function teams ()
     {
-        return $this->belongsToMany('App\Team');
+        return $this->belongsToMany(Team::class);
     }
 
 

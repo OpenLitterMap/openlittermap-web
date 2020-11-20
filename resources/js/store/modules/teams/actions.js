@@ -1,3 +1,6 @@
+import Vue from 'vue'
+import i18n from '../../../i18n'
+
 export const actions = {
 
     /**
@@ -5,6 +8,9 @@ export const actions = {
      */
     async CREATE_NEW_TEAM (context, payload)
     {
+        const title = i18n.t('notifications.success');
+        const body  = i18n.t('settings.teams.created');
+
         await axios.post('/teams/create', {
             name: payload.name,
             identifier: payload.identifier,
@@ -13,12 +19,26 @@ export const actions = {
         .then(response => {
             console.log('create_new_team', response);
 
-            // update translation with response
-
             // show notification
+            Vue.$vToastify.success({
+                title,
+                body,
+                position: 'top-right'
+            });
+
+            // add team to teams array
+            // context.commit('usersTeams', response.data.team);
+
+            // If user does not have an active team, assign
+            if (! context.rootState.user.user.team_id)
+            {
+                context.commit('userJoinTeam', response.data.team);
+            }
         })
         .catch(error => {
-            console.error('get_team_types', error);
+            console.error('create_new_team', error.response.data.errors);
+
+            context.commit('teamErrors', error.response.data.errors);
         });
     },
 
@@ -29,9 +49,9 @@ export const actions = {
     {
         await axios.get('/teams/get-types')
             .then(response => {
-                console.log('create_new_team', response);
+                console.log('get_team_types', response);
 
-
+                context.commit('teamTypes', response.data);
             })
             .catch(error => {
                 console.error('get_team_types', error);

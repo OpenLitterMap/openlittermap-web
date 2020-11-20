@@ -8,6 +8,7 @@ import littercoin from './littercoin.json'
 import payments from './payments.json'
 import presence from './presence.json'
 import privacy from './privacy.json'
+import teams from './teams.json'
 
 export const settings = {
     password,
@@ -19,5 +20,6 @@ export const settings = {
     littercoin,
     payments,
     presence,
-    privacy
+    privacy,
+    teams
 }

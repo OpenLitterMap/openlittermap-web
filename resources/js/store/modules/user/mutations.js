@@ -116,6 +116,14 @@ export const mutations = {
     toggle_litter_picked_up (state, payload)
     {
         state.user.items_remaining = payload;
+    },
+
+    /**
+     * The user has just created and joined a team
+     */
+    userJoinTeam (state, payload)
+    {
+        state.user['team'] = payload;
     }
 
 };

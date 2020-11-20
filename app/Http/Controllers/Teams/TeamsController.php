@@ -8,6 +8,8 @@ use App\Models\Teams\TeamType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+use App\Http\Controllers\Controller;
+
 class TeamsController extends Controller
 {
     /**
@@ -37,9 +39,10 @@ class TeamsController extends Controller
         $user->teams()->attach($team);
 
         $user->active_team = $team->id;
+        $user->remaining_teams--;
         $user->save();
 
-        return ['success' => true];
+        return ['success' => true, 'team' => $team];
     }
 
     /**
