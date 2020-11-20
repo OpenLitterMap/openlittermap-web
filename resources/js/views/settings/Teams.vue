@@ -12,8 +12,8 @@
             <div class="columns">
                 <div class="column is-offset-1">
 
-                    <div v-if="user.team" class="mb2">
-                        <p>You are currently jointed team {{ user.team.name }}</p>
+                    <div v-if="user.team" class="mb2" :key="user.team">
+                        <p>You are currently joined team {{ user.team.name }}</p>
                     </div>
 
                     <div v-else class="mb2">

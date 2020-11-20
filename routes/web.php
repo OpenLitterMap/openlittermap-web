@@ -173,9 +173,9 @@ Route::get('/settings/flags/countries', 'SettingsController@getCountries');
 Route::post('/settings/save-flag', 'SettingsController@saveFlag');
 
 // Teams
-Route::post('/teams/create', 'TeamsController@create');
-Route::post('/teams/join', 'TeamsController@join');
-Route::get('/teams/get-types', 'TeamsController@types');
+Route::post('/teams/create', 'Teams\TeamsController@create');
+Route::post('/teams/join', 'Teams\TeamsController@join');
+Route::get('/teams/get-types', 'Teams\TeamsController@types');
 
 /**
  * IMAGE VERIFICATION

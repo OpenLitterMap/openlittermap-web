@@ -26,12 +26,18 @@
 
             <label for="identifier">Team Identifier</label>
             <p>Anyone with this ID will be able to join your team.</p>
+            <span
+                class="is-danger"
+                v-if="errorExists('identifier')"
+                v-text="getFirstError('identifier')"
+            />
             <input
                 class="input mb2"
                 name="identifier"
                 placeholder="Awesome2020"
-                v-model="identifier"
                 required
+                v-model="identifier"
+                @keydown="clearError('identifier')"
             />
 
             <div>
@@ -69,6 +75,14 @@ export default {
         },
 
         /**
+         * Errors object from teams
+         */
+        errors ()
+        {
+            return this.$store.state.teams.errors;
+        },
+
+        /**
          * Types of teams from the database
          */
         teamTypes ()
@@ -77,6 +91,14 @@ export default {
         }
     },
     methods: {
+
+        /**
+         * Clear an error with this key
+         */
+        clearError (key)
+        {
+            if (this.errors[key]) this.$store.commit('clearTeamsError', key);
+        },
 
         /**
          * Create a new team
@@ -92,6 +114,22 @@ export default {
             });
 
             this.processing = false;
+        },
+
+        /**
+         * Check if any errors exist for this key
+         */
+        errorExists (key)
+        {
+            return this.errors.hasOwnProperty(key);
+        },
+
+        /**
+         * Get the first error from errors object
+         */
+        getFirstError (key)
+        {
+            return this.errors[key][0];
         },
 
         /**
