@@ -1,0 +1,20 @@
+{
+    "change-privacy": "Verander mijn Privacy",
+    "maps": "Kaarten",
+    "credit-name": "Noem mijn naam",
+    "credit-username": "Noem mijn gebruikersnaam",
+    "name-imgs-yes": "Je naam is ingesteld om te tonen bij elke foto die je upload naar de kaarten.",
+    "username-imgs-yes": "Je gebruikersnaam is ingesteld om te tonen bij elke foto die je upload naar de kaarten.",
+    "name-username-map-no": "Je naam en gebruikersnaam worden niet getoond op de kaarten.",
+    "leaderboards": "Scoreboard",
+    "credit-my-name": "Noem mijn naam",
+    "credit-my-username": "Noem mijn gebruikersnaam",
+    "name-leaderboards-yes": "Je naam is ingesteld om te tonen bij elk scoreboard waar je voor in aanmerking komt.",
+    "username-leaderboards-yes": "Je gebruikersnaam is ingesteld om te tonen bij elk scoreboard waar je voor in aanmerking komt.",
+    "name-username-leaderboards-no": "Je naam en gebruikersnaam worden niet getoond op de scoreboards.",
+    "created-by": "Gemaakt Door",
+    "name-locations-yes": "Je naam is ingesteld om te tonen bij elke locatie die je maakt.",
+    "username-locations-yes": "Je gebruikersnaam is ingesteld om te tonen bij elke locatie die je maakt",
+    "name-username-locations-yes": "Je naam en gebruikersnaam worden niet getoond in de Gemaakt Door sectie van welke locatie je dan ook toevoegt aan de database",
+    "update": "Bijwerken"
+}
