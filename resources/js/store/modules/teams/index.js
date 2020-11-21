@@ -2,7 +2,7 @@ import { actions } from './actions'
 import { mutations } from './mutations'
 
 const state = {
-    component_type: 'Default',
+    component_type: 'TeamsDashboard',
     error: '',
     errors: {},
     types: []

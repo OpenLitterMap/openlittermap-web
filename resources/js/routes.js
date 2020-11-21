@@ -100,9 +100,16 @@ const router = new VueRouter({
                 middleware: [ auth ]
             }
         },
+        // {
+        //     path: '/profile',
+        //     component: require('./views/general/Profile').default,
+        //     meta: {
+        //         middleware: [ auth ]
+        //     }
+        // },
         {
-            path: '/profile',
-            component: require('./views/general/Profile').default,
+            path: '/teams',
+            component: require('./views/Teams/Teams').default,
             meta: {
                 middleware: [ auth ]
             }
@@ -149,10 +156,6 @@ const router = new VueRouter({
                 {
                     path: 'show-flag',
                     component: require('./views/settings/GlobalFlag').default,
-                },
-                {
-                	path: 'teams',
-                	component: require('./views/settings/Teams').default
                 },
                 // {
                 // 	path: 'phone',

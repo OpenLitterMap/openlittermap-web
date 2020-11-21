@@ -32,25 +32,10 @@
 </template>
 
 <script>
-import Default from "./Teams/Default"
-import CreateTeam from "./Teams/CreateTeam"
-import JoinTeam from "./Teams/JoinTeam"
 
 export default {
     name: 'Teams',
-    components: {
-        CreateTeam,
-        JoinTeam,
-        Default
-    },
-    async created ()
-    {
-        this.loading = true;
 
-        await this.$store.dispatch('GET_TEAM_TYPES');
-
-        this.loading = false;
-    },
     data ()
     {
         return {
