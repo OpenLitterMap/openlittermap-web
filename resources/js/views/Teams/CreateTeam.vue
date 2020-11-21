@@ -96,11 +96,27 @@ export default {
         },
 
         /**
+         * Number of teams the user is allowed to create
+         */
+        remaining ()
+        {
+            return this.user.remaining_teams;
+        },
+
+        /**
          * Types of teams from the database
          */
         teamTypes ()
         {
             return this.$store.state.teams.types;
+        },
+
+        /**
+         * Currently authenticated user
+         */
+        user ()
+        {
+            return this.$store.state.user.user;
         }
     },
     methods: {
