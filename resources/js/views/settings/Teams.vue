@@ -12,7 +12,7 @@
             <div class="columns">
                 <div class="column is-offset-1">
 
-                    <div v-if="user.team" class="mb2" :key="user.team">
+                    <div v-if="user.team" class="mb2" :key="user.team.id">
                         <p>You are currently joined team {{ user.team.name }}</p>
                     </div>
 
@@ -22,7 +22,6 @@
 
                     <component
                         :is="this.type"
-                        @goto="goto"
                         :remaining="user.remaining_teams"
                     />
 
@@ -55,11 +54,18 @@ export default {
     data ()
     {
         return {
-            type: 'Default',
             loading: true
         };
     },
     computed: {
+
+        /**
+         * "Default", "JoinTeam" or "CreateTeam"
+         */
+        type ()
+        {
+            return this.$store.state.teams.component_type;
+        },
 
         /**
          * Currently authenticated user
@@ -76,7 +82,7 @@ export default {
          */
         goto (type)
         {
-            this.type = type
+
         }
     }
 }

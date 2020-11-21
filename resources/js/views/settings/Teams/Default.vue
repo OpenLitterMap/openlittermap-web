@@ -20,11 +20,11 @@ export default {
     props: ['remaining'],
     methods: {
         /**
-         * Emit method to parent
+         * Change component type
          */
         goto (type)
         {
-            this.$emit('goto', type);
+            this.$store.commit('teamComponent', type);
         }
     }
 }

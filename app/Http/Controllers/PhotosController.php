@@ -120,7 +120,6 @@ class PhotosController extends Controller
 
         $filename = $file->hashName();
         $filepath = $y.'/'.$m.'/'.$d.'/'.$filename;
-        $imageName = '';
 
         // Upload the image to AWS
         if (app()->environment('production'))
@@ -129,17 +128,14 @@ class PhotosController extends Controller
             $s3->put($filepath, file_get_contents($file), 'public');
             $imageName = $s3->url($filepath);
         }
+        else $imageName = '/assets/verified.jpg';
 
         // Get phone model
         if (array_key_exists('Model', $exif))
         {
             $model = $exif["Model"];
         }
-
-        else
-        {
-            $model = 'Unknown';
-        }
+        else $model = 'Unknown';
 
         // Get coordinates
          $lat_ref = $exif["GPSLatitudeRef"];
@@ -163,7 +159,7 @@ class PhotosController extends Controller
         $display_name = $revGeoCode["display_name"];
         // Extract the address array
         $addressArray = $revGeoCode["address"];
-        // \Log::info(['Address', $addressArray]);
+         // \Log::info(['Address', $addressArray]);
         // dd($addressArray);
         $location = array_values($addressArray)[0];
         $road = array_values($addressArray)[1];
@@ -207,7 +203,8 @@ class PhotosController extends Controller
             'state_id' => $stateId,
             'city_id' => $cityId,
             'platform' => 'web',
-            'geohash' => $geohash
+            'geohash' => $geohash,
+            'team_id' => $user->active_team
         ]);
 
         // $user->images_remaining -= 1;
@@ -217,8 +214,11 @@ class PhotosController extends Controller
 //        $user->total_images = $totalImages;
         $user->save();
 
+        $teamName = null;
+        if ($user->team) $teamName = $user->team->name;
+
         // Broadcast this event to anyone viewing the global map
-        event (new ImageUploaded($this->city, $this->state, $this->country, $imageName));
+        event (new ImageUploaded($this->city, $this->state, $this->country, $this->countryCode, $imageName, $teamName));
 
         // Increment the { Month-Year: int } value for each location
         // Todo - this needs debugging

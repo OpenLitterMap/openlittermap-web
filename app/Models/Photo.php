@@ -50,7 +50,8 @@ class Photo extends Model
         'total_litter',
         'platform',
         'bounding_box',
-        'geohash'
+        'geohash',
+        'team_id'
     ];
 
     /**
