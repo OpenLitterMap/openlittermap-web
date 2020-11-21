@@ -9,6 +9,14 @@ export const mutations = {
     },
 
     /**
+     * Change what team component the user is viewing
+     */
+    teamComponent (state, payload)
+    {
+        state.component_type = payload;
+    },
+
+    /**
      * There was a problem creating a new team
      */
     teamErrors (state, payload)

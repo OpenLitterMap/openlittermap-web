@@ -15,6 +15,11 @@
             </div>
 
             <label for="name">Team Name</label>
+            <span
+                class="is-danger"
+                v-if="errorExists('name')"
+                v-text="getFirstError('name')"
+            />
             <input
                 class="input mb2"
                 name="name"
@@ -22,6 +27,7 @@
                 v-model="name"
                 type="text"
                 required
+                @keydown="clearError('name')"
             />
 
             <label for="identifier">Team Identifier</label>
@@ -41,7 +47,7 @@
             />
 
             <div>
-                <button class="button is-medium" @click="goback">Cancel</button>
+                <button class="button is-medium" @click.prevent="goback">Cancel</button>
                 <button :class="button" :disabled="processing">Create Team</button>
             </div>
         </form>
@@ -133,11 +139,11 @@ export default {
         },
 
         /**
-         * Emit an event to go back to Default.vue
+         * Change component the user can see
          */
         goback ()
         {
-            this.$emit('goto', 'Default');
+            this.$store.commit('teamComponent', 'Default');
         }
     }
 }

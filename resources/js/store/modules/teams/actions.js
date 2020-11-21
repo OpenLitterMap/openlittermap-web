@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import i18n from '../../../i18n'
+import router from "../../../routes";
 
 export const actions = {
 
@@ -34,6 +35,10 @@ export const actions = {
             {
                 context.commit('userJoinTeam', response.data.team);
             }
+
+            // update what component the user is looking at
+            context.commit('teamComponent', 'Default');
+
         })
         .catch(error => {
             console.error('create_new_team', error.response.data.errors);
@@ -64,17 +69,19 @@ export const actions = {
     async JOIN_TEAM (context, payload)
     {
         await axios.post('/teams/join', {
-            identifier: payload.identifier
+            identifier: payload
         })
-            .then(response => {
-                console.log('join_team', response);
+        .then(response => {
+            console.log('join_team', response);
 
-                // update translation with response
+            // update translation with response
 
-                // show notification
-            })
-            .catch(error => {
-                console.error('join_team', error);
-            });
+            // show notification
+        })
+        .catch(error => {
+            console.error('join_team', error);
+
+            context.commit('teamErrors', error.response.data.errors);
+        });
     }
 }

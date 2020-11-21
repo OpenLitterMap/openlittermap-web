@@ -18,7 +18,7 @@ class TeamsController extends Controller
     public function create (Request $request)
     {
         $request->validate([
-            'name' => 'required|min:3|max:100',
+            'name' => 'required|min:3|max:100|unique:teams',
             'identifier' => 'required|min:3|max:15|unique:teams',
             'teamType' => 'required'
         ]);

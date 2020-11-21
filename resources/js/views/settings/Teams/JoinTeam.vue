@@ -4,15 +4,21 @@
 
         <form @submit.prevent="submit">
             <label for="join">Join team by identifier</label>
+            <span
+                class="is-danger"
+                v-if="errorExists('identifier')"
+                v-text="getFirstError('identifier')"
+            />
             <input
                 class="input mb2"
                 name="join"
+                placeholder="Enter ID to join a team"
                 required
                 v-model="identifier"
                 @input="clearError"
             />
 
-            <button class="button is-medium" @click="goback">Cancel</button>
+            <button class="button is-medium" @click.prevent="goback">Cancel</button>
             <button :class="button" :disabled="processing">Join Team</button>
         </form>
     </div>
@@ -41,20 +47,36 @@ export default {
         /**
          * Error string
          */
-        error ()
+        errors ()
         {
-            return this.$store.state.teams.error;
+            return this.$store.state.teams.errors;
         }
 
     },
     methods: {
 
         /**
-         * If there is an error, remove it when the user types something
+         * Clear an error with this key
          */
-        clearError ()
+        clearError (key)
         {
-            if (this.error) this.$store.commit('teamsError', '');
+            if (this.errors[key]) this.$store.commit('clearTeamsError', key);
+        },
+
+        /**
+         * Check if any errors exist for this key
+         */
+        errorExists (key)
+        {
+            return this.errors.hasOwnProperty(key);
+        },
+
+        /**
+         * Get the first error from errors object
+         */
+        getFirstError (key)
+        {
+            return this.errors[key][0];
         },
 
         /**
@@ -62,7 +84,7 @@ export default {
          */
         goback ()
         {
-            this.$emit('goback', 'Default');
+            this.$store.commit('teamComponent', 'Default');
         },
 
         /**
