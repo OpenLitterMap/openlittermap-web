@@ -172,10 +172,13 @@ Route::get('/settings/flags/countries', 'SettingsController@getCountries');
 // Save Country Flag for top 10
 Route::post('/settings/save-flag', 'SettingsController@saveFlag');
 
-// Teams
+// Teams - Settings
 Route::post('/teams/create', 'Teams\TeamsController@create');
 Route::post('/teams/join', 'Teams\TeamsController@join');
 Route::get('/teams/get-types', 'Teams\TeamsController@types');
+
+// Teams - probably going to merge these ^
+Route::get('/teams', 'HomeController@index');
 
 /**
  * IMAGE VERIFICATION

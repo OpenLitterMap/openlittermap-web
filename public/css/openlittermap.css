@@ -169,7 +169,7 @@ html {
 }
 
 .pb2 {
-    padding-bottom: 2em;
+    padding-bottom: 2em !important;
 }
 
 .pointer {
