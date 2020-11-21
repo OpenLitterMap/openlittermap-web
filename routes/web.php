@@ -176,6 +176,7 @@ Route::post('/settings/save-flag', 'SettingsController@saveFlag');
 Route::post('/teams/create', 'Teams\TeamsController@create');
 Route::post('/teams/join', 'Teams\TeamsController@join');
 Route::get('/teams/get-types', 'Teams\TeamsController@types');
+Route::get('/teams/combined-effort', 'Teams\TeamsController@combined');
 
 // Teams - probably going to merge these ^
 Route::get('/teams', 'HomeController@index');

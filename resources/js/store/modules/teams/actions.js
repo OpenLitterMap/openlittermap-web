@@ -48,6 +48,26 @@ export const actions = {
     },
 
     /**
+     * Get the combined effort for all of the users teams for this period
+     */
+    async GET_COMBINED_TEAM_EFFORT (context, payload)
+    {
+        await axios.get('/teams/combined-effort', {
+            params: {
+                period: payload
+            }
+        })
+        .then(response => {
+            console.log('get_combined_teams_effort', response);
+
+            context.commit('combinedTeamEffort', response.data);
+        })
+        .catch(error => {
+            console.error('get_combined_teams_effort', error);
+        });
+    },
+
+    /**
      * Get all team types from DB
      */
     async GET_TEAM_TYPES (context)

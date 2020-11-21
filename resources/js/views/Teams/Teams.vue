@@ -87,7 +87,7 @@ export default {
 
     .teams-left-col {
         background-color: #232d3f;
-        height: 100vh;
+        height: calc(100vh - 70px);
         padding-left: 2em;
         color: #d3d8e0;
     }
