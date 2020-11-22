@@ -78,6 +78,27 @@ export const actions = {
     },
 
     /**
+     * Get paginated team members for team_id
+     */
+    async GET_TEAM_MEMBERS (context, payload)
+    {
+        await axios.get('/teams/members', {
+            params: {
+                team_id: payload
+            }
+        })
+        .then(response => {
+            console.log('get_team_members', response);
+
+            context.commit('teamMembers', response.data.result);
+            // todo - take out total_members into separate request
+        })
+        .catch(error => {
+            console.error('get_team_members', error);
+        });
+    },
+
+    /**
      * Get all team types from DB
      */
     async GET_TEAM_TYPES (context)
@@ -90,6 +111,22 @@ export const actions = {
             })
             .catch(error => {
                 console.error('get_team_types', error);
+            });
+    },
+
+    /**
+     * Get an array of all teams the user has joined
+     */
+    async GET_USERS_TEAMS (context)
+    {
+        await axios.get('/teams/joined')
+            .then(response => {
+                console.log('get_users_teams', response);
+
+                context.commit('usersTeams', response.data);
+            })
+            .catch(error => {
+                console.error('get_users_teams', error);
             });
     },
 

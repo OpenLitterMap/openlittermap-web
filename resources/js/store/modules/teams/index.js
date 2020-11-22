@@ -8,9 +8,10 @@ const state = {
         members_count: 0
     },
     component_type: 'TeamsDashboard',
-    error: '',
     errors: {},
-    types: []
+    members: {}, // paginated response of a teams members
+    teams: [], // the user has joined
+    types: [] // the user can create
 };
 
 export const teams = {

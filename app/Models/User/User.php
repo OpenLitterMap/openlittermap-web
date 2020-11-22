@@ -47,7 +47,7 @@ class User extends Authenticatable
     /**
      * Eager load by default
      */
-    protected $with = ['team'];
+     protected $with = ['team'];
 
     /**
      * The attributes that are mass assignable.

@@ -35,10 +35,26 @@ export const mutations = {
     },
 
     /**
+     * Paginated array of a teams members
+     */
+    teamMembers (state, payload)
+    {
+        state.members = payload;
+    },
+
+    /**
      * Init team.types from database
      */
     teamTypes (state, payload)
     {
         state.types = payload;
+    },
+
+    /**
+     * Any teams the user has joined
+     */
+    usersTeams (state, payload)
+    {
+        state.teams = payload;
     }
 }
