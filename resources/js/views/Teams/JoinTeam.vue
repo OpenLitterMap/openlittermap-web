@@ -2,25 +2,36 @@
     <div class="jtc">
         <h1 class="title is-2">Join a Team</h1>
 
-        <form @submit.prevent="submit">
-            <label for="join">Join team by identifier</label>
-            <span
-                class="is-danger"
-                v-if="errorExists('identifier')"
-                v-text="getFirstError('identifier')"
-            />
-            <input
-                class="input mb2"
-                name="join"
-                placeholder="Enter ID to join a team"
-                required
-                v-model="identifier"
-                @input="clearError"
-            />
+        <div class="columns mt3">
 
-            <button class="button is-medium" @click.prevent="goback">Cancel</button>
-            <button :class="button" :disabled="processing">Join Team</button>
-        </form>
+            <div class="column is-one-third">
+                <p class="mb1">Enter an identifier to join a team.</p>
+            </div>
+
+            <div class="column is-half card p2">
+                <form @submit.prevent="submit">
+                    <label for="join">Join team by identifier</label>
+                    <span
+                        class="is-danger"
+                        v-if="errorExists('identifier')"
+                        v-text="getFirstError('identifier')"
+                    />
+                    <input
+                        class="input mb2"
+                        name="join"
+                        placeholder="Enter ID to join a team"
+                        required
+                        v-model="identifier"
+                        @input="clearError"
+                    />
+
+                    <div class="has-text-right">
+                        <button class="button is-medium" @click.prevent="goback">Cancel</button>
+                        <button :class="button" :disabled="processing">Join Team</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -107,7 +118,6 @@ export default {
     .jtc {
         margin-top: 1em;
         margin-left: 5em;
-        max-width: 30em;
     }
 
     .team-error {

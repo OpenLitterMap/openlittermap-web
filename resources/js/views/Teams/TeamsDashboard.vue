@@ -7,19 +7,19 @@
             <div class="column teams-card">
                 <span class="title is-2" style="color: #7b848e;">{{ photos_count }}</span>
                 <br>
-                photos uploaded {{ this.getPeriod() }}
+                Photos uploaded {{ this.getPeriod() }}
             </div>
 
             <div class="column teams-card">
                 <span class="title is-2" style="color: #7b848e;">{{ litter_count }}</span>
                 <br>
-                litter uploaded {{ this.getPeriod() }}
+                Litter tagged {{ this.getPeriod() }}
             </div>
 
             <div class="column teams-card">
                 <span class="title is-2" style="color: #7b848e;">{{ members_count }}</span>
                 <br>
-                team members uploaded {{ this.getPeriod() }}
+                Team members uploaded {{ this.getPeriod() }}
             </div>
         </div>
 

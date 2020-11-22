@@ -4,69 +4,76 @@
 
         <p class="mb2">You are allowed to create {{ this.remaining }} team(s)</p>
 
-        <form method="post" @submit.prevent="create">
-            <div class="control pb2">
+        <div class="columns mt3">
 
-                <p>Team Type</p>
-
-                <div class="select">
-                    <select v-model="teamType">
-                        <option v-for="type in teamTypes" :value="type.id">{{ type.team }}</option>
-                    </select>
-                </div>
+            <div class="column is-one-third">
+                <p class="mb1">What kind of Team would you like to create?</p>
             </div>
 
-            <label for="name">Team Name</label>
-            <span
-                class="is-danger"
-                v-if="errorExists('name')"
-                v-text="getFirstError('name')"
-            />
-            <input
-                class="input mb2"
-                name="name"
-                placeholder="My Awesome Team"
-                v-model="name"
-                type="text"
-                required
-                @keydown="clearError('name')"
-            />
+            <div class="column is-half card p2">
+                <form method="post" @submit.prevent="create">
+                    <div class="control pb2">
 
-            <label for="identifier">Team Identifier</label>
-            <p>Anyone with this ID will be able to join your team.</p>
-            <span
-                class="is-danger"
-                v-if="errorExists('identifier')"
-                v-text="getFirstError('identifier')"
-            />
-            <input
-                class="input mb2"
-                name="identifier"
-                placeholder="Awesome2020"
-                required
-                v-model="identifier"
-                @keydown="clearError('identifier')"
-            />
+                        <p>Team Type</p>
 
-            <!-- Todo - Checkbox -->
-            <!-- Allow people to join your team automatically? -->
-            <!-- Yes = auto-join is on -->
-            <!-- No = approval is required -->
+                        <div class="select">
+                            <select v-model="teamType">
+                                <option v-for="type in teamTypes" :value="  type.id">{{ type.team }}</option>
+                            </select>
+                        </div>
+                    </div>
 
-            <div>
-                <button class="button is-medium" @click.prevent="goback">Cancel</button>
-                <button :class="button" :disabled="processing">Create Team</button>
+                    <label for="name">Team Name</label>
+                    <span
+                        class="is-danger"
+                        v-if="errorExists('name')"
+                        v-text="getFirstError('name')"
+                    />
+                    <input
+                        class="input mb2"
+                        name="name"
+                        placeholder="My Awesome Team"
+                        v-model="name"
+                        type="text"
+                        required
+                        @keydown="clearError('name')"
+                    />
+
+                    <label for="identifier">Team Identifier</label>
+                    <p>Anyone with this ID will be able to join your team.</p>
+                    <span
+                        class="is-danger"
+                        v-if="errorExists('identifier')"
+                        v-text="getFirstError('identifier')"
+                    />
+                    <input
+                        class="input mb2"
+                        name="identifier"
+                        placeholder="Awesome2020"
+                        required
+                        v-model="identifier"
+                        @keydown="clearError('identifier')"
+                    />
+
+                    <!-- Todo - Checkbox -->
+                    <!-- Allow people to join your team automatically? -->
+                    <!-- Yes = auto-join is on -->
+                    <!-- No = approval is required -->
+
+                    <div>
+                        <button class="button is-medium" @click.prevent="goback">Cancel</button>
+                        <button :class="button" :disabled="processing">Create Team</button>
+                    </div>
+                </form>
             </div>
-        </form>
+        </div>
     </div>
 </template>
 
 <script>
-/* Todo - show failed validation errors */
 /* Todo - translations */
 export default {
     name: 'CreateTeam',
-    props: ['remaining'],
     data ()
     {
         return {
@@ -177,6 +184,5 @@ export default {
     .ctc {
         margin-top: 1em;
         margin-left: 5em;
-        max-width: 30em;
     }
 </style>

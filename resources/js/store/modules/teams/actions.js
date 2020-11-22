@@ -10,7 +10,10 @@ export const actions = {
     async CREATE_NEW_TEAM (context, payload)
     {
         const title = i18n.t('notifications.success');
-        const body  = i18n.t('settings.teams.created');
+        const body  = i18n.t('teams.created');
+
+        const error_title = i18n.t('notifications.error');
+        const error_body  = i18n.t('teams.create.max-created');
 
         await axios.post('/teams/create', {
             name: payload.name,
@@ -20,25 +23,32 @@ export const actions = {
         .then(response => {
             console.log('create_new_team', response);
 
-            // show notification
-            Vue.$vToastify.success({
-                title,
-                body,
-                position: 'top-right'
-            });
-
-            // add team to teams array
-            // context.commit('usersTeams', response.data.team);
-
-            // If user does not have an active team, assign
-            if (! context.rootState.user.user.team_id)
+            if (response.data.success)
             {
-                context.commit('userJoinTeam', response.data.team);
+                // show notification
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                    position: 'top-right'
+                });
+
+                // add team to teams array
+                // context.commit('usersTeams', response.data.team);
+
+                // If user does not have an active team, assign
+                if (! context.rootState.user.user.team_id) {
+                    context.commit('userJoinTeam', response.data.team);
+                }
             }
 
-            // update what component the user is looking at
-            context.commit('teamComponent', 'Default');
-
+            else
+            {
+                Vue.$vToastify.error({
+                    title: error_title,
+                    body: error_body,
+                    position: 'top-right'
+                });
+            }
         })
         .catch(error => {
             console.error('create_new_team', error.response.data.errors);
