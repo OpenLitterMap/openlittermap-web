@@ -164,6 +164,10 @@ html {
     margin-bottom: 1em;
 }
 
+.p2 {
+    padding: 2em !important;
+}
+
 .pb1em {
 	padding-bottom: 1em;
 }

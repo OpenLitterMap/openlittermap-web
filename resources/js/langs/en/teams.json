@@ -7,5 +7,9 @@
         "month": "This month",
         "year": "This year",
         "all": "All time"
+    },
+    "create": {
+        "fail": "There was an error creating your Team",
+        "max-created": "You are not allowed to create any more teams."
     }
 }
