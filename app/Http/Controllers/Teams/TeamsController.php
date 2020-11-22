@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Teams;
 use App\Models\Photo;
 use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
+use App\Traits\FilterTeamMembersTrait;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,6 +14,7 @@ use App\Http\Controllers\Controller;
 
 class TeamsController extends Controller
 {
+    use FilterTeamMembersTrait;
 
     /**
      * Get the combined effort for all of your teams for the time-period
@@ -104,6 +106,41 @@ class TeamsController extends Controller
         }
 
         return ['success' => false, 'msg' => 'not-found'];
+    }
+
+    /**
+     * Array of teams the user has joined
+     */
+    public function joined ()
+    {
+        return Auth::user()->teams;
+    }
+
+    /**
+     * Get paginated members for a team_id
+     */
+    public function members ()
+    {
+        $query = $this->filterTeamMembers(request()->team_id);
+
+        $total_members = $query->users->count();
+
+        $result = $query->users()
+            ->withPivot('total_photos', 'total_litter')
+            ->simplePaginate(10, [
+                // include these fields
+                'users.id',
+                'users.email',
+                'users.name',
+                'users.username',
+                'users.updated_at', // todo add users.last_uploaded
+                'total_photos'
+            ]);
+
+        return [
+            'total_members' => $total_members,
+            'result' => $result
+        ];
     }
 
     /**

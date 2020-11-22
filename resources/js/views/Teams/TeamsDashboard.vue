@@ -1,7 +1,7 @@
 <template>
     <section class="tdc">
         <p class="subtitle is-centered is-3">Teams Dashboard</p>
-        <p class="mb1">Here you can find combined impact made by all the teams you have joined.</p>
+        <p class="mb1">Here you can find the combined impact made by all the teams you have joined.</p>
 
         <div class="columns">
             <div class="column teams-card">
