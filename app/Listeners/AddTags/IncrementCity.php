@@ -12,16 +12,6 @@ use Illuminate\Queue\InteractsWithQueue;
 class IncrementCity
 {
     /**
-     * Create the event listener.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        //
-    }
-
-    /**
      * Handle the event.
      *
      * @param  PhotoVerifiedByAdmin  $event
@@ -29,28 +19,9 @@ class IncrementCity
      */
     public function handle (TagsVerifiedByAdmin $event)
     {
-        $photo = Photo::find($event->photo_id);
-
-        if ($city = City::find($photo->city_id))
+        if ($city = City::find($event->city_id))
         {
-            $total_count = 0;
-
-            // this is going to be the same for each location
-            foreach ($photo->categories() as $category)
-            {
-                if ($photo->$category)
-                {
-                    $total = $photo->$category->total();
-
-                    $total_string = "total_" . $category; // total_smoking, total_food...
-
-                    $city->$total_string += $total;
-
-                    $total_count += $total; // total counts of all categories
-                }
-            }
-
-            $city->total_litter += $total_count;
+            $city->total_litter += $event->total_count;
             $city->total_images++;
             $city->save();
         }

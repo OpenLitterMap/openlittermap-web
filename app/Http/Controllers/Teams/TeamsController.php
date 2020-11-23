@@ -34,11 +34,18 @@ class TeamsController extends Controller
         else if (request()->period === 'year') $period = now()->startOfYear();
         else if (request()->period === 'all') $period = '2020-11-22 00:00:00'; // date of writing
 
-        $query = Photo::whereIn('team_id', $ids)->whereDate('created_at', '>=', $period);
+        $query = Photo::whereIn('team_id', $ids)
+            ->whereDate('created_at', '>=', $period)
+            ->where('verified', 2);
 
         $photos_count = $query->count();
-        $litter_count = $query->sum('total_litter');
         $members_count = $query->distinct()->count('user_id');
+
+        // might need photo.verified_at
+        $litter_count = Photo::whereIn('team_id', $ids)
+            ->whereDate('updated_at', '>=', $period)
+            ->where('verified', 2)
+            ->sum('total_litter');
 
         return [
             'photos_count' => $photos_count,
@@ -127,6 +134,7 @@ class TeamsController extends Controller
 
         $result = $query->users()
             ->withPivot('total_photos', 'total_litter')
+            ->orderBy('pivot_total_litter')
             ->simplePaginate(10, [
                 // include these fields
                 'users.id',

@@ -19,7 +19,7 @@ use App\Models\LitterTags;
 
 use Illuminate\Http\Request;
 use App\Events\ImageUploaded;
-use App\Events\PhotoVerifiedByAdmin;
+use App\Events\TagsVerifiedByAdmin;
 use App\Events\Photo\IncrementPhotoMonth;
 
 use Illuminate\Support\Facades\Redis;
@@ -346,7 +346,7 @@ class PhotosController extends Controller
         {
             $photo->verification = 1;
             $photo->verified = 2;
-            event(new PhotoVerifiedByAdmin($photo->id));
+            event(new TagsVerifiedByAdmin($photo->id));
         }
 
         $photo->save();
