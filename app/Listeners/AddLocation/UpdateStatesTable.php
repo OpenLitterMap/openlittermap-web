@@ -31,7 +31,7 @@ class UpdateStatesTable
     public function handle (NewStateAdded $event)
     {
         $state = new State;
-        $state->state = $event->state
+        $state->state = $event->state;
 
         $country_id = Country::where('country', $event->country)->orWhere('countrynameb', $event->country)->first()->id;
         $state->country_id = $country_id;
