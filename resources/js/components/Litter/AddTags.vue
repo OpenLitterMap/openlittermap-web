@@ -1,120 +1,109 @@
 <template>
     <div class="control has-text-centered">
-
         <!-- Categories -->
-    	<div class="select" id="litter-items">
-			<select v-model="category">
-				<option v-for="cat in categories" :value="cat">{{ cat.title }}</option>
-			</select>
-		</div>
+        <div id="litter-items" class="litter-select-category">
+            <v-select v-model="category" :options="categories" label="title" :value="category" :clearable="false">
+                <slot name="no-options">
+                    Sorry, no matching options.
+                </slot>
+            </v-select>
+        </div>
 
         <!-- Items -->
-	    <div class="select" id="litter-category">
-			<select v-model="item">
-				<option v-for="i in items" :value="i">{{ i.title }}</option>
-			</select>
-		</div>
+        <div id="litter-category" class="litter-select-items">
+            <v-select v-model="item" :options="items" label="title" :value="i" :clearable="false">
+                <slot name="no-options">
+                    Sorry, no matching options.
+                </slot>
+            </v-select>
+        </div>
 
         <!-- Quantity -->
-    	<div class="select" id="int">
-			<select v-model="quantity">
-				<option v-for="int in integers">{{ int }}</option>
-			</select>
-		</div>
+        <div id="int" class="litter-select-quantity">
+            <v-select v-model="quantity" :options="integers" :clearable="false">
+                <slot name="no-options">
+                    Sorry, no matching options.
+                </slot>
+            </v-select>
+        </div>
 
-		<br>
-		<br>
+        <br>
+        <br>
 
-		<button
-			:disabled="checkDecr"
-			class="button is-medium is-danger"
-			@click="decr"
-		>-</button>
+        <button
+            :disabled="checkDecr"
+            class="button is-medium is-danger"
+            @click="decr"
+        >
+            -
+        </button>
 
-		<button
-			class="button is-medium is-info"
-			@click="addTag"
-		>{{ $t('tags.add-tag') }}</button>
+        <button
+            class="button is-medium is-info"
+            @click="addTag"
+        >
+            {{ $t('tags.add-tag') }}
+        </button>
 
-		<button
-			:disabled="checkIncr"
-			class="button is-medium is-dark"
-			@click="incr"
-		>+</button>
+        <button
+            :disabled="checkIncr"
+            class="button is-medium is-dark"
+            @click="incr"
+        >
+            +
+        </button>
 
-		<br>
-		<br>
+        <br>
+        <br>
 
-		<button
-			:disabled="checkItems"
-			:class="button"
-			@click="submit"
+        <button
             v-show="! admin"
-		>{{ $t('common.submit') }}</button>
+            :disabled="checkItems"
+            :class="button"
+            @click="submit"
+        >
+            {{ $t('common.submit') }}
+        </button>
 
-		<!-- Only show these on mobile <= 768px -->
-		<div class="show-mobile">
-			<br>
-			<tags />
+        <!-- Only show these on mobile <= 768px -->
+        <div class="show-mobile">
+            <br>
+            <tags />
 
-			<div class="custom-buttons">
-				<profile-delete :photoid="  id" />
-    	    	<presence :itemsr="true" />
-    	    </div>
-    	</div>
-	</div>
+            <div class="custom-buttons">
+                <profile-delete :photoid=" id" />
+                <presence :itemsr="true" />
+            </div>
+        </div>
+    </div>
 </template>
 
 <script>
-import Tags from './Tags'
-import Presence from './Presence'
-import ProfileDelete from './ProfileDelete'
-import { categories } from '../../extra/categories'
+import Tags from './Tags';
+import Presence from './Presence';
+import ProfileDelete from './ProfileDelete';
+import { categories } from '../../extra/categories';
+import vSelect from "vue-select";
+import { litterkeys } from '../../extra/litterkeys';
 
 export default {
-    name: 'AddTags',
-	props: ['id', 'admin'], // photo.id, bool
-	components: {
+    name: 'AddTags', // photo.id, bool
+    components: {
         Tags,
         Presence,
-        ProfileDelete
-	},
-	created ()
-    {
-        // We need to initialize with translated title
-        this.$store.commit('changeCategory', {
-            id: 11,
-            key: 'smoking',
-            title: this.$i18n.t('litter.categories.smoking')
-        });
-
-        // We need to initialize with translated title
-        this.$store.commit('changeItem', {
-            id: 0,
-            key: 'butts',
-            title: this.$i18n.t('litter.smoking.butts')
-        });
+        ProfileDelete,
+        vSelect
     },
-	data ()
+    props: ['id', 'admin'],
+    data ()
     {
-		return {
+        return {
 		    btn: 'button is-medium is-success',
-			quantity: 1,
+            quantity: 1,
     		processing: false,
-	        integers: [
-	            1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
-	            11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-	            21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
-	            31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
-	            41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
-	            51, 52, 53, 54, 55, 56, 57, 58, 59, 60,
-	            61, 62, 63, 64, 65, 66, 67, 68, 69, 70,
-	            71, 72, 73, 74, 75, 76, 77, 78, 79, 80,
-	            81, 82, 83, 84, 85, 86, 87, 88, 89, 90,
-	            91, 92, 93, 94, 95, 96, 97, 98, 99, 100
-	        ],
-		};
-	},
+	        integers: Array.from({length: 100}, (_, i) => i + 1),
+        };
+    },
     computed: {
 
         /**
@@ -162,22 +151,25 @@ export default {
                 return this.$store.state.litter.item;
             },
             set (i) {
+                const findedCatName = Object.keys(litterkeys).find(key =>
+                    litterkeys[key].filter(litter=> litter.key === i.key).length > 0
+                );
+                this.$store.commit('changeCategory', this.categories.find(category => category.key === findedCatName));
                 this.$store.commit('changeItem', i);
             }
         },
 
         /**
-         * Litter items for the selected category
+         * All litter items in the system
          */
         items ()
         {
-            return this.$store.state.litter.items.map(item => {
-               return {
-                   id: item.id,
-                   key: item.key,
-                   title: this.$i18n.t('litter.' + this.category.key + '.' + item.key )
-               };
-            });
+            return Object.keys(litterkeys).map((key) =>
+                litterkeys[key].map(litter=> ({
+                    key: litter.key ,
+                    title: this.$i18n.t('litter.' + key + '.' + litter.key)
+                }))
+            ).flat();
         },
 
         /**
@@ -212,29 +204,45 @@ export default {
             return Object.keys(this.$store.state.litter.items).length === 0 ? true : false;
         }
     },
+    created ()
+    {
+        // We need to initialize with translated title
+        this.$store.commit('changeCategory', {
+            id: 11,
+            key: 'smoking',
+            title: this.$i18n.t('litter.categories.smoking')
+        });
+
+        // We need to initialize with translated title
+        this.$store.commit('changeItem', {
+            id: 0,
+            key: 'butts',
+            title: this.$i18n.t('litter.smoking.butts')
+        });
+    },
     methods: {
 
-		/**
+        /**
 		 * Increment the quantity
 		 */
-		incr ()
+        incr ()
         {
-			this.quantity++;
-		},
+            this.quantity++;
+        },
 
-		/**
+        /**
 		 * Decrement the quantity
 		 */
-		decr ()
+        decr ()
         {
-			this.quantity--;
-		},
+            this.quantity--;
+        },
 
-		/**
+        /**
 		 * Add data to the collection
 		 */
         addTag ()
-		{
+        {
         	this.$store.commit('addTag', {
         		category: this.category,
         		item: this.item,
@@ -257,22 +265,54 @@ export default {
 
             this.processing = false;
         },
-	}
-}
+    }
+};
 </script>
 
 <style lang="scss">
-
+@import "vue-select/src/scss/vue-select.scss";
     .hide-br {
         display: none;
     }
+
+    .litter-select{
+
+        &-category{
+            display: inline-block;
+            min-width: 130px;
+        }
+        &-items{
+            display: inline-block;
+            min-width: 270px;
+        }
+        &-quantity{
+            display: inline-block;
+            min-width: 80px;
+        }
+    }
+
+    .v-select{
+
+        .vs__dropdown {
+            &-toggle{
+                background-color: white;
+            }
+            &-menu {
+                max-height: 250px
+            }
+        }
+        .vs__no-options {
+            color: black;
+        }
+    }
+
 
     @media (max-width: 500px)
     {
         .hide-br {
             display: block;
         }
-        .select {
+        .v-select {
             margin-top: 10px;
         }
     }
