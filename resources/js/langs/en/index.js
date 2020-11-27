@@ -10,6 +10,7 @@ import { home } from './home/index';
 import signup from './signup.json'
 import tags from './tags.json'
 import nav from './nav.json'
+import upload from './upload.json'
 
 
 export const en = {
@@ -24,5 +25,6 @@ export const en = {
     profile,
     settings,
     signup,
-    tags
+    tags,
+    upload
 }
