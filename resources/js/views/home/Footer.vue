@@ -173,7 +173,8 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@import "../../styles/variables.scss";
 
     .foot {
         padding: 5em;
@@ -202,7 +203,7 @@ export default {
 
     .footer-success {
         font-size: 1.5em;
-        color: white;
+        color: $white;
     }
 
     .footer-text {
@@ -215,7 +216,7 @@ export default {
     }
 
     .footer-link:hover {
-        color: white;
+        color: $white;
     }
 
     .f-input {
@@ -234,19 +235,19 @@ export default {
     .olm-title {
         font-size: 2em;
         font-weight: 700;
-        color: white;
+        color: $white;
         margin-bottom: 1em;
     }
 
     .olm-subtitle {
         font-size: 1.5em;
         font-weight: 700;
-        color: white;
+        color: $white;
         margin-bottom: 1em;
     }
 
     .top-footer-title {
-        color: white;
+        color: $white;
         font-size: 2.5em;
         margin-bottom: 1.25em;
     }
