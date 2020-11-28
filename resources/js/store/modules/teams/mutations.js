@@ -23,6 +23,7 @@ export const mutations = {
      */
     teamComponent (state, payload)
     {
+        console.log('teamComponent', payload);
         state.component_type = payload;
     },
 

@@ -5,6 +5,36 @@ import router from "../../../routes";
 export const actions = {
 
     /**
+     * Change what team the user is currently a part of
+     */
+    async CHANGE_ACTIVE_TEAM (context, payload)
+    {
+        const title = i18n.t('notifications.success');
+        const body = 'Your active team has changed'; // insert new active team name
+
+        await axios.post('/teams/active', {
+            team_id: payload
+        })
+        .then(response => {
+            console.log('change_active_team', response);
+
+            if (response.data.success)
+            {
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                    position: 'top-right'
+                });
+
+                context.commit('usersActiveTeam', payload);
+            }
+        })
+        .catch(error => {
+            console.error('change_active_team', error);
+        });
+    },
+
+    /**
      * The user wants to create a new team
      */
     async CREATE_NEW_TEAM (context, payload)
@@ -14,6 +44,9 @@ export const actions = {
 
         const error_title = i18n.t('notifications.error');
         const error_body  = i18n.t('teams.create.max-created');
+
+        const joinedTeamTitle = i18n.t('notifications.success');
+        const joinedTeamBody = 'Congratulations! You have joined a new team!'; // todo - insert team name
 
         await axios.post('/teams/create', {
             name: payload.name,
@@ -25,19 +58,23 @@ export const actions = {
 
             if (response.data.success)
             {
-                // show notification
                 Vue.$vToastify.success({
                     title,
                     body,
                     position: 'top-right'
                 });
 
-                // add team to teams array
-                // context.commit('usersTeams', response.data.team);
+                context.commit('decrementUsersRemainingTeams');
 
-                // If user does not have an active team, assign
-                if (! context.rootState.user.user.team_id) {
-                    context.commit('userJoinTeam', response.data.team);
+                if (! context.rootState.user.user.active_team)
+                {
+                    context.commit('usersActiveTeam', response.data.team_id);
+
+                    Vue.$vToastify.success({
+                        title: joinedTeamTitle,
+                        body: joinedTeamBody,
+                        position: 'top-right'
+                    });
                 }
             }
 
@@ -132,18 +169,42 @@ export const actions = {
 
     /**
      * The user wants to join a team with an identifier
+     *
+     * Not to be confused with change active team.
      */
     async JOIN_TEAM (context, payload)
     {
+        const title = i18n.t('notifications.success');
+        const body = 'Congratulations! You have joined a new team!'; // todo - insert team name, translate
+
+        const failTitle = i18n.t('notifications.error');
+        const failBody = 'Sorry, we could not find a team with this identifier.' // todo - insert identifier, translate
+
         await axios.post('/teams/join', {
             identifier: payload
         })
         .then(response => {
             console.log('join_team', response);
 
-            // update translation with response
-
             // show notification
+            if (response.data.success)
+            {
+                // success
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                    position: 'top-right'
+                });
+            }
+
+            else
+            {
+                Vue.$vToastify.error({
+                    title: failTitle,
+                    body: failBody,
+                    position: 'top-right'
+                });
+            }
         })
         .catch(error => {
             console.error('join_team', error);

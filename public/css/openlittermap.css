@@ -131,6 +131,10 @@ html {
 	margin-bottom: 5em !important;
 }
 
+.ml1 {
+    margin-left: 1em;
+}
+
 .mr1 {
     margin-right: 1em;
 }
@@ -157,6 +161,10 @@ html {
 
 .mt5em {
 	margin-top: 5em !important;
+}
+
+.mtba {
+    margin: auto 0;
 }
 
 .mtb1 {
