@@ -17,6 +17,30 @@ class TeamsController extends Controller
     use FilterTeamMembersTrait;
 
     /**
+     * Change the users currently active team
+     */
+    public function active (Request $request)
+    {
+        $user = Auth::user();
+
+        if (Team::find($request->team_id))
+        {
+            foreach ($user->teams as $team)
+            {
+                if ($team->id === $request->team_id)
+                {
+                    $user->active_team = $request->team_id;
+                    $user->save();
+
+                    return ['success' => true];
+                }
+            }
+        }
+
+        return ['success' => false];
+    }
+
+    /**
      * Get the combined effort for all of your teams for the time-period
      *
      * Should we only count verified photos?
@@ -109,7 +133,13 @@ class TeamsController extends Controller
             // Have the user join this team
             $user->teams()->attach($team);
 
-            return ['success' => true];
+            if (is_null($user->active_team))
+            {
+                $user->active_team = $team->id;
+                $user->save();
+            }
+
+            return ['success' => true, 'team_id' => $team->id];
         }
 
         return ['success' => false, 'msg' => 'not-found'];
@@ -130,10 +160,10 @@ class TeamsController extends Controller
     {
         $query = $this->filterTeamMembers(request()->team_id);
 
-        $total_members = $query->users->count();
+        $total_members = $query->users->count(); // members?
 
         $result = $query->users()
-            ->withPivot('total_photos', 'total_litter')
+            ->withPivot('total_photos', 'total_litter', 'updated_at')
             ->orderBy('pivot_total_litter')
             ->simplePaginate(10, [
                 // include these fields
@@ -141,6 +171,7 @@ class TeamsController extends Controller
                 'users.email',
                 'users.name',
                 'users.username',
+                'users.active_team',
                 'users.updated_at', // todo add users.last_uploaded
                 'total_photos'
             ]);

@@ -26,7 +26,6 @@
                     />
 
                     <div class="has-text-right">
-                        <button class="button is-medium" @click.prevent="goback">Cancel</button>
                         <button :class="button" :disabled="processing">Join Team</button>
                     </div>
                 </form>
@@ -47,6 +46,7 @@ export default {
         };
     },
     computed: {
+
         /**
          * Add spinner when processing
          */
@@ -88,14 +88,6 @@ export default {
         getFirstError (key)
         {
             return this.errors[key][0];
-        },
-
-        /**
-         * Emit event to go back to Default page
-         */
-        goback ()
-        {
-            this.$store.commit('teamComponent', 'TeamsDashboard');
         },
 
         /**

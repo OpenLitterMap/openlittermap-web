@@ -18,7 +18,7 @@
 
                         <div class="select">
                             <select v-model="teamType">
-                                <option v-for="type in teamTypes" :value="  type.id">{{ type.team }}</option>
+                                <option v-for="type in teamTypes" :value="type.id">{{ type.team }}</option>
                             </select>
                         </div>
                     </div>
@@ -39,7 +39,7 @@
                         @keydown="clearError('name')"
                     />
 
-                    <label for="identifier">Team Identifier</label>
+                    <label for="identifier">Unique Team Identifier</label>
                     <p>Anyone with this ID will be able to join your team.</p>
                     <span
                         class="is-danger"
@@ -61,7 +61,6 @@
                     <!-- No = approval is required -->
 
                     <div>
-                        <button class="button is-medium" @click.prevent="goback">Cancel</button>
                         <button :class="button" :disabled="processing">Create Team</button>
                     </div>
                 </form>
@@ -166,14 +165,6 @@ export default {
         getFirstError (key)
         {
             return this.errors[key][0];
-        },
-
-        /**
-         * Change component the user can see
-         */
-        goback ()
-        {
-            this.$store.commit('teamComponent', 'TeamsDashboard');
         }
     }
 }
