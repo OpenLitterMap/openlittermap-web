@@ -264,6 +264,8 @@ class MapController extends Controller
 
         $country = Country::where('country', $country_name)->first();
 
+        \Log::info(['getCities', $country->id, $state_name, request()->ip()]);
+
 		$state = State::where([
 			['state', $state_name],
 			['total_images', '!=', null]
@@ -278,35 +280,15 @@ class MapController extends Controller
 			$q->select('id', 'name', 'username', 'show_name', 'show_username')
 			  ->where('show_name', true)
 			  ->orWhere('show_username', true);
-		}, 'photos' => function($qq) {
-			$qq->with('owner:id,name,username,show_name,show_username,xp')
-			   ->where('verified', '>=', 1)->orderBy('datetime', 'asc');
-		}])->where([
-			['state_id', $state->id],
+		}])
+        ->where([
+            ['state_id', $state->id],
 			['total_images', '>', 0]
+            // ['total_litter', '>', 0] todo - once total_litter column is working
 		])->orderBy('city', 'asc')->get();
 
-		// return $cities;
 		foreach ($cities as $city)
 		{
-            // If city, append time slider values (min, max)
-            if (! is_null($city))
-            {
-                // $city['time'] = json_encode(self::getTimeSlider($city->city));
-                $time = [];
-
-                $myPhotos = $city->photos->groupBy(function ($v) {
-                    return Carbon::parse($v->datetime)->format('d-m-y');
-                });
-
-                // Determine images per day (for time slider)
-                foreach ($myPhotos as $key => $value)
-                {
-                    $time[$key] = $value->count();
-                }
-                $city['time'] = json_encode($time);
-            }
-
             // Get Creator info
             $city = $this->getCreatorInfo($city);
 
@@ -320,6 +302,8 @@ class MapController extends Controller
             $city['leaderboard'] = json_encode($arrayOfLeaders);
 
             $city['avg_photo_per_user'] = round($city->total_images / $city->total_contributors, 2);
+
+            // Todo - save + update total_litter on the model
             $city['total_litter'] = $city->total_smoking
                 + $city->total_food
                 + $city->total_softDrinks
@@ -330,9 +314,9 @@ class MapController extends Controller
                 + $city->total_coastal
                 + $city->total_dumping
                 + $city->total_industrial;
+
             $city['avg_litter_per_user'] = round($city->total_litter / $city->total_contributors, 2);
 
-            unset($city->photos); // we don't need these anymore
             $city['diffForHumans'] = $city->created_at->diffForHumans();
         }
 

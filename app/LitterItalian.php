@@ -143,7 +143,7 @@ final class LitterItalian {
         "id": "softdrinks_id",
         "table": "soft_drinks",
         "class": "SoftDrinks",
-        "total": "total_softDrinks",
+        "total": "total_softdrinks",
         "types": {
             "Bottiglie d’acqua plastica": {
                 "col": "waterBottle"
@@ -673,9 +673,9 @@ final class LitterItalian {
         if ($inst === null) $inst = new LitterItalian();
         return $inst;
     }
-    
+
     public function __construct(){
         $this->jsonDecoded = json_decode($this->json);
     }
-    public function getDecodedJSON(){ return $this->jsonDecoded; } 
+    public function getDecodedJSON(){ return $this->jsonDecoded; }
 }

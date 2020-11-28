@@ -63,6 +63,8 @@ class PhotosController extends Controller
         $file = $request->file('file'); // -> /tmp/php7S8v..
         $exif = Image::make($file)->exif();
 
+        \Log::info(['exif', $exif]);
+
         // Check if the EXIF has GPS data
         // todo - make this error appear on the frontend dropzone.js without clicking it
         if (! array_key_exists("GPSLatitudeRef", $exif))
@@ -154,7 +156,6 @@ class PhotosController extends Controller
 
         // The entire reverse geocoded result
         $revGeoCode = json_decode(file_get_contents($url), true);
-        // dd($revGeoCode);
         // The entire address as a string
         $display_name = $revGeoCode["display_name"];
         // Extract the address array
@@ -357,6 +358,12 @@ class PhotosController extends Controller
     /**
      * Convert Degrees, Minutes and Seconds to Lat, Long
      * Cheers to Hassan for this!
+     *
+     *  "GPSLatitude" => array:3 [ might be an array
+            0 => "51/1"
+            1 => "50/1"
+            2 => "888061/1000000"
+        ]
      */
     private function dmsToDec ($lat, $long, $lat_ref, $long_ref)
     {

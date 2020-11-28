@@ -33,7 +33,7 @@ final class LitterTags {
         "class": "SoftDrinks",
         "id_table": "softdrinks_id",
         "table": "soft_drinks",
-        "total": "total_softDrinks"
+        "total": "total_softdrinks"
     },
     "sanitary": {
         "class": "Sanitary",

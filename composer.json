@@ -24,6 +24,7 @@
         "laravel/ui": "^3.0",
         "league/flysystem-aws-s3-v3": "^1.0",
         "maatwebsite/excel": "^3.1",
+        "pragmarx/firewall": "^2.3",
         "predis/predis": "^1.1",
         "pusher/pusher-php-server": "~3.0",
         "schuppo/password-strength": "^2.1",

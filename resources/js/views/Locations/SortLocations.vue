@@ -11,7 +11,8 @@
             </div>
         </div>
 
-        <section v-for="location, index in orderedBy">
+        <!-- v-show is a temp bug fix until cities table has working total_litter column -->
+        <section v-for="location, index in orderedBy" v-show="location.total_litter > 0">
             <div v-show="category !== 'A-Z'">
                 <br>
                 <h1 style="text-align: center; color: #34495e;" class="title is-1">

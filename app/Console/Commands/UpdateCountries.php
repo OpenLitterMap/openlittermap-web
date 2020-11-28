@@ -201,7 +201,7 @@ class UpdateCountries extends Command
             $country->total_cigaretteButts = $cigaretteTotal;
             $country->total_smoking = $smokingTotal;
             $country->total_food = $foodTotal;
-            $country->total_softDrinks = $softDrinksTotal;
+            $country->total_softdrinks = $softDrinksTotal;
             $country->total_plasticBottles = $plasticBottleTotal;
             $country->total_alcohol = $alcoholTotal;
             $country->total_coffee = $coffeeTotal;

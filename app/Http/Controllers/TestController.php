@@ -154,7 +154,7 @@ class TestController extends Controller
 //             // return $arrayOfLeaders;
 //             $country['leaderboard'] = json_encode($arrayOfLeaders);
 //             $country['avg_photo_per_user'] = ($country->total_contributors / $country->total_images);
-//             $country['total_litter'] = $country->total_smoking + $country->total_food + $country->total_softDrinks + $country->total_alcohol + $country->total_coffee + $country->total_drugs + $country->total_needles + $country->total_sanitary + $country->total_other;
+//             $country['total_litter'] = $country->total_smoking + $country->total_food + $country->total_softdrinks + $country->total_alcohol + $country->total_coffee + $country->total_drugs + $country->total_needles + $country->total_sanitary + $country->total_other;
 
 //             $total_litter += $country['total_litter'];
 //         }
