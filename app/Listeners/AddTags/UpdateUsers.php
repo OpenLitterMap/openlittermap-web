@@ -12,25 +12,13 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 class UpdateUsers
 {
     /**
-     * Create the event listener.
+     * Update the users table
      *
-     * @return void
-     */
-    public function __construct()
-    {
-        //
-    }
-
-    /**
-     * Handle the event.
-     *
-     * @param  TagsVerifiedByAdmin  $event
-     * @return void
+     * Combine this with update active team
      */
     public function handle (TagsVerifiedByAdmin $event)
     {
-        $photo = Photo::find($event->photo_id);
-        $user = User::find($photo->user_id);
+        $user = User::find($event->user_id);
 
         if ($user->count_correctly_verified == 100)
         {
@@ -44,7 +32,7 @@ class UpdateUsers
         // Update user.total_column_for_each_category_tagged_on_this_photo
 
         $user->total_verified += 1;
-        $user->total_verified_litter += $photo->total_litter;
+        $user->total_verified_litter += $event->total_count;
 
         $user->save();
     }
