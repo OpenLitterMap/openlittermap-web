@@ -11,16 +11,6 @@ use Illuminate\Queue\InteractsWithQueue;
 class IncrementCountry
 {
     /**
-     * Create the event listener.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        //
-    }
-
-    /**
      * Handle the event.
      *
      * @param  TagsVerifiedByAdmin  $event
@@ -28,10 +18,11 @@ class IncrementCountry
      */
     public function handle (TagsVerifiedByAdmin $event)
     {
-        $photo = Photo::find($event->photo_id);
-
-        if ($country = Country::find($photo->country_id))
+        if ($country = Country::find($event->country_id))
         {
+<<<<<<< HEAD
+            $country->total_litter += $event->total_count;
+=======
             $total_count = 0;
 
             // this is going to be the same for each location
@@ -50,6 +41,7 @@ class IncrementCountry
             }
 
             $country->total_litter += $total_count;
+>>>>>>> master
             $country->total_images++;
             $country->save();
         }

@@ -46,13 +46,16 @@ class EventServiceProvider extends ServiceProvider
             'App\Listeners\UpdateLeaderboards',
         ],
         'App\Events\TagsVerifiedByAdmin' => [
+            // Todo - generate total tag counts on the event and pass the result into the listeners
             'App\Listeners\AddTags\UpdateUsers',
             'App\Listeners\AddTags\IncrementCity',
             'App\Listeners\AddTags\IncrementState',
             'App\Listeners\AddTags\IncrementCountry',
             // 'App\Listeners\GenerateLitterCoin',
             // 'App\Listeners\UpdateLeaderboardsAdmin', happens on AddTagsTrait
-            'App\Listeners\AddTags\CompileResultsString'
+            'App\Listeners\AddTags\CompileResultsString',
+            // todo - only call this listener if the user has active_team
+            'App\Listeners\AddTags\IncrementUsersActiveTeam'
         ],
         'App\Events\ResetTagsCountAdmin' => [ // not using this yet. Need to add a new Reset + Update tags button
             // 'App\Listeners\DecrementUserTags', Add this in when we update UpdateUserTags

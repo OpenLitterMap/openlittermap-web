@@ -6,7 +6,7 @@ export const mutations = {
      * Settings.details
      */
     changeUserEmail (state, payload)
-    {
+    {team
         state.user.email = payload;
     },
 
@@ -24,6 +24,14 @@ export const mutations = {
     changeUserUsername (state, payload)
     {
         state.user.username = payload;
+    },
+
+    /**
+     * When the user successfully creates a team, we need to decrement the remaining teams on the frontend
+     */
+    decrementUsersRemainingTeams (state)
+    {
+        state.user.remaining_teams--;
     },
 
     /**
@@ -87,6 +95,15 @@ export const mutations = {
     },
 
     /**
+     * If the user created a team and this is their first team,
+     * we want to set their active_team to the new team_id
+     */
+    usersActiveTeam (state, payload)
+    {
+        state.user.active_team = payload;
+    },
+
+    /**
      * The user wants to change a privacy setting
      */
     privacy (state, payload)
@@ -116,6 +133,14 @@ export const mutations = {
     toggle_litter_picked_up (state, payload)
     {
         state.user.items_remaining = payload;
-    }
+    },
+
+    // /**
+    //  * The user has just created and joined a team
+    //  */
+    // userJoinTeam (state, payload)
+    // {
+    //     state.user['team'] = payload;
+    // }
 
 };

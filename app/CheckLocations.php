@@ -31,14 +31,20 @@ trait CheckLocations
         if (array_key_exists('country', $addressArray))
         {
             $this->country = $addressArray['country'];
-        } else {
+        }
+
+        else
+        {
             $this->country = 'error_country'; // error country
         }
 
         if (array_key_exists('country_code', $addressArray))
         {
             $this->countryCode = $addressArray["country_code"];
-        } else {
+        }
+
+        else
+        {
             $this->countryCode = 'error';
         }
 
