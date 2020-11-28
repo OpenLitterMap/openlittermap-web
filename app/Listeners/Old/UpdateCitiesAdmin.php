@@ -180,7 +180,7 @@ class UpdateCitiesAdmin
                 $softDrinksTotal    += $softdrink->styro_cup;
                 $softDrinksTotal    += $softdrink->softDrinkOther;
             }
-            $city->total_softDrinks = $softDrinksTotal;
+            $city->total_softdrinks = $softDrinksTotal;
             $city->total_plasticBottles = $plasticBottleTotal;
             $city->save();
         }
