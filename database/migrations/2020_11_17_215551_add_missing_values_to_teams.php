@@ -14,8 +14,8 @@ class AddMissingValuesToTeams extends Migration
     public function up()
     {
         Schema::table('teams', function (Blueprint $table) {
-            $table->unsignedInteger('type_id');
-            $table->string('type_name')->nullable();
+            // $table->unsignedInteger('type_id');
+            // $table->string('type_name')->nullable();
             $table->unsignedBigInteger('created_by');
             $table->string('identifier');
         });
