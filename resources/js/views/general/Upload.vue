@@ -1,17 +1,19 @@
 <template>
-    <section class="section hero fullheight is-warning is-bold" style="padding: 5em;">
+    <section class="section hero fullheight is-warning is-bold upload-section">
 
         <div class="container ma has-text-centered" style="flex-grow: 0; width: 100%;">
 
-            <h1 class="title is-1 drop-title">Click to upload or drop your photos</h1>
+            <h1 class="title is-1 drop-title">{{$t('upload.click-to-upload')}}</h1>
 
-            <vue-dropzone id="dropzone" class="mb3" :options="options" />
+            <vue-dropzone :options="options" :useCustomSlot=true id="customdropzone" @vdropzone-error="verror">
+                <i class="fa fa-image upload-icon" aria-hidden="true" />
+            </vue-dropzone>
 
-            <h2 class="title is-2">Thank you!</h2>
+            <h2 class="title is-2">{{$t('upload.thank-you')}}</h2>
 
-            <h3 class="title is-3 mb2r">Next, you need to tag the litter</h3>
+            <h3 class="title is-3 mb2r">{{$t('upload.need-tag-litter')}}</h3>
 
-            <button class="button is-medium is-info hov" @click="tag">Tag Litter</button>
+            <button class="button is-medium is-info hov" @click="tag">{{$t('upload.tag-litter')}}<i class='fa fa-arrow-right' aria-hidden='true'></i></button>
         </div>
     </section>
 </template>
@@ -53,16 +55,72 @@ export default {
         tag ()
         {
             this.$router.push({ path: '/tag' });
-        }
+        },
+
+        /**
+         * Todo - error
+         */
+        verror (file)
+        {
+            console.log({ file });
+            // this.error = true
+            // window.toastr.error(file.upload.filename, 'Event : vdropzone-error - ' + file.status)
+        },
     }
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 
-    .drop-title {
-        margin-bottom: 1.5em;
-        text-align: center;
+@import '../../styles/variables.scss';
+
+.drop-title {
+    margin-bottom: 1.5em;
+    text-align: center;
+}
+
+.upload-section {
+    padding: 5rem;
+    .fa-arrow-right{
+        margin: {
+            left: 10px;
+        }
     }
+}
+
+#customdropzone {
+    border: 2px $drop-zone-border dashed;
+    border-radius: 10px;
+    margin: {
+        bottom: 3rem;
+    }
+}
+
+@include media-breakpoint-up(lg) {
+    #customdropzone {
+        margin: {
+            left: 4rem;
+            right: 4rem;
+        };
+    }
+}
+
+@include media-breakpoint-down(sm){
+    .drop-title {
+        font-size: 2.5rem;
+    }
+
+    .upload-section {
+        padding: 2rem;
+    }
+}
+
+.upload-icon {
+    font-size: 60px;
+    &:hover{
+        transform: translate(0px, -5px);
+        transition-duration: 0.3s
+    }
+}
 
 </style>
