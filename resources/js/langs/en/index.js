@@ -11,7 +11,7 @@ import signup from './signup.json'
 import tags from './tags.json'
 import teams from './teams.json'
 import nav from './nav.json'
-
+import upload from './upload.json'
 
 export const en = {
     common,
@@ -26,5 +26,6 @@ export const en = {
     settings,
     signup,
     tags,
-    teams
+    teams,
+    upload
 }
