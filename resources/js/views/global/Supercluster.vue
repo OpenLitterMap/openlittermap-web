@@ -21,13 +21,14 @@ import Languages from '../../components/global/Languages'
 // import GlobalDates from '../../components/global/GlobalDates'
 import LiveEvents from '../../components/LiveEvents'
 // import GlobalInfo from '../../components/global/GlobalInfo'
+import {CLUSTER_ZOOM_THRESHOLD, MAX_ZOOM, MEDIUM_CLUSTER_SIZE, MIN_ZOOM, SHOW_DETAIL_ZOOM, ZOOM_STEP} from '../../constants'
 
 import L from 'leaflet'
 import moment from 'moment'
 
 var map;
 var markers;
-var prevZoom = 2;
+var prevZoom = MIN_ZOOM;
 
 const single_icon = L.icon({
     iconUrl: './images/vendor/leaflet/dist/dot.png',
@@ -42,7 +43,7 @@ function createClusterIcon (feature, latlng)
     if (! feature.properties.cluster) return L.marker(latlng, { icon: single_icon });
 
     let count = feature.properties.point_count;
-    let size = count < 100 ? 'small' : count < 1000 ? 'medium' : 'large';
+    let size = count < MEDIUM_CLUSTER_SIZE ? 'small' : count < LARGE_CLUSTER_SIZE ? 'medium' : 'large';
 
     let icon = L.divIcon({
         html: '<div class="mi"><span class="ma">' + feature.properties.point_count_abbreviated + '</span></div>',
@@ -138,7 +139,7 @@ export default {
         /** 1. Create map object */
         map = L.map('super', {
             center: [0, 0],
-            zoom: 2,
+            zoom: MIN_ZOOM,
         });
 
         const date = new Date();
@@ -148,8 +149,8 @@ export default {
         const mapLink = '<a href="https://openstreetmap.org">OpenStreetMap</a>';
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: 'Map data &copy; ' + mapLink + ' & Contributors',
-            maxZoom: 18,
-            minZoom: 2
+            maxZoom: MAX_ZOOM,
+            minZoom: MIN_ZOOM
         }).addTo(map);
 
         map.attributionControl.addAttribution('Litter data &copy OpenLitterMap & Contributors ' + year + ' Clustering @ MapBox');
@@ -157,8 +158,17 @@ export default {
         // Empty Layer Group that will receive the clusters data on the fly.
         markers = L.geoJSON(null, {
             pointToLayer: createClusterIcon,
-            onEachFeature: onEachFeature
+            onEachFeature: onEachFeature,
         }).addTo(map);
+
+        // Zoom in cluster when click to it
+        markers.on('click', function(e){
+            // If marker is not cluster, stop zooming.
+            if(map.getZoom() >= CLUSTER_ZOOM_THRESHOLD){
+                return;
+            }
+            map.setView(e.latlng, map.getZoom() + ZOOM_STEP);
+        });
 
         markers.addData(this.$store.state.globalmap.geojson.features);
 
