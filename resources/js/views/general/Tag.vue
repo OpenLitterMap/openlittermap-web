@@ -113,8 +113,7 @@
                                         :aria-label="'page' + current_page"
                                         :aria-current="current_page"
                                         @click="goToPage(i)"
-                                    > {{ i }}
-                                    </a>
+                                    >{{ i }}</a>
                                 </li>
                             </ul>
                         </nav>
