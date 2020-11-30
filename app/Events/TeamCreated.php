@@ -3,34 +3,34 @@
 namespace App\Events;
 
 use Illuminate\Broadcasting\Channel;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Broadcasting\PresenceChannel;
-use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Broadcasting\PresenceChannel;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Queue\SerializesModels;
 
-class UserSignedUp implements ShouldBroadcast
+// When events are namespaced inside another folder, they are not being registered on Echo.
+class TeamCreated implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    // PROTECTED PRIVATE properties will not be serialized or sent through.
-    public $now;
+    public $name;
 
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct ($now)
+    public function __construct ($name)
     {
-        $this->now = $now;
+        $this->name = $name;
     }
 
     /**
      * Get the channels the event should broadcast on.
      *
-     * @return Channel|array
+     * @return \Illuminate\Broadcasting\Channel|array
      */
     public function broadcastOn()
     {
