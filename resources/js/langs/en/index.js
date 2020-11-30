@@ -9,8 +9,9 @@ import { locations } from './locations/index'
 import { home } from './home/index';
 import signup from './signup.json'
 import tags from './tags.json'
+import teams from './teams.json'
 import nav from './nav.json'
-
+import upload from './upload.json'
 
 export const en = {
     common,
@@ -24,5 +25,7 @@ export const en = {
     profile,
     settings,
     signup,
-    tags
+    tags,
+    teams,
+    upload
 }

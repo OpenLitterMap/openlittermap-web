@@ -1,6 +1,6 @@
 <?php
 
-namespace App;
+namespace App\Models\Teams;
 
 use Illuminate\Database\Eloquent\Model;
 
@@ -14,22 +14,27 @@ class Team extends Model
     	'images_remaining',
     	'total_images',
     	'total_litter',
-    	'leader'
+    	'leader',
+        'created_by',
+        'identifier'
     ];
 
     /**
      * Relationships
      */
-    public function users() {
+    public function users ()
+    {
     	return $this->belongsToMany('App\Models\User\User');
     }
 
-    public function leader() {
+    public function leader ()
+    {
     	return $this->hasOne('App\Models\User\User');
     }
 
     // double check this
-    public function photos() {
+    public function photos ()
+    {
         return $this->hasManyThrough('App\Models\User\User', 'App\Models\Photo');
     }
 

@@ -14,22 +14,21 @@ class ImageUploaded implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $city;
-    public $state;
-    public $country;
-    public $imageName;
+    public $city, $state, $country, $countryCode, $imageName, $teamName;
 
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct ($city, $state, $country, $name)
+    public function __construct ($city, $state, $country, $countryCode, $imageName, $teamName)
     {
         $this->city = $city;
         $this->state = $state;
         $this->country = $country;
-        $this->imageName = $name;
+        $this->countryCode = $countryCode;
+        $this->imageName = $imageName;
+        $this->teamName = $teamName;
     }
 
     /**

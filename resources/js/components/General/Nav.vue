@@ -64,6 +64,11 @@
 <!--                                        Profile-->
 <!--                                    </router-link>-->
 
+                                    <!-- Teams -->
+                                    <router-link to="/teams" class="navbar-item drop-item">
+                                        {{ $t('nav.teams') }}
+                                    </router-link>
+
                                     <!-- Settings -->
                                     <router-link to="/settings/password" class="navbar-item drop-item">
                                          {{ $t('nav.settings')}}

@@ -122,10 +122,10 @@ Route::get('/settings/payments', 'HomeController@index');
 Route::get('/settings/privacy', 'HomeController@index');
 Route::get('/settings/littercoin', 'HomeController@index');
 Route::get('/settings/phone', 'HomeController@index');
-Route::get('/settings/teams', 'HomeController@index');
 Route::get('/settings/presence', 'HomeController@index');
 Route::get('/settings/email', 'HomeController@index');
 Route::get('/settings/show-flag', 'HomeController@index');
+Route::get('/settings/teams', 'HomeController@index');
 
 // Game settings @ SettingsController
 // Toggle Presense of a piece of litter
@@ -164,19 +164,6 @@ Route::post('/settings/littercoin/removewallet', 'BlockchainController@removeWal
 Route::post('/settings/phone/submit', 'UsersController@phone');
 Route::post('/settings/phone/remove', 'UsersController@removePhone');
 
-// TEAMS
-// // Create a new team
-// Route::post('/settings/teams/create', 'TeamController@create');
-
-// // Request to join a new team
-// Route::post('/settings/teams/request', 'TeamController@request');
-
-// // Get currently active team
-// Route::get('/settings/teams/get', 'TeamController@get');
-
-// // Change active team
-// Route::post('/settings/teams/change', 'TeamController@change');
-
 // Change default litter presence value
 Route::post('/settings/toggle', 'UsersController@togglePresence');
 
@@ -187,6 +174,18 @@ Route::post('/settings/email/toggle', 'EmailSubController@toggleEmailSub');
 Route::get('/settings/flags/countries', 'SettingsController@getCountries');
 // Save Country Flag for top 10
 Route::post('/settings/save-flag', 'SettingsController@saveFlag');
+
+// Teams
+Route::get('/teams', 'HomeController@index');
+Route::get('/teams/get-types', 'Teams\TeamsController@types');
+Route::get('/teams/combined-effort', 'Teams\TeamsController@combined');
+Route::get('/teams/members', 'Teams\TeamsController@members');
+Route::get('/teams/joined', 'Teams\TeamsController@joined');
+
+Route::post('/teams/create', 'Teams\TeamsController@create');
+Route::post('/teams/join', 'Teams\TeamsController@join');
+Route::post('/teams/active', 'Teams\TeamsController@active');
+
 
 /**
  * IMAGE VERIFICATION
