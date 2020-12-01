@@ -29,6 +29,6 @@
         "max-len": ["error", { "code": 120, "ignoreUrls": true, "ignoreComments": true }],
         "vue/html-indent": ["error", 4],
         "vue/max-attributes-per-line": "off",
-        "quotes": ["single", "double"]
+        "quotes": ["error", "single"]
     }
 }
