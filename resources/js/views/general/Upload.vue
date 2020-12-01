@@ -56,9 +56,14 @@ export default {
         {
             this.$router.push({ path: '/tag' });
         },
-        verror(file) {
-            console.log('file', file)
-            this.error = true
+
+        /**
+         * Todo - error
+         */
+        verror (file)
+        {
+            console.log({ file });
+            // this.error = true
             // window.toastr.error(file.upload.filename, 'Event : vdropzone-error - ' + file.status)
         },
     }
