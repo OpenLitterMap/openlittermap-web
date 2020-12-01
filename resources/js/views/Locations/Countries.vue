@@ -4,12 +4,12 @@
             <section class="section is-link is-bold">
 
                 <!-- We are creating open data -->
-                <h1 class="title is-1" style="text-align: center; padding-bottom: 10px;">
+                <h1 class="title is-1 has-text-centered" style="padding-bottom: 10px;">
                     {{ $t('location.maps1') }}
                 </h1>
 
                 <!-- Todo - Click here to read why -->
-                <h2 class="subtitle is-4" style="text-align: center;">
+                <h2 class="subtitle is-4 has-text-centered">
                     {{ $t('location.maps2') }}
                 </h2>
 
@@ -61,13 +61,13 @@
                     <div class="columns">
                         <div class="column is-half is-offset-3">
                             <div class="columns">
-                                <div class="column is-one-third">
-                                    <h1 class="subtitle is-5" style="color: black; text-align: center;">
+                                <div class="column has-text-centered">
+                                    <h1 class="subtitle is-6">
                                         <strong style="color:black;">
                                             {{ $t('location.maps10') }}
                                         </strong>
                                     </h1>
-                                    <h1 class="title is-2" style="text-align: center;">
+                                    <h1 class="title is-2">
                                         <strong>
                                             <number
                                                 :from="previous_total_litter"
@@ -81,13 +81,13 @@
                                     </h1>
                                 </div>
 
-                                <div class="column is-one-third">
-                                    <h1 class="subtitle is-5" style="color: black; text-align: center;">
+                                <div class="column has-text-centered">
+                                    <h1 class="subtitle is-6 ">
                                         <strong style="color: black;">
                                             {{ $t('location.maps11') }}
                                         </strong>
                                     </h1>
-                                    <h1 class="title is-2" style="text-align: center;">
+                                    <h1 class="title is-2">
                                         <strong>
                                             <number
                                                 :from="previous_total_photos"
@@ -101,13 +101,13 @@
                                     </h1>
                                 </div>
 
-                                <div class="column is-one-third">
-                                    <h1 class="subtitle is-5" style="color: black; text-align: center;">
+                                <div class="column has-text-centered">
+                                    <h1 class="subtitle is-6">
                                         <strong style="color: black;">
                                             {{ $t('location.maps11a') }}
                                         </strong>
                                     </h1>
-                                    <h1 class="title is-2" style="text-align: center;">
+                                    <h1 class="title is-2">
                                         <strong>
                                             {{ this.littercoinPaid }}
                                         </strong>

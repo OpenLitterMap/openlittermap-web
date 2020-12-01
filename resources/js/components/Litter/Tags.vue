@@ -9,10 +9,11 @@
                 <!-- List of tags in each category -->
                 <span
                     v-for="tags in Object.entries(category.tags)"
-                    v-html="getTags(tags, category.category)"
-                    class="tag is-large is-info litter-tag"
-                    @click="removeTag(category.category, tags[0])"
-                />
+                    class="tag is-medium is-info litter-tag"
+                >
+                    {{$t(`litter.${category.category}.${tags[0]}`) + ': ' + tags[1]}}
+                    <button class="delete is-small" @click="removeTag(category.category, tags[0])"/>
+                </span>
             </li>
         </ul>
 	</div>
@@ -53,14 +54,6 @@ export default {
         getCategory (category)
         {
             return this.$i18n.t('litter.categories.' + category);
-        },
-
-        /**
-         * Return Translated key: value from tags[0]: tags[1]
-         */
-        getTags (tags, category)
-        {
-            return this.$i18n.t('litter.' + category + '.' + tags[0]) + ': ' + tags[1] + '<br>';
         },
 
         /**
