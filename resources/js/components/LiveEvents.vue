@@ -55,7 +55,16 @@
 					</aside>
 					<div class="grid-main">
 						<p class="new-user-text-wide">A new user has signed up!</p>
-						<!-- <p class="new-user-text-narrow">New User!</p> -->
+					</div>
+				</div>
+
+                <div v-else-if="event.type === 'team-created'" class="event" style="background-color: #e256fff0;">
+					<aside class="grid-img">
+						<i class="fa fa-users" />
+					</aside>
+					<div class="grid-main">
+						<p>A new Team has been created!</p>
+                        <i>Say hello to <strong>{{ event.name }}</strong>!</i>
 					</div>
 				</div>
 
@@ -70,7 +79,7 @@ import Echo from 'laravel-echo'
 import Pusher from 'pusher-js'
 
 export default {
-	name: "live-events",
+	name: 'live-events',
 	channel: 'main',
 	echo: {
 	    'ImageUploaded': (payload, vm) => {
@@ -110,7 +119,13 @@ export default {
 				type: 'new-user',
 				now: payload.now
 			})
-		}
+		},
+        'TeamCreated': (payload, vm) => {
+	        vm.events.unshift({
+                type: 'team-created',
+                name: payload.name
+            });
+        }
 	},
 	data ()
     {
@@ -150,6 +165,8 @@ export default {
 			else if (event.type === 'city') return event.type + event.cityId;
 
 			else if (event.type === 'new-user') return event.type + event.now;
+
+			else if (event.type === 'team-created') return event.type + event.name;
 
 			return this.events.length;
 		}

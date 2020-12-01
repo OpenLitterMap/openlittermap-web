@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Teams;
 
+use App\Events\Teams\TeamCreated;
 use App\Models\Photo;
 use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
@@ -100,6 +101,9 @@ class TeamsController extends Controller
             'leader' => $user->id,
             'identifier' => $request->identifier
         ]);
+
+        // Broadcast live event to the global map
+        event (new TeamCreated($team->name));
 
         // Have the user join this team
         $user->teams()->attach($team);
