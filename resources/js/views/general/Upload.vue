@@ -19,17 +19,12 @@
 </template>
 
 <script>
-import vue2Dropzone from 'vue2-dropzone'
+import vue2Dropzone from 'vue2-dropzone';
 
 export default {
     name: 'Upload',
     components: {
         vueDropzone: vue2Dropzone
-    },
-    async created ()
-    {
-        // user object is not passed when the user logs in. We need to get it here
-        if (Object.keys(this.$store.state.user.user.length === 0)) await this.$store.dispatch('GET_CURRENT_USER');
     },
     data ()
     {
@@ -45,7 +40,12 @@ export default {
                 duplicateCheck: true,
                 paramName: 'file'
             }
-        }
+        };
+    },
+    async created ()
+    {
+        // user object is not passed when the user logs in. We need to get it here
+        if (Object.keys(this.$store.state.user.user.length === 0)) await this.$store.dispatch('GET_CURRENT_USER');
     },
     methods: {
 
@@ -62,7 +62,7 @@ export default {
             // window.toastr.error(file.upload.filename, 'Event : vdropzone-error - ' + file.status)
         },
     }
-}
+};
 </script>
 
 <style scoped lang="scss">
