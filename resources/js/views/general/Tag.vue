@@ -1,8 +1,10 @@
 <template>
     <section class="hero fullheight is-primary is-bold tag-container">
+
         <loading v-if="loading" v-model:active="loading" :is-full-page="true" />
 
-        <div v-else style="padding-top: 2em;">
+        <div v-else class="pt2">
+
             <!-- No Image available for tagging -->
             <div v-if="photos.length === 0" class="hero-body">
                 <div class="container has-text-centered">
@@ -19,6 +21,7 @@
 
             <!-- Image is available for tagging -->
             <div v-else>
+
                 <div v-for="photo in photos" class="mb2">
                     <h2 class="taken">
                         <strong style="color: #fff;">#{{ photo.id }}</strong>
@@ -45,6 +48,8 @@
                                 <!-- Model of the device -->
                                 <p><strong>{{ $t('tags.device') }}: </strong>{{ photo.model }}</p>
                                 <br>
+                                <!-- Delete photo button -->
+                                <profile-delete :photoid="photo.id" />
                             </div>
                         </div> <!-- end info box -->
 
@@ -52,8 +57,6 @@
                         <div class="column is-6 image-wrapper">
                             <!-- The Image -->
                             <div class="image-content">
-                                <!-- Delete photo button -->
-                                <i class="fa fa-times-circle delete-img" @click="confirmDelete(photo.id)" />
                                 <img :src="photo.filename" class="img">
                             </div>
                         </div>
@@ -123,12 +126,13 @@
 </template>
 
 <script>
-import moment from 'moment';
-import Loading from 'vue-loading-overlay';
-import 'vue-loading-overlay/dist/vue-loading.css';
-import AddTags from '../../components/Litter/AddTags';
-import Presence from '../../components/Litter/Presence';
-import Tags from '../../components/Litter/Tags';
+import moment from 'moment'
+import Loading from 'vue-loading-overlay'
+import 'vue-loading-overlay/dist/vue-loading.css'
+import AddTags from '../../components/Litter/AddTags'
+import Presence from '../../components/Litter/Presence'
+import Tags from '../../components/Litter/Tags'
+import ProfileDelete from '../../components/Litter/ProfileDelete'
 
 export default {
     name: 'Tag',
@@ -136,7 +140,16 @@ export default {
         Loading,
         AddTags,
         Presence,
-        Tags
+        Tags,
+        ProfileDelete
+    },
+    async created ()
+    {
+        this.loading = true;
+
+        await this.$store.dispatch('GET_PHOTOS_FOR_TAGGING');
+
+        this.loading = false;
     },
     data ()
     {
@@ -203,16 +216,33 @@ export default {
             return this.$store.state.user.user;
         }
     },
-    async created ()
-    {
-        this.loading = true;
-
-        await this.$store.dispatch('GET_PHOTOS_FOR_TAGGING');
-
-        this.loading = false;
-    },
 
     methods: {
+
+        /**
+         * Todo - Dispatch request to delete an image
+         */
+        async confirmDelete (photoid)
+        {
+            if (confirm("Do you want to delete this image? This cannot be undone."))
+            {
+                await axios.post('/en/profile/photos/delete', {
+                    photoid
+                })
+                    .then(response => {
+                        console.log(response);
+                        if (response.status === 200)
+                        {
+                            window.location.href = window.location.href;
+                        }
+                    })
+                    .catch(error => {
+                        console.log(error);
+                    });
+            } else {
+                console.log("Not deleted");
+            }
+        },
 
         /**
          * Format date
@@ -244,28 +274,6 @@ export default {
         previousImage ()
         {
             this.$store.dispatch('PREVIOUS_IMAGE');
-        },
-        confirmDelete (photoid)
-        {
-            // alert("Sorry, this is not working yet. If you think open data on plastic pollution is important please help with the crowdfunding so we can hire a developer?");
-            if (confirm("Do you want to delete this image? This cannot be undone."))
-            {
-                axios.post('/en/profile/photos/delete', {
-                    photoid
-                })
-                    .then(response => {
-                        console.log(response);
-                        if (response.status == 200)
-                        {
-                            window.location.href = window.location.href;
-                        }
-                    })
-                    .catch(error => {
-                        console.log(error);
-                    });
-            } else {
-                console.log("Not deleted");
-            }
         }
     }
 };

@@ -1,30 +1,25 @@
 <template>
     <div class="control has-text-centered">
+
         <!-- Categories -->
-        <div id="litter-items" class="litter-select-category">
-            <v-select v-model="category" :options="categories" label="title" :value="category" :clearable="false">
-                <slot name="no-options">
-                    Sorry, no matching options.
-                </slot>
-            </v-select>
+        <div class="select" id="litter-items">
+            <select v-model="category">
+                <option v-for="cat in categories" :value="cat">{{ cat.title }}</option>
+            </select>
         </div>
 
         <!-- Items -->
-        <div id="litter-category" class="litter-select-items">
-            <v-select v-model="item" :options="items" label="title" :value="i" :clearable="false">
-                <slot name="no-options">
-                    Sorry, no matching options.
-                </slot>
-            </v-select>
+        <div class="select" id="litter-category">
+            <select v-model="item">
+                <option v-for="i in items" :value="i">{{ i.title }}</option>
+            </select>
         </div>
 
         <!-- Quantity -->
-        <div id="int" class="litter-select-quantity">
-            <v-select v-model="quantity" :options="integers" :clearable="false">
-                <slot name="no-options">
-                    Sorry, no matching options.
-                </slot>
-            </v-select>
+        <div class="select" id="int">
+            <select v-model="quantity">
+                <option v-for="int in integers">{{ int }}</option>
+            </select>
         </div>
 
         <br>
@@ -34,24 +29,18 @@
             :disabled="checkDecr"
             class="button is-medium is-danger"
             @click="decr"
-        >
-            -
-        </button>
+        >-</button>
 
         <button
             class="button is-medium is-info"
             @click="addTag"
-        >
-            {{ $t('tags.add-tag') }}
-        </button>
+        >{{ $t('tags.add-tag') }}</button>
 
         <button
             :disabled="checkIncr"
             class="button is-medium is-dark"
             @click="incr"
-        >
-            +
-        </button>
+        >+</button>
 
         <br>
         <br>
@@ -61,9 +50,7 @@
             :disabled="checkItems"
             :class="button"
             @click="submit"
-        >
-            {{ $t('common.submit') }}
-        </button>
+        >{{ $t('common.submit') }}</button>
 
         <!-- Only show these on mobile <= 768px -->
         <div class="show-mobile">
@@ -71,7 +58,7 @@
             <tags />
 
             <div class="custom-buttons">
-                <profile-delete :photoid=" id" />
+                <profile-delete :photoid="id" />
                 <presence :itemsr="true" />
             </div>
         </div>
@@ -79,35 +66,58 @@
 </template>
 
 <script>
-import Tags from './Tags';
-import Presence from './Presence';
-import ProfileDelete from './ProfileDelete';
-import { categories } from '../../extra/categories';
-import vSelect from "vue-select";
-import { litterkeys } from '../../extra/litterkeys';
+import Tags from './Tags'
+import Presence from './Presence'
+import ProfileDelete from './ProfileDelete'
+// import VueSimpleSuggest from 'vue-simple-suggest' todo
+// import 'vue-simple-suggest/dist/styles.css'
+import { categories } from '../../extra/categories'
+import { litterkeys } from '../../extra/litterkeys'
 
 export default {
-    name: 'AddTags', // photo.id, bool
+    name: 'AddTags',
+    props: ['id', 'admin'], // photo.id, bool
     components: {
         Tags,
         Presence,
         ProfileDelete,
-        vSelect
     },
-    props: ['id', 'admin'],
+    created ()
+    {
+        // We need to initialize with translated title
+        this.$store.commit('changeCategory', {
+            id: 11,
+            key: 'smoking',
+            title: this.$i18n.t('litter.categories.smoking')
+        });
+
+        // We need to initialize with translated title
+        this.$store.commit('changeItem', {
+            id: 0,
+            key: 'butts',
+            title: this.$i18n.t('litter.smoking.butts')
+        });
+    },
     data ()
     {
         return {
 		    btn: 'button is-medium is-success',
             quantity: 1,
     		processing: false,
-	        integers: Array.from({length: 100}, (_, i) => i + 1),
+	        integers: Array.from({ length: 100 }, (_, i) => i + 1),
+            // autoCompleteStyle: {
+            //     vueSimpleSuggest: 'position-relative flex-05 mb1',
+            //     inputWrapper: '',
+            //     defaultInput : 'input',
+            //     suggestions: 'position-absolute list-group z-1000 custom-class-overflow flex-05',
+            //     suggestItem: 'list-group-item'
+            // },
         };
     },
     computed: {
 
         /**
-         * Add ' is-loading' when processing
+         * Show spinner when processing
          */
         button ()
         {
@@ -151,25 +161,22 @@ export default {
                 return this.$store.state.litter.item;
             },
             set (i) {
-                const findedCatName = Object.keys(litterkeys).find(key =>
-                    litterkeys[key].filter(litter=> litter.key === i.key).length > 0
-                );
-                this.$store.commit('changeCategory', this.categories.find(category => category.key === findedCatName));
                 this.$store.commit('changeItem', i);
             }
         },
 
         /**
-         * All litter items in the system
+         * Litter items for the selected category
          */
         items ()
         {
-            return Object.keys(litterkeys).map((key) =>
-                litterkeys[key].map(litter=> ({
-                    key: litter.key ,
-                    title: this.$i18n.t('litter.' + key + '.' + litter.key)
-                }))
-            ).flat();
+            return this.$store.state.litter.items.map(item => {
+                return {
+                    id: item.id,
+                    key: item.key,
+                    title: this.$i18n.t('litter.' + this.category.key + '.' + item.key )
+                };
+            });
         },
 
         /**
@@ -204,23 +211,22 @@ export default {
             return Object.keys(this.$store.state.litter.items).length === 0 ? true : false;
         }
     },
-    created ()
-    {
-        // We need to initialize with translated title
-        this.$store.commit('changeCategory', {
-            id: 11,
-            key: 'smoking',
-            title: this.$i18n.t('litter.categories.smoking')
-        });
-
-        // We need to initialize with translated title
-        this.$store.commit('changeItem', {
-            id: 0,
-            key: 'butts',
-            title: this.$i18n.t('litter.smoking.butts')
-        });
-    },
     methods: {
+
+        /**
+         * Add data to the collection
+         */
+        addTag ()
+        {
+            this.$store.commit('addTag', {
+                category: this.category,
+                item: this.item,
+                quantity: this.quantity,
+            });
+
+            this.quantity = 1;
+            // this.disabled = false
+        },
 
         /**
 		 * Increment the quantity
@@ -236,21 +242,6 @@ export default {
         decr ()
         {
             this.quantity--;
-        },
-
-        /**
-		 * Add data to the collection
-		 */
-        addTag ()
-        {
-        	this.$store.commit('addTag', {
-        		category: this.category,
-        		item: this.item,
-        		quantity: this.quantity,
-        	});
-
-            this.quantity = 1;
-            // this.disabled = false
         },
 
         /**
@@ -270,42 +261,14 @@ export default {
 </script>
 
 <style lang="scss">
-@import "vue-select/src/scss/vue-select.scss";
+
     .hide-br {
         display: none;
     }
 
-    .litter-select{
-
-        &-category{
-            display: inline-block;
-            min-width: 130px;
-        }
-        &-items{
-            display: inline-block;
-            min-width: 270px;
-        }
-        &-quantity{
-            display: inline-block;
-            min-width: 80px;
-        }
+    .suggest-item {
+        color: black;
     }
-
-    .v-select{
-
-        .vs__dropdown {
-            &-toggle{
-                background-color: white;
-            }
-            &-menu {
-                max-height: 250px
-            }
-        }
-        .vs__no-options {
-            color: black;
-        }
-    }
-
 
     @media (max-width: 500px)
     {
