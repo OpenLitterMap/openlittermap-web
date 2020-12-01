@@ -21,7 +21,7 @@ import Languages from '../../components/global/Languages'
 // import GlobalDates from '../../components/global/GlobalDates'
 import LiveEvents from '../../components/LiveEvents'
 // import GlobalInfo from '../../components/global/GlobalInfo'
-import {CLUSTER_ZOOM_THRESHOLD, MAX_ZOOM, MEDIUM_CLUSTER_SIZE, MIN_ZOOM, SHOW_DETAIL_ZOOM, ZOOM_STEP} from '../../constants'
+import {CLUSTER_ZOOM_THRESHOLD, MAX_ZOOM, MEDIUM_CLUSTER_SIZE, LARGE_CLUSTER_SIZE, MIN_ZOOM, SHOW_DETAIL_ZOOM, ZOOM_STEP} from '../../constants'
 
 import L from 'leaflet'
 import moment from 'moment'
