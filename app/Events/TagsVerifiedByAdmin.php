@@ -16,7 +16,7 @@ class TagsVerifiedByAdmin
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $photo_id, $city_id, $state_id, $country_id, $user_id;
-    public $total_count, $total_categories;
+    public $total_count;
     public $total_alcohol, $total_art,
         $total_brands,
         $total_coastal, $total_coffee,
