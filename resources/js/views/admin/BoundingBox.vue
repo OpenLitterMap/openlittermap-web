@@ -17,13 +17,13 @@
 
                         <Box
                             v-if="drawingBox.active"
-			    :geom="drawingBox.geom"
+                            :geom="drawingBox.geom"
                         />
 
                         <Box
                             v-for="(box, i) in boxes"
-			    :key="i + box.height"
-			    :geom="box.geom"
+                            :key="i + box.height"
+                            :geom="box.geom"
                             :index="i"
                             :selected="box.selected"
                             :activeTop="box.activeTop"
@@ -46,6 +46,7 @@
 <script>
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
+
 import Box from '../../components/Admin/Box'
 export default {
     name: 'BoundingBox',
@@ -94,6 +95,7 @@ export default {
         {
             return 'backgroundImage: url(' + this.$store.state.admin.filename + ')';
         },
+
         /**
          * The ID of the image being edited
          */
@@ -101,6 +103,7 @@ export default {
         {
             return this.$store.state.admin.id;
         },
+
         /**
          * Boolean
          */
@@ -115,11 +118,12 @@ export default {
          */
         activate (index, nodeIndex, pageX, pageY)
         {
-	    this.activatedBox = index;
-	    this.activatedNode = nodeIndex;
-	    this.currentX = pageX;
-	    this.currentY = pageY;
+            this.activatedBox = index;
+            this.activatedNode = nodeIndex;
+            this.currentX = pageX;
+            this.currentY = pageY;
         },
+
         /**
          * De-select any boxes
          */
@@ -127,6 +131,7 @@ export default {
         {
             this.boxes.map(box => box.selected = false);
         },
+
         /**
          * One of the nodes was left go from dragging
          */
@@ -134,62 +139,65 @@ export default {
         {
             this.boxes[index][node] = false;
         },
+
         /**
          * Drag and draw the box (Top-left to bottom-right)
          */
         mouseMove (e)
         {
-	    // Record the relative movement of the mouse since the last call:
-	    var move = [e.pageX - this.currentX, e.pageY - this.currentY];
+            // Record the relative movement of the mouse since the last call:
+            var move = [e.pageX - this.currentX, e.pageY - this.currentY];
             this.currentX = e.pageX;
-	    this.currentY = e.pageY;
+            this.currentY = e.pageY;
 
-	    // Drawing box mode:
+            // Drawing box mode:
             if (this.drawingBox.active)
             {
                 this.drawingBox = {
                     ...this.drawingBox,
-		    geom: [this.drawingBox.geom[0], this.drawingBox.geom[1], e.offsetX - this.drawingBox.geom[1], e.offsetY - this.drawingBox.geom[0]]
+                    geom: [this.drawingBox.geom[0], this.drawingBox.geom[1], e.offsetX - this.drawingBox.geom[1], e.offsetY - this.drawingBox.geom[0]]
                 };
             }
 
-	    // Box shape adjustment mode:
-	    if (this.activatedBox != -1)
-	    {
-		 var diff = move[0] * this.dir[this.activatedNode][0] + move[1] * this.dir[this.activatedNode][1];
-	
-		 this.boxes[this.activatedBox].geom = [
-					this.boxes[this.activatedBox].geom[0] + this.apply[this.activatedNode][0] * diff, 
-					this.boxes[this.activatedBox].geom[1] + this.apply[this.activatedNode][1] * diff,
-					this.boxes[this.activatedBox].geom[2] + this.apply[this.activatedNode][2] * diff,
-					this.boxes[this.activatedBox].geom[3] + this.apply[this.activatedNode][3] * diff
-				];
-	    }
+	       // Box shape adjustment mode:
+           if (this.activatedBox != -1)
+           {
+                var diff = move[0] * this.dir[this.activatedNode][0] + move[1] * this.dir[this.activatedNode][1];
 
-	    // Box dragging mode:
-	    if (this.dragBox != -1)
-	    {
-		this.boxes[this.dragBox].geom = [
-					this.boxes[this.dragBox].geom[0] + move[1], 
-					this.boxes[this.dragBox].geom[1] + move[0],
-					this.boxes[this.dragBox].geom[2],
-					this.boxes[this.dragBox].geom[3]
-				];
-	    }
+                this.boxes[this.activatedBox].geom = [
+                    this.boxes[this.activatedBox].geom[0] + this.apply[this.activatedNode][0] * diff,
+                    this.boxes[this.activatedBox].geom[1] + this.apply[this.activatedNode][1] * diff,
+                    this.boxes[this.activatedBox].geom[2] + this.apply[this.activatedNode][2] * diff,
+                    this.boxes[this.activatedBox].geom[3] + this.apply[this.activatedNode][3] * diff
+                ];
+            }
+
+            // Box dragging mode:
+            if (this.dragBox != -1)
+            {
+                this.boxes[this.dragBox].geom = [
+                    this.boxes[this.dragBox].geom[0] + move[1], 
+                    this.boxes[this.dragBox].geom[1] + move[0],
+                    this.boxes[this.dragBox].geom[2],
+                    this.boxes[this.dragBox].geom[3]
+                ];
+            }
         },
+        
         /**
          * A box has been selected
          */
         selectBox (i, pageX, pageY)
         {
-	    if(this.activatedBox == -1)
-	    {
-	    	this.boxes[i].selected = true;
-	    	this.dragBox = i;
-	    	this.currentX = pageX;
-	    	this.currentY = pageY;
-	    }
+            if(this.activatedBox == -1)
+            {
+                this.boxes[i].selected = true;
+                this.dragBox = i;
+                this.currentX = pageX;
+                this.currentY = pageY;
+            }
         },
+
         /**
          *
          */
@@ -197,9 +205,10 @@ export default {
         {
             this.drawingBox = {
                 active: true,
-	        geom: [e.offsetY, e.offsetX, 0, 0]
+                geom: [e.offsetY, e.offsetX, 0, 0]
             };
         },
+
         /**
          *
          */
@@ -217,25 +226,24 @@ export default {
                         activeBottom: false,
                         activeRight: false,
                     });
-		
-
                 }
                 this.drawingBox = {
-                    active: false,
-		    geom: [0, 0, 0, 0]
+                    active: false, 
+                    geom: [0, 0, 0, 0]
                 }
             }
 
-	    this.activatedBox = -1;
-	    dragEnd();
+            this.activatedBox = -1;
+            dragEnd();
         },
-	/**
-	 * When a box dragging event ends: 
-	 */
-	dragEnd()
-	{
-		this.dragBox = -1;
-	}
+
+        /**
+         * When a box dragging event ends: 
+         */
+        dragEnd()
+        {
+            this.dragBox = -1;
+        }
     }
 }
 </script>

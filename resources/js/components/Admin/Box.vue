@@ -35,6 +35,7 @@
             {
                 this.$emit('deselectNode', node, this.index);
             },
+
             /**
              * This box (index) has been selected
              * @emit selected event to parent
@@ -43,20 +44,22 @@
             {
                 this.$emit('select', this.index, e.pageX, e.pageY);
             },
+
             /**
              * Select a node (Top, left, bottom, right)
              */
             selectNode (e, nodeIndex)
             {
-		 this.$emit('activate', this.index, nodeIndex, e.pageX, e.pageY);
+                this.$emit('activate', this.index, nodeIndex, e.pageX, e.pageY);
             },
-	    /**
+
+            /**
              * Select a node (Top, left, bottom, right)
              */
-	    dragEnd()
-	    {
-		this.$emit('dragEnd');
-	    }
+            dragEnd()
+            {
+                this.$emit('dragEnd');
+            }
         }
     }
 </script>
