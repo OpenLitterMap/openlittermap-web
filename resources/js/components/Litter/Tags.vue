@@ -1,8 +1,7 @@
 <template>
-	<div>
+    <div>
         <ul class="container">
-            <li v-for="category in categories" class='admin-item'>
-
+            <li v-for="category in categories" class="admin-item">
                 <!-- Translated Category Title -->
                 <span class="category">{{ getCategory(category.category) }}</span>
 
@@ -11,12 +10,12 @@
                     v-for="tags in Object.entries(category.tags)"
                     class="tag is-medium is-info litter-tag"
                 >
-                    {{$t(`litter.${category.category}.${tags[0]}`) + ': ' + tags[1]}}
-                    <button class="delete is-small" @click="removeTag(category.category, tags[0])"/>
+                    {{ $t(`litter.${category.category}.${tags[0]}`) + ': ' + tags[1] }}
+                    <button class="delete is-small" @click="removeTag(category.category, tags[0])" />
                 </span>
             </li>
         </ul>
-	</div>
+    </div>
 </template>
 
 <script>
@@ -76,7 +75,7 @@ export default {
             });
         }
     }
-}
+};
 </script>
 
 <style scoped>
