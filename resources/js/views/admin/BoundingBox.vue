@@ -11,35 +11,30 @@
                     <div id="image-wrapper"
                          :style="image"
                          @mousedown.self="startDrawingBox"
-                         @mousemove="drawBox"
-                         @mouseup="stopDrawingBox"
+                         @mousemove="mouseMove"
+                         @mouseup="mouseUp"
                     >
 
                         <Box
                             v-if="drawingBox.active"
-                            :top="drawingBox.top"
-                            :left="drawingBox.left"
-                            :width="drawingBox.width"
-                            :height="drawingBox.height"
+			    :geom="drawingBox.geom"
                         />
 
                         <Box
                             v-for="(box, i) in boxes"
-                            :key="i + box.height"
+			    :key="i + box.height"
+			    :geom="box.geom"
                             :index="i"
-                            :top="box.top"
-                            :left="box.left"
-                            :width="box.width"
-                            :height="box.height"
                             :selected="box.selected"
                             :activeTop="box.activeTop"
                             :activeLeft="box.activeLeft"
                             :activeBottom="box.activeBottom"
                             :activeRight="box.activeRight"
-                            @select="selectBox(i)"
+                            @select="selectBox"
                             @activate="activate"
                             @deselectNode="deselectNode"
                             @repositionTop="repositionTop"
+			    @dragEnd="dragEnd"
                         />
 
                 </div>
@@ -51,9 +46,7 @@
 <script>
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
-
 import Box from '../../components/Admin/Box'
-
 export default {
     name: 'BoundingBox',
     components: { Loading, Box },
@@ -81,16 +74,19 @@ export default {
             processing: false,
             drawingBox: {
                 active: false,
-                top: 0,
-                left: 0,
-                height: 0,
-                width: 0
+		geom: [0, 0, 0, 0]
             },
-            boxes: []
+            boxes: [],
+	    activatedBox: -1,
+	    activatedNode: 0,
+	    currentX: 0,
+	    currentY: 0,
+	    dir: [[0, 1],[1, 0],[0, 1],[1, 0]],
+	    apply: [[1, 0, 0, -1],[0, 1, -1, 0],[0, 0, 0, 1],[0, 0, 1, 0]], 
+	    dragBox: -1
         };
     },
     computed: {
-
         /**
          * Filename of the image from the database
          */
@@ -98,7 +94,6 @@ export default {
         {
             return 'backgroundImage: url(' + this.$store.state.admin.filename + ')';
         },
-
         /**
          * The ID of the image being edited
          */
@@ -106,7 +101,6 @@ export default {
         {
             return this.$store.state.admin.id;
         },
-
         /**
          * Boolean
          */
@@ -114,18 +108,18 @@ export default {
         {
             return this.$store.state.admin.loading;
         }
-
     },
     methods: {
-
         /**
          * Activate a node on a box-index for reordering
          */
-        activate (node, index)
+        activate (index, nodeIndex, pageX, pageY)
         {
-            this.boxes[index][node] = true;
+	    this.activatedBox = index;
+	    this.activatedNode = nodeIndex;
+	    this.currentX = pageX;
+	    this.currentY = pageY;
         },
-
         /**
          * De-select any boxes
          */
@@ -133,115 +127,123 @@ export default {
         {
             this.boxes.map(box => box.selected = false);
         },
-
         /**
          * One of the nodes was left go from dragging
          */
         deselectNode (node, index)
         {
-            console.log('deselectNode', node, index);
             this.boxes[index][node] = false;
         },
-
         /**
          * Drag and draw the box (Top-left to bottom-right)
          */
-        drawBox (e)
+        mouseMove (e)
         {
+	    // Record the relative movement of the mouse since the last call:
+	    var move = [e.pageX - this.currentX, e.pageY - this.currentY];
+            this.currentX = e.pageX;
+	    this.currentY = e.pageY;
+
+	    // Drawing box mode:
             if (this.drawingBox.active)
             {
                 this.drawingBox = {
                     ...this.drawingBox,
-                    width: e.offsetX - this.drawingBox.left,
-                    height: e.offsetY - this.drawingBox.top,
+		    geom: [this.drawingBox.geom[0], this.drawingBox.geom[1], e.offsetX - this.drawingBox.geom[1], e.offsetY - this.drawingBox.geom[0]]
                 };
             }
+
+	    // Box shape adjustment mode:
+	    if (this.activatedBox != -1)
+	    {
+		 var diff = move[0] * this.dir[this.activatedNode][0] + move[1] * this.dir[this.activatedNode][1];
+	
+		 this.boxes[this.activatedBox].geom = [
+					this.boxes[this.activatedBox].geom[0] + this.apply[this.activatedNode][0] * diff, 
+					this.boxes[this.activatedBox].geom[1] + this.apply[this.activatedNode][1] * diff,
+					this.boxes[this.activatedBox].geom[2] + this.apply[this.activatedNode][2] * diff,
+					this.boxes[this.activatedBox].geom[3] + this.apply[this.activatedNode][3] * diff
+				];
+	    }
+
+	    // Box dragging mode:
+	    if (this.dragBox != -1)
+	    {
+		this.boxes[this.dragBox].geom = [
+					this.boxes[this.dragBox].geom[0] + move[1], 
+					this.boxes[this.dragBox].geom[1] + move[0],
+					this.boxes[this.dragBox].geom[2],
+					this.boxes[this.dragBox].geom[3]
+				];
+	    }
         },
-
-        /**
-         *
-         */
-        repositionTop (px, index)
-        {
-            console.log('repositionTop', px);
-            
-            if (px >= 0)
-            {
-                this.boxes[index].top += px;
-                this.boxes[index].height -= px;
-            }
-
-            else
-            {
-                this.boxes[index].top -= px;
-                this.boxes[index].height += px;
-            }
-
-        },
-
         /**
          * A box has been selected
          */
-        selectBox (i)
+        selectBox (i, pageX, pageY)
         {
-            this.boxes[i].selected = true;
+	    if(this.activatedBox == -1)
+	    {
+	    	this.boxes[i].selected = true;
+	    	this.dragBox = i;
+	    	this.currentX = pageX;
+	    	this.currentY = pageY;
+	    }
         },
-
         /**
          *
          */
         startDrawingBox (e)
         {
             this.drawingBox = {
-                width: 0,
-                height: 0,
-                top: e.offsetY,
-                left: e.offsetX,
                 active: true,
+	        geom: [e.offsetY, e.offsetX, 0, 0]
             };
         },
-
         /**
          *
          */
-        stopDrawingBox ()
+        mouseUp ()
         {
             if (this.drawingBox.active)
             {
-                if (this.drawingBox.width > 5)
+                if (this.drawingBox.geom[2] > 5)
                 {
                     this.boxes.push({
-                        top: this.drawingBox.top,
-                        left: this.drawingBox.left,
-                        height: this.drawingBox.height,
-                        width: this.drawingBox.width,
+                        geom: this.drawingBox.geom,
                         selected: false,
                         activeTop: false,
                         activeLeft: false,
                         activeBottom: false,
                         activeRight: false,
                     });
-                }
+		
 
+                }
                 this.drawingBox = {
                     active: false,
-                    top: 0,
-                    left: 0,
-                    height: 0,
-                    width: 0
+		    geom: [0, 0, 0, 0]
                 }
             }
+
+	    this.activatedBox = -1;
+	    dragEnd();
         },
+	/**
+	 * When a box dragging event ends: 
+	 */
+	dragEnd()
+	{
+		this.dragBox = -1;
+	}
     }
 }
 </script>
 
 <style scoped>
-
     .mt1em {
         margin-top: 1em;
     }
-
     #image-wrapper {
         height: 500px;
         width: 500px;
@@ -250,5 +252,4 @@ export default {
         background-size: 500px 500px;
         margin: 0 auto;
     }
-
 </style>
