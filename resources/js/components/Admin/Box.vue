@@ -65,6 +65,7 @@
 </script>
 
 <style lang="scss" scoped>
+
     .box {
         position: absolute;
         border: 2px #90ee90 solid;
@@ -78,11 +79,13 @@
             padding: 0;
         }
     }
+
     .inner-box {
         position: relative;
         height: 100%;
         width: 100%;
     }
+
     .top-node {
         position: absolute;
         top: -6px;
@@ -91,6 +94,7 @@
         background-color: #90ee90;
         cursor: grab;
     }
+
     .left-node {
         position: absolute;
         left: -6px;
@@ -99,6 +103,7 @@
         background-color: #90ee90;
         cursor: grab;
     }
+
     .bottom-node {
         position: absolute;
         bottom: -6px;
@@ -107,12 +112,14 @@
         background-color: #90ee90;
         cursor: grab;
     }
+
     .right-node {
         position: absolute;
         right: -6px;
         height: 10px;
         width: 10px;
         background-color: #90ee90;
-	cursor: grab;
+        cursor: grab;
     }
+    
 </style>

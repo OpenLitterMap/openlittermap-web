@@ -48,6 +48,7 @@ import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
 
 import Box from '../../components/Admin/Box'
+
 export default {
     name: 'BoundingBox',
     components: { Loading, Box },
@@ -75,19 +76,20 @@ export default {
             processing: false,
             drawingBox: {
                 active: false,
-		geom: [0, 0, 0, 0]
+                geom: [0, 0, 0, 0]
             },
             boxes: [],
-	    activatedBox: -1,
-	    activatedNode: 0,
-	    currentX: 0,
-	    currentY: 0,
-	    dir: [[0, 1],[1, 0],[0, 1],[1, 0]],
-	    apply: [[1, 0, 0, -1],[0, 1, -1, 0],[0, 0, 0, 1],[0, 0, 1, 0]], 
-	    dragBox: -1
+            activatedBox: -1,
+            activatedNode: 0,
+            currentX: 0,
+            currentY: 0,
+            dir: [[0, 1],[1, 0],[0, 1],[1, 0]],
+            apply: [[1, 0, 0, -1],[0, 1, -1, 0],[0, 0, 0, 1],[0, 0, 1, 0]], 
+            dragBox: -1
         };
     },
     computed: {
+
         /**
          * Filename of the image from the database
          */
@@ -111,8 +113,10 @@ export default {
         {
             return this.$store.state.admin.loading;
         }
+
     },
     methods: {
+
         /**
          * Activate a node on a box-index for reordering
          */
@@ -249,9 +253,11 @@ export default {
 </script>
 
 <style scoped>
+
     .mt1em {
         margin-top: 1em;
     }
+
     #image-wrapper {
         height: 500px;
         width: 500px;
@@ -260,4 +266,5 @@ export default {
         background-size: 500px 500px;
         margin: 0 auto;
     }
+    
 </style>
