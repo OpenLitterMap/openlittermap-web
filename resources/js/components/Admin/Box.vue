@@ -25,9 +25,10 @@
             'activeLeft',
             'activeBottom',
             'activeRight',
-	    'geom'
+            'geom'
         ],
         methods: {
+
             /**
              * A node has been de-selected
              */
@@ -70,10 +71,13 @@
         position: absolute;
         border: 2px #90ee90 solid;
         background-color: transparent;
+
         &:hover, &.active {
             background-color: rgba(144, 238, 144, .2);
         }
+
         z-index: 3;
+        
         &.selected-box {
             background-color: rgba(255,0,0,0.3);
             padding: 0;
@@ -121,5 +125,5 @@
         background-color: #90ee90;
         cursor: grab;
     }
-    
+
 </style>
