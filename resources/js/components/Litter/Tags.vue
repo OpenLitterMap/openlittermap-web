@@ -9,10 +9,9 @@
                 <span
                     v-for="tags in Object.entries(category.tags)"
                     class="tag is-medium is-info litter-tag"
-                >
-                    {{ $t(`litter.${category.category}.${tags[0]}`) + ': ' + tags[1] }}
-                    <button class="delete is-small" @click="removeTag(category.category, tags[0])" />
-                </span>
+                    @click="removeTag(category.category, tags[0])"
+                    v-html="getTags(tags, category.category)"
+                />
             </li>
         </ul>
     </div>
@@ -54,7 +53,13 @@ export default {
         {
             return this.$i18n.t('litter.categories.' + category);
         },
-
+        /**
+         * Return Translated key: value from tags[0]: tags[1]
+         */
+        getTags (tags, category)
+        {
+            return this.$i18n.t('litter.' + category + '.' + tags[0]) + ': ' + tags[1] + '<br>';
+        },
         /**
          * Remove tag from this category
          * If all tags have been removed, delete the category

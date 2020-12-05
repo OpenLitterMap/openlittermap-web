@@ -82,7 +82,7 @@
                                 </div>
 
                                 <div class="column has-text-centered">
-                                    <h1 class="subtitle is-6 ">
+                                    <h1 class="subtitle is-6">
                                         <strong style="color: black;">
                                             {{ $t('location.maps11') }}
                                         </strong>
