@@ -40,7 +40,7 @@ class VerifiyRemainingTagsForUser extends Command
     public function handle()
     {
         $photos = Photo::where([
-            'user_id' => $this->argument('team_id'),
+            'user_id' => $this->argument('user_id'),
             'verification' => 0.1
         ])->get();
 
