@@ -67,19 +67,6 @@ class MapController extends Controller
 
         	// Total values
         	$country['avg_photo_per_user'] = round($country->total_images / $country->total_contributors, 2);
-
-        	// todo - save total_litter on the model
-        	$country['total_litter'] = $country['litter_data']['smoking'] +
-        							   $country['litter_data']['food'] +
-        							   $country['litter_data']['coffee'] +
-        							   $country['litter_data']['alcohol'] +
-        							   $country['litter_data']['softdrinks'] +
-        							   $country['litter_data']['sanitary'] +
-        							   $country['litter_data']['other'] +
-        							   $country['litter_data']['coastal'] +
-        							   $country['litter_data']['dumping'] +
-        							   $country['litter_data']['industrial'];
-
         	$country['avg_litter_per_user'] = round($country->total_litter / $country->total_contributors, 2);
 
         	$total_litter += $country['total_litter'];
@@ -87,13 +74,6 @@ class MapController extends Controller
 
         	$country['diffForHumans'] = $country->created_at->diffForHumans();
 	    }
-
-//	    $totalLitterInt = $total_litter;
-//        $total_litter = number_format($total_litter); // do this on frontend
-//        $total_photos = number_format($total_photos);
-
-    	// $globalxp = GlobalLevel::where('xp', '>=', $total_photos)->get();
-
 
         /**
          * Global levels
@@ -228,18 +208,7 @@ class MapController extends Controller
         	$state->leaderboard = json_encode($arrayOfLeaders);
 
         	// Get images/litter metadata
-            // todo - save this on the model
         	$state->avg_photo_per_user = round($state->total_images / $state->total_contributors, 2);
-        	$state->total_litter = $state->total_smoking
-                + $state->total_food
-                + $state->total_softDrinks
-                + $state->total_alcohol
-                + $state->total_coffee
-                + $state->total_sanitary
-                + $state->total_other
-                + $state->total_coastal
-                + $state->total_dumping
-                + $state->total_industrial;
         	$state->avg_litter_per_user = round($state->total_litter / $state->total_contributors, 2);
 
         	$total_litter += $state->total_litter;
@@ -300,23 +269,8 @@ class MapController extends Controller
             $arrayOfLeaders = $this->getLeaders($leaders);
 
             $city['leaderboard'] = json_encode($arrayOfLeaders);
-
             $city['avg_photo_per_user'] = round($city->total_images / $city->total_contributors, 2);
-
-            // Todo - save + update total_litter on the model
-            $city['total_litter'] = $city->total_smoking
-                + $city->total_food
-                + $city->total_softDrinks
-                + $city->total_alcohol
-                + $city->total_coffee
-                + $city->total_sanitary
-                + $city->total_other
-                + $city->total_coastal
-                + $city->total_dumping
-                + $city->total_industrial;
-
             $city['avg_litter_per_user'] = round($city->total_litter / $city->total_contributors, 2);
-
             $city['diffForHumans'] = $city->created_at->diffForHumans();
         }
 

@@ -152,7 +152,7 @@ export default {
     {
         return {
             loading: true,
-            littercoinPaid: 2950, // hard-coded for now
+            littercoinPaid: '2,950' // hard-coded for now
         };
     },
     computed: {
