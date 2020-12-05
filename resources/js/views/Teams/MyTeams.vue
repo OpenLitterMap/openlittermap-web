@@ -21,13 +21,14 @@
                             <option v-for="team in teams" :value="team.id">{{ team.name }}</option>
                         </select>
 
-                        <button :class="button" @click="changeActiveTeam" :disabled="disabled">Join Team</button>
+                        <button :class="button" @click="changeActiveTeam" :disabled="disabled">Change active team</button>
                     </div>
 
                     <table class="table is-fullwidth has-text-centered">
                         <thead>
                             <th>Position</th>
                             <th>Name</th>
+                            <th>Username</th>
                             <th>Status</th>
                             <th>Photos</th>
                             <th>Litter</th>
@@ -38,6 +39,7 @@
                             <tr v-for="(member, index) in members.data">
                                 <td>{{ index + 1 }}</td>
                                 <td>{{ member.name }}</td>
+                                <td>{{ member.username }}</td>
                                 <td :class="checkActiveTeam(user.active_team)" v-html="checkActiveTeamText(user.active_team)">
                                 <td>{{ member.pivot.total_photos }}</td>
                                 <td>{{ member.pivot.total_litter }}</td>

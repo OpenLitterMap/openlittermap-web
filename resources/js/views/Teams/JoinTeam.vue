@@ -48,7 +48,7 @@ export default {
     computed: {
 
         /**
-         * Add spinner when processing
+         * Show spinner when processing
          */
         button ()
         {
@@ -56,7 +56,7 @@ export default {
         },
 
         /**
-         * Error string
+         * Error object from TeamsController
          */
         errors ()
         {

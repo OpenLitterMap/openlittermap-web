@@ -180,7 +180,7 @@ export const actions = {
         const failTitle = i18n.t('notifications.error');
         const failBody = 'Sorry, we could not find a team with this identifier.' // todo - insert identifier, translate
 
-        const alreadyJoinedbody = 'You have already joined this team!';
+        const alreadyJoinedbody = 'You have already joined this team!'; // todo - translate
 
         await axios.post('/teams/join', {
             identifier: payload

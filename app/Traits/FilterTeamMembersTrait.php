@@ -10,6 +10,7 @@ trait FilterTeamMembersTrait {
      * Filter members by team_id
      *
      * todo - add more filters here
+     * eg, name, username, total_litter, total_photos, last_upload
      */
     public function filterTeamMembers ($team_id)
     {
