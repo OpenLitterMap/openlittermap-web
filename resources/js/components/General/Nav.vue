@@ -25,6 +25,10 @@
                             {{ $t('nav.admin')}}
                         </router-link>
 
+                        <a v-if="admin" href="/horizon" class="navbar-item">
+                            Horizon
+                        </a>
+
                         <!-- About -->
                         <router-link to="/about" class="navbar-item">
                               {{ $t('nav.about')}}
