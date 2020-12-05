@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers\Teams;
 
-use App\Events\Teams\TeamCreated;
 use App\Models\Photo;
 use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
 use App\Traits\FilterTeamMembersTrait;
+
+use App\Events\TeamCreated;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -142,6 +143,9 @@ class TeamsController extends Controller
                 $user->active_team = $team->id;
                 $user->save();
             }
+
+            $team->members++;
+            $team->save();
 
             return ['success' => true, 'team_id' => $team->id];
         }
