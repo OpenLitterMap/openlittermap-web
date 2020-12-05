@@ -127,7 +127,7 @@ export const actions = {
         .then(response => {
             console.log('get_team_members', response);
 
-            context.commit('teamMembers', response.data.result);
+            context.commit('paginatedTeamMembers', response.data.result);
             // todo - take out total_members into separate request
         })
         .catch(error => {
@@ -211,5 +211,46 @@ export const actions = {
 
             context.commit('teamErrors', error.response.data.errors);
         });
+    },
+
+    /**
+     * Load the previous page of members
+     */
+    async PREVIOUS_MEMBERS_PAGE (context, payload)
+    {
+        await axios.get(context.state.members.prev_page_url, {
+            params: {
+                team_id: payload
+            }
+        })
+        .then(response => {
+            console.log('previous_members_page', response);
+
+            context.commit('paginatedTeamMembers', response.data.result);
+        })
+        .catch(error => {
+            console.error('previous_members_page', error);
+        });
+    },
+
+    /**
+     * Load the next page of members
+     */
+    async NEXT_MEMBERS_PAGE (context, payload)
+    {
+        await axios.get(context.state.members.next_page_url, {
+            params: {
+                team_id: payload
+            }
+        })
+        .then(response => {
+            console.log('next_members_page', response);
+
+            context.commit('paginatedTeamMembers', response.data.result);
+        })
+        .catch(error => {
+            console.error('next_members_page', error);
+        });
     }
+
 }

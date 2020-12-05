@@ -159,7 +159,7 @@ export default {
     computed: {
 
         /**
-         * Get the current page the user in on
+         * Get the current page the user is on
          */
         current_page ()
         {

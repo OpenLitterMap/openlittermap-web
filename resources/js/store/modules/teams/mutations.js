@@ -19,11 +19,18 @@ export const mutations = {
     },
 
     /**
+     * Paginated array of a teams members
+     */
+    paginatedTeamMembers (state, payload)
+    {
+        state.members = payload;
+    },
+
+    /**
      * Change what team component the user is viewing
      */
     teamComponent (state, payload)
     {
-        console.log('teamComponent', payload);
         state.component_type = payload;
     },
 
@@ -36,11 +43,11 @@ export const mutations = {
     },
 
     /**
-     * Paginated array of a teams members
+     * Update the members on a paginated team object
      */
     teamMembers (state, payload)
     {
-        state.members = payload;
+        state.members.data = payload;
     },
 
     /**

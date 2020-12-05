@@ -27,7 +27,7 @@
                     <table class="table is-fullwidth has-text-centered">
                         <thead>
                             <th>Position</th>
-                            <th>Username</th>
+                            <th>Name</th>
                             <th>Status</th>
                             <th>Photos</th>
                             <th>Litter</th>
@@ -46,6 +46,23 @@
                             </tr>
                         </tbody>
                     </table>
+
+                    <!-- Pagination -->
+                    <div class="has-text-centered">
+                        <!-- Previous Page -->
+                        <a
+                            v-show="this.current_page > 1"
+                            class="pagination-previous"
+                            @click="previousPage"
+                        >Previous</a>
+
+                        <!-- Next Page -->
+                        <a
+                            v-show="this.show_next_page"
+                            class="pagination-next"
+                            @click="nextPage"
+                        >Next page</a>
+                    </div>
                 </div>
 
                 <div v-else class="mb2">
@@ -102,6 +119,14 @@ export default {
         },
 
         /**
+         * Get the current page the user is on
+         */
+        current_page ()
+        {
+            return this.members.current_page;
+        },
+
+        /**
          * Return true to disable the JoinTeam button
          */
         disabled ()
@@ -116,11 +141,30 @@ export default {
         },
 
         /**
-         * Members for the team currently in view
+         * Paginated object for the team currently in view
+         *
+         * Array of team members exist at members.data
          */
         members ()
         {
             return this.$store.state.teams.members;
+        },
+
+        /**
+         * Only show Previous button if current page is greater than 1
+         * If current page is 1, then we don't need to show the previous page button.
+         */
+        show_current_page ()
+        {
+            return this.members.current_page > 1;
+        },
+
+        /**
+         * Only show Previous button if next_page_url exists
+         */
+        show_next_page ()
+        {
+            return this.members.next_page_url;
         },
 
         /**
@@ -179,6 +223,22 @@ export default {
         checkActiveTeamText (users_active_team)
         {
             return users_active_team === this.viewTeam ? 'Active' : 'Inactive';
+        },
+
+        /**
+         * Load the previous page of members
+         */
+        previousPage ()
+        {
+            this.$store.dispatch('PREVIOUS_MEMBERS_PAGE', this.viewTeam);
+        },
+
+        /**
+         * Load the next page of members
+         */
+        nextPage ()
+        {
+            this.$store.dispatch('NEXT_MEMBERS_PAGE', this.viewTeam);
         }
     }
 }
