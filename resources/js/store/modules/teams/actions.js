@@ -180,6 +180,8 @@ export const actions = {
         const failTitle = i18n.t('notifications.error');
         const failBody = 'Sorry, we could not find a team with this identifier.' // todo - insert identifier, translate
 
+        const alreadyJoinedbody = 'You have already joined this team!';
+
         await axios.post('/teams/join', {
             identifier: payload
         })
@@ -193,7 +195,16 @@ export const actions = {
                 Vue.$vToastify.success({
                     title,
                     body,
-                    position: 'top-right'
+                    position: 'bottom-right'
+                });
+            }
+
+            else if (response.data.msg === 'already-joined')
+            {
+                Vue.$vToastify.info({
+                    title: 'Hold on!',
+                    body: alreadyJoinedbody,
+                    position: 'bottom-right'
                 });
             }
 
@@ -202,7 +213,7 @@ export const actions = {
                 Vue.$vToastify.error({
                     title: failTitle,
                     body: failBody,
-                    position: 'top-right'
+                    position: 'bottom-right'
                 });
             }
         })

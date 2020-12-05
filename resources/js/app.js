@@ -23,9 +23,8 @@ Vue.use(VueRouter)
 Vue.use(VueLocalStorage)
 Vue.use(VueSweetalert2)
 Vue.use(VueToastify, {
-    theme: 'light',
+    theme: 'dark',
     errorDuration: 5000,
-    position: 'top-right'
 });
 // Vue.use(VueMask)
 Vue.use(VueNumber)
