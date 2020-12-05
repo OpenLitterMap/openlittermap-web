@@ -76,6 +76,13 @@ class UpdateCountries extends Command
 
             echo "Country.id " . $country->id . "\n";
 
+            $count = Photo::where([
+                'country_id' => $country->id,
+                'verified' => 2
+            ])->count();
+
+            echo "Total photos " . $count . "\n";
+
             foreach ($categories as $category)
             {
                 $category_id = $category . '_id';
@@ -83,7 +90,7 @@ class UpdateCountries extends Command
 
                 $photos = Photo::where('verified', 2)->where('country_id', $country->id)->whereNotNull($category_id)->get();
 
-                echo "photos count " . sizeof($photos). "\n";
+                echo "category count " . sizeof($photos). "\n";
 
                 foreach ($photos as $photo)
                 {
