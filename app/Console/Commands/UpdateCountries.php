@@ -53,165 +53,53 @@ class UpdateCountries extends Command
      */
     public function handle()
     {
-        // Get all countries that have 2+ images
-        $countries = Country::where('total_images', '>', 2)->get();
+        $countries = Country::all();
 
-        // loop
-        foreach($countries as $country) {
-            // get photos
-            $photos = Photo::where([
-                ['country_id', $country->id],
-                ['verified', '>', 0],
-            ])->get();
+        $total = 0;
 
-            // count contributors
-            $users = [];
+        foreach ($countries as $country)
+        {
+            $country_total = 0;
 
-            $smokingTotal = 0;
-            $cigaretteTotal = 0;
+            $categories = [
+                'alcohol',
+                'coastal',
+                'coffee',
+                'dumping',
+                'food',
+                'industrial',
+                'other',
+                'sanitary',
+                'softdrinks',
+                'smoking'
+            ];
 
-            $foodTotal = 0;
+            echo "Country.id " . $country->id . "\n";
 
-            $softDrinksTotal = 0;
-            $plasticBottleTotal = 0;
+            foreach ($categories as $category)
+            {
+                $category_id = $category . '_id';
+                $category_total = 0;
 
-            $alcoholTotal = 0;
+                $photos = Photo::where('verified', 2)->where('country_id', $country->id)->whereNotNull($category_id)->get();
 
-            $coffeeTotal = 0;
+                echo "photos count " . sizeof($photos). "\n";
 
-            $drugsTotal = 0;
-            $needlesTotal = 0;
-
-            $sanitaryTotal = 0;
-            $otherTotal = 0;
-
-            foreach($photos as $photo) {
-                $users[$photo->user_id] = $photo->user_id;
-
-                // Check the photo for foreign keys, count and update them on the Country
-                if($photo['smoking_id']) {
-
-                    // find each instance in the smoking table
-                    $smoking = Smoking::find($photo['smoking_id']);
-                    // count totals
-                    $cigaretteTotal += $smoking['butts'];
-                      $smokingTotal += $smoking['butts'];
-                      $smokingTotal += $smoking['lighters'];
-                      $smokingTotal += $smoking['cigaretteBox'];
-                      $smokingTotal += $smoking['tobaccoPouch'];
-                      $smokingTotal += $smoking['skins'];
-                      $smokingTotal += $smoking['smokingOther'];
+                foreach ($photos as $photo)
+                {
+                    if ($photo->$category) $category_total += $photo->$category->total();
                 }
 
+                echo "Category total " . $category_total . "\n";
 
-                if($photo['food_id']) {
+                $country_total += $category_total;
 
-                    $food = Food::find($photo['food_id']);
+                echo "Country total " . $country_total . "\n";
+            }
 
-                    $foodTotal += $food['sweetWrappers'];
-                    $foodTotal += $food['paperFoodPackaging'];
-                    $foodTotal += $food['plasticFoodPackaging'];
-                    $foodTotal += $food['plasticCutlery'];
-                    $foodTotal += $food['foodOther'];
-                }
+            $total += $country_total;
+        }
 
-                if($photo['softdrinks_id']) {
-
-                    $softdrink = SoftDrinks::find($photo['softdrinks_id']);
-
-                    $plasticBottleTotal += $softdrink['waterBottle'];
-                       $softDrinksTotal += $softdrink['waterBottle'];
-                    $plasticBottleTotal += $softdrink['fizzyDrinkBottle'];
-                       $softDrinksTotal += $softdrink['fizzyDrinkBottle'];
-                       $softDrinksTotal += $softdrink['tinCan'];
-                       $softDrinksTotal += $softdrink['bottleLid'];
-                       $softDrinksTotal += $softdrink['bottleLabel'];
-                       $softDrinksTotal += $softdrink['sportsDrink'];
-                    $plasticBottleTotal += $softdrink['sportsDrink'];
-                       $softDrinksTotal += $softdrink['softDrinkOther'];
-                }
-
-
-                if($photo['alcohol_id']){
-
-                    $alcohol = Alcohol::find($photo['alcohol_id']);
-
-                    $alcoholTotal += $alcohol['beerBottle'];
-                    $alcoholTotal += $alcohol['spiritBottle'];
-                    $alcoholTotal += $alcohol['wineBottle'];
-                    $alcoholTotal += $alcohol['beerCan'];
-                    $alcoholTotal += $alcohol['brokenGlass'];
-                    $alcoholTotal += $alcohol['paperCardAlcoholPackaging'];
-                    $alcoholTotal += $alcohol['plasticAlcoholPackaging'];
-                    $alcoholTotal += $alcohol['bottleTops'];
-                    $alcoholTotal += $alcohol['alcoholOther'];
-                }
-
-                if($photo['coffee_id']) {
-                    $coffee = Coffee::find($photo['coffee_id']);
-                    $coffeeTotal += $coffee['coffeeCups'];
-                    $coffeeTotal += $coffee['coffeeLids'];
-                    $coffeeTotal += $coffee['coffeeOther'];
-                }
-
-                if($photo['drugs_id']) {
-
-                    $drugs = Drugs::find($photo['drugs_id']);
-                      $needlesTotal += $drugs['needles'];
-                        $drugsTotal += $drugs['needles'];
-                        $drugsTotal += $drugs['wipes'];
-                        $drugsTotal += $drugs['tops'];
-                        $drugsTotal += $drugs['packaging'];
-                        $drugsTotal += $drugs['waterBottle'];
-                        $drugsTotal += $drugs['spoons'];
-                        $drugsTotal += $drugs['needlebin'];
-                        $drugsTotal += $drugs['barrels'];
-                        $drugsTotal += $drugs['usedtinfoil'];
-                        $drugsTotal += $drugs['fullpackage'];
-                        $drugsTotal += $drugs['drugsOther'];
-                    }
-
-                }
-
-                if($photo['sanitary_id']) {
-
-                    $sanitary = Sanitary::find($photo['sanitary_id']);
-
-                    $sanitaryTotal += $sanitary['gloves'];
-                    $sanitaryTotal += $sanitary['condoms'];
-                    $sanitaryTotal += $sanitary['nappies'];
-                    $sanitaryTotal += $sanitary['menstral'];
-                    $sanitaryTotal += $sanitary['deodorant'];
-                    $sanitaryTotal += $sanitary['sanitaryOther'];
-                }
-
-                if($photo['other_id']) {
-
-                    $other = Other::find($photo['other_id']);
-
-                    $otherTotal += $other['dogshit'];
-                    $otherTotal += $other['plastic'];
-                    $otherTotal += $other['dump'];
-                    $otherTotal += $other['metal'];
-                    $otherTotal += $other['other'];
-                } // end other
-
-            } // end for each photos
-
-            $country->total_cigaretteButts = $cigaretteTotal;
-            $country->total_smoking = $smokingTotal;
-            $country->total_food = $foodTotal;
-            $country->total_softdrinks = $softDrinksTotal;
-            $country->total_plasticBottles = $plasticBottleTotal;
-            $country->total_alcohol = $alcoholTotal;
-            $country->total_coffee = $coffeeTotal;
-            $country->total_drugs = $drugsTotal;
-            $country->total_needles = $drugsTotal;
-            $country->total_sanitary = $sanitaryTotal;
-            $country->total_other = $otherTotal;
-            $sizeOfUsers = sizeof($users);
-            $country->total_contributors = $sizeOfUsers;
-            $country->save();
-
-    } // end for each countries
+        echo "Total " . $total . "\n";
+    }
 }

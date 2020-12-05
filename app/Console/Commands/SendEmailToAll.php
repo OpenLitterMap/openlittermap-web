@@ -39,10 +39,7 @@ class SendEmailToAll extends Command
      */
     public function handle()
     {
-        $users = User::where([
-            ['id', '>', 221],
-            'emailsub' => 1
-        ])->orderBy('id', 'asc')->get();
+        $users = User::where('emailsub', 1)->orderBy('id', 'asc')->get();
 
         foreach ($users as $user)
         {
