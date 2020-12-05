@@ -291,14 +291,17 @@ export default {
 
 <style scoped>
 
-    .medal {
-        height: 1em;
-    }
-
     .medal-container {
         display: flex;
         justify-content: center;
         align-items: center;
+        position: relative
+    }
+
+    .medal {
+        height: 1em;
+        position: absolute;
+        left: 2em;
     }
 
     .my-teams-container {
