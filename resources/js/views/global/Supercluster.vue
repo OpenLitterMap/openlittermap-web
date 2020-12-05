@@ -23,7 +23,8 @@ import LiveEvents from '../../components/LiveEvents';
 // import GlobalInfo from '../../components/global/GlobalInfo'
 import {
     CLUSTER_ZOOM_THRESHOLD,
-    MAX_ZOOM, MEDIUM_CLUSTER_SIZE,
+    MAX_ZOOM,
+    MEDIUM_CLUSTER_SIZE,
     LARGE_CLUSTER_SIZE,
     MIN_ZOOM,
     ZOOM_STEP
