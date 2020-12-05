@@ -1,6 +1,6 @@
 <template>
     <section>
-        <div>
+        <div class="my-teams-container">
             <h1 class="title is-2">My Teams</h1>
 
             <p v-if="loading">Loading...</p>
@@ -14,7 +14,6 @@
             <p v-else>You have not yet joined a team</p>
 
                 <div v-if="teams">
-
                     <div class="flex mb1">
                         <select v-model="viewTeam" class="input mtba" style="max-width: 30em;" @change="changeViewedTeam">
                             <option :selected="! viewTeam" :value="null" disabled>Please join a team</option>
@@ -24,7 +23,7 @@
                         <button :class="button" @click="changeActiveTeam" :disabled="disabled">Change active team</button>
                     </div>
 
-                    <table class="table is-fullwidth has-text-centered">
+                    <table class="table is-fullwidth is-hoverable has-text-centered">
                         <thead>
                             <th>Position</th>
                             <th>Name</th>
@@ -37,10 +36,24 @@
 
                         <tbody>
                             <tr v-for="(member, index) in members.data">
-                                <td>{{ index + 1 }}</td>
+                                <td>
+                                    <div class="medal-container">
+                                        <img
+                                            v-show="index < 3"
+                                            :src="medal(index)"
+                                            class="medal"
+                                        />
+                                        <span>{{ index + 1 }}</span>
+                                    </div>
+                                </td>
                                 <td>{{ member.name }}</td>
                                 <td>{{ member.username }}</td>
-                                <td :class="checkActiveTeam(member.active_team)" v-html="checkActiveTeamText(member.active_team)">
+                                <td style="width: 9em;">
+                                    <span :class="checkActiveTeam(member.active_team)">
+                                        <i :class="icon(member.active_team)" />
+                                        {{ checkActiveTeamText(member.active_team) }}
+                                    </span>
+                                </td>
                                 <td>{{ member.pivot.total_photos }}</td>
                                 <td>{{ member.pivot.total_litter }}</td>
                                 <!-- todo - last_uploaded -->
@@ -217,9 +230,9 @@ export default {
         /**
          * Return class to show if user is currently joined this team or not
          */
-        checkActiveTeam (users_active_team)
+        checkActiveTeam (active_team_id)
         {
-            return users_active_team === this.viewTeam ? 'team-active' : 'team-inactive';
+            return active_team_id === this.viewTeam ? 'team-active' : 'team-inactive';
         },
 
         /**
@@ -227,14 +240,34 @@ export default {
          *
          * Todo - translate
          */
-        checkActiveTeamText (users_active_team)
+        checkActiveTeamText (active_team_id)
         {
             if (this.changing) return '...';
 
-            console.log({ users_active_team });
-            console.log('viewTeam', this.viewTeam);
+            return active_team_id === this.viewTeam ? 'Active' : 'Inactive';
+        },
 
-            return users_active_team === this.viewTeam ? 'Active' : 'Inactive';
+        /**
+         * Return icon class for active/inactive team
+         */
+        icon (active_team_id)
+        {
+            return active_team_id === this.viewTeam ? 'fa fa-check' : 'fa fa-ban';
+        },
+
+        /**
+         * Return medal for 1st, 2nd and 3rd
+         */
+        medal (i)
+        {
+            if (this.members.current_page === 1)
+            {
+                if (i === 0) return '/assets/icons/gold-medal.png';
+                if (i === 1) return '/assets/icons/silver-medal.png';
+                if (i === 2) return '/assets/icons/bronze-medal.svg';
+            }
+
+            return '';
         },
 
         /**
@@ -257,5 +290,31 @@ export default {
 </script>
 
 <style scoped>
+
+    .medal {
+        height: 1em;
+    }
+
+    .medal-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .my-teams-container {
+        padding: 0 1em;
+    }
+
+    .team-active {
+        background-color: #2ecc71;
+        padding: 0.5em 1em;
+        border-radius: 10px;
+    }
+
+    .team-inactive {
+        background-color: #e67e22;
+        padding: 0.5em 1em;
+        border-radius: 10px;
+    }
 
 </style>

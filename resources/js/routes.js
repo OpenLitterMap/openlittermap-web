@@ -43,6 +43,10 @@ const router = new VueRouter({
             path: '/privacy',
             component: require('./views/general/Privacy').default
         },
+        {
+            path: '/credits',
+            component: require('./views/general/Credits').default
+        },
         // Countries
         {
             path: '/world',

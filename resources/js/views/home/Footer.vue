@@ -46,6 +46,8 @@
                         @click="open(s.url)"
                         class="footer-icon"
                     />
+                    <br>
+                    <router-link to="/credits" style="color: #94afe3;">Credits</router-link>
 
                 </div>
 
