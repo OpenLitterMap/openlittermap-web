@@ -1,21 +1,11 @@
 <template>
     <div>
-        <section class="hero is-fullheight is-link is-bold">
+        <section class="hero is-link is-bold">
             <section class="section is-link is-bold">
 
-                <!-- We are creating open data -->
-                <h1 class="title is-1 has-text-centered" style="padding-bottom: 10px;">
-                    {{ $t('location.maps1') }}
-                </h1>
-
-                <!-- Todo - Click here to read why -->
-                <h2 class="subtitle is-4 has-text-centered">
-                    {{ $t('location.maps2') }}
-                </h2>
-
                 <!-- Global Leaderboard -->
-                <div class="container mt3">
-                    <h3 class="title is-4 has-text-centered">{{ $t('location.maps4') }}</h3>
+                <div class="container">
+                    <h3 class="title is-2 has-text-centered">{{ $t('location.maps4') }}</h3>
 
                     <loading v-if="loading" :active.sync="loading" :is-full-page="true" />
 
@@ -61,13 +51,13 @@
                     <div class="columns">
                         <div class="column is-half is-offset-3">
                             <div class="columns">
-                                <div class="column has-text-centered">
-                                    <h1 class="subtitle is-6">
+                                <div class="column is-one-third">
+                                    <h1 class="subtitle is-5" style="color: black; text-align: center;">
                                         <strong style="color:black;">
                                             {{ $t('location.maps10') }}
                                         </strong>
                                     </h1>
-                                    <h1 class="title is-2">
+                                    <h1 class="title is-2" style="text-align: center;">
                                         <strong>
                                             <number
                                                 :from="previous_total_litter"
@@ -81,13 +71,13 @@
                                     </h1>
                                 </div>
 
-                                <div class="column has-text-centered">
-                                    <h1 class="subtitle is-6">
+                                <div class="column is-one-third">
+                                    <h1 class="subtitle is-5" style="color: black; text-align: center;">
                                         <strong style="color: black;">
                                             {{ $t('location.maps11') }}
                                         </strong>
                                     </h1>
-                                    <h1 class="title is-2">
+                                    <h1 class="title is-2" style="text-align: center;">
                                         <strong>
                                             <number
                                                 :from="previous_total_photos"
@@ -101,13 +91,13 @@
                                     </h1>
                                 </div>
 
-                                <div class="column has-text-centered">
-                                    <h1 class="subtitle is-6">
+                                <div class="column is-one-third">
+                                    <h1 class="subtitle is-5" style="color: black; text-align: center;">
                                         <strong style="color: black;">
                                             {{ $t('location.maps11a') }}
                                         </strong>
                                     </h1>
-                                    <h1 class="title is-2">
+                                    <h1 class="title is-2" style="text-align: center;">
                                         <strong>
                                             {{ this.littercoinPaid }}
                                         </strong>
@@ -152,7 +142,7 @@ export default {
     {
         return {
             loading: true,
-            littercoinPaid: 2950, // hard-coded for now
+            littercoinPaid: '2,950' // hard-coded for now
         };
     },
     computed: {
