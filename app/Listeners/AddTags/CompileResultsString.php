@@ -392,7 +392,7 @@ class CompileResultsString
                 $other_string .= ' Overflowing Bins: ' . $other->overflowing_bins;
             }
             if ($other->random_litter) {
-                $other_string .= 'Random Litter: ' . $other->random_litter;
+                $other_string .= ' Random Litter: ' . $other->random_litter;
             }
 
 
