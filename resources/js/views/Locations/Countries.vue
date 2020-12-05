@@ -1,21 +1,11 @@
 <template>
     <div>
-        <section class="hero is-fullheight is-link is-bold">
+        <section class="hero is-link is-bold">
             <section class="section is-link is-bold">
-
-                <!-- We are creating open data -->
-                <h1 class="title is-1" style="text-align: center; padding-bottom: 10px;">
-                    {{ $t('location.maps1') }}
-                </h1>
-
-                <!-- Todo - Click here to read why -->
-                <h2 class="subtitle is-4" style="text-align: center;">
-                    {{ $t('location.maps2') }}
-                </h2>
 
                 <!-- Global Leaderboard -->
                 <div class="container mt3">
-                    <h3 class="title is-4 has-text-centered">{{ $t('location.maps4') }}</h3>
+                    <h3 class="title is-2 has-text-centered">{{ $t('location.maps4') }}</h3>
 
                     <loading v-if="loading" :active.sync="loading" :is-full-page="true" />
 

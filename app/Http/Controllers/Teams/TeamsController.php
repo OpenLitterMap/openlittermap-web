@@ -173,8 +173,8 @@ class TeamsController extends Controller
                 // include these fields
                 'users.id',
                 'users.email',
-                'users.name',
-                'users.username',
+                'users.name', // todo - add privacy settings per team
+                'users.username', // todo - add privacy settings per team
                 'users.active_team',
                 'users.updated_at', // todo add users.last_uploaded
                 'total_photos'

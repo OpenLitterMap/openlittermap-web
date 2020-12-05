@@ -37,7 +37,7 @@
                         <tbody>
                             <tr v-for="(member, index) in members.data">
                                 <td>{{ index + 1 }}</td>
-                                <td>{{ member.username }}</td>
+                                <td>{{ member.name }}</td>
                                 <td :class="checkActiveTeam(user.active_team)" v-html="checkActiveTeamText(user.active_team)">
                                 <td>{{ member.pivot.total_photos }}</td>
                                 <td>{{ member.pivot.total_litter }}</td>
