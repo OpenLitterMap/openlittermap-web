@@ -62,8 +62,8 @@ export const actions = {
                 if (response.data.success)
                 {
                     Vue.$vToastify.success({
-                        title,
-                        body,
+                        title: joinedTeamTitle,
+                        body: joinedTeamBody,
                         position: 'top-right'
                     });
 
