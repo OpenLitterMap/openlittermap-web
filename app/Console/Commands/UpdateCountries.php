@@ -98,6 +98,8 @@ class UpdateCountries extends Command
             }
 
             $total += $country_total;
+
+            echo "\n \n";
         }
 
         echo "Total " . $total . "\n";
