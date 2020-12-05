@@ -17,14 +17,15 @@
 </template>
 
 <script>
-import Languages from '../../components/global/Languages'
+import Languages from '../../components/global/Languages';
 // import GlobalDates from '../../components/global/GlobalDates'
-import LiveEvents from '../../components/LiveEvents'
+import LiveEvents from '../../components/LiveEvents';
 // import GlobalInfo from '../../components/global/GlobalInfo'
-import {CLUSTER_ZOOM_THRESHOLD, MAX_ZOOM, MEDIUM_CLUSTER_SIZE, LARGE_CLUSTER_SIZE, MIN_ZOOM, SHOW_DETAIL_ZOOM, ZOOM_STEP} from '../../constants'
+import {CLUSTER_ZOOM_THRESHOLD, MAX_ZOOM, MEDIUM_CLUSTER_SIZE, LARGE_CLUSTER_SIZE, MIN_ZOOM, SHOW_DETAIL_ZOOM, ZOOM_STEP} from '../../constants';
 
-import L from 'leaflet'
-import moment from 'moment'
+import L from 'leaflet';
+import moment from 'moment';
+import './SmoothWheelZoom.js';
 
 var map;
 var markers;
@@ -79,7 +80,7 @@ async function update ()
     const bounds = map.getBounds();
 
     let bbox = {'left': bounds.getWest(), 'bottom': bounds.getSouth(), 'right': bounds.getEast(), 'top': bounds.getNorth()};
-    let zoom = map.getZoom();
+    let zoom = Math.round(map.getZoom());
 
     console.log({ zoom });
 
@@ -98,15 +99,15 @@ async function update ()
         await axios.get('clusters', {
             params: { zoom, bbox }
         })
-        .then(response => {
-            console.log('get_clusters.update', response);
+            .then(response => {
+                console.log('get_clusters.update', response);
 
-            markers.clearLayers();
-            markers.addData(response.data);
-        })
-        .catch(error => {
-            console.error('get_clusters.update', error);
-        });
+                markers.clearLayers();
+                markers.addData(response.data);
+            })
+            .catch(error => {
+                console.error('get_clusters.update', error);
+            });
     }
 
     else
@@ -114,15 +115,15 @@ async function update ()
         await axios.get('global-points', {
             params: { zoom, bbox }
         })
-        .then(response => {
-            console.log('get_global_points', response);
+            .then(response => {
+                console.log('get_global_points', response);
 
-            markers.clearLayers();
-            markers.addData(response.data);
-        })
-        .catch(error => {
-            console.error('get_global_points', error);
-        });
+                markers.clearLayers();
+                markers.addData(response.data);
+            })
+            .catch(error => {
+                console.error('get_global_points', error);
+            });
     }
 }
 
@@ -140,7 +141,12 @@ export default {
         map = L.map('super', {
             center: [0, 0],
             zoom: MIN_ZOOM,
+            scrollWheelZoom: false,
+            smoothWheelZoom: true,
+            smoothSensitivity: 1,
         });
+
+        map.scrollWheelZoom = true;
 
         const date = new Date();
         const year = date.getFullYear();
@@ -162,7 +168,7 @@ export default {
         }).addTo(map);
 
         // Zoom in cluster when click to it
-        markers.on('click', function(e){
+        markers.on('click', function (e){
             // If marker is not cluster, stop zooming.
             if(map.getZoom() >= CLUSTER_ZOOM_THRESHOLD){
                 return;
@@ -190,7 +196,7 @@ export default {
             this.$store.commit('closeLangsButton');
         }
     }
-}
+};
 </script>
 
 <style>
