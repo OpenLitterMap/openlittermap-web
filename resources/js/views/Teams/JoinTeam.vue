@@ -1,36 +1,24 @@
 <template>
-    <div class="jtc">
-        <h1 class="title is-2">Join a Team</h1>
+    <div class="has-text-center">
+        <form @submit.prevent="submit">
+            <label for="join" class="mb2">Enter an identifier to join a team.</label>
+            <span
+                v-if="errorExists('identifier')"
+                class="is-danger"
+                v-text="getFirstError('identifier')"
+            />
+            <input v-model="identifier"
+                   class="input mb2 mt2"
+                   name="join"
+                   placeholder="Enter ID to join a team"
+                   required
+                   @input="clearError"
+            >
 
-        <div class="columns mt3">
-
-            <div class="column is-one-third">
-                <p class="mb1">Enter an identifier to join a team.</p>
-            </div>
-
-            <div class="column is-half card p2">
-                <form @submit.prevent="submit">
-                    <label for="join">Join team by identifier</label>
-                    <span
-                        class="is-danger"
-                        v-if="errorExists('identifier')"
-                        v-text="getFirstError('identifier')"
-                    />
-                    <input
-                        class="input mb2"
-                        name="join"
-                        placeholder="Enter ID to join a team"
-                        required
-                        v-model="identifier"
-                        @input="clearError"
-                    />
-
-                    <div class="has-text-right">
-                        <button :class="button" :disabled="processing">Join Team</button>
-                    </div>
-                </form>
-            </div>
-        </div>
+            <button :class="button" :disabled="processing">
+                Join Team
+            </button>
+        </form>
     </div>
 </template>
 
@@ -42,11 +30,10 @@ export default {
         return {
             btn: 'button is-medium is-primary',
             identifier: '',
-            processing: false
+            processing: false,
         };
     },
     computed: {
-
         /**
          * Show spinner when processing
          */
@@ -61,11 +48,10 @@ export default {
         errors ()
         {
             return this.$store.state.teams.errors;
-        }
+        },
 
     },
     methods: {
-
         /**
          * Clear an error with this key
          */
@@ -100,21 +86,16 @@ export default {
             await this.$store.dispatch('JOIN_TEAM', this.identifier);
 
             this.processing = false;
-        }
-    }
-}
+        },
+    },
+};
 </script>
 
 <style scoped>
 
-    .jtc {
-        margin-top: 1em;
-        margin-left: 5em;
-    }
-
-    .team-error {
-        color: red;
-        font-weight: 600;
-        margin-bottom: 1em;
-    }
+.team-error {
+    color: red;
+    font-weight: 600;
+    margin-bottom: 1em;
+}
 </style>

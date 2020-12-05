@@ -1,31 +1,51 @@
 <template>
-    <section class="tdc">
-        <p class="subtitle is-centered is-3">Teams Dashboard</p>
-        <p class="mb1">Here you can find the combined impact made by all the teams you have joined.</p>
+    <section class="container">
+        <div class="dashboard-header">
+            <p class="subtitle is-centered is-3">
+                Teams Dashboard
+            </p>
+            <button class="button is-primary" @click="showJoinTeam">
+                Join Team
+            </button>
+        </div>
+        <p class="mb-3">
+            Here you can find the combined impact made by all the teams you have joined.
+        </p>
 
-        <div class="columns">
-            <div class="column teams-card">
-                <span class="title is-2" style="color: #7b848e;">{{ photos_count }}</span>
-                <br>
-                Photos uploaded {{ this.getPeriod() }}
+        <div class="columns is-mobile is-multiline">
+            <div class="column is-11-mobile teams-card card level">
+                <p class="title level-item" style="color: #7b848e;">
+                    {{ photos_count }}
+                </p>
+                <p class="level-item">
+                    Photos uploaded {{ this.getPeriod() }}
+                </p>
             </div>
 
-            <div class="column teams-card">
-                <span class="title is-2" style="color: #7b848e;">{{ litter_count }}</span>
-                <br>
-                Litter tagged {{ this.getPeriod() }}
+            <div class="column is-11-mobile teams-card card level">
+                <p class="title level-item" style="color: #7b848e;">
+                    {{ litter_count }}
+                </p>
+                <p class="level-item">
+                    Litter tagged {{ this.getPeriod() }}
+                </p>
             </div>
 
-            <div class="column teams-card">
-                <span class="title is-2" style="color: #7b848e;">{{ members_count }}</span>
-                <br>
-                Team members uploaded {{ this.getPeriod() }}
+            <div class="column is-11-mobile teams-card card level">
+                <p class="title level-item" style="color: #7b848e;">
+                    {{ members_count }}
+                </p>
+                <p class="level-item">
+                    Team members uploaded {{ this.getPeriod() }}
+                </p>
             </div>
         </div>
 
         <!-- Change time period -->
-        <select v-model="period" @change="changeTime" class="input" style="max-width: 25%;">
-            <option v-for="time in timePeriods" :value="time">{{ getPeriod(time) }}</option>
+        <select v-model="period" class="input" style="max-width: 25%;" @change="changeTime">
+            <option v-for="time in timePeriods" :value="time">
+                {{ getPeriod(time) }}
+            </option>
         </select>
 
         <!-- todo - Map of all teams effort -->
@@ -35,10 +55,6 @@
 <script>
 export default {
     name: 'TeamsDashboard',
-    created ()
-    {
-        this.changeTime();
-    },
     data ()
     {
         return {
@@ -78,6 +94,10 @@ export default {
             return this.$store.state.teams.allTeams.members_count;
         }
     },
+    created ()
+    {
+        this.changeTime();
+    },
     methods: {
 
         /**
@@ -95,23 +115,39 @@ export default {
         {
             if (! period) period = this.period;
 
-            return this.$t('teams.times.' + period)
+            return this.$t('teams.times.' + period);
         },
+
+        showJoinTeam ()
+        {
+            this.$store.commit('showModal', {
+                type: 'JoinTeam',
+                title: 'Join a Team',
+                action: 'JOINTEAM'
+            });
+        }
     }
-}
+};
 </script>
 
-<style scoped>
-
-    .tdc {
-        padding-left: 2em;
-        padding-right: 2em;
+<style scoped lang="scss">
+@import '../../styles/variables.scss';
+    .teams-card {
+        border-radius: 10px;
+        margin: 1em;
+        padding: 3rem 1.5rem;
     }
 
-    .teams-card {
-        background: white;
-        text-align: center;
-        margin: 1em;
-        padding: 5em;
+     @include media-breakpoint-down(sm){
+        .teams-card {
+            border-radius: 10px;
+            margin: 1em;
+            padding: 2rem 1.5rem;
+        }
+    }
+
+    .dashboard-header{
+        display: flex;
+        justify-content: space-between;
     }
 </style>

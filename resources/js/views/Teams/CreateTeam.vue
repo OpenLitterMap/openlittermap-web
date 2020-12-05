@@ -1,59 +1,65 @@
 <template>
     <div class="ctc">
-        <h1 class="title is-2">Create a Team</h1>
+        <h1 class="title is-2">
+            Create a Team
+        </h1>
 
-        <p class="mb2">You are allowed to create {{ this.remaining }} team(s)</p>
+        <p class="mb2">
+            You are allowed to create {{ remaining }} team(s)
+        </p>
 
         <div class="columns mt3">
-
             <div class="column is-one-third">
-                <p class="mb1">What kind of Team would you like to create?</p>
+                <p class="mb1">
+                    What kind of Team would you like to create?
+                </p>
             </div>
 
             <div class="column is-half card p2">
                 <form method="post" @submit.prevent="create">
                     <div class="control pb2">
-
                         <p>Team Type</p>
 
                         <div class="select">
                             <select v-model="teamType">
-                                <option v-for="type in teamTypes" :value="type.id">{{ type.team }}</option>
+                                <option v-for="type in teamTypes" :key="type.id" :value="type.id">
+                                    {{ type.team }}
+                                </option>
                             </select>
                         </div>
                     </div>
 
                     <label for="name">Team Name</label>
                     <span
-                        class="is-danger"
                         v-if="errorExists('name')"
+                        class="is-danger"
                         v-text="getFirstError('name')"
                     />
                     <input
+                        v-model="name"
                         class="input mb2"
                         name="name"
                         placeholder="My Awesome Team"
-                        v-model="name"
                         type="text"
                         required
                         @keydown="clearError('name')"
-                    />
+                    >
 
                     <label for="identifier">Unique Team Identifier</label>
                     <p>Anyone with this ID will be able to join your team.</p>
                     <span
-                        class="is-danger"
                         v-if="errorExists('identifier')"
+                        class="is-danger"
                         v-text="getFirstError('identifier')"
                     />
                     <input
+                        v-model="identifier"
                         class="input mb2"
                         name="identifier"
                         placeholder="Awesome2020"
                         required
-                        v-model="identifier"
                         @keydown="clearError('identifier')"
-                    />
+                    >
 
                     <!-- Todo - Checkbox -->
                     <!-- Allow people to join your team automatically? -->
@@ -61,7 +67,9 @@
                     <!-- No = approval is required -->
 
                     <div>
-                        <button :class="button" :disabled="processing">Create Team</button>
+                        <button :class="button" :disabled="processing">
+                            Create Team
+                        </button>
                     </div>
                 </form>
             </div>
@@ -167,13 +175,24 @@ export default {
             return this.errors[key][0];
         }
     }
-}
+};
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@import '../../styles/variables.scss';
 
     .ctc {
         margin-top: 1em;
         margin-left: 5em;
+    }
+
+    @include media-breakpoint-down(sm){
+        .ctc {
+            margin: 0 1em;
+
+            .is-2 {
+                font-size: 2rem
+            }
+        }
     }
 </style>

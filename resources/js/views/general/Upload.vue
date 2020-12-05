@@ -69,8 +69,13 @@ export default {
         verror (file)
         {
             console.log({ file });
-            // this.error = true
-            // window.toastr.error(file.upload.filename, 'Event : vdropzone-error - ' + file.status)
+            let errorMessage = 'Something went wrong. Please try again later.';
+
+            if(file.xhr?.response && file.xhr?.response?.length < 200) {
+                errorMessage = file.xhr?.response;
+            }
+
+            this.$vToastify.error(errorMessage);
         },
     }
 };

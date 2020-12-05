@@ -1,6 +1,6 @@
-import Vue from 'vue'
-import i18n from '../../../i18n'
-import router from "../../../routes";
+import Vue from 'vue';
+import i18n from '../../../i18n';
+import router from '../../../routes';
 
 export const actions = {
 
@@ -15,23 +15,25 @@ export const actions = {
         await axios.post('/teams/active', {
             team_id: payload
         })
-        .then(response => {
-            console.log('change_active_team', response);
-
-            if (response.data.success)
+            .then(response =>
             {
-                Vue.$vToastify.success({
-                    title,
-                    body,
-                    position: 'top-right'
-                });
+                console.log('change_active_team', response);
 
-                context.commit('usersActiveTeam', payload);
-            }
-        })
-        .catch(error => {
-            console.error('change_active_team', error);
-        });
+                if (response.data.success)
+                {
+                    Vue.$vToastify.success({
+                        title,
+                        body,
+                        position: 'top-right'
+                    });
+
+                    context.commit('usersActiveTeam', payload);
+                }
+            })
+            .catch(error =>
+            {
+                console.error('change_active_team', error);
+            });
     },
 
     /**
@@ -53,45 +55,47 @@ export const actions = {
             identifier: payload.identifier,
             teamType: payload.teamType
         })
-        .then(response => {
-            console.log('create_new_team', response);
-
-            if (response.data.success)
+            .then(response =>
             {
-                Vue.$vToastify.success({
-                    title,
-                    body,
-                    position: 'top-right'
-                });
+                console.log('create_new_team', response);
 
-                context.commit('decrementUsersRemainingTeams');
-
-                if (! context.rootState.user.user.active_team)
+                if (response.data.success)
                 {
-                    context.commit('usersActiveTeam', response.data.team_id);
-
                     Vue.$vToastify.success({
-                        title: joinedTeamTitle,
-                        body: joinedTeamBody,
+                        title,
+                        body,
+                        position: 'top-right'
+                    });
+
+                    context.commit('decrementUsersRemainingTeams');
+
+                    if (! context.rootState.user.user.active_team)
+                    {
+                        context.commit('usersActiveTeam', response.data.team_id);
+
+                        Vue.$vToastify.success({
+                            title: joinedTeamTitle,
+                            body: joinedTeamBody,
+                            position: 'top-right'
+                        });
+                    }
+                }
+
+                else
+                {
+                    Vue.$vToastify.error({
+                        title: error_title,
+                        body: error_body,
                         position: 'top-right'
                     });
                 }
-            }
-
-            else
+            })
+            .catch(error =>
             {
-                Vue.$vToastify.error({
-                    title: error_title,
-                    body: error_body,
-                    position: 'top-right'
-                });
-            }
-        })
-        .catch(error => {
-            console.error('create_new_team', error.response.data.errors);
+                console.error('create_new_team', error.response.data.errors);
 
-            context.commit('teamErrors', error.response.data.errors);
-        });
+                context.commit('teamErrors', error.response.data.errors);
+            });
     },
 
     /**
@@ -104,14 +108,16 @@ export const actions = {
                 period: payload
             }
         })
-        .then(response => {
-            console.log('get_combined_teams_effort', response);
+            .then(response =>
+            {
+                console.log('get_combined_teams_effort', response);
 
-            context.commit('combinedTeamEffort', response.data);
-        })
-        .catch(error => {
-            console.error('get_combined_teams_effort', error);
-        });
+                context.commit('combinedTeamEffort', response.data);
+            })
+            .catch(error =>
+            {
+                console.error('get_combined_teams_effort', error);
+            });
     },
 
     /**
@@ -124,15 +130,17 @@ export const actions = {
                 team_id: payload
             }
         })
-        .then(response => {
-            console.log('get_team_members', response);
+            .then(response =>
+            {
+                console.log('get_team_members', response);
 
-            context.commit('paginatedTeamMembers', response.data.result);
+                context.commit('paginatedTeamMembers', response.data.result);
             // todo - take out total_members into separate request
-        })
-        .catch(error => {
-            console.error('get_team_members', error);
-        });
+            })
+            .catch(error =>
+            {
+                console.error('get_team_members', error);
+            });
     },
 
     /**
@@ -141,12 +149,14 @@ export const actions = {
     async GET_TEAM_TYPES (context)
     {
         await axios.get('/teams/get-types')
-            .then(response => {
+            .then(response =>
+            {
                 console.log('get_team_types', response);
 
                 context.commit('teamTypes', response.data);
             })
-            .catch(error => {
+            .catch(error =>
+            {
                 console.error('get_team_types', error);
             });
     },
@@ -157,12 +167,14 @@ export const actions = {
     async GET_USERS_TEAMS (context)
     {
         await axios.get('/teams/joined')
-            .then(response => {
+            .then(response =>
+            {
                 console.log('get_users_teams', response);
 
                 context.commit('usersTeams', response.data);
             })
-            .catch(error => {
+            .catch(error =>
+            {
                 console.error('get_users_teams', error);
             });
     },
@@ -178,50 +190,52 @@ export const actions = {
         const body = 'Congratulations! You have joined a new team!'; // todo - insert team name, translate
 
         const failTitle = i18n.t('notifications.error');
-        const failBody = 'Sorry, we could not find a team with this identifier.' // todo - insert identifier, translate
+        const failBody = 'Sorry, we could not find a team with this identifier.'; // todo - insert identifier, translate
 
         const alreadyJoinedbody = 'You have already joined this team!'; // todo - translate
 
         await axios.post('/teams/join', {
             identifier: payload
         })
-        .then(response => {
-            console.log('join_team', response);
-
-            // show notification
-            if (response.data.success)
+            .then(response =>
             {
+                console.log('join_team', response);
+
+                // show notification
+                if (response.data.success)
+                {
                 // success
-                Vue.$vToastify.success({
-                    title,
-                    body,
-                    position: 'bottom-right'
-                });
-            }
+                    Vue.$vToastify.success({
+                        title,
+                        body,
+                        position: 'bottom-right'
+                    });
+                    context.commit('hideModal');
+                }
 
-            else if (response.data.msg === 'already-joined')
+                else if (response.data.msg === 'already-joined')
+                {
+                    Vue.$vToastify.info({
+                        title: 'Hold on!',
+                        body: alreadyJoinedbody,
+                        position: 'bottom-right'
+                    });
+                }
+
+                else
+                {
+                    Vue.$vToastify.error({
+                        title: failTitle,
+                        body: failBody,
+                    });
+                }
+            })
+            .catch(error =>
             {
-                Vue.$vToastify.info({
-                    title: 'Hold on!',
-                    body: alreadyJoinedbody,
-                    position: 'bottom-right'
-                });
-            }
+                console.error('join_team', error);
 
-            else
-            {
-                Vue.$vToastify.error({
-                    title: failTitle,
-                    body: failBody,
-                    position: 'bottom-right'
-                });
-            }
-        })
-        .catch(error => {
-            console.error('join_team', error);
-
-            context.commit('teamErrors', error.response.data.errors);
-        });
+                context.commit('teamErrors', error.response.data.errors);
+            });
     },
 
     /**
@@ -234,14 +248,14 @@ export const actions = {
                 team_id: payload
             }
         })
-        .then(response => {
-            console.log('previous_members_page', response);
+            .then(response => {
+                console.log('previous_members_page', response);
 
-            context.commit('paginatedTeamMembers', response.data.result);
-        })
-        .catch(error => {
-            console.error('previous_members_page', error);
-        });
+                context.commit('paginatedTeamMembers', response.data.result);
+            })
+            .catch(error => {
+                console.error('previous_members_page', error);
+            });
     },
 
     /**
@@ -254,14 +268,14 @@ export const actions = {
                 team_id: payload
             }
         })
-        .then(response => {
-            console.log('next_members_page', response);
+            .then(response => {
+                console.log('next_members_page', response);
 
-            context.commit('paginatedTeamMembers', response.data.result);
-        })
-        .catch(error => {
-            console.error('next_members_page', error);
-        });
+                context.commit('paginatedTeamMembers', response.data.result);
+            })
+            .catch(error => {
+                console.error('next_members_page', error);
+            });
     }
 
-}
+};

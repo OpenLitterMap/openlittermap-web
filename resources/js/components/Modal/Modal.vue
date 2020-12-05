@@ -1,20 +1,20 @@
 <template>
     <transition name="modal">
-        <div @click="close" class="modal-mask modal-flex">
-            <div @click.stop :class="container">
-
+        <div class="modal-mask modal-flex" @click="close">
+            <div :class="container" @click.stop>
                 <!-- Header -->
                 <header :class="header">
-                    <p class="modal-card-title">{{ title }}</p>
+                    <p class="modal-card-title">
+                        {{ title }}
+                    </p>
                     <i v-show="showIcon" class="fa fa-times close-login" @click="close" />
                 </header>
 
                 <!-- Main content -->
                 <component
-                    :class="inner_container"
                     :is="modalTypes[type]"
+                    :class="inner_container"
                 />
-
             </div>
         </div>
     </transition>
@@ -22,26 +22,20 @@
 
 <script>
 /* Auth */
-import Login from './Auth/Login'
+import Login from './Auth/Login';
 
 /* Payments */
-import CreditCard from './Payments/CreditCard'
+import CreditCard from './Payments/CreditCard';
+
+/* Join Team */
+import JoinTeam from '../../views/Teams/JoinTeam';
 
 export default {
     name: 'Modal',
     components: {
         Login,
-        CreditCard
-    },
-    mounted ()
-    {
-        // Close modal with 'esc' key
-        document.addEventListener('keydown', (e) => {
-            if (e.keyCode == 27)
-            {
-                this.close();
-            }
-        });
+        CreditCard,
+        JoinTeam
     },
     data ()
     {
@@ -51,7 +45,8 @@ export default {
             processing: false,
             modalTypes: {
                 'Login': 'Login',
-                'CreditCard': 'CreditCard'
+                'CreditCard': 'CreditCard',
+                'JoinTeam': 'JoinTeam'
             }
         };
     },
@@ -137,6 +132,17 @@ export default {
             return false;
         },
     },
+    mounted ()
+    {
+        // Close modal with 'esc' key
+        document.addEventListener('keydown', (e) =>
+        {
+            if (e.keyCode == 27)
+            {
+                this.close();
+            }
+        });
+    },
     methods: {
 
         /**
@@ -161,7 +167,7 @@ export default {
             this.$store.commit('hideModal');
         }
     }
-}
+};
 </script>
 
 <style scoped lang="scss">
