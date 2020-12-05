@@ -172,7 +172,7 @@ class TeamsController extends Controller
 
         $result = $query->users()
             ->withPivot('total_photos', 'total_litter', 'updated_at')
-            ->orderBy('pivot_total_litter')
+            ->orderBy('pivot_total_litter', 'desc')
             ->simplePaginate(10, [
                 // include these fields
                 'users.id',
