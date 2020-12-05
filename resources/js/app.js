@@ -17,19 +17,19 @@ import VueEcho from 'vue-echo-laravel'
 import RootContainer from './views/RootContainer'
 
 // assign global variables
-window.axios = axios;
+window.axios = axios
 
-Vue.use(VueRouter);
-Vue.use(VueLocalStorage);
-Vue.use(VueSweetalert2);
+Vue.use(VueRouter)
+Vue.use(VueLocalStorage)
+Vue.use(VueSweetalert2)
 Vue.use(VueToastify, {
     theme: 'light',
     errorDuration: 5000,
     position: 'top-right'
-},);
+});
 // Vue.use(VueMask)
-Vue.use(VueNumber);
-Vue.use(VueEcho, window.Echo);
+Vue.use(VueNumber)
+Vue.use(VueEcho, window.Echo)
 
 // Format a number with commas: "10,000"
 Vue.filter('commas', value =>
@@ -44,22 +44,5 @@ const vm = new Vue({
     i18n,
     components: {
         RootContainer
-    },
-    created ()
-    {
-        // ProgressBar
-        this.$on('percent', function (pcnt)
-        {
-            this.progressPercent = pcnt;
-        });
-    },
-    methods: {
-        /**
-         * Delete the welcome div when a user verifies their email address
-         */
-        deleteEmailSession ()
-        {
-            document.getElementById('#emaildiv').delay(500).slideUp(300);
-        }
     }
 });
