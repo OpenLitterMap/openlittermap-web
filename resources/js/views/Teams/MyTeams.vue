@@ -231,7 +231,7 @@ export default {
         {
             if (this.changing) return '...';
 
-            return users_active_team === this.viewTeam ? 'Active' : 'Inactive';
+            return parseInt(users_active_team) === parseInt(this.viewTeam) ? 'Active' : 'Inactive';
         },
 
         /**
