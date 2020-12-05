@@ -84,6 +84,7 @@ export default {
             btn: 'button is-medium is-primary ml1',
             loading: false,
             processing: false,
+            changing: false,
             viewTeam: null // the team the user is currently looking at. Different team = load different list of members
         };
     },
@@ -206,7 +207,11 @@ export default {
          */
         async changeViewedTeam ()
         {
+            this.changing = true;
+
             await this.$store.dispatch('GET_TEAM_MEMBERS', this.viewTeam);
+
+            this.changing = false;
         },
 
         /**
@@ -224,6 +229,8 @@ export default {
          */
         checkActiveTeamText (users_active_team)
         {
+            if (this.changing) return '...';
+
             return users_active_team === this.viewTeam ? 'Active' : 'Inactive';
         },
 
