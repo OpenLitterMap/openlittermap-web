@@ -43,7 +43,7 @@
                                             :src="medal(index)"
                                             class="medal"
                                         />
-                                        <span>{{ index + 1 }}</span>
+                                        <span>{{ getRank(index) }}</span>
                                     </div>
                                 </td>
                                 <td>{{ member.name }}</td>
@@ -245,6 +245,16 @@ export default {
             if (this.changing) return '...';
 
             return active_team_id === this.viewTeam ? 'Active' : 'Inactive';
+        },
+
+        /**
+         * Return the correct position for every rank in the leaderboard
+         */
+        getRank (index)
+        {
+            if (this.members.current_page === 1) return index + 1; // 1-10
+
+            return (index + 1) + ((this.members.current_page -1) * 10); // 11-19
         },
 
         /**
