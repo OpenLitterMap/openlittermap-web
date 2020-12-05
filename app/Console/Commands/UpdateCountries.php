@@ -104,6 +104,9 @@ class UpdateCountries extends Command
                 echo "Country total " . $country_total . "\n";
             }
 
+            $country->total_litter = $country_total;
+            $country->save();
+
             $total += $country_total;
 
             echo "\n \n";

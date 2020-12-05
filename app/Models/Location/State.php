@@ -13,6 +13,7 @@ class State extends Model
 		'created_at',
 		'updated_at',
 		'total_images',
+        'total_litter',
 		'total_smoking',
 		'total_cigaretteButts',
         'total_dumping',

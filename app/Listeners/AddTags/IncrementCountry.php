@@ -31,8 +31,8 @@ class IncrementCountry
             if ($event->total_sanitary)     $country->total_sanitary    += $event->total_sanitary;
             if ($event->total_softdrinks)   $country->total_softdrinks  += $event->total_softdrinks;
             if ($event->total_smoking)      $country->total_smoking     += $event->total_smoking;
-            // $country->total_litter += $event->total_count; todo - add this column
 
+            $country->total_litter += $event->total_count;
             $country->total_images++;
             $country->save();
         }

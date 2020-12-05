@@ -16,6 +16,7 @@ class Country extends Model
         'created_at',
         'updated_at',
         'total_images',
+        'total_litter',
         'total_smoking',
         'total_cigaretteButts',
         'total_plasticBottles',
@@ -34,7 +35,7 @@ class Country extends Model
         'countrynameb',
         'littercoin_paid',
         'created_by',
-        'photos_per_month'
+        'photos_per_month',
     ];
 
     public function getRouteKeyName()

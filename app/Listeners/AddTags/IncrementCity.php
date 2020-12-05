@@ -32,8 +32,8 @@ class IncrementCity
             if ($event->total_sanitary)     $city->total_sanitary    += $event->total_sanitary;
             if ($event->total_softdrinks)   $city->total_softdrinks  += $event->total_softdrinks;
             if ($event->total_smoking)      $city->total_smoking     += $event->total_smoking;
-            // $country->total_litter += $event->total_count; todo - add this column
 
+            $city->total_litter += $event->total_count;
             $city->total_images++;
             $city->save();
         }

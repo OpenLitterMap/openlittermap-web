@@ -14,6 +14,7 @@ class City extends Model
 		'created_at',
 		'updated_at',
 		'total_images',
+        'total_litter',
 		'total_smoking',
 		'total_cigaretteButts',
 		'total_food',
@@ -33,7 +34,6 @@ class City extends Model
 		'manual_verify',
 		'littercoin_paid',
 		'created_by',
-        'total_litter'
 	];
 
 	/**
