@@ -4,7 +4,7 @@
             <section class="section is-link is-bold">
 
                 <!-- Global Leaderboard -->
-                <div class="container mt3">
+                <div class="container">
                     <h3 class="title is-2 has-text-centered">{{ $t('location.maps4') }}</h3>
 
                     <loading v-if="loading" :active.sync="loading" :is-full-page="true" />
