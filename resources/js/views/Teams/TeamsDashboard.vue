@@ -1,7 +1,7 @@
 <template>
     <section class="tdc">
         <p class="subtitle is-centered is-3">Teams Dashboard</p>
-        <p class="mb1">Here you can find the combined impact made by all the teams you have joined.</p>
+        <p class="teams-dashboard-subtitle">Here you can find the combined impact made by all the teams you have joined.</p>
 
         <div class="columns">
             <div class="column teams-card">
@@ -114,4 +114,21 @@ export default {
         margin: 1em;
         padding: 5em;
     }
+
+    .teams-dashboard-subtitle {
+        margin-bottom: 1em;
+    }
+
+    @media screen and (max-width: 768px)
+    {
+        .teams-card {
+            padding: 3em;
+        }
+
+        .teams-dashboard-subtitle {
+            margin-bottom: 2em;
+        }
+    }
+
+
 </style>

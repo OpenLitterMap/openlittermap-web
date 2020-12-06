@@ -117,4 +117,12 @@ export default {
         font-weight: 600;
         margin-bottom: 1em;
     }
+
+    @media screen and (max-width: 768px)
+    {
+        .jtc {
+            margin-top: 0;
+            margin-left: 0;
+        }
+    }
 </style>

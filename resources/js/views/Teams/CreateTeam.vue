@@ -176,4 +176,12 @@ export default {
         margin-top: 1em;
         margin-left: 5em;
     }
+
+    @media screen and (max-width: 768px)
+    {
+        .ctc {
+            margin-top: 0;
+            margin-left: 0;
+        }
+    }
 </style>

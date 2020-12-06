@@ -1,5 +1,7 @@
 <template>
     <section>
+
+        <!-- remove margin-right on mobile -->
         <div class="columns">
 
             <div class="column is-one-fifth teams-left-col">
@@ -11,7 +13,8 @@
                 </div>
             </div>
 
-            <div class="column pt3" style="background-color: #edf1f4;">
+            <!-- add padding-left 2em on mobile -->
+            <div class="column pt3 mobile-teams-padding" style="background-color: #edf1f4;">
                 <p v-if="loading">Loading...</p>
 
                 <component v-else :is="type" />
@@ -73,7 +76,9 @@ export default {
 }
 </script>
 
-<style scoped>
+<style lang="scss">
+
+    @import '../../styles/variables.scss';
 
     .fa-users {
         font-size: 1.75rem !important;
@@ -85,6 +90,7 @@ export default {
         cursor: pointer;
     }
 
+    /* remove height on mobile */
     .teams-left-col {
         background-color: #232d3f;
         height: calc(100vh - 70px);
@@ -103,4 +109,24 @@ export default {
         margin-top: 1em;
         margin-bottom: 1em;
     }
+
+    @include media-breakpoint-down (sm)
+    {
+        .columns {
+            margin-right: 0;
+        }
+
+        .teams-left-col {
+            background-color: #232d3f;
+            height: 100%;
+            padding-left: 2em;
+            color: #d3d8e0;
+        }
+
+        .mobile-teams-padding {
+            padding-left: 2.5em;
+            padding-bottom: 5em;
+        }
+    }
+
 </style>
