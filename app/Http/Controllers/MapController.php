@@ -55,10 +55,9 @@ class MapController extends Controller
             // Get Creator info
             $country = $this->getCreatorInfo($country);
 
-            // Get Leaderboard. Should load more and stop when there are 10-max as some users settings may be off.
+            // Get Leaderboard per country. Should load more and stop when there are 10-max as some users settings may be off.
 			$leaderboard_ids = Redis::zrevrange($country->country.':Leaderboard', 0, 9);
 
-			// We should eager load this when countries is being requested
 			$leaders = User::whereIn('id', $leaderboard_ids)->orderBy('xp', 'desc')->get();
 
 			$arrayOfLeaders = $this->getLeaders($leaders);
@@ -186,7 +185,8 @@ class MapController extends Controller
 			  	  ->orWhere('show_username', true);
 			}])->where([
 				'country_id' => $country->id,
-				'manual_verify' => '1'
+				'manual_verify' => '1',
+                ['total_litter', '>', 0]
 			])
             ->orderBy('state', 'asc')
             ->get();
@@ -241,7 +241,6 @@ class MapController extends Controller
 		])->first();
 
         /**
-         * todo
          * Instead of loading the photos here on the city model,
          * save photos_per_day string on the city model
          */
@@ -252,8 +251,8 @@ class MapController extends Controller
 		}])
         ->where([
             ['state_id', $state->id],
-			['total_images', '>', 0]
-            // ['total_litter', '>', 0] todo - once total_litter column is working
+			['total_images', '>', 0],
+            ['total_litter', '>', 0]
 		])->orderBy('city', 'asc')->get();
 
 		foreach ($cities as $city)
