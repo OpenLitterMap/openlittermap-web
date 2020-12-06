@@ -326,9 +326,6 @@ class MapController extends Controller
 			$minTime = substr_replace($minTime,'2',0,1); //  2018-mm-dd hh:mm:ss
 		    $maxTime = substr_replace($maxTime,'2',0,1);
 
-			\Log::info(['$minTime', $minTime]);
-			\Log::info(['$maxTime', $maxTime]);
-
 			$photoData = Photo::with([
 				'smoking',
 				'food',

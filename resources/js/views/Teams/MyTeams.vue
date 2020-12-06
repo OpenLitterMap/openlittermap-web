@@ -105,7 +105,7 @@ export default {
     {
         this.loading = true;
 
-        await this.$store.dispatch('GET_USERS_TEAMS');
+        if (this.teams.length === 0) await this.$store.dispatch('GET_USERS_TEAMS');
 
         if (this.user.active_team)
         {

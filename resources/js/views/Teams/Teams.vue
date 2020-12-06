@@ -9,7 +9,7 @@
 
                 <div v-for="i in items" class="team-flex" @click="goto(i.component)">
                     <i :class="i.icon" />
-                    <p>{{ i.name }}</p>
+                    <p class="mtba">{{ i.name }}</p>
                 </div>
             </div>
 
@@ -28,10 +28,11 @@ import TeamsDashboard from './TeamsDashboard'
 import CreateTeam from './CreateTeam'
 import JoinTeam from './JoinTeam'
 import MyTeams from './MyTeams'
+import TeamSettings from './TeamSettings'
 
 export default {
     name: 'Teams',
-    components: { TeamsDashboard, CreateTeam, JoinTeam, MyTeams },
+    components: { TeamsDashboard, CreateTeam, JoinTeam, MyTeams, TeamSettings },
     async created ()
     {
         this.loading = true;
@@ -48,8 +49,9 @@ export default {
                 { id: 1, name: 'Dashboard', icon: 'fa fa-home teams-icon', component: 'TeamsDashboard' },
                 { id: 2, name: 'Join a Team', icon: 'fa fa-sign-in teams-icon', component: 'JoinTeam' },
                 { id: 3, name: 'Create a Team', icon: 'fa fa-plus teams-icon', component: 'CreateTeam' },
-                { id: 4, name: 'Your Teams', icon: 'fa fa-users teams-icon', component: 'MyTeams' }
-                // sub routes = Team members, Team charts, Team map
+                { id: 4, name: 'Your Teams', icon: 'fa fa-users teams-icon', component: 'MyTeams' },
+                // todo - sub routes = Team members, Team charts, Team map
+                { id: 5, name: 'Settings', icon: 'fa fa-gear teams-icon', component: 'TeamSettings' }
             ]
         }
     },
