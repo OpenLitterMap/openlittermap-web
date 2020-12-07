@@ -14,7 +14,7 @@ class UpdateStates extends Command
      *
      * @var string
      */
-    protected $signature = 'olm:update-states';
+    protected $signature = 'olm:test-update-states';
 
     /**
      * The console command description.
@@ -48,6 +48,8 @@ class UpdateStates extends Command
 
         foreach ($states as $state)
         {
+            echo "State.id " . $state->id . "\n";
+
             $state_total = 0;
 
             $categories = [
@@ -63,7 +65,6 @@ class UpdateStates extends Command
                 'smoking'
             ];
 
-            echo "State.id " . $state->id . "\n";
 
             $count = Photo::where([
                 'state_id' => $state->id,

@@ -14,7 +14,7 @@ class UpdateCities extends Command
      *
      * @var string
      */
-    protected $signature = 'olm:update-cities';
+    protected $signature = 'olm:test-update-cities';
 
     /**
      * The console command description.
