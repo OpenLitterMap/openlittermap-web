@@ -1,40 +1,27 @@
 <?php
 
-namespace App\Console\Commands;
+namespace App\Console\Commands\Locations;
 
-use App\Models\Location\Country;
+use App\Models\Location\State;
 use App\Models\Photo;
 
-use App\Models\Litter\Categories\Smoking;
-use App\Models\Litter\Categories\Alcohol;
-use App\Models\Litter\Categories\Coffee;
-use App\Models\Litter\Categories\Food;
-use App\Models\Litter\Categories\SoftDrinks;
-use App\Models\Litter\Categories\Drugs;
-use App\Models\Litter\Categories\Sanitary;
-use App\Models\Litter\Categories\Other;
-use App\Models\Litter\Categories\Coastal;
-use App\Models\Litter\Categories\Pathway;
-use App\Models\Litter\Categories\Art;
-use App\Models\Litter\Categories\Brand;
-use App\Models\Litter\Categories\TrashDog;
 use Illuminate\Console\Command;
 
-class UpdateCountries extends Command
+class UpdateStates extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'olm:update-countries';
+    protected $signature = 'olm:update-states';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Refresh all values for countries verified data';
+    protected $description = 'Refresh all values for states verified data';
 
     /**
      * Create a new command instance.
@@ -53,13 +40,13 @@ class UpdateCountries extends Command
      */
     public function handle()
     {
-        $countries = Country::all();
+        $states = State::all();
 
         $total = 0;
 
-        foreach ($countries as $country)
+        foreach ($states as $state)
         {
-            $country_total = 0;
+            $state_total = 0;
 
             $categories = [
                 'alcohol',
@@ -74,10 +61,10 @@ class UpdateCountries extends Command
                 'smoking'
             ];
 
-            echo "Country.id " . $country->id . "\n";
+            echo "State.id " . $state->id . "\n";
 
             $count = Photo::where([
-                'country_id' => $country->id,
+                'state_id' => $state->id,
                 'verified' => 2
             ])->count();
 
@@ -88,7 +75,7 @@ class UpdateCountries extends Command
                 $category_id = $category . '_id';
                 $category_total = 0;
 
-                $photos = Photo::where('verified', 2)->where('country_id', $country->id)->whereNotNull($category_id)->get();
+                $photos = Photo::where('verified', 2)->where('state_id', $state->id)->whereNotNull($category_id)->get();
 
                 echo "category count " . sizeof($photos). "\n";
 
@@ -99,15 +86,15 @@ class UpdateCountries extends Command
 
                 echo "Category total " . $category_total . "\n";
 
-                $country_total += $category_total;
+                $state_total += $category_total;
 
-                echo "Country total " . $country_total . "\n";
+                echo "Country total " . $state_total . "\n";
             }
 
-            $country->total_litter = $country_total;
-            $country->save();
+            $state->total_litter = $state_total;
+            $state->save();
 
-            $total += $country_total;
+            $total += $state_total;
 
             echo "\n \n";
         }
