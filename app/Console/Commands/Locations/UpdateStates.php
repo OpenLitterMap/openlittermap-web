@@ -42,6 +42,8 @@ class UpdateStates extends Command
     {
         $states = State::all();
 
+        echo "Total states " . sizeof($states) . "\n";
+
         $total = 0;
 
         foreach ($states as $state)
@@ -88,7 +90,7 @@ class UpdateStates extends Command
 
                 $state_total += $category_total;
 
-                echo "Country total " . $state_total . "\n";
+                echo "State total " . $state_total . "\n";
             }
 
             $state->total_litter = $state_total;
