@@ -220,7 +220,7 @@ export default {
 	computed: {
 
 	    /**
-         * Add ' is-loading' when processing
+         * Add spinner when processing
          */
 	    button ()
         {
