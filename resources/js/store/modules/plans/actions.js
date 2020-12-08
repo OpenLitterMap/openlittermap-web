@@ -23,8 +23,6 @@ export const actions = {
             {
                 // translate
                 alert('Congratulations! Your free account has been created. Please verify your email to activate login');
-
-                // login
             }
 
             // Load stripe for a subscription
@@ -36,7 +34,7 @@ export const actions = {
                 // });
 
                 // For now - stripes checkout page
-                const stripe = Stripe(process.env.MIX_STRIPE_KEY);
+                const stripe = Stripe(process.env.MIX_STRIPE_PUBLIC_KEY);
 
                 let successUrl = window.location.href + '&status=success';
                 let cancelUrl = window.location.href + '&status=error';
@@ -52,7 +50,7 @@ export const actions = {
                 });
             }
 
-            // log the user in
+            // log the user in?
         })
         .catch(error => {
             console.log('error.create_account', error);
