@@ -5,8 +5,6 @@ export const actions = {
      */
     async CREATE_ACCOUNT (context, payload)
     {
-        console.log('CREATE_ACCOUNT', payload);
-
         await axios.post('/register', {
             name: payload.name,
             username: payload.username,
