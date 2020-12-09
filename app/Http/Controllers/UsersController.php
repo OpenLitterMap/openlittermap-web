@@ -173,29 +173,29 @@ class UsersController extends Controller
     /*
     * Change the avatar image of the authenticated user ( & pass in the photos again )
     */
-    // public function update_avatar(Request $request) {
-    //     // Handle the user upload of avatar
+    public function updateAvatar(Request $request) {
+        // Handle the user upload of avatar
 
-    //     $file = $request->file('avatar');
+        $file = $request->file('avatar');
 
-    //     if ($file == null) {
-    //         return redirect()->back();
-    //     }
+        if ($file == null) {
+            return redirect()->back();
+        }
 
-    //     $user = Auth::user();
-    //     if($request->hasFile('avatar')) {
-    //         // the user has decided to upload a new avatar
-    //         $avatar = $request->file('avatar');
-    //         $filename = time() . $avatar->getClientOriginalName();
-    //         // Image::make($avatar->getRealPath())->resize(300, 300)->save(public_path('uploads/' . $user->id . '/avatar' . '/' . $filename));
+        $user = Auth::user();
+        if($request->hasFile('avatar')) {
+            // the user has decided to upload a new avatar
+            $avatar = $request->file('avatar');
+            $filename = time() . $avatar->getClientOriginalName();
+            // Image::make($avatar->getRealPath())->resize(300, 300)->save(public_path('uploads/' . $user->id . '/avatar' . '/' . $filename));
 
-    //         $user->avatar = $filename;
-    //         $user->save();
-    //         $file->move('uploads/' . $user->id . '/avatar' . '/', $filename);
-    //         // $photos = Photo::orderBy('created_at', 'desc')->paginate(10);
-    //     }
-    //     return view('user.settings', array('user' => Auth::user()));
-    // }
+            $user->avatar = '/uploads/' . $user->id . '/avatar' . '/'.$filename;
+            $user->save();
+            $file->move('uploads/' . $user->id . '/avatar' . '/', $filename);
+            // $photos = Photo::orderBy('created_at', 'desc')->paginate(10);
+        }
+        return ['message' => 'success'];
+    }
 
 
     /**

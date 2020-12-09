@@ -1,4 +1,4 @@
-import { init } from './init'
+import { init } from './init';
 
 export const mutations = {
 
@@ -6,7 +6,7 @@ export const mutations = {
      * Settings.details
      */
     changeUserEmail (state, payload)
-    {team
+    {
         state.user.email = payload;
     },
 
@@ -25,7 +25,10 @@ export const mutations = {
     {
         state.user.username = payload;
     },
-
+    changeUserAvatar (state, payload)
+    {
+        state.user.avatar = payload;
+    },
     /**
      * When the user successfully creates a team, we need to decrement the remaining teams on the frontend
      */

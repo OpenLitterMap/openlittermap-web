@@ -1,37 +1,37 @@
 <template>
-	<div class="container mt5">
-		<div class="columns">
-			<div class="column is-2">
-				<aside id="panel" class="menu">
-				    <p class="menu-label">
-				        {{ $t('settings.common.general') }}
-				    </p>
-				    <ul class="menu-list">
-				        <li v-for="link in links">
-				    	    <router-link :to="'/settings/' + link" @click.native="change(link)">
+    <div class="container mt-5">
+        <div class="columns">
+            <div class="column is-2">
+                <aside id="panel" class="menu">
+                    <p class="menu-label">
+                        {{ $t('settings.common.general') }}
+                    </p>
+                    <ul class="menu-list">
+                        <li v-for="link in links">
+                            <router-link :to="'/settings/' + link" @click.native="change(link)">
                                 {{ translate(link) }}
-				    	    </router-link>
-				        </li>
-				    </ul>
-				</aside>
-			</div>
-			<div class="column is-three-quarters is-offset-1">
-                <component :is="this.types[this.link]" />
-			</div>
-		</div>
-	</div>
+                            </router-link>
+                        </li>
+                    </ul>
+                </aside>
+            </div>
+            <div class="column is-three-quarters is-offset-1">
+                <component :is="types[link]" />
+            </div>
+        </div>
+    </div>
 </template>
 
 <script>
-import Password from './settings/Password'
-import Details from './settings/Details'
-import Account from './settings/Account'
-import Payments from './settings/Payments'
-import Privacy from './settings/Privacy'
-import Littercoin from './settings/Littercoin'
-import Presence from './settings/Presence'
-import Emails from './settings/Emails'
-import GlobalFlag from './settings/GlobalFlag'
+import Password from './settings/Password';
+import Details from './settings/Details';
+import Account from './settings/Account';
+import Payments from './settings/Payments';
+import Privacy from './settings/Privacy';
+import Littercoin from './settings/Littercoin';
+import Presence from './settings/Presence';
+import Emails from './settings/Emails';
+import GlobalFlag from './settings/GlobalFlag';
 
 export default {
     name: 'Settings',
@@ -45,13 +45,6 @@ export default {
         Presence,
         Emails,
         GlobalFlag,
-    },
-    async created ()
-    {
-        if (window.location.href.split('/')[4])
-        {
-            this.link = window.location.href.split('/')[4];
-        }
     },
     data ()
     {
@@ -79,6 +72,13 @@ export default {
                 'emails': 'Emails',
                 'show-flag': 'GlobalFlag',
             }
+        };
+    },
+    async created ()
+    {
+        if (window.location.href.split('/')[4])
+        {
+            this.link = window.location.href.split('/')[4];
         }
     },
     methods: {
@@ -99,5 +99,5 @@ export default {
             return this.$t('settings.common.' + link);
         }
     }
-}
+};
 </script>
