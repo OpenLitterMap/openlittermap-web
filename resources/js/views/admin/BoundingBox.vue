@@ -34,7 +34,7 @@
                             @activate="activate"
                             @deselectNode="deselectNode"
                             @repositionTop="repositionTop"
-			    @dragEnd="dragEnd"
+                            @dragEnd="dragEnd"
                         />
 
                 </div>

@@ -5,10 +5,10 @@
              :style="{top: this.geom[0] + 'px', left: this.geom[1] + 'px', width: this.geom[2] + 'px', height: this.geom[3] + 'px'}">
 
             <div class="inner-box">
-                <div v-show="selected" class="top-node" :style="{left: (0.5 * this.geom[2] - 6) + 'px'}"  @mousedown="function(e) { selectNode(e, 0) }" />
-                <div v-show="selected" class="left-node" :style="{top: (0.5 * this.geom[3] - 6) + 'px'}" @mousedown="function(e) { selectNode(e, 1) }"/>
-                <div v-show="selected" class="bottom-node" :style="{left: (0.5 * this.geom[2] - 6) + 'px'}" @mousedown="function(e) { selectNode(e, 2) }"/>
-                <div v-show="selected" class="right-node" :style="{top: (0.5 * this.geom[3] - 6) + 'px'}" @mousedown="function(e) { selectNode(e, 3) }"/>
+                <div v-show="selected" class="node" :style="{top: -6 + 'px', left: (0.5 * this.geom[2] - 6) + 'px'}" @mousedown="function(e) { selectNode(e, 0) }" />
+                <div v-show="selected" class="node" :style="{top: (0.5 * this.geom[3] - 6) + 'px', left: -6 + 'px'}" @mousedown="function(e) { selectNode(e, 1) }"/>
+                <div v-show="selected" class="node" :style="{left: (0.5 * this.geom[2] - 6) + 'px', bottom: -6 + 'px'}" @mousedown="function(e) { selectNode(e, 2) }"/>
+                <div v-show="selected" class="node" :style="{top: (0.5 * this.geom[3] - 6) + 'px', right: -6 + 'px'}" @mousedown="function(e) { selectNode(e, 3) }"/>
             </div>
 
         </div>
@@ -90,36 +90,8 @@
         width: 100%;
     }
 
-    .top-node {
+    .node {
         position: absolute;
-        top: -6px;
-        height: 10px;
-        width: 10px;
-        background-color: #90ee90;
-        cursor: grab;
-    }
-
-    .left-node {
-        position: absolute;
-        left: -6px;
-        height: 10px;
-        width: 10px;
-        background-color: #90ee90;
-        cursor: grab;
-    }
-
-    .bottom-node {
-        position: absolute;
-        bottom: -6px;
-        height: 10px;
-        width: 10px;
-        background-color: #90ee90;
-        cursor: grab;
-    }
-
-    .right-node {
-        position: absolute;
-        right: -6px;
         height: 10px;
         width: 10px;
         background-color: #90ee90;
