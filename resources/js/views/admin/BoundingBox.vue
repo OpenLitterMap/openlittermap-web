@@ -76,7 +76,7 @@ export default {
             processing: false,
             drawingBox: {
                 active: false,
-                geom: [0, 0, 0, 0]
+                geom: [0, 0, 0, 0]                      // box top, left, width, height
             },
             boxes: [],
             activatedBox: -1,
