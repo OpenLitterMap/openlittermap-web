@@ -22,7 +22,7 @@
 
                         <Box
                             v-for="(box, i) in boxes"
-                            :key="i + box.height"
+                            :key="i"
                             :geom="box.geom"
                             :index="i"
                             :selected="box.selected"
@@ -33,7 +33,6 @@
                             @select="selectBox"
                             @activate="activate"
                             @deselectNode="deselectNode"
-                            @repositionTop="repositionTop"
                             @dragEnd="dragEnd"
                         />
 
@@ -83,9 +82,12 @@ export default {
             activatedNode: 0,
             currentX: 0,
             currentY: 0,
-            dir: [[0, 1],[1, 0],[0, 1],[1, 0]],
+            dir: [[0, 1],[1, 0],[0, 1],[1, 0]], 
             apply: [[1, 0, 0, -1],[0, 1, -1, 0],[0, 0, 0, 1],[0, 0, 1, 0]], 
-            dragBox: -1
+            dragBox: -1,
+            startPos: [0, 0],
+            startGeom: [0, 0, 0, 0],
+            c: [1, 0, 1, 0]
         };
     },
     computed: {
@@ -126,6 +128,9 @@ export default {
             this.activatedNode = nodeIndex;
             this.currentX = pageX;
             this.currentY = pageY;
+
+            this.startPos = [pageX, pageY];
+            this.startGeom = this.boxes[index].geom
         },
 
         /**
@@ -153,27 +158,43 @@ export default {
             var move = [e.pageX - this.currentX, e.pageY - this.currentY];
             this.currentX = e.pageX;
             this.currentY = e.pageY;
+            var newPos = [e.pageX, e.pageY];
 
             // Drawing box mode:
             if (this.drawingBox.active)
             {
+                var newWidth = e.offsetX - this.drawingBox.geom[1];
+                var newHeight = e.offsetY - this.drawingBox.geom[0];
+
+                if(e.target.id != "image-wrapper")
+                {
+                    newWidth = e.offsetX;
+                    newHeight = e.offsetY;
+                }
+
                 this.drawingBox = {
                     ...this.drawingBox,
-                    geom: [this.drawingBox.geom[0], this.drawingBox.geom[1], e.offsetX - this.drawingBox.geom[1], e.offsetY - this.drawingBox.geom[0]]
+                    geom: [this.drawingBox.geom[0], this.drawingBox.geom[1], newWidth, newHeight]
                 };
             }
 
-	       // Box shape adjustment mode:
-           if (this.activatedBox != -1)
-           {
-                var diff = move[0] * this.dir[this.activatedNode][0] + move[1] * this.dir[this.activatedNode][1];
+            // Box shape adjustment mode:
+            if (this.activatedBox != -1)
+            {
+                var diff = newPos[this.c[this.activatedNode]] - this.startPos[this.c[this.activatedNode]];
 
-                this.boxes[this.activatedBox].geom = [
-                    this.boxes[this.activatedBox].geom[0] + this.apply[this.activatedNode][0] * diff,
-                    this.boxes[this.activatedBox].geom[1] + this.apply[this.activatedNode][1] * diff,
-                    this.boxes[this.activatedBox].geom[2] + this.apply[this.activatedNode][2] * diff,
-                    this.boxes[this.activatedBox].geom[3] + this.apply[this.activatedNode][3] * diff
-                ];
+                var newWidth = this.startGeom[2] + this.apply[this.activatedNode][2] * diff;
+                var newHeight = this.startGeom[3] + this.apply[this.activatedNode][3] * diff;
+
+                if((newWidth > 43)&&(newHeight > 43))
+                {
+                    this.boxes[this.activatedBox].geom = [
+                        this.startGeom[0] + this.apply[this.activatedNode][0] * diff,
+                        this.startGeom[1] + this.apply[this.activatedNode][1] * diff,
+                        newWidth,
+                        newHeight
+                    ];
+                }
             }
 
             // Box dragging mode:
@@ -187,7 +208,7 @@ export default {
                 ];
             }
         },
-        
+
         /**
          * A box has been selected
          */
@@ -214,6 +235,14 @@ export default {
         },
 
         /**
+         * When a box dragging event ends: 
+         */
+        dragEnd()
+        {
+            this.dragBox = -1;
+        },
+
+        /**
          *
          */
         mouseUp ()
@@ -222,6 +251,8 @@ export default {
             {
                 if (this.drawingBox.geom[2] > 5)
                 {
+                    //console.log(this.drawingBox.geom);
+
                     this.boxes.push({
                         geom: this.drawingBox.geom,
                         selected: false,
@@ -238,16 +269,9 @@ export default {
             }
 
             this.activatedBox = -1;
-            dragEnd();
-        },
-
-        /**
-         * When a box dragging event ends: 
-         */
-        dragEnd()
-        {
-            this.dragBox = -1;
+            this.dragEnd();
         }
+
     }
 }
 </script>
