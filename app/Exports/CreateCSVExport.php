@@ -375,7 +375,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             $row->other ? $row->other->batteries : null,
             $row->other ? $row->other->elec_small : null,
             $row->other ? $row->other->elec_large : null,
-            $row->other ? $row->other->Other_Unknown : null,
+            $row->other ? $row->other->other : null,
 
             // Coastal
             $row->coastal ? $row->coastal->microplastics : null,
