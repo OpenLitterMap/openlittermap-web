@@ -3,5 +3,6 @@
     <Root-Container
         auth="{{ $auth }}"
         user="{{ $user }}"
+        verified="{{ $verified }}"
     />
 @stop
