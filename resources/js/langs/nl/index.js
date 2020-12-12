@@ -12,7 +12,7 @@ import tags from './tags.json'
 import nav from './nav.json'
 
 
-export const en = {
+export const nl = {
     common,
     creditcard,
     home,
