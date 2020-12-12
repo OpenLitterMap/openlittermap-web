@@ -25,6 +25,9 @@
                             class="app-icon"
                             @click="android"
                         />
+
+                        <!-- Work in progress! -->
+                        <!-- <Languages />-->
                     </div>
                 </div>
 
@@ -119,10 +122,11 @@
 
 <script>
 import Footer from './Footer'
+import Languages from '../../components/global/Languages'
 
 export default {
     name: 'Welcome',
-    components: { Footer },
+    components: { Footer, Languages },
     computed: {
 
         /**

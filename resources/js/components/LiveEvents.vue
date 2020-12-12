@@ -2,17 +2,23 @@
 	<div class="sidebar-menu">
 		<transition-group name="list">
 			<span v-for="event in events" :key="getKey(event)" class="list-item">
-				<div v-if="event.type === 'image'" class="event" style="background-color: #88d267;">
-					<aside class="grid-img">
-						<i class="fa fa-image" />
+
+                <div v-if="event.type === 'image'" class="event" style="background-color: #88d267;">
+                    <aside class="grid-img">
+                        <img v-if="event.countryCode" :src="countryFlag(event.countryCode)" width="35" />
+
+                        <i v-else class="fa fa-image" />
 					</aside>
 					<div class="grid-main">
 						<strong>New image</strong>
 						<br>
 						<i class="event-subtitle city-name">{{ event.city }}, {{ event.state }}</i>
 						<p class="event-subtitle">{{ event.country }}</p>
+
+                        <p v-show="event.teamName">By Team: <strong>{{ event.teamName }}</strong></p>
 					</div>
 				</div>
+
 				<div v-else-if="event.type === 'country'" class="event" style="background-color: #4bb0e0;">
 					<aside class="grid-img">
 						<i class="fa fa-flag" />
@@ -49,7 +55,16 @@
 					</aside>
 					<div class="grid-main">
 						<p class="new-user-text-wide">A new user has signed up!</p>
-						<!-- <p class="new-user-text-narrow">New User!</p> -->
+					</div>
+				</div>
+
+                <div v-else-if="event.type === 'team-created'" class="event" style="background-color: #e256fff0;">
+					<aside class="grid-img">
+						<i class="fa fa-users" />
+					</aside>
+					<div class="grid-main">
+						<p>A new Team has been created!</p>
+                        <i>Say hello to <strong>{{ event.name }}</strong>!</i>
 					</div>
 				</div>
 
@@ -64,53 +79,77 @@ import Echo from 'laravel-echo'
 import Pusher from 'pusher-js'
 
 export default {
-	name: "live-events",
+	name: 'live-events',
 	channel: 'main',
 	echo: {
 	    'ImageUploaded': (payload, vm) => {
 			vm.events.unshift({
-				type:      'image',
-				city:      payload.city,
-				state: 	   payload.state,
-				country:   payload.country,
-				imageName: payload.imageName
+				type: 'image',
+				city: payload.city,
+				state: payload.state,
+				country: payload.country,
+				imageName: payload.imageName,
+                teamName: payload.teamName,
+                countryCode: payload.countryCode
 			});
 		},
 		'NewCountryAdded': (payload, vm) => {
 			vm.events.unshift({
-				type:      'country',
-				country:   payload.country,
+				type: 'country',
+				country: payload.country,
 				countryId: payload.countryId
 			})
 		},
 		'NewStateAdded': (payload, vm) => {
 			vm.events.unshift({
-				type:    'state',
-				state:   payload.state,
+				type: 'state',
+				state: payload.state,
 				stateId: payload.stateId
 			})
 		},
 		'NewCityAdded': (payload, vm) => {
 			vm.events.unshift({
-				type:   'city',
-				city:   payload.city,
+				type: 'city',
+				city: payload.city,
 				cityId: payload.cityId
 			})
 		},
 		'UserSignedUp': (payload, vm) => {
 			vm.events.unshift({
-				type:   'new-user',
+				type: 'new-user',
 				now: payload.now
 			})
-		}
+		},
+        'TeamCreated': (payload, vm) => {
+	        vm.events.unshift({
+                type: 'team-created',
+                name: payload.name
+            });
+        }
 	},
 	data ()
     {
 		return {
+            dir: '/assets/icons/flags/',
 			events: []
 		};
 	},
 	methods: {
+
+	    /**
+         * Return location of country_flag.png
+         */
+        countryFlag (iso)
+        {
+            if (iso)
+            {
+                iso = iso.toLowerCase();
+
+                return this.dir + iso + '.png';
+            }
+
+            return '';
+        },
 
         /**
          * Return a unique key for each event
@@ -126,6 +165,8 @@ export default {
 			else if (event.type === 'city') return event.type + event.cityId;
 
 			else if (event.type === 'new-user') return event.type + event.now;
+
+			else if (event.type === 'team-created') return event.type + event.name;
 
 			return this.events.length;
 		}

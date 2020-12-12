@@ -11,10 +11,11 @@
             </div>
         </div>
 
-        <section v-for="location, index in orderedBy">
+        <!-- v-show is a temp bug fix until cities table has working total_litter column -->
+        <section v-for="location, index in orderedBy" v-show="location.total_litter > 0">
             <div v-show="category !== 'A-Z'">
                 <br>
-                <h1 style="text-align: center; color: #34495e;" class="title is-1">
+                <h1 style="color: #34495e;" class="title is-1 has-text-centered">
                     #LitterWorldCup
                 </h1>
             </div>
@@ -26,7 +27,7 @@
                     <div class="column is-3">
 
                         <!-- Name, Position and Flag-->
-                        <div style="display: flex; padding-bottom: 1em;">
+                        <div class="flex pb1">
 
                             <!-- Flag -->
                             <img v-if="type === 'country' && category !== 'A-Z'"

@@ -30,12 +30,20 @@ class UpdateStatesTable
      */
     public function handle (NewStateAdded $event)
     {
-        $state = State::create([
-            'state' => $event->state
-        ]);
+<<<<<<< HEAD
+        $country_id = Country::where('country', $event->country)
+            ->orWhere('countrynameb', $event->country)
+            ->orWhere('countrynamec', $event->country)
+            ->first()->id;
 
-        $country_id = Country::where('country', $event->country)->orWhere('countrynameb', $event->country)->first()->id;
-        $state->country_id = $country_id;
+        $state = State::create([
+            'state' => $event->state,
+            'country_id' => $country_id
+        ]);
+=======
+        $state = new State;
+        $state->state = $event->state;
+>>>>>>> master
 
         $state->save();
     }

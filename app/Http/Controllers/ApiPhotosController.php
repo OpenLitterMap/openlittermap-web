@@ -117,7 +117,11 @@ class ApiPhotosController extends Controller
             'geohash' => GeoHash::encode($lat, $lon)
         ]);
 
-        event (new ImageUploaded($this->city, $this->state, $this->country, $imageName));
+
+        $teamName = null;
+        if ($user->team) $teamName = $user->team->name;
+
+        event (new ImageUploaded($this->city, $this->state, $this->country, $this->countryCode, $imageName, $teamName));
 
         if ($user->has_uploaded_today == 0) {
               $user->has_uploaded_today = 1;

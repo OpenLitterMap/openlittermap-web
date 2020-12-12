@@ -38,12 +38,6 @@ class ResetResultString extends Command
      */
     public function handle()
     {
-        $photos = Photo::all();
-
-        foreach ($photos as $photo)
-        {
-            $photo['result_string'] = NULL;
-            $photo->save();
-        }
+        Photo::where('verified', 2)->update(['result_string' => null]);
     }
 }

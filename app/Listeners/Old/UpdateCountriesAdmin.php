@@ -183,7 +183,7 @@ class UpdateCountriesAdmin
                    $softDrinksTotal += $softdrink->styro_cup;
                    $softDrinksTotal += $softdrink->softDrinkOther;
             }
-            $country->total_softDrinks = $softDrinksTotal;
+            $country->total_softdrinks = $softDrinksTotal;
             $country->total_plasticBottles = $plasticBottleTotal;
             $country->save();
         }

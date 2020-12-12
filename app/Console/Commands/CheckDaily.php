@@ -44,21 +44,20 @@ class CheckDaily extends Command
             ['has_uploaded', 1]
         ])->get();
 
-        // If user has not uploaded, reset the counter
-        foreach($users as $user) {
-            if($user->has_uploaded_today == 0) {
+        // If user has uploaded, reset the counter
+        foreach ($users as $user)
+        {
+            if ($user->has_uploaded_today == 0)
+            {
                 $user->has_uploaded_counter = 0;
                 $user->save();
             }
-            if($user->has_uploaded_today == 1) {
+
+            if ($user->has_uploaded_today == 1)
+            {
                 $user->has_uploaded_today = 0;
                 $user->save();
             }
         }
-
-        // dd($today= Carbon::today()->dayOfWeek);
-        // foreach($users as $user) {
-        //     dd($user->photos->reverse()->first()->created_at->dayOfWeek);
-        // }
     }
 }

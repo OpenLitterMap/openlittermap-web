@@ -25,6 +25,10 @@
                             {{ $t('nav.admin')}}
                         </router-link>
 
+                        <a v-if="admin" href="/horizon" class="navbar-item">
+                            Horizon
+                        </a>
+
                         <!-- About -->
                         <router-link to="/about" class="navbar-item">
                               {{ $t('nav.about')}}
@@ -63,6 +67,11 @@
 <!--                                    <router-link to="/profile" class="navbar-item drop-item">-->
 <!--                                        Profile-->
 <!--                                    </router-link>-->
+
+                                    <!-- Teams -->
+                                    <router-link to="/teams" class="navbar-item drop-item">
+                                        {{ $t('nav.teams') }}
+                                    </router-link>
 
                                     <!-- Settings -->
                                     <router-link to="/settings/password" class="navbar-item drop-item">

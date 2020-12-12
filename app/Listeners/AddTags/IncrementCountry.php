@@ -11,16 +11,6 @@ use Illuminate\Queue\InteractsWithQueue;
 class IncrementCountry
 {
     /**
-     * Create the event listener.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        //
-    }
-
-    /**
      * Handle the event.
      *
      * @param  TagsVerifiedByAdmin  $event
@@ -28,28 +18,21 @@ class IncrementCountry
      */
     public function handle (TagsVerifiedByAdmin $event)
     {
-        $photo = Photo::find($event->photo_id);
-
-        if ($country = Country::find($photo->country_id))
+        if ($country = Country::find($event->country_id))
         {
-            $total_count = 0;
+            // todo - merge this into dynamic function
+            if ($event->total_alcohol)      $country->total_alcohol     += $event->total_alcohol;
+            if ($event->total_coastal)      $country->total_coastal     += $event->total_coastal;
+            if ($event->total_coffee)       $country->total_coffee      += $event->total_coffee;
+            if ($event->total_dumping)      $country->total_dumping     += $event->total_dumping;
+            if ($event->total_food)         $country->total_food        += $event->total_food;
+            if ($event->total_industrial)   $country->total_industrial  += $event->total_industrial;
+            if ($event->total_other)        $country->total_other       += $event->total_other;
+            if ($event->total_sanitary)     $country->total_sanitary    += $event->total_sanitary;
+            if ($event->total_softdrinks)   $country->total_softdrinks  += $event->total_softdrinks;
+            if ($event->total_smoking)      $country->total_smoking     += $event->total_smoking;
 
-            // this is going to be the same for each location
-            foreach ($photo->categories() as $category)
-            {
-                if ($photo->$category)
-                {
-                    $total = $photo->$category->total();
-
-                    $total_string = "total_" . $category; // total_smoking, total_food...
-
-                    $country->$total_string += $total;
-
-                    $total_count += $total; // total counts of all categories
-                }
-            }
-
-            $country->total_litter += $total_count;
+            $country->total_litter += $event->total_count;
             $country->total_images++;
             $country->save();
         }

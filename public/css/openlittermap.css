@@ -131,6 +131,14 @@ html {
 	margin-bottom: 5em !important;
 }
 
+.ml1 {
+    margin-left: 1em;
+}
+
+.mr1 {
+    margin-right: 1em;
+}
+
 .mt1 {
     margin-top: 1em;
 }
@@ -155,9 +163,21 @@ html {
 	margin-top: 5em !important;
 }
 
+.mtba {
+    margin: auto 0;
+}
+
 .mtb1 {
     margin-top: 1em;
     margin-bottom: 1em;
+}
+
+.p2 {
+    padding: 2em !important;
+}
+
+.pb1 {
+    padding-bottom: 1em;
 }
 
 .pb1em {
@@ -165,7 +185,7 @@ html {
 }
 
 .pb2 {
-    padding-bottom: 2em;
+    padding-bottom: 2em !important;
 }
 
 .pointer {

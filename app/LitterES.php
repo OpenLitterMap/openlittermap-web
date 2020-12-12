@@ -140,7 +140,7 @@ final class LitterES{
         "id": "softdrinks_id",
         "table": "soft_drinks",
         "class": "SoftDrinks",
-        "total": "total_softDrinks",
+        "total": "total_softdrinks",
         "types": {
             "Botella de agua plástica": {
                 "col": "waterBottle"
@@ -628,10 +628,10 @@ final class LitterES{
         if ($inst === null) $inst = new LitterES();
         return $inst;
     }
-    
+
     public function __construct(){
         $this->jsonDecoded = json_decode($this->json);
-        
+
     }
-    public function getDecodedJSON(){ return $this->jsonDecoded; } 
+    public function getDecodedJSON(){ return $this->jsonDecoded; }
 }

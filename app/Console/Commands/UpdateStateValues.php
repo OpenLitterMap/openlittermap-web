@@ -28,7 +28,7 @@ class UpdateStateValues extends Command
      *
      * @var string
      */
-    protected $signature = 'olm:update-states';
+    protected $signature = 'olm:update-state-values';
 
     /**
      * The console command description.
@@ -54,6 +54,8 @@ class UpdateStateValues extends Command
      */
     public function handle()
     {
+        echo "update-state-values \n";
+
         $states = State::all();
 
         foreach($states as $state) {
@@ -232,7 +234,7 @@ class UpdateStateValues extends Command
             $state->total_cigaretteButts = $cigaretteTotal;
             $state->total_smoking = $smokingTotal;
             $state->total_food = $foodTotal;
-            $state->total_softDrinks = $softDrinksTotal;
+            $state->total_softdrinks = $softDrinksTotal;
             $state->total_plasticBottles = $plasticBottleTotal;
             $state->total_coffee = $coffeeTotal;
             $state->total_alcohol = $alcoholTotal;

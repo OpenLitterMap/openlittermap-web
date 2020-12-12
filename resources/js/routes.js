@@ -47,6 +47,10 @@ const router = new VueRouter({
             path: '/privacy',
             component: require('./views/general/Privacy').default
         },
+        {
+            path: '/credits',
+            component: require('./views/general/Credits').default
+        },
         // Countries
         {
             path: '/world',
@@ -104,9 +108,16 @@ const router = new VueRouter({
                 middleware: [ auth ]
             }
         },
+        // {
+        //     path: '/profile',
+        //     component: require('./views/general/Profile').default,
+        //     meta: {
+        //         middleware: [ auth ]
+        //     }
+        // },
         {
-            path: '/profile',
-            component: require('./views/general/Profile').default,
+            path: '/teams',
+            component: require('./views/Teams/Teams').default,
             meta: {
                 middleware: [ auth ]
             }
@@ -153,11 +164,7 @@ const router = new VueRouter({
                 {
                     path: 'show-flag',
                     component: require('./views/settings/GlobalFlag').default,
-                }
-                // {
-                // 	path: 'teams',
-                // 	component: require('./views/Teams').default
-                // },
+                },
                 // {
                 // 	path: 'phone',
                 // 	component: require('./views/Phone').default

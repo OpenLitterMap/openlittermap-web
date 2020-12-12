@@ -137,7 +137,7 @@ final class LitterFrench{
         "id": "softdrinks_id",
         "table": "soft_drinks",
         "class": "SoftDrinks",
-        "total": "total_softDrinks",
+        "total": "total_softdrinks",
         "types": {
             "Bouteille d`eau en plastique": {
                 "col": "waterBottle"
@@ -627,15 +627,15 @@ final class LitterFrench{
         if ($inst === null) $inst = new LitterFrench();
         return $inst;
     }
-    
+
     public function __construct(){
         $this->jsonDecoded = json_decode($this->json);
     }
-    public function getDecodedJSON(){ return $this->jsonDecoded; } 
+    public function getDecodedJSON(){ return $this->jsonDecoded; }
 }
 
 
-//// USAGE 
+//// USAGE
 
 // $jsonDecoded = Litterrata::INSTANCE()->getDecodedJSON();
 
@@ -644,4 +644,4 @@ final class LitterFrench{
 // echo $jsonDecoded->$joking->$lable . "<br />\n";
 // echo $jsonDecoded->smoking->table  . "<br />\n";
 
-//// USAGE 
+//// USAGE

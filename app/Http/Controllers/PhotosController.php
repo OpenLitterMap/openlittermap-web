@@ -19,7 +19,7 @@ use App\Models\LitterTags;
 
 use Illuminate\Http\Request;
 use App\Events\ImageUploaded;
-use App\Events\PhotoVerifiedByAdmin;
+use App\Events\TagsVerifiedByAdmin;
 use App\Events\Photo\IncrementPhotoMonth;
 
 use Illuminate\Support\Facades\Redis;
@@ -62,6 +62,8 @@ class PhotosController extends Controller
 
         $file = $request->file('file'); // -> /tmp/php7S8v..
         $exif = Image::make($file)->exif();
+
+        // \Log::info(['exif', $exif]);
 
         // Check if the EXIF has GPS data
         // todo - make this error appear on the frontend dropzone.js without clicking it
@@ -120,7 +122,6 @@ class PhotosController extends Controller
 
         $filename = $file->hashName();
         $filepath = $y.'/'.$m.'/'.$d.'/'.$filename;
-        $imageName = '';
 
         // Upload the image to AWS
         if (app()->environment('production'))
@@ -129,17 +130,14 @@ class PhotosController extends Controller
             $s3->put($filepath, file_get_contents($file), 'public');
             $imageName = $s3->url($filepath);
         }
+        else $imageName = '/assets/verified.jpg';
 
         // Get phone model
         if (array_key_exists('Model', $exif))
         {
             $model = $exif["Model"];
         }
-
-        else
-        {
-            $model = 'Unknown';
-        }
+        else $model = 'Unknown';
 
         // Get coordinates
          $lat_ref = $exif["GPSLatitudeRef"];
@@ -158,12 +156,11 @@ class PhotosController extends Controller
 
         // The entire reverse geocoded result
         $revGeoCode = json_decode(file_get_contents($url), true);
-        // dd($revGeoCode);
         // The entire address as a string
         $display_name = $revGeoCode["display_name"];
         // Extract the address array
         $addressArray = $revGeoCode["address"];
-        // \Log::info(['Address', $addressArray]);
+         // \Log::info(['Address', $addressArray]);
         // dd($addressArray);
         $location = array_values($addressArray)[0];
         $road = array_values($addressArray)[1];
@@ -207,7 +204,8 @@ class PhotosController extends Controller
             'state_id' => $stateId,
             'city_id' => $cityId,
             'platform' => 'web',
-            'geohash' => $geohash
+            'geohash' => $geohash,
+            'team_id' => $user->active_team
         ]);
 
         // $user->images_remaining -= 1;
@@ -217,8 +215,11 @@ class PhotosController extends Controller
 //        $user->total_images = $totalImages;
         $user->save();
 
+        $teamName = null;
+        if ($user->team) $teamName = $user->team->name;
+
         // Broadcast this event to anyone viewing the global map
-        event (new ImageUploaded($this->city, $this->state, $this->country, $imageName));
+        event (new ImageUploaded($this->city, $this->state, $this->country, $this->countryCode, $imageName, $teamName));
 
         // Increment the { Month-Year: int } value for each location
         // Todo - this needs debugging
@@ -346,7 +347,7 @@ class PhotosController extends Controller
         {
             $photo->verification = 1;
             $photo->verified = 2;
-            event(new PhotoVerifiedByAdmin($photo->id));
+            event(new TagsVerifiedByAdmin($photo->id));
         }
 
         $photo->save();
@@ -357,6 +358,12 @@ class PhotosController extends Controller
     /**
      * Convert Degrees, Minutes and Seconds to Lat, Long
      * Cheers to Hassan for this!
+     *
+     *  "GPSLatitude" => array:3 [ might be an array
+            0 => "51/1"
+            1 => "50/1"
+            2 => "888061/1000000"
+        ]
      */
     private function dmsToDec ($lat, $long, $lat_ref, $long_ref)
     {
