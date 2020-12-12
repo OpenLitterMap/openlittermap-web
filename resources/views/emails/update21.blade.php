@@ -100,13 +100,13 @@
 
         <td bgcolor="#2ecc71" style="padding: 30px 30px 30px 30px;">
             <table border="0" cellpadding="0" cellspacing="0" width="100%" style="font-family: sans-serif;">
-                <tr>
-                    <td width="75%">
-                        &copy; OpenLitterMap & Contributors 2020.<br/>
-                        <p>If you want to unsubscribe <a href="https://openlittermap.com/emails/unsubscribe/{{ $user->sub_token }}">click this link</a></p>
-                        <p>(you can also un-subscribe and re-subscribe to our email updates in the settings)</p>
-                    </td>
-                </tr>
+{{--                <tr>--}}
+{{--                    <td width="75%">--}}
+{{--                        &copy; OpenLitterMap & Contributors 2020.<br/>--}}
+{{--                        <p>If you want to unsubscribe <a href="https://openlittermap.com/emails/unsubscribe/{{ $user->sub_token }}">click this link</a></p>--}}
+{{--                        <p>(you can also un-subscribe and re-subscribe to our email updates in the settings)</p>--}}
+{{--                    </td>--}}
+{{--                </tr>--}}
                 <tr>
                     <td align="right">
                         <table border="0" cellpadding="0" cellspacing="0">
