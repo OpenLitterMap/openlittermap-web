@@ -11,35 +11,29 @@
                     <div id="image-wrapper"
                          :style="image"
                          @mousedown.self="startDrawingBox"
-                         @mousemove="drawBox"
-                         @mouseup="stopDrawingBox"
+                         @mousemove="mouseMove"
+                         @mouseup="mouseUp"
                     >
 
                         <Box
                             v-if="drawingBox.active"
-                            :top="drawingBox.top"
-                            :left="drawingBox.left"
-                            :width="drawingBox.width"
-                            :height="drawingBox.height"
+                            :geom="drawingBox.geom"
                         />
 
                         <Box
                             v-for="(box, i) in boxes"
-                            :key="i + box.height"
+                            :key="i"
+                            :geom="box.geom"
                             :index="i"
-                            :top="box.top"
-                            :left="box.left"
-                            :width="box.width"
-                            :height="box.height"
                             :selected="box.selected"
                             :activeTop="box.activeTop"
                             :activeLeft="box.activeLeft"
                             :activeBottom="box.activeBottom"
                             :activeRight="box.activeRight"
-                            @select="selectBox(i)"
+                            @select="selectBox"
                             @activate="activate"
                             @deselectNode="deselectNode"
-                            @repositionTop="repositionTop"
+                            @dragEnd="dragEnd"
                         />
 
                 </div>
@@ -81,12 +75,19 @@ export default {
             processing: false,
             drawingBox: {
                 active: false,
-                top: 0,
-                left: 0,
-                height: 0,
-                width: 0
+                geom: [0, 0, 0, 0]                      // box top, left, width, height
             },
-            boxes: []
+            boxes: [],
+            activatedBox: -1,
+            activatedNode: 0,
+            currentX: 0,
+            currentY: 0,
+            dir: [[0, 1],[1, 0],[0, 1],[1, 0]], 
+            apply: [[1, 0, 0, -1],[0, 1, -1, 0],[0, 0, 0, 1],[0, 0, 1, 0]], 
+            dragBox: -1,
+            startPos: [0, 0],
+            startGeom: [0, 0, 0, 0],
+            c: [1, 0, 1, 0]
         };
     },
     computed: {
@@ -121,9 +122,15 @@ export default {
         /**
          * Activate a node on a box-index for reordering
          */
-        activate (node, index)
+        activate (index, nodeIndex, pageX, pageY)
         {
-            this.boxes[index][node] = true;
+            this.activatedBox = index;
+            this.activatedNode = nodeIndex;
+            this.currentX = pageX;
+            this.currentY = pageY;
+
+            this.startPos = [pageX, pageY];
+            this.startGeom = this.boxes[index].geom
         },
 
         /**
@@ -139,52 +146,81 @@ export default {
          */
         deselectNode (node, index)
         {
-            console.log('deselectNode', node, index);
             this.boxes[index][node] = false;
         },
 
         /**
          * Drag and draw the box (Top-left to bottom-right)
          */
-        drawBox (e)
+        mouseMove (e)
         {
+            // Record the relative movement of the mouse since the last call:
+            var move = [e.pageX - this.currentX, e.pageY - this.currentY];
+            this.currentX = e.pageX;
+            this.currentY = e.pageY;
+            var newPos = [e.pageX, e.pageY];
+
+            // Drawing box mode:
             if (this.drawingBox.active)
             {
+                var newWidth = e.offsetX - this.drawingBox.geom[1];
+                var newHeight = e.offsetY - this.drawingBox.geom[0];
+
+                if(e.target.id != "image-wrapper")
+                {
+                    newWidth = e.offsetX;
+                    newHeight = e.offsetY;
+                }
+
                 this.drawingBox = {
                     ...this.drawingBox,
-                    width: e.offsetX - this.drawingBox.left,
-                    height: e.offsetY - this.drawingBox.top,
+                    geom: [this.drawingBox.geom[0], this.drawingBox.geom[1], newWidth, newHeight]
                 };
             }
-        },
 
-        /**
-         *
-         */
-        repositionTop (px, index)
-        {
-            console.log('repositionTop', px);
-            
-            if (px >= 0)
+            // Box shape adjustment mode:
+            if (this.activatedBox != -1)
             {
-                this.boxes[index].top += px;
-                this.boxes[index].height -= px;
+                var diff = newPos[this.c[this.activatedNode]] - this.startPos[this.c[this.activatedNode]];
+
+                var newWidth = this.startGeom[2] + this.apply[this.activatedNode][2] * diff;
+                var newHeight = this.startGeom[3] + this.apply[this.activatedNode][3] * diff;
+
+                if((newWidth > 43)&&(newHeight > 43))
+                {
+                    this.boxes[this.activatedBox].geom = [
+                        this.startGeom[0] + this.apply[this.activatedNode][0] * diff,
+                        this.startGeom[1] + this.apply[this.activatedNode][1] * diff,
+                        newWidth,
+                        newHeight
+                    ];
+                }
             }
 
-            else
+            // Box dragging mode:
+            if (this.dragBox != -1)
             {
-                this.boxes[index].top -= px;
-                this.boxes[index].height += px;
+                this.boxes[this.dragBox].geom = [
+                    this.boxes[this.dragBox].geom[0] + move[1], 
+                    this.boxes[this.dragBox].geom[1] + move[0],
+                    this.boxes[this.dragBox].geom[2],
+                    this.boxes[this.dragBox].geom[3]
+                ];
             }
-
         },
 
         /**
          * A box has been selected
          */
-        selectBox (i)
+        selectBox (i, pageX, pageY)
         {
-            this.boxes[i].selected = true;
+            if(this.activatedBox == -1)
+            {
+                this.boxes[i].selected = true;
+                this.dragBox = i;
+                this.currentX = pageX;
+                this.currentY = pageY;
+            }
         },
 
         /**
@@ -193,28 +229,32 @@ export default {
         startDrawingBox (e)
         {
             this.drawingBox = {
-                width: 0,
-                height: 0,
-                top: e.offsetY,
-                left: e.offsetX,
                 active: true,
+                geom: [e.offsetY, e.offsetX, 0, 0]
             };
+        },
+
+        /**
+         * When a box dragging event ends: 
+         */
+        dragEnd()
+        {
+            this.dragBox = -1;
         },
 
         /**
          *
          */
-        stopDrawingBox ()
+        mouseUp ()
         {
             if (this.drawingBox.active)
             {
-                if (this.drawingBox.width > 5)
+                if (this.drawingBox.geom[2] > 5)
                 {
+                    //console.log(this.drawingBox.geom);
+
                     this.boxes.push({
-                        top: this.drawingBox.top,
-                        left: this.drawingBox.left,
-                        height: this.drawingBox.height,
-                        width: this.drawingBox.width,
+                        geom: this.drawingBox.geom,
                         selected: false,
                         activeTop: false,
                         activeLeft: false,
@@ -222,16 +262,16 @@ export default {
                         activeRight: false,
                     });
                 }
-
                 this.drawingBox = {
-                    active: false,
-                    top: 0,
-                    left: 0,
-                    height: 0,
-                    width: 0
+                    active: false, 
+                    geom: [0, 0, 0, 0]
                 }
             }
-        },
+
+            this.activatedBox = -1;
+            this.dragEnd();
+        }
+
     }
 }
 </script>
@@ -250,5 +290,5 @@ export default {
         background-size: 500px 500px;
         margin: 0 auto;
     }
-
+    
 </style>
