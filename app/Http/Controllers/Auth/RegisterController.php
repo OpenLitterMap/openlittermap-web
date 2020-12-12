@@ -93,16 +93,15 @@ class RegisterController extends Controller
     }
 
    /**
-    * The user clicks the confirm email link
+    * The user clicked the confirm email link
     */
     public function confirmEmail ($token)
     {
-        // a dynamic / magic method
-        // bool
         $verified = User::whereToken($token)->firstOrFail()->confirmEmail();
+
         $auth = false;
         $user = null;
-        if ($auth) $user = Auth::user();
+
         return view('root', compact('auth', 'user', 'verified'));
     }
 

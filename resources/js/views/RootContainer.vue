@@ -1,8 +1,11 @@
 <template>
     <div class="root-container">
         <Nav />
-        <WelcomeBanner v-bind:showEmailConfirmedBanner="showEmailConfirmedBanner" />
+
+        <WelcomeBanner :showEmailConfirmed="showEmailConfirmed" />
+
         <Modal v-show="modal" />
+
         <router-view />
     </div>
 </template>
@@ -23,16 +26,15 @@ export default {
     data ()
     {
         return {
-            showEmailConfirmedBanner: false
+            showEmailConfirmed: false
         }
     },
     created ()
     {
-        console.log(this.showEmailConfirmedBanner);
         if (this.auth)
         {
             this.$store.commit('login');
-            
+
 
             // user object is passed when the page is refreshed
             if (this.user)
@@ -46,8 +48,9 @@ export default {
         // This is needed to invalidate user.auth = true
         // which is persisted and not updated if the authenticated user forgets to manually log out
         else this.$store.commit('resetState');
-        // If Account Verified 
-        if(this.verified) this.showEmailConfirmedBanner = true;
+
+        // If Account Verified
+        if (this.verified) this.showEmailConfirmed = true;
     },
     computed: {
 
