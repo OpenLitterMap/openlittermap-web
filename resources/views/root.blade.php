@@ -4,5 +4,6 @@
         auth="{{ $auth }}"
         user="{{ $user }}"
         verified="{{ $verified }}"
-    />
+        unsub="{{ $unsub }}"
+    ></Root-Container>
 @stop

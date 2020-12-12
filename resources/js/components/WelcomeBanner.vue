@@ -11,7 +11,7 @@
 
 <script>
 export default {
-    props: ['showEmailConfirmed'],
+    props: ['showEmailConfirmed'], // todo - fix this.
     methods: {
         /**
          * Delete the welcome div when a user verifies their email address

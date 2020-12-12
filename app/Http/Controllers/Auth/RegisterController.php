@@ -101,8 +101,9 @@ class RegisterController extends Controller
 
         $auth = false;
         $user = null;
+        $unsub = false;
 
-        return view('root', compact('auth', 'user', 'verified'));
+        return view('root', compact('auth', 'user', 'verified', 'unsub'));
     }
 
 

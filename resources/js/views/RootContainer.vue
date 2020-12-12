@@ -3,6 +3,7 @@
         <Nav />
 
         <WelcomeBanner :showEmailConfirmed="showEmailConfirmed" />
+        <Unsubscribed :showUnsubscribed="showUnsubscribed" />
 
         <Modal v-show="modal" />
 
@@ -14,19 +15,22 @@
 import Nav from '../components/General/Nav'
 import Modal from '../components/Modal/Modal'
 import WelcomeBanner from '../components/WelcomeBanner'
+import Unsubscribed from '../components/Notifications/Unsubscribed'
 
 export default {
     name: 'RootContainer',
-    props: ['auth', 'user', 'verified'],
+    props: ['auth', 'user', 'verified', 'unsub'],
     components: {
         Nav,
         Modal,
-        WelcomeBanner
+        WelcomeBanner,
+        Unsubscribed
     },
     data ()
     {
         return {
-            showEmailConfirmed: false
+            showEmailConfirmed: false,
+            showUnsubscribed: false
         }
     },
     created ()
@@ -51,6 +55,7 @@ export default {
 
         // If Account Verified
         if (this.verified) this.showEmailConfirmed = true;
+        if (this.unsub) this.showUnsubscribed = true;
     },
     computed: {
 

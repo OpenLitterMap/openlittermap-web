@@ -19,8 +19,12 @@ class HomeController extends Controller
 
         $user = null;
         if ($auth) $user = Auth::user();
-        // // We set this to true when user verifies their email
+
+        // We set this to true when user verifies their email
         $verified = false;
-        return view('root', compact('auth', 'user', 'verified'));
+        // or when a user unsubscribes from emails
+        $unsub = false;
+
+        return view('root', compact('auth', 'user', 'verified', 'unsub'));
     }
 }

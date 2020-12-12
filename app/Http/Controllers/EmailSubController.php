@@ -13,19 +13,19 @@ class EmailSubController extends Controller
     /**
      * Unsubscribe an Un-authenticated user from email subscriptions via Sent Email
      */
-    public function unsubEmail(Request $request, $subToken)
+    public function unsubEmail (Request $request, $subToken)
     {
         $user = User::where('sub_token', $subToken)->first();
 
         $user->emailsub = 0;
         $user->save();
 
-        // Use the same session key as emailconfirmed
-        session()->flash('emailconfirmed', 'Your subscription to the good news has been removed. You can reactivate it later if you like!');
+        $auth = false;
+        $user = null;
+        $verified = false;
+        $unsub = true;
 
-        $locale = \Lang::locale();
-
-        return view('layouts.globalmap', compact('locale'));
+        return view('root', compact('auth', 'user', 'verified', 'unsub'));
     }
 
     /**
