@@ -313,7 +313,7 @@ Route::group(['prefix' => '/admin'], function () {
     Route::post('/ltrxgenerated', 'LTRXController@success');
 
     // Add coordinates
-    Route::get('bbox', 'AdminController@index');
+    Route::get('bbox', 'HomeController@index');
 
     Route::get('next-bb-image', 'BoundingBoxController@index');
 });
