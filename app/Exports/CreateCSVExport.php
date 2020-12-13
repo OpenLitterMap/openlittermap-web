@@ -126,6 +126,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             'tooth_pick',
             'tooth_brush',
             'sanitaryOther',
+            'hand_sanitiser',
 
             // Other
             'dogshit',
@@ -356,6 +357,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             $row->sanitary ? $row->sanitary->tooth_pick : null,
             $row->sanitary ? $row->sanitary->tooth_brush : null,
             $row->sanitary ? $row->sanitary->sanitaryOther : null,
+            $row->sanitary ? $row->sanitary->hand_sanitiser : null,
 
             // Other
             $row->other ? $row->other->dogshit : null,

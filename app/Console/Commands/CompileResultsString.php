@@ -63,7 +63,7 @@ class CompileResultsString extends Command
                     $smoking_string = '';
                     if ($smoking['butts'])
                     {
-                        $smoking_string .= 'Cigarette/Butts: ' . $smoking['butts'];
+                        $smoking_string .= 'litter.smoking.butts' . ' ' . $smoking['butts'];
                     }
                     if($smoking['lighters']){
                         $smoking_string .= ' Lighters: ' . $smoking['lighters'];
@@ -239,26 +239,29 @@ class CompileResultsString extends Command
                 if($photo['sanitary_id']){
                     $sanitary_string = '';
                     $sanitary = Sanitary::find($photo['sanitary_id']);
-                    if($sanitary['condoms']){
+                    if ($sanitary['condoms']) {
                         $sanitary_string .= ' Condoms: ' . $sanitary['condoms'];
                     }
-                    if($sanitary['nappies']){
+                    if ($sanitary['nappies']) {
                         $sanitary_string .= ' Nappies: ' . $sanitary['nappies'];
                     }
-                    if($sanitary['menstral']){
+                    if ($sanitary['menstral']) {
                         $sanitary_string .= ' Menstral: ' . $sanitary['condoms'];
                     }
-                    if($sanitary['deodorant']){
+                    if ($sanitary['deodorant']) {
                         $sanitary_string .= ' Deodorant: ' . $sanitary['deodorant'];
                     }
-                    if($sanitary['ear_swabs']){
+                    if ($sanitary['ear_swabs']) {
                         $sanitary_string .= ' Ear swabs: ' . $sanitary['ear_swabs'];
                     }
-                    if($sanitary['tooth_pick']){
+                    if ($sanitary['tooth_pick']){
                         $sanitary_string .= ' Tooth pick: ' . $sanitary['tooth_pick'];
                     }
-                    if($sanitary['sanitaryOther']){
+                    if ($sanitary['sanitaryOther']){
                         $sanitary_string .= ' Sanitary (other): ' . $sanitary['sanitaryOther'];
+                    }
+                    if ($sanitary->hand_sanitiser) {
+                        $sanitary_string .= ' Hand Sanitiser: ' . $sanitary->hand_sanitiser;
                     }
                     $photo['result_string'] .= $sanitary_string;
                 }

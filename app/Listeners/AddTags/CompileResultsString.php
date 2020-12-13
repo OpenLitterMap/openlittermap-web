@@ -280,6 +280,9 @@ class CompileResultsString
             if ($sanitary->sanitaryOther) {
                 $sanitary_string .= ' Sanitary (other): ' . $sanitary->sanitaryOther;
             }
+            if ($sanitary->hand_sanitiser) {
+                $sanitary_string .= ' Hand Sanitiser: ' . $sanitary->hand_sanitiser;
+            }
 
             $result_string .= $sanitary_string;
         }
