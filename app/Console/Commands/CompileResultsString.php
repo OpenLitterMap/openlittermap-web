@@ -63,7 +63,7 @@ class CompileResultsString extends Command
                     $smoking_string = '';
                     if ($smoking['butts'])
                     {
-                        $smoking_string .= 'litter.smoking.butts' . ' ' . $smoking['butts'];
+                        $smoking_string .= 'Cigarette/Butts: ' . $smoking['butts'];
                     }
                     if($smoking['lighters']){
                         $smoking_string .= ' Lighters: ' . $smoking['lighters'];
