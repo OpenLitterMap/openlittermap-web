@@ -99,8 +99,7 @@ export default {
          */
         image ()
         {
-            //return 'backgroundImage: url(' + this.$store.state.admin.filename + ')';
-            return 'backgroundImage: url(assets/plastic_bottles.jpg)';
+            return 'backgroundImage: url(' + this.$store.state.admin.filename + ')';
         },
 
         /**
@@ -108,7 +107,7 @@ export default {
          */
         imageId ()
         {
-            return 1;//this.$store.state.admin.id;
+            return this.$store.state.admin.id;
         },
 
         /**
@@ -116,7 +115,7 @@ export default {
          */
         loading ()
         {
-            return 0;//this.$store.state.admin.loading;
+            return this.$store.state.admin.loading;
         }
 
     },
