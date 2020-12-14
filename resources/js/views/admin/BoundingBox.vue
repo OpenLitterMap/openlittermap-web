@@ -10,7 +10,7 @@
 
                     <div id="image-wrapper"
                          :style="image"
-                         @mousedown.self="startDrawingBox"
+                         @mousedown.self="mousedownSelf"
                          @mousemove="mouseMove"
                          @mouseup="mouseUp"
                     >
@@ -47,6 +47,8 @@ import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
 
 import Box from '../../components/Admin/Box'
+
+const minBoxSize = 43;
 
 export default {
     name: 'BoundingBox',
@@ -97,7 +99,8 @@ export default {
          */
         image ()
         {
-            return 'backgroundImage: url(' + this.$store.state.admin.filename + ')';
+            //return 'backgroundImage: url(' + this.$store.state.admin.filename + ')';
+            return 'backgroundImage: url(assets/plastic_bottles.jpg)';
         },
 
         /**
@@ -105,7 +108,7 @@ export default {
          */
         imageId ()
         {
-            return this.$store.state.admin.id;
+            return 1;//this.$store.state.admin.id;
         },
 
         /**
@@ -113,7 +116,7 @@ export default {
          */
         loading ()
         {
-            return this.$store.state.admin.loading;
+            return 0;//this.$store.state.admin.loading;
         }
 
     },
@@ -186,7 +189,7 @@ export default {
                 var newWidth = this.startGeom[2] + this.apply[this.activatedNode][2] * diff;
                 var newHeight = this.startGeom[3] + this.apply[this.activatedNode][3] * diff;
 
-                if((newWidth > 43)&&(newHeight > 43))
+                if((newWidth > minBoxSize)&&(newHeight > minBoxSize))
                 {
                     this.boxes[this.activatedBox].geom = [
                         this.startGeom[0] + this.apply[this.activatedNode][0] * diff,
@@ -216,7 +219,10 @@ export default {
         {
             if(this.activatedBox == -1)
             {
+                // Record the box which has been selected, and set all other boxes to be deselected:
+                for(var b = 0; b < this.boxes.length; b++) this.boxes[b].selected = false;
                 this.boxes[i].selected = true;
+
                 this.dragBox = i;
                 this.currentX = pageX;
                 this.currentY = pageY;
@@ -226,8 +232,12 @@ export default {
         /**
          *
          */
-        startDrawingBox (e)
+        mousedownSelf (e)
         {
+            // The user has clicked outside all the boxes, so deselect all boxes:
+            for(var b = 0; b < this.boxes.length; b++) this.boxes[b].selected = false;
+
+            // Now activate box drawing mode:
             this.drawingBox = {
                 active: true,
                 geom: [e.offsetY, e.offsetX, 0, 0]
