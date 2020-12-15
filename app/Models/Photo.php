@@ -7,14 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class Photo extends Model
 {
-	/*
-	* Only these categories can be edited in the database
-	*/
     protected $fillable = [
     	'filename',
     	'model',
     	'datetime',
-    	'lat', 'lon',
+    	'lat',
+        'lon',
         'verification',
         'result_string',
 
@@ -101,7 +99,7 @@ class Photo extends Model
     }
 
     /**
-     * Contributor
+     * User who uploaded the photo
      */
     public function owner ()
     {
@@ -109,11 +107,11 @@ class Photo extends Model
     }
 
     /**
-     * Return translation key => value for every item on each category
+     * Save translation key => value for every item on each category that has a value
      */
     public function translate ()
     {
-        $result_string = '';
+        $result_string = ''; // smoking.butts 3, alcohol.beerBottles 4,
 
         foreach ($this->categories() as $category)
         {

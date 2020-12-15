@@ -9,9 +9,6 @@ class Food extends LitterCategory
     protected $table = 'food';
 
     protected $fillable = [
-        'id',
-    	'photo_id',
-
 	    'sweetWrappers',
     	'cardboardFoodPackaging',
     	'paperFoodPackaging',

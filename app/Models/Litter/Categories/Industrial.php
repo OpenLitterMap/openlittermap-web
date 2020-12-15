@@ -6,7 +6,7 @@ use App\Models\Litter\LitterCategory;
 
 class Industrial extends LitterCategory
 {
-    public $fillable = [
+    protected $fillable = [
     	'oil',
     	'chemical',
     	'plastic',

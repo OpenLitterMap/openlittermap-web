@@ -90,11 +90,11 @@ function onEachFeature (feature, layer)
             + '<p>Taken on ' + moment(feature.properties.datetime).format('LLL') +'</p>'
         );
     }
+
     else
     {
         // Zoom in cluster when click to it
-        layer.on('click', function (e)
-        {
+        layer.on('click', function (e) {
             map.setView(e.latlng, map.getZoom() + ZOOM_STEP);
         });
     }

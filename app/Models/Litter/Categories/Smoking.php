@@ -9,8 +9,6 @@ class Smoking extends LitterCategory
     protected $table = 'smoking';
 
     protected $fillable = [
-        'id',
-        'photo_id',
     	'butts',
     	'lighters',
     	'cigaretteBox',
