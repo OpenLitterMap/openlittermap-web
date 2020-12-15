@@ -25,8 +25,8 @@
                 <div :class="nav">
                     <div class="navbar-end">
                         <!-- Admin -->
-                        <router-link v-if="admin" to="/admin/photos" class="navbar-item">
-                            {{ $t('nav.admin') }}
+                        <router-link v-if="admin" to="/admin/photos" class="navbar-item" @click.native="close">
+                            {{ $t('nav.admin')}}
                         </router-link>
 
                         <a v-if="admin" href="/horizon" class="navbar-item">
@@ -34,18 +34,18 @@
                         </a>
 
                         <!-- About -->
-                        <router-link to="/about" class="navbar-item">
-                            {{ $t('nav.about') }}
+                        <router-link to="/about" class="navbar-item" @click.native="close">
+                              {{ $t('nav.about')}}
                         </router-link>
 
                         <!-- Global Map -->
-                        <router-link to="/global" class="navbar-item">
-                            {{ $t('nav.global-map') }}
+                        <router-link to="/global" class="navbar-item" @click.native="close">
+                             {{ $t('nav.global-map')}}
                         </router-link>
 
                         <!-- World Cup -->
-                        <router-link to="/world" class="navbar-item">
-                            {{ $t('nav.world-cup') }}
+                        <router-link to="/world" class="navbar-item" @click.native="close">
+                             {{ $t('nav.world-cup')}}
                         </router-link>
 
                         <!-- if auth -->
@@ -140,6 +140,15 @@ export default {
     },
 
     methods: {
+
+        /**
+         * Mobile - Close the nav
+         */
+        close ()
+        {
+            console.log('close');
+            this.open = false;
+        },
 
         /**
          * Show modal to log the user in

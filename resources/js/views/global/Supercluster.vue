@@ -21,7 +21,14 @@ import Languages from '../../components/global/Languages';
 // import GlobalDates from '../../components/global/GlobalDates'
 import LiveEvents from '../../components/LiveEvents';
 // import GlobalInfo from '../../components/global/GlobalInfo'
-import {CLUSTER_ZOOM_THRESHOLD, MAX_ZOOM, MEDIUM_CLUSTER_SIZE, LARGE_CLUSTER_SIZE, MIN_ZOOM, SHOW_DETAIL_ZOOM, ZOOM_STEP} from '../../constants';
+import {
+    CLUSTER_ZOOM_THRESHOLD,
+    MAX_ZOOM,
+    MEDIUM_CLUSTER_SIZE,
+    LARGE_CLUSTER_SIZE,
+    MIN_ZOOM,
+    ZOOM_STEP
+} from '../../constants';
 
 import L from 'leaflet';
 import moment from 'moment';
@@ -60,8 +67,6 @@ function createClusterIcon (feature, latlng)
  */
 function onEachFeature (feature, layer)
 {
-    // todo - on cluster, zoom on click
-
     if (! feature.properties.cluster)
     {
         layer.bindPopup(
@@ -69,6 +74,14 @@ function onEachFeature (feature, layer)
             + '<img src= "' + feature.properties.filename + '" class="mw100" />'
             + '<p>Taken on ' + moment(feature.properties.datetime).format('LLL') +'</p>'
         );
+    }
+    else
+    {
+        // Zoom in cluster when click to it
+        layer.on('click', function (e)
+        {
+            map.setView(e.latlng, map.getZoom() + ZOOM_STEP);
+        });
     }
 }
 
@@ -79,7 +92,12 @@ async function update ()
 {
     const bounds = map.getBounds();
 
-    let bbox = {'left': bounds.getWest(), 'bottom': bounds.getSouth(), 'right': bounds.getEast(), 'top': bounds.getNorth()};
+    let bbox = {
+        'left': bounds.getWest(),
+        'bottom': bounds.getSouth(),
+        'right': bounds.getEast(),
+        'top': bounds.getNorth(),
+    };
     let zoom = Math.round(map.getZoom());
 
     console.log({ zoom });
@@ -91,40 +109,46 @@ async function update ()
     if (zoom === 4 && zoom === prevZoom) return;
     if (zoom === 5 && zoom === prevZoom) return;
 
-    prevZoom = zoom; // hold previous zoom
-
     // If the zoom is less than 17, we want to load cluster data
-    if (zoom < 17)
+    if (zoom < CLUSTER_ZOOM_THRESHOLD)
     {
         await axios.get('clusters', {
             params: { zoom, bbox }
         })
-            .then(response => {
+            .then(response =>
+            {
                 console.log('get_clusters.update', response);
 
                 markers.clearLayers();
                 markers.addData(response.data);
             })
-            .catch(error => {
+            .catch(error =>
+            {
                 console.error('get_clusters.update', error);
             });
     }
-
     else
     {
         await axios.get('global-points', {
-            params: { zoom, bbox }
+            params: { zoom, bbox, },
         })
-            .then(response => {
+            .then(response =>
+            {
                 console.log('get_global_points', response);
 
-                markers.clearLayers();
+                // Clear layer if prev layer is cluster.
+                if(prevZoom < CLUSTER_ZOOM_THRESHOLD)
+                {
+                    markers.clearLayers();
+                }
                 markers.addData(response.data);
             })
-            .catch(error => {
+            .catch(error =>
+            {
                 console.error('get_global_points', error);
             });
     }
+    prevZoom = zoom; // hold previous zoom
 }
 
 export default {
@@ -167,18 +191,10 @@ export default {
             onEachFeature: onEachFeature,
         }).addTo(map);
 
-        // Zoom in cluster when click to it
-        markers.on('click', function (e){
-            // If marker is not cluster, stop zooming.
-            if(map.getZoom() >= CLUSTER_ZOOM_THRESHOLD){
-                return;
-            }
-            map.setView(e.latlng, map.getZoom() + ZOOM_STEP);
-        });
-
         markers.addData(this.$store.state.globalmap.geojson.features);
 
-        map.on('moveend', function () {
+        map.on('moveend', function ()
+        {
             update();
         });
 

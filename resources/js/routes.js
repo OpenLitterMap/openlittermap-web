@@ -16,6 +16,14 @@ const router = new VueRouter({
             component: require('./views/home/Welcome').default
         },
         {
+            path: '/confirm/email/:token',
+            component: require('./views/home/Welcome').default
+        },
+        {
+            path: '/emails/unsubscribe/:token',
+            component: require('./views/home/Welcome').default
+        },
+        {
             path: '/about',
             component: require('./views/home/About').default
         },

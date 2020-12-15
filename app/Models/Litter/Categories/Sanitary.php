@@ -24,7 +24,8 @@ class Sanitary extends LitterCategory
 	    'sanitaryOther',
         'gloves',
         'facemask',
-        'wetwipes'
+        'wetwipes',
+        'hand_sanitiser'
     ];
 
     public function photo () {
@@ -47,7 +48,8 @@ class Sanitary extends LitterCategory
             'sanitaryOther',
             'gloves',
             'facemask',
-            'wetwipes'
+            'wetwipes',
+            'hand_sanitiser'
         ];
     }
 

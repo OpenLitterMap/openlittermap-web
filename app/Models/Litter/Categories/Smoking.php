@@ -25,7 +25,7 @@ class Smoking extends LitterCategory
     ];
 
     /**
-     * The photo where this
+     * The photo related to the smoking category
      */
     public function photo () {
     	return $this->belongsTo('App\Models\Photo');

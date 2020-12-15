@@ -81,7 +81,8 @@ export const litterkeys = {
         { id: 7, key: 'tooth_pick' },   // Tooth Pick
         { id: 8, key: 'tooth_brush' },  // Tooth Brush
         { id: 9, key: 'wetwipes' },     // Wet Wipes
-        { id: 10, key: 'sanitaryOther' } // Sanitary (other)
+        { id: 10, key: 'sanitaryOther' }, // Sanitary (other)
+        { id: 11, key: 'hand_sanitiser' }, // Hand Sanitiser
     ],
     other: [
         { id: 0, key: 'dogshit' },          // Pet Surprise
