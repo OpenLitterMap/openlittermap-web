@@ -99,7 +99,8 @@ export default {
          */
         image ()
         {
-            return 'backgroundImage: url(' + this.$store.state.admin.filename + ')';
+            //return 'backgroundImage: url(' + this.$store.state.admin.filename + ')';
+            return 'backgroundImage: url(assets/plastic_bottles.jpg)';
         },
 
         /**
@@ -107,7 +108,7 @@ export default {
          */
         imageId ()
         {
-            return this.$store.state.admin.id;
+            return 1;//this.$store.state.admin.id;
         },
 
         /**
@@ -115,7 +116,7 @@ export default {
          */
         loading ()
         {
-            return this.$store.state.admin.loading;
+            return 0;//this.$store.state.admin.loading;
         }
 
     },
@@ -132,7 +133,7 @@ export default {
             this.currentY = pageY;
 
             this.startPos = [pageX, pageY];
-            this.startGeom = this.boxes[index].geom
+            this.startGeom = this.boxes[index].geom;
         },
 
         /**
@@ -219,7 +220,7 @@ export default {
             if(this.activatedBox == -1)
             {
                 // Record the box which has been selected, and set all other boxes to be deselected:
-                for(var b = 0; b < this.boxes.length; b++) this.boxes[b].selected = false;
+                this.deselectAllBoxes();
                 this.boxes[i].selected = true;
 
                 this.dragBox = i;
@@ -234,7 +235,7 @@ export default {
         mousedownSelf (e)
         {
             // The user has clicked outside all the boxes, so deselect all boxes:
-            for(var b = 0; b < this.boxes.length; b++) this.boxes[b].selected = false;
+            this.deselectAllBoxes();
 
             // Now activate box drawing mode:
             this.drawingBox = {
@@ -246,7 +247,7 @@ export default {
         /**
          * When a box dragging event ends: 
          */
-        dragEnd()
+        dragEnd ()
         {
             this.dragBox = -1;
         },
@@ -260,8 +261,6 @@ export default {
             {
                 if (this.drawingBox.geom[2] > 5)
                 {
-                    //console.log(this.drawingBox.geom);
-
                     this.boxes.push({
                         geom: this.drawingBox.geom,
                         selected: false,
@@ -274,11 +273,21 @@ export default {
                 this.drawingBox = {
                     active: false, 
                     geom: [0, 0, 0, 0]
-                }
+                };
             }
 
             this.activatedBox = -1;
             this.dragEnd();
+        },
+
+        /**
+         *
+         */
+        deselectAllBoxes ()
+        {
+            this.boxes.forEach(
+                function (box) { box.selected = false }
+            );
         }
 
     }
