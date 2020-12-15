@@ -1,105 +1,111 @@
 <template>
-	<div style="padding-left: 1em; padding-right: 1em;">
-		<h1 class="title is-4">{{ $t('settings.details.change-details')}}</h1>
-		<hr>
-		<br>
-		<div class="columns">
-			<div class="column is-one-third is-offset-1">
+    <div>
+        <h1 class="title is-4">
+            {{ $t('settings.details.change-details') }}
+        </h1>
+        <hr>
+        <div class="mb-6">
+            <form @submit.prevent="submit" @keydown="clearError($event.target.name)">
+                <!-- The users name -->
+                <label for="name">{{ $t('settings.details.your-name') }}</label>
 
-                <form @submit.prevent="submit" @keydown="clearError($event.target.name)">
+                <span
+                    v-if="errorExists('name')"
+                    class="error"
+                    v-text="getFirstError('name')"
+                />
 
-                    <!-- The users name -->
-                    <label for="name">{{ $t('settings.details.your-name')}}</label>
-
-                    <span
-                        class="error"
-                        v-if="errorExists('name')"
-                        v-text="getFirstError('name')"
-                    />
-
-                    <div class="field">
-                        <div class="control has-icons-left">
-                            <input
-                                type="text"
-                                name="name"
-                                id="name"
-                                class="input"
-                                :placeholder="name"
-                                required
-                                v-model="name"
-                            />
-                            <span class="icon is-small is-left">
-                                <i class="fa fa-user" />
-                            </span>
-                        </div>
+                <div class="field">
+                    <div class="control has-icons-left">
+                        <input
+                            id="name"
+                            v-model="name"
+                            type="text"
+                            name="name"
+                            class="input"
+                            :placeholder="name"
+                            required
+                        >
+                        <span class="icon is-small is-left">
+                            <i class="fa fa-user" />
+                        </span>
                     </div>
+                </div>
 
-                    <!-- The users username-->
-                    <label for="username">{{ $t('settings.details.unique-id')}}</label>
+                <!-- The users username-->
+                <label for="username">{{ $t('settings.details.unique-id') }}</label>
 
-                    <span
-                        class="error"
-                        v-if="errorExists('username')"
-                        v-text="getFirstError('username')"
-                    />
+                <span
+                    v-if="errorExists('username')"
+                    class="error"
+                    v-text="getFirstError('username')"
+                />
 
-                    <div class="field">
-                        <div class="control has-icons-left">
-                            <input
-                                type="text"
-                                name="username"
-                                id="username"
-                                class="input"
-                                :placeholder="username"
-                                required
-                                v-model="username"
-                            />
-                            <span class="icon is-small is-left">
-                                @
-                            </span>
-                        </div>
+                <div class="field">
+                    <div class="control has-icons-left">
+                        <input
+                            id="username"
+                            v-model="username"
+                            type="text"
+                            name="username"
+                            class="input"
+                            :placeholder="username"
+                            required
+                        >
+                        <span class="icon is-small is-left">
+                            @
+                        </span>
                     </div>
+                </div>
 
-                    <!-- The users email -->
-                    <label for="email">{{ $t('settings.details.email')}}</label>
+                <!-- The users email -->
+                <label for="email">{{ $t('settings.details.email') }}</label>
 
-                    <span
-                        class="error"
-                        v-if="errorExists('email')"
-                        v-text="getFirstError('email')"
-                    />
+                <span
+                    v-if="errorExists('email')"
+                    class="error"
+                    v-text="getFirstError('email')"
+                />
 
-                    <div class="field mb2">
-                        <div class="control has-icons-left">
-                            <input
-                                type="email"
-                                name="email"
-                                id="email"
-                                class="input"
-                                :placeholder="email"
-                                required
-                                v-model="email"
-                            />
-                            <span class="icon is-small is-left">
-                                <i class="fa fa-envelope" />
-                            </span>
-                        </div>
+                <div class="field mb2">
+                    <div class="control has-icons-left">
+                        <input
+                            id="email"
+                            v-model="email"
+                            type="email"
+                            name="email"
+                            class="input"
+                            :placeholder="email"
+                            required
+                        >
+                        <span class="icon is-small is-left">
+                            <i class="fa fa-envelope" />
+                        </span>
                     </div>
-
-                    <button :class="button" :disabled="processing">{{ $t('settings.details.update-details')}}</button>
-				</form>
-			</div>
-		</div>
-	</div>
+                </div>
+                <div class="col-md-12 has-text-centered">
+                    <button :class="button" :disabled="processing">
+                        {{ $t('settings.details.update-details') }}
+                    </button>
+                </div>
+            </form>
+        </div>
+        <emails />
+        <presence />
+    </div>
 </template>
 
 <script>
+import Emails from './Emails.vue';
+import Presence from './Presence.vue';
+
 export default {
     name: 'Details',
+    components: { Emails, Presence },
     data ()
     {
         return {
-            btn: 'button is-medium is-info',
+            btn: 'button is-normal is-info',
             processing: false
         };
     },
@@ -203,5 +209,5 @@ export default {
             this.processing = false;
         }
     }
-}
+};
 </script>

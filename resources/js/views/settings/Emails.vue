@@ -1,19 +1,17 @@
 <template>
-	<div style="padding: 0 1em;">
-		<h1 class="title is-4">{{ $t('settings.emails.toggle-email') }}</h1>
-		<hr>
-		<p>{{ $t('settings.emails.we-send-updates') }}</p>
-		<p>{{ $t('settings.emails.subscribe') }}</p>
-		<br>
-		<p><b>{{ $t('settings.emails.current-status') }}:</b></p>
-        <p><b :style="color">{{ this.computedPresence }}</b></p>
-		<br>
-		<div class="columns">
-			<div class="column is-one-third is-offset-1">
-                <button :class="button" :disabled="processing" @click="toggle">{{ $t('settings.emails.change-status') }}</button>
-			</div>
-		</div>
-	</div>
+    <div class="mb-6">
+        <h1 class="title is-4">
+            {{ $t('settings.emails.email-subscription') }}
+        </h1>
+        <hr>
+        <p>{{ $t('settings.emails.we-send-updates') }}</p>
+        <p>{{ $t('settings.emails.subscribe') }}</p>
+        <br>
+        <label class="checkbox">
+            <input v-model="computedPresence" type="checkbox" @click="toggle">
+            {{ $t('settings.emails.subscribe-to-our-emails') }}
+        </label>
+    </div>
 </template>
 
 <script>
@@ -40,7 +38,7 @@ export default {
          */
         color ()
         {
-            return this.$store.state.user.user.emailsub ? "color: green" : "color: red";
+            return this.$store.state.user.user.emailsub ? 'color: green' : 'color: red';
         },
 
         /**
@@ -48,7 +46,7 @@ export default {
          */
         computedPresence ()
         {
-            return this.$store.state.user.user.emailsub ? "Subscribed" : "Unsubscribed";
+            return !!this.$store.state.user.user.emailsub;
         }
     },
     methods: {
@@ -65,5 +63,5 @@ export default {
             this.processing = false;
         }
     }
-}
+};
 </script>

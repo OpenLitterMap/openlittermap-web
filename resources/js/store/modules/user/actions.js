@@ -1,6 +1,6 @@
-import routes from '../../../routes'
-import Vue from "vue";
-import i18n from "../../../i18n";
+import routes from '../../../routes';
+import Vue from 'vue';
+import i18n from '../../../i18n';
 
 export const actions = {
 
@@ -17,17 +17,17 @@ export const actions = {
             password: payload.password,
             password_confirmation: payload.password_confirmation
         })
-        .then(response => {
-            console.log('change_password', response);
+            .then(response => {
+                console.log('change_password', response);
 
             // success
-        })
-        .catch(error => {
-            console.log('error.change_password', error.response.data);
+            })
+            .catch(error => {
+                console.log('error.change_password', error.response.data);
 
-            // update errors. user.js
-            context.commit('errors', error.response.data.errors);
-        });
+                // update errors. user.js
+                context.commit('errors', error.response.data.errors);
+            });
     },
 
     /**
@@ -46,17 +46,17 @@ export const actions = {
         await axios.post('/settings/delete', {
             password: payload
         })
-        .then(response => {
-            console.log('delete_account', response);
+            .then(response => {
+                console.log('delete_account', response);
 
             // success
-        })
-        .catch(error => {
-            console.log('error.delete_account', error.response.data);
+            })
+            .catch(error => {
+                console.log('error.delete_account', error.response.data);
 
-            // update errors
+                // update errors
 
-        });
+            });
     },
 
     /**
@@ -65,15 +65,15 @@ export const actions = {
     async GET_CURRENT_USER (context)
     {
         await axios.get('/current-user')
-        .then(response => {
-            console.log('get_current_user', response);
+            .then(response => {
+                console.log('get_current_user', response);
 
-            context.commit('initUser', response.data);
-            context.commit('set_default_litter_presence', response.data.items_remaining);
-        })
-        .catch(error => {
-            console.log('error.get_current_user', error);
-        });
+                context.commit('initUser', response.data);
+                context.commit('set_default_litter_presence', response.data.items_remaining);
+            })
+            .catch(error => {
+                console.log('error.get_current_user', error);
+            });
     },
 
     /**
@@ -102,19 +102,19 @@ export const actions = {
             email: payload.email,
             password: payload.password
         })
-        .then(response => {
-            console.log('login_success', response);
+            .then(response => {
+                console.log('login_success', response);
 
-            context.commit('hideModal');
-            context.commit('login');
+                context.commit('hideModal');
+                context.commit('login');
 
-            window.location.href = '/upload'; // we need to force page refresh to put CSRF token in the session
-        })
-        .catch(error => {
-            console.log('error.login', error.response.data);
+                window.location.href = '/upload'; // we need to force page refresh to put CSRF token in the session
+            })
+            .catch(error => {
+                console.log('error.login', error.response.data);
 
-            context.commit('errorLogin', error.response.data.email);
-        });
+                context.commit('errorLogin', error.response.data.email);
+            });
     },
 
     /**
@@ -154,19 +154,19 @@ export const actions = {
             show_name_createdby: context.state.user.show_name_createdby,
             show_username_createdby:  context.state.user.show_username_createdby
         })
-        .then(response => {
-            console.log('save_privacy_settings', response);
+            .then(response => {
+                console.log('save_privacy_settings', response);
 
-            /* improve css */
-            Vue.$vToastify.success({
-                title,
-                body,
-                position: 'top-right'
+                /* improve css */
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                    position: 'top-right'
+                });
+            })
+            .catch(error => {
+                console.log('error.save_privacy_settings', error);
             });
-        })
-        .catch(error => {
-            console.log('error.save_privacy_settings', error);
-        });
     },
 
     /**
@@ -206,7 +206,7 @@ export const actions = {
             })
             .catch(error => {
                 console.log(error);
-            })
+            });
     },
 
     /**
@@ -214,8 +214,9 @@ export const actions = {
      */
     async TOGGLE_LITTER_PICKED_UP_SETTING (context)
     {
+        const pickedUp = !!context.state.user.items_remaining;
         let title = i18n.t('notifications.success');
-        let body  = i18n.t('notifications.litter-toggled');
+        let body  = i18n.t('notifications.litter-picked-up', { value: pickedUp ? 'not ' : '' });
 
         await axios.post('/settings/toggle')
             .then(response => {
@@ -245,29 +246,29 @@ export const actions = {
     {
         let title = i18n.t('notifications.success');
         // todo - translate this
-        let body  = 'Your information has been updated'
+        let body  = 'Your information has been updated';
 
         await axios.post('/settings/details', {
             name: context.state.user.name,
             email: context.state.user.email,
             username: context.state.user.username
         })
-        .then(response => {
-            console.log('update_details', response);
+            .then(response => {
+                console.log('update_details', response);
 
-            /* improve this */
-            Vue.$vToastify.success({
-                title,
-                body,
-                position: 'top-right'
+                /* improve this */
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                    position: 'top-right'
+                });
+            })
+            .catch(error => {
+                console.log('error.update_details', error);
+
+                // update errors. user.js
+                context.commit('errors', error.response.data.errors);
             });
-        })
-        .catch(error => {
-            console.log('error.update_details', error);
-
-            // update errors. user.js
-            context.commit('errors', error.response.data.errors);
-        });
     },
 
     /**
@@ -281,18 +282,18 @@ export const actions = {
         await axios.post('/settings/save-flag', {
             country: payload
         })
-        .then(response => {
-            console.log(response);
+            .then(response => {
+                console.log(response);
 
-            /* improve this */
-            Vue.$vToastify.success({
-                title,
-                body,
-                position: 'top-right'
+                /* improve this */
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                    position: 'top-right'
+                });
+            })
+            .catch(error => {
+                console.log(error);
             });
-        })
-        .catch(error => {
-            console.log(error);
-        });
     }
 };

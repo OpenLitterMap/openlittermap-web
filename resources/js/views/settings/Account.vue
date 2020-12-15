@@ -1,59 +1,57 @@
 <template>
-	<div style="padding-left: 1em; padding-right: 1em;">
-        <h1 class="title is-4">{{ $t('settings.account.delete-account') }}</h1>
+    <div>
+        <h1 class="title is-4">
+            {{ $t('settings.account.delete-account') }}
+        </h1>
         <hr>
-        <p>{{ $t('settings.account.delete-account') }}</p>
-        <br>
-        <div class="columns">
-            <div class="column is-one-third is-offset-1">
-                <div class="row">
-                    <form method="POST"
-                          @submit.prevent="submit"
-                          @keydown="clearError($event.target.name)"
-                    >
-                        <label for="password">{{ $t('settings.account.delete-account?') }}</label>
-                        <span
-                            class="is-danger"
-                            v-if="errorExists('password')"
-                            v-text="getFirstError('password')"
-                        />
-                        <div class="field">
-                            <div class="control">
-                                <input
-                                    type="password"
-                                    name="password"
-                                    id="password"
-                                    placeholder="******"
-                                    v-model="password"
-                                    required
-                                    class="input"
-                                />
-                            </div>
+        <div>
+            <div class="row">
+                <form method="POST"
+                      @submit.prevent="submit"
+                      @keydown="clearError($event.target.name)"
+                >
+                    <label for="password">{{ $t('settings.account.delete-account?') }}</label>
+                    <span
+                        v-if="errorExists('password')"
+                        class="is-danger"
+                        v-text="getFirstError('password')"
+                    />
+                    <div class="field">
+                        <div class="control">
+                            <input
+                                id="password"
+                                v-model="password"
+                                type="password"
+                                name="password"
+                                placeholder="******"
+                                required
+                                class="input"
+                            >
                         </div>
+                    </div>
 
-                        <button :class="button">{{ $t('settings.account.enter-password') }}</button>
-                    </form>
-                </div>
+                    <div class="col-md-12 has-text-centered">
+                        <button :class="button">
+                            {{ $t('settings.account.enter-password') }}
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
-	</div>
+    </div>
 </template>
 
 <script>
 export default {
     name: 'Account',
-    async created ()
+    data ()
     {
-        await this.$store.dispatch('GET_PLANS');
-    },
-	data ()
-    {
-		return {
+        return {
 		    btn: 'button is-danger',
-			processing: false,
+            processing: false,
             password: ''
-		};
-	},
+        };
+    },
     computed: {
 
         /**
@@ -80,7 +78,11 @@ export default {
             return this.$store.state.createaccount.plans;
         }
     },
-	methods: {
+    async created ()
+    {
+        await this.$store.dispatch('GET_PLANS');
+    },
+    methods: {
 
         /**
          * Clear an error with this key
@@ -111,13 +113,13 @@ export default {
          */
         async submit ()
         {
-			this.processing = true;
+            this.processing = true;
 
             await this.$store.dispatch('DELETE_ACCOUNT', this.password);
 
             this.processing = false;
             this.password = '';
-		}
-	}
-}
+        }
+    }
+};
 </script>

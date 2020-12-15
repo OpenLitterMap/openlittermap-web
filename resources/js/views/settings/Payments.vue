@@ -1,18 +1,17 @@
 <template>
-	<div style="padding-left: 1em; padding-right: 1em;">
-		<h1 class="title is-4">{{ $t('settings.payments.finance') }}</h1>
-		<hr>
-		<br>
-		<div class="columns">
+    <div>
+        <h1 class="title is-4">
+            {{ $t('settings.payments.finance') }}
+        </h1>
+        <hr>
+        <div>
+            <loading v-if="loading" v-model:active="loading" :is-full-page="true" />
 
-            <loading v-if="loading" :active.sync="loading" :is-full-page="true" />
-
-            <div v-else class="column one-third is-offset-1">
-
+            <div v-else>
                 <div v-if="! check_for_stripe_id">
                     <p>{{ $t('settings.payments.help') }}</p>
 
-                    <ul>
+                    <ul class="mb2">
                         <li>- {{ $t('settings.payments.support') }}</li>
                         <li>- {{ $t('settings.payments.help-costs') }}</li>
                         <li>- {{ $t('settings.payments.help-hire') }}</li>
@@ -24,80 +23,74 @@
                     </ul>
 
                     <!-- Show list of plans -->
-
-                    <button class="button is-medium is-primary" @click="subscribe">{{ $t('settings.payments.click-to-support') }}</button>
+                    <div class="col-md-12 has-text-centered">
+                        <button class="button is-norma is-primary" @click="subscribe">
+                            {{ $t('settings.payments.click-to-support') }}
+                        </button>
+                    </div>
                 </div>
 
                 <!-- The user has already subscribed -->
                 <div v-else>
-
                     <div v-if="subscription.stripe_status === 'active'">
-
                         <p>You are currently subscribed to the <strong class="green">{{ subscription.name }}</strong> plan</p>
-                        <p class="mb1">Helping us with <strong class="green">€{{ current_plan.price / 100 }}</strong> per month</p>
+                        <p class="mb1">
+                            Helping us with <strong class="green">€{{ current_plan.price / 100 }}</strong> per month
+                        </p>
                         <p>Thank you for helping the development of OpenLitterMap!</p>
-                        <p class="mb1">You can change or cancel your subscription at any time.</p>
+                        <p class="mb1">
+                            You can change or cancel your subscription at any time.
+                        </p>
 
-                        <button @click="cancel_active_subscription" class="button is-medium is-danger">Cancel Subscription</button>
+                        <button class="button is-medium is-danger" @click="cancel_active_subscription">
+                            Cancel Subscription
+                        </button>
                     </div>
 
                     <!-- Cancelled subscription -->
                     <div v-else>
-
-                        <p class="mb1">You have unsubscribed from <strong class="green">{{ subscription.name }}</strong></p>
-                        <p class="mb1">Thank you for supporting the development of OpenLitterMap</p>
+                        <p class="mb1">
+                            You have unsubscribed from <strong class="green">{{ subscription.name }}</strong>
+                        </p>
+                        <p class="mb1">
+                            Thank you for supporting the development of OpenLitterMap
+                        </p>
 
 
                         <p>Please contact us if you would like to resubscribe, or else create a new account. Thanks!</p>
                         <!-- Show list of plans -->
-<!--                        <div class="control mb1">-->
-<!--                            <div class="select">-->
-<!--                                <select v-model="plan">-->
-<!--                                    <option v-for="plan in plans" :value="plan.name">-->
-<!--                                        {{ plan.name }} &mdash; €{{ plan.price / 100 }}-->
-<!--                                    </option>-->
-<!--                                </select>-->
-<!--                            </div>-->
-<!--                        </div>-->
+                        <!--                        <div class="control mb1">-->
+                        <!--                            <div class="select">-->
+                        <!--                                <select v-model="plan">-->
+                        <!--                                    <option v-for="plan in plans" :value="plan.name">-->
+                        <!--                                        {{ plan.name }} &mdash; €{{ plan.price / 100 }}-->
+                        <!--                                    </option>-->
+                        <!--                                </select>-->
+                        <!--                            </div>-->
+                        <!--                        </div>-->
 
-<!--                        <button class="button is-medium is-primary" @click="resubscribe">Click here to resubscribe</button>-->
+                        <!--                        <button class="button is-medium is-primary" @click="resubscribe">Click here to resubscribe</button>-->
                     </div>
                 </div>
-			</div>
-		</div>
-	</div>
+            </div>
+        </div>
+    </div>
 </template>
 
 <script>
-import Loading from 'vue-loading-overlay'
-import 'vue-loading-overlay/dist/vue-loading.css'
+import Loading from 'vue-loading-overlay';
+import 'vue-loading-overlay/dist/vue-loading.css';
 
 export default {
     name: 'Payments',
     components: { Loading },
-    async created ()
+    data ()
     {
-        this.loading = true;
-
-        if (this.$store.state.plans.plans.length === 0)
-        {
-            await this.$store.dispatch('GET_PLANS');
-        }
-
-        if (this.$store.state.user.user.stripe_id)
-        {
-            await this.$store.dispatch('GET_USERS_SUBSCRIPTIONS');
-        }
-
-        this.loading = false;
-    },
-	data ()
-    {
-		return {
-		    loading: true,
+        return {
+            loading: true,
             plan: 'Startup'
-		};
-	},
+        };
+    },
     computed: {
 
         /**
@@ -132,6 +125,22 @@ export default {
             return this.$store.state.subscriber.subscription;
         }
     },
+    async created ()
+    {
+        this.loading = true;
+
+        if (this.$store.state.plans.plans.length === 0)
+        {
+            await this.$store.dispatch('GET_PLANS');
+        }
+
+        if (this.$store.state.user.user.stripe_id)
+        {
+            await this.$store.dispatch('GET_USERS_SUBSCRIPTIONS');
+        }
+
+        this.loading = false;
+    },
     methods: {
 
         /**
@@ -153,10 +162,10 @@ export default {
         /**
          * The user wants to sign up for a monthly subscription
          */
-		subscribe ()
+        subscribe ()
         {
             console.log('todo - load stripe');
-		}
-	}
-}
+        }
+    }
+};
 </script>

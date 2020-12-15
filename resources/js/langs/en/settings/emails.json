@@ -1,7 +1,8 @@
 {
-    "toggle-email": "Toggle Email Subscription",
+    "email-subscription": "Email Subscription",
     "we-send-updates": "Occasionally, we send out emails with updates and good news.",
     "subscribe": "You can subscribe or unsubscribe to our emails here.",
     "current-status": "Current Status",
-    "change-status": "Change Status"
+    "change-status": "Change Status",
+    "subscribe-to-our-emails": "Subscribe to our emails."
 }

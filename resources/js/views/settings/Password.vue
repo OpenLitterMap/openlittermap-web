@@ -1,96 +1,95 @@
 <template>
-	<div style="padding-left: 1em; padding-right: 1em;">
-		<h1 class="title is-4"> {{ $t('settings.password.change-password') }}</h1>
-		<hr>
-		<br>
-		<div class="columns">
-			<div class="column is-one-third is-offset-1">
+    <div>
+        <h1 class="title is-4">
+            {{ $t('settings.password.change-password') }}
+        </h1>
+        <hr>
+        <div>
+            <!-- Change password -->
+            <form method="POST" @submit.prevent="submit" @keydown="clearError($event.target.name)">
+                <!-- Old Password -->
+                <label for="oldpassword"> {{ $t('settings.password.enter-old-password') }}</label>
 
-                <!-- Change password -->
-                <form method="POST" @submit.prevent="submit" @keydown="clearError($event.target.name)">
+                <span
+                    v-if="errorExists('oldpassword')"
+                    class="error"
+                    v-text="getFirstError('oldpassword')"
+                />
 
-                    <!-- Old Password -->
-                    <label for="oldpassword"> {{ $t('settings.password.enter-old-password') }}</label>
-
-                    <span
-                        v-if="errorExists('oldpassword')"
-                        v-text="getFirstError('oldpassword')"
-                        class="error"
-                    />
-
-                    <div class="field">
-                        <div class="control has-icons-left">
-                            <input
-                                type="password"
-                                name="oldpassword"
-                                class="input"
-                                placeholder="*********"
-                                v-model="oldpassword"
-                                required
-                            >
-                            <span class="icon is-small is-left">
-                                <i class="fa fa-key" />
-                            </span>
-                        </div>
+                <div class="field">
+                    <div class="control has-icons-left">
+                        <input
+                            v-model="oldpassword"
+                            type="password"
+                            name="oldpassword"
+                            class="input"
+                            placeholder="*********"
+                            required
+                        >
+                        <span class="icon is-small is-left">
+                            <i class="fa fa-key" />
+                        </span>
                     </div>
+                </div>
 
-                    <!-- New Password -->
-                    <label for="password">{{ $t('settings.password.enter-new-password') }}</label>
+                <!-- New Password -->
+                <label for="password">{{ $t('settings.password.enter-new-password') }}</label>
 
-                    <span
-                        v-if="errorExists('password')"
-                        v-text="getFirstError('password')"
-                        class="error"
-                    />
-                    <div class="field">
-                        <div class="control has-icons-left">
-                            <input
-                                id="password"
-                                type="password"
-                                name="password"
-                                class="input"
-                                :placeholder="translate('password.enter-strong-password')"
-                                v-model="password"
-                                required
-                            />
-                            <span class="icon is-small is-left">
-                                <i class="fa fa-key" />
-                            </span>
-                        </div>
+                <span
+                    v-if="errorExists('password')"
+                    class="error"
+                    v-text="getFirstError('password')"
+                />
+                <div class="field">
+                    <div class="control has-icons-left">
+                        <input
+                            id="password"
+                            v-model="password"
+                            type="password"
+                            name="password"
+                            class="input"
+                            :placeholder="translate('password.enter-strong-password')"
+                            required
+                        >
+                        <span class="icon is-small is-left">
+                            <i class="fa fa-key" />
+                        </span>
                     </div>
+                </div>
 
-                    <!-- Repeat Password -->
-                    <label for="password_confirmation">{{ $t('settings.password.confirm-new-password') }}</label>
+                <!-- Repeat Password -->
+                <label for="password_confirmation">{{ $t('settings.password.confirm-new-password') }}</label>
 
-                    <span
-                        v-if="errorExists('password_confirmation')"
-                        v-text="getFirstError('password_confirmation')"
-                        class="error"
-                    />
+                <span
+                    v-if="errorExists('password_confirmation')"
+                    class="error"
+                    v-text="getFirstError('password_confirmation')"
+                />
 
-                    <div class="field mb2">
-                        <div class="control has-icons-left">
-                            <input
-                                type="password"
-                                name="password_confirmation"
-                                class="input"
-                                :placeholder="translate('password.repeat-strong-password')"
-                                v-model="password_confirmation"
-                                required
-                            />
-                            <span class="icon is-small is-left">
-                                <i class="fa fa-key" />
-                            </span>
-                        </div>
+                <div class="field mb2">
+                    <div class="control has-icons-left">
+                        <input
+                            v-model="password_confirmation"
+                            type="password"
+                            name="password_confirmation"
+                            class="input"
+                            :placeholder="translate('password.repeat-strong-password')"
+                            required
+                        >
+                        <span class="icon is-small is-left">
+                            <i class="fa fa-key" />
+                        </span>
                     </div>
+                </div>
 
-                    <div class="col-md-12" style="text-align: center;">
-                        <button :class="button" :disabled="processing">{{ $t('settings.password.update-password') }}</button>
-                    </div>
-                </form>
-			</div>
-		</div>
-	</div>
+                <div class="col-md-12 has-text-centered">
+                    <button :class="button" :disabled="processing">
+                        {{ $t('settings.password.update-password') }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </template>
 
 <script>
@@ -103,7 +102,7 @@ export default {
             oldpassword: '',
             password: '',
             password_confirmation: '',
-            btn: 'button is-medium is-info'
+            btn: 'button is-normal is-info'
         };
     },
     computed: {
@@ -166,12 +165,16 @@ export default {
             this.processing = false;
         },
         /**
-         * Get translated text 
+         * Get translated text
          */
         translate (text)
         {
             return this.$t('settings.' + text);
         }
     },
-}
+};
 </script>
+
+<style lang="scss" scoped>
+
+</style>

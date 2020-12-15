@@ -1,78 +1,79 @@
 <template>
-	<div style="padding-left: 1em; padding-right: 1em;">
-        <h1 class="title is-4">{{ $t('settings.globalFlag.show-flag') }}</h1>
+    <div>
+        <h1 class="title is-4">
+            {{ $t('settings.globalFlag.show-flag') }}
+        </h1>
         <hr>
-        <br>
 
-        <loading v-if="loading" :active.sync="loading" :is-full-page="true" />
+        <loading v-if="loading" v-model:active="loading" :is-full-page="true" />
 
-        <div v-else class="columns">
-            <div class="column is-offset-1">
+        <div v-else>
+            <p class="title is-5 mb20 green">
+                {{ $t('settings.globalFlag.top-10') }}
+            </p>
 
-                <p class="title is-5 mb20 green">{{ $t('settings.globalFlag.top-10') }}</p>
+            <div v-show="this.$store.state.user.user.global_flag" class="mb20">
+                <p class="strong">
+                    {{ $t('settings.globalFlag.global-top-10-challenge') }}: {{ this.getSelected() }}
+                </p>
+            </div>
 
-                <div v-show="this.$store.state.user.user.global_flag" class="mb20">
-                    <p class="strong">{{ $t('settings.globalFlag.global-top-10-challenge') }}: {{ this.getSelected() }}</p>
-                </div>
+            <p class="mb20">
+                {{ $t('settings.globalFlag.action-select') }}
+            </p>
+            <p class="mb20">
+                {{ $t('settings.globalFlag.select-country') }}
+            </p>
 
-                <p class="mb20">{{ $t('settings.globalFlag.action-select') }}</p>
-                <p class="mb20">{{ $t('settings.globalFlag.select-country') }}</p>
-
-                <vue-simple-suggest
-                    ref="vss"
-                    :filter-by-query="true"
-                    :list="getCountries()"
-                    :min-length="0"
-                    :max-suggestions="0"
-                    mode="select"
-                    :placeholder=" $t('settings.globalFlag.select-country')"
-                    :styles="autoCompleteStyle"
-                    v-model="country"
-                    @focus="onFocus()"
-                    @suggestion-click="onSuggestion()"
-                />
-
+            <vue-simple-suggest
+                ref="vss"
+                v-model="country"
+                :filter-by-query="true"
+                :list="getCountries()"
+                :min-length="0"
+                :max-suggestions="0"
+                mode="select"
+                :placeholder=" $t('settings.globalFlag.select-country')"
+                :styles="autoCompleteStyle"
+                @focus="onFocus()"
+                @suggestion-click="onSuggestion()"
+            />
+            <div class="col-md-12 has-text-centered">
                 <button
                     :disabled="processing"
                     :class="button"
                     @click="save"
-                >{{ $t('settings.globalFlag.save-flag') }}</button>
+                >
+                    {{ $t('settings.globalFlag.save-flag') }}
+                </button>
             </div>
         </div>
     </div>
 </template>
 
 <script>
-import Loading from 'vue-loading-overlay'
-import 'vue-loading-overlay/dist/vue-loading.css'
+import Loading from 'vue-loading-overlay';
+import 'vue-loading-overlay/dist/vue-loading.css';
 
-import VueSimpleSuggest from 'vue-simple-suggest'
-import 'vue-simple-suggest/dist/styles.css'
+import VueSimpleSuggest from 'vue-simple-suggest';
+import 'vue-simple-suggest/dist/styles.css';
 
 export default {
     name: 'GlobalFlag',
     components: { Loading, VueSimpleSuggest },
-    async created ()
-    {
-        this.loading = true;
-
-        await this.$store.dispatch('GET_COUNTRIES_FOR_FLAGS');
-
-        this.loading = false;
-    },
     data ()
     {
         return {
-            btn: 'button mt1 is-primary is-medium',
+            btn: 'button mt1 is-primary is-normal',
             country: '',
             processing: false,
             loading: true,
             autoCompleteStyle: {
-                vueSimpleSuggest: "position-relative width-50",
-                inputWrapper: "",
-                defaultInput : "input",
-                suggestions: "position-absolute list-group z-1000 custom-class-overflow width-50",
-                suggestItem: "list-group-item"
+                vueSimpleSuggest: 'position-relative width-50',
+                inputWrapper: '',
+                defaultInput : 'input',
+                suggestions: 'position-absolute list-group z-1000 custom-class-overflow width-50',
+                suggestItem: 'list-group-item'
             }
         };
     },
@@ -93,6 +94,14 @@ export default {
         {
             return this.$store.state.user.countries;
         }
+    },
+    async created ()
+    {
+        this.loading = true;
+
+        await this.$store.dispatch('GET_COUNTRIES_FOR_FLAGS');
+
+        this.loading = false;
     },
     methods: {
 
@@ -128,8 +137,8 @@ export default {
          */
         onSuggestion ()
         {
-            this.$nextTick(function() {
-                Array.prototype.forEach.call(document.getElementsByClassName('input'), function(el) {
+            this.$nextTick(function () {
+                Array.prototype.forEach.call(document.getElementsByClassName('input'), function (el) {
                     el.blur();
                 });
             });
@@ -149,7 +158,7 @@ export default {
             this.processing = false;
         }
     }
-}
+};
 </script>
 
 <style lang="scss">
