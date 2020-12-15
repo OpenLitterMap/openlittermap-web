@@ -55,29 +55,9 @@ class Photo extends Model
     ];
 
     /**
-     * Category types available on each photo
-     */
-    public function categories ()
-    {
-        return [
-            'smoking',
-            'food',
-            'coffee',
-            'softdrinks',
-            'alcohol',
-            'other',
-            'coastal',
-            'sanitary',
-            'dumping',
-            'industrial',
-            'brands'
-        ];
-    }
-
-    /**
      * Observe when this model is being updated
-       - onDelete, also delete relationships
-       - onDelete->cascade not working
+    - onDelete, also delete relationships
+    - onDelete->cascade not working
      */
     public static function boot ()
     {
@@ -100,11 +80,56 @@ class Photo extends Model
         });
     }
 
+    /**
+     * Category types available on each photo
+     */
+    public function categories ()
+    {
+        return [
+            'smoking',
+            'food',
+            'coffee',
+            'softdrinks',
+            'alcohol',
+            'other',
+            'coastal',
+            'sanitary',
+            'dumping',
+            'industrial',
+            'brands'
+        ];
+    }
+
+    /**
+     * Contributor
+     */
     public function owner ()
     {
     	return $this->belongsTo(User::class, 'user_id');
     }
 
+    /**
+     * Return translation key => value for every item on each category
+     */
+    public function translate ()
+    {
+        $result_string = '';
+
+        foreach ($this->categories() as $category)
+        {
+            if ($this->$category)
+            {
+                $result_string .= $this->$category->translate();
+            }
+        }
+
+        $this->result_string = $result_string;
+        $this->save();
+    }
+
+    /**
+     * Location relationships
+     */
     public function country ()
     {
     	return $this->hasOne('App\Models\Location\Country');
@@ -120,6 +145,9 @@ class Photo extends Model
     	return $this->hasOne('App\Models\Location\City');
     }
 
+    /**
+     * Litter categories
+     */
     public function smoking ()
     {
     	return $this->hasOne('App\Models\Litter\Categories\Smoking', 'id', 'smoking_id');

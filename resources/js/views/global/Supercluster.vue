@@ -33,6 +33,7 @@ import {
 import L from 'leaflet';
 import moment from 'moment';
 import './SmoothWheelZoom.js';
+import i18n from '../../i18n'
 
 var map;
 var markers;
@@ -64,13 +65,27 @@ function createClusterIcon (feature, latlng)
 
 /**
  * On each feature, perform this action
+ *
+ * This is being performed whenever the user drags the map.
+ *
+ * Tranlsation should only occur when the user clicks on a point to open an image.
  */
 function onEachFeature (feature, layer)
 {
     if (! feature.properties.cluster)
     {
+        let a = feature.properties.result_string.split(',');
+        a.pop();
+
+        let z = '';
+        a.forEach(i => {
+            let b = i.split(' ');
+
+            z += i18n.t('litter.' + b[0]) + ': ' + b[1] + ' ';
+        });
+
         layer.bindPopup(
-            '<p class="mb5p">' + feature.properties.result_string + ' </p>'
+            '<p class="mb5p">' + z + ' </p>'
             + '<img src= "' + feature.properties.filename + '" class="mw100" />'
             + '<p>Taken on ' + moment(feature.properties.datetime).format('LLL') +'</p>'
         );
@@ -100,8 +115,6 @@ async function update ()
     };
     let zoom = Math.round(map.getZoom());
 
-    console.log({ zoom });
-
     // We don't want to make a request at zoom level 2-5 if the user is just panning the map.
     // At these levels, we just load all global data for now
     if (zoom === 2 && zoom === prevZoom) return;
@@ -115,38 +128,34 @@ async function update ()
         await axios.get('clusters', {
             params: { zoom, bbox }
         })
-            .then(response =>
-            {
-                console.log('get_clusters.update', response);
+        .then(response => {
+            console.log('get_clusters.update', response);
 
-                markers.clearLayers();
-                markers.addData(response.data);
-            })
-            .catch(error =>
-            {
-                console.error('get_clusters.update', error);
-            });
+            markers.clearLayers();
+            markers.addData(response.data);
+        })
+        .catch(error => {
+            console.error('get_clusters.update', error);
+        });
     }
     else
     {
         await axios.get('global-points', {
             params: { zoom, bbox, },
         })
-            .then(response =>
-            {
-                console.log('get_global_points', response);
+        .then(response => {
+            console.log('get_global_points', response);
 
-                // Clear layer if prev layer is cluster.
-                if(prevZoom < CLUSTER_ZOOM_THRESHOLD)
-                {
-                    markers.clearLayers();
-                }
-                markers.addData(response.data);
-            })
-            .catch(error =>
+            // Clear layer if prev layer is cluster.
+            if (prevZoom < CLUSTER_ZOOM_THRESHOLD)
             {
-                console.error('get_global_points', error);
-            });
+                markers.clearLayers();
+            }
+            markers.addData(response.data);
+        })
+        .catch(error => {
+            console.error('get_global_points', error);
+        });
     }
     prevZoom = zoom; // hold previous zoom
 }
