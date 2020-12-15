@@ -16,7 +16,7 @@
             <!-- Profile-->
             <!-- </router-link>-->
             <!-- Settings -->
-            <router-link to="/settings/password" class="drop-item">
+            <router-link to="/settings/details" class="drop-item">
                 {{ $t('nav.settings') }}
             </router-link>
 
