@@ -55,10 +55,9 @@ class MapController extends Controller
             // Get Creator info
             $country = $this->getCreatorInfo($country);
 
-            // Get Leaderboard. Should load more and stop when there are 10-max as some users settings may be off.
+            // Get Leaderboard per country. Should load more and stop when there are 10-max as some users settings may be off.
 			$leaderboard_ids = Redis::zrevrange($country->country.':Leaderboard', 0, 9);
 
-			// We should eager load this when countries is being requested
 			$leaders = User::whereIn('id', $leaderboard_ids)->orderBy('xp', 'desc')->get();
 
 			$arrayOfLeaders = $this->getLeaders($leaders);
@@ -67,19 +66,6 @@ class MapController extends Controller
 
         	// Total values
         	$country['avg_photo_per_user'] = round($country->total_images / $country->total_contributors, 2);
-
-        	// todo - save total_litter on the model
-        	$country['total_litter'] = $country['litter_data']['smoking'] +
-        							   $country['litter_data']['food'] +
-        							   $country['litter_data']['coffee'] +
-        							   $country['litter_data']['alcohol'] +
-        							   $country['litter_data']['softdrinks'] +
-        							   $country['litter_data']['sanitary'] +
-        							   $country['litter_data']['other'] +
-        							   $country['litter_data']['coastal'] +
-        							   $country['litter_data']['dumping'] +
-        							   $country['litter_data']['industrial'];
-
         	$country['avg_litter_per_user'] = round($country->total_litter / $country->total_contributors, 2);
 
         	$total_litter += $country['total_litter'];
@@ -87,13 +73,6 @@ class MapController extends Controller
 
         	$country['diffForHumans'] = $country->created_at->diffForHumans();
 	    }
-
-//	    $totalLitterInt = $total_litter;
-//        $total_litter = number_format($total_litter); // do this on frontend
-//        $total_photos = number_format($total_photos);
-
-    	// $globalxp = GlobalLevel::where('xp', '>=', $total_photos)->get();
-
 
         /**
          * Global levels
@@ -206,7 +185,8 @@ class MapController extends Controller
 			  	  ->orWhere('show_username', true);
 			}])->where([
 				'country_id' => $country->id,
-				'manual_verify' => '1'
+				'manual_verify' => '1',
+                ['total_litter', '>', 0]
 			])
             ->orderBy('state', 'asc')
             ->get();
@@ -228,18 +208,7 @@ class MapController extends Controller
         	$state->leaderboard = json_encode($arrayOfLeaders);
 
         	// Get images/litter metadata
-            // todo - save this on the model
         	$state->avg_photo_per_user = round($state->total_images / $state->total_contributors, 2);
-        	$state->total_litter = $state->total_smoking
-                + $state->total_food
-                + $state->total_softDrinks
-                + $state->total_alcohol
-                + $state->total_coffee
-                + $state->total_sanitary
-                + $state->total_other
-                + $state->total_coastal
-                + $state->total_dumping
-                + $state->total_industrial;
         	$state->avg_litter_per_user = round($state->total_litter / $state->total_contributors, 2);
 
         	$total_litter += $state->total_litter;
@@ -264,13 +233,14 @@ class MapController extends Controller
 
         $country = Country::where('country', $country_name)->first();
 
+        \Log::info(['getCities', $country->id, $state_name, request()->ip()]);
+
 		$state = State::where([
 			['state', $state_name],
 			['total_images', '!=', null]
 		])->first();
 
         /**
-         * todo
          * Instead of loading the photos here on the city model,
          * save photos_per_day string on the city model
          */
@@ -278,35 +248,15 @@ class MapController extends Controller
 			$q->select('id', 'name', 'username', 'show_name', 'show_username')
 			  ->where('show_name', true)
 			  ->orWhere('show_username', true);
-		}, 'photos' => function($qq) {
-			$qq->with('owner:id,name,username,show_name,show_username,xp')
-			   ->where('verified', '>=', 1)->orderBy('datetime', 'asc');
-		}])->where([
-			['state_id', $state->id],
-			['total_images', '>', 0]
+		}])
+        ->where([
+            ['state_id', $state->id],
+			['total_images', '>', 0],
+            ['total_litter', '>', 0]
 		])->orderBy('city', 'asc')->get();
 
-		// return $cities;
 		foreach ($cities as $city)
 		{
-            // If city, append time slider values (min, max)
-            if (! is_null($city))
-            {
-                // $city['time'] = json_encode(self::getTimeSlider($city->city));
-                $time = [];
-
-                $myPhotos = $city->photos->groupBy(function ($v) {
-                    return Carbon::parse($v->datetime)->format('d-m-y');
-                });
-
-                // Determine images per day (for time slider)
-                foreach ($myPhotos as $key => $value)
-                {
-                    $time[$key] = $value->count();
-                }
-                $city['time'] = json_encode($time);
-            }
-
             // Get Creator info
             $city = $this->getCreatorInfo($city);
 
@@ -318,21 +268,8 @@ class MapController extends Controller
             $arrayOfLeaders = $this->getLeaders($leaders);
 
             $city['leaderboard'] = json_encode($arrayOfLeaders);
-
             $city['avg_photo_per_user'] = round($city->total_images / $city->total_contributors, 2);
-            $city['total_litter'] = $city->total_smoking
-                + $city->total_food
-                + $city->total_softDrinks
-                + $city->total_alcohol
-                + $city->total_coffee
-                + $city->total_sanitary
-                + $city->total_other
-                + $city->total_coastal
-                + $city->total_dumping
-                + $city->total_industrial;
             $city['avg_litter_per_user'] = round($city->total_litter / $city->total_contributors, 2);
-
-            unset($city->photos); // we don't need these anymore
             $city['diffForHumans'] = $city->created_at->diffForHumans();
         }
 

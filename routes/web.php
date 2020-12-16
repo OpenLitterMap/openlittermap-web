@@ -2,10 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 
-// Route::get('test', function() {
-// 	$user = \App\Models\User\User::first();
-// 	return view('emails.update20', compact('user'));
-// });
+ Route::get('test', function() {
+ 	$user = \App\Models\User\User::first();
+ 	return view('emails.update21', compact('user'));
+ });
 
 // only turn this on in limited circumstances
 // Route::get('sean', 'TotalDataController@getCSV');
@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', 'HomeController@index');
 Route::get('/about', 'HomeController@index');
 Route::get('/world', 'HomeController@index');
+
 
 // Registration
 Route::get('/signup', 'HomeController@index');
@@ -48,22 +49,25 @@ Route::get('/world/{country}/{state}/{city?}/download/get', 'DownloadsController
 
 // "maps" was used before "world". We will keep this for now to keep old links active.
 // Todo - make this dynamic for wildcard routes prefixed by "/{lang}/maps"
-Route::get('/maps', 'MapController@getCountries');
-Route::get('/maps/{country}/litter', 'MapController@getCountries');
-Route::get('/maps/{country}/leaderboard', 'MapController@getCountries');
-Route::get('/maps/{country}/time-series', 'MapController@getCountries');
-// Route::get('/maps/total/download', 'MapController@getCountries');
 
-Route::get('/maps/{country}', 'MapController@getStates');
-Route::get('/maps/{country}/{state}', 'MapController@getCities');
-Route::get('/maps/{country}/{state}/{city?}/{id?}', 'MapController@getCities');
-// Route::get('/maps/{country}/{city}/city_hex_map', 'MapController@getCity');
-// Similarly, get the city and pass the maps dynamically
-Route::get('/maps/{country}/{state}/{city}/city_hex_map/{minfilter?}/{maxfilter?}/{hex?}', 'MapController@getCity');
-Route::get('/maps/{country}/{state}/{city?}/download/get', 'DownloadsController@getDataByCity');
+Route::group(['middleware' => 'fw-block-blacklisted'], function () {
+    Route::get('/maps', 'MapController@getCountries');
+    Route::get('/maps/{country}/litter', 'MapController@getCountries');
+    Route::get('/maps/{country}/leaderboard', 'MapController@getCountries');
+    Route::get('/maps/{country}/time-series', 'MapController@getCountries');
+    // Route::get('/maps/total/download', 'MapController@getCountries');
 
-// new
-Route::get('city', 'MapController@getCity');
+    Route::get('/maps/{country}', 'MapController@getStates');
+    Route::get('/maps/{country}/{state}', 'MapController@getCities');
+    Route::get('/maps/{country}/{state}/{city?}/{id?}', 'MapController@getCities');
+    // Route::get('/maps/{country}/{city}/city_hex_map', 'MapController@getCity');
+    // Similarly, get the city and pass the maps dynamically
+    Route::get('/maps/{country}/{state}/{city}/city_hex_map/{minfilter?}/{maxfilter?}/{hex?}', 'MapController@getCity');
+    Route::get('/maps/{country}/{state}/{city?}/download/get', 'DownloadsController@getDataByCity');
+
+    // new
+    Route::get('city', 'MapController@getCity');
+});
 
 // Donation page
 Route::get('donate', 'HomeController@index');
@@ -119,10 +123,10 @@ Route::get('/settings/payments', 'HomeController@index');
 Route::get('/settings/privacy', 'HomeController@index');
 Route::get('/settings/littercoin', 'HomeController@index');
 Route::get('/settings/phone', 'HomeController@index');
-Route::get('/settings/teams', 'HomeController@index');
 Route::get('/settings/presence', 'HomeController@index');
 Route::get('/settings/email', 'HomeController@index');
 Route::get('/settings/show-flag', 'HomeController@index');
+Route::get('/settings/teams', 'HomeController@index');
 
 // Game settings @ SettingsController
 // Toggle Presense of a piece of litter
@@ -161,19 +165,6 @@ Route::post('/settings/littercoin/removewallet', 'BlockchainController@removeWal
 Route::post('/settings/phone/submit', 'UsersController@phone');
 Route::post('/settings/phone/remove', 'UsersController@removePhone');
 
-// TEAMS
-// // Create a new team
-// Route::post('/settings/teams/create', 'TeamController@create');
-
-// // Request to join a new team
-// Route::post('/settings/teams/request', 'TeamController@request');
-
-// // Get currently active team
-// Route::get('/settings/teams/get', 'TeamController@get');
-
-// // Change active team
-// Route::post('/settings/teams/change', 'TeamController@change');
-
 // Change default litter presence value
 Route::post('/settings/toggle', 'UsersController@togglePresence');
 
@@ -184,6 +175,18 @@ Route::post('/settings/email/toggle', 'EmailSubController@toggleEmailSub');
 Route::get('/settings/flags/countries', 'SettingsController@getCountries');
 // Save Country Flag for top 10
 Route::post('/settings/save-flag', 'SettingsController@saveFlag');
+
+// Teams
+Route::get('/teams', 'HomeController@index');
+Route::get('/teams/get-types', 'Teams\TeamsController@types');
+Route::get('/teams/combined-effort', 'Teams\TeamsController@combined');
+Route::get('/teams/members', 'Teams\TeamsController@members');
+Route::get('/teams/joined', 'Teams\TeamsController@joined');
+
+Route::post('/teams/create', 'Teams\TeamsController@create');
+Route::post('/teams/join', 'Teams\TeamsController@join');
+Route::post('/teams/active', 'Teams\TeamsController@active');
+
 
 /**
  * IMAGE VERIFICATION
@@ -240,7 +243,13 @@ Route::get('/privacy', function() {
 
 // Confirm Email Address, old and new
 Route::get('register/confirm/{token}', 'Auth\RegisterController@confirmEmail');
+// Route::get('a', function () {
+//     $user = \App\Models\User\User::first();
+//     return view('auth.emails.confirm', ['user' => $user]);
+//  });
 Route::get('confirm/email/{token}', 'Auth\RegisterController@confirmEmail');
+
+// Route::get('confirm/email/{token}', 'Auth\RegisterController@confirmEmail');
 
 // Logout
 Route::get('logout', 'UsersController@logout');
@@ -304,7 +313,7 @@ Route::group(['prefix' => '/admin'], function () {
     Route::post('/ltrxgenerated', 'LTRXController@success');
 
     // Add coordinates
-    Route::get('bbox', 'AdminController@index');
+    Route::get('bbox', 'HomeController@index');
 
     Route::get('next-bb-image', 'BoundingBoxController@index');
 });

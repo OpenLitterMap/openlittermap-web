@@ -1,6 +1,3 @@
-// Here we create the reverse of column_name -> Frontend string to display
-// These keys have to match the database column on the correct table
-// ID not really needed, yet
 export const litterkeys = {
     smoking: [
         { id: 0, key: 'butts' },            // Cigarette/Butts
@@ -49,7 +46,7 @@ export const litterkeys = {
         { id: 11, key: 'foodOther' },           // Food-other
         { id: 12, key: 'aluminium_foil' }       // Aluminium Foil
     ],
-	softdrinks: [
+    softdrinks: [
         { id: 0, key: 'waterBottle' },      // Plastic Water bottle
         { id: 1, key: 'fizzyDrinkBottle' }, // Plastic Fizzy Drink bottle
         { id: 2, key: 'tinCan' },           // Can
@@ -73,7 +70,7 @@ export const litterkeys = {
         { id: 20, key: 'styro_cup' },        // Styrofoam Cup
         { id: 21, key: 'softDrinkOther' }    // Soft Drink (other)
     ],
-	sanitary: [
+    sanitary: [
         { id: 0, key: 'gloves' },       // Gloves
         { id: 1, key: 'facemask' },     // Facemask
         { id: 2, key: 'condoms' },      // Condoms
@@ -84,9 +81,10 @@ export const litterkeys = {
         { id: 7, key: 'tooth_pick' },   // Tooth Pick
         { id: 8, key: 'tooth_brush' },  // Tooth Brush
         { id: 9, key: 'wetwipes' },     // Wet Wipes
-        { id: 10, key: 'sanitaryOther' } // Sanitary (other)
+        { id: 10, key: 'sanitaryOther' }, // Sanitary (other)
+        { id: 11, key: 'hand_sanitiser' }, // Hand Sanitiser
     ],
-	other: [
+    other: [
         { id: 0, key: 'dogshit' },          // Pet Surprise
         { id: 1, key: 'pooinbag' },         // Surprise In Bag
         { id: 2, key: 'automobile' },       // Automobile
@@ -112,12 +110,12 @@ export const litterkeys = {
         { id: 22, key: 'other' },            // Other (other)
         { id: 23, key: 'random_litter' },    // Random Litter
     ],
-	dumping: [
+    dumping: [
         { id: 0, key: 'small' },  // Small
         { id: 2, key: 'medium' }, // Medium
         { id: 3, key: 'large' },  // Large
     ],
-	industrial: [
+    industrial: [
         { id: 0, key: 'oil' },                // Oil
         { id: 1, key: 'industrial_plastic' }, // Plastic
         { id: 2, key: 'chemical' },           // Chemical
@@ -125,7 +123,7 @@ export const litterkeys = {
         { id: 4, key: 'tape' },               // Tape
         { id: 5, key: 'industrial_other' }    // Other
     ],
-	coastal: [
+    coastal: [
         { id: 0, key: 'microplastics' },            // Microplastics
         { id: 1, key: 'mediumplastics' },           // Mediumplastics
         { id: 2, key: 'macroplastics' },            // Macroplastics
@@ -146,7 +144,7 @@ export const litterkeys = {
         { id: 17, key: 'styro_large' },             // Styrofoam large
         { id: 18, key: 'coastal_other' }            // Coastal (other
     ],
-	brands: [
+    brands: [
         { id: 0, key: 'adidas' },            // Adidas
         { id: 1, key: 'amazon' },            // Amazon
         { id: 2, key: 'apple' },             // Apple
@@ -208,6 +206,6 @@ export const litterkeys = {
     trashdog: [
         { id: 0, key: 'trashdog' }, // TrashDog
         { id: 1, key: 'littercat' }, // LitterCat
-        { id: 2, key: 'duck:' } // LitterDuc
+        { id: 2, key: 'duck' } // LitterDuc
     ]
 };

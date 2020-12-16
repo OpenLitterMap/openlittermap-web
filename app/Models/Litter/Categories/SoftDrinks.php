@@ -6,15 +6,9 @@ use App\Models\Litter\LitterCategory;
 
 class SoftDrinks extends LitterCategory
 {
+    protected $table = 'softdrinks';
 
-    protected $table = 'soft_drinks';
-	/*
-	* Only these categories can be edited in the photo model
-	*/
     protected $fillable = [
-
-    	'photo_id',
-
     	'waterBottle',
     	'fizzyDrinkBottle',
     	'bottleLid',
@@ -35,7 +29,6 @@ class SoftDrinks extends LitterCategory
         'energy_can',
     	'softDrinksOther',
         'styro_cups'
-
     ];
 
     public function photo () {

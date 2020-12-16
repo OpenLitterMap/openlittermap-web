@@ -17,17 +17,27 @@
 </template>
 
 <script>
-import Languages from '../../components/global/Languages'
+import Languages from '../../components/global/Languages';
 // import GlobalDates from '../../components/global/GlobalDates'
-import LiveEvents from '../../components/LiveEvents'
+import LiveEvents from '../../components/LiveEvents';
 // import GlobalInfo from '../../components/global/GlobalInfo'
+import {
+    CLUSTER_ZOOM_THRESHOLD,
+    MAX_ZOOM,
+    MEDIUM_CLUSTER_SIZE,
+    LARGE_CLUSTER_SIZE,
+    MIN_ZOOM,
+    ZOOM_STEP
+} from '../../constants';
 
-import L from 'leaflet'
-import moment from 'moment'
+import L from 'leaflet';
+import moment from 'moment';
+import './SmoothWheelZoom.js';
+import i18n from '../../i18n'
 
 var map;
 var markers;
-var prevZoom = 2;
+var prevZoom = MIN_ZOOM;
 
 const single_icon = L.icon({
     iconUrl: './images/vendor/leaflet/dist/dot.png',
@@ -42,7 +52,7 @@ function createClusterIcon (feature, latlng)
     if (! feature.properties.cluster) return L.marker(latlng, { icon: single_icon });
 
     let count = feature.properties.point_count;
-    let size = count < 100 ? 'small' : count < 1000 ? 'medium' : 'large';
+    let size = count < MEDIUM_CLUSTER_SIZE ? 'small' : count < LARGE_CLUSTER_SIZE ? 'medium' : 'large';
 
     let icon = L.divIcon({
         html: '<div class="mi"><span class="ma">' + feature.properties.point_count_abbreviated + '</span></div>',
@@ -55,18 +65,38 @@ function createClusterIcon (feature, latlng)
 
 /**
  * On each feature, perform this action
+ *
+ * This is being performed whenever the user drags the map.
+ *
+ * Tranlsation should only occur when the user clicks on a point to open an image.
  */
 function onEachFeature (feature, layer)
 {
-    // todo - on cluster, zoom on click
-
     if (! feature.properties.cluster)
     {
+        let a = feature.properties.result_string.split(',');
+        a.pop();
+
+        let z = '';
+        a.forEach(i => {
+            let b = i.split(' ');
+
+            z += i18n.t('litter.' + b[0]) + ': ' + b[1] + ' ';
+        });
+
         layer.bindPopup(
-            '<p class="mb5p">' + feature.properties.result_string + ' </p>'
+            '<p class="mb5p">' + z + ' </p>'
             + '<img src= "' + feature.properties.filename + '" class="mw100" />'
             + '<p>Taken on ' + moment(feature.properties.datetime).format('LLL') +'</p>'
         );
+    }
+
+    else
+    {
+        // Zoom in cluster when click to it
+        layer.on('click', function (e) {
+            map.setView(e.latlng, map.getZoom() + ZOOM_STEP);
+        });
     }
 }
 
@@ -77,10 +107,13 @@ async function update ()
 {
     const bounds = map.getBounds();
 
-    let bbox = {'left': bounds.getWest(), 'bottom': bounds.getSouth(), 'right': bounds.getEast(), 'top': bounds.getNorth()};
-    let zoom = map.getZoom();
-
-    console.log({ zoom });
+    let bbox = {
+        'left': bounds.getWest(),
+        'bottom': bounds.getSouth(),
+        'right': bounds.getEast(),
+        'top': bounds.getNorth(),
+    };
+    let zoom = Math.round(map.getZoom());
 
     // We don't want to make a request at zoom level 2-5 if the user is just panning the map.
     // At these levels, we just load all global data for now
@@ -89,10 +122,8 @@ async function update ()
     if (zoom === 4 && zoom === prevZoom) return;
     if (zoom === 5 && zoom === prevZoom) return;
 
-    prevZoom = zoom; // hold previous zoom
-
     // If the zoom is less than 17, we want to load cluster data
-    if (zoom < 17)
+    if (zoom < CLUSTER_ZOOM_THRESHOLD)
     {
         await axios.get('clusters', {
             params: { zoom, bbox }
@@ -107,22 +138,26 @@ async function update ()
             console.error('get_clusters.update', error);
         });
     }
-
     else
     {
         await axios.get('global-points', {
-            params: { zoom, bbox }
+            params: { zoom, bbox, },
         })
         .then(response => {
             console.log('get_global_points', response);
 
-            markers.clearLayers();
+            // Clear layer if prev layer is cluster.
+            if (prevZoom < CLUSTER_ZOOM_THRESHOLD)
+            {
+                markers.clearLayers();
+            }
             markers.addData(response.data);
         })
         .catch(error => {
             console.error('get_global_points', error);
         });
     }
+    prevZoom = zoom; // hold previous zoom
 }
 
 export default {
@@ -138,8 +173,13 @@ export default {
         /** 1. Create map object */
         map = L.map('super', {
             center: [0, 0],
-            zoom: 2,
+            zoom: MIN_ZOOM,
+            scrollWheelZoom: false,
+            smoothWheelZoom: true,
+            smoothSensitivity: 1,
         });
+
+        map.scrollWheelZoom = true;
 
         const date = new Date();
         const year = date.getFullYear();
@@ -148,8 +188,8 @@ export default {
         const mapLink = '<a href="https://openstreetmap.org">OpenStreetMap</a>';
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: 'Map data &copy; ' + mapLink + ' & Contributors',
-            maxZoom: 18,
-            minZoom: 2
+            maxZoom: MAX_ZOOM,
+            minZoom: MIN_ZOOM
         }).addTo(map);
 
         map.attributionControl.addAttribution('Litter data &copy OpenLitterMap & Contributors ' + year + ' Clustering @ MapBox');
@@ -157,12 +197,13 @@ export default {
         // Empty Layer Group that will receive the clusters data on the fly.
         markers = L.geoJSON(null, {
             pointToLayer: createClusterIcon,
-            onEachFeature: onEachFeature
+            onEachFeature: onEachFeature,
         }).addTo(map);
 
         markers.addData(this.$store.state.globalmap.geojson.features);
 
-        map.on('moveend', function () {
+        map.on('moveend', function ()
+        {
             update();
         });
 
@@ -180,7 +221,7 @@ export default {
             this.$store.commit('closeLangsButton');
         }
     }
-}
+};
 </script>
 
 <style>

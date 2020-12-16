@@ -14,10 +14,11 @@ class City extends Model
 		'created_at',
 		'updated_at',
 		'total_images',
+        'total_litter',
 		'total_smoking',
 		'total_cigaretteButts',
 		'total_food',
-		'total_softDrinks',
+		'total_softdrinks',
 		'total_plasticBottles',
 		'total_alcohol',
 		'total_coffee',
@@ -33,7 +34,6 @@ class City extends Model
 		'manual_verify',
 		'littercoin_paid',
 		'created_by',
-        'total_litter'
 	];
 
 	/**
@@ -52,7 +52,7 @@ class City extends Model
         return [
             'smoking' => $this->total_smoking,
                'food' => $this->total_food,
-         'softdrinks' => $this->total_softDrinks,
+         'softdrinks' => $this->total_softdrinks,
             'alcohol' => $this->total_alcohol,
              'coffee' => $this->total_coffee,
            'sanitary' => $this->total_sanitary,
@@ -118,7 +118,7 @@ class City extends Model
         'total_smoking',
         'total_food',
         'total_alcohol',
-        'total_softDrinks',
+        'total_softdrinks',
         'total_coffee',
         'total_sanitary',
         'total_other',

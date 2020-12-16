@@ -1,6 +1,5 @@
 <template>
     <div>
-
         <!-- Cigarette Butts -->
         <section class="section">
             <div class="columns">
@@ -27,7 +26,7 @@
                     <p class="subtitle is-3">{{ $t('home.about.about6') }}</p>
                 </div>
 
-                <div class="column is-offset-1" style="text-align: center; padding-right: 5em;">
+                <div class="column is-offset-1 butts-img">
                     <img src="/assets/cigbutts_jar.jpg" style="height: 600px;">
                 </div>
             </div>
@@ -281,9 +280,25 @@ export default {
 
 <style scoped>
 
+    .butts-img {
+        text-align: center;
+        padding-right: 5em;
+    }
+
     .cig-2 {
         align-items: center;
         display: flex;
         padding: 5em;
+    }
+
+    @media screen and (max-width: 768px)
+    {
+        .butts-img {
+            padding-right: 0;
+        }
+
+        .cig-2 {
+            padding: 1em;
+        }
     }
 </style>

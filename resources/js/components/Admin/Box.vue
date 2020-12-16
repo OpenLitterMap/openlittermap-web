@@ -1,14 +1,14 @@
 <template>
-    <div class="box-wrapper" @click="selectBox">
+    <div class="box-wrapper" @mousedown="function(e) { selectBox(e) }" @mouseup="mouseUp()">
 
-        <div :class="selected ? 'box selected-box' : 'box'"
-             :style="{top: this.top + 'px', left: this.left + 'px', width: this.width + 'px', height: this.height + 'px'}">
+        <div :class="selected ? 'box selected-box' : 'box'
+"             :style="{top: this.geom[0] + 'px', left: this.geom[1] + 'px', width: this.geom[2] + 'px', height: this.geom[3] + 'px'}">
 
             <div class="inner-box">
-                <div v-show="selected" class="top-node" @mousedown.self="selectNode('activeTop')" @mousemove="dragTop" @mouseup="deselectNode('activeTop')" />
-                <div v-show="selected" class="left-node" />
-                <div v-show="selected" class="bottom-node" />
-                <div v-show="selected" class="right-node" />
+                <div v-show="selected" class="node" :style="{top: -6 + 'px', left: (0.5 * this.geom[2] - 6) + 'px'}" @mousedown="function(e) { selectNode(e, 0) }" />
+                <div v-show="selected" class="node" :style="{top: (0.5 * this.geom[3] - 6) + 'px', left: -6 + 'px'}" @mousedown="function(e) { selectNode(e, 1) }"/>
+                <div v-show="selected" class="node" :style="{left: (0.5 * this.geom[2] - 6) + 'px', bottom: -6 + 'px'}" @mousedown="function(e) { selectNode(e, 2) }"/>
+                <div v-show="selected" class="node" :style="{top: (0.5 * this.geom[3] - 6) + 'px', right: -6 + 'px'}" @mousedown="function(e) { selectNode(e, 3) }"/>
             </div>
 
         </div>
@@ -19,16 +19,13 @@
     export default {
         name: 'Box',
         props: [
-            'top',
-            'left',
-            'width',
-            'height',
             'index',
             'selected',
             'activeTop',
             'activeLeft',
             'activeBottom',
-            'activeRight'
+            'activeRight',
+            'geom'
         ],
         methods: {
 
@@ -41,34 +38,30 @@
             },
 
             /**
-             * A node is being repositioned
-             * Should only fire when this index is selected + this node is active
-             */
-            dragTop (e)
-            {
-                if (this.selected && this.activeTop)
-                {
-                    // console.log('drag', e.offsetY - this.top);
-                    this.$emit('repositionTop', e.offsetY, this.index);
-                }
-            },
-
-            /**
              * This box (index) has been selected
              * @emit selected event to parent
              */
-            selectBox ()
+            selectBox (e)
             {
-                this.$emit('select');
+                this.$emit('select', this.index, e.pageX, e.pageY);
             },
 
             /**
              * Select a node (Top, left, bottom, right)
              */
-            selectNode (node)
+            selectNode (e, nodeIndex)
             {
-                this.$emit('activate', node, this.index);
+                this.$emit('activate', this.index, nodeIndex, e.pageX, e.pageY);
+            },
+
+            /**
+             * Select a node (Top, left, bottom, right)
+             */
+            mouseUp()
+            {
+                this.$emit('dragEnd');
             }
+            
         }
     }
 </script>
@@ -85,7 +78,7 @@
         }
 
         z-index: 3;
-
+        
         &.selected-box {
             background-color: rgba(255,0,0,0.3);
             padding: 0;
@@ -98,42 +91,12 @@
         width: 100%;
     }
 
-    .top-node {
+    .node {
         position: absolute;
-        top: -6px;
-        left: 50%;
         height: 10px;
         width: 10px;
         background-color: #90ee90;
         cursor: grab;
     }
 
-    .left-node {
-        position: absolute;
-        top: 50%;
-        left: -6px;
-        height: 10px;
-        width: 10px;
-        background-color: #90ee90;
-        cursor: grab;
-    }
-
-    .bottom-node {
-        position: absolute;
-        bottom: -6px;
-        left: 50%;
-        height: 10px;
-        width: 10px;
-        background-color: #90ee90;
-        cursor: grab;
-    }
-
-    .right-node {
-        position: absolute;
-        top: 50%;
-        right: -6px;
-        height: 10px;
-        width: 10px;
-        background-color: #90ee90;
-    }
 </style>

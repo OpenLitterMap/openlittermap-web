@@ -1,21 +1,20 @@
 <template>
-	<div>
+    <div>
         <ul class="container">
-            <li v-for="category in categories" class='admin-item'>
-
+            <li v-for="category in categories" class="admin-item">
                 <!-- Translated Category Title -->
                 <span class="category">{{ getCategory(category.category) }}</span>
 
                 <!-- List of tags in each category -->
                 <span
                     v-for="tags in Object.entries(category.tags)"
-                    v-html="getTags(tags, category.category)"
-                    class="tag is-large is-info litter-tag"
+                    class="tag is-medium is-info litter-tag"
                     @click="removeTag(category.category, tags[0])"
+                    v-html="getTags(tags, category.category)"
                 />
             </li>
         </ul>
-	</div>
+    </div>
 </template>
 
 <script>
@@ -54,7 +53,6 @@ export default {
         {
             return this.$i18n.t('litter.categories.' + category);
         },
-
         /**
          * Return Translated key: value from tags[0]: tags[1]
          */
@@ -62,7 +60,6 @@ export default {
         {
             return this.$i18n.t('litter.' + category + '.' + tags[0]) + ': ' + tags[1] + '<br>';
         },
-
         /**
          * Remove tag from this category
          * If all tags have been removed, delete the category
@@ -83,7 +80,7 @@ export default {
             });
         }
     }
-}
+};
 </script>
 
 <style scoped>

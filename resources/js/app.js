@@ -22,39 +22,26 @@ window.axios = axios
 Vue.use(VueRouter)
 Vue.use(VueLocalStorage)
 Vue.use(VueSweetalert2)
-Vue.use(VueToastify)
+Vue.use(VueToastify, {
+    theme: 'dark',
+    errorDuration: 5000,
+});
 // Vue.use(VueMask)
 Vue.use(VueNumber)
 Vue.use(VueEcho, window.Echo)
 
 // Format a number with commas: "10,000"
-Vue.filter('commas', value => {
+Vue.filter('commas', value =>
+{
     return parseInt(value).toLocaleString();
-});
+},);
 
 const vm = new Vue({
     el: '#app',
     store,
     router,
     i18n,
-    created ()
-    {
-        // ProgressBar
-        this.$on('percent', function (pcnt) {
-            this.progressPercent = pcnt;
-        });
-    },
     components: {
         RootContainer
-    },
-    methods: {
-
-        /**
-         * Delete the welcome div when a user verifies their email address
-         */
-        deleteEmailSession ()
-        {
-            document.getElementById('#emaildiv').delay(500).slideUp(300);
-        },
     }
 });

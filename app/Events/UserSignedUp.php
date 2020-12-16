@@ -2,7 +2,6 @@
 
 namespace App\Events;
 
-use App\Events\Event;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Broadcasting\PrivateChannel;
@@ -15,7 +14,6 @@ class UserSignedUp implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    // public $username;
     // PROTECTED PRIVATE properties will not be serialized or sent through.
     public $now;
 
@@ -26,7 +24,6 @@ class UserSignedUp implements ShouldBroadcast
      */
     public function __construct ($now)
     {
-        // $this->username = $username;
         $this->now = $now;
     }
 

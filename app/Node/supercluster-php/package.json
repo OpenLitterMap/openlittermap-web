@@ -8,7 +8,7 @@
     "start": "http-server"
   },
   "author": "OpenLitterMap",
-  "license": "ISC",
+  "license": "GPL v3.0",
   "dependencies": {
     "fs": "0.0.1-security",
     "supercluster": "^7.1.0"

@@ -44,7 +44,7 @@ export default {
         Littercoin,
         Presence,
         Emails,
-        GlobalFlag
+        GlobalFlag,
     },
     async created ()
     {
@@ -65,7 +65,7 @@ export default {
                 'littercoin',
                 'presence',
                 'emails',
-                'show-flag'
+                'show-flag',
             ],
             link: 'password',
             types: {
@@ -77,7 +77,7 @@ export default {
                 'littercoin': 'Littercoin',
                 'presence': 'Presence',
                 'emails': 'Emails',
-                'show-flag': 'GlobalFlag'
+                'show-flag': 'GlobalFlag',
             }
         }
     },

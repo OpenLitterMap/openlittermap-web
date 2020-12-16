@@ -46,6 +46,8 @@
                         @click="open(s.url)"
                         class="footer-icon"
                     />
+                    <br>
+                    <router-link to="/credits" style="color: #94afe3;">Credits</router-link>
 
                 </div>
 
@@ -173,12 +175,13 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@import "../../styles/variables.scss";
 
     .foot {
         padding: 5em;
         background-image: radial-gradient(circle at 1% 1%,#328bf2,#1644ad);
-        height: 40em;
+        height: 42em;
         position: relative;
     }
 
@@ -202,7 +205,7 @@ export default {
 
     .footer-success {
         font-size: 1.5em;
-        color: white;
+        color: $white;
     }
 
     .footer-text {
@@ -215,7 +218,7 @@ export default {
     }
 
     .footer-link:hover {
-        color: white;
+        color: $white;
     }
 
     .f-input {
@@ -234,19 +237,19 @@ export default {
     .olm-title {
         font-size: 2em;
         font-weight: 700;
-        color: white;
+        color: $white;
         margin-bottom: 1em;
     }
 
     .olm-subtitle {
         font-size: 1.5em;
         font-weight: 700;
-        color: white;
+        color: $white;
         margin-bottom: 1em;
     }
 
     .top-footer-title {
-        color: white;
+        color: $white;
         font-size: 2.5em;
         margin-bottom: 1.25em;
     }

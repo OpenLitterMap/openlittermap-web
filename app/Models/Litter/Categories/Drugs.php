@@ -10,8 +10,6 @@ class Drugs extends Model
 	* Only these categories can be edited in the photo model
 	*/
     protected $fillable = [
-        'id',
-    	'photo_id',
     	'needles',
     	'wipes',
     	'tops',

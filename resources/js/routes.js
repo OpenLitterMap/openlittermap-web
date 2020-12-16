@@ -16,6 +16,14 @@ const router = new VueRouter({
             component: require('./views/home/Welcome').default
         },
         {
+            path: '/confirm/email/:token',
+            component: require('./views/home/Welcome').default
+        },
+        {
+            path: '/emails/unsubscribe/:token',
+            component: require('./views/home/Welcome').default
+        },
+        {
             path: '/about',
             component: require('./views/home/About').default
         },
@@ -42,6 +50,10 @@ const router = new VueRouter({
         {
             path: '/privacy',
             component: require('./views/general/Privacy').default
+        },
+        {
+            path: '/credits',
+            component: require('./views/general/Credits').default
         },
         // Countries
         {
@@ -100,9 +112,16 @@ const router = new VueRouter({
                 middleware: [ auth ]
             }
         },
+        // {
+        //     path: '/profile',
+        //     component: require('./views/general/Profile').default,
+        //     meta: {
+        //         middleware: [ auth ]
+        //     }
+        // },
         {
-            path: '/profile',
-            component: require('./views/general/Profile').default,
+            path: '/teams',
+            component: require('./views/Teams/Teams').default,
             meta: {
                 middleware: [ auth ]
             }
@@ -149,11 +168,7 @@ const router = new VueRouter({
                 {
                     path: 'show-flag',
                     component: require('./views/settings/GlobalFlag').default,
-                }
-                // {
-                // 	path: 'teams',
-                // 	component: require('./views/Teams').default
-                // },
+                },
                 // {
                 // 	path: 'phone',
                 // 	component: require('./views/Phone').default

@@ -7,14 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class Photo extends Model
 {
-	/*
-	* Only these categories can be edited in the database
-	*/
     protected $fillable = [
     	'filename',
     	'model',
     	'datetime',
-    	'lat', 'lon',
+    	'lat',
+        'lon',
         'verification',
         'result_string',
 
@@ -50,33 +48,14 @@ class Photo extends Model
         'total_litter',
         'platform',
         'bounding_box',
-        'geohash'
+        'geohash',
+        'team_id'
     ];
 
     /**
-     * Category types available on each photo
-     */
-    public function categories ()
-    {
-        return [
-            'smoking',
-            'food',
-            'coffee',
-            'softdrinks',
-            'alcohol',
-            'other',
-            'coastal',
-            'sanitary',
-            'dumping',
-            'industrial',
-            'brands'
-        ];
-    }
-
-    /**
      * Observe when this model is being updated
-       - onDelete, also delete relationships
-       - onDelete->cascade not working
+    - onDelete, also delete relationships
+    - onDelete->cascade not working
      */
     public static function boot ()
     {
@@ -99,11 +78,56 @@ class Photo extends Model
         });
     }
 
+    /**
+     * Category types available on each photo
+     */
+    public function categories ()
+    {
+        return [
+            'smoking',
+            'food',
+            'coffee',
+            'softdrinks',
+            'alcohol',
+            'other',
+            'coastal',
+            'sanitary',
+            'dumping',
+            'industrial',
+            'brands'
+        ];
+    }
+
+    /**
+     * User who uploaded the photo
+     */
     public function owner ()
     {
     	return $this->belongsTo(User::class, 'user_id');
     }
 
+    /**
+     * Save translation key => value for every item on each category that has a value
+     */
+    public function translate ()
+    {
+        $result_string = ''; // smoking.butts 3, alcohol.beerBottles 4,
+
+        foreach ($this->categories() as $category)
+        {
+            if ($this->$category)
+            {
+                $result_string .= $this->$category->translate();
+            }
+        }
+
+        $this->result_string = $result_string;
+        $this->save();
+    }
+
+    /**
+     * Location relationships
+     */
     public function country ()
     {
     	return $this->hasOne('App\Models\Location\Country');
@@ -119,6 +143,9 @@ class Photo extends Model
     	return $this->hasOne('App\Models\Location\City');
     }
 
+    /**
+     * Litter categories
+     */
     public function smoking ()
     {
     	return $this->hasOne('App\Models\Litter\Categories\Smoking', 'id', 'smoking_id');
@@ -151,7 +178,7 @@ class Photo extends Model
 
     public function dumping ()
     {
-        return $this->hasOne('App\Models\Litter\Categories\Dumping', 'id', 'dump_id');
+        return $this->hasOne('App\Models\Litter\Categories\Dumping', 'id', 'dumping_id');
     }
 
 	public function other ()

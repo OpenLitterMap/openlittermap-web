@@ -6,7 +6,7 @@ use App\Models\Litter\LitterCategory;
 
 class Dumping extends LitterCategory
 {
-    public $fillable = [
+    protected $fillable = [
     	'small',
     	'medium',
     	'large'

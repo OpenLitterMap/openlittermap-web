@@ -2,84 +2,87 @@
     <div class="control has-text-centered">
 
         <!-- Categories -->
-    	<div class="select" id="litter-items">
-			<select v-model="category">
-				<option v-for="cat in categories" :value="cat">{{ cat.title }}</option>
-			</select>
-		</div>
+        <div class="select" id="litter-items">
+            <select v-model="category">
+                <option v-for="cat in categories" :value="cat">{{ cat.title }}</option>
+            </select>
+        </div>
 
         <!-- Items -->
-	    <div class="select" id="litter-category">
-			<select v-model="item">
-				<option v-for="i in items" :value="i">{{ i.title }}</option>
-			</select>
-		</div>
+        <div class="select" id="litter-category">
+            <select v-model="item">
+                <option v-for="i in items" :value="i">{{ i.title }}</option>
+            </select>
+        </div>
 
         <!-- Quantity -->
-    	<div class="select" id="int">
-			<select v-model="quantity">
-				<option v-for="int in integers">{{ int }}</option>
-			</select>
-		</div>
+        <div class="select" id="int">
+            <select v-model="quantity">
+                <option v-for="int in integers">{{ int }}</option>
+            </select>
+        </div>
 
-		<br>
-		<br>
+        <br>
+        <br>
 
-		<button
-			:disabled="checkDecr"
-			class="button is-medium is-danger"
-			@click="decr"
-		>-</button>
+        <button
+            :disabled="checkDecr"
+            class="button is-medium is-danger"
+            @click="decr"
+        >-</button>
 
-		<button
-			class="button is-medium is-info"
-			@click="addTag"
-		>{{ $t('tags.add-tag') }}</button>
+        <button
+            class="button is-medium is-info"
+            @click="addTag"
+        >{{ $t('tags.add-tag') }}</button>
 
-		<button
-			:disabled="checkIncr"
-			class="button is-medium is-dark"
-			@click="incr"
-		>+</button>
+        <button
+            :disabled="checkIncr"
+            class="button is-medium is-dark"
+            @click="incr"
+        >+</button>
 
-		<br>
-		<br>
+        <br>
+        <br>
 
-		<button
-			:disabled="checkItems"
-			:class="button"
-			@click="submit"
+        <button
             v-show="! admin"
-		>{{ $t('common.submit') }}</button>
+            :disabled="checkItems"
+            :class="button"
+            @click="submit"
+        >{{ $t('common.submit') }}</button>
 
-		<!-- Only show these on mobile <= 768px -->
-		<div class="show-mobile">
-			<br>
-			<tags />
+        <!-- Only show these on mobile <= 768px -->
+        <div class="show-mobile">
+            <br>
+            <tags />
 
-			<div class="custom-buttons">
-				<profile-delete :photoid="  id" />
-    	    	<presence :itemsr="true" />
-    	    </div>
-    	</div>
-	</div>
+            <div class="custom-buttons">
+                <profile-delete :photoid="id" />
+                <presence :itemsr="true" />
+            </div>
+        </div>
+    </div>
 </template>
 
 <script>
 import Tags from './Tags'
 import Presence from './Presence'
 import ProfileDelete from './ProfileDelete'
+// import VueSimpleSuggest from 'vue-simple-suggest' todo
+// import 'vue-simple-suggest/dist/styles.css'
 import { categories } from '../../extra/categories'
+import { litterkeys } from '../../extra/litterkeys'
 
 export default {
     name: 'AddTags',
-	props: ['id', 'admin'], // photo.id, bool
-	components: {
+    props: ['id', 'admin'], // photo.id, bool
+    components: {
         Tags,
         Presence,
-        ProfileDelete
-	},
-	created ()
+        ProfileDelete,
+    },
+    created ()
     {
         // We need to initialize with translated title
         this.$store.commit('changeCategory', {
@@ -95,30 +98,26 @@ export default {
             title: this.$i18n.t('litter.smoking.butts')
         });
     },
-	data ()
+    data ()
     {
-		return {
+        return {
 		    btn: 'button is-medium is-success',
-			quantity: 1,
+            quantity: 1,
     		processing: false,
-	        integers: [
-	            1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
-	            11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-	            21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
-	            31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
-	            41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
-	            51, 52, 53, 54, 55, 56, 57, 58, 59, 60,
-	            61, 62, 63, 64, 65, 66, 67, 68, 69, 70,
-	            71, 72, 73, 74, 75, 76, 77, 78, 79, 80,
-	            81, 82, 83, 84, 85, 86, 87, 88, 89, 90,
-	            91, 92, 93, 94, 95, 96, 97, 98, 99, 100
-	        ],
-		};
-	},
+	        integers: Array.from({ length: 100 }, (_, i) => i + 1),
+            // autoCompleteStyle: {
+            //     vueSimpleSuggest: 'position-relative flex-05 mb1',
+            //     inputWrapper: '',
+            //     defaultInput : 'input',
+            //     suggestions: 'position-absolute list-group z-1000 custom-class-overflow flex-05',
+            //     suggestItem: 'list-group-item'
+            // },
+        };
+    },
     computed: {
 
         /**
-         * Add ' is-loading' when processing
+         * Show spinner when processing
          */
         button ()
         {
@@ -172,11 +171,11 @@ export default {
         items ()
         {
             return this.$store.state.litter.items.map(item => {
-               return {
-                   id: item.id,
-                   key: item.key,
-                   title: this.$i18n.t('litter.' + this.category.key + '.' + item.key )
-               };
+                return {
+                    id: item.id,
+                    key: item.key,
+                    title: this.$i18n.t('litter.' + this.category.key + '.' + item.key )
+                };
             });
         },
 
@@ -214,35 +213,35 @@ export default {
     },
     methods: {
 
-		/**
-		 * Increment the quantity
-		 */
-		incr ()
-        {
-			this.quantity++;
-		},
-
-		/**
-		 * Decrement the quantity
-		 */
-		decr ()
-        {
-			this.quantity--;
-		},
-
-		/**
-		 * Add data to the collection
-		 */
+        /**
+         * Add data to the collection
+         */
         addTag ()
-		{
-        	this.$store.commit('addTag', {
-        		category: this.category,
-        		item: this.item,
-        		quantity: this.quantity,
-        	});
+        {
+            this.$store.commit('addTag', {
+                category: this.category,
+                item: this.item,
+                quantity: this.quantity,
+            });
 
             this.quantity = 1;
             // this.disabled = false
+        },
+
+        /**
+		 * Increment the quantity
+		 */
+        incr ()
+        {
+            this.quantity++;
+        },
+
+        /**
+		 * Decrement the quantity
+		 */
+        decr ()
+        {
+            this.quantity--;
         },
 
         /**
@@ -257,8 +256,8 @@ export default {
 
             this.processing = false;
         },
-	}
-}
+    }
+};
 </script>
 
 <style lang="scss">
@@ -267,12 +266,16 @@ export default {
         display: none;
     }
 
+    .suggest-item {
+        color: black;
+    }
+
     @media (max-width: 500px)
     {
         .hide-br {
             display: block;
         }
-        .select {
+        .v-select {
             margin-top: 10px;
         }
     }

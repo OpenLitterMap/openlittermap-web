@@ -16,6 +16,7 @@ class Country extends Model
         'created_at',
         'updated_at',
         'total_images',
+        'total_litter',
         'total_smoking',
         'total_cigaretteButts',
         'total_plasticBottles',
@@ -34,7 +35,7 @@ class Country extends Model
         'countrynameb',
         'littercoin_paid',
         'created_by',
-        'photos_per_month'
+        'photos_per_month',
     ];
 
     public function getRouteKeyName()
@@ -58,7 +59,7 @@ class Country extends Model
         return [
             'smoking' => $this->total_smoking,
                'food' => $this->total_food,
-         'softdrinks' => $this->total_softDrinks,
+         'softdrinks' => $this->total_softdrinks,
             'alcohol' => $this->total_alcohol,
              'coffee' => $this->total_coffee,
            'sanitary' => $this->total_sanitary,
@@ -126,7 +127,7 @@ class Country extends Model
         'total_smoking',
         'total_food',
         'total_alcohol',
-        'total_softDrinks',
+        'total_softdrinks',
         'total_coffee',
         'total_sanitary',
         'total_other',
