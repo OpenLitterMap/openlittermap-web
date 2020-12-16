@@ -26,12 +26,7 @@
                             @click="android"
                         />
 
-<<<<<<< HEAD
                         <!--  <Languages />-->
-=======
-                        <!-- Work in progress! -->
-<!--                         <Languages />-->
->>>>>>> 1bd3b660e39c4347b1b1860e365975bf6de61b3e
                     </div>
                 </div>
 
