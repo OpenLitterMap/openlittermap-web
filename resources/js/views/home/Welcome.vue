@@ -26,8 +26,10 @@
                             @click="android"
                         />
 
-                        <Languages />
+                        <Languages class="is-hidden-mobile" />
                     </div>
+
+                    <Languages class="show-mobile has-text-centered" />
                 </div>
 
                 <div class="column is-half">
