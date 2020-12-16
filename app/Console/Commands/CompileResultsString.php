@@ -25,7 +25,7 @@ class CompileResultsString extends Command
      *
      * @var string
      */
-    protected $signature = 'global:compile-verified-resultstrings';
+    protected $signature = 'global:compile-verified-translated-tags';
 
     /**
      * The console command description.
@@ -45,7 +45,14 @@ class CompileResultsString extends Command
     }
 
     /**
-     * Save string to text column
+     * Instead of having to query the database to get the data for each photo
+     * We save the metadata on the photos table to speed up page load
+     * and avoid additional requests
+     *
+     * When a record exists, we apply the translation key => value,
+     * for every item in each category.
+     *
+     * Todo - chunk this.
      */
     public function handle()
     {

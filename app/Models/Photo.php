@@ -178,7 +178,7 @@ class Photo extends Model
 
     public function dumping ()
     {
-        return $this->hasOne('App\Models\Litter\Categories\Dumping', 'id', 'dump_id');
+        return $this->hasOne('App\Models\Litter\Categories\Dumping', 'id', 'dumping_id');
     }
 
 	public function other ()

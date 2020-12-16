@@ -18,9 +18,6 @@ class CompileResultsString
      * for every item in each category.
      *
      * with this 1 line of code!
-     *
-     * @param  object  $event
-     * @return void
      */
     public function handle ($event)
     {
