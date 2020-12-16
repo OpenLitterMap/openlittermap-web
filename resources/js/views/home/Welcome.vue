@@ -26,7 +26,7 @@
                             @click="android"
                         />
 
-                        <Languages />
+                        <!--  <Languages />-->
                     </div>
                 </div>
 
