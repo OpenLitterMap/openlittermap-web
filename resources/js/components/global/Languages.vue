@@ -3,8 +3,8 @@
 	  	<div class="dropdown-trigger" @click.stop="toggleOpen" >
 	    	<button class="button" aria-haspopup="true">
 	      		<!-- Current Language -->
-      			<img :src="getFlag('en')" class="lang-flag-small" />
-				<span>English</span>
+      			<img :src="getFlag(this.$i18n.locale)" class="lang-flag-small" />
+				<span>{{ this.currentLang }}</span>
 			</button>
 	  	</div>
 
@@ -50,6 +50,14 @@ export default {
 		{
 			return this.$store.state.globalmap.langsOpen ? this.button + ' is-active' : this.button;
 		},
+
+        /**
+         *
+         */
+        currentLang ()
+        {
+            return this.$t('locations.countries.' + this.$i18n.locale + '.lang');
+        },
 
 		/**
 		 * Current locale @en
