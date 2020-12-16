@@ -30,7 +30,7 @@ export default {
 			langs: [
 				{ url: 'en' }, // We have these languages mostly done but they are in php code with the old keys
 				// { url: 'de' },
-				{ url: 'es' },
+				// { url: 'es' },
 				// { url: 'fr' },
 				// { url: 'it' },
 				{ url: 'nl' },
