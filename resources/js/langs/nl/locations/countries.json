@@ -1,0 +1,51 @@
+{
+    "de": {
+        "name": "Duitland",
+        "lang": "Duits"
+    },
+
+    "en": {
+        "name": "Engeland",
+        "lang": "Engels"
+    },
+
+    "es": {
+        "name": "Spanje",
+        "lang": "Spaans"
+    },
+
+    "fr": {
+        "name": "Frankrijk",
+        "lang": "Frans"
+    },
+
+    "ie": {
+        "name": "Ierland",
+        "lang": "Iers"
+    },
+
+    "it": {
+        "name": "Italië",
+        "lang": "Italiaans"
+    },
+
+    "ms": {
+        "name": "Maleisië",
+        "lang": "Maleis"
+    },
+
+        "nl": {
+        "name": "Nederland",
+        "lang": "Nederlands"
+    },
+
+    "tk": {
+        "name": "Turkije",
+        "lang": "Turks"
+    },
+
+    "uk": {
+        "name": "Engeland",
+        "lang": "Engels"
+    }
+}

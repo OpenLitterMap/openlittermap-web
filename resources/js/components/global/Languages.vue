@@ -33,6 +33,7 @@ export default {
 				{ url: 'es' },
 				// { url: 'fr' },
 				// { url: 'it' },
+				{ url: 'nl' },
 				// { url: 'ms' },
 				// { url: 'tk' }
 			]
@@ -86,6 +87,7 @@ export default {
         language (lang)
         {
             this.$i18n.locale = lang;
+            this.$store.commit('closeLangsButton');
         },
 
 		/**
