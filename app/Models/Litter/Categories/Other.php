@@ -6,13 +6,9 @@ use App\Models\Litter\LitterCategory;
 
 class Other extends LitterCategory
 {
-    protected $table = 'others';
+    protected $table = 'other';
 
-	/*
-	* Only these categories can be edited in the photo model
-	*/
     protected $fillable = [
-        'id',
     	'dogshit',
     	'plastic',
         'dump',

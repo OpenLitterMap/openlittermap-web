@@ -6,16 +6,9 @@ use App\Models\Litter\LitterCategory;
 
 class Food extends LitterCategory
 {
-
     protected $table = 'food';
-	/*
-	* Only these categories can be edited in the photo model
-	*/
+
     protected $fillable = [
-
-        'id',
-    	'photo_id',
-
 	    'sweetWrappers',
     	'cardboardFoodPackaging',
     	'paperFoodPackaging',
@@ -33,7 +26,8 @@ class Food extends LitterCategory
         'aluminium_foil'
     ];
 
-    public function photo () {
+    public function photo ()
+    {
     	return $this->hasOne('App\Models\Photo');
     }
 

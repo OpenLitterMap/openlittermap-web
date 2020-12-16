@@ -9,8 +9,6 @@ class Smoking extends LitterCategory
     protected $table = 'smoking';
 
     protected $fillable = [
-        'id',
-        'photo_id',
     	'butts',
     	'lighters',
     	'cigaretteBox',
@@ -27,12 +25,13 @@ class Smoking extends LitterCategory
     /**
      * The photo related to the smoking category
      */
-    public function photo () {
+    public function photo ()
+    {
     	return $this->belongsTo('App\Models\Photo');
     }
 
     /**
-     * Pre-defined litter types available on this class
+     * Pre-defined litter types/columns available on this class
      */
     public function types ()
     {
@@ -45,7 +44,9 @@ class Smoking extends LitterCategory
             'smokingOther',
             'smoking_plastic',
             'filters',
-            'filterbox'
+            'filterbox',
+            'vape_pen',
+            'vape_oil'
         ];
     }
 

@@ -7,8 +7,6 @@ use App\Models\Litter\LitterCategory;
 class Brand extends LitterCategory
 {
     protected $fillable = [
-        'photo_id',
-
     	'adidas',
     	'amazon',
         'aldi',
