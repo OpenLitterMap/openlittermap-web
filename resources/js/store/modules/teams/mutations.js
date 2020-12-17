@@ -51,6 +51,20 @@ export const mutations = {
     },
 
     /**
+     * Update the value of a users settings on 1 team
+     */
+    team_settings (state, payload)
+    {
+        let teams = [...state.teams];
+
+        let team = teams.find(t => t.id === payload.team_id);
+
+        team.pivot[payload.key] = payload.v;
+
+        state.teams = teams;
+    },
+
+    /**
      * Init team.types from database
      */
     teamTypes (state, payload)

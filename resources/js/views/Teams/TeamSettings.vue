@@ -19,33 +19,43 @@
                         </option>
                     </select>
 
-                    <!-- Maps -->
+                    <!-- Team Maps -->
                     <h1 class="title is-4">{{ $t('settings.privacy.maps') }}:</h1>
-                    <label class="checkbox">
+                    <label class="checkbox mb1">
                         <input type="checkbox" v-model="show_name_maps" />
                         {{ $t('settings.privacy.credit-name') }}
                     </label>
+
                     <br>
 
-                    <label class="checkbox">
+                    <label class="checkbox mb1">
                         <input type="checkbox" v-model="show_username_maps" />
                         {{ $t('settings.privacy.credit-username') }}
                     </label>
 
-                    <!-- Leaderboard -->
+                    <p v-show="show_name_maps" class="is-green">Your name will appear on the maps</p>
+                    <p v-show="show_username_maps" class="is-green">Your username will appear on the maps</p>
+                    <p v-show="! show_name_maps && ! show_username_maps" class="is-red">Your name and username will not appear on the maps</p>
+
+                    <!-- Team Leaderboard -->
                     <h1 class="title is-4 mt1">{{ $t('settings.privacy.leaderboards') }}:</h1>
-                    <label class="checkbox">
-                        <input type="checkbox" v-model="show_name_leaderboard" />
+                    <label class="checkbox mb1">
+                        <input type="checkbox" v-model="show_name_leaderboards" />
                         {{ $t('settings.privacy.credit-name') }}
                     </label>
+
                     <br>
 
-                    <label class="checkbox">
-                        <input type="checkbox" v-model="show_username_leaderboard" />
+                    <label class="checkbox mb1">
+                        <input type="checkbox" v-model="show_username_leaderboards" />
                         {{ $t('settings.privacy.credit-username') }}
                     </label>
 
-                    <br>
+                    <p v-show="show_name_leaderboards" class="is-green">Your name will appear on the leaderboard</p>
+                    <p v-show="show_username_leaderboards" class="is-green">Your username will appear on the leaderboard</p>
+                    <p v-show="! show_name_leaderboards && ! show_username_leaderboards" class="is-red">Your name and username will not appear on the leaderboard</p>
+
+                    <button :class="button" @click="submit">Save</button>
                 </div>
             </div>
         </div>
@@ -59,7 +69,9 @@ export default {
     {
         return {
             loading: true,
-            viewTeam: 0
+            viewTeam: 0,
+            processing: false,
+            btn: 'button is-medium is-primary mt1',
         };
     },
     async created ()
@@ -75,26 +87,42 @@ export default {
     computed: {
 
         /**
+         * Add spinner when processing
+         */
+        button ()
+        {
+            return this.processing ? this.btn + ' is-loading' : this.btn;
+        },
+
+        /**
          *
          */
-        show_name_leaderboard: {
+        show_name_leaderboards: {
             get () {
-                return false;
+                return this.team.pivot.show_name_leaderboards;
             },
             set (v) {
-                console.log(v);
+                this.$store.commit('team_settings', {
+                    team_id: this.viewTeam,
+                    key: 'show_name_leaderboards',
+                    v
+                });
             }
         },
 
         /**
          *
          */
-        show_username_leaderboard: {
+        show_username_leaderboards: {
             get () {
-                return false;
+                return this.team.pivot.show_username_leaderboards;
             },
             set (v) {
-                console.log(v);
+                this.$store.commit('team_settings', {
+                    team_id: this.viewTeam,
+                    key: 'show_username_leaderboards',
+                    v
+                });
             }
         },
 
@@ -103,10 +131,14 @@ export default {
          */
         show_name_maps: {
             get () {
-                return false;
+                return this.team.pivot.show_name_maps;
             },
             set (v) {
-                console.log(v);
+                this.$store.commit('team_settings', {
+                    team_id: this.viewTeam,
+                    key: 'show_name_maps',
+                    v
+                });
             }
         },
 
@@ -115,11 +147,23 @@ export default {
          */
         show_username_maps: {
             get () {
-                return false;
+                return this.team.pivot.show_username_maps;
             },
             set (v) {
-                console.log(v);
+                this.$store.commit('team_settings', {
+                    team_id: this.viewTeam,
+                    key: 'show_username_maps',
+                    v
+                });
             }
+        },
+
+        /**
+         * Current team we are viewing
+         */
+        team ()
+        {
+            return this.teams.find(team => team.id === this.viewTeam);
         },
 
         /**
@@ -128,6 +172,16 @@ export default {
         teams ()
         {
             return this.$store.state.teams.teams;
+        }
+    },
+    methods: {
+
+        /**
+         * Dispatch a request to save settings per Team
+         */
+        async submit ()
+        {
+            await this.$store.dispatch('SAVE_TEAM_SETTINGS', this.viewTeam);
         }
     }
 };
