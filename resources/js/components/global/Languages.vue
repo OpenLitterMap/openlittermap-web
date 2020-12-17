@@ -95,6 +95,7 @@ export default {
         language (lang)
         {
             this.$i18n.locale = lang;
+            this.$localStorage.set('lang', lang);
             this.$store.commit('closeLangsButton');
         },
 
