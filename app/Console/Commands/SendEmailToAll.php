@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\User\User;
 use App\Mail\SmallUpdate;
+use App\Subscriber;
 use Illuminate\Console\Command;
 
 class SendEmailToAll extends Command
@@ -39,7 +40,9 @@ class SendEmailToAll extends Command
      */
     public function handle()
     {
-        $users = User::where('emailsub', 1)->orderBy('id', 'asc')->get();
+//        $users = User::where('emailsub', 1)->orderBy('id', 'asc')->get();
+
+        $users = Subscriber::all();
 
         foreach ($users as $user)
         {

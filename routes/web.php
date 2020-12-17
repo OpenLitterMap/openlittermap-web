@@ -2,10 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 
-// Route::get('test', function() {
-// 	$user = \App\Models\User\User::first();
-// 	return view('emails.update20', compact('user'));
-// });
+ Route::get('test', function() {
+ 	$user = \App\Models\User\User::first();
+ 	return view('emails.update21', compact('user'));
+ });
 
 // only turn this on in limited circumstances
 // Route::get('sean', 'TotalDataController@getCSV');
@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', 'HomeController@index');
 Route::get('/about', 'HomeController@index');
 Route::get('/world', 'HomeController@index');
+
 
 // Registration
 Route::get('/signup', 'HomeController@index');
@@ -242,7 +243,13 @@ Route::get('/privacy', function() {
 
 // Confirm Email Address, old and new
 Route::get('register/confirm/{token}', 'Auth\RegisterController@confirmEmail');
+// Route::get('a', function () {
+//     $user = \App\Models\User\User::first();
+//     return view('auth.emails.confirm', ['user' => $user]);
+//  });
 Route::get('confirm/email/{token}', 'Auth\RegisterController@confirmEmail');
+
+// Route::get('confirm/email/{token}', 'Auth\RegisterController@confirmEmail');
 
 // Logout
 Route::get('logout', 'UsersController@logout');
@@ -306,7 +313,7 @@ Route::group(['prefix' => '/admin'], function () {
     Route::post('/ltrxgenerated', 'LTRXController@success');
 
     // Add coordinates
-    Route::get('bbox', 'AdminController@index');
+    Route::get('bbox', 'HomeController@index');
 
     Route::get('next-bb-image', 'BoundingBoxController@index');
 });

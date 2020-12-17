@@ -28,7 +28,7 @@ class UpdateStateValues extends Command
      *
      * @var string
      */
-    protected $signature = 'olm:update-states';
+    protected $signature = 'olm:update-state-values';
 
     /**
      * The console command description.
@@ -54,6 +54,8 @@ class UpdateStateValues extends Command
      */
     public function handle()
     {
+        echo "update-state-values \n";
+
         $states = State::all();
 
         foreach($states as $state) {

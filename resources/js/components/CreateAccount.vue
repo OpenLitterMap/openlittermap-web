@@ -220,7 +220,7 @@ export default {
 	computed: {
 
 	    /**
-         * Add ' is-loading' when processing
+         * Add spinner when processing
          */
 	    button ()
         {
@@ -251,11 +251,8 @@ export default {
 		{
             if (process.env.NODE_ENV === "development")
 			{
-                console.log('dev;')
                 return "6LcvHsIZAAAAAOG0q9-1vY3uWqu0iFvUC3tCNhID"; // olm.test
 			}
-
-            console.log('production');
 
 			return "6LciihwUAAAAADsZr0CYUoLPSMOIiwKvORj8AD9m" // production
 		},

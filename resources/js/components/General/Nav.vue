@@ -21,7 +21,7 @@
                     <div class="navbar-end">
 
                         <!-- Admin -->
-                        <router-link v-if="admin" to="/admin/photos" class="navbar-item">
+                        <router-link v-if="admin" to="/admin/photos" class="navbar-item" @click.native="close">
                             {{ $t('nav.admin')}}
                         </router-link>
 
@@ -30,17 +30,17 @@
                         </a>
 
                         <!-- About -->
-                        <router-link to="/about" class="navbar-item">
+                        <router-link to="/about" class="navbar-item" @click.native="close">
                               {{ $t('nav.about')}}
                         </router-link>
 
                         <!-- Global Map -->
-                        <router-link to="/global" class="navbar-item">
+                        <router-link to="/global" class="navbar-item" @click.native="close">
                              {{ $t('nav.global-map')}}
                         </router-link>
 
                         <!-- World Cup -->
-                        <router-link to="/world" class="navbar-item">
+                        <router-link to="/world" class="navbar-item" @click.native="close">
                              {{ $t('nav.world-cup')}}
                         </router-link>
 
@@ -87,7 +87,7 @@
                         <!-- The user is not authenticated -->
                         <div v-else class="flex-not-mobile">
                             <!-- Login -->
-                            <a class="navbar-item" @click="login"> {{ $t('nav.login')}}</a>
+                            <a class="navbar-item" @click="login">{{ $t('nav.login')}}</a>
 
                             <!-- Signup -->
                             <router-link to="/signup" class="navbar-item">
@@ -147,6 +147,15 @@ export default {
     },
 
     methods: {
+
+        /**
+         * Mobile - Close the nav
+         */
+        close ()
+        {
+            console.log('close');
+            this.open = false;
+        },
 
         /**
          * Show modal to log the user in

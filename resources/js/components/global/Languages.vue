@@ -3,8 +3,8 @@
 	  	<div class="dropdown-trigger" @click.stop="toggleOpen" >
 	    	<button class="button" aria-haspopup="true">
 	      		<!-- Current Language -->
-      			<img :src="getFlag('en')" class="lang-flag-small" />
-				<span>English</span>
+      			<img :src="getFlag(this.$i18n.locale)" class="lang-flag-small" />
+				<span>{{ this.currentLang }}</span>
 			</button>
 	  	</div>
 
@@ -30,9 +30,10 @@ export default {
 			langs: [
 				{ url: 'en' }, // We have these languages mostly done but they are in php code with the old keys
 				// { url: 'de' },
-				{ url: 'es' },
+				// { url: 'es' },
 				// { url: 'fr' },
 				// { url: 'it' },
+				{ url: 'nl' },
 				// { url: 'ms' },
 				// { url: 'tk' }
 			]
@@ -49,6 +50,14 @@ export default {
 		{
 			return this.$store.state.globalmap.langsOpen ? this.button + ' is-active' : this.button;
 		},
+
+        /**
+         *
+         */
+        currentLang ()
+        {
+            return this.$t('locations.countries.' + this.$i18n.locale + '.lang');
+        },
 
 		/**
 		 * Current locale @en
@@ -86,6 +95,8 @@ export default {
         language (lang)
         {
             this.$i18n.locale = lang;
+            this.$localStorage.set('lang', lang);
+            this.$store.commit('closeLangsButton');
         },
 
 		/**

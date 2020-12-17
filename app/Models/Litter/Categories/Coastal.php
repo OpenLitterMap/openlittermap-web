@@ -9,8 +9,6 @@ class Coastal extends LitterCategory
 	protected $table = 'coastal';
 
 	protected $fillable = [
-		'id',
-		'photo_id',
 		'microplastics',
 		'mediumplastics',
 		'macroplastics',

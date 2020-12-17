@@ -6,9 +6,6 @@ use App\Models\Litter\LitterCategory;
 
 class Alcohol extends LitterCategory
 {
-	/*
-	* Only these categories can be edited in the photo model
-	*/
     protected $fillable = [
 	    'beerCan',
 	    'beerBottle',

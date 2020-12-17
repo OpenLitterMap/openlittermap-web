@@ -8,12 +8,7 @@ class Sanitary extends LitterCategory
 {
 	protected $table = 'sanitary';
 
-	/*
-	* Only these categories can be edited in the photo model
-	*/
     protected $fillable = [
-    	'id',
-    	'photo_id',
 	    'condoms',
 	    'nappies',
 	    'menstral',
@@ -24,7 +19,8 @@ class Sanitary extends LitterCategory
 	    'sanitaryOther',
         'gloves',
         'facemask',
-        'wetwipes'
+        'wetwipes',
+        'hand_sanitiser'
     ];
 
     public function photo () {
@@ -47,7 +43,8 @@ class Sanitary extends LitterCategory
             'sanitaryOther',
             'gloves',
             'facemask',
-            'wetwipes'
+            'wetwipes',
+            'hand_sanitiser'
         ];
     }
 

@@ -177,7 +177,7 @@ class User extends Authenticatable
         $this->verified = true;
         $this->token = null;
         $this->save();
-        // return redirect()->view('pages.locations.welcome');
+        return $this->verified;
     }
 
     /**

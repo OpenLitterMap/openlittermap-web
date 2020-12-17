@@ -1,0 +1,13 @@
+{
+    "card-number": "Kaart nummer",
+    "card-holder": "Naam van kaart eigenaar",
+    "exp": "Verval datum",
+    "cvv": "CVV",
+    "placeholders": {
+        "card-number": "Je 16 cijferig kaart nummer",
+        "card-holder": "Naam van de kaart eigenaar",
+        "exp-month": "Maand",
+        "exp-year": "Jaar",
+        "cvv": "***"
+    }
+}

@@ -8,18 +8,10 @@ class Coffee extends LitterCategory
 {
     protected $table = 'coffee';
 
-	/*
-	* Only these categories can be edited in the photo model
-	*/
     protected $fillable = [
-
-    	'id',
-    	'photo_id',
-
 	    'coffeeCups',
 	    'coffeeLids',
 	    'coffeeOther'
-
     ];
 
     public function photo () {

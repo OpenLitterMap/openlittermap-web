@@ -43,7 +43,7 @@ class UpdateStateLeaderboards extends Command
      */
     public function handle()
     {
-
+        echo "update states leaderboards \n";
         // $states = State::all();
 
         $users = User::where([

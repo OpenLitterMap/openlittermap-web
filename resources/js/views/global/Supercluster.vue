@@ -21,11 +21,19 @@ import Languages from '../../components/global/Languages';
 // import GlobalDates from '../../components/global/GlobalDates'
 import LiveEvents from '../../components/LiveEvents';
 // import GlobalInfo from '../../components/global/GlobalInfo'
-import {CLUSTER_ZOOM_THRESHOLD, MAX_ZOOM, MEDIUM_CLUSTER_SIZE, LARGE_CLUSTER_SIZE, MIN_ZOOM, SHOW_DETAIL_ZOOM, ZOOM_STEP} from '../../constants';
+import {
+    CLUSTER_ZOOM_THRESHOLD,
+    MAX_ZOOM,
+    MEDIUM_CLUSTER_SIZE,
+    LARGE_CLUSTER_SIZE,
+    MIN_ZOOM,
+    ZOOM_STEP
+} from '../../constants';
 
 import L from 'leaflet';
 import moment from 'moment';
 import './SmoothWheelZoom.js';
+import i18n from '../../i18n'
 
 var map;
 var markers;
@@ -57,18 +65,38 @@ function createClusterIcon (feature, latlng)
 
 /**
  * On each feature, perform this action
+ *
+ * This is being performed whenever the user drags the map.
+ *
+ * Tranlsation should only occur when the user clicks on a point to open an image.
  */
 function onEachFeature (feature, layer)
 {
-    // todo - on cluster, zoom on click
-
     if (! feature.properties.cluster)
     {
+        let a = feature.properties.result_string.split(',');
+        a.pop();
+
+        let z = '';
+        a.forEach(i => {
+            let b = i.split(' ');
+
+            z += i18n.t('litter.' + b[0]) + ': ' + b[1] + ' ';
+        });
+
         layer.bindPopup(
-            '<p class="mb5p">' + feature.properties.result_string + ' </p>'
+            '<p class="mb5p">' + z + ' </p>'
             + '<img src= "' + feature.properties.filename + '" class="mw100" />'
             + '<p>Taken on ' + moment(feature.properties.datetime).format('LLL') +'</p>'
         );
+    }
+
+    else
+    {
+        // Zoom in cluster when click to it
+        layer.on('click', function (e) {
+            map.setView(e.latlng, map.getZoom() + ZOOM_STEP);
+        });
     }
 }
 
@@ -79,10 +107,13 @@ async function update ()
 {
     const bounds = map.getBounds();
 
-    let bbox = {'left': bounds.getWest(), 'bottom': bounds.getSouth(), 'right': bounds.getEast(), 'top': bounds.getNorth()};
+    let bbox = {
+        'left': bounds.getWest(),
+        'bottom': bounds.getSouth(),
+        'right': bounds.getEast(),
+        'top': bounds.getNorth(),
+    };
     let zoom = Math.round(map.getZoom());
-
-    console.log({ zoom });
 
     // We don't want to make a request at zoom level 2-5 if the user is just panning the map.
     // At these levels, we just load all global data for now
@@ -91,40 +122,42 @@ async function update ()
     if (zoom === 4 && zoom === prevZoom) return;
     if (zoom === 5 && zoom === prevZoom) return;
 
-    prevZoom = zoom; // hold previous zoom
-
     // If the zoom is less than 17, we want to load cluster data
-    if (zoom < 17)
+    if (zoom < CLUSTER_ZOOM_THRESHOLD)
     {
         await axios.get('clusters', {
             params: { zoom, bbox }
         })
-            .then(response => {
-                console.log('get_clusters.update', response);
+        .then(response => {
+            console.log('get_clusters.update', response);
 
-                markers.clearLayers();
-                markers.addData(response.data);
-            })
-            .catch(error => {
-                console.error('get_clusters.update', error);
-            });
+            markers.clearLayers();
+            markers.addData(response.data);
+        })
+        .catch(error => {
+            console.error('get_clusters.update', error);
+        });
     }
-
     else
     {
         await axios.get('global-points', {
-            params: { zoom, bbox }
+            params: { zoom, bbox, },
         })
-            .then(response => {
-                console.log('get_global_points', response);
+        .then(response => {
+            console.log('get_global_points', response);
 
+            // Clear layer if prev layer is cluster.
+            if (prevZoom < CLUSTER_ZOOM_THRESHOLD)
+            {
                 markers.clearLayers();
-                markers.addData(response.data);
-            })
-            .catch(error => {
-                console.error('get_global_points', error);
-            });
+            }
+            markers.addData(response.data);
+        })
+        .catch(error => {
+            console.error('get_global_points', error);
+        });
     }
+    prevZoom = zoom; // hold previous zoom
 }
 
 export default {
@@ -167,18 +200,10 @@ export default {
             onEachFeature: onEachFeature,
         }).addTo(map);
 
-        // Zoom in cluster when click to it
-        markers.on('click', function (e){
-            // If marker is not cluster, stop zooming.
-            if(map.getZoom() >= CLUSTER_ZOOM_THRESHOLD){
-                return;
-            }
-            map.setView(e.latlng, map.getZoom() + ZOOM_STEP);
-        });
-
         markers.addData(this.$store.state.globalmap.geojson.features);
 
-        map.on('moveend', function () {
+        map.on('moveend', function ()
+        {
             update();
         });
 

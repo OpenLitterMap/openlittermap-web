@@ -23,4 +23,28 @@ class LitterCategory extends Model
 
         return $total;
     }
+
+    /**
+     * Return a string of key => value pairs,
+     *
+     * Where "table" is the name of the category
+     *
+     * Where key is the translation key
+     *
+     * and value is the number of litter items for that key
+     */
+    public function translate ()
+    {
+        $string = '';
+
+        foreach ($this->types() as $type)
+        {
+            if ($this->$type)
+            {
+                $string .= $this->table . '.' . $type . ' ' . $this->$type . ',';
+            }
+        }
+
+        return $string;
+    }
 }
