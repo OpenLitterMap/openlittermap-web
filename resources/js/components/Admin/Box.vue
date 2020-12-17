@@ -1,8 +1,8 @@
 <template>
     <div class="box-wrapper" @mousedown="function(e) { selectBox(e) }" @mouseup="mouseUp()">
 
-        <div :class="selected ? 'box selected-box' : 'box'
-"             :style="{top: this.geom[0] + 'px', left: this.geom[1] + 'px', width: this.geom[2] + 'px', height: this.geom[3] + 'px'}">
+        <div :class="selected ? 'box selected-box' : 'box'"             
+                :style="{top: this.geom[0] + 'px', left: this.geom[1] + 'px', width: this.geom[2] + 'px', height: this.geom[3] + 'px'}">
 
             <div class="inner-box">
                 <div v-show="selected" class="node" :style="{top: -6 + 'px', left: (0.5 * this.geom[2] - 6) + 'px'}" @mousedown="function(e) { selectNode(e, 0) }" />

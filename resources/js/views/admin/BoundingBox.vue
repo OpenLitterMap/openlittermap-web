@@ -10,7 +10,7 @@
 
                     <div id="image-wrapper"
                          :style="image"
-                         @mousedown.self="startDrawingBox"
+                         @mousedown.self="mousedownSelf"
                          @mousemove="mouseMove"
                          @mouseup="mouseUp"
                     >
@@ -47,6 +47,8 @@ import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
 
 import Box from '../../components/Admin/Box'
+
+const minBoxSize = 43;
 
 export default {
     name: 'BoundingBox',
@@ -130,7 +132,7 @@ export default {
             this.currentY = pageY;
 
             this.startPos = [pageX, pageY];
-            this.startGeom = this.boxes[index].geom
+            this.startGeom = this.boxes[index].geom;
         },
 
         /**
@@ -186,7 +188,7 @@ export default {
                 var newWidth = this.startGeom[2] + this.apply[this.activatedNode][2] * diff;
                 var newHeight = this.startGeom[3] + this.apply[this.activatedNode][3] * diff;
 
-                if((newWidth > 43)&&(newHeight > 43))
+                if((newWidth > minBoxSize)&&(newHeight > minBoxSize))
                 {
                     this.boxes[this.activatedBox].geom = [
                         this.startGeom[0] + this.apply[this.activatedNode][0] * diff,
@@ -216,7 +218,10 @@ export default {
         {
             if(this.activatedBox == -1)
             {
+                // Record the box which has been selected, and set all other boxes to be deselected:
+                this.deselectAllBoxes();
                 this.boxes[i].selected = true;
+
                 this.dragBox = i;
                 this.currentX = pageX;
                 this.currentY = pageY;
@@ -226,8 +231,12 @@ export default {
         /**
          *
          */
-        startDrawingBox (e)
+        mousedownSelf (e)
         {
+            // The user has clicked outside all the boxes, so deselect all boxes:
+            this.deselectAllBoxes();
+
+            // Now activate box drawing mode:
             this.drawingBox = {
                 active: true,
                 geom: [e.offsetY, e.offsetX, 0, 0]
@@ -237,7 +246,7 @@ export default {
         /**
          * When a box dragging event ends: 
          */
-        dragEnd()
+        dragEnd ()
         {
             this.dragBox = -1;
         },
@@ -251,8 +260,6 @@ export default {
             {
                 if (this.drawingBox.geom[2] > 5)
                 {
-                    //console.log(this.drawingBox.geom);
-
                     this.boxes.push({
                         geom: this.drawingBox.geom,
                         selected: false,
@@ -265,11 +272,21 @@ export default {
                 this.drawingBox = {
                     active: false, 
                     geom: [0, 0, 0, 0]
-                }
+                };
             }
 
             this.activatedBox = -1;
             this.dragEnd();
+        },
+
+        /**
+         *
+         */
+        deselectAllBoxes ()
+        {
+            this.boxes.forEach(
+                function (box) { box.selected = false }
+            );
         }
 
     }
