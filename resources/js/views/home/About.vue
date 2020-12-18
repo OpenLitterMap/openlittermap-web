@@ -1,41 +1,37 @@
 <template>
-    <div>
+    <div class="grid-container">
         <!-- Cigarette Butts -->
-        <section class="section">
-            <div class="columns">
-                <div class="column is-one-third is-offset-1" style="text-align: center;">
-                    <img src="/assets/butts.jpg" />
-                </div>
+        <div>
+            <img src="/assets/butts.jpg">
+        </div>
 
-                <div class="column cig-2">
-                    <h2 id="butts1txt" class="title is-2" style="color: red; text-align: center;">
-                        <strong>{{ $t('home.about.about2') }}</strong>
-                    </h2>
-                </div>
-            </div>
-            <br>
-            <br>
-            <div class="columns">
-                <div class="column is-one-third is-offset-1">
-                    <h1 class="title is-1" style="text-align: center;"><strong>{{ $t('home.about.about3') }}</strong></h1>
-                    <br>
-                    <h1 class="subtitle is-3">{{ $t('home.about.about4') }}</h1>
-                    <br>
-                    <h1 class="subtitle is-3">{{ $t('home.about.about5') }}</h1>
-                    <br>
-                    <p class="subtitle is-3">{{ $t('home.about.about6') }}</p>
-                </div>
-
-                <div class="column is-offset-1 butts-img">
-                    <img src="/assets/cigbutts_jar.jpg" style="height: 600px;">
-                </div>
-            </div>
-        </section>
+        <div class="text-px">
+            <h1 class="title has-text-centered" style="color: red">
+                <strong>{{ $t('home.about.about2') }}</strong>
+            </h1>
+        </div>
+        <div class="text-px">
+            <h1 class="title has-text-centered">
+                <strong>{{ $t('home.about.about3') }}</strong>
+            </h1>
+            <h1 class="subtitle is-4 font-size-mb">
+                {{ $t('home.about.about4') }}
+            </h1>
+            <h1 class="subtitle is-4 font-size-mb">
+                {{ $t('home.about.about5') }}
+            </h1>
+            <p class="subtitle is-4 font-size-mb">
+                {{ $t('home.about.about6') }}
+            </p>
+        </div>
+        <div class="butts-img">
+            <img src="/assets/cigbutts_jar.jpg" class="img-max-height">
+        </div>
 
         <!-- Call to action -->
-        <section class="hero is-success">
-            <div class="hero-body">
-                <div class="container has-text-centered">
+        <section class="hero is-success grid-item-full">
+            <div class="hero-body has-text-centered">
+                <div class="pb-5">
                     <h1 class="title">
                         <strong>
                             {{ $t('home.about.about7') }}
@@ -43,76 +39,77 @@
                     </h1>
                     <!-- subtitle removed -->
                 </div>
-                <div class="has-text-centered" style="padding-top: 2em;">
-                    <router-link to="/signup">
-                        <button class="button is-large is-info hov">{{ $t('home.about.about9') }}</button>
-                    </router-link>
-                </div>
+                <router-link
+                    to="/signup"
+                    class="button is-size-5-mobile is-size-4-desktop is-size-4-tablet is-info hov"
+                >
+                    {{ $t('home.about.about9') }}
+                </router-link>
             </div>
         </section>
 
         <!-- 1. Just take a photo -->
-        <div class="has-text-centered pt3">
-            <h1 class="title is-1">1. Just take a photo</h1>
-
-            <img src="/assets/about/iphone.PNG" />
+        <div class="has-text-centered grid-item-full">
+            <h1 class="title">
+                1. Just take a photo
+            </h1>
+            <img class="pt-2" src="/assets/about/iphone.PNG">
         </div>
 
         <!-- 2. Tag it with our app -->
-        <div class="has-text-centered pt3">
-            <h1 class="title is-1">2. Tag the litter</h1>
-
-            <img src="/assets/about/facemask-tag.PNG" />
+        <div class="has-text-centered grid-item-full">
+            <h1 class="title">
+                2. Tag the litter
+            </h1>
+            <img class="pt-2 img-max-height" src="/assets/about/facemask-tag.PNG">
         </div>
 
         <!-- 3. Upload it -->
-        <div class="has-text-centered pt3">
-            <h1 class="title is-1">3. Upload it</h1>
-
-            <img src="/assets/about/facemask-map.PNG" />
+        <div class="has-text-centered grid-item-full">
+            <h1 class="title">
+                3. Upload it
+            </h1>
+            <img class="pt-2 img-max-height" src="/assets/about/facemask-map.PNG">
         </div>
 
         <!-- Download app icons -->
-        <div class="flex jc pt3">
+        <div class="flex jc grid-item-full">
             <img
                 src="/assets/icons/ios.png"
-                class="app-icon"
-                style="margin-right: 1em;"
+                class="app-icon mr-4"
                 @click="ios"
-            />
+            >
             <img
                 src="/assets/icons/android.png"
                 class="app-icon"
                 @click="android"
-            />
+            >
         </div>
 
         <!-- Plastic from land to sea -->
-        <section>
-            <div class="columns" style="padding-top: 4em; padding-bottom: 4em;">
-                <div class="column is-one-third is-offset-1" style="padding-left: 2em; margin:auto;">
-                    <h1 class="title is-2" style="text-align: center;"><strong style="color: red;">{{ $t('home.about.about10') }}</strong></h1>
-                    <br>
-                    <h1 class="title is-2" style="text-align: center;"><strong style="color: red;">{{ $t('home.about.about11') }}</strong></h1>
-                </div>
-
-                <div class="column is-one-third is-offset-1" style="padding-top: 4em; padding-bottom: 4em; margin:auto;">
-                    <img src="/assets/plastic_bottles.jpg" style="">
-                </div>
-            </div>
-        </section>
+        <div class="text-px has-text-centered">
+            <h1 class="title">
+                <strong style="color: red;">{{ $t('home.about.about10') }}</strong>
+            </h1>
+            <h1 class="title">
+                <strong style="color: red;">{{ $t('home.about.about11') }}</strong>
+            </h1>
+        </div>
+        <div>
+            <img src="/assets/plastic_bottles.jpg">
+        </div>
 
         <!-- The illusion of urban cleaning -->
-        <section class="hero is-warning">
+        <section class="hero is-warning grid-item-full">
             <div class="hero-body">
-                <div class="container">
-                    <h1 class="title is-1">
+                <div class="container has-text-centered">
+                    <h1 class="title has-text-left">
                         {{ $t('home.about.about12') }}
                     </h1>
 
-                    <img src="/assets/cigbutts.jpg">
+                    <img class="img-max-height" src="/assets/cigbutts.jpg">
 
-                    <h1 class="title is-1 has-text-right">
+                    <h1 class="title has-text-right">
                         {{ $t('home.about.about13') }}
                     </h1>
                 </div>
@@ -120,136 +117,144 @@
         </section>
 
         <!-- More info -->
-        <div class="hero-body">
-            <div class="container">
-                <div class="tile is-ancestor">
-                    <div class="tile is-vertical is-8">
-                        <div class="tile">
-                            <div class="tile is-parent is-vertical">
-                                <article class="tile is-child notification is-primary">
-                                    <p class="title">{{ $t('home.about.about14') }} <b style="color: black;">{{ $t('home.about.about14a') }}</b></p>
-                                    <p class="title" style="padding-bottom: 1em;">{{ $t('home.about.about14b') }}</p>
-                                    <p class="subtitle" style="text-align: right; color: red;"><strong>{{ $t('home.about.about15') }}</strong></p>
-                                </article>
-                                <article class="tile is-child notification is-warning">
-                                    <p class="title" style="padding-bottom: 1em;">{{ $t('home.about.about16') }}</p>
-                                    <p class="subtitle" style="text-align: right; color: red; padding-bottom: 1em;"><b>{{ $t('home.about.about17') }}</b></p>
-                                </article>
-                            </div>
-                            <div class="tile is-parent">
-                                <article class="tile is-child notification is-info">
-                                    <p class="title">Our data is mapped by Space, Time, Location, and Behaviour.</p>
-                                    <p class="subtitle">Check out this incredible stretch of Free and Open Data on the pollution being caused by the products of a handful of global corporations</p>
-                                    <!-- <figure class="image is-4by3"> -->
-                                    <a href="https://openlittermap.com/maps/The%20Netherlands/Zuid-Holland/Wassenaar/map">https://openlittermap.com/maps/The%20Netherlands/Zuid-Holland/Wassenaar/map</a>
-                                    <br>
-                                    <br>
-                                    <img src="/assets/nlbrands.png">
-                                    <!-- </figure> -->
-                                    <br>
-                                    <br>
-                                    <p class="subtitle">Want to download the data?</p>
-                                    <a href="https://openlittermap.com/maps/The%20Netherlands/Zuid-Holland/Wassenaar/download">https://openlittermap.com/maps/The%20Netherlands/Zuid-Holland/Wassenaar/download</a>
-                                    <br>
-                                </article>
-                            </div>
-                        </div>
-                        <div class="tile is-parent">
-                            <article class="tile is-child notification is-danger">
-                                <p class="title">{{ $t('home.about.about18') }}</p>
-                                <p class="subtitle">{{ $t('home.about.about19') }}<strong>{{ $t('home.about.about20') }}</strong> {{ $t('home.about.about21') }}</p>
-                                <div class="content">
-                                    <!-- Content -->
-                                </div>
-                            </article>
-                        </div>
-                    </div>
-                    <div class="tile is-parent is-5">
-                        <article class="tile is-child is-10 notification is-success">
-                            <div class="content">
-                                <p class="title">{{ $t('home.about.about22') }}</p>
-                                <div class="content">
-                                    <ul>
-                                        <li>{{ $t('home.about.about24') }}</li>
-                                        <li>{{ $t('home.about.about25') }}</li>
-                                        <li>{{ $t('home.about.about26') }}</li>
-                                        <li>{{ $t('home.about.about27') }}</li>
-                                        <li>{{ $t('home.about.about28') }}</li>
-                                        <li>{{ $t('home.about.about29') }}</li>
-                                        <li>{{ $t('home.about.about29a') }}</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </article>
-                    </div>
+        <div class="more-info-grid grid-item-full">
+            <article class="notification is-primary">
+                <p class="title">
+                    {{ $t('home.about.about14') }} <b style="color: black;">{{ $t('home.about.about14a') }}</b>
+                </p>
+                <p class="title pb-4">
+                    {{ $t('home.about.about14b') }}
+                </p>
+                <p class="subtitle has-text-right" style="color: red;">
+                    <strong>{{ $t('home.about.about15') }}</strong>
+                </p>
+            </article>
+            <article class="notification is-info grid-item-2">
+                <p class="title">
+                    Our data is mapped by Space, Time, Location, and Behaviour.
+                </p>
+                <p class="subtitle">
+                    Check out this incredible stretch of Free and Open Data on the pollution being caused by the products of a handful of global corporations
+                </p>
+                <!-- <figure class="image is-4by3"> -->
+                <a href="https://openlittermap.com/maps/The%20Netherlands/Zuid-Holland/Wassenaar/map" class="text-truncate mb-4" style="display: block;">
+                    https://openlittermap.com/maps/The%20Netherlands/Zuid-Holland/Wassenaar/map
+                </a>
+                <img class="mb-4" src="/assets/nlbrands.png">
+                <!-- </figure> -->
+                <p class="subtitle">
+                    Want to download the data?
+                </p>
+                <a href="https://openlittermap.com/maps/The%20Netherlands/Zuid-Holland/Wassenaar/download" class="text-truncate" style="display: block;">
+                    https://openlittermap.com/maps/The%20Netherlands/Zuid-Holland/Wassenaar/download
+                </a>
+            </article>
+            <article class="is-10 notification is-success grid-item-3">
+                <div class="content">
+                    <p class="title">
+                        {{ $t('home.about.about22') }}
+                    </p>
+                    <ul>
+                        <li>{{ $t('home.about.about24') }}</li>
+                        <li>{{ $t('home.about.about25') }}</li>
+                        <li>{{ $t('home.about.about26') }}</li>
+                        <li>{{ $t('home.about.about27') }}</li>
+                        <li>{{ $t('home.about.about28') }}</li>
+                        <li>{{ $t('home.about.about29') }}</li>
+                        <li>{{ $t('home.about.about29a') }}</li>
+                    </ul>
                 </div>
-            </div>
+            </article>
+            <article class="notification is-warning">
+                <p class="title pb-4">
+                    {{ $t('home.about.about16') }}
+                </p>
+                <p class="subtitle has-text-right" style="color: red;">
+                    <b>{{ $t('home.about.about17') }}</b>
+                </p>
+            </article>
+            <article class="notification is-danger grid-item-5">
+                <p class="title">
+                    {{ $t('home.about.about18') }}
+                </p>
+                <p class="subtitle">
+                    {{ $t('home.about.about19') }}
+                    <strong>{{ $t('home.about.about20') }}</strong>
+                    {{ $t('home.about.about21') }}
+                </p>
+                <div class="content">
+                    <!-- Content -->
+                </div>
+            </article>
         </div>
 
-        <div>
-            <br>
-            <h1 class="title is-1" style="color: black; text-align: center;"><strong>{{ $t('home.about.about30') }}</strong> <strong style="color: red;">{{ $t('home.about.about301') }}</strong></h1>
-            <br>
-        </div>
-
-        <div class="container" style="padding-bottom:5em; text-align: center;">
-            <img src="/assets/marinelitter.jpg" />
-            <p style="padding-bottom: 3em;">Dublin, Ireland.</p>
-            <h1 class="title is-1" style="color: black; text-align: center;">
-                <strong style="color: red;">{{ $t('home.about.about302') }}</strong>
+        <div class="grid-item-full">
+            <h1 class="title has-text-centered">
+                <strong>{{ $t('home.about.about30') }}</strong> <strong style="color: red;">{{ $t('home.about.about301') }}</strong>
             </h1>
-            <img src="/assets/microplastics_oranmore.JPG" />
+        </div>
+
+        <div class="has-text-centered grid-item-full">
+            <img class="img-max-height" src="/assets/marinelitter.jpg">
+            <p> Dublin, Ireland. </p>
+        </div>
+        <div class="grid-item-full">
+            <h1 class="title has-text-centered is-danger">
+                <strong>{{ $t('home.about.about302') }}</strong>
+            </h1>
+        </div>
+        <div class="grid-item-full has-text-centered">
+            <img class="img-max-height" src="/assets/microplastics_oranmore.JPG">
             <p>Microplastics in Oranmore, Co. Galway.</p>
         </div>
 
-        <div class="container">
-            <h1 class="title is-1">
+        <div class="text-px grid-item-full">
+            <h1 class="title">
                 {{ $t('home.about.about31') }}
             </h1>
-            <br>
-            <br>
+        </div>
+        <div class="has-text-centered align-normal">
+            <img src="/assets/urban.JPG">
+            <p class="has-text-centered">
+                Penrose Wharf, Cork City, Ireland (above)
+            </p>
         </div>
 
-        <img src="/assets/urban.JPG" style="padding-bottom: 1em;">
-        <p style="padding-bottom: 5em; text-align: center;">Penrose Wharf, Cork City, Ireland (above)</p>
-
-        <div style="text-align: center;">
-            <img src="/assets/IMG_0554.JPG" style="padding-bottom: 2em;">
-            <p style="padding-bottom: 5em; text-align: center;">Accra, Capital of Ghana, North-Western Coast of Africa <a href="https://www.facebook.com/nshorena/posts/1652239435009949">more photos on facebook</a></p>
-            <img src="/assets/IMG_0556.JPG" style="padding-bottom: 2em;">
-            <p style="padding-bottom: 5em;">{{ $t('home.about.about32') }}</p>
+        <div class="has-text-centered align-normal">
+            <img src="/assets/IMG_0554.JPG">
+            <p>
+                Accra, Capital of Ghana, North-Western Coast of Africa <a href="https://www.facebook.com/nshorena/posts/1652239435009949">more photos on facebook</a>
+            </p>
+        </div>
+        <div class="grid-item-full has-text-centered">
+            <img src="/assets/IMG_0556.JPG">
+            <p>
+                {{ $t('home.about.about32') }}
+            </p>
         </div>
 
-        <div class="container">
-            <h1 class="title is-1 has-text-left">
+        <div class="grid-item-full text-px">
+            <h1 class="title has-text-left">
                 {{ $t('home.about.about33') }}
             </h1>
         </div>
-        <br>
-        <br>
-        <div class="container">
-            <h1 class="title is-1 has-text-right">
+        <div class="grid-item-full text-px">
+            <h1 class="title has-text-right">
                 {{ $t('home.about.about34') }}
             </h1>
-            <br>
-            <div class="has-text-centered" style="padding-top: 2em;">
-                <form action="/signup">
-                    <button class="button is-large is-primary hov">{{ $t('home.about.about35') }}</button>
-                </form>
-            </div>
-            <br>
-            <br>
+        </div>
+        <div class="has-text-centered grid-item-full">
+            <router-link to="/signup" class="button is-size-5-mobile is-size-4-desktop is-size-4-tablet is-primary hov">
+                {{ $t('home.about.about35') }}
+            </router-link>
         </div>
 
-        <footer class="footer">
-            <div class="container">
-
-                <div class="content has-text-centered">
-                    <p>
-                        <strong>OpenLitterMap</strong> by <a href="https://ie.linkedin.com/in/seanlynchgis">Seán Lynch, M.Sc, M.Sc., B.A.</a>
-                        <br>
-                    <p>info@openlittermap.com</p>
-                </div>
+        <footer class="grid-item-full pt-5">
+            <div class="has-text-centered">
+                <p>
+                    <strong>OpenLitterMap</strong> by <a href="https://ie.linkedin.com/in/seanlynchgis">Seán Lynch, M.Sc, M.Sc., B.A.</a>
+                </p>
+                <p>info@openlittermap.com</p>
             </div>
         </footer>
     </div>
@@ -275,20 +280,82 @@ export default {
             window.open('https://apps.apple.com/us/app/openlittermap/id1475982147', '_blank');
         }
     }
-}
+};
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@import '../../styles/variables.scss';
+
+    .grid-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        row-gap: 2rem;
+        padding: 2rem 10px;
+
+        @include media-breakpoint-up(md) {
+            grid-template-columns: repeat(2, minmax(240px, 1fr));
+            column-gap: 2rem;
+            padding: 3rem 0;
+            align-items: center;
+
+            .img-max-height{
+                max-height: 650px
+            }
+
+            .more-info-grid {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(240px, 1fr));
+                column-gap: 1rem;
+
+                .grid-item-2 {
+                    grid-column-start: 2;
+                    grid-row: 1 / 3;
+                }
+
+                .grid-item-3 {
+                    grid-row: 1 / 3;
+                    grid-column-start: 3;
+                }
+
+                .grid-item-5 {
+                    grid-row-start: 3;
+                    grid-column: 1 / 4;
+                }
+            }
+
+            .text-px {
+                padding: 0 2rem;
+            }
+
+            .align-normal {
+                align-self: normal;
+            }
+
+            .grid-item-full {
+                grid-column: 1 / 3;
+            }
+        }
+
+        @include media-breakpoint-down(sm) {
+            .font-size-mb {
+                font-size: 1rem;
+            }
+            .title {
+                font-size: 1.5rem;
+            }
+        }
+    }
+
 
     .butts-img {
         text-align: center;
         padding-right: 5em;
     }
 
-    .cig-2 {
-        align-items: center;
-        display: flex;
-        padding: 5em;
+    .text-truncate {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap
     }
 
     @media screen and (max-width: 768px)
@@ -296,9 +363,6 @@ export default {
         .butts-img {
             padding-right: 0;
         }
-
-        .cig-2 {
-            padding: 1em;
-        }
     }
+
 </style>

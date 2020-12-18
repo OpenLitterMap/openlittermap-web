@@ -2,10 +2,6 @@
 	visibility: hidden;
 }
 
-html {
-    height: 100vh;
-}
-
 /* Extra leaflet styles */
 .info {
     padding: 6px 8px;

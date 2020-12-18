@@ -2,8 +2,8 @@
     <div class="root-container">
         <Nav />
 
-        <WelcomeBanner :showEmailConfirmed="showEmailConfirmed" />
-        <Unsubscribed :showUnsubscribed="showUnsubscribed" />
+        <WelcomeBanner :show-email-confirmed="showEmailConfirmed" />
+        <Unsubscribed :show-unsubscribed="showUnsubscribed" />
 
         <Modal v-show="modal" />
 
@@ -12,25 +12,35 @@
 </template>
 
 <script>
-import Nav from '../components/General/Nav'
-import Modal from '../components/Modal/Modal'
-import WelcomeBanner from '../components/WelcomeBanner'
-import Unsubscribed from '../components/Notifications/Unsubscribed'
+import Nav from '../components/General/Nav';
+import Modal from '../components/Modal/Modal';
+import WelcomeBanner from '../components/WelcomeBanner';
+import Unsubscribed from '../components/Notifications/Unsubscribed';
 
 export default {
     name: 'RootContainer',
-    props: ['auth', 'user', 'verified', 'unsub'],
     components: {
         Nav,
         Modal,
         WelcomeBanner,
         Unsubscribed
     },
+    props: ['auth', 'user', 'verified', 'unsub'],
     data ()
     {
         return {
             showEmailConfirmed: false,
             showUnsubscribed: false
+        };
+    },
+    computed: {
+
+        /**
+         * Boolean to show or hide the modal
+         */
+        modal ()
+        {
+            return this.$store.state.modal.show;
         }
     },
     created ()
@@ -56,24 +66,10 @@ export default {
         // If Account Verified
         if (this.verified) this.showEmailConfirmed = true;
         if (this.unsub) this.showUnsubscribed = true;
-    },
-    computed: {
-
-        /**
-         * Boolean to show or hide the modal
-         */
-        modal ()
-        {
-            return this.$store.state.modal.show;
-        }
     }
-}
+};
 </script>
 
 <style scoped>
-
-    .root-container {
-        height: calc(100vh - 10px);
-    }
 
 </style>
