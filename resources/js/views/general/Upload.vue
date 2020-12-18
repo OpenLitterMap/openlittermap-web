@@ -80,7 +80,7 @@ export default {
 
             if(file.xhr?.response && file.xhr?.response?.length < 200)
             {
-                errorMessage = file.xhr?.response;
+                errorMessage = `${file.name}: ${file.xhr?.response}`;
                 this.$refs.uploadFile?.removeFile(file);
             }
 
