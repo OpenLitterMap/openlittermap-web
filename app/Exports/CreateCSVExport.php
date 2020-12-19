@@ -38,6 +38,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
      * Todo - Import these from elsewhere
      * Todo - Separate brands by country
      * Todo - Insert translated string instead of hard-coded 1-language title
+     * Todo - When downloading per team, show team member, if privacy true. (We need to create the privacy option first).
      */
     public function headings (): array
     {
