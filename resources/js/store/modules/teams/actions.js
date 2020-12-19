@@ -262,6 +262,43 @@ export const actions = {
         .catch(error => {
             console.error('next_members_page', error);
         });
+    },
+
+    /**
+     * Save the privacy settings for 1 team or all teams
+     *
+     * team_id
+     * all @bool
+     */
+    async SAVE_TEAM_SETTINGS (context, payload)
+    {
+        const settings = context.state.teams.find(team => team.id === payload.team_id).pivot;
+
+        const title = i18n.t('notifications.success');
+        const body = 'Team settings updated';
+
+        await axios.post('/teams/settings', {
+            settings,
+            all: payload.all,
+            team_id: payload.team_id
+        })
+        .then(response => {
+            console.log('save_team_settings', response);
+
+            if (response.data.success)
+            {
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                    position: 'top-right'
+                });
+
+                if (payload.all) context.commit('allTeamSettings', payload.team_id);
+            }
+        })
+        .catch(error => {
+            console.error('save_team_settings', error);
+        });
     }
 
 }

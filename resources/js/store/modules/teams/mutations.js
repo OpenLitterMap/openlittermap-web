@@ -1,6 +1,25 @@
 export const mutations = {
 
     /**
+     * Update the settings for all Teams
+     */
+    allTeamSettings (state, payload)
+    {
+        let teams = [...state.teams];
+
+        const team = teams.find(t => t.id === payload);
+
+        teams.forEach(t => {
+            t.pivot.show_name_maps = team.pivot.show_name_maps;
+            t.pivot.show_username_maps = team.pivot.show_username_maps;
+            t.pivot.show_name_leaderboards = team.pivot.show_name_leaderboards;
+            t.pivot.show_username_leaderboards = team.pivot.show_username_leaderboards;
+        });
+
+        state.teams = teams;
+    },
+
+    /**
      * Delete an error with payload key
      */
     clearTeamsError (state, payload)

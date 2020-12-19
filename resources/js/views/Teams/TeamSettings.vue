@@ -19,8 +19,8 @@
                         </option>
                     </select>
 
-                    <!-- Team Maps -->
-                    <h1 class="title is-4">{{ $t('settings.privacy.maps') }}:</h1>
+                    <!-- Team Map -->
+                    <h1 class="title is-4">{{ $t('teams.settings.maps.team-map') }}:</h1>
                     <label class="checkbox mb1">
                         <input type="checkbox" v-model="show_name_maps" />
                         {{ $t('settings.privacy.credit-name') }}
@@ -33,14 +33,15 @@
                         {{ $t('settings.privacy.credit-username') }}
                     </label>
 
-                    <p v-show="show_name_maps" class="is-green">Your name will appear on the maps</p>
-                    <p v-show="show_username_maps" class="is-green">Your username will appear on the maps</p>
-                    <p v-show="! show_name_maps && ! show_username_maps" class="is-red">Your name and username will not appear on the maps</p>
+                    <p v-show="show_name_maps" class="is-green">{{ $t('teams.settings.maps.name-will-appear') }}</p>
+                    <p v-show="show_username_maps" class="is-green">{{ $t('teams.settings.maps.username-will-appear') }}</p>
+                    <p v-show="! show_name_maps && ! show_username_maps" class="is-red">{{ $t('teams.settings.maps.will-not-appear') }}</p>
 
                     <!-- Team Leaderboard -->
-                    <h1 class="title is-4 mt1">{{ $t('settings.privacy.leaderboards') }}:</h1>
+                    <h1 class="title is-4 mt1">{{ $t('teams.settings.leaderboards.team-leaderboard') }}:</h1>
                     <label class="checkbox mb1">
                         <input type="checkbox" v-model="show_name_leaderboards" />
+                        <!-- Credit my username -->
                         {{ $t('settings.privacy.credit-name') }}
                     </label>
 
@@ -51,11 +52,14 @@
                         {{ $t('settings.privacy.credit-username') }}
                     </label>
 
-                    <p v-show="show_name_leaderboards" class="is-green">Your name will appear on the leaderboard</p>
-                    <p v-show="show_username_leaderboards" class="is-green">Your username will appear on the leaderboard</p>
-                    <p v-show="! show_name_leaderboards && ! show_username_leaderboards" class="is-red">Your name and username will not appear on the leaderboard</p>
+                    <p v-show="show_name_leaderboards" class="is-green">{{ $t('teams.settings.leaderboards.name-will-appear') }}</p>
+                    <p v-show="show_username_leaderboards" class="is-green">{{ $t('teams.settings.leaderboards.username-will-appear') }}</p>
+                    <p v-show="! show_name_leaderboards && ! show_username_leaderboards" class="is-red">{{ $t('teams.settings.leaderboards.will-not-appear') }}</p>
 
-                    <button :class="button" @click="submit">Save</button>
+                    <div class="flex">
+                        <button :class="submitButton" @click="submit(false)" :disabled="disabled">{{ $t('teams.settings.submit-one-team') }}</button>
+                        <button :class="allButton" @click="submit(true)" :disabled="disabled">{{ $t('teams.settings.apply-all-teams') }}</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -70,8 +74,10 @@ export default {
         return {
             loading: true,
             viewTeam: 0,
-            processing: false,
-            btn: 'button is-medium is-primary mt1',
+            allProcessing: false,
+            submitProcessing: false,
+            btnAll: 'button is-medium is-primary mt1',
+            btn: 'button is-medium is-warning mt1 mr1',
         };
     },
     async created ()
@@ -89,9 +95,25 @@ export default {
         /**
          * Add spinner when processing
          */
-        button ()
+        allButton ()
         {
-            return this.processing ? this.btn + ' is-loading' : this.btn;
+            return this.allProcessing ? this.btnAll + ' is-loading' : this.btnAll;
+        },
+
+        /**
+         * Return true to disable the buttons
+         */
+        disabled ()
+        {
+            return (this.allProcessing || this.submitProcessing);
+        },
+
+        /**
+         * Add spinner when processing
+         */
+        submitButton ()
+        {
+            return this.submitProcessing ? this.btn + ' is-loading' : this.btn;
         },
 
         /**
@@ -177,11 +199,19 @@ export default {
     methods: {
 
         /**
-         * Dispatch a request to save settings per Team
+         * Apply these settings to this team for this user
          */
-        async submit ()
+        async submit (all)
         {
-            await this.$store.dispatch('SAVE_TEAM_SETTINGS', this.viewTeam);
+            all ? this.allProcessing = true : this.submitProcessing = true;
+
+            await this.$store.dispatch('SAVE_TEAM_SETTINGS', {
+                all,
+                team_id: this.viewTeam
+            });
+
+            this.submitProcessing = false;
+            this.allProcessing = false;
         }
     }
 };
