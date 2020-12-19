@@ -163,6 +163,9 @@ class TeamsController extends Controller
 
     /**
      * Get paginated members for a team_id
+     *
+     * We need to check the privacy settings for each user on the team,
+     * and only load the columns (show_name_leaderboard) that each user has allowed.
      */
     public function members ()
     {
@@ -171,18 +174,27 @@ class TeamsController extends Controller
         $total_members = $query->users->count(); // members?
 
         $result = $query->users()
-            ->withPivot('total_photos', 'total_litter', 'updated_at')
+            ->withPivot('total_photos', 'total_litter', 'updated_at', 'show_name_leaderboards', 'show_username_leaderboards')
             ->orderBy('pivot_total_litter', 'desc')
             ->simplePaginate(10, [
                 // include these fields
                 'users.id',
-                'users.email',
-                'users.name', // todo - add privacy settings per team
-                'users.username', // todo - add privacy settings per team
+                'users.name', // todo - only load this if team_user.show_name is true
+                'users.username', // todo - only load this if team_user.show_username is true
                 'users.active_team',
                 'users.updated_at', // todo add users.last_uploaded
                 'total_photos'
             ]);
+
+        // We need to filter out name/username based on the settings
+        // For now, just remove them manually with a loop.
+        // We should figure out how to do this in the query
+        // https://stackoverflow.com/questions/65371551/filter-simplepaginate-column-select-by-pivot-table
+        foreach ($result as $r)
+        {
+            if (! $r->pivot->show_name_leaderboards) $r->name = null;
+            if (! $r->pivot->show_username_leaderboards) $r->username = null;
+        }
 
         return [
             'total_members' => $total_members,

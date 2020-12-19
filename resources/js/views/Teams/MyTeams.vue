@@ -46,8 +46,8 @@
                                         <span>{{ getRank(index) }}</span>
                                     </div>
                                 </td>
-                                <td>{{ member.name }}</td>
-                                <td>{{ member.username }}</td>
+                                <td>{{ member.name ? member.name : '-'}}</td>
+                                <td>{{ member.username ? member.username: '-' }}</td>
                                 <td style="width: 9em;">
                                     <span :class="checkActiveTeam(member.active_team)">
                                         <i :class="icon(member.active_team)" />
