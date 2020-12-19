@@ -1,6 +1,6 @@
 <template>
     <div class="tsc">
-        <h1 class="title is-2">Join a Team</h1>
+        <h1 class="title is-2">Control your Privacy</h1>
 
         <div class="columns mt3">
 

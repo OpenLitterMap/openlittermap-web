@@ -187,6 +187,7 @@ Route::post('/teams/create', 'Teams\TeamsController@create');
 Route::post('/teams/join', 'Teams\TeamsController@join');
 Route::post('/teams/active', 'Teams\TeamsController@active');
 Route::post('/teams/settings', 'Teams\TeamsSettingsController@index');
+Route::post('/teams/download', 'Teams\TeamsController@download');
 
 
 /**

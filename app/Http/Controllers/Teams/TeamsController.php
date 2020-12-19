@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Teams;
 
+use App\Exports\CreateCSVExport;
+use App\Jobs\EmailUserExportCompleted;
 use App\Models\Photo;
 use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
@@ -114,6 +116,35 @@ class TeamsController extends Controller
         $user->save();
 
         return ['success' => true, 'team' => $team];
+    }
+
+    /**
+     * The user wants to download data from a specific team
+     */
+    public function download (Request $request)
+    {
+        $email = auth()->user()->email;
+
+        $x     = new \DateTime();
+        $date  = $x->format('Y-m-d');
+        $date  = explode('-', $date);
+        $year  = $date[0];
+        $month = $date[1];
+        $day   = $date[2];
+        $unix  = now()->timestamp;
+
+        $path = $year.'/'.$month.'/'.$day.'/'.$unix.'/';  // 2020/10/25/unix/
+
+        /* Dispatch job to create CSV file for export */
+        (new CreateCSVExport($request->type, null, $request->team_id))
+            ->queue($path, 's3', null, ['visibility' => 'public'])
+            ->chain([
+                // These jobs are executed when above is finished.
+                new EmailUserExportCompleted($email, $path)
+                // new ....job
+            ]);
+
+        return ['success' => true];
     }
 
     /**

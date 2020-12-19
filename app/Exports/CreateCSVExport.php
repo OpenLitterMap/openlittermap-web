@@ -18,15 +18,16 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
 {
     use Exportable, Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $location_type, $location_id;
+    public $location_type, $location_id, $team_id;
 
     /**
      * Init args
      */
-    public function __construct ($location_type, $location_id)
+    public function __construct ($location_type, $location_id, $team_id = null)
     {
         $this->location_type = $location_type;
         $this->location_id = $location_id;
+        $this->team_id = $team_id;
     }
 
     /**
@@ -36,6 +37,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
      * Todo - Allow the user to determine what data they want on the frontend
      * Todo - Import these from elsewhere
      * Todo - Separate brands by country
+     * Todo - Insert translated string instead of hard-coded 1-language title
      */
     public function headings (): array
     {
@@ -503,31 +505,43 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
      */
     public function query ()
     {
-        if ($this->location_type === 'city')
+        if ($this->team_id)
         {
             return Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands'])
                 ->where([
-                    'city_id' => $this->location_id,
-                    'verified' => 2
-                ]);
-        }
-
-        else if ($this->location_type === 'state')
-        {
-            return Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands'])
-                ->where([
-                    'state_id' => $this->location_id,
+                    'team_id' => $this->team_id,
                     'verified' => 2
                 ]);
         }
 
         else
         {
-            return Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands'])
-                ->where([
-                    'country_id' => $this->location_id,
-                    'verified' => 2
-                ]);
+            if ($this->location_type === 'city')
+            {
+                return Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands'])
+                    ->where([
+                        'city_id' => $this->location_id,
+                        'verified' => 2
+                    ]);
+            }
+
+            else if ($this->location_type === 'state')
+            {
+                return Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands'])
+                    ->where([
+                        'state_id' => $this->location_id,
+                        'verified' => 2
+                    ]);
+            }
+
+            else
+            {
+                return Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands'])
+                    ->where([
+                        'country_id' => $this->location_id,
+                        'verified' => 2
+                    ]);
+            }
         }
     }
 }

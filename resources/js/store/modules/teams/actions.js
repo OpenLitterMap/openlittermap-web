@@ -95,6 +95,35 @@ export const actions = {
     },
 
     /**
+     * Download the data made by a specific team
+     */
+    async DOWNLOAD_DATA_FOR_TEAM (context, payload)
+    {
+        const title = i18n.t('notifications.success');
+        const body = 'Your download is being processed and will be emailed to you shortly';
+
+        await axios.post('/teams/download', {
+            team_id: payload
+        })
+        .then(response => {
+            console.log('download_data_for_team', response);
+
+            if (response.data.success)
+            {
+                // success
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                    position: 'bottom-right'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('download_data_for_team', error);
+        });
+    },
+
+    /**
      * Get the combined effort for all of the users teams for this period
      */
     async GET_COMBINED_TEAM_EFFORT (context, payload)
