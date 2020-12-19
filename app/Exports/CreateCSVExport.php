@@ -68,7 +68,6 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
 
             // Food
             'sweet_wrapper',
-//           cardboard_food_packiging is not an option in web/app
             'cardboard_food_packaging',
             'paper_cardboard_food_packaging',
             'plastic_food_packaging',
