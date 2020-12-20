@@ -62,6 +62,14 @@ export const mutations = {
     },
 
     /**
+     * Init data from get teams map data request
+     */
+    teamMap (state, payload)
+    {
+        state.geojson = payload;
+    },
+
+    /**
      * Update the members on a paginated team object
      */
     teamMembers (state, payload)

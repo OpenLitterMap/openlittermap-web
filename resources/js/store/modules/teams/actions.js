@@ -144,6 +144,24 @@ export const actions = {
     },
 
     /**
+     * Get the map data for all teams the user has joined
+     *
+     * Todo - filter this by each team
+     */
+    async GET_TEAMS_MAP_DATA (context)
+    {
+        await axios.get('/teams/map-data')
+        .then(response => {
+            console.log('get_teams_map_data', response);
+
+            context.commit('teamMap', response.data.geojson);
+        })
+        .catch(error => {
+            console.error('get_teams_map_data', error);
+        });
+    },
+
+    /**
      * Get paginated team members for team_id
      */
     async GET_TEAM_MEMBERS (context, payload)

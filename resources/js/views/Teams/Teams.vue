@@ -92,10 +92,9 @@ export default {
         cursor: pointer;
     }
 
-    /* remove height on mobile */
     .teams-left-col {
         background-color: #232d3f;
-        height: calc(100vh - 70px);
+        min-height: calc(100vh - 70px);
         padding-left: 2em;
         color: #d3d8e0;
     }
@@ -120,13 +119,14 @@ export default {
 
         .teams-left-col {
             background-color: #232d3f;
-            height: 100%;
+            height: auto;
+            min-height: auto;
             padding-left: 2em;
             color: #d3d8e0;
         }
 
         .mobile-teams-padding {
-            padding-left: 2.5em;
+            padding-left: 1.5em;
             padding-bottom: 5em;
         }
     }
