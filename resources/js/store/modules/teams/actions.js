@@ -125,39 +125,24 @@ export const actions = {
 
     /**
      * Get the combined effort for all of the users teams for this period
+     *
+     * team.id 0 => all teams
      */
-    async GET_COMBINED_TEAM_EFFORT (context, payload)
+    async GET_TEAM_DASHBOARD_DATA (context, payload)
     {
-        await axios.get('/teams/combined-effort', {
+        await axios.get('/teams/data', {
             params: {
-                period: payload
+                period: payload.period,
+                team_id: payload.team_id
             }
         })
         .then(response => {
-            console.log('get_combined_teams_effort', response);
+            console.log('get_team_dashboard_data', response);
 
-            context.commit('combinedTeamEffort', response.data);
+            context.commit('teamDashboardData', response.data);
         })
         .catch(error => {
-            console.error('get_combined_teams_effort', error);
-        });
-    },
-
-    /**
-     * Get the map data for all teams the user has joined
-     *
-     * Todo - filter this by each team
-     */
-    async GET_TEAMS_MAP_DATA (context)
-    {
-        await axios.get('/teams/map-data')
-        .then(response => {
-            console.log('get_teams_map_data', response);
-
-            context.commit('teamMap', response.data.geojson);
-        })
-        .catch(error => {
-            console.error('get_teams_map_data', error);
+            console.error('get_team_dashboard_data', error);
         });
     },
 

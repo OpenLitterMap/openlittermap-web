@@ -30,11 +30,12 @@ export const mutations = {
     /**
      * Data from combined teams request by time_period
      */
-    combinedTeamEffort (state, payload)
+    teamDashboardData (state, payload)
     {
         state.allTeams.photos_count = payload.photos_count;
         state.allTeams.litter_count = payload.litter_count;
         state.allTeams.members_count = payload.members_count;
+        state.geojson = payload.geojson;
     },
 
     /**

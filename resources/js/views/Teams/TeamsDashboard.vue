@@ -1,7 +1,6 @@
 <template>
     <section class="tdc">
         <p class="subtitle is-centered is-3">Teams Dashboard</p>
-        <p class="teams-dashboard-subtitle">Here you can find the combined impact made by all the teams you have joined.</p>
 
         <div class="columns">
             <div class="column teams-card">
@@ -23,12 +22,24 @@
             </div>
         </div>
 
-        <!-- Change time period -->
-        <select v-model="period" @change="changeTime" class="input dash-time">
-            <option v-for="time in timePeriods" :value="time">{{ getPeriod(time) }}</option>
-        </select>
+        <div class="mobile-teams-select">
+            <!-- Change time period -->
+            <select v-model="period" @change="changeTeamOrTime" class="input dash-time">
+                <option v-for="time in timePeriods" :value="time">{{ getPeriod(time) }}</option>
+            </select>
 
-        <TeamMap />
+            <div style="flex: 0.1;" />
+
+            <!-- All or Select Team -->
+            <select v-model="viewTeam" @change="changeTeamOrTime" class="input dash-time">
+                <option value="0" selected>All Teams</option>
+                <option v-for="team in teams" :value="team.id">{{ team.name }}</option>
+            </select>
+        </div>
+
+        <p v-if="loading">Loading...</p>
+
+        <TeamMap v-else />
 
     </section>
 </template>
@@ -41,21 +52,27 @@ export default {
     components: {
         TeamMap
     },
-    created ()
+    async created ()
     {
-        this.changeTime();
+        this.loading = true;
+
+        await this.changeTeamOrTime();
+
+        this.loading = false;
     },
     data ()
     {
         return {
-            period: 'today',
+            period: 'all',
             timePeriods: [
                 'today',
                 'week',
                 'month',
                 'year',
                 'all'
-            ]
+            ],
+            loading: true,
+            viewTeam: 0
         };
     },
     computed: {
@@ -82,6 +99,16 @@ export default {
         members_count ()
         {
             return this.$store.state.teams.allTeams.members_count;
+        },
+
+        /**
+         * Teams the user has joined
+         *
+         * Show active team
+         */
+        teams ()
+        {
+            return this.$store.state.teams.teams;
         }
     },
     methods: {
@@ -89,9 +116,12 @@ export default {
         /**
          * Change the time period for what data is visible on the dashboard
          */
-        changeTime ()
+        async changeTeamOrTime ()
         {
-            this.$store.dispatch('GET_COMBINED_TEAM_EFFORT', this.period);
+            await this.$store.dispatch('GET_TEAM_DASHBOARD_DATA', {
+                period: this.period,
+                team_id: this.viewTeam
+            });
         },
 
         /**
@@ -111,6 +141,11 @@ export default {
 
     .dash-time {
         width: 25%;
+    }
+
+    .mobile-teams-select {
+        display: flex;
+        justify-content: center;
     }
 
     .tdc {
@@ -133,6 +168,12 @@ export default {
     {
         .dash-time {
             width: 100%;
+            margin-bottom: 1em;
+        }
+
+        .mobile-teams-select {
+            display: block;
+            justify-content: center;
         }
 
         .teams-card {
