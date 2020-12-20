@@ -45,44 +45,6 @@ class TeamsController extends Controller
     }
 
     /**
-     * Get the combined effort for all of your teams for the time-period
-     *
-     * Should we only count verified photos?
-     */
-    public function combined ()
-    {
-        $user = Auth::user();
-
-        $ids = $user->teams->pluck('id'); // array of team_ids
-
-        // period
-        if (request()->period === 'today') $period = now()->startOfDay();
-        else if (request()->period === 'week') $period = now()->startOfWeek();
-        else if (request()->period === 'month') $period = now()->startOfMonth();
-        else if (request()->period === 'year') $period = now()->startOfYear();
-        else if (request()->period === 'all') $period = '2020-11-22 00:00:00'; // date of writing
-
-        $query = Photo::whereIn('team_id', $ids)
-            ->whereDate('created_at', '>=', $period)
-            ->where('verified', 2);
-
-        $photos_count = $query->count();
-        $members_count = $query->distinct()->count('user_id');
-
-        // might need photo.verified_at
-        $litter_count = Photo::whereIn('team_id', $ids)
-            ->whereDate('updated_at', '>=', $period)
-            ->where('verified', 2)
-            ->sum('total_litter');
-
-        return [
-            'photos_count' => $photos_count,
-            'litter_count' => $litter_count,
-            'members_count' => $members_count
-        ];
-    }
-
-    /**
      * The user wants to create a new team
      */
     public function create (Request $request)

@@ -1,9 +1,6 @@
 <template>
     <div class="team-map-container">
-
-        <p v-if="loading">Loading...</p>
-
-        <l-map v-else :zoom="zoom" :center="center" :minZoom="1">
+        <l-map :zoom="zoom" :center="center" :minZoom="1">
             <l-tile-layer :url="url" :attribution="attribution" />
             <v-marker-cluster v-if="geojson.length > 0">
                 <l-marker v-for="i in geojson" :lat-lng="i.properties.latlng" :key="i.properties.id">
@@ -29,15 +26,9 @@ export default {
         LPopup,
         'v-marker-cluster': Vue2LeafletMarkerCluster
     },
-    async created ()
+    created ()
     {
-        this.loading = true;
-
         this.attribution += new Date().getFullYear();
-
-        await this.$store.dispatch('GET_TEAMS_MAP_DATA');
-
-        this.loading = false;
     },
     data ()
     {

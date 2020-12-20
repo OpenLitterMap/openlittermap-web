@@ -1,7 +1,5 @@
 <template>
     <section>
-
-        <!-- remove margin-right on mobile -->
         <div class="columns">
 
             <div class="column is-one-fifth teams-left-col">
@@ -13,7 +11,6 @@
                 </div>
             </div>
 
-            <!-- add padding-left 2em on mobile -->
             <div class="column pt3 mobile-teams-padding" style="background-color: #edf1f4;">
                 <p v-if="loading">Loading...</p>
 
@@ -39,6 +36,8 @@ export default {
 
         await this.$store.dispatch('GET_TEAM_TYPES');
 
+        if (this.teams.length === 0) await this.$store.dispatch('GET_USERS_TEAMS');
+
         this.loading = false;
     },
     data ()
@@ -56,6 +55,14 @@ export default {
         }
     },
     computed: {
+
+        /**
+         * Array of teams the user has joined
+         */
+        teams ()
+        {
+            return this.$store.state.teams.teams;
+        },
 
         /**
          * What component to show
