@@ -135,6 +135,8 @@ class TeamsController extends Controller
 
         $path = $year.'/'.$month.'/'.$day.'/'.$unix.'/';  // 2020/10/25/unix/
 
+        $path .= '_Team_OpenLitterMap.csv';
+
         /* Dispatch job to create CSV file for export */
         (new CreateCSVExport($request->type, null, $request->team_id))
             ->queue($path, 's3', null, ['visibility' => 'public'])
