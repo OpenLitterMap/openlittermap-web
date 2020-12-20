@@ -56,7 +56,8 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             'address',
             'total_litter',
 
-            // Smoking
+            'SMOKING',
+
             'cigarette_butt',
             'lighter',
             'cigarette_box',
@@ -69,7 +70,8 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             'vape_oil',
             'smoking_other',
 
-            // Food
+            'FOOD',
+
             'sweet_wrapper',
 //           cardboard_food_packiging is not an option in web/app
             'cardboard_food_packaging',
@@ -82,17 +84,19 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             'napkin',
             'sauce_packet',
             'glass_jar',
+            'glass_jar_lid',
             'pizza_box',
             'aluminium_foil',
-            'glass_jar_lid',
             'food_other',
 
-            // Coffee
+            'COFFEE',
+
             'coffee_cup',
             'coffee_lid',
             'coffee_other',
 
-            // Alcohol
+            'ALCOHOL',
+
             'beer_can',
             'beer_bottle',
             'spirit_bottle',
@@ -106,7 +110,8 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             'pint_glass',
             'alcohol_other',
 
-            // SoftDrinks
+            'SOFTDRINKS',
+
             'plastic_water_bottle',
             'plastic_fizzy_drink_bottle',
             'softdrink_bottle_top',
@@ -130,7 +135,8 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             'styrofoam_cup',
             'softdrink_other',
 
-            // Sanitary
+            'SANITARY',
+
             'glove',
             'facemask',
             'condom',
@@ -144,7 +150,8 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             'hand_sanitiser',
             'sanitary_other',
 
-            // Other
+            'OTHER',
+
             'dog_poo',
             'random_litter',
             'bag_of_litter',
@@ -175,7 +182,23 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             'electric_large',
             'other_other',
 
-            // Coastal
+            'DUMPING',
+
+            'dumping_small',
+            'dumping_medium',
+            'dumping_large',
+
+            'INDUSTRIAL',
+
+            'oil',
+            'chemical',
+            'plastic',
+            'bricks',
+            'tape',
+            'other',
+
+            'COASTAL',
+
             'microplastic',
             'mediumplastic',
             'macroplastic',
@@ -196,7 +219,8 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             'shotgun_cartridge',
             'coastal_other',
 
-            // Brands
+            'BRANDS',
+
             'adidas',
             'amazon',
             'aldi',
@@ -318,7 +342,8 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             $row->address,
             $row->total_litter,
 
-            // Smoking
+            NULL,
+
             $row->smoking ? $row->smoking->butts : null,
             $row->smoking ? $row->smoking->lighters : null,
             $row->smoking ? $row->smoking->cigaretteBox : null,
@@ -331,7 +356,8 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             $row->smoking ? $row->smoking->vape_oil : null,
             $row->smoking ? $row->smoking->smokingOther : null,
 
-            // Food
+            NULL,
+
             $row->food ? $row->food->sweetWrappers : null,
             $row->food ? $row->food->cardboardFoodPackaging : null,
             $row->food ? $row->food->paperFoodPackaging : null,
@@ -348,12 +374,14 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             $row->food ? $row->food->aluminium_foil : null,
             $row->food ? $row->food->foodOther : null,
 
-            // Coffee
+            NULL,
+
             $row->coffee ? $row->coffee->coffeeCups : null,
             $row->coffee ? $row->coffee->coffeeLids : null,
             $row->coffee ? $row->coffee->coffeeOther : null,
 
-            // Alcohol
+            NULL,
+
             $row->alcohol ? $row->alcohol->beerCan : null,
             $row->alcohol ? $row->alcohol->beerBottle : null,
             $row->alcohol ? $row->alcohol->spiritBottle : null,
@@ -367,7 +395,8 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             $row->alcohol ? $row->alcohol->pint : null,
             $row->alcohol ? $row->alcohol->alcoholOther : null,
 
-            // SoftDrinks
+            NULL,
+
             $row->softdrinks ? $row->softdrinks->plasticWaterBottle : null,
             $row->softdrinks ? $row->softdrinks->fizzyDrinkBottle : null,
             $row->softdrinks ? $row->softdrinks->bottleLid : null,
@@ -391,7 +420,8 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             $row->softdrinks ? $row->softdrinks->styro_cup : null,
             $row->softdrinks ? $row->softdrinks->softDrinkOther : null,
 
-            // Sanitary
+            NULL,
+
             $row->sanitary ? $row->sanitary->gloves : null,
             $row->sanitary ? $row->sanitary->facemask : null,
             $row->sanitary ? $row->sanitary->condoms : null,
@@ -405,7 +435,8 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             $row->sanitary ? $row->sanitary->hand_sanitiser : null,
             $row->sanitary ? $row->sanitary->sanitaryOther : null,
 
-            // Other
+            NULL,
+
             $row->other ? $row->other->dogshit : null,
             $row->other ? $row->other->Random_dump : null,
             $row->other ? $row->other->bags_litter : null,
@@ -436,7 +467,23 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             $row->other ? $row->other->elec_large : null,
             $row->other ? $row->other->other : null,
 
-            // Coastal
+            NULL,
+
+            $row->dumping ? $row->dumping->small : null,
+            $row->dumping ? $row->dumping->medium : null,
+            $row->dumping ? $row->dumping->large : null,
+
+            NULL,
+
+            $row->industrial ? $row->industrial->oil : null,
+            $row->industrial ? $row->industrial->chemical : null,
+            $row->industrial ? $row->industrial->plastic : null,
+            $row->industrial ? $row->industrial->bricks : null,
+            $row->industrial ? $row->industrial->tape : null,
+            $row->industrial ? $row->industrial->other : null,
+
+            NULL,
+
             $row->coastal ? $row->coastal->microplastics : null,
             $row->coastal ? $row->coastal->mediumplastics : null,
             $row->coastal ? $row->coastal->macroplastics : null,
@@ -457,7 +504,8 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             $row->coastal ? $row->coastal->shotgun_cartridges : null,
             $row->coastal ? $row->coastal->coastal_other : null,
 
-            // Brands
+            NULL,
+
             $row->brands ? $row->brands->adidas : null,
             $row->brands ? $row->brands->amazon : null,
             $row->brands ? $row->brands->aldi : null,
@@ -563,13 +611,13 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
      * Create a query which we will loop over in the map function
      * no need to use ->get();
      *
-     * Todo - Dumping, Industrial, Art, Coastal
+     * Todo - Industrial, Art
      */
     public function query ()
     {
         if ($this->team_id)
         {
-            return Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands'])
+            return Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands', 'dumping', 'industrial'])
                 ->where([
                     'team_id' => $this->team_id,
                     'verified' => 2
@@ -580,7 +628,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
         {
             if ($this->location_type === 'city')
             {
-                return Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands'])
+                return Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands', 'dumping', 'industrial'])
                     ->where([
                         'city_id' => $this->location_id,
                         'verified' => 2
@@ -589,7 +637,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
 
             else if ($this->location_type === 'state')
             {
-                return Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands'])
+                return Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands', 'dumping', 'industrial'])
                     ->where([
                         'state_id' => $this->location_id,
                         'verified' => 2
@@ -598,7 +646,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
 
             else
             {
-                return Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands'])
+                return Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands', 'dumping', 'industrial'])
                     ->where([
                         'country_id' => $this->location_id,
                         'verified' => 2
