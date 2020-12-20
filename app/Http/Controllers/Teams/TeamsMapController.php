@@ -20,6 +20,8 @@ class TeamsMapController extends Controller
     {
         $team_ids = Auth::user()->teams->pluck('id'); // get team_ids
 
+        \Log::info(['team_ids', $team_ids]);
+
         // filter by teams
         $photos = Photo::where('verified', 2)
             ->whereIn('team_id', $team_ids)
