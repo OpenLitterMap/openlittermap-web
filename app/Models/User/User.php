@@ -282,10 +282,18 @@ class User extends Authenticatable
 
     /**
      * Team Relationships
+     *
+     * Load extra columns on the pivot table
      */
     public function teams ()
     {
-        return $this->belongsToMany(Team::class);
+        return $this->belongsToMany(Team::class)
+            ->withPivot(
+                'show_name_maps',
+                'show_username_maps',
+                'show_name_leaderboards',
+                'show_username_leaderboards'
+            );
     }
 
 

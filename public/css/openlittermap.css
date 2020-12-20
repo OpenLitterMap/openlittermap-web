@@ -91,6 +91,14 @@ html {
 	transform: translate(0px, -5px);
 }
 
+.is-green {
+    color: green;
+}
+
+.is-red {
+    color: red;
+}
+
 .jc {
     justify-content: center;
 }

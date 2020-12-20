@@ -24,17 +24,23 @@
         </div>
 
         <!-- Change time period -->
-        <select v-model="period" @change="changeTime" class="input" style="max-width: 25%;">
+        <select v-model="period" @change="changeTime" class="input dash-time">
             <option v-for="time in timePeriods" :value="time">{{ getPeriod(time) }}</option>
         </select>
 
-        <!-- todo - Map of all teams effort -->
+        <TeamMap />
+
     </section>
 </template>
 
 <script>
+import TeamMap from '../../components/Teams/TeamMap';
+
 export default {
     name: 'TeamsDashboard',
+    components: {
+        TeamMap
+    },
     created ()
     {
         this.changeTime();
@@ -103,6 +109,10 @@ export default {
 
 <style scoped>
 
+    .dash-time {
+        width: 25%;
+    }
+
     .tdc {
         padding-left: 2em;
         padding-right: 2em;
@@ -121,6 +131,10 @@ export default {
 
     @media screen and (max-width: 768px)
     {
+        .dash-time {
+            width: 100%;
+        }
+
         .teams-card {
             padding: 3em;
         }

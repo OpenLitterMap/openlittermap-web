@@ -21,6 +21,7 @@
                         </select>
 
                         <button :class="button" @click="changeActiveTeam" :disabled="disabled">Change active team</button>
+                        <button :class="downloadClass" :disabled="dlProcessing" @click="download">Download Team Data</button>
                     </div>
 
                     <table class="table is-fullwidth is-hoverable has-text-centered">
@@ -46,8 +47,8 @@
                                         <span>{{ getRank(index) }}</span>
                                     </div>
                                 </td>
-                                <td>{{ member.name }}</td>
-                                <td>{{ member.username }}</td>
+                                <td>{{ member.name ? member.name : '-'}}</td>
+                                <td>{{ member.username ? member.username: '-' }}</td>
                                 <td style="width: 9em;">
                                     <span :class="checkActiveTeam(member.active_team)">
                                         <i :class="icon(member.active_team)" />
@@ -98,14 +99,16 @@ export default {
             loading: false,
             processing: false,
             changing: false,
-            viewTeam: null // the team the user is currently looking at. Different team = load different list of members
+            viewTeam: null, // the team the user is currently looking at. Different team = load different list of members
+            dlProcessing: false,
+            dlButtonClass: 'button is-medium is-info ml1'
         };
     },
     async created ()
     {
         this.loading = true;
 
-        await this.$store.dispatch('GET_USERS_TEAMS');
+        if (this.teams.length === 0) await this.$store.dispatch('GET_USERS_TEAMS');
 
         if (this.user.active_team)
         {
@@ -154,6 +157,14 @@ export default {
             if (this.viewTeam === this.activeTeam) return true;
 
             return false;
+        },
+
+        /**
+         * Add spinner to download button class when processing
+         */
+        downloadClass ()
+        {
+            return this.dlProcessing ? this.dlButtonClass + ' is-loading' : this.dlButtonClass;
         },
 
         /**
@@ -245,6 +256,18 @@ export default {
             if (this.changing) return '...';
 
             return active_team_id === this.viewTeam ? 'Active' : 'Inactive';
+        },
+
+        /**
+         * Download the data from this Team
+         */
+        async download ()
+        {
+            this.dlProcessing = true;
+
+            await this.$store.dispatch('DOWNLOAD_DATA_FOR_TEAM', this.viewTeam);
+
+            this.dlProcessing = false;
         },
 
         /**

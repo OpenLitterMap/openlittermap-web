@@ -1,6 +1,25 @@
 export const mutations = {
 
     /**
+     * Update the settings for all Teams
+     */
+    allTeamSettings (state, payload)
+    {
+        let teams = [...state.teams];
+
+        const team = teams.find(t => t.id === payload);
+
+        teams.forEach(t => {
+            t.pivot.show_name_maps = team.pivot.show_name_maps;
+            t.pivot.show_username_maps = team.pivot.show_username_maps;
+            t.pivot.show_name_leaderboards = team.pivot.show_name_leaderboards;
+            t.pivot.show_username_leaderboards = team.pivot.show_username_leaderboards;
+        });
+
+        state.teams = teams;
+    },
+
+    /**
      * Delete an error with payload key
      */
     clearTeamsError (state, payload)
@@ -43,11 +62,33 @@ export const mutations = {
     },
 
     /**
+     * Init data from get teams map data request
+     */
+    teamMap (state, payload)
+    {
+        state.geojson = payload;
+    },
+
+    /**
      * Update the members on a paginated team object
      */
     teamMembers (state, payload)
     {
         state.members.data = payload;
+    },
+
+    /**
+     * Update the value of a users settings on 1 team
+     */
+    team_settings (state, payload)
+    {
+        let teams = [...state.teams];
+
+        let team = teams.find(t => t.id === payload.team_id);
+
+        team.pivot[payload.key] = payload.v;
+
+        state.teams = teams;
     },
 
     /**

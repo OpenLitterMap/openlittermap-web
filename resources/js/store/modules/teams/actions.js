@@ -95,6 +95,35 @@ export const actions = {
     },
 
     /**
+     * Download the data made by a specific team
+     */
+    async DOWNLOAD_DATA_FOR_TEAM (context, payload)
+    {
+        const title = i18n.t('notifications.success');
+        const body = 'Your download is being processed and will be emailed to you shortly';
+
+        await axios.post('/teams/download', {
+            team_id: payload
+        })
+        .then(response => {
+            console.log('download_data_for_team', response);
+
+            if (response.data.success)
+            {
+                // success
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                    position: 'bottom-right'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('download_data_for_team', error);
+        });
+    },
+
+    /**
      * Get the combined effort for all of the users teams for this period
      */
     async GET_COMBINED_TEAM_EFFORT (context, payload)
@@ -111,6 +140,24 @@ export const actions = {
         })
         .catch(error => {
             console.error('get_combined_teams_effort', error);
+        });
+    },
+
+    /**
+     * Get the map data for all teams the user has joined
+     *
+     * Todo - filter this by each team
+     */
+    async GET_TEAMS_MAP_DATA (context)
+    {
+        await axios.get('/teams/map-data')
+        .then(response => {
+            console.log('get_teams_map_data', response);
+
+            context.commit('teamMap', response.data.geojson);
+        })
+        .catch(error => {
+            console.error('get_teams_map_data', error);
         });
     },
 
@@ -261,6 +308,43 @@ export const actions = {
         })
         .catch(error => {
             console.error('next_members_page', error);
+        });
+    },
+
+    /**
+     * Save the privacy settings for 1 team or all teams
+     *
+     * team_id
+     * all @bool
+     */
+    async SAVE_TEAM_SETTINGS (context, payload)
+    {
+        const settings = context.state.teams.find(team => team.id === payload.team_id).pivot;
+
+        const title = i18n.t('notifications.success');
+        const body = 'Team settings updated';
+
+        await axios.post('/teams/settings', {
+            settings,
+            all: payload.all,
+            team_id: payload.team_id
+        })
+        .then(response => {
+            console.log('save_team_settings', response);
+
+            if (response.data.success)
+            {
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                    position: 'top-right'
+                });
+
+                if (payload.all) context.commit('allTeamSettings', payload.team_id);
+            }
+        })
+        .catch(error => {
+            console.error('save_team_settings', error);
         });
     }
 
