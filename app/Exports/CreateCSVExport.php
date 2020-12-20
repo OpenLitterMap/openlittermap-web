@@ -349,7 +349,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             $row->smoking ? $row->smoking->cigaretteBox : null,
             $row->smoking ? $row->smoking->tobaccoPouch : null,
             $row->smoking ? $row->smoking->skins : null,
-            $row->smoking ? $row->smoking->plastic_smoking_pk : null,
+            $row->smoking ? $row->smoking->smoking_plastic : null,
             $row->smoking ? $row->smoking->filters : null,
             $row->smoking ? $row->smoking->filterbox : null,
             $row->smoking ? $row->smoking->vape_pen : null,
