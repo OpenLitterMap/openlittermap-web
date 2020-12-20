@@ -339,7 +339,7 @@ class MapController extends Controller
 				'dumping',
 				'industrial',
 //				 'art',
-				'trashdog',
+//				'trashdog',
 				'owner' => function ($q) {
 					$q->where('show_name_maps', true)
                       ->orWhere('show_username_maps', true);
@@ -368,7 +368,7 @@ class MapController extends Controller
 				'dumping',
 				'industrial',
 //				 'art',
-				'trashdog',
+//				'trashdog',
 				'owner' => function ($q) {
 					$q->where('show_name_maps', true)->orWhere('show_username_maps', true);
 				}])->where([
@@ -420,7 +420,7 @@ class MapController extends Controller
 					 'brands' => $c->brands,
 					'dumping' => $c->dumping,
 				 'industrial' => $c->industrial,
-				   'trashdog' => $c->trashdog,
+//				   'trashdog' => $c->trashdog,
 			   'total_litter' => $c->total_litter
 				)
 			);

@@ -68,7 +68,7 @@ final class LitterTags {
     "trashdog": {
         "class": "TrashDog",
         "id_table": "trashdog_id",
-        "table": "trash_dogs",
+        "table": "trashdog",
         "total": "total_trashdog"
     },
     "dumping": {
