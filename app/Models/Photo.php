@@ -115,9 +115,11 @@ class Photo extends Model
 
         foreach ($this->categories() as $category)
         {
-            if ($this->$category)
+            if ($category !== 'brands')
             {
-                $total += $this->$category->total();
+                if ($this->$category) {
+                    $total += $this->$category->total();
+                }
             }
         }
 
