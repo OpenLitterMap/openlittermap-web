@@ -12,6 +12,8 @@ use App\Models\Location\Country;
 use App\Models\Litter\Categories\Smoking;
 use App\Models\Litter\Categories\Alcohol;
 use App\Models\Litter\Categories\Coffee;
+use App\Models\Litter\Categories\Dumping;
+use App\Models\Litter\Categories\Industrial;
 use App\Models\Litter\Categories\Food;
 use App\Models\Litter\Categories\SoftDrinks;
 use App\Models\Litter\Categories\Drugs;
@@ -153,6 +155,16 @@ class ReportsController extends Controller
 			} else {
 				$coffee = 'null';
 			}
+			if ($c['dumping_id']) {
+				$dumping = Dumping::find($c['dumping_id']);
+			} else {
+				$dumping = 'null';
+			}
+			if ($c['industrial_id']) {
+				$industrial = Industrial::find($c['industrial_id']);
+			} else {
+				$industrial = 'null';
+			}
 			if ($c['alcohol_id']) {
 				$alcohol = Alcohol::find($c['alcohol_id']);
 			} else {
@@ -213,6 +225,8 @@ class ReportsController extends Controller
 						'smoking' => $smoking,
 						   'food' => $food,
 						 'coffee' => $coffee,
+						'dumping' => $dumping,
+					 'industrial' => $industrial,
 						'alcohol' => $alcohol,
 					 'softdrinks' => $softdrinks,
 						  'drugs' => $drugs,
@@ -282,6 +296,16 @@ class ReportsController extends Controller
 			} else {
 				$coffee = 'null';
 			}
+			if ($c['dumping_id']) {
+				$dumping = Dumping::find($c['dumping_id']);
+			} else {
+				$dumping = 'null';
+			}
+			if ($c['industrial_id']) {
+				$industrial = Industrial::find($c['industrial_id']);
+			} else {
+				$industrial = 'null';
+			}
 			if ($c['alcohol_id']) {
 				$alcohol = Alcohol::find($c['alcohol_id']);
 			} else {
@@ -342,6 +366,8 @@ class ReportsController extends Controller
 						'smoking' => $smoking,
 						   'food' => $food,
 						 'coffee' => $coffee,
+					    'dumping' => $dumping,
+					 'industrial' => $industrial,
 						'alcohol' => $alcohol,
 					 'softdrinks' => $softdrinks,
 						  'drugs' => $drugs,
@@ -410,6 +436,16 @@ class ReportsController extends Controller
 			} else {
 				$coffee = 'null';
 			}
+			if ($c['dumping_id']) {
+				$dumping = Dumping::find($c['dumping_id']);
+			} else {
+				$dumping = 'null';
+			}
+			if ($c['industrial_id']) {
+				$industrial = Industrial::find($c['industrial_id']);
+			} else {
+				$industrial = 'null';
+			}
 			if ($c['alcohol_id']) {
 				$alcohol = Alcohol::find($c['alcohol_id']);
 			} else {
@@ -470,6 +506,8 @@ class ReportsController extends Controller
 						'smoking' => $smoking,
 						   'food' => $food,
 						 'coffee' => $coffee,
+						'dumping' => $dumping,
+					 'industrial' => $industrial,
 						'alcohol' => $alcohol,
 					 'softdrinks' => $softdrinks,
 						  'drugs' => $drugs,
@@ -539,6 +577,16 @@ class ReportsController extends Controller
 			} else {
 				$coffee = 'null';
 			}
+			if ($c['dumping_id']) {
+				$dumping = Dumping::find($c['dumping_id']);
+			} else {
+				$dumping = 'null';
+			}
+			if ($c['industrial_id']) {
+				$industrial = Industrial::find($c['industrial_id']);
+			} else {
+				$industrial = 'null';
+			}
 			if ($c['alcohol_id']) {
 				$alcohol = Alcohol::find($c['alcohol_id']);
 			} else {
@@ -599,6 +647,8 @@ class ReportsController extends Controller
 						'smoking' => $smoking,
 						   'food' => $food,
 						 'coffee' => $coffee,
+						'dumping' => $dumping,
+					 'industrial' => $industrial,
 						'alcohol' => $alcohol,
 					 'softdrinks' => $softdrinks,
 						  'drugs' => $drugs,

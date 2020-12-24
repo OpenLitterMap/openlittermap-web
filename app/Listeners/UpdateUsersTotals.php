@@ -49,8 +49,14 @@ class UpdateUsersTotals
             if($userPhoto["total_coffee"]) {
                 $totalVerifiedLitter += $userPhoto["total_coffee"];
             }
+            if($userPhoto["total_dumping"]) {
+                $totalVerifiedLitter += $userPhoto["total_dumping"];
+            }
             if($userPhoto["total_food"]) {
                 $totalVerifiedLitter += $userPhoto["total_food"];
+            }
+            if($userPhoto["total_industrial"]) {
+                $totalVerifiedLitter += $userPhoto["total_industrial"];
             }
             if($userPhoto["total_softdrinks"]) {
                 $totalVerifiedLitter += $userPhoto["total_softdrinks"];

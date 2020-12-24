@@ -359,6 +359,41 @@ class DownloadsController extends Controller
 			    			}
 			    		}
 
+			    		if($photo['dumping_id']) {
+			    			$dumping = Dumping::find($photo['dumping_id']);
+			    			if($dumping['small']) {
+			    				$export[$index]['small'] = $dumping['small'];
+			    			}
+			    			if($dumping['medium']) {
+			    				$export[$index]['medium'] = $dumping['medium'];
+			    			}
+			    			if($dumping['large']) {
+			    				$export[$index]['large'] = $dumping['large'];
+			    			}
+			    		}
+
+			    		if($photo['industrial_id']) {
+			    			$industrial = Industrial::find($photo['industrial_id']);
+			    			if($industrial['oil']) {
+			    				$export[$index]['oil'] = $industrial['oil'];
+			    			}
+			    			if($industrial['chemical']) {
+			    				$export[$index]['chemical'] = $industrial['chemical'];
+			    			}
+			    			if($industrial['industrial_plastic']) {
+			    				$export[$index]['industrial_plastic'] = $industrial['industrial_plastic'];
+			    			}
+			    			if($industrial['bricks']) {
+			    				$export[$index]['bricks'] = $industrial['bricks'];
+			    			}
+			    			if($industrial['tape']) {
+			    				$export[$index]['tape'] = $industrial['tape'];
+			    			}
+			    			if($industrial['industrial_other']) {
+			    				$export[$index]['industrial_other'] = $industrial['industrial_other'];
+			    			}
+			    		}
+
 			    		if($photo['alcohol_id']) {
 			    			$alcohol = Alcohol::find($photo['alcohol_id']);
 			    			if($alcohol['beerBottle']) {
@@ -962,6 +997,41 @@ class DownloadsController extends Controller
 		    			}
 		    			if($coffee['coffeeOther']) {
 		    				$export[$index]['coffeeOther'] = $coffee['coffeeOther'];
+		    			}
+		    		}
+
+		    		if($photo['dumping_id']) {
+		    			$dumping = Dumping::find($photo['dumping_id']);
+		    			if($dumping['small']) {
+		    				$export[$index]['small'] = $coffee['small'];
+		    			}
+		    			if($dumping['medium']) {
+		    				$export[$index]['medium'] = $coffee['medium'];
+		    			}
+		    			if($dumping['large']) {
+		    				$export[$index]['large'] = $coffee['large'];
+		    			}
+		    		}
+
+		    		if($photo['industrial_id']) {
+		    			$industrial = Industrial::find($photo['industrial_id']);
+		    			if($industrial['oil']) {
+		    				$export[$index]['oil'] = $industrial['oil'];
+		    			}
+		    			if($industrial['chemical']) {
+		    				$export[$index]['chemical'] = $industrial['chemical'];
+		    			}
+		    			if($industrial['industrial_plastic']) {
+		    				$export[$index]['industrial_plastic'] = $industrial['industrial_plastic'];
+		    			}
+		    			if($industrial['bricks']) {
+		    				$export[$index]['bricks'] = $industrial['bricks'];
+		    			}
+		    			if($industrial['tape']) {
+		    				$export[$index]['tape'] = $industrial['tape'];
+		    			}
+		    			if($industrial['industrial_other']) {
+		    				$export[$index]['industrial_other'] = $industrial['industrial_other'];
 		    			}
 		    		}
 
@@ -1737,6 +1807,41 @@ class DownloadsController extends Controller
 			    			}
 			    			if($coffee['coffeeOther']) {
 			    				$export[$index]['coffeeOther'] = $coffee['coffeeOther'];
+			    			}
+			    		}
+
+			    		if($photo['dumping_id']) {
+			    			$dumping = Dumping::find($photo['dumping_id']);
+			    			if($dumping['small']) {
+			    				$export[$index]['small'] = $dumping['small'];
+			    			}
+			    			if($dumping['medium']) {
+			    				$export[$index]['medium'] = $dumping['medium'];
+			    			}
+			    			if($dumping['large']) {
+			    				$export[$index]['large'] = $dumping['large'];
+			    			}
+			    		}
+
+			    		if($photo['industrial_id']) {
+			    			$industrial = Industrial::find($photo['industrial_id']);
+			    			if($industrial['oil']) {
+			    				$export[$index]['oil'] = $industrial['oil'];
+			    			}
+			    			if($industrial['chemical']) {
+			    				$export[$index]['chemical'] = $industrial['chemical'];
+			    			}
+			    			if($industrial['industrial_plastic']) {
+			    				$export[$index]['industrial_plastic'] = $industrial['industrial_plastic'];
+			    			}
+			    			if($industrial['bricks']) {
+			    				$export[$index]['bricks'] = $industrial['bricks'];
+			    			}
+			    			if($industrial['tape']) {
+			    				$export[$index]['tape'] = $industrial['tape'];
+			    			}
+			    			if($industrial['industrial_other']) {
+			    				$export[$index]['industrial_other'] = $industrial['industrial_other'];
 			    			}
 			    		}
 

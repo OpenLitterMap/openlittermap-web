@@ -121,6 +121,8 @@ class State extends Model
         'total_alcohol',
         'total_softdrinks',
         'total_coffee',
+        'total_dumping',
+        'total_industrial',
         'total_sanitary',
         'total_other',
         'total_coastal',

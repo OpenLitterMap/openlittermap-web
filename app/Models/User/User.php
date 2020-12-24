@@ -207,9 +207,19 @@ class User extends Authenticatable
         return $this->hasManyThrough('App\Coffee', 'App\Models\Photo');
     }
 
+    public function dumping ()
+    {
+        return $this->hasManyThrough('App\Dumping', 'App\Models\Photo');
+    }
+
     public function food ()
     {
         return $this->hasManyThrough('App\Food', 'App\Models\Photo');
+    }
+
+    public function industrial ()
+    {
+        return $this->hasManyThrough('App\Industrial', 'App\Models\Photo');
     }
 
     public function softdrinks ()

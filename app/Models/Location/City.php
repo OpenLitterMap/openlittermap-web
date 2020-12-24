@@ -52,6 +52,8 @@ class City extends Model
         return [
             'smoking' => $this->total_smoking,
                'food' => $this->total_food,
+            'dumping' => $this->total_dumping,
+         'industrial' => $this->total_industrial,
          'softdrinks' => $this->total_softdrinks,
             'alcohol' => $this->total_alcohol,
              'coffee' => $this->total_coffee,
@@ -120,6 +122,8 @@ class City extends Model
         'total_alcohol',
         'total_softdrinks',
         'total_coffee',
+        'total_dumping',
+        'total_industrial',
         'total_sanitary',
         'total_other',
         'total_coastal',

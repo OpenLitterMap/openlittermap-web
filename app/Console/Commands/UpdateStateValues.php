@@ -8,6 +8,8 @@ use App\Models\Location\State;
 use App\Models\Litter\Categories\Smoking;
 use App\Models\Litter\Categories\Alcohol;
 use App\Models\Litter\Categories\Coffee;
+use App\Models\Litter\Categories\Dumping;
+use App\Models\Litter\Categories\Industrial;
 use App\Models\Litter\Categories\Food;
 use App\Models\Litter\Categories\SoftDrinks;
 use App\Models\Litter\Categories\Drugs;
@@ -82,6 +84,10 @@ class UpdateStateValues extends Command
 
             $coffeeTotal = 0;
 
+            $dumpingTotal = 0;
+
+            $industrialTotal = 0;
+
             $drugsTotal = 0;
             $needlesTotal = 0;
 
@@ -151,6 +157,23 @@ class UpdateStateValues extends Command
                     $coffeeTotal += $coffee['coffeeCups'];
                     $coffeeTotal += $coffee['coffeeLids'];
                     $coffeeTotal += $coffee['coffeeOther'];
+                }
+
+                if($photo['dumping_id']) {
+                    $dumping = Dumping::find($photo['dumping_id']);
+                    $dumpingTotal += $dumping['small'];
+                    $dumpingTotal += $dumping['medium'];
+                    $dumpingTotal += $dumping['large'];
+                }
+
+                if($photo['industrial_id']) {
+                    $industrial = Industrial::find($photo['industrial_id']);
+                    $industrialTotal += $industrial['oil'];
+                    $industrialTotal += $industrial['chemical'];
+                    $industrialTotal += $industrial['industrial_plastic'];
+                    $industrialTotal += $industrial['bricks'];
+                    $industrialTotal += $industrial['tape'];
+                    $industrialTotal += $industrial['industrial_other'];
                 }
 
                 if($photo['drugs_id']) {
@@ -237,6 +260,8 @@ class UpdateStateValues extends Command
             $state->total_softdrinks = $softDrinksTotal;
             $state->total_plasticBottles = $plasticBottleTotal;
             $state->total_coffee = $coffeeTotal;
+            $state->total_dumping = $dumpingTotal;
+            $state->total_industrial = $industrialTotal;
             $state->total_alcohol = $alcoholTotal;
             $state->total_drugs = $drugsTotal;
             $state->total_needles = $drugsTotal;

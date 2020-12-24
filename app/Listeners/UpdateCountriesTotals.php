@@ -5,6 +5,8 @@ namespace App\Listeners;
 use App\Models\Litter\Categories\Smoking;
 use App\Models\Litter\Categories\Alcohol;
 use App\Models\Litter\Categories\Coffee;
+use App\Models\Litter\Categories\Dumping;
+use App\Models\Litter\Categories\Industrial;
 use App\Models\Litter\Categories\Food;
 use App\Models\Litter\Categories\SoftDrinks;
 use App\Models\Litter\Categories\Drugs;
@@ -216,6 +218,49 @@ class UpdateCountriesTotals
                 $coffeeTotal += $coffee['coffeeOther'];
             }
             $country->total_coffee = $coffeeTotal;
+            $country->save();
+        }
+
+        if($photo['dumping_id']){
+            $dumpingPhotos = Photo::where([
+                ['country_id', $photo->country_id],
+                ['verified', '>', 0],
+                ['dumping_id', '!=', null]
+            ])->get();
+
+            $dumpingTotal = 0;
+            foreach($dumpingPhotos as $dumpingPhoto){
+
+                $dumping = App\Models\Litter\Categories\Dumping::find($dumpingPhoto['dumping_id']);
+
+                $dumpingTotal += $coffee['small'];
+                $dumpingTotal += $coffee['medium'];
+                $dumpingTotal += $coffee['large'];
+            }
+            $country->total_dumping = $dumpingTotal;
+            $country->save();
+        }
+
+        if($photo['industrial_id']){
+            $industrialPhotos = Photo::where([
+                ['country_id', $photo->country_id],
+                ['verified', '>', 0],
+                ['industrial_id', '!=', null]
+            ])->get();
+
+            $industrialTotal = 0;
+            foreach($industrialPhotos as $industrialPhoto){
+
+                $industrial = App\Models\Litter\Categories\Industrial::find($industrialPhoto['industrial_id']);
+
+                $industrialTotal += $industrial['oil'];
+                $industrialTotal += $industrial['chemical'];
+                $industrialTotal += $industrial['industrial_plastic'];
+                $industrialTotal += $industrial['bricks'];
+                $industrialTotal += $industrial['tape'];
+                $industrialTotal += $industrial['industrial_other'];
+            }
+            $country->total_industrial = $industrialTotal;
             $country->save();
         }
 

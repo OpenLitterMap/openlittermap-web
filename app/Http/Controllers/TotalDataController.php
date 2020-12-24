@@ -8,6 +8,8 @@ use App\Models\User\User;
 use App\Models\Litter\Categories\Smoking;
 use App\Models\Litter\Categories\Alcohol;
 use App\Models\Litter\Categories\Coffee;
+use App\Models\Litter\Categories\Dumping;
+use App\Models\Litter\Categories\Industrial;
 use App\Models\Litter\Categories\Food;
 use App\Models\Litter\Categories\SoftDrinks;
 use App\Models\Litter\Categories\Drugs;

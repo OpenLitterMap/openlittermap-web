@@ -9,6 +9,8 @@ use JavaScript;
 use App\Models\Litter\Categories\Smoking;
 use App\Models\Litter\Categories\Alcohol;
 use App\Models\Litter\Categories\Coffee;
+use App\Models\Litter\Categories\Dumping;
+use App\Models\Litter\Categories\Industrial;
 use App\Models\Litter\Categories\Food;
 use App\Models\Litter\Categories\SoftDrinks;
 use App\Models\Litter\Categories\Drugs;
@@ -157,6 +159,16 @@ class VerificationController extends Controller
         if ($photo['coffee_id']) {
             $coffee = Coffee::where('id', $photo['coffee_id'])->get();
             $photodata['Coffee'] = $coffee;
+        }
+
+        if ($photo['dumping_id']) {
+            $dumping = Dumping::where('id', $photo['dumping_id'])->get();
+            $photodata['Dumping'] = $dumping;
+        }
+
+        if ($photo['industrial_id']) {
+            $industrial = Industrial::where('id', $photo['industrial_id'])->get();
+            $photodata['Industrial'] = $industrial;
         }
 
         if ($photo['food_id']) {
