@@ -52,6 +52,10 @@ const router = new VueRouter({
             component: require('./views/general/Privacy').default
         },
         {
+            path: '/references',
+            component: require('./views/general/References').default
+        },
+        {
             path: '/credits',
             component: require('./views/general/Credits').default
         },
