@@ -56,6 +56,7 @@
 
                     <p class="footer-link" @click="open('https://medium.com/@littercoin')">{{ $t('home.footer.blog') }}</p>
                     <p class="footer-link" @click="open('https://opengeospatialdata.springeropen.com/articles/10.1186/s40965-018-0050-y')">{{ $t('home.footer.research-paper') }}</p>
+                    <router-link to="/references" class="footer-link">{{ $t('home.footer.references') }}</router-link>
                 </div>
 
                 <div class="column is-2">
