@@ -74,6 +74,7 @@ class UpdateCountries extends Command
             {
                 $category_id = $category . '_id';
                 $category_total = 0;
+                $total_category = 'total_' . $category;
 
                 $photos = Photo::where('verified', 2)->where('country_id', $country->id)->whereNotNull($category_id)->get();
 
@@ -85,6 +86,8 @@ class UpdateCountries extends Command
                 }
 
                 echo "Category total " . $category_total . "\n";
+
+                $country->$total_category = $category_total;
 
                 $country_total += $category_total;
 

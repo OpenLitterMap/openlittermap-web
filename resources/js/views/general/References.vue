@@ -1,6 +1,6 @@
 <template>
     <div class="content p2">
-        <p class="ref-title">OpenLiterMap has been referenced {{ items.length }} times and counting</p>
+        <p class="ref-title">OpenLitterMap has been referenced {{ items.length }} times and counting</p>
         <ul>
             <li v-for="item in items">
                 <div class="mb1">
