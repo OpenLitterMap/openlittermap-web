@@ -219,6 +219,10 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             'shotgun_cartridge',
             'coastal_other',
 
+            'ART',
+
+            'item',
+
             'BRANDS',
 
             'adidas',
@@ -397,7 +401,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
 
             NULL,
 
-            $row->softdrinks ? $row->softdrinks->plasticWaterBottle : null,
+            $row->softdrinks ? $row->softdrinks->waterBottle : null,
             $row->softdrinks ? $row->softdrinks->fizzyDrinkBottle : null,
             $row->softdrinks ? $row->softdrinks->bottleLid : null,
             $row->softdrinks ? $row->softdrinks->bottleLabel : null,
@@ -503,6 +507,10 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             $row->coastal ? $row->coastal->lego : null,
             $row->coastal ? $row->coastal->shotgun_cartridges : null,
             $row->coastal ? $row->coastal->coastal_other : null,
+
+            NULL,
+
+            $row->art ? $row->art->item : null,
 
             NULL,
 
