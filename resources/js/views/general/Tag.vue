@@ -220,7 +220,7 @@ export default {
          */
         async confirmDelete (photoid)
         {
-            if (confirm('Do you want to delete this image? This cannot be undone.'))
+            if (confirm(this.$i18n.t('confirm-delete')))
             {
                 await axios.post('/en/profile/photos/delete', {
                     photoid
