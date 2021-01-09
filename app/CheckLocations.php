@@ -57,7 +57,7 @@ trait CheckLocations
 //                // Broadcast event and update countries table
 //                event(new NewCountryAdded($this->country, $this->countryCode, now()));
 //            }
-            if (! Country::where('country', $this->country)->orWhere('countrynameb')->orWhere('countrynamec')->first())
+            if (! Country::where('country', $this->country)->orWhere('countrynameb', $this->country)->orWhere('countrynamec', $this->country)->first())
             {
                 event(new NewCountryAdded($this->country, $this->countryCode, now()));
             }
