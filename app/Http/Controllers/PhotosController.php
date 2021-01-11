@@ -69,6 +69,7 @@ class PhotosController extends Controller
         // todo - make this error appear on the frontend dropzone.js without clicking it
         if (! array_key_exists("GPSLatitudeRef", $exif))
         {
+            \Log::info("Response: Sorry, no GPS on this one");
             header('HTTP/1.1 500 Internal Server Error');
             header('Content-type: text/plain');
             exit ("Sorry, no GPS on this one");
@@ -400,18 +401,16 @@ class PhotosController extends Controller
     {
         $user = Auth::user();
 
-        $photos = Photo::select('id', 'filename', 'lat', 'lon', 'model', 'remaining', 'display_name', 'datetime')
-            ->where([
-                'user_id' => $user->id,
-                'verified' => 0,
-                'verification' => 0
-            ])->simplePaginate(1);
-
-        $remaining = Photo::where([
+        $query = Photo::where([
             'user_id' => $user->id,
             'verified' => 0,
             'verification' => 0
-        ])->count();
+        ]);
+
+        $photos = $query->select('id', 'filename', 'lat', 'lon', 'model', 'remaining', 'display_name', 'datetime')
+            ->simplePaginate(1);
+
+        $remaining = $query->count();
 
         $total = Photo::where('user_id', $user->id)->count();
 

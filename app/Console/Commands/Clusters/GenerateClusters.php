@@ -81,7 +81,7 @@ class GenerateClusters extends Command
 
         if (app()->environment() === 'local')
         {
-            $prefix = '/home/vagrant/Code/olm';
+            $prefix = env('GENERATE_CLUSTER_PREFIX', '');
         }
 
         // delete all clusters?

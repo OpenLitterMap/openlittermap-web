@@ -5,9 +5,13 @@
                 {{ $t('upload.click-to-upload') }}
             </h1>
 
-            <vue-dropzone id="customdropzone" :options="options" :use-custom-slot="true" @vdropzone-error="verror">
-                <i class="fa fa-image upload-icon" aria-hidden="true" />
-            </vue-dropzone>
+            <vue-dropzone
+                id="customdropzone"
+                ref="uploadFile"
+                :options="options"
+                :use-custom-slot="true"
+                @vdropzone-error="verror"
+            >
 
             <h2 class="title is-2">
                 {{ $t('upload.thank-you') }}
@@ -69,8 +73,18 @@ export default {
         verror (file)
         {
             console.log({ file });
-            // this.error = true
-            // window.toastr.error(file.upload.filename, 'Event : vdropzone-error - ' + file.status)
+
+            let errorMessage = 'Something went wrong. Please try again later.';
+
+            if(file.xhr?.response && file.xhr?.response?.length < 200)
+            {
+                errorMessage = `${file.name}: ${file.xhr?.response}`;
+                this.$refs.uploadFile?.removeFile(file);
+            }
+            this.$vToastify.error({
+                title: this.$i18n.t('notifications.error'),
+                body: errorMessage
+            });
         },
     }
 };

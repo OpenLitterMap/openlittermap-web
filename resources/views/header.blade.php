@@ -20,7 +20,7 @@
     <link rel="stylesheet" type="text/css" href="/css/openlittermap.css" />
     <!-- extra leaflet styles -->
     <link ref="stylesheet" type="text/css" href="/css/leaflet.css" />
-
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     <link rel="stylesheet" type="text/css" href="/css/MarkerCluster.css">
     <link rel="stylesheet" type="text/css" href="/css/MarkerCluster.Default.css">
 
