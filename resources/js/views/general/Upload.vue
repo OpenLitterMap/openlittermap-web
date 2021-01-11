@@ -12,6 +12,8 @@
                 :use-custom-slot="true"
                 @vdropzone-error="verror"
             >
+                <i class="fa fa-image upload-icon" aria-hidden="true" />
+            </vue-dropzone>
 
             <h2 class="title is-2">
                 {{ $t('upload.thank-you') }}
