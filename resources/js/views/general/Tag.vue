@@ -19,7 +19,7 @@
 
             <!-- Image is available for tagging -->
             <div v-else>
-                <div v-for="photo in photos" :key="photo.id + photo.filename" class="mb2">
+                <div v-for="photo in photos" :key="photo.id" class="mb2">
                     <h2 class="taken">
                         <strong style="color: #fff;">#{{ photo.id }}</strong>
                         <!-- was profile.profile5 "Uploaded". now "taken on" -->
