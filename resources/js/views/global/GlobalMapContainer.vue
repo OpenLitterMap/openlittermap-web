@@ -1,24 +1,19 @@
 <template>
     <div class="global-map-container">
-        <loading v-if="loading" :active.sync="loading" :is-full-page="true" />
+        <loading v-if="loading" v-model:active="loading" :is-full-page="true" />
 
         <supercluster v-else />
     </div>
 </template>
 
 <script>
-import Loading from 'vue-loading-overlay'
-import 'vue-loading-overlay/dist/vue-loading.css'
-import Supercluster from './Supercluster'
+import Loading from 'vue-loading-overlay';
+import 'vue-loading-overlay/dist/vue-loading.css';
+import Supercluster from './Supercluster';
 
 export default {
     name: 'GlobalMapContainer',
     components: { Loading, Supercluster },
-    async created ()
-    {
-        // this.$store.dispatch('GLOBAL_MAP_DATA', 'one-month'); // today, one-week
-        await this.$store.dispatch('GET_CLUSTERS', 2);
-    },
     computed: {
         /**
          * Show loading when changing dates
@@ -27,7 +22,12 @@ export default {
         {
             return this.$store.state.globalmap.loading;
         }
-    }
+    },
+    async created ()
+    {
+        // this.$store.dispatch('GLOBAL_MAP_DATA', 'one-month'); // today, one-week
+        await this.$store.dispatch('GET_CLUSTERS', 2);
+    },
 }
 </script>
 
@@ -35,7 +35,7 @@ export default {
     @import '~leaflet/dist/leaflet.css';
 
     .global-map-container {
-        height: calc(100% - 72px);
+        height: calc(100vh - 72px);
         margin: 0;
         position: relative;
         z-index: 1;
