@@ -27,7 +27,7 @@
             <span>
                 {{ $t('tags.recently-tags') }}
             </span>
-            <div class="recently-tags">
+            <transition-group name="list" class="recently-tags" tag="div">
                 <div
                     v-for="tag in recentlyTags"
                     :key="tag.item.key"
@@ -36,7 +36,7 @@
                 >
                     {{ getTagName(tag.item.key, tag.category.key) }}
                 </div>
-            </div>
+            </transition-group>
         </div>
 
         <div>
@@ -347,6 +347,8 @@ export default {
         max-width: 500px;
         margin: auto;
         flex-wrap: wrap;
+        max-height: 155px;
+        overflow: auto;
     }
 
     .litter-tag {
@@ -355,6 +357,15 @@ export default {
         border-radius: 5px;
         background-color: $info;
         margin: 5px
+    }
+
+    .list-enter-active, .list-leave-active {
+        transition: all 1s;
+    }
+
+    .list-enter, .list-leave-to /* .list-leave-active below version 2.1.8 */ {
+        opacity: 0;
+        transform: translateX(30px);
     }
 
 </style>

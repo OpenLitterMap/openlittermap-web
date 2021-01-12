@@ -3,6 +3,7 @@ import i18n from '../../../i18n'
 import { categories } from '../../../extra/categories'
 import { litterkeys } from '../../../extra/litterkeys'
 import { init } from './init'
+import { MAX_RECENTLY_TAGS } from "../../../constants/index"
 
 export const mutations = {
 
@@ -233,9 +234,8 @@ export const mutations = {
     },
     addRecentlyTag (state, payload)
     {
-        console.log('state', state);
-        console.log('payload', payload);
-        const tags = state.recentlyTags.length === 5 ? state.recentlyTags.slice(1, 5) : state.recentlyTags;
+        const tags = state.recentlyTags.length === MAX_RECENTLY_TAGS ? state.recentlyTags.slice(1, MAX_RECENTLY_TAGS) :
+            state.recentlyTags;
         const isTagExisted = tags.find(({ item }) => item.key === payload.item.key);
 
         if (isTagExisted)
