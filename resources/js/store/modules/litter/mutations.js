@@ -172,12 +172,12 @@ export const mutations = {
         }
     },
 
-   /**
-    * Set all existing items to 0
-    */
+    /**
+     * Set all existing items to 0
+     */
     setAllItemsToZero (state)
-   {
-       console.log('setAllItemsToZero');
+    {
+        console.log('setAllItemsToZero');
 
         let categories = Object.assign({}, state.categories);
 
@@ -210,10 +210,10 @@ export const mutations = {
      */
     setLang (state, payload)
     {
-      	state.categoryNames = payload.categoryNames;
-      	state.currentCategory = payload.currentCategory;
-      	state.currentItem = payload.currentItem;
-      	state.litterlang = payload.litterlang;
+        state.categoryNames = payload.categoryNames;
+        state.currentCategory = payload.currentCategory;
+        state.currentItem = payload.currentItem;
+        state.litterlang = payload.litterlang;
     },
 
     /**
@@ -221,7 +221,7 @@ export const mutations = {
      */
     togglePresence (state)
     {
-        state.presence = ! state.presence;
+        state.presence = !state.presence;
     },
 
     /**
@@ -229,7 +229,20 @@ export const mutations = {
      */
     toggleSubmit (state)
     {
-  	    state.submitting = ! state.submitting;
-    }
+        state.submitting = !state.submitting;
+    },
+    addRecentlyTag (state, payload)
+    {
+        console.log('state', state);
+        console.log('payload', payload);
+        const tags = state.recentlyTags.length === 5 ? state.recentlyTags.slice(1, 5) : state.recentlyTags;
+        const isTagExisted = tags.find(({ item }) => item.key === payload.item.key);
 
-}
+        if (isTagExisted)
+        {
+            return;
+        }
+
+        state.recentlyTags = [...tags, payload];
+    }
+};
