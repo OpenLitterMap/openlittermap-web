@@ -1,48 +1,69 @@
 <template>
     <div class="control has-text-centered">
-
         <!-- Categories -->
-        <div class="select" id="litter-items">
-            <select v-model="category">
-                <option v-for="cat in categories" :value="cat">{{ cat.title }}</option>
-            </select>
+        <b-field grouped group-multiline position="is-centered" class="mb-5">
+            <b-select v-model="category">
+                <option v-for="cat in categories" :key="cat.key" :value="cat">
+                    {{ cat.title }}
+                </option>
+            </b-select>
+
+            <!-- Items -->
+            <b-select v-model="item">
+                <option v-for="i in items" :key="i.key" :value="i">
+                    {{ i.title }}
+                </option>
+            </b-select>
+
+            <!-- Quantity -->
+            <b-select v-model="quantity">
+                <option v-for="int in integers">
+                    {{ int }}
+                </option>
+            </b-select>
+        </b-field>
+
+        <div v-if="recentlyTags.length > 0" class="mb-5">
+            <span>
+                {{ $t('tags.recently-tags') }}
+            </span>
+            <transition-group name="list" class="recently-tags" tag="div">
+                <div
+                    v-for="tag in recentlyTags"
+                    :key="tag.item.key"
+                    class="litter-tag"
+                    @click="changeTag(tag)"
+                >
+                    {{ getTagName(tag.item.key, tag.category.key) }}
+                </div>
+            </transition-group>
         </div>
 
-        <!-- Items -->
-        <div class="select" id="litter-category">
-            <select v-model="item">
-                <option v-for="i in items" :value="i">{{ i.title }}</option>
-            </select>
+        <div>
+            <button
+                :disabled="checkDecr"
+                class="button is-medium is-danger"
+                @click="decr"
+            >
+                -
+            </button>
+
+            <button
+                class="button is-medium is-info"
+                @click="addTag"
+            >
+                {{ $t('tags.add-tag') }}
+            </button>
+
+            <button
+                :disabled="checkIncr"
+                class="button is-medium is-dark"
+                @click="incr"
+            >
+                +
+            </button>
         </div>
 
-        <!-- Quantity -->
-        <div class="select" id="int">
-            <select v-model="quantity">
-                <option v-for="int in integers">{{ int }}</option>
-            </select>
-        </div>
-
-        <br>
-        <br>
-
-        <button
-            :disabled="checkDecr"
-            class="button is-medium is-danger"
-            @click="decr"
-        >-</button>
-
-        <button
-            class="button is-medium is-info"
-            @click="addTag"
-        >{{ $t('tags.add-tag') }}</button>
-
-        <button
-            :disabled="checkIncr"
-            class="button is-medium is-dark"
-            @click="incr"
-        >+</button>
-
-        <br>
         <br>
 
         <button
@@ -50,7 +71,9 @@
             :disabled="checkItems"
             :class="button"
             @click="submit"
-        >{{ $t('common.submit') }}</button>
+        >
+            {{ $t('common.submit') }}
+        </button>
 
         <!-- Only show these on mobile <= 768px -->
         <div class="show-mobile">
@@ -66,45 +89,32 @@
 </template>
 
 <script>
-import Tags from './Tags'
-import Presence from './Presence'
-import ProfileDelete from './ProfileDelete'
+import Tags from './Tags';
+import Presence from './Presence';
+import ProfileDelete from './ProfileDelete';
 // import VueSimpleSuggest from 'vue-simple-suggest' todo
 // import 'vue-simple-suggest/dist/styles.css'
-import { categories } from '../../extra/categories'
-import { litterkeys } from '../../extra/litterkeys'
+import { categories } from '../../extra/categories';
+import { litterkeys } from '../../extra/litterkeys';
 
 export default {
     name: 'AddTags',
-    props: ['id', 'admin'], // photo.id, bool
     components: {
         Tags,
         Presence,
         ProfileDelete,
     },
-    created ()
-    {
-        // We need to initialize with translated title
-        this.$store.commit('changeCategory', {
-            id: 11,
-            key: 'smoking',
-            title: this.$i18n.t('litter.categories.smoking')
-        });
-
-        // We need to initialize with translated title
-        this.$store.commit('changeItem', {
-            id: 0,
-            key: 'butts',
-            title: this.$i18n.t('litter.smoking.butts')
-        });
+    props: {
+        'id': { type: Number, required: true },
+        'admin': Boolean
     },
     data ()
     {
         return {
-		    btn: 'button is-medium is-success',
+            btn: 'button is-medium is-success',
             quantity: 1,
-    		processing: false,
-	        integers: Array.from({ length: 100 }, (_, i) => i + 1),
+            processing: false,
+            integers: Array.from({ length: 100 }, (_, i) => i + 1),
             // autoCompleteStyle: {
             //     vueSimpleSuggest: 'position-relative flex-05 mb1',
             //     inputWrapper: '',
@@ -130,10 +140,12 @@ export default {
          * @value { id: 0, key: 'category', title: 'Translated Category' };
          */
         category: {
-            get () {
+            get ()
+            {
                 return this.$store.state.litter.category;
             },
-            set (cat) {
+            set (cat)
+            {
                 this.$store.commit('changeCategory', cat);
                 this.quantity = 1;
             }
@@ -144,7 +156,8 @@ export default {
          */
         categories ()
         {
-            return categories.map(cat => {
+            return categories.map(cat =>
+            {
                 return {
                     id: cat.id,
                     key: cat.key,
@@ -157,10 +170,12 @@ export default {
          * Get / Set the current item (category -> item)
          */
         item: {
-            get () {
+            get ()
+            {
                 return this.$store.state.litter.item;
             },
-            set (i) {
+            set (i)
+            {
                 this.$store.commit('changeItem', i);
             }
         },
@@ -170,7 +185,8 @@ export default {
          */
         items ()
         {
-            return this.$store.state.litter.items.map(item => {
+            return this.$store.state.litter.items.map(item =>
+            {
                 return {
                     id: item.id,
                     key: item.key,
@@ -209,7 +225,27 @@ export default {
         checkItems ()
         {
             return Object.keys(this.$store.state.litter.items).length === 0 ? true : false;
+        },
+        recentlyTags ()
+        {
+            return this.$store.state.litter.recentlyTags;
         }
+    },
+    created ()
+    {
+        // We need to initialize with translated title
+        this.$store.commit('changeCategory', {
+            id: 11,
+            key: 'smoking',
+            title: this.$i18n.t('litter.categories.smoking')
+        });
+
+        // We need to initialize with translated title
+        this.$store.commit('changeItem', {
+            id: 0,
+            key: 'butts',
+            title: this.$i18n.t('litter.smoking.butts')
+        });
     },
     methods: {
 
@@ -226,8 +262,17 @@ export default {
 
             this.quantity = 1;
             // this.disabled = false
-        },
 
+            this.$store.commit('addRecentlyTag', {
+                category: this.category,
+                item: this.item,
+            });
+        },
+        changeTag ({category, item})
+        {
+            this.category = category;
+            this.item = item;
+        },
         /**
 		 * Increment the quantity
 		 */
@@ -256,11 +301,16 @@ export default {
 
             this.processing = false;
         },
+        getTagName (tag, category)
+        {
+            return this.$i18n.t(`litter.${category}.${tag}`);
+        },
     }
 };
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
+@import "../../styles/variables.scss";
 
     .hide-br {
         display: none;
@@ -290,6 +340,32 @@ export default {
     .custom-buttons {
         display: flex;
         padding: 20px;
+    }
+
+    .recently-tags {
+        display: flex;
+        max-width: 500px;
+        margin: auto;
+        flex-wrap: wrap;
+        max-height: 155px;
+        overflow: auto;
+    }
+
+    .litter-tag {
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        background-color: $info;
+        margin: 5px
+    }
+
+    .list-enter-active, .list-leave-active {
+        transition: all 1s;
+    }
+
+    .list-enter, .list-leave-to {
+        opacity: 0;
+        transform: translateX(30px);
     }
 
 </style>
