@@ -3,8 +3,28 @@ import i18n from '../../../i18n'
 import { categories } from '../../../extra/categories'
 import { litterkeys } from '../../../extra/litterkeys'
 import { init } from './init'
+import { MAX_RECENTLY_TAGS } from '../../../constants'
 
 export const mutations = {
+
+    /**
+     * Add a tag that was just used, so the user can easily use it again on the next image
+     */
+    addRecentTag (state, payload)
+    {
+        const tags = state.recentTags.length === MAX_RECENTLY_TAGS
+            ? state.recentTags.slice(1, MAX_RECENTLY_TAGS)
+            : state.recentTags;
+
+        const isTagExisted = tags.find(({ item }) => item.key === payload.item.key);
+
+        if (isTagExisted)
+        {
+            return;
+        }
+
+        state.recentTags = [...tags, payload];
+    },
 
     /**
      * Add a Tag.
@@ -172,12 +192,12 @@ export const mutations = {
         }
     },
 
-   /**
-    * Set all existing items to 0
-    */
+    /**
+     * Set all existing items to 0
+     */
     setAllItemsToZero (state)
-   {
-       console.log('setAllItemsToZero');
+    {
+        console.log('setAllItemsToZero');
 
         let categories = Object.assign({}, state.categories);
 
@@ -210,10 +230,10 @@ export const mutations = {
      */
     setLang (state, payload)
     {
-      	state.categoryNames = payload.categoryNames;
-      	state.currentCategory = payload.currentCategory;
-      	state.currentItem = payload.currentItem;
-      	state.litterlang = payload.litterlang;
+        state.categoryNames = payload.categoryNames;
+        state.currentCategory = payload.currentCategory;
+        state.currentItem = payload.currentItem;
+        state.litterlang = payload.litterlang;
     },
 
     /**
@@ -221,15 +241,13 @@ export const mutations = {
      */
     togglePresence (state)
     {
-        state.presence = ! state.presence;
+        state.presence = !state.presence;
     },
-
     /**
      *
      */
     toggleSubmit (state)
     {
-  	    state.submitting = ! state.submitting;
+        state.submitting = !state.submitting;
     }
-
-}
+};

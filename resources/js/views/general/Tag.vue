@@ -26,7 +26,7 @@
                     <h2 class="taken">
                         <strong style="color: #fff;">#{{ photo.id }}</strong>
                         <!-- was profile.profile5 "Uploaded". now "taken on" -->
-                        {{ $t('tags.taken') }}: {{ getDate(photo.created_at) }}
+                        {{ $t('tags.taken') }}: {{ getDate(photo.datetime) }}
                     </h2>
 
                     <div class="columns">
@@ -285,7 +285,7 @@ export default {
     }
 
     .tag-container {
-        padding: 0 5em;
+        padding: 0 3em;
     }
 
     .image-wrapper {
