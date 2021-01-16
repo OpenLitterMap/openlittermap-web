@@ -1,41 +1,40 @@
 <template>
     <div class="control has-text-centered">
+
         <!-- Categories -->
-        <b-field grouped group-multiline position="is-centered" class="mb-5">
-            <b-select v-model="category">
-                <option v-for="cat in categories" :key="cat.key" :value="cat">
-                    {{ cat.title }}
-                </option>
-            </b-select>
+        <div class="select">
+            <select v-model="category">
+                <option v-for="cat in categories" :value="cat">{{ cat.title }}</option>
+            </select>
+        </div>
 
-            <!-- Items -->
-            <b-select v-model="item">
-                <option v-for="i in items" :key="i.key" :value="i">
-                    {{ i.title }}
-                </option>
-            </b-select>
+        <!-- Items -->
+        <div class="select">
+            <select v-model="item">
+                <option v-for="i in items" :value="i">{{ i.title }}</option>
+            </select>
+        </div>
 
-            <!-- Quantity -->
-            <b-select v-model="quantity">
-                <option v-for="int in integers">
-                    {{ int }}
-                </option>
-            </b-select>
-        </b-field>
+        <!-- Quantity -->
+        <div class="select" id="int">
+            <select v-model="quantity">
+                <option v-for="int in integers">{{ int }}</option>
+            </select>
+        </div>
 
-        <div v-if="recentlyTags.length > 0" class="mb-5">
-            <span>
-                {{ $t('tags.recently-tags') }}
-            </span>
+        <br><br>
+
+        <div v-if="recentTags.length > 0" class="mb-5">
+
+            <span>{{ $t('tags.recently-tags') }}</span>
+
             <transition-group name="list" class="recently-tags" tag="div">
                 <div
-                    v-for="tag in recentlyTags"
+                    v-for="tag in recentTags"
                     :key="tag.item.key"
                     class="litter-tag"
-                    @click="changeTag(tag)"
-                >
-                    {{ getTagName(tag.item.key, tag.category.key) }}
-                </div>
+                    @click="addRecentTag(tag)"
+                >{{ getTagName(tag.item.key, tag.category.key) }}</div>
             </transition-group>
         </div>
 
@@ -44,24 +43,18 @@
                 :disabled="checkDecr"
                 class="button is-medium is-danger"
                 @click="decr"
-            >
-                -
-            </button>
+            >-</button>
 
             <button
                 class="button is-medium is-info"
                 @click="addTag"
-            >
-                {{ $t('tags.add-tag') }}
-            </button>
+            >{{ $t('tags.add-tag') }}</button>
 
             <button
                 :disabled="checkIncr"
                 class="button is-medium is-dark"
                 @click="incr"
-            >
-                +
-            </button>
+            >+</button>
         </div>
 
         <br>
@@ -71,9 +64,7 @@
             :disabled="checkItems"
             :class="button"
             @click="submit"
-        >
-            {{ $t('common.submit') }}
-        </button>
+        >{{ $t('common.submit') }}</button>
 
         <!-- Only show these on mobile <= 768px -->
         <div class="show-mobile">
@@ -114,15 +105,24 @@ export default {
             btn: 'button is-medium is-success',
             quantity: 1,
             processing: false,
-            integers: Array.from({ length: 100 }, (_, i) => i + 1),
-            // autoCompleteStyle: {
-            //     vueSimpleSuggest: 'position-relative flex-05 mb1',
-            //     inputWrapper: '',
-            //     defaultInput : 'input',
-            //     suggestions: 'position-absolute list-group z-1000 custom-class-overflow flex-05',
-            //     suggestItem: 'list-group-item'
-            // },
+            integers: Array.from({ length: 100 }, (_, i) => i + 1)
         };
+    },
+    created ()
+    {
+        // We need to initialize with translated title
+        this.$store.commit('changeCategory', {
+            id: 11, // todo - use category.key only
+            key: 'smoking',
+            title: this.$i18n.t('litter.categories.smoking')
+        });
+
+        // We need to initialize with translated title
+        this.$store.commit('changeItem', {
+            id: 0,
+            key: 'butts',
+            title: this.$i18n.t('litter.smoking.butts')
+        });
     },
     computed: {
 
@@ -167,6 +167,30 @@ export default {
         },
 
         /**
+         * Disable decrement if true
+         */
+        checkDecr ()
+        {
+            return this.quantity === 1;
+        },
+
+        /**
+         * Disable increment if true
+         */
+        checkIncr ()
+        {
+            return this.quantity === 100;
+        },
+
+        /**
+         * Disable button if true
+         */
+        checkItems ()
+        {
+            return Object.keys(this.$store.state.litter.items).length === 0;
+        },
+
+        /**
          * Get / Set the current item (category -> item)
          */
         item: {
@@ -204,50 +228,40 @@ export default {
         },
 
         /**
-         * Disable decrement if true
+         * The most recent tags the user has applied
          */
-        checkDecr ()
+        recentTags ()
         {
-            return this.quantity === 1 ? true : false;
-        },
-
-        /**
-         * Disable increment if true
-         */
-        checkIncr ()
-        {
-            return this.quantity === 100 ? true : false;
-        },
-
-        /**
-         * Disable button if true
-         */
-        checkItems ()
-        {
-            return Object.keys(this.$store.state.litter.items).length === 0 ? true : false;
-        },
-        recentlyTags ()
-        {
-            return this.$store.state.litter.recentlyTags;
+            return this.$store.state.litter.recentTags;
         }
     },
-    created ()
-    {
-        // We need to initialize with translated title
-        this.$store.commit('changeCategory', {
-            id: 11,
-            key: 'smoking',
-            title: this.$i18n.t('litter.categories.smoking')
-        });
-
-        // We need to initialize with translated title
-        this.$store.commit('changeItem', {
-            id: 0,
-            key: 'butts',
-            title: this.$i18n.t('litter.smoking.butts')
-        });
-    },
     methods: {
+
+        /**
+         * When a recent tag was applied, we update the category + item
+         *
+         * Todo - Persist this to local brower cache with this.$localStorage.set('recentTags', keys)
+         * Todo - Allow the user to pick their top tags in Settings and load them on this page by default
+         * Todo - Click and hold recent tag to update this.category and this.item
+         */
+        addRecentTag ({category, item})
+        {
+            let quantity = 1;
+
+            if (this.$store.state.litter.tags.hasOwnProperty(category.key))
+            {
+                if (this.$store.state.litter.tags[category.key].hasOwnProperty(item.key))
+                {
+                    quantity = (this.$store.state.litter.tags[category.key][item.key] + 1);
+                }
+            }
+
+            this.$store.commit('addTag', {
+                category,
+                item,
+                quantity
+            });
+        },
 
         /**
          * Add data to the collection
@@ -263,16 +277,12 @@ export default {
             this.quantity = 1;
             // this.disabled = false
 
-            this.$store.commit('addRecentlyTag', {
+            this.$store.commit('addRecentTag', {
                 category: this.category,
                 item: this.item,
             });
         },
-        changeTag ({category, item})
-        {
-            this.category = category;
-            this.item = item;
-        },
+
         /**
 		 * Increment the quantity
 		 */
@@ -301,6 +311,10 @@ export default {
 
             this.processing = false;
         },
+
+        /**
+         *
+         */
         getTagName (tag, category)
         {
             return this.$i18n.t(`litter.${category}.${tag}`);
