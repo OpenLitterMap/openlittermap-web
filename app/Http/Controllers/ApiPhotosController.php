@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 
 use App\Events\ImageUploaded;
 use App\Jobs\UploadData;
+use App\Jobs\Api\AddTags;
 
 class ApiPhotosController extends Controller
 {
@@ -60,16 +61,16 @@ class ApiPhotosController extends Controller
             $s3 = \Storage::disk('s3');
             $s3->put($filepath, file_get_contents($file), 'public');
             $imageName = $s3->url($filepath);
-        } else {
-		    $imageName = 'test';
         }
 
-        // todo - let horizon process address details as a Job.
-	    $apiKey = "052c068e4a9306e34c87";
+	    else $imageName = 'test';
+
+        $apiKey = config('services.location.secret');
         $url =  "http://locationiq.org/v1/reverse.php?format=json&key=".$apiKey."&lat=".$lat."&lon=".$lon."&zoom=20";
 
         // The entire reverse geocoded result
         $revGeoCode = json_decode(file_get_contents($url), true);
+        // \Log::info(['revGeoCode', $revGeoCode]);
         // The entire address as a string
         $display_name = $revGeoCode["display_name"];
         // Extract the address array as $key => $value pairs.
@@ -112,7 +113,7 @@ class ApiPhotosController extends Controller
             'country_id' => $countryId,
             'state_id' => $stateId,
             'city_id' => $cityId,
-            'remaining' => $request['remaining'],
+            'remaining' => $request['presence'],
             'platform' => 'mobile',
             'geohash' => GeoHash::encode($lat, $lon)
         ]);
@@ -123,13 +124,17 @@ class ApiPhotosController extends Controller
 
         event (new ImageUploaded($this->city, $this->state, $this->country, $this->countryCode, $imageName, $teamName));
 
-        if ($user->has_uploaded_today == 0) {
+        if ($user->has_uploaded_today === 0)
+        {
               $user->has_uploaded_today = 1;
               $user->has_uploaded_counter++;
-              if ($user->has_uploaded_counter == 7) {
-                $user->littercoin_allowance++;
-                $user->has_uploaded_counter = 0;
+
+              if ($user->has_uploaded_counter == 7)
+              {
+                    $user->littercoin_allowance++;
+                    $user->has_uploaded_counter = 0;
               }
+
               $user->save();
         }
 
@@ -139,16 +144,36 @@ class ApiPhotosController extends Controller
 
     /**
      * Save litter data to a recently uploaded photo
+     *
+     * version 1
      */
     public function dynamicUpdate (Request $request)
     {
         \Log::info(['dynamicUpdate', $request->all()]);
+
 		$userId = Auth::guard('api')->user()->id;
 
         dispatch (new UploadData($request->all(), $userId));
 
         return ['msg' => 'dispatched'];
     }
+
+    /**
+     * Save litter data to a recently uploaded photo
+     *
+     * version 1
+     */
+    public function addTags (Request $request)
+    {
+        \Log::info(['addTags', $request->all()]);
+
+        $userId = Auth::guard('api')->user()->id;
+
+        dispatch (new AddTags($request->all(), $userId));
+
+        return ['msg' => 'dispatched'];
+    }
+
 
     /**
      *  Check if the user has any available photos that are uploaded, but not tagged

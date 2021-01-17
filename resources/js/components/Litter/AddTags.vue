@@ -2,14 +2,14 @@
     <div class="control has-text-centered">
 
         <!-- Categories -->
-        <div class="select" id="litter-items">
+        <div class="select">
             <select v-model="category">
                 <option v-for="cat in categories" :value="cat">{{ cat.title }}</option>
             </select>
         </div>
 
         <!-- Items -->
-        <div class="select" id="litter-category">
+        <div class="select">
             <select v-model="item">
                 <option v-for="i in items" :value="i">{{ i.title }}</option>
             </select>
@@ -22,27 +22,41 @@
             </select>
         </div>
 
-        <br>
-        <br>
+        <br><br>
 
-        <button
-            :disabled="checkDecr"
-            class="button is-medium is-danger"
-            @click="decr"
-        >-</button>
+        <div v-if="recentTags.length > 0" class="mb-5">
 
-        <button
-            class="button is-medium is-info"
-            @click="addTag"
-        >{{ $t('tags.add-tag') }}</button>
+            <span>{{ $t('tags.recently-tags') }}</span>
 
-        <button
-            :disabled="checkIncr"
-            class="button is-medium is-dark"
-            @click="incr"
-        >+</button>
+            <transition-group name="list" class="recently-tags" tag="div">
+                <div
+                    v-for="tag in recentTags"
+                    :key="tag.item.key"
+                    class="litter-tag"
+                    @click="addRecentTag(tag)"
+                >{{ getTagName(tag.item.key, tag.category.key) }}</div>
+            </transition-group>
+        </div>
 
-        <br>
+        <div>
+            <button
+                :disabled="checkDecr"
+                class="button is-medium is-danger"
+                @click="decr"
+            >-</button>
+
+            <button
+                class="button is-medium is-info"
+                @click="addTag"
+            >{{ $t('tags.add-tag') }}</button>
+
+            <button
+                :disabled="checkIncr"
+                class="button is-medium is-dark"
+                @click="incr"
+            >+</button>
+        </div>
+
         <br>
 
         <button
@@ -66,27 +80,39 @@
 </template>
 
 <script>
-import Tags from './Tags'
-import Presence from './Presence'
-import ProfileDelete from './ProfileDelete'
+import Tags from './Tags';
+import Presence from './Presence';
+import ProfileDelete from './ProfileDelete';
 // import VueSimpleSuggest from 'vue-simple-suggest' todo
 // import 'vue-simple-suggest/dist/styles.css'
-import { categories } from '../../extra/categories'
-import { litterkeys } from '../../extra/litterkeys'
+import { categories } from '../../extra/categories';
+import { litterkeys } from '../../extra/litterkeys';
 
 export default {
     name: 'AddTags',
-    props: ['id', 'admin'], // photo.id, bool
     components: {
         Tags,
         Presence,
         ProfileDelete,
     },
+    props: {
+        'id': { type: Number, required: true },
+        'admin': Boolean
+    },
+    data ()
+    {
+        return {
+            btn: 'button is-medium is-success',
+            quantity: 1,
+            processing: false,
+            integers: Array.from({ length: 100 }, (_, i) => i + 1)
+        };
+    },
     created ()
     {
         // We need to initialize with translated title
         this.$store.commit('changeCategory', {
-            id: 11,
+            id: 11, // todo - use category.key only
             key: 'smoking',
             title: this.$i18n.t('litter.categories.smoking')
         });
@@ -97,22 +123,6 @@ export default {
             key: 'butts',
             title: this.$i18n.t('litter.smoking.butts')
         });
-    },
-    data ()
-    {
-        return {
-		    btn: 'button is-medium is-success',
-            quantity: 1,
-    		processing: false,
-	        integers: Array.from({ length: 100 }, (_, i) => i + 1),
-            // autoCompleteStyle: {
-            //     vueSimpleSuggest: 'position-relative flex-05 mb1',
-            //     inputWrapper: '',
-            //     defaultInput : 'input',
-            //     suggestions: 'position-absolute list-group z-1000 custom-class-overflow flex-05',
-            //     suggestItem: 'list-group-item'
-            // },
-        };
     },
     computed: {
 
@@ -130,10 +140,12 @@ export default {
          * @value { id: 0, key: 'category', title: 'Translated Category' };
          */
         category: {
-            get () {
+            get ()
+            {
                 return this.$store.state.litter.category;
             },
-            set (cat) {
+            set (cat)
+            {
                 this.$store.commit('changeCategory', cat);
                 this.quantity = 1;
             }
@@ -144,7 +156,8 @@ export default {
          */
         categories ()
         {
-            return categories.map(cat => {
+            return categories.map(cat =>
+            {
                 return {
                     id: cat.id,
                     key: cat.key,
@@ -154,13 +167,39 @@ export default {
         },
 
         /**
+         * Disable decrement if true
+         */
+        checkDecr ()
+        {
+            return this.quantity === 1;
+        },
+
+        /**
+         * Disable increment if true
+         */
+        checkIncr ()
+        {
+            return this.quantity === 100;
+        },
+
+        /**
+         * Disable button if true
+         */
+        checkItems ()
+        {
+            return Object.keys(this.$store.state.litter.items).length === 0;
+        },
+
+        /**
          * Get / Set the current item (category -> item)
          */
         item: {
-            get () {
+            get ()
+            {
                 return this.$store.state.litter.item;
             },
-            set (i) {
+            set (i)
+            {
                 this.$store.commit('changeItem', i);
             }
         },
@@ -170,7 +209,8 @@ export default {
          */
         items ()
         {
-            return this.$store.state.litter.items.map(item => {
+            return this.$store.state.litter.items.map(item =>
+            {
                 return {
                     id: item.id,
                     key: item.key,
@@ -188,30 +228,40 @@ export default {
         },
 
         /**
-         * Disable decrement if true
+         * The most recent tags the user has applied
          */
-        checkDecr ()
+        recentTags ()
         {
-            return this.quantity === 1 ? true : false;
-        },
-
-        /**
-         * Disable increment if true
-         */
-        checkIncr ()
-        {
-            return this.quantity === 100 ? true : false;
-        },
-
-        /**
-         * Disable button if true
-         */
-        checkItems ()
-        {
-            return Object.keys(this.$store.state.litter.items).length === 0 ? true : false;
+            return this.$store.state.litter.recentTags;
         }
     },
     methods: {
+
+        /**
+         * When a recent tag was applied, we update the category + item
+         *
+         * Todo - Persist this to local brower cache with this.$localStorage.set('recentTags', keys)
+         * Todo - Allow the user to pick their top tags in Settings and load them on this page by default
+         * Todo - Click and hold recent tag to update this.category and this.item
+         */
+        addRecentTag ({category, item})
+        {
+            let quantity = 1;
+
+            if (this.$store.state.litter.tags.hasOwnProperty(category.key))
+            {
+                if (this.$store.state.litter.tags[category.key].hasOwnProperty(item.key))
+                {
+                    quantity = (this.$store.state.litter.tags[category.key][item.key] + 1);
+                }
+            }
+
+            this.$store.commit('addTag', {
+                category,
+                item,
+                quantity
+            });
+        },
 
         /**
          * Add data to the collection
@@ -226,6 +276,11 @@ export default {
 
             this.quantity = 1;
             // this.disabled = false
+
+            this.$store.commit('addRecentTag', {
+                category: this.category,
+                item: this.item,
+            });
         },
 
         /**
@@ -256,11 +311,20 @@ export default {
 
             this.processing = false;
         },
+
+        /**
+         *
+         */
+        getTagName (tag, category)
+        {
+            return this.$i18n.t(`litter.${category}.${tag}`);
+        },
     }
 };
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
+@import "../../styles/variables.scss";
 
     .hide-br {
         display: none;
@@ -290,6 +354,32 @@ export default {
     .custom-buttons {
         display: flex;
         padding: 20px;
+    }
+
+    .recently-tags {
+        display: flex;
+        max-width: 500px;
+        margin: auto;
+        flex-wrap: wrap;
+        max-height: 155px;
+        overflow: auto;
+    }
+
+    .litter-tag {
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        background-color: $info;
+        margin: 5px
+    }
+
+    .list-enter-active, .list-leave-active {
+        transition: all 1s;
+    }
+
+    .list-enter, .list-leave-to {
+        opacity: 0;
+        transform: translateX(30px);
     }
 
 </style>

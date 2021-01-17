@@ -56,6 +56,7 @@
 
                     <p class="footer-link" @click="open('https://medium.com/@littercoin')">{{ $t('home.footer.blog') }}</p>
                     <p class="footer-link" @click="open('https://opengeospatialdata.springeropen.com/articles/10.1186/s40965-018-0050-y')">{{ $t('home.footer.research-paper') }}</p>
+                    <router-link to="/references" class="footer-link">{{ $t('home.footer.references') }}</router-link>
                 </div>
 
                 <div class="column is-2">
@@ -65,6 +66,7 @@
                     <p class="footer-link" @click="open('https://www.youtube.com/watch?v=E_qhEhHwUGM')">State of the Map 2019</p>
                     <p class="footer-link" @click="open('https://www.youtube.com/watch?v=T8rGf1ScR1I')">Datapub 2020</p>
                     <p class="footer-link" @click="open('https://www.youtube.com/watch?v=5HuaQNeHuZ8')">ESA PhiWeek 2020</p>
+                    <p class="footer-link" @click="open('https://www.youtube.com/watch?v=QhLsA0WIfTA')">Geneva Form, UN 2020</p>
                 </div>
 
                 <div class="column is-2">

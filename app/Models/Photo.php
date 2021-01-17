@@ -107,6 +107,31 @@ class Photo extends Model
     }
 
     /**
+     * Update and return the total amount of litter in a photo
+     */
+    public function total ()
+    {
+        $total = 0;
+
+        foreach ($this->categories() as $category)
+        {
+            if ($category !== 'brands')
+            {
+                if ($this->$category) {
+                    $total += $this->$category->total();
+                }
+            }
+        }
+
+        echo "id " . $this->id . "\n";
+        echo "Prev " . $this->total_litter . "\n";
+        echo "New " . $total . " \n \n";
+
+        $this->total_litter = $total;
+        $this->save();
+    }
+
+    /**
      * Save translation key => value for every item on each category that has a value
      */
     public function translate ()

@@ -2,18 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 
- Route::get('test', function() {
- 	$user = \App\Models\User\User::first();
- 	return view('emails.update21', compact('user'));
- });
-
-// only turn this on in limited circumstances
-// Route::get('sean', 'TotalDataController@getCSV');
-
 Route::get('/', 'HomeController@index');
 Route::get('/about', 'HomeController@index');
 Route::get('/world', 'HomeController@index');
-
+Route::get('/references', 'HomeController@index');
 
 // Registration
 Route::get('/signup', 'HomeController@index');

@@ -7,5 +7,6 @@ export const init = {
     loading: false,
     photos: {}, // paginated photos object
     tags: {}, // added tags go here -> { smoking: { butts: q, lighters: q }, alcohol: { beer_cans: q } ... };
-    submitting: false
+    submitting: false,
+    recentTags: []
 };

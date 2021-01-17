@@ -397,7 +397,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
 
             NULL,
 
-            $row->softdrinks ? $row->softdrinks->plasticWaterBottle : null,
+            $row->softdrinks ? $row->softdrinks->waterBottle : null,
             $row->softdrinks ? $row->softdrinks->fizzyDrinkBottle : null,
             $row->softdrinks ? $row->softdrinks->bottleLid : null,
             $row->softdrinks ? $row->softdrinks->bottleLabel : null,
