@@ -21,7 +21,7 @@ export const actions = {
      */
     async NEXT_IMAGE (context)
     {
-        await axios.get(context.state.photos.next_page_url)
+        await axios.get(context.state.paginate.next_page_url)
             .then(response => {
                 console.log('next_image', response);
 
@@ -39,7 +39,7 @@ export const actions = {
      */
     async PREVIOUS_IMAGE (context)
     {
-        await axios.get(context.state.photos.prev_page_url)
+        await axios.get(context.state.paginate.prev_page_url)
             .then(response => {
                 console.log('next_image', response);
 

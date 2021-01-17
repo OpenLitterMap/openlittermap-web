@@ -88,7 +88,7 @@
                     <div class="column" style="text-align: center;">
                         <div class="has-text-centered mt3em">
                             <a
-                                v-show="current_page > 1"
+                                v-show="previous_page"
                                 class="pagination-previous has-background-link has-text-white"
                                 @click="previousImage"
                             >{{ $t('tags.previous') }}</a>
@@ -145,6 +145,14 @@ export default {
             loading: true
         };
     },
+    async created ()
+    {
+        this.loading = true;
+
+        await this.$store.dispatch('GET_PHOTOS_FOR_TAGGING');
+
+        this.loading = false;
+    },
     computed: {
 
         /**
@@ -152,7 +160,7 @@ export default {
          */
         current_page ()
         {
-            return this.$store.state.photos.photos.current_page;
+            return this.$store.state.photos.paginate.current_page;
         },
 
         /**
@@ -160,7 +168,15 @@ export default {
          */
         photos ()
         {
-            return this.$store.state?.photos?.photos?.data;
+            return this.$store.state?.photos?.paginate?.data;
+        },
+
+        /**
+         * URL for the previous page, if it exists.
+         */
+        previous_page ()
+        {
+            return this.$store.state.photos.paginate?.prev_page_url;
         },
 
         /**
@@ -177,7 +193,7 @@ export default {
          */
         show_current_page ()
         {
-            return this.$store.state.photos.photos.current_page > 1;
+            return this.$store.state.photos.paginate.current_page > 1;
         },
 
         /**
@@ -185,7 +201,7 @@ export default {
          */
         show_next_page ()
         {
-            return this.$store.state.photos.photos.next_page_url;
+            return this.$store.state.photos.paginate.next_page_url;
         },
 
         /**
@@ -203,14 +219,6 @@ export default {
         {
             return this.$store.state.user.user;
         }
-    },
-    async created ()
-    {
-        this.loading = true;
-
-        await this.$store.dispatch('GET_PHOTOS_FOR_TAGGING');
-
-        this.loading = false;
     },
 
     methods: {
