@@ -400,18 +400,16 @@ class PhotosController extends Controller
     {
         $user = Auth::user();
 
-        $photos = Photo::select('id', 'filename', 'lat', 'lon', 'model', 'remaining', 'display_name', 'datetime')
-            ->where([
-                'user_id' => $user->id,
-                'verified' => 0,
-                'verification' => 0
-            ])->simplePaginate(1);
-
-        $remaining = Photo::where([
+        $query = Photo::where([
             'user_id' => $user->id,
             'verified' => 0,
             'verification' => 0
-        ])->count();
+        ]);
+
+        $photos = $query->select('id', 'filename', 'lat', 'lon', 'model', 'remaining', 'display_name', 'datetime')
+            ->simplePaginate(1);
+
+        $remaining = $query->count();
 
         $total = Photo::where('user_id', $user->id)->count();
 

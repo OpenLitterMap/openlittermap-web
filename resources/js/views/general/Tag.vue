@@ -1,10 +1,8 @@
 <template>
     <section class="hero fullheight is-primary is-bold tag-container">
-
         <loading v-if="loading" v-model:active="loading" :is-full-page="true" />
 
         <div v-else class="pt2">
-
             <!-- No Image available for tagging -->
             <div v-if="photos.length === 0" class="hero-body">
                 <div class="container has-text-centered">
@@ -21,8 +19,7 @@
 
             <!-- Image is available for tagging -->
             <div v-else>
-
-                <div v-for="photo in photos" class="mb2">
+                <div v-for="photo in photos" :key="photo.id" class="mb2">
                     <h2 class="taken">
                         <strong style="color: #fff;">#{{ photo.id }}</strong>
                         <!-- was profile.profile5 "Uploaded". now "taken on" -->
@@ -66,7 +63,7 @@
                             <div class="box">
                                 <!-- was profile14, 15-->
                                 <li class="list-group-item">
-                                    {{ $t('tags.to-tag') }}: {{ photos.length }}
+                                    {{ $t('tags.to-tag') }}: {{ remaining }}
                                 </li>
                                 <li class="list-group-item">
                                     {{ $t('tags.total-uploaded') }}: {{ user.photos_count }}
@@ -125,13 +122,13 @@
 </template>
 
 <script>
-import moment from 'moment'
-import Loading from 'vue-loading-overlay'
-import 'vue-loading-overlay/dist/vue-loading.css'
-import AddTags from '../../components/Litter/AddTags'
-import Presence from '../../components/Litter/Presence'
-import Tags from '../../components/Litter/Tags'
-import ProfileDelete from '../../components/Litter/ProfileDelete'
+import moment from 'moment';
+import Loading from 'vue-loading-overlay';
+import 'vue-loading-overlay/dist/vue-loading.css';
+import AddTags from '../../components/Litter/AddTags';
+import Presence from '../../components/Litter/Presence';
+import Tags from '../../components/Litter/Tags';
+import ProfileDelete from '../../components/Litter/ProfileDelete';
 
 export default {
     name: 'Tag',
@@ -141,14 +138,6 @@ export default {
         Presence,
         Tags,
         ProfileDelete
-    },
-    async created ()
-    {
-        this.loading = true;
-
-        await this.$store.dispatch('GET_PHOTOS_FOR_TAGGING');
-
-        this.loading = false;
     },
     data ()
     {
@@ -215,6 +204,14 @@ export default {
             return this.$store.state.user.user;
         }
     },
+    async created ()
+    {
+        this.loading = true;
+
+        await this.$store.dispatch('GET_PHOTOS_FOR_TAGGING');
+
+        this.loading = false;
+    },
 
     methods: {
 
@@ -223,23 +220,27 @@ export default {
          */
         async confirmDelete (photoid)
         {
-            if (confirm("Do you want to delete this image? This cannot be undone."))
+            if (confirm(this.$i18n.t('confirm-delete')))
             {
                 await axios.post('/en/profile/photos/delete', {
                     photoid
                 })
-                    .then(response => {
+                    .then(response =>
+                    {
                         console.log(response);
                         if (response.status === 200)
                         {
                             window.location.href = window.location.href;
                         }
                     })
-                    .catch(error => {
+                    .catch(error =>
+                    {
                         console.log(error);
                     });
-            } else {
-                console.log("Not deleted");
+            }
+            else
+            {
+                console.log('Not deleted');
             }
         },
 
