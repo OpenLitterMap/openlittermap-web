@@ -14,11 +14,11 @@ L.Map.mergeOptions({
 L.Map.SmoothWheelZoom = L.Handler.extend({
 
     addHooks: function () {
-        L.DomEvent.on(this._map._container, 'mousewheel', this._onWheelScroll, this);
+        L.DomEvent.on(this._map._container, 'wheel', this._onWheelScroll, this);
     },
 
     removeHooks: function () {
-        L.DomEvent.off(this._map._container, 'mousewheel', this._onWheelScroll, this);
+        L.DomEvent.off(this._map._container, 'wheel', this._onWheelScroll, this);
     },
 
     _onWheelScroll: function (e) {
@@ -56,7 +56,6 @@ L.Map.SmoothWheelZoom = L.Handler.extend({
         if (this._goalZoom < map.getMinZoom() || this._goalZoom > map.getMaxZoom()) {
             this._goalZoom = map._limitZoom(this._goalZoom);
         }
-        this._wheelMousePosition = this._map.mouseEventToContainerPoint(e);
 
         clearTimeout(this._timeoutId);
         this._timeoutId = setTimeout(this._onWheelEnd.bind(this), 200);
