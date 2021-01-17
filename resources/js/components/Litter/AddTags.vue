@@ -187,7 +187,7 @@ export default {
          */
         checkItems ()
         {
-            return Object.keys(this.$store.state.litter.items).length === 0;
+            return Object.keys(this.$store.state.litter.tags).length === 0;
         },
 
         /**
