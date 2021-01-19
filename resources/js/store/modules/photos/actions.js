@@ -12,7 +12,7 @@ export const actions = {
                 context.commit('photosForTagging', response.data);
             })
             .catch(error => {
-                console.log('error.photos', error);
+                console.error('get_photos_for_tagging', error);
             });
     },
 
@@ -25,14 +25,13 @@ export const actions = {
     {
         await axios.get('/photos?page=' + context.state.paginate.current_page)
             .then(response => {
-                console.log('next_image', response);
+                console.log('load_next_image', response);
 
                 context.commit('clearTags');
-
                 context.commit('photosForTagging', response.data);
             })
             .catch(error => {
-                console.log('error.next_image', error);
+                console.error('load_next_image', error);
             });
     },
 
@@ -46,11 +45,10 @@ export const actions = {
                 console.log('next_image', response);
 
                 context.commit('clearTags');
-
                 context.commit('photosForTagging', response.data);
             })
             .catch(error => {
-                console.log('error.next_image', error);
+                console.error('next_image', error);
             });
     },
 
@@ -61,14 +59,13 @@ export const actions = {
     {
         await axios.get(context.state.paginate.prev_page_url)
             .then(response => {
-                console.log('next_image', response);
+                console.log('previous_image', response);
 
                 context.commit('clearTags');
-
                 context.commit('photosForTagging', response.data);
             })
             .catch(error => {
-                console.log('error.next_image', error);
+                console.error('previous_image', error);
             });
     },
 
@@ -81,13 +78,13 @@ export const actions = {
     {
         await axios.get(`/photos?page=${payload}`)
             .then(response => {
-                console.log('select_img', response);
+                console.log('select_image', response);
 
                 context.commit('clearTags');
                 context.commit('photosForTagging', response.data);
             })
             .catch(error => {
-                console.log('res', error);
+                console.error('select_image', error);
             });
     },
 }
