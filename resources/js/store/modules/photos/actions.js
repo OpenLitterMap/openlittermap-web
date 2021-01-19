@@ -17,6 +17,26 @@ export const actions = {
     },
 
     /**
+     * When an image is submitted, we want to get the next image for tagging
+     *
+     * Since there is 1 less pagination, we want to reload the same page we are currently on
+     */
+    async LOAD_NEXT_IMAGE (context)
+    {
+        await axios.get('/photos?page=' + context.state.paginate.current_page)
+            .then(response => {
+                console.log('next_image', response);
+
+                context.commit('clearTags');
+
+                context.commit('photosForTagging', response.data);
+            })
+            .catch(error => {
+                console.log('error.next_image', error);
+            });
+    },
+
+    /**
      * Load the next image from pagination
      */
     async NEXT_IMAGE (context)

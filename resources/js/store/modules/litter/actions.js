@@ -29,7 +29,7 @@ export const actions = {
             // todo - update XP bar
 
             context.commit('clearTags');
-            context.dispatch('GET_PHOTOS_FOR_TAGGING');
+            context.dispatch('LOAD_NEXT_IMAGE');
         })
         .catch(error => console.log(error));
     }
