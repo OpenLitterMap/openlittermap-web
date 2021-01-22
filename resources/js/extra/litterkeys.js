@@ -108,7 +108,8 @@ export const litterkeys = {
         { id: 20, key: 'elec_small' },       // Electric small
         { id: 21, key: 'elec_large' },       // Electric large
         { id: 22, key: 'other' },            // Other (other)
-        { id: 23, key: 'random_litter' },    // Random Litter
+        { id: 23, key: 'random_litter' },    // Random Litter,
+        { id: 24, key: 'balloons' }          // Balloons
     ],
     dumping: [
         { id: 0, key: 'small' },  // Small

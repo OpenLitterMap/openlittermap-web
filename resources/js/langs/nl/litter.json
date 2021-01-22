@@ -121,7 +121,8 @@
         "elec_small": "Elektrisch klein",
         "elec_large": "Elektrisch groot",
         "other": "Overig (Overig)",
-        "random_litter": "Willekeurig afval"
+        "random_litter": "Willekeurig afval",
+        "balloons": "Ballonnen"
     },
     "dumping": {
         "small": "Klein",

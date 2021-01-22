@@ -3,9 +3,28 @@ import i18n from '../../../i18n'
 import { categories } from '../../../extra/categories'
 import { litterkeys } from '../../../extra/litterkeys'
 import { init } from './init'
-import { MAX_RECENTLY_TAGS } from "../../../constants/index"
+import { MAX_RECENTLY_TAGS } from '../../../constants'
 
 export const mutations = {
+
+    /**
+     * Add a tag that was just used, so the user can easily use it again on the next image
+     */
+    addRecentTag (state, payload)
+    {
+        const tags = state.recentTags.length === MAX_RECENTLY_TAGS
+            ? state.recentTags.slice(1, MAX_RECENTLY_TAGS)
+            : state.recentTags;
+
+        const isTagExisted = tags.find(({ item }) => item.key === payload.item.key);
+
+        if (isTagExisted)
+        {
+            return;
+        }
+
+        state.recentTags = [...tags, payload];
+    },
 
     /**
      * Add a Tag.
@@ -224,25 +243,11 @@ export const mutations = {
     {
         state.presence = !state.presence;
     },
-
     /**
      *
      */
     toggleSubmit (state)
     {
         state.submitting = !state.submitting;
-    },
-    addRecentlyTag (state, payload)
-    {
-        const tags = state.recentlyTags.length === MAX_RECENTLY_TAGS ? state.recentlyTags.slice(1, MAX_RECENTLY_TAGS) :
-            state.recentlyTags;
-        const isTagExisted = tags.find(({ item }) => item.key === payload.item.key);
-
-        if (isTagExisted)
-        {
-            return;
-        }
-
-        state.recentlyTags = [...tags, payload];
     }
 };

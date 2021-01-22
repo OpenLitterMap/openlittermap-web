@@ -169,6 +169,7 @@
       <path value="$PROJECT_DIR$/vendor/react/http-client" />
       <path value="$PROJECT_DIR$/vendor/pragmarx/firewall" />
       <path value="$PROJECT_DIR$/vendor/pragmarx/support" />
+      <path value="$PROJECT_DIR$/vendor/ezyang/htmlpurifier" />
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="7.2" />

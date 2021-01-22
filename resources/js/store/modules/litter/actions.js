@@ -14,7 +14,7 @@ export const actions = {
         await axios.post('add-tags', {
             tags: context.state.tags,
             presence: context.state.presence,
-            photo_id: context.rootState.photos.photos.data[0].id
+            photo_id: context.rootState.photos.paginate.data[0].id
         })
         .then(response => {
             console.log('add_tags_to_image', response);
@@ -29,7 +29,7 @@ export const actions = {
             // todo - update XP bar
 
             context.commit('clearTags');
-            context.dispatch('GET_PHOTOS_FOR_TAGGING');
+            context.dispatch('LOAD_NEXT_IMAGE');
         })
         .catch(error => console.log(error));
     }

@@ -12,7 +12,26 @@ export const actions = {
                 context.commit('photosForTagging', response.data);
             })
             .catch(error => {
-                console.log('error.photos', error);
+                console.error('get_photos_for_tagging', error);
+            });
+    },
+
+    /**
+     * When an image is submitted, we want to get the next image for tagging
+     *
+     * Since there is 1 less pagination, we want to reload the same page we are currently on
+     */
+    async LOAD_NEXT_IMAGE (context)
+    {
+        await axios.get('/photos?page=' + context.state.paginate.current_page)
+            .then(response => {
+                console.log('load_next_image', response);
+
+                context.commit('clearTags');
+                context.commit('photosForTagging', response.data);
+            })
+            .catch(error => {
+                console.error('load_next_image', error);
             });
     },
 
@@ -21,16 +40,15 @@ export const actions = {
      */
     async NEXT_IMAGE (context)
     {
-        await axios.get(context.state.photos.next_page_url)
+        await axios.get(context.state.paginate.next_page_url)
             .then(response => {
                 console.log('next_image', response);
 
                 context.commit('clearTags');
-
                 context.commit('photosForTagging', response.data);
             })
             .catch(error => {
-                console.log('error.next_image', error);
+                console.error('next_image', error);
             });
     },
 
@@ -39,16 +57,15 @@ export const actions = {
      */
     async PREVIOUS_IMAGE (context)
     {
-        await axios.get(context.state.photos.prev_page_url)
+        await axios.get(context.state.paginate.prev_page_url)
             .then(response => {
-                console.log('next_image', response);
+                console.log('previous_image', response);
 
                 context.commit('clearTags');
-
                 context.commit('photosForTagging', response.data);
             })
             .catch(error => {
-                console.log('error.next_image', error);
+                console.error('previous_image', error);
             });
     },
 
@@ -61,13 +78,13 @@ export const actions = {
     {
         await axios.get(`/photos?page=${payload}`)
             .then(response => {
-                console.log('select_img', response);
+                console.log('select_image', response);
 
                 context.commit('clearTags');
                 context.commit('photosForTagging', response.data);
             })
             .catch(error => {
-                console.log('res', error);
+                console.error('select_image', error);
             });
     },
 }

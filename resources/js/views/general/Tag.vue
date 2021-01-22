@@ -1,10 +1,8 @@
 <template>
     <section class="hero fullheight is-primary is-bold tag-container">
-
         <loading v-if="loading" v-model:active="loading" :is-full-page="true" />
 
         <div v-else class="pt2">
-
             <!-- No Image available for tagging -->
             <div v-if="photos.length === 0" class="hero-body">
                 <div class="container has-text-centered">
@@ -21,12 +19,11 @@
 
             <!-- Image is available for tagging -->
             <div v-else>
-
-                <div v-for="photo in photos" class="mb2">
+                <div v-for="photo in photos" :key="photo.id" class="mb2">
                     <h2 class="taken">
                         <strong style="color: #fff;">#{{ photo.id }}</strong>
                         <!-- was profile.profile5 "Uploaded". now "taken on" -->
-                        {{ $t('tags.taken') }}: {{ getDate(photo.created_at) }}
+                        {{ $t('tags.taken') }}: {{ getDate(photo.datetime) }}
                     </h2>
 
                     <div class="columns">
@@ -66,7 +63,7 @@
                             <div class="box">
                                 <!-- was profile14, 15-->
                                 <li class="list-group-item">
-                                    {{ $t('tags.to-tag') }}: {{ photos.length }}
+                                    {{ $t('tags.to-tag') }}: {{ remaining }}
                                 </li>
                                 <li class="list-group-item">
                                     {{ $t('tags.total-uploaded') }}: {{ user.photos_count }}
@@ -91,7 +88,7 @@
                     <div class="column" style="text-align: center;">
                         <div class="has-text-centered mt3em">
                             <a
-                                v-show="current_page > 1"
+                                v-show="previous_page"
                                 class="pagination-previous has-background-link has-text-white"
                                 @click="previousImage"
                             >{{ $t('tags.previous') }}</a>
@@ -125,13 +122,13 @@
 </template>
 
 <script>
-import moment from 'moment'
-import Loading from 'vue-loading-overlay'
-import 'vue-loading-overlay/dist/vue-loading.css'
-import AddTags from '../../components/Litter/AddTags'
-import Presence from '../../components/Litter/Presence'
-import Tags from '../../components/Litter/Tags'
-import ProfileDelete from '../../components/Litter/ProfileDelete'
+import moment from 'moment';
+import Loading from 'vue-loading-overlay';
+import 'vue-loading-overlay/dist/vue-loading.css';
+import AddTags from '../../components/Litter/AddTags';
+import Presence from '../../components/Litter/Presence';
+import Tags from '../../components/Litter/Tags';
+import ProfileDelete from '../../components/Litter/ProfileDelete';
 
 export default {
     name: 'Tag',
@@ -142,6 +139,12 @@ export default {
         Tags,
         ProfileDelete
     },
+    data ()
+    {
+        return {
+            loading: true
+        };
+    },
     async created ()
     {
         this.loading = true;
@@ -150,12 +153,6 @@ export default {
 
         this.loading = false;
     },
-    data ()
-    {
-        return {
-            loading: true
-        };
-    },
     computed: {
 
         /**
@@ -163,7 +160,7 @@ export default {
          */
         current_page ()
         {
-            return this.$store.state.photos.photos.current_page;
+            return this.$store.state.photos.paginate.current_page;
         },
 
         /**
@@ -171,7 +168,15 @@ export default {
          */
         photos ()
         {
-            return this.$store.state?.photos?.photos?.data;
+            return this.$store.state?.photos?.paginate?.data;
+        },
+
+        /**
+         * URL for the previous page, if it exists.
+         */
+        previous_page ()
+        {
+            return this.$store.state.photos.paginate?.prev_page_url;
         },
 
         /**
@@ -188,7 +193,7 @@ export default {
          */
         show_current_page ()
         {
-            return this.$store.state.photos.photos.current_page > 1;
+            return this.$store.state.photos.paginate.current_page > 1;
         },
 
         /**
@@ -196,7 +201,7 @@ export default {
          */
         show_next_page ()
         {
-            return this.$store.state.photos.photos.next_page_url;
+            return this.$store.state.photos.paginate.next_page_url;
         },
 
         /**
@@ -223,23 +228,27 @@ export default {
          */
         async confirmDelete (photoid)
         {
-            if (confirm("Do you want to delete this image? This cannot be undone."))
+            if (confirm(this.$i18n.t('confirm-delete')))
             {
                 await axios.post('/en/profile/photos/delete', {
                     photoid
                 })
-                    .then(response => {
+                    .then(response =>
+                    {
                         console.log(response);
                         if (response.status === 200)
                         {
                             window.location.href = window.location.href;
                         }
                     })
-                    .catch(error => {
+                    .catch(error =>
+                    {
                         console.log(error);
                     });
-            } else {
-                console.log("Not deleted");
+            }
+            else
+            {
+                console.log('Not deleted');
             }
         },
 
@@ -285,7 +294,7 @@ export default {
     }
 
     .tag-container {
-        padding: 0 5em;
+        padding: 0 3em;
     }
 
     .image-wrapper {

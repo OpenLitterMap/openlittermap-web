@@ -1,5 +1,7 @@
 export const init = {
-    photos: {},
+    paginate: {
+        data: []
+    },
     remaining: 0,
     total: 0
 };

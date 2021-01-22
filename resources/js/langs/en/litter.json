@@ -122,7 +122,8 @@
         "elec_small": "Electric small",
         "elec_large": "Electric large",
         "other": "Other (other)",
-        "random_litter": "Random Litter"
+        "random_litter": "Random Litter",
+        "balloons": "Balloons"
     },
     "dumping": {
         "small": "Small",

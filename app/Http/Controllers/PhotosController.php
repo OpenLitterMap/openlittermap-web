@@ -407,10 +407,11 @@ class PhotosController extends Controller
             'verification' => 0
         ]);
 
+        // we need to get this before the pagination
+        $remaining = $query->count();
+
         $photos = $query->select('id', 'filename', 'lat', 'lon', 'model', 'remaining', 'display_name', 'datetime')
             ->simplePaginate(1);
-
-        $remaining = $query->count();
 
         $total = Photo::where('user_id', $user->id)->count();
 
