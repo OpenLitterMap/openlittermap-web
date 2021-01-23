@@ -39,11 +39,11 @@ class EventServiceProvider extends ServiceProvider
         // ],
         // stage-1 verification is not up to date
         'App\Events\PhotoVerifiedByUser' => [
-            'App\Listeners\UpdateUsersTotals',
-            'App\Listeners\UpdateCitiesTotals',
-            'App\Listeners\UpdateStatesTotals',
-            'App\Listeners\UpdateCountriesTotals',
-            'App\Listeners\UpdateLeaderboards',
+//            'App\Listeners\UpdateUsersTotals',
+//            'App\Listeners\UpdateCitiesTotals',
+//            'App\Listeners\UpdateStatesTotals',
+//            'App\Listeners\UpdateCountriesTotals',
+//            'App\Listeners\UpdateLeaderboards',
         ],
         'App\Events\TagsVerifiedByAdmin' => [
             // Todo - generate total tag counts on the event and pass the result into the listeners
@@ -55,7 +55,9 @@ class EventServiceProvider extends ServiceProvider
             // 'App\Listeners\UpdateLeaderboardsAdmin', happens on AddTagsTrait
             'App\Listeners\AddTags\CompileResultsString',
             // todo - only call this listener if the user has active_team
-            'App\Listeners\AddTags\IncrementUsersActiveTeam'
+            'App\Listeners\AddTags\IncrementUsersActiveTeam',
+            'App\Listeners\User\UpdateUserTimeSeries',
+            'App\Listeners\User\UpdateUserCategories'
         ],
         'App\Events\ResetTagsCountAdmin' => [ // not using this yet. Need to add a new Reset + Update tags button
             // 'App\Listeners\DecrementUserTags', Add this in when we update UpdateUserTags

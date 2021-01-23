@@ -116,13 +116,13 @@ const router = new VueRouter({
                 middleware: [ auth ]
             }
         },
-        // {
-        //     path: '/profile',
-        //     component: require('./views/general/Profile').default,
-        //     meta: {
-        //         middleware: [ auth ]
-        //     }
-        // },
+        {
+            path: '/profile',
+            component: require('./views/general/Profile').default,
+            meta: {
+                middleware: [ auth ]
+            }
+        },
         {
             path: '/teams',
             component: require('./views/Teams/Teams').default,

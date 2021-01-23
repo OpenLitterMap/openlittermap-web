@@ -18,16 +18,17 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
 {
     use Exportable, Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $location_type, $location_id, $team_id;
+    public $location_type, $location_id, $team_id, $user_id;
 
     /**
      * Init args
      */
-    public function __construct ($location_type, $location_id, $team_id = null)
+    public function __construct ($location_type, $location_id, $team_id = null, $user_id = null)
     {
         $this->location_type = $location_type;
         $this->location_id = $location_id;
         $this->team_id = $team_id;
+        $this->user_id = $user_id;
     }
 
     /**
@@ -615,7 +616,16 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
      */
     public function query ()
     {
-        if ($this->team_id)
+        if ($this->user_id)
+        {
+            return Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands', 'dumping', 'industrial'])
+                ->where([
+                    'user_id' => $this->user_id,
+                    'verified' => 2
+                ]);
+        }
+
+        else if ($this->team_id)
         {
             return Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands', 'dumping', 'industrial'])
                 ->where([

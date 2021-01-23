@@ -60,6 +60,29 @@ export const actions = {
     },
 
     /**
+     * Send the user an email containing a CSV with all of their data
+     */
+    async DOWNLOAD_MY_DATA (context)
+    {
+        const title = i18n.t('notifications.success');
+        const body = 'Your download is being processed and will be emailed to you.'
+
+        await axios.get('/user/profile/download')
+            .then(response => {
+                console.log('download_my_data', response);
+
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                    position: 'top-right'
+                });
+            })
+            .catch(error => {
+                console.error('download_my_data', error);
+            });
+    },
+
+    /**
      * When we log in, we need to dispatch a request to get the current user
      */
     async GET_CURRENT_USER (context)
@@ -90,6 +113,44 @@ export const actions = {
             .catch(error => {
                 console.log('error.flags_countries', error);
             });
+    },
+
+    /**
+     * Get the total number of users, and the current users rank (1st, 2nd...)
+     *
+     * and more
+     */
+    async GET_USERS_PROFILE_DATA (context)
+    {
+        await axios.get('/user/profile/index')
+            .then(response => {
+                console.log('get_users_position', response);
+
+                context.commit('usersPosition', response.data);
+            })
+            .catch(error => {
+                console.error('get_users_position', error);
+            });
+    },
+
+    /**
+     * Get the geojson data for the users Profile/ProfileMap
+     */
+    async GET_USERS_PROFILE_MAP_DATA (context, payload)
+    {
+        await axios.get('/user/profile/map', {
+            params: {
+                period: payload
+            }
+        })
+        .then(response => {
+            console.log('get_users_profile_map_data', response);
+
+            context.commit('usersGeojson', response.data.geojson);
+        })
+        .catch(error => {
+            console.error('get_users_profile_map_data', error);
+        });
     },
 
     /**

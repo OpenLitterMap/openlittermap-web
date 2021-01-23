@@ -135,6 +135,30 @@ export const mutations = {
         state.user.items_remaining = payload;
     },
 
+    /**
+     * Users map data for the given time-period
+     */
+    usersGeojson (state, payload)
+    {
+        state.geojson = payload;
+    },
+
+    /**
+     * On Profile.vue, get the total number of users and the current users rank
+     */
+    usersPosition (state, payload)
+    {
+        state.position = payload.usersPosition;
+        state.totalUsers = payload.totalUsers;
+        state.totalPhotos = payload.totalPhotos;
+        state.totalTags = payload.totalTags;
+
+        state.photoPercent = Math.round(payload.photoPercent * 100, 2);
+        state.tagPercent = Math.round(payload.tagPercent * 100, 2);
+
+        state.requiredXp = payload.requiredXp;
+    },
+
     // /**
     //  * The user has just created and joined a team
     //  */

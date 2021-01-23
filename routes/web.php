@@ -183,6 +183,11 @@ Route::post('/teams/active', 'Teams\TeamsController@active');
 Route::post('/teams/settings', 'Teams\TeamsSettingsController@index');
 Route::post('/teams/download', 'Teams\TeamsController@download');
 
+// The users profile
+Route::get('/user/profile/index', 'User\ProfileController@index');
+Route::get('/user/profile/map', 'User\ProfileController@geojson');
+Route::get('/user/profile/download', 'User\ProfileController@download');
+
 
 /**
  * IMAGE VERIFICATION
