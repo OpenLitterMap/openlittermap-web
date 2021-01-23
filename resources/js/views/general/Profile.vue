@@ -5,31 +5,31 @@
         <!--  Todo - Later: Add translations -->
         <!--  Todo - Animate numbers incrementing from previous to current values -->
 
-        <!-- Column 1, Row 1 -->
+        <!-- Row 1, Column 1 -->
         <ProfileWelcome />
 
-        <!-- Column 1, Row 2 -->
+        <!-- Row 1, Column 2 -->
         <ProfileStats />
 
-        <!-- Column 1, Row 3 -->
+        <!-- Row 1, Column 3 -->
         <ProfileNextTarget />
 
-        <!-- Column 2, Row 1 -->
+        <!-- Row 2, Column 1 -->
         <ProfileCategories />
 
-        <!-- Column 2, Row 2 -->
+        <!-- Row 2, Column 2 -->
         <ProfileMap />
 
-        <!-- Column 2, Row 3 -->
+        <!-- Row 2, Column 3 -->
         <ProfileAwards />
 
-        <!-- Column 3, Row 1 -->
+        <!-- Row 3, Column 1 -->
         <ProfileDownload />
 
-        <!-- Column 3, Row 2 -->
+        <!-- Row 3, Column 2 -->
         <ProfileTimeSeries />
 
-        <!-- Column 3, Row 3 -->
+        <!-- Row 3, Column 3 -->
         <div class="profile-card">
             <p>Coming soon - Locations added</p>
         </div>
