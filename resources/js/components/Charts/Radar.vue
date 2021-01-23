@@ -4,39 +4,31 @@ import { Radar } from 'vue-chartjs'
 export default {
     extends: Radar,
     name: 'Radar',
-    props: ['ppm'],
-    data ()
-    {
-        return {
-            months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-        }
-    },
+    props: ['categories'],
     mounted ()
     {
-        // Convert string into array
-        let arr = JSON.parse(this.ppm);
-
-        let dates = [];
-        let values = [];
-
-        // convert label month to text
-        // todo - translate this.months
-        for (let k in arr)
-        {
-            dates.push(this.months[parseInt(k.substring(0,2))-1] + k.substring(2,5));
-            values.push(arr[k]);
-        }
-
         this.renderChart({
-                labels: dates,
+                labels: [
+                    'smoking',
+                    'food',
+                    'coffee',
+                    'softdrinks',
+                    'alcohol',
+                    'other',
+                    'coastal',
+                    'sanitary',
+                    'dumping',
+                    'industrial',
+                    'brands'
+                ],
                 datasets: [
                     {
-                        label: 'Verified Photos',
-                        backgroundColor: '#FF0000',
-                        data: values,
-                        fill: false,
-                        borderColor: 'red',
-                        maxBarThickness: '50'
+                        label: 'Total Categories',
+                        backgroundColor: '#8e7fd6',
+                        data: this.categories,
+                        fill: true,
+                        borderColor: '#8e7fd6',
+                        maxBarThickness: '10'
                     }
                 ]
             },
@@ -46,32 +38,8 @@ export default {
                 maintainAspectRatio: false,
                 legend: {
                     labels: {
-                        fontColor: '#000000'
+                        fontColor: '#8e7fd6'
                     }
-                },
-                scales: {
-                    xAxes:[{
-                        gridLines:{
-                            color: "rgba(255,255,255,0.5)",
-                            display: true,
-                            drawBorder: true,
-                            drawOnChartArea: false
-                        },
-                        ticks: {
-                            fontColor: '#000000'
-                        },
-                    }],
-                    yAxes:[{
-                        gridLines:{
-                            color: "rgba(255,255,255,0.5)",
-                            display: true,
-                            drawBorder: true,
-                            drawOnChartArea: false
-                        },
-                        ticks: {
-                            fontColor: '#000000'
-                        },
-                    }],
                 }
             })
     }

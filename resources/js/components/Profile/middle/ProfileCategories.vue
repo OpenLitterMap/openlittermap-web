@@ -1,6 +1,6 @@
 <template>
     <div class="profile-card">
-        <Radar :ppm="ppm" />
+        <Radar :categories="categories" />
     </div>
 </template>
 
@@ -15,9 +15,29 @@ export default {
         /**
          * The users photos per month, as a string. Saved as metadata because CPU.
          */
-        ppm ()
+        categories ()
         {
-            return this.$store.state.user.user.photos_per_month;
+            return [
+                this.user.total_smoking,
+                this.user.total_food,
+                this.user.total_coffee,
+                this.user.total_softdrinks,
+                this.user.total_alcohol,
+                this.user.total_other,
+                this.user.total_coastal,
+                this.user.total_sanitary,
+                this.user.total_dumping,
+                this.user.total_industrial,
+                this.user.total_brands
+            ]
+        },
+
+        /**
+         * Currently authenticated user
+         */
+        user ()
+        {
+            return this.$store.state.user.user;
         }
     }
 };
