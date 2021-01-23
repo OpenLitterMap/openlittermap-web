@@ -72,7 +72,7 @@ export default {
         background-color: #341f97;
         display: grid;
         grid-template-columns: 1fr 2fr 1fr;
-        grid-template-rows: 1fr 2fr 1fr;
+        grid-template-rows: 0.5fr 1fr 1fr;
         column-gap: 1em;
         row-gap: 1em;
         padding: 3em;
