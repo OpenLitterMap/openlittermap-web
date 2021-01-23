@@ -52,27 +52,28 @@ class UploadData implements ShouldQueue
         $litterTotal = 0;
         foreach ($this->request['litter'] as $category => $values)
         {
-            foreach ($values as $item => $quantity) // butts => 3
+            foreach ($values as $column => $quantity) // butts => 3
             {
-                // reference column on the photos table to update eg. smoking_id
-                $id     = $schema->$category->id;
-                $clazz  = $schema->$category->class;
-                $col    = $schema->$category->types->$item->col;
-                $dynamicClassName = 'App\\Models\\Litter\\Categories\\'.$clazz;
+                // Column on photos table to make a relationship with current category eg smoking_id
+                $id_table = $schema->$category->id_table;
 
-                if (is_null($photo->$id)) {
-                    $row = $dynamicClassName::create();
-                    $photo->$id = $row->id;
+                // Full class path
+                $class = 'App\\Models\\Litter\\Categories\\'.$schema->$category->class;
+
+                // Create reference to category.$id_table on photos if it does not exist
+                if (is_null($photo->$id_table))
+                {
+                    $row = $class::create();
+                    $photo->$id_table = $row->id;
                     $photo->save();
-                } else {
-                    $row = $dynamicClassName::find($photo->$id);
                 }
-                // Update the quantity on the dynamic table and save
-                $row->$col = $quantity;
+
+                // If it does exist, get it
+                else $row = $class::find($photo->$id_table);
+
+                // Update quantity on the category table
+                $row->$column = $quantity;
                 $row->save();
-                // TODO - Only reward XP on verification.
-                $user->xp += $quantity;
-                $user->save();
 
                 // todo - Update Leaderboards if user has changed privacy settings
                 if (($user->show_name == 1) || ($user->show_username == 1)) {
