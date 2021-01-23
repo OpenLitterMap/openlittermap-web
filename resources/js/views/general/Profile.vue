@@ -100,7 +100,7 @@
         <!-- Column 3, Row 3 -->
         <div class="profile-card">
             <p>Spider chart of all categories</p>
-            <p># Locaions added</p>
+            <p># Locations added</p>
         </div>
 
     </section>
