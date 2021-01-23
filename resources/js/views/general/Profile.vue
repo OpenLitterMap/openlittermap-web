@@ -3,7 +3,7 @@
 
         <!--  Todo - Show Loading -->
         <!--  Todo - Later: Add translations -->
-        <!--  Todo - Later: Seperate each block into its own component -->
+        <!--  Todo - Later: Separate each block into its own component -->
         <!--  Todo - Animate numbers incrementing from previous to current values -->
 
         <!-- Column 1, Row 1 -->
@@ -17,7 +17,7 @@
 
         <!-- Column 1, Row 2 -->
         <div class="profile-card">
-            <p class="mb1">Statistics</p>
+            <p class="mb1">You have uploaded</p>
 
             <div class="flex">
 
@@ -44,7 +44,7 @@
 
                     <div>
                         <p class="profile-stat">{{ photoPercent }}%</p>
-                        <p class="profile-text">% photos</p>
+                        <p class="profile-text">% all photos</p>
                     </div>
                 </div>
 
@@ -53,7 +53,7 @@
 
                     <div>
                         <p class="profile-stat">{{ tagPercent }}%</p>
-                        <p class="profile-text">% tags</p>
+                        <p class="profile-text">% all tags</p>
                     </div>
                 </div>
             </div>
@@ -61,9 +61,9 @@
 
         <!-- Column 1, Row 3 -->
         <div class="profile-card">
-            <p class="mb1">Next Target / Progress</p>
+            <p class="mb1">Coming soon - Next Target / Progress</p>
 
-            <p>You have reached <strong>Level 5</strong></p>
+            <p>You have reached <strong style="color: white;">Level 5</strong></p>
             <p class="mb2">You need 300xp to reach the next level.</p>
 
             <!-- Change time period -->
@@ -74,7 +74,7 @@
 
         <!-- Column 2, Row 1 -->
         <div class="profile-card">
-            <p>Spider chart of the categories added</p>
+            <p>Coming soon - Spider chart of the categories added</p>
         </div>
 
         <!-- Column 2, Row 2 -->
@@ -84,25 +84,23 @@
 
         <!-- Column 2, Row 3 -->
         <div class="profile-card">
-            <p>Gamification / Awards</p>
+            <p>Coming soon - Awards</p>
         </div>
 
         <!-- Column 3, Row 1 -->
         <div class="profile-card">
-            <p>Download My Data</p>
+            <p>Coming soon - Download My Data (easy)</p>
         </div>
 
         <!-- Column 3, Row 2 -->
         <div class="profile-card">
-            <p>Time-series chart of the users data</p>
+            <p>Coming soon - Time-series chart of the users data</p>
         </div>
 
         <!-- Column 3, Row 3 -->
         <div class="profile-card">
-            <p>Spider chart of all categories</p>
-            <p># Locations added</p>
+            <p>Coming soon - Locations added</p>
         </div>
-
     </section>
 </template>
 
