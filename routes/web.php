@@ -183,6 +183,9 @@ Route::post('/teams/active', 'Teams\TeamsController@active');
 Route::post('/teams/settings', 'Teams\TeamsSettingsController@index');
 Route::post('/teams/download', 'Teams\TeamsController@download');
 
+// The users profile
+Route::get('/user/profile/position', 'User\ProfileController@index');
+
 
 /**
  * IMAGE VERIFICATION

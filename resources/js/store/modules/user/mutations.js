@@ -135,6 +135,15 @@ export const mutations = {
         state.user.items_remaining = payload;
     },
 
+    /**
+     * On Profile.vue, get the total number of users and the current users rank
+     */
+    usersPosition (state, payload)
+    {
+        state.position = payload.position;
+        state.totalUsers = payload.total;
+    },
+
     // /**
     //  * The user has just created and joined a team
     //  */

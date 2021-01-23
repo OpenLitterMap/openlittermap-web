@@ -93,6 +93,22 @@ export const actions = {
     },
 
     /**
+     *
+     */
+    async GET_USERS_POSITION (context)
+    {
+        await axios.get('/user/profile/position')
+            .then(response => {
+                console.log('get_users_position', response);
+
+                context.commit('usersPosition', response.data);
+            })
+            .catch(error => {
+                console.error('get_users_position', error);
+            });
+    },
+
+    /**
      * Try to log the user in
      * Todo - return the user object
      */

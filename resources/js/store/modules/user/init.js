@@ -4,5 +4,7 @@ export const init = {
     countries: {}, // options for flags => { ie: "Ireland" }
     errorLogin: '',
     errors: {},
+    position: 0,
+    totalUsers: 0,
     user: {}
 };
