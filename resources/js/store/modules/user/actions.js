@@ -109,6 +109,26 @@ export const actions = {
     },
 
     /**
+     * Get the geojson data for the users Profile/ProfileMap
+     */
+    async GET_USERS_PROFILE_MAP_DATA (context, payload)
+    {
+        await axios.get('/user/profile/map', {
+            params: {
+                period: payload
+            }
+        })
+        .then(response => {
+            console.log('get_users_profile_map_data', response);
+
+            context.commit('usersGeojson', response.data.geojson);
+        })
+        .catch(error => {
+            console.error('get_users_profile_map_data', error);
+        });
+    },
+
+    /**
      * Try to log the user in
      * Todo - return the user object
      */

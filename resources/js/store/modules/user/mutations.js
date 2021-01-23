@@ -136,6 +136,14 @@ export const mutations = {
     },
 
     /**
+     * Users map data for the given time-period
+     */
+    usersGeojson (state, payload)
+    {
+        state.geojson = payload;
+    },
+
+    /**
      * On Profile.vue, get the total number of users and the current users rank
      */
     usersPosition (state, payload)

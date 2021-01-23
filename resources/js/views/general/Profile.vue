@@ -19,7 +19,7 @@
         <div class="profile-card">
             <p class="mb1">Statistics</p>
 
-            <div class="flex">
+            <div class="flex mb2">
 
                 <div class="profile-stat-card">
                     <img src="/assets/icons/bronze-medal.svg" />
@@ -65,16 +65,21 @@
 
             <p>You have reached <strong>Level 5</strong></p>
             <p>You need 300xp to reach the next level.</p>
+
+            <!-- Change time period -->
+            <select v-model="period" @change="changePeriod" class="input" style="float: right; width: 10em;">
+                <option v-for="time in timePeriods" :value="time">{{ getPeriod(time) }}</option>
+            </select>
         </div>
 
         <!-- Column 2, Row 1 -->
         <div class="profile-card">
-            <p>Map controls</p>
+            <p>Spider chart of the categories added</p>
         </div>
 
         <!-- Column 2, Row 2 -->
-        <div class="profile-card">
-            <p>Insert Map</p>
+        <div class="profile-card" style="padding: 0 !important;">
+            <ProfileMap />
         </div>
 
         <!-- Column 2, Row 3 -->
@@ -94,7 +99,8 @@
 
         <!-- Column 3, Row 3 -->
         <div class="profile-card">
-            <p># Locations added</p>
+            <p>Spider chart of all categories</p>
+            <p># Locaions added</p>
         </div>
 
     </section>
@@ -102,12 +108,29 @@
 
 <script>
 import moment from 'moment';
+import ProfileMap from '../../components/Profile/ProfileMap';
 
 export default {
     name: 'Profile',
+    components: {
+        ProfileMap
+    },
     async created ()
     {
         await this.$store.dispatch('GET_USERS_POSITION');
+    },
+    data ()
+    {
+        return {
+            period: 'today',
+            timePeriods: [
+                'today',
+                'week',
+                'month',
+                'year',
+                'all'
+            ],
+        };
     },
     computed: {
 
@@ -174,6 +197,27 @@ export default {
         {
             return this.$store.state.user;
         }
+    },
+    methods: {
+
+        /**
+         * Get map data
+         */
+        async changePeriod ()
+        {
+            await this.$store.dispatch('GET_USERS_PROFILE_MAP_DATA', this.period);
+        },
+
+
+        /**
+         * Return translated time period
+         */
+        getPeriod (period)
+        {
+            if (! period) period = this.period;
+
+            return this.$t('teams.times.' + period)
+        },
     }
 }
 </script>

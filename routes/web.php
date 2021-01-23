@@ -185,6 +185,7 @@ Route::post('/teams/download', 'Teams\TeamsController@download');
 
 // The users profile
 Route::get('/user/profile/position', 'User\ProfileController@index');
+Route::get('/user/profile/map', 'User\ProfileController@geojson');
 
 
 /**

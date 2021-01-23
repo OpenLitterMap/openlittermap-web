@@ -4,6 +4,9 @@ export const init = {
     countries: {}, // options for flags => { ie: "Ireland" }
     errorLogin: '',
     errors: {},
+    geojson: {
+        features: []
+    },
     position: 0,
     photoPercent: 0,
     tagPercent: 0,

@@ -16,9 +16,6 @@ class TeamsDataController extends Controller
     {
         $team_ids = Auth::user()->teams->pluck('id')->toArray();
 
-        \Log::info(['data', request()->all()]);
-        \Log::info(['team_ids', $team_ids]);
-
         // if 0, we want to use all team_ids
         // if its not 0, we only want the data for this team
         if (request()->team_id !== '0')
