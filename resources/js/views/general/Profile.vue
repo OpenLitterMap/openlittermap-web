@@ -3,99 +3,31 @@
 
         <!--  Todo - Show Loading -->
         <!--  Todo - Later: Add translations -->
-        <!--  Todo - Later: Separate each block into its own component -->
         <!--  Todo - Animate numbers incrementing from previous to current values -->
 
         <!-- Column 1, Row 1 -->
-        <div class="profile-card">
-            <p class="mb1">Welcome to your new Profile, {{ name }}</p>
-
-            <p class="mb1">Out of {{ totalUsers }} users</p>
-
-            <p>You are currently in {{ usersPosition }} place</p>
-        </div>
+        <ProfileWelcome />
 
         <!-- Column 1, Row 2 -->
-        <div class="profile-card">
-            <p class="mb1">You have uploaded</p>
-
-            <div class="flex">
-
-                <div class="profile-stat-card">
-                    <img src="/assets/icons/bronze-medal.svg" />
-
-                    <div>
-                        <p class="profile-stat">{{ totalPhotos }}</p>
-                        <p class="profile-text">Photos</p>
-                    </div>
-                </div>
-
-                <div class="profile-stat-card">
-                    <img src="/assets/icons/bronze-medal.svg" />
-
-                    <div>
-                        <p class="profile-stat">{{ totalTags }}</p>
-                        <p class="profile-text">Tags</p>
-                    </div>
-                </div>
-
-                <div class="profile-stat-card">
-                    <img src="/assets/icons/bronze-medal.svg" />
-
-                    <div>
-                        <p class="profile-stat">{{ photoPercent }}%</p>
-                        <p class="profile-text">% all photos</p>
-                    </div>
-                </div>
-
-                <div class="profile-stat-card">
-                    <img src="/assets/icons/bronze-medal.svg" />
-
-                    <div>
-                        <p class="profile-stat">{{ tagPercent }}%</p>
-                        <p class="profile-text">% all tags</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <ProfileStats />
 
         <!-- Column 1, Row 3 -->
-        <div class="profile-card">
-            <p class="mb1">Coming soon - Next Target / Progress</p>
-
-            <p>You have reached <strong style="color: white;">Level 5</strong></p>
-            <p class="mb2">You need 300xp to reach the next level.</p>
-
-            <!-- Change time period -->
-            <select v-model="period" @change="changePeriod" class="input" style="width: 10em;">
-                <option v-for="time in timePeriods" :value="time">{{ getPeriod(time) }}</option>
-            </select>
-        </div>
+        <ProfileNextTarget />
 
         <!-- Column 2, Row 1 -->
-        <div class="profile-card">
-            <p>Coming soon - Spider chart of the categories added</p>
-        </div>
+        <ProfileCategories />
 
         <!-- Column 2, Row 2 -->
-        <div class="profile-card" style="padding: 0 !important;">
-            <ProfileMap />
-        </div>
+        <ProfileMap />
 
         <!-- Column 2, Row 3 -->
-        <div class="profile-card">
-            <p>Coming soon - Awards</p>
-        </div>
+        <ProfileAwards />
 
         <!-- Column 3, Row 1 -->
-        <div class="profile-card">
-            <p>Coming soon - Download My Data (easy)</p>
-        </div>
+        <ProfileDownload />
 
         <!-- Column 3, Row 2 -->
-        <div class="profile-card">
-            <p>Coming soon - Time-series chart of the users data</p>
-        </div>
+        <ProfileTimeSeries />
 
         <!-- Column 3, Row 3 -->
         <div class="profile-card">
@@ -105,117 +37,30 @@
 </template>
 
 <script>
-import moment from 'moment';
-import ProfileMap from '../../components/Profile/ProfileMap';
+import ProfileWelcome from '../../components/Profile/top/ProfileWelcome';
+import ProfileStats from '../../components/Profile/top/ProfileStats';
+import ProfileNextTarget from '../../components/Profile/top/ProfileNextTarget';
+import ProfileCategories from '../../components/Profile/middle/ProfileCategories';
+import ProfileMap from '../../components/Profile/middle/ProfileMap';
+import ProfileAwards from '../../components/Profile/middle/ProfileAwards';
+import ProfileDownload from '../../components/Profile/bottom/ProfileDownload';
+import ProfileTimeSeries from '../../components/Profile/bottom/ProfileTimeSeries';
 
 export default {
     name: 'Profile',
     components: {
-        ProfileMap
+        ProfileWelcome,
+        ProfileTimeSeries,
+        ProfileStats,
+        ProfileNextTarget,
+        ProfileCategories,
+        ProfileMap,
+        ProfileAwards,
+        ProfileDownload
     },
     async created ()
     {
         await this.$store.dispatch('GET_USERS_POSITION');
-    },
-    data ()
-    {
-        return {
-            period: 'today',
-            timePeriods: [
-                'today',
-                'week',
-                'month',
-                'year',
-                'all'
-            ],
-        };
-    },
-    computed: {
-
-        /**
-         * The users name
-         */
-        name ()
-        {
-            return this.user.user.name;
-        },
-
-        /**
-         *
-         */
-        photoPercent ()
-        {
-            return this.user.photoPercent;
-        },
-
-        /**
-         *
-         */
-        tagPercent ()
-        {
-            return this.user.tagPercent;
-        },
-
-        /**
-         * Total number of photos the user has uploaded
-         */
-        totalPhotos ()
-        {
-            return this.user.totalPhotos;
-        },
-
-        /**
-         * Total number of tags the user has submitted
-         */
-        totalTags ()
-        {
-            return this.user.totalTags;
-        },
-
-        /**
-         * The total number of accounts on OLM
-         */
-        totalUsers ()
-        {
-            return this.user.totalUsers;
-        },
-
-        /**
-         * The users position out of all users, based on their XP
-         */
-        usersPosition ()
-        {
-            return moment.localeData().ordinal(this.user.position);
-        },
-
-        /**
-         * The currently active user
-         */
-        user ()
-        {
-            return this.$store.state.user;
-        }
-    },
-    methods: {
-
-        /**
-         * Get map data
-         */
-        async changePeriod ()
-        {
-            await this.$store.dispatch('GET_USERS_PROFILE_MAP_DATA', this.period);
-        },
-
-
-        /**
-         * Return translated time period
-         */
-        getPeriod (period)
-        {
-            if (! period) period = this.period;
-
-            return this.$t('teams.times.' + period)
-        },
     }
 }
 </script>
