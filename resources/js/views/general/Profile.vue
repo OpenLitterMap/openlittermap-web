@@ -65,7 +65,7 @@ export default {
 }
 </script>
 
-<style scoped>
+<style lang="scss">
 
     .profile-container {
         min-height: calc(100vh - 82px);
@@ -91,26 +91,7 @@ export default {
         color: white;
     }
 
-    .profile-stat-card {
-        flex: 1;
-        display: flex;
-    }
-
-    .profile-stat-card img {
-        height: 3em;
-        margin: auto 1em auto 0;
-    }
-
     .profile-stat-card p {
 
-    }
-
-    .profile-stat {
-        font-size: 1.5em;
-        font-weight: 600;
-    }
-
-    .profile-text {
-        color: #8e7fd6 !important;
     }
 </style>

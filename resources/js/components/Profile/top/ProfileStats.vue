@@ -93,4 +93,23 @@ export default {
 
 <style scoped>
 
+    .profile-stat-card {
+        flex: 1;
+        display: flex;
+    }
+
+    .profile-stat-card img {
+        height: 3em;
+        margin: auto 1em auto 0;
+    }
+
+    .profile-stat {
+        font-size: 1.5em;
+        font-weight: 600;
+    }
+
+    .profile-text {
+        color: #8e7fd6 !important;
+}
+
 </style>
