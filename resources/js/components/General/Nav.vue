@@ -63,10 +63,10 @@
                                          {{ $t('nav.tag-litter')}}
                                     </router-link>
 
-                                    <!-- Todo - Profile -->
-<!--                                    <router-link to="/profile" class="navbar-item drop-item">-->
-<!--                                        Profile-->
-<!--                                    </router-link>-->
+                                    <!-- Profile -->
+                                    <router-link to="/profile" class="navbar-item drop-item">
+                                        Profile
+                                    </router-link>
 
                                     <!-- Teams -->
                                     <router-link to="/teams" class="navbar-item drop-item">
