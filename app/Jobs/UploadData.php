@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Events\TagsVerifiedByAdmin;
+use App\Models\LitterTags;
 use App\Models\User\User;
 use App\Models\Photo;
 use App\Models\Location\Country;
@@ -46,17 +47,17 @@ class UploadData implements ShouldQueue
     {
         $user = User::find($this->userId);
         $photo = Photo::find($this->request['photo_id']);
-        $jsonDecoded = Litterrata::INSTANCE()->getDecodedJSON();
+        $schema = LitterTags::INSTANCE()->getDecodedJSON();
 
         $litterTotal = 0;
         foreach ($this->request['litter'] as $category => $values)
         {
-            $total = 0;
-            foreach ($values as $item => $quantity) { // Butts => 3
+            foreach ($values as $item => $quantity) // butts => 3
+            {
                 // reference column on the photos table to update eg. smoking_id
-                $id     = $jsonDecoded->$category->id;
-                $clazz  = $jsonDecoded->$category->class;
-                $col    = $jsonDecoded->$category->types->$item->col;
+                $id     = $schema->$category->id;
+                $clazz  = $schema->$category->class;
+                $col    = $schema->$category->types->$item->col;
                 $dynamicClassName = 'App\\Models\\Litter\\Categories\\'.$clazz;
 
                 if (is_null($photo->$id)) {

@@ -417,7 +417,6 @@ final class Litterrata{
             }
         }
     },
-
     "Coastal": {
         "id": "coastal_id",
         "table": "costal",
@@ -559,7 +558,6 @@ final class Litterrata{
             }
         }
     },
-
     "Brands": {
         "id": "brands_id",
         "table": "brands",
@@ -799,7 +797,6 @@ final class Litterrata{
             }
         }
     },
-
     "TrashDog": {
         "id": "trashdog_id",
         "table": "trash_dogs",
@@ -818,7 +815,6 @@ final class Litterrata{
             }
         }
     },
-
     "Dumping": {
         "id": "dumping_id",
         "table": "dumping",
@@ -836,7 +832,6 @@ final class Litterrata{
             }
         }
     },
-
     "Industrial": {
         "id": "industrial_id",
         "table": "industrial",
