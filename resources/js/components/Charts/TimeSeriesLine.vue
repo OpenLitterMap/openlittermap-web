@@ -32,10 +32,10 @@ export default {
                 datasets: [
                     {
                         label: 'Verified Photos',
-                        backgroundColor: '#FF0000',
+                        backgroundColor: '#8e7fd6',
                         data: values,
                         fill: false,
-                        borderColor: 'red',
+                        borderColor: '#8e7fd6',
                         maxBarThickness: '50'
                     }
                 ]
@@ -46,7 +46,7 @@ export default {
                 maintainAspectRatio: false,
                 legend: {
                     labels: {
-                        fontColor: '#000000'
+                        fontColor: '#8e7fd6'
                     }
                 },
                 scales: {
@@ -58,7 +58,7 @@ export default {
                             drawOnChartArea: false
                         },
                         ticks: {
-                            fontColor: '#000000'
+                            fontColor: '#8e7fd6'
                         },
                     }],
                     yAxes:[{
@@ -69,7 +69,7 @@ export default {
                             drawOnChartArea: false
                         },
                         ticks: {
-                            fontColor: '#000000'
+                            fontColor: '#8e7fd6'
                         },
                     }],
                 }

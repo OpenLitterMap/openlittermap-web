@@ -155,6 +155,8 @@ export const mutations = {
 
         state.photoPercent = Math.round(payload.photoPercent * 100, 2);
         state.tagPercent = Math.round(payload.tagPercent * 100, 2);
+
+        state.requiredXp = payload.requiredXp;
     },
 
     // /**

@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers\User;
 
+use App\Exports\CreateCSVExport;
 use App\Http\Controllers\Controller;
+use App\Jobs\EmailUserExportCompleted;
+use App\Level;
 use App\Models\Photo;
 use App\Models\User\User;
 use Illuminate\Http\Request;
@@ -10,6 +13,37 @@ use Illuminate\Support\Facades\Auth;
 
 class ProfileController extends Controller
 {
+    /**
+     * Dispatch a request to download the users data
+     */
+    public function download ()
+    {
+        $user = Auth::user();
+
+        $x     = new \DateTime();
+        $date  = $x->format('Y-m-d');
+        $date  = explode('-', $date);
+        $year  = $date[0];
+        $month = $date[1];
+        $day   = $date[2];
+        $unix  = now()->timestamp;
+
+        $path = $year.'/'.$month.'/'.$day.'/'.$unix.'/';  // 2020/10/25/unix/
+
+        $path .= '_MyData_OpenLitterMap.csv';
+
+        /* Dispatch job to create CSV file for export */
+        (new CreateCSVExport(null, null, null, $user->id))
+            ->queue($path, 's3', null, ['visibility' => 'public'])
+            ->chain([
+                // These jobs are executed when above is finished.
+                new EmailUserExportCompleted($user->email, $path)
+                // new ....job
+            ]);
+
+        return ['success' => true];
+    }
+
     /**
      * Get the users data for the given time period
      */
@@ -77,29 +111,31 @@ class ProfileController extends Controller
      */
     public function index ()
     {
+        // Todo - Store this metadata in another table
         $totalUsers = User::count();
+
         $usersPosition = User::where('xp', '>', auth()->user()->xp)->count() + 1;
 
-        // Todo - Store this metadata in another table
-        $userPhotoCount = Photo::where('user_id', auth()->user()->id)->count();
-        // Todo - Store this metadata in another table
-        $userTagsCount = Photo::where('user_id', auth()->user()->id)->sum('total_litter');
+        $user = Auth::user();
 
         // Todo - Store this metadata in another table
         $totalPhotosAllUsers = Photo::count();
         // Todo - Store this metadata in another table
         $totalLitterAllUsers = Photo::sum('total_litter');
 
-        $photoPercent = ($userPhotoCount / $totalPhotosAllUsers);
-        $tagPercent = ($userTagsCount / $totalLitterAllUsers);
+        $photoPercent = ($user->total_images / $totalPhotosAllUsers);
+        $tagPercent = ($user->total_litter / $totalLitterAllUsers);
+
+        // XP needed to reach the next level
+        $nextLevelXp = Level::where('xp', '>=', $user->xp)->first()->xp;
+        $requiredXp = $nextLevelXp - $user->xp;
 
         return [
             'totalUsers' => $totalUsers,
             'usersPosition' => $usersPosition,
-            'totalPhotos' => $userPhotoCount,
-            'totalTags' => $userTagsCount,
             'tagPercent' => $tagPercent,
-            'photoPercent' => $photoPercent
+            'photoPercent' => $photoPercent,
+            'requiredXp' => $requiredXp
         ];
     }
 }

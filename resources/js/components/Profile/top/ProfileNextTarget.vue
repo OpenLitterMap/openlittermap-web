@@ -1,9 +1,11 @@
 <template>
     <div class="profile-card">
-        <p class="mb1">Coming soon - Next Target / Progress</p>
+        <p class="mb1">Your Level</p>
 
-        <p>You have reached <strong style="color: white;">Level 5</strong></p>
-        <p class="mb2">You need 300xp to reach the next level.</p>
+        <p class="is-purp">You have reached level <strong class="is-white">{{ currentLevel }}</strong>
+            and you have <strong class="is-white">{{ currentXp }} xp</strong>
+        </p>
+        <p class="is-purp mb2">You need <strong class="is-white">{{ neededXp }} xp</strong> to reach the next level.</p>
 
         <!-- Change time period -->
         <select v-model="period" @change="changePeriod" class="input" style="width: 10em;">
@@ -27,6 +29,40 @@ export default {
                 'all'
             ],
         };
+    },
+    computed: {
+
+        /**
+         * The users current level, based on their XP
+         */
+        currentLevel ()
+        {
+            return this.user.level;
+        },
+
+        /**
+         * The users current XP
+         */
+        currentXp ()
+        {
+            return this.user.xp;
+        },
+
+        /**
+         * Remaining xp until the user Levels Up
+         */
+        neededXp ()
+        {
+            return this.$store.state.user.requiredXp;
+        },
+
+        /**
+         * Currently authenticated user
+         */
+        user ()
+        {
+            return this.$store.state.user.user;
+        }
     },
     methods: {
 
@@ -54,4 +90,11 @@ export default {
 
 <style scoped>
 
+    .is-purp {
+        color: #8e7fd6;
+    }
+
+    .is-white {
+        color: white !important;
+    }
 </style>

@@ -60,7 +60,7 @@ export default {
     },
     async created ()
     {
-        await this.$store.dispatch('GET_USERS_POSITION');
+        await this.$store.dispatch('GET_USERS_PROFILE_DATA');
     }
 }
 </script>

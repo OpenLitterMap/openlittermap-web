@@ -5,38 +5,38 @@
         <div class="flex">
 
             <div class="profile-stat-card">
-                <img src="/assets/icons/bronze-medal.svg" />
+                <img src="/assets/icons/home/camera.png" />
 
                 <div>
-                    <p class="profile-stat">{{ totalPhotos }}</p>
+                    <p class="profile-stat">{{ userPhotoCount }}</p>
                     <p class="profile-text">Photos</p>
                 </div>
             </div>
 
             <div class="profile-stat-card">
-                <img src="/assets/icons/bronze-medal.svg" />
+                <img src="/assets/icons/home/phone.png" />
 
                 <div>
-                    <p class="profile-stat">{{ totalTags }}</p>
+                    <p class="profile-stat">{{ userTagsCount }}</p>
                     <p class="profile-text">Tags</p>
                 </div>
             </div>
 
             <div class="profile-stat-card">
-                <img src="/assets/icons/bronze-medal.svg" />
+                <p class="profile-percent">%</p>
 
                 <div>
-                    <p class="profile-stat">{{ photoPercent }}%</p>
-                    <p class="profile-text">% all photos</p>
+                    <p class="profile-stat">{{ photoPercent }}</p>
+                    <p class="profile-text">all photos</p>
                 </div>
             </div>
 
             <div class="profile-stat-card">
-                <img src="/assets/icons/bronze-medal.svg" />
+                <p class="profile-percent">%</p>
 
                 <div>
-                    <p class="profile-stat">{{ tagPercent }}%</p>
-                    <p class="profile-text">% all tags</p>
+                    <p class="profile-stat">{{ tagPercent }}</p>
+                    <p class="profile-text">all tags</p>
                 </div>
             </div>
         </div>
@@ -65,19 +65,21 @@ export default {
         },
 
         /**
-         * Total number of photos the user has uploaded
+         * Total number of tags the user has submitted
+         *
+         * Todo - create new total_tags column that includes brands
          */
-        totalPhotos ()
+        userTagsCount ()
         {
-            return this.user.totalPhotos;
+            return this.user.user.total_litter;
         },
 
         /**
-         * Total number of tags the user has submitted
+         * Total number of photos the user has uploaded
          */
-        totalTags ()
+        userPhotoCount ()
         {
-            return this.user.totalTags;
+            return this.user.user.total_images;
         },
 
         /**
@@ -93,9 +95,16 @@ export default {
 
 <style scoped>
 
+    .profile-percent {
+        font-size: 3em;
+        font-weight: 600;
+        margin-right: 0.5em;
+    }
+
     .profile-stat-card {
         flex: 1;
         display: flex;
+        text-align: center;
     }
 
     .profile-stat-card img {
