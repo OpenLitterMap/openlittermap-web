@@ -5,6 +5,6 @@ export const init = {
     errorLogin: '',
     errors: {},
     position: 0,
-    totalUsers: 0,
+    totalUsers: 0, // Should be on users.js
     user: {}
 };

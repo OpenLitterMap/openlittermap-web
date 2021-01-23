@@ -93,7 +93,7 @@ export const actions = {
     },
 
     /**
-     *
+     * Get the total number of users, and the current users rank (1st, 2nd...)
      */
     async GET_USERS_POSITION (context)
     {

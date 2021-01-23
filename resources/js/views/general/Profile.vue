@@ -2,7 +2,9 @@
     <section class="profile-container">
 
         <!--  Todo - Show Loading -->
-        <!--  Todo - Add translations -->
+        <!--  Todo - Later: Add translations -->
+        <!--  Todo - Later: Seperate each block into its own component -->
+        <!--  Todo - Animate numbers incrementing from previous to current values -->
 
         <!-- Column 1, Row 1 -->
         <div class="profile-card">
@@ -15,12 +17,54 @@
 
         <!-- Column 1, Row 2 -->
         <div class="profile-card">
-            <p>Total Photos, Total Litter, Top 5 items</p>
+            <p class="mb1">Statistics</p>
+
+            <div class="flex">
+
+                <div class="profile-stat-card">
+                    <img src="/assets/icons/bronze-medal.svg" />
+
+                    <div>
+                        <p class="profile-stat">100</p>
+                        <p class="profile-text">photos</p>
+                    </div>
+                </div>
+
+                <div class="profile-stat-card">
+                    <img src="/assets/icons/bronze-medal.svg" />
+
+                    <div>
+                        <p class="profile-stat">200</p>
+                        <p class="profile-text">tags</p>
+                    </div>
+                </div>
+
+                <div class="profile-stat-card">
+                    <img src="/assets/icons/bronze-medal.svg" />
+
+                    <div>
+                        <p class="profile-stat">2</p>
+                        <p class="profile-text">locations</p>
+                    </div>
+                </div>
+
+                <div class="profile-stat-card">
+                    <img src="/assets/icons/bronze-medal.svg" />
+
+                    <div>
+                        <p class="profile-stat">5%</p>
+                        <p class="profile-text">total data</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Column 1, Row 3 -->
         <div class="profile-card">
-            <p>Next Target, Progress</p>
+            <p class="mb1">Next Target / Progress</p>
+
+            <p>You have reached <strong>Level 5</strong></p>
+            <p>You need 300xp to reach the next level.</p>
         </div>
 
         <!-- Column 2, Row 1 -->
@@ -35,7 +79,7 @@
 
         <!-- Column 2, Row 3 -->
         <div class="profile-card">
-            <p>Gamification Awards</p>
+            <p>Gamification / Awards</p>
         </div>
 
         <!-- Column 3, Row 1 -->
@@ -126,5 +170,28 @@ export default {
 
     .profile-card p {
         color: white;
+    }
+
+    .profile-stat-card {
+        flex: 1;
+        display: flex;
+    }
+
+    .profile-stat-card img {
+        height: 3em;
+        margin: auto 1em auto 0;
+    }
+
+    .profile-stat-card p {
+
+    }
+
+    .profile-stat {
+        font-size: 1.5em;
+        font-weight: 600;
+    }
+
+    .profile-text {
+        color: #8e7fd6 !important;
     }
 </style>
