@@ -92,9 +92,7 @@ export default {
 
 /* remove padding on mobile */
 .profile-map-container {
-    height: 500px;
-    margin: 0;
-    position: relative;
+    height: 100%;
 }
 
 .leaflet-popup-content {

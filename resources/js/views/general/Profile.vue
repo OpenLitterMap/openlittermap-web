@@ -19,7 +19,7 @@
         <div class="profile-card">
             <p class="mb1">Statistics</p>
 
-            <div class="flex mb2">
+            <div class="flex">
 
                 <div class="profile-stat-card">
                     <img src="/assets/icons/bronze-medal.svg" />
@@ -64,10 +64,10 @@
             <p class="mb1">Next Target / Progress</p>
 
             <p>You have reached <strong>Level 5</strong></p>
-            <p>You need 300xp to reach the next level.</p>
+            <p class="mb2">You need 300xp to reach the next level.</p>
 
             <!-- Change time period -->
-            <select v-model="period" @change="changePeriod" class="input" style="float: right; width: 10em;">
+            <select v-model="period" @change="changePeriod" class="input" style="width: 10em;">
                 <option v-for="time in timePeriods" :value="time">{{ getPeriod(time) }}</option>
             </select>
         </div>
