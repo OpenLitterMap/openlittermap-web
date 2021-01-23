@@ -25,8 +25,8 @@
                     <img src="/assets/icons/bronze-medal.svg" />
 
                     <div>
-                        <p class="profile-stat">100</p>
-                        <p class="profile-text">photos</p>
+                        <p class="profile-stat">{{ totalPhotos }}</p>
+                        <p class="profile-text">Photos</p>
                     </div>
                 </div>
 
@@ -34,8 +34,8 @@
                     <img src="/assets/icons/bronze-medal.svg" />
 
                     <div>
-                        <p class="profile-stat">200</p>
-                        <p class="profile-text">tags</p>
+                        <p class="profile-stat">{{ totalTags }}</p>
+                        <p class="profile-text">Tags</p>
                     </div>
                 </div>
 
@@ -43,8 +43,8 @@
                     <img src="/assets/icons/bronze-medal.svg" />
 
                     <div>
-                        <p class="profile-stat">2</p>
-                        <p class="profile-text">locations</p>
+                        <p class="profile-stat">{{ photoPercent }}%</p>
+                        <p class="profile-text">% photos</p>
                     </div>
                 </div>
 
@@ -52,8 +52,8 @@
                     <img src="/assets/icons/bronze-medal.svg" />
 
                     <div>
-                        <p class="profile-stat">5%</p>
-                        <p class="profile-text">total data</p>
+                        <p class="profile-stat">{{ tagPercent }}%</p>
+                        <p class="profile-text">% tags</p>
                     </div>
                 </div>
             </div>
@@ -84,7 +84,7 @@
 
         <!-- Column 3, Row 1 -->
         <div class="profile-card">
-            <p>Time-series controls?</p>
+            <p>Download My Data</p>
         </div>
 
         <!-- Column 3, Row 2 -->
@@ -94,7 +94,7 @@
 
         <!-- Column 3, Row 3 -->
         <div class="profile-card">
-            <p>Hello world</p>
+            <p># Locations added</p>
         </div>
 
     </section>
@@ -117,6 +117,38 @@ export default {
         name ()
         {
             return this.user.user.name;
+        },
+
+        /**
+         *
+         */
+        photoPercent ()
+        {
+            return this.user.photoPercent;
+        },
+
+        /**
+         *
+         */
+        tagPercent ()
+        {
+            return this.user.tagPercent;
+        },
+
+        /**
+         * Total number of photos the user has uploaded
+         */
+        totalPhotos ()
+        {
+            return this.user.totalPhotos;
+        },
+
+        /**
+         * Total number of tags the user has submitted
+         */
+        totalTags ()
+        {
+            return this.user.totalTags;
         },
 
         /**

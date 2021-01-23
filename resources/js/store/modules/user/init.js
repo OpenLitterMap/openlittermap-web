@@ -5,6 +5,10 @@ export const init = {
     errorLogin: '',
     errors: {},
     position: 0,
+    photoPercent: 0,
+    tagPercent: 0,
+    totalPhotos: 0,
+    totalTags: 0,
     totalUsers: 0, // Should be on users.js
     user: {}
 };

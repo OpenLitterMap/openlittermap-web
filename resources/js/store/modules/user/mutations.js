@@ -140,8 +140,13 @@ export const mutations = {
      */
     usersPosition (state, payload)
     {
-        state.position = payload.position;
-        state.totalUsers = payload.total;
+        state.position = payload.usersPosition;
+        state.totalUsers = payload.totalUsers;
+        state.totalPhotos = payload.totalPhotos;
+        state.totalTags = payload.totalTags;
+
+        state.photoPercent = Math.round(payload.photoPercent * 100, 2);
+        state.tagPercent = Math.round(payload.tagPercent * 100, 2);
     },
 
     // /**
