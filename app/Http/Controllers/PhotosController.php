@@ -210,9 +210,8 @@ class PhotosController extends Controller
 
         // $user->images_remaining -= 1;
 
-        $user->xp += 1;
-//        $totalImages = 0; // $user->photos->sum('verified'); this is failing locally since upgraded from Laravel 5 to 8
-//        $user->total_images = $totalImages;
+        $user->xp++;
+        $user->total_images++;
         $user->save();
 
         $teamName = null;
