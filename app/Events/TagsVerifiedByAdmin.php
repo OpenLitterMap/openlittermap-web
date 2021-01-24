@@ -15,7 +15,7 @@ class TagsVerifiedByAdmin
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $photo_id, $city_id, $state_id, $country_id, $user_id;
+    public $photo_id, $city_id, $state_id, $country_id, $user_id, $created_at;
     public $total_count;
     public $total_alcohol, $total_art,
         $total_brands,
@@ -40,6 +40,7 @@ class TagsVerifiedByAdmin
         $this->state_id = $photo->state_id;
         $this->country_id = $photo->country_id;
         $this->user_id = $photo->user_id;
+        $this->created_at = $photo->created_at;
 
         $total_count = 0;
 
