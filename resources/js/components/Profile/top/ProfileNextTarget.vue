@@ -4,7 +4,7 @@
 
         <p class="is-purp">You have reached level <strong class="is-white">{{ currentLevel }}</strong></p>
 
-        <p class="is-purp">and you have <strong class="is-white">{{ currentXp }} xp</strong></p>
+        <p class="is-purp mb1">and you have <strong class="is-white">{{ currentXp }} xp</strong></p>
 
         <p class="is-purp mb2">You need <strong class="is-white">{{ neededXp }} xp</strong> to reach the next level.</p>
 
