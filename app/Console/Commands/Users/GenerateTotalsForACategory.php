@@ -20,7 +20,7 @@ class GenerateTotalsForACategory extends Command
      *
      * @var string
      */
-    protected $description = 'Pass a cateogory, and update total_category for all users for that category';
+    protected $description = 'Pass a category, and update total_category for all users for that category';
 
     /**
      * Create a new command instance.
