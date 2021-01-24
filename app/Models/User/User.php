@@ -64,7 +64,7 @@ class User extends Authenticatable
         'xp',
         'level',
 
-        // Todo - Separate user_totals into another table
+        // Todo - Separate user_totals into another table users_totals
         'total_images',
         'total_litter',
         'total_verified',

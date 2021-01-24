@@ -28,9 +28,6 @@ class UpdateUsers
 
         else $user->count_correctly_verified += 1;
 
-        // TODO :
-        // Update user.total_column_for_each_category_tagged_on_this_photo
-
         $user->total_verified += 1;
         $user->total_verified_litter += $event->total_count;
 

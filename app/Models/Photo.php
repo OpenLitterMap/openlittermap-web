@@ -114,9 +114,17 @@ class Photo extends Model
 
         foreach ($this->categories() as $category)
         {
-            if ($category !== 'brands')
+            if ($this->$category)
             {
-                if ($this->$category) {
+                // We dont want to include brands in total_litter
+                if ($category === 'brands')
+                {
+                    $this->$category->total();
+                }
+
+                // Increment total_litter when its not brands
+                else
+                {
                     $total += $this->$category->total();
                 }
             }

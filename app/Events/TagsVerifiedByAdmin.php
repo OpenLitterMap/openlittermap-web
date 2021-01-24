@@ -52,9 +52,13 @@ class TagsVerifiedByAdmin
 
                 $total_string = "total_" . $category; // total_smoking, total_food...
 
-                $this->$total_string += $total;
+                $this->$total_string = $total;
 
-                $total_count += $total; // total counts of all categories
+                // Don't include brands in total_litter. We keep total_brands separate.
+                if ($photo->$category !== 'brands')
+                {
+                    $total_count += $total; // total counts of all categories
+                }
             }
         }
 
