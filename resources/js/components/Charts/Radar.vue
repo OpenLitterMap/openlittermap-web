@@ -40,6 +40,11 @@ export default {
                 labels: {
                     fontColor: '#8e7fd6'
                 }
+            },
+            scale: {
+                pointLabels: {
+                    fontColor: 'white'
+                }
             }
         })
     }
