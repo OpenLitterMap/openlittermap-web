@@ -14,6 +14,16 @@ use Illuminate\Support\Facades\Auth;
 class ProfileController extends Controller
 {
     /**
+     * Apply middleware to all of these routes
+     */
+    public function __construct ()
+    {
+        return $this->middleware('auth');
+
+        parent::__construct();
+    }
+    
+    /**
      * Dispatch a request to download the users data
      */
     public function download ()
