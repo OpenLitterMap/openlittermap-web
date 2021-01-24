@@ -22,7 +22,7 @@ class ProfileController extends Controller
 
         parent::__construct();
     }
-    
+
     /**
      * Dispatch a request to download the users data
      */

@@ -80,7 +80,7 @@ class Photo extends Model
     /**
      * Category types available on each photo
      */
-    public function categories ()
+    public static function categories ()
     {
         return [
             'smoking',
