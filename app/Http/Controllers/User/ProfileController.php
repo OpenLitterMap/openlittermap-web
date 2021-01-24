@@ -133,8 +133,10 @@ class ProfileController extends Controller
         // Todo - Store this metadata in another table
         $totalLitterAllUsers = Photo::sum('total_litter');
 
+        $usersTotalTags = $user->total_litter + $user->total_brands;
+
         $photoPercent = ($user->total_images / $totalPhotosAllUsers);
-        $tagPercent = ($user->total_litter / $totalLitterAllUsers);
+        $tagPercent = ($usersTotalTags / $totalLitterAllUsers);
 
         // XP needed to reach the next level
         $nextLevelXp = Level::where('xp', '>=', $user->xp)->first()->xp;

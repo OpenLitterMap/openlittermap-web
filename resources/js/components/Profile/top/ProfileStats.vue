@@ -71,7 +71,7 @@ export default {
          */
         userTagsCount ()
         {
-            return this.user.user.total_litter;
+            return this.user.user.total_litter + this.user.user.total_brands;
         },
 
         /**
