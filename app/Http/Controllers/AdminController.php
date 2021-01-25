@@ -203,6 +203,8 @@ class AdminController extends Controller
         $user = Auth::user();
         $user->count_correctly_verified = 0;
         $user->save();
+
+        return ['success' => true];
     }
 
     /**
@@ -211,107 +213,33 @@ class AdminController extends Controller
     protected function reset ($id)
     {
         $photo = Photo::find($id);
+
         $photo->verification = 0;
         $photo->verified = 0;
         $photo->total_litter = 0;
         $photo->result_string = null;
+
+        $categories = Photo::categories();
+
+        foreach ($categories as $category)
+        {
+            if ($photo->$category)
+            {
+                // hold instance of the relationship to delete
+                $d = $photo->$category;
+
+                // remove the model from the photo
+                $category_id = $category . '_id';
+                $photo->$category_id = null;
+                $photo->save();
+
+                // delete the relationship
+                $d->delete();
+            }
+        }
+
+        // persist reset verification changes
         $photo->save();
-
-        if ($photo["smoking_id"])
-        {
-            $smoking_id = $photo["smoking_id"];
-            $photo["smoking_id"] = null;
-            $photo->save();
-            Smoking::find($smoking_id)->delete();
-        }
-
-        if ($photo["food_id"])
-        {
-            $food_id = $photo["food_id"];
-            $photo["food_id"] = null;
-            $photo->save();
-            Food::find($food_id)->delete();
-        }
-
-        if ($photo["coffee_id"])
-        {
-            $coffee_id = $photo["coffee_id"];
-            $photo["coffee_id"] = null;
-            $photo->save();
-            Coffee::find($coffee_id)->delete();
-        }
-
-        if ($photo["softdrinks_id"])
-        {
-            $softdrinks_id = $photo["softdrinks_id"];
-            $photo["softdrinks_id"] = null;
-            $photo->save();
-            SoftDrinks::find($softdrinks_id)->delete();
-        }
-
-        if ($photo["alcohol_id"])
-        {
-            $alcohol_id = $photo["alcohol_id"];
-            $photo["alcohol_id"] = null;
-            $photo->save();
-            Alcohol::find($alcohol_id)->delete();
-        }
-
-        if ($photo["other_id"])
-        {
-            $other_id = $photo["other_id"];
-            $photo["other_id"] = null;
-            $photo->save();
-            Other::find($other_id)->delete();
-        }
-
-        if ($photo["sanitary_id"])
-        {
-            $sanitary_id = $photo["sanitary_id"];
-            $photo["sanitary_id"] = null;
-            $photo->save();
-            Sanitary::find($sanitary_id)->delete();
-        }
-
-        if ($photo["coastal_id"])
-        {
-            $coastal_id = $photo["coastal_id"];
-            $photo["coastal_id"] = null;
-            $photo->save();
-            Coastal::find($coastal_id)->delete();
-        }
-
-        if ($photo["art_id"])
-        {
-            $art_id = $photo["art_id"];
-            $photo["art_id"] = null;
-            $photo->save();
-            Art::find($art_id)->delete();
-        }
-
-        if ($photo["trashdog_id"])
-        {
-            $trashdog_id = $photo["trashdog_id"];
-            $photo["trashdog_id"] = null;
-            $photo->save();
-            TrashDog::find($trashdog_id)->delete();
-        }
-
-        if ($photo["dumping_id"])
-        {
-            $dumping_id = $photo["dumping_id"];
-            $photo["dumping_id"] = null;
-            $photo->save();
-            Dumping::find($dumping_id)->delete();
-        }
-
-        if ($photo["industrial_id"])
-        {
-            $industrial_id = $photo["industrial_id"];
-            $photo["industrial_id"] = null;
-            $photo->save();
-            Industrial::find($industrial_id)->delete();
-        }
     }
 
     /**

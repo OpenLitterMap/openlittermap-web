@@ -1,3 +1,6 @@
+import Vue from 'vue';
+import i18n from '../../../i18n';
+
 export const actions = {
 
     /**
@@ -23,13 +26,26 @@ export const actions = {
      */
     async ADMIN_RESET_TAGS (context)
     {
+        const title = i18n.t('notifications.success');
+        const body = 'Image has been reset';
+
         await axios.post('/admin/incorrect', {
-            photoId: this.photo.id
+            photoId: context.state.photo.id
         })
         .then(response => {
             console.log('admin_reset_tags', response);
 
-            context.dispatch('GET_NEXT_ADMIN_PHOTO');
+            if (response.data.success)
+            {
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                    position: 'top-right'
+                });
+
+                context.dispatch('GET_NEXT_ADMIN_PHOTO');
+            }
+
         }).catch(error => {
             console.log(error);
         });

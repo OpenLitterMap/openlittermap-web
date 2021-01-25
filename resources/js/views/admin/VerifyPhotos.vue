@@ -64,7 +64,7 @@
 				</div>
 
 				<!-- Add / edit tags -->
-                <add-tags :admin="true" />
+                <add-tags :admin="true" :id="photo.id" />
 
 				<div style="padding-top: 1em; text-align: center;">
 					<p class="strong">Update the image and save the new data</p>

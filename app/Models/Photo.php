@@ -51,31 +51,31 @@ class Photo extends Model
         'team_id'
     ];
 
-    /**
-     * Observe when this model is being updated
-    - onDelete, also delete relationships
-    - onDelete->cascade not working
-     */
-    public static function boot ()
-    {
-        parent::boot();
-
-        self::deleting(function (Photo $photo) {
-            if ($photo->smoking) $photo->smoking->delete();
-            if ($photo->food) $photo->food->delete();
-            if ($photo->coffee) $photo->coffee->delete();
-            if ($photo->softdrinks) $photo->softdrinks->delete();
-            if ($photo->alcohol) $photo->alcohol->delete();
-            if ($photo->sanitary) $photo->sanitary->delete();
-            if ($photo->other) $photo->other->delete();
-            if ($photo->coastal) $photo->coastal->delete();
-            if ($photo->art) $photo->art->delete();
-            if ($photo->brands) $photo->brands->delete();
-            if ($photo->trashdog) $photo->trashdog->delete();
-            if ($photo->dumping) $photo->dumping->delete();
-            if ($photo->industrial) $photo->industrial->delete();
-        });
-    }
+//    /**
+//     * Observe when this model is being updated
+//    - onDelete, also delete relationships
+//    - onDelete->cascade not working
+//     */
+//    public static function boot ()
+//    {
+//        parent::boot();
+//
+//        self::deleting(function (Photo $photo) {
+//            if ($photo->smoking) $photo->smoking->delete();
+//            if ($photo->food) $photo->food->delete();
+//            if ($photo->coffee) $photo->coffee->delete();
+//            if ($photo->softdrinks) $photo->softdrinks->delete();
+//            if ($photo->alcohol) $photo->alcohol->delete();
+//            if ($photo->sanitary) $photo->sanitary->delete();
+//            if ($photo->other) $photo->other->delete();
+//            if ($photo->coastal) $photo->coastal->delete();
+//            if ($photo->art) $photo->art->delete();
+//            if ($photo->brands) $photo->brands->delete();
+//            if ($photo->trashdog) $photo->trashdog->delete();
+//            if ($photo->dumping) $photo->dumping->delete();
+//            if ($photo->industrial) $photo->industrial->delete();
+//        });
+//    }
 
     /**
      * Category types available on each photo

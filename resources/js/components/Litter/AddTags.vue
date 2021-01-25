@@ -187,6 +187,8 @@ export default {
          */
         checkItems ()
         {
+            if (this.processing) return true;
+
             return Object.keys(this.$store.state.litter.tags).length === 0;
         },
 
