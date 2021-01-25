@@ -89,7 +89,7 @@ export const actions = {
     /**
      * Verify the image, and update with new tags
      */
-    async ADMIN_NEW_TAGS (context)
+    async ADMIN_UPDATE_WITH_NEW_TAGS (context)
     {
         await axios.post('/admin/update-tags', {
             photoId: context.state.photo.id,
@@ -114,6 +114,7 @@ export const actions = {
 
         // clear previous input on litter.js
         context.commit('resetLitter');
+        context.commit('clearTags');
 
         await axios.get('/admin/get-image')
         .then(resp => {

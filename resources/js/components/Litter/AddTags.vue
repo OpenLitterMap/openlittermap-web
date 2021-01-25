@@ -112,7 +112,7 @@ export default {
     {
         // We need to initialize with translated title
         this.$store.commit('changeCategory', {
-            id: 11, // todo - use category.key only
+            id: 11, // todo - drop this asnd use category.key only
             key: 'smoking',
             title: this.$i18n.t('litter.categories.smoking')
         });

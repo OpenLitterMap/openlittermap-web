@@ -248,7 +248,7 @@ export default {
 		{
 			this.processing = true;
 
-            await this.$store.dispatch('ADMIN_NEW_TAGS');
+            await this.$store.dispatch('ADMIN_UPDATE_WITH_NEW_TAGS');
 
             this.processing = false;
   		}

@@ -9,6 +9,7 @@ export const actions = {
             .then(response => {
                 console.log('get_photos_for_tagging', response);
 
+                context.commit('clearTags');
                 context.commit('photosForTagging', response.data);
             })
             .catch(error => {

@@ -172,8 +172,7 @@ export const mutations = {
      */
     resetLitter (state)
     {
-        console.log('resetLitter');
-        state.items = {};
+        // state.items = {};
         state.categories = {
             'Alcohol': {},
             'Art': {},
@@ -194,26 +193,27 @@ export const mutations = {
 
     /**
      * Set all existing items to 0
+     *
+     * Admin @ reset
      */
     setAllItemsToZero (state)
     {
-        console.log('setAllItemsToZero');
+        let original_tags = Object.assign({}, state.tags);
 
-        let categories = Object.assign({}, state.categories);
+        Object.entries(original_tags).map(keys => {
 
-        Object.entries(categories).map(keys => {
-            let category = keys[0];
-            let tags = keys[1]; // { Cans: 1, Bottles: 2 }
+            let category = keys[0]; // alcohol
+            let category_tags = keys[1]; // { cans: 1, beerBottle: 2 }
 
-            if (Object.keys(categories[category]).length > 0) {
-                Object.entries(tags).map(tag => {
-                    categories[category][tag[0]] = 0;
-                    state.items[tag[0]] = 0;
+            if (Object.keys(original_tags[category]).length > 0)
+            {
+                Object.keys(category_tags).map(tag => {
+                    original_tags[category][tag] = 0;
                 });
             }
         });
 
-        state.categories = Object.assign({}, categories);
+        state.tags = original_tags;
     },
 
     /**

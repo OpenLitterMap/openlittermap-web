@@ -139,12 +139,6 @@ export default {
         Tags,
         ProfileDelete
     },
-    data ()
-    {
-        return {
-            loading: true
-        };
-    },
     async created ()
     {
         this.loading = true;
@@ -152,6 +146,12 @@ export default {
         await this.$store.dispatch('GET_PHOTOS_FOR_TAGGING');
 
         this.loading = false;
+    },
+    data ()
+    {
+        return {
+            loading: true
+        };
     },
     computed: {
 
