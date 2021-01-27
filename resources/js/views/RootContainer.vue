@@ -44,7 +44,6 @@ export default {
         {
             this.$store.commit('login');
 
-
             // user object is passed when the page is refreshed
             if (this.user)
             {
