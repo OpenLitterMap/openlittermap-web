@@ -52,6 +52,7 @@
 
             <span>{{ $t('tags.recently-tags') }}</span>
 
+            <!--  Todo - Sort these by category -->
             <transition-group name="list" class="recent-tags" tag="div">
                 <div
                     v-for="tag in recentTags"
@@ -450,10 +451,11 @@ export default {
 
     .recent-tags {
         display: flex;
-        max-width: 500px;
+        max-width: 50em;
         margin: auto;
         flex-wrap: wrap;
         overflow: auto;
+        justify-content: center;
     }
 
     .litter-tag {
