@@ -117,24 +117,24 @@ export const actions = {
         context.commit('clearTags');
 
         await axios.get('/admin/get-image')
-        .then(resp => {
+            .then(resp => {
 
-            console.log('get_next_admin_photo', resp);
+                console.log('get_next_admin_photo', resp);
 
-            // init photo data (admin.js)
-            context.commit('initAdminPhoto', resp.data.photo);
+                // init photo data (admin.js)
+                context.commit('initAdminPhoto', resp.data.photo);
 
-            // init litter data for verification (litter.js)
-            if (resp.data.photoData) context.commit('initAdminItems', resp.data.photoData);
+                // init litter data for verification (litter.js)
+                if (resp.data.photoData) context.commit('initAdminItems', resp.data.photoData);
 
-            context.commit('initAdminMetadata', {
-                not_processed: resp.data.photosNotProcessed,
-                awaiting_verification: resp.data.photosAwaitingVerification
+                context.commit('initAdminMetadata', {
+                    not_processed: resp.data.photosNotProcessed,
+                    awaiting_verification: resp.data.photosAwaitingVerification
+                });
+            })
+            .catch(err => {
+                console.error(err);
             });
-        })
-        .catch(err => {
-            console.error(err);
-        });
 
         // admin loading = false
     },

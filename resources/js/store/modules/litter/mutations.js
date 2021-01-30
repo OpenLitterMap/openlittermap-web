@@ -1,5 +1,3 @@
-import Vue from 'vue'
-import i18n from '../../../i18n'
 import { categories } from '../../../extra/categories'
 import { litterkeys } from '../../../extra/litterkeys'
 import { init } from './init'
@@ -18,10 +16,7 @@ export const mutations = {
 
         const isTagExisted = tags.find(({ item }) => item.key === payload.item.key);
 
-        if (isTagExisted)
-        {
-            return;
-        }
+        if (isTagExisted) return;
 
         state.recentTags = [...tags, payload];
     },
@@ -66,22 +61,18 @@ export const mutations = {
      * Update the currently selected category
      * Update the items for that category
      * Select the first item
+     *
+     * payload = key "smoking"
      */
     changeCategory (state, payload)
     {
         state.category = payload;
-
-        state.items = litterkeys[payload.key];
-
-        state.item = {
-            id: litterkeys[payload.key][0].id,
-            key: litterkeys[payload.key][0].key,
-            title: i18n.t('litter.' + payload.key + '.' + litterkeys[payload.key][0].key)
-        }
     },
 
     /**
-     * Change the currently selected item. Category -> item
+     * Change the currently selected item
+     *
+     * One category has many items
      */
     changeItem (state, payload)
     {
@@ -97,17 +88,17 @@ export const mutations = {
         let tags = {};
 
         categories.map(category => {
-            if (payload.hasOwnProperty(category.key) && payload[category.key])
+            if (payload.hasOwnProperty(category) && payload[category])
             {
-                litterkeys[category.key].map(item => {
+                litterkeys[category].map(item => {
 
-                    if (payload[category.key][item.key])
+                    if (payload[category][item.key])
                     {
                         tags = {
                             ...tags,
-                            [category.key]: {
-                                ...tags[category.key],
-                                [item.key]: payload[category.key][item.key]
+                            [category]: {
+                                ...tags[category],
+                                [item.key]: payload[category][item.key]
                             }
                         };
                     }

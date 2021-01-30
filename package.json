@@ -45,6 +45,7 @@
         "v-mask": "^2.2.3",
         "vue": "^2.6.11",
         "vue-chartjs": "^3.5.0",
+        "vue-click-outside": "^1.1.0",
         "vue-echo-laravel": "0.0.6",
         "vue-i18n": "^8.21.0",
         "vue-loading-overlay": "^3.3.3",

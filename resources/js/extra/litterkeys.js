@@ -1,4 +1,5 @@
 export const litterkeys = {
+    // todo - remove ID
     smoking: [
         { id: 0, key: 'butts' },            // Cigarette/Butts
         { id: 1, key: 'lighters' },         // Lighters

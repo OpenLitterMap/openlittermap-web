@@ -23,7 +23,6 @@ export default {
     name: 'Tags',
     props: ['admin'], // bool
     computed: {
-
         /**
          * Categories from the tags object the user has created
          */

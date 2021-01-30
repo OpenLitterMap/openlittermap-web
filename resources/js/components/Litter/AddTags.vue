@@ -3,16 +3,40 @@
 
         <!-- Categories -->
         <div class="select">
-            <select v-model="category">
-                <option v-for="cat in categories" :value="cat">{{ cat.title }}</option>
-            </select>
+            <vue-simple-suggest
+                ref="categories"
+                display-attribute="title"
+                value-attribute="key"
+                :filter-by-query="true"
+                :list="categories"
+                :min-length="0"
+                :max-suggestions="0"
+                mode="select"
+                :styles="autoCompleteStyle"
+                v-model="category"
+                @suggestion-click="onSuggestion()"
+                @focus="onFocusCategories()"
+                v-click-outside="clickOutsideCategory"
+            />
         </div>
 
         <!-- Items -->
         <div class="select">
-            <select v-model="item">
-                <option v-for="i in items" :value="i">{{ i.title }}</option>
-            </select>
+            <vue-simple-suggest
+                ref="items"
+                display-attribute="title"
+                value-attribute="key"
+                :filter-by-query="true"
+                :list="items"
+                :min-length="0"
+                :max-suggestions="0"
+                mode="select"
+                :styles="autoCompleteStyle"
+                v-model="item"
+                @suggestion-click="onSuggestion()"
+                @focus="onFocusItems()"
+                v-click-outside="clickOutsideItem"
+            />
         </div>
 
         <!-- Quantity -->
@@ -28,13 +52,16 @@
 
             <span>{{ $t('tags.recently-tags') }}</span>
 
-            <transition-group name="list" class="recently-tags" tag="div">
+            <transition-group name="list" class="recent-tags" tag="div">
                 <div
                     v-for="tag in recentTags"
                     :key="tag.item.key"
                     class="litter-tag"
                     @click="addRecentTag(tag)"
-                >{{ getTagName(tag.item.key, tag.category.key) }}</div>
+                >
+                    <p>{{ getCategoryName(tag.category.key) }}</p>
+                    <p>{{ getTagName(tag.item.key, tag.category.key) }}</p>
+                </div>
             </transition-group>
         </div>
 
@@ -83,10 +110,11 @@
 import Tags from './Tags';
 import Presence from './Presence';
 import ProfileDelete from './ProfileDelete';
-// import VueSimpleSuggest from 'vue-simple-suggest' todo
-// import 'vue-simple-suggest/dist/styles.css'
+import VueSimpleSuggest from 'vue-simple-suggest';
+import 'vue-simple-suggest/dist/styles.css';
 import { categories } from '../../extra/categories';
 import { litterkeys } from '../../extra/litterkeys';
+import ClickOutside from 'vue-click-outside';
 
 export default {
     name: 'AddTags',
@@ -94,6 +122,10 @@ export default {
         Tags,
         Presence,
         ProfileDelete,
+        VueSimpleSuggest
+    },
+    directives: {
+        ClickOutside
     },
     props: {
         'id': { type: Number, required: true },
@@ -105,24 +137,15 @@ export default {
             btn: 'button is-medium is-success',
             quantity: 1,
             processing: false,
-            integers: Array.from({ length: 100 }, (_, i) => i + 1)
+            integers: Array.from({ length: 100 }, (_, i) => i + 1),
+            autoCompleteStyle: {
+                vueSimpleSuggest: 'position-relative',
+                inputWrapper: '',
+                defaultInput : 'input',
+                suggestions: 'position-absolute list-group',
+                suggestItem: 'list-group-item'
+            },
         };
-    },
-    created ()
-    {
-        // We need to initialize with translated title
-        this.$store.commit('changeCategory', {
-            id: 11, // todo - drop this asnd use category.key only
-            key: 'smoking',
-            title: this.$i18n.t('litter.categories.smoking')
-        });
-
-        // We need to initialize with translated title
-        this.$store.commit('changeItem', {
-            id: 0,
-            key: 'butts',
-            title: this.$i18n.t('litter.smoking.butts')
-        });
     },
     computed: {
 
@@ -137,17 +160,21 @@ export default {
         /**
          * Get / Set the current category
          *
-         * @value { id: 0, key: 'category', title: 'Translated Category' };
+         * @value category (smoking)
          */
         category: {
-            get ()
-            {
-                return this.$store.state.litter.category;
+            get () {
+                return {
+                    key: this.$store.state.litter.category,
+                    title:  this.$i18n.t('litter.categories.' + this.$store.state.litter.category)
+                }
             },
-            set (cat)
-            {
-                this.$store.commit('changeCategory', cat);
-                this.quantity = 1;
+            set (cat) {
+                if (cat) {
+                    this.$store.commit('changeCategory', cat.key);
+                    this.$store.commit('changeItem', litterkeys[cat.key][0].key);
+                    this.quantity = 1;
+                }
             }
         },
 
@@ -156,12 +183,10 @@ export default {
          */
         categories ()
         {
-            return categories.map(cat =>
-            {
+            return categories.map(cat => {
                 return {
-                    id: cat.id,
-                    key: cat.key,
-                    title: this.$i18n.t('litter.categories.' + cat.key)
+                    key: cat,
+                    title: this.$i18n.t('litter.categories.' + cat)
                 };
             });
         },
@@ -196,13 +221,16 @@ export default {
          * Get / Set the current item (category -> item)
          */
         item: {
-            get ()
-            {
-                return this.$store.state.litter.item;
+            get () {
+                return {
+                    key: this.$store.state.litter.item,
+                    title: this.$i18n.t(`litter.${this.category.key}.${this.$store.state.litter.item}`)
+                }
             },
-            set (i)
-            {
-                this.$store.commit('changeItem', i);
+            set (i) {
+                if (i) {
+                    this.$store.commit('changeItem', i.key);
+                }
             }
         },
 
@@ -211,12 +239,10 @@ export default {
          */
         items ()
         {
-            return this.$store.state.litter.items.map(item =>
-            {
+            return litterkeys[this.category.key].map(item => {
                 return {
-                    id: item.id,
                     key: item.key,
-                    title: this.$i18n.t('litter.' + this.category.key + '.' + item.key )
+                    title: this.$i18n.t(`litter.${this.category.key}.${item.key}`)
                 };
             });
         },
@@ -277,12 +303,35 @@ export default {
             });
 
             this.quantity = 1;
-            // this.disabled = false
 
             this.$store.commit('addRecentTag', {
                 category: this.category,
                 item: this.item,
             });
+        },
+
+        /**
+         * When we click on the category input, the text is removed
+         *
+         * When we click outside, we reset it
+         */
+        clickOutsideCategory ()
+        {
+            this.$refs.categories.setText(
+                this.$i18n.t(`litter.categories.${this.category.key}`)
+            );
+        },
+
+        /**
+         * When we click on the category input, the text is removed
+         *
+         * When we click outside, we reset it
+         */
+        clickOutsideItem ()
+        {
+            this.$refs.items.setText(
+                this.$i18n.t(`litter.${this.category.key}.${this.$store.state.litter.item}`)
+            );
         },
 
         /**
@@ -302,6 +351,59 @@ export default {
         },
 
         /**
+         * Return translated category name for recent tags
+         */
+        getCategoryName (category)
+        {
+            return this.$i18n.t(`litter.categories.${category}`);
+        },
+
+        /**
+         * Return translated litter.key name for recent tags
+         */
+        getTagName (tag, category)
+        {
+            return this.$i18n.t(`litter.${category}.${tag}`);
+        },
+
+        /**
+         * The input field has been selected.
+         * Show all suggestions, not just those limited by text.
+         *
+         * Clear the input field to allow the user to begin typing
+         */
+        onFocusCategories ()
+        {
+            this.$refs.categories.suggestions = this.$refs.categories.list;
+            this.$refs.categories.setText('');
+        },
+
+        /**
+         * The input field has been selected.
+         * Show all suggestions, not just those limited by text.
+         *
+         * Clear the input field to allow the user to begin typing
+         */
+        onFocusItems ()
+        {
+            this.$refs.items.suggestions = this.$refs.items.list;
+            this.$refs.items.setText('');
+        },
+
+        /**
+         * Hacky solution. Waiting on fix. https://github.com/KazanExpress/vue-simple-suggest/issues/311
+         * An item has been selected from the list. Blur the input focus.
+         */
+        onSuggestion ()
+        {
+            this.$nextTick(function() {
+                Array.prototype.forEach.call(document.getElementsByClassName('input'), function(el) {
+                    el.blur();
+                });
+            });
+        },
+
+        /**
          * Submit the image for verification
          * litter/actions.js
          */
@@ -312,15 +414,7 @@ export default {
             await this.$store.dispatch('ADD_TAGS_TO_IMAGE');
 
             this.processing = false;
-        },
-
-        /**
-         *
-         */
-        getTagName (tag, category)
-        {
-            return this.$i18n.t(`litter.${category}.${tag}`);
-        },
+        }
     }
 };
 </script>
@@ -330,10 +424,6 @@ export default {
 
     .hide-br {
         display: none;
-    }
-
-    .suggest-item {
-        color: black;
     }
 
     @media (max-width: 500px)
@@ -358,12 +448,11 @@ export default {
         padding: 20px;
     }
 
-    .recently-tags {
+    .recent-tags {
         display: flex;
         max-width: 500px;
         margin: auto;
         flex-wrap: wrap;
-        max-height: 155px;
         overflow: auto;
     }
 
@@ -383,5 +472,6 @@ export default {
         opacity: 0;
         transform: translateX(30px);
     }
+
 
 </style>
