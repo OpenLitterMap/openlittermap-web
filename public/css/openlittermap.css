@@ -224,12 +224,20 @@ html {
 	display: none;
 }
 
+.suggest-item {
+    color: #363636 !important;
+}
+
 .vh100 {
     height: 100vh;
 }
 
 .vh65 {
     height: 65vh;
+}
+
+.vue-simple-suggest.designed .input-wrapper input {
+    color: #363636 !important;
 }
 
 .w100 {
