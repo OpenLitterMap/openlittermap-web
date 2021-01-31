@@ -111,6 +111,10 @@ html {
 	margin: auto;
 }
 
+.mb-05 {
+    margin-bottom: 0.5em;
+}
+
 .mb1 {
     margin-bottom: 1em !important;
 }

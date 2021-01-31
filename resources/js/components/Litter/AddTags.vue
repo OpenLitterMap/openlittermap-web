@@ -20,22 +20,22 @@
             />
         </div>
 
-        <!-- Items -->
+        <!-- Tags per category -->
         <div class="select">
             <vue-simple-suggest
-                ref="items"
+                ref="tags"
                 display-attribute="title"
                 value-attribute="key"
                 :filter-by-query="true"
-                :list="items"
+                :list="tags"
                 :min-length="0"
                 :max-suggestions="0"
                 mode="select"
                 :styles="autoCompleteStyle"
-                v-model="item"
+                v-model="tag"
                 @suggestion-click="onSuggestion()"
-                @focus="onFocusItems()"
-                v-click-outside="clickOutsideItem"
+                @focus="onFocusTags()"
+                v-click-outside="clickOutsideTag"
             />
         </div>
 
@@ -48,22 +48,21 @@
 
         <br><br>
 
-        <div v-if="recentTags.length > 0" class="mb-5">
+        <div v-if="Object.keys(recentTags).length > 0" class="mb-5">
 
-            <span>{{ $t('tags.recently-tags') }}</span>
+            <p class="mb-05">{{ $t('tags.recently-tags') }}</p>
 
-            <!--  Todo - Sort these by category -->
-            <transition-group name="list" class="recent-tags" tag="div">
-                <div
-                    v-for="tag in recentTags"
-                    :key="tag.item.key"
-                    class="litter-tag"
-                    @click="addRecentTag(tag)"
-                >
-                    <p>{{ getCategoryName(tag.category.key) }}</p>
-                    <p>{{ getTagName(tag.item.key, tag.category.key) }}</p>
-                </div>
-            </transition-group>
+            <div v-for="category in Object.keys(recentTags)">
+                <p>{{ getCategoryName(category) }}</p>
+                 <transition-group name="list" class="recent-tags" tag="div" :key="category">
+                        <div
+                            v-for="tag in Object.keys(recentTags[category])"
+                            class="litter-tag"
+                            :key="tag"
+                            @click="addRecentTag(category, tag)"
+                        ><p>{{ getTagName(category, tag) }}</p></div>
+                </transition-group>
+            </div>
         </div>
 
         <div>
@@ -88,8 +87,8 @@
         <br>
 
         <button
-            v-show="! admin"
-            :disabled="checkItems"
+            v-show="!admin"
+            :disabled="checkTags"
             :class="button"
             @click="submit"
         >{{ $t('common.submit') }}</button>
@@ -132,6 +131,13 @@ export default {
         'id': { type: Number, required: true },
         'admin': Boolean
     },
+    created ()
+    {
+        if (this.$localStorage.get('recentTags'))
+        {
+            this.$store.commit('initRecentTags', JSON.parse(this.$localStorage.get('recentTags')));
+        }
+    },
     data ()
     {
         return {
@@ -173,7 +179,7 @@ export default {
             set (cat) {
                 if (cat) {
                     this.$store.commit('changeCategory', cat.key);
-                    this.$store.commit('changeItem', litterkeys[cat.key][0].key);
+                    this.$store.commit('changeTag', litterkeys[cat.key][0].key);
                     this.quantity = 1;
                 }
             }
@@ -211,41 +217,11 @@ export default {
         /**
          * Disable button if true
          */
-        checkItems ()
+        checkTags ()
         {
             if (this.processing) return true;
 
             return Object.keys(this.$store.state.litter.tags).length === 0;
-        },
-
-        /**
-         * Get / Set the current item (category -> item)
-         */
-        item: {
-            get () {
-                return {
-                    key: this.$store.state.litter.item,
-                    title: this.$i18n.t(`litter.${this.category.key}.${this.$store.state.litter.item}`)
-                }
-            },
-            set (i) {
-                if (i) {
-                    this.$store.commit('changeItem', i.key);
-                }
-            }
-        },
-
-        /**
-         * Litter items for the selected category
-         */
-        items ()
-        {
-            return litterkeys[this.category.key].map(item => {
-                return {
-                    key: item.key,
-                    title: this.$i18n.t(`litter.${this.category.key}.${item.key}`)
-                };
-            });
         },
 
         /**
@@ -262,53 +238,92 @@ export default {
         recentTags ()
         {
             return this.$store.state.litter.recentTags;
-        }
+        },
+
+        /**
+         * Get / Set the current tag (category -> tag)
+         */
+        tag: {
+            get () {
+                return {
+                    key: this.$store.state.litter.tag,
+                    title: this.$i18n.t(`litter.${this.category.key}.${this.$store.state.litter.tag}`)
+                }
+            },
+            set (i) {
+                if (i) {
+                    this.$store.commit('changeTag', i.key);
+                }
+            }
+        },
+
+        /**
+         * Litter tags for the selected category
+         */
+        tags ()
+        {
+            return litterkeys[this.category.key].map(tag => {
+                return {
+                    key: tag.key,
+                    title: this.$i18n.t(`litter.${this.category.key}.${tag.key}`)
+                };
+            });
+        },
     },
     methods: {
 
         /**
-         * When a recent tag was applied, we update the category + item
+         * When a recent tag was applied, we update the category + tag
          *
-         * Todo - Persist this to local brower cache with this.$localStorage.set('recentTags', keys)
+         * Todo - Persist this to local browser cache with this.$localStorage.set('recentTags', keys)
+         * Todo - Click and hold recent tag to update this.category and this.tag
          * Todo - Allow the user to pick their top tags in Settings and load them on this page by default
-         * Todo - Click and hold recent tag to update this.category and this.item
+         *        (New - PopularTags, bottom-left)
          */
-        addRecentTag ({category, item})
+        addRecentTag (category, tag)
         {
             let quantity = 1;
 
-            if (this.$store.state.litter.tags.hasOwnProperty(category.key))
+            if (this.$store.state.litter.tags.hasOwnProperty(category))
             {
-                if (this.$store.state.litter.tags[category.key].hasOwnProperty(item.key))
+                if (this.$store.state.litter.tags[category].hasOwnProperty(tag))
                 {
-                    quantity = (this.$store.state.litter.tags[category.key][item.key] + 1);
+                    quantity = (this.$store.state.litter.tags[category][tag] + 1);
                 }
             }
 
             this.$store.commit('addTag', {
                 category,
-                item,
+                tag,
                 quantity
             });
         },
 
         /**
-         * Add data to the collection
+         * Add or increment a tag
+         *
+         * tags: {
+         *     smoking: {
+         *         butts: 1
+         *     }
+         * }
          */
         addTag ()
         {
             this.$store.commit('addTag', {
-                category: this.category,
-                item: this.item,
+                category: this.category.key,
+                tag: this.tag.key,
                 quantity: this.quantity,
             });
 
             this.quantity = 1;
 
             this.$store.commit('addRecentTag', {
-                category: this.category,
-                item: this.item,
+                category: this.category.key,
+                tag: this.tag.key,
             });
+
+            this.$localStorage.set('recentTags', JSON.stringify(this.recentTags));
         },
 
         /**
@@ -328,10 +343,10 @@ export default {
          *
          * When we click outside, we reset it
          */
-        clickOutsideItem ()
+        clickOutsideTag ()
         {
-            this.$refs.items.setText(
-                this.$i18n.t(`litter.${this.category.key}.${this.$store.state.litter.item}`)
+            this.$refs.tags.setText(
+                this.$i18n.t(`litter.${this.category.key}.${this.$store.state.litter.tag}`)
             );
         },
 
@@ -362,7 +377,7 @@ export default {
         /**
          * Return translated litter.key name for recent tags
          */
-        getTagName (tag, category)
+        getTagName (category, tag)
         {
             return this.$i18n.t(`litter.${category}.${tag}`);
         },
@@ -385,10 +400,10 @@ export default {
          *
          * Clear the input field to allow the user to begin typing
          */
-        onFocusItems ()
+        onFocusTags ()
         {
-            this.$refs.items.suggestions = this.$refs.items.list;
-            this.$refs.items.setText('');
+            this.$refs.tags.suggestions = this.$refs.tags.list;
+            this.$refs.tags.setText('');
         },
 
         /**

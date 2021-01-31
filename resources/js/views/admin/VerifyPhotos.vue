@@ -51,7 +51,7 @@
                         <Tags :admin="true" />
 
 						<div style="padding-top: 3em;">
-							<button class="button is-medium is-dark" @click="clearItems">Clear user input</button>
+							<button class="button is-medium is-dark" @click="clearTags">Clear user input</button>
 							<p>To undo this, just refresh the page</p>
 						</div>
 				  	</div>
@@ -202,9 +202,9 @@ export default {
 		/**
 		 * Reset the tags the user has submitted
 		 */
-		clearItems ()
+		clearTags ()
 		{
-			this.$store.commit('setAllItemsToZero');
+			this.$store.commit('setAllTagsToZero');
 		},
 
 		/**

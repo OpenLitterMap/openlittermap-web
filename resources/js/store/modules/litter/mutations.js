@@ -1,7 +1,7 @@
 import { categories } from '../../../extra/categories'
 import { litterkeys } from '../../../extra/litterkeys'
 import { init } from './init'
-import { MAX_RECENTLY_TAGS } from '../../../constants'
+// import { MAX_RECENTLY_TAGS } from '../../../constants'
 
 export const mutations = {
 
@@ -10,15 +10,17 @@ export const mutations = {
      */
     addRecentTag (state, payload)
     {
-        const tags = state.recentTags.length === MAX_RECENTLY_TAGS
-            ? state.recentTags.slice(1, MAX_RECENTLY_TAGS)
-            : state.recentTags;
+        let tags = Object.assign({}, state.recentTags);
 
-        const isTagExisted = tags.find(({ item }) => item.key === payload.item.key);
+        tags = {
+            ...tags,
+            [payload.category]: {
+                ...tags[payload.category],
+                [payload.tag]: 1 // quantity not important
+            }
+        }
 
-        if (isTagExisted) return;
-
-        state.recentTags = [...tags, payload];
+        state.recentTags = tags;
     },
 
     /**
@@ -40,9 +42,9 @@ export const mutations = {
 
         tags = {
             ...tags,
-            [payload.category.key]: {
-                ...tags[payload.category.key],
-                [payload.item.key]: payload.quantity
+            [payload.category]: {
+                ...tags[payload.category],
+                [payload.tag]: payload.quantity
             }
         };
 
@@ -70,13 +72,13 @@ export const mutations = {
     },
 
     /**
-     * Change the currently selected item
+     * Change the currently selected tag
      *
-     * One category has many items
+     * One category has many tags
      */
-    changeItem (state, payload)
+    changeTag (state, payload)
     {
-        state.item = payload;
+        state.tag = payload;
     },
 
     /**
@@ -116,6 +118,14 @@ export const mutations = {
     initPresence (state, payload)
     {
         state.presence = payload;
+    },
+
+    /**
+     * When AddTags is created, we check localStorage for the users recentTags
+     */
+    initRecentTags (state, payload)
+    {
+        state.recentTags = payload;
     },
 
     /**
@@ -187,7 +197,7 @@ export const mutations = {
      *
      * Admin @ reset
      */
-    setAllItemsToZero (state)
+    setAllTagsToZero (state)
     {
         let original_tags = Object.assign({}, state.tags);
 

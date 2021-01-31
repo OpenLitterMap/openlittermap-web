@@ -27,26 +27,43 @@
                     </h2>
 
                     <div class="columns">
-                        <!-- the info box, Left -->
+
+                        <!-- Todo - Put this into a component -->
+                        <!-- the Info box, Left -->
                         <div id="image-metadata" class="column">
                             <div class="box">
+
                                 <!-- Coordinates. was profile6 -->
                                 <p><strong>{{ $t('tags.coordinates') }}: </strong>{{ photo.lat }}, {{ photo.lon }}</p>
                                 <br>
+
                                 <!-- Full address. was profile7 -->
                                 <p><strong>{{ $t('tags.address') }}: </strong>{{ photo.display_name }}</p>
                                 <br>
+
                                 <!-- Presence button. was profile8 -->
                                 <div>
                                     <strong>{{ $t('tags.picked-up-title') }}</strong>
                                     <presence />
                                 </div>
                                 <br>
+
                                 <!-- Model of the device -->
                                 <p><strong>{{ $t('tags.device') }}: </strong>{{ photo.model }}</p>
                                 <br>
+
                                 <!-- Delete photo button -->
                                 <profile-delete :photoid="photo.id" />
+
+                                <!-- Clear recent tags -->
+                                <div v-show="hasRecentTags">
+                                    <br>
+                                    <p class="strong">Clear recent tags?</p>
+
+                                    <button
+                                        @click="clearRecentTags"
+                                    >Clear recent tags</button>
+                                </div>
                             </div>
                         </div> <!-- end info box -->
 
@@ -81,8 +98,6 @@
                             <add-tags :id="photo.id" />
                         </div>
                     </div>
-
-                    <br>
 
                     <!-- Previous, Next Image-->
                     <div class="column" style="text-align: center;">
@@ -164,6 +179,14 @@ export default {
         },
 
         /**
+         * Return true and show Clear Recent Tags button if the user has recent tags
+         */
+        hasRecentTags ()
+        {
+            return Object.keys(this.$store.state.litter.recentTags).length > 0;
+        },
+
+        /**
          * Paginated array of the users photos where verification = 0
          */
         photos ()
@@ -222,6 +245,16 @@ export default {
     },
 
     methods: {
+
+        /**
+         * Remove the users recent tags
+         */
+        clearRecentTags ()
+        {
+            this.$store.commit('initRecentTags', {});
+
+            this.$localStorage.remove('recentTags');
+        },
 
         /**
          * Todo - Dispatch request to delete an image
