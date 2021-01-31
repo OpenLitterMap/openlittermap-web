@@ -3,6 +3,10 @@
         <section class="hero is-link is-bold">
             <section class="section is-link is-bold">
 
+                <h3 class="title is-2 has-text-centered">Join us and share data!</h3>
+
+                <TotalCounts />
+
                 <!-- Global Leaderboard -->
                 <div class="container">
                     <h3 class="title is-2 has-text-centered">{{ $t('location.maps4') }}</h3>
@@ -48,64 +52,6 @@
                         </div>
                     </div>
 
-                    <div class="columns">
-                        <div class="column is-half is-offset-3">
-                            <div class="columns">
-                                <div class="column is-one-third">
-                                    <h1 class="subtitle is-5" style="color: black; text-align: center;">
-                                        <strong style="color:black;">
-                                            {{ $t('location.maps10') }}
-                                        </strong>
-                                    </h1>
-                                    <h1 class="title is-2" style="text-align: center;">
-                                        <strong>
-                                            <number
-                                                :from="previous_total_litter"
-                                                :to="total_litter"
-                                                :duration="3"
-                                                :delay="1"
-                                                easing="Power1.easeOut"
-                                                :format="commas"
-                                            />
-                                        </strong>
-                                    </h1>
-                                </div>
-
-                                <div class="column is-one-third">
-                                    <h1 class="subtitle is-5" style="color: black; text-align: center;">
-                                        <strong style="color: black;">
-                                            {{ $t('location.maps11') }}
-                                        </strong>
-                                    </h1>
-                                    <h1 class="title is-2" style="text-align: center;">
-                                        <strong>
-                                            <number
-                                                :from="previous_total_photos"
-                                                :to="total_photos"
-                                                :duration="3"
-                                                :delay="1"
-                                                easing="Power1.easeOut"
-                                                :format="commas"
-                                            />
-                                        </strong>
-                                    </h1>
-                                </div>
-
-                                <div class="column is-one-third">
-                                    <h1 class="subtitle is-5" style="color: black; text-align: center;">
-                                        <strong style="color: black;">
-                                            {{ $t('location.maps11a') }}
-                                        </strong>
-                                    </h1>
-                                    <h1 class="title is-2" style="text-align: center;">
-                                        <strong>
-                                            {{ this.littercoinPaid }}
-                                        </strong>
-                                    </h1>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </section>
         </section>
@@ -115,6 +61,7 @@
 </template>
 
 <script>
+import TotalCounts from '../../components/global/TotalCounts';
 import GlobalLeaders from '../../components/GlobalLeaders'
 import ProgressBar from '../../components/ProgressBar'
 import SortLocations from './SortLocations'
@@ -125,6 +72,7 @@ import 'vue-loading-overlay/dist/vue-loading.css'
 export default {
     name: 'Countries',
     components: {
+        TotalCounts,
         GlobalLeaders,
         ProgressBar,
         SortLocations,
@@ -156,42 +104,6 @@ export default {
         },
 
         /**
-         * The last total_litter the user has seen (saved in browser cache)
-         * Update to latest value once called
-         */
-        previous_total_litter ()
-        {
-            let prev_total = 0;
-
-            if (this.$localStorage.get('total_litter'))
-            {
-                prev_total = this.$localStorage.get('total_litter');
-            }
-
-            this.$localStorage.set('total_litter', this.total_litter);
-
-            return prev_total;
-        },
-
-        /**
-         * The last total_photos the user has seen (saved in browser cache)
-         * Update to latest value once called
-         */
-        previous_total_photos ()
-        {
-            let prev_photos = 0;
-
-            if (this.$localStorage.get('total_photos'))
-            {
-                prev_photos = this.$localStorage.get('total_photos');
-            }
-
-            this.$localStorage.set('total_photos', this.total_photos);
-
-            return prev_photos;
-        },
-
-        /**
          * The amount of XP we achieved at the current level
          */
         previousXp ()
@@ -218,25 +130,6 @@ export default {
         {
             return this.$store.state.locations.total_litter;
         },
-
-        /**
-         * The total number of verified photos all users have uploaded
-         */
-        total_photos ()
-        {
-            return this.$store.state.locations.total_photos;
-        }
-    },
-
-    methods: {
-
-        /**
-         * Format number value
-         */
-        commas (n)
-        {
-            return parseInt(n).toLocaleString();
-        }
     }
 }
 </script>
