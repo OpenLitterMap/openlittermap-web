@@ -1,5 +1,5 @@
 <template>
-    <div class="columns">
+    <div class="columns mb2">
         <div class="column is-half is-offset-3">
             <div class="columns">
                 <div class="column is-one-third">
@@ -11,10 +11,10 @@
                     <h1 class="title is-2" style="text-align: center;">
                         <strong>
                             <number
-                                :from="previous_total_litter"
+                                :from="this.prev_total"
                                 :to="total_litter"
                                 :duration="3"
-                                :delay="1"
+                                :delay="3"
                                 easing="Power1.easeOut"
                                 :format="commas"
                             />
@@ -62,24 +62,17 @@
 <script>
 export default {
     name: 'TotalCounts',
+    props: [
+        'prev_total'
+    ],
+    data ()
+    {
+        return {
+            littercoinPaid: '2,950' // hard-coded for now
+        };
+    },
     computed: {
-        /**
-         * The last total_litter the user has seen (saved in browser cache)
-         * Update to latest value once called
-         */
-        previous_total_litter ()
-        {
-            let prev_total = 0;
 
-            if (this.$localStorage.get('total_litter'))
-            {
-                prev_total = this.$localStorage.get('total_litter');
-            }
-
-            this.$localStorage.set('total_litter', this.total_litter);
-
-            return prev_total;
-        },
 
         /**
          * The last total_photos the user has seen (saved in browser cache)
