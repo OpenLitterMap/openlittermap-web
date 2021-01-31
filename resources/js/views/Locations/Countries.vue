@@ -6,6 +6,7 @@
                 <!-- Global Leaderboard -->
                 <div class="container">
                     <h3 class="title is-2 has-text-centered">{{ $t('location.maps4') }}</h3>
+<!--                    <h3 class="title is-2 has-text-centered">Join us and share data!</h3>-->
 
                     <loading v-if="loading" :active.sync="loading" :is-full-page="true" />
 
