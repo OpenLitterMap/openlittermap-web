@@ -140,7 +140,9 @@ export const actions = {
     {
         await axios.get('/user/profile/map', {
             params: {
-                period: payload
+                period: payload.period,
+                start: payload.start + ' 00:00:00',
+                end: payload.end + ' 23:59:59'
             }
         })
         .then(response => {

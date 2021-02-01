@@ -21,7 +21,7 @@
         <ProfileMap />
 
         <!-- Row 2, Column 3 -->
-        <ProfileAwards />
+        <ProfileCalendar />
 
         <!-- Row 3, Column 1 -->
         <ProfileDownload />
@@ -31,7 +31,7 @@
 
         <!-- Row 3, Column 3 -->
         <div class="profile-card">
-            <p>Coming soon - Locations added</p>
+            <p>Coming soon</p>
         </div>
     </section>
 </template>
@@ -42,7 +42,7 @@ import ProfileStats from '../../components/Profile/top/ProfileStats';
 import ProfileNextTarget from '../../components/Profile/top/ProfileNextTarget';
 import ProfileCategories from '../../components/Profile/middle/ProfileCategories';
 import ProfileMap from '../../components/Profile/middle/ProfileMap';
-import ProfileAwards from '../../components/Profile/middle/ProfileAwards';
+import ProfileCalendar from '../../components/Profile/middle/ProfileCalendar';
 import ProfileDownload from '../../components/Profile/bottom/ProfileDownload';
 import ProfileTimeSeries from '../../components/Profile/bottom/ProfileTimeSeries';
 
@@ -55,7 +55,7 @@ export default {
         ProfileNextTarget,
         ProfileCategories,
         ProfileMap,
-        ProfileAwards,
+        ProfileCalendar,
         ProfileDownload
     },
     async created ()

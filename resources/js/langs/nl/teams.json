@@ -7,8 +7,8 @@
         "month": "This month",
         "year": "This year",
         "all": "All time",
-        "created_at": "Uploaded at",
-        "datetime": "Taken at"
+        "created_at": "Geupload op",
+        "datetime": "Genomen op"
     },
     "create": {
         "fail": "There was an error creating your Team",

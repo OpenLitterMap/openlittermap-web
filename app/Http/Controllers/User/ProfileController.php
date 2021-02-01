@@ -56,23 +56,29 @@ class ProfileController extends Controller
 
     /**
      * Get the users data for the given time period
+     *
+     * Period created_at || datetime
+     *
+     * start null? yyyy-mm-dd
+     * end null? yyyy-mm-dd
      */
     public function geojson ()
     {
-        // period
-        if (request()->period === 'today') $period = now()->startOfDay();
-        else if (request()->period === 'week') $period = now()->startOfWeek();
-        else if (request()->period === 'month') $period = now()->startOfMonth();
-        else if (request()->period === 'year') $period = now()->startOfYear();
-        else if (request()->period === 'all') $period = '2017-01-01 00:00:00'; // Year OLM began
+        // we might need this again
+//        if (request()->period === 'today') $period = now()->startOfDay();
+//        else if (request()->period === 'week') $period = now()->startOfWeek();
+//        else if (request()->period === 'month') $period = now()->startOfMonth();
+//        else if (request()->period === 'year') $period = now()->startOfYear();
+//        else if (request()->period === 'all') $period = '2017-01-01 00:00:00'; // Year OLM began
 
         // Todo - Pre-cluster each users photos
-        $query = Photo::select('id', 'filename', 'datetime', 'lat', 'lon', 'model', 'result_string')
+        $query = Photo::select('id', 'filename', 'datetime', 'lat', 'lon', 'model', 'result_string', 'created_at')
             ->where([
                 ['user_id', auth()->user()->id],
                 'verified' => 2
             ])
-            ->whereDate('created_at', '>=', $period);
+            ->whereDate(request()->period, '>=', request()->start)
+            ->whereDate(request()->period, '<=', request()->end);
 
         // Note, we need a total_tags column as this does not contain brands
         // Note, we need to save this metadata into another table

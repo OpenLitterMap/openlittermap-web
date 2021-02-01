@@ -13,7 +13,7 @@
     </div>
 </template>
 
-<!-- NOTE: This very similar to TeamMap.vue - Maybe we can combine them? -->
+<!-- NOTE: This very similar to TeamMap.vue - We should combine them -->
 
 <script>
 import { LMap, LTileLayer, LMarker, LPopup } from 'vue2-leaflet';
@@ -34,7 +34,8 @@ export default {
     {
         this.attribution += new Date().getFullYear();
 
-        await this.$store.dispatch('GET_USERS_PROFILE_MAP_DATA', 'today');
+        // Todo - we need to add back a way to get data by string eg "today" or "this year", etc.
+        // await this.$store.dispatch('GET_USERS_PROFILE_MAP_DATA', 'today');
     },
     data ()
     {
@@ -79,7 +80,7 @@ export default {
                     z += i18n.t('litter.' + b[0]) + ': ' + b[1] + ' <br>';
                 });
 
-                return '<p style="margin-bottom: 5px;">' + z + ' </p><img src= "' + img + '" style="max-width: 100%;" /><p>Taken on ' + moment(date).format('LLL') + '</p>'
+                return '<p class="img-tag">' + z + ' </p><img src= "' + img + '" style="max-width: 100%;" /><p class="is-black">Taken on ' + moment(date).format('LLL') + '</p>'
             }
         }
     }
@@ -103,6 +104,11 @@ export default {
 
 .lealet-popup {
     left: -106px !important;
+}
+
+.img-tag {
+    margin-bottom: 5px;
+    color: black !important;
 }
 
 //@include media-breakpoint-down (sm)

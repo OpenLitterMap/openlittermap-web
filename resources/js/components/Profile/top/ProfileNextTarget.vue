@@ -7,30 +7,12 @@
         <p class="is-purp mb1">and you have <strong class="is-white">{{ currentXp }} xp</strong></p>
 
         <p class="is-purp mb2">You need <strong class="is-white">{{ neededXp }} xp</strong> to reach the next level.</p>
-
-        <!-- Change time period -->
-        <select v-model="period" @change="changePeriod" class="input" style="width: 10em;">
-            <option v-for="time in timePeriods" :value="time">{{ getPeriod(time) }}</option>
-        </select>
     </div>
 </template>
 
 <script>
 export default {
     name: 'ProfileNextTarget',
-    data ()
-    {
-        return {
-            period: 'today',
-            timePeriods: [
-                'today',
-                'week',
-                'month',
-                'year',
-                'all'
-            ],
-        };
-    },
     computed: {
 
         /**
@@ -64,27 +46,6 @@ export default {
         {
             return this.$store.state.user.user;
         }
-    },
-    methods: {
-
-        /**
-         * Get map data
-         */
-        async changePeriod ()
-        {
-            await this.$store.dispatch('GET_USERS_PROFILE_MAP_DATA', this.period);
-        },
-
-
-        /**
-         * Return translated time period
-         */
-        getPeriod (period)
-        {
-            if (! period) period = this.period;
-
-            return this.$t('teams.times.' + period)
-        },
     }
 };
 </script>
