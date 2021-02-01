@@ -1,6 +1,11 @@
 <template>
     <div class="profile-card" style="padding: 0 !important;">
-        <div class="profile-map-container">
+        <fullscreen ref="fullscreen" @change="fullscreenChange" class="profile-map-container">
+
+            <button class="btn-map-fullscreen" @click="toggle">
+                <i class="fa fa-expand" />
+            </button>
+
             <l-map :zoom="zoom" :center="center" :minZoom="1">
                 <l-tile-layer :url="url" :attribution="attribution" />
                 <v-marker-cluster v-if="geojson.length > 0">
@@ -9,7 +14,8 @@
                     </l-marker>
                 </v-marker-cluster>
             </l-map>
-        </div>
+
+        </fullscreen>
     </div>
 </template>
 
@@ -44,7 +50,8 @@ export default {
             center: L.latLng(0,0),
             url:'https://{s}.tile.osm.org/{z}/{x}/{y}.png',
             attribution:'Map Data &copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors, Litter data &copy OpenLitterMap & Contributors ',
-            loading: true
+            loading: true,
+            fullscreen: false
         };
     },
     computed: {
@@ -82,7 +89,26 @@ export default {
 
                 return '<p class="img-tag">' + z + ' </p><img src= "' + img + '" style="max-width: 100%;" /><p class="is-black">Taken on ' + moment(date).format('LLL') + '</p>'
             }
-        }
+        },
+
+
+        /**
+         *
+         */
+        fullscreenChange (fullscreen)
+        {
+            this.fullscreen = fullscreen
+        },
+
+        /**
+         *
+         */
+        toggle ()
+        {
+            this.$refs['fullscreen'].toggle() // recommended
+        },
+
+
     }
 };
 </script>
@@ -93,9 +119,17 @@ export default {
 
 //@import '../../../styles/variables.scss';
 
+.btn-map-fullscreen {
+    position: absolute;
+    top: 1em;
+    right: 1em;
+    z-index: 1234;
+}
+
 /* remove padding on mobile */
 .profile-map-container {
     height: 100%;
+    position: relative;
 }
 
 .leaflet-popup-content {
