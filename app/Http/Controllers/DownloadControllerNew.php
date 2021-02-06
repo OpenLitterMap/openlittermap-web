@@ -23,7 +23,17 @@ class DownloadControllerNew extends Controller
      */
     public function index (Request $request)
     {
-        $email = auth()->user()->email;
+        // If there is no user logged in, then use the email address in $request:
+        if(is_null(auth()->user()))
+        {
+            $email = $request->email;
+        }
+
+        // If the user is logged in, use their registered email address:
+        else
+        {
+            $email = auth()->user()->email;
+        }
 
         $x     = new \DateTime();
         $date  = $x->format('Y-m-d');

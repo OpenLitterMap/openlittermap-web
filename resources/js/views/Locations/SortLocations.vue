@@ -87,9 +87,8 @@
                                 Options
                             </a>
 
-                            <!-- Download (Auth only) -->
+                            <!-- Download -->
                             <a
-                                v-show="isAuth"
                                 @click="loadTab(index, 'download')" :class="tabClass('download')">
                                 {{ $t('location.maps19') }}
                             </a>

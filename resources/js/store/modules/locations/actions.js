@@ -15,7 +15,8 @@ export const actions = {
 
         await axios.post('download', {
             type: payload.type,
-            locationId: payload.locationId
+            locationId: payload.locationId,
+            email: payload.email
         })
         .then(response => {
             console.log('download_data', response);
