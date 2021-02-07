@@ -1,33 +1,33 @@
 {
-    "title": "Welcome to OpenLitterMap Teams!",
-    "created": "Congratulations! Your new team has been created.",
+    "title": "Welkom bij de OpenLitterMap Teams!",
+    "created": "Gefeliciteerd! Je nieuwe team is aangemaakt.",
     "times": {
-        "today": "Today",
-        "week": "This week",
-        "month": "This month",
-        "year": "This year",
-        "all": "All time",
+        "today": "Vandaag",
+        "week": "Deze week",
+        "month": "Deze maand",
+        "year": "Dit jaar",
+        "all": "Alle tijden",
         "created_at": "Geupload op",
         "datetime": "Genomen op"
     },
     "create": {
-        "fail": "There was an error creating your Team",
-        "max-created": "You are not allowed to create any more teams."
+        "fail": "Er ging iets mis bij het aanmaken van jouw Team",
+        "max-created": "Het maximum aantal teams dat je kunt aanmaken is bereikt."
     },
     "settings": {
         "maps": {
-            "team-map": "Team Map",
-            "name-will-appear": "Your name will appear on the maps",
-            "username-will-appear": "Your username will appear on the maps",
-            "will-not-appear": "Your name and username will not appear on the maps"
+            "team-map": "Team Plattegrond",
+            "name-will-appear": "Jouw naam zal verschijnen op de plattegrond",
+            "username-will-appear": "Jouw gebruikersnaam zal verschijnen op de plattegrond",
+            "will-not-appear": "Jouw naam en gebruikersnaam zullen niet op de plattegrond verschijnen"
         },
         "leaderboards": {
-            "team-leaderboard": "Team Leaderboard",
-            "name-will-appear": "Your name will appear on the leaderboards",
-            "username-will-appear": "Your username will appear on the leaderboards",
-            "will-not-appear": "Your name and username will not appear on the leaderboards"
+            "team-leaderboard": "Team Leiderbord",
+            "name-will-appear": "Jouw naam zal verschijen op het leiderbord",
+            "username-will-appear": "Jouw gebruikersnaam zal verschijen op het leiderbord",
+            "will-not-appear": "Jouw naam en gebruikersnaam zullen niet op het leiderbord verschijnen"
         },
-        "submit-one-team": "Save for this Team",
-        "apply-all-teams": "Apply for all Teams"
+        "submit-one-team": "Opslaan voor dit Team",
+        "apply-all-teams": "Toepassen voor alle Teams"
     }
 }
