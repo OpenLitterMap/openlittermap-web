@@ -264,7 +264,7 @@ export default {
         .foot {
             padding: 2em;
             background-image: radial-gradient(circle at 1% 1%,#328bf2,#1644ad);
-            height: 205vh;
+            height: 220vh;
             position: relative;
         }
 
