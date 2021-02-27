@@ -39,9 +39,14 @@ var map;
 var markers;
 var prevZoom = MIN_ZOOM;
 
-const single_icon = L.icon({
+const green_dot = L.icon({
     iconUrl: './images/vendor/leaflet/dist/dot.png',
     iconSize: [10, 10]
+});
+
+const grey_dot = L.icon({
+    iconUrl: './images/vendor/leaflet/dist/grey-dot.jpg',
+    iconSize: [13, 10]
 });
 
 /**
@@ -49,7 +54,12 @@ const single_icon = L.icon({
  */
 function createClusterIcon (feature, latlng)
 {
-    if (! feature.properties.cluster) return L.marker(latlng, { icon: single_icon });
+    if (! feature.properties.cluster)
+    {
+        return feature.properties.verified === 2
+            ? L.marker(latlng, { icon: green_dot })
+            : L.marker(latlng, { icon: grey_dot });
+    }
 
     let count = feature.properties.point_count;
     let size = count < MEDIUM_CLUSTER_SIZE ? 'small' : count < LARGE_CLUSTER_SIZE ? 'medium' : 'large';
@@ -74,15 +84,26 @@ function onEachFeature (feature, layer)
 {
     if (! feature.properties.cluster)
     {
-        let a = feature.properties.result_string.split(',');
-        a.pop();
-
         let z = '';
-        a.forEach(i => {
-            let b = i.split(' ');
 
-            z += i18n.t('litter.' + b[0]) + ': ' + b[1] + ' ';
-        });
+        if (feature.properties.result_string)
+        {
+            let a = '';
+
+            a = feature.properties.result_string.split(',');
+
+            a.pop();
+
+            a.forEach(i => {
+                let b = i.split(' ');
+
+                z += i18n.t('litter.' + b[0]) + ': ' + b[1] + ' ';
+            });
+        }
+        else
+        {
+            z = i18n.t('litter.not-verified');
+        }
 
         layer.bindPopup(
             '<p class="mb5p">' + z + ' </p>'
@@ -138,6 +159,7 @@ async function update ()
             console.error('get_clusters.update', error);
         });
     }
+    // otherwise, get point data
     else
     {
         await axios.get('global-points', {

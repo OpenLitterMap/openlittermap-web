@@ -6,7 +6,7 @@ use GeoHash;
 use App\Models\Photo;
 use App\Traits\GeohashTrait;
 
-trait FilterPhotosByGeohashTrait
+trait FilterPhotosByGeoHashTrait
 {
     use GeohashTrait;
 
@@ -47,7 +47,6 @@ trait FilterPhotosByGeohashTrait
             foreach ($geos as $geo)
             {
                 $q->orWhere([
-                    'verified' => 2,
                     ['geohash', 'like', $geo . '%'] // starts with
                 ]);
             }

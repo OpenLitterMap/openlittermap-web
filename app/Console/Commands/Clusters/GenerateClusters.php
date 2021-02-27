@@ -39,6 +39,7 @@ class GenerateClusters extends Command
     /**
      * Generate Clusters for All Photos
      *
+     * Todo - Load photos as geojson without looping over them and inserting into another array
      * Todo - Append to file instead of re-writing it
      * Todo - Split file into multiple files
      * Todo - Find a way to update clusters instead of deleting all and re-writing all every time..
@@ -47,10 +48,12 @@ class GenerateClusters extends Command
     public function handle()
     {
         // 100,000 photos and growing...
-        $photos = Photo::select('lat', 'lon')
-            ->where('verified', 2)
-            // ->whereDate('created_at', '>', '2020-10-01 00:00:00') // for testing smaller amounts of data
-            ->get();
+        // ->whereDate('created_at', '>', '2020-10-01 00:00:00') // for testing smaller amounts of data
+
+        // begin timer
+        $start = microtime(true);
+
+        $photos = Photo::select('lat', 'lon')->get();
 
         echo "size of photos " . sizeof($photos) . "\n";
 
@@ -72,8 +75,6 @@ class GenerateClusters extends Command
         unset($photos); // free up memory
 
         $features = json_encode($features, JSON_NUMERIC_CHECK);
-
-        echo gettype($features)  . "\n";;
 
         Storage::put('/data/features.json', $features);
 
@@ -117,5 +118,9 @@ class GenerateClusters extends Command
         }
 
         // Remove "compiling data" from global map
+
+        // end timer
+        $finish = microtime(true);
+        echo "Total Time: " . ($finish - $start) . "\n";
     }
 }

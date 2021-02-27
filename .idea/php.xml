@@ -170,6 +170,7 @@
       <path value="$PROJECT_DIR$/vendor/pragmarx/firewall" />
       <path value="$PROJECT_DIR$/vendor/pragmarx/support" />
       <path value="$PROJECT_DIR$/vendor/ezyang/htmlpurifier" />
+      <path value="$PROJECT_DIR$/vendor/paragonie/constant_time_encoding" />
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="7.2" />

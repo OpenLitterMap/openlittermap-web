@@ -225,5 +225,7 @@
     "presence": {
         "picked-up": "I picked it up!",
         "still-there": "It's still there."
-    }
+    },
+    "no-tags": "No Tags",
+    "not-verified": "Awaiting verification"
 }

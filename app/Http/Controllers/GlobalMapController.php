@@ -2,22 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use GeoHash;
-use App\Models\Photo;
-
 use Illuminate\Http\Request;
-use App\Traits\FilterPhotosByGeohashTrait;
+use App\Traits\FilterPhotosByGeoHashTrait;
 
 class GlobalMapController extends Controller
 {
-    use FilterPhotosByGeohashTrait;
+    use FilterPhotosByGeoHashTrait;
 
     /**
      * Get photos point data at zoom levels 16 or above
      *
      * Todo - Load unverified images + change image to grey/unverified when verification !== 2
+     *
+     * @return array
      */
-    public function index ()
+    public function index (): array
     {
         $photos = $this->filterPhotosByGeoHash(request()->zoom, request()->bbox)->get();
 
@@ -39,10 +38,11 @@ class GlobalMapController extends Controller
                     'coordinates' => [$photo->lon, $photo->lat]
                 ],
                 'properties' => [
-                    'result_string' => $photo->result_string,
-                    'filename' => $photo->filename,
+                    'result_string' => $photo->verified === 2 ? $photo->result_string : null,
+                    'filename' => $photo->verified === 2 ? $photo->filename : '/assets/images/waiting.png',
                     'datetime' => $photo->datetime,
-                    'cluster'  => false
+                    'cluster'  => false,
+                    'verified' => $photo->verified
                 ]
             ];
 

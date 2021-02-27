@@ -24,7 +24,6 @@ class ClusterController extends Controller
         {
             $clusters = $this->filterClustersByGeoHash(request()->zoom, request()->bbox)->get();
         }
-
         else
         {
             // If the zoom is 2,3,4 -> get all clusters for this zoom level

@@ -224,5 +224,7 @@
     "presence": {
         "picked-up": "Ik heb het opgeruimd!",
         "still-there": "Het ligt er nog."
-    }
+    },
+    "no-tags": "No tags",
+    "not-verified": "In afwachting van verificatie"
 }
