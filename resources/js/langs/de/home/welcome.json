@@ -1,5 +1,5 @@
 {
-    "plastic-pollution-out-of-control": "Todo - Spanish",
+    "plastic-pollution-out-of-control": "Plastic pollution is out of control",
     "help-us": "Help us create the world's most advanced open database on litter, brands & plastic pollution",
     "why-collect-data": "Why should we collect data",
     "visibility": "Visibility",
@@ -14,5 +14,7 @@
     "tag-the-litter": "Tag the litter",
     "tag-litter-you-see": "Just tag what litter you see in the photo. You can tag if the litter has been picked up or if it's still there",
     "share-results": "Share your results",
-    "share": "Share the maps or download our data. Let's show everyone how badly polluted the world really is"
+    "share": "Share the maps or download our data. Let's show everyone how badly polluted the world really is",
+    "verified": "Your email has been confirmed! You can now log in.",
+    "close": "Close"
 }
