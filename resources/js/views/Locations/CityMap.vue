@@ -21,13 +21,10 @@ var smokingGroup;
 var foodGroup;
 var coffeeGroup;
 var alcoholGroup;
-// var drugsGroup;
 var softdrinksGroup;
 var sanitaryGroup;
 var otherGroup;
 var coastalGroup;
-// var pathwayGroup;
-// var artGroup;
 var brandsGroup;
 var dogshitGroup;
 var dumpingGroup;
@@ -210,18 +207,14 @@ export default {
         foodGroup = new L.LayerGroup();
         coffeeGroup = new L.LayerGroup();
         alcoholGroup = new L.LayerGroup();
-        // drugsGroup = new L.LayerGroup();
         softdrinksGroup = new L.LayerGroup().addTo(map);
         sanitaryGroup = new L.LayerGroup();
         otherGroup = new L.LayerGroup();
         coastalGroup = new L.LayerGroup();
-        // pathwayGroup = new L.LayerGroup();
-        // artGroup = new L.LayerGroup();
         brandsGroup = new L.LayerGroup();
         dogshitGroup = new L.LayerGroup();
         dumpingGroup = new L.LayerGroup();
         industrialGroup = new L.LayerGroup();
-        // trashdogGroup = new L.LayerGroup();
 
         /** 7. Loop over geojson data and add to groups */
         this.addDataToLayerGroups();
@@ -229,21 +222,17 @@ export default {
         /** 8. Create overlays toggle menu */
         let overlays = {
             Alcohol: alcoholGroup,
-            // Art: artGroup,
             Brands: brandsGroup,
             Coastal: coastalGroup,
             Coffee: coffeeGroup,
             Dumping: dumpingGroup,
-            // Drugs: drugsGroup,
             Food: foodGroup,
             Industrial: industrialGroup,
             Other: otherGroup,
-            // Pathway: pathwayGroup,
             PetSurprise: dogshitGroup,
             Sanitary: sanitaryGroup,
             Smoking: smokingGroup,
             SoftDrinks: softdrinksGroup,
-            // TrashDog: trashdogGroup
         };
 
         /** 9- Add null basemaps and overlays to the map */
@@ -330,7 +319,8 @@ export default {
                 coastal: coastalGroup,
                 brands: brandsGroup,
                 dogshit: dogshitGroup,
-                industrial: industrialGroup
+                industrial: industrialGroup,
+                dumping: dumpingGroup
             };
 
             this.geojson.features.map(i => {
@@ -345,18 +335,18 @@ export default {
                 // Dynamically add items to the groups + add markers
                 categories.map(category => {
 
-                    if (i.properties[category.key])
+                    if (i.properties[category])
                     {
                         let string = '';
 
-                        litterkeys[category.key].map(item => {
+                        litterkeys[category].map(item => {
 
-                            if (i.properties[category.key][item.key])
+                            if (i.properties[category][item.key])
                             {
-                                string += this.$t('litter.'+[category.key]+'.'+[item.key]) + ': ' + i.properties[category.key][item.key] + ' <br>';
+                                string += this.$t('litter.'+[category]+'.'+[item.key]) + ': ' + i.properties[category][item.key] + ' <br>';
 
                                 L.marker([i.properties.lat, i.properties.lon])
-                                    .addTo(groups[category.key])
+                                    .addTo(groups[category])
                                     .bindPopup(string
                                         + '<img class="lim" src="'+ i.properties.filename + '"/>'
                                         + '<p>' + this.$t('locations.cityVueMap.taken-on') + ' ' + moment(i.properties.datetime).format('LLL') + ' ' + this.$t('locations.cityVueMap.with-a') + ' ' + i.properties.model + '</p>'
