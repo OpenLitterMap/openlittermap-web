@@ -13,6 +13,7 @@ import moment from 'moment'
 
 import { categories } from '../../extra/categories'
 import { litterkeys } from '../../extra/litterkeys'
+import {MIN_ZOOM} from '../../constants';
 
 var info;
 var hexFiltered;
@@ -117,7 +118,10 @@ export default {
         /** 1. Create map object */
         const map = L.map(this.$refs.map, {
             center: this.$store.state.citymap.center, // center_map,
-            zoom: this.$store.state.citymap.zoom
+            zoom: this.$store.state.citymap.zoom,
+            scrollWheelZoom: false,
+            smoothWheelZoom: true,
+            smoothSensitivity: 1,
         });
 
         /** 2. Add attribution to the map */
