@@ -180,30 +180,31 @@ export const litterkeys = {
         { id: 30, key: 'nescafe' },          // Nescafe
         { id: 31, key: 'nestle' },           // Nestle
         { id: 32, key: 'marlboro' },         // Marlboro
-        { id: 33, key: 'mcdonalds' },        // McDonalds
-        { id: 34, key: 'nike' },             // Nike
-        { id: 35, key: 'obriens' },          // O-Briens
-        { id: 36, key: 'pepsi' },            // Pepsi
-        { id: 37, key: 'powerade' },         // Powerade
-        { id: 38, key: 'redbull' },          // Redbull
-        { id: 39, key: 'ribena' },           // Ribena
-        { id: 40, key: 'samsung' },          // Samsung
-        { id: 41, key: 'sainsburys' },       // Sainsburys
-        { id: 42, key: 'spar' },             // Spar
-        { id: 43, key: 'stella' },           // Stella
-        { id: 44, key: 'subway' },           // Subway
-        { id: 45, key: 'supermacs' },        // Supermacs
-        { id: 46, key: 'supervalu' },        // Supervalu
-        { id: 47, key: 'starbucks' },        // Starbucks
-        { id: 48, key: 'tayto' },            // Tayto
-        { id: 49, key: 'tesco' },            // Tesco
-        { id: 50, key: 'thins' },            // Thins
-        { id: 51, key: 'volvic' },           // Volvic
-        { id: 52, key: 'waitrose' },         // Waitrose
-        { id: 53, key: 'walkers' },          // Walkers
-        { id: 54, key: 'woolworths' },       // Woolworths
-        { id: 55, key: 'wilde_and_greene' }, // Wilde-and-Greene
-        { id: 56, key: 'wrigleys' },         // Wrigley
+        { id: 33, key: 'mars' },             // Mars
+        { id: 34, key: 'mcdonalds' },        // McDonalds
+        { id: 35, key: 'nike' },             // Nike
+        { id: 36, key: 'obriens' },          // O-Briens
+        { id: 37, key: 'pepsi' },            // Pepsi
+        { id: 38, key: 'powerade' },         // Powerade
+        { id: 39, key: 'redbull' },          // Redbull
+        { id: 40, key: 'ribena' },           // Ribena
+        { id: 41, key: 'samsung' },          // Samsung
+        { id: 42, key: 'sainsburys' },       // Sainsburys
+        { id: 43, key: 'spar' },             // Spar
+        { id: 44, key: 'stella' },           // Stella
+        { id: 45, key: 'subway' },           // Subway
+        { id: 46, key: 'supermacs' },        // Supermacs
+        { id: 47, key: 'supervalu' },        // Supervalu
+        { id: 48, key: 'starbucks' },        // Starbucks
+        { id: 49, key: 'tayto' },            // Tayto
+        { id: 50, key: 'tesco' },            // Tesco
+        { id: 51, key: 'thins' },            // Thins
+        { id: 52, key: 'volvic' },           // Volvic
+        { id: 53, key: 'waitrose' },         // Waitrose
+        { id: 54, key: 'walkers' },          // Walkers
+        { id: 55, key: 'woolworths' },       // Woolworths
+        { id: 56, key: 'wilde_and_greene' }, // Wilde-and-Greene
+        { id: 57, key: 'wrigleys' },         // Wrigley
     ],
     trashdog: [
         { id: 0, key: 'trashdog' }, // TrashDog
