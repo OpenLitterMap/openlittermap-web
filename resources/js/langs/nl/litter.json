@@ -1,6 +1,6 @@
 {
     "categories": {
-        "alcohol": "Alkohol",
+        "alcohol": "Alcohol",
         "art": "Kunst",
         "brands": "Merken",
         "coastal": "Kust",
@@ -8,10 +8,10 @@
         "dumping": "Lozingen",
         "food": "Voedsel",
         "industrial": "Industrieel",
-        "other": "Ander",
         "sanitary": "Hygiëne",
         "softdrinks": "Frisdrank",
-        "smoking": "Rookwaar"
+        "smoking": "Rookwaar",
+        "other": "Overig"
     },
     "smoking": {
         "butts": "Sigaretten/Peuken",
@@ -22,9 +22,9 @@
         "smoking_plastic": "Sigarettenpakplastic",
         "filters": "Filters",
         "filterbox": "Filterverpakking",
-        "smokingOther": "Rookwaar-Overig",
         "vape_pen": "Vape pen",
-        "vape_oil": "Vape olie"
+        "vape_oil": "Vape olie",
+        "smokingOther": "Rookwaar-Overig"
     },
     "alcohol": {
         "beerBottle": "Bier Flessen",
@@ -35,10 +35,10 @@
         "bottleTops": "Bierfles Doppen",
         "paperCardAlcoholPackaging": "Papieren Verpakking",
         "plasticAlcoholPackaging": "Plastic Verpakking",
-        "alcoholOther": "Alkohol-Overig",
         "pint": "Bierglas",
         "six_pack_rings": "Six-pack keelclips",
-        "alcohol_plastic_cups": "Plastic Bekers"
+        "alcohol_plastic_cups": "Plastic Bekers",
+        "alcoholOther": "Alcohol-Overig"
     },
     "coffee": {
         "coffeeCups": "Koffie Bekers",
@@ -57,8 +57,8 @@
         "sauce_packet": "Saus Bakjes",
         "glass_jar": "Glazen Pot",
         "glass_jar_lid": "Glazen Pot Deksel",
-        "foodOther": "Voedsel-Overig",
-        "aluminium_foil": "Aluminium folie"
+        "aluminium_foil": "Aluminium folie",
+        "foodOther": "Voedsel-Overig"
     },
     "softdrinks": {
         "waterBottle": "Plastic Water Fles",
@@ -82,7 +82,7 @@
         "pullring": "Blik Lipje",
         "strawpacket": "Rietjes Verpakking",
         "styro_cup": "Piepschuim Beker",
-        "softDrinkOther": "Frisdrank (overig)"
+        "softDrinkOther": "Frisdrank-Overig"
     },
     "sanitary": {
         "gloves": "Handschoenen",
@@ -95,7 +95,7 @@
         "tooth_pick": "Tandenstoker",
         "tooth_brush": "Tandenborstel",
         "wetwipes": "Natte Doekjes",
-        "sanitaryOther": "Hygiëne (overig)"
+        "sanitaryOther": "Hygiëne-Overig"
     },
     "other": {
         "dogshit": "Hondendrol",
@@ -120,9 +120,9 @@
         "batteries": "Batterijen",
         "elec_small": "Elektrisch klein",
         "elec_large": "Elektrisch groot",
-        "other": "Overig (Overig)",
         "random_litter": "Willekeurig afval",
-        "balloons": "Ballonnen"
+        "balloons": "Ballonnen",
+        "other": "Overig-Overig"
     },
     "dumping": {
         "small": "Klein",
@@ -135,7 +135,7 @@
         "chemical": "Chemicaliën",
         "bricks": "Stenen",
         "tape": "Plakband",
-        "industrial_other": "Overig"
+        "industrial_other": "Industrieel-Overig"
     },
     "coastal": {
         "microplastics": "Microplastic",
@@ -156,7 +156,7 @@
         "styro_small": "Piepschuim klein",
         "styro_medium": "Piepschuim middel",
         "styro_large": "Piepschuim groot",
-        "coastal_other": "Kust (overig)"
+        "coastal_other": "Kust-Overig"
     },
     "brands": {
         "adidas": "Adidas",
@@ -196,7 +196,7 @@
         "fritolay": "Frito-Lay",
         "gatorade": "Gatorade",
         "gillette": "Gillette",
-        "guinnes": "Guinness",
+        "guinness": "Guinness",
         "haribo": "Haribo",
         "heineken": "Heineken",
         "insomnia": "Insomnia",

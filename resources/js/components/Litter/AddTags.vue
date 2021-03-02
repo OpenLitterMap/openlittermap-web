@@ -264,8 +264,8 @@ export default {
         {
             return litterkeys[this.category.key].map(tag => {
                 return {
-                    key: tag.key,
-                    title: this.$i18n.t(`litter.${this.category.key}.${tag.key}`)
+                    key: tag,
+                    title: this.$i18n.t(`litter.${this.category.key}.${tag}`)
                 };
             });
         },
@@ -312,15 +312,15 @@ export default {
         {
             this.$store.commit('addTag', {
                 category: this.category.key,
-                tag: this.tag.key,
-                quantity: this.quantity,
+                tag: this.tag,
+                quantity: this.quantity
             });
 
             this.quantity = 1;
 
             this.$store.commit('addRecentTag', {
                 category: this.category.key,
-                tag: this.tag.key,
+                tag: this.tag
             });
 
             this.$localStorage.set('recentTags', JSON.stringify(this.recentTags));
