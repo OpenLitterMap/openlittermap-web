@@ -12,7 +12,9 @@ use Illuminate\Support\Facades\Auth;
 class WebPhotosController extends Controller
 {
     /**
+     * Get the total number of photos to tag that were uploaded via web
      *
+     * And get the first 10 photos to tag
      */
     public function index ()
     {
@@ -23,15 +25,15 @@ class WebPhotosController extends Controller
             'verification' => 0
         ]);
 
-        $photo = null;
+        $photos = null;
 
         $count = $query->count();
 
-        if ($count > 0) $photo = $query->select('id', 'filename')->first();
+        if ($count > 0) $photos = $query->select('id', 'filename')->take(10)->get();
 
         return [
             'count' => $count,
-            'photo' => $photo
+            'photos' => $photos
         ];
     }
 }
