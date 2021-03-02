@@ -9,9 +9,9 @@ export const litterkeys = {
         { id: 5, key: 'smoking_plastic' },  // Plastic Packaging
         { id: 6, key: 'filters' },          // Filters
         { id: 7, key: 'filterbox' },        // Filter Box
-        { id: 8, key: 'smokingOther' },     // Smoking-Other
-        { id: 9, key: 'vape_pen' },         // Vape pen
-        { id: 10, key: 'vape_oil' },        // Vape oil
+        { id: 8, key: 'vape_pen' },         // Vape pen
+        { id: 9, key: 'vape_oil' },        // Vape oil
+        { id: 10, key: 'smokingOther' }     // Smoking-Other
     ],
     alcohol: [
         { id: 0, key: 'beerBottle' },                // Beer Bottles
@@ -22,10 +22,10 @@ export const litterkeys = {
         { id: 5, key: 'bottleTops' },                // Beer bottle tops
         { id: 6, key: 'paperCardAlcoholPackaging' }, // Paper Packaging
         { id: 7, key: 'plasticAlcoholPackaging' },   // Plastic Packaging
-        { id: 8, key: 'alcoholOther' },              // Alcohol-Other
-        { id: 9, key: 'pint' },                      // Pint Glass
-        { id: 10, key: 'six_pack_rings' },           // Six-pack rings
-        { id: 11, key: 'alcohol_plastic_cups' }      // Plastic Cups
+        { id: 8, key: 'pint' },                      // Pint Glass
+        { id: 9, key: 'six_pack_rings' },           // Six-pack rings
+        { id: 10, key: 'alcohol_plastic_cups' },      // Plastic Cups
+        { id: 11, key: 'alcoholOther' }              // Alcohol-Other
     ],
     coffee: [
         { id: 0, key: 'coffeeCups' }, // Coffee Cups
@@ -44,8 +44,8 @@ export const litterkeys = {
         { id: 8, key: 'sauce_packet' },         // Sauce Packet
         { id: 9, key: 'glass_jar' },            // Glass Jar
         { id: 10, key: 'glass_jar_lid' },       // Glass Jar Lid
-        { id: 11, key: 'foodOther' },           // Food-other
-        { id: 12, key: 'aluminium_foil' }       // Aluminium Foil
+        { id: 11, key: 'aluminium_foil' },       // Aluminium Foil
+        { id: 12, key: 'foodOther' }           // Food-other
     ],
     softdrinks: [
         { id: 0, key: 'waterBottle' },      // Plastic Water bottle
@@ -82,8 +82,8 @@ export const litterkeys = {
         { id: 7, key: 'tooth_pick' },   // Tooth Pick
         { id: 8, key: 'tooth_brush' },  // Tooth Brush
         { id: 9, key: 'wetwipes' },     // Wet Wipes
-        { id: 10, key: 'sanitaryOther' }, // Sanitary (other)
-        { id: 11, key: 'hand_sanitiser' }, // Hand Sanitiser
+        { id: 10, key: 'hand_sanitiser' }, // Hand Sanitiser
+        { id: 11, key: 'sanitaryOther' } // Sanitary (other)
     ],
     other: [
         { id: 0, key: 'dogshit' },          // Pet Surprise
@@ -108,9 +108,9 @@ export const litterkeys = {
         { id: 19, key: 'batteries' },        // Batteries
         { id: 20, key: 'elec_small' },       // Electric small
         { id: 21, key: 'elec_large' },       // Electric large
-        { id: 22, key: 'other' },            // Other (other)
-        { id: 23, key: 'random_litter' },    // Random Litter,
-        { id: 24, key: 'balloons' }          // Balloons
+        { id: 22, key: 'random_litter' },    // Random Litter,
+        { id: 23, key: 'balloons' },          // Balloons
+        { id: 24, key: 'other' }            // Other (other)
     ],
     dumping: [
         { id: 0, key: 'small' },  // Small

@@ -8,10 +8,10 @@
         "dumping": "Dumping",
         "food": "Food",
         "industrial": "Industrial",
-        "other": "Other",
         "sanitary": "Sanitary",
         "softdrinks": "Soft Drinks",
-        "smoking": "Smoking"
+        "smoking": "Smoking",
+        "other": "Other"
     },
     "smoking": {
         "butts": "Cigarettes/Butts",
@@ -22,9 +22,9 @@
         "smoking_plastic": "Plastic Packaging",
         "filters": "Filters",
         "filterbox": "Filter Box",
-        "smokingOther": "Smoking-Other",
         "vape_pen": "Vape pen",
-        "vape_oil": "Vape oil"
+        "vape_oil": "Vape oil",
+        "smokingOther": "Smoking-Other"
     },
     "alcohol": {
         "beerBottle": "Beer Bottles",
@@ -35,10 +35,10 @@
         "bottleTops": "Beer bottle tops",
         "paperCardAlcoholPackaging": "Paper Packaging",
         "plasticAlcoholPackaging": "Plastic Packaging",
-        "alcoholOther": "Alcohol-Other",
         "pint": "Pint Glass",
         "six_pack_rings": "Six-pack rings",
-        "alcohol_plastic_cups": "Plastic Cups"
+        "alcohol_plastic_cups": "Plastic Cups",
+        "alcoholOther": "Alcohol-Other"
     },
     "coffee": {
         "coffeeCups": "Coffee Cups",
@@ -57,8 +57,8 @@
         "sauce_packet": "Sauce Packet",
         "glass_jar": "Glass Jar",
         "glass_jar_lid": "Glass Jar Lid",
-        "foodOther": "Food-other",
-        "aluminium_foil": "Aluminium Foil"
+        "aluminium_foil": "Aluminium Foil",
+        "foodOther": "Food-other"
     },
     "softdrinks": {
         "waterBottle": "Plastic Water bottle",
@@ -95,8 +95,8 @@
         "tooth_pick": "Tooth Pick",
         "tooth_brush": "Tooth Brush",
         "wetwipes": "Wet Wipes",
-        "sanitaryOther": "Sanitary (other)",
-        "hand_sanitiser": "Hand Sanitiser"
+        "hand_sanitiser": "Hand Sanitiser",
+        "sanitaryOther": "Sanitary (other)"
     },
     "other": {
         "dogshit": "Pet Surprise",
@@ -121,9 +121,9 @@
         "batteries": "Batteries",
         "elec_small": "Electric small",
         "elec_large": "Electric large",
-        "other": "Other (other)",
         "random_litter": "Random Litter",
-        "balloons": "Balloons"
+        "balloons": "Balloons",
+        "other": "Other (other)"
     },
     "dumping": {
         "small": "Small",
@@ -197,7 +197,7 @@
         "fritolay": "Frito-Lay",
         "gatorade": "Gatorade",
         "gillette": "Gillette",
-        "guinnes": "Guinness",
+        "guinness": "Guinness",
         "haribo": "Haribo",
         "heineken": "Heineken",
         "insomnia": "Insomnia",
