@@ -28,6 +28,8 @@ Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function(){
 
     Route::post('add-tags', 'ApiPhotosController@addTags');
 
+    Route::get('/photos/web/index', 'API\WebPhotosController@index');
+
 });
 
 // Check if current token is valid
