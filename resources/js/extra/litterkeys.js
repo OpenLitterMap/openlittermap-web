@@ -1,5 +1,4 @@
 export const litterkeys = {
-    // todo - remove ID
     smoking: [
         'butts',            // Cigarette/Butts
         'lighters',         // Lighters
@@ -24,8 +23,8 @@ export const litterkeys = {
         'plasticAlcoholPackaging',   // Plastic Packaging
         'pint',                      // Pint Glass
         'six_pack_rings',            // Six-pack rings
-         'alcohol_plastic_cups',     // Plastic Cups
-         'alcoholOther'              // Alcohol-Other
+        'alcohol_plastic_cups',     // Plastic Cups
+        'alcoholOther'              // Alcohol-Other
     ],
     coffee: [
         'coffeeCups', // Coffee Cups
@@ -43,9 +42,10 @@ export const litterkeys = {
         'napkins',              // Napkins
         'sauce_packet',         // Sauce Packet
         'glass_jar',            // Glass Jar
-         'glass_jar_lid',       // Glass Jar Lid
-         'aluminium_foil',      // Aluminium Foil
-         'foodOther'            // Food-other
+        'glass_jar_lid',       // Glass Jar Lid
+        'aluminium_foil',      // Aluminium Foil
+        'pizza_box',           // Pizza Box
+        'foodOther'            // Food-other
     ],
     softdrinks: [
         'waterBottle',      // Plastic Water bottle
@@ -58,18 +58,18 @@ export const litterkeys = {
         'plastic_cups',     // Plastic Cups
         'plastic_cup_tops', // Plastic Cup Tops
         'milk_bottle',      // Milk Bottle
-         'milk_carton',     // Milk Carton
-         'paper_cups',      // Paper Cups
-         'juice_cartons',   // Juice Cartons
-         'juice_bottles',   // Juice Bottles
-         'juice_packet',    // Juice Packet
-         'ice_tea_bottles', // Ice Tea Bottles
-         'ice_tea_can',     // Ice Tea Can
-         'energy_can',      // Energy Can
-         'pullring',        // Pull-ring
-         'strawpacket',     // Straw Packaging
-         'styro_cup',       // Styrofoam Cup
-         'softDrinkOther'   // Soft Drink (other)
+        'milk_carton',     // Milk Carton
+        'paper_cups',      // Paper Cups
+        'juice_cartons',   // Juice Cartons
+        'juice_bottles',   // Juice Bottles
+        'juice_packet',    // Juice Packet
+        'ice_tea_bottles', // Ice Tea Bottles
+        'ice_tea_can',     // Ice Tea Can
+        'energy_can',      // Energy Can
+        'pullring',        // Pull-ring
+        'strawpacket',     // Straw Packaging
+        'styro_cup',       // Styrofoam Cup
+        'softDrinkOther'   // Soft Drink (other)
     ],
     sanitary: [
         'gloves',           // Gloves
@@ -82,35 +82,8 @@ export const litterkeys = {
         'tooth_pick',       // Tooth Pick
         'tooth_brush',      // Tooth Brush
         'wetwipes',         // Wet Wipes
-         'hand_sanitiser',  // Hand Sanitiser
-         'sanitaryOther'    // Sanitary (other)
-    ],
-    other: [
-        'dogshit',           // Pet Surprise
-        'pooinbag',          // Surprise In Bag
-        'automobile',        // Automobile
-        'clothing',          // Clothing
-        'traffic_cone',      // Traffic cone
-        'life_buoy',         // Life Buoy
-        'plastic',           // Unidentified Plastic
-        'dump',              // Illegal Dumping
-        'metal',             // Metal Object
-        'plastic_bags',      // Plastic Bags
-         'election_posters', // Election Posters
-         'forsale_posters',  // For Sale Posters
-         'books',            // Books
-         'magazine',         // Magazines
-         'paper',            // Paper
-         'stationary',       // Stationery
-         'washing_up',       // Washing-up Bottle
-         'hair_tie',         // Hair Tie
-         'ear_plugs',        // Ear Plugs (music)
-         'batteries',        // Batteries
-         'elec_small',       // Electric small
-         'elec_large',       // Electric large
-         'random_litter',    // Random Litter,
-         'balloons',         // Balloons
-         'other'             // Other (other)
+        'hand_sanitiser',  // Hand Sanitiser
+        'sanitaryOther'    // Sanitary (other)
     ],
     dumping: [
         'small',  // Small
@@ -136,15 +109,15 @@ export const litterkeys = {
         'buoys',                    // Buoys
         'degraded_plasticbottle',   // Degraded Plastic Bottle
         'degraded_plasticbag',      // Degraded Plastic Bag
-         'degraded_straws',         // Degraded Drinking Straws
-         'degraded_lighters',       // Degraded Lighters
-         'balloons',                // Balloons
-         'lego',                    // Lego
-         'shotgun_cartridges',      // Shotgun Cartridges
-         'styro_small',             // Styrofoam small
-         'styro_medium',            // Styrofoam medium
-         'styro_large',             // Styrofoam large
-         'coastal_other'            // Coastal (other
+        'degraded_straws',         // Degraded Drinking Straws
+        'degraded_lighters',       // Degraded Lighters
+        'balloons',                // Balloons
+        'lego',                    // Lego
+        'shotgun_cartridges',      // Shotgun Cartridges
+        'styro_small',             // Styrofoam small
+        'styro_medium',            // Styrofoam medium
+        'styro_large',             // Styrofoam large
+        'coastal_other'            // Coastal (other
     ],
     brands: [
          'adidas',	 // Adidas
@@ -243,6 +216,38 @@ export const litterkeys = {
          'wilde_and_greene',	// Wilde-and-Greene
          'woolworths',	        // Woolworths
          'wrigleys'	            // Wrigley
+    ],
+    other: [
+        'dogshit',           // Pet Surprise
+        'pooinbag',          // Surprise In Bag
+        'automobile',        // Automobile
+        'clothing',          // Clothing
+        'traffic_cone',      // Traffic cone
+        'life_buoy',         // Life Buoy
+        'plastic',           // Unidentified Plastic
+        'dump',              // Illegal Dumping
+        'metal',             // Metal Object
+        'plastic_bags',      // Plastic Bags
+        'election_posters', // Election Posters
+        'forsale_posters',  // For Sale Posters
+        'books',            // Books
+        'magazine',         // Magazines
+        'paper',            // Paper
+        'stationary',       // Stationery
+        'washing_up',       // Washing-up Bottle
+        'hair_tie',         // Hair Tie
+        'ear_plugs',        // Ear Plugs (music)
+        'batteries',        // Batteries
+        'elec_small',       // Electric small
+        'elec_large',       // Electric large
+        'random_litter',    // Random Litter
+        'balloons',         // Balloons
+        'bags_litter',      // Bags of Litter
+        'overflowing_bins', // Overflowing Bins
+        'tyre',             // Tyre
+        'cable_tie',        // Cable Tie
+        'balloons',         // Balloons
+        'other'             // Other (other)
     ],
     trashdog: [
         'trashdog',  // TrashDog
