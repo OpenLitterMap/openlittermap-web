@@ -30,6 +30,8 @@ Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function(){
 
     Route::get('/photos/web/index', 'API\WebPhotosController@index');
 
+    Route::get('/photos/web/load-more', 'API\WebPhotosController@loadMore');
+
 });
 
 // Check if current token is valid
