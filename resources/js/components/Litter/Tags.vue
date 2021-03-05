@@ -58,8 +58,7 @@ export default {
          */
         getTags (tags, category)
         {
-            console.log({ tags
-            });
+            console.log({ tags });
             return this.$i18n.t('litter.' + category + '.' + tags[0]) + ': ' + tags[1] + '<br>';
         },
 
