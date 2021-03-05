@@ -52,13 +52,17 @@ export default {
         {
             return this.$i18n.t('litter.categories.' + category);
         },
+
         /**
          * Return Translated key: value from tags[0]: tags[1]
          */
         getTags (tags, category)
         {
+            console.log({ tags
+            });
             return this.$i18n.t('litter.' + category + '.' + tags[0]) + ': ' + tags[1] + '<br>';
         },
+
         /**
          * Remove tag from this category
          * If all tags have been removed, delete the category
