@@ -36,6 +36,8 @@ export const mutations = {
      */
     addTag (state, payload)
     {
+        console.log('addTag', payload);
+
         state.hasAddedNewTag = true; // Enable the Update Button
 
         let tags = Object.assign({}, state.tags);

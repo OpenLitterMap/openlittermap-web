@@ -312,7 +312,7 @@ export default {
         {
             this.$store.commit('addTag', {
                 category: this.category.key,
-                tag: this.tag,
+                tag: this.tag.key,
                 quantity: this.quantity
             });
 
@@ -320,7 +320,7 @@ export default {
 
             this.$store.commit('addRecentTag', {
                 category: this.category.key,
-                tag: this.tag
+                tag: this.tag.key
             });
 
             this.$localStorage.set('recentTags', JSON.stringify(this.recentTags));
