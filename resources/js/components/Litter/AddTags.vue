@@ -179,7 +179,7 @@ export default {
             set (cat) {
                 if (cat) {
                     this.$store.commit('changeCategory', cat.key);
-                    this.$store.commit('changeTag', litterkeys[cat.key][0].key);
+                    this.$store.commit('changeTag', litterkeys[cat.key][0]);
                     this.quantity = 1;
                 }
             }
