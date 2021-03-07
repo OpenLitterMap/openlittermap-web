@@ -29,11 +29,29 @@ class WebPhotosController extends Controller
 
         $count = $query->count();
 
-        if ($count > 0) $photos = $query->select('id', 'filename')->orderBy('id')->take(10)->get();
+        if ($count > 0) $photos = $query->select('id', 'filename')->orderBy('id')->take(2)->get();
 
         return [
             'count' => $count,
             'photos' => $photos
         ];
+    }
+
+    /**
+     * Load the next 10 images that were uploaded via web
+     */
+    public function loadMore ()
+    {
+        $user = Auth::guard('api')->user();
+
+        return APIPhoto::where([
+            'user_id' => $user->id,
+            'verification' => 0,
+            ['id', '>', request()->photo_id]
+        ])
+        ->select('id', 'filename')
+        ->orderBy('id')
+        ->take(10)
+        ->get();
     }
 }
