@@ -1,43 +1,62 @@
 <template>
     <div>
-
         <loading v-if="loading" :active.sync="loading" :is-full-page="true" />
 
-        <div v-else>
-            <h1 class="title is-2 has-text-centered mt1em">Add bounding box to image # {{ this.imageId }}</h1>
+        <div v-else class="columns mt1">
 
-                <div style="text-align: center;">
+            <ImageInfo />
 
-                    <div id="image-wrapper"
-                         :style="image"
-                         @mousedown.self="mousedownSelf"
-                         @mousemove="mouseMove"
-                         @mouseup="mouseUp"
+            <div class="column is-one-third">
+                <h1 class="title is-2 has-text-centered">Add bounding box to image # {{ this.imageId }}</h1>
+
+                <div class="has-text-centered">
+
+<!--                    @mousedown.self="mousedownSelf"-->
+<!--                    @mousemove="mouseMove"-->
+<!--                    @mouseup="mouseUp"-->
+                    <div
+                        id="image-wrapper"
+                        ref="img"
+                        :style="image"
                     >
 
-                        <Box
-                            v-if="drawingBox.active"
-                            :geom="drawingBox.geom"
-                        />
+                        <div style="height: 500px; width: 500px; border: 1px solid red; position: relative;">
+                            <vue-draggable-resizable :w="100" :h="100" @dragging="onDrag" @resizing="onResize" :parent="true">
+                                <p>Hello! I'm a flexible component. You can drag me around and you can resize me.<br>
+                                    X: {{ x }} / Y: {{ y }} - Width: {{ width }} / Height: {{ height }}</p>
+                            </vue-draggable-resizable>
+                        </div>
 
-                        <Box
-                            v-for="(box, i) in boxes"
-                            :key="i"
-                            :geom="box.geom"
-                            :index="i"
-                            :selected="box.selected"
-                            :activeTop="box.activeTop"
-                            :activeLeft="box.activeLeft"
-                            :activeBottom="box.activeBottom"
-                            :activeRight="box.activeRight"
-                            @select="selectBox"
-                            @activate="activate"
-                            @deselectNode="deselectNode"
-                            @dragEnd="dragEnd"
-                        />
+<!--                        <Box-->
+<!--                            v-if="drawingBox.active"-->
+<!--                            :geom="drawingBox.geom"-->
+<!--                        />-->
 
+<!--                        <Box-->
+<!--                            v-for="(box, i) in boxes"-->
+<!--                            :key="i"-->
+<!--                            :geom="box.geom"-->
+<!--                            :index="i"-->
+<!--                            :selected="box.selected"-->
+<!--                            :activeTop="box.activeTop"-->
+<!--                            :activeLeft="box.activeLeft"-->
+<!--                            :activeBottom="box.activeBottom"-->
+<!--                            :activeRight="box.activeRight"-->
+<!--                            @select="selectBox"-->
+<!--                            @activate="activate"-->
+<!--                            @deselectNode="deselectNode"-->
+<!--                            @dragEnd="dragEnd"-->
+<!--                        />-->
+                    </div>
+
+                    <add-tags
+                        :id="imageId"
+                        :annotations="true"
+                    />
                 </div>
             </div>
+
+            <div class="column is-one-third" />
         </div>
     </div>
 </template>
@@ -45,14 +64,20 @@
 <script>
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
-
+import ImageInfo from '../../components/Admin/ImageInfo'
 import Box from '../../components/Admin/Box'
+import AddTags from '../../components/Litter/AddTags';
 
 const minBoxSize = 43;
 
 export default {
     name: 'BoundingBox',
-    components: { Loading, Box },
+    components: {
+        Loading,
+        Box,
+        AddTags,
+        ImageInfo
+    },
     async created ()
     {
         this.$store.dispatch('GET_NEXT_BBOX');
@@ -77,23 +102,28 @@ export default {
             processing: false,
             drawingBox: {
                 active: false,
-                geom: [0, 0, 0, 0]                      // box top, left, width, height
+                geom: [0, 0, 0, 0]  // box top, left, width, height
             },
             boxes: [],
             activatedBox: -1,
             activatedNode: 0,
             currentX: 0,
             currentY: 0,
-            dir: [[0, 1],[1, 0],[0, 1],[1, 0]], 
-            apply: [[1, 0, 0, -1],[0, 1, -1, 0],[0, 0, 0, 1],[0, 0, 1, 0]], 
+            dir: [[0, 1],[1, 0],[0, 1],[1, 0]],
+            apply: [[1, 0, 0, -1],[0, 1, -1, 0],[0, 0, 0, 1],[0, 0, 1, 0]],
             dragBox: -1,
             startPos: [0, 0],
             startGeom: [0, 0, 0, 0],
-            c: [1, 0, 1, 0]
+            c: [1, 0, 1, 0],
+
+            // vue draggable
+            width: 0,
+            height: 0,
+            x: 0,
+            y: 0
         };
     },
     computed: {
-
         /**
          * Filename of the image from the database
          */
@@ -120,6 +150,22 @@ export default {
 
     },
     methods: {
+
+        // vue-draggable
+
+        onResize (x, y, width, height) {
+            this.x = x
+            this.y = y
+            this.width = width
+            this.height = height
+        },
+
+        onDrag (x, y) {
+            this.x = x
+            this.y = y
+        },
+
+
 
         /**
          * Activate a node on a box-index for reordering
@@ -203,7 +249,7 @@ export default {
             if (this.dragBox != -1)
             {
                 this.boxes[this.dragBox].geom = [
-                    this.boxes[this.dragBox].geom[0] + move[1], 
+                    this.boxes[this.dragBox].geom[0] + move[1],
                     this.boxes[this.dragBox].geom[1] + move[0],
                     this.boxes[this.dragBox].geom[2],
                     this.boxes[this.dragBox].geom[3]
@@ -244,7 +290,7 @@ export default {
         },
 
         /**
-         * When a box dragging event ends: 
+         * When a box dragging event ends:
          */
         dragEnd ()
         {
@@ -270,7 +316,7 @@ export default {
                     });
                 }
                 this.drawingBox = {
-                    active: false, 
+                    active: false,
                     geom: [0, 0, 0, 0]
                 };
             }
@@ -305,7 +351,7 @@ export default {
         background-repeat: no-repeat;
         position: relative;
         background-size: 500px 500px;
-        margin: 0 auto;
+        margin: 0 auto 1em auto;
     }
-    
+
 </style>

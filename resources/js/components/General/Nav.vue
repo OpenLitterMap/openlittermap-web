@@ -20,15 +20,6 @@
                 <div :class="nav">
                     <div class="navbar-end">
 
-                        <!-- Admin -->
-                        <router-link v-if="admin" to="/admin/photos" class="navbar-item" @click.native="close">
-                            {{ $t('nav.admin')}}
-                        </router-link>
-
-                        <a v-if="admin" href="/horizon" class="navbar-item">
-                            Horizon
-                        </a>
-
                         <!-- About -->
                         <router-link to="/about" class="navbar-item" @click.native="close">
                               {{ $t('nav.about')}}
@@ -57,6 +48,21 @@
                                 <a id="more" class="navbar-item"> {{ $t('nav.more')}}</a>
                                 <!-- Dropdown menu -->
                                 <div class="navbar-dropdown" style="z-index: 2;">
+
+                                    <!-- Admin -->
+                                    <div v-if="admin">
+                                        <router-link to="/admin/photos" class="navbar-item drop-item" @click.native="close">
+                                            ADMIN - Verify Photos
+                                        </router-link>
+
+                                        <a href="/horizon" class="navbar-item drop-item" target="_blank">
+                                            ADMIN - Horizon
+                                        </a>
+
+                                        <router-link to="/admin/bbox" class="navbar-item drop-item" @click.native="close">
+                                            ADMIN - Bounding Boxes
+                                        </router-link>
+                                    </div>
 
                                     <!-- Tag Litter -->
                                     <router-link to="/tag" class="navbar-item drop-item">

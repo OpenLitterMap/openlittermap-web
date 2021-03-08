@@ -1,8 +1,10 @@
 <template>
     <div class="box-wrapper" @mousedown="function(e) { selectBox(e) }" @mouseup="mouseUp()">
 
-        <div :class="selected ? 'box selected-box' : 'box'"             
-                :style="{top: this.geom[0] + 'px', left: this.geom[1] + 'px', width: this.geom[2] + 'px', height: this.geom[3] + 'px'}">
+        <div
+            :class="selected ? 'box selected-box' : 'box'"
+            :style="{top: this.geom[0] + 'px', left: this.geom[1] + 'px', width: this.geom[2] + 'px', height: this.geom[3] + 'px'}"
+        >
 
             <div class="inner-box">
                 <div v-show="selected" class="node" :style="{top: -6 + 'px', left: (0.5 * this.geom[2] - 6) + 'px'}" @mousedown="function(e) { selectNode(e, 0) }" />
@@ -16,54 +18,55 @@
 </template>
 
 <script>
-    export default {
-        name: 'Box',
-        props: [
-            'index',
-            'selected',
-            'activeTop',
-            'activeLeft',
-            'activeBottom',
-            'activeRight',
-            'geom'
-        ],
-        methods: {
+export default {
+    name: 'Box',
+    props: [
+        'index',
+        'selected',
+        'activeTop',
+        'activeLeft',
+        'activeBottom',
+        'activeRight',
+        'geom'
+    ],
+    methods: {
 
-            /**
-             * A node has been de-selected
-             */
-            deselectNode (node)
-            {
-                this.$emit('deselectNode', node, this.index);
-            },
+        /**
+         * A node has been de-selected
+         */
+        deselectNode (node)
+        {
+            this.$emit('deselectNode', node, this.index);
+        },
 
-            /**
-             * This box (index) has been selected
-             * @emit selected event to parent
-             */
-            selectBox (e)
-            {
-                this.$emit('select', this.index, e.pageX, e.pageY);
-            },
+        /**
+         * This box (index) has been selected
+         *
+         * @emit selected event to parent
+         */
+        selectBox (e)
+        {
+            this.$emit('select', this.index, e.pageX, e.pageY);
+        },
 
-            /**
-             * Select a node (Top, left, bottom, right)
-             */
-            selectNode (e, nodeIndex)
-            {
-                this.$emit('activate', this.index, nodeIndex, e.pageX, e.pageY);
-            },
+        /**
+         * Select a node (Top, left, bottom, right)
+         */
+        selectNode (e, nodeIndex)
+        {
+            this.$emit('activate', this.index, nodeIndex, e.pageX, e.pageY);
+        },
 
-            /**
-             * Select a node (Top, left, bottom, right)
-             */
-            mouseUp()
-            {
-                this.$emit('dragEnd');
-            }
-            
+        /**
+         * Select a node (Top, left, bottom, right)
+         */
+        mouseUp()
+        {
+            this.$emit('dragEnd');
         }
+
     }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -78,7 +81,7 @@
         }
 
         z-index: 3;
-        
+
         &.selected-box {
             background-color: rgba(255,0,0,0.3);
             padding: 0;

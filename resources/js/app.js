@@ -15,8 +15,10 @@ import VueNumber from 'vue-number-animation'
 import VueEcho from 'vue-echo-laravel'
 import Buefy from 'buefy'
 import fullscreen from 'vue-fullscreen'
+import VueDraggableResizable from 'vue-draggable-resizable'
 
 import RootContainer from './views/RootContainer'
+import 'vue-draggable-resizable/dist/VueDraggableResizable.css'
 
 // assign global variables
 window.axios = axios
@@ -38,7 +40,10 @@ Vue.use(fullscreen)
 Vue.filter('commas', value =>
 {
     return parseInt(value).toLocaleString();
-},);
+});
+
+
+Vue.component('vue-draggable-resizable', VueDraggableResizable)
 
 const vm = new Vue({
     el: '#app',

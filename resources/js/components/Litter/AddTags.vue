@@ -48,19 +48,20 @@
 
         <br><br>
 
-        <div v-if="Object.keys(recentTags).length > 0" class="mb-5">
+        <div v-if="Object.keys(recentTags).length > 0 && this.annotations !== true" class="mb-5">
 
             <p class="mb-05">{{ $t('tags.recently-tags') }}</p>
 
             <div v-for="category in Object.keys(recentTags)">
                 <p>{{ getCategoryName(category) }}</p>
-                 <transition-group name="list" class="recent-tags" tag="div" :key="category">
-                        <div
-                            v-for="tag in Object.keys(recentTags[category])"
-                            class="litter-tag"
-                            :key="tag"
-                            @click="addRecentTag(category, tag)"
-                        ><p>{{ getTagName(category, tag) }}</p></div>
+
+                <transition-group name="list" class="recent-tags" tag="div" :key="category">
+                    <div
+                        v-for="tag in Object.keys(recentTags[category])"
+                        class="litter-tag"
+                        :key="tag"
+                        @click="addRecentTag(category, tag)"
+                    ><p>{{ getTagName(category, tag) }}</p></div>
                 </transition-group>
             </div>
         </div>
@@ -129,7 +130,8 @@ export default {
     },
     props: {
         'id': { type: Number, required: true },
-        'admin': Boolean
+        'admin': Boolean,
+        'annotations': { type: Boolean, required: false }
     },
     created ()
     {
@@ -307,6 +309,11 @@ export default {
          *         butts: 1
          *     }
          * }
+         *
+         * If annotations is true
+         *     We want to add a bounding box (Admin/BoundingBox.vue)
+         * else
+         *     Add tag to the image
          */
         addTag ()
         {
