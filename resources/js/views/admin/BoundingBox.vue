@@ -4,49 +4,41 @@
 
         <div v-else class="columns mt1">
 
-            <ImageInfo />
+            <ImageInfo
+                @addNewBox="addNewBox"
+            />
 
             <div class="column is-one-third">
                 <h1 class="title is-2 has-text-centered">Add bounding box to image # {{ this.imageId }}</h1>
 
                 <div class="has-text-centered">
 
-<!--                    @mousedown.self="mousedownSelf"-->
-<!--                    @mousemove="mouseMove"-->
-<!--                    @mouseup="mouseUp"-->
                     <div
                         id="image-wrapper"
                         ref="img"
                         :style="image"
                     >
 
-                        <div style="height: 500px; width: 500px; border: 1px solid red; position: relative;">
-                            <vue-draggable-resizable :w="100" :h="100" @dragging="onDrag" @resizing="onResize" :parent="true">
-                                <p>Hello! I'm a flexible component. You can drag me around and you can resize me.<br>
-                                    X: {{ x }} / Y: {{ y }} - Width: {{ width }} / Height: {{ height }}</p>
+                        <div style="height: 500px; width: 500px; position: relative;">
+
+                            <!-- activated -->
+
+                            <vue-draggable-resizable
+                                v-for="box in boxes"
+                                :key="box.id"
+                                :x="box.x"
+                                :y="box.y"
+                                :w="100"
+                                :h="100"
+                                @dragging="onDrag"
+                                @resizing="onResize"
+                                :parent="true"
+                                class-name="test-class"
+                                class-name-active="my-active-class"
+                            >
+                                <p>X: {{ x }} / Y: {{ y }} - Width: {{ width }} / Height: {{ height }}</p>
                             </vue-draggable-resizable>
                         </div>
-
-<!--                        <Box-->
-<!--                            v-if="drawingBox.active"-->
-<!--                            :geom="drawingBox.geom"-->
-<!--                        />-->
-
-<!--                        <Box-->
-<!--                            v-for="(box, i) in boxes"-->
-<!--                            :key="i"-->
-<!--                            :geom="box.geom"-->
-<!--                            :index="i"-->
-<!--                            :selected="box.selected"-->
-<!--                            :activeTop="box.activeTop"-->
-<!--                            :activeLeft="box.activeLeft"-->
-<!--                            :activeBottom="box.activeBottom"-->
-<!--                            :activeRight="box.activeRight"-->
-<!--                            @select="selectBox"-->
-<!--                            @activate="activate"-->
-<!--                            @deselectNode="deselectNode"-->
-<!--                            @dragEnd="dragEnd"-->
-<!--                        />-->
                     </div>
 
                     <add-tags
@@ -98,24 +90,10 @@ export default {
     data ()
     {
         return {
-            disabled: false,
             processing: false,
-            drawingBox: {
-                active: false,
-                geom: [0, 0, 0, 0]  // box top, left, width, height
-            },
-            boxes: [],
-            activatedBox: -1,
-            activatedNode: 0,
-            currentX: 0,
-            currentY: 0,
-            dir: [[0, 1],[1, 0],[0, 1],[1, 0]],
-            apply: [[1, 0, 0, -1],[0, 1, -1, 0],[0, 0, 0, 1],[0, 0, 1, 0]],
-            dragBox: -1,
-            startPos: [0, 0],
-            startGeom: [0, 0, 0, 0],
-            c: [1, 0, 1, 0],
-
+            boxes: [
+                { id: 1, x: 0, y: 0, text: '' }
+            ],
             // vue draggable
             width: 0,
             height: 0,
@@ -124,6 +102,7 @@ export default {
         };
     },
     computed: {
+
         /**
          * Filename of the image from the database
          */
@@ -151,190 +130,43 @@ export default {
     },
     methods: {
 
-        // vue-draggable
+        /**
+         * Add a new bounding box
+         */
+        addNewBox ()
+        {
+            this.x = 0;
+            this.y = 0;
+            this.width = 0;
+            this.height = 0;
 
-        onResize (x, y, width, height) {
+            this.boxes.push({
+                id: this.boxes.length + 1,
+                x: 0,
+                y: 0,
+                text: ''
+            });
+        },
+
+        /**
+         *
+         */
+        onDrag (x, y)
+        {
+            this.x = x
+            this.y = y
+        },
+
+        /**
+         *
+         */
+        onResize (x, y, width, height)
+        {
             this.x = x
             this.y = y
             this.width = width
             this.height = height
         },
-
-        onDrag (x, y) {
-            this.x = x
-            this.y = y
-        },
-
-
-
-        /**
-         * Activate a node on a box-index for reordering
-         */
-        activate (index, nodeIndex, pageX, pageY)
-        {
-            this.activatedBox = index;
-            this.activatedNode = nodeIndex;
-            this.currentX = pageX;
-            this.currentY = pageY;
-
-            this.startPos = [pageX, pageY];
-            this.startGeom = this.boxes[index].geom;
-        },
-
-        /**
-         * De-select any boxes
-         */
-        deselectBox ()
-        {
-            this.boxes.map(box => box.selected = false);
-        },
-
-        /**
-         * One of the nodes was left go from dragging
-         */
-        deselectNode (node, index)
-        {
-            this.boxes[index][node] = false;
-        },
-
-        /**
-         * Drag and draw the box (Top-left to bottom-right)
-         */
-        mouseMove (e)
-        {
-            // Record the relative movement of the mouse since the last call:
-            var move = [e.pageX - this.currentX, e.pageY - this.currentY];
-            this.currentX = e.pageX;
-            this.currentY = e.pageY;
-            var newPos = [e.pageX, e.pageY];
-
-            // Drawing box mode:
-            if (this.drawingBox.active)
-            {
-                var newWidth = e.offsetX - this.drawingBox.geom[1];
-                var newHeight = e.offsetY - this.drawingBox.geom[0];
-
-                if(e.target.id != "image-wrapper")
-                {
-                    newWidth = e.offsetX;
-                    newHeight = e.offsetY;
-                }
-
-                this.drawingBox = {
-                    ...this.drawingBox,
-                    geom: [this.drawingBox.geom[0], this.drawingBox.geom[1], newWidth, newHeight]
-                };
-            }
-
-            // Box shape adjustment mode:
-            if (this.activatedBox != -1)
-            {
-                var diff = newPos[this.c[this.activatedNode]] - this.startPos[this.c[this.activatedNode]];
-
-                var newWidth = this.startGeom[2] + this.apply[this.activatedNode][2] * diff;
-                var newHeight = this.startGeom[3] + this.apply[this.activatedNode][3] * diff;
-
-                if((newWidth > minBoxSize)&&(newHeight > minBoxSize))
-                {
-                    this.boxes[this.activatedBox].geom = [
-                        this.startGeom[0] + this.apply[this.activatedNode][0] * diff,
-                        this.startGeom[1] + this.apply[this.activatedNode][1] * diff,
-                        newWidth,
-                        newHeight
-                    ];
-                }
-            }
-
-            // Box dragging mode:
-            if (this.dragBox != -1)
-            {
-                this.boxes[this.dragBox].geom = [
-                    this.boxes[this.dragBox].geom[0] + move[1],
-                    this.boxes[this.dragBox].geom[1] + move[0],
-                    this.boxes[this.dragBox].geom[2],
-                    this.boxes[this.dragBox].geom[3]
-                ];
-            }
-        },
-
-        /**
-         * A box has been selected
-         */
-        selectBox (i, pageX, pageY)
-        {
-            if(this.activatedBox == -1)
-            {
-                // Record the box which has been selected, and set all other boxes to be deselected:
-                this.deselectAllBoxes();
-                this.boxes[i].selected = true;
-
-                this.dragBox = i;
-                this.currentX = pageX;
-                this.currentY = pageY;
-            }
-        },
-
-        /**
-         *
-         */
-        mousedownSelf (e)
-        {
-            // The user has clicked outside all the boxes, so deselect all boxes:
-            this.deselectAllBoxes();
-
-            // Now activate box drawing mode:
-            this.drawingBox = {
-                active: true,
-                geom: [e.offsetY, e.offsetX, 0, 0]
-            };
-        },
-
-        /**
-         * When a box dragging event ends:
-         */
-        dragEnd ()
-        {
-            this.dragBox = -1;
-        },
-
-        /**
-         *
-         */
-        mouseUp ()
-        {
-            if (this.drawingBox.active)
-            {
-                if (this.drawingBox.geom[2] > 5)
-                {
-                    this.boxes.push({
-                        geom: this.drawingBox.geom,
-                        selected: false,
-                        activeTop: false,
-                        activeLeft: false,
-                        activeBottom: false,
-                        activeRight: false,
-                    });
-                }
-                this.drawingBox = {
-                    active: false,
-                    geom: [0, 0, 0, 0]
-                };
-            }
-
-            this.activatedBox = -1;
-            this.dragEnd();
-        },
-
-        /**
-         *
-         */
-        deselectAllBoxes ()
-        {
-            this.boxes.forEach(
-                function (box) { box.selected = false }
-            );
-        }
-
     }
 }
 </script>
@@ -352,6 +184,14 @@ export default {
         position: relative;
         background-size: 500px 500px;
         margin: 0 auto 1em auto;
+    }
+
+    .test-class {
+        border: 3px solid green;
+    }
+
+    .my-active-class {
+        border: 3px solid red;
     }
 
 </style>

@@ -4,12 +4,28 @@
         <p>Height: </p>
         <p>Width: </p>
         <p>Tags: </p>
+
+        <br>
+
+        <button class="button is-medium is-primary" @click="addNewBox">
+            Add Box
+        </button>
     </div>
 </template>
 
 <script>
 export default {
     name: 'ImageInfo',
+    methods: {
+
+        /**
+         * Add a new bounding box
+         */
+        addNewBox ()
+        {
+            this.$emit('addNewBox');
+        }
+    }
 };
 </script>
 
