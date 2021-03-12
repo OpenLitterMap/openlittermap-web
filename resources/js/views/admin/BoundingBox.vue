@@ -21,24 +21,24 @@
 
                         <div style="height: 500px; width: 500px; position: relative;">
 
-                            <!-- activated -->
-                            <vue-draggable-resizable
-                                v-for="box in boxes"
-                                :key="box.id + box.x + box.y"
-                                :x="box.x"
-                                :y="box.y"
-                                :h="box.height"
-                                :w="box.width"
-                                :parent="true"
-                                :resizeable="true"
-                                @activated="activated(box.id)"
-                                @dragging="(x, y) => onDragging(box.id, x, y)"
-                                @dragstop="(x, y) => onDragStop(box.id, x, y)"
-                                @resizing="(left, top, width, height) => onResizing(box.id, left, top, width, height)"
-                                class-name="test-class"
-                                class-name-active="my-active-class"
-                            ><p>X: {{ box.x }} / Y: {{ box.y }}</p>
-                            </vue-draggable-resizable>
+                            <template v-for="box in boxes">
+                                <vue-draggable-resizable
+                                    :key="box.id + box.x + box.y"
+                                    :x="box.x"
+                                    :y="box.y"
+                                    :h="box.height"
+                                    :w="box.width"
+                                    :parent="true"
+                                    :resizeable="true"
+                                    @activated="activated(box.id)"
+                                    @dragging="(x, y) => onDragging(box.id, x, y)"
+                                    @dragstop="(x, y) => onDragStop(box.id, x, y)"
+                                    @resizing="(left, top, width, height) => onResizing(box.id, left, top, width, height)"
+                                    class-name="test-class"
+                                    class-name-active="my-active-class"
+                                ><p>X: {{ box.x }} / Y: {{ box.y }}</p>
+                                </vue-draggable-resizable>
+                            </template>
                         </div>
                     </div>
 
@@ -82,19 +82,17 @@ export default {
 
             const key = e.key;
 
-            console.log({ key });
-
             if (key === "Backspace")
             {
-                console.log('clicked');
-
                 let boxes = [...this.boxes];
 
-                boxes = boxes.filter(box => box.id != this.activeId);
+                boxes = boxes.filter(box => box.id !== this.activeId);
 
                 this.boxes = boxes;
             }
         });
+
+        // move +1 pixels x, y with keyboard
     },
     data ()
     {
