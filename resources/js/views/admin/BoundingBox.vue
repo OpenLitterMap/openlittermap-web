@@ -22,21 +22,22 @@
                         <div style="height: 500px; width: 500px; position: relative;">
 
                             <!-- activated -->
-
                             <vue-draggable-resizable
                                 v-for="box in boxes"
-                                :key="box.id"
+                                :key="box.id + box.x + box.y"
                                 :x="box.x"
                                 :y="box.y"
-                                :w="100"
-                                :h="100"
-                                @dragging="onDrag"
-                                @resizing="onResize"
+                                :h="box.height"
+                                :w="box.width"
                                 :parent="true"
+                                :resizeable="true"
+                                @activated="activated(box.id)"
+                                @dragging="(x, y) => onDragging(box.id, x, y)"
+                                @dragstop="(x, y) => onDragStop(box.id, x, y)"
+                                @resizing="(left, top, width, height) => onResizing(box.id, left, top, width, height)"
                                 class-name="test-class"
                                 class-name-active="my-active-class"
-                            >
-                                <p>X: {{ x }} / Y: {{ y }} - Width: {{ width }} / Height: {{ height }}</p>
+                            ><p>X: {{ box.x }} / Y: {{ box.y }}</p>
                             </vue-draggable-resizable>
                         </div>
                     </div>
@@ -78,11 +79,19 @@ export default {
     {
         // delete selected box on backspace
         document.addEventListener("keydown", (e) => {
+
             const key = e.key;
+
+            console.log({ key });
+
             if (key === "Backspace")
             {
+                console.log('clicked');
+
                 let boxes = [...this.boxes];
-                boxes = boxes.filter(box => box.selected != true);
+
+                boxes = boxes.filter(box => box.id != this.activeId);
+
                 this.boxes = boxes;
             }
         });
@@ -90,18 +99,31 @@ export default {
     data ()
     {
         return {
+            activeId: null,
+            draggingId: null,
             processing: false,
             boxes: [
-                { id: 1, x: 0, y: 0, text: '' }
+                { id: 1, x: 0, y: 0, height: 100, width: 100, text: '', active: false }
             ],
-            // vue draggable
-            width: 0,
-            height: 0,
+            prevOffsetX: 0,
+            prevOffsetY: 0,
+            sync: false,
             x: 0,
             y: 0
         };
+
     },
     computed: {
+
+        /**
+         * The current box.id being dragged
+         */
+        draggingBox ()
+        {
+            if (! this.draggingId) return;
+
+            return this.boxes.find(el => el.id === this.draggingId);
+        },
 
         /**
          * Filename of the image from the database
@@ -131,42 +153,118 @@ export default {
     methods: {
 
         /**
+         * When a box has been selected
+         *
+         * Hold box.id
+         *
+         * Todo - clear this when click outside
+         */
+        activated (id)
+        {
+            this.activeId = id;
+        },
+
+        /**
          * Add a new bounding box
          */
         addNewBox ()
         {
-            this.x = 0;
-            this.y = 0;
-            this.width = 0;
-            this.height = 0;
-
             this.boxes.push({
                 id: this.boxes.length + 1,
                 x: 0,
                 y: 0,
-                text: ''
+                height: 100,
+                width: 100,
+                text: '',
+                active: false
+            });
+        },
+
+        deltaX (offsetX)
+        {
+            const ret = offsetX - this.prevOffsetX;
+
+            this.prevOffsetX = offsetX;
+
+            return ret;
+        },
+
+
+        deltaY (offsetY)
+        {
+            const ret = offsetY - this.prevOffsetY;
+
+            this.prevOffsetY = offsetY;
+
+            return ret;
+        },
+
+        /**
+         * When we stop dragging a box
+         */
+        onDragStop (id, x, y)
+        {
+            console.log('onDragStop', id, x, y);
+
+            this.boxes.map(box => {
+
+                if (box.id === id)
+                {
+                    box.x = x;
+                    box.y = y;
+                }
+
+                return box;
+            });
+
+            this.draggingId = null;
+            this.prevOffsetX = 0;
+            this.prevOffsetY = 0;
+        },
+
+        /**
+         * When dragging, update (x,y) values on that box
+         */
+        onDragging (id, x, y)
+        {
+            this.draggingId = id;
+
+            if (! this.sync) return;
+
+            const offsetX = x - this.draggingBox.x;
+            const offsetY = y - this.draggingBox.y;
+
+            const deltaX = this.deltaX(offsetX);
+            const deltaY = this.deltaY(offsetY);
+
+            this.boxes.map(el => {
+                if (el.id !== id) {
+                    el.x += deltaX;
+                    el.y += deltaY;
+                }
+
+                return el;
             });
         },
 
         /**
          *
          */
-        onDrag (x, y)
+        onResizing (id, left, top, width, height)
         {
-            this.x = x
-            this.y = y
-        },
+            console.log(id, left, top, width, height)
+        }
 
-        /**
-         *
-         */
-        onResize (x, y, width, height)
-        {
-            this.x = x
-            this.y = y
-            this.width = width
-            this.height = height
-        },
+        // /**
+        //  *
+        //  */
+        // onResize (x, y, width, height)
+        // {
+        //     this.x = x
+        //     this.y = y
+        //     this.width = width
+        //     this.height = height
+        // },
     }
 }
 </script>
@@ -188,6 +286,7 @@ export default {
 
     .test-class {
         border: 3px solid green;
+        background: #00b89c;
     }
 
     .my-active-class {
