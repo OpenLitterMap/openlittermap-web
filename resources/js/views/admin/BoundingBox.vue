@@ -18,28 +18,19 @@
                         ref="img"
                         :style="image"
                     >
-
-                        <div style="height: 500px; width: 500px; position: relative;">
-
-                            <template v-for="box in boxes">
-                                <vue-draggable-resizable
-                                    :key="box.id + box.x + box.y"
-                                    :x="box.x"
-                                    :y="box.y"
-                                    :h="box.height"
-                                    :w="box.width"
-                                    :parent="true"
-                                    :resizeable="true"
-                                    @activated="activated(box.id)"
-                                    @dragging="(x, y) => onDragging(box.id, x, y)"
-                                    @dragstop="(x, y) => onDragStop(box.id, x, y)"
-                                    @resizing="(left, top, width, height) => onResizing(box.id, left, top, width, height)"
-                                    class-name="test-class"
-                                    class-name-active="my-active-class"
-                                ><p>X: {{ box.x }} / Y: {{ box.y }}</p>
-                                </vue-draggable-resizable>
-                            </template>
-                        </div>
+                        <VueDragResize
+                            v-for="(box, index) in boxes"
+                            :key="box.id"
+                            :isActive="box.active"
+                            :w="box.width"
+                            :h="box.height"
+                            v-on:resizing="resize"
+                            v-on:dragging="resize"
+                            class="test-class"
+                            @clicked.prevent="activated(index)"
+                        >
+                            <p>{{ box.id }}</p>
+                        </VueDragResize>
                     </div>
 
                     <add-tags
@@ -58,18 +49,17 @@
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
 import ImageInfo from '../../components/Admin/ImageInfo'
-import Box from '../../components/Admin/Box'
-import AddTags from '../../components/Litter/AddTags';
+import AddTags from '../../components/Litter/AddTags'
 
-const minBoxSize = 43;
+import VueDragResize from 'vue-drag-resize'
 
 export default {
     name: 'BoundingBox',
     components: {
         Loading,
-        Box,
         AddTags,
-        ImageInfo
+        ImageInfo,
+        VueDragResize
     },
     async created ()
     {
@@ -92,7 +82,7 @@ export default {
             }
         });
 
-        // move +1 pixels x, y with keyboard
+        // todo - move +1 pixels x, y with keyboard for currently active box
     },
     data ()
     {
@@ -103,11 +93,10 @@ export default {
             boxes: [
                 { id: 1, x: 0, y: 0, height: 100, width: 100, text: '', active: false }
             ],
-            prevOffsetX: 0,
-            prevOffsetY: 0,
-            sync: false,
-            x: 0,
-            y: 0
+            width: 0,
+            height: 0,
+            top: 0,
+            left: 0
         };
 
     },
@@ -157,18 +146,21 @@ export default {
          *
          * Todo - clear this when click outside
          */
-        activated (id)
+        activated (index)
         {
-            this.activeId = id;
+            // this.activeId = id;
+            this.boxes[index].active = true;
         },
 
         /**
          * Add a new bounding box
+         *
+         * We +1 the last ID in case a box was deleted
          */
         addNewBox ()
         {
             this.boxes.push({
-                id: this.boxes.length + 1,
+                id: this.boxes[this.boxes.length -1].id + 1,
                 x: 0,
                 y: 0,
                 height: 100,
@@ -176,6 +168,14 @@ export default {
                 text: '',
                 active: false
             });
+        },
+
+        /**
+         * Deactivate all boxes
+         */
+        deactivate ()
+        {
+            this.boxes.map(box => box.active = false);
         },
 
         deltaX (offsetX)
@@ -199,12 +199,14 @@ export default {
 
         /**
          * When we stop dragging a box
+         *
+         * Bug:
          */
         onDragStop (id, x, y)
         {
-            console.log('onDragStop', id, x, y);
+            console.log({ y });
 
-            this.boxes.map(box => {
+            this.boxes.map((box, index) => {
 
                 if (box.id === id)
                 {
@@ -218,6 +220,7 @@ export default {
             this.draggingId = null;
             this.prevOffsetX = 0;
             this.prevOffsetY = 0;
+
         },
 
         /**
@@ -245,24 +248,20 @@ export default {
             });
         },
 
+        resize(newRect) {
+            this.width = newRect.width;
+            this.height = newRect.height;
+            this.top = newRect.top;
+            this.left = newRect.left;
+        },
+
         /**
          *
          */
         onResizing (id, left, top, width, height)
         {
-            console.log(id, left, top, width, height)
+            // console.log(id, left, top, width, height)
         }
-
-        // /**
-        //  *
-        //  */
-        // onResize (x, y, width, height)
-        // {
-        //     this.x = x
-        //     this.y = y
-        //     this.width = width
-        //     this.height = height
-        // },
     }
 }
 </script>

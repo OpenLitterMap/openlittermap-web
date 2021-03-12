@@ -46,6 +46,7 @@
         "vue": "^2.6.11",
         "vue-chartjs": "^3.5.0",
         "vue-click-outside": "^1.1.0",
+        "vue-drag-resize": "^1.4.2",
         "vue-draggable-resizable": "^2.3.0",
         "vue-echo-laravel": "0.0.6",
         "vue-fullscreen": "^2.2.0",
