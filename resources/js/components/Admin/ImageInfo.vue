@@ -4,9 +4,11 @@
         <p>Height: </p>
         <p>Width: </p>
 
-        <br>
+        <button class="button is-medium is-primary mt1 mb1" @click="addNewBox">
+            Add Box
+        </button>
 
-        <div v-for="(box, index) in boxes" :key="box.id" :class="boxClass" @click.stop="activate(box.id)">
+        <div v-for="(box, index) in boxes" :key="box.id" :class="boxClass(box.active)" @click.stop="activate(box.id)">
 
             <!-- Box.id, duplicate button -->
             <div class="flex">
@@ -37,10 +39,6 @@
                 </li>
             </ul>
         </div>
-
-        <button class="button is-medium is-primary" @click="addNewBox">
-            Add Box
-        </button>
     </div>
 </template>
 
@@ -56,16 +54,6 @@ export default {
         boxes ()
         {
             return this.$store.state.bbox.boxes;
-        },
-
-        /**
-         * Normal or active class
-         */
-        boxClass ()
-        {
-            return this.boxes.map(box => {
-                return box.active ? 'is-box is-active' : 'is-box';
-            });
         }
 
     },
@@ -85,6 +73,14 @@ export default {
         addNewBox ()
         {
             this.$store.commit('addNewBox');
+        },
+
+        /**
+         * Normal or active class
+         */
+        boxClass (bool)
+        {
+            return bool ? 'is-box is-active' : 'is-box';
         },
 
         /**
@@ -145,12 +141,7 @@ export default {
          */
         removeTag (category, tag_key)
         {
-            let commit = '';
-
-            if (this.admin)  commit = 'resetTag';
-            else commit = 'removeTag';
-
-            this.$store.commit(commit, {
+            this.$store.commit('removeBboxTag', {
                 category,
                 tag_key
             });

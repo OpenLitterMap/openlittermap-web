@@ -316,7 +316,10 @@ Route::group(['prefix' => '/admin'], function () {
     // Add coordinates
     Route::get('bbox', 'HomeController@index');
 
+    // Load the next image to add bounding boxes to
     Route::get('next-bb-image', 'BoundingBoxController@index');
+
+
 });
 
 /**

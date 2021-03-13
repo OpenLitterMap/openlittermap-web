@@ -17,22 +17,22 @@
                         :style="image"
                         @click.stop
                     >
-                        <!-- Todo - add @clicked.stop -->
                         <VueDragResize
                             v-for="box in boxes"
                             :key="box.id"
-                            :isActive="box.active"
                             :w="box.width"
                             :h="box.height"
-                            v-on:resizing="resize"
-                            v-on:dragging="resize"
-                            class="test-class"
+                            :x="box.left"
+                            :y="box.top"
+                            :isActive="box.active"
+                            :minw="10"
+                            :minh="10"
+                            :parentLimitation="true"
+                            :z="box.id"
                             @clicked="activated(box.id)"
-                            :minw="5"
-                            :minh="5"
-                        >
-                            <p class="box-tag">{{ box.id }}</p>
-                        </VueDragResize>
+                            @resizing="resize"
+                            @dragging="resize"
+                        ><p class="box-tag">{{ box.id }}</p></VueDragResize>
                     </div>
 
                     <add-tags
@@ -70,6 +70,13 @@ export default {
     async created ()
     {
         this.$store.dispatch('GET_NEXT_BBOX');
+    },
+    data ()
+    {
+        return {
+            listWidth: 0,
+            listHeight: 0
+        };
     },
     mounted ()
     {
@@ -166,7 +173,7 @@ export default {
 }
 </script>
 
-<style scoped>
+<style>
 
     #image-wrapper {
         height: 500px;
@@ -175,6 +182,10 @@ export default {
         position: relative;
         background-size: 500px 500px;
         margin: 0 auto 1em auto;
+    }
+
+    .vdr {
+        border: 3px solid red;
     }
 
     .test-class {
@@ -189,6 +200,12 @@ export default {
         right: 0;
         padding: 0 5px;
         margin-right: -3px;
+    }
+
+    .filler {
+        width: 100%;
+        height: 100%;
+        position: absolute;
     }
 
 </style>

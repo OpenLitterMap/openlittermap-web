@@ -444,13 +444,22 @@ export default {
 
         /**
          * Submit the image for verification
+         *
+         * add_tags_to_image => users
+         *
+         * add_boxes_to_image => admins
+         *
          * litter/actions.js
          */
         async submit ()
         {
             this.processing = true;
 
-            await this.$store.dispatch('ADD_TAGS_TO_IMAGE');
+            let action = this.annotations
+                ? 'ADD_BOXES_TO_IMAGE'
+                : 'ADD_TAGS_TO_IMAGE';
+
+            await this.$store.dispatch(action);
 
             this.processing = false;
         }

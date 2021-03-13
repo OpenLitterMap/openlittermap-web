@@ -14,8 +14,6 @@ export const mutations = {
         state.boxes.map(box => {
             box.active = box.id === payload;
 
-            console.log('activate', box.active);
-
             return box;
         });
     },
@@ -137,6 +135,42 @@ export const mutations = {
         let boxes = [...state.boxes];
 
         boxes = boxes.filter(box => box.active === false);
+
+        // Todo - Reset the ID of each box to stay in order
+        // let id = 1;
+        //
+        // boxes.map(box => {
+        //     box.id = id;
+        //     id++;
+        //     return box;
+        // });
+
+        state.boxes = boxes;
+    },
+
+    /**
+     * Remove a tag from a bounding box
+     */
+    removeBboxTag (state, payload)
+    {
+        let boxes = [...state.boxes];
+
+        boxes.map(box => {
+
+            if (box.active)
+            {
+                let tags = Object.assign({}, box.tags);
+
+                delete tags[payload.category][payload.tag_key];
+
+                if (Object.keys(tags[payload.category]).length === 0)
+                {
+                    delete tags[payload.category];
+                }
+            }
+
+            return box;
+        });
 
         state.boxes = boxes;
     },
