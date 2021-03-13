@@ -17,6 +17,7 @@
                         id="image-wrapper"
                         ref="img"
                         :style="image"
+                        v-click-outside="deactivate"
                     >
                         <VueDragResize
                             v-for="(box, index) in boxes"
@@ -27,9 +28,11 @@
                             v-on:resizing="resize"
                             v-on:dragging="resize"
                             class="test-class"
-                            @clicked.prevent="activated(index)"
+                            @clicked.prevent="activated(box.id)"
                         >
                             <p>{{ box.id }}</p>
+                            <p>Top: {{ box.top }}, Left: {{ box.left }}</p>
+                            <p>Width: {{ box.width }}, Height: {{ box.height }}</p>
                         </VueDragResize>
                     </div>
 
@@ -52,6 +55,7 @@ import ImageInfo from '../../components/Admin/ImageInfo'
 import AddTags from '../../components/Litter/AddTags'
 
 import VueDragResize from 'vue-drag-resize'
+import ClickOutside from 'vue-click-outside';
 
 export default {
     name: 'BoundingBox',
@@ -60,6 +64,9 @@ export default {
         AddTags,
         ImageInfo,
         VueDragResize
+    },
+    directives: {
+        ClickOutside
     },
     async created ()
     {
@@ -91,12 +98,8 @@ export default {
             draggingId: null,
             processing: false,
             boxes: [
-                { id: 1, x: 0, y: 0, height: 100, width: 100, text: '', active: false }
-            ],
-            width: 0,
-            height: 0,
-            top: 0,
-            left: 0
+                { id: 1, top: 0, left: 0, height: 100, width: 100, text: '', active: false }
+            ]
         };
 
     },
@@ -143,13 +146,14 @@ export default {
          * When a box has been selected
          *
          * Hold box.id
-         *
-         * Todo - clear this when click outside
          */
-        activated (index)
+        activated (id)
         {
-            // this.activeId = id;
-            this.boxes[index].active = true;
+            this.boxes.map(box => {
+                box.active = box.id === id;
+
+                return box;
+            });
         },
 
         /**
@@ -161,8 +165,8 @@ export default {
         {
             this.boxes.push({
                 id: this.boxes[this.boxes.length -1].id + 1,
-                x: 0,
-                y: 0,
+                top: 0,
+                left: 0,
                 height: 100,
                 width: 100,
                 text: '',
@@ -178,89 +182,24 @@ export default {
             this.boxes.map(box => box.active = false);
         },
 
-        deltaX (offsetX)
-        {
-            const ret = offsetX - this.prevOffsetX;
-
-            this.prevOffsetX = offsetX;
-
-            return ret;
-        },
-
-
-        deltaY (offsetY)
-        {
-            const ret = offsetY - this.prevOffsetY;
-
-            this.prevOffsetY = offsetY;
-
-            return ret;
-        },
 
         /**
-         * When we stop dragging a box
-         *
-         * Bug:
+         * Resize active box
          */
-        onDragStop (id, x, y)
+        resize (newRect)
         {
-            console.log({ y });
+            this.boxes.map(box => {
 
-            this.boxes.map((box, index) => {
-
-                if (box.id === id)
+                if (box.active)
                 {
-                    box.x = x;
-                    box.y = y;
+                    box.width = newRect.width;
+                    box.height = newRect.height;
+                    box.top = newRect.top;
+                    box.left = newRect.left;
                 }
 
                 return box;
             });
-
-            this.draggingId = null;
-            this.prevOffsetX = 0;
-            this.prevOffsetY = 0;
-
-        },
-
-        /**
-         * When dragging, update (x,y) values on that box
-         */
-        onDragging (id, x, y)
-        {
-            this.draggingId = id;
-
-            if (! this.sync) return;
-
-            const offsetX = x - this.draggingBox.x;
-            const offsetY = y - this.draggingBox.y;
-
-            const deltaX = this.deltaX(offsetX);
-            const deltaY = this.deltaY(offsetY);
-
-            this.boxes.map(el => {
-                if (el.id !== id) {
-                    el.x += deltaX;
-                    el.y += deltaY;
-                }
-
-                return el;
-            });
-        },
-
-        resize(newRect) {
-            this.width = newRect.width;
-            this.height = newRect.height;
-            this.top = newRect.top;
-            this.left = newRect.left;
-        },
-
-        /**
-         *
-         */
-        onResizing (id, left, top, width, height)
-        {
-            // console.log(id, left, top, width, height)
         }
     }
 }
