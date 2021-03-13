@@ -6,13 +6,22 @@
 
         <br>
 
-        <div v-for="(box, index) in boxes" :key="box.id" class="is-box">
-            <p>Box: <span class="is-bold">{{ index + 1 }}</span></p>
+        <div v-for="(box, index) in boxes" :key="box.id" :class="boxClass" @click.stop="activate(box.id)">
+
+            <!-- Box.id, duplicate button -->
+            <div class="flex">
+                <p class="flex-1 ma">Box: <span class="is-bold">{{ index + 1 }}</span></p>
+
+                <button class="button is-small" @click="duplicate(box.id)" disabled>Todo - Duplicate Box</button>
+            </div>
+
+            <!-- Box attributes -->
             <p>Height: {{ box.height }}</p>
             <p>Width: {{ box.width }}</p>
             <p>Top: {{ box.top }}</p>
             <p class="mb1">Left: {{ box.left }}</p>
 
+            <!-- Tags -->
             <ul v-if="box.tags" class="container">
                 <li v-for="category in getCategories(box.tags)" class="box-categories">
                     <!-- Translated Category Title -->
@@ -49,8 +58,26 @@ export default {
             return this.$store.state.bbox.boxes;
         },
 
+        /**
+         * Normal or active class
+         */
+        boxClass ()
+        {
+            return this.boxes.map(box => {
+                return box.active ? 'is-box is-active' : 'is-box';
+            });
+        }
+
     },
     methods: {
+
+        /**
+         * Activate a box
+         */
+        activate (id)
+        {
+            this.$store.commit('activateBox', id);
+        },
 
         /**
          * Add a new bounding box
@@ -61,12 +88,23 @@ export default {
         },
 
         /**
+         * Todo - Duplicate a box + tags
+         *
+         * Bug: position should be relative to the image container.
+         * It is duplicating relative to previous box
+         *
+         * Position starts (0,0)
+         */
+        duplicate (id)
+        {
+            this.$store.commit('duplicateBox', id);
+        },
+
+        /**
          * Categories from the tags object the user has created
          */
         getCategories (keys)
         {
-            console.log({ keys });
-
             let categories = [];
 
             Object.entries(keys).map(entries => {
@@ -128,6 +166,10 @@ export default {
         padding: 1em;
         margin-bottom: 1em;
         max-width: 20em;
+    }
+
+    .is-box.is-active {
+        border: 1px solid green;
     }
 
     .box-tag {

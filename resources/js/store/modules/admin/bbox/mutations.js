@@ -14,6 +14,8 @@ export const mutations = {
         state.boxes.map(box => {
             box.active = box.id === payload;
 
+            console.log('activate', box.active);
+
             return box;
         });
     },
@@ -39,7 +41,7 @@ export const mutations = {
             width: 100,
             text: '',
             active: false
-        })
+        });
     },
 
     /**
@@ -82,6 +84,47 @@ export const mutations = {
     deactivateBoxes (state)
     {
         state.boxes.map(box => box.active = false);
+    },
+
+    /**
+     * Todo - Duplicate a box
+     *
+     * Bug: not relative to parent photo
+     */
+    duplicateBox (state, payload)
+    {
+        let boxes = [...state.boxes];
+
+        let box = boxes.find(box => box.id === payload);
+
+        let newBox = _.cloneDeep(box);
+
+        newBox.id = boxes.length + 1;
+        newBox.top = 0;
+        newBox.left = 0;
+
+        boxes.push(newBox);
+
+        state.boxes = boxes;
+    },
+
+    /**
+     *
+     */
+    moveBoxUp (state)
+    {
+        let boxes = [...state.boxes];
+
+        boxes.map(box => {
+            if (box.active)
+            {
+                box.top = box.top -1
+            }
+
+            return box;
+        })
+
+        state.boxes = boxes;
     },
 
     /**

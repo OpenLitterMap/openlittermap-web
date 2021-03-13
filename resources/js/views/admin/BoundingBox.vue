@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div @click="deactivate">
         <loading v-if="loading" :active.sync="loading" :is-full-page="true" />
 
         <div v-else class="columns mt1">
@@ -15,8 +15,9 @@
                         id="image-wrapper"
                         ref="img"
                         :style="image"
-                        v-click-outside="deactivate"
+                        @click.stop
                     >
+                        <!-- Todo - add @clicked.stop -->
                         <VueDragResize
                             v-for="box in boxes"
                             :key="box.id"
@@ -26,7 +27,7 @@
                             v-on:resizing="resize"
                             v-on:dragging="resize"
                             class="test-class"
-                            @clicked.prevent="activated(box.id)"
+                            @clicked="activated(box.id)"
                             :minw="5"
                             :minh="5"
                         >
@@ -81,16 +82,30 @@ export default {
             {
                 this.$store.commit('removeActiveBox');
             }
+            else if (key === "ArrowUp")
+            {
+                this.$store.commit('moveBoxUp');
+            }
+            else if (key === "ArrowRight")
+            {
+                this.$store.commit('moveBoxRight');
+            }
+            else if (key === "ArrowDown")
+            {
+                this.$store.commit('moveBoxDown');
+            }
+            else if (key === "ArrowLeft")
+            {
+                this.$store.commit('moveBoxLeft');
+            }
         });
-
-        // todo - move +1 pixels x, y with keyboard for currently active box
     },
-    data ()
-    {
-        return {
-            activeId: null
-        };
-    },
+    // data ()
+    // {
+    //     return {
+    //         activeId: null
+    //     };
+    // },
     computed: {
 
         /**
@@ -141,6 +156,7 @@ export default {
          */
         deactivate ()
         {
+            console.log('deactivate');
             this.$store.commit('deactivateBoxes');
         },
 
