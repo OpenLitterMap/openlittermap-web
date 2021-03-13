@@ -4,9 +4,7 @@
 
         <div v-else class="columns mt1">
 
-            <ImageInfo
-                @addNewBox="addNewBox"
-            />
+            <ImageInfo />
 
             <div class="column is-one-third">
                 <h1 class="title is-2 has-text-centered">Add bounding box to image # {{ this.imageId }}</h1>
@@ -20,7 +18,7 @@
                         v-click-outside="deactivate"
                     >
                         <VueDragResize
-                            v-for="(box, index) in boxes"
+                            v-for="box in boxes"
                             :key="box.id"
                             :isActive="box.active"
                             :w="box.width"
@@ -29,10 +27,10 @@
                             v-on:dragging="resize"
                             class="test-class"
                             @clicked.prevent="activated(box.id)"
+                            :minw="5"
+                            :minh="5"
                         >
-                            <p>{{ box.id }}</p>
-                            <p>Top: {{ box.top }}, Left: {{ box.left }}</p>
-                            <p>Width: {{ box.width }}, Height: {{ box.height }}</p>
+                            <p class="box-tag">{{ box.id }}</p>
                         </VueDragResize>
                     </div>
 
@@ -81,11 +79,7 @@ export default {
 
             if (key === "Backspace")
             {
-                let boxes = [...this.boxes];
-
-                boxes = boxes.filter(box => box.id !== this.activeId);
-
-                this.boxes = boxes;
+                this.$store.commit('removeActiveBox');
             }
         });
 
@@ -94,25 +88,17 @@ export default {
     data ()
     {
         return {
-            activeId: null,
-            draggingId: null,
-            processing: false,
-            boxes: [
-                { id: 1, top: 0, left: 0, height: 100, width: 100, text: '', active: false }
-            ]
+            activeId: null
         };
-
     },
     computed: {
 
         /**
-         * The current box.id being dragged
+         * Array of bounding boxes
          */
-        draggingBox ()
+        boxes ()
         {
-            if (! this.draggingId) return;
-
-            return this.boxes.find(el => el.id === this.draggingId);
+            return this.$store.state.bbox.boxes;
         },
 
         /**
@@ -143,35 +129,11 @@ export default {
     methods: {
 
         /**
-         * When a box has been selected
-         *
-         * Hold box.id
+         * Box.active => True
          */
         activated (id)
         {
-            this.boxes.map(box => {
-                box.active = box.id === id;
-
-                return box;
-            });
-        },
-
-        /**
-         * Add a new bounding box
-         *
-         * We +1 the last ID in case a box was deleted
-         */
-        addNewBox ()
-        {
-            this.boxes.push({
-                id: this.boxes[this.boxes.length -1].id + 1,
-                top: 0,
-                left: 0,
-                height: 100,
-                width: 100,
-                text: '',
-                active: false
-            });
+            this.$store.commit('activateBox', id);
         },
 
         /**
@@ -179,37 +141,21 @@ export default {
          */
         deactivate ()
         {
-            this.boxes.map(box => box.active = false);
+            this.$store.commit('deactivateBoxes');
         },
-
 
         /**
          * Resize active box
          */
         resize (newRect)
         {
-            this.boxes.map(box => {
-
-                if (box.active)
-                {
-                    box.width = newRect.width;
-                    box.height = newRect.height;
-                    box.top = newRect.top;
-                    box.left = newRect.left;
-                }
-
-                return box;
-            });
+            this.$store.commit('updateBoxPosition', newRect);
         }
     }
 }
 </script>
 
 <style scoped>
-
-    .mt1em {
-        margin-top: 1em;
-    }
 
     #image-wrapper {
         height: 500px;
@@ -221,12 +167,17 @@ export default {
     }
 
     .test-class {
-        border: 3px solid green;
-        background: #00b89c;
+        border: 3px solid red;
+        position: relative;
     }
 
-    .my-active-class {
-        border: 3px solid red;
+    .box-tag {
+        background-color: red;
+        position: absolute;
+        top: -1.5em;
+        right: 0;
+        padding: 0 5px;
+        margin-right: -3px;
     }
 
 </style>

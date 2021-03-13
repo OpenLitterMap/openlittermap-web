@@ -3,6 +3,7 @@ import Vuex from 'vuex'
 import createPersistedState from 'vuex-persistedstate'
 
 import { admin } from './modules/admin'
+import { bbox } from './modules/admin/bbox'
 import { donate } from './modules/donate'
 import { citymap } from './modules/citymap'
 import { globalmap } from './modules/globalmap'
@@ -26,6 +27,7 @@ export default new Vuex.Store({
     ],
     modules: {
         admin,
+        bbox,
         donate,
         citymap,
         globalmap,

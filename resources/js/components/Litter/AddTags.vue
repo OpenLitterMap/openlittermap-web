@@ -75,6 +75,7 @@
 
             <button
                 class="button is-medium is-info"
+                :disabled="disabled"
                 @click="addTag"
             >{{ $t('tags.add-tag') }}</button>
 
@@ -227,6 +228,24 @@ export default {
         },
 
         /**
+         * When adding tags to a bounding box,
+         *
+         * We should disable the addTag button if a box is not selected
+         */
+        disabled ()
+        {
+            if (! this.annotations) return false;
+
+            let disable = true;
+
+            this.$store.state.bbox.boxes.forEach(box => {
+                if (box.active) disable = false;
+            });
+
+            return disable;
+        },
+
+        /**
          * Has the litter been picked up, or is it still there?
          */
         presence ()
@@ -304,16 +323,13 @@ export default {
         /**
          * Add or increment a tag
          *
+         * Also used by Admin/BBox to add annotations to an image
+         *
          * tags: {
          *     smoking: {
          *         butts: 1
          *     }
          * }
-         *
-         * If annotations is true
-         *     We want to add a bounding box (Admin/BoundingBox.vue)
-         * else
-         *     Add tag to the image
          */
         addTag ()
         {
