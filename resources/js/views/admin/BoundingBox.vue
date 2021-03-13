@@ -82,30 +82,26 @@ export default {
             {
                 this.$store.commit('removeActiveBox');
             }
-            else if (key === "ArrowUp")
-            {
-                this.$store.commit('moveBoxUp');
-            }
-            else if (key === "ArrowRight")
-            {
-                this.$store.commit('moveBoxRight');
-            }
-            else if (key === "ArrowDown")
-            {
-                this.$store.commit('moveBoxDown');
-            }
-            else if (key === "ArrowLeft")
-            {
-                this.$store.commit('moveBoxLeft');
-            }
+
+            // Todo
+            // else if (key === "ArrowUp")
+            // {
+            //     this.$store.commit('moveBoxUp');
+            // }
+            // else if (key === "ArrowRight")
+            // {
+            //     this.$store.commit('moveBoxRight');
+            // }
+            // else if (key === "ArrowDown")
+            // {
+            //     this.$store.commit('moveBoxDown');
+            // }
+            // else if (key === "ArrowLeft")
+            // {
+            //     this.$store.commit('moveBoxLeft');
+            // }
         });
     },
-    // data ()
-    // {
-    //     return {
-    //         activeId: null
-    //     };
-    // },
     computed: {
 
         /**
@@ -156,7 +152,6 @@ export default {
          */
         deactivate ()
         {
-            console.log('deactivate');
             this.$store.commit('deactivateBoxes');
         },
 

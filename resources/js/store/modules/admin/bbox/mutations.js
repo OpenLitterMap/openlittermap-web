@@ -108,24 +108,26 @@ export const mutations = {
         state.boxes = boxes;
     },
 
-    /**
-     *
-     */
-    moveBoxUp (state)
-    {
-        let boxes = [...state.boxes];
-
-        boxes.map(box => {
-            if (box.active)
-            {
-                box.top = box.top -1
-            }
-
-            return box;
-        })
-
-        state.boxes = boxes;
-    },
+    // /**
+    //  * Todo
+    //  */
+    // moveBoxUp (state)
+    // {
+    //     let boxes = [...state.boxes];
+    //
+    //     boxes.map(box => {
+    //         if (box.active)
+    //         {
+    //             box.top--;
+    //
+    //             console.log('box.top', box.top);
+    //         }
+    //
+    //         return box;
+    //     })
+    //
+    //     state.boxes = boxes;
+    // },
 
     /**
      * Filter out any boxes that are active
