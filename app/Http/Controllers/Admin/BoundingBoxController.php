@@ -55,7 +55,8 @@ class BoundingBoxController extends Controller
             'sanitary_id',
             'dumping_id',
             'industrial_id',
-            'brands_id'
+            'brands_id',
+            'result_string'
         )
         ->where(['verified' => 2])
         ->first();
