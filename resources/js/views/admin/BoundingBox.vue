@@ -41,7 +41,12 @@
                 </div>
             </div>
 
-            <div class="column is-one-third" />
+            <div class="column is-2 is-offset-1">
+
+                <!-- The list of tags associated with this image-->
+                <Tags :admin="true" />
+
+            </div>
         </div>
     </div>
 </template>
@@ -50,6 +55,7 @@
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
 import ImageInfo from '../../components/Admin/ImageInfo'
+import Tags from '../../components/Litter/Tags'
 import AddTags from '../../components/Litter/AddTags'
 
 import VueDragResize from 'vue-drag-resize'
@@ -59,6 +65,7 @@ export default {
     name: 'BoundingBox',
     components: {
         Loading,
+        Tags,
         AddTags,
         ImageInfo,
         VueDragResize

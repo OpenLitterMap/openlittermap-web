@@ -104,9 +104,31 @@ class Photo extends Model
     }
 
     /**
+     * Return the tags for an image
+     *
+     * Remove any keys with null values
+     */
+    public function tags ()
+    {
+        foreach ($this->categories() as $category)
+        {
+            if ($this->$category)
+            {
+                foreach ($this->$category->types() as $tag)
+                {
+                    if (is_null($this->$category[$tag]))
+                    {
+                        unset ($this->$category[$tag]);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Update and return the total amount of litter in a photo
      */
-    public function total ()
+    protected function total ()
     {
         $total = 0;
 

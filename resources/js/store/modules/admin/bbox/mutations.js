@@ -146,10 +146,11 @@ export const mutations = {
                     // Get the last / most recently created box.id
                     const box_id = state.boxes[state.boxes.length -1].id;
 
-                    // active this box so we can add tags to it
+                    // activate this box so we can add tags to it
+                    // all other boxes will be deactivated
                     this.commit('activateBox', box_id);
 
-                    // add tag to the most active box
+                    // add category, tag to the active box
                     this.commit('addTag', { category, tag });
 
                     i++;

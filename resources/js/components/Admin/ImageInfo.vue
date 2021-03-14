@@ -31,7 +31,7 @@
                     <!-- Translated Category Title -->
                     <span class="box-category">{{ getCategory(box.category) }}</span>
 
-                    <!-- List of tags in each category -->
+                    <!-- Translated tag -->
                     <span
                         class="tag is-medium is-info box-label"
                         @click="removeTag(box.category, box.tag)"
@@ -42,6 +42,7 @@
                         <!-- Translated Brand title -->
                         <span class="box-category">{{ getTags('brands', box.brand) }}</span>
 
+                        <!-- Translated Brand tag -->
                         <span
                             class="tag is-medium is-info box-label"
                             @click="removeTag('brands', box.brand)"

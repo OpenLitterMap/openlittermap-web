@@ -42,9 +42,27 @@ class BoundingBoxController extends Controller
      */
     public function index ()
     {
-        return Photo::select('id', 'filename', 'result_string')->where([
-            'verified' => 2,
-        ])->first();
+        $photo = Photo::select(
+            'id',
+            'filename',
+            'smoking_id',
+            'food_id',
+            'alcohol_id',
+            'coffee_id',
+            'softdrinks_id',
+            'other_id',
+            'coastal_id',
+            'sanitary_id',
+            'dumping_id',
+            'industrial_id',
+            'brands_id'
+        )
+        ->where(['verified' => 2])
+        ->first();
+
+        $photo->tags();
+
+        return $photo;
     }
 
 

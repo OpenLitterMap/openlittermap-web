@@ -32,6 +32,8 @@ class Smoking extends LitterCategory
 
     /**
      * Pre-defined litter types/columns available on this class
+     *
+     * Todo - rename this tags
      */
     public function types ()
     {
