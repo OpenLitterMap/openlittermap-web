@@ -128,7 +128,7 @@ class Photo extends Model
     /**
      * Update and return the total amount of litter in a photo
      */
-    protected function total ()
+    public function total ()
     {
         $total = 0;
 
