@@ -16,7 +16,7 @@ final class Litterrata{
         "filterbox": "8",
         "vape_pen": "9",
         "vape_oil": "10",
-        "smokingOther": "11",
+        "smokingOther": "11"
     },
     "alcohol": {
         "beerCan": "12",
@@ -52,7 +52,7 @@ final class Litterrata{
         "glass_jar_lid": "38",
         "pizza_box": "39",
         "aluminium_foil": "40",
-        "foodOther": "41",
+        "foodOther": "41"
     },
     "softdrinks": {
         "waterBottle": "42",
@@ -220,12 +220,12 @@ final class Litterrata{
         "waitrose": "196",
         "wilde_and_greene": "197",
         "woolworths": "198",
-        "wrigleys": "199",
+        "wrigleys": "199"
     },
     "dumping": {
         "small": "200",
         "medium": "201",
-        "large": "202",
+        "large": "202"
     },
     "industrial": {
         "oil": "203",
@@ -233,7 +233,7 @@ final class Litterrata{
         "industrial_plastic": "205",
         "bricks": "206",
         "tape": "207",
-        "industrial_other": "208",
+        "industrial_other": "208"
     }
 }';
 
