@@ -33,7 +33,11 @@ export const actions = {
                     filename: response.data.filename
                 });
 
-                context.commit('initBboxTags', response.data.result_string);
+                // litter.js
+                context.commit('initAdminItems', response.data);
+
+                // bbox.js
+                context.commit('initBboxTags', response.data);
 
                 context.commit('adminLoading', false);
             })

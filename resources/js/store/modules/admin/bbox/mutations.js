@@ -1,3 +1,6 @@
+import { categories } from '../../../../extra/categories'
+import { litterkeys } from '../../../../extra/litterkeys'
+
 export const mutations = {
 
     /**
@@ -57,7 +60,7 @@ export const mutations = {
      *
      * Note: We need Quantity number of boxes per tag (eg 10 butts => 10 boxes)
      */
-    addTag (state, payload)
+    addTagToBox (state, payload)
     {
         let boxes = [...state.boxes];
 
@@ -120,43 +123,45 @@ export const mutations = {
      */
     initBboxTags (state, payload)
     {
-        const tags = payload.split(',');
-
         // state.boxes = []
         this.commit('clearBoxes');
 
-        tags.map(category_tag_quantity => {
-            if (category_tag_quantity)
+        categories.map(category => {
+
+            if (payload[category])
             {
-                const keys = category_tag_quantity.split(' ');
-                const category_tag = keys[0].split('.');
+                litterkeys[category].map(tag => {
 
-                const category = category_tag[0];
-                const tag = category_tag[1];
-                const quantity = parseInt(keys[1]);
+                    if (payload[category][tag])
+                    {
+                        const quantity = payload[category][tag];
 
-                let i = 1;
+                        console.log(category, tag, quantity);
 
-                // for i in range(quantity):
-                while (i <= quantity)
-                {
-                    // Create a new box for each tag
-                    this.commit('addNewBox');
+                        let i = 1;
 
-                    // Get the last / most recently created box.id
-                    const box_id = state.boxes[state.boxes.length -1].id;
+                        while (i <= quantity)
+                        {
+                            this.commit('addNewBox');
 
-                    // activate this box so we can add tags to it
-                    // all other boxes will be deactivated
-                    this.commit('activateBox', box_id);
+                            // Get the last / most recently created box.id
+                            const box_id = state.boxes[state.boxes.length -1].id;
 
-                    // add category, tag to the active box
-                    this.commit('addTag', { category, tag });
+                            // activate this box so we can add tags to it
+                            // all other boxes will be deactivated
+                            this.commit('activateBox', box_id);
 
-                    i++;
-                }
+                            // add category, tag to the active box
+                            this.commit('addTagToBox', { category, tag });
+
+                            i++;
+                        }
+
+                    }
+
+                });
             }
-        })
+        });
     },
 
     // /**
