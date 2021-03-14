@@ -281,7 +281,6 @@ Route::get('/nav', function () {
 /**
  * ADMIN
  */
-
 Route::group(['prefix' => '/admin'], function () {
 
     // route
@@ -317,7 +316,10 @@ Route::group(['prefix' => '/admin'], function () {
     Route::get('bbox', 'HomeController@index');
 
     // Load the next image to add bounding boxes to
-    Route::get('next-bb-image', 'BoundingBoxController@index');
+    Route::get('next-bb-image', 'Admin\BoundingBoxController@index');
+
+    // Add bboxes to image
+    Route::post('/bbox/create', 'Admin\BoundingBoxController@create');
 
 
 });

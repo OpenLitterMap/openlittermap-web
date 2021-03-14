@@ -24,7 +24,6 @@ use App\Events\Photo\IncrementPhotoMonth;
 
 use Illuminate\Support\Facades\Redis;
 
-
 class PhotosController extends Controller
 {
     use CheckLocations;

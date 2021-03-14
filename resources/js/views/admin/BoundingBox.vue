@@ -188,6 +188,10 @@ export default {
         border: 3px solid red;
     }
 
+    .vdr.active:before {
+        outline: 0;
+    }
+
     .test-class {
         border: 3px solid red;
         position: relative;
