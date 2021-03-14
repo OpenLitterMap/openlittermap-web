@@ -37,15 +37,15 @@ export const mutations = {
             left: 0,
             height: 100,
             width: 100,
-            text: '',
-            active: false
+            active: false,
+            category: null,
+            tag: null,
+            brand: null
         });
     },
 
     /**
      * Add tag to a box
-     *
-     * 1 box = 1 tag?
      *
      * Payload = {
      *     category: {
@@ -53,7 +53,9 @@ export const mutations = {
      *     }
      * }
      *
-     * eg { smoking: { butts: 1 } }
+     * eg { smoking: { butts: 10 } }
+     *
+     * Note: We need Quantity number of boxes per tag (eg 10 butts => 10 boxes)
      */
     addTag (state, payload)
     {
@@ -61,19 +63,23 @@ export const mutations = {
 
         let box = boxes.find(box => box.active);
 
-        let tags = Object.assign({}, box.tags);
+        box.category = payload.category;
+        box.tag = payload.tag;
 
-        tags = {
-            ...tags,
-            [payload.category]: {
-                ...tags[payload.category],
-                [payload.tag]: payload.quantity
-            }
-        };
-
-        box.tags = tags;
+        if (payload.hasOwnProperty('brand'))
+        {
+            box.brand = payload.brand;
+        }
 
         state.boxes = boxes;
+    },
+
+    /**
+     * When an image has tags, we start with [] boxes
+     */
+    clearBoxes (state)
+    {
+        state.boxes = [];
     },
 
     /**
@@ -104,6 +110,52 @@ export const mutations = {
         boxes.push(newBox);
 
         state.boxes = boxes;
+    },
+
+    /**
+     * Using the result string,
+     *
+     * Split up the result and add Quantity number of bounding_boxes,
+     * with the associated category labels
+     */
+    initBboxTags (state, payload)
+    {
+        const tags = payload.split(',');
+
+        // state.boxes = []
+        this.commit('clearBoxes');
+
+        tags.map(category_tag_quantity => {
+            if (category_tag_quantity)
+            {
+                const keys = category_tag_quantity.split(' ');
+                const category_tag = keys[0].split('.');
+
+                const category = category_tag[0];
+                const tag = category_tag[1];
+                const quantity = parseInt(keys[1]);
+
+                let i = 1;
+
+                // for i in range(quantity):
+                while (i <= quantity)
+                {
+                    // Create a new box for each tag
+                    this.commit('addNewBox');
+
+                    // Get the last / most recently created box.id
+                    const box_id = state.boxes[state.boxes.length -1].id;
+
+                    // active this box so we can add tags to it
+                    this.commit('activateBox', box_id);
+
+                    // add tag to the most active box
+                    this.commit('addTag', { category, tag });
+
+                    i++;
+                }
+            }
+        })
     },
 
     // /**

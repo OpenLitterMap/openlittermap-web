@@ -10,6 +10,9 @@ const state = {
             top: 0,
             left: 0,
             active: true,
+            category: null,
+            tag: null,
+            brand: null
         }
     ]
 };

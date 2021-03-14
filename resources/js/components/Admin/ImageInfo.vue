@@ -17,6 +17,8 @@
                 <button class="button is-small" @click="duplicate(box.id)" disabled>Todo - Duplicate Box</button>
             </div>
 
+            <button class="button is-small" @click="toggleLabel(box.id)" disabled>Todo - Toggle Label</button>
+
             <!-- Box attributes -->
             <p>Height: {{ box.height }}</p>
             <p>Width: {{ box.width }}</p>
@@ -24,20 +26,30 @@
             <p class="mb1">Left: {{ box.left }}</p>
 
             <!-- Tags -->
-            <ul v-if="box.tags" class="container">
-                <li v-for="category in getCategories(box.tags)" class="box-categories">
+            <div class="container">
+                <div class="box-categories">
                     <!-- Translated Category Title -->
-                    <span class="box-category">{{ getCategory(category.category) }}</span>
+                    <span class="box-category">{{ getCategory(box.category) }}</span>
 
                     <!-- List of tags in each category -->
                     <span
-                        v-for="tags in Object.entries(category.tags)"
-                        class="tag is-medium is-info box-tag"
-                        @click="removeTag(category.category, tags[0])"
-                        v-html="getTags(tags, category.category)"
+                        class="tag is-medium is-info box-label"
+                        @click="removeTag(box.category, box.tag)"
+                        v-html="getTags(box.category, box.tag)"
                     />
-                </li>
-            </ul>
+
+                    <div v-if="box.brand">
+                        <!-- Translated Brand title -->
+                        <span class="box-category">{{ getTags('brands', box.brand) }}</span>
+
+                        <span
+                            class="tag is-medium is-info box-label"
+                            @click="removeTag('brands', box.brand)"
+                            v-html="getTags('brands', box.brand)"
+                        />
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </template>
@@ -125,11 +137,11 @@ export default {
         },
 
         /**
-         * Return Translated key: value from tags[0]: tags[1]
+         * Return translated text for box.category, box.tag. Quantity => 1
          */
-        getTags (tags, category)
+        getTags (category, tag)
         {
-            return this.$i18n.t('litter.' + category + '.' + tags[0]) + ': ' + tags[1] + '<br>';
+            return this.$i18n.t('litter.' + category + '.' + tag) + ': 1';
         },
 
         /**
@@ -145,7 +157,15 @@ export default {
                 category,
                 tag_key
             });
-        }
+        },
+
+        /**
+         * Switch between box.id and box.category
+         */
+        toggleLabel (box_id)
+        {
+            console.log('todo - toggle label');
+        },
     }
 };
 </script>
@@ -163,7 +183,7 @@ export default {
         border: 1px solid green;
     }
 
-    .box-tag {
+    .box-label {
         margin-bottom: 0.25em;
     }
 

@@ -9,13 +9,12 @@
             <div class="column is-one-third">
                 <h1 class="title is-2 has-text-centered">Add bounding box to image # {{ this.imageId }}</h1>
 
-                <div class="has-text-centered">
+                <div class="has-text-centered" @click.stop>
 
                     <div
                         id="image-wrapper"
                         ref="img"
                         :style="image"
-                        @click.stop
                     >
                         <VueDragResize
                             v-for="box in boxes"

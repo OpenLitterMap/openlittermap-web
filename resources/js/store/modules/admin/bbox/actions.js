@@ -17,5 +17,28 @@ export const actions = {
         .catch(error => {
             console.error('add_boxes_to_image', error);
         });
+    },
+
+    /**
+     * Get the next image to add bounding box
+     */
+    async GET_NEXT_BBOX (context)
+    {
+        await axios.get('/admin/bbox/index')
+            .then(response => {
+                console.log('next_bb_img', response);
+
+                context.commit('adminImage', {
+                    id: response.data.id,
+                    filename: response.data.filename
+                });
+
+                context.commit('initBboxTags', response.data.result_string);
+
+                context.commit('adminLoading', false);
+            })
+            .catch(error => {
+                console.log('error.next_bb_img', error);
+            });
     }
 }

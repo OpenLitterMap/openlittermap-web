@@ -46,6 +46,6 @@ const vm = new Vue({
     router,
     i18n,
     components: {
-        RootContainer,
+        RootContainer
     }
 });
