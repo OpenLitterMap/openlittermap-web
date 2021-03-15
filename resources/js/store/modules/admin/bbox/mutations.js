@@ -142,6 +142,13 @@ export const mutations = {
 
                         while (i <= quantity)
                         {
+                            if (category === 'brands')
+                            {
+                                // add brand tag to another box
+                                i++;
+                                continue;
+                            }
+
                             this.commit('addNewBox');
 
                             // Get the last / most recently created box.id

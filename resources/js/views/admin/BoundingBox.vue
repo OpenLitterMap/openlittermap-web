@@ -50,6 +50,8 @@
                 <button class="button is-medium is-primary mt1" @click="update">Update Tags</button>
 
                 <button class="button is-medium is-warning mt1" @click="skip">Cannot use this image</button>
+
+                <!-- Todo - Go Back button (reverse skip) -->
             </div>
         </div>
     </div>
@@ -194,7 +196,7 @@ export default {
         {
             // commit bbox_update true
 
-            await this.$store.dispatch('ADMIN_VERIFY_CORRECT');
+            await this.$store.dispatch('BBOX_UPDATE_TAGS');
 
             // commit bbox_update false
         }

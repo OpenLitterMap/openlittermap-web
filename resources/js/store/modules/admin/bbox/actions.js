@@ -1,3 +1,5 @@
+import Vue from 'vue';
+
 export const actions = {
 
     /**
@@ -33,11 +35,43 @@ export const actions = {
             console.log('bbox_skip_image', response);
 
             // notification
+            Vue.$vToastify.success({
+                title: 'Skipping',
+                body: 'This image will not be used for AI',
+                position: 'top-right'
+            });
 
             // load next image
+            context.dispatch('GET_NEXT_BBOX');
         })
         .catch(error => {
             console.error('bbox_skip_image', error);
+        });
+    },
+
+    /**
+     * Update the tags for a bounding box image
+     */
+    async BBOX_UPDATE_TAGS (context)
+    {
+        await axios.post('/admin/bbox/tags/update', {
+            photoId: context.rootState.admin.id,
+            tags: context.rootState.litter.tags
+        })
+        .then(response => {
+            console.log('bbox_update_tags', response);
+
+            Vue.$vToastify.success({
+                title: 'Updated',
+                body: 'The tags for this image have been updated',
+                position: 'top-right'
+            });
+
+            // Update boxes based on tags in the image
+            context.commit('initBboxTags', context.rootState.litter.tags);
+        })
+        .catch(error => {
+            console.error('bbox_update_tags', error);
         });
     },
 

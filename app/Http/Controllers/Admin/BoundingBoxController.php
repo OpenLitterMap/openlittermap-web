@@ -2,14 +2,18 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Events\TagsVerifiedByAdmin;
 use App\Models\AI\Annotation;
 use App\Models\Photo;
 
+use App\Traits\AddTagsTrait;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 
 class BoundingBoxController extends Controller
 {
+    use AddTagsTrait;
+
     /**
      * Allow Admin to add bounding boxes to an image
      *
@@ -79,6 +83,21 @@ class BoundingBoxController extends Controller
         $photo->bbox_skipped = 1;
         $photo->skipped_by = auth()->user()->id;
         $photo->save();
+
+        return ['success' => true];
+    }
+
+    /**
+     * Update the tags on this image
+     */
+    public function updateTags (Request $request)
+    {
+        $photo = Photo::find($request->photoId);
+
+        $this->addTags($request->tags, $request->photoId);
+
+        // todo - dispatch event via horizon
+        event (new TagsVerifiedByAdmin($photo->id));
 
         return ['success' => true];
     }

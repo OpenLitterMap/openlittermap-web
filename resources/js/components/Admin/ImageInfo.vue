@@ -11,13 +11,10 @@
         <div v-for="(box, index) in boxes" :key="box.id" :class="boxClass(box.active)" @click.stop="activate(box.id)">
 
             <!-- Box.id, duplicate button -->
-            <div class="flex">
-                <p class="flex-1 ma">Box: <span class="is-bold">{{ index + 1 }}</span></p>
+            <p class="ma">Box: <span class="is-bold">{{ index + 1 }}</span></p>
 
-                <button class="button is-small" @click="duplicate(box.id)" disabled>Todo - Duplicate Box</button>
-            </div>
-
-            <button class="button is-small" @click="toggleLabel(box.id)" disabled>Todo - Toggle Label</button>
+            <button class="button is-small duplicate-box" @click="duplicate(box.id)" disabled>Todo - Duplicate Box</button>
+            <button class="button is-small toggle-box" @click="toggleLabel(box.id)" disabled>Todo - Toggle Label</button>
 
             <!-- Box attributes -->
             <p>Height: {{ box.height }}</p>
@@ -178,6 +175,7 @@ export default {
         padding: 1em;
         margin-bottom: 1em;
         max-width: 20em;
+        position: relative;
     }
 
     .is-box.is-active {
@@ -190,5 +188,16 @@ export default {
 
     .box-categories {
         display: grid;
+    }
+
+    .duplicate-box {
+        position: absolute;
+        right: 1em;
+    }
+
+    .toggle-box {
+        position: absolute;
+        top: 7em;
+        right: 1em;
     }
 </style>

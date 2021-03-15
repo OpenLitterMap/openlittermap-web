@@ -323,6 +323,9 @@ Route::group(['prefix' => '/admin'], function () {
 
     // Mark this image as not bbox compatible
     Route::post('/bbox/skip', 'Admin\BoundingBoxController@skip');
+
+    // Update the tags
+    Route::post('/bbox/tags/update', 'Admin\BoundingBoxController@updateTags');
 });
 
 /**
