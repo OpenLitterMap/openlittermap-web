@@ -16,8 +16,9 @@ class Photo extends Model
         'verification',
         'verified',
         'result_string',
+        'total_litter',
 
-    	'display_name',
+        'display_name',
     	'location',
     	'road',
     	'suburb',
@@ -44,11 +45,15 @@ class Photo extends Model
         'art_id',
         'brands_id',
         'trashdog_id',
-        'total_litter',
+
         'platform',
         'bounding_box',
         'geohash',
-        'team_id'
+        'team_id',
+
+        // annotations
+        'bbox_skipped',
+        'skipped_by'
     ];
 
     /**

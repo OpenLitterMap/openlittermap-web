@@ -320,6 +320,9 @@ Route::group(['prefix' => '/admin'], function () {
 
     // Add bboxes to image
     Route::post('/bbox/create', 'Admin\BoundingBoxController@create');
+
+    // Mark this image as not bbox compatible
+    Route::post('/bbox/skip', 'Admin\BoundingBoxController@skip');
 });
 
 /**

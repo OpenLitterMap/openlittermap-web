@@ -58,12 +58,29 @@ class BoundingBoxController extends Controller
             'brands_id',
             'result_string'
         )
-        ->where(['verified' => 2])
+        ->where([
+            'verified' => 2,
+            'bbox_skipped' => 0
+        ])
         ->first();
 
         $photo->tags();
 
         return $photo;
+    }
+
+    /**
+     * Mark this image as not compatible for annotations
+     */
+    public function skip (Request $request)
+    {
+        $photo = Photo::find($request->photo_id);
+
+        $photo->bbox_skipped = 1;
+        $photo->skipped_by = auth()->user()->id;
+        $photo->save();
+
+        return ['success' => true];
     }
 
 

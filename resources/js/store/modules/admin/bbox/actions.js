@@ -20,6 +20,28 @@ export const actions = {
     },
 
     /**
+     * Mark this image as unable to use for bbox
+     *
+     * Load the next image
+     */
+    async BBOX_SKIP_IMAGE (context)
+    {
+        await axios.post('/admin/bbox/skip', {
+            photo_id: context.rootState.admin.id
+        })
+        .then(response => {
+            console.log('bbox_skip_image', response);
+
+            // notification
+
+            // load next image
+        })
+        .catch(error => {
+            console.error('bbox_skip_image', error);
+        });
+    },
+
+    /**
      * Get the next image to add bounding box
      */
     async GET_NEXT_BBOX (context)

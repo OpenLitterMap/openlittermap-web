@@ -7,7 +7,7 @@
             <ImageInfo />
 
             <div class="column is-one-third">
-                <h1 class="title is-2 has-text-centered">Add bounding box to image # {{ this.imageId }}</h1>
+                <h1 class="title is-2 has-text-centered">Add bounding box to image #{{ this.imageId }}</h1>
 
                 <div class="has-text-centered" @click.stop>
 
@@ -38,14 +38,18 @@
                         :id="imageId"
                         :annotations="true"
                     />
+
                 </div>
             </div>
 
-            <div class="column is-2 is-offset-1">
+            <div class="column is-2 is-offset-1 has-text-centered">
 
                 <!-- The list of tags associated with this image-->
                 <Tags :admin="true" />
 
+                <button class="button is-medium is-primary mt1" @click="update">Update Tags</button>
+
+                <button class="button is-medium is-warning mt1" @click="skip">Cannot use this image</button>
             </div>
         </div>
     </div>
@@ -76,13 +80,6 @@ export default {
     async created ()
     {
         this.$store.dispatch('GET_NEXT_BBOX');
-    },
-    data ()
-    {
-        return {
-            listWidth: 0,
-            listHeight: 0
-        };
     },
     mounted ()
     {
@@ -174,6 +171,32 @@ export default {
         resize (newRect)
         {
             this.$store.commit('updateBoxPosition', newRect);
+        },
+
+        /**
+         * Skip this image
+         *
+         * Mark as cannot be used for bounding boxes
+         */
+        async skip ()
+        {
+            // commit skip_processing true
+
+            await this.$store.dispatch('BBOX_SKIP_IMAGE');
+
+            // commit skip_processing false
+        },
+
+        /**
+         * Update the tags for this image
+         */
+        async update ()
+        {
+            // commit bbox_update true
+
+            await this.$store.dispatch('ADMIN_VERIFY_CORRECT');
+
+            // commit bbox_update false
         }
     }
 }
