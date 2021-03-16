@@ -3,7 +3,7 @@
 
         <div>
             <p>Image info</p>
-            <p>Height: </p
+            <p>Height: </p>
             <p>Width: </p>
 
             <button class="button is-medium is-primary mt1 mb1" @click="addNewBox">
@@ -20,7 +20,6 @@
             @click.stop="activate(box.id)"
             @mouseup="checkBrand"
         >
-
             <!-- Box.id, duplicate button -->
             <p class="ma">Box: <span class="is-bold">{{ index + 1 }}</span></p>
 

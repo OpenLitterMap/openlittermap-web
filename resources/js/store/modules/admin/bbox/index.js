@@ -16,10 +16,7 @@ const state = {
         }
     ],
     brands: [],
-    selectedBrand: {
-        index: 0,
-        brand: ''
-    }
+    selectedBrandIndex: null
 };
 
 export const bbox = {

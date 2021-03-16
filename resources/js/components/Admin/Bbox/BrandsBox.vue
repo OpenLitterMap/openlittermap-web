@@ -1,26 +1,20 @@
 <template>
     <div>
-        <p>Drag these brands into the correct box</p>
+        <p>Select a brand to add to a box</p>
 
-        <draggable v-model="brands" @start="drag=true" @end="drag=false">
-            <div
-                v-for="brand, index in brands"
-                :key="brand + index"
-                class="is-brand-card"
-                @mousedown="select(brand, index)"
-            >{{ brand }}</div>
-        </draggable>
+        <!-- Todo - make this draggable -->
+        <div
+            v-for="brand, index in brands"
+            :key="brand"
+            :class="brandClass(index)"
+            @mousedown="select(index)"
+        >{{ brand }}</div>
     </div>
 </template>
 
 <script>
-import draggable from 'vuedraggable'
-
 export default {
     name: 'BrandsBox',
-    components: {
-        draggable
-    },
     computed: {
 
         /**
@@ -38,11 +32,21 @@ export default {
     methods: {
 
         /**
+         * Turn brand on if its selected
+         */
+        brandClass (index)
+        {
+            return this.$store.state.bbox.selectedBrandIndex === index
+                ? 'is-brand-card selected'
+                : 'is-brand-card';
+        },
+
+        /**
          * Select a brand
          */
-        select (brand, index)
+        select (index)
         {
-            this.$store.commit('selectBrandBox', { brand, index });
+            this.$store.commit('selectBrandBox', index);
         }
     }
 };

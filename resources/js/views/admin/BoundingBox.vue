@@ -63,6 +63,7 @@ import 'vue-loading-overlay/dist/vue-loading.css'
 import ImageInfo from '../../components/Admin/ImageInfo'
 import Tags from '../../components/Litter/Tags'
 import AddTags from '../../components/Litter/AddTags'
+import BrandsBox from '../../components/Admin/Bbox/BrandsBox'
 
 import VueDragResize from 'vue-drag-resize'
 import ClickOutside from 'vue-click-outside'
@@ -74,7 +75,8 @@ export default {
         Tags,
         AddTags,
         ImageInfo,
-        VueDragResize
+        VueDragResize,
+        BrandsBox
     },
     directives: {
         ClickOutside

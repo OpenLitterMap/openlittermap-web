@@ -268,15 +268,12 @@ export const mutations = {
 
     /**
      * Select 1 of many brands
+     *
+     * payload = index
      */
     selectBrandBox (state, payload)
     {
-        console.log({ payload });
-
-        state.selectedBrand = {
-            brand: payload.brand,
-            index: payload.index
-        };
+        state.selectedBrandIndex = payload;
     },
 
     /**
