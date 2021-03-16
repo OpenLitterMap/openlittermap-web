@@ -65,7 +65,7 @@ import Tags from '../../components/Litter/Tags'
 import AddTags from '../../components/Litter/AddTags'
 
 import VueDragResize from 'vue-drag-resize'
-import ClickOutside from 'vue-click-outside';
+import ClickOutside from 'vue-click-outside'
 
 export default {
     name: 'BoundingBox',

@@ -22,6 +22,22 @@ export const mutations = {
     },
 
     /**
+     * When a brand tag is received from the backend,
+     *
+     * We need to put it into a separate brands array,
+     *
+     * And let the user drag it into the correct box
+     */
+    addBoxBrand (state, payload)
+    {
+        let brands = [...state.brands];
+
+        brands.push(payload);
+
+        state.brands = brands;
+    },
+
+    /**
      * Add a new bounding box
      *
      * We +1 the last ID in case a box was deleted
@@ -75,6 +91,14 @@ export const mutations = {
         }
 
         state.boxes = boxes;
+    },
+
+    /**
+     * Draggable
+     */
+    setBrandsBox (state, payload)
+    {
+        state.brands = payload;
     },
 
     /**
@@ -145,6 +169,8 @@ export const mutations = {
                             if (category === 'brands')
                             {
                                 // add brand tag to another box
+                                this.commit('addBoxBrand', tag);
+
                                 i++;
                                 continue;
                             }
@@ -238,6 +264,19 @@ export const mutations = {
         });
 
         state.boxes = boxes;
+    },
+
+    /**
+     * Select 1 of many brands
+     */
+    selectBrandBox (state, payload)
+    {
+        console.log({ payload });
+
+        state.selectedBrand = {
+            brand: payload.brand,
+            index: payload.index
+        };
     },
 
     /**

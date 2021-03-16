@@ -1,14 +1,25 @@
 <template>
     <div class="column is-one-third pl3 pt7">
-        <p>Image info</p>
-        <p>Height: </p>
-        <p>Width: </p>
 
-        <button class="button is-medium is-primary mt1 mb1" @click="addNewBox">
-            Add Box
-        </button>
+        <div>
+            <p>Image info</p>
+            <p>Height: </p
+            <p>Width: </p>
 
-        <div v-for="(box, index) in boxes" :key="box.id" :class="boxClass(box.active)" @click.stop="activate(box.id)">
+            <button class="button is-medium is-primary mt1 mb1" @click="addNewBox">
+                Add Box
+            </button>
+
+            <BrandsBox />
+        </div>
+
+        <div
+            v-for="(box, index) in boxes"
+            :key="box.id"
+            :class="boxClass(box.active)"
+            @click.stop="activate(box.id)"
+            @mouseup="checkBrand"
+        >
 
             <!-- Box.id, duplicate button -->
             <p class="ma">Box: <span class="is-bold">{{ index + 1 }}</span></p>
@@ -53,9 +64,13 @@
 </template>
 
 <script>
+import BrandsBox from './Bbox/BrandsBox';
 
 export default {
     name: 'ImageInfo',
+    components: {
+        BrandsBox
+    },
     computed: {
 
         /**
@@ -91,6 +106,17 @@ export default {
         boxClass (bool)
         {
             return bool ? 'is-box is-active' : 'is-box';
+        },
+
+        /**
+         *
+         */
+        checkBrand (e)
+        {
+            if (this.$store.state.bbox.selectedBrand.brand)
+            {
+                console.log('dropped', this.$store.state.bbox.selectedBrand.brand);
+            }
         },
 
         /**
