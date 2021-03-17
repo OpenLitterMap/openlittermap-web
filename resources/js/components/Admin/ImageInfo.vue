@@ -17,8 +17,7 @@
             v-for="(box, index) in boxes"
             :key="box.id"
             :class="boxClass(box.active)"
-            @click.stop="activate(box.id)"
-            @mouseup="checkBrand"
+            @click.stop="activateAndCheckBox(box.id)"
         >
             <!-- Box.id, duplicate button -->
             <p class="ma">Box: <span class="is-bold">{{ index + 1 }}</span></p>
@@ -47,11 +46,11 @@
 
                     <div v-if="box.brand">
                         <!-- Translated Brand title -->
-                        <span class="box-category">{{ getTags('brands', box.brand) }}</span>
+                        <p class="box-category">Brand</p>
 
                         <!-- Translated Brand tag -->
                         <span
-                            class="tag is-medium is-info box-label"
+                            class="tag is-medium is-info box-label w100"
                             @click="removeTag('brands', box.brand)"
                             v-html="getTags('brands', box.brand)"
                         />
@@ -85,10 +84,17 @@ export default {
 
         /**
          * Activate a box
+         *
+         * Check if we need to add brand to this box
          */
-        activate (id)
+        activateAndCheckBox (box_id)
         {
-            this.$store.commit('activateBox', id);
+            this.$store.commit('activateBox', box_id);
+
+            if (this.$store.state.bbox.selectedBrandIndex !== null)
+            {
+                this.$store.commit('addSelectedBrandToBox', box_id);
+            }
         },
 
         /**
@@ -105,17 +111,6 @@ export default {
         boxClass (bool)
         {
             return bool ? 'is-box is-active' : 'is-box';
-        },
-
-        /**
-         *
-         */
-        checkBrand (e)
-        {
-            if (this.$store.state.bbox.selectedBrand.brand)
-            {
-                console.log('dropped', this.$store.state.bbox.selectedBrand.brand);
-            }
         },
 
         /**

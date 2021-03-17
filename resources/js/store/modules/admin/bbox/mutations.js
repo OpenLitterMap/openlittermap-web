@@ -64,6 +64,30 @@ export const mutations = {
     },
 
     /**
+     * Add brand to a box
+     */
+    addSelectedBrandToBox (state, payload)
+    {
+        let boxes = [...state.boxes];
+
+        let box = boxes.find(box => box.id === payload);
+
+        let brands = [...state.brands];
+
+        box.brand = brands[state.selectedBrandIndex];
+
+        console.log({ box });
+
+        brands.splice(state.selectedBrandIndex, 1);
+
+        console.log({ brands });
+
+        state.brands = brands;
+        state.boxes = boxes;
+        state.selectedBrandIndex = null;
+    },
+
+    /**
      * Add tag to a box
      *
      * Payload = {
@@ -111,10 +135,14 @@ export const mutations = {
 
     /**
      * Turn box.active => false for all boxes
+     *
+     * Disable selectedBrand if exists
      */
     deactivateBoxes (state)
     {
         state.boxes.map(box => box.active = false);
+
+        state.selectedBrandIndex = null;
     },
 
     /**
@@ -268,10 +296,8 @@ export const mutations = {
 
     /**
      * Select 1 of many brands
-     *
-     * payload = index
      */
-    selectBrandBox (state, payload)
+    selectBrandBoxIndex (state, payload)
     {
         state.selectedBrandIndex = payload;
     },

@@ -1,20 +1,29 @@
 <template>
-    <div>
+    <div @click.stop class="fit-content">
         <p>Select a brand to add to a box</p>
 
-        <!-- Todo - make this draggable -->
-        <div
-            v-for="brand, index in brands"
-            :key="brand"
-            :class="brandClass(index)"
-            @mousedown="select(index)"
-        >{{ brand }}</div>
+        <p v-show="selectedBrandIndex !== null" class="mb1">When a box is selected, click a box to add the brand</p>
+
+        <!-- Todo - make this draggable so we can drag + drop the brand into a box -->
+<!--        <draggable v-model="brands">-->
+            <div
+                v-for="brand, index in brands"
+                :key="brand + index"
+                :class="brandClass(index)"
+                @mousedown="select(index)"
+            >{{ brand }} {{ isSelected(index) }}</div>
+<!--        </draggable>-->
     </div>
 </template>
 
 <script>
+// import draggable from 'vuedraggable'
+
 export default {
     name: 'BrandsBox',
+    // components: {
+    //     draggable
+    // },
     computed: {
 
         /**
@@ -27,6 +36,14 @@ export default {
             set (v) {
                 this.$store.commit('setBrandsBox', v);
             }
+        },
+
+        /**
+         * Shortcut
+         */
+        selectedBrandIndex ()
+        {
+            return this.$store.state.bbox.selectedBrandIndex;
         }
     },
     methods: {
@@ -36,9 +53,19 @@ export default {
          */
         brandClass (index)
         {
-            return this.$store.state.bbox.selectedBrandIndex === index
+            return this.selectedBrandIndex === index
                 ? 'is-brand-card selected'
                 : 'is-brand-card';
+        },
+
+        /**
+         * Add "- selected" text if this brand is selected
+         */
+        isSelected (index)
+        {
+            return this.selectedBrandIndex === index
+                ? ' - selected'
+                : '';
         },
 
         /**
@@ -46,13 +73,17 @@ export default {
          */
         select (index)
         {
-            this.$store.commit('selectBrandBox', index);
+            this.$store.commit('selectBrandBoxIndex', index);
         }
     }
 };
 </script>
 
 <style scoped>
+
+    .fit-content {
+        max-width: fit-content;
+    }
 
     .is-brand-card {
         border: 1px solid #ccc;
@@ -61,6 +92,10 @@ export default {
         cursor: grab;
         width: fit-content;
         margin-bottom: 1em;
+    }
+
+    .is-brand-card.selected {
+        border: 1px solid green;
     }
 
     .is-brand-card:active {
