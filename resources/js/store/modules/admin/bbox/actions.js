@@ -14,7 +14,16 @@ export const actions = {
         .then(response => {
             console.log('add_boxes_to_image', response);
 
+            if (response.data.success)
+            {
+                Vue.$vToastify.success({
+                    title: 'Success!',
+                    body: 'Thank you for helping us clean the planet!',
+                    position: 'top-right'
+                });
 
+                context.dispatch('GET_NEXT_BBOX');
+            }
         })
         .catch(error => {
             console.error('add_boxes_to_image', error);
@@ -34,7 +43,6 @@ export const actions = {
         .then(response => {
             console.log('bbox_skip_image', response);
 
-            // notification
             Vue.$vToastify.success({
                 title: 'Skipping',
                 body: 'This image will not be used for AI',

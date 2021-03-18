@@ -2,9 +2,21 @@
 
 namespace App;
 
-final class Litterrata{
+final class Litterrata {
     private $json = '
 {
+    "categories": {
+        "smoking": "1",
+        "alcohol": "2",
+        "coffee": "3",
+        "food": "4",
+        "softdrinks": "5",
+        "sanitary": "6",
+        "other": "7",
+        "coastal": "8",
+        "dumping": "9",
+        "industrial": "10"
+    },
     "smoking": {
         "butts": "1",
         "lighters": "2",
