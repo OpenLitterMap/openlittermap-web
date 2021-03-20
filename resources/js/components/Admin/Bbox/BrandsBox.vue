@@ -1,29 +1,23 @@
 <template>
     <div @click.stop class="fit-content">
-        <p>Select a brand to add to a box</p>
+
+        <p v-show="brands.length > 0">Select a brand to add to a box</p>
 
         <p v-show="selectedBrandIndex !== null" class="mb1">When a box is selected, click a box to add the brand</p>
 
-        <!-- Todo - make this draggable so we can drag + drop the brand into a box -->
-<!--        <draggable v-model="brands">-->
-            <div
-                v-for="brand, index in brands"
-                :key="brand + index"
-                :class="brandClass(index)"
-                @mousedown="select(index)"
-            >{{ brand }} {{ isSelected(index) }}</div>
-<!--        </draggable>-->
+        <div
+            v-for="brand, index in brands"
+            :key="brand + index"
+            :class="brandClass(index)"
+            @mousedown="select(index)"
+        >{{ brand }} {{ isSelected(index) }}</div>
     </div>
 </template>
 
 <script>
-// import draggable from 'vuedraggable'
 
 export default {
     name: 'BrandsBox',
-    // components: {
-    //     draggable
-    // },
     computed: {
 
         /**

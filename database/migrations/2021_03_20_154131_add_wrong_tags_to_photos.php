@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddBboxLittercoinToUsers extends Migration
+class AddWrongTagsToPhotos extends Migration
 {
     /**
      * Run the migrations.
@@ -13,8 +13,9 @@ class AddBboxLittercoinToUsers extends Migration
      */
     public function up()
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->unsignedInteger('bbox_verification_count')->default(0);
+        Schema::table('photos', function (Blueprint $table) {
+            $table->boolean('wrong_tags')->default(false);
+            $table->unsignedInteger('wrong_tags_by')->nullable();
         });
     }
 
@@ -25,8 +26,8 @@ class AddBboxLittercoinToUsers extends Migration
      */
     public function down()
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['bbox_verification_count']);
+        Schema::table('photos', function (Blueprint $table) {
+            $table->dropColumn(['wrong_tags', 'wrong_tags_by']);
         });
     }
 }

@@ -54,7 +54,9 @@ class Photo extends Model
         // annotations
         'bbox_skipped',
         'skipped_by',
-        'bbox_assigned_to'
+        'bbox_assigned_to',
+        'wrong_tags',
+        'wrong_tags_by'
     ];
 
     /**

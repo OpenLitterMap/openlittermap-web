@@ -1,6 +1,6 @@
 <?php /** @noinspection PhpUndefinedFieldInspection */
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Bbox;
 
 use App\Events\TagsVerifiedByAdmin;
 use App\Litterrata;
@@ -16,7 +16,7 @@ class BoundingBoxController extends Controller
     use AddTagsTrait;
 
     /**
-     * Allow Admin to add bounding boxes to an image
+     * Add bounding boxes to an image
      *
      * Bring the image to stage 3 level of verifiation
      *
@@ -80,43 +80,53 @@ class BoundingBoxController extends Controller
 
     /**
      * Get the next image to add bounding box coordinates
-     *
-         'id',
-        'filename',
-        'smoking_id',
-        'food_id',
-        'alcohol_id',
-        'coffee_id',
-        'softdrinks_id',
-        'other_id',
-        'coastal_id',
-        'sanitary_id',
-        'dumping_id',
-        'industrial_id',
-        'brands_id',
-        'result_string'
      */
     public function index ()
     {
-        $photo = Photo::where([
-            'verified' => 2,
-            'bbox_skipped' => 0,
-            ['filename', '!=', '/assets/verified.jpg'],
-            'bbox_assigned_to' => auth()->user()->id
-        ])->first();
+        $columns = [
+            'id',
+            'filename',
+            'smoking_id',
+            'food_id',
+            'alcohol_id',
+            'coffee_id',
+            'softdrinks_id',
+            'other_id',
+            'coastal_id',
+            'sanitary_id',
+            'dumping_id',
+            'industrial_id',
+            'brands_id',
+            'result_string'
+        ];
 
-        if (! $photo)
-        {
-            $photo = Photo::where([
+        $userId = auth()->user()->id;
+
+        // Get the previous photo assigned to the user
+        $photo = Photo::select($columns)
+            ->where([
                 'verified' => 2,
                 'bbox_skipped' => 0,
                 ['filename', '!=', '/assets/verified.jpg'],
-                'bbox_assigned_to' => null
+                'bbox_assigned_to' => $userId,
+                'wrong_tags' => false
             ])->first();
 
-            // assign the photo to a user so 2+ users don't load the same photo
-            // we should reset th
-            $photo->bbox_assigned_to = auth()->user()->id;
+        // Or, get the next available photo
+        if (! $photo)
+        {
+            $photo = Photo::select($columns)
+                ->where([
+                    'verified' => 2,
+                    'bbox_skipped' => 0,
+                    ['filename', '!=', '/assets/verified.jpg'],
+                    'bbox_assigned_to' => null,
+                    'wrong_tags' => false
+                ])->first();
+
+            // Assign the photo to a user so 2+ users don't load the same photo
+            // This should be reset eventually
+            $photo->bbox_assigned_to = $userId;
             $photo->save();
         }
 
@@ -142,15 +152,41 @@ class BoundingBoxController extends Controller
 
     /**
      * Update the tags on this image
+     *
+     * Admin only
      */
     public function updateTags (Request $request)
     {
+        // if Admin
+        if (auth()->user()->role_id === 1)
+        {
+            $photo = Photo::find($request->photoId);
+
+            $this->addTags($request->tags, $request->photoId);
+
+            // todo - dispatch event via horizon
+            event(new TagsVerifiedByAdmin($photo->id));
+
+            return ['success' => true];
+        }
+
+        return ['success' => false, 'msg' => 'not-admin'];
+    }
+
+    /**
+     * Non-admin can mark the image as having wrong tags
+     *
+     * This user will not see this image again, but another user will.
+     * This helps us prevent against
+     *
+     * Only admin can update the tags
+     */
+    public function wrongTags (Request $request)
+    {
         $photo = Photo::find($request->photoId);
 
-        $this->addTags($request->tags, $request->photoId);
-
-        // todo - dispatch event via horizon
-        event (new TagsVerifiedByAdmin($photo->id));
+        $photo->wrong_tags = auth()->user()->id;
+        $photo->save();
 
         return ['success' => true];
     }

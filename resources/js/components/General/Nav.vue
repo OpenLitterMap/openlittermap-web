@@ -44,6 +44,7 @@
 
                             <!-- Dropdown toggle -->
                             <div class="navbar-item has-dropdown is-hoverable">
+
                                 <!-- "More" -->
                                 <a id="more" class="navbar-item"> {{ $t('nav.more')}}</a>
                                 <!-- Dropdown menu -->
@@ -58,10 +59,6 @@
                                         <a href="/horizon" class="navbar-item drop-item" target="_blank">
                                             ADMIN - Horizon
                                         </a>
-
-                                        <router-link to="/admin/bbox" class="navbar-item drop-item" @click.native="close">
-                                            ADMIN - Bounding Boxes
-                                        </router-link>
                                     </div>
 
                                     <!-- Tag Litter -->
@@ -82,6 +79,11 @@
                                     <!-- Settings -->
                                     <router-link to="/settings/password" class="navbar-item drop-item">
                                          {{ $t('nav.settings')}}
+                                    </router-link>
+
+                                    <!-- Bounding boxes -->
+                                    <router-link v-if="can_bbox" to="/bbox" class="navbar-item drop-item" @click.native="close">
+                                        Bounding Boxes
                                     </router-link>
 
                                     <!-- Logout -->
@@ -141,6 +143,14 @@ export default {
         burger ()
         {
             return this.open ? 'navbar-burger burger is-active' : 'navbar-burger burger'
+        },
+
+        /**
+         * Some users are able to add bounding boxes to images
+         */
+        can_bbox ()
+        {
+            return this.$store.state.user.user.can_bbox;
         },
 
         /**

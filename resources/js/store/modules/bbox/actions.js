@@ -7,7 +7,7 @@ export const actions = {
      */
     async ADD_BOXES_TO_IMAGE (context)
     {
-        await axios.post('/admin/bbox/create', {
+        await axios.post('/bbox/create', {
             photo_id: context.rootState.admin.id,
             boxes: context.state.boxes
         })
@@ -37,7 +37,7 @@ export const actions = {
      */
     async BBOX_SKIP_IMAGE (context)
     {
-        await axios.post('/admin/bbox/skip', {
+        await axios.post('/bbox/skip', {
             photo_id: context.rootState.admin.id
         })
         .then(response => {
@@ -62,7 +62,7 @@ export const actions = {
      */
     async BBOX_UPDATE_TAGS (context)
     {
-        await axios.post('/admin/bbox/tags/update', {
+        await axios.post('/bbox/tags/update', {
             photoId: context.rootState.admin.id,
             tags: context.rootState.litter.tags
         })
@@ -84,11 +84,38 @@ export const actions = {
     },
 
     /**
+     * Non-admins cannot update tags.
+     *
+     * Normal users can mark a box with incorrect tags that an Admin must inspect.
+     */
+    async BBOX_WRONG_TAGS (context)
+    {
+        await axios.post('/bbox/tags/wrong', {
+            photoId: context.rootState.admin.id,
+        })
+        .then(response => {
+            console.log('bbox_wrong_tags', response);
+
+            if (response.data.success)
+            {
+                Vue.$vToastify.success({
+                    title: 'Thanks for helping!',
+                    body: 'An admin will update these tags',
+                    position: 'top-right'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('bbox_wrong_tags', error);
+        });
+    },
+
+    /**
      * Get the next image to add bounding box
      */
     async GET_NEXT_BBOX (context)
     {
-        await axios.get('/admin/bbox/index')
+        await axios.get('/bbox/index')
             .then(response => {
                 console.log('next_bb_img', response);
 

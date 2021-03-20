@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddBboxLittercoinToUsers extends Migration
+class CanBbox extends Migration
 {
     /**
      * Run the migrations.
@@ -14,7 +14,7 @@ class AddBboxLittercoinToUsers extends Migration
     public function up()
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->unsignedInteger('bbox_verification_count')->default(0);
+            $table->boolean('can_bbox')->default(false);
         });
     }
 
@@ -26,7 +26,7 @@ class AddBboxLittercoinToUsers extends Migration
     public function down()
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['bbox_verification_count']);
+            $table->dropColumn('can_bbox');
         });
     }
 }

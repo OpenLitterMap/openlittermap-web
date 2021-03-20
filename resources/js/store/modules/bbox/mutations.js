@@ -1,5 +1,5 @@
-import { categories } from '../../../../extra/categories'
-import { litterkeys } from '../../../../extra/litterkeys'
+import { categories } from '../../../extra/categories'
+import { litterkeys } from '../../../extra/litterkeys'
 
 export const mutations = {
 

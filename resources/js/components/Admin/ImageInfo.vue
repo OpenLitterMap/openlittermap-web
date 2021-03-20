@@ -1,17 +1,7 @@
 <template>
     <div class="column is-one-third pl3 pt7">
 
-        <div>
-            <p>Image info</p>
-            <p>Height: </p>
-            <p>Width: </p>
-
-            <button class="button is-medium is-primary mt1 mb1" @click="addNewBox">
-                Add Box
-            </button>
-
-            <BrandsBox />
-        </div>
+        <BrandsBox />
 
         <div
             v-for="(box, index) in boxes"
@@ -95,14 +85,6 @@ export default {
             {
                 this.$store.commit('addSelectedBrandToBox', box_id);
             }
-        },
-
-        /**
-         * Add a new bounding box
-         */
-        addNewBox ()
-        {
-            this.$store.commit('addNewBox');
         },
 
         /**

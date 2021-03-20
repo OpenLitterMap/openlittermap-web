@@ -1,5 +1,5 @@
 <template>
-    <div @click="deactivate">
+    <div @click="deactivate" class="relative h100">
         <loading v-if="loading" :active.sync="loading" :is-full-page="true" />
 
         <div v-else class="columns mt1">
@@ -45,14 +45,35 @@
             <div class="column is-2 is-offset-1 has-text-centered">
 
                 <!-- The list of tags associated with this image-->
-                <Tags :admin="true" />
+                <Tags :admin="isAdmin" />
 
-                <button class="button is-medium is-primary mt1" @click="update">Update Tags</button>
+                <button
+                    v-if="isAdmin"
+                    :class="updateButton"
+                    @click="update"
+                    :disabled="disabled"
+                >Update Tags</button>
 
-                <button class="button is-medium is-warning mt1" @click="skip">Cannot use this image</button>
+                <button
+                    v-else
+                    :class="wrongTagsButton"
+                    @click="wrongTags"
+                    :disabled="disabled"
+                >Wrong Tags</button>
+
+                <button
+                    :class="skipButton"
+                    @click="skip"
+                    :disabled="disabled"
+                >Cannot use this image</button>
 
                 <!-- Todo - Go Back button (reverse skip) -->
             </div>
+        </div>
+
+        <div class="littercoin-pos">
+            <p>Littercoin earned: {{ this.littercoinEarned }}</p>
+            <p>Next Littercoin: {{ this.littercoinProgress }}</p>
         </div>
     </div>
 </template>
@@ -84,6 +105,14 @@ export default {
     async created ()
     {
         this.$store.dispatch('GET_NEXT_BBOX');
+    },
+    data ()
+    {
+        return {
+            skip_processing: false,
+            update_processing: false,
+            wrong_tags_processing: false
+        };
     },
     mounted ()
     {
@@ -127,6 +156,14 @@ export default {
         },
 
         /**
+         * Return true to disable all buttons
+         */
+        disabled ()
+        {
+            return (this.skip_processing || this.update_processing || this.wrong_tags_processing);
+        },
+
+        /**
          * Filename of the image from the database
          */
         image ()
@@ -145,11 +182,64 @@ export default {
         /**
          * Boolean
          */
+        isAdmin ()
+        {
+            return this.$store.state.user.admin;
+        },
+
+        /**
+         * Total number of Littercoins the user has earned
+         */
+        littercoinEarned ()
+        {
+            return this.$store.state.user.user.littercoin_owed + this.$store.state.user.user.littercoin_allowance;
+        },
+
+        /**
+         * Number of boxes the user has left to verify to earn a Littercoin
+         */
+        littercoinProgress ()
+        {
+            return this.$store.state.user.user.bbox_verification_count + "%"
+        },
+
+        /**
+         * Boolean
+         */
         loading ()
         {
             return this.$store.state.admin.loading;
-        }
+        },
 
+        /**
+         * Add spinner when processing
+         */
+        skipButton ()
+        {
+            let str = 'button is-medium is-warning mt1 ';
+
+            return this.skip_processing ? str + ' is-loading' : str;
+        },
+
+        /**
+         * Add spinner when processing
+         */
+        updateButton ()
+        {
+            let str = 'button is-medium is-primary mt1 ';
+
+            return this.update_processing ? str + 'is-loading' : str;
+        },
+
+        /**
+         * Add spinner when processing
+         */
+        wrongTagsButton ()
+        {
+            let str = 'button is-medium is-primary mt1 ';
+
+            return this.wrong_tags_processing ? str + 'is-loading' : str;
+        }
     },
     methods: {
 
@@ -184,11 +274,11 @@ export default {
          */
         async skip ()
         {
-            // commit skip_processing true
+            this.skip_processing = true;
 
             await this.$store.dispatch('BBOX_SKIP_IMAGE');
 
-            // commit skip_processing false
+            this.skip_processing = false;
         },
 
         /**
@@ -196,11 +286,25 @@ export default {
          */
         async update ()
         {
-            // commit bbox_update true
+            this.update_processing = true;
 
             await this.$store.dispatch('BBOX_UPDATE_TAGS');
 
-            // commit bbox_update false
+            this.update_processing = false;
+        },
+
+        /**
+         * For a non-admin, they can mark the image with wrong tags
+         *
+         * Only admin can update Tags at stage 2
+         */
+        wrongTags ()
+        {
+            this.wrong_tags_processing = true;
+
+            this.$store.dispatch('BBOX_WRONG_TAGS');
+
+            this.wrong_tags_processing = false;
         }
     }
 }
@@ -243,6 +347,12 @@ export default {
         width: 100%;
         height: 100%;
         position: absolute;
+    }
+
+    .littercoin-pos {
+        position: absolute;
+        bottom: 1em;
+        right: 1em;
     }
 
 </style>

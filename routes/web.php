@@ -2,6 +2,13 @@
 
 use Illuminate\Support\Facades\Route;
 
+Route::get('test', function () {
+
+    $user = \App\Models\User\User::first();
+
+    return view('emails.update22', ['user' => $user]);
+});
+
 Route::get('/', 'HomeController@index');
 Route::get('/about', 'HomeController@index');
 Route::get('/world', 'HomeController@index');
@@ -311,22 +318,32 @@ Route::group(['prefix' => '/admin'], function () {
     // LTRX
     // Reduce ltrx allowance - succesfull LTRX generation
     Route::post('/ltrxgenerated', 'LTRXController@success');
+});
+
+
+Route::group(['prefix' => '/bbox', 'middleware' => ['can_bbox']], function () {
 
     // Add coordinates
-    Route::get('bbox', 'HomeController@index');
+    Route::get('/', 'HomeController@index');
 
     // Load the next image to add bounding boxes to
-    Route::get('/bbox/index', 'Admin\BoundingBoxController@index');
+    Route::get('/index', 'Bbox\BoundingBoxController@index');
 
     // Add bboxes to image
-    Route::post('/bbox/create', 'Admin\BoundingBoxController@create');
+    Route::post('/create', 'Bbox\BoundingBoxController@create');
 
     // Mark this image as not bbox compatible
-    Route::post('/bbox/skip', 'Admin\BoundingBoxController@skip');
+    Route::post('/skip', 'Bbox\BoundingBoxController@skip');
 
-    // Update the tags
-    Route::post('/bbox/tags/update', 'Admin\BoundingBoxController@updateTags');
+    // Admin - Update the tags
+    Route::post('/tags/update', 'Bbox\BoundingBoxController@updateTags');
+
+    // Non-admin - Mark tags as incorrect
+    Route::post('/tags/wrong', 'Bbox\BoundingBoxController@wrongTags');
 });
+
+
+
 
 /**
  * REPORTING
