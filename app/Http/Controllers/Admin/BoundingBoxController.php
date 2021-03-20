@@ -102,14 +102,18 @@ class BoundingBoxController extends Controller
         ->where([
             'verified' => 2,
             'bbox_skipped' => 0,
-            'bbox_assigned_to' => null
         ])
+        ->where('bbox_assigned_to', auth()->user()->id)
+        ->orWhere('bbox_assigned_to', null)
         ->first();
 
-        // assign the photo to a user so 2+ users don't load the same photo
-        // we should reset this at midnight
-        $photo->bbox_assigned_to = auth()->user()->id;
-        $photo->save();
+        if (is_null($photo->bbox_assigned_to))
+        {
+            // assign the photo to a user so 2+ users don't load the same photo
+            // we should reset th
+            $photo->bbox_assigned_to = auth()->user()->id;
+            $photo->save();
+        }
 
         // Load the tags for this image
         $photo->tags();
