@@ -80,36 +80,40 @@ class BoundingBoxController extends Controller
 
     /**
      * Get the next image to add bounding box coordinates
+     *
+         'id',
+        'filename',
+        'smoking_id',
+        'food_id',
+        'alcohol_id',
+        'coffee_id',
+        'softdrinks_id',
+        'other_id',
+        'coastal_id',
+        'sanitary_id',
+        'dumping_id',
+        'industrial_id',
+        'brands_id',
+        'result_string'
      */
     public function index ()
     {
-        $photo = Photo::select(
-            'id',
-            'filename',
-            'smoking_id',
-            'food_id',
-            'alcohol_id',
-            'coffee_id',
-            'softdrinks_id',
-            'other_id',
-            'coastal_id',
-            'sanitary_id',
-            'dumping_id',
-            'industrial_id',
-            'brands_id',
-            'result_string'
-        )
-        ->where([
+        $photo = Photo::where([
             'verified' => 2,
             'bbox_skipped' => 0,
-            ['filename', '!=', '/assets/verified.jpg']
-        ])
-        ->where('bbox_assigned_to', auth()->user()->id)
-        ->orWhere('bbox_assigned_to', null)
-        ->first();
+            ['filename', '!=', '/assets/verified.jpg'],
+            'bbox_assigned_to' => auth()->user()->id
+        ])->first();
 
-        if (is_null($photo->bbox_assigned_to))
+        if (! $photo)
         {
+            $photo = Photo::where([
+                'verified' => 2,
+                'bbox_skipped' => 0,
+                ['filename', '!=', '/assets/verified.jpg'],
+                'bbox_assigned_to' => null
+            ])->first();
+
             // assign the photo to a user so 2+ users don't load the same photo
             // we should reset th
             $photo->bbox_assigned_to = auth()->user()->id;
