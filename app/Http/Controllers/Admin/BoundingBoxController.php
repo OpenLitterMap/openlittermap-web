@@ -102,6 +102,7 @@ class BoundingBoxController extends Controller
         ->where([
             'verified' => 2,
             'bbox_skipped' => 0,
+            ['filename', '!=', '/assets/verified.jpg']
         ])
         ->where('bbox_assigned_to', auth()->user()->id)
         ->orWhere('bbox_assigned_to', null)
