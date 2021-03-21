@@ -75,7 +75,6 @@
 
             <button
                 class="button is-medium is-info"
-                :disabled="disabled"
                 @click="addTag"
             >{{ $t('tags.add-tag') }}</button>
 
@@ -227,23 +226,23 @@ export default {
             return Object.keys(this.$store.state.litter.tags).length === 0;
         },
 
-        /**
-         * When adding tags to a bounding box,
-         *
-         * We should disable the addTag button if a box is not selected
-         */
-        disabled ()
-        {
-            if (! this.annotations) return false;
-
-            let disable = true;
-
-            this.$store.state.bbox.boxes.forEach(box => {
-                if (box.active) disable = false;
-            });
-
-            return disable;
-        },
+        // /**
+        //  * When adding tags to a bounding box,
+        //  *
+        //  * We should disable the addTag button if a box is not selected
+        //  */
+        // disabled ()
+        // {
+        //     if (! this.annotations) return false;
+        //
+        //     let disable = true;
+        //
+        //     this.$store.state.bbox.boxes.forEach(box => {
+        //         if (box.active) disable = false;
+        //     });
+        //
+        //     return disable;
+        // },
 
         /**
          * Has the litter been picked up, or is it still there?
