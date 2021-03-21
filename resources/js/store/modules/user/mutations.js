@@ -68,12 +68,15 @@ export const mutations = {
 
     /**
      * User object from HomeController@index if auth
+     *
+     * Todo, find a better way than this
      */
     initUser (state, payload)
     {
         state.user = payload;
 
         if (payload.id === 1) state.admin = true;
+        if (payload.id === 1969) state.admin = true;
         if (payload.id === 3233) state.admin = true;
         if (payload.id === 3327) state.admin = true;
         if (payload.id === 3430) state.admin = true;
