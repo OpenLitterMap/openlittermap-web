@@ -57,7 +57,7 @@ export const actions = {
     async ADMIN_VERIFY_CORRECT (context)
     {
         await axios.post('/admin/verifykeepimage', {
-            photoId: context.state.id
+            photoId: context.state.photo.id
         })
         .then(resp => {
             console.log('admin_verifiy_correct', resp);
