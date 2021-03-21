@@ -1,11 +1,12 @@
 <?php
 
-namespace App\Console\Commands\Locations\CreatedBy\Locations\CreatedBy\Locations\CreatedBy\Tags;
+namespace App\Console\Commands\Tags;
 
-use App\Events\TagsVerifiedByAdmin;
-use App\Models\LitterTags;
 use App\Models\Photo;
 use App\Models\User\User;
+use App\Models\LitterTags;
+use App\Events\TagsVerifiedByAdmin;
+
 use Illuminate\Console\Command;
 
 class AddTagsForAUsersNewPhotos extends Command

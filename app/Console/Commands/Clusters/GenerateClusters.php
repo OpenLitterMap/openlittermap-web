@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Console\Commands\Locations\CreatedBy\Locations\CreatedBy\Locations\CreatedBy\Clusters;
+namespace App\Console\Commands\Clusters;
 
-use App\Models\Cluster;
 use App\Models\Photo;
+use App\Models\Cluster;
+
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 

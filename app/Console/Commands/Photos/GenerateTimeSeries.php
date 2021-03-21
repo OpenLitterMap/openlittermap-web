@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands\Locations\CreatedBy\Locations\CreatedBy\Locations\CreatedBy\Photos;
+namespace App\Console\Commands\Photos;
 
 use App\Models\Location\City;
 use App\Models\Location\Country;

@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Console\Commands\Locations\CreatedBy\Locations\CreatedBy\Locations\CreatedBy\Locations;
+namespace App\Console\Commands\Locations;
 
-use App\Models\Location\Country;
 use App\Models\Photo;
+use App\Models\Location\Country;
+
 use Illuminate\Console\Command;
 
 class UpdateCountry extends Command
