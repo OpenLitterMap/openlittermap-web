@@ -23,7 +23,7 @@ class IncrementStateMonth
     /**
      * Handle the event.
      *
-     * @param  ImageUploaded  $event
+     * @param  IncrementPhotoMonth  $event
      * @return void
      */
     public function handle (IncrementPhotoMonth $event)

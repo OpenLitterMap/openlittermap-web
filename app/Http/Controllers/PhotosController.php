@@ -221,6 +221,7 @@ class PhotosController extends Controller
 
         // Increment the { Month-Year: int } value for each location
         // Todo - this needs debugging
+        // This should dispatch a job
         event (new IncrementPhotoMonth($countryId, $stateId, $cityId, $dateTime));
 
         if ($user->has_uploaded_today == 0)

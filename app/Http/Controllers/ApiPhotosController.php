@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\Photo\IncrementPhotoMonth;
 use GeoHash;
 use App\Models\Location\Country;
 use App\Models\Location\State;
@@ -123,6 +124,11 @@ class ApiPhotosController extends Controller
         if ($user->team) $teamName = $user->team->name;
 
         event (new ImageUploaded($this->city, $this->state, $this->country, $this->countryCode, $imageName, $teamName));
+
+        // Increment the { Month-Year: int } value for each location
+        // Todo - this needs debugging
+        // This should dispatch a job
+        event (new IncrementPhotoMonth($countryId, $stateId, $cityId, $date));
 
         if ($user->has_uploaded_today === 0)
         {
