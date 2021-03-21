@@ -109,6 +109,7 @@ export const litterkeys = {
         'rope_medium',              // Rope medium
         'rope_large',               // Rope large
         'fishing_gear_nets',        // Fishing gear/nets
+        'ghost_nets',               // Ghost nets
         'buoys',                    // Buoys
         'degraded_plasticbottle',   // Degraded Plastic Bottle
         'degraded_plasticbag',      // Degraded Plastic Bag
