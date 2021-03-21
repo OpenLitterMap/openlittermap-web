@@ -2,6 +2,9 @@
 
 namespace App;
 
+// last tag = ghost_nets => 209
+// Every category could be category -> 1:n
+
 final class Litterrata {
     private $json = '
 {
@@ -142,6 +145,7 @@ final class Litterrata {
         "rope_medium": "108",
         "rope_large": "109",
         "fishing_gear_nets": "110",
+        "ghost_nets": "209",
         "buoys": "111",
         "degraded_plasticbottle": "112",
         "degraded_plasticbag": "113",
