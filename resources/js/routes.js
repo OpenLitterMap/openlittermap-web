@@ -2,6 +2,7 @@ import VueRouter from 'vue-router'
 import store from './store'
 import auth from './middleware/auth'
 import admin from './middleware/admin'
+import can_bbox from './middleware/can_bbox';
 import middlewarePipeline from './middleware/middlewarePipeline'
 
 // The earlier a route is defined, the higher its priority.
@@ -83,13 +84,6 @@ const router = new VueRouter({
         {
             path: '/admin/photos',
             component: require('./views/admin/VerifyPhotos').default,
-            meta: {
-                middleware: [auth, admin]
-            }
-        },
-        {
-            path: '/admin/bbox',
-            component: require('./views/admin/BoundingBox').default,
             meta: {
                 middleware: [auth, admin]
             }
@@ -178,6 +172,13 @@ const router = new VueRouter({
                 // 	component: require('./views/Phone').default
                 // }
             ]
+        },
+        {
+            path: '/bbox',
+            component: require('./views/bbox/BoundingBox').default,
+            meta: {
+                middleware: [ auth, can_bbox ]
+            }
         }
     ]
 });

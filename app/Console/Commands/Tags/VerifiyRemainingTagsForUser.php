@@ -2,8 +2,9 @@
 
 namespace App\Console\Commands\Tags;
 
-use App\Events\TagsVerifiedByAdmin;
 use App\Models\Photo;
+use App\Events\TagsVerifiedByAdmin;
+
 use Illuminate\Console\Command;
 
 class VerifiyRemainingTagsForUser extends Command

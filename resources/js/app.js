@@ -38,7 +38,7 @@ Vue.use(fullscreen)
 Vue.filter('commas', value =>
 {
     return parseInt(value).toLocaleString();
-},);
+});
 
 const vm = new Vue({
     el: '#app',

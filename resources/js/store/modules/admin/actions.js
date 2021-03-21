@@ -118,14 +118,13 @@ export const actions = {
 
         await axios.get('/admin/get-image')
             .then(resp => {
-
                 console.log('get_next_admin_photo', resp);
 
                 // init photo data (admin.js)
                 context.commit('initAdminPhoto', resp.data.photo);
 
                 // init litter data for verification (litter.js)
-                if (resp.data.photoData) context.commit('initAdminItems', resp.data.photoData);
+                if (resp.data.photo.verification > 0) context.commit('initAdminItems', resp.data.photo);
 
                 context.commit('initAdminMetadata', {
                     not_processed: resp.data.photosNotProcessed,
@@ -137,27 +136,6 @@ export const actions = {
             });
 
         // admin loading = false
-    },
-
-    /**
-     * Get the next image to add bounding box
-     */
-    async GET_NEXT_BBOX (context)
-    {
-        await axios.get('next-bb-image')
-        .then(response => {
-            console.log('next_bb_img', response);
-
-            context.commit('adminImage', {
-                id: response.data.id,
-                filename: response.data.filename
-            });
-
-            context.commit('adminLoading', false);
-        })
-        .catch(error => {
-            console.log('error.next_bb_img', error);
-        });
     }
 
 };

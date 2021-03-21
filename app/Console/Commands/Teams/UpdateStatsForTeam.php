@@ -5,6 +5,7 @@ namespace App\Console\Commands\Teams;
 use DB;
 use App\Models\Photo;
 use App\Models\Teams\Team;
+
 use Illuminate\Console\Command;
 
 class UpdateStatsForTeam extends Command

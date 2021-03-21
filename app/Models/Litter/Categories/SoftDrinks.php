@@ -9,26 +9,28 @@ class SoftDrinks extends LitterCategory
     protected $table = 'softdrinks';
 
     protected $fillable = [
-    	'waterBottle',
-    	'fizzyDrinkBottle',
-    	'bottleLid',
-    	'bottleLabel',
-    	'tinCan',
-    	'sportsDrink',
+        'waterBottle',
+        'fizzyDrinkBottle',
+        'bottleLid',
+        'bottleLabel',
+        'tinCan',
+        'sportsDrink',
         'straws',
         'plastic_cups',
         'plastic_cup_tops',
         'milk_bottle',
         'milk_carton',
         'paper_cups',
+        'pullring',
         'juice_cartons',
         'juice_bottles',
         'juice_packet',
         'ice_tea_bottles',
         'ice_tea_can',
         'energy_can',
-    	'softDrinksOther',
-        'styro_cups'
+        'strawpacket',
+        'styro_cup',
+        'softDrinkOther'
     ];
 
     public function photo () {
@@ -53,14 +55,16 @@ class SoftDrinks extends LitterCategory
             'milk_bottle',
             'milk_carton',
             'paper_cups',
+            'pullring',
             'juice_cartons',
             'juice_bottles',
             'juice_packet',
             'ice_tea_bottles',
             'ice_tea_can',
             'energy_can',
-            'softDrinksOther',
-            'styro_cups'
+            'strawpacket',
+            'styro_cup',
+            'softDrinkOther'
         ];
     }
 }

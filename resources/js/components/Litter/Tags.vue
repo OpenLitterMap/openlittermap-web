@@ -23,6 +23,7 @@ export default {
     name: 'Tags',
     props: ['admin'], // bool
     computed: {
+
         /**
          * Categories from the tags object the user has created
          */
@@ -52,6 +53,7 @@ export default {
         {
             return this.$i18n.t('litter.categories.' + category);
         },
+
         /**
          * Return Translated key: value from tags[0]: tags[1]
          */
@@ -59,6 +61,7 @@ export default {
         {
             return this.$i18n.t('litter.' + category + '.' + tags[0]) + ': ' + tags[1] + '<br>';
         },
+
         /**
          * Remove tag from this category
          * If all tags have been removed, delete the category
@@ -83,6 +86,7 @@ export default {
 </script>
 
 <style scoped>
+
     @media only screen and (max-width: 900px) {
         .container {
             display: flex;

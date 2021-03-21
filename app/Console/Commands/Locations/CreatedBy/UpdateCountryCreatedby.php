@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands;
+namespace App\Console\Commands\Locations\CreatedBy;
 
 use App\Models\Location\Country;
 use App\Models\Photo;
@@ -13,7 +13,7 @@ class UpdateCountryCreatedby extends Command
      *
      * @var string
      */
-    protected $signature = 'country:createdby';
+    protected $signature = 'locations:fix-countries-createdby';
 
     /**
      * The console command description.
@@ -39,11 +39,20 @@ class UpdateCountryCreatedby extends Command
      */
     public function handle()
     {
-        $countries = Country::where('manual_verify', 1)->get();
-        foreach($countries as $country) {
-            if(is_null($country->created_by)) {
-                $country['created_by'] = $country->photos()->first()->user_id;
+        $countries = Country::whereNull('created_by')->get();
+
+        foreach ($countries as $country)
+        {
+            echo "country $country->id $country->country \n";
+
+            $photo = Photo::where('country_id', $country->id)->orderBy('id')->first();
+
+            if ($photo)
+            {
+                $country->created_by = $photo->user_id;
                 $country->save();
+
+                echo "updated \n";
             }
         }
     }

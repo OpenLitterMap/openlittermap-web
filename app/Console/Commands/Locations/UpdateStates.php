@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands\Locations;
 
-use App\Models\Location\State;
 use App\Models\Photo;
+use App\Models\Location\State;
 
 use Illuminate\Console\Command;
 

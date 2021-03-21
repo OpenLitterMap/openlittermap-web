@@ -20,15 +20,6 @@
                 <div :class="nav">
                     <div class="navbar-end">
 
-                        <!-- Admin -->
-                        <router-link v-if="admin" to="/admin/photos" class="navbar-item" @click.native="close">
-                            {{ $t('nav.admin')}}
-                        </router-link>
-
-                        <a v-if="admin" href="/horizon" class="navbar-item">
-                            Horizon
-                        </a>
-
                         <!-- About -->
                         <router-link to="/about" class="navbar-item" @click.native="close">
                               {{ $t('nav.about')}}
@@ -53,10 +44,22 @@
 
                             <!-- Dropdown toggle -->
                             <div class="navbar-item has-dropdown is-hoverable">
+
                                 <!-- "More" -->
                                 <a id="more" class="navbar-item"> {{ $t('nav.more')}}</a>
                                 <!-- Dropdown menu -->
                                 <div class="navbar-dropdown" style="z-index: 2;">
+
+                                    <!-- Admin -->
+                                    <div v-if="admin">
+                                        <router-link to="/admin/photos" class="navbar-item drop-item" @click.native="close">
+                                            ADMIN - Verify Photos
+                                        </router-link>
+
+                                        <a href="/horizon" class="navbar-item drop-item" target="_blank">
+                                            ADMIN - Horizon
+                                        </a>
+                                    </div>
 
                                     <!-- Tag Litter -->
                                     <router-link to="/tag" class="navbar-item drop-item">
@@ -76,6 +79,11 @@
                                     <!-- Settings -->
                                     <router-link to="/settings/password" class="navbar-item drop-item">
                                          {{ $t('nav.settings')}}
+                                    </router-link>
+
+                                    <!-- Bounding boxes -->
+                                    <router-link v-if="can_bbox" to="/bbox" class="navbar-item drop-item" @click.native="close">
+                                        Bounding Boxes
                                     </router-link>
 
                                     <!-- Logout -->
@@ -135,6 +143,14 @@ export default {
         burger ()
         {
             return this.open ? 'navbar-burger burger is-active' : 'navbar-burger burger'
+        },
+
+        /**
+         * Some users are able to add bounding boxes to images
+         */
+        can_bbox ()
+        {
+            return this.$store.state.user.user.can_bbox;
         },
 
         /**

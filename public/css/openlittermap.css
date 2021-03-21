@@ -212,6 +212,10 @@ html {
     cursor: pointer;
 }
 
+.pl3 {
+    padding-left: 3em;
+}
+
 .pr1em {
 	padding-right: 1em;
 }
@@ -230,6 +234,10 @@ html {
 
 .pt3 {
     padding-top: 3em;
+}
+
+.pt7 {
+    padding-top: 7em;
 }
 
 .show-mobile {

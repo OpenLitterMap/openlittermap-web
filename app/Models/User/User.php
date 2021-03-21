@@ -101,7 +101,8 @@ class User extends Authenticatable
         'count_correctly_verified',
         'previous_tags',
         'remaining_teams',
-        'photos_per_month'
+        'photos_per_month',
+        'bbox_verification_count'
     ];
 
     /**

@@ -48,19 +48,20 @@
 
         <br><br>
 
-        <div v-if="Object.keys(recentTags).length > 0" class="mb-5">
+        <div v-if="Object.keys(recentTags).length > 0 && this.annotations !== true" class="mb-5">
 
             <p class="mb-05">{{ $t('tags.recently-tags') }}</p>
 
             <div v-for="category in Object.keys(recentTags)">
                 <p>{{ getCategoryName(category) }}</p>
-                 <transition-group name="list" class="recent-tags" tag="div" :key="category">
-                        <div
-                            v-for="tag in Object.keys(recentTags[category])"
-                            class="litter-tag"
-                            :key="tag"
-                            @click="addRecentTag(category, tag)"
-                        ><p>{{ getTagName(category, tag) }}</p></div>
+
+                <transition-group name="list" class="recent-tags" tag="div" :key="category">
+                    <div
+                        v-for="tag in Object.keys(recentTags[category])"
+                        class="litter-tag"
+                        :key="tag"
+                        @click="addRecentTag(category, tag)"
+                    ><p>{{ getTagName(category, tag) }}</p></div>
                 </transition-group>
             </div>
         </div>
@@ -129,7 +130,8 @@ export default {
     },
     props: {
         'id': { type: Number, required: true },
-        'admin': Boolean
+        'admin': Boolean,
+        'annotations': { type: Boolean, required: false }
     },
     created ()
     {
@@ -179,7 +181,7 @@ export default {
             set (cat) {
                 if (cat) {
                     this.$store.commit('changeCategory', cat.key);
-                    this.$store.commit('changeTag', litterkeys[cat.key][0].key);
+                    this.$store.commit('changeTag', litterkeys[cat.key][0]);
                     this.quantity = 1;
                 }
             }
@@ -223,6 +225,24 @@ export default {
 
             return Object.keys(this.$store.state.litter.tags).length === 0;
         },
+
+        // /**
+        //  * When adding tags to a bounding box,
+        //  *
+        //  * We should disable the addTag button if a box is not selected
+        //  */
+        // disabled ()
+        // {
+        //     if (! this.annotations) return false;
+        //
+        //     let disable = true;
+        //
+        //     this.$store.state.bbox.boxes.forEach(box => {
+        //         if (box.active) disable = false;
+        //     });
+        //
+        //     return disable;
+        // },
 
         /**
          * Has the litter been picked up, or is it still there?
@@ -302,6 +322,8 @@ export default {
         /**
          * Add or increment a tag
          *
+         * Also used by Admin/BBox to add annotations to an image
+         *
          * tags: {
          *     smoking: {
          *         butts: 1
@@ -312,7 +334,7 @@ export default {
         {
             this.$store.commit('addTag', {
                 category: this.category.key,
-                tag: this.tag,
+                tag: this.tag.key,
                 quantity: this.quantity
             });
 
@@ -320,7 +342,7 @@ export default {
 
             this.$store.commit('addRecentTag', {
                 category: this.category.key,
-                tag: this.tag
+                tag: this.tag.key
             });
 
             this.$localStorage.set('recentTags', JSON.stringify(this.recentTags));
@@ -421,13 +443,22 @@ export default {
 
         /**
          * Submit the image for verification
+         *
+         * add_tags_to_image => users
+         *
+         * add_boxes_to_image => admins
+         *
          * litter/actions.js
          */
         async submit ()
         {
             this.processing = true;
 
-            await this.$store.dispatch('ADD_TAGS_TO_IMAGE');
+            let action = this.annotations
+                ? 'ADD_BOXES_TO_IMAGE'
+                : 'ADD_TAGS_TO_IMAGE';
+
+            await this.$store.dispatch(action);
 
             this.processing = false;
         }

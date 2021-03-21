@@ -41,8 +41,10 @@ class Brand extends LitterCategory
         'duracell',
         'durex',
 
+        'evian',
         'esquires',
 
+        'fosters',
         'frank_and_honest',
     	'fritolay',
 
@@ -144,8 +146,10 @@ class Brand extends LitterCategory
             'duracell',
             'durex',
 
+            'evian',
             'esquires',
 
+            'fosters',
             'frank_and_honest',
             'fritolay',
 

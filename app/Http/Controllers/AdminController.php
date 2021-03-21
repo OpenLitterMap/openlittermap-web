@@ -374,7 +374,7 @@ class AdminController extends Controller
     {
         if ($photo = Photo::where('verification', 0.1)->first())
         {
-            $photoData = $this->getPhotoData($photo);
+            $photo->tags();
         }
 
         else
@@ -383,7 +383,6 @@ class AdminController extends Controller
                 'verification' => 0,
                 // ['user_id', '!=', 1]
             ])->first();
-            $photoData = null;
         }
 
         // Count photos that have been uploaded, but not tagged or submitted for verification
@@ -401,97 +400,8 @@ class AdminController extends Controller
 
         return [
             'photo' => $photo,
-            'photoData' => $photoData,
             'photosNotProcessed' => $photosNotProcessed,
             'photosAwaitingVerification' => $photosAwaitingVerification
         ];
     }
-
-    /**
-     * Get the litter data for the image
-     */
-    protected function getPhotoData ($photo)
-    {
-        $photodata = [];
-
-        if ($photo->smoking_id)
-        {
-            $photodata['smoking'] = Smoking::find($photo->smoking_id);
-        }
-
-        if ($photo->coffee_id)
-        {
-            $photodata['coffee'] = Coffee::find($photo->coffee_id);
-        }
-
-        if ($photo->food_id)
-        {
-            $photodata['food'] = Food::find($photo->food_id);
-        }
-
-        if ($photo->alcohol_id)
-        {
-            $photodata['alcohol'] = Alcohol::find($photo->alcohol_id);
-        }
-
-        if ($photo->softdrinks_id)
-        {
-            $photodata['softdrinks'] = SoftDrinks::find($photo->softdrinks_id);
-        }
-
-        // if ($photo['drugs_id'])
-        //{
-        //     $drugs = Drugs::find($photo['drugs_id']);
-        //     $photodata['Drugs'] = $drugs;
-        // }
-
-        if ($photo->sanitary_id)
-        {
-            $photodata['sanitary'] = Sanitary::find($photo->sanitary_id);
-        }
-
-        if ($photo->other_id)
-        {
-            $photodata['other'] = Other::find($photo->other_id);
-        }
-
-        if ($photo->coastal_id)
-        {
-            $photodata['coastal'] = Coastal::find($photo->coastal_id);
-        }
-
-        // if ($photo['pathways_id'])
-        //{
-        //     $pathway = Pathway::find($photo['pathways_id']);
-        //     $photodata['Pathway'] = $pathway;
-        // }
-
-        if ($photo->art_id)
-        {
-            $photodata['art'] = Art::find($photo->art_id);
-        }
-
-        if ($photo->trashdog_id)
-        {
-            $photodata['trashdog'] = TrashDog::find($photo->trashdog_id);
-        }
-
-        if ($photo->brands_id)
-        {
-            $photodata['brands'] = Brand::find($photo->brands_id);
-        }
-
-        if ($photo->dumping_id)
-        {
-            $photodata['dumping'] = Dumping::find($photo->dumping_id);
-        }
-
-        if ($photo->industrial_id)
-        {
-            $photodata['industrial'] = Industrial::find($photo->industrial_id);
-        }
-
-        return $photodata;
-    }
-
 }

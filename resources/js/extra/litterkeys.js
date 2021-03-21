@@ -1,4 +1,7 @@
 export const litterkeys = {
+    // todo - Import these by category
+    // Todo - Split brands by A-Z/
+    // todo - rename this tags
     smoking: [
         'butts',            // Cigarette/Butts
         'lighters',         // Lighters

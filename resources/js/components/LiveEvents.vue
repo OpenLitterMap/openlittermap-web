@@ -83,6 +83,9 @@ export default {
 	channel: 'main',
 	echo: {
 	    'ImageUploaded': (payload, vm) => {
+
+	        document.title = "OpenLitterMap (" + (vm.events.length + 1) + ")";
+
 			vm.events.unshift({
 				type: 'image',
 				city: payload.city,
@@ -94,34 +97,49 @@ export default {
 			});
 		},
 		'NewCountryAdded': (payload, vm) => {
-			vm.events.unshift({
+
+            document.title = "OpenLitterMap (" + (vm.events.length + 1) + ")";
+
+            vm.events.unshift({
 				type: 'country',
 				country: payload.country,
 				countryId: payload.countryId
 			})
 		},
 		'NewStateAdded': (payload, vm) => {
-			vm.events.unshift({
+
+            document.title = "OpenLitterMap (" + (vm.events.length + 1) + ")";
+
+            vm.events.unshift({
 				type: 'state',
 				state: payload.state,
 				stateId: payload.stateId
 			})
 		},
 		'NewCityAdded': (payload, vm) => {
-			vm.events.unshift({
+
+            document.title = "OpenLitterMap (" + (vm.events.length + 1) + ")";
+
+            vm.events.unshift({
 				type: 'city',
 				city: payload.city,
 				cityId: payload.cityId
 			})
 		},
 		'UserSignedUp': (payload, vm) => {
-			vm.events.unshift({
+
+            document.title = "OpenLitterMap (" + (vm.events.length + 1) + ")";
+
+            vm.events.unshift({
 				type: 'new-user',
 				now: payload.now
 			})
 		},
         'TeamCreated': (payload, vm) => {
-	        vm.events.unshift({
+
+            document.title = "OpenLitterMap (" + (vm.events.length + 1) + ")";
+
+            vm.events.unshift({
                 type: 'team-created',
                 name: payload.name
             });

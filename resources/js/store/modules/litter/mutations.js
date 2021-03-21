@@ -94,13 +94,13 @@ export const mutations = {
             {
                 litterkeys[category].map(item => {
 
-                    if (payload[category][item.key])
+                    if (payload[category][item])
                     {
                         tags = {
                             ...tags,
                             [category]: {
                                 ...tags[category],
-                                [item.key]: payload[category][item.key]
+                                [item]: payload[category][item]
                             }
                         };
                     }

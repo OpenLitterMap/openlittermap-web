@@ -16,8 +16,9 @@ class Photo extends Model
         'verification',
         'verified',
         'result_string',
+        'total_litter',
 
-    	'display_name',
+        'display_name',
     	'location',
     	'road',
     	'suburb',
@@ -44,11 +45,18 @@ class Photo extends Model
         'art_id',
         'brands_id',
         'trashdog_id',
-        'total_litter',
+
         'platform',
         'bounding_box',
         'geohash',
-        'team_id'
+        'team_id',
+
+        // annotations
+        'bbox_skipped',
+        'skipped_by',
+        'bbox_assigned_to',
+        'wrong_tags',
+        'wrong_tags_by'
     ];
 
     /**
@@ -101,6 +109,28 @@ class Photo extends Model
     public function owner ()
     {
     	return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * Return the tags for an image
+     *
+     * Remove any keys with null values
+     */
+    public function tags ()
+    {
+        foreach ($this->categories() as $category)
+        {
+            if ($this->$category)
+            {
+                foreach ($this->$category->types() as $tag)
+                {
+                    if (is_null($this->$category[$tag]))
+                    {
+                        unset ($this->$category[$tag]);
+                    }
+                }
+            }
+        }
     }
 
     /**
