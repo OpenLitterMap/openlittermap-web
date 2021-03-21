@@ -381,21 +381,21 @@ class AdminController extends Controller
         {
             $photo = Photo::where([
                 'verification' => 0,
-                // ['user_id', '!=', 1]
+                 ['user_id', '!=', 3233] // dont load freds data
             ])->first();
         }
 
         // Count photos that have been uploaded, but not tagged or submitted for verification
         $photosNotProcessed = Photo::where([
                 ['verification', 0],
-                // ['user_id', '!=', 1]
+                 ['user_id', '!=', 3233]
             ])->count();
 
         // Count photos submitted for verification
         $photosAwaitingVerification = Photo::where([
             ['verified', '<', 2], // not verified
             ['verification', '>', 0], // submitted for verification
-            // ['user_id', '!=', 1]
+            ['user_id', '!=', 3233]
         ])->count();
 
         return [

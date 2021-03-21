@@ -58,7 +58,8 @@
         "glass_jar": "Glass Jar",
         "glass_jar_lid": "Glass Jar Lid",
         "aluminium_foil": "Aluminium Foil",
-        "foodOther": "Food-other"
+        "pizza_box": "Pizza Box",        
+        "foodOther": "Food-Other"
     },
     "softdrinks": {
         "waterBottle": "Plastic Water bottle",
@@ -82,7 +83,7 @@
         "pullring": "Pull-ring",
         "strawpacket": "Straw Packaging",
         "styro_cup": "Styrofoam Cup",
-        "softDrinkOther": "Soft Drink (other)"
+        "softDrinkOther": "Soft Drink-Other"
     },
     "sanitary": {
         "gloves": "Gloves",
@@ -96,34 +97,7 @@
         "tooth_brush": "Tooth Brush",
         "wetwipes": "Wet Wipes",
         "hand_sanitiser": "Hand Sanitiser",
-        "sanitaryOther": "Sanitary (other)"
-    },
-    "other": {
-        "dogshit": "Pet Surprise",
-        "pooinbag": "Surprise In Bag",
-        "automobile": "Automobile",
-        "clothing": "Clothing",
-        "traffic_cone": "Traffic cone",
-        "life_buoy": "Life Buoy",
-        "plastic": "Unidentified Plastic",
-        "dump": "Illegal Dumping",
-        "metal": "Metal Object",
-        "plastic_bags": "Plastic Bags",
-        "election_posters": "Election Posters",
-        "forsale_posters": "For Sale Posters",
-        "books": "Books",
-        "magazine": "Magazines",
-        "paper": "Paper",
-        "stationary": "Stationery",
-        "washing_up": "Washing-up Bottle",
-        "hair_tie": "Hair Tie",
-        "ear_plugs": "Ear Plugs (music)",
-        "batteries": "Batteries",
-        "elec_small": "Electric small",
-        "elec_large": "Electric large",
-        "random_litter": "Random Litter",
-        "balloons": "Balloons",
-        "other": "Other (other)"
+        "sanitaryOther": "Sanitary-Other"
     },
     "dumping": {
         "small": "Small",
@@ -136,7 +110,7 @@
         "chemical": "Chemical",
         "bricks": "Bricks",
         "tape": "Tape",
-        "industrial_other": "Other"
+        "industrial_other": "Industrial-Other"
     },
     "coastal": {
         "microplastics": "Microplastics",
@@ -157,7 +131,7 @@
         "styro_small": "Styrofoam small",
         "styro_medium": "Styrofoam medium",
         "styro_large": "Styrofoam large",
-        "coastal_other": "Coastal (other)"
+        "coastal_other": "Coastal-Other"
     },
     "brands": {
         "adidas": "Adidas",
@@ -243,6 +217,37 @@
         "trashdog": "TrashDog",
         "littercat": "LitterCat",
         "duck": "LitterDuck"
+    },
+    "other": {
+        "dogshit": "Dog Poo",
+        "pooinbag": "Dog Poo In Bag",
+        "automobile": "Automobile",
+        "clothing": "Clothing",
+        "traffic_cone": "Traffic cone",
+        "life_buoy": "Life Buoy",
+        "plastic": "Unidentified Plastic",
+        "dump": "Illegal Dumping",
+        "metal": "Metal Object",
+        "plastic_bags": "Plastic Bags",
+        "election_posters": "Election Posters",
+        "forsale_posters": "For Sale Posters",
+        "books": "Books",
+        "magazine": "Magazines",
+        "paper": "Paper",
+        "stationary": "Stationery",
+        "washing_up": "Washing-up Bottle",
+        "hair_tie": "Hair Tie",
+        "ear_plugs": "Ear Plugs (music)",
+        "batteries": "Batteries",
+        "elec_small": "Electric small",
+        "elec_large": "Electric large",
+        "random_litter": "Random Litter",
+        "balloons": "Balloons",
+        "bags_litter": "Bags of Litter",        
+        "overflowing_bins": "Overflowing Bins",
+        "tyre": "Tyre",
+        "cable_tie": "Cable Tie",
+        "other": "Other-Other"
     },
     "presence": {
         "picked-up": "I picked it up!",
