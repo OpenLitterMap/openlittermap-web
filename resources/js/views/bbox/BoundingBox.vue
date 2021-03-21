@@ -72,6 +72,8 @@
         </div>
 
         <div class="littercoin-pos">
+            <p>Your boxes: {{ this.usersBoxCount }}</p>
+            <p>Total Boxes: {{ this.totalBoxCount }}</p>
             <p>Littercoin earned: {{ this.littercoinEarned }}</p>
             <p>Next Littercoin: {{ this.littercoinProgress }}</p>
         </div>
@@ -219,6 +221,22 @@ export default {
             let str = 'button is-medium is-warning mt1 ';
 
             return this.skip_processing ? str + ' is-loading' : str;
+        },
+
+        /**
+         * Total count of all boxes submitted by all users
+         */
+        totalBoxCount ()
+        {
+            return this.$store.state.bbox.totalBoxCount;
+        },
+
+        /**
+         * Total number of boxes submitted by the current user
+         */
+        usersBoxCount ()
+        {
+            return this.$store.state.bbox.usersBoxCount;
         },
 
         /**

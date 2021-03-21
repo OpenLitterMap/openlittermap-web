@@ -118,6 +118,15 @@ export const mutations = {
     },
 
     /**
+     * Update total boxes tagged by this user and all users
+     */
+    bboxCount (state, payload)
+    {
+        state.usersBoxCount = payload.usersBoxCount;
+        state.totalBoxCount = payload.totalBoxCount;
+    },
+
+    /**
      * Draggable
      */
     setBrandsBox (state, payload)

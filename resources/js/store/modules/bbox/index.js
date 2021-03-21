@@ -16,7 +16,9 @@ const state = {
         }
     ],
     brands: [],
-    selectedBrandIndex: null
+    selectedBrandIndex: null,
+    totalBoxCount: 0,
+    usersBoxCount: 0
 };
 
 export const bbox = {

@@ -120,15 +120,21 @@ export const actions = {
                 console.log('next_bb_img', response);
 
                 context.commit('adminImage', {
-                    id: response.data.id,
-                    filename: response.data.filename
+                    id: response.data.photo.id,
+                    filename: response.data.photo.filename
                 });
 
                 // litter.js
-                context.commit('initAdminItems', response.data);
+                context.commit('initAdminItems', response.data.photo);
 
                 // bbox.js
-                context.commit('initBboxTags', response.data);
+                context.commit('initBboxTags', response.data.photo);
+
+                // box counts
+                context.commit('bboxCount', {
+                    usersBoxCount: response.data.usersBoxCount,
+                    totalBoxCount: response.data.totalBoxCount
+                })
 
                 context.commit('adminLoading', false);
             })
