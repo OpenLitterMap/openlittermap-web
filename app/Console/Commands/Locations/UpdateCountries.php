@@ -4,7 +4,6 @@ namespace App\Console\Commands\Locations;
 
 use App\Models\Location\Country;
 use App\Models\Photo;
-
 use Illuminate\Console\Command;
 
 class UpdateCountries extends Command

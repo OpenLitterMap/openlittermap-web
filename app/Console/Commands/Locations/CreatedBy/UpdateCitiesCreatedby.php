@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Console\Commands;
+namespace App\Console\Commands\Locations\CreatedBy;
 
 use App\Models\Location\City;
+use App\Models\Photo;
 use Illuminate\Console\Command;
 
 class UpdateCitiesCreatedby extends Command
@@ -12,7 +13,7 @@ class UpdateCitiesCreatedby extends Command
      *
      * @var string
      */
-    protected $signature = 'cities:createdby';
+    protected $signature = 'locations:fix-cities-createdby';
 
     /**
      * The console command description.
@@ -38,15 +39,20 @@ class UpdateCitiesCreatedby extends Command
      */
     public function handle()
     {
-        $cities = City::where([
-            ['manual_verify', 1],
-            ['total_contributors', '>', 1],
-            ['total_images', '>', 0]
-        ])->get();
-        foreach($cities as $city) {
-            if(is_null($city->created_by)) {
-                $city['created_by'] = $city->photos()->first()->user_id;
+        $cities = City::whereNull('created_by')->get();
+
+        foreach ($cities as $city)
+        {
+            echo "city $city->id $city->city \n";
+
+            $photo = Photo::where('city_id', $city->id)->orderBy('id')->first();
+
+            if ($photo)
+            {
+                $city->created_by = $photo->user_id;
                 $city->save();
+
+                echo "updated \n";
             }
         }
     }

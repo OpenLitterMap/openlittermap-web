@@ -14,20 +14,19 @@ class NewStateAdded implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $state;
-    public $country;
-    public $now;
+    public $state, $country, $now, $userId;
 
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct($state, $country, $now)
+    public function __construct ($state, $country, $now, $userId)
     {
         $this->state = $state;
         $this->country = $country;
         $this->now = $now;
+        $this->userId = $userId;
     }
 
     /**

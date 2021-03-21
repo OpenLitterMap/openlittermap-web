@@ -10,16 +10,6 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 class UpdateCountriesTable
 {
     /**
-     * Create the event listener.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        //
-    }
-
-    /**
      * Handle the event.
      *
      * @param  NewCountryAdded  $event
@@ -29,7 +19,8 @@ class UpdateCountriesTable
     {
         Country::create([
             'country' => $event->country,
-            'shortcode' => $event->countryCode
+            'shortcode' => $event->countryCode,
+            'created_by' => $event->userId
         ]);
     }
 }

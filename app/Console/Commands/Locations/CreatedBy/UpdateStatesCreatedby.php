@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Console\Commands;
+namespace App\Console\Commands\Locations\CreatedBy;
 
 use App\Models\Location\State;
+use App\Models\Photo;
 use Illuminate\Console\Command;
 
 class UpdateStatesCreatedby extends Command
@@ -12,7 +13,7 @@ class UpdateStatesCreatedby extends Command
      *
      * @var string
      */
-    protected $signature = 'states:createdby';
+    protected $signature = 'locations:fix-states-createdby';
 
     /**
      * The console command description.
@@ -38,11 +39,20 @@ class UpdateStatesCreatedby extends Command
      */
     public function handle()
     {
-        $states = State::where('manual_verify', 1)->get();
-        foreach($states as $state) {
-            if(is_null($state->created_by)) {
-                $state['created_by'] = $state->photos()->first()->user_id;
+        $states = State::whereNull('created_by')->get();
+
+        foreach ($states as $state)
+        {
+            echo "state $state->id $state->state \n";
+
+            $photo = Photo::where('state_id', $state->id)->orderBy('id')->first();
+
+            if ($photo)
+            {
+                $state->created_by = $photo->user_id;
                 $state->save();
+
+                echo "updated \n";
             }
         }
     }

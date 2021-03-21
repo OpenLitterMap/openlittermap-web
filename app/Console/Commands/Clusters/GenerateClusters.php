@@ -2,11 +2,9 @@
 
 namespace App\Console\Commands\Clusters;
 
-use App\Models\Cluster;
 use App\Models\Photo;
+use App\Models\Cluster;
 
-use Geohash;
-use Illuminate\Http\File;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 

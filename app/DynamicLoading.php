@@ -14,6 +14,7 @@ trait DynamicLoading
 
 	/**
 	 * Who created this resource? Is their name or username public or private?
+     *
 	 * @return name || username || anonymous
 	 */
 	protected function getCreatorInfo ($location)
