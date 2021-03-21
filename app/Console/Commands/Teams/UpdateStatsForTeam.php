@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Console\Commands\Teams;
+namespace App\Console\Commands\Locations\CreatedBy\Locations\CreatedBy\Locations\CreatedBy\Teams;
 
-use DB;
 use App\Models\Photo;
 use App\Models\Teams\Team;
+use DB;
 use Illuminate\Console\Command;
 
 class UpdateStatsForTeam extends Command

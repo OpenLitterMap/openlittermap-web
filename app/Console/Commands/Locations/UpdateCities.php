@@ -1,10 +1,9 @@
 <?php
 
-namespace App\Console\Commands\Locations;
+namespace App\Console\Commands\Locations\CreatedBy\Locations\CreatedBy\Locations\CreatedBy\Locations;
 
 use App\Models\Location\City;
 use App\Models\Photo;
-
 use Illuminate\Console\Command;
 
 class UpdateCities extends Command

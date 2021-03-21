@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands\Tags;
+namespace App\Console\Commands\Locations\CreatedBy\Locations\CreatedBy\Locations\CreatedBy\Tags;
 
 use App\Events\TagsVerifiedByAdmin;
 use App\Models\Photo;

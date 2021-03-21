@@ -37,7 +37,8 @@ class UpdateStatesTable
 
         $state = State::create([
             'state' => $event->state,
-            'country_id' => $country_id
+            'country_id' => $country_id,
+            'created_by' => $event->userId
         ]);
 
         $state->save();

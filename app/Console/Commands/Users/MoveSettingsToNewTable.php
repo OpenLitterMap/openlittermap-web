@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands\Users;
+namespace App\Console\Commands\Locations\CreatedBy\Locations\CreatedBy\Locations\CreatedBy\Users;
 
 use Illuminate\Console\Command;
 

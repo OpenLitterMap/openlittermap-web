@@ -1,12 +1,9 @@
 <?php
 
-namespace App\Console\Commands\Clusters;
+namespace App\Console\Commands\Locations\CreatedBy\Locations\CreatedBy\Locations\CreatedBy\Clusters;
 
 use App\Models\Cluster;
 use App\Models\Photo;
-
-use Geohash;
-use Illuminate\Http\File;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 

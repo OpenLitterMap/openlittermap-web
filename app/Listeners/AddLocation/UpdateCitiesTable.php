@@ -2,7 +2,6 @@
 
 namespace App\Listeners\AddLocation;
 
-use DB;
 use App\Models\Location\City;
 use App\Models\Location\State;
 use App\Models\Location\Country;
@@ -12,16 +11,6 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 
 class UpdateCitiesTable
 {
-    /**
-     * Create the event listener.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        //
-    }
-
     /**
      * Handle the event
      *
@@ -38,6 +27,7 @@ class UpdateCitiesTable
 
         $country_id = Country::where('country', $event->country)->orWhere('countrynameb', $event->country)->first()->id;
         $city->country_id = $country_id;
+        $city->created_by = $event->userId;
 
         $city->save();
     }

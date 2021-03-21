@@ -36,7 +36,7 @@ class MapController extends Controller
 		 	2. Find out how to get top-10 more efficiently
             3. Paginate
             4. Automate 'manual_verify => 1'
-            5. Eager load leaders with the country model
+            5. Eager load leaders with the country model```
          */
 		$countries = Country::with(['creator' => function($q) {
 			$q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby')

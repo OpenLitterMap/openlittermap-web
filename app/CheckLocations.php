@@ -59,7 +59,7 @@ trait CheckLocations
 //            }
             if (! Country::where('shortcode', $this->countryCode)->first())
             {
-                event(new NewCountryAdded($this->country, $this->countryCode, now()));
+                event(new NewCountryAdded($this->country, $this->countryCode, now(), auth()->user()->id));
             }
         }
     }
@@ -108,7 +108,7 @@ trait CheckLocations
             if (! State::where('state', $this->state)->orWhere('statenameb', $this->state)->first())
             {
                 $this->checkCountry($addressArray);
-                event(new NewStateAdded($this->state, $this->country, now()));
+                event(new NewStateAdded($this->state, $this->country, now(), auth()->user()->id));
             }
         }
     }
@@ -228,7 +228,7 @@ trait CheckLocations
             {
                 $this->checkCountry($addressArray);
                 $this->checkState($addressArray);
-                event(new NewCityAdded($this->city, $this->state, $this->country, now()));
+                event(new NewCityAdded($this->city, $this->state, $this->country, now(), auth()->user()->id));
             }
         }
     }
