@@ -109,7 +109,8 @@ class BoundingBoxController extends Controller
                 'bbox_skipped' => 0,
                 ['filename', '!=', '/assets/verified.jpg'],
                 'bbox_assigned_to' => $userId,
-                'wrong_tags' => false
+                'wrong_tags' => false,
+                'total_litter' => 1
             ])->first();
 
         // Or, get the next available photo
@@ -121,7 +122,8 @@ class BoundingBoxController extends Controller
                     'bbox_skipped' => 0,
                     ['filename', '!=', '/assets/verified.jpg'],
                     'bbox_assigned_to' => null,
-                    'wrong_tags' => false
+                    'wrong_tags' => false,
+                    'total_litter' => 1
                 ])->first();
 
             // Assign the photo to a user so 2+ users don't load the same photo
