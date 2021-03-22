@@ -366,7 +366,7 @@ export default {
     }
 
     .test-class {
-        border: 3px solid red;
+        border: 1px solid red;
         position: relative;
     }
 
