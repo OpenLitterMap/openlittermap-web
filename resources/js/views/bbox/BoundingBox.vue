@@ -27,11 +27,13 @@
                             v-show="! box.hidden"
                             :minw="10"
                             :minh="10"
+                            :stickSize="stickSize"
                             :parentLimitation="true"
                             :z="box.id"
                             @clicked="activated(box.id)"
+                            @dragging="dragging"
                             @resizing="resize"
-                            @dragging="resize"
+                            @resizestop="resizestop"
                         ><p class="box-tag">{{ boxText(box.id, box.showLabel, box.category, box.tag) }}</p></VueDragResize>
                     </div>
 
@@ -109,13 +111,21 @@ export default {
     async created ()
     {
         this.$store.dispatch('GET_NEXT_BBOX');
+
+        if (window.innerWidth < 1000)
+        {
+            this.isMobile = true;
+            this.stickSize = 20;
+        }
     },
     data ()
     {
         return {
+            stickSize: 6,
             skip_processing: false,
             update_processing: false,
-            wrong_tags_processing: false
+            wrong_tags_processing: false,
+            isMobile: false
         };
     },
     mounted ()
@@ -296,11 +306,29 @@ export default {
         },
 
         /**
+         * Dragging active box
+         */
+        dragging (newRect)
+        {
+            this.$store.commit('updateBoxPosition', newRect);
+        },
+
+        /**
          * Resize active box
          */
         resize (newRect)
         {
+            this.stickSize = 1;
+
             this.$store.commit('updateBoxPosition', newRect);
+        },
+
+        /**
+         * When resizing stops, reset the sticks-size
+         */
+        resizestop ()
+        {
+            this.stickSize = this.isMobile ? 20 : 6;
         },
 
         /**
