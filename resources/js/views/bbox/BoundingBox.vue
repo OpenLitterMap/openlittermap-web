@@ -119,7 +119,6 @@ export default {
     },
     mounted ()
     {
-        // delete selected box on backspace
         document.addEventListener("keydown", (e) => {
 
             const key = e.key;
@@ -129,23 +128,30 @@ export default {
                 this.$store.commit('removeActiveBox');
             }
 
-            // Todo
-            // else if (key === "ArrowUp")
-            // {
-            //     this.$store.commit('moveBoxUp');
-            // }
-            // else if (key === "ArrowRight")
-            // {
-            //     this.$store.commit('moveBoxRight');
-            // }
-            // else if (key === "ArrowDown")
-            // {
-            //     this.$store.commit('moveBoxDown');
-            // }
-            // else if (key === "ArrowLeft")
-            // {
-            //     this.$store.commit('moveBoxLeft');
-            // }
+            else if (key === "ArrowUp")
+            {
+                e.preventDefault();
+                this.$store.commit('moveBoxUp');
+            }
+
+            else if (key === "ArrowRight")
+            {
+                e.preventDefault();
+                this.$store.commit('moveBoxRight');
+
+            }
+            else if (key === "ArrowDown")
+            {
+                e.preventDefault();
+                this.$store.commit('moveBoxDown');
+            }
+
+            else if (key === "ArrowLeft")
+            {
+                e.preventDefault();
+                this.$store.commit('moveBoxLeft');
+            }
+            
         });
     },
     computed: {

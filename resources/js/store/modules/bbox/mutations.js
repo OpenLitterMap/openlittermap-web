@@ -241,26 +241,81 @@ export const mutations = {
         });
     },
 
-    // /**
-    //  * Todo
-    //  */
-    // moveBoxUp (state)
-    // {
-    //     let boxes = [...state.boxes];
-    //
-    //     boxes.map(box => {
-    //         if (box.active)
-    //         {
-    //             box.top--;
-    //
-    //             console.log('box.top', box.top);
-    //         }
-    //
-    //         return box;
-    //     })
-    //
-    //     state.boxes = boxes;
-    // },
+    /**
+     * Move the active box up 1 pixel
+     */
+    moveBoxUp (state)
+    {
+        let boxes = [...state.boxes];
+
+        boxes.map(box => {
+            if (box.active)
+            {
+                box.top--;
+            }
+
+            return box;
+        });
+
+        state.boxes = boxes;
+    },
+
+    /**
+     * Move the active box right 1 pixel
+     */
+    moveBoxRight (state)
+    {
+        let boxes = [...state.boxes];
+
+        boxes.map(box => {
+            if (box.active)
+            {
+                box.left++;
+            }
+
+            return box;
+        });
+
+        state.boxes = boxes;
+    },
+
+    /**
+     * Move the active box down 1 pixel
+     */
+    moveBoxDown (state)
+    {
+        let boxes = [...state.boxes];
+
+        boxes.map(box => {
+            if (box.active)
+            {
+                box.top++;
+            }
+
+            return box;
+        });
+
+        state.boxes = boxes;
+    },
+
+    /**
+     * Move the active box left 1 pixel
+     */
+    moveBoxLeft (state)
+    {
+        let boxes = [...state.boxes];
+
+        boxes.map(box => {
+            if (box.active)
+            {
+                box.left--;
+            }
+
+            return box;
+        });
+
+        state.boxes = boxes;
+    },
 
     /**
      * Filter out any boxes that are active
