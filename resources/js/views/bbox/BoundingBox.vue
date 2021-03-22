@@ -4,7 +4,7 @@
 
         <div v-else class="columns mt1">
 
-            <ImageInfo />
+            <Boxes />
 
             <div class="column is-one-third">
                 <h1 class="title is-2 has-text-centered">Add bounding box to image #{{ this.imageId }}</h1>
@@ -31,7 +31,7 @@
                             @clicked="activated(box.id)"
                             @resizing="resize"
                             @dragging="resize"
-                        ><p class="box-tag">{{ box.id }}</p></VueDragResize>
+                        ><p class="box-tag">{{ boxText(box.id, box.showLabel, box.category, box.tag) }}</p></VueDragResize>
                     </div>
 
                     <add-tags
@@ -84,7 +84,7 @@
 <script>
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
-import ImageInfo from '../../components/Admin/ImageInfo'
+import Boxes from '../../components/Admin/Boxes'
 import Tags from '../../components/Litter/Tags'
 import AddTags from '../../components/Litter/AddTags'
 import BrandsBox from '../../components/Admin/Bbox/BrandsBox'
@@ -98,7 +98,7 @@ export default {
         Loading,
         Tags,
         AddTags,
-        ImageInfo,
+        Boxes,
         VueDragResize,
         BrandsBox
     },
@@ -151,7 +151,7 @@ export default {
                 e.preventDefault();
                 this.$store.commit('moveBoxLeft');
             }
-            
+
         });
     },
     computed: {
@@ -274,6 +274,16 @@ export default {
         activated (id)
         {
             this.$store.commit('activateBox', id);
+        },
+
+        /**
+         *
+         */
+        boxText (id, showLabel, category, tag)
+        {
+            return showLabel
+                ? this.$t(`litter.${category}.${tag}`)
+                : id;
         },
 
         /**

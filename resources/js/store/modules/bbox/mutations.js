@@ -374,6 +374,20 @@ export const mutations = {
     },
 
     /**
+     *
+     */
+    toggleBoxLabel (state, payload)
+    {
+        let boxes = [...state.boxes];
+
+        let box = boxes.find(box => box.id === payload);
+
+        box.showLabel = ! box.showLabel;
+
+        state.boxes = boxes;
+    },
+
+    /**
      * Update the coordinates of active box
      */
     updateBoxPosition (state, payload)

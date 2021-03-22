@@ -13,7 +13,7 @@
             <p class="ma">Box: <span class="is-bold">{{ index + 1 }}</span></p>
 
             <button class="button is-small duplicate-box" @click="duplicate(box.id)" disabled>Todo - Duplicate Box</button>
-            <button class="button is-small toggle-box" @click="toggleLabel(box.id)" disabled>Todo - Toggle Label</button>
+            <button class="button is-small toggle-box" @click="toggleLabel(box.id)">Toggle Label</button>
 
             <!-- Box attributes -->
             <p>Height: {{ box.height }}</p>
@@ -55,7 +55,7 @@
 import BrandsBox from './Bbox/BrandsBox';
 
 export default {
-    name: 'ImageInfo',
+    name: 'Boxes',
     components: {
         BrandsBox
     },
@@ -164,7 +164,7 @@ export default {
          */
         toggleLabel (box_id)
         {
-            console.log('todo - toggle label');
+            this.$store.commit('toggleBoxLabel', box_id);
         },
     }
 };

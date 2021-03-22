@@ -12,7 +12,8 @@ const state = {
             active: true,
             category: null,
             tag: null,
-            brand: null
+            brand: null,
+            showLabel: false
         }
     ],
     brands: [],
