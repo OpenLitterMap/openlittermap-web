@@ -358,16 +358,11 @@ export default {
     }
 
     .vdr {
-        border: 3px solid red;
+        border: 1px solid red;
     }
 
     .vdr.active:before {
         outline: 0;
-    }
-
-    .test-class {
-        border: 1px solid red;
-        position: relative;
     }
 
     .box-tag {
