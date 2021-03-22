@@ -181,6 +181,8 @@ export const mutations = {
      */
     initBboxTags (state, payload)
     {
+        console.log({ payload });
+
         // reset the boxes
         this.commit('clearBoxes');
 

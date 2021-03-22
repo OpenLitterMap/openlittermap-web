@@ -388,7 +388,7 @@ export default {
     .littercoin-pos {
         position: absolute;
         bottom: 1em;
-        right: 1em;
+        left: 1em;
     }
 
 </style>
