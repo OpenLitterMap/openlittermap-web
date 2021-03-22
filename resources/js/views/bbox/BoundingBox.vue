@@ -37,6 +37,7 @@
                     <add-tags
                         :id="imageId"
                         :annotations="true"
+                        v-show="isAdmin"
                     />
 
                 </div>
@@ -44,7 +45,7 @@
 
             <div class="column is-2 is-offset-1 has-text-centered">
 
-                <!-- The list of tags associated with this image-->
+                <!-- The list of tags associated with this image -->
                 <Tags :admin="isAdmin" />
 
                 <button

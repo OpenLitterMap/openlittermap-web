@@ -75,8 +75,12 @@ export const actions = {
                 position: 'top-right'
             });
 
+            const boxes = [...context.state.boxes];
+
             // Update boxes based on tags in the image
             context.commit('initBboxTags', context.rootState.litter.tags);
+
+            context.commit('updateBoxPositions', boxes);
         })
         .catch(error => {
             console.error('bbox_update_tags', error);

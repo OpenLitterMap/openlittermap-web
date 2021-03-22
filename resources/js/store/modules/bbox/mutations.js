@@ -177,14 +177,13 @@ export const mutations = {
     },
 
     /**
-     * Using the result string,
+     * Create 1 for for every tag added to an image
      *
-     * Split up the result and add Quantity number of bounding_boxes,
-     * with the associated category labels
+     * Add the tag to the box
      */
     initBboxTags (state, payload)
     {
-        // state.boxes = []
+        // reset the boxes
         this.commit('clearBoxes');
 
         categories.map(category => {
@@ -224,11 +223,19 @@ export const mutations = {
                             // add category, tag to the active box
                             this.commit('addTagToBox', { category, tag });
 
+                            // if (boxes.length < i + 1)
+                            // {
+                            //     this.commit('updateBoxPosition', {
+                            //         width: boxes[i + 1].width,
+                            //         height: boxes[i + 1].height,
+                            //         top: boxes[i + 1].top,
+                            //         left: boxes[i + 1].left,
+                            //     });
+                            // }
+
                             i++;
                         }
-
                     }
-
                 });
             }
         });
@@ -320,13 +327,38 @@ export const mutations = {
 
             if (box.active)
             {
-                box.width = payload.width;
-                box.height = payload.height;
                 box.top = payload.top;
                 box.left = payload.left;
+                box.width = payload.width;
+                box.height = payload.height;
             }
 
             return box;
         });
+    },
+
+    /**
+     * When changing the tags of an image,
+     *
+     * We want to update to the previous box positions which were reset + cleared
+     */
+    updateBoxPositions (state, payload)
+    {
+        let boxes = [...state.boxes];
+
+        boxes.map((box, index) => {
+
+            if (payload[index])
+            {
+                box.top = payload[index].top;
+                box.left = payload[index].left;
+                box.width = payload[index].width;
+                box.height = payload[index].height;
+            }
+
+            return box;
+        });
+
+        state.boxes = boxes;
     }
 }
