@@ -9,7 +9,7 @@
             <div class="column is-one-third">
                 <h1 class="title is-2 has-text-centered">Add bounding box to image #{{ this.imageId }}</h1>
 
-                <div class="has-text-centered" @click.stop>
+                <div class="display-inline-grid" @click.stop>
 
                     <div
                         id="image-wrapper"
@@ -372,6 +372,10 @@ export default {
         right: 0;
         padding: 0 5px;
         margin-right: -3px;
+    }
+
+    .display-inline-grid {
+        display: inline-grid;
     }
 
     .filler {
