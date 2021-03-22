@@ -59,7 +59,9 @@ export const mutations = {
             active: false,
             category: null,
             tag: null,
-            brand: null
+            brand: null,
+            showLabel: false,
+            hidden: false
         });
     },
 
@@ -76,11 +78,7 @@ export const mutations = {
 
         box.brand = brands[state.selectedBrandIndex];
 
-        console.log({ box });
-
         brands.splice(state.selectedBrandIndex, 1);
-
-        console.log({ brands });
 
         state.brands = brands;
         state.boxes = boxes;
@@ -374,6 +372,18 @@ export const mutations = {
     },
 
     /**
+     * Stop hiding the boxes
+     */
+    showAllBoxes (state)
+    {
+        let boxes = [...state.boxes];
+
+        boxes.map(box => box.hidden = false);
+
+        state.boxes = boxes;
+    },
+
+    /**
      *
      */
     toggleBoxLabel (state, payload)
@@ -383,6 +393,22 @@ export const mutations = {
         let box = boxes.find(box => box.id === payload);
 
         box.showLabel = ! box.showLabel;
+
+        state.boxes = boxes;
+    },
+
+    /**
+     * Hide non-active boxes
+     */
+    toggleHiddenBoxes (state)
+    {
+        let boxes = [...state.boxes];
+
+        boxes.map(box => {
+
+            return box.hidden = ! box.active;
+
+        });
 
         state.boxes = boxes;
     },

@@ -3,6 +3,20 @@
 
         <BrandsBox />
 
+        <!-- Hide inactive boxes -->
+        <button
+            class="button is-small is-primary mb1"
+            @click.stop="hideInactive"
+            v-show="manyBoxes"
+        >Hide boxes</button>
+
+        <!-- Show all boxes -->
+        <button
+            class="button is-small is-info mb1"
+            @click="showAll"
+            v-show="boxHidden"
+        >Show boxes</button>
+
         <div
             v-for="(box, index) in boxes"
             :key="box.id"
@@ -67,6 +81,22 @@ export default {
         boxes ()
         {
             return this.$store.state.bbox.boxes;
+        },
+
+        /**
+         * One of the boxes is hidden
+         */
+        boxHidden ()
+        {
+            return this.$store.state.bbox.boxes.find(box => box.hidden);
+        },
+
+        /**
+         * There are more than 1 boxes
+         */
+        manyBoxes ()
+        {
+            return this.$store.state.bbox.boxes.length > 1;
         }
 
     },
@@ -145,6 +175,14 @@ export default {
         },
 
         /**
+         * Hide non-active boxes or show all
+         */
+        hideInactive ()
+        {
+            this.$store.commit('toggleHiddenBoxes');
+        },
+
+        /**
          * Remove tag from this category
          * If all tags have been removed, delete the category
          *
@@ -157,6 +195,14 @@ export default {
                 category,
                 tag_key
             });
+        },
+
+        /**
+         * Show all the boxes
+         */
+        showAll ()
+        {
+            this.$store.commit('showAllBoxes');
         },
 
         /**

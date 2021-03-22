@@ -24,6 +24,7 @@
                             :x="box.left"
                             :y="box.top"
                             :isActive="box.active"
+                            v-show="! box.hidden"
                             :minw="10"
                             :minh="10"
                             :parentLimitation="true"

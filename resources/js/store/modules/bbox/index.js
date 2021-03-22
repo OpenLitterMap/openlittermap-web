@@ -13,7 +13,8 @@ const state = {
             category: null,
             tag: null,
             brand: null,
-            showLabel: false
+            showLabel: false,
+            hidden: false
         }
     ],
     brands: [],
