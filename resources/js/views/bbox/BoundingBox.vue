@@ -115,7 +115,7 @@ export default {
         if (window.innerWidth < 1000)
         {
             this.isMobile = true;
-            this.stickSize = 20;
+            this.stickSize = 30;
         }
     },
     data ()
@@ -328,7 +328,7 @@ export default {
          */
         resizestop ()
         {
-            this.stickSize = this.isMobile ? 20 : 6;
+            this.stickSize = this.isMobile ? 30 : 6;
         },
 
         /**
