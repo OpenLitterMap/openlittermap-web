@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Auth;
-use Illuminate\Http\Request;
+// use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class HomeController extends Controller
 {
@@ -18,7 +18,11 @@ class HomeController extends Controller
         $auth = Auth::check();
 
         $user = null;
-        if ($auth) $user = Auth::user();
+        if ($auth)
+        {
+            $user = Auth::user();
+            $user->roles;
+        }
 
         // We set this to true when user verifies their email
         $verified = false;

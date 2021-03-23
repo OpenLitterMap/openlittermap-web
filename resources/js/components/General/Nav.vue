@@ -51,15 +51,13 @@
                                 <div class="navbar-dropdown" style="z-index: 2;">
 
                                     <!-- Admin -->
-                                    <div v-if="admin">
-                                        <router-link to="/admin/photos" class="navbar-item drop-item" @click.native="close">
-                                            ADMIN - Verify Photos
-                                        </router-link>
+                                    <router-link v-if="admin" to="/admin/photos" class="navbar-item drop-item" @click.native="close">
+                                        ADMIN - Verify Photos
+                                    </router-link>
 
-                                        <a href="/horizon" class="navbar-item drop-item" target="_blank">
-                                            ADMIN - Horizon
-                                        </a>
-                                    </div>
+                                    <a v-if="superadmin" href="/horizon" class="navbar-item drop-item" target="_blank">
+                                        ADMIN - Horizon
+                                    </a>
 
                                     <!-- Tag Litter -->
                                     <router-link to="/tag" class="navbar-item drop-item">
@@ -126,7 +124,7 @@ export default {
          */
         admin ()
         {
-            return this.$store.state.user.admin;
+            return this.$store.state.user.user.roles.find(role => role.name === 'admin');
         },
 
         /**
@@ -159,6 +157,14 @@ export default {
         nav ()
         {
             return this.open ? 'navbar-menu is-active' : 'navbar-menu';
+        },
+
+        /**
+         * TReturn true if the user is superadmin
+         */
+        superadmin ()
+        {
+            return this.$store.state.user.user.roles.find(role => role.name === 'superadmin');
         }
     },
 
