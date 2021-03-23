@@ -47,7 +47,7 @@ class EventServiceProvider extends ServiceProvider
         ],
         'App\Events\TagsVerifiedByAdmin' => [
             // Todo - generate total tag counts on the event and pass the result into the listeners
-            'App\Listeners\AddTags\UpdateUsers',
+            'App\Listeners\AddTags\UpdateUser',
             'App\Listeners\AddTags\IncrementCity',
             'App\Listeners\AddTags\IncrementState',
             'App\Listeners\AddTags\IncrementCountry',

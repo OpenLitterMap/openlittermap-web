@@ -2,14 +2,13 @@
 
 namespace App\Listeners\AddTags;
 
-use App\Models\Photo;
 use App\Models\User\User;
 use App\Events\TagsVerifiedByAdmin;
 
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class UpdateUsers
+class UpdateUser
 {
     /**
      * Update the users table
@@ -28,9 +27,7 @@ class UpdateUsers
 
         else $user->count_correctly_verified += 1;
 
-        $user->total_verified += 1;
-        $user->total_verified_litter += $event->total_count;
-
+        $user->total_litter += $event->total_count;
         $user->save();
     }
 }
