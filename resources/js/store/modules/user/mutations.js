@@ -83,6 +83,7 @@ export const mutations = {
         if (payload.id === 3768) state.admin = true;
         if (payload.id === 3851) state.admin = true;
         if (payload.id === 3880) state.admin = true;
+        if (payload.id === 3906) state.admin = true;
     },
 
     /**
