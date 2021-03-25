@@ -35,6 +35,7 @@
         "eslint": "^7.15.0",
         "eslint-plugin-vue": "^7.3.0",
         "laravel-echo": "^1.8.1",
+        "laravel-permission-to-vuejs": "^2.0.5",
         "leaflet": "^1.7.1",
         "leaflet.markercluster": "^1.4.1",
         "lodash.sortby": "^4.7.0",

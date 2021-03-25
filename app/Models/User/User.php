@@ -11,10 +11,11 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Spatie\Permission\Traits\HasRoles;
 use Laravel\Passport\HasApiTokens;
+use LaravelAndVueJS\Traits\LaravelPermissionToVueJS;
 
 class User extends Authenticatable
 {
-    use Notifiable, Billable, HasApiTokens, HasRoles;
+    use Notifiable, Billable, HasApiTokens, HasRoles, LaravelPermissionToVueJS;
 
     /**
      * On creation, give a new user a 30 random string for email verification

@@ -15,6 +15,7 @@ import VueNumber from 'vue-number-animation'
 import VueEcho from 'vue-echo-laravel'
 import Buefy from 'buefy'
 import fullscreen from 'vue-fullscreen'
+import LaravelPermissionToVueJS from 'laravel-permission-to-vuejs'
 
 import RootContainer from './views/RootContainer'
 
@@ -33,6 +34,7 @@ Vue.use(VueToastify, {
 Vue.use(VueNumber)
 Vue.use(VueEcho, window.Echo)
 Vue.use(fullscreen)
+Vue.use(LaravelPermissionToVueJS);
 
 // Format a number with commas: "10,000"
 Vue.filter('commas', value =>

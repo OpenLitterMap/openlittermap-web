@@ -7,6 +7,9 @@
     <script>
         window.PUSHER_APP_KEY = '{{ config('broadcasting.connections.pusher.key') }}';
         window.APP_DEBUG      = '{{ config('app.debug') ? 'true' : 'false' }}';
+        window.Laravel = {
+            jsPermissions: {!! auth()->check() ? auth()->user()->jsPermissions() : null !!}
+        }
     </script>
     <title>OpenLitterMap</title>
     <!-- Font & icons -->

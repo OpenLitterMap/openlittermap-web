@@ -51,11 +51,11 @@
                                 <div class="navbar-dropdown" style="z-index: 2;">
 
                                     <!-- Admin -->
-                                    <router-link v-if="admin" to="/admin/photos" class="navbar-item drop-item" @click.native="close">
+                                    <router-link v-if="is('admin')" to="/admin/photos" class="navbar-item drop-item" @click.native="close">
                                         ADMIN - Verify Photos
                                     </router-link>
 
-                                    <a v-if="superadmin" href="/horizon" class="navbar-item drop-item" target="_blank">
+                                    <a v-if="is('superadmin')" href="/horizon" class="navbar-item drop-item" target="_blank">
                                         ADMIN - Horizon
                                     </a>
 
@@ -80,7 +80,7 @@
                                     </router-link>
 
                                     <!-- Bounding boxes -->
-                                    <router-link v-if="can_bbox" to="/bbox" class="navbar-item drop-item" @click.native="close">
+                                    <router-link v-if="can('create boxes')" to="/bbox" class="navbar-item drop-item" @click.native="close">
                                         Bounding Boxes
                                     </router-link>
 
@@ -120,14 +120,6 @@ export default {
     computed: {
 
         /**
-         * Return true if the user is admin
-         */
-        admin ()
-        {
-            return this.$store.state.user.user.roles.find(role => role.name === 'admin');
-        },
-
-        /**
          * Return true if the user is logged in
          */
         auth ()
@@ -157,14 +149,6 @@ export default {
         nav ()
         {
             return this.open ? 'navbar-menu is-active' : 'navbar-menu';
-        },
-
-        /**
-         * TReturn true if the user is superadmin
-         */
-        superadmin ()
-        {
-            return this.$store.state.user.user.roles.find(role => role.name === 'superadmin');
         }
     },
 
@@ -175,7 +159,6 @@ export default {
          */
         close ()
         {
-            console.log('close');
             this.open = false;
         },
 

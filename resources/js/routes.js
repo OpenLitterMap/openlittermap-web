@@ -85,7 +85,7 @@ const router = new VueRouter({
             path: '/admin/photos',
             component: require('./views/admin/VerifyPhotos').default,
             meta: {
-                middleware: [auth, admin]
+                middleware: [ auth, admin ]
             }
         },
         // AUTH ROUTES

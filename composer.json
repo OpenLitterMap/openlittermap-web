@@ -10,6 +10,7 @@
     "require": {
         "php": "^7.3",
         "ext-json": "*",
+        "ahmedsaoud31/laravel-permission-to-vuejs": "dev-master",
         "beyondcode/laravel-websockets": "^1.8",
         "doctrine/dbal": "^2.10",
         "fideloper/proxy": "^4.2",
