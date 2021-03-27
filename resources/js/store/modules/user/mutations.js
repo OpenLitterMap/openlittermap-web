@@ -72,7 +72,7 @@ export const mutations = {
      * Todo, find a better way than this
      */
     initUser (state, payload)
-    {
+    { 
         state.user = payload;
 
         // if (payload.id === 1) state.admin = true;
