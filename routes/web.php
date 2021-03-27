@@ -325,6 +325,7 @@ Route::group(['prefix' => '/bbox', 'middleware' => ['can_bbox']], function () {
 
     // Add coordinates
     Route::get('/', 'HomeController@index');
+    Route::get('/verify', 'HomeController@index');
 
     // Load the next image to add bounding boxes to
     Route::get('/index', 'Bbox\BoundingBoxController@index');

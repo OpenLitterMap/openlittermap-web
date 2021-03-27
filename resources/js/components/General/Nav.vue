@@ -59,9 +59,13 @@
                                         ADMIN - Horizon
                                     </a>
 
+                                    <router-link v-if="can('verify boxes')" to="/bbox/verify" class="navbar-item drop-item" @click.native="close">
+                                        ADMIN - Verify Boxes
+                                    </router-link>
+
                                     <!-- Tag Litter -->
                                     <router-link to="/tag" class="navbar-item drop-item">
-                                         {{ $t('nav.tag-litter')}}
+                                        {{ $t('nav.tag-litter')}}
                                     </router-link>
 
                                     <!-- Profile -->

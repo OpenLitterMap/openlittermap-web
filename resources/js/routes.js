@@ -174,7 +174,7 @@ const router = new VueRouter({
             ]
         },
         {
-            path: '/bbox',
+            path: '/bbox/:verify?',
             component: require('./views/bbox/BoundingBox').default,
             meta: {
                 middleware: [ auth, can_bbox ]
