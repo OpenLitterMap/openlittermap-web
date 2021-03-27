@@ -134,12 +134,13 @@ export default {
 
             const key = e.key;
 
-            if (key === "Backspace")
-            {
-                this.$store.commit('removeActiveBox');
-            }
+            // dont need this anymore?
+            // if (key === "Backspace")
+            // {
+            //     this.$store.commit('removeActiveBox');
+            // }
 
-            else if (key === "ArrowUp")
+            if (key === "ArrowUp")
             {
                 e.preventDefault();
                 this.$store.commit('moveBoxUp');
