@@ -6,7 +6,7 @@ export const mutations = {
      * Settings.details
      */
     changeUserEmail (state, payload)
-    {team
+    {
         state.user.email = payload;
     },
 
