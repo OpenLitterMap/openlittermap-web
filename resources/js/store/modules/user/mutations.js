@@ -75,17 +75,6 @@ export const mutations = {
     {
         state.user = payload;
 
-        // if (payload.id === 1) state.admin = true;
-        // if (payload.id === 1969) state.admin = true;
-        // if (payload.id === 3233) state.admin = true;
-        // if (payload.id === 3327) state.admin = true;
-        // if (payload.id === 3430) state.admin = true;
-        // if (payload.id === 3768) state.admin = true;
-        // if (payload.id === 3851) state.admin = true;
-        // if (payload.id === 3880) state.admin = true;
-        // if (payload.id === 3906) state.admin = true;
-        // if (payload.id === 4460) state.admin = true;
-
         if (window.Laravel.jsPermissions.roles.includes('admin'))
         {
             state.admin = true;
