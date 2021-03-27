@@ -25,8 +25,8 @@
                             :y="box.top"
                             :isActive="box.active"
                             v-show="! box.hidden"
-                            :minw="10"
-                            :minh="10"
+                            :minw="5"
+                            :minh="5"
                             :stickSize="stickSize"
                             :parentLimitation="true"
                             :z="box.id"
@@ -224,7 +224,7 @@ export default {
          */
         isAdmin ()
         {
-            return this.$store.state.user.admin;
+            return (this.$store.state.user.admin || this.$store.state.user.helper);
         },
 
         /**

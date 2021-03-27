@@ -7,6 +7,7 @@ export const init = {
     geojson: {
         features: []
     },
+    helper: false,
     position: 0,
     photoPercent: 0,
     requiredXp: 0,

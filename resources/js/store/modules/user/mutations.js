@@ -68,8 +68,6 @@ export const mutations = {
 
     /**
      * User object from HomeController@index if auth
-     *
-     * Todo, find a better way than this
      */
     initUser (state, payload)
     {
@@ -78,6 +76,11 @@ export const mutations = {
         if (window.Laravel.jsPermissions.roles.includes('admin'))
         {
             state.admin = true;
+        }
+
+        if (window.Laravel.jsPermissions.roles.includes('helper'))
+        {
+            state.helper = true;
         }
     },
 
@@ -96,6 +99,7 @@ export const mutations = {
     {
         state.auth = false;
         state.admin = false;
+        state.helper = false;
     },
 
     /**
