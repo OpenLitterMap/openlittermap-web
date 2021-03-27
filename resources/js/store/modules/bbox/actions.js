@@ -145,5 +145,41 @@ export const actions = {
             .catch(error => {
                 console.log('error.next_bb_img', error);
             });
+    },
+
+    /**
+     * Get the next image that has boxes to be verified
+     */
+    async VERIFY_NEXT_BOX (context)
+    {
+        await axios.get('/bbox/verify/index')
+            .then(response => {
+                console.log('verify_next_box', response);
+
+                context.commit('adminImage', {
+                    id: response.data.photo.id,
+                    filename: response.data.photo.filename
+                });
+
+                // litter.js
+                context.commit('initAdminItems', response.data.photo);
+
+                // bbox.js
+                context.commit('initBoxesToVerify', response.data.photo.boxes);
+
+                // bbox.js
+                // context.commit('initBboxTags', response.data.photo);
+
+                // // box counts
+                // context.commit('bboxCount', {
+                //     usersBoxCount: response.data.usersBoxCount,
+                //     totalBoxCount: response.data.totalBoxCount
+                // })
+
+                context.commit('adminLoading', false);
+            })
+            .catch(error => {
+                console.log('error.verify_next_box', error);
+            });
     }
 }

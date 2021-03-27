@@ -36,10 +36,12 @@ class UsersController extends Controller
 
     /**
      * Get the currently authenticated user on login
+     *
+     * Eager load any roles assigned to the user
      */
     public function getAuthUser ()
     {
-        return Auth::user();
+        return Auth::user()->load('roles');
     }
 
     /**

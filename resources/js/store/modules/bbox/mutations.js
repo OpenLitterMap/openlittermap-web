@@ -242,6 +242,28 @@ export const mutations = {
     },
 
     /**
+     * Load boxes + their tags that need verification
+     */
+    initBoxesToVerify (state, payload)
+    {
+        this.commit('clearBoxes');
+
+        payload.map(box => {
+
+            const bbox = JSON.parse(box.bbox);
+
+            box.left = bbox[0];
+            box.top = bbox[1];
+            box.width = bbox[2];
+            box.height = bbox[3];
+
+            return box;
+        });
+
+        state.boxes = payload;
+    },
+
+    /**
      * Move the active box up 1 pixel
      */
     moveBoxUp (state)

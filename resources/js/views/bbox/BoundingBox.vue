@@ -7,7 +7,7 @@
             <Boxes />
 
             <div class="column is-one-third">
-                <h1 class="title is-2 has-text-centered">Add bounding box to image #{{ this.imageId }}</h1>
+                <h1 class="title is-2 has-text-centered">{{ getTitle }}</h1>
 
                 <div class="display-inline-grid" @click.stop>
 
@@ -110,12 +110,20 @@ export default {
     },
     async created ()
     {
-        this.$store.dispatch('GET_NEXT_BBOX');
-
         if (window.innerWidth < 1000)
         {
             this.isMobile = true;
             this.stickSize = 30;
+        }
+
+        if (window.location.href.includes('verify'))
+        {
+            this.isVerifying = true;
+            this.$store.dispatch('VERIFY_NEXT_BOX');
+        }
+        else
+        {
+            this.$store.dispatch('GET_NEXT_BBOX');
         }
     },
     data ()
@@ -125,7 +133,8 @@ export default {
             skip_processing: false,
             update_processing: false,
             wrong_tags_processing: false,
-            isMobile: false
+            isMobile: false,
+            isVerifying: false
         };
     },
     mounted ()
@@ -182,6 +191,16 @@ export default {
         disabled ()
         {
             return (this.skip_processing || this.update_processing || this.wrong_tags_processing);
+        },
+
+        /**
+         * Return main title
+         */
+        getTitle ()
+        {
+            return this.isVerifying
+                ? `Verify boxes for image # ${this.imageId}`
+                : `Add bounding box to image # ${this.imageId}`;
         },
 
         /**

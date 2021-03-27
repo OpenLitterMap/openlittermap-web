@@ -340,6 +340,10 @@ Route::group(['prefix' => '/bbox', 'middleware' => ['can_bbox']], function () {
 
     // Non-admin - Mark tags as incorrect
     Route::post('/tags/wrong', 'Bbox\BoundingBoxController@wrongTags');
+
+    // Admin - View boxes to verify
+    Route::get('/verify', 'HomeController@index');
+    Route::get('/verify/index', 'Bbox\VerifyBoxController@index');
 });
 
 

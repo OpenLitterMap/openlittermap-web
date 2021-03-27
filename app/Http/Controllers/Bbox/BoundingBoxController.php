@@ -167,7 +167,7 @@ class BoundingBoxController extends Controller
     public function updateTags (Request $request)
     {
         // if Admin
-        if (auth()->user()->role_id === 1)
+        if (auth()->user()->can('update tags'))
         {
             $photo = Photo::find($request->photoId);
 

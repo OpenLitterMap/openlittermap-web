@@ -5,16 +5,17 @@ namespace App\Models\User;
 use App\Models\Photo;
 use App\Models\Teams\Team;
 use App\Payment;
-use App\Role;
-//use App\Billing\Billable;
+
 use Laravel\Cashier\Billable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Spatie\Permission\Traits\HasRoles;
 use Laravel\Passport\HasApiTokens;
+use LaravelAndVueJS\Traits\LaravelPermissionToVueJS;
 
 class User extends Authenticatable
 {
-    use Notifiable, Billable, HasApiTokens;
+    use Notifiable, Billable, HasApiTokens, HasRoles, LaravelPermissionToVueJS;
 
     /**
      * On creation, give a new user a 30 random string for email verification
@@ -132,24 +133,6 @@ class User extends Authenticatable
     public function photos ()
     {
         return $this->hasMany(Photo::class);
-    }
-
-    /**
-     * The user belongs to a role (specified in db)
-     */
-    public function role ()
-    {
-        return $this->belongsTo('App\Role');
-    }
-
-    /**
-     * Function to check if the user is admin
-     */
-    public function isAdmin ()
-    {
-        if ($this->role->name == "Zephyr") return true;
-
-        return false;
     }
 
 // old stripe -> new moved to App\Billing

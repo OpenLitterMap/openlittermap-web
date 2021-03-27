@@ -51,19 +51,21 @@
                                 <div class="navbar-dropdown" style="z-index: 2;">
 
                                     <!-- Admin -->
-                                    <div v-if="admin">
-                                        <router-link to="/admin/photos" class="navbar-item drop-item" @click.native="close">
-                                            ADMIN - Verify Photos
-                                        </router-link>
+                                    <router-link v-if="is('admin')" to="/admin/photos" class="navbar-item drop-item" @click.native="close">
+                                        ADMIN - Verify Photos
+                                    </router-link>
 
-                                        <a href="/horizon" class="navbar-item drop-item" target="_blank">
-                                            ADMIN - Horizon
-                                        </a>
-                                    </div>
+                                    <a v-if="is('superadmin')" href="/horizon" class="navbar-item drop-item" target="_blank">
+                                        ADMIN - Horizon
+                                    </a>
+
+                                    <router-link v-if="can('update boxes')" to="/bbox/verify" class="navbar-item drop-item" @click.native="close">
+                                        ADMIN - Verify Boxes
+                                    </router-link>
 
                                     <!-- Tag Litter -->
                                     <router-link to="/tag" class="navbar-item drop-item">
-                                         {{ $t('nav.tag-litter')}}
+                                        {{ $t('nav.tag-litter')}}
                                     </router-link>
 
                                     <!-- Profile -->
@@ -82,7 +84,7 @@
                                     </router-link>
 
                                     <!-- Bounding boxes -->
-                                    <router-link v-if="can_bbox" to="/bbox" class="navbar-item drop-item" @click.native="close">
+                                    <router-link v-if="can('create boxes')" to="/bbox" class="navbar-item drop-item" @click.native="close">
                                         Bounding Boxes
                                     </router-link>
 
@@ -120,14 +122,6 @@ export default {
         };
     },
     computed: {
-
-        /**
-         * Return true if the user is admin
-         */
-        admin ()
-        {
-            return this.$store.state.user.admin;
-        },
 
         /**
          * Return true if the user is logged in
@@ -169,7 +163,6 @@ export default {
          */
         close ()
         {
-            console.log('close');
             this.open = false;
         },
 

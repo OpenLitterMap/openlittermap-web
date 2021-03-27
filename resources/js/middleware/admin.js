@@ -1,6 +1,6 @@
-export default function admin ({ next, store })
+export default function admin ({ next })
 {
-    if (store.state.user.admin) return next();
+    if (window.Laravel.jsPermissions.roles.includes('admin')) return next();
 
     else window.location.href = '/';
 }
