@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\AI\Annotation;
 use App\Models\User\User;
 use Illuminate\Database\Eloquent\Model;
 
@@ -66,7 +67,8 @@ class Photo extends Model
     {
         parent::boot();
 
-        self::deleting(function (Photo $photo) {
+        self::deleting(function (Photo $photo)
+        {
             if ($photo->smoking) $photo->smoking->delete();
             if ($photo->food) $photo->food->delete();
             if ($photo->coffee) $photo->coffee->delete();
@@ -81,6 +83,14 @@ class Photo extends Model
             if ($photo->dumping) $photo->dumping->delete();
             if ($photo->industrial) $photo->industrial->delete();
         });
+    }
+
+    /**
+     * A photo can have many bounding boxes associated with it
+     */
+    public function boxes ()
+    {
+        return $this->hasMany(Annotation::class);
     }
 
     /**

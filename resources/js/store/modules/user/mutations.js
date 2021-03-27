@@ -74,6 +74,11 @@ export const mutations = {
     initUser (state, payload)
     {
         state.user = payload;
+
+        if (window.Laravel.jsPermissions.roles.includes('admin'))
+        {
+            state.admin = true;
+        }
     },
 
     /**

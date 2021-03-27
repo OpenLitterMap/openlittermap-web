@@ -110,8 +110,6 @@ export default {
     },
     async created ()
     {
-        this.$store.dispatch('GET_NEXT_BBOX');
-
         if (window.innerWidth < 1000)
         {
             this.isMobile = true;
@@ -121,6 +119,11 @@ export default {
         if (window.location.href.includes('verify'))
         {
             this.isVerifying = true;
+            this.$store.dispatch('VERIFY_NEXT_BOX');
+        }
+        else
+        {
+            this.$store.dispatch('GET_NEXT_BBOX');
         }
     },
     data ()
