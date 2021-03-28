@@ -57,7 +57,8 @@ class Photo extends Model
         'skipped_by',
         'bbox_assigned_to',
         'wrong_tags',
-        'wrong_tags_by'
+        'wrong_tags_by',
+        'bbox_verification_assigned_to'
     ];
 
     /**

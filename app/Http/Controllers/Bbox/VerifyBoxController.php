@@ -22,12 +22,31 @@ class VerifyBoxController extends Controller
      */
     public function index ()
     {
+        $userId = auth()->user()->id;
+
+        // Load the next photo to verify, or the previous one assigned to the active user
         $photo = Photo::with('boxes')
             ->where([
                 'verified' => 3,
-                // ['bbox_assigned_to', '!=', auth()->user()->id]
+                 'bbox_verification_assigned_to' => $userId
             ])->first();
 
+        // orWhere not working?
+        if (! $photo)
+        {
+            $photo = Photo::with('boxes')
+                ->where([
+                    'verified' => 3,
+                    'bbox_verification_assigned_to' => null
+                ])->first();
+        }
+
+        if (! $photo) return ['photo' => null];
+
+        $photo->bbox_verification_assigned_to = $userId;
+        $photo->save();
+
+        // load the tags for the image
         $photo->tags();
 
         return ['photo' => $photo];
