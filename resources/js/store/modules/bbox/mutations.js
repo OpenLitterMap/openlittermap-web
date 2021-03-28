@@ -14,11 +14,15 @@ export const mutations = {
      */
     activateBox (state, payload)
     {
-        state.boxes.map(box => {
+        let boxes = [...state.boxes];
+
+        boxes.map(box => {
             box.active = box.id === payload;
 
             return box;
         });
+
+        state.boxes = boxes;
     },
 
     /**
@@ -83,6 +87,7 @@ export const mutations = {
         state.brands = brands;
         state.boxes = boxes;
         state.selectedBrandIndex = null;
+        state.hasChanged = true;
     },
 
     /**
@@ -147,9 +152,12 @@ export const mutations = {
      */
     deactivateBoxes (state)
     {
-        state.boxes.map(box => box.active = false);
+        let boxes = [...state.boxes];
+
+        boxes.map(box => box.active = false);
 
         state.selectedBrandIndex = null;
+        state.boxes = boxes;
     },
 
     /**
@@ -157,22 +165,22 @@ export const mutations = {
      *
      * Bug: not relative to parent photo
      */
-    duplicateBox (state, payload)
-    {
-        let boxes = [...state.boxes];
-
-        let box = boxes.find(box => box.id === payload);
-
-        let newBox = _.cloneDeep(box);
-
-        newBox.id = boxes.length + 1;
-        newBox.top = 0;
-        newBox.left = 0;
-
-        boxes.push(newBox);
-
-        state.boxes = boxes;
-    },
+    // duplicateBox (state, payload)
+    // {
+    //     let boxes = [...state.boxes];
+    //
+    //     let box = boxes.find(box => box.id === payload);
+    //
+    //     let newBox = _.cloneDeep(box);
+    //
+    //     newBox.id = boxes.length + 1;
+    //     newBox.top = 0;
+    //     newBox.left = 0;
+    //
+    //     boxes.push(newBox);
+    //
+    //     state.boxes = boxes;
+    // },
 
     /**
      * Create 1 for for every tag added to an image
@@ -185,6 +193,8 @@ export const mutations = {
 
         // reset the boxes
         this.commit('clearBoxes');
+
+        state.hasChanged = false;
 
         categories.map(category => {
 
@@ -280,6 +290,7 @@ export const mutations = {
         });
 
         state.boxes = boxes;
+        state.hasChanged = true;
     },
 
     /**
@@ -299,6 +310,7 @@ export const mutations = {
         });
 
         state.boxes = boxes;
+        state.hasChanged = true;
     },
 
     /**
@@ -318,6 +330,7 @@ export const mutations = {
         });
 
         state.boxes = boxes;
+        state.hasChanged = true;
     },
 
     /**
@@ -337,28 +350,31 @@ export const mutations = {
         });
 
         state.boxes = boxes;
+        state.hasChanged = true;
     },
 
     /**
      * Filter out any boxes that are active
+     *
+     * Not using this anymore.
      */
-    removeActiveBox (state)
-    {
-        let boxes = [...state.boxes];
-
-        boxes = boxes.filter(box => box.active === false);
-
-        // Todo - Reset the ID of each box to stay in order
-        // let id = 1;
-        //
-        // boxes.map(box => {
-        //     box.id = id;
-        //     id++;
-        //     return box;
-        // });
-
-        state.boxes = boxes;
-    },
+    // removeActiveBox (state)
+    // {
+    //     let boxes = [...state.boxes];
+    //
+    //     boxes = boxes.filter(box => box.active === false);
+    //
+    //     // Todo - Reset the ID of each box to stay in order
+    //     // let id = 1;
+    //     //
+    //     // boxes.map(box => {
+    //     //     box.id = id;
+    //     //     id++;
+    //     //     return box;
+    //     // });
+    //
+    //     state.boxes = boxes;
+    // },
 
     /**
      * Remove a tag from a bounding box
@@ -454,18 +470,25 @@ export const mutations = {
 
             return box;
         });
+
+        state.hasChanged = true;
     },
 
     /**
-     * When changing the tags of an image,
+     * When changing the tags,
      *
      * We want to update to the previous box positions which were reset + cleared
+     *
+     * We also maintain the box.id (when verifying)
      */
     updateBoxPositions (state, payload)
     {
         let boxes = [...state.boxes];
 
         boxes.map((box, index) => {
+
+            // when verifying boxes, we need to keep the annotation.id
+            box.id = payload[index].id;
 
             if (payload[index])
             {
@@ -479,5 +502,6 @@ export const mutations = {
         });
 
         state.boxes = boxes;
+        state.hasChanged = true;
     }
 }

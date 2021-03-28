@@ -344,6 +344,7 @@ Route::group(['prefix' => '/bbox', 'middleware' => ['can_bbox']], function () {
     // Admin - View boxes to verify
     Route::get('/verify', 'HomeController@index');
     Route::get('/verify/index', 'Bbox\VerifyBoxController@index');
+    Route::post('/verify/update', 'Bbox\VerifyBoxController@update');
 });
 
 

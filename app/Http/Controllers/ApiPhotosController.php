@@ -130,19 +130,19 @@ class ApiPhotosController extends Controller
         // This should dispatch a job
         event (new IncrementPhotoMonth($countryId, $stateId, $cityId, $date));
 
-        if ($user->has_uploaded_today === 0)
-        {
-              $user->has_uploaded_today = 1;
-              $user->has_uploaded_counter++;
-
-              if ($user->has_uploaded_counter == 7)
-              {
-                    $user->littercoin_allowance++;
-                    $user->has_uploaded_counter = 0;
-              }
-
-              $user->save();
-        }
+//        if ($user->has_uploaded_today === 0)
+//        {
+//              $user->has_uploaded_today = 1;
+//              $user->has_uploaded_counter++;
+//
+//              if ($user->has_uploaded_counter == 7)
+//              {
+//                    $user->littercoin_allowance++;
+//                    $user->has_uploaded_counter = 0;
+//              }
+//
+//              $user->save();
+//        }
 
 		return ['photo_id' => $photo->id];
     }

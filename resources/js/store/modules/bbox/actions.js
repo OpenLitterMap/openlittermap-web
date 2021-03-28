@@ -150,7 +150,7 @@ export const actions = {
     /**
      * Get the next image that has boxes to be verified
      */
-    async VERIFY_NEXT_BOX (context)
+    async GET_NEXT_BOXES_TO_VERIFY (context)
     {
         await axios.get('/bbox/verify/index')
             .then(response => {
@@ -167,10 +167,7 @@ export const actions = {
                 // bbox.js
                 context.commit('initBoxesToVerify', response.data.photo.boxes);
 
-                // bbox.js
-                // context.commit('initBboxTags', response.data.photo);
-
-                // // box counts
+                // todo - verified box counts
                 // context.commit('bboxCount', {
                 //     usersBoxCount: response.data.usersBoxCount,
                 //     totalBoxCount: response.data.totalBoxCount
@@ -181,5 +178,34 @@ export const actions = {
             .catch(error => {
                 console.log('error.verify_next_box', error);
             });
+    },
+
+    /**
+     * Verify the boxes are placed correctly and match the tags
+     */
+    async VERIFY_BOXES (context)
+    {
+        await axios.post('/bbox/verify/update', {
+            photo_id: context.rootState.admin.id,
+            hasChanged: context.state.hasChanged,
+            boxes: context.state.boxes
+        })
+        .then(response => {
+            console.log('verify_boxes', response);
+
+            if (response.data.success)
+            {
+                Vue.$vToastify.success({
+                    title: 'Verified',
+                    body: 'Stage 4 level achieved!',
+                    position: 'top-right'
+                });
+
+                context.dispatch('GET_NEXT_BOXES_TO_VERIFY');
+            }
+        })
+        .catch(error => {
+            console.error('verify_boxes', error);
+        });
     }
 }

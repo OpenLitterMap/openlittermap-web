@@ -2,6 +2,7 @@
 
 namespace App\Listeners\AddTags;
 
+use App\Events\Littercoin\LittercoinMined;
 use App\Models\User\User;
 use App\Events\TagsVerifiedByAdmin;
 
@@ -19,13 +20,15 @@ class UpdateUser
     {
         $user = User::find($event->user_id);
 
-        if ($user->count_correctly_verified == 100)
+        $user->count_correctly_verified += 1;
+
+        if ($user->count_correctly_verified >= 100)
         {
             $user->littercoin_allowance += 1;
             $user->count_correctly_verified = 0;
-        }
 
-        else $user->count_correctly_verified += 1;
+            event (new LittercoinMined($user->id, '100-images-verified'));
+        }
 
         $user->total_litter += $event->total_count;
         $user->save();

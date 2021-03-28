@@ -131,7 +131,8 @@ export default {
     props: {
         'id': { type: Number, required: true },
         'admin': Boolean,
-        'annotations': { type: Boolean, required: false }
+        'annotations': { type: Boolean, required: false },
+        'isVerifying': { type: Boolean, required: false }
     },
     created ()
     {
@@ -445,8 +446,8 @@ export default {
          * Submit the image for verification
          *
          * add_tags_to_image => users
-         *
          * add_boxes_to_image => admins
+         * verify_boxes => admins
          *
          * litter/actions.js
          */
@@ -454,9 +455,18 @@ export default {
         {
             this.processing = true;
 
-            let action = this.annotations
-                ? 'ADD_BOXES_TO_IMAGE'
-                : 'ADD_TAGS_TO_IMAGE';
+            let action = '';
+
+            if (this.annotations)
+            {
+                action = this.isVerifying
+                    ? 'VERIFY_BOXES'
+                    : 'ADD_BOXES_TO_IMAGE'
+            }
+            else
+            {
+                action = 'ADD_TAGS_TO_IMAGE';
+            }
 
             await this.$store.dispatch(action);
 

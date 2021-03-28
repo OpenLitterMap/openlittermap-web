@@ -39,8 +39,9 @@
 
                     <add-tags
                         :id="imageId"
-                        :annotations="true"
                         v-show="isAdmin"
+                        :annotations="true"
+                        :isVerifying="isVerifying"
                     />
 
                 </div>
@@ -119,7 +120,7 @@ export default {
         if (window.location.href.includes('verify'))
         {
             this.isVerifying = true;
-            this.$store.dispatch('VERIFY_NEXT_BOX');
+            this.$store.dispatch('GET_NEXT_BOXES_TO_VERIFY');
         }
         else
         {
@@ -433,9 +434,11 @@ export default {
     }
 
     .littercoin-pos {
-        position: absolute;
-        bottom: 1em;
+        position: fixed;
+        background: white;
+        bottom: 0;
         left: 1em;
+        margin-bottom: 1em;
     }
 
 </style>

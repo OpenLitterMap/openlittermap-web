@@ -68,6 +68,16 @@
 					</div>
 				</div>
 
+                <div v-else-if="event.type === 'littercoin-mined'" class="event" style="background-color: #e256fff0;">
+					<aside class="grid-img">
+						<img src="/assets/icons/mining.png" class="ltr-icon" />
+					</aside>
+					<div class="grid-main">
+						<p>A Littercoin as been mined!</p>
+                        <i>Reason: <span class="ltr-strong">{{ getLittercoinReason(event.reason) }}</span></i>
+					</div>
+				</div>
+
 				<div v-else />
 			</span>
 		</transition-group>
@@ -143,6 +153,16 @@ export default {
                 type: 'team-created',
                 name: payload.name
             });
+        },
+        '.App\\Events\\Littercoin\\LittercoinMined': (payload, vm) => {
+
+            document.title = "OpenLitterMap (" + (vm.events.length + 1) + ")";
+
+            vm.events.unshift({
+                type: 'littercoin-mined',
+                reason: payload.reason,
+                userId: payload.userId
+            });
         }
 	},
 	data ()
@@ -186,9 +206,29 @@ export default {
 
 			else if (event.type === 'team-created') return event.type + event.name;
 
+			else if (event.type === 'littercoin-mined') return event.type + event.userId + event.now;
+
 			return this.events.length;
-		}
-	}
+		},
+
+        /**
+         * Using the LittercoinMined event key,
+         *
+         * Todo - return translated string
+         */
+        getLittercoinReason (reason)
+        {
+            if (reason === 'verified-box')
+            {
+                return '100 OpenLitterAI boxes verified';
+            }
+
+            else if (reason === '100-images-verified')
+            {
+                return '100 images verified';
+            }
+        }
+    }
 }
 </script>
 
@@ -304,6 +344,15 @@ export default {
         margin-top: auto;
         margin-bottom: auto;
         padding: 10px;
+    }
+
+    .ltr-icon {
+        max-width: 55%;
+        padding-top: 0.5em;
+    }
+
+    .ltr-strong {
+        font-weight: 600;
     }
 
 </style>

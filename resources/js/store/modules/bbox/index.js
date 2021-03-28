@@ -18,6 +18,7 @@ const state = {
         }
     ],
     brands: [],
+    hasChanged: false, // for verification
     selectedBrandIndex: null,
     totalBoxCount: 0,
     usersBoxCount: 0

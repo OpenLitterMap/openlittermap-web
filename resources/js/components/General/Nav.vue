@@ -51,7 +51,7 @@
                                 <div class="navbar-dropdown" style="z-index: 2;">
 
                                     <!-- Admin -->
-                                    <router-link v-if="is('admin')" to="/admin/photos" class="navbar-item drop-item" @click.native="close">
+                                    <router-link v-if="can('update tags')" to="/admin/photos" class="navbar-item drop-item" @click.native="close">
                                         ADMIN - Verify Photos
                                     </router-link>
 
@@ -59,9 +59,9 @@
                                         ADMIN - Horizon
                                     </a>
 
-                                    <router-link v-if="can('update boxes')" to="/bbox/verify" class="navbar-item drop-item" @click.native="close">
+                                    <a v-if="can('update boxes')" href="/bbox/verify" class="navbar-item drop-item">
                                         ADMIN - Verify Boxes
-                                    </router-link>
+                                    </a>
 
                                     <!-- Tag Litter -->
                                     <router-link to="/tag" class="navbar-item drop-item">

@@ -73,7 +73,7 @@ export const mutations = {
     {
         state.user = payload;
 
-        if (window.Laravel.jsPermissions.roles.includes('admin'))
+        if (window.Laravel.jsPermissions.roles.includes('admin') || window.Laravel.jsPermissions.roles.includes('superadmin'))
         {
             state.admin = true;
         }

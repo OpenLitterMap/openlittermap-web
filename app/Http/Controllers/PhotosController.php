@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\Littercoin\LittercoinMined;
 use Log;
 use Auth;
 use Image;
@@ -223,18 +224,6 @@ class PhotosController extends Controller
         // Todo - this needs debugging
         // This should dispatch a job
         event (new IncrementPhotoMonth($countryId, $stateId, $cityId, $dateTime));
-
-        if ($user->has_uploaded_today == 0)
-        {
-              $user->has_uploaded_today = 1;
-              $user->has_uploaded_counter++;
-              if ($user->has_uploaded_counter == 7)
-              {
-                  $user->littercoin_allowance++;
-                  $user->has_uploaded_counter = 0;
-              }
-              $user->save();
-        }
 
         return ['msg' => 'success'];
     }

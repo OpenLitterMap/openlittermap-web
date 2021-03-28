@@ -24,16 +24,16 @@
             @click.stop="activateAndCheckBox(box.id)"
         >
             <!-- Box.id, duplicate button -->
-            <p class="ma">Box: <span class="is-bold">{{ index + 1 }}</span></p>
+            <p class="ma">Box: <span class="is-bold">{{ box.id }}</span></p>
 
             <button class="button is-small duplicate-box" @click="duplicate(box.id)" disabled>Todo - Duplicate Box</button>
             <button class="button is-small toggle-box" @click="toggleLabel(box.id)">Toggle Label</button>
 
             <!-- Box attributes -->
-            <p>Height: {{ box.height }}</p>
-            <p>Width: {{ box.width }}</p>
+            <p>Left: {{ box.left }}</p>
             <p>Top: {{ box.top }}</p>
-            <p class="mb1">Left: {{ box.left }}</p>
+            <p>Width: {{ box.width }}</p>
+            <p class="mb1">Height: {{ box.height }}</p>
 
             <!-- Tags -->
             <div class="container">

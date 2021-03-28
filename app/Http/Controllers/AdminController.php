@@ -109,56 +109,6 @@ class AdminController extends Controller
         return view('admin.usercount', compact('users', 'totalUsers', 'upm', 'uupm'));
     }
 
-
-    /**
-     * Get Photos @ 0.1 - 1 verification
-     */
-    // public function getPhotos() {
-        // Get the first photo submitted for verification
-        // $photo = Photo::where([
-        //     ['verified', '<', 2], // not verified
-        //     ['verification', '>', 0] // submitted for verification
-        // ])->first();
-
-        // // Count photos submitted for verification
-        // $photosCount = Photo::where([
-        //     ['verified', '<', 2], // not verified
-        //     ['verification', '>', 0] // submitted for verification
-        // ])->count();
-
-        // else, process other images uploaded but not processed
-        // if (! $photo) $photo = Photo::where('verification', 0)->first();
-
-        // if (! $photo) return view('admin.nophotos');
-
-        // $userWhoUploaded = User::find($photo['user_id']);
-
-        // note - not using this anymore, todo - write smart contracts and automate Littercoin distribution
-        // Check if the Users Ltrx allowance is Greater than 0
-        // if ($userWhoUploaded->littercoin_allowance > 0) {
-        //     // check if user has a wallet id
-        //     if ($userWhoUploaded->eth_wallet) {
-        //         // if so, display the ltrx button
-        //         $eth_wallet = $userWhoUploaded->eth_wallet;
-        //     } else {
-        //         $eth_wallet = '';
-        //     }
-
-        // } else {
-        //     $eth_wallet = '';
-        // }
-
-    //     return view('admin.newphototool', compact(
-    //         'photo',
-    //         'photosCount',
-    //         'photosNotProcessedCount',
-    //         'userWhoUploaded',
-    //         'eth_wallet',
-    //         'photodata',
-    //         'userId'
-    //     ));
-    // }
-
     /**
      * Verify an image, delete the image
      ** todo - fix this with correct AWS permissions
