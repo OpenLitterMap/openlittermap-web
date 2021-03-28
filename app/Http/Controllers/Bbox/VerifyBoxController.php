@@ -28,7 +28,8 @@ class VerifyBoxController extends Controller
         $photo = Photo::with('boxes')
             ->where([
                 'verified' => 3,
-                 'bbox_verification_assigned_to' => $userId
+                'bbox_verification_assigned_to' => $userId,
+                'bbox_skipped' => false
             ])->first();
 
         // orWhere not working?
@@ -37,7 +38,8 @@ class VerifyBoxController extends Controller
             $photo = Photo::with('boxes')
                 ->where([
                     'verified' => 3,
-                    'bbox_verification_assigned_to' => null
+                    'bbox_verification_assigned_to' => null,
+                    'bbox_skipped' => false
                 ])->first();
         }
 
@@ -136,6 +138,7 @@ class VerifyBoxController extends Controller
         }
 
         $photo->verified = 4;
+        $photo->verified_by = $userDoingVerification->id;
         $photo->save();
 
 

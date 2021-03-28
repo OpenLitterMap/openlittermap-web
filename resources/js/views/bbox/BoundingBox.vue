@@ -361,7 +361,7 @@ export default {
         {
             this.skip_processing = true;
 
-            await this.$store.dispatch('BBOX_SKIP_IMAGE');
+            await this.$store.dispatch('BBOX_SKIP_IMAGE', this.isVerifying);
 
             this.skip_processing = false;
         },

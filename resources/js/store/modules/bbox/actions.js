@@ -34,8 +34,10 @@ export const actions = {
      * Mark this image as unable to use for bbox
      *
      * Load the next image
+     *
+     * @payload bool (isVerifying)
      */
-    async BBOX_SKIP_IMAGE (context)
+    async BBOX_SKIP_IMAGE (context, payload)
     {
         await axios.post('/bbox/skip', {
             photo_id: context.rootState.admin.id
@@ -50,7 +52,9 @@ export const actions = {
             });
 
             // load next image
-            context.dispatch('GET_NEXT_BBOX');
+            (payload)
+                ? context.dispatch('GET_NEXT_BOXES_TO_VERIFY')
+                : context.dispatch('GET_NEXT_BBOX');
         })
         .catch(error => {
             console.error('bbox_skip_image', error);
