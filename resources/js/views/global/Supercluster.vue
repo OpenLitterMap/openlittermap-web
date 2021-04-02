@@ -192,6 +192,8 @@ export default {
     },
     mounted ()
     {
+        console.log('mounted', glify);
+
         /** 1. Create map object */
         map = L.map('super', {
             center: [0, 0],
@@ -217,12 +219,26 @@ export default {
         map.attributionControl.addAttribution('Litter data &copy OpenLitterMap & Contributors ' + year + ' Clustering @ MapBox');
 
         // Empty Layer Group that will receive the clusters data on the fly.
-        markers = L.geoJSON(null, {
-            pointToLayer: createClusterIcon,
-            onEachFeature: onEachFeature,
-        }).addTo(map);
+        // markers = L.geoJSON(null, {
+        //     pointToLayer: createClusterIcon,
+        //     onEachFeature: onEachFeature,
+        // }).addTo(map);
+        //
+        // markers.addData(this.$store.state.globalmap.geojson.features);
 
-        markers.addData(this.$store.state.globalmap.geojson.features);
+        // glify.points({
+        //     map,
+        //     data: this.$store.state.globalmap.geojson.features,
+        //     // click: (e, pointOrGeoJsonFeature, xy) => {
+        //     //     // do something when a point is clicked
+        //     //     // return false to continue traversing
+        //     //     console.log('clicked');
+        //     // },
+        //     // hover: (e, pointOrGeoJsonFeature, xy) => {
+        //     //     // do something when a point is hovered
+        //     //     console.log('hovered');
+        //     // }
+        // });
 
         map.on('moveend', function ()
         {
