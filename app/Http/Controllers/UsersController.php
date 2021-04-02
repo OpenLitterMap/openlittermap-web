@@ -2,25 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Alert;
-use Auth;
-use Image;
-use App\Models\User\User;
-// use App\Award;
 use App\Plan;
-use App\Team;
-use Validator;
-use App\Models\Photo;
 use App\Level;
-use App\TeamType;
-use JavaScript;
-use App\Settings;
-use Carbon\Carbon;
-use App\Http\Requests;
+use App\Models\User\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Redis;
-use App\Providers\SweetAlertServiceProvider;
-use Log;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Auth;
 
 class UsersController extends Controller
 {
@@ -209,13 +196,13 @@ class UsersController extends Controller
      */
     public function details (Request $request)
     {
+        $user = Auth::user();
+
         $this->validate($request, [
             'name'     => 'min:3|max:25',
-            'email'    => 'email|max:75|unique:users',
-            'username' => 'max:75|unique:users',
+            'email'    => ['required', 'email', 'max:75', Rule::unique('users')->ignore($user->id)],
+            'username' => ['required', 'min:3', 'max:75', Rule::unique('users')->ignore($user->id)]
         ]);
-
-        $user = Auth::user();
 
         $email_changed = false;
 

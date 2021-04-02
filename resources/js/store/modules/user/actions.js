@@ -306,9 +306,9 @@ export const actions = {
      */
     async UPDATE_DETAILS (context)
     {
-        let title = i18n.t('notifications.success');
+        const title = i18n.t('notifications.success');
         // todo - translate this
-        let body  = 'Your information has been updated'
+        const body  = 'Your information has been updated'
 
         await axios.post('/settings/details', {
             name: context.state.user.name,

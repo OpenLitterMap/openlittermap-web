@@ -177,7 +177,7 @@ class ApiPhotosController extends Controller
 
         dispatch (new AddTags($request->all(), $userId));
 
-        return ['msg' => 'dispatched'];
+        return ['msg' => 'dispatched', 'success' => true];
     }
 
 
