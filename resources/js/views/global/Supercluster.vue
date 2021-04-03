@@ -35,6 +35,9 @@ import moment from 'moment';
 import './SmoothWheelZoom.js';
 import i18n from '../../i18n'
 
+// Todo - fix this export bug (The request of a dependency is an expression...)
+import glify from 'leaflet.glify';
+
 var map;
 var markers;
 var prevZoom = MIN_ZOOM;
@@ -74,6 +77,7 @@ function createClusterIcon (feature, latlng)
 }
 
 /**
+ * Old way with markers - has been replaced by glify
  * On each feature, perform this action
  *
  * This is being performed whenever the user drags the map.
@@ -173,7 +177,71 @@ async function update ()
             {
                 markers.clearLayers();
             }
-            markers.addData(response.data);
+
+            const data = response.data.features.map(feature => {
+                return [ feature.geometry.coordinates[1], feature.geometry.coordinates[0]];
+            });
+
+            // old way
+            // markers.addData(response.data);
+
+            // New way using webGL
+            glify.points({
+                map,
+                data,
+                size: 10,
+                color: { r: 0.054, g: 0.819, b: 0.27 }, // 14, 209, 69 / 255
+                click: (e, point, xy) => {
+                    // return false to continue traversing
+                    // console.log(e);
+                    // console.log(point);
+
+                    const f = response.data.features.find(feature => {
+                        return feature.geometry.coordinates[0] === point[1]
+                            && feature.geometry.coordinates[1] === point[0];
+                    });
+                    // console.log({ f });
+                    // console.log(xy);
+
+                    if (f)
+                    {
+                        let tags = '';
+
+                        if (f.properties.result_string)
+                        {
+                            let a = '';
+
+                            a = f.properties.result_string.split(',');
+
+                            a.pop();
+
+                            a.forEach(i => {
+                                let b = i.split(' ');
+
+                                tags += i18n.t('litter.' + b[0]) + ': ' + b[1] + ' ';
+                            });
+                        }
+                        else
+                        {
+                            tags = i18n.t('litter.not-verified');
+                        }
+
+                        L.popup()
+                            .setLatLng(e.latlng)
+                            .setContent(
+                                '<p class="mb5p">' + tags + ' </p>'
+                                + '<img src= "' + f.properties.filename + '" class="mw100" />'
+                                + '<p>Taken on ' + moment(f.properties.datetime).format('LLL') +'</p>'
+                            )
+                            .openOn(map);
+                    }
+
+                },
+                // hover: (e, pointOrGeoJsonFeature, xy) => {
+                //     // do something when a point is hovered
+                //     console.log('hovered');
+                // }
+            });
         })
         .catch(error => {
             console.error('get_global_points', error);
