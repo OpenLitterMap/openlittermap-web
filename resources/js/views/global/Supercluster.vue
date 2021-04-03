@@ -35,7 +35,7 @@ import moment from 'moment';
 import './SmoothWheelZoom.js';
 import i18n from '../../i18n'
 
-// Todo - fix this export bug (The request of a dependency is an expression)
+// Todo - fix this export bug (The request of a dependency is an expression...)
 import glify from 'leaflet.glify';
 
 var map;
@@ -77,6 +77,7 @@ function createClusterIcon (feature, latlng)
 }
 
 /**
+ * Old way with markers - has been replaced by glify
  * On each feature, perform this action
  *
  * This is being performed whenever the user drags the map.
