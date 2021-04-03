@@ -1,4 +1,4 @@
-]<template>
+<template>
     <div style="height: 100%;" @click="closeButtons">
         <div id="super" ref="super" />
 
