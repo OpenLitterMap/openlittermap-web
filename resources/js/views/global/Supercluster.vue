@@ -181,20 +181,60 @@ async function update ()
                 return [ feature.geometry.coordinates[1], feature.geometry.coordinates[0]];
             });
 
+            // old way
             // markers.addData(response.data);
 
+            // New way using webGL
             glify.points({
                 map,
                 data,
                 size: 10,
                 color: { r: 0.054, g: 0.819, b: 0.27 }, // 14, 209, 69 / 255
-                click: (e, pointOrGeoJsonFeature, xy) => {
-                    // do something when a point is clicked
+                click: (e, point, xy) => {
                     // return false to continue traversing
-                    console.log('clicked');
-                    console.log(e);
-                    console.log(pointOrGeoJsonFeature);
-                    console.log(xy);
+                    // console.log(e);
+                    // console.log(point);
+
+                    const f = response.data.features.find(feature => {
+                        return feature.geometry.coordinates[0] === point[1]
+                            && feature.geometry.coordinates[1] === point[0];
+                    });
+                    // console.log({ f });
+                    // console.log(xy);
+
+                    if (f)
+                    {
+                        let tags = '';
+
+                        if (f.properties.result_string)
+                        {
+                            let a = '';
+
+                            a = f.properties.result_string.split(',');
+
+                            a.pop();
+
+                            a.forEach(i => {
+                                let b = i.split(' ');
+
+                                tags += i18n.t('litter.' + b[0]) + ': ' + b[1] + ' ';
+                            });
+                        }
+                        else
+                        {
+                            tags = i18n.t('litter.not-verified');
+                        }
+
+                        L.popup()
+                            .setLatLng(e.latlng)
+                            .setContent(
+                                '<p class="mb5p">' + tags + ' </p>'
+                                + '<img src= "' + f.properties.filename + '" class="mw100" />'
+                                + '<p>Taken on ' + moment(f.properties.datetime).format('LLL') +'</p>'
+                            )
+                            .openOn(map);
+                    }
+
                 },
                 // hover: (e, pointOrGeoJsonFeature, xy) => {
                 //     // do something when a point is hovered
