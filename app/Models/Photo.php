@@ -59,7 +59,7 @@ class Photo extends Model
         'wrong_tags',
         'wrong_tags_by',
         'bbox_verification_assigned_to',
-        '500xfilepath'
+        'five_hundred_square_filepath'
     ];
 
     /**

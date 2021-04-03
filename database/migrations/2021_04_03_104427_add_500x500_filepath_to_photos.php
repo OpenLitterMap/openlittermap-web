@@ -14,7 +14,7 @@ class Add500x500FilepathToPhotos extends Migration
     public function up()
     {
         Schema::table('photos', function (Blueprint $table) {
-            $table->string('500xfilepath')->nullable();
+            $table->string('five_hundred_square_filepath')->nullable();
         });
     }
 
@@ -26,7 +26,7 @@ class Add500x500FilepathToPhotos extends Migration
     public function down()
     {
         Schema::table('photos', function (Blueprint $table) {
-            $table->dropColumn('500xfilepath');
+            $table->dropColumn('five_hundred_square_filepath');
         });
     }
 }

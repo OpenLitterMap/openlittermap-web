@@ -71,8 +71,8 @@ return [
             'secret'   => env('x500_AWS_SECRET'),
             'region'   => env('x500_AWS_REGION'),
             'bucket'   => env('x500_AWS_BUCKET'),
-            'url'      => env('x500_AWS_URL'),
-            'endpoint' => env('x500_AWS_ENDPOINT'),
+            // 'url'      => env('x500_AWS_URL'),
+            // 'endpoint' => env('x500_AWS_ENDPOINT'),
         ]
 
     ],
