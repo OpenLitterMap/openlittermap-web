@@ -65,6 +65,16 @@ return [
             'endpoint' => env('AWS_ENDPOINT'),
         ],
 
+        's3500x500' => [
+            'driver'   => 's3',
+            'key'      => env('x500_AWS_KEY'),
+            'secret'   => env('x500_AWS_SECRET'),
+            'region'   => env('x500_AWS_REGION'),
+            'bucket'   => env('x500_AWS_BUCKET'),
+            'url'      => env('x500_AWS_URL'),
+            'endpoint' => env('x500_AWS_ENDPOINT'),
+        ]
+
     ],
 
     /*

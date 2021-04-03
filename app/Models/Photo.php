@@ -58,7 +58,8 @@ class Photo extends Model
         'bbox_assigned_to',
         'wrong_tags',
         'wrong_tags_by',
-        'bbox_verification_assigned_to'
+        'bbox_verification_assigned_to',
+        '500xfilepath'
     ];
 
     /**
