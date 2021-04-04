@@ -29,7 +29,8 @@ class VerifyBoxController extends Controller
             ->where([
                 'verified' => 3,
                 'bbox_verification_assigned_to' => $userId,
-                'bbox_skipped' => false
+                'bbox_skipped' => false,
+                ['five_hundred_square_filepath', '!=', null]
             ])->first();
 
         // orWhere not working?
@@ -39,7 +40,8 @@ class VerifyBoxController extends Controller
                 ->where([
                     'verified' => 3,
                     'bbox_verification_assigned_to' => null,
-                    'bbox_skipped' => false
+                    'bbox_skipped' => false,
+                    ['five_hundred_square_filepath', '!=', null]
                 ])->first();
         }
 
