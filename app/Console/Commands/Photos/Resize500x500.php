@@ -49,6 +49,8 @@ class Resize500x500 extends Command
         {
             foreach ($photos as $photo)
             {
+                echo "Photo id $photo->id \n";
+
                 // Create an image object
                 $img = Image::make($photo->filename);
 
