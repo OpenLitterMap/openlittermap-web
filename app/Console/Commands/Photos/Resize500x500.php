@@ -43,6 +43,7 @@ class Resize500x500 extends Command
         // Get a batch of images with bounding boxes to resize
         Photo::where([
             ['verified', '>=', 2],
+            ['filename', '!=', '/assets/verified.jpg'],
             'five_hundred_square_filepath' => null
         ])->chunk(500, function ($photos)
         {
