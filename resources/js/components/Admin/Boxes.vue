@@ -28,6 +28,7 @@
 
             <button class="button is-small duplicate-box" @click="duplicate(box.id)" disabled>Todo - Duplicate Box</button>
             <button class="button is-small toggle-box" @click="toggleLabel(box.id)">Toggle Label</button>
+            <button class="button is-small is-dark rotate-box" @click="rotate(box.id)">Rotate</button>
 
             <!-- Box attributes -->
             <p>Left: {{ box.left }}</p>
@@ -198,6 +199,14 @@ export default {
         },
 
         /**
+         * Temp - rotate the box
+         */
+        rotate (box_id)
+        {
+            this.$store.commit('rotateBox', box_id);
+        },
+
+        /**
          * Show all the boxes
          */
         showAll ()
@@ -247,5 +256,11 @@ export default {
         position: absolute;
         top: 7em;
         right: 1em;
+    }
+
+    .rotate-box {
+      position: absolute;
+      top: 10em;
+      right: 1em;
     }
 </style>

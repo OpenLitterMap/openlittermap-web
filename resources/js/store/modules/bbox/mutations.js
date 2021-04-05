@@ -404,6 +404,26 @@ export const mutations = {
     },
 
     /**
+     * Rotate a box
+     *
+     * payload = box_id
+     */
+    rotateBox (state, payload)
+    {
+        let boxes = [...state.boxes];
+
+        let box = boxes.find(box => box.id === payload);
+
+        const width = box.width;
+        const height = box.height;
+
+        box.height = width;
+        box.width = height;
+
+        state.boxes = boxes;
+    },
+
+    /**
      * Select 1 of many brands
      */
     selectBrandBoxIndex (state, payload)

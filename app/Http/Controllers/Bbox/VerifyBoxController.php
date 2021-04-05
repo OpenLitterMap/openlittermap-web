@@ -17,7 +17,6 @@ class VerifyBoxController extends Controller
      *
      * Don't load an image the user created boxes for
      *
-     * Todo - show who created this image,
      * Todo - show level 4 counts so far
      */
     public function index ()
@@ -52,6 +51,8 @@ class VerifyBoxController extends Controller
 
         // load the tags for the image
         $photo->tags();
+
+
 
         return ['photo' => $photo];
     }
