@@ -172,10 +172,10 @@ export const actions = {
                 context.commit('initBoxesToVerify', response.data.photo.boxes);
 
                 // bbox.js
-                context.commit('bboxCount', {
-                    usersBoxCount: response.data.usersBoxCount,
-                    totalBoxCount: response.data.totalBoxCount
-                })
+                // context.commit('bboxCount', {
+                //     usersBoxCount: response.data.usersBoxCount,
+                //     totalBoxCount: response.data.totalBoxCount
+                // })
 
                 context.commit('adminLoading', false);
             })
