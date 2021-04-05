@@ -52,7 +52,12 @@ class VerifyBoxController extends Controller
         // load the tags for the image
         $photo->tags();
 
-        $totalBoxCount = $photo['boxes'][0]->id;
+        $totalBoxCount = 0;
+        if ($photo['boxes'])
+        {
+            $totalBoxCount = $photo['boxes'][0]->id;
+        }
+
         $usersBoxCount = Photo::where(['verified' => 4, 'verified_by' => $userId])->count();
 
         return [
