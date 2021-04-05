@@ -97,10 +97,13 @@ class BoundingBoxController extends Controller
             'dumping_id',
             'industrial_id',
             'brands_id',
-            'result_string'
+            'result_string',
+            'five_hundred_square_filepath'
         ];
 
         $userId = auth()->user()->id;
+
+        // Continue after photo.id 25921
 
         // Get the previous photo assigned to the user
         $photo = Photo::select($columns)
@@ -110,7 +113,8 @@ class BoundingBoxController extends Controller
                 ['filename', '!=', '/assets/verified.jpg'],
                 'bbox_assigned_to' => $userId,
                 'wrong_tags' => false,
-                'total_litter' => 1
+                'total_litter' => 1,
+                ['five_hundred_square_filepath', '!=', null]
             ])->first();
 
         // Or, get the next available photo
@@ -123,7 +127,8 @@ class BoundingBoxController extends Controller
                     ['filename', '!=', '/assets/verified.jpg'],
                     'bbox_assigned_to' => null,
                     'wrong_tags' => false,
-                    'total_litter' => 1
+                    'total_litter' => 1,
+                    ['five_hundred_square_filepath', '!=', null]
                 ])->first();
 
             // Assign the photo to a user so 2+ users don't load the same photo

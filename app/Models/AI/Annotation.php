@@ -25,6 +25,7 @@ class Annotation extends Model
         'is_crowd',
         'area',
         'added_by',
-        'verified_by'
+        'verified_by',
+        'is_500' // boolean. Was the annotation created for full high-res image or 500x500 image
     ];
 }

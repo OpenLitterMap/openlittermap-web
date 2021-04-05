@@ -84,7 +84,7 @@
                                     </router-link>
 
                                     <!-- Bounding boxes -->
-                                    <router-link v-if="can('create boxes')" to="/bbox" class="navbar-item drop-item" @click.native="close">
+                                    <router-link v-if="can('create boxes')" to="/bbox/verify" class="navbar-item drop-item" @click.native="close">
                                         Bounding Boxes
                                     </router-link>
 

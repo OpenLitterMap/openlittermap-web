@@ -59,7 +59,10 @@ class Photo extends Model
         'wrong_tags',
         'wrong_tags_by',
         'bbox_verification_assigned_to',
-        'five_hundred_square_filepath'
+
+        // Introduced after resizing images to 500x500
+        'five_hundred_square_filepath',
+        'bbox_500_assigned_to'
     ];
 
     /**

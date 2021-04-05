@@ -129,7 +129,7 @@ export const actions = {
 
                 context.commit('adminImage', {
                     id: response.data.photo.id,
-                    filename: response.data.photo.filename
+                    filename: response.data.photo.five_hundred_square_filepath // filename
                 });
 
                 // litter.js
