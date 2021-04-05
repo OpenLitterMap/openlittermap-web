@@ -45,6 +45,7 @@
 
                                 <li>
                                     <p>Our Slack channel has never been more active! If you are ready to be a part of the OpenLitterMap movement, <a href="https://join.slack.com/t/openlittermap/shared_invite/zt-fdctasud-mu~OBQKReRdC9Ai9KgGROw">Click here to join our chat and be a part of our open-source community</a></p>
+                                    <p>We especially want to hear from new users. What was your first experience like? How could we do better? What would you like to change or see improved?</p>
                                 </li>
 
                                 <li>

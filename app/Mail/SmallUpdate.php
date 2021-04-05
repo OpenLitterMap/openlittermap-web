@@ -30,7 +30,7 @@ class SmallUpdate extends Mailable
     public function build()
     {
         return $this->from('info@openlittermap.com', 'OpenLitterMap')
-            ->subject('Update #22 - OpenLitterAi New Tool We Need Your Help!!')
-            ->view('emails.update22');
+            ->subject('Update #23 - Huge Update to Global Map')
+            ->view('emails.update23');
     }
 }
