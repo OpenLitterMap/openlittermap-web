@@ -83,7 +83,7 @@
                                          {{ $t('nav.settings')}}
                                     </router-link>
 
-                                    <!-- Bounding boxes -->
+                                    <!-- Bounding boxes. Temp => redirect to verify -->
                                     <router-link v-if="can('create boxes')" to="/bbox/verify" class="navbar-item drop-item" @click.native="close">
                                         Bounding Boxes
                                     </router-link>
