@@ -6,7 +6,7 @@ Route::get('test', function () {
 
     $user = \App\Models\User\User::first();
 
-    return view('emails.update22', ['user' => $user]);
+    return view('emails.update23', ['user' => $user]);
 });
 
 Route::get('/', 'HomeController@index');
