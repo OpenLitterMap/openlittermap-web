@@ -90,7 +90,7 @@ class VerifyBoxController extends Controller
         {
             if ($request->hasChanged)
             {
-                $annotation = Annotation::find($box['id']);
+                $annotation = Annotation::where(['id' => $box['id'], 'photo_id' => $photo->id])->first();
 
                 if (! $annotation)
                 {

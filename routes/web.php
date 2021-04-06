@@ -2,12 +2,12 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('test', function () {
-
-    $user = \App\Models\User\User::first();
-
-    return view('emails.update23', ['user' => $user]);
-});
+//Route::get('test', function () {
+//
+//    $user = \App\Models\User\User::first();
+//
+//    return view('emails.update23', ['user' => $user]);
+//});
 
 Route::get('/', 'HomeController@index');
 Route::get('/about', 'HomeController@index');
@@ -195,50 +195,8 @@ Route::get('/user/profile/index', 'User\ProfileController@index');
 Route::get('/user/profile/map', 'User\ProfileController@geojson');
 Route::get('/user/profile/download', 'User\ProfileController@download');
 
-
-/**
- * IMAGE VERIFICATION
- */
-// The users currently pending images (verification >= 0.1)
-// Route::get('/pending', 'VerificationController@getPending');
-// Route::get('/verify', 'VerificationController@getVerification');
-// Route::post('/verify', 'VerificationController@verify');
-
-
 // Unsubscribe via email (user not authenticated)
 Route::get('/emails/unsubscribe/{token}', 'EmailSubController@unsubEmail');
-
-/** OTHER PAGES THAT SHOULD NOT BE LOCALIZED **/
-
-// use App\Events\UserSignedUp;
-// use Illuminate\Support\Facades\Redis;
-
-	// todo: websockets
-	// 1. Publish event with redis
-	// Redis::publish('test-channel', json_encode($data));
-	// 2. Socket.js -> Node.js + Redis subscribes to the event
-	// 3. Fire an event
-
-// use App\Team;
-// Route::get('/email', function() {
-// 	$team = Team::first();
-// 	$user = User::first();
-// 	// $team = $team->name;
-// 	// $leader = User::first()->name;
-// 	// $member = User::first()->name;
-// 	return view('emails.update5', compact('user'));
-// });
-
-// Route::get('littercoin', function() {
-// 	return view('pages.littercoin');
-// });
-
-// // Hall of Fame
-// Route::get('hall', function() {
-// 	return view('pages.hall');
-// });
-
-
 Route::get('/unsubscribe/{token}', 'UsersController@unsubscribeEmail');
 
 Route::get('/terms', function() {
@@ -320,7 +278,6 @@ Route::group(['prefix' => '/admin'], function () {
     Route::post('/ltrxgenerated', 'LTRXController@success');
 });
 
-
 Route::group(['prefix' => '/bbox', 'middleware' => ['can_bbox']], function () {
 
     // Add coordinates
@@ -329,7 +286,7 @@ Route::group(['prefix' => '/bbox', 'middleware' => ['can_bbox']], function () {
     // Load the next image to add bounding boxes to
     Route::get('/index', 'Bbox\BoundingBoxController@index');
 
-    // Add bboxes to image
+    // Add boxes to image
     Route::post('/create', 'Bbox\BoundingBoxController@create');
 
     // Mark this image as not bbox compatible
@@ -346,19 +303,3 @@ Route::group(['prefix' => '/bbox', 'middleware' => ['can_bbox']], function () {
     Route::get('/verify/index', 'Bbox\VerifyBoxController@index');
     Route::post('/verify/update', 'Bbox\VerifyBoxController@update');
 });
-
-
-
-
-/**
- * REPORTING
- */
-// New: Reporting
-// Route::get('/report', 'ReportsController@get');
-
-// Route::get('/suburb', 'SuburbsController@getSuburb');
-// Route::post('/suburb', 'SuburbsController@getSuburb');
-
-// Route::get('/{vue_capture?}', function () {
-//     return view('pages.locations.welcome');
-// })->where('vue_capture', '[\/\w\.-]*');

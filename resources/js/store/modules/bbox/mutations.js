@@ -507,11 +507,10 @@ export const mutations = {
 
         boxes.map((box, index) => {
 
-            // when verifying boxes, we need to keep the annotation.id
-            box.id = payload[index].id;
-
             if (payload[index])
             {
+                // when verifying boxes, we need to keep the annotation.id
+                box.id = payload[index].id
                 box.top = payload[index].top;
                 box.left = payload[index].left;
                 box.width = payload[index].width;
