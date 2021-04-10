@@ -34,7 +34,8 @@ class Other extends LitterCategory
         'tyre',
         'overflowing_bins',
         'pooinbag',
-        'automobile'
+        'automobile',
+        'clothing'
     ];
 
     public function photo () {
@@ -72,7 +73,8 @@ class Other extends LitterCategory
             'tyre',
             'overflowing_bins',
             'pooinbag',
-            'automobile'
+            'automobile',
+            'clothing'
         ];
     }
 
