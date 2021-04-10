@@ -152,6 +152,8 @@ class ApiPhotosController extends Controller
      * Save litter data to a recently uploaded photo
      *
      * version 1
+     *
+     * This is used to add tags to web images, and session photos
      */
     public function dynamicUpdate (Request $request)
     {
@@ -168,6 +170,8 @@ class ApiPhotosController extends Controller
      * Save litter data to a recently uploaded photo
      *
      * version 1
+     *
+     * This is used by gallery photos
      */
     public function addTags (Request $request)
     {

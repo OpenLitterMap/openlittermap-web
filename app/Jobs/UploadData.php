@@ -50,6 +50,7 @@ class UploadData implements ShouldQueue
         $schema = LitterTags::INSTANCE()->getDecodedJSON();
 
         $litterTotal = 0;
+
         foreach ($this->request['litter'] as $category => $values)
         {
             foreach ($values as $column => $quantity) // butts => 3
@@ -76,7 +77,8 @@ class UploadData implements ShouldQueue
                 $row->save();
 
                 // todo - Update Leaderboards if user has changed privacy settings
-                if (($user->show_name == 1) || ($user->show_username == 1)) {
+                if (($user->show_name == 1) || ($user->show_username == 1))
+                {
                     $country = Country::find($photo->country_id);
                     $state = State::find($photo->state_id);
                     $city = City::find($photo->city_id);
@@ -84,6 +86,7 @@ class UploadData implements ShouldQueue
                     Redis::zadd($country->country.':'.$state->state.':Leaderboard', $user->xp, $user->id);
                     Redis::zadd($country->country.':'.$state->state.':'.$city->city.':Leaderboard', $user->xp, $user->id);
                 }
+
                 $litterTotal += $quantity;
             }
 
@@ -107,5 +110,8 @@ class UploadData implements ShouldQueue
 
             $photo->save();
         }
+
+        $user->xp += $litterTotal;
+        $user->save();
     }
 }

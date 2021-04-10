@@ -95,9 +95,6 @@ class AddTags implements ShouldQueue
             }
         }
 
-        \Log::info(['user.xp', $user->xp]);
-        \Log::info(['litterTotal', $litterTotal]);
-
         $user->xp += $litterTotal;
         $user->save();
 

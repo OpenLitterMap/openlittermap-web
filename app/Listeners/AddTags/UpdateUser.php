@@ -30,6 +30,8 @@ class UpdateUser
             event (new LittercoinMined($user->id, '100-images-verified'));
         }
 
+        // We should increment xp here
+
         $user->total_litter += $event->total_count;
         $user->save();
     }
