@@ -32,7 +32,8 @@ class Other extends LitterCategory
         'bags_litter',
         'cable_tie',
         'tyre',
-        'overflowing_bins'
+        'overflowing_bins',
+        'pooinbag'
     ];
 
     public function photo () {
@@ -68,7 +69,8 @@ class Other extends LitterCategory
             'bags_litter',
             'cable_tie',
             'tyre',
-            'overflowing_bins'
+            'overflowing_bins',
+            'pooinbag'
         ];
     }
 
