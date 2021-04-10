@@ -231,7 +231,8 @@ class PhotosController extends Controller
             'city_id' => $cityId,
             'platform' => 'web',
             'geohash' => $geohash,
-            'team_id' => $user->active_team
+            'team_id' => $user->active_team,
+            'five_hundred_square_filepath' => $imageName // new 10th April 2021
         ]);
 
         // $user->images_remaining -= 1;
