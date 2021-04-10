@@ -68,9 +68,9 @@ class PhotosController extends Controller
 
         $image->resize(500, 500);
 
-//        $image->resize(500, 500, function ($constraint) {
-//            $constraint->aspectRatio();
-//        });
+        $image->resize(500, 500, function ($constraint) {
+            $constraint->aspectRatio();
+        });
 
         $exif = $image->exif();
         // \Log::info(['exif', $exif]);
@@ -140,7 +140,9 @@ class PhotosController extends Controller
         if (app()->environment('production'))
         {
             $s3 = \Storage::disk('s3');
-            $s3->put($filepath, file_get_contents($file), 'public');
+
+            $s3->put($filepath, $image->stream(), 'public');
+
             $imageName = $s3->url($filepath);
         }
         else
