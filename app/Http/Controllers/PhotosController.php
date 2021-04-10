@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Events\Littercoin\LittercoinMined;
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\Facades\Image;
 use Log;
 use Auth;
-use Image;
+//use Image;
 use GeoHash;
 
 use Carbon\Carbon;
@@ -61,16 +63,26 @@ class PhotosController extends Controller
         }
 
         $file = $request->file('file'); // -> /tmp/php7S8v..
-        $exif = Image::make($file)->exif();
 
+        $image = Image::make($file);
+
+        $image->resize(500, 500);
+
+        $image->resize(500, 500, function ($constraint) {
+            $constraint->aspectRatio();
+        });
+
+        $exif = $image->exif();
         // \Log::info(['exif', $exif]);
 
         // Check if the EXIF has GPS data
         // todo - make this error appear on the frontend dropzone.js without clicking it
+        // todo - translate
         if (! array_key_exists("GPSLatitudeRef", $exif))
         {
             header('HTTP/1.1 500 Internal Server Error');
             header('Content-type: text/plain');
+            // Todo - pass translation keys and create translations
             exit ("Sorry, no GPS on this one");
         }
 
@@ -110,6 +122,7 @@ class PhotosController extends Controller
             {
                 header('HTTP/1.1 500 Internal Server Error');
                 header('Content-type: text/plain');
+                // Todo - pass translation keys and create translations
                 exit ("You have already uploaded this file!");
             }
         }
@@ -127,17 +140,30 @@ class PhotosController extends Controller
         if (app()->environment('production'))
         {
             $s3 = \Storage::disk('s3');
-            $s3->put($filepath, file_get_contents($file), 'public');
+
+            $s3->put($filepath, $image->stream(), 'public');
+
             $imageName = $s3->url($filepath);
         }
-        else $imageName = '/assets/verified.jpg';
+        else
+        {
+            $public_path = public_path('local-uploads/'.$y.'/'.$m.'/'.$d);
+
+            // home/vagrant/Code/openlittermap-web/public/local-uploads/y/m/d
+            if (! file_exists($public_path))
+            {
+                mkdir($public_path, 666, true);
+            }
+
+            $image->save($public_path. $filename);
+
+            $imageName = config('app.url') . '/local-uploads/'.$y.'/'.$m.'/'.$d . $filename;
+        }
 
         // Get phone model
-        if (array_key_exists('Model', $exif))
-        {
-            $model = $exif["Model"];
-        }
-        else $model = 'Unknown';
+        $model = (array_key_exists('Model', $exif))
+            ? $exif["Model"]
+            : 'Unknown';
 
         // Get coordinates
          $lat_ref = $exif["GPSLatitudeRef"];
