@@ -2,35 +2,14 @@
 
 namespace App\Http\Controllers;
 
-
 use App\Events\ResetTagsCountAdmin;
+use App\Litterrata;
 use Log;
 use Auth;
 use File;
 
-use App\Models\LitterTags;
-use App\Models\Location\City;
-use App\Models\Location\Country;
-use App\Models\Location\State;
-
 use App\Models\Photo;
 use App\Models\User\User;
-
-use App\Models\Litter\Categories\Smoking as Smoking;
-use App\Models\Litter\Categories\Alcohol as Alcohol;
-use App\Models\Litter\Categories\Coffee as Coffee;
-use App\Models\Litter\Categories\Food as Food;
-use App\Models\Litter\Categories\SoftDrinks as SoftDrinks;
-use App\Models\Litter\Categories\Drugs as Drugs;
-use App\Models\Litter\Categories\Sanitary as Sanitary;
-use App\Models\Litter\Categories\Other as Other;
-use App\Models\Litter\Categories\Coastal as Coastal;
-use App\Models\Litter\Categories\Pathway as Pathway;
-use App\Models\Litter\Categories\Art as Art;
-use App\Models\Litter\Categories\Brand as Brand;
-use App\Models\Litter\Categories\TrashDog as TrashDog;
-use App\Models\Litter\Categories\Dumping as Dumping;
-use App\Models\Litter\Categories\Industrial as Industrial;
 
 use App\Traits\AddTagsTrait;
 
@@ -41,7 +20,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
 
 use App\Events\TagsVerifiedByAdmin;
-
 
 class AdminController extends Controller
 {
@@ -338,8 +316,8 @@ class AdminController extends Controller
         // Count photos that have been uploaded, but not tagged or submitted for verification
         $photosNotProcessed = Photo::where([
                 ['verification', 0],
-                 ['user_id', '!=', 3233]
-            ])->count();
+                ['user_id', '!=', 3233]
+        ])->count();
 
         // Count photos submitted for verification
         $photosAwaitingVerification = Photo::where([

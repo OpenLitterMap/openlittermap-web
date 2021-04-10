@@ -82,6 +82,12 @@ final class LitterTags {
         "table": "industrial",
         "class": "Industrial",
         "total": "total_industrial"
+    },
+    "dogshit": {
+        "id_table": "dogshit_id",
+        "table": "dogshit",
+        "class": "Dogshit",
+        "total": "total_dogshit"
     }
 }';
 

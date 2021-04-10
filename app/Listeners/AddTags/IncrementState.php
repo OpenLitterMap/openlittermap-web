@@ -32,6 +32,7 @@ class IncrementState
             if ($event->total_softdrinks)   $state->total_softdrinks  += $event->total_softdrinks;
             if ($event->total_smoking)      $state->total_smoking     += $event->total_smoking;
             if ($event->total_brands)       $state->total_brands      += $event->total_brands;
+            if ($event->total_dogshit)      $state->total_dogshit     += $event->total_dogshit;
 
             $state->total_litter += $event->total_count;
             $state->total_images++;

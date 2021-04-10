@@ -82,6 +82,7 @@ class User extends Authenticatable
         'total_industrial',
         'total_brands',
         'total_art',
+        'total_dogshit',
 
         'stripe_id',
         'images_remaining',

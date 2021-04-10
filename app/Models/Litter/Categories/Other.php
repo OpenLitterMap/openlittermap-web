@@ -9,34 +9,37 @@ class Other extends LitterCategory
     protected $table = 'other';
 
     protected $fillable = [
-    	'dogshit',
-    	'plastic',
-        'dump',
+        'random_litter',
+        'bags_litter',
+        'overflowing_bins',
+        'plastic',
+
+        'dogshit', // Moved to Dogshit category
+        'pooinbag',
+
+        'automobile',
+        'tyre',
+        'traffic_cone',
+        'dump', // Moved to dumping category
     	'metal',
         'plastic_bags',
         'election_posters',
         'forsale_posters',
+        'cable_tie',
         'books',
         'magazine',
         'paper',
         'stationary',
         'washing_up',
+        'clothing',
         'hair_tie',
         'ear_plugs',
-    	'other',
-        'batteries',
-        'balloons',
         'elec_small',
         'elec_large',
-        'random_litter',
-        'bags_litter',
-        'cable_tie',
-        'tyre',
-        'overflowing_bins',
-        'pooinbag',
-        'automobile',
-        'clothing',
-        'life_buoy'
+        'batteries',
+        'balloons',
+        'life_buoy', // coastal?
+        'other'
     ];
 
     public function photo () {
@@ -49,34 +52,37 @@ class Other extends LitterCategory
     public function types ()
     {
         return [
-            'dogshit',
+            'random_litter',
+            'bags_litter',
+            'overflowing_bins',
             'plastic',
-            'dump',
+
+            'dogshit',
+            'pooinbag',
+
+            'automobile',
+            'tyre',
+            'traffic_cone',
+            'dump', // Moved to dumping category
             'metal',
             'plastic_bags',
             'election_posters',
             'forsale_posters',
+            'cable_tie',
             'books',
             'magazine',
             'paper',
             'stationary',
             'washing_up',
+            'clothing',
             'hair_tie',
             'ear_plugs',
-            'other',
-            'batteries',
-            'balloons',
             'elec_small',
             'elec_large',
-            'random_litter',
-            'bags_litter',
-            'cable_tie',
-            'tyre',
-            'overflowing_bins',
-            'pooinbag',
-            'automobile',
-            'clothing',
-            'life_buoy'
+            'batteries',
+            'balloons',
+            'life_buoy', // coastal?
+            'other'
         ];
     }
 

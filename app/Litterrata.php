@@ -2,7 +2,8 @@
 
 namespace App;
 
-// last tag = ghost_nets => 209
+// This is used when adding bounding boxes to images to train the OpenLitterAi
+// last tag = poo_in_bag => 211
 // Every category could be category -> 1:n
 
 final class Litterrata {
@@ -18,7 +19,8 @@ final class Litterrata {
         "other": "7",
         "coastal": "8",
         "dumping": "9",
-        "industrial": "10"
+        "industrial": "10",
+        "dogshit": "11"
     },
     "smoking": {
         "butts": "1",
@@ -250,6 +252,10 @@ final class Litterrata {
         "bricks": "206",
         "tape": "207",
         "industrial_other": "208"
+    },
+    "dogshit": {
+        "poo": "210",
+        "poo_in_bag": "211"
     }
 }';
 

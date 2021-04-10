@@ -34,6 +34,7 @@ class City extends Model
 		'manual_verify',
 		'littercoin_paid',
 		'created_by',
+        'total_dogshit'
 	];
 
 	/**

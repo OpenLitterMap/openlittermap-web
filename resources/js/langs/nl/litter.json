@@ -254,5 +254,9 @@
         "still-there": "Het ligt er nog."
     },
     "no-tags": "No tags",
-    "not-verified": "In afwachting van verificatie"
+    "not-verified": "In afwachting van verificatie",
+    "dogshit": {
+        "poo": "Hondendrol!",
+        "poo_in_bag": "Hondendrol in zakje!"
+    }
 }

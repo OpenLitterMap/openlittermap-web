@@ -20,6 +20,7 @@ class TagsVerifiedByAdmin
     public $total_alcohol, $total_art,
         $total_brands,
         $total_coastal, $total_coffee,
+        $total_dogshit,
         $total_dumping,
         $total_food,
         $total_industrial,

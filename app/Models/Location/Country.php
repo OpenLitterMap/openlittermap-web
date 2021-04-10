@@ -36,6 +36,7 @@ class Country extends Model
         'littercoin_paid',
         'created_by',
         'photos_per_month',
+        'total_dogshit'
     ];
 
     public function getRouteKeyName()
@@ -53,6 +54,8 @@ class Country extends Model
 
     /**
      *  @return 'litter_data' column
+     *
+     * Todo - add dogshit here, states, cities, and update the charts
      */
     public function getLitterDataAttribute ()
     {

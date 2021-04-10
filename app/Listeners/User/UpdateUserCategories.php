@@ -32,6 +32,7 @@ class UpdateUserCategories
         if ($event->total_softdrinks)   $user->total_softdrinks  += $event->total_softdrinks;
         if ($event->total_smoking)      $user->total_smoking     += $event->total_smoking;
         if ($event->total_brands)       $user->total_brands      += $event->total_brands;
+        if ($event->total_dogshit)      $user->total_dogshit     += $event->total_dogshit;
 
         $user->save();
     }

@@ -222,40 +222,43 @@ export const litterkeys = {
          'wrigleys'	            // Wrigley
     ],
     other: [
-        'dogshit',           // Pet Surprise
-        'pooinbag',          // Surprise In Bag
-        'automobile',        // Automobile
-        'clothing',          // Clothing
-        'traffic_cone',      // Traffic cone
-        'life_buoy',         // Life Buoy
-        'plastic',           // Unidentified Plastic
-        'dump',              // Illegal Dumping
-        'metal',             // Metal Object
-        'plastic_bags',      // Plastic Bags
-        'election_posters', // Election Posters
-        'forsale_posters',  // For Sale Posters
-        'books',            // Books
-        'magazine',         // Magazines
-        'paper',            // Paper
-        'stationary',       // Stationery
-        'washing_up',       // Washing-up Bottle
-        'hair_tie',         // Hair Tie
-        'ear_plugs',        // Ear Plugs (music)
-        'batteries',        // Batteries
-        'elec_small',       // Electric small
-        'elec_large',       // Electric large
-        'random_litter',    // Random Litter
-        'balloons',         // Balloons
-        'bags_litter',      // Bags of Litter
+        'random_litter', // Random Litter
+        'bags_litter', // Bags of Litter
         'overflowing_bins', // Overflowing Bins
-        'tyre',             // Tyre
-        'cable_tie',        // Cable Tie
-        'balloons',         // Balloons
-        'other'             // Other (other)
+        'plastic', // Unidentified Plastic
+        // 'dogshit', // Moved to Dogshit category
+        // 'pooinbag', // Moved to Dogshit category
+        'automobile', // Automobile
+        'tyre', // Tyre
+        'traffic_cone',
+        'dump', // Moved to dumping category
+        'metal',
+        'plastic_bags',
+        'election_posters',
+        'forsale_posters',
+        'cable_tie',
+        'books',
+        'magazine',
+        'paper',
+        'stationary',
+        'washing_up',
+        'clothing',
+        'hair_tie',
+        'ear_plugs',
+        'elec_small',
+        'elec_large',
+        'batteries',
+        'balloons',
+        'life_buoy', // coastal?
+        'other'
     ],
     trashdog: [
         'trashdog',  // TrashDog
         'littercat', // LitterCat
         'duck'       // LitterDuc
+    ],
+    dogshit: [
+        'poo',
+        'poo_in_bag'
     ]
 };

@@ -11,7 +11,8 @@
         "sanitary": "Sanitary",
         "softdrinks": "Soft Drinks",
         "smoking": "Smoking",
-        "other": "Other"
+        "other": "Other",
+        "dogshit": "Pets"
     },
     "smoking": {
         "butts": "Cigarettes/Butts",
@@ -255,5 +256,9 @@
         "still-there": "It's still there."
     },
     "no-tags": "No Tags",
-    "not-verified": "Awaiting verification"
+    "not-verified": "Awaiting verification",
+    "dogshit": {
+        "poo": "Surprise!",
+        "poo_in_bag": "Surprise in a bag!"
+    }
 }

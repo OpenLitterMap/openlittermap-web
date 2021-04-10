@@ -73,7 +73,7 @@ class PhotosController extends Controller
         });
 
         $exif = $image->exif();
-        // \Log::info(['exif', $exif]);
+        \Log::info(['exif', $exif]);
 
         // Check if the EXIF has GPS data
         // todo - make this error appear on the frontend dropzone.js without clicking it

@@ -32,8 +32,9 @@ class State extends Model
 		'total_art',
 		'manual_verify',
         'littercoin_paid',
-        'created_by'
-	];
+        'created_by',
+        'total_dogshit'
+    ];
 
 	/**
      * Extra columns on our Country model

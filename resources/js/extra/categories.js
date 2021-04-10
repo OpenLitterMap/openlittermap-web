@@ -4,6 +4,7 @@ export const categories = [
     'brands',
     'coastal',
     'coffee',
+    'dogshit',
     'dumping',
     'food',
     'industrial',
