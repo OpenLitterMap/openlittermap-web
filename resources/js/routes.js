@@ -1,8 +1,12 @@
 import VueRouter from 'vue-router'
 import store from './store'
+
+// Middleware
 import auth from './middleware/auth'
 import admin from './middleware/admin'
 import can_bbox from './middleware/can_bbox';
+import can_verify_boxes from './middleware/can_verify_boxes'
+
 import middlewarePipeline from './middleware/middlewarePipeline'
 
 // The earlier a route is defined, the higher its priority.
@@ -174,10 +178,17 @@ const router = new VueRouter({
             ]
         },
         {
-            path: '/bbox/:verify?',
+            path: '/bbox',
             component: require('./views/bbox/BoundingBox').default,
             meta: {
                 middleware: [ auth, can_bbox ]
+            }
+        },
+        {
+            path: '/bbox/verify',
+            component: require('./views/bbox/BoundingBox').default,
+            meta: {
+                middleware: [ auth, can_verify_boxes ]
             }
         }
     ]

@@ -59,7 +59,7 @@
                                         ADMIN - Horizon
                                     </a>
 
-                                    <a v-if="can('update boxes')" href="/bbox/verify" class="navbar-item drop-item">
+                                    <a v-if="can('verify boxes')" href="/bbox/verify" class="navbar-item drop-item">
                                         ADMIN - Verify Boxes
                                     </a>
 
@@ -83,8 +83,8 @@
                                          {{ $t('nav.settings')}}
                                     </router-link>
 
-                                    <!-- Bounding boxes. Temp => redirect to verify -->
-                                    <router-link v-if="can('create boxes')" to="/bbox/verify" class="navbar-item drop-item" @click.native="close">
+                                    <!-- Bounding boxes -->
+                                    <router-link v-if="can('create boxes')" to="/bbox" class="navbar-item drop-item" @click.native="close">
                                         Bounding Boxes
                                     </router-link>
 

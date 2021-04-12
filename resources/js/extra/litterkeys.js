@@ -231,7 +231,7 @@ export const litterkeys = {
         'automobile', // Automobile
         'tyre', // Tyre
         'traffic_cone',
-        'dump', // Moved to dumping category
+        // 'dump', // Moved to dumping category
         'metal',
         'plastic_bags',
         'election_posters',
