@@ -1,4 +1,5 @@
 import Vue from 'vue';
+import routes from '../../../routes';
 
 export const actions = {
 
@@ -160,24 +161,32 @@ export const actions = {
             .then(response => {
                 console.log('verify_next_box', response);
 
-                context.commit('adminImage', {
-                    id: response.data.photo.id,
-                    filename: response.data.photo.five_hundred_square_filepath // filename
-                });
+                if (response.data.photo)
+                {
+                    context.commit('adminImage', {
+                        id: response.data.photo.id,
+                        filename: response.data.photo.five_hundred_square_filepath // filename
+                    });
 
-                // litter.js
-                context.commit('initAdminItems', response.data.photo);
+                    // litter.js
+                    context.commit('initAdminItems', response.data.photo);
 
-                // bbox.js
-                context.commit('initBoxesToVerify', response.data.photo.boxes);
+                    // bbox.js
+                    context.commit('initBoxesToVerify', response.data.photo.boxes);
 
-                // bbox.js
-                // context.commit('bboxCount', {
-                //     usersBoxCount: response.data.usersBoxCount,
-                //     totalBoxCount: response.data.totalBoxCount
-                // })
+                    // bbox.js
+                    // context.commit('bboxCount', {
+                    //     usersBoxCount: response.data.usersBoxCount,
+                    //     totalBoxCount: response.data.totalBoxCount
+                    // })
 
-                context.commit('adminLoading', false);
+                    context.commit('adminLoading', false);
+                }
+                else
+                {
+                    // todo
+                    // routes.push({ path: '/bbox' });
+                }
             })
             .catch(error => {
                 console.log('error.verify_next_box', error);
