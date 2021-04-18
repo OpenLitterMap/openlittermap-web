@@ -158,7 +158,7 @@ async function update ()
 
             markers.clearLayers();
             markers.addData(response.data);
-            glify.points.remove();
+            // glify.points.remove();
         })
         .catch(error => {
             console.error('get_clusters.update', error);
@@ -177,7 +177,7 @@ async function update ()
             if (prevZoom < CLUSTER_ZOOM_THRESHOLD)
             {
                 markers.clearLayers();
-                glify.points.remove();
+                // glify.points.remove();
             }
 
             const data = response.data.features.map(feature => {
