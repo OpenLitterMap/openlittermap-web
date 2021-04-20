@@ -187,8 +187,6 @@ async function update ()
                 return [ feature.geometry.coordinates[1], feature.geometry.coordinates[0]];
             });
 
-            // points.addData?
-
             // New way using webGL
             points = glify.points({
                 map,
