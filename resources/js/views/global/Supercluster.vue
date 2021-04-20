@@ -41,6 +41,7 @@ import glify from 'leaflet.glify';
 var map;
 var markers;
 var prevZoom = MIN_ZOOM;
+var points;
 
 const green_dot = L.icon({
     iconUrl: './images/vendor/leaflet/dist/dot.png',
@@ -158,7 +159,8 @@ async function update ()
 
             markers.clearLayers();
             markers.addData(response.data);
-            // glify.points.remove();
+
+            if (points) points.remove();
         })
         .catch(error => {
             console.error('get_clusters.update', error);
@@ -177,18 +179,20 @@ async function update ()
             if (prevZoom < CLUSTER_ZOOM_THRESHOLD)
             {
                 markers.clearLayers();
-                // glify.points.remove();
+
+                console.log({ points });
+
+                if (points) points.remove();
             }
 
             const data = response.data.features.map(feature => {
                 return [ feature.geometry.coordinates[1], feature.geometry.coordinates[0]];
             });
 
-            // old way
-            // markers.addData(response.data);
+            // points.addData?
 
             // New way using webGL
-            glify.points({
+            points = glify.points({
                 map,
                 data,
                 size: 10,
