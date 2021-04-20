@@ -160,7 +160,7 @@ async function update ()
             markers.clearLayers();
             markers.addData(response.data);
 
-            if (points) points.remove();
+            // if (points) points.remove();
         })
         .catch(error => {
             console.error('get_clusters.update', error);
@@ -181,9 +181,7 @@ async function update ()
                 markers.clearLayers();
             }
 
-            console.log({ points });
-            
-            if (points) points.remove();
+            // if (points) points.remove();
 
             const data = response.data.features.map(feature => {
                 return [ feature.geometry.coordinates[1], feature.geometry.coordinates[0]];
