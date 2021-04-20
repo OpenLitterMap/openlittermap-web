@@ -179,11 +179,11 @@ async function update ()
             if (prevZoom < CLUSTER_ZOOM_THRESHOLD)
             {
                 markers.clearLayers();
-
-                console.log({ points });
-
-                if (points) points.remove();
             }
+
+            console.log({ points });
+            
+            if (points) points.remove();
 
             const data = response.data.features.map(feature => {
                 return [ feature.geometry.coordinates[1], feature.geometry.coordinates[0]];
