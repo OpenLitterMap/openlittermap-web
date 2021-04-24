@@ -95,7 +95,7 @@
                                 <div class="column is-one-third">
                                     <h1 class="subtitle is-5" style="color: black; text-align: center;">
                                         <strong style="color: black;">
-                                            Littercoin Owed
+                                            {{ $t('location.maps11a') }}
                                         </strong>
                                     </h1>
                                     <h1 class="title is-2" style="text-align: center;">
