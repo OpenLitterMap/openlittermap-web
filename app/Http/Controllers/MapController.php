@@ -27,8 +27,7 @@ class MapController extends Controller
 	public function getCountries ()
 	{
 		// first - global metadata
-		// for now, just hard-code this
-		$littercoin = '2,950';
+		$littercoin = \DB::table('users')->sum(\DB::raw('littercoin_owed + littercoin_allowance'));
 
 		/**
 		 *  Todo
@@ -79,6 +78,7 @@ class MapController extends Controller
          *
          * todo - Make this dynamic
          * See: GlobalLevels.php global_levels table
+         * We need to keep earlier levels for test databases
          */
         // level 0
         if ($total_litter <= 1000)
@@ -123,7 +123,7 @@ class MapController extends Controller
         }
 
         /** GLOBAL LITTER MAPPERS */
-	    $users = User::where('xp', '>', 8000)
+	    $users = User::where('xp', '>', 9000)
             ->orderBy('xp', 'desc')
             ->where('show_name', 1)
             ->orWhere('show_username', 1)
@@ -163,7 +163,7 @@ class MapController extends Controller
             'globalLeaders' => $globalLeadersString,
             'previousXp' => $previousXp,
             'nextXp' => $nextXp,
-            'littercoinPaid' => $littercoin,
+            'littercoin' => $littercoin,
             'owed' => 0
         ];
     }

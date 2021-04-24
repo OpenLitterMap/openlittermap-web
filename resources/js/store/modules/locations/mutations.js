@@ -21,6 +21,7 @@ export const mutations = {
         state.total_photos = payload.total_photos;
         state.level.previousXp = payload.previousXp;
         state.level.nextXp = payload.nextXp;
+        state.littercoin = payload.littercoin;
     },
 
     /**

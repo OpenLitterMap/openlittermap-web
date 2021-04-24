@@ -100,7 +100,14 @@
                                     </h1>
                                     <h1 class="title is-2" style="text-align: center;">
                                         <strong>
-                                            {{ this.littercoinPaid }}
+                                            <number
+                                                :from="previous_littercoin"
+                                                :to="littercoin"
+                                                :duration="3"
+                                                :delay="1"
+                                                easing="Power1.easeOut"
+                                                :format="commas"
+                                            />
                                         </strong>
                                     </h1>
                                 </div>
@@ -142,11 +149,18 @@ export default {
     data ()
     {
         return {
-            loading: true,
-            littercoinPaid: '2,950' // hard-coded for now
+            loading: true
         };
     },
     computed: {
+
+        /**
+         * Total littercoin owed to users for proof of citizen science
+         */
+        littercoin ()
+        {
+            return this.$store.state.locations.littercoin;
+        },
 
         /**
          * The amount of XP we need to reach the next level
@@ -154,6 +168,25 @@ export default {
         nextXp ()
         {
             return this.$store.state.locations.level.nextXp;
+        },
+
+        /**
+         * The last littercoin the user has seen (saved in browser cache)
+         *
+         * Update to latest value once called
+         */
+        previous_littercoin ()
+        {
+            let littercoin = 0;
+
+            if (this.$localStorage.get('littercoin_owed'))
+            {
+                littercoin = this.$localStorage.get('littercoin_owed');
+            }
+
+            this.$localStorage.set('littercoin_owed', this.littercoin);
+
+            return littercoin;
         },
 
         /**

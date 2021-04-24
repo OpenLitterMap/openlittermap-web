@@ -7,8 +7,15 @@
     <script>
         window.PUSHER_APP_KEY = '{{ config('broadcasting.connections.pusher.key') }}';
         window.APP_DEBUG      = '{{ config('app.debug') ? 'true' : 'false' }}';
+
+        <?php
+            $permissions = auth()->check()
+                ? auth()->user()->jsPermissions()
+                : 'null'
+        ?>
+
         window.Laravel = {
-            jsPermissions: {!! auth()->check() ? auth()->user()->jsPermissions() : null !!}
+            jsPermissions: {!! $permissions !!}
         }
     </script>
     <title>OpenLitterMap</title>
