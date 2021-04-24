@@ -10,6 +10,7 @@ const state = {
     component_type: 'TeamsDashboard',
     errors: {},
     geojson: [],
+    leaderboard: [],
     members: {}, // paginated response of a teams members
     teams: [], // the user has joined
     types: [] // the user can create

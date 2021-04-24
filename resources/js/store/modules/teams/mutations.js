@@ -63,6 +63,14 @@ export const mutations = {
     },
 
     /**
+     * All Teams Leaderboard
+     */
+    teamsLeaderboard (state, payload)
+    {
+        state.leaderboard = payload;
+    },
+
+    /**
      * Init data from get teams map data request
      */
     teamMap (state, payload)
@@ -98,6 +106,20 @@ export const mutations = {
     teamTypes (state, payload)
     {
         state.types = payload;
+    },
+
+    /**
+     * Change the visibility of a team
+     */
+    toggleTeamLeaderboardVis (state, payload)
+    {
+        let teams = [...state.teams];
+
+        let team = teams.find(team => team.id === payload);
+
+        team.leaderboards = ! team.leaderboards;
+
+        state.teams = teams;
     },
 
     /**

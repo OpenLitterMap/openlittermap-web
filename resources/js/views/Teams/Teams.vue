@@ -26,10 +26,18 @@ import CreateTeam from './CreateTeam'
 import JoinTeam from './JoinTeam'
 import MyTeams from './MyTeams'
 import TeamSettings from './TeamSettings'
+import TeamsLeaderboard from './TeamsLeaderboard'
 
 export default {
     name: 'Teams',
-    components: { TeamsDashboard, CreateTeam, JoinTeam, MyTeams, TeamSettings },
+    components: {
+        TeamsDashboard,
+        CreateTeam,
+        JoinTeam,
+        MyTeams,
+        TeamSettings,
+        TeamsLeaderboard
+    },
     async created ()
     {
         this.loading = true;
@@ -45,12 +53,13 @@ export default {
         return {
             loading: true,
             items: [
-                { id: 1, name: 'Dashboard', icon: 'fa fa-home teams-icon', component: 'TeamsDashboard' },
-                { id: 2, name: 'Join a Team', icon: 'fa fa-sign-in teams-icon', component: 'JoinTeam' },
-                { id: 3, name: 'Create a Team', icon: 'fa fa-plus teams-icon', component: 'CreateTeam' },
-                { id: 4, name: 'Your Teams', icon: 'fa fa-users teams-icon', component: 'MyTeams' },
+                { name: 'Dashboard', icon: 'fa fa-home teams-icon', component: 'TeamsDashboard' },
+                { name: 'Join a Team', icon: 'fa fa-sign-in teams-icon', component: 'JoinTeam' },
+                { name: 'Create a Team', icon: 'fa fa-plus teams-icon', component: 'CreateTeam' },
+                { name: 'Your Teams', icon: 'fa fa-users teams-icon', component: 'MyTeams' },
+                { name: 'Leaderboard', icon: 'fa fa-trophy teams-icon', component: 'TeamsLeaderboard' },
                 // todo - sub routes = Team members, Team charts, Team map
-                { id: 5, name: 'Settings', icon: 'fa fa-gear teams-icon', component: 'TeamSettings' }
+                { name: 'Settings', icon: 'fa fa-gear teams-icon', component: 'TeamSettings' }
             ]
         }
     },

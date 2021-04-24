@@ -7,11 +7,15 @@
 
             <div v-else>
 
-            <div v-if="user.active_team" class="mb2" :key="user.team.id">
-                <p>You are currently joined team {{ user.team.name }}</p>
-            </div>
+                <div v-if="user.active_team" class="mb2" :key="user.team.id">
+                    <p>You are currently joined team {{ user.team.name }}</p>
+                </div>
 
-            <p v-else>You have not yet joined a team</p>
+                <p v-else>You have not yet joined a team</p>
+
+                <div v-if="isLeader" class="mb2">
+                    <p>You are the leader of this team</p>
+                </div>
 
                 <div v-if="teams">
                     <div class="flex mb1">
@@ -22,6 +26,12 @@
 
                         <button :class="button" @click="changeActiveTeam" :disabled="disabled">Change active team</button>
                         <button :class="downloadClass" :disabled="dlProcessing" @click="download">Download Team Data</button>
+                        <button
+                            v-if="isLeader"
+                            :class="leaderboardClass"
+                            :disabled="leaderboardProcessing"
+                            @click="toggleLeaderboardVis"
+                        >{{ showLeaderboard }}</button>
                     </div>
 
                     <table class="table is-fullwidth is-hoverable has-text-centered">
@@ -101,7 +111,9 @@ export default {
             changing: false,
             viewTeam: null, // the team the user is currently looking at. Different team = load different list of members
             dlProcessing: false,
-            dlButtonClass: 'button is-medium is-info ml1'
+            dlButtonClass: 'button is-medium is-info ml1',
+            leaderboardClass: 'button is-medium is-warning ml1',
+            leaderboardProcessing: false
         };
     },
     async created ()
@@ -168,6 +180,16 @@ export default {
         },
 
         /**
+         * Check if the user.id
+         */
+        isLeader ()
+        {
+            const team = this.teams.find(team => team.id === this.viewTeam);
+
+            return team.leader === this.user.id;
+        },
+
+        /**
          * Paginated object for the team currently in view
          *
          * Array of team members exist at members.data
@@ -192,6 +214,16 @@ export default {
         show_next_page ()
         {
             return this.members.next_page_url;
+        },
+
+        /**
+         * Return bool for current team being looked at
+         */
+        showLeaderboard ()
+        {
+            return this.teams.find(team => team.id === this.viewTeam).leaderboards
+                ? 'Hide from Leaderboards'
+                : 'Show on Leaderboards';
         },
 
         /**
@@ -317,7 +349,15 @@ export default {
         nextPage ()
         {
             this.$store.dispatch('NEXT_MEMBERS_PAGE', this.viewTeam);
-        }
+        },
+
+        /**
+         *
+         */
+        async toggleLeaderboardVis ()
+        {
+            await this.$store.dispatch('TOGGLE_LEADERBOARD_VISIBILITY', this.viewTeam);
+        },
     }
 }
 </script>

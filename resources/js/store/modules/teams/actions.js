@@ -147,6 +147,22 @@ export const actions = {
     },
 
     /**
+     * Get all teams for a global team leaderboard
+     */
+    async GET_TEAMS_LEADERBOARD (context)
+    {
+        await axios.get('/teams/leaderboard')
+            .then(response => {
+                console.log('get_teams_leaderboard', response);
+
+                context.commit('teamsLeaderboard', response.data);
+            })
+            .catch(error => {
+                console.error('get_teams_leaderboard', error);
+            });
+    },
+
+    /**
      * Get paginated team members for team_id
      */
     async GET_TEAM_MEMBERS (context, payload)
@@ -330,6 +346,36 @@ export const actions = {
         })
         .catch(error => {
             console.error('save_team_settings', error);
+        });
+    },
+
+    /**
+     * Show or Hide the Team on the shared TeamsLeaderboard
+     */
+    async TOGGLE_LEADERBOARD_VISIBILITY (context, payload)
+    {
+        const title = i18n.t('notifications.success');
+        const body = 'Visibility changed';
+
+        await axios.post('/teams/leaderboard/visibility', {
+            id: payload
+        })
+        .then(response => {
+            console.log('toggle_leaderboard_visibility', response);
+
+            if (response.data.success)
+            {
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                    position: 'top-right'
+                });
+
+                context.commit('toggleTeamLeaderboardVis', payload);
+            }
+        })
+        .catch(error => {
+            console.error('toggle_leaderboard_visibility', error);
         });
     }
 

@@ -16,7 +16,8 @@ class Team extends Model
     	'total_litter',
     	'leader',
         'created_by',
-        'identifier'
+        'identifier',
+        'leaderboards'
     ];
 
     /**
