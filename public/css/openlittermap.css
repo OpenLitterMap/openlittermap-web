@@ -248,6 +248,10 @@ html {
     color: #363636 !important;
 }
 
+.vfc-main-container {
+    width: 21em !important;
+}
+
 .vh100 {
     height: 100vh;
 }

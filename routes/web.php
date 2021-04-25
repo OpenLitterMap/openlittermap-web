@@ -111,6 +111,8 @@ Route::post('/profile/photos/remaining/{id}', 'PhotosController@remaining');
 // The user can delete photos
 Route::post('/profile/photos/delete', 'PhotosController@deleteImage');
 
+Route::get('/profile/my-photos', 'User\UserPhotoController@index');
+
 /**
  * USER SETTINGS
  */

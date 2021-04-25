@@ -156,6 +156,22 @@ export const actions = {
     },
 
     /**
+     *
+     */
+    async LOAD_MY_PHOTOS (context)
+    {
+        await axios.get('/profile/my-photos')
+            .then(response => {
+                console.log('load_my_photos', response);
+
+                context.commit('myProfilePhotos', response.data);
+            })
+            .catch(error => {
+                console.error('load_my_photos', error);
+            });
+    },
+
+    /**
      * Try to log the user in
      * Todo - return the user object
      */

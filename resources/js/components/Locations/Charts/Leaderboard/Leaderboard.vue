@@ -1,4 +1,4 @@
-<template>
+w<template>
 	<div class="columns">
 		<div class="column is-three-quarters is-offset-1">
 			<table class="table is-fullwidth" style="background-color: transparent;">

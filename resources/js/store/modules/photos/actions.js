@@ -71,6 +71,40 @@ export const actions = {
     },
 
     /**
+     * Load the previous page of photos
+     */
+    async PREVIOUS_PHOTOS_PAGE (context)
+    {
+        await axios.get(context.state.paginate.prev_page_url)
+            .then(response => {
+                console.log('previous_photos_url', response);
+
+                // update photos
+                context.commit('paginatedPhotos', response.data);
+            })
+            .catch(error => {
+                console.error('previous_photos_url', error);
+            });
+    },
+
+    /**
+     * Load the next page of photos
+     */
+    async NEXT_PHOTOS_PAGE (context)
+    {
+        await axios.get(context.state.paginate.next_page_url)
+            .then(response => {
+                console.log('next_photos_page', response);
+
+                // update photos
+                context.commit('paginatedPhotos', response.data);
+            })
+            .catch(error => {
+                console.error('next_photos_page', error);
+            });
+    },
+
+    /**
      * Select page from pagination
      *
      * @payload = pageSelected
