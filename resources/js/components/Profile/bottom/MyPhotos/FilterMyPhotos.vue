@@ -2,12 +2,20 @@
     <!-- Filters -->
     <div class="flex mb1">
 
-        <input
-            class="input mr1"
-            placeholder="Search by ID"
-            v-model="filter_by_id"
-            @input="search"
-        />
+        <div class="field flex-1 mb0 pt0 mr1">
+            <div class="control has-icons-left">
+                <input
+                    class="input w10"
+                    placeholder="Search by ID"
+                    v-model="filter_by_id"
+                    @input="search"
+                />
+
+                <span class="icon is-small is-left z-index-0">
+                    <i :class="spinner" />
+                </span>
+            </div>
+        </div>
 
         <!-- Calendar -->
         <div :class="calendar">
@@ -31,12 +39,12 @@
             </div>
         </div>
 
-        <select class="input mr1">
-            <option v-for="period in periods" :value="period">{{ getPeriod(period) }}</option>
+        <select class="input mr1" v-model="period" @change="getPhotos">
+            <option v-for="time in periods" :value="time">{{ getPeriod(time) }}</option>
         </select>
 
-        <select class="input">
-            <option selected disabled>Verified</option>
+        <select class="input" v-model="verifiedIndex" @change="getPhotos">
+            <option selected disabled :value="null">Verified</option>
             <option v-for="i in verifiedIndices" :value="i">{{ i }}</option>
         </select>
     </div>
@@ -52,11 +60,11 @@ export default {
     },
     data () {
         return {
-            period: 'created_at',
             periods: [
                 'created_at',
                 'datetime'
             ],
+            processing: false,
             showCalendar: false,
             verifiedIndices: [
                 0,1,2,3,4
@@ -84,9 +92,11 @@ export default {
             },
             set (v) {
                 this.$store.commit('filter_photos_calendar', {
-                    min: v.dateRange.start.date,
-                    max: v.dateRange.end.date
+                    min: v.dateRange.start,
+                    max: v.dateRange.end
                 });
+
+                if (v.dateRange.end) this.getPhotos();
             }
         },
 
@@ -99,7 +109,25 @@ export default {
             },
             set (v) {
                 this.$store.commit('filter_photos', {
-                    key: id,
+                    key: 'id',
+                    v
+                });
+            }
+        },
+
+        /**
+         * Filter the photos by created_at or datetime
+         *
+         * Created_at = when the photo was uploaded
+         * Datetime = when the photo was taken
+         */
+        period: {
+            get () {
+                return this.$store.state.photos.filters.period;
+            },
+            set (v) {
+                this.$store.commit('filter_photos', {
+                    key: 'period',
                     v
                 });
             }
@@ -113,6 +141,31 @@ export default {
         showCalendarDates ()
         {
             return 'Show Calendar';
+        },
+
+        /**
+         * Animate the spinner when searching by id
+         */
+        spinner ()
+        {
+            return this.processing
+                ? 'fa fa-refresh fa-spin'
+                : 'fa fa-refresh';
+        },
+
+        /**
+         * Stage of verification to filter photos by
+         */
+        verifiedIndex: {
+            get () {
+                return this.$store.state.photos.filters.verified;
+            },
+            set (v) {
+                this.$store.commit('filter_photos', {
+                    key: 'verified',
+                    v
+                });
+            }
         }
     },
     methods: {
@@ -128,13 +181,29 @@ export default {
         },
 
         /**
+         * Return the users photos based on the current filters
+         */
+        async getPhotos ()
+        {
+            await this.$store.dispatch('GET_USERS_FILTERED_PHOTOS');
+        },
+
+        /**
          * Filter photos by ID
          */
         search ()
         {
-            // timeout
-            // show spinner
-            // dispatch request to filter
+            this.processing = true;
+
+            if (this.timeout) clearTimeout(this.timeout);
+
+            this.timeout = setTimeout(async () => {
+
+                await this.getPhotos();
+
+                this.processing = false;
+
+            }, 500);
         },
 
         /**

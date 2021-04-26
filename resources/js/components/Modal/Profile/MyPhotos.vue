@@ -21,7 +21,10 @@
                 <tr v-for="photo in photos">
 
                     <td @click="toggle(photo.id)">
-                        <input type="checkbox" v-model="photo.selected" />
+                        <input
+                            type="checkbox"
+                            v-model="photo.selected"
+                        />
                     </td>
 
                     <td>
@@ -118,7 +121,6 @@ export default {
         {
             return this.$store.state.photos.paginate.data;
         },
-
     },
     methods: {
 

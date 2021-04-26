@@ -18,6 +18,44 @@ export const actions = {
     },
 
     /**
+     * Return paginated filtered array of the users photos,
+     */
+    async GET_USERS_FILTERED_PHOTOS (context)
+    {
+        console.log('filters', context.state.filters);
+
+        await axios.get('/user/profile/photos/filter', {
+            params: {
+                filters: context.state.filters
+            }
+        })
+        .then(response => {
+            console.log('get_users_filtered_photos', response);
+
+
+        })
+        .catch(error => {
+            console.error('get_users_filtered_photos', error);
+        });
+    },
+
+    /**
+     * Get non filtered paginated array of the users photos
+     */
+    async LOAD_MY_PHOTOS (context)
+    {
+        await axios.get('/user/profile/photos/index')
+            .then(response => {
+                console.log('load_my_photos', response);
+
+                context.commit('myProfilePhotos', response.data);
+            })
+            .catch(error => {
+                console.error('load_my_photos', error);
+            });
+    },
+
+    /**
      * When an image is submitted, we want to get the next image for tagging
      *
      * Since there is 1 less pagination, we want to reload the same page we are currently on

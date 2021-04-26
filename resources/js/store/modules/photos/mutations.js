@@ -7,7 +7,16 @@ export const mutations = {
      */
     filter_photos (state, payload)
     {
-        state.filters[payload.id] = payload.v;
+        state.filters[payload.key] = payload.v;
+    },
+
+    /**
+     * The min and max date to filter the users photos by
+     */
+    filter_photos_calendar (state, payload)
+    {
+        state.filters.dateRange.start = payload.min;
+        state.filters.dateRange.end = payload.max;
     },
 
     /**

@@ -111,7 +111,11 @@ Route::post('/profile/photos/remaining/{id}', 'PhotosController@remaining');
 // The user can delete photos
 Route::post('/profile/photos/delete', 'PhotosController@deleteImage');
 
-Route::get('/profile/my-photos', 'User\UserPhotoController@index');
+// Paginated array of the users photos (no filters)
+Route::get('/user/profile/photos/index', 'User\UserPhotoController@index');
+
+// Filtered paginated array of the users photos
+Route::get('/user/profile/photos/filter', 'User\UserPhotoController@filter');
 
 /**
  * USER SETTINGS

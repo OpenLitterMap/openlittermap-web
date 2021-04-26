@@ -1,16 +1,12 @@
 export const init = {
     filters: {
         id: '',
-        calendarData: {
-            dateRange: {
-                start: {
-                    date: null
-                },
-                end: {
-                    date: null
-                }
-            }
+        dateRange: {
+            start: null,
+            end: null
         },
+        period: 'created_at',
+        verified: null
     },
     paginate: {
         prev_page_url: null,
