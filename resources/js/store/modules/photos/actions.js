@@ -22,8 +22,6 @@ export const actions = {
      */
     async GET_USERS_FILTERED_PHOTOS (context)
     {
-        console.log('filters', context.state.filters);
-
         await axios.get('/user/profile/photos/filter', {
             params: {
                 filters: context.state.filters
@@ -32,7 +30,8 @@ export const actions = {
         .then(response => {
             console.log('get_users_filtered_photos', response);
 
-
+            // update count
+            context.commit('myProfilePhotos', response.data.paginate);
         })
         .catch(error => {
             console.error('get_users_filtered_photos', error);

@@ -84,11 +84,19 @@ export default {
         },
 
         /**
+         * Shortcut to filters object
+         */
+        filters ()
+        {
+            return this.$store.state.photos.filters;
+        },
+
+        /**
          * Filter by calendar dates
          */
         filter_by_calendar: {
             get () {
-                return this.$store.state.photos.filters.calendar;
+                return this.filters.calendar;
             },
             set (v) {
                 this.$store.commit('filter_photos_calendar', {
@@ -105,7 +113,7 @@ export default {
          */
         filter_by_id: {
             get () {
-                return this.$store.state.photos.filters.id;
+                return this.filters.id;
             },
             set (v) {
                 this.$store.commit('filter_photos', {
@@ -123,7 +131,7 @@ export default {
          */
         period: {
             get () {
-                return this.$store.state.photos.filters.period;
+                return this.filters.period;
             },
             set (v) {
                 this.$store.commit('filter_photos', {
@@ -140,7 +148,9 @@ export default {
          */
         showCalendarDates ()
         {
-            return 'Show Calendar';
+            return (this.filters.dateRange.start && this.filters.dateRange.end)
+                ? `${this.filters.dateRange.start} - ${this.filters.dateRange.end}`
+                : 'Choose Dates';
         },
 
         /**
@@ -158,7 +168,7 @@ export default {
          */
         verifiedIndex: {
             get () {
-                return this.$store.state.photos.filters.verified;
+                return this.filters.verified;
             },
             set (v) {
                 this.$store.commit('filter_photos', {

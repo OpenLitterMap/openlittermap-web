@@ -54,7 +54,6 @@ export default {
     {
         return {
             btn: 'button is-medium is-primary',
-            disabled: false,
             processing: false
         };
     },
@@ -123,14 +122,6 @@ export default {
         },
 
         /**
-         * Shortcut for modal.type
-         */
-        type ()
-        {
-            return this.$store.state.modal.type;
-        },
-
-        /**
          * Get the title for the modal
          */
         title ()
@@ -141,12 +132,12 @@ export default {
         },
 
         /**
-         * If disabledConfirm is true, confirm button is disabled, default = false
+         * Shortcut for modal.type
          */
-        disabledConfirm ()
+        type ()
         {
-            return false;
-        },
+            return this.$store.state.modal.type;
+        }
     },
     methods: {
 
@@ -155,12 +146,10 @@ export default {
          */
         async action ()
         {
-            this.disabled = true;
             this.processing = true;
 
             await this.$store.dispatch(this.$store.state.modal.action);
 
-            this.disabled = false;
             this.processing = false;
         },
 

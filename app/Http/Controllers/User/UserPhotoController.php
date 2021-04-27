@@ -10,12 +10,14 @@ use App\Http\Controllers\Controller;
 
 class UserPhotoController extends Controller
 {
-    protected $paginate = 1;
+    protected $paginate = 5;
 
     use FilterPhotos;
 
     /**
      * Return filtered array of the users photos
+     *
+     * @return array
      */
     public function filter ()
     {
