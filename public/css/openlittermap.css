@@ -115,6 +115,10 @@ html {
 	margin: auto;
 }
 
+.mb0 {
+    margin-bottom: 0 !important;
+}
+
 .mb-05 {
     margin-bottom: 0.5em;
 }
@@ -224,6 +228,10 @@ html {
 	padding-right: 2em;
 }
 
+.pt0 {
+    padding-top: 0 !important;
+}
+
 .pt1 {
     padding-top: 1em;
 }
@@ -248,6 +256,10 @@ html {
     color: #363636 !important;
 }
 
+.vfc-main-container {
+    width: 21em !important;
+}
+
 .vh100 {
     height: 100vh;
 }
@@ -258,6 +270,10 @@ html {
 
 .vue-simple-suggest.designed .input-wrapper input {
     color: #363636 !important;
+}
+
+.w10 {
+    width: 10em;
 }
 
 .w100 {

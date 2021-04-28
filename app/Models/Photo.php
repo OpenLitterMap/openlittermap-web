@@ -66,6 +66,17 @@ class Photo extends Model
         'bbox_500_assigned_to'
     ];
 
+    protected $appends = ['selected'];
+
+    /**
+     * Create an Accessor that adds ['selected' => false] to each order
+     * The user can select an order to export it
+     */
+    public function getSelectedAttribute ()
+    {
+        return false;
+    }
+
 //    /**
 //     * Observe when this model is being updated
 //     */

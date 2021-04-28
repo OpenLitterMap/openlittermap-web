@@ -5,14 +5,17 @@
 
                 <!-- Header -->
                 <header :class="header">
+                    <p v-show="hasSelected" class="top-left">{{ getSelectedCount }}</p>
+
                     <p class="modal-card-title">{{ title }}</p>
+
                     <i v-show="showIcon" class="fa fa-times close-login" @click="close" />
                 </header>
 
                 <!-- Main content -->
                 <component
                     :class="inner_container"
-                    :is="modalTypes[type]"
+                    :is="type"
                 />
 
             </div>
@@ -27,17 +30,25 @@ import Login from './Auth/Login'
 /* Payments */
 import CreditCard from './Payments/CreditCard'
 
+/* Profile */
+import MyPhotos from './Profile/MyPhotos';
+import AddManyTagsToManyPhotos from './Photos/AddManyTagsToManyPhotos';
+import ConfirmDeleteManyPhotos from './Photos/ConfirmDeleteManyPhotos';
+
 export default {
     name: 'Modal',
     components: {
         Login,
-        CreditCard
+        CreditCard,
+        MyPhotos,
+        AddManyTagsToManyPhotos,
+        ConfirmDeleteManyPhotos
     },
     mounted ()
     {
         // Close modal with 'esc' key
         document.addEventListener('keydown', (e) => {
-            if (e.keyCode == 27)
+            if (e.keyCode === 27)
             {
                 this.close();
             }
@@ -47,40 +58,56 @@ export default {
     {
         return {
             btn: 'button is-medium is-primary',
-            disabled: false,
-            processing: false,
-            modalTypes: {
-                'Login': 'Login',
-                'CreditCard': 'CreditCard'
-            }
+            processing: false
         };
     },
     computed: {
 
         /**
-         * Add ' is-loading' when processing
+         * Show spinner when processing
          */
         button ()
         {
             return this.processing ? this.btn + ' is-loading' : this.btn;
         },
 
-        // /**
-        //  * Text to display on the action button
-        //  */
-        // buttonText ()
-        // {
-        //     return this.$store.state.modal.button;
-        // },
-
         /**
          * What container class to return
          */
         container ()
         {
-            if (this.type == 'CreditCard') return 'transparent-container';
+            if (this.type === 'CreditCard') return 'transparent-container';
+
+            else if (this.type === 'MyPhotos') return 'wide-modal-container';
 
             return 'modal-container';
+        },
+
+        /**
+         * When selecting photos from the MyPhotos table,
+         *
+         * Show x / total
+         */
+        getSelectedCount ()
+        {
+            if (this.type === 'MyPhotos')
+            {
+                return `${this.$store.state.photos.selectedCount} / ${this.$store.state.photos.total}`;
+            }
+
+            return '';
+        },
+
+        /**
+         * The user can select data.
+         *
+         * Show selected / total
+         *
+         * Used by MyPhotos.vue
+         */
+        hasSelected ()
+        {
+            return this.type === 'MyPhotos' && this.$store.state.photos.selectedCount > 0;
         },
 
         /**
@@ -88,7 +115,7 @@ export default {
          */
         header ()
         {
-            if (this.type == 'CreditCard') return '';
+            if (this.type === 'CreditCard') return '';
 
             return 'modal-card-head';
         },
@@ -98,7 +125,7 @@ export default {
          */
         inner_container ()
         {
-            if (this.type == 'Login') return 'inner-login-container';
+            if (this.type === 'Login') return 'inner-login-container';
 
             return 'inner-modal-container';
         },
@@ -108,17 +135,9 @@ export default {
          */
         showIcon ()
         {
-            if (this.type == 'CreditCard') return false;
+            if (this.type === 'CreditCard') return false;
 
             return true;
-        },
-
-        /**
-         * Shortcut for modal.type
-         */
-        type ()
-        {
-            return this.$store.state.modal.type;
         },
 
         /**
@@ -130,12 +149,12 @@ export default {
         },
 
         /**
-         * If disabledConfirm is true, confirm button is disabled, default = false
+         * Shortcut for modal.type
          */
-        disabledConfirm ()
+        type ()
         {
-            return false;
-        },
+            return this.$store.state.modal.type;
+        }
     },
     methods: {
 
@@ -144,12 +163,10 @@ export default {
          */
         async action ()
         {
-            this.disabled = true;
             this.processing = true;
 
             await this.$store.dispatch(this.$store.state.modal.action);
 
-            this.disabled = false;
             this.processing = false;
         },
 
@@ -243,7 +260,12 @@ export default {
         overflow-x: hidden;
         transition: opacity .3s ease;
         text-align: center;
-        z-index: 1000;
+        z-index: 1555;
+    }
+
+    .top-left {
+        position: absolute;
+        left: 2em;
     }
 
     .top-right {
@@ -276,6 +298,22 @@ export default {
         color: #459ef5;
         cursor: pointer;
         margin-top: 1.75em;
+    }
+
+    .wide-modal-container {
+        background-color: #fff;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, .33);
+        display: inline-block;
+        font-family: Helvetica, Arial, sans-serif;
+        position: relative;
+        margin: 30px auto;
+        transition: all .3s ease;
+        width: 1585px;
+
+        @media (max-width: 700px) {
+            width: 80%;
+        }
     }
 
     @media only screen and (max-width: 600px)

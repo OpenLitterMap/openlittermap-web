@@ -30,9 +30,7 @@
         <ProfileTimeSeries />
 
         <!-- Row 3, Column 3 -->
-        <div class="profile-card">
-            <p>Coming soon</p>
-        </div>
+        <ProfilePhotos />
     </section>
 </template>
 
@@ -45,6 +43,7 @@ import ProfileMap from '../../components/Profile/middle/ProfileMap';
 import ProfileCalendar from '../../components/Profile/middle/ProfileCalendar';
 import ProfileDownload from '../../components/Profile/bottom/ProfileDownload';
 import ProfileTimeSeries from '../../components/Profile/bottom/ProfileTimeSeries';
+import ProfilePhotos from '../../components/Profile/bottom/ProfilePhotos';
 
 export default {
     name: 'Profile',
@@ -56,7 +55,8 @@ export default {
         ProfileCategories,
         ProfileMap,
         ProfileCalendar,
-        ProfileDownload
+        ProfileDownload,
+        ProfilePhotos
     },
     async created ()
     {

@@ -48,7 +48,7 @@
 
         <br><br>
 
-        <div v-if="Object.keys(recentTags).length > 0 && this.annotations !== true" class="mb-5">
+        <div v-if="Object.keys(recentTags).length > 0 && this.annotations !== true && this.id !== 0" class="mb-5">
 
             <p class="mb-05">{{ $t('tags.recently-tags') }}</p>
 
@@ -88,14 +88,14 @@
         <br>
 
         <button
-            v-show="!admin"
+            v-show="! admin && this.id !== 0"
             :disabled="checkTags"
             :class="button"
             @click="submit"
         >{{ $t('common.submit') }}</button>
 
-        <!-- Only show these on mobile <= 768px -->
-        <div class="show-mobile">
+        <!-- Only show these on mobile <= 768px, and when not using MyPhotos => AddManyTagsToPhotos (id = 0) -->
+        <div class="show-mobile" v-show="this.id !== 0">
             <br>
             <tags />
 
@@ -117,6 +117,7 @@ import { categories } from '../../extra/categories';
 import { litterkeys } from '../../extra/litterkeys';
 import ClickOutside from 'vue-click-outside';
 
+// When this.id === 0, we are using MyPhotos && AddManyTagsToManyPhotos
 export default {
     name: 'AddTags',
     components: {
