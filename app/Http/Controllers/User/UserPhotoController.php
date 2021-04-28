@@ -11,7 +11,7 @@ use App\Http\Controllers\Controller;
 
 class UserPhotoController extends Controller
 {
-    protected $paginate = 1;
+    protected $paginate = 15;
 
     use FilterPhotos;
 
