@@ -18,7 +18,7 @@ export default {
         {
             this.$store.commit('showModal', {
                 type: 'MyPhotos',
-                title: 'View My Photos'
+                title: 'My Photos'
             });
         }
     }

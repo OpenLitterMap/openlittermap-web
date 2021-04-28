@@ -6,13 +6,12 @@
 
         <table v-else class="table is-fullwidth is-hoverable has-text-centered">
             <thead>
-                <th @click="toggleAll">
+                <th @click="toggleSelectAll">
                     <input type="checkbox" v-model="selectAll" />
                 </th>
                 <th>ID</th>
                 <th>Filename</th>
                 <th>Litter</th>
-                <th>Verification</th>
                 <th>Taken at</th>
                 <th>Uploaded at</th>
             </thead>
@@ -39,10 +38,6 @@
                         <p>{{ photo.total_litter }}</p>
                     </td>
 
-                    <td>
-                        <p>{{ photo.verified }}</p>
-                    </td>
-
                     <td>{{ getDate(photo.datetime) }}</td>
 
                     <td>{{ getDate(photo.created_at) }}</td>
@@ -64,8 +59,18 @@
             >Next</button>
 
             <div class="my-photos-buttons">
-                <button class="button is-medium is-danger mr1">Delete</button>
-                <button class="button is-medium is-primary">Add Tags</button>
+<!-- Todo - test this on production -->
+<!--                <button-->
+<!--                    class="button is-medium is-danger mr1"-->
+<!--                    @click="deletePhotos"-->
+<!--                    :disabled="selectedCount === 0"-->
+<!--                >Delete</button>-->
+
+                <button
+                    class="button is-medium is-primary"
+                    @click="addTags"
+                    :disabled="selectedCount === 0"
+                >Add Tags</button>
             </div>
         </div>
     </div>
@@ -82,8 +87,7 @@ export default {
     },
     data () {
         return {
-            loading: true,
-            selectAll: false
+            loading: true
         };
     },
     async created ()
@@ -107,7 +111,7 @@ export default {
         },
 
         /**
-         * Shortcut to paginate object
+         * Shortcut to pagination object
          */
         paginate ()
         {
@@ -115,14 +119,56 @@ export default {
         },
 
         /**
-         *
+         * Array of paginated photos
          */
         photos ()
         {
-            return this.$store.state.photos.paginate.data;
+            return this.paginate.data;
         },
+
+        /**
+         * Toggle the selected-all checkbox, and all photo.selected values
+         */
+        selectAll: {
+            get () {
+                return this.$store.state.photos.selectAll;
+            },
+            set (v) {
+                this.$store.commit('selectAllPhotos', v);
+            }
+        },
+
+        /**
+         * Number of photos that have been selected
+         */
+        selectedCount ()
+        {
+            return this.$store.state.photos.selectedCount;
+        }
     },
     methods: {
+
+        /**
+         * Load a modal to add 1 or more tags to the selected photos
+         */
+        addTags ()
+        {
+            this.$store.commit('showModal', {
+               type: 'AddManyTagsToManyPhotos',
+               title: 'Add Many Tags'
+            });
+        },
+
+        /**
+         * Load a modal to confirm delete of the selected photos
+         */
+        deletePhotos ()
+        {
+            this.$store.commit('showModal', {
+                type: 'ConfirmDeleteManyPhotos',
+                title: 'Confirm Delete'
+            });
+        },
 
         /**
          * Return formatted date
@@ -149,7 +195,7 @@ export default {
         },
 
         /**
-         *
+         * A checkbox was was selected or de-selected
          */
         toggle (photo_id)
         {
@@ -157,14 +203,10 @@ export default {
         },
 
         /**
-         * Change checkbox value to select all items,
          *
-         * Or all filtered items
          */
-        toggleAll ()
+        toggleSelectAll ()
         {
-            this.selectAll = ! this.selectAll;
-
             this.$store.commit('selectAllPhotos', this.selectAll);
         }
     }

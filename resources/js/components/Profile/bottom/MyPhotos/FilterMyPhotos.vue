@@ -43,10 +43,10 @@
             <option v-for="time in periods" :value="time">{{ getPeriod(time) }}</option>
         </select>
 
-        <select class="input" v-model="verifiedIndex" @change="getPhotos">
-            <option selected disabled :value="null">Verified</option>
-            <option v-for="i in verifiedIndices" :value="i">{{ i }}</option>
-        </select>
+<!--        <select class="input" v-model="verifiedIndex" @change="getPhotos">-->
+<!--            <option disabled :value="null">Verification</option>-->
+<!--            <option v-for="i in verifiedIndices" :value="i">{{ getVerifiedText(i) }}</option>-->
+<!--        </select>-->
     </div>
 </template>
 
@@ -66,9 +66,9 @@ export default {
             ],
             processing: false,
             showCalendar: false,
-            verifiedIndices: [
-                0,1,2,3,4
-            ]
+            // verifiedIndices: [
+            //     0,1
+            // ]
         };
     },
     computed: {
@@ -196,6 +196,16 @@ export default {
         async getPhotos ()
         {
             await this.$store.dispatch('GET_USERS_FILTERED_PHOTOS');
+        },
+
+        /**
+         *
+         */
+        getVerifiedText (i)
+        {
+            return (i === 0)
+                ? 'Not Verified'
+                : 'Verified';
         },
 
         /**

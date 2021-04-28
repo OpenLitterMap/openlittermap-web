@@ -117,6 +117,12 @@ Route::get('/user/profile/photos/index', 'User\UserPhotoController@index');
 // Filtered paginated array of the users photos
 Route::get('/user/profile/photos/filter', 'User\UserPhotoController@filter');
 
+// Add Many Tags to Many Photos
+Route::post('/user/profile/photos/tags/create', 'User\UserPhotoController@create');
+
+// Delete selected photos
+Route::post('/user/profile/photos/delete', 'User\UserPhotoController@destroy');
+
 /**
  * USER SETTINGS
  */

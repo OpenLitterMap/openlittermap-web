@@ -5,11 +5,11 @@
 
                 <!-- Header -->
                 <header :class="header">
+                    <p v-show="hasSelected" class="top-left">{{ getSelectedCount }}</p>
 
                     <p class="modal-card-title">{{ title }}</p>
 
                     <i v-show="showIcon" class="fa fa-times close-login" @click="close" />
-
                 </header>
 
                 <!-- Main content -->
@@ -32,13 +32,17 @@ import CreditCard from './Payments/CreditCard'
 
 /* Profile */
 import MyPhotos from './Profile/MyPhotos';
+import AddManyTagsToManyPhotos from './Photos/AddManyTagsToManyPhotos';
+import ConfirmDeleteManyPhotos from './Photos/ConfirmDeleteManyPhotos';
 
 export default {
     name: 'Modal',
     components: {
         Login,
         CreditCard,
-        MyPhotos
+        MyPhotos,
+        AddManyTagsToManyPhotos,
+        ConfirmDeleteManyPhotos
     },
     mounted ()
     {
@@ -60,7 +64,7 @@ export default {
     computed: {
 
         /**
-         * Add ' is-loading' when processing
+         * Show spinner when processing
          */
         button ()
         {
@@ -80,6 +84,21 @@ export default {
         },
 
         /**
+         * When selecting photos from the MyPhotos table,
+         *
+         * Show x / total
+         */
+        getSelectedCount ()
+        {
+            if (this.type === 'MyPhotos')
+            {
+                return `${this.$store.state.photos.selectedCount} / ${this.$store.state.photos.total}`;
+            }
+
+            return '';
+        },
+
+        /**
          * The user can select data.
          *
          * Show selected / total
@@ -88,7 +107,7 @@ export default {
          */
         hasSelected ()
         {
-            return false; // this.type === 'MyPhotos';
+            return this.type === 'MyPhotos' && this.$store.state.photos.selectedCount > 0;
         },
 
         /**
@@ -126,9 +145,7 @@ export default {
          */
         title ()
         {
-            return this.hasSelected
-                ? 'x / total'
-                : this.$store.state.modal.title;
+            return this.$store.state.modal.title;
         },
 
         /**
@@ -244,6 +261,11 @@ export default {
         transition: opacity .3s ease;
         text-align: center;
         z-index: 1555;
+    }
+
+    .top-left {
+        position: absolute;
+        left: 2em;
     }
 
     .top-right {

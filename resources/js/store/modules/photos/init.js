@@ -14,6 +14,10 @@ export const init = {
         data: []
     },
     remaining: 0,
-    total: 0,
+    selectedCount: 0,
+    selectAll: false,
+    inclIds: [], // when selectAll is false
+    exclIds: [], // when selectAll is true
+    total: 0, // number of photos available
     verified: 0 // level of verification
 };

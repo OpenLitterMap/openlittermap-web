@@ -1,9 +1,32 @@
 export const actions = {
 
     /**
+     * MyPhotos.vue the user has confirmed they want to delete the selected photos
+     */
+    async DELETE_SELECTED_PHOTOS (context)
+    {
+        await axios.post('/user/profile/photos/delete', {
+            selectAll: context.state.photos.selectAll,
+            inclIds: context.state.photos.inclIds,
+            exclIds: context.state.photos.exclIds,
+            filters: context.state.photos.filters,
+        })
+        .then(response => {
+            console.log('delete_selected_photos', response);
+
+            // success notification
+
+            // filter out selected photos
+        })
+        .catch(error => {
+            console.error('delete_selected_photos', error);
+        });
+    },
+
+    /**
      * Get unverified photos for tagging
      */
-    async GET_PHOTOS_FOR_TAGGING (context, payload)
+    async GET_PHOTOS_FOR_TAGGING (context)
     {
         await axios.get('photos')
             .then(response => {
@@ -30,8 +53,8 @@ export const actions = {
         .then(response => {
             console.log('get_users_filtered_photos', response);
 
-            // update count
             context.commit('myProfilePhotos', response.data.paginate);
+            context.commit('photosCount', response.data.count);
         })
         .catch(error => {
             console.error('get_users_filtered_photos', error);
@@ -47,7 +70,8 @@ export const actions = {
             .then(response => {
                 console.log('load_my_photos', response);
 
-                context.commit('myProfilePhotos', response.data);
+                context.commit('myProfilePhotos', response.data.paginate);
+                context.commit('photosCount', response.data.count);
             })
             .catch(error => {
                 console.error('load_my_photos', error);
@@ -117,7 +141,7 @@ export const actions = {
                 console.log('previous_photos_url', response);
 
                 // update photos
-                context.commit('paginatedPhotos', response.data);
+                context.commit('paginatedPhotos', response.data.paginate);
             })
             .catch(error => {
                 console.error('previous_photos_url', error);
@@ -134,7 +158,7 @@ export const actions = {
                 console.log('next_photos_page', response);
 
                 // update photos
-                context.commit('paginatedPhotos', response.data);
+                context.commit('paginatedPhotos', response.data.paginate);
             })
             .catch(error => {
                 console.error('next_photos_page', error);
