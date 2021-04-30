@@ -2,48 +2,24 @@
     <div>
         <FilterMyPhotos />
 
-        <p v-if="loading">Loading...</p>
+        <div class="my-photos-grid-container">
 
-        <table v-else class="table is-fullwidth is-hoverable has-text-centered">
-            <thead>
-                <th @click="toggleSelectAll">
-                    <input type="checkbox" v-model="selectAll" />
-                </th>
-                <th>ID</th>
-                <th>Filename</th>
-                <th>Litter</th>
-                <th>Taken at</th>
-                <th>Uploaded at</th>
-            </thead>
+            <div
+                v-for="photo in photos"
+                class="my-grid-photo"
+                :key="photo.id"
+                @click="select(photo.id)"
+            >
+                <img :src="photo.filename" />
 
-            <tbody>
-                <tr v-for="photo in photos">
+                <img
+                    v-if="photo.selected"
+                    src="/assets/images/checkmark.png"
+                    class="grid-checkmark"
+                />
+            </div>
 
-                    <td @click="toggle(photo.id)">
-                        <input
-                            type="checkbox"
-                            v-model="photo.selected"
-                        />
-                    </td>
-
-                    <td>
-                        <p>{{ photo.id }}</p>
-                    </td>
-
-                    <td>
-                        <p class="has-text-left">{{ photo.filename }}</p>
-                    </td>
-
-                    <td>
-                        <p>{{ photo.total_litter }}</p>
-                    </td>
-
-                    <td>{{ getDate(photo.datetime) }}</td>
-
-                    <td>{{ getDate(photo.created_at) }}</td>
-                </tr>
-            </tbody>
-        </table>
+        </div>
 
         <div class="flex">
             <button
@@ -89,14 +65,6 @@ export default {
         return {
             loading: true
         };
-    },
-    async created ()
-    {
-        this.loading = true;
-
-        await this.$store.dispatch('LOAD_MY_PHOTOS');
-
-        this.loading = false;
     },
     computed: {
 
@@ -195,9 +163,9 @@ export default {
         },
 
         /**
-         * A checkbox was was selected or de-selected
+         * A photo was was selected or de-selected
          */
-        toggle (photo_id)
+        select (photo_id)
         {
             this.$store.commit('togglePhotoSelected', photo_id);
         },
@@ -214,6 +182,30 @@ export default {
 </script>
 
 <style scoped>
+
+    .my-photos-grid-container {
+        display: grid;
+        grid-template-rows: repeat(3, 1fr);
+        grid-template-columns: repeat(8, 1fr);
+        grid-row-gap: 1em;
+        grid-column-gap: 1em;
+    }
+
+    .my-grid-photo {
+        max-height: 10em;
+        max-width: 10em;
+        position: relative;
+    }
+
+    .grid-checkmark {
+        position: absolute;
+        height: 3em;
+        bottom: 0;
+        right: 0;
+        border: 5px solid #0ca3e0;
+        border-radius: 50%;
+        padding: 5px;
+    }
 
     .my-photos-buttons {
         display: flex;

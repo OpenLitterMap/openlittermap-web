@@ -14,8 +14,12 @@ export default {
         /**
          * Load a modal to view the users photos
          */
-        load ()
+        async load ()
         {
+            this.$store.commit('resetPhotoState');
+
+            await this.$store.dispatch('LOAD_MY_PHOTOS');
+
             this.$store.commit('showModal', {
                 type: 'MyPhotos',
                 title: 'My Photos'

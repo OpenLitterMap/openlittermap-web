@@ -66,9 +66,17 @@ export const mutations = {
     },
 
     /**
-     * Reset state, when the user logs out
+     * Called when the user logs out
      */
     resetState (state)
+    {
+        Object.assign(state, init);
+    },
+
+    /**
+     * Called when MyPhotos is loaded
+     */
+    resetPhotoState (state)
     {
         Object.assign(state, init);
     },
