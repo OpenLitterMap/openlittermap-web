@@ -86,16 +86,17 @@ export const mutations = {
      *
      * Update selectedCount
      */
-    selectAllPhotos (state, payload)
+    selectAllPhotos (state)
     {
+        state.selectAll = ! state.selectAll;
+
         let photos = [...state.paginate.data];
 
         photos.forEach(photo => {
-            photo.selected = payload;
+            photo.selected = state.selectAll;
         });
 
         state.paginate.data = photos;
-        state.selectAll = payload;
 
         state.selectedCount = state.selectAll ? state.total : 0;
     },

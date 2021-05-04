@@ -95,18 +95,6 @@ export default {
         },
 
         /**
-         * Toggle the selected-all checkbox, and all photo.selected values
-         */
-        selectAll: {
-            get () {
-                return this.$store.state.photos.selectAll;
-            },
-            set (v) {
-                this.$store.commit('selectAllPhotos', v);
-            }
-        },
-
-        /**
          * Number of photos that have been selected
          */
         selectedCount ()
@@ -168,14 +156,6 @@ export default {
         select (photo_id)
         {
             this.$store.commit('togglePhotoSelected', photo_id);
-        },
-
-        /**
-         *
-         */
-        toggleSelectAll ()
-        {
-            this.$store.commit('selectAllPhotos', this.selectAll);
         }
     }
 };

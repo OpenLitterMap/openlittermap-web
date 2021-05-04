@@ -17,6 +17,10 @@
             </div>
         </div>
 
+        <button class="button is-primary select-all-photos" @click="toggleAll">
+            {{ getSelectAllText }}
+        </button>
+
         <!-- Calendar -->
         <div :class="calendar">
             <div class="dropdown-trigger">
@@ -124,6 +128,16 @@ export default {
         },
 
         /**
+         *
+         */
+        getSelectAllText ()
+        {
+            return this.selectAll
+                ? 'De-select all'
+                : 'Select all';
+        },
+
+        /**
          * Filter the photos by created_at or datetime
          *
          * Created_at = when the photo was uploaded
@@ -138,6 +152,18 @@ export default {
                     key: 'period',
                     v
                 });
+            }
+        },
+
+        /**
+         * Toggle the selected-all checkbox, and all photo.selected values
+         */
+        selectAll: {
+            get () {
+                return this.$store.state.photos.selectAll;
+            },
+            set (v) {
+                this.$store.commit('selectAllPhotos', v);
             }
         },
 
@@ -227,6 +253,14 @@ export default {
         },
 
         /**
+         *
+         */
+        toggleAll ()
+        {
+            this.$store.commit('selectAllPhotos', this.selectAll);
+        },
+
+        /**
          * Show or Hide the dropdown calendar
          */
         toggleCalendar ()
@@ -238,5 +272,10 @@ export default {
 </script>
 
 <style scoped>
+
+    .select-all-photos {
+        min-width: 9em;
+        margin-right: 1em;
+    }
 
 </style>
