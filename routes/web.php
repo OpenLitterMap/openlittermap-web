@@ -9,10 +9,6 @@ use Illuminate\Support\Facades\Route;
 //    return view('emails.update23', ['user' => $user]);
 //});
 
-Route::get('/test', function () {
-    return 'hello';
-});
-
 Route::get('/', 'HomeController@index');
 Route::get('/about', 'HomeController@index');
 Route::get('/world', 'HomeController@index');
