@@ -1,13 +1,8 @@
 <?php
 
+use App\Models\Photo;
+use App\Models\User\User;
 use Illuminate\Support\Facades\Route;
-
-//Route::get('test', function () {
-//
-//    $user = \App\Models\User\User::first();
-//
-//    return view('emails.update23', ['user' => $user]);
-//});
 
 Route::get('/', 'HomeController@index');
 Route::get('/about', 'HomeController@index');

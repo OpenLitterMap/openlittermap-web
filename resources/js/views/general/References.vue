@@ -93,6 +93,12 @@ export default {
                     title: 'Autonomous, Onboard Vision-Based Trash and Litter Detection in Low Altitude Aerial Images Collected by an Unmanned Aerial Vehicle',
                     link: 'https://www.researchgate.net/profile/Mateusz-Piechocki-2/publication/349869848_Autonomous_Onboard_Vision-Based_Trash_and_Litter_Detection_in_Low_Altitude_Aerial_Images_Collected_by_an_Unmanned_Aerial_Vehicle/links/60450db2a6fdcc9c781dc33b/Autonomous-Onboard-Vision-Based-Trash-and-Litter-Detection-in-Low-Altitude-Aerial-Images-Collected-by-an-Unmanned-Aerial-Vehicle.pdf',
                     author: 'Kraft, M., et al.'
+                },
+                {
+                    date: '2021/05/06',
+                    title: 'Blockchain technologies to address smart city and society challenges',
+                    link: 'https://www.sciencedirect.com/science/article/abs/pii/S0747563221001771',
+                    author: 'Mora, M., et al.'
                 }
             ]
         }

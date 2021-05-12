@@ -1,5 +1,6 @@
 <template>
     <section class="hero fullheight is-primary is-bold tag-container">
+
         <loading v-if="loading" v-model:active="loading" :is-full-page="true" />
 
         <div v-else class="pt2">
@@ -162,8 +163,7 @@ export default {
 
         this.loading = false;
     },
-    data ()
-    {
+    data () {
         return {
             loading: true
         };
