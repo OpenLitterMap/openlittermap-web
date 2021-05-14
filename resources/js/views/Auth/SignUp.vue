@@ -2,30 +2,30 @@
     <section class="section hero fullheight is-primary is-bold">
         <div class="container">
             <h1 class="title">
-                Ready to join the geospatial revolution?
+                {{ $t('auth.signup.ready-to-join') }}
             </h1>
             <h2 class="subtitle">
-                If you like our work, OpenLitterMap could really use your help.
+                {{ $t('auth.signup.join-subtitle') }}
             </h2>
 
             <div class="columns">
                 <div class="column wow bounceInRight">
                     <div id="first" class="box">
                         <p class="card-header-title" style="color: #3273dc; margin-bottom: -20px;">
-                            FREE
+                            {{ $t('auth.signup.free-plan') }}
                         </p>
                         <div class="content">
                             <ul>
-                                <li>Upload 1000 images per day</li>
-                                <li>Unlock Badges + Rewards</li>
-                                <li>Earn Littercoin</li>
-                                <li>Compete in multiple different leaderboards</li>
+                                <li>{{ $t('auth.signup.free-plan-feature1') }}</li>
+                                <li>{{ $t('auth.signup.free-plan-feature2') }}</li>
+                                <li>{{ $t('auth.signup.free-plan-feature3') }}</li>
+                                <li>{{ $t('auth.signup.free-plan-feature4') }}</li>
                             </ul>
                         </div>
                         <div style="text-align: center;">
                             <router-link :to="'/join?plan=free'">
                                 <button class="button is-primary is-center" style="margin-top: -10px;">
-                                    I'm in
+                                    {{ $t('auth.signup.free-plan-join') }}
                                 </button>
                             </router-link>
                         </div>
@@ -35,19 +35,19 @@
                 <div class="column wow bounceInDown">
                     <div class="box">
                         <p class="card-header-title" style="color: orange;">
-                            STARTUP <strong style="padding-left: 30px;">€5 per month</strong>
+                            {{ $t('auth.signup.startup-plan') }} <strong style="padding-left: 30px;">{{ $t('auth.signup.startup-plan-donation') }}</strong>
                         </p>
                         <div class="content">
                             <ul>
-                                <li>Finance the development of OpenLitterMap.</li>
-                                <li>Help us cover our costs.</li>
-                                <li>Sit back and enjoy the updates.</li>
+                                <li>{{ $t('auth.signup.startup-plan-feature1') }}</li>
+                                <li>{{ $t('auth.signup.startup-plan-feature2') }}</li>
+                                <li>{{ $t('auth.signup.startup-plan-feature3') }}</li>
                             </ul>
                         </div>
                         <div style="text-align: center;">
                             <router-link :to="'/join?plan=startup'">
                                 <button class="button is-warning">
-                                    I'll support!
+                                    {{ $t('auth.signup.startup-plan-join') }}
                                 </button>
                             </router-link>
                         </div>
@@ -57,19 +57,19 @@
                 <div class="column wow bounceInLeft">
                     <div class="box">
                         <p class="card-header-title" style="color: green;">
-                            BASIC <strong style="padding-left: 30px;">€9.99 per month</strong>
+                            {{ $t('auth.signup.basic-plan') }}<strong style="padding-left: 30px;">{{ $t('auth.signup.basic-plan-donation') }}</strong>
                         </p>
                         <div class="content">
                             <ul>
-                                <li>Finance the development of OpenLitterMap.</li>
-                                <li>Help us cover our costs.</li>
-                                <li>Sit back and enjoy the updates.</li>
+                                <li>{{ $t('auth.signup.basic-plan-feature1') }}</li>
+                                <li>{{ $t('auth.signup.basic-plan-feature2') }}</li>
+                                <li>{{ $t('auth.signup.basic-plan-feature3') }}</li>
                             </ul>
                         </div>
                         <div style="text-align: center;">
                             <router-link :to="'/join?plan=basic'">
                                 <button class="button is-success">
-                                    I'll support!
+                                    {{ $t('auth.signup.basic-plan-join') }}
                                 </button>
                             </router-link>
                         </div>
@@ -81,19 +81,19 @@
                 <div class="column is-4 is-offset-2 wow bounceInLeft">
                     <div class="box">
                         <p class="card-header-title">
-                            ADVANCED <strong style="padding-left: 12px;">€20 per month</strong>
+                            {{ $t('auth.signup.advanced-plan') }} <strong style="padding-left: 12px;">{{ $t('auth.signup.advanced-plan-donation') }}  </strong>
                         </p>
                         <div class="content">
                             <ul>
-                                <li>Finance the development of OpenLitterMap.</li>
-                                <li>Help us cover our costs.</li>
-                                <li>Sit back and enjoy the updates.</li>
+                                <li>{{ $t('auth.signup.advanced-plan-feature1') }}</li>
+                                <li>{{ $t('auth.signup.advanced-plan-feature2') }}</li>
+                                <li>{{ $t('auth.signup.advanced-plan-feature3') }}</li>
                             </ul>
                         </div>
                         <div style="text-align: center;">
                             <router-link :to="'/join?plan=advanced'">
                                 <button class="button is-dark">
-                                    I'll support!
+                                    {{ $t('auth.signup.advanced-plan-join') }}
                                 </button>
                             </router-link>
                         </div>
@@ -103,19 +103,19 @@
                 <div class="column is-4 wow bounceInRight">
                     <div class="box">
                         <p class="card-header-title" style="color: red;">
-                            PRO <strong style="padding-left: 45px;">€30 per month</strong>
+                            {{ $t('auth.signup.pro-plan') }} <strong style="padding-left: 45px;">{{ $t('auth.signup.pro-plan-donation') }}</strong>
                         </p>
                         <div class="content">
                             <ul>
-                                <li>Finance the development of OpenLitterMap.</li>
-                                <li>Help us cover our costs.</li>
-                                <li>Sit back and enjoy the updates.</li>
+                                <li>{{ $t('auth.signup.pro-plan-feature1') }}</li>
+                                <li>{{ $t('auth.signup.pro-plan-feature2') }}</li>
+                                <li>{{ $t('auth.signup.pro-plan-feature3') }}</li>
                             </ul>
                         </div>
                         <div style="text-align: center;">
                             <router-link :to="'/join?plan=pro'">
                                 <button class="button is-danger">
-                                    I mean serious business.
+                                    {{ $t('auth.signup.pro-plan-join') }}
                                 </button>
                             </router-link>
                         </div>

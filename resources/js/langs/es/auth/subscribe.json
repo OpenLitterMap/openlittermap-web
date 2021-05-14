@@ -1,0 +1,14 @@
+{
+    "title": "¿Estas lista?",
+    "subtitle": "Regístrate para convertirte en un 'mapper' de basura experto y ayúdanos a vencer la contaminación por plásticos.",
+    "crowdfunding-message": "Por favor, considera apoyar nuestro trabajo mediante el crowdfunding de OpenLitterMap con tan sólo 6 céntimos al día con una suscripción mensual para ayudar a crecer y desarrollar esta importante plataforma.",
+    "form-create-account": "Crea tu cuenta",
+    "form-field-name": "Nombre",
+    "form-field-unique-id": "Identificador único",
+    "form-field-email": "Dirección de correo electrónico",
+    "form-field-password": "Contraseña. Debe contener mayúsculas, minúsculas y un número.", 
+    "form-field-pass-confirm": "Confirmar contraseña",
+    "form-account-conditions": "He leído y acepto los <a href='/terms'>Términos y Condiciones de Uso</a> y la <a href='/privacy'>Política de privacidad</a>",
+    "form-btn": "Registrarme",
+    "create-account-note": "Nota: Si no recibes el correo electrónico de verificación en tu bandeja de entrada, comprueba en la carpeta de correo no deseado."
+}

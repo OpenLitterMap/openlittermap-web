@@ -22,7 +22,7 @@
                             <div class="columns">
                                 <div class="column flex">
                                     <h4 class="flex-1">
-                                        Previous Target:
+                                        {{ $t('location.maps8a') }}:
                                         <br>
                                         <strong style="color: white;">
                                             {{ this.previousXp | commas }} {{ $t('location.maps9') }}

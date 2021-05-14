@@ -4,10 +4,10 @@
             <div class="hero-body">
                 <div class="container">
                     <h1 class="title">
-                        Are you ready?
+                        {{ $t('auth.subscribe.title') }}
                     </h1>
                     <h2 class="subtitle">
-                        Sign up to become an expert litter mapper and help us defeat plastic pollution.
+                        {{ $t('auth.subscribe.subtitle') }}
                     </h2>
                 </div>
             </div>

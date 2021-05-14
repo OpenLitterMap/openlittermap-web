@@ -1,7 +1,9 @@
-import { en } from './en'
-import { nl } from './nl'
+import { en } from './en';
+import { nl } from './nl';
+import { es } from './es';
 
 export const langs = {
     'en': en,
-	'nl': nl
+    'nl': nl,
+    'es': es,
 };
