@@ -54,8 +54,13 @@
 
                     <p class="footer-link" @click="open('https://medium.com/@littercoin')">{{ $t('home.footer.blog') }}</p>
                     <p class="footer-link" @click="open('https://opengeospatialdata.springeropen.com/articles/10.1186/s40965-018-0050-y')">{{ $t('home.footer.research-paper') }}</p>
+<<<<<<< HEAD
                     <router-link tag="p" to="/references" class="footer-link">{{ $t('home.footer.references') }}</router-link>
                     <router-link tag="p" to="/credits" class="footer-link">Credits</router-link>
+=======
+                    <router-link to="/references" class="footer-link">{{ $t('home.footer.references') }}</router-link>
+                    <br><router-link to="/credits" style="color: #94afe3;">{{ $t('home.footer.credits') }}</router-link>
+>>>>>>> 94f2415f29ac95bf43083a2e1df19f887fbff89f
                 </div>
 
                 <div class="column is-2">

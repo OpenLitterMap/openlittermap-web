@@ -30,7 +30,7 @@ export default {
 			langs: [
 				{ url: 'en' }, // We have these languages mostly done but they are in php code with the old keys
 				// { url: 'de' },
-				// { url: 'es' },
+				{ url: 'es' },
 				// { url: 'fr' },
 				// { url: 'it' },
 				{ url: 'nl' },
@@ -75,8 +75,9 @@ export default {
 		getFlag (lang)
 		{
 			if (lang === 'en') return this.dir + 'gb.png'; // english
+			if (lang === 'es') return this.dir + 'es.png'; // spanish
 			if (lang === 'ms') return this.dir + 'my.png'; // malaysian
-			if (lang === 'tk')  return this.dir + 'tr.png'; // turkish
+			if (lang === 'tk') return this.dir + 'tr.png'; // turkish
 
 			return this.dir + lang.toLowerCase() + '.png';
 		},

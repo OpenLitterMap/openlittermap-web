@@ -1,0 +1,13 @@
+{
+    "card-number": "Número de tarjeta",
+    "card-holder": "Nombre del titular",
+    "exp": "Fecha de caducidad",
+    "cvv": "CVV (código de seguridad)",
+    "placeholders": {
+        "card-number": "Tu número de tarjeta de 16 dígitos",
+        "card-holder": "Nombre del titular de la tarjeta",
+        "exp-month": "Mes",
+        "exp-year": "Año",
+        "cvv": "***"
+    }
+}

@@ -26,16 +26,16 @@
 				autocomplete="current-password"
 			/>
 
-			<button :class="button" :disabled="processing">Login</button>
+			<button :class="button" :disabled="processing">{{ $t('auth.login.login-btn') }}</button>
 		 </form>
 
         <footer class="modal-card-foot" style="height: 50px;">
             <div class="column is-half">
-                <a href="/signup">Sign up</a>
+                <a href="/signup">{{ $t('auth.login.signup-text') }}</a>
             </div>
 
             <div class="column is-half">
-                <a href="/password/reset" class="has-text-right">Forgot Password?</a>
+                <a href="/password/reset" class="has-text-right">{{ $t('auth.login.forgot-password') }}</a>
             </div>
         </footer>
 	 </div>
