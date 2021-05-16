@@ -1,0 +1,19 @@
+{
+    "address": "Dirección",
+    "add-tag": "Añadir etiqueta",
+    "coordinates": "Coordenadas",
+    "device": "Dispositivo",
+    "next": "Imagen siguiente",
+    "no-tags": "No tienes nada que etiquetar en este momento.",
+    "picked-up-title": "¿Recogida?",
+    "please-upload": "Subir más fotos",
+    "previous": "Imagen anterior",
+    "removed": "La basura ha sido retirada",
+    "still-there": "La basura sigue ahí",
+    "taken": "Tomada",
+    "to-tag": "Imágenes restantes para etiquetar",
+    "total-uploaded": "Total de imágenes subidas",
+    "uploaded": "Subida",
+    "confirm-delete": "¿Quieres eliminar esta imagen? Esto no se puede deshacer.",
+    "recently-tags": "Etiquetas usadas recientemente: "
+}

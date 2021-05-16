@@ -53,21 +53,21 @@
 
         <!-- 1. Just take a photo -->
         <div class="has-text-centered pt3">
-            <h1 class="title is-1">1. Just take a photo</h1>
+            <h1 class="title is-1">1. {{ $t('home.about.about9a') }}</h1>
 
             <img src="/assets/about/iphone.PNG" />
         </div>
 
         <!-- 2. Tag it with our app -->
         <div class="has-text-centered pt3">
-            <h1 class="title is-1">2. Tag the litter</h1>
+            <h1 class="title is-1">2. {{ $t('home.about.about9b') }}</h1>
 
             <img src="/assets/about/facemask-tag.PNG" />
         </div>
 
         <!-- 3. Upload it -->
         <div class="has-text-centered pt3">
-            <h1 class="title is-1">3. Upload it</h1>
+            <h1 class="title is-1">3. {{ $t('home.about.about9c') }}</h1>
 
             <img src="/assets/about/facemask-map.PNG" />
         </div>
@@ -138,8 +138,8 @@
                             </div>
                             <div class="tile is-parent">
                                 <article class="tile is-child notification is-info">
-                                    <p class="title">Our data is mapped by Space, Time, Location, and Behaviour.</p>
-                                    <p class="subtitle">Check out this incredible stretch of Free and Open Data on the pollution being caused by the products of a handful of global corporations</p>
+                                    <p class="title">{{ $t('home.about.about17a') }}</p>
+                                    <p class="subtitle">{{ $t('home.about.about17b') }}</p>
                                     <!-- <figure class="image is-4by3"> -->
                                     <a href="https://openlittermap.com/maps/The%20Netherlands/Zuid-Holland/Wassenaar/map">https://openlittermap.com/maps/The%20Netherlands/Zuid-Holland/Wassenaar/map</a>
                                     <br>
@@ -148,7 +148,7 @@
                                     <!-- </figure> -->
                                     <br>
                                     <br>
-                                    <p class="subtitle">Want to download the data?</p>
+                                    <p class="subtitle">{{ $t('home.about.about17c') }}</p>
                                     <a href="https://openlittermap.com/maps/The%20Netherlands/Zuid-Holland/Wassenaar/download">https://openlittermap.com/maps/The%20Netherlands/Zuid-Holland/Wassenaar/download</a>
                                     <br>
                                 </article>

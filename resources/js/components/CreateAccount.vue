@@ -2,7 +2,7 @@
 	<div class="container">
 		<div class="call-container">
             <div class="has-text-centered">
-                <strong>Please consider supporting our work by crowdfunding OpenLitterMap with as little as 6 cents a day with a monthly subscription to help grow and develop this important platform.</strong>
+                <strong>{{ $t('auth.subscribe.crowdfunding-message') }}</strong>
 
                 <div class="control mt2">
                     <div class="select">
@@ -18,7 +18,7 @@
 
 		<div class="signup-container">
 
-            <h3 class="title is-3">Create your account</h3>
+            <h3 class="title is-3">{{ $t('auth.subscribe.form-create-account') }}</h3>
 
             <form
                 method="post"
@@ -26,7 +26,7 @@
                 @keydown="clearError($event.target.name)"
             >
                 <!-- NAME -->
-                <label for="name">Name</label>
+                <label for="name">{{ $t('auth.subscribe.form-field-name') }}</label>
 
                 <span
                     class="is-danger"
@@ -52,7 +52,7 @@
                 </div>
 
                 <!-- USERNAME OR ORGANISATION -->
-                <label for="username">Unique Identifier</label>
+                <label for="username">{{ $t('auth.subscribe.form-field-unique-id') }}</label>
 
                 <span
                     class="is-danger"
@@ -77,7 +77,7 @@
                 </div>
 
                 <!-- EMAIL -->
-                <label for="email">E-Mail Address</label>
+                <label for="email">{{ $t('auth.subscribe.form-field-email') }}</label>
 
                 <span
                     class="is-danger"
@@ -102,7 +102,7 @@
                 </div>
 
                 <!-- PASSWORD -->
-                <label for="password">Password. Must contain Uppercase, lowercase and a number.</label>
+                <label for="password">{{ $t('auth.subscribe.form-field-password') }}</label>
 
                 <span class="is-danger" v-if="errorExists('password')" v-text="getFirstError('password')" />
 
@@ -123,7 +123,7 @@
                 </div>
 
                 <!-- CONFIRM PASSWORD -->
-                <label for="password_confirmation">Confirm Password</label>
+                <label for="password_confirmation">{{ $t('auth.subscribe.form-field-pass-confirm') }}</label>
 
                 <span
                     class="is-danger"
@@ -156,8 +156,8 @@
                         id="ConfirmToS"
                         v-model="checkbox"
                     />
-                    <label for="ConfirmToS">
-                         I have read and agree to the <router-link to="/terms">Terms and Conditions of use</router-link> and <router-link to="/privacy">Privacy Policy</router-link>
+                    <label for="ConfirmToS" v-html="$t('auth.subscribe.form-account-conditions')">
+                         
                     </label>
                 </p>
 
@@ -174,9 +174,9 @@
                 <br>
                 <div style="text-align: center; padding-bottom: 1em;">
 
-                    <button :class="button" :disabled="checkDisabled">Sign up</button>
+                    <button :class="button" :disabled="checkDisabled">{{ $t('auth.subscribe.form-btn') }}</button>
 
-                    <p>Note: If you do not recieve the verification e-mail in your inbox, please check your spam/junk folder.</p>
+                    <p>{{ $t('auth.subscribe.create-account-note') }} </p>
                 </div>
             </form>
 		</div>

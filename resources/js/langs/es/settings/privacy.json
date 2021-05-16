@@ -1,0 +1,20 @@
+{
+    "change-privacy": "Cambiar mi privacidad",
+    "maps": "Mapas",
+    "credit-name": "Acreditar mi nombre",
+    "credit-username": "Acreditar mi nombre de usuario",
+    "name-imgs-yes": "Tu nombre está configurado para aparecer en cada una de las imágenes que subas a los mapas.",
+    "username-imgs-yes": "Tu nombre de usuario está configurado para aparecer en cada una de las imágenes que subas a los mapas.",
+    "name-username-map-no": "Tu nombre y tu nombre de usuario no aparecerán en los mapas.",
+    "leaderboards": "Tablas de Clasificación",
+    "credit-my-name": "Acreditar mi nombre",
+    "credit-my-username": "Acreditar mi nombre de usuario",
+    "name-leaderboards-yes": "Tu nombre está configurado para aparecer en cualquier tabla de clasificación para la que califiques.", 
+    "username-leaderboards-yes": "Tu nombre de usuario está configurado para aparecer en cualquier tabla de clasificación para la que califiques.",
+    "name-username-leaderboards-no": "Tu nombre y tu nombre de usuario no aparecerán en las tablas de clasificación.",
+    "created-by": "Creada por",
+    "name-locations-yes": "Tu nombre está configurado para aparecer en cualquier ubicación creada por ti.",
+    "username-locations-yes": "Tu nombre de usuartio está configurado para aparecer en cualquier ubicación creada por ti.",
+    "name-username-locations-yes": "Tu nombre y tu nombre de usuario no aparecerán en la sección 'Creada por' de las ubicaciones que añadas a la base de datos.",
+    "update": "Actualizar"
+}

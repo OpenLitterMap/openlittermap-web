@@ -1,0 +1,51 @@
+{
+    "de": {
+        "name": "Alemania",
+        "lang": "Aleman"
+    },
+
+    "en": {
+        "name": "UK",
+        "lang": "Inglés"
+    },
+
+    "es": {
+        "name": "España",
+        "lang": "Español"
+    },
+
+    "fr": {
+        "name": "Francia",
+        "lang": "Francés"
+    },
+
+    "ie": {
+        "name": "Irlanda",
+        "lang": "Irlandés"
+    },
+
+    "it": {
+        "name": "Italia",
+        "lang": "Italiano"
+    },
+
+    "ms": {
+        "name": "Malasia",
+        "lang": "Malayo"
+    },
+
+    "nl": {
+        "name": "Holanda",
+        "lang": "Holandés"
+    },
+
+    "tk": {
+        "name": "Turquía",
+        "lang": "Turco"
+    },
+
+    "uk": {
+        "name": "UK",
+        "lang": "Inglés"
+    }
+}
