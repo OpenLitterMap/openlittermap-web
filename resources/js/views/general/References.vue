@@ -18,6 +18,9 @@ import moment from 'moment'
 
 export default {
     name: 'References',
+    created () {
+        window.scrollTo(0, 0);
+    },
     data ()
     {
         return {
@@ -48,7 +51,7 @@ export default {
                 },
                 {
                     date: '2019/12/04',
-                    title: 'Citizen Science - International Encyclopedia of Human Geography (Second Edition, Pages 209-214',
+                    title: 'Citizen Science - International Encyclopedia of Human Geography (Second Edition, Pages 209-214)',
                     link: 'https://www.sciencedirect.com/science/article/pii/B9780081022955106018',
                     author: 'Fast, V. and Haworth, B.'
                 },
@@ -99,6 +102,18 @@ export default {
                     title: 'Blockchain technologies to address smart city and society challenges',
                     link: 'https://www.sciencedirect.com/science/article/abs/pii/S0747563221001771',
                     author: 'Mora, M., et al.'
+                },
+                {
+                    date: '2021/05/17',
+                    title: 'Waste deteection in Pomerania: Non-profit project for detecting waste in environment',
+                    link: 'https://arxiv.org/pdf/2105.06808.pdf',
+                    author: 'Majchrowska, S., et al.'
+                },
+                {
+                    date: '2021/05/17',
+                    title: 'This city is not a bin: Crowdmapping the distribution of urban litter',
+                    link: 'https://github.com/andrea-ballatore/litter-dynamics/blob/885de9c61d0b669d007ad871c8494851ce43da9a/publications/ballatore_et_al-2021-city_not_a_bin_crowdmapping.pdf',
+                    author: 'Ballatore, A., et al.'
                 }
             ]
         }

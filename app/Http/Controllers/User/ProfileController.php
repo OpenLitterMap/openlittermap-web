@@ -134,9 +134,9 @@ class ProfileController extends Controller
 
         $user = Auth::user();
 
-        // Todo - Store this metadata in another table
+        // Todo - Store this metadata in Redis
         $totalPhotosAllUsers = Photo::count();
-        // Todo - Store this metadata in another table
+        // Todo - Store this metadata in Redis
         $totalLitterAllUsers = Photo::sum('total_litter');
 
         $usersTotalTags = $user->total_litter + $user->total_brands;
