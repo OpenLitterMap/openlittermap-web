@@ -128,6 +128,7 @@ class ApiPhotosController extends Controller
         // Increment the { Month-Year: int } value for each location
         // Todo - this needs debugging
         // This should dispatch a job
+        // Move this to redis
         event (new IncrementPhotoMonth($countryId, $stateId, $cityId, $date));
 
 //        if ($user->has_uploaded_today === 0)
@@ -144,7 +145,7 @@ class ApiPhotosController extends Controller
 //              $user->save();
 //        }
 
-		return ['photo_id' => $photo->id];
+		return ['success' => true, 'photo_id' => $photo->id];
     }
 
 
