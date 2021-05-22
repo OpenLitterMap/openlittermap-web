@@ -175,6 +175,9 @@
       <excludeFolder url="file://$MODULE_DIR$/vendor/spatie/dropbox-api" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/benjamincrozat/laravel-dropbox-driver" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/laravel/slack-notification-channel" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/spatie/laravel-backup" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/spatie/temporary-directory" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/spatie/db-dumper" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

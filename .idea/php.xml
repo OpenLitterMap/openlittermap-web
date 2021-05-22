@@ -173,6 +173,9 @@
       <path value="$PROJECT_DIR$/vendor/spatie/dropbox-api" />
       <path value="$PROJECT_DIR$/vendor/benjamincrozat/laravel-dropbox-driver" />
       <path value="$PROJECT_DIR$/vendor/laravel/slack-notification-channel" />
+      <path value="$PROJECT_DIR$/vendor/spatie/laravel-backup" />
+      <path value="$PROJECT_DIR$/vendor/spatie/temporary-directory" />
+      <path value="$PROJECT_DIR$/vendor/spatie/db-dumper" />
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="7.3" />
