@@ -73,6 +73,11 @@ return [
             'bucket'   => env('x500_AWS_BUCKET'),
             // 'url'      => env('x500_AWS_URL'),
             // 'endpoint' => env('x500_AWS_ENDPOINT'),
+        ],
+
+        'dropbox' => [
+            'driver' => 'dropbox',
+            'token' => env('DROPBOX_TOKEN'),
         ]
 
     ],
