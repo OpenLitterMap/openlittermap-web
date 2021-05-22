@@ -170,9 +170,6 @@
       <excludeFolder url="file://$MODULE_DIR$/vendor/sebastian/diff" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/spatie/laravel-permission" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/doctrine/deprecations" />
-      <excludeFolder url="file://$MODULE_DIR$/vendor/spatie/temporary-directory" />
-      <excludeFolder url="file://$MODULE_DIR$/vendor/spatie/laravel-backup" />
-      <excludeFolder url="file://$MODULE_DIR$/vendor/spatie/db-dumper" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/graham-campbell/guzzle-factory" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/spatie/flysystem-dropbox" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/spatie/dropbox-api" />
