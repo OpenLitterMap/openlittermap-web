@@ -61,9 +61,7 @@
                                     <br>
                                     <p class="strong">Clear recent tags?</p>
 
-                                    <button
-                                        @click="clearRecentTags"
-                                    >Clear recent tags</button>
+                                    <button @click="clearRecentTags">Clear recent tags</button>
                                 </div>
                             </div>
                         </div> <!-- end info box -->

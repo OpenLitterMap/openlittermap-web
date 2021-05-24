@@ -21,6 +21,7 @@
 				<!-- todo - verification bar -->
 
 				<div class="columns">
+
 				  	<!-- Left - remaining verification & other actions -->
 				  	<div class="column has-text-centered">
 						<p class="subtitle is-5">Uploaded, not tagged: {{ this.photosNotProcessed }}</p>
@@ -36,7 +37,12 @@
 					    <button :class="delete_button" @click="adminDelete" :disabled="processing">
 					    	DELETE
 					    </button>
-						</div>
+
+                        <br>
+
+                        <button @click="clearRecentTags">Clear recent tags</button>
+
+                        </div>
 					</div>
 
 				  	<!-- Middle - image -->
@@ -104,7 +110,7 @@ export default {
 			processing: false,
 			btn: 'button is-large is-success',
 			// button classes
-			deleteButton: 'button is-large is-danger',
+			deleteButton: 'button is-large is-danger mb1',
 			deleteVerify: 'button is-large is-warning mb1',
 			verifyClass: 'button is-large is-success mb1',
 		};
@@ -206,6 +212,16 @@ export default {
 		{
 			this.$store.commit('setAllTagsToZero');
 		},
+
+        /**
+         * Remove the users recent tags
+         */
+        clearRecentTags ()
+        {
+            this.$store.commit('initRecentTags', {});
+
+            this.$localStorage.remove('recentTags');
+        },
 
 		/**
 		 * Send the image back to the use
