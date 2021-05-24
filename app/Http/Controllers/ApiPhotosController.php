@@ -119,7 +119,6 @@ class ApiPhotosController extends Controller
             'geohash' => GeoHash::encode($lat, $lon)
         ]);
 
-
         $teamName = null;
         if ($user->team) $teamName = $user->team->name;
 
@@ -147,7 +146,6 @@ class ApiPhotosController extends Controller
 
 		return ['success' => true, 'photo_id' => $photo->id];
     }
-
 
     /**
      * Save litter data to a recently uploaded photo

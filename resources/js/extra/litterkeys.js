@@ -72,6 +72,7 @@ export const litterkeys = {
         'pullring',        // Pull-ring
         'strawpacket',     // Straw Packaging
         'styro_cup',       // Styrofoam Cup
+        'broken_glass',    // Broken Glass
         'softDrinkOther'   // Soft Drink (other)
     ],
     sanitary: [

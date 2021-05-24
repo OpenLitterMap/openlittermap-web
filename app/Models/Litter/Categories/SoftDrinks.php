@@ -30,6 +30,7 @@ class SoftDrinks extends LitterCategory
         'energy_can',
         'strawpacket',
         'styro_cup',
+        'broken_glass',
         'softDrinkOther'
     ];
 
@@ -64,6 +65,7 @@ class SoftDrinks extends LitterCategory
             'energy_can',
             'strawpacket',
             'styro_cup',
+            'broken_glass',
             'softDrinkOther'
         ];
     }
