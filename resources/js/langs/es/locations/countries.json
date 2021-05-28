@@ -6,7 +6,7 @@
 
     "en": {
         "name": "UK",
-        "lang": "Inglés"
+        "lang": "English"
     },
 
     "es": {
@@ -36,7 +36,7 @@
 
     "nl": {
         "name": "Holanda",
-        "lang": "Holandés"
+        "lang": "Nederlands"
     },
 
     "tk": {
@@ -46,6 +46,11 @@
 
     "uk": {
         "name": "UK",
-        "lang": "Inglés"
+        "lang": "English"
+    },
+
+    "pl": {
+        "name": "Poland",
+        "lang": "Polski"
     }
 }

@@ -14,7 +14,7 @@
     "about10" : "Każdego roku miliony ton plastiku przedostają się z lądu do morza.",
     "about11" : "Tam, gdzie jest znacznie bardziej szkodliwy, trudniejszy i droższy do usunięcia.",
     "about12" : "Iluzja \"miejskiego sprzątania\"",
-    "about13" : "ułatwia projektowanie infrastruktury.7",
+    "about13" : "ułatwia projektowanie infrastruktury.",
 
     "about14" : "Dane OpenLitterMap są",
     "about14a" : "Danymi otwartymi",
@@ -26,7 +26,7 @@
     "about17a" : "Nasze dane są mapowane według przestrzeni, czasu, lokalizacji i zachowania.",
     "about17b" : "Sprawdź ten niesamowity fragment bezpłatnych i otwartych danych na temat zanieczyszczenia powodowanego przez produkty kilku globalnych korporacji",
     "about17c" : "Chcesz pobrać dane?",
-    "about18" : "Produkcja wiedzy geoprzestrzennej była kiedyś prowadzona wyłącznie przez główne instytucje i osoby mające władzę.",
+    "about18" : "Produkcja wiedzy geoprzestrzennej była kiedyś prowadzona wyłącznie przez główne instytucje i osoby posiadające władzę.",
     "about19" : "Jako obywatelski naukowiec, ",
     "about20" : "ty tworzysz wiedzę. ",
     "about21" : "To jest zmiana paradygmatu w sposobie tworzenia znanych informacji geograficznych o naszym świecie.",
@@ -36,10 +36,10 @@
     "about24" : "Włącz geotagowanie na swoim urządzeniu. Instrukcje, jak to zrobić, są wysyłane w powitalnej wiadomości e-mail podczas rejestracji.",
     "about25" : "Na jednym zdjęciu możesz zmapować wszystko, od jednego niedopałka papierosa po zawartość całej plaży lub ulicy.",
     "about26" : "Jeśli jest zbyt dużo śmieci i jest to nieobliczalne, po prostu użyj kategorii Zaśmiecanie i oceń obszar od 1 do 100 lub wybierz \"Losowe śmieci\" w kategorii \"Inne\"",
-    "about27" : "Jeśli chcesz tworzyć naprawdę potężne mapy, zrób jak najwięcej zdjęć. Jeśli nie masz czasu, możesz zarejestrować dowolną liczbę elementów śmieci na jednym zdjęciu.",
-    "about28" : "Zweryfikowane zdjęcia i treści zostaną automatycznie dodane do bazy danych, poddane analizie ilościowej i geoprzestrzennej oraz udostępnione do publicznego oglądania, aby świat mógł je zobaczyć!",
-    "about29" : "Pomóż nam informować o problemach i rozwiązaniach - aby powstrzymać plastik przed dostaniem się do oceanu.",
-    "about29a" : "Jeśli podoba Ci się nasza praca i chciałbyś wesprzeć, dołącz do crowdfundingu",
+    "about27" : "Jeśli chcesz tworzyć naprawdę potężne mapy, zrób jak najwięcej zdjęć. Jeśli nie masz czasu, możesz zarejestrować dowolną liczbę odpadów na jednym zdjęciu.",
+    "about28" : "Zweryfikowane zdjęcia i treści zostaną automatycznie dodane do bazy danych, poddane analizie ilościowej i geoprzestrzennej oraz udostępnione publicznie, aby świat mógł je zobaczyć!",
+    "about29" : "Pomóż nam informować o problemach i rozwiązaniach - aby plastik nie dostawał się do oceanu.",
+    "about29a" : "Jeśli podoba Ci się nasza praca i chciałbyś nas wesprzeć, dołącz do crowdfundingu",
 
     "about30" : "Dołącz do Open Litter Map, aby stworzyć świat z mniejszą ilością",
     "about301" : "tego",
@@ -49,6 +49,6 @@
     "about31" : "Szacuje się, że w samym 2010 roku co najmniej 8 milionów ton plastiku trafiło do oceanu. To średnio 916 ton na godzinę.",
     "about32" : "Próbka tego, co unosi się w oceanach",
     "about33" : "Zanieczyszczenie tworzywami sztucznymi jest obecnie odpowiedzialne za roczną śmierć około 1 miliona ptaków i 100 000 ssaków morskich.",
-    "about34" : "Oczekuje się, że do 2025 r. Ilość plastiku wprowadzanego do oceanu wzrośnie do 70 milionów ton, zakładając kontynuację obecnych trendów.",
+    "about34" : "Oczekuje się, że do 2025 roku. Ilość plastiku wprowadzanego do oceanu wzrośnie do 70 milionów ton, zakładając kontynuację obecnych trendów.",
     "about35" : "Chcę pomóc!"
 }

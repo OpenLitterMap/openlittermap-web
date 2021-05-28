@@ -6,12 +6,12 @@
 
     "en": {
         "name": "Engeland",
-        "lang": "Engels"
+        "lang": "English"
     },
 
     "es": {
         "name": "Spanje",
-        "lang": "Spaans"
+        "lang": "Español"
     },
 
     "fr": {
@@ -46,6 +46,6 @@
 
     "uk": {
         "name": "Engeland",
-        "lang": "Engels"
+        "lang": "English"
     }
 }
