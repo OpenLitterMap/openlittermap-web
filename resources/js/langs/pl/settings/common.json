@@ -1,13 +1,13 @@
 {
-    "general": "General",
-    "password": "Password",
-    "details": "Personal Details",
-    "account": "My Account",
-    "payments": "My Payments",
-    "privacy": "Privacy",
+    "general": "Generalne",
+    "password": "Hasło",
+    "details": "Dane osobowe",
+    "account": "Moje konto",
+    "payments": "Moje płatności",
+    "privacy": "Prywatności",
     "littercoin": "Littercoin (LTRX)",
-    "presence": "Presence",
-    "emails": "Emails",
-    "show-flag": "Show Flag",
-    "teams": "Teams"
+    "presence": "Obecność",
+    "emails": "E-maile",
+    "show-flag": "Pokaż flage",
+    "teams": "Drużyny"
 }

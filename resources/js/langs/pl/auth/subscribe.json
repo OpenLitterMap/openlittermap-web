@@ -1,15 +1,15 @@
 {
-    "title": "Are you ready?",
-    "subtitle": "Sign up to become an expert litter mapper and help us defeat plastic pollution.",
-    "crowdfunding-message": "Please consider supporting our work by crowdfunding OpenLitterMap with as little as 6 cents a day with a monthly subscription to help grow and develop this important platform.",
-    "form-create-account": "Create your account",
-    "form-field-name": "Name",
-    "form-field-unique-id": "Unique Identifier",
-    "form-field-email": "E-Mail Address",
-    "form-field-password": "Password. Must contain Uppercase, lowercase and a number.", 
-    "form-field-pass-confirm": "Confirm Password",
-    "form-account-conditions": "I have read and agree to the <a href='/terms'>Terms and Conditions of use</a> and <a href='/privacy'>Privacy Policy</a>",
-    "form-btn": "Sign up",
-    "create-account-note": "Note: If you do not recieve the verification e-mail in your inbox, please check your spam/junk folder."
+    "title": "Jesteś gotów?",
+    "subtitle": "Zarejestruj się, aby zostać ekspertem w mapowaniu śmieci i pomóż nam pokonać zanieczyszczenie plastikiem.",
+    "crowdfunding-message": "Rozważ wsparcie naszej pracy poprzez finansowanie społecznościowe OpenLitterMap za zaledwie 6 centów dziennie z miesięczną subskrypcją, aby pomóc w rozwoju tej ważnej platformy.",
+    "form-create-account": "Załóż konto",
+    "form-field-name": "Imie",
+    "form-field-unique-id": "Unikatowy Identyfikator",
+    "form-field-email": "Adres E-Mail",
+    "form-field-password": "Hasło. Musi zawierać wielkie i małe litery oraz cyfrę.",
+    "form-field-pass-confirm": "Potwierdź hasło",
+    "form-account-conditions": "Przeczytałem i akceptuję <a href='/terms'> Warunki korzystania z usługi </a> i <a href='/privacy'> Politykę prywatności </a>",
+    "form-btn": "Załóż konto",
+    "create-account-note": "Uwaga: jeśli nie otrzymasz e-maila weryfikacyjnego w swojej skrzynce odbiorczej, sprawdź folder ze spamem"
 
 }

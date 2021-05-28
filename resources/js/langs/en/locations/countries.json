@@ -47,5 +47,10 @@
     "uk": {
         "name": "UK",
         "lang": "English"
+    },
+
+    "pl": {
+        "name": "Poland",
+        "lang": "Polish"
     }
 }
