@@ -1,54 +1,54 @@
 {
     "de": {
-        "name": "Germany",
-        "lang": "German"
+        "name": "Niemcy",
+        "lang": "Niemiecki"
     },
 
     "en": {
-        "name": "UK",
+        "name": "Wielka Brytania",
         "lang": "English"
     },
 
     "es": {
-        "name": "Spain",
+        "name": "Hiszpania",
         "lang": "Español"
     },
 
     "fr": {
-        "name": "France",
-        "lang": "French"
+        "name": "Francja",
+        "lang": "Francuski"
     },
 
     "ie": {
-        "name": "Ireland",
-        "lang": "Irish"
+        "name": "Irlandia",
+        "lang": "Irlandzki"
     },
 
     "it": {
-        "name": "Italy",
-        "lang": "Italian"
+        "name": "Włochy",
+        "lang": "Włoski"
     },
 
     "ms": {
-        "name": "Malaysia",
+        "name": "Malezja",
         "lang": "Malay"
     },
 
     "nl": {
-        "name": "Nederland",
+        "name": "Holandia",
         "lang": "Nederlands"
     },
 
     "tk": {
-        "name": "Turkey",
-        "lang": "Turkish"
+        "name": "Turcja",
+        "lang": "Turecki"
     },
 
     "uk": {
         "name": "UK",
         "lang": "English"
     },
-    "uk": {
+    "pl": {
         "name": "Polska",
         "lang": "Polski"
     }
