@@ -1,33 +1,33 @@
 {
-    "title": "Welcome to OpenLitterMap Teams!",
-    "created": "Congratulations! Your new team has been created.",
+    "title": "Witamy w Drużynach OpenLitterMap!",
+    "created": "Gratulacje! Twoja drużyna została utworzona.",
     "times": {
-        "today": "Today",
-        "week": "This week",
-        "month": "This month",
-        "year": "This year",
-        "all": "All time",
-        "created_at": "Uploaded at",
-        "datetime": "Taken at"
+        "today": "Dzisiaj",
+        "week": "W tym tygodniu",
+        "month": "Ten miesiąc",
+        "year": "Ten rok",
+        "all": "Cały okres",
+        "created_at": "Przesłane w",
+        "datetime": "Zrobiono o godzinie"
     },
     "create": {
-        "fail": "There was an error creating your Team",
-        "max-created": "You are not allowed to create any more teams."
+        "fail": "Wystąpił błąd podczas tworzenia Twojego drużyny",
+        "max-created": "Nie możesz tworzyć więcej drużyn"
     },
     "settings": {
         "maps": {
-            "team-map": "Team Map",
-            "name-will-appear": "Your name will appear on the maps",
-            "username-will-appear": "Your username will appear on the maps",
-            "will-not-appear": "Your name and username will not appear on the maps"
+            "team-map": "Mapa drużyny",
+            "name-will-appear": "Twoje imię pojawi się na mapach",
+            "username-will-appear": "Twoja nazwa użytkownika pojawi się na mapach",
+            "will-not-appear": "Twoje imię oraz nazwa użytkownika nie pojawią się na mapach"
         },
         "leaderboards": {
-            "team-leaderboard": "Team Leaderboard",
-            "name-will-appear": "Your name will appear on the leaderboards",
-            "username-will-appear": "Your username will appear on the leaderboards",
-            "will-not-appear": "Your name and username will not appear on the leaderboards"
+            "team-leaderboard": "Ranking drużyny",
+            "name-will-appear": "Twoje imię i nazwisko pojawi się w rankingach",
+            "username-will-appear": "Twoja nazwa użytkownika pojawi się w rankingach",
+            "will-not-appear": "Twoje imię oraz nazwa użytkownika nie pojawią się w rankingach"
         },
-        "submit-one-team": "Save for this Team",
-        "apply-all-teams": "Apply for all Teams"
+        "submit-one-team": "Zapisz dla tego zespołu",
+        "apply-all-teams": "Zapisz dla wszystkich zespołów"
     }
 }
