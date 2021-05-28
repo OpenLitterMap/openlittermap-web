@@ -1,0 +1,19 @@
+{
+    "address": "Adres",
+    "add-tag": "Dodaj tag",
+    "coordinates": "Współrzędne",
+    "device": "Urządzenie",
+    "next": "Następne zdjęcie",
+    "no-tags": "W tej chwili nie masz nic do oznaczenia.",
+    "picked-up-title": "Zebrane?",
+    "please-upload": "Prześlij więcej zdjęć",
+    "previous": "poprzednie zdjęcie",
+    "removed": "Śmieci zostały usunięte",
+    "still-there": "Śmieci nadal tam są",
+    "taken": "zebrane",
+    "to-tag": "Zdjęcia pozostawione do oznaczenia",
+    "total-uploaded": "Wszystkie przesłane zdjęcia",
+    "uploaded": "Przesłane",
+    "confirm-delete": "Czy chcesz usunąć to zdjęcie? Tego nie da się cofnąć.",
+    "recently-tags": "Ostatnio używane tagi: "
+}
