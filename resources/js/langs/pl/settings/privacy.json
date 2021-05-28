@@ -1,0 +1,20 @@
+{
+    "change-privacy": "Zmień moją prywatność",
+    "maps": "Maps",
+    "credit-name": "Wpisz moje imie",
+    "credit-username": "Wpisz moją nazwę użytkownika",
+    "name-imgs-yes": "Twoje imię pojawi się na każdym obrazie przesłanym na mapy.",
+    "username-imgs-yes": "Twoja nazwa użytkownika pojawi się na każdym obrazie przesłanym na mapy.",
+    "name-username-map-no": "Twoje imię oraz nazwa użytkownika nie pojawią się na mapach.",
+    "leaderboards": "Ranking",
+    "credit-my-name": "Wpisz moje imie",
+    "credit-my-username": "Wpisz moją nazwę użytkownika",
+    "name-leaderboards-yes": "Twoje imię pojawi się we wszystkich tabelach rankingowych, do których się kwalifikujesz.",
+    "username-leaderboards-yes": "Twoja nazwa użytkownika będzie się pojawiać we wszystkich tabelach rankingowych, do których się kwalifikujesz.",
+    "name-username-leaderboards-no": "Twoje imię oraz nazwa użytkownika nie pojawią się na tablicach wyników.",
+    "created-by": "Docenione przez",
+    "name-locations-yes": "Twoje imię będzie wyświetlane we wszystkich tworzonych przez Ciebie lokalizacjach.",
+    "username-locations-yes": "Twoja nazwa użytkownika jest ustawiona tak, aby pojawiała się we wszystkich tworzonych przez Ciebie lokalizacjach.",
+    "name-username-locations-yes": "Twoje imię oraz nazwa użytkownika nie pojawią się w sekcji Utworzone Przez w żadnej lokalizacji, którą dodasz do bazy danych.",
+    "update": "Aktualizuj"
+}
