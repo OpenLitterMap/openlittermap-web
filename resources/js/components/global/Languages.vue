@@ -36,6 +36,7 @@ export default {
 				{ url: 'nl' },
 				// { url: 'ms' },
 				// { url: 'tk' }
+                { url: 'pl' },
 			]
 		};
 	},
@@ -76,6 +77,7 @@ export default {
 		{
 			if (lang === 'en') return this.dir + 'gb.png'; // english
 			if (lang === 'es') return this.dir + 'es.png'; // spanish
+            if (lang === 'pl') return this.dir + 'pl.png';
 			if (lang === 'ms') return this.dir + 'my.png'; // malaysian
 			if (lang === 'tk') return this.dir + 'tr.png'; // turkish
 

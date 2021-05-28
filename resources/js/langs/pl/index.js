@@ -14,7 +14,7 @@ import teams from './teams.json';
 import nav from './nav.json';
 import upload from './upload.json';
 
-export const en = {
+export const pl = {
     auth,
     common,
     creditcard,
