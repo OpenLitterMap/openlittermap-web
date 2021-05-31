@@ -7,7 +7,7 @@
 				<span>{{ this.currentLang }}</span>
 			</button>
 	  	</div>
-nice
+		  
 		<div class="dropdown-menu">
 	    	<div class="dropdown-content" style="padding: 0;">
 	      		<div v-for="lang in langs" @click="language(lang.url)" class="dropdown-item hoverable flex p1em">

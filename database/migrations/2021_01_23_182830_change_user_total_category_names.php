@@ -18,7 +18,7 @@ class ChangeUserTotalCategoryNames extends Migration
             $table->unsignedBigInteger('total_dumping')->nullable();
             $table->unsignedBigInteger('total_industrial')->nullable();
             $table->unsignedBigInteger('total_coastal')->nullable();
-            $table->dropColumn('total_drugs');
+            //$table->dropColumn('total_drugs');
             $table->dropColumn('total_needles');
             $table->dropColumn('total_cigaretteButts');
             $table->dropColumn('total_plasticBottles');
