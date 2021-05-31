@@ -23,6 +23,9 @@ class ApiPhotosController extends Controller
 
     /**
      * Save a photo to the database
+     *
+     * Todo - Accept the image and data and process it is a job,
+     * Then return as quickly as possible.
      */
     public function store (Request $request)
     {
@@ -32,7 +35,6 @@ class ApiPhotosController extends Controller
         {
             $model = $request->model;
         }
-
         else
         {
             $model = 'Mobile app v2';

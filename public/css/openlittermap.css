@@ -299,7 +299,6 @@ html {
 /* Mobile view */
 @media (max-width: 768px)
 {
-
     .app-icon {
         max-height: 9em !important;
     }

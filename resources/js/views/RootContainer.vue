@@ -77,7 +77,7 @@ export default {
 <style scoped>
 
     .root-container {
-        height: calc(100vh - 10px);
+        height: 100vh;
     }
 
 </style>

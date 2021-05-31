@@ -23,17 +23,9 @@ class DownloadControllerNew extends Controller
      */
     public function index (Request $request)
     {
-        // If there is no user logged in, then use the email address in $request:
-        if(is_null(auth()->user()))
-        {
-            $email = $request->email;
-        }
-
-        // If the user is logged in, use their registered email address:
-        else
-        {
-            $email = auth()->user()->email;
-        }
+        $email = (is_null(auth()->user()))
+            ? $request->email
+            : auth()->user()->email;
 
         $x     = new \DateTime();
         $date  = $x->format('Y-m-d');
@@ -56,7 +48,6 @@ class DownloadControllerNew extends Controller
                     $location_id = $city->id;
                 }
             }
-
             else if ($request->type === 'state')
             {
                 if ($state = State::find($request->locationId))
@@ -65,7 +56,6 @@ class DownloadControllerNew extends Controller
                     $location_id = $state->id;
                 }
             }
-
             else if ($request->type === 'country')
             {
                 if ($country = Country::find($request->locationId))
