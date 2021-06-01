@@ -26,13 +26,13 @@
                 class="button is-medium mr1"
                 v-show="this.paginate.prev_page_url"
                 @click="previous"
-            >Previous</button>
+            >{{$t('common.previous') }}</button>
 
             <button
                 class="button is-medium"
                 v-show="this.paginate.next_page_url"
                 @click="next"
-            >Next</button>
+            >{{$t('common.next') }}</button>
 
             <div class="my-photos-buttons">
 <!-- Todo - test this on production -->
@@ -46,7 +46,7 @@
                     class="button is-medium is-primary"
                     @click="addTags"
                     :disabled="selectedCount === 0"
-                >Add Tags</button>
+                >{{$t('common.add-tags') }}</button>
             </div>
         </div>
     </div>
@@ -111,7 +111,7 @@ export default {
         {
             this.$store.commit('showModal', {
                type: 'AddManyTagsToManyPhotos',
-               title: 'Add Many Tags'
+               title: this.t('common.add-many-tags') //'Add Many Tags'
             });
         },
 
@@ -122,7 +122,7 @@ export default {
         {
             this.$store.commit('showModal', {
                 type: 'ConfirmDeleteManyPhotos',
-                title: 'Confirm Delete'
+                title: this.t('common.confirm-delete') //'Confirm Delete'
             });
         },
 

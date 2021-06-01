@@ -1,19 +1,19 @@
 <template>
     <section>
         <div class="my-teams-container">
-            <h1 class="title is-2">Team Leaderboard</h1>
+            <h1 class="title is-2">{{ $t('teams_dashboard.leaderboard.title') }}</h1>
 
-            <p v-if="loading">Loading...</p>
+            <p v-if="loading">{{ $t('common.loading') }}</p>
 
             <table v-else class="table is-fullwidth is-hoverable has-text-centered">
                 <thead>
-                    <th>Position</th>
-                    <th>Name</th>
-                    <th>Total Litter</th>
-                    <th>Total Photos</th>
+                    <th>{{ $t('teams_dashboard.leaderboard.position-header') }}</th>
+                    <th>{{ $t('teams_dashboard.leaderboard.name-header') }}</th>
+                    <th>{{ $t('teams_dashboard.leaderboard.litter-header') }}</th>
+                    <th>{{ $t('teams_dashboard.leaderboard.photos-header') }}</th>
                     <!-- Total members -->
                     <!-- Last Upload -->
-                    <th>Created At</th>
+                    <th>{{ $t('teams_dashboard.leaderboard.created-at-header') }}</th>
                 </thead>
 
                 <tbody>

@@ -1,6 +1,6 @@
 <template>
     <div class="profile-card">
-        <p class="mb1">You have uploaded</p>
+        <p class="mb1">{{ $t('profile_dashboard.top.have-uploaded') }}</p>
 
         <div class="flex">
 
@@ -9,7 +9,7 @@
 
                 <div>
                     <p class="profile-stat">{{ userPhotoCount }}</p>
-                    <p class="profile-text">Photos</p>
+                    <p class="profile-text">{{ $t('profile_dashboard.top.photos') }}</p>
                 </div>
             </div>
 
@@ -18,7 +18,7 @@
 
                 <div>
                     <p class="profile-stat">{{ userTagsCount }}</p>
-                    <p class="profile-text">Tags</p>
+                    <p class="profile-text">{{ $t('profile_dashboard.top.tags') }}</p>
                 </div>
             </div>
 
@@ -27,7 +27,7 @@
 
                 <div>
                     <p class="profile-stat">{{ photoPercent }}</p>
-                    <p class="profile-text">all photos</p>
+                    <p class="profile-text">{{ $t('profile_dashboard.top.all-photos') }}</p>
                 </div>
             </div>
 
@@ -36,7 +36,7 @@
 
                 <div>
                     <p class="profile-stat">{{ tagPercent }}</p>
-                    <p class="profile-text">all tags</p>
+                    <p class="profile-text">{{ $t('profile_dashboard.top.all-tags') }}</p>
                 </div>
             </div>
         </div>

@@ -1,10 +1,10 @@
 <template>
     <div class="profile-card">
-        <p class="mb1">Welcome to your new Profile, {{ name }}</p>
+        <p class="mb1">{{ $t('profile_dashboard.top.welcome') }}, {{ name }}</p>
 
-        <p class="mb1">Out of {{ totalUsers }} users</p>
+        <p class="mb1">{{ $t('profile_dashboard.top.out-of') }} {{ totalUsers }} {{ $t('profile_dashboard.top.users') }}</p>
 
-        <p>You are currently in {{ usersPosition }} place</p>
+        <p>{{ $t('profile_dashboard.top.in-position') }} {{ usersPosition }} {{ $t('profile_dashboard.top.place') }}</p>
     </div>
 </template>
 

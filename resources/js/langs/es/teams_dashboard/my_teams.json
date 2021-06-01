@@ -1,0 +1,19 @@
+{
+    "title": "Mis equipos",
+    "currently-joined-team": "Actualmente estás en el equipo",
+    "currently-not-joined-team": "Actualmente no estás en ningún equipo",
+    "no-joined-team": "Aún no te has unido a un equipo",
+    "leader-of-team": "Tu lideras este equipo",
+    "join-team": "Por favor únete a un equipo",
+    "change-active-team": "Cambiar equipo activo",
+    "download-team-data": "Descargar datos del equipo",
+    "hide-from-leaderboards": "Ocultarme de la clasificación",
+    "show-on-leaderboards": "Mostrarme en la clasificación",
+    "position-header": "Posición",
+    "name-header": "Nombre",
+    "username-header": "Nombre de usuario",
+    "status-header": "Estado",
+    "photos-header": "Fotos",
+    "litter-header": "Basura",
+    "last-activity-header": "Última actividad"
+}

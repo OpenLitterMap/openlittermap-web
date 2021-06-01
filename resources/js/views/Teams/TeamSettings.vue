@@ -1,11 +1,11 @@
 <template>
     <div class="tsc">
-        <h1 class="title is-2">Control your Privacy</h1>
+        <h1 class="title is-2">{{ $t('teams_dashboard.settings.privacy-title') }}</h1>
 
         <div class="columns mt3">
 
             <div class="column is-one-third">
-                <p class="mb1">Control your privacy for every team you have joined.</p>
+                <p class="mb1">{{ $t('teams_dashboard.settings.privacy-text') }}</p>
             </div>
 
             <div class="column is-half card p2">

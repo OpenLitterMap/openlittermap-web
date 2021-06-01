@@ -1,12 +1,12 @@
 <template>
     <div class="profile-card">
-        <p class="mb1">Your Level</p>
+        <p class="mb1">{{ $t('profile_dashboard.top.your-level') }}</p>
 
-        <p class="is-purp">You have reached level <strong class="is-white">{{ currentLevel }}</strong></p>
+        <p class="is-purp">{{ $t('profile_dashboard.top.reached-level') }} <strong class="is-white">{{ currentLevel }}</strong></p>
 
-        <p class="is-purp mb1">and you have <strong class="is-white">{{ currentXp }} xp</strong></p>
+        <p class="is-purp mb1">{{ $t('profile_dashboard.top.have-xp') }} <strong class="is-white">{{ currentXp }} xp</strong></p>
 
-        <p class="is-purp mb2">You need <strong class="is-white">{{ neededXp }} xp</strong> to reach the next level.</p>
+        <p class="is-purp mb2">{{ $t('profile_dashboard.top.need-xp') }} <strong class="is-white">{{ neededXp }} xp</strong> {{ $t('profile_dashboard.top.to-reach-level') }}</p>
     </div>
 </template>
 

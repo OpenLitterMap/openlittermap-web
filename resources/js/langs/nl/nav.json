@@ -1,12 +1,17 @@
 {
     "admin": "Admin",
+    "admin-verify-photos": "ADMIN - Verify Photos",
+    "admin-horizon": "ADMIN - Horizon",
+    "admin-verify-boxes": "ADMIN - Verify Boxes",
     "about": "Over",
     "global-map": "Wereld Kaart",
     "world-cup": "Wereld Cup",
     "upload": "Upload",
     "more": "Meer",
     "tag-litter": "Label het Afval",
+    "profile": "Profile",
     "settings": "Instellingen",
+    "bounding-boxes": "Bounding Boxes",
     "logout": "Uitloggen",
     "login": "Inloggen",
     "signup": "Aanmelden"

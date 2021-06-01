@@ -15,5 +15,7 @@
     "total-uploaded": "Totaal aantal foto's geupload",
     "uploaded": "Geupload",
     "confirm-delete": "",
-    "recently-tags": ""
+    "recently-tags": "",
+    "clear-tags": "Clear recent tags?",
+    "clear-tags-btn": "Clear recent tags"
 }

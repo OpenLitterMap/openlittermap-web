@@ -1,24 +1,24 @@
 <template>
     <section class="tdc">
-        <p class="subtitle is-centered is-3">Teams Dashboard</p>
+        <p class="subtitle is-centered is-3">{{ $t('teams_dashboard.main.teams-dashboard') }}</p>
 
         <div class="columns">
             <div class="column teams-card">
                 <span class="title is-2" style="color: #7b848e;">{{ photos_count }}</span>
                 <br>
-                Photos uploaded {{ this.getPeriod() }}
+                {{ $t('teams_dashboard.main.photos-uploaded') }} {{ this.getPeriod() }}
             </div>
 
             <div class="column teams-card">
                 <span class="title is-2" style="color: #7b848e;">{{ litter_count }}</span>
                 <br>
-                Litter tagged {{ this.getPeriod() }}
+                {{ $t('teams_dashboard.main.litter-tagged') }} {{ this.getPeriod() }}
             </div>
 
             <div class="column teams-card">
                 <span class="title is-2" style="color: #7b848e;">{{ members_count }}</span>
                 <br>
-                Team members uploaded {{ this.getPeriod() }}
+                {{ $t('teams_dashboard.main.members-uploaded') }} {{ this.getPeriod() }}
             </div>
         </div>
 
@@ -32,12 +32,12 @@
 
             <!-- All or Select Team -->
             <select v-model="viewTeam" @change="changeTeamOrTime" class="input dash-time">
-                <option value="0" selected>All Teams</option>
+                <option value="0" selected>{{ $t('teams_dashboard.main.all-teams') }}</option>
                 <option v-for="team in teams" :value="team.id">{{ team.name }}</option>
             </select>
         </div>
 
-        <p v-if="loading">Loading...</p>
+        <p v-if="loading">{{ $t('common.loading') }}</p>
 
         <TeamMap v-else />
 

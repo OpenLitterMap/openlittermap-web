@@ -15,5 +15,7 @@
     "total-uploaded": "Wszystkie przesłane zdjęcia",
     "uploaded": "Przesłane",
     "confirm-delete": "Czy chcesz usunąć to zdjęcie? Tego nie da się cofnąć.",
-    "recently-tags": "Ostatnio używane tagi: "
+    "recently-tags": "Ostatnio używane tagi: ",
+    "clear-tags": "Clear recent tags?",
+    "clear-tags-btn": "Clear recent tags"
 }

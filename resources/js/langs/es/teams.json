@@ -6,7 +6,7 @@
         "week": "Esta semana",
         "month": "Este mes",
         "year": "Este año",
-        "all": "All time",
+        "all": "Todo",
         "created_at": "Subida el",
         "datetime": "Tomada el"
     },
@@ -28,6 +28,6 @@
             "will-not-appear": "Tu nombre y nombre de usuario aparecerán en las tablas de clasificación"
         },
         "submit-one-team": "Guardar para este equipo",
-        "apply-all-teams": "Aplicar para todos los equipos"
+        "apply-all-teams": "Aplicar a todos los equipos"
     }
 }

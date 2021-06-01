@@ -1,8 +1,8 @@
 <template>
 	<div class="expand-mobile">
-        <strong>Delete the image?</strong>
+        <strong>{{ $t('del_image_comp.delete-image') }}</strong>
         <br>
-        <button class="submit" @click="confirmDelete">Delete</button>
+        <button class="submit" @click="confirmDelete">{{ $t('del_image_comp.delete-btn') }}</button>
 	</div>
 </template>
 

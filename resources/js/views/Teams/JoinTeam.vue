@@ -1,16 +1,16 @@
 <template>
     <div class="jtc">
-        <h1 class="title is-2">Join a Team</h1>
+        <h1 class="title is-2">{{ $t('teams_dashboard.main.join-a-team') }}</h1>
 
         <div class="columns mt3">
 
             <div class="column is-one-third">
-                <p class="mb1">Enter an identifier to join a team.</p>
+                <p class="mb1">{{ $t('teams_dashboard.join.enter-team-identifier') }}</p>
             </div>
 
             <div class="column is-half card p2">
                 <form @submit.prevent="submit">
-                    <label for="join">Join team by identifier</label>
+                    <label for="join">{{ $t('teams_dashboard.join.team-identifier') }}</label>
                     <span
                         class="is-danger"
                         v-if="errorExists('identifier')"
@@ -19,14 +19,14 @@
                     <input
                         class="input mb2"
                         name="join"
-                        placeholder="Enter ID to join a team"
+                        :placeholder="$t('teams_dashboard.join.enter-id-to-join-placeholder')"
                         required
                         v-model="identifier"
                         @input="clearError"
                     />
 
                     <div class="has-text-right">
-                        <button :class="button" :disabled="processing">Join Team</button>
+                        <button :class="button" :disabled="processing">{{ $t('teams_dashboard.join.join-team') }}</button>
                     </div>
                 </form>
             </div>

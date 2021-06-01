@@ -1,4 +1,25 @@
 {
     "cancel": "Annuleren",
-    "submit": "Indienen"
+    "submit": "Indienen",
+    "download": "Download",
+    "confirm-delete": "Confirm Delete",
+    "loading": "Loading...",
+    "created_at": "Uploaded at",
+    "datetime": "Taken at",
+    "day-names": ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
+    "month-names": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+    "short-month-names": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    "next": "Next",
+    "previous": "Previous",
+    "next-page": "Next page",
+    "add-tags": "Add Tags",
+    "add-many-tags": "Add Many Tags",
+    "select-all": "Select all",
+    "de-select-all": "De-select all",
+    "choose-dates": "Choose Dates",
+    "not-verified": "Not Verified",
+    "verified": "Verified",
+    "search-by-id": "Search by ID",
+    "active": "Active",
+    "inactive": "Inactive"
 }

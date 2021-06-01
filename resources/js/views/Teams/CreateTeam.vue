@@ -1,20 +1,20 @@
 <template>
     <div class="ctc">
-        <h1 class="title is-2">Create a Team</h1>
+        <h1 class="title is-2">{{ $t('teams_dashboard.main.create-a-team') }}</h1>
 
-        <p class="mb2">You are allowed to create {{ this.remaining }} team(s)</p>
+        <p class="mb2">{{ $t('teams_dashboard.create.allowed-to-create') }} {{ this.remaining }} {{ $t('teams_dashboard.create.teams') }}</p>
 
         <div class="columns mt3">
 
             <div class="column is-one-third">
-                <p class="mb1">What kind of Team would you like to create?</p>
+                <p class="mb1">{{ $t('teams_dashboard.create.what-kind-of-team') }}</p>
             </div>
 
             <div class="column is-half card p2">
                 <form method="post" @submit.prevent="create">
                     <div class="control pb2">
 
-                        <p>Team Type</p>
+                        <p>{{ $t('teams_dashboard.create.team-type') }}</p>
 
                         <div class="select">
                             <select v-model="teamType">
@@ -23,7 +23,7 @@
                         </div>
                     </div>
 
-                    <label for="name">Team Name</label>
+                    <label for="name">{{ $t('teams_dashboard.create.team-name') }}</label>
                     <span
                         class="is-danger"
                         v-if="errorExists('name')"
@@ -32,15 +32,15 @@
                     <input
                         class="input mb2"
                         name="name"
-                        placeholder="My Awesome Team"
+                        :placeholder="$t('teams_dashboard.create.my-awesome-team-placeholder')"
                         v-model="name"
                         type="text"
                         required
                         @keydown="clearError('name')"
                     />
 
-                    <label for="identifier">Unique Team Identifier</label>
-                    <p>Anyone with this ID will be able to join your team.</p>
+                    <label for="identifier">{{ $t('teams_dashboard.create.unique-team-id') }}</label>
+                    <p>{{ $t('teams_dashboard.create.id-to-join-team') }}</p>
                     <span
                         class="is-danger"
                         v-if="errorExists('identifier')"
@@ -61,7 +61,7 @@
                     <!-- No = approval is required -->
 
                     <div>
-                        <button :class="button" :disabled="processing">Create Team</button>
+                        <button :class="button" :disabled="processing">{{ $t('teams_dashboard.create.create-team') }}</button>
                     </div>
                 </form>
             </div>

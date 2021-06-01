@@ -1,31 +1,31 @@
 <template>
     <section>
         <div class="my-teams-container">
-            <h1 class="title is-2">My Teams</h1>
+            <h1 class="title is-2">{{ $t('teams_dashboard.my_teams.title') }}</h1>
 
-            <p v-if="loading">Loading...</p>
+            <p v-if="loading">{{ $t('common.loading') }}</p>
 
             <div v-else>
 
                 <div v-if="user.active_team" class="mb2" :key="user.team.id">
-                    <p>You are currently joined team {{ user.team.name }}</p>
+                    <p>{{ $t('teams_dashboard.my_teams.currently-joined-team') }} {{ user.team.name }}</p>
                 </div>
 
-                <p v-else>You have not yet joined a team</p>
+                <p v-else>{{ $t('teams_dashboard.my_teams.no-joined-team') }}</p>
 
                 <div v-if="isLeader" class="mb2">
-                    <p>You are the leader of this team</p>
+                    <p>{{ $t('teams_dashboard.my_teams.leader-of-team') }}</p>
                 </div>
 
                 <div v-if="teams">
                     <div class="flex mb1">
                         <select v-model="viewTeam" class="input mtba" style="max-width: 30em;" @change="changeViewedTeam">
-                            <option :selected="! viewTeam" :value="null" disabled>Please join a team</option>
+                            <option :selected="! viewTeam" :value="null" disabled>{{ $t('teams_dashboard.my_teams.join-team') }}</option>
                             <option v-for="team in teams" :value="team.id">{{ team.name }}</option>
                         </select>
 
-                        <button :class="button" @click="changeActiveTeam" :disabled="disabled">Change active team</button>
-                        <button :class="downloadClass" :disabled="dlProcessing" @click="download">Download Team Data</button>
+                        <button :class="button" @click="changeActiveTeam" :disabled="disabled">{{ $t('teams_dashboard.my_teams.change-active-team') }}</button>
+                        <button :class="downloadClass" :disabled="dlProcessing" @click="download">{{ $t('teams_dashboard.my_teams.download-team-data') }}</button>
                         <button
                             v-if="isLeader"
                             :class="leaderboardClass"
@@ -36,13 +36,13 @@
 
                     <table class="table is-fullwidth is-hoverable has-text-centered">
                         <thead>
-                            <th>Position</th>
-                            <th>Name</th>
-                            <th>Username</th>
-                            <th>Status</th>
-                            <th>Photos</th>
-                            <th>Litter</th>
-                            <th>Last Activity</th>
+                            <th>{{ $t('teams_dashboard.my_teams.position-header') }}</th>
+                            <th>{{ $t('teams_dashboard.my_teams.name-header') }}</th>
+                            <th>{{ $t('teams_dashboard.my_teams.username-header') }}</th>
+                            <th>{{ $t('teams_dashboard.my_teams.status-header') }}</th>
+                            <th>{{ $t('teams_dashboard.my_teams.photos-header') }}</th>
+                            <th>{{ $t('teams_dashboard.my_teams.litter-header') }}</th>
+                            <th>{{ $t('teams_dashboard.my_teams.last-activity-header') }}</th>
                         </thead>
 
                         <tbody>
@@ -80,19 +80,19 @@
                             v-show="this.current_page > 1"
                             class="pagination-previous"
                             @click="previousPage"
-                        >Previous</a>
+                        >{{ $t('common.previous') }}</a>
 
                         <!-- Next Page -->
                         <a
                             v-show="this.show_next_page"
                             class="pagination-next"
                             @click="nextPage"
-                        >Next page</a>
+                        >{{ $t('common.next-page') }}</a>
                     </div>
                 </div>
 
                 <div v-else class="mb2">
-                    <p>You are not currently joined a team</p>
+                    <p>{{ $t('teams_dashboard.my_teams.currently-not-joined-team') }}</p>
                 </div>
             </div>
         </div>
@@ -222,8 +222,8 @@ export default {
         showLeaderboard ()
         {
             return this.teams.find(team => team.id === this.viewTeam).leaderboards
-                ? 'Hide from Leaderboards'
-                : 'Show on Leaderboards';
+                ? this.$t('teams_dashboard.my_teams.hide-from-leaderboards')
+                : this.$t('teams_dashboard.my_teams.show-on-leaderboards');
         },
 
         /**
@@ -287,7 +287,7 @@ export default {
         {
             if (this.changing) return '...';
 
-            return active_team_id === this.viewTeam ? 'Active' : 'Inactive';
+            return active_team_id === this.viewTeam ? this.$t('common.active') : this.$t('common.inactive');
         },
 
         /**

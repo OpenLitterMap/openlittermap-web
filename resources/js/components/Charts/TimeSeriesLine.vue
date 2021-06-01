@@ -8,7 +8,7 @@ export default {
     data ()
     {
         return {
-            months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+            months: this.$t('common.short-month-names') //['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
         }
     },
     mounted ()
@@ -20,7 +20,7 @@ export default {
         let values = [];
 
         // convert label month to text
-        // todo - translate this.months
+        // todo - translate this.months //Done!
         for (let k in arr)
         {
             dates.push(this.months[parseInt(k.substring(0,2))-1] + k.substring(2,5));
@@ -31,7 +31,7 @@ export default {
                 labels: dates,
                 datasets: [
                     {
-                        label: 'Verified Photos',
+                        label: this.$t('profile_dashboard.bottom.timeseries-verified-photos'),
                         backgroundColor: '#8e7fd6',
                         data: values,
                         fill: false,

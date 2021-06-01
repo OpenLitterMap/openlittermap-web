@@ -6,7 +6,7 @@
             <div class="control has-icons-left">
                 <input
                     class="input w10"
-                    placeholder="Search by ID"
+                    :placeholder="$t('common.search-by-id')"
                     v-model="filter_by_id"
                     @input="search"
                 />
@@ -31,6 +31,9 @@
             <div class="dropdown-menu">
                 <div class="dropdown-content calendar-box">
                     <FunctionalCalendar
+                        :day-names="$t('common.day-names')"
+                        :month-names="$t('common.month-names')"
+                        :short-month-names="$t('common.short-month-names')"
                         :change-month-function="true"
                         :change-year-function="true"
                         :is-date-range="true"
@@ -133,8 +136,8 @@ export default {
         getSelectAllText ()
         {
             return this.selectAll
-                ? 'De-select all'
-                : 'Select all';
+                ? this.$t('common.de-select-all')
+                : this.$t('common.select-all');
         },
 
         /**
@@ -176,7 +179,7 @@ export default {
         {
             return (this.filters.dateRange.start && this.filters.dateRange.end)
                 ? `${this.filters.dateRange.start} - ${this.filters.dateRange.end}`
-                : 'Choose Dates';
+                : this.$t('common.choose-dates');
         },
 
         /**
@@ -230,8 +233,8 @@ export default {
         getVerifiedText (i)
         {
             return (i === 0)
-                ? 'Not Verified'
-                : 'Verified';
+                ? this.$t('common.not-verified')
+                : this.$t('common.verified');
         },
 
         /**
