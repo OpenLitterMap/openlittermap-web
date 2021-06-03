@@ -1,10 +1,9 @@
 <template>
     <div class="profile-card">
-        <p class="mb1">{{ $t('profile_dashboard.top.welcome') }}, {{ name }}</p>
+        <p class="mb1">{{ $t('profile.dashboard.welcome') }}, {{ name }}</p>
 
-        <p class="mb1">{{ $t('profile_dashboard.top.out-of') }} {{ totalUsers }} {{ $t('profile_dashboard.top.users') }}</p>
-
-        <p>{{ $t('profile_dashboard.top.in-position') }} {{ usersPosition }} {{ $t('profile_dashboard.top.place') }}</p>
+        <p class="mb1">{{ $t('profile.dashboard.out-of', {total: totalUsers} ) }}</p>
+        <p>{{ $t('profile.dashboard.rank', { rank: usersPosition } ) }}</p>
     </div>
 </template>
 

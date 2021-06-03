@@ -1,20 +1,20 @@
 <template>
     <div class="ctc">
-        <h1 class="title is-2">{{ $t('teams_dashboard.main.create-a-team') }}</h1>
+        <h1 class="title is-2">{{ $t('teams.dashboard.create-a-team') }}</h1>
 
-        <p class="mb2">{{ $t('teams_dashboard.create.allowed-to-create') }} {{ this.remaining }} {{ $t('teams_dashboard.create.teams') }}</p>
+        <p class="mb2">{{ $t('teams.create.allowed-to-create', { teams:  this.remaining } ) }}</p>
 
         <div class="columns mt3">
 
             <div class="column is-one-third">
-                <p class="mb1">{{ $t('teams_dashboard.create.what-kind-of-team') }}</p>
+                <p class="mb1">{{ $t('teams.create.what-kind-of-team') }}</p>
             </div>
 
             <div class="column is-half card p2">
                 <form method="post" @submit.prevent="create">
                     <div class="control pb2">
 
-                        <p>{{ $t('teams_dashboard.create.team-type') }}</p>
+                        <p>{{ $t('teams.create.team-type') }}</p>
 
                         <div class="select">
                             <select v-model="teamType">
@@ -23,7 +23,7 @@
                         </div>
                     </div>
 
-                    <label for="name">{{ $t('teams_dashboard.create.team-name') }}</label>
+                    <label for="name">{{ $t('teams.create.team-name') }}</label>
                     <span
                         class="is-danger"
                         v-if="errorExists('name')"
@@ -32,15 +32,15 @@
                     <input
                         class="input mb2"
                         name="name"
-                        :placeholder="$t('teams_dashboard.create.my-awesome-team-placeholder')"
+                        :placeholder="$t('teams.create.my-awesome-team-placeholder')"
                         v-model="name"
                         type="text"
                         required
                         @keydown="clearError('name')"
                     />
 
-                    <label for="identifier">{{ $t('teams_dashboard.create.unique-team-id') }}</label>
-                    <p>{{ $t('teams_dashboard.create.id-to-join-team') }}</p>
+                    <label for="identifier">{{ $t('teams.create.unique-team-id') }}</label>
+                    <p>{{ $t('teams.create.id-to-join-team') }}</p>
                     <span
                         class="is-danger"
                         v-if="errorExists('identifier')"
@@ -61,7 +61,7 @@
                     <!-- No = approval is required -->
 
                     <div>
-                        <button :class="button" :disabled="processing">{{ $t('teams_dashboard.create.create-team') }}</button>
+                        <button :class="button" :disabled="processing">{{ $t('teams.create.create-team') }}</button>
                     </div>
                 </form>
             </div>

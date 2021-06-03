@@ -111,7 +111,7 @@ export default {
         {
             this.$store.commit('showModal', {
                type: 'AddManyTagsToManyPhotos',
-               title: this.t('common.add-many-tags') //'Add Many Tags'
+               title: this.$t('common.add-many-tags') //'Add Many Tags'
             });
         },
 
@@ -122,7 +122,7 @@ export default {
         {
             this.$store.commit('showModal', {
                 type: 'ConfirmDeleteManyPhotos',
-                title: this.t('common.confirm-delete') //'Confirm Delete'
+                title: this.$t('common.confirm-delete') //'Confirm Delete'
             });
         },
 

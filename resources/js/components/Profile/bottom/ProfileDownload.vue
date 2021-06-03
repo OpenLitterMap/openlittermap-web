@@ -1,8 +1,8 @@
 <template>
     <div class="profile-card">
-        <p class="profile-dl-title">{{ $t('profile_dashboard.bottom.download-data') }}</p>
+        <p class="profile-dl-title">{{ $t('profile.dashboard.download-data') }}</p>
 
-        <p class="profile-dl-subtitle">{{ $t('profile_dashboard.bottom.email-send-msg') }}</p>
+        <p class="profile-dl-subtitle">{{ $t('profile.dashboard.email-send-msg') }}</p>
 
         <button :class="button" @click="download" :disabled="processing">{{ $t('common.download') }}</button>
     </div>

@@ -1,5 +1,6 @@
 <script>
 import { Radar } from 'vue-chartjs'
+import { categories} from '../../extra/categories';
 
 export default {
     extends: Radar,
@@ -7,23 +8,19 @@ export default {
     props: ['categories'],
     mounted ()
     {
+        let labels = [];
+        //temp fix - we need to add art and dogshit
+        categories.filter((category) => (category !== 'art' && category !== 'dogshit')).map((category) => {
+            labels.push(
+                this.$t('litter.categories.' + category)
+            )
+        });
+
         this.renderChart({
-            labels: [
-                this.$t('profile_dashboard.middle.radar-cat-smoking'),
-                this.$t('profile_dashboard.middle.radar-cat-food'),
-                this.$t('profile_dashboard.middle.radar-cat-coffee'),
-                this.$t('profile_dashboard.middle.radar-cat-softdrinks'),
-                this.$t('profile_dashboard.middle.radar-cat-alcohol'),
-                this.$t('profile_dashboard.middle.radar-cat-other'),
-                this.$t('profile_dashboard.middle.radar-cat-coastal'),
-                this.$t('profile_dashboard.middle.radar-cat-sanitary'),
-                this.$t('profile_dashboard.middle.radar-cat-dumping'),
-                this.$t('profile_dashboard.middle.radar-cat-industrial'),
-                this.$t('profile_dashboard.middle.radar-cat-brands')
-            ],
+            labels,
             datasets: [
                 {
-                    label: this.$t('profile_dashboard.middle.radar-total-categories'), //'Total Categories',
+                    label: this.$t('profile.dashboard.total-categories'),
                     backgroundColor: '#8e7fd6',
                     data: this.categories,
                     fill: true,

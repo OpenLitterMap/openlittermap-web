@@ -2,6 +2,8 @@
     "cancel": "Cancel",
     "submit": "Submit",
     "download": "Download",
+    "delete": "Delete",
+    "delete-image": "Delete the image?",
     "confirm-delete": "Confirm Delete",
     "loading": "Loading...",
     "created_at": "Uploaded at",

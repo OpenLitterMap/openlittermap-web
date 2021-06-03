@@ -18,7 +18,7 @@
             <option v-for="time in periods" :value="time">{{ getPeriod(time) }}</option>
         </select>
 
-        <button :class="button" @click="changePeriod" :disabled="disabled">{{ $t('profile_dashboard.middle.calendar-load-data') }}</button>
+        <button :class="button" @click="changePeriod" :disabled="disabled">{{ $t('profile.dashboard.calendar-load-data') }}</button>
     </div>
 </template>
 

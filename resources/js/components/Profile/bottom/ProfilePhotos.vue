@@ -1,8 +1,8 @@
 <template>
     <div class="profile-card">
-        <p class="mb1">{{ $t('profile_dashboard.bottom.manage-my-photos') }}</p>
+        <p class="mb1">{{ $t('profile.dashboard.manage-my-photos') }}</p>
 
-        <button class="button is-medium is-primary" @click="load">{{ $t('profile_dashboard.bottom.view-my-photos') }}</button>
+        <button class="button is-medium is-primary" @click="load">{{ $t('profile.dashboard.view-my-photos') }}</button>
     </div>
 </template>
 
@@ -22,7 +22,7 @@ export default {
 
             this.$store.commit('showModal', {
                 type: 'MyPhotos',
-                title: this.$t('profile_dashboard.bottom.my-photos') //'My Photos'
+                title: this.$t('profile.dashboard.my-photos') //'My Photos'
             });
         }
     }

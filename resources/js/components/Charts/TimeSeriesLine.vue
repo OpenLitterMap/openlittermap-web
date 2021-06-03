@@ -20,7 +20,7 @@ export default {
         let values = [];
 
         // convert label month to text
-        // todo - translate this.months //Done!
+        // todo - translate this.months
         for (let k in arr)
         {
             dates.push(this.months[parseInt(k.substring(0,2))-1] + k.substring(2,5));
@@ -31,7 +31,7 @@ export default {
                 labels: dates,
                 datasets: [
                     {
-                        label: this.$t('profile_dashboard.bottom.timeseries-verified-photos'),
+                        label: this.$t('profile.dashboard.timeseries-verified-photos'),
                         backgroundColor: '#8e7fd6',
                         data: values,
                         fill: false,

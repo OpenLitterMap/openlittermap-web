@@ -1,24 +1,24 @@
 <template>
     <section class="tdc">
-        <p class="subtitle is-centered is-3">{{ $t('teams_dashboard.main.teams-dashboard') }}</p>
+        <p class="subtitle is-centered is-3">{{ $t('teams.dashboard.teams-dashboard') }}</p>
 
         <div class="columns">
             <div class="column teams-card">
                 <span class="title is-2" style="color: #7b848e;">{{ photos_count }}</span>
                 <br>
-                {{ $t('teams_dashboard.main.photos-uploaded') }} {{ this.getPeriod() }}
+                {{ $t('teams.dashboard.photos-uploaded') }} {{ this.getPeriod() }}
             </div>
 
             <div class="column teams-card">
                 <span class="title is-2" style="color: #7b848e;">{{ litter_count }}</span>
                 <br>
-                {{ $t('teams_dashboard.main.litter-tagged') }} {{ this.getPeriod() }}
+                {{ $t('teams.dashboard.litter-tagged') }} {{ this.getPeriod() }}
             </div>
 
             <div class="column teams-card">
                 <span class="title is-2" style="color: #7b848e;">{{ members_count }}</span>
                 <br>
-                {{ $t('teams_dashboard.main.members-uploaded') }} {{ this.getPeriod() }}
+                {{ $t('teams.dashboard.members-uploaded') }} {{ this.getPeriod() }}
             </div>
         </div>
 
@@ -32,7 +32,7 @@
 
             <!-- All or Select Team -->
             <select v-model="viewTeam" @change="changeTeamOrTime" class="input dash-time">
-                <option value="0" selected>{{ $t('teams_dashboard.main.all-teams') }}</option>
+                <option value="0" selected>{{ $t('teams.dashboard.all-teams') }}</option>
                 <option v-for="team in teams" :value="team.id">{{ team.name }}</option>
             </select>
         </div>
@@ -131,7 +131,7 @@ export default {
         {
             if (! period) period = this.period;
 
-            return this.$t('teams.times.' + period)
+            return this.$t('teams.dashboard.times.' + period)
         },
     }
 }
