@@ -87,7 +87,7 @@ export default {
         {
             if (! period) period = this.period;
 
-            return this.$t('teams.times.' + period)
+            return this.$t('teams.dashboard.times.' + period)
         },
     }
 };
