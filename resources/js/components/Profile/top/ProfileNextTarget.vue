@@ -6,7 +6,7 @@
 
         <p class="is-purp mb1">{{ $t('profile.dashboard.have-xp') }} <strong class="is-white">{{ currentXp }} xp</strong></p>
 
-        <p class="is-purp mb2">{{ $t('profile.dashboard.need-xp') }} <strong class="is-white">{{ neededXp }} xp</strong> {{ $t('profile_dashboard.top.to-reach-level') }}</p>
+        <p class="is-purp mb2">{{ $t('profile.dashboard.need-xp') }} <strong class="is-white">{{ neededXp }} xp</strong> {{ $t('profile.dashboard.to-reach-level') }}</p>
     </div>
 </template>
 
