@@ -73,7 +73,7 @@
 						<img src="/assets/icons/mining.png" class="ltr-icon" />
 					</aside>
 					<div class="grid-main">
-						<p>A Littercoin as been mined!</p>
+						<p>A Littercoin has been mined!</p>
                         <i>Reason: <span class="ltr-strong">{{ getLittercoinReason(event.reason) }}</span></i>
 					</div>
 				</div>
