@@ -40,15 +40,4 @@ export default {
         position: relative;
         z-index: 1;
     }
-
-    /* Mobile view. Seems to work for iPhone 7 */
-    @media (max-width: 768px)
-    {
-        .global-map-container {
-            height: calc(100% - 138px);
-            margin: 0;
-            position: relative;
-            z-index: 1;
-        }
-    }
 </style>
