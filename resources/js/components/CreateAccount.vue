@@ -157,7 +157,7 @@
                         v-model="checkbox"
                     />
                     <label for="ConfirmToS" v-html="$t('auth.subscribe.form-account-conditions')">
-                         
+
                     </label>
                 </p>
 
@@ -243,18 +243,10 @@ export default {
 
 		/**
 		 * Key to return for google-recaptcha
-         * @olmbulma.test (old) 6Lfd4HMUAAAAAMZBVUIpBJI7OfwtPcbqR6kGndSE
-         * @olm.test (new) 6LcvHsIZAAAAAOG0q9-1vY3uWqu0iFvUC3tCNhID
-         * @production 6LciihwUAAAAADsZr0CYUoLPSMOIiwKvORj8AD9m // todo - put this on .env
 		 */
 		computedKey ()
 		{
-            if (process.env.NODE_ENV === "development")
-			{
-                return "6LcvHsIZAAAAAOG0q9-1vY3uWqu0iFvUC3tCNhID"; // olm.test
-			}
-
-			return "6LciihwUAAAAADsZr0CYUoLPSMOIiwKvORj8AD9m" // production
+            return process.env.MIX_GOOGLE_RECAPTCHA_KEY;
 		},
 
         /**
