@@ -1,5 +1,10 @@
 <template>
-    <div class="global-map-container">
+    <div v-if="!isPhone()" class="global-map-container">
+        <loading v-if="loading" :active.sync="loading" :is-full-page="true" />
+
+        <supercluster v-else />
+    </div>
+    <div v-else class="global-map-container" :style="{height: mapHeight}">
         <loading v-if="loading" :active.sync="loading" :is-full-page="true" />
 
         <supercluster v-else />
@@ -14,10 +19,15 @@ import Supercluster from './Supercluster'
 export default {
     name: 'GlobalMapContainer',
     components: { Loading, Supercluster },
+    data() {return {mapHeight: window.outerHeight - 72 + "px"}},
     async created ()
     {
         // this.$store.dispatch('GLOBAL_MAP_DATA', 'one-month'); // today, one-week
         await this.$store.dispatch('GET_CLUSTERS', 2);
+    },
+    async destroyed ()
+    {
+        window.removeEventListener("resize", this.resizeHandler);
     },
     computed: {
         /**
@@ -27,6 +37,19 @@ export default {
         {
             return this.$store.state.globalmap.loading;
         }
+    },
+    methods: {
+        resizeHandler () {
+            console.log(window.innerHeight);
+            this.mapHeight = window.innerHeight - 72 + "px";
+        },
+        isPhone(){
+            if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)){
+                window.addEventListener("resize", this.resizeHandler);
+                return true;
+            }
+            return false;
+        }
     }
 }
 </script>
@@ -34,6 +57,9 @@ export default {
 <style scoped>
     @import '~leaflet/dist/leaflet.css';
 
+    html, body{
+        height: 100%;
+    }
     .global-map-container {
         height: calc(100% - 72px);
         margin: 0;
