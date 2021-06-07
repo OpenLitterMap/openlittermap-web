@@ -40,7 +40,6 @@ export default {
     },
     methods: {
         resizeHandler () {
-            console.log(window.innerHeight);
             this.mapHeight = window.innerHeight - 72 + "px";
         },
         isPhone(){
@@ -57,9 +56,6 @@ export default {
 <style scoped>
     @import '~leaflet/dist/leaflet.css';
 
-    html, body{
-        height: 100%;
-    }
     .global-map-container {
         height: calc(100% - 72px);
         margin: 0;
