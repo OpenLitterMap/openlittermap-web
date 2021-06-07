@@ -46,12 +46,10 @@ export default {
 	async created ()
 	{
 		this.loading = true;
-		await this.$store.dispatch('GET_DONATION_AMOUNTS')
-            .then(() => {
-                this.loading = false;
+		await this.$store.dispatch('GET_DONATION_AMOUNTS');
+        this.loading = false;
 
-                this.$emit('donations-loaded')
-            });
+        this.$emit('donations-loaded')
 	},
 
 	computed: {
