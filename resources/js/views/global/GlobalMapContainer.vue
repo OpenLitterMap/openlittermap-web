@@ -19,7 +19,11 @@ import Supercluster from './Supercluster'
 export default {
     name: 'GlobalMapContainer',
     components: { Loading, Supercluster },
-    data() {return {mapHeight: window.outerHeight - 72 + "px"}},
+    data() {
+            return {
+                mapHeight: window.outerHeight - 72 + "px"
+            }
+        },
     async created ()
     {
         // this.$store.dispatch('GLOBAL_MAP_DATA', 'one-month'); // today, one-week
