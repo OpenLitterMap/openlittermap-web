@@ -1,8 +1,8 @@
 {
-    "title": "Team Leaderboard",
-    "position-header": "Position",
-    "name-header": "Name",
-    "photos-header": "Total Photos",
-    "litter-header": "Total Litter",
-    "created-at-header" : "Created At"
+    "title": "Team Scorebord",
+    "position-header": "Positie",
+    "name-header": "Naam",
+    "photos-header": "Totaal Foto's",
+    "litter-header": "Totaal Afval",
+    "created-at-header" : "Gemaakt op"
 }

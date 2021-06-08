@@ -1,7 +1,6 @@
 {
-    "privacy-title": "Control your Privacy",
-    "privacy-text": "Control your privacy for every team you have joined.",
-
+    "privacy-title": "Controleer je Privacy",
+    "privacy-text": "Controleer je privacy voor elk team waar je je bij aangesloten hebt.",
     "maps": {
         "team-map": "Team Plattegrond",
         "name-will-appear": "Jouw naam zal verschijnen op de plattegrond",
@@ -10,8 +9,8 @@
     },
     "leaderboards": {
         "team-leaderboard": "Team Leiderbord",
-        "name-will-appear": "Jouw naam zal verschijen op het leiderbord",
-        "username-will-appear": "Jouw gebruikersnaam zal verschijen op het leiderbord",
+        "name-will-appear": "Jouw naam zal verschijnen op het leiderbord",
+        "username-will-appear": "Jouw gebruikersnaam zal verschijnen op het leiderbord",
         "will-not-appear": "Jouw naam en gebruikersnaam zullen niet op het leiderbord verschijnen"
     },
     "submit-one-team": "Opslaan voor dit Team",

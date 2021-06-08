@@ -12,7 +12,7 @@
         "softdrinks": "Frisdrank",
         "smoking": "Rookwaar",
         "other": "Overig",
-        "dogshit": "Pets"
+        "dogshit": "Huisdieren"
     },
     "smoking": {
         "butts": "Sigaretten/Peuken",
@@ -84,7 +84,7 @@
         "pullring": "Blik Lipje",
         "strawpacket": "Rietjes Verpakking",
         "styro_cup": "Piepschuim Beker",
-        "broken_glass": "Broken Glass",
+        "broken_glass": "Gebroken Glas",
         "softDrinkOther": "Frisdrank-Overig"
     },
     "sanitary": {
@@ -98,7 +98,7 @@
         "tooth_pick": "Tandenstoker",
         "tooth_brush": "Tandenborstel",
         "wetwipes": "Natte Doekjes",
-        "hand_sanitiser": "Hand Sanitiser",
+        "hand_sanitiser": "Hand Reiniger",
         "sanitaryOther": "Hygiëne-Overig"
     },
     "dumping": {
@@ -255,10 +255,10 @@
     "presence": {
         "picked-up": "Ik heb het opgeruimd!",
         "still-there": "Het ligt er nog.",
-        "picked-up-text": "It's gone.",
-        "still-there-text": "The litter is still there!"
+        "picked-up-text": "Het is opgeruimd.",
+        "still-there-text": "Het afval is er nog!"
     },
-    "no-tags": "No tags",
+    "no-tags": "Geen kenmerken",
     "not-verified": "In afwachting van verificatie",
     "dogshit": {
         "poo": "Hondendrol!",

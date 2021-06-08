@@ -14,8 +14,8 @@
     "to-tag": "Aantal foto's om nog te labelen",
     "total-uploaded": "Totaal aantal foto's geupload",
     "uploaded": "Geupload",
-    "confirm-delete": "",
-    "recently-tags": "",
-    "clear-tags": "Clear recent tags?",
-    "clear-tags-btn": "Clear recent tags"
+    "confirm-delete": "Bevestig verwijdering",
+    "recently-tags": "Recent gebruikte kenmerken",
+    "clear-tags": "Verwijder recent gebruikte kenmerken?",
+    "clear-tags-btn": "Verwijder recent gebruikte kenmerken"
 }
