@@ -11,7 +11,8 @@
         "sanitary": "Hygiëne",
         "softdrinks": "Frisdrank",
         "smoking": "Rookwaar",
-        "other": "Overig"
+        "other": "Overig",
+        "dogshit": "Pets"
     },
     "smoking": {
         "butts": "Sigaretten/Peuken",
@@ -83,6 +84,7 @@
         "pullring": "Blik Lipje",
         "strawpacket": "Rietjes Verpakking",
         "styro_cup": "Piepschuim Beker",
+        "broken_glass": "Broken Glass",
         "softDrinkOther": "Frisdrank-Overig"
     },
     "sanitary": {
@@ -96,6 +98,7 @@
         "tooth_pick": "Tandenstoker",
         "tooth_brush": "Tandenborstel",
         "wetwipes": "Natte Doekjes",
+        "hand_sanitiser": "Hand Sanitiser",
         "sanitaryOther": "Hygiëne-Overig"
     },
     "dumping": {

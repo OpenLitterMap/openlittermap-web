@@ -11,7 +11,8 @@
         "other": "Other",
         "sanitary": "Sanitary",
         "softdrinks": "Soft Drinks",
-        "smoking": "Smoking"
+        "smoking": "Smoking",
+        "dogshit": "Pets"
     },
     "smoking": {
         "butts": "Cigarettes/Butts",
@@ -82,6 +83,7 @@
         "pullring": "Pull-ring",
         "strawpacket": "Straw Packaging",
         "styro_cup": "Styrofoam Cup",
+        "broken_glass": "Broken Glass",
         "softDrinkOther": "Soft Drink (other)"
     },
     "sanitary": {
@@ -95,8 +97,8 @@
         "tooth_pick": "Tooth Pick",
         "tooth_brush": "Tooth Brush",
         "wetwipes": "Wet Wipes",
-        "sanitaryOther": "Sanitary (other)",
-        "hand_sanitiser": "Hand Sanitiser"
+        "hand_sanitiser": "Hand Sanitiser",
+        "sanitaryOther": "Sanitary (other)"
     },
     "other": {
         "dogshit": "Pet Surprise",
