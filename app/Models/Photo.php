@@ -4,10 +4,13 @@ namespace App\Models;
 
 use App\Models\AI\Annotation;
 use App\Models\User\User;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Photo extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
     	'filename',
     	'model',
