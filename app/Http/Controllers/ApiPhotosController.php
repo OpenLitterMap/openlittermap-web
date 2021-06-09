@@ -23,25 +23,46 @@ class ApiPhotosController extends Controller
 
     /**
      * Save a photo to the database
+     *
+     * Todo - Accept the image and data and process it is a job,
+     * Then return as quickly as possible.
+     *
+     * @param Request $request
+     *
+     * array (
+        'lat' => '55.455525',
+        'lon' => '-5.713071670000001',
+        'date' => '2021:06:04 15:50:55',
+        'presence' => 'true',
+        'model' => 'iPhone 12',
+        'photo' =>
+            Illuminate\Http\UploadedFile::__set_state(array(
+                'test' => false,
+                'originalName' => 'IMG_2624.JPG',
+                'mimeType' => 'image/jpeg',
+                'error' => 0,
+                'hashName' => NULL,
+            )),
+        );
      */
     public function store (Request $request)
     {
         \Log::info(['app.upload', $request->all()]);
 
-        if ($request->has('model'))
+        $file = $request->file('photo');
+
+        if ($file->getError() === 3)
         {
-            $model = $request->model;
+            return ['success' => false, 'msg' => 'error-3'];
         }
 
-        else
-        {
-            $model = 'Mobile app v2';
-        }
+        $user = Auth::guard('api')->user();
 
-		$user = Auth::guard('api')->user();
+        $model = ($request->has('model'))
+            ? $request->model
+            : 'Mobile app v2';
 
-		$file = $request->file('photo');
-		$filename = $file->getClientOriginalName();
+        $filename = $file->getClientOriginalName();
 
 		$lat  = $request['lat'];
 		$lon  = $request['lon'];
@@ -63,7 +84,6 @@ class ApiPhotosController extends Controller
             $s3->put($filepath, file_get_contents($file), 'public');
             $imageName = $s3->url($filepath);
         }
-
 	    else $imageName = 'test';
 
         $apiKey = config('services.location.secret');

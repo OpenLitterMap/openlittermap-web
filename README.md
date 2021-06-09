@@ -83,7 +83,7 @@ databases:
 <p>You also need to install composer and npm dependencies.</p>
 <p>Locally, run "npm install"</p>
 <p>SSH into the VM with "vagrant ssh". cd into Code/olm, and then run "composer install"</p>
-<p>You can migrate the tables with "php artisan migrate"</p>
+<p>You can migrate and seed the tables with "php artisan migrate --seed"</p>
 <p>If you would like to contribute something, make a new branch locally "git checkout -b feature/my-new-feature". We would love to see your pull requests!</p>
 
 <p>You might notice there are some websocket errors in the browser. Some operations like adding photos broadcast live events to the client. It's easy to get websockets set up to resolve this.</p>
