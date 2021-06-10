@@ -3,8 +3,20 @@
 namespace Tests\Unit\Models;
 
 use App\Models\AI\Annotation;
+use App\Models\Litter\Categories\Alcohol;
+use App\Models\Litter\Categories\Art;
+use App\Models\Litter\Categories\Brand;
+use App\Models\Litter\Categories\Coastal;
+use App\Models\Litter\Categories\Coffee;
+use App\Models\Litter\Categories\Dogshit;
+use App\Models\Litter\Categories\Dumping;
 use App\Models\Litter\Categories\Food;
+use App\Models\Litter\Categories\Industrial;
+use App\Models\Litter\Categories\Other;
+use App\Models\Litter\Categories\Sanitary;
 use App\Models\Litter\Categories\Smoking;
+use App\Models\Litter\Categories\SoftDrinks;
+use App\Models\Litter\Categories\TrashDog;
 use App\Models\Photo;
 use App\Models\User\User;
 use Illuminate\Database\Eloquent\Collection;
@@ -55,6 +67,59 @@ class PhotoTest extends TestCase
         $this->assertNotEmpty($photo->categories());
     }
 
+    public function test_a_photo_has_a_translated_string_of_its_categories()
+    {
+        $smoking = Smoking::factory()->create();
+        $food = Food::factory()->create();
+        $photo = Photo::factory()->create([
+            'smoking_id' => $smoking->id,
+            'food_id' => $food->id
+        ]);
+
+        $photo->translate();
+
+        $this->assertEquals(
+            $smoking->translate() . $food->translate(),
+            $photo->result_string
+        );
+    }
+
+    public function test_a_photo_has_a_count_of_total_litter_in_it()
+    {
+        $smoking = Smoking::factory(['butts' => 1])->create();
+        $brands = Brand::factory(['walkers' => 1])->create();
+        $photo = Photo::factory()->create([
+            'smoking_id' => $smoking->id,
+            'brands_id' => $brands->id
+        ]);
+
+        // Suppress output to console
+        $this->setOutputCallback(function() {});
+
+        $photo->total();
+
+        // Brands are not calculated
+        $this->assertEquals($smoking->total(), $photo->total_litter);
+    }
+
+    public function test_a_photo_removes_empty_tags_from_categories()
+    {
+        $smoking = Smoking::factory(['butts' => 1])->create();
+        $brands = Brand::factory(['walkers' => 1])->create();
+        $photo = Photo::factory()->create([
+            'smoking_id' => $smoking->id,
+            'brands_id' => $brands->id
+        ]);
+
+        $photo->tags();
+
+        $this->assertEquals(1, $photo->smoking->butts);
+        $this->assertEquals(1, $photo->brands->walkers);
+
+        $this->assertObjectNotHasAttribute('lighters', $photo->smoking);
+        $this->assertObjectNotHasAttribute('amazon', $photo->brands);
+    }
+
     public function test_a_photo_has_an_owner()
     {
         $owner = User::factory()->create();
@@ -88,4 +153,135 @@ class PhotoTest extends TestCase
         $this->assertTrue($food->is($photo->food));
     }
 
+    public function test_a_photo_has_a_coffee_relationship()
+    {
+        $coffee = Coffee::factory()->create();
+        $photo = Photo::factory()->create([
+            'coffee_id' => $coffee->id
+        ]);
+
+        $this->assertInstanceOf(Coffee::class, $photo->coffee);
+        $this->assertTrue($coffee->is($photo->coffee));
+    }
+
+    public function test_a_photo_has_a_softdrinks_relationship()
+    {
+        $softdrinks = SoftDrinks::factory()->create();
+        $photo = Photo::factory()->create([
+            'softdrinks_id' => $softdrinks->id
+        ]);
+
+        $this->assertInstanceOf(SoftDrinks::class, $photo->softdrinks);
+        $this->assertTrue($softdrinks->is($photo->softdrinks));
+    }
+
+    public function test_a_photo_has_an_alcohol_relationship()
+    {
+        $alcohol = Alcohol::factory()->create();
+        $photo = Photo::factory()->create([
+            'alcohol_id' => $alcohol->id
+        ]);
+
+        $this->assertInstanceOf(Alcohol::class, $photo->alcohol);
+        $this->assertTrue($alcohol->is($photo->alcohol));
+    }
+
+    public function test_a_photo_has_a_sanitary_relationship()
+    {
+        $sanitary = Sanitary::factory()->create();
+        $photo = Photo::factory()->create([
+            'sanitary_id' => $sanitary->id
+        ]);
+
+        $this->assertInstanceOf(Sanitary::class, $photo->sanitary);
+        $this->assertTrue($sanitary->is($photo->sanitary));
+    }
+
+    public function test_a_photo_has_a_dumping_relationship()
+    {
+        $dumping = Dumping::factory()->create();
+        $photo = Photo::factory()->create([
+            'dumping_id' => $dumping->id
+        ]);
+
+        $this->assertInstanceOf(Dumping::class, $photo->dumping);
+        $this->assertTrue($dumping->is($photo->dumping));
+    }
+
+    public function test_a_photo_has_an_other_relationship()
+    {
+        $other = Other::factory()->create();
+        $photo = Photo::factory()->create([
+            'other_id' => $other->id
+        ]);
+
+        $this->assertInstanceOf(Other::class, $photo->other);
+        $this->assertTrue($other->is($photo->other));
+    }
+
+    public function test_a_photo_has_an_industrial_relationship()
+    {
+        $industrial = Industrial::factory()->create();
+        $photo = Photo::factory()->create([
+            'industrial_id' => $industrial->id
+        ]);
+
+        $this->assertInstanceOf(Industrial::class, $photo->industrial);
+        $this->assertTrue($industrial->is($photo->industrial));
+    }
+
+    public function test_a_photo_has_a_coastal_relationship()
+    {
+        $coastal = Coastal::factory()->create();
+        $photo = Photo::factory()->create([
+            'coastal_id' => $coastal->id
+        ]);
+
+        $this->assertInstanceOf(Coastal::class, $photo->coastal);
+        $this->assertTrue($coastal->is($photo->coastal));
+    }
+
+    public function test_a_photo_has_an_art_relationship()
+    {
+        $art = Art::factory()->create();
+        $photo = Photo::factory()->create([
+            'art_id' => $art->id
+        ]);
+
+        $this->assertInstanceOf(Art::class, $photo->art);
+        $this->assertTrue($art->is($photo->art));
+    }
+
+    public function test_a_photo_has_a_brands_relationship()
+    {
+        $brands = Brand::factory()->create();
+        $photo = Photo::factory()->create([
+            'brands_id' => $brands->id
+        ]);
+
+        $this->assertInstanceOf(Brand::class, $photo->brands);
+        $this->assertTrue($brands->is($photo->brands));
+    }
+
+    public function test_a_photo_has_a_trashdog_relationship()
+    {
+        $trashdog = TrashDog::factory()->create();
+        $photo = Photo::factory()->create([
+            'trashdog_id' => $trashdog->id
+        ]);
+
+        $this->assertInstanceOf(TrashDog::class, $photo->trashdog);
+        $this->assertTrue($trashdog->is($photo->trashdog));
+    }
+
+    public function test_a_photo_has_a_dogshit_relationship()
+    {
+        $dogshit = Dogshit::factory()->create();
+        $photo = Photo::factory()->create([
+            'dogshit_id' => $dogshit->id
+        ]);
+
+        $this->assertInstanceOf(Dogshit::class, $photo->dogshit);
+        $this->assertTrue($dogshit->is($photo->dogshit));
+    }
 }

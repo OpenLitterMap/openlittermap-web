@@ -35,7 +35,7 @@ class AnnotationFactory extends Factory
             'bbox' => $this->faker->sentence,
             'segmentation' => $this->faker->sentence,
             'is_crowd' => 0,
-            'area' => $this->faker->randomFloat(2),
+            'area' => 1,
             'added_by' => User::factory()->create(),
             'verified_by' => User::factory()->create(),
         ];
