@@ -1,0 +1,8 @@
+{
+    "title": "Team Leaderboard",
+    "position-header": "Position",
+    "name-header": "Name",
+    "photos-header": "Total Photos",
+    "litter-header": "Total Litter",
+    "created-at-header" : "Created At"
+}

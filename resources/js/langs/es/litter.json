@@ -9,7 +9,7 @@
         "food": "Comida",
         "industrial": "Industrial",
         "sanitary": "Sanitario",
-        "softdrinks": "Bebidas (sin alcohol)",
+        "softdrinks": "Refrescos",
         "smoking": "Fumar",
         "other": "Otros",
         "dogshit": "Mascotas"
@@ -84,6 +84,7 @@
         "pullring": "Anillas",
         "strawpacket": "Embalaje pajitas",
         "styro_cup": "Vaso de poliestireno",
+        "broken_glass": "Vidrio roto",
         "softDrinkOther": "Bebidas-Otras"
     },
     "sanitary": {
@@ -253,7 +254,9 @@
     },
     "presence": {
         "picked-up": "¡La he recogido!",
-        "still-there": "Todavía sigue ahí."
+        "still-there": "Todavía sigue ahí.",
+        "picked-up-text": "Ya no está.",
+        "still-there-text": "¡La basura sigue ahí!"
     },
     "no-tags": "Sin etiquetas",
     "not-verified": "Esperando verificación",

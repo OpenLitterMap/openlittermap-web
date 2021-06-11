@@ -1,10 +1,10 @@
 <template>
     <div class="profile-card">
-        <p class="profile-dl-title">Download My Data</p>
+        <p class="profile-dl-title">{{ $t('profile.dashboard.download-data') }}</p>
 
-        <p class="profile-dl-subtitle">An email will be sent to the address you use to login.</p>
+        <p class="profile-dl-subtitle">{{ $t('profile.dashboard.email-send-msg') }}</p>
 
-        <button :class="button" @click="download" :disabled="processing">Download</button>
+        <button :class="button" @click="download" :disabled="processing">{{ $t('common.download') }}</button>
     </div>
 </template>
 

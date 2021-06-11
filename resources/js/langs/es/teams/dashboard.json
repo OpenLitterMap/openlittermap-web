@@ -1,0 +1,24 @@
+{
+    "olm-teams": "Equipos de OpenLitterMap",
+    "dashboard": "Dashboard",
+    "join-a-team": "Únete a un equipo",
+    "create-a-team": "Crea un equipo",
+    "your-teams": "Tus equipos",
+    "leaderboard": "Tabla de clasificación",
+    "settings": "Ajustes",
+    "teams-dashboard": "Dashboard de equipos ",
+    "photos-uploaded": "Fotos subidas",
+    "litter-tagged": "Basura etiquetada",
+    "members-uploaded": "Miembros del equipo con fotos subidas",
+    "all-teams": "Todos los equipos",
+
+    "times": {
+        "today": "Hoy",
+        "week": "Esta semana",
+        "month": "Este mes",
+        "year": "Este año",
+        "all": "Todos los años",
+        "created_at": "Subida el",
+        "datetime": "Tomada el"
+    }
+}

@@ -1,0 +1,13 @@
+{
+    "allowed-to-create": "Je mag {teams} team(s) aanmaken",
+    "what-kind-of-team": "Wat voor soort team wil je aanmaken?",
+    "team-type": "Team Type",
+    "team-name": "Team Naam",
+    "my-awesome-team-placeholder": "Mijn Geweldige Team",
+    "unique-team-id": "Uniek Kenmerk van het team",
+    "id-to-join-team": "Iedereen met dit kenmerk kan zich aansluiten bij jouw team.",
+    "create-team": "Maak Team Aan",
+    "created": "Gefeliciteerd! Je nieuwe team is aangemaakt.",
+    "fail": "Er ging iets mis bij het aanmaken van jouw Team",
+    "max-created": "Het maximum aantal teams dat je kunt aanmaken is bereikt."
+}

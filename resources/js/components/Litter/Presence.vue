@@ -28,7 +28,7 @@ export default {
          */
         remainingText ()
         {
-            return this.$store.state.litter.presence ? "It's gone." : "The litter is still there!";
+            return this.$store.state.litter.presence ? this.$t('litter.presence.picked-up-text') : this.$t('litter.presence.still-there-text');
         },
 
         /**

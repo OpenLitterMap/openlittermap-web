@@ -1,0 +1,19 @@
+{
+    "privacy-title": "Controla tu privacidad",
+    "privacy-text": "Controla tu privacidad para cada equipo al que te hayas unido.",
+
+    "maps": {
+        "team-map": "Mapa del equipo",
+        "name-will-appear": "Tu nombre aparecerá en los mapas",
+        "username-will-appear": "Tu nombre de usuario aparecerá en los mapas",
+        "will-not-appear": "Tu nombre y nombre de usuario aparecerán en los mapas"
+    },
+    "leaderboards": {
+        "team-leaderboard": "Tabla de clasificación del equipo",
+        "name-will-appear": "Tu nombre aparecerá en las tablas de clasificación",
+        "username-will-appear": "Tu nombre de usuario aparecerá en las tablas de clasificación",
+        "will-not-appear": "Tu nombre y nombre de usuario aparecerán en las tablas de clasificación"
+    },
+    "submit-one-team": "Guardar para este equipo",
+    "apply-all-teams": "Aplicar a todos los equipos"
+}
