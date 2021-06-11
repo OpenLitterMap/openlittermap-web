@@ -6,6 +6,7 @@ use App\Models\Photo;
 use App\Models\Teams\Team;
 use App\Payment;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Laravel\Cashier\Billable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -15,7 +16,7 @@ use LaravelAndVueJS\Traits\LaravelPermissionToVueJS;
 
 class User extends Authenticatable
 {
-    use Notifiable, Billable, HasApiTokens, HasRoles, LaravelPermissionToVueJS;
+    use Notifiable, Billable, HasApiTokens, HasRoles, LaravelPermissionToVueJS, HasFactory;
 
     /**
      * On creation, give a new user a 30 random string for email verification

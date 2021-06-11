@@ -3,33 +3,32 @@
 namespace Tests\Feature;
 
 use App\Models\User\User;
+use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 use App\Models\Photo;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
 class UploadPhotoTest extends TestCase
 {
     /** @test */
-    public function a_guest_can_visit_the_homepage ()
+    public function a_user_can_upload_a_photo()
     {
-        $response = $this->get('/');
+        // need to fake the storage
+        // and upload a fake image with location data
+        $this->markTestIncomplete();
 
-        $response->assertStatus(200);
-    }
+        $this->withExceptionHandling();
 
-    /** @test */
-    public function a_user_can_upload_a_photo ()
-    {
-        $user = factory(User::class)->create();
+        $user = User::factory()->create();
+
+        $this->actingAs($user);
+
+        $file = UploadedFile::fake()->image('image.jpg');
 
         $response = $this->post('/submit', [
-            'file' => 'test.png'
+            'file' => $file,
         ]);
 
-//        $response->assertOk();
         $response->assertJsonCount(1, Photo::all());
-//        $response->assertStatus(200);
     }
 }
