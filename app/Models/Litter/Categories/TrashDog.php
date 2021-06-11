@@ -2,12 +2,10 @@
 
 namespace App\Models\Litter\Categories;
 
-use App\Models\Litter\LitterCategory;
+use Illuminate\Database\Eloquent\Model;
 
-class TrashDog extends LitterCategory
+class TrashDog extends Model
 {
-    protected $table = 'trashdog';
-
     protected $fillable = [
     	'trashdog',
     	'littercat',

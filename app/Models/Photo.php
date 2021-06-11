@@ -4,13 +4,10 @@ namespace App\Models;
 
 use App\Models\AI\Annotation;
 use App\Models\User\User;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Photo extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
     	'filename',
     	'model',
@@ -176,8 +173,13 @@ class Photo extends Model
             if ($this->$category)
             {
                 // We dont want to include brands in total_litter
+                if ($category === 'brands')
+                {
+                    $this->$category->total();
+                }
+
                 // Increment total_litter when its not brands
-                if ($category !== 'brands')
+                else
                 {
                     $total += $this->$category->total();
                 }
