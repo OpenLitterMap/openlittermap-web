@@ -36,7 +36,8 @@ class PhotoTest extends TestCase
                 'art_id', 'brands_id', 'trashdog_id', 'dogshit_id', 'platform', 'bounding_box', 'geohash', 'team_id',
                 'bbox_skipped', 'skipped_by', 'bbox_assigned_to', 'wrong_tags', 'wrong_tags_by',
                 'bbox_verification_assigned_to', 'five_hundred_square_filepath'
-            ]));
+            ])
+        );
     }
 
     public function test_a_photo_has_selected_attribute()
@@ -104,20 +105,40 @@ class PhotoTest extends TestCase
 
     public function test_a_photo_removes_empty_tags_from_categories()
     {
-        $smoking = Smoking::factory(['butts' => 1])->create();
-        $brands = Brand::factory(['walkers' => 1])->create();
+        $smoking = Smoking::factory([
+            'butts' => 1, 'lighters' => null
+        ])->create();
+        $brands = Brand::factory([
+            'walkers' => 1, 'amazon' => null
+        ])->create();
         $photo = Photo::factory()->create([
             'smoking_id' => $smoking->id,
             'brands_id' => $brands->id
         ]);
+
+        // As a sanity check, we first test that
+        // the current state is as we expect it to be
+        $this->assertEquals(1, $photo->smoking->butts);
+        $this->assertEquals(1, $photo->brands->walkers);
+
+        $this->assertArrayHasKey(
+            'lighters', $photo->smoking->getAttributes()
+        );
+        $this->assertArrayHasKey(
+            'amazon', $photo->brands->getAttributes()
+        );
 
         $photo->tags();
 
         $this->assertEquals(1, $photo->smoking->butts);
         $this->assertEquals(1, $photo->brands->walkers);
 
-        $this->assertObjectNotHasAttribute('lighters', $photo->smoking);
-        $this->assertObjectNotHasAttribute('amazon', $photo->brands);
+        $this->assertArrayNotHasKey(
+            'lighters', $photo->smoking->getAttributes()
+        );
+        $this->assertArrayNotHasKey(
+            'amazon', $photo->brands->getAttributes()
+        );
     }
 
     public function test_a_photo_has_an_owner()
