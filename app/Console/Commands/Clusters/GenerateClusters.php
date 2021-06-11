@@ -38,10 +38,12 @@ class GenerateClusters extends Command
      * Generate Clusters for All Photos
      *
      * Todo - Load photos as geojson without looping over them and inserting into another array
+     * Todo - Chunk photos (ideally as geojson) without having to loop over a very large array (155k+)
      * Todo - Append to file instead of re-writing it
      * Todo - Split file into multiple files
      * Todo - Find a way to update clusters instead of deleting all and re-writing all every time..
      * Todo - Cluster data by "today", "one-week", "one-month", "one-year"
+     * Todo - Cluster data by year, 2021, 2020...
      */
     public function handle()
     {
