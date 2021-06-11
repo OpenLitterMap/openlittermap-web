@@ -1,0 +1,8 @@
+{
+    "title": "Tabla de clasificación de equipos",
+    "position-header": "Posición",
+    "name-header": "Nombre",
+    "photos-header": "Total de fotos",
+    "litter-header": "Total de basura",
+    "created-at-header" : "Creado el"
+}

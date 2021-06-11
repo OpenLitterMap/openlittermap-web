@@ -1,0 +1,23 @@
+{
+    "olm-teams": "OpenLitterMap Teams",
+    "dashboard": "Dashboard",
+    "join-a-team": "Join a Team",
+    "create-a-team": "Create a Team",
+    "your-teams": "Yours Teams",
+    "leaderboard": "Leaderboard",
+    "settings": "Settings",
+    "teams-dashboard": "Teams Dashboard",
+    "photos-uploaded": "Photos uploaded",
+    "litter-tagged": "Litter tagged",
+    "members-uploaded": "Team members uploaded",
+    "all-teams": "All Teams",
+    "times": {
+        "today": "Dzisiaj",
+        "week": "W tym tygodniu",
+        "month": "Ten miesiąc",
+        "year": "Ten rok",
+        "all": "Cały okres",
+        "created_at": "Przesłane w",
+        "datetime": "Zrobiono o godzinie"
+    }
+}

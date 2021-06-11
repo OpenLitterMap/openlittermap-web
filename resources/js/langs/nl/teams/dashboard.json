@@ -1,0 +1,23 @@
+{
+    "olm-teams": "OpenLitterMap Teams",
+    "dashboard": "Dashboard",
+    "join-a-team": "Sluit je aan bij een Team",
+    "create-a-team": "Maak een Team aan",
+    "your-teams": "Jouw Teams",
+    "leaderboard": "Team Scoreboard",
+    "settings": "Instellingen",
+    "teams-dashboard": "Teams Dashboard",
+    "photos-uploaded": "Foto's ge-upload",
+    "litter-tagged": "Afval voorzien van kenmerken",
+    "members-uploaded": "Teamleden hebben geupload",
+    "all-teams": "Alle Teams",
+    "times": {
+        "today": "Vandaag",
+        "week": "Deze week",
+        "month": "Deze maand",
+        "year": "Dit jaar",
+        "all": "Alle tijden",
+        "created_at": "Geupload op",
+        "datetime": "Genomen op"
+    }
+}

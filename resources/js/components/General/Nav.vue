@@ -52,15 +52,15 @@
 
                                     <!-- Admin -->
                                     <router-link v-if="can('update tags')" to="/admin/photos" class="navbar-item drop-item" @click.native="close">
-                                        ADMIN - Verify Photos
+                                        {{ $t('nav.admin-verify-photos')}}
                                     </router-link>
 
                                     <a v-if="is('superadmin')" href="/horizon" class="navbar-item drop-item" target="_blank">
-                                        ADMIN - Horizon
+                                        {{ $t('nav.admin-horizon')}}
                                     </a>
 
                                     <a v-if="can('verify boxes')" href="/bbox/verify" class="navbar-item drop-item">
-                                        ADMIN - Verify Boxes
+                                        {{ $t('nav.admin-verify-boxes')}}
                                     </a>
 
                                     <!-- Tag Litter -->
@@ -70,7 +70,7 @@
 
                                     <!-- Profile -->
                                     <router-link to="/profile" class="navbar-item drop-item">
-                                        Profile
+                                        {{ $t('nav.profile')}}
                                     </router-link>
 
                                     <!-- Teams -->
@@ -85,7 +85,7 @@
 
                                     <!-- Bounding boxes -->
                                     <router-link v-if="can('create boxes')" to="/bbox" class="navbar-item drop-item" @click.native="close">
-                                        Bounding Boxes
+                                       {{ $t('nav.bounding-boxes')}}
                                     </router-link>
 
                                     <!-- Logout -->

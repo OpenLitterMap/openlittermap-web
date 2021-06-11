@@ -254,7 +254,9 @@
     },
     "presence": {
         "picked-up": "Zebrałem!",
-        "still-there": "Nadal tam jest"
+        "still-there": "Nadal tam jest",
+        "picked-up-text": "It's gone.",
+        "still-there-text": "The litter is still there!"
     },
     "no-tags": "Bez tagów",
     "not-verified": "oczekiwanie na weryfikację",

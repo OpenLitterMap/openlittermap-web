@@ -1,0 +1,13 @@
+{
+    "allowed-to-create": "Tienes permito crear {teams} equipo(s)",
+    "what-kind-of-team": "¿Qué clase de equipo te gustaría crear?",
+    "team-type": "Tipo de equipo",
+    "team-name": "Nombre del equipo",
+    "my-awesome-team-placeholder": "Mi Super Equipo",
+    "unique-team-id": "Identificador de Equipo Único",
+    "id-to-join-team": "Cualquiera con este identificador podrá unirse a tu equipo.",
+    "create-team": "Crear equipo",
+    "created": "¡Enhorabuena! Se ha creado tu nuevo equipo.",
+    "fail": "Hubo un error al crear tu equipo",
+    "max-created": "No tienes permitido crear más equipos."
+}

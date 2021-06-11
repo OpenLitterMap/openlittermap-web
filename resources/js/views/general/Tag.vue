@@ -10,7 +10,7 @@
                     <h3 class="subtitle is-1">
                         {{ $t('tags.no-tags') }}
                     </h3>
-                    <h3 class="subtitle is-3">
+                    <h3 class="subtitle button is-medium is-info hov">
                         <router-link to="/submit">
                             {{ $t('tags.please-upload') }}
                         </router-link>
@@ -59,9 +59,9 @@
                                 <!-- Clear recent tags -->
                                 <div v-show="hasRecentTags">
                                     <br>
-                                    <p class="strong">Clear recent tags?</p>
+                                    <p class="strong">{{ $t('tags.clear-tags') }}</p>
 
-                                    <button @click="clearRecentTags">Clear recent tags</button>
+                                    <button @click="clearRecentTags">{{ $t('tags.clear-tags-btn') }}</button>
                                 </div>
                             </div>
                         </div> <!-- end info box -->

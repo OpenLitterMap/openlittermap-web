@@ -254,7 +254,9 @@
     },
     "presence": {
         "picked-up": "I picked it up!",
-        "still-there": "It's still there."
+        "still-there": "It's still there.",
+        "picked-up-text": "It's gone.",
+        "still-there-text": "The litter is still there!"
     },
     "no-tags": "No Tags",
     "not-verified": "Awaiting verification",
