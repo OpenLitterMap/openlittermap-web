@@ -64,11 +64,11 @@ class MapController extends Controller
         	$country['leaderboard'] = json_encode($arrayOfLeaders);
 
         	// Total values
-        	$country['avg_photo_per_user'] = round($country->total_images / $country->total_contributors, 2);
-        	$country['avg_litter_per_user'] = round($country->total_litter / $country->total_contributors, 2);
+        	$country['avg_photo_per_user'] = round($country->total_photos_redis / $country->total_contributors, 2);
+        	$country['avg_litter_per_user'] = round($country->total_litter_redis / $country->total_contributors, 2);
 
-        	$total_litter += $country->total_litter;
-        	$total_photos += $country->total_images;
+            $total_photos += $country->total_photos_redis;
+            $total_litter += $country->total_litter_redis;
 
         	$country['diffForHumans'] = $country->created_at->diffForHumans();
 	    }
@@ -86,35 +86,30 @@ class MapController extends Controller
             $previousXp = 0;
             $nextXp = 1000;
         }
-
         // level 1 - target, 10,000
         else if ($total_litter <= 10000)
         {
             $previousXp = 1000;
             $nextXp = 10000; // 10,000
         }
-
         // level 2 - target, 100,000
     	else if ($total_litter <= 100000)
     	{
     		$previousXp = 10000; // 10,000
     		$nextXp = 100000; // 100,000
     	}
-
     	// level 3 - target 250,000
         else if ($total_litter <= 250000)
         {
             $previousXp = 100000; // 100,000
             $nextXp = 250000; // 250,000
         }
-
         // level 4 500,000
         else if ($total_litter <= 500000)
         {
             $previousXp = 250000; // 250,000
             $nextXp = 500000; // 500,000
         }
-
         // level 5, 1M
         else if ($total_litter <= 1000000)
         {
@@ -136,7 +131,8 @@ class MapController extends Controller
 	    {
             $name = '';
             $username = '';
-            if (($user->show_name) | ($user->show_username)) {
+            if (($user->show_name) || ($user->show_username))
+            {
                 if ($user->show_name) $name = $user->name;
 
                 if ($user->show_username) $username = '@' . $user->username;
@@ -150,6 +146,7 @@ class MapController extends Controller
                     // 'level' => $user->level,
                     // 'linkinsta' => $user->link_instagram
                 ];
+
                 $newIndex++;
             }
         }
@@ -185,7 +182,7 @@ class MapController extends Controller
 			  	  ->orWhere('show_username', true);
 			}])->where([
 				'country_id' => $country->id,
-				'manual_verify' => '1',
+				'manual_verify' => 1,
                 ['total_litter', '>', 0]
 			])
             ->orderBy('state', 'asc')
@@ -208,10 +205,10 @@ class MapController extends Controller
         	$state->leaderboard = json_encode($arrayOfLeaders);
 
         	// Get images/litter metadata
-        	$state->avg_photo_per_user = round($state->total_images / $state->total_contributors, 2);
-        	$state->avg_litter_per_user = round($state->total_litter / $state->total_contributors, 2);
+        	$state->avg_photo_per_user = round($state->total_photos_redis / $state->total_contributors, 2);
+        	$state->avg_litter_per_user = round($state->total_litter_redis / $state->total_contributors, 2);
 
-        	$total_litter += $state->total_litter;
+        	$total_litter += $state->total_litter_redis;
         	$state->diffForHumans = $state->created_at->diffForHumans();
 	    }
 
@@ -268,8 +265,8 @@ class MapController extends Controller
             $arrayOfLeaders = $this->getLeaders($leaders);
 
             $city['leaderboard'] = json_encode($arrayOfLeaders);
-            $city['avg_photo_per_user'] = round($city->total_images / $city->total_contributors, 2);
-            $city['avg_litter_per_user'] = round($city->total_litter / $city->total_contributors, 2);
+            $city['avg_photo_per_user'] = round($city->total_photos_redis / $city->total_contributors, 2);
+            $city['avg_litter_per_user'] = round($city->total_litter_redis / $city->total_contributors, 2);
             $city['diffForHumans'] = $city->created_at->diffForHumans();
         }
 

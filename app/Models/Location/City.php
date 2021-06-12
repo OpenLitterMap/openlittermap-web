@@ -51,7 +51,7 @@ class City extends Model
     /**
      * Return the total_litter value from redis
      */
-    public function getTotalLitterAttribute ()
+    public function getTotalLitterRedisAttribute ()
     {
         return Redis::hexists("city:$this->id", "total_litter")
             ? Redis::hget("city:$this->id", "total_litter")
@@ -61,7 +61,7 @@ class City extends Model
     /**
      * Return the total_photos value from redis
      */
-    public function getTotalPhotosAttribute ()
+    public function getTotalPhotosRedisAttribute ()
     {
         return Redis::hexists("city:$this->id", "total_photos")
             ? Redis::hget("city:$this->id", "total_photos")
