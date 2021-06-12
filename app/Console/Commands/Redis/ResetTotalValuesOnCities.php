@@ -40,7 +40,7 @@ class ResetTotalValuesOnCities extends Command
      */
     public function handle()
     {
-        $cities = City::select('id')->where('total_photos', '>', 0)->get();
+        $cities = City::select('id')->where('total_images', '>', 0)->get();
 
         foreach ($cities as $city)
         {

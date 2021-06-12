@@ -42,8 +42,8 @@ class City extends Model
      * Extra columns on our Country model
      */
     protected $appends = [
-        'total_litter',
-        'total_photos',
+        'total_litter_redis',
+        'total_photos_redis',
         'litter_data',
         'brands_data'
     ];
