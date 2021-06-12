@@ -7,6 +7,7 @@ use App\Models\Location\Country;
 use App\Models\Photo;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Support\Facades\Redis;
 
 class IncrementCountry
 {
@@ -34,9 +35,10 @@ class IncrementCountry
             if ($event->total_brands)       $country->total_brands      += $event->total_brands;
             if ($event->total_dogshit)      $country->total_dogshit     += $event->total_dogshit;
 
-            $country->total_litter += $event->total_count;
-            $country->total_images++;
             $country->save();
+
+            Redis::hincrby("country:$country->id", "total_photos", 1);
+            Redis::hincrby("country:$country->id", "total_litter", $event->total_count);
         }
     }
 }

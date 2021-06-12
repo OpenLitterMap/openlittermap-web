@@ -67,7 +67,7 @@ class MapController extends Controller
         	$country['avg_photo_per_user'] = round($country->total_images / $country->total_contributors, 2);
         	$country['avg_litter_per_user'] = round($country->total_litter / $country->total_contributors, 2);
 
-        	$total_litter += $country['total_litter'];
+        	$total_litter += $country->total_litter;
         	$total_photos += $country->total_images;
 
         	$country['diffForHumans'] = $country->created_at->diffForHumans();

@@ -12,7 +12,7 @@
         </div>
 
         <!-- v-show is a temp bug fix until cities table has working total_litter column -->
-        <section v-for="location, index in orderedBy" v-show="location.total_litter > 0">
+        <section v-for="location, index in orderedBy" v-show="location.total_litter_redis > 0">
             <div v-show="category !== 'A-Z'">
                 <br>
                 <h1 style="color: #34495e;" class="title is-1 has-text-centered">
@@ -48,8 +48,8 @@
 
                         <!-- Location metadata -->
                         <div class="panel">
-                            <div class="panel-block">{{ $t('location.maps10') }}: <strong class="green">&nbsp; {{ location['total_litter'].toLocaleString() }}</strong></div>
-                            <div class="panel-block">{{ $t('location.maps11') }}: <strong class="green">&nbsp; {{ location['total_images'].toLocaleString() }}</strong></div>
+                            <div class="panel-block">{{ $t('location.maps10') }}: <strong class="green">&nbsp; {{ location['total_litter_redis'].toLocaleString() }}</strong></div>
+                            <div class="panel-block">{{ $t('location.maps11') }}: <strong class="green">&nbsp; {{ location['total_photos_redis'].toLocaleString() }}</strong></div>
                             <div class="panel-block">{{ $t('location.maps12') }}: <strong class="green">&nbsp; {{ location['diffForHumans'] }}</strong></div>
                             <div class="panel-block">{{ $t('location.maps13') }}: <strong class="green">&nbsp; {{ location['total_contributors'].toLocaleString() }}</strong></div>
                             <div class="panel-block">{{ $t('location.maps14') }}: <strong class="green">&nbsp; {{ location['avg_photo_per_user'].toLocaleString() }}</strong></div>
@@ -196,7 +196,7 @@ export default {
 
 			else if (this.category === "Most Open Data")
 			{
-				return sortBy(this.locations, 'total_litter').reverse();
+				return sortBy(this.locations, 'total_litter_redis').reverse();
 			}
 
 			else if (this.category === "Most Open Data Per Person")

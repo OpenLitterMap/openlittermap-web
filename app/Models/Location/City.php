@@ -4,6 +4,7 @@ namespace App\Models\Location;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Redis;
 
 class City extends Model
 {
@@ -15,8 +16,6 @@ class City extends Model
 		'country_id',
 		'created_at',
 		'updated_at',
-		'total_images',
-        'total_litter',
 		'total_smoking',
 		'total_cigaretteButts',
 		'total_food',
@@ -43,9 +42,31 @@ class City extends Model
      * Extra columns on our Country model
      */
     protected $appends = [
+        'total_litter',
+        'total_photos',
         'litter_data',
         'brands_data'
     ];
+
+    /**
+     * Return the total_litter value from redis
+     */
+    public function getTotalLitterAttribute ()
+    {
+        return Redis::hexists("city:$this->id", "total_litter")
+            ? Redis::hget("city:$this->id", "total_litter")
+            : 0;
+    }
+
+    /**
+     * Return the total_photos value from redis
+     */
+    public function getTotalPhotosAttribute ()
+    {
+        return Redis::hexists("city:$this->id", "total_photos")
+            ? Redis::hget("city:$this->id", "total_photos")
+            : 0;
+    }
 
     /**
      *  @return 'litter_data' column
