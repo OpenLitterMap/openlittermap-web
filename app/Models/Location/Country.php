@@ -62,7 +62,7 @@ class Country extends Model
     public function getTotalLitterRedisAttribute ()
     {
         return Redis::hexists("country:$this->id", "total_litter")
-            ? Redis::hget("country:$this->id", "total_litter")
+            ? (int)Redis::hget("country:$this->id", "total_litter")
             : 0;
     }
 
