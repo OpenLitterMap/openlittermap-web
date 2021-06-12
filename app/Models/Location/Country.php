@@ -72,7 +72,7 @@ class Country extends Model
     public function getTotalPhotosRedisAttribute ()
     {
         return Redis::hexists("country:$this->id", "total_photos")
-            ? Redis::hget("country:$this->id", "total_photos")
+            ? (int)Redis::hget("country:$this->id", "total_photos")
             : 0;
     }
 
