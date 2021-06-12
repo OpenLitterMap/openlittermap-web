@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\Littercoin\LittercoinMined;
+use Exception;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Facades\Image;
-use Log;
-use Auth;
-//use Image;
 use GeoHash;
 
 use Carbon\Carbon;
@@ -57,9 +56,8 @@ class PhotosController extends Controller
 
         if ($user->images_remaining == 0)
         {
-            header('HTTP/1.1 500 Internal Server Error');
-            header('Content-type: text/plain');
-            exit ("Sorry, your max upload limit has been reached."); // todo - make message show by default
+            // todo - make message show by default
+            abort(500, "Sorry, your max upload limit has been reached.");
         }
 
         $file = $request->file('file'); // -> /tmp/php7S8v..
@@ -79,10 +77,8 @@ class PhotosController extends Controller
         // todo - translate
         if (! array_key_exists("GPSLatitudeRef", $exif))
         {
-            header('HTTP/1.1 500 Internal Server Error');
-            header('Content-type: text/plain');
             // Todo - pass translation keys and create translations
-            exit ("Sorry, no GPS on this one");
+            abort(500, "Sorry, no GPS on this one");
         }
 
         $dateTime = '';
@@ -119,10 +115,8 @@ class PhotosController extends Controller
         {
             if (Photo::where(['user_id' => $user->id, 'datetime' => $dateTime])->first())
             {
-                header('HTTP/1.1 500 Internal Server Error');
-                header('Content-type: text/plain');
                 // Todo - pass translation keys and create translations
-                exit ("You have already uploaded this file!");
+                abort(500, "You have already uploaded this file!");
             }
         }
 
@@ -138,7 +132,7 @@ class PhotosController extends Controller
         // Upload the image to AWS
         if (app()->environment('production'))
         {
-            $s3 = \Storage::disk('s3');
+            $s3 = Storage::disk('s3');
 
             $s3->put($filepath, $image->stream(), 'public');
 
@@ -263,7 +257,7 @@ class PhotosController extends Controller
     {
         $user = Auth::user();
         $photo = Photo::find($request->photoid);
-        $s3 = \Storage::disk('s3');
+        $s3 = Storage::disk('s3');
 
         try {
             if ($user->id === $photo->user_id)
@@ -277,7 +271,7 @@ class PhotosController extends Controller
             }
         } catch (Exception $e) {
             // could not be deleted
-            \Log::info(["Photo could not be deleted", $e->getMessage()]);
+            Log::info(["Photo could not be deleted", $e->getMessage()]);
         }
 
       	return redirect()->back();
