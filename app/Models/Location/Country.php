@@ -32,7 +32,6 @@ class Country extends Model
         'total_other',
         'total_coastal',
         'total_art',
-        'total_contributors',
         'manual_verify',
         'countrynameb',
         'littercoin_paid',
@@ -52,6 +51,7 @@ class Country extends Model
     protected $appends = [
         'total_litter_redis',
         'total_photos_redis',
+        'total_contributors_redis',
         'litter_data',
         'brands_data'
     ];
@@ -74,6 +74,14 @@ class Country extends Model
         return Redis::hexists("country:$this->id", "total_photos")
             ? (int)Redis::hget("country:$this->id", "total_photos")
             : 0;
+    }
+
+    /**
+     * Return the total number of people who uploaded a photo from redis
+     */
+    public function getTotalContributorsRedisAttribute ()
+    {
+        return Redis::scard("country:$this->id:user_ids");
     }
 
     /**

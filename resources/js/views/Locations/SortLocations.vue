@@ -37,12 +37,12 @@
                             />
 
                             <h2 :class="textSize">
-                                <router-link :to="goTo(index)" :id="location[type]" class="is-link has-text-centered location-title">
+                                <a @click="goTo(index)" :id="location[type]" class="is-link has-text-centered location-title">
                                     <!-- Position -->
                                     <span v-show="category !== 'A-Z' && index < 30">{{ positions(index) }} -</span>
                                     <!-- Name -->
                                     <span>{{ getName(location) }}</span>
-                                </router-link>
+                                </a>
                             </h2>
                         </div>
 
@@ -51,7 +51,7 @@
                             <div class="panel-block">{{ $t('location.maps10') }}: <strong class="green">&nbsp; {{ location['total_litter_redis'].toLocaleString() }}</strong></div>
                             <div class="panel-block">{{ $t('location.maps11') }}: <strong class="green">&nbsp; {{ location['total_photos_redis'].toLocaleString() }}</strong></div>
                             <div class="panel-block">{{ $t('location.maps12') }}: <strong class="green">&nbsp; {{ location['diffForHumans'] }}</strong></div>
-                            <div class="panel-block">{{ $t('location.maps13') }}: <strong class="green">&nbsp; {{ location['total_contributors'].toLocaleString() }}</strong></div>
+                            <div class="panel-block">{{ $t('location.maps13') }}: <strong class="green">&nbsp; {{ location['total_contributors_redis'].toLocaleString() }}</strong></div>
                             <div class="panel-block">{{ $t('location.maps14') }}: <strong class="green">&nbsp; {{ location['avg_photo_per_user'].toLocaleString() }}</strong></div>
                             <div class="panel-block">{{ $t('location.maps15') }}: <strong class="green">&nbsp; {{ location['avg_litter_per_user'].toLocaleString() }}</strong></div>
                             <div class="panel-block">{{ $t('location.maps16') }}: <strong class="green">&nbsp; {{ location['created_by_name'] }} {{ location['created_by_username'] }}</strong></div>
@@ -193,12 +193,10 @@ export default {
 			{
 				return this.locations;
 			}
-
 			else if (this.category === "Most Open Data")
 			{
 				return sortBy(this.locations, 'total_litter_redis').reverse();
 			}
-
 			else if (this.category === "Most Open Data Per Person")
 			{
 				return sortBy(this.locations, 'avg_litter_per_user').reverse();
@@ -236,9 +234,12 @@ export default {
 		 */
 		getCountryFlag (iso)
 		{
-			iso = iso.toLowerCase();
+		    if (iso)
+            {
+                iso = iso.toLowerCase();
 
-			return this.dir + iso + '.png';
+                return this.dir + iso + '.png';
+            }
 		},
 
 		/**
@@ -260,28 +261,29 @@ export default {
 
 			    this.$store.commit('setCountry', country);
 
-				return '/world/' + country;
+				this.$router.push({ path:  '/world/' + country });
 			}
-
 			else if (this.type === 'state')
 			{
 			    let state = this.orderedBy[index].state;
 
 			    this.$store.commit('setState', state);
 
-				return '/world/' + this.country + '/' + state;
+				this.$router.push({ path:  '/world/' + this.country + '/' + state });
 			}
-
 			else if (this.type === 'city')
 			{
 			    // if the object has "hex" key, the slider has updated
                 if (this.orderedBy[index].hasOwnProperty('hex'))
                 {
-                    return '/world/' + this.country + '/' + this.state + '/' + this.orderedBy[index].city + '/map/'
-                        + this.orderedBy[index].minDate + '/' + this.orderedBy[index].maxDate + '/' + this.orderedBy[index].hex;
+                    this.$router.push({
+                        path:
+                            '/world/' + this.country + '/' + this.state + '/' + this.orderedBy[index].city + '/map/'
+                            + this.orderedBy[index].minDate + '/' + this.orderedBy[index].maxDate + '/' + this.orderedBy[index].hex
+                    });
                 }
 
-				return '/world/' + this.country + '/' + this.state + '/' + this.orderedBy[index].city + '/map';
+				this.$router.push({ path:  '/world/' + this.country + '/' + this.state + '/' + this.orderedBy[index].city + '/map' });
 			}
 		},
 

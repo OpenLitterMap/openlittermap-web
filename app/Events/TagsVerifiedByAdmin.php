@@ -3,15 +3,13 @@
 namespace App\Events;
 
 use App\Models\Photo;
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Contracts\Queue\ShouldQueue;
 
-class TagsVerifiedByAdmin
+class TagsVerifiedByAdmin implements ShouldQueue
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -28,9 +26,9 @@ class TagsVerifiedByAdmin
         $total_sanitary, $total_softdrinks, $total_smoking;
 
     /**
-     * Create a new event instance.
+     * The tags on a single photo have been verified by an Admin
      *
-     * @return void
+     * photo.verified => 2
      */
     public function __construct ($photo_id)
     {
@@ -43,27 +41,36 @@ class TagsVerifiedByAdmin
         $this->user_id = $photo->user_id;
         $this->created_at = $photo->created_at;
 
-        $total_count = 0;
+        $total_litter_all_categories = 0;
 
+        // Count the total category values on this photo
+        // We will use this data to update the total_category values...
+        // for Country, State and City the photo was uploaded from
         foreach ($photo->categories() as $category)
         {
             if ($photo->$category)
             {
-                $total = $photo->$category->total();
+                // Create a key, a string representation of each "total_category"
+                // eg "total_smoking", "total_alcohol"
+                $total_category_key = "total_" . $category;
 
-                $total_string = "total_" . $category; // total_smoking, total_food...
+                // Create a value
+                // This is the sum of all litter types on this category
+                $total_category_value = $photo->$category->total();
 
-                $this->$total_string = $total;
+                // total_smoking = 1
+                // total_alcohol = 2
+                $this->$total_category_key = $total_category_value;
 
                 // Don't include brands in total_litter. We keep total_brands separate.
                 if ($photo->$category !== 'brands')
                 {
-                    $total_count += $total; // total counts of all categories
+                    $total_litter_all_categories += $total_category_value; // total counts of all categories
                 }
             }
         }
 
-        $this->total_count = $total_count;
+        $this->total_count = $total_litter_all_categories;
     }
 
     /**

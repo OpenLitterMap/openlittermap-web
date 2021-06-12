@@ -44,6 +44,7 @@ class City extends Model
     protected $appends = [
         'total_litter_redis',
         'total_photos_redis',
+        'total_contributors_redis',
         'litter_data',
         'brands_data'
     ];
@@ -66,6 +67,14 @@ class City extends Model
         return Redis::hexists("city:$this->id", "total_photos")
             ? Redis::hget("city:$this->id", "total_photos")
             : 0;
+    }
+
+    /**
+     * Return the total number of people who uploaded a photo from redis
+     */
+    public function getTotalContributorsRedisAttribute ()
+    {
+        return Redis::scard("city:$this->id:user_ids");
     }
 
     /**
