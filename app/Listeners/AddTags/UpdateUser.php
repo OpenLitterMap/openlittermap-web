@@ -34,7 +34,7 @@ class UpdateUser
 
         // We should increment xp here
 
-        $user->total_litter += $event->total_count;
+        $user->total_litter += $event->total_litter_all_categories;
         $user->save();
     }
 }

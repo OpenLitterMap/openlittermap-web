@@ -71,12 +71,11 @@ class State extends Location
 
         $totals = [];
 
-        // total_smoking, etc
         foreach ($categories as $category)
         {
             if ($category !== "brands")
             {
-                $totals[$category] = Redis::hget("state:$this->id", "total_" . $category);
+                $totals[$category] = Redis::hget("state:$this->id", $category);
             }
         }
 
@@ -92,10 +91,9 @@ class State extends Location
 
         $totals = [];
 
-        // total_coke, total_pepsi, etc
         foreach ($brands as $brand)
         {
-            $totals[$brand] = Redis::hget("country:$this->id", "total_" . $brand);
+            $totals[$brand] = Redis::hget("country:$this->id", $brand);
         }
 
         return $totals;

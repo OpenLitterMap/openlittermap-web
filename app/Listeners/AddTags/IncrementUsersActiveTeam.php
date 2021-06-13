@@ -16,6 +16,8 @@ class IncrementUsersActiveTeam
      * If the user has an active team,
      *
      * Increment the total values for the users active team.
+     *
+     * Todo: move this to redis
      */
     public function handle (TagsVerifiedByAdmin $event)
     {
@@ -24,7 +26,7 @@ class IncrementUsersActiveTeam
         // Update the Team
         if ($user->active_team)
         {
-            $user->team->total_litter += $event->total_count;
+            $user->team->total_litter += $event->total_litter_all_categories;
             $user->team->total_images++;
             $user->team->save();
         }
@@ -38,6 +40,6 @@ class IncrementUsersActiveTeam
         DB::table('team_user')->where([
             'team_id' => $user->active_team,
             'user_id' => $user->id
-        ])->increment('total_litter', $event->total_count);
+        ])->increment('total_litter', $event->total_litter_all_categories);
     }
 }

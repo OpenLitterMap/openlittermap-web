@@ -15,6 +15,8 @@ class UpdateUserTimeSeries
      *
      * @param  TagsVerifiedByAdmin  $event
      * @return void
+     *
+     * Todo: move this to redis
      */
     public function handle (TagsVerifiedByAdmin $event)
     {

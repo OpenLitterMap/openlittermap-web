@@ -49,29 +49,27 @@ class MoveCityCategoryTotalsToRedis extends Command
 
         foreach ($cities as $city)
         {
-            // total_smoking, etc
             foreach ($categories as $category)
             {
                 $total_category = "total_$category";
 
                 if ($city->$total_category)
                 {
-                    Redis::del("city:$city->id", $total_category);
+                    Redis::hdel("city:$city->id", $category);
 
-                    Redis::hincrby("city:$city->id", $total_category, $city->$total_category);
+                    Redis::hincrby("city:$city->id", $category, $city->$total_category);
                 }
             }
 
-            // total_coke, total_pepsi, etc
             foreach ($brands as $brand)
             {
                 $total_brand = "total_$brand";
 
                 if ($city->$total_brand)
                 {
-                    Redis::del("city:$city->id", $total_brand);
+                    Redis::hdel("city:$city->id", $brand);
 
-                    Redis::hincrby("city:$city->id", $total_brand, $city->$total_brand);
+                    Redis::hincrby("city:$city->id", $brand, $city->$total_brand);
                 }
             }
         }

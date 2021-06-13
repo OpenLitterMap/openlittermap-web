@@ -18,17 +18,17 @@ export default {
         categories ()
         {
             return [
-                this.user.total_smoking,
-                this.user.total_food,
-                this.user.total_coffee,
-                this.user.total_softdrinks,
-                this.user.total_alcohol,
-                this.user.total_other,
-                this.user.total_coastal,
-                this.user.total_sanitary,
-                this.user.total_dumping,
-                this.user.total_industrial,
-                this.user.total_brands
+                this.user.total_categories.smoking,
+                this.user.total_categories.food,
+                this.user.total_categories.coffee,
+                this.user.total_categories.softdrinks,
+                this.user.total_categories.alcohol,
+                this.user.total_categories.other,
+                this.user.total_categories.coastal,
+                this.user.total_categories.sanitary,
+                this.user.total_categories.dumping,
+                this.user.total_categories.industrial,
+                this.user.total_categories.brands
             ]
         },
 

@@ -4,6 +4,7 @@ namespace App\Console\Commands\Redis;
 
 use App\Models\Location\Location;
 use App\Models\Location\State;
+use App\Models\Photo;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Redis;
 
@@ -42,30 +43,32 @@ class MoveStateCategoryTotalsToRedis extends Command
     {
         $states = State::all();
 
-        $categoryTotals = Location::getCategoryTotals();
-        $brandTotals = Location::getBrandTotals();
+        $categories = Photo::categories();
+        $brands = Photo::getBrands();
 
         foreach ($states as $state)
         {
-            // total_smoking, etc
-            foreach ($categoryTotals as $categoryTotal)
+            foreach ($categories as $category)
             {
-                if ($state->$categoryTotal)
-                {
-                    Redis::del("state:$state->id", $brandTotal);
+                $total_category = "total_$category";
 
-                    Redis::hincrby("state:$state->id", $categoryTotal, $state->$categoryTotal);
+                if ($state->$total_category)
+                {
+                    Redis::hdel("state:$state->id", $category);
+
+                    Redis::hincrby("state:$state->id", $category, $state->$total_category);
                 }
             }
 
-            // total_coke, total_pepsi, etc
-            foreach ($brandTotals as $brandTotal)
+            foreach ($brands as $brand)
             {
-                if ($state->$brandTotal)
-                {
-                    Redis::del("state:$state->id", $brandTotal);
+                $total_brand = "total_$brand";
 
-                    Redis::hincrby("state:$state->id", $brandTotal, $state->$brandTotal);
+                if ($state->$total_brand)
+                {
+                    Redis::hdel("state:$state->id", $brand);
+
+                    Redis::hincrby("state:$state->id", $brand, $state->$total_brand);
                 }
             }
         }

@@ -13,17 +13,11 @@ class TagsVerifiedByAdmin implements ShouldQueue
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
+    // photo relationships
     public $photo_id, $city_id, $state_id, $country_id, $user_id, $created_at;
-    public $total_count;
-    public $total_alcohol, $total_art,
-        $total_brands,
-        $total_coastal, $total_coffee,
-        $total_dogshit,
-        $total_dumping,
-        $total_food,
-        $total_industrial,
-        $total_other,
-        $total_sanitary, $total_softdrinks, $total_smoking;
+
+    // total litter on all categories
+    public $total_litter_all_categories;
 
     /**
      * The tags on a single photo have been verified by an Admin
@@ -50,27 +44,19 @@ class TagsVerifiedByAdmin implements ShouldQueue
         {
             if ($photo->$category)
             {
-                // Create a key, a string representation of each "total_category"
-                // eg "total_smoking", "total_alcohol"
-                $total_category_key = "total_" . $category;
-
-                // Create a value
-                // This is the sum of all litter types on this category
-                $total_category_value = $photo->$category->total();
-
-                // total_smoking = 1
-                // total_alcohol = 2
-                $this->$total_category_key = $total_category_value;
-
                 // Don't include brands in total_litter. We keep total_brands separate.
                 if ($photo->$category !== 'brands')
                 {
-                    $total_litter_all_categories += $total_category_value; // total counts of all categories
+                    $categoryTotal = $photo->$category->total();
+
+                    $this->$category = $categoryTotal;
+
+                    $total_litter_all_categories += $categoryTotal;
                 }
             }
         }
 
-        $this->total_count = $total_litter_all_categories;
+        $this->total_litter_all_categories = $total_litter_all_categories;
     }
 
     /**

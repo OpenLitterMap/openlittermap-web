@@ -44,32 +44,48 @@ class MoveCountryCategoryTotalsToRedis extends Command
         $countries = Country::all();
 
         $categories = Photo::categories();
-
         $brands = Photo::getBrands();
 
         foreach ($countries as $country)
         {
-            // total_smoking, etc
             foreach ($categories as $category)
             {
-                $total_category = "total_$category";
+                $categoryTotal = 0;
+                $categoryId = $category."_id";
 
-                if ($country->$total_category)
+                $photos = Photo::where([
+                    'country_id' => $country->id,
+                    [$categoryId, '!=', null]
+                ])->get();
+
+                foreach ($photos as $photo)
                 {
-                    Redis::del("country:$country->id", $category);
+                    if ($category === "brands")
+                    {
 
-                    Redis::hincrby("country:$country->id", $category, $country->$total_category);
+                    }
+
+                    if ($photo->$category)
+                    {
+                        $categoryTotal += $photo->$category->total();
+                    }
+                }
+
+                if ($categoryTotal >= 0)
+                {
+                    Redis::hdel("country:$country->id", $category);
+
+                    Redis::hincrby("country:$country->id", $category, $categoryTotal);
                 }
             }
 
-            // total_coke, total_pepsi, etc
             foreach ($brands as $brand)
             {
                 $total_brand = "total_$brand";
 
                 if ($country->$total_brand)
                 {
-                    Redis::del("country:$country->id", $brand);
+                    Redis::hdel("country:$country->id", $brand);
 
                     Redis::hincrby("country:$country->id", $brand, $country->$total_brand);
                 }
