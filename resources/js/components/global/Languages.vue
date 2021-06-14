@@ -7,7 +7,7 @@
 				<span>{{ this.currentLang }}</span>
 			</button>
 	  	</div>
-
+		  
 		<div class="dropdown-menu">
 	    	<div class="dropdown-content" style="padding: 0;">
 	      		<div v-for="lang in langs" @click="language(lang.url)" class="dropdown-item hoverable flex p1em">
@@ -29,14 +29,9 @@ export default {
 			dir: '/assets/icons/flags/',
 			langs: [
 				{ url: 'en' }, // We have these languages mostly done but they are in php code with the old keys
-				// { url: 'de' },
 				{ url: 'es' },
-				// { url: 'fr' },
-				// { url: 'it' },
 				{ url: 'nl' },
-				// { url: 'ms' },
-				// { url: 'tk' }
-                { url: 'pl' },
+                { url: 'pl' }
 			]
 		};
 	},

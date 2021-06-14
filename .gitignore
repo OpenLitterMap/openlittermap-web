@@ -1,7 +1,7 @@
 /node_modules
 /public/hot
 /public/storage
-/public/local-uploads
+/public/local-uploads/*
 /storage/*.key
 /vendor
 .env
@@ -12,3 +12,8 @@ Homestead.yaml
 npm-debug.log
 yarn-error.log
 .vscode
+<<<<<<< HEAD
+.idea
+=======
+.eslintignore
+>>>>>>> a15ecedfacbcaf092a05afaa32655c7b3bd0de85

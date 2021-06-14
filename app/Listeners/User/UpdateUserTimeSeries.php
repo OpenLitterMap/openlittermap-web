@@ -28,7 +28,6 @@ class UpdateUserTimeSeries
         {
             $ppm[$date]++;
         }
-
         else
         {
             $ppm[$date] = 1;

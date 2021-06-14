@@ -8,7 +8,7 @@ export default {
     data ()
     {
         return {
-            months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+            months: this.$t('common.short-month-names') //['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
         }
     },
     mounted ()
@@ -31,7 +31,7 @@ export default {
                 labels: dates,
                 datasets: [
                     {
-                        label: 'Verified Photos',
+                        label: this.$t('profile.dashboard.timeseries-verified-photos'),
                         backgroundColor: '#8e7fd6',
                         data: values,
                         fill: false,

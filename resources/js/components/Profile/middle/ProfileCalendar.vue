@@ -2,6 +2,9 @@
     <div class="profile-card">
         <FunctionalCalendar
             v-model="calendarData"
+            :day-names="$t('common.day-names')"
+            :month-names="$t('common.month-names')"
+            :short-month-names="$t('common.short-month-names')"
             :sundayStart="false"
             :date-format="'yyyy-mm-dd'"
             :is-date-range="true"
@@ -15,7 +18,7 @@
             <option v-for="time in periods" :value="time">{{ getPeriod(time) }}</option>
         </select>
 
-        <button :class="button" @click="changePeriod" :disabled="disabled">Load Data</button>
+        <button :class="button" @click="changePeriod" :disabled="disabled">{{ $t('profile.dashboard.calendar-load-data') }}</button>
     </div>
 </template>
 
@@ -84,7 +87,7 @@ export default {
         {
             if (! period) period = this.period;
 
-            return this.$t('teams.times.' + period)
+            return this.$t('teams.dashboard.times.' + period)
         },
     }
 };

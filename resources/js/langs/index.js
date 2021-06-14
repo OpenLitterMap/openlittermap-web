@@ -1,11 +1,11 @@
 import { en } from './en';
-import { nl } from './nl';
 import { es } from './es';
+import { nl } from './nl';
 import { pl } from './pl';
 
 export const langs = {
     'en': en,
-    'nl': nl,
     'es': es,
-    'pl': pl,
+    'nl': nl,
+    'pl': pl
 };

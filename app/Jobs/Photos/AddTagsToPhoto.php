@@ -53,22 +53,21 @@ class AddTagsToPhoto implements ShouldQueue
         {
             foreach ($items as $column => $quantity)
             {
-                // Column on photos table to make a relationship with current category eg smoking_id
-                $id_table = $schema->$category->id_table;
+                // Column on photos table to make a relationship the category eg smoking_id
+                $category_id = $schema->$category->id_table;
 
                 // Full class path
                 $class = 'App\\Models\\Litter\\Categories\\'.$schema->$category->class;
 
-                // Create reference to category.$id_table on photos if it does not exist
-                if (is_null($photo->$id_table))
+                // Create reference to photos.$category_id on photos if it does not exist
+                if (is_null($photo->$category_id))
                 {
                     $row = $class::create();
-                    $photo->$id_table = $row->id;
+                    $photo->$category_id = $row->id;
                     $photo->save();
                 }
-
                 // If it does exist, get it
-                else $row = $class::find($photo->$id_table);
+                else $row = $class::find($photo->$category_id);
 
                 // Update quantity on the category table
                 $row->$column = $quantity;
@@ -102,7 +101,6 @@ class AddTagsToPhoto implements ShouldQueue
             /* 0 for testing, 0.1 for production */
             $photo->verification = 0.1;
         }
-
         else // the user is trusted. Dispatch event to update OLM.
         {
             $photo->verification = 1;

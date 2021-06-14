@@ -2,18 +2,20 @@
 
 namespace App\Models\Location;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Redis;
 
 class State extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
 		'id',
 		'state',
 		'country_id',
 		'created_at',
 		'updated_at',
-		'total_images',
-        'total_litter',
 		'total_smoking',
 		'total_cigaretteButts',
         'total_dumping',
@@ -40,9 +42,40 @@ class State extends Model
      * Extra columns on our Country model
      */
     protected $appends = [
+        'total_litter_redis',
+        'total_photos_redis',
+        'total_contributors_redis',
         'litter_data',
         'brands_data'
     ];
+
+    /**
+     * Return the total_litter value from redis
+     */
+    public function getTotalLitterRedisAttribute ()
+    {
+        return Redis::hexists("state:$this->id", "total_litter")
+            ? Redis::hget("state:$this->id", "total_litter")
+            : 0;
+    }
+
+    /**
+     * Return the total_photos value from redis
+     */
+    public function getTotalPhotosRedisAttribute ()
+    {
+        return Redis::hexists("state:$this->id", "total_photos")
+            ? Redis::hget("state:$this->id", "total_photos")
+            : 0;
+    }
+
+    /**
+     * Return the total number of people who uploaded a photo from redis
+     */
+    public function getTotalContributorsRedisAttribute ()
+    {
+        return Redis::scard("state:$this->id:user_ids");
+    }
 
     /**
      *  @return 'litter_data' column

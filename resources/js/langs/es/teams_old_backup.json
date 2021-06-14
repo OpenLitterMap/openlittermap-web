@@ -1,0 +1,33 @@
+{
+    "title": "¡Bienvenido a OpenLitterMap Teams!",
+    "created": "¡Enhorabuena! Se ha creado tu nuevo equipo.",
+    "times": {
+        "today": "Hoy",
+        "week": "Esta semana",
+        "month": "Este mes",
+        "year": "Este año",
+        "all": "Todo los años",
+        "created_at": "Subida el",
+        "datetime": "Tomada el"
+    },
+    "create": {
+        "fail": "Hubo un error al crear tu equipo",
+        "max-created": "No tienes permitido crear más equipos."
+    },
+    "settings": {
+        "maps": {
+            "team-map": "Mapa del equipo",
+            "name-will-appear": "Tu nombre aparecerá en los mapas",
+            "username-will-appear": "Tu nombre de usuario aparecerá en los mapas",
+            "will-not-appear": "Tu nombre y nombre de usuario aparecerán en los mapas"
+        },
+        "leaderboards": {
+            "team-leaderboard": "Tabla de clasificación del equipo",
+            "name-will-appear": "Tu nombre aparecerá en las tablas de clasificación",
+            "username-will-appear": "Tu nombre de usuario aparecerá en las tablas de clasificación",
+            "will-not-appear": "Tu nombre y nombre de usuario aparecerán en las tablas de clasificación"
+        },
+        "submit-one-team": "Guardar para este equipo",
+        "apply-all-teams": "Aplicar a todos los equipos"
+    }
+}

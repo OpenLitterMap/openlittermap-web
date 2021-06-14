@@ -8,6 +8,7 @@ use App\Events\TagsVerifiedByAdmin;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Support\Facades\Redis;
 
 class IncrementCity
 {
@@ -35,9 +36,10 @@ class IncrementCity
             if ($event->total_brands)       $city->total_brands      += $event->total_brands;
             if ($event->total_dogshit)      $city->total_dogshit     += $event->total_dogshit;
 
-            $city->total_litter += $event->total_count;
-            $city->total_images++;
             $city->save();
+
+            Redis::hincrby("city:$city->id", "total_photos", 1);
+            Redis::hincrby("city:$city->id", "total_litter", $event->total_count);
         }
     }
 }

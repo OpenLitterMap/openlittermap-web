@@ -2,10 +2,12 @@
 
 namespace App\Models\Litter\Categories;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Models\Litter\LitterCategory;
 
-class Art extends Model
+class Art extends LitterCategory
 {
+    protected $table = 'arts';
+
     protected $fillable = [
     	'photo_id',
     	'item'
