@@ -6,14 +6,14 @@ use App\Models\User\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Redis;
 
-class ResetCountTotalContributors extends Command
+class RefreshTotalContributors extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'redis:count-all-contributors';
+    protected $signature = 'redis:refresh-total-contributors';
 
     /**
      * The console command description.
