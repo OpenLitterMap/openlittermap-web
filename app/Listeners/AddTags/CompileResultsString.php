@@ -7,7 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 
 use App\Models\Photo;
 
-class CompileResultsString
+class CompileResultsString implements ShouldQueue
 {
     /**
      * Instead of having to query the database to get the category data for each photo

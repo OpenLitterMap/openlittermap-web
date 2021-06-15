@@ -9,7 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Redis;
 
-class IncrementState
+class IncrementState implements ShouldQueue
 {
     /**
      * Handle the event.
@@ -35,6 +35,8 @@ class IncrementState
 
             Redis::hincrby("state:$state->id", "total_photos", 1);
             Redis::hincrby("state:$state->id", "total_litter", $event->total_litter_all_categories);
+
+            // update total brand + brands per location
         }
     }
 }

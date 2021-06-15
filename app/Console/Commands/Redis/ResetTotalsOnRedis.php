@@ -125,6 +125,8 @@ class ResetTotalsOnRedis extends Command
                             if ($photo->brands->$brand)
                             {
                                 Redis::hincrby("$featureType:$feature->id", $brand, $photo->brands->$brand);
+
+                                $this->$brand = $photo->brands->$brand;
                             }
                         }
                     }

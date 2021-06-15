@@ -28,5 +28,8 @@ class UpdateUserCategories implements ShouldQueue
                 Redis::hincrby("user:$event->user_id", $category, $event->$category);
             }
         }
+
+        Redis::hincrby("user:$event->user_id", "total_photos", 1);
+        Redis::hincrby("user:$event->user_id", "total_litter", $event->total_litter_all_categories);
     }
 }
