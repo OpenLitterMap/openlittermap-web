@@ -154,17 +154,17 @@ async function update ()
         await axios.get('clusters', {
             params: { zoom, bbox }
         })
-        .then(response => {
-            console.log('get_clusters.update', response);
+            .then(response => {
+                console.log('get_clusters.update', response);
 
-            markers.clearLayers();
-            markers.addData(response.data);
+                markers.clearLayers();
+                markers.addData(response.data);
 
-            // if (points) points.remove();
-        })
-        .catch(error => {
-            console.error('get_clusters.update', error);
-        });
+                // if (points) points.remove();
+            })
+            .catch(error => {
+                console.error('get_clusters.update', error);
+            });
     }
     // otherwise, get point data
     else
@@ -172,82 +172,89 @@ async function update ()
         await axios.get('global-points', {
             params: { zoom, bbox, },
         })
-        .then(response => {
-            console.log('get_global_points', response);
+            .then(response => {
+                console.log('get_global_points', response);
 
-            // Clear layer if prev layer is cluster.
-            if (prevZoom < CLUSTER_ZOOM_THRESHOLD)
-            {
-                markers.clearLayers();
-            }
+                // Clear layer if prev layer is cluster.
+                if (prevZoom < CLUSTER_ZOOM_THRESHOLD)
+                {
+                    markers.clearLayers();
+                }
 
-            // if (points) points.remove();
+                // if (points) points.remove();
 
-            const data = response.data.features.map(feature => {
-                return [ feature.geometry.coordinates[1], feature.geometry.coordinates[0]];
-            });
+                const data = response.data.features.map(feature => {
+                    return [ feature.geometry.coordinates[1], feature.geometry.coordinates[0]];
+                });
 
-            // New way using webGL
-            points = glify.points({
-                map,
-                data,
-                size: 10,
-                color: { r: 0.054, g: 0.819, b: 0.27 }, // 14, 209, 69 / 255
-                click: (e, point, xy) => {
-                    // return false to continue traversing
-                    // console.log(e);
-                    // console.log(point);
+                // New way using webGL
+                points = glify.points({
+                    map,
+                    data,
+                    size: 10,
+                    color: { r: 0.054, g: 0.819, b: 0.27 }, // 14, 209, 69 / 255
+                    click: (e, point, xy) => {
+                        // return false to continue traversing
+                        // console.log(e);
+                        // console.log(point);
 
-                    const f = response.data.features.find(feature => {
-                        return feature.geometry.coordinates[0] === point[1]
-                            && feature.geometry.coordinates[1] === point[0];
-                    });
-                    // console.log({ f });
-                    // console.log(xy);
+                        const f = response.data.features.find(feature => {
+                            return feature.geometry.coordinates[0] === point[1]
+                                && feature.geometry.coordinates[1] === point[0];
+                        });
+                        // console.log({ f });
+                        // console.log(xy);
+                        // console.log("hi" + response.data.features.find(feature =>{
+                        //     return feature.properties.user
+                        // });
 
-                    if (f)
-                    {
-                        let tags = '';
-
-                        if (f.properties.result_string)
+                        console.log("Datetime " + f.properties.filename);
+                        console.log("user " + f.properties.owner)
+                        //const user = response.data.features.properties.username;
+                        if (f)
                         {
-                            let a = '';
+                            let tags = '';
 
-                            a = f.properties.result_string.split(',');
+                            if (f.properties.result_string)
+                            {
+                                let a = '';
 
-                            a.pop();
+                                a = f.properties.result_string.split(',');
+                                console.log(f.properties.fullname);
+                                a.pop();
 
-                            a.forEach(i => {
-                                let b = i.split(' ');
+                                a.forEach(i => {
+                                    let b = i.split(' ');
 
-                                tags += i18n.t('litter.' + b[0]) + ': ' + b[1] + ' ';
-                            });
+                                    tags += i18n.t('litter.' + b[0]) + ': ' + b[1] + ' ';
+                                });
+                            }
+                            else
+                            {
+                                tags = i18n.t('litter.not-verified');
+                            }
+
+                            L.popup()
+                                .setLatLng(e.latlng)
+                                .setContent(
+                                    '<p class="mb5p">' + tags + ' </p>'
+                                    + '<img src= "' + f.properties.filename + '" class="mw100" />'
+                                    + '<p>Taken on ' + moment(f.properties.datetime).format('LLL') +'</p>'
+                                    + '<p>Contributed by: '+'<b>' + f.properties.name + ' / '+ f.properties.username + '</b>' +'</p>'
+                                )
+                                .openOn(map);
                         }
-                        else
-                        {
-                            tags = i18n.t('litter.not-verified');
-                        }
 
-                        L.popup()
-                            .setLatLng(e.latlng)
-                            .setContent(
-                                '<p class="mb5p">' + tags + ' </p>'
-                                + '<img src= "' + f.properties.filename + '" class="mw100" />'
-                                + '<p>Taken on ' + moment(f.properties.datetime).format('LLL') +'</p>'
-                            )
-                            .openOn(map);
-                    }
-
-                },
-                // hover: (e, pointOrGeoJsonFeature, xy) => {
-                //     // do something when a point is hovered
-                //     console.log('hovered');
-                // }
+                    },
+                    // hover: (e, pointOrGeoJsonFeature, xy) => {
+                    //     // do something when a point is hovered
+                    //     console.log('hovered');
+                    // }
+                });
+            })
+            .catch(error => {
+                console.error('get_global_points', error);
             });
-        })
-        .catch(error => {
-            console.error('get_global_points', error);
-        });
     }
     prevZoom = zoom; // hold previous zoom
 }
@@ -318,30 +325,30 @@ export default {
 
 <style>
 
-    #super {
-        height: 100%;
-        margin: 0;
-        position: relative;
-    }
+#super {
+    height: 100%;
+    margin: 0;
+    position: relative;
+}
 
-    .leaflet-marker-icon {
-        border-radius: 20px;
-    }
+.leaflet-marker-icon {
+    border-radius: 20px;
+}
 
-    .mb5p {
-        margin-bottom: 5px;
-    }
+.mb5p {
+    margin-bottom: 5px;
+}
 
-    .mw100 {
-        max-width: 100%;
-    }
+.mw100 {
+    max-width: 100%;
+}
 
-    .mi {
-        height: 100%;
-        margin: auto;
-        display: flex;
-        justify-content: center;
-        border-radius: 20px;
-    }
+.mi {
+    height: 100%;
+    margin: auto;
+    display: flex;
+    justify-content: center;
+    border-radius: 20px;
+}
 
 </style>
