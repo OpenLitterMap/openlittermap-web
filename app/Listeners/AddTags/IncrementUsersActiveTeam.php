@@ -39,6 +39,5 @@ class IncrementUsersActiveTeam
             'team_id' => $user->active_team,
             'user_id' => $user->id
         ])->increment('total_litter', $event->total_count);
-
     }
 }

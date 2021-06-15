@@ -15,6 +15,8 @@ class UpdateUser
      * Update the users table
      *
      * Combine this with update active team
+     *
+     * Todo - Move all incrementing to Redis
      */
     public function handle (TagsVerifiedByAdmin $event)
     {

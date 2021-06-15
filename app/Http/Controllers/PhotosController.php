@@ -60,7 +60,7 @@ class PhotosController extends Controller
             abort(500, "Sorry, your max upload limit has been reached.");
         }
 
-        $file = $request->file('file'); // -> /tmp/php7S8v..
+        $file = $request->file('file'); // /tmp/php7S8v..
 
         $image = Image::make($file);
 
@@ -73,9 +73,9 @@ class PhotosController extends Controller
         $exif = $image->exif();
 
         // Check if the EXIF has GPS data
-        // todo - make this error appear on the frontend dropzone.js without clicking it
-        // todo - translate
-        if (! array_key_exists("GPSLatitudeRef", $exif))
+        // todo - make this error appear on the frontend dropzone without clicking the "X"
+        // todo - translate the error
+        if (!array_key_exists("GPSLatitudeRef", $exif))
         {
             // Todo - pass translation keys and create translations
             abort(500, "Sorry, no GPS on this one");
@@ -87,16 +87,14 @@ class PhotosController extends Controller
         {
             $dateTime = $exif["DateTimeOriginal"];
         }
-
-        if (! $dateTime)
+        if (!$dateTime)
         {
             if (array_key_exists('DateTime', $exif))
             {
               $dateTime = $exif["DateTime"];
             }
         }
-
-        if (! $dateTime)
+        if (!$dateTime)
         {
             if (array_key_exists('FileDateTime', $exif))
             {
@@ -115,7 +113,6 @@ class PhotosController extends Controller
         {
             if (Photo::where(['user_id' => $user->id, 'datetime' => $dateTime])->first())
             {
-                // Todo - pass translation keys and create translations
                 abort(500, "You have already uploaded this file!");
             }
         }
@@ -143,7 +140,7 @@ class PhotosController extends Controller
             $public_path = public_path('local-uploads/'.$y.'/'.$m.'/'.$d);
 
             // home/vagrant/Code/openlittermap-web/public/local-uploads/y/m/d
-            if (! file_exists($public_path))
+            if (!file_exists($public_path))
             {
                 mkdir($public_path, 666, true);
             }
@@ -187,6 +184,7 @@ class PhotosController extends Controller
         // todo- check all locations for "/" and replace with "-"
         // todo - return country/state/city without having to check again
         // todo - process this as a job when request is made to get reverse geocoded data
+        // todo - check country by shortcode not the full string
         $this->checkCountry($addressArray);
         $this->checkState($addressArray);
         $this->checkDistrict($addressArray);
@@ -238,7 +236,19 @@ class PhotosController extends Controller
         if ($user->team) $teamName = $user->team->name;
 
         // Broadcast this event to anyone viewing the global map
-        event (new ImageUploaded($this->city, $this->state, $this->country, $this->countryCode, $imageName, $teamName));
+        // This will also update country, state, and city.total_contributors_redis
+        event (new ImageUploaded(
+            $this->city,
+            $this->state,
+            $this->country,
+            $this->countryCode,
+            $imageName,
+            $teamName,
+            $user->id,
+            $countryId,
+            $stateId,
+            $cityId
+        ));
 
         // Increment the { Month-Year: int } value for each location
         // Todo - this needs debugging
@@ -346,16 +356,18 @@ class PhotosController extends Controller
 
         if ($user->verification_required)
         {
-            /* Bring the photo to an initial state of verification */
-            /* 0 for testing, 0.1 for production */
+            // Bring the photo to an initial state of verification
+            // 0 for testing, 0.1 for production
+            // This value can be +/- 0.1 when users vote True or False
+            // When verification reaches 1.0, it verified increases from 0 to 1
             $photo->verification = 0.1;
         }
-
-        else // the user is trusted. Dispatch event to update OLM.
+        else
         {
+            // the user is trusted. Dispatch event to update OLM.
             $photo->verification = 1;
             $photo->verified = 2;
-            event(new TagsVerifiedByAdmin($photo->id));
+            event (new TagsVerifiedByAdmin($photo->id));
         }
 
         $photo->save();

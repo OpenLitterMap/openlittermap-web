@@ -4,6 +4,7 @@ namespace App\Models\Location;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Redis;
 
 class Country extends Model
 {
@@ -18,8 +19,6 @@ class Country extends Model
         'shortcode',
         'created_at',
         'updated_at',
-        'total_images',
-        'total_litter',
         'total_smoking',
         'total_cigaretteButts',
         'total_plasticBottles',
@@ -33,7 +32,6 @@ class Country extends Model
         'total_other',
         'total_coastal',
         'total_art',
-        'total_contributors',
         'manual_verify',
         'countrynameb',
         'littercoin_paid',
@@ -51,14 +49,46 @@ class Country extends Model
      * Extra columns on our Country model
      */
     protected $appends = [
+        'total_litter_redis',
+        'total_photos_redis',
+        'total_contributors_redis',
         'litter_data',
         'brands_data'
     ];
 
     /**
+     * Return the total_litter value from redis
+     */
+    public function getTotalLitterRedisAttribute ()
+    {
+        return Redis::hexists("country:$this->id", "total_litter")
+            ? (int)Redis::hget("country:$this->id", "total_litter")
+            : 0;
+    }
+
+    /**
+     * Return the total_photos value from redis
+     */
+    public function getTotalPhotosRedisAttribute ()
+    {
+        return Redis::hexists("country:$this->id", "total_photos")
+            ? (int)Redis::hget("country:$this->id", "total_photos")
+            : 0;
+    }
+
+    /**
+     * Return the total number of people who uploaded a photo from redis
+     */
+    public function getTotalContributorsRedisAttribute ()
+    {
+        return Redis::scard("country:$this->id:user_ids");
+    }
+
+    /**
      *  @return 'litter_data' column
      *
      * Todo - add dogshit here, states, cities, and update the charts
+     * Todo - move this to redis
      */
     public function getLitterDataAttribute ()
     {
@@ -80,6 +110,7 @@ class Country extends Model
      * @return 'brands_data' column
      * Todo - organize this by country
      *      - every country should have a different list of brands associated with it
+     * Todo - move this to redis
      */
     public function getBrandsDataAttribute()
     {

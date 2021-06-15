@@ -18,7 +18,9 @@ class EventServiceProvider extends ServiceProvider
         Registered::class => [
             SendEmailVerificationNotification::class,
         ],
-
+        'App\Events\ImageUploaded' => [
+              'App\Listeners\Locations\CheckContributors'
+        ],
         'App\Events\NewCountryAdded' => [
             'App\Listeners\AddLocation\UpdateCountriesTable',
             // 'App\Listeners\GenerateLitterCoin',
