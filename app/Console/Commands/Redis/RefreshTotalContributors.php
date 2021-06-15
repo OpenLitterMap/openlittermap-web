@@ -60,7 +60,7 @@ class RefreshTotalContributors extends Command
             $statePhotos = $user->photos()->select('state_id')->distinct()->get();
             foreach ($statePhotos as $photo)
             {
-                Redis::sadd("state:$photo->photo_id:user_ids", $user->id);
+                Redis::sadd("state:$photo->state_id:user_ids", $user->id);
             }
 
             $cityPhotos = $user->photos()->select('city_id')->distinct()->get();

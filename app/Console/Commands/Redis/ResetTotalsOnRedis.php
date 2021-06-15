@@ -60,7 +60,7 @@ class ResetTotalsOnRedis extends Command
             $features = City::select('id')->all();
             $feature_id = "city_id";
         }
-        else if ($featureType === "users")
+        else if ($featureType === "user")
         {
             $features = User::select('id')->where('has_uploaded', 1)->get();
             $feature_id = "user_id";
@@ -91,10 +91,11 @@ class ResetTotalsOnRedis extends Command
                 $feature_id => $feature->id,
                 ['verified', '>=', 2]
             ])->count();
-            $total_litter = 0;
-            $total_brands = 0;
 
             Redis::hincrby("$featureType:$feature->id", "total_photos", $total_photos);
+
+            $total_litter = 0;
+            $total_brands = 0;
 
             foreach ($categories as $category)
             {
@@ -106,7 +107,7 @@ class ResetTotalsOnRedis extends Command
                 // Load all of the verified photos for this feature,
                 // for this category
                 $photos = Photo::where([
-                    $feature_id => $feature->id, // country_id => 1, user_id => 2
+                    $feature_id => $feature->id,
                     [$categoryId, '!=', null],
                     ['verified', '>=', 2]
                 ])->get();
