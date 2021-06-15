@@ -145,9 +145,9 @@ class PhotosController extends Controller
                 mkdir($public_path, 666, true);
             }
 
-            $image->save($public_path. $filename);
+            $image->save($public_path . '/' . $filename);
 
-            $imageName = config('app.url') . '/local-uploads/'.$y.'/'.$m.'/'.$d . $filename;
+            $imageName = config('app.url') . '/local-uploads/'.$y.'/'.$m.'/'.$d .'/'.$filename;
         }
 
         // Get phone model
