@@ -47,22 +47,22 @@ class ResetTotalsOnRedis extends Command
 
         if ($featureType === "country")
         {
-            $features = Country::select('id')->get();
+            $features = Country::select('id')->orderBy('id')->get();
             $feature_id = "country_id";
         }
         else if ($featureType === "state")
         {
-            $features = State::select('id')->get();
+            $features = State::select('id')->orderBy('id')->get();
             $feature_id = "state_id";
         }
         else if ($featureType === "city")
         {
-            $features = City::select('id')->get();
+            $features = City::select('id')->orderBy('id')->get();
             $feature_id = "city_id";
         }
         else if ($featureType === "user")
         {
-            $features = User::select('id')->where('has_uploaded', 1)->get();
+            $features = User::select('id')->where('has_uploaded', 1)->orderBy('id')->get();
             $feature_id = "user_id";
         }
         else
