@@ -142,7 +142,18 @@ class ApiPhotosController extends Controller
         $teamName = null;
         if ($user->team) $teamName = $user->team->name;
 
-        event (new ImageUploaded($this->city, $this->state, $this->country, $this->countryCode, $imageName, $teamName));
+        event (new ImageUploaded(
+            $this->city,
+            $this->state,
+            $this->country,
+            $this->countryCode,
+            $imageName,
+            $teamName,
+            $user->id,
+            $countryId,
+            $stateId,
+            $cityId
+        ));
 
         // Increment the { Month-Year: int } value for each location
         // Todo - this needs debugging
