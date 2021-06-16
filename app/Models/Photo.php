@@ -80,31 +80,6 @@ class Photo extends Model
         return false;
     }
 
-//    /**
-//     * Observe when this model is being updated
-//     */
-//    public static function boot ()
-//    {
-//        parent::boot();
-//
-//        self::deleting(function (Photo $photo)
-//        {
-//            if ($photo->smoking) $photo->smoking->delete();
-//            if ($photo->food) $photo->food->delete();
-//            if ($photo->coffee) $photo->coffee->delete();
-//            if ($photo->softdrinks) $photo->softdrinks->delete();
-//            if ($photo->alcohol) $photo->alcohol->delete();
-//            if ($photo->sanitary) $photo->sanitary->delete();
-//            if ($photo->other) $photo->other->delete();
-//            if ($photo->coastal) $photo->coastal->delete();
-//            if ($photo->art) $photo->art->delete();
-//            if ($photo->brands) $photo->brands->delete();
-//            if ($photo->trashdog) $photo->trashdog->delete();
-//            if ($photo->dumping) $photo->dumping->delete();
-//            if ($photo->industrial) $photo->industrial->delete();
-//        });
-//    }
-
     /**
      * A photo can have many bounding boxes associated with it
      */
@@ -114,7 +89,7 @@ class Photo extends Model
     }
 
     /**
-     * Category types available on each photo
+     * All Categories
      */
     public static function categories ()
     {
@@ -131,6 +106,54 @@ class Photo extends Model
             'industrial',
             'brands',
             'dogshit'
+        ];
+    }
+
+    /**
+     * All Currently available Brands
+     */
+    public static function getBrands ()
+    {
+        return [
+            'adidas',
+            'amazon',
+            'apple',
+            'applegreen',
+            'avoca',
+            'bewleys',
+            'brambles',
+            'butlers',
+            'budweiser',
+            'cafe_nero',
+            'centra',
+            'coke',
+            'colgate',
+            'corona',
+            'costa',
+            'esquires',
+            'frank_and_honest',
+            'fritolay',
+            'gillette',
+            'heineken',
+            'insomnia',
+            'kellogs',
+            'lego',
+            'lolly_and_cookes',
+            'loreal',
+            'nescafe',
+            'nestle',
+            'marlboro',
+            'mcdonalds',
+            'nike',
+            'obriens',
+            'pepsi',
+            'redbull',
+            'samsung',
+            'subway',
+            'supermacs',
+            'starbucks',
+            'tayto',
+            'wilde_and_greene'
         ];
     }
 
@@ -184,20 +207,24 @@ class Photo extends Model
             }
         }
 
-        echo "id " . $this->id . "\n";
-        echo "Prev " . $this->total_litter . "\n";
-        echo "New " . $total . " \n \n";
-
         $this->total_litter = $total;
         $this->save();
     }
 
     /**
      * Save translation key => value for every item on each category that has a value
+     *
+     * Format: category.item quantity, category.item quantity,
+     *
+     * eg. smoking.butts 3, alcohol.beerBottles 4,
+     *
+     * We use the result_string on the global map for 2 reasons.
+     * 1. We don't have to eager load any data.
+     * 2. This format can be translated into any language.
      */
     public function translate ()
     {
-        $result_string = ''; // smoking.butts 3, alcohol.beerBottles 4,
+        $result_string = '';
 
         foreach ($this->categories() as $category)
         {

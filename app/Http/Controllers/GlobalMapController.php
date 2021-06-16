@@ -38,8 +38,8 @@ class GlobalMapController extends Controller
                     'coordinates' => [$photo->lon, $photo->lat]
                 ],
                 'properties' => [
-                    'result_string' => $photo->verified === 2 ? $photo->result_string : null,
-                    'filename' => $photo->verified === 2 ? $photo->filename : '/assets/images/waiting.png',
+                    'result_string' => $photo->verified >= 2 ? $photo->result_string : null,
+                    'filename' => $photo->verified >= 2 ? $photo->filename : '/assets/images/waiting.png',
                     'datetime' => $photo->datetime,
                     'cluster'  => false,
                     'verified' => $photo->verified
