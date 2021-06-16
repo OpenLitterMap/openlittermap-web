@@ -83,9 +83,9 @@ class ResetTotalsOnRedis extends Command
             // state:1 total_photos
             // city:1 total_photos
             // user:1 total_photos
-            Redis::hdel("$featureType:$feature->id", "total_photos");
-            Redis::hdel("$featureType:$feature->id", "total_litter");
-            Redis::hdel("$featureType:$feature->id", "total_brands");
+//            Redis::hdel("$featureType:$feature->id", "total_photos");
+//            Redis::hdel("$featureType:$feature->id", "total_litter");
+//            Redis::hdel("$featureType:$feature->id", "total_brands");
 
             $total_photos = Photo::where([
                 $feature_id => $feature->id,
@@ -138,7 +138,7 @@ class ResetTotalsOnRedis extends Command
 
                 if ($total_category >= 0 && $category !== "brands")
                 {
-                    Redis::hdel("$featureType:$feature->id", $category);
+//                    Redis::hdel("$featureType:$feature->id", $category);
 
                     Redis::hincrby("$featureType:$feature->id", $category, $total_category);
 
@@ -153,7 +153,7 @@ class ResetTotalsOnRedis extends Command
 
             if ($total_brands > 0)
             {
-                Redis::del("$featureType:$feature->id", "total_brands", $total_brands);
+//                Redis::del("$featureType:$feature->id", "total_brands", $total_brands);
             }
         }
     }
