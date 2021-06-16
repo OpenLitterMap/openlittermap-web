@@ -3,14 +3,11 @@
 namespace App\Listeners\AddTags;
 
 use App\Events\TagsVerifiedByAdmin;
-use App\Models\Location\Country;
-use App\Models\Photo;
 use App\Models\User\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\DB;
 
-class IncrementUsersActiveTeam
+class IncrementUsersActiveTeam implements ShouldQueue
 {
     /**
      * If the user has an active team,

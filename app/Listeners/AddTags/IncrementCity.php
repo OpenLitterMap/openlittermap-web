@@ -2,12 +2,10 @@
 
 namespace App\Listeners\AddTags;
 
-use App\Models\Photo;
 use App\Models\Location\City;
 use App\Events\TagsVerifiedByAdmin;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Redis;
 
 class IncrementCity implements ShouldQueue
@@ -22,38 +20,29 @@ class IncrementCity implements ShouldQueue
     {
         $city = City::find($event->city_id);
 
-        \Log::info(['IncrCity', $event]);
-
         if ($city)
         {
-            $categories = Photo::categories();
-            $brands = Photo::getBrands();
-
-            foreach ($categories as $category)
+            if ($event->total_litter_all_categories > 0)
             {
-                if ($event->$category)
+                foreach ($event->total_litter_per_category as $category => $total)
                 {
-                    if ($category === "brands")
-                    {
-                        foreach ($brands as $brand)
-                        {
-                            if (isset($event->$brand))
-                            {
-                                Redis::hincrby("city:$city->id", $brand, $event->$brand);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        Redis::hincrby("city:$city->id", $category, $event->$category);
-                    }
+                    Redis::hincrby("city:$city->id", $category, $total);
                 }
+
+                Redis::hincrby("city:$city->id", "total_litter", $event->total_litter_all_categories);
+            }
+
+            if ($event->total_brands > 0)
+            {
+                foreach ($event->total_litter_per_brand as $brand => $total)
+                {
+                    Redis::hincrby("city:$city->id", $brand, $total);
+                }
+
+                Redis::hincrby("city:$city->id", "total_brands", $event->total_brands);
             }
 
             Redis::hincrby("city:$city->id", "total_photos", 1);
-            Redis::hincrby("city:$city->id", "total_litter", $event->total_litter_all_categories);
-
-            // update total brand + brands per location
         }
     }
 }

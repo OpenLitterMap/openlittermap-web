@@ -49,7 +49,7 @@ class EventServiceProvider extends ServiceProvider
         ],
         // Several UpdateUser Listeners could be merged
         'App\Events\TagsVerifiedByAdmin' => [
-            'App\Listeners\AddTags\UpdateUser', // Rename to ProofOfWork
+            'App\Listeners\AddTags\UpdateUser', // ProofOfWork
             'App\Listeners\AddTags\IncrementCity',
             'App\Listeners\AddTags\IncrementState',
             'App\Listeners\AddTags\IncrementCountry',

@@ -3,10 +3,8 @@
 namespace App\Listeners\User;
 
 use App\Events\TagsVerifiedByAdmin;
-use App\Models\Photo;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Redis;
 
 class UpdateUserCategories implements ShouldQueue
@@ -19,17 +17,26 @@ class UpdateUserCategories implements ShouldQueue
      */
     public function handle (TagsVerifiedByAdmin $event)
     {
-        $categories = Photo::categories();
-
-        foreach ($categories as $category)
+        if ($event->total_litter_all_categories > 0)
         {
-            if ($event->$category)
+            foreach ($event->total_litter_per_category as $category => $total)
             {
-                Redis::hincrby("user:$event->user_id", $category, $event->$category);
+                Redis::hincrby("user:$event->user_id", $category, $total);
             }
+
+            Redis::hincrby("user:$event->user_id", "total_litter", $event->total_litter_all_categories);
+        }
+
+        if ($event->total_brands > 0)
+        {
+            foreach ($event->total_litter_per_brand as $brand => $total)
+            {
+                Redis::hincrby("user:$event->user_id", $brand, $total);
+            }
+
+            Redis::hincrby("user:$event->user_id", "total_brands", $event->total_brands);
         }
 
         Redis::hincrby("user:$event->user_id", "total_photos", 1);
-        Redis::hincrby("user:$event->user_id", "total_litter", $event->total_litter_all_categories);
     }
 }
