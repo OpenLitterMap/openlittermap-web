@@ -13,17 +13,15 @@ class TagsVerifiedByAdmin implements ShouldQueue
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
+    // photo relationships
     public $photo_id, $city_id, $state_id, $country_id, $user_id, $created_at;
-    public $total_count;
-    public $total_alcohol, $total_art,
-        $total_brands,
-        $total_coastal, $total_coffee,
-        $total_dogshit,
-        $total_dumping,
-        $total_food,
-        $total_industrial,
-        $total_other,
-        $total_sanitary, $total_softdrinks, $total_smoking;
+
+    // total litter on all categories
+    public $total_litter_all_categories, $total_brands;
+
+    // total per category, or total per brand
+    public $total_litter_per_category = []; // smoking => 5, alcohol => 1
+    public $total_litter_per_brand = []; // mcd => 1, starbucks => 2
 
     /**
      * The tags on a single photo have been verified by an Admin
@@ -43,34 +41,45 @@ class TagsVerifiedByAdmin implements ShouldQueue
 
         $total_litter_all_categories = 0;
 
+        $categories = Photo::categories();
+        $brands = Photo::getBrands();
+
         // Count the total category values on this photo
-        // We will use this data to update the total_category values...
-        // for Country, State and City the photo was uploaded from
-        foreach ($photo->categories() as $category)
+        // We will use this data to update the total category values...
+        // for each Country, State and City the photo was uploaded from
+        foreach ($categories as $category)
         {
             if ($photo->$category)
             {
-                // Create a key, a string representation of each "total_category"
-                // eg "total_smoking", "total_alcohol"
-                $total_category_key = "total_" . $category;
-
-                // Create a value
-                // This is the sum of all litter types on this category
-                $total_category_value = $photo->$category->total();
-
-                // total_smoking = 1
-                // total_alcohol = 2
-                $this->$total_category_key = $total_category_value;
-
-                // Don't include brands in total_litter. We keep total_brands separate.
-                if ($photo->$category !== 'brands')
+                if ($category === "brands")
                 {
-                    $total_litter_all_categories += $total_category_value; // total counts of all categories
+                    $this->total_brands = $photo->brands->total();
+
+                    foreach ($brands as $brand)
+                    {
+                        if ($photo->brands->$brand)
+                        {
+                            // This parent class will hold each brand total
+                            // and use it to update each listener
+                            $this->total_litter_per_brand[$brand] = $photo->brands->$brand;
+                        }
+                    }
+                }
+                // Don't include brands in total_litter. We keep total_brands separate.
+                else
+                {
+                    $categoryTotal = $photo->$category->total();
+
+                    // This parent class will hold each category total
+                    // and use it to update each listener
+                    $this->total_litter_per_category[$category] = $categoryTotal;
+
+                    $total_litter_all_categories += $categoryTotal;
                 }
             }
         }
 
-        $this->total_count = $total_litter_all_categories;
+        $this->total_litter_all_categories = $total_litter_all_categories;
     }
 
     /**

@@ -32,7 +32,6 @@ trait CheckLocations
         {
             $this->country = $addressArray['country'];
         }
-
         else
         {
             $this->country = 'error_country'; // error country
@@ -42,7 +41,6 @@ trait CheckLocations
         {
             $this->countryCode = $addressArray["country_code"];
         }
-
         else
         {
             $this->countryCode = 'error';

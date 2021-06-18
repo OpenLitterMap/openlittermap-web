@@ -1,6 +1,6 @@
 {
-    "enter-team-identifier": "Enter an identifier to join a team.",
-    "team-identifier": "Join team by identifier",
-    "enter-id-to-join-placeholder": "Enter ID to join a team",
-    "join-team": "Join Team"
+    "enter-team-identifier": "Wprowadź identyfikator, aby dołączyć do drużyny.",
+    "team-identifier": "Dołącz do drużyny przez jej identyfikator",
+    "enter-id-to-join-placeholder": "Wpisz identyfikator, aby dołączyć do drużyny",
+    "join-team": "Dołącz do drużyny"
 }

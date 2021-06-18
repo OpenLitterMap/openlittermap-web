@@ -241,13 +241,20 @@ export default {
             return false;
         },
 
-		/**
-		 * Key to return for google-recaptcha
-		 */
-		computedKey ()
-		{
-            return process.env.MIX_GOOGLE_RECAPTCHA_KEY;
-		},
+        /**
+         * Key to return for google-recaptcha
+         * @olmbulma.test (old) 6Lfd4HMUAAAAAMZBVUIpBJI7OfwtPcbqR6kGndSE
+         * @olm.test (new) 6LcvHsIZAAAAAOG0q9-1vY3uWqu0iFvUC3tCNhID
+         * @production 6LciihwUAAAAADsZr0CYUoLPSMOIiwKvORj8AD9m // todo - put this on .env
+         */
+        computedKey ()
+        {
+            if (process.env.NODE_ENV === "development")
+            {
+                return "6LcvHsIZAAAAAOG0q9-1vY3uWqu0iFvUC3tCNhID"; // olm.test
+            }
+            return "6LciihwUAAAAADsZr0CYUoLPSMOIiwKvORj8AD9m" // production
+        },
 
         /**
          * Errors object from plans
