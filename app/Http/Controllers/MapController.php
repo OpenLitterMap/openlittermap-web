@@ -215,6 +215,12 @@ class MapController extends Controller
 
         	$total_litter += $state->total_litter_redis;
         	$state->diffForHumans = $state->created_at->diffForHumans();
+
+            if ($state->creator)
+            {
+                $state->creator->name = ($state->creator->show_name) ? $state->creator->name : "";
+                $state->creator->username = ($state->creator->show_username) ? $state->creator->username : "";
+            }
 	    }
 
 		return [
