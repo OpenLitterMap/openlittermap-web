@@ -41,6 +41,7 @@ trait FilterPhotosByGeoHashTrait
 
         $query = Photo::query()->select(
             'id',
+            'verified',
             'user_id',
             'team_id',
             'result_string',
