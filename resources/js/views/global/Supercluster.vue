@@ -184,7 +184,6 @@ async function update ()
                             a.pop();
 
                             a.forEach(i => {
-                                console.log({ i });
                                 let b = i.split(' ');
 
                                 tags += i18n.t('litter.' + b[0]) + ': ' + b[1] + ' ';

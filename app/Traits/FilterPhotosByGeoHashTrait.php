@@ -39,7 +39,17 @@ trait FilterPhotosByGeoHashTrait
         $ns = $this->neighbors($center_geohash);
         foreach ($ns as $n) array_push($geos, $n);
 
-        $query = Photo::query()->select('id', 'user_id', 'team_id', 'result_string', 'geohash', 'lat', 'lon', 'datetime');
+        $query = Photo::query()->select(
+            'id',
+            'user_id',
+            'team_id',
+            'result_string',
+            'filepath',
+            'geohash',
+            'lat',
+            'lon',
+            'datetime'
+        );
 
         $query->with([
             'user' => function ($query) {
