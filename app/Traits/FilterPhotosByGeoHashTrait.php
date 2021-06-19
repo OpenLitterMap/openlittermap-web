@@ -39,7 +39,18 @@ trait FilterPhotosByGeoHashTrait
         $ns = $this->neighbors($center_geohash);
         foreach ($ns as $n) array_push($geos, $n);
 
-        $query = Photo::query();
+        $query = Photo::query()->select('id', 'user_id', 'team_id', 'result_string', 'geohash', 'lat', 'lon', 'datetime');
+
+        $query->with([
+            'user' => function ($query) {
+                $query->where('users.show_name_maps', 1)
+                    ->orWhere('users.show_username_maps', 1)
+                    ->select('users.id', 'users.name', 'users.username', 'users.show_username_maps', 'users.show_name_maps');
+            },
+            'team' => function ($query) {
+                $query->select('teams.id', 'teams.name');
+            }
+        ]);
 
         // Build cluster query
         $query->where(function ($q) use ($geos)
