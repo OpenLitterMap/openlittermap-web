@@ -4,9 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Events\Photo\IncrementPhotoMonth;
 use GeoHash;
-use App\Models\Location\Country;
-use App\Models\Location\State;
-use App\Models\Location\City;
 
 use App\CheckLocations;
 use Carbon\Carbon;
@@ -16,10 +13,13 @@ use Illuminate\Support\Facades\Auth;
 use App\Events\ImageUploaded;
 use App\Jobs\UploadData;
 use App\Jobs\Api\AddTags;
+use Illuminate\Support\Facades\Log;
 
 class ApiPhotosController extends Controller
 {
 	use CheckLocations;
+
+	protected $userId;
 
     /**
      * Save a photo to the database
@@ -47,8 +47,6 @@ class ApiPhotosController extends Controller
      */
     public function store (Request $request)
     {
-        \Log::info(['app.upload', $request->all()]);
-
         $file = $request->file('photo');
 
         if ($file->getError() === 3)
@@ -57,6 +55,11 @@ class ApiPhotosController extends Controller
         }
 
         $user = Auth::guard('api')->user();
+
+        Log::channel('photos')->info((string)[
+            'app_upload' => $request->all(),
+            'user_id' => $user->id
+        ]);
 
         $model = ($request->has('model'))
             ? $request->model
@@ -101,20 +104,9 @@ class ApiPhotosController extends Controller
         $location = array_values($addressArray)[0];
         $road = array_values($addressArray)[1];
 
-        $this->checkCountry($addressArray);
-        $this->checkState($addressArray);
-        $this->checkDistrict($addressArray);
-        $this->checkCity($addressArray);
-        $this->checkSuburb($addressArray);
-
-        $countryId = Country::where('country', $this->country)
-                    ->orWhere('countrynameb', $this->country)
-                    ->orWhere('countrynamec', $this->country)->first()->id;
-
-        $stateId = State::where('state', $this->state)
-                  ->orWhere('statenameb', $this->state)->first()->id;
-
-        $cityId = City::where('city', $this->city)->first()->id;
+        $this->checkCountry($addressArray, $user->id);
+        $this->checkState($addressArray, $user->id);
+        $this->checkCity($addressArray, $user->id);
 
 	    $photo = $user->photos()->create([
 			'filename' => $imageName,
@@ -131,9 +123,9 @@ class ApiPhotosController extends Controller
             'country' => $this->country,
             'country_code' => $this->countryCode,
             'model' => $model,
-            'country_id' => $countryId,
-            'state_id' => $stateId,
-            'city_id' => $cityId,
+            'country_id' => $this->countryId,
+            'state_id' => $this->stateId,
+            'city_id' => $this->cityId,
             'remaining' => $request['presence'],
             'platform' => 'mobile',
             'geohash' => GeoHash::encode($lat, $lon)
@@ -150,16 +142,13 @@ class ApiPhotosController extends Controller
             $imageName,
             $teamName,
             $user->id,
-            $countryId,
-            $stateId,
-            $cityId
+            $this->countryId,
+            $this->stateId,
+            $this->cityId
         ));
 
-        // Increment the { Month-Year: int } value for each location
-        // Todo - this needs debugging
-        // This should dispatch a job
         // Move this to redis
-        event (new IncrementPhotoMonth($countryId, $stateId, $cityId, $date));
+        event (new IncrementPhotoMonth($this->countryId, $this->stateId, $this->cityId, $date));
 
 //        if ($user->has_uploaded_today === 0)
 //        {
@@ -187,9 +176,12 @@ class ApiPhotosController extends Controller
      */
     public function dynamicUpdate (Request $request)
     {
-        \Log::info(['dynamicUpdate', $request->all()]);
-
 		$userId = Auth::guard('api')->user()->id;
+
+        \Log::channel('tags')->info([
+            'dynamicUpdate' => 'mobile',
+            'request' => $request->all()
+        ]);
 
         dispatch (new UploadData($request->all(), $userId));
 
@@ -205,9 +197,12 @@ class ApiPhotosController extends Controller
      */
     public function addTags (Request $request)
     {
-        \Log::info(['addTags', $request->all()]);
-
         $userId = Auth::guard('api')->user()->id;
+
+        \Log::channel('tags')->info([
+            'add_tags' => 'mobile',
+            'request' => $request->all()
+        ]);
 
         dispatch (new AddTags($request->all(), $userId));
 

@@ -88,7 +88,7 @@ export default {
         tag ()
         {
             this.$router.push({ path: '/tag' });
-        },
+        }
     }
 };
 </script>

@@ -5,21 +5,10 @@ namespace App\Listeners\UpdateTimes;
 use App\Models\Location\State;
 use Carbon\Carbon;
 use App\Events\Photo\IncrementPhotoMonth;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class IncrementStateMonth
+class IncrementStateMonth implements ShouldQueue
 {
-    /**
-     * Create the event listener.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        //
-    }
-
     /**
      * Handle the event.
      *
@@ -28,7 +17,9 @@ class IncrementStateMonth
      */
     public function handle (IncrementPhotoMonth $event)
     {
-        if ($state = State::find($event->state_id))
+        $state = State::find($event->state_id);
+
+        if ($state)
         {
             $ppm = json_decode($state->photos_per_month, true);
 
@@ -38,16 +29,12 @@ class IncrementStateMonth
             {
                 $ppm[$date]++;
             }
-
             else
             {
                 $ppm[$date] = 1;
             }
 
-            $ppm = json_encode($ppm);
-
-            $state->photos_per_month = $ppm;
-
+            $state->photos_per_month = json_encode($ppm);
             $state->save();
         }
     }

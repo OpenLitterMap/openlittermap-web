@@ -77,6 +77,9 @@ class MapController extends Controller
          * Global levels
          *
          * todo - Make this dynamic
+         *
+         * Someone please refactor this!!!
+         *
          * See: GlobalLevels.php global_levels table
          * We need to keep earlier levels for test databases
          */
@@ -178,6 +181,8 @@ class MapController extends Controller
 			->orWhere('shortcode', $country_name)
 			->first();
 
+		if (!$country) return ['success' => false, 'msg' => 'country not found'];
+
 		$states = State::select('id', 'state', 'country_id', 'created_by', 'created_at', 'manual_verify', 'total_contributors')
             ->with(['creator' => function ($q) {
 				$q->select('id', 'name', 'username', 'show_name', 'show_username')
@@ -224,6 +229,7 @@ class MapController extends Controller
 	    }
 
 		return [
+		    'success' => true,
 			'country' => $country->country,
 			'states' => $states,
 			'total_litter' => $total_litter,
@@ -245,6 +251,8 @@ class MapController extends Controller
 			['state', $state_name],
 			['total_images', '!=', null]
 		])->first();
+
+		if (!$state) return ['success' => false, 'msg' => 'state not found'];
 
         /**
          * Instead of loading the photos here on the city model,
@@ -290,7 +298,8 @@ class MapController extends Controller
         }
 
 		return [
-			'country' => $country->country,
+            'success' => true,
+            'country' => $country->country,
 			'state' => $state->state,
 			'cities' => $cities
 		];

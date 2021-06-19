@@ -35,6 +35,20 @@ return [
     */
 
     'channels' => [
+        // custom
+        'photos' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/photos/photos.log'),
+            'level' => 'info'
+        ],
+
+        'tags' => [
+            'driver' => 'daily',
+            'path' => storage_path(('logs/tags/tags.log')),
+            'level' => 'info'
+        ],
+
+        // default
         'stack' => [
             'driver' => 'stack',
             'channels' => ['daily'],
