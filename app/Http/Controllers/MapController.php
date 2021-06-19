@@ -183,7 +183,8 @@ class MapController extends Controller
 				$q->select('id', 'name', 'username', 'show_name', 'show_username')
 				  ->where('show_name', true)
 			  	  ->orWhere('show_username', true);
-			}])->where([
+			}])
+            ->where([
 				'country_id' => $country->id,
 				'manual_verify' => 1,
                 ['total_litter', '>', 0],
@@ -234,8 +235,6 @@ class MapController extends Controller
 
         $country = Country::where('country', $country_name)->first();
 
-        \Log::info(['getCities', $country->id, $state_name, request()->ip()]);
-
 		$state = State::where([
 			['state', $state_name],
 			['total_images', '!=', null]
@@ -245,16 +244,20 @@ class MapController extends Controller
          * Instead of loading the photos here on the city model,
          * save photos_per_day string on the city model
          */
-		$cities = City::with(['creator' => function ($q) {
-			$q->select('id', 'name', 'username', 'show_name', 'show_username')
-			  ->where('show_name', true)
-			  ->orWhere('show_username', true);
-		}])
-        ->where([
-            ['state_id', $state->id],
-			['total_images', '>', 0],
-            ['total_litter', '>', 0]
-		])->orderBy('city', 'asc')->get();
+		$cities = City::select('id', 'city', 'country_id', 'state_id', 'created_by', 'created_at', 'manual_verify', 'total_contributors')
+            ->with(['creator' => function ($q) {
+			    $q->select('id', 'name', 'username', 'show_name', 'show_username')
+                  ->where('show_name', true)
+                  ->orWhere('show_username', true);
+		    }])
+            ->where([
+                ['state_id', $state->id],
+			    ['total_images', '>', 0],
+                ['total_litter', '>', 0],
+                ['total_contributors', '>', 0]
+		    ])
+            ->orderBy('city', 'asc')
+            ->get();
 
 		foreach ($cities as $city)
 		{
