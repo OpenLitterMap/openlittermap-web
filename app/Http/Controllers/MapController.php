@@ -167,8 +167,10 @@ class MapController extends Controller
 
 	/**
 	 * Get States for a country
+     *
+     * @return array
 	 */
-	public function getStates ()
+	public function getStates () :array
 	{
         $country_name = urldecode(request()->country);
 
@@ -184,7 +186,8 @@ class MapController extends Controller
 			}])->where([
 				'country_id' => $country->id,
 				'manual_verify' => 1,
-                ['total_litter', '>', 0]
+                ['total_litter', '>', 0],
+                ['total_contributors', '>', 0]
 			])
             ->orderBy('state', 'asc')
             ->get();
