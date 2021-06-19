@@ -68,6 +68,14 @@ class PhotoTest extends TestCase
         $this->assertNotEmpty($photo->categories());
     }
 
+    public function test_a_photo_has_brands()
+    {
+        $photo = Photo::factory()->create();
+
+        $this->assertIsArray($photo->getBrands());
+        $this->assertNotEmpty($photo->getBrands());
+    }
+
     public function test_a_photo_has_a_translated_string_of_its_categories()
     {
         $smoking = Smoking::factory()->create();
@@ -93,9 +101,6 @@ class PhotoTest extends TestCase
             'smoking_id' => $smoking->id,
             'brands_id' => $brands->id
         ]);
-
-        // Suppress output to console
-        $this->setOutputCallback(function() {});
 
         $photo->total();
 
