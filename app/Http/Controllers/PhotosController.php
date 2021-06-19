@@ -43,6 +43,8 @@ class PhotosController extends Controller
     /**
      * Move photo to AWS S3 in production || local in development
      * then persist new record to photos table
+     *
+     * @param Request $request
      */
     public function store (Request $request)
     {
@@ -52,13 +54,14 @@ class PhotosController extends Controller
 
         $user = Auth::user();
 
-        if ($user->has_uploaded == 0) $user->has_uploaded = 1;
+        if (!$user->has_uploaded) $user->has_uploaded = 1;
 
-        if ($user->images_remaining == 0)
-        {
-            // todo - make message show by default
-            abort(500, "Sorry, your max upload limit has been reached.");
-        }
+        // we don't need this for now
+        //if (!$user->images_remaining)
+        //{
+        //    // todo - make message show by default
+        //    abort(500, "Sorry, your max upload limit has been reached.");
+        //}
 
         $file = $request->file('file'); // /tmp/php7S8v..
 
@@ -87,6 +90,7 @@ class PhotosController extends Controller
 
         $dateTime = '';
 
+        // Some devices store this key in a different format. We need to check for many key types.
         if (array_key_exists('DateTimeOriginal', $exif))
         {
             $dateTime = $exif["DateTimeOriginal"];
@@ -113,10 +117,13 @@ class PhotosController extends Controller
         // Check if the user has already uploaded this image
         // todo - load error automatically without clicking it
         // todo - translate
+        if (app()->environment() === "production")
+        {
             if (Photo::where(['user_id' => $user->id, 'datetime' => $dateTime])->first())
             {
                 abort(500, "You have already uploaded this file!");
             }
+        }
 
         // Create dir/filename and move to AWS S3
         $explode = explode('-', $dateTime);
