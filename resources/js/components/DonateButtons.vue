@@ -47,7 +47,9 @@ export default {
 	{
 		this.loading = true;
 		await this.$store.dispatch('GET_DONATION_AMOUNTS');
-		this.loading = false;
+        this.loading = false;
+
+        this.$emit('donations-loaded')
 	},
 
 	computed: {
