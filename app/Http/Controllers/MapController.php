@@ -275,6 +275,12 @@ class MapController extends Controller
             $city['avg_photo_per_user'] = round($city->total_photos_redis / $city->total_contributors, 2);
             $city['avg_litter_per_user'] = round($city->total_litter_redis / $city->total_contributors, 2);
             $city['diffForHumans'] = $city->created_at->diffForHumans();
+
+            if ($city->creator)
+            {
+                $city->creator->name = ($city->creator->show_name) ? $city->creator->name : "";
+                $city->creator->username = ($city->creator->show_username) ? $city->creator->username : "";
+            }
         }
 
 		return [
