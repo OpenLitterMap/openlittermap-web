@@ -178,7 +178,7 @@ class MapController extends Controller
 			->orWhere('shortcode', $country_name)
 			->first();
 
-		$states = State::select('id', 'state', 'country_id', 'created_by', 'manual_verify', 'total_contributors')
+		$states = State::select('id', 'state', 'country_id', 'created_by', 'created_at', 'manual_verify', 'total_contributors')
             ->with(['creator' => function ($q) {
 				$q->select('id', 'name', 'username', 'show_name', 'show_username')
 				  ->where('show_name', true)
