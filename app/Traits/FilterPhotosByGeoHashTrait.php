@@ -44,7 +44,7 @@ trait FilterPhotosByGeoHashTrait
             'user_id',
             'team_id',
             'result_string',
-            'filepath',
+            'filename',
             'geohash',
             'lat',
             'lon',
