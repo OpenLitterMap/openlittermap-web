@@ -72,13 +72,17 @@ class PhotosController extends Controller
 
         $exif = $image->exif();
 
+        if (is_null($exif))
+        {
+            abort(500, "Sorry, no GPS on this one. Code=1");
+        }
+
         // Check if the EXIF has GPS data
         // todo - make this error appear on the frontend dropzone without clicking the "X"
         // todo - translate the error
         if (!array_key_exists("GPSLatitudeRef", $exif))
         {
-            // Todo - pass translation keys and create translations
-            abort(500, "Sorry, no GPS on this one");
+            abort(500, "Sorry, no GPS on this one. Code=2");
         }
 
         $dateTime = '';
@@ -109,13 +113,10 @@ class PhotosController extends Controller
         // Check if the user has already uploaded this image
         // todo - load error automatically without clicking it
         // todo - translate
-        if (app()->environment() === 'production')
-        {
             if (Photo::where(['user_id' => $user->id, 'datetime' => $dateTime])->first())
             {
                 abort(500, "You have already uploaded this file!");
             }
-        }
 
         // Create dir/filename and move to AWS S3
         $explode = explode('-', $dateTime);
