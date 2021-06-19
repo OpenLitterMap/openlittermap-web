@@ -38,7 +38,7 @@ class State extends Location
     public function getTotalLitterRedisAttribute ()
     {
         return Redis::hexists("state:$this->id", "total_litter")
-            ? Redis::hget("state:$this->id", "total_litter")
+            ? (int)Redis::hget("state:$this->id", "total_litter")
             : 0;
     }
 
@@ -48,7 +48,7 @@ class State extends Location
     public function getTotalPhotosRedisAttribute ()
     {
         return Redis::hexists("state:$this->id", "total_photos")
-            ? Redis::hget("state:$this->id", "total_photos")
+            ? (int)Redis::hget("state:$this->id", "total_photos")
             : 0;
     }
 
