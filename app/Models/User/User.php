@@ -7,6 +7,7 @@ use App\Models\Teams\Team;
 use App\Payment;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\Redis;
 use Laravel\Cashier\Billable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -66,25 +67,6 @@ class User extends Authenticatable
         'xp',
         'level',
 
-        // Todo - Separate user_totals into another table users_totals
-        'total_images',
-        'total_litter',
-        'total_verified',
-        'total_verified_litter',
-        'total_smoking',
-        'total_food',
-        'total_coffee',
-        'total_softdrinks',
-        'total_alcohol',
-        'total_other',
-        'total_coastal',
-        'total_sanitary',
-        'total_dumping',
-        'total_industrial',
-        'total_brands',
-        'total_art',
-        'total_dogshit',
-
         'stripe_id',
         'images_remaining',
         'verify_remaining',
@@ -120,6 +102,25 @@ class User extends Authenticatable
     protected $guarded = [
         'role_id'
     ];
+
+    protected $appends = ['total_categories'];
+
+    public function getTotalCategoriesAttribute ()
+    {
+        $categories = Photo::categories();
+
+        $totals = [];
+
+        foreach ($categories as $category)
+        {
+            if ($category !== "brands")
+            {
+                $totals[$category] = (int)Redis::hget("user:$this->id", $category);
+            }
+        }
+
+        return $totals;
+    }
 
     /**
      *

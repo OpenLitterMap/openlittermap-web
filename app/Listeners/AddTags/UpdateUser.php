@@ -9,10 +9,10 @@ use App\Events\TagsVerifiedByAdmin;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class UpdateUser
+class UpdateUser implements ShouldQueue
 {
     /**
-     * Update the users table
+     * Update the users proof of work
      *
      * Combine this with update active team
      *
@@ -22,6 +22,7 @@ class UpdateUser
     {
         $user = User::find($event->user_id);
 
+        // Move to redis
         $user->count_correctly_verified += 1;
 
         if ($user->count_correctly_verified >= 100)
@@ -34,7 +35,6 @@ class UpdateUser
 
         // We should increment xp here
 
-        $user->total_litter += $event->total_count;
         $user->save();
     }
 }

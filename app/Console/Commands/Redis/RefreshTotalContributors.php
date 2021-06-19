@@ -6,14 +6,14 @@ use App\Models\User\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Redis;
 
-class ResetCountTotalContributors extends Command
+class RefreshTotalContributors extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'redis:count-all-contributors';
+    protected $signature = 'redis:refresh-total-contributors';
 
     /**
      * The console command description.
@@ -60,7 +60,7 @@ class ResetCountTotalContributors extends Command
             $statePhotos = $user->photos()->select('state_id')->distinct()->get();
             foreach ($statePhotos as $photo)
             {
-                Redis::sadd("state:$photo->photo_id:user_ids", $user->id);
+                Redis::sadd("state:$photo->state_id:user_ids", $user->id);
             }
 
             $cityPhotos = $user->photos()->select('city_id')->distinct()->get();
