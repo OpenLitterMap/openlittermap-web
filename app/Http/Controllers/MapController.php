@@ -307,7 +307,6 @@ class MapController extends Controller
 		];
 	}
 
-
 	/**
 	 * Dynamically build GeoJSON data for web-mapping
 	 */
@@ -337,7 +336,7 @@ class MapController extends Controller
 				'industrial',
 //				 'art',
 //				'trashdog',
-				'owner' => function ($q) {
+				'user' => function ($q) {
 					$q->where('show_name_maps', true)
                       ->orWhere('show_username_maps', true);
 				}])->where([
@@ -366,7 +365,7 @@ class MapController extends Controller
 				'industrial',
 //				 'art',
 //				'trashdog',
-				'owner' => function ($q) {
+				'user' => function ($q) {
 					$q->where('show_name_maps', true)->orWhere('show_username_maps', true);
 				}])->where([
 					['city_id', $cityId],
@@ -422,13 +421,13 @@ class MapController extends Controller
 				)
 			);
 
-			if ($c->owner)
+			if ($c->user)
 			{
-				if ($c->owner->show_name_maps) {
-					$feature["properties"]["fullname"] = $c->owner->name;;
+				if ($c->user->show_name_maps) {
+					$feature["properties"]["fullname"] = $c->user->name;;
 				}
-				if ($c->owner->show_username_maps) {
-					$feature["properties"]["username"] = $c->owner->username;;
+				if ($c->user->show_username_maps) {
+					$feature["properties"]["username"] = $c->user->username;;
 				}
 			}
 
