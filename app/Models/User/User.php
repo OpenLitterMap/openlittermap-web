@@ -30,10 +30,7 @@ class User extends Authenticatable
         parent::boot();
 
         // listen for model events
-        // eg. after a record has been created
-
-        // When a user is created, add token
-        // function accepts the user
+        // When a user is created, add tokens
         static::creating(function($user) {
             $user->token = str_random(30);
         });
@@ -138,28 +135,6 @@ class User extends Authenticatable
         return $this->hasMany(Photo::class);
     }
 
-// old stripe -> new moved to App\Billing
-// protected $plan;
-
-// // protected $token;
-// /*
-// * Check if the User is subscribed:
-// * -> Accept a plan (not required)
-// * @param string $plan
-// */
-// public function subscribed($plan = null) {
-//     // return $this->subscribed;
-//     // return $this->stripe_id;
-
-//     // if we pass through a plan, return the plan the user is currently on
-//     if ($plan) {
-//         return $this->plan = $plan;
-//     }
-//     // else, make sure the user has a subscription -> as Bool
-//     return !! $this->plan;
-// }
-
-
     /**
      * Get the registered user to confirm their email
      */
@@ -237,31 +212,6 @@ class User extends Authenticatable
     {
         return $this->hasManyThrough('App\Art', 'App\Models\Photo');
     }
-
-
-    /**
-     * Location Relationships
-     ** - Get a list of all locations a User has created.
-     */
-    // public function locations_created() {
-    //     $countries = \App\Models\Location\Country::where('manual_verify', 1)->get();
-    //     $countries_created = [];
-    //     foreach($countries as $country) {
-    //         if($country->photos->first()->user_id == $this->id) {
-    //             array_push($countries_created, [$country->name, $country->id]);
-    //         }
-    //     }
-    //     $countries_created = json_encode($countries_created);
-    //     return $countries_created;
-    // }
-
-    /**
-     * Give the user experience points
-     */
-//    public function givePoints (n)
-//    {
-//        $this->increment('xp', n);
-//    }
 
     /**
      * Currently active team

@@ -15,10 +15,10 @@ trait FilterPhotosByGeoHashTrait
      *
      * For a specific zoom level, we want to return the bounding box of the clusters + neighbours
      *
-     * @param $zoom int   -> zoom level of the browser
-     * @param $bbox array -> [west|left, south|bottom, east|right, north|top]
+     * @param $zoom int          -> zoom level of the browser
+     * @param string $bbox array -> [west|left, south|bottom, east|right, north|top]
      *
-     * @return $query
+     * @return \Illuminate\Database\Eloquent\Builder $query
      */
     public function filterPhotosByGeoHash (int $zoom, string $bbox)
     {

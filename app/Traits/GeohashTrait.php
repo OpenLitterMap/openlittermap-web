@@ -4,7 +4,6 @@ namespace App\Traits;
 
 trait GeohashTrait
 {
-
     private $bitss = [16, 8, 4, 2, 1];
     private $neighbors = [];
     private $borders = [];
