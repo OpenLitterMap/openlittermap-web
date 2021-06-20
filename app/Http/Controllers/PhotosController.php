@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\Littercoin\LittercoinMined;
+use Exception;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Facades\Image;
-use Log;
-use Auth;
-//use Image;
 use GeoHash;
 
 use Carbon\Carbon;
@@ -44,6 +43,8 @@ class PhotosController extends Controller
     /**
      * Move photo to AWS S3 in production || local in development
      * then persist new record to photos table
+     *
+     * @param Request $request
      */
     public function store (Request $request)
     {
@@ -53,14 +54,14 @@ class PhotosController extends Controller
 
         $user = Auth::user();
 
-        if ($user->has_uploaded == 0) $user->has_uploaded = 1;
+        if (!$user->has_uploaded) $user->has_uploaded = 1;
 
-        if ($user->images_remaining == 0)
-        {
-            header('HTTP/1.1 500 Internal Server Error');
-            header('Content-type: text/plain');
-            exit ("Sorry, your max upload limit has been reached."); // todo - make message show by default
-        }
+        // we don't need this for now
+        //if (!$user->images_remaining)
+        //{
+        //    // todo - make message show by default
+        //    abort(500, "Sorry, your max upload limit has been reached.");
+        //}
 
         $file = $request->file('file'); // /tmp/php7S8v..
 
@@ -74,19 +75,22 @@ class PhotosController extends Controller
 
         $exif = $image->exif();
 
+        if (is_null($exif))
+        {
+            abort(500, "Sorry, no GPS on this one. Code=1");
+        }
+
         // Check if the EXIF has GPS data
         // todo - make this error appear on the frontend dropzone without clicking the "X"
         // todo - translate the error
         if (!array_key_exists("GPSLatitudeRef", $exif))
         {
-            header('HTTP/1.1 500 Internal Server Error');
-            header('Content-type: text/plain');
-            // Todo - pass translation keys and create translations
-            exit ("Sorry, no GPS on this one");
+            abort(500, "Sorry, no GPS on this one. Code=2");
         }
 
         $dateTime = '';
 
+        // Some devices store this key in a different format. We need to check for many key types.
         if (array_key_exists('DateTimeOriginal', $exif))
         {
             $dateTime = $exif["DateTimeOriginal"];
@@ -113,13 +117,11 @@ class PhotosController extends Controller
         // Check if the user has already uploaded this image
         // todo - load error automatically without clicking it
         // todo - translate
-        if (app()->environment() === 'production')
+        if (app()->environment() === "production")
         {
             if (Photo::where(['user_id' => $user->id, 'datetime' => $dateTime])->first())
             {
-                header('HTTP/1.1 500 Internal Server Error');
-                header('Content-type: text/plain');
-                exit ("You have already uploaded this file!");
+                abort(500, "You have already uploaded this file!");
             }
         }
 
@@ -135,7 +137,7 @@ class PhotosController extends Controller
         // Upload the image to AWS
         if (app()->environment('production'))
         {
-            $s3 = \Storage::disk('s3');
+            $s3 = Storage::disk('s3');
 
             $s3->put($filepath, $image->stream(), 'public');
 
@@ -151,9 +153,9 @@ class PhotosController extends Controller
                 mkdir($public_path, 666, true);
             }
 
-            $image->save($public_path. $filename);
+            $image->save($public_path . '/' . $filename);
 
-            $imageName = config('app.url') . '/local-uploads/'.$y.'/'.$m.'/'.$d . $filename;
+            $imageName = config('app.url') . '/local-uploads/'.$y.'/'.$m.'/'.$d .'/'.$filename;
         }
 
         // Get phone model
@@ -273,7 +275,7 @@ class PhotosController extends Controller
     {
         $user = Auth::user();
         $photo = Photo::find($request->photoid);
-        $s3 = \Storage::disk('s3');
+        $s3 = Storage::disk('s3');
 
         try {
             if ($user->id === $photo->user_id)
@@ -287,7 +289,7 @@ class PhotosController extends Controller
             }
         } catch (Exception $e) {
             // could not be deleted
-            \Log::info(["Photo could not be deleted", $e->getMessage()]);
+            Log::info(["Photo could not be deleted", $e->getMessage()]);
         }
 
       	return redirect()->back();

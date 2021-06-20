@@ -1,13 +1,17 @@
 <template>
     <div class="global-map-container" :style="{height: mapHeight}">
+
         <loading v-if="loading" :active.sync="loading" :is-full-page="true" />
+
         <supercluster v-else />
+
     </div>
 </template>
 <script>
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
 import Supercluster from './Supercluster'
+
 export default {
     name: 'GlobalMapContainer',
     components: {
@@ -55,21 +59,25 @@ export default {
 
             window.addEventListener("resize", this.resizeHandler);
         },
+
         /**
-         * sets the display height for mobile devices
+         * Sets the display height for mobile devices
          */
-        resizeHandler () {
+        resizeHandler ()
+        {
             this.mapHeight = window.innerHeight - 72 + "px";
         }
     }
 }
 </script>
+
 <style scoped>
-@import '~leaflet/dist/leaflet.css';
-.global-map-container {
-    height: calc(100% - 72px);
-    margin: 0;
-    position: relative;
-    z-index: 1;
-}
+    @import '~leaflet/dist/leaflet.css';
+
+    .global-map-container {
+        height: calc(100% - 72px);
+        margin: 0;
+        position: relative;
+        z-index: 1;
+    }
 </style>

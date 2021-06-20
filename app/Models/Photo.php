@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\AI\Annotation;
+use App\Models\Teams\Team;
 use App\Models\User\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -159,10 +160,23 @@ class Photo extends Model
 
     /**
      * User who uploaded the photo
+     *
+     * This is unnecessarily loading
+     * - photos_count
+     * - team
+     * - total_categories
      */
-    public function owner ()
+    public function user ()
     {
     	return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * Team that uploaded the photo
+     */
+    public function team ()
+    {
+        return $this->belongsTo(Team::class, 'team_id');
     }
 
     /**

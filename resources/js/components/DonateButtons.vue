@@ -31,27 +31,27 @@ import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
 
 export default {
-	name: 'DonateButtons',
-	components: { Loading },
-	data ()
+    name: 'DonateButtons',
+    components: { Loading },
+    data () {
+        return {
+            stripeEmail: '',
+            stripeToken: '',
+            amount: '',
+            loading: true
+        }
+    },
+    async created ()
 	{
-		return {
-			stripeEmail: '',
-			stripeToken: '',
-			amount: '',
-			loading: true
-		}
-	},
+        this.loading = true;
 
-	async created ()
-	{
-		this.loading = true;
-		await this.$store.dispatch('GET_DONATION_AMOUNTS');
-		this.loading = false;
-	},
+        await this.$store.dispatch('GET_DONATION_AMOUNTS');
 
+        this.$emit('donations-loaded')
+
+        this.loading = false;
+	},
 	computed: {
-
 		/**
 		 * The options to donate in cents (500 = €5)
 		 */
@@ -60,9 +60,7 @@ export default {
 			return this.$store.state.donate.amounts;
 		}
 	},
-
 	methods: {
-
 		/**
 		 *
 		 */
