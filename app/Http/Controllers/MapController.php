@@ -167,8 +167,10 @@ class MapController extends Controller
 
 	/**
 	 * Get States for a country
+     *
+     * @return array
 	 */
-	public function getStates ()
+	public function getStates () :array
 	{
         $country_name = urldecode(request()->country);
 
@@ -176,14 +178,17 @@ class MapController extends Controller
 			->orWhere('shortcode', $country_name)
 			->first();
 
-		$states = State::with(['creator' => function ($q) {
+		$states = State::select('id', 'state', 'country_id', 'created_by', 'created_at', 'manual_verify', 'total_contributors')
+            ->with(['creator' => function ($q) {
 				$q->select('id', 'name', 'username', 'show_name', 'show_username')
 				  ->where('show_name', true)
 			  	  ->orWhere('show_username', true);
-			}])->where([
+			}])
+            ->where([
 				'country_id' => $country->id,
 				'manual_verify' => 1,
-                ['total_litter', '>', 0]
+                ['total_litter', '>', 0],
+                ['total_contributors', '>', 0]
 			])
             ->orderBy('state', 'asc')
             ->get();
@@ -210,6 +215,12 @@ class MapController extends Controller
 
         	$total_litter += $state->total_litter_redis;
         	$state->diffForHumans = $state->created_at->diffForHumans();
+
+            if ($state->creator)
+            {
+                $state->creator->name = ($state->creator->show_name) ? $state->creator->name : "";
+                $state->creator->username = ($state->creator->show_username) ? $state->creator->username : "";
+            }
 	    }
 
 		return [
@@ -230,8 +241,6 @@ class MapController extends Controller
 
         $country = Country::where('country', $country_name)->first();
 
-        \Log::info(['getCities', $country->id, $state_name, request()->ip()]);
-
 		$state = State::where([
 			['state', $state_name],
 			['total_images', '!=', null]
@@ -241,16 +250,20 @@ class MapController extends Controller
          * Instead of loading the photos here on the city model,
          * save photos_per_day string on the city model
          */
-		$cities = City::with(['creator' => function ($q) {
-			$q->select('id', 'name', 'username', 'show_name', 'show_username')
-			  ->where('show_name', true)
-			  ->orWhere('show_username', true);
-		}])
-        ->where([
-            ['state_id', $state->id],
-			['total_images', '>', 0],
-            ['total_litter', '>', 0]
-		])->orderBy('city', 'asc')->get();
+		$cities = City::select('id', 'city', 'country_id', 'state_id', 'created_by', 'created_at', 'manual_verify', 'total_contributors')
+            ->with(['creator' => function ($q) {
+			    $q->select('id', 'name', 'username', 'show_name', 'show_username')
+                  ->where('show_name', true)
+                  ->orWhere('show_username', true);
+		    }])
+            ->where([
+                ['state_id', $state->id],
+			    ['total_images', '>', 0],
+                ['total_litter', '>', 0],
+                ['total_contributors', '>', 0]
+		    ])
+            ->orderBy('city', 'asc')
+            ->get();
 
 		foreach ($cities as $city)
 		{
@@ -268,6 +281,12 @@ class MapController extends Controller
             $city['avg_photo_per_user'] = round($city->total_photos_redis / $city->total_contributors, 2);
             $city['avg_litter_per_user'] = round($city->total_litter_redis / $city->total_contributors, 2);
             $city['diffForHumans'] = $city->created_at->diffForHumans();
+
+            if ($city->creator)
+            {
+                $city->creator->name = ($city->creator->show_name) ? $city->creator->name : "";
+                $city->creator->username = ($city->creator->show_username) ? $city->creator->username : "";
+            }
         }
 
 		return [
@@ -337,7 +356,7 @@ class MapController extends Controller
 				'industrial',
 //				 'art',
 //				'trashdog',
-				'owner' => function ($q) {
+				'user' => function ($q) {
 					$q->where('show_name_maps', true)
                       ->orWhere('show_username_maps', true);
 				}])->where([
@@ -366,7 +385,7 @@ class MapController extends Controller
 				'industrial',
 //				 'art',
 //				'trashdog',
-				'owner' => function ($q) {
+				'user' => function ($q) {
 					$q->where('show_name_maps', true)->orWhere('show_username_maps', true);
 				}])->where([
 					['city_id', $cityId],
@@ -422,13 +441,13 @@ class MapController extends Controller
 				)
 			);
 
-			if ($c->owner)
+			if ($c->user)
 			{
-				if ($c->owner->show_name_maps) {
-					$feature["properties"]["fullname"] = $c->owner->name;;
+				if ($c->user->show_name_maps) {
+					$feature["properties"]["fullname"] = $c->user->name;;
 				}
-				if ($c->owner->show_username_maps) {
-					$feature["properties"]["username"] = $c->owner->username;;
+				if ($c->user->show_username_maps) {
+					$feature["properties"]["username"] = $c->user->username;;
 				}
 			}
 

@@ -2,9 +2,6 @@
 
 namespace App;
 
-use Log;
-use Carbon\Carbon;
-
 trait DynamicLoading
 {
 	protected $total_photos = 0;
@@ -13,27 +10,28 @@ trait DynamicLoading
 	protected $photoCount = 0;
 
 	/**
-	 * Who created this resource? Is their name or username public or private?
+	 * Who created this resource?
+     * Is their name or username public or private?
      *
-	 * @return name || username || anonymous
+	 * @return string name || username || anonymous
 	 */
 	protected function getCreatorInfo ($location)
 	{
 		if ($location->creator)
 		{
-			if ($location->creator->show_name_createdby == 1)
+			if ($location->creator->show_name_createdby)
 			{
 	        	$location["created_by_name"] = $location->creator->name;
 	        }
-	        if ($location->creator->show_username_createdby == 1)
+	        if ($location->creator->show_username_createdby)
 	        {
 	        	$location["created_by_username"] = ' @'.$location->creator->username;
 	        }
 	    }
 
-		if (! isset($location->created_by_name))
+		if (!isset($location->created_by_name))
 		{
-			if (! isset($location->created_by_username))
+			if (!isset($location->created_by_username))
 			{
 				$location["created_by_name"] = 'Anonymous';
 			}

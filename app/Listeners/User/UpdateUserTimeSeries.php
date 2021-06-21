@@ -8,13 +8,15 @@ use Carbon\Carbon;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 
-class UpdateUserTimeSeries
+class UpdateUserTimeSeries implements ShouldQueue
 {
     /**
      * Handle the event.
      *
      * @param  TagsVerifiedByAdmin  $event
      * @return void
+     *
+     * Todo: move this to redis
      */
     public function handle (TagsVerifiedByAdmin $event)
     {

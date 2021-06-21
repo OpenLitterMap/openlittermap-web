@@ -78,46 +78,13 @@ function createClusterIcon (feature, latlng)
 }
 
 /**
- * Old way with markers - has been replaced by glify
  * On each feature, perform this action
  *
  * This is being performed whenever the user drags the map.
- *
- * Tranlsation should only occur when the user clicks on a point to open an image.
  */
 function onEachFeature (feature, layer)
 {
-    if (! feature.properties.cluster)
-    {
-        let z = '';
-
-        if (feature.properties.result_string)
-        {
-            let a = '';
-
-            a = feature.properties.result_string.split(',');
-
-            a.pop();
-
-            a.forEach(i => {
-                let b = i.split(' ');
-
-                z += i18n.t('litter.' + b[0]) + ': ' + b[1] + ' ';
-            });
-        }
-        else
-        {
-            z = i18n.t('litter.not-verified');
-        }
-
-        layer.bindPopup(
-            '<p class="mb5p">' + z + ' </p>'
-            + '<img src= "' + feature.properties.filename + '" class="mw100" />'
-            + '<p>Taken on ' + moment(feature.properties.datetime).format('LLL') +'</p>'
-        );
-    }
-
-    else
+    if (feature.properties.cluster)
     {
         // Zoom in cluster when click to it
         layer.on('click', function (e) {
@@ -128,6 +95,8 @@ function onEachFeature (feature, layer)
 
 /**
  * The user dragged or zoomed the map
+ *
+ * Todo: remove glify points when the user moves the map, and is above zoom threshold
  */
 async function update ()
 {
@@ -139,6 +108,7 @@ async function update ()
         'right': bounds.getEast(),
         'top': bounds.getNorth(),
     };
+
     let zoom = Math.round(map.getZoom());
 
     // We don't want to make a request at zoom level 2-5 if the user is just panning the map.
@@ -195,15 +165,13 @@ async function update ()
                 color: { r: 0.054, g: 0.819, b: 0.27 }, // 14, 209, 69 / 255
                 click: (e, point, xy) => {
                     // return false to continue traversing
-                    // console.log(e);
-                    // console.log(point);
 
                     const f = response.data.features.find(feature => {
                         return feature.geometry.coordinates[0] === point[1]
                             && feature.geometry.coordinates[1] === point[0];
                     });
+
                     // console.log({ f });
-                    // console.log(xy);
 
                     if (f)
                     {
@@ -211,9 +179,7 @@ async function update ()
 
                         if (f.properties.result_string)
                         {
-                            let a = '';
-
-                            a = f.properties.result_string.split(',');
+                            let a = f.properties.result_string.split(',');
 
                             a.pop();
 
@@ -228,12 +194,22 @@ async function update ()
                             tags = i18n.t('litter.not-verified');
                         }
 
+                        const user = (f.properties.name || f.properties.username)
+                            ? `By ${f.properties.name ? f.properties.name : ''} ${ f.properties.username ? '@' + f.properties.username : ''}`
+                            : "";
+
+                        const team = (f.properties.team)
+                            ? `\nTeam ${f.properties.team}`
+                            : "";
+
                         L.popup()
                             .setLatLng(e.latlng)
                             .setContent(
                                 '<p class="mb5p">' + tags + ' </p>'
                                 + '<img src= "' + f.properties.filename + '" class="mw100" />'
                                 + '<p>Taken on ' + moment(f.properties.datetime).format('LLL') +'</p>'
+                                + user
+                                + team
                             )
                             .openOn(map);
                     }
@@ -318,30 +294,30 @@ export default {
 
 <style>
 
-    #super {
-        height: 100%;
-        margin: 0;
-        position: relative;
-    }
+#super {
+    height: 100%;
+    margin: 0;
+    position: relative;
+}
 
-    .leaflet-marker-icon {
-        border-radius: 20px;
-    }
+.leaflet-marker-icon {
+    border-radius: 20px;
+}
 
-    .mb5p {
-        margin-bottom: 5px;
-    }
+.mb5p {
+    margin-bottom: 5px;
+}
 
-    .mw100 {
-        max-width: 100%;
-    }
+.mw100 {
+    max-width: 100%;
+}
 
-    .mi {
-        height: 100%;
-        margin: auto;
-        display: flex;
-        justify-content: center;
-        border-radius: 20px;
-    }
+.mi {
+    height: 100%;
+    margin: auto;
+    display: flex;
+    justify-content: center;
+    border-radius: 20px;
+}
 
 </style>

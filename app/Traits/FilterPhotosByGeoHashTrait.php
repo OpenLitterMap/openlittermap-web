@@ -15,10 +15,10 @@ trait FilterPhotosByGeoHashTrait
      *
      * For a specific zoom level, we want to return the bounding box of the clusters + neighbours
      *
-     * @param $zoom int   -> zoom level of the browser
-     * @param $bbox array -> [west|left, south|bottom, east|right, north|top]
+     * @param $zoom int          -> zoom level of the browser
+     * @param string $bbox array -> [west|left, south|bottom, east|right, north|top]
      *
-     * @return $query
+     * @return \Illuminate\Database\Eloquent\Builder $query
      */
     public function filterPhotosByGeoHash (int $zoom, string $bbox)
     {
@@ -39,7 +39,29 @@ trait FilterPhotosByGeoHashTrait
         $ns = $this->neighbors($center_geohash);
         foreach ($ns as $n) array_push($geos, $n);
 
-        $query = Photo::query();
+        $query = Photo::query()->select(
+            'id',
+            'verified',
+            'user_id',
+            'team_id',
+            'result_string',
+            'filename',
+            'geohash',
+            'lat',
+            'lon',
+            'datetime'
+        );
+
+        $query->with([
+            'user' => function ($query) {
+                $query->where('users.show_name_maps', 1)
+                    ->orWhere('users.show_username_maps', 1)
+                    ->select('users.id', 'users.name', 'users.username', 'users.show_username_maps', 'users.show_name_maps');
+            },
+            'team' => function ($query) {
+                $query->select('teams.id', 'teams.name');
+            }
+        ]);
 
         // Build cluster query
         $query->where(function ($q) use ($geos)

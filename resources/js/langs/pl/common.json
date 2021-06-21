@@ -1,8 +1,9 @@
 {
     "cancel": "Anuluj",
     "submit": "Zatwierdź",
-    "download": "Download",
+    "download": "Pobierz",
     "delete": "Delete",
+<<<<<<< HEAD
     "delete-image": "Delete the image?",
     "confirm-delete": "Confirm Delete",
     "loading": "Loading...",
@@ -26,4 +27,27 @@
     "search-by-id": "Search by ID",
     "active": "Active",
     "inactive": "Inactive"
+=======
+    "delete-image": "Usuń zdjęcie?",
+    "confirm-delete": "Potwierdz usunięcie",
+    "loading": "Ładowanie...",
+    "created_at": "Przesłane",
+    "datetime": "Zrobione",
+    "day-names": ["Pon", "Wt", "Śr", "Czw", "Pt", "Sob", "Niedz"],
+    "month-names": ["Styczeń", "Luty", "Marzec", "Kwiecień", "Maj", "Czerwiec", "Lipiec", "Sierpień", "Wrzesień", "Pażdziernik", "Listopad", "Grudzień"],
+    "short-month-names": ["Sty", "Lut", "Mar", "Kwi", "Maj", "Cze", "Lip", "Sie", "Wrze", "Paż", "Lis", "Gru"],
+    "next": "Następne",
+    "previous": "Poprzednie",
+    "next-page": "Następna strona",
+    "add-tags": "Dodaj tagi",
+    "add-many-tags": "dodaj wiele tagów",
+    "select-all": "Zaznacz wszystkie",
+    "de-select-all": "Odznacz wszystkie",
+    "choose-dates": "Wybierz daty",
+    "not-verified": "Niezweryfikowane",
+    "verified": "Zweryfikowane",
+    "search-by-id": "Szukaj według ID",
+    "active": "Aktywne",
+    "inactive": "Nieaktywne"
+>>>>>>> 2010714ff0375b021e2805057150347d4f4ac369
 }
