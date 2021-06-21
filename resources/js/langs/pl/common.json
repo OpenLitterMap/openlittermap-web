@@ -3,35 +3,12 @@
     "submit": "Zatwierdź",
     "download": "Pobierz",
     "delete": "Delete",
-<<<<<<< HEAD
-    "delete-image": "Delete the image?",
-    "confirm-delete": "Confirm Delete",
-    "loading": "Loading...",
-    "created_at": "Uploaded at",
-    "created": "Stworzone",
-    "created-by": "Stworzone przez",
-    "datetime": "Taken at",
-    "day-names": ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
-    "month-names": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
-    "short-month-names": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-    "next": "Next",
-    "previous": "Previous",
-    "next-page": "Next page",
-    "add-tags": "Add Tags",
-    "add-many-tags": "Add Many Tags",
-    "select-all": "Select all",
-    "de-select-all": "De-select all",
-    "choose-dates": "Choose Dates",
-    "not-verified": "Not Verified",
-    "verified": "Verified",
-    "search-by-id": "Search by ID",
-    "active": "Active",
-    "inactive": "Inactive"
-=======
     "delete-image": "Usuń zdjęcie?",
     "confirm-delete": "Potwierdz usunięcie",
     "loading": "Ładowanie...",
     "created_at": "Przesłane",
+    "created": "Stworzone",
+    "created-by": "Stworzone przez",
     "datetime": "Zrobione",
     "day-names": ["Pon", "Wt", "Śr", "Czw", "Pt", "Sob", "Niedz"],
     "month-names": ["Styczeń", "Luty", "Marzec", "Kwiecień", "Maj", "Czerwiec", "Lipiec", "Sierpień", "Wrzesień", "Pażdziernik", "Listopad", "Grudzień"],
@@ -49,5 +26,4 @@
     "search-by-id": "Szukaj według ID",
     "active": "Aktywne",
     "inactive": "Nieaktywne"
->>>>>>> 2010714ff0375b021e2805057150347d4f4ac369
 }
