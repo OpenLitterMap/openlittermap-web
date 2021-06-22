@@ -29,7 +29,7 @@
                     {{ location['total_litter_redis'].toLocaleString() }}
                 </strong>
 
-                <p class="total-photos-percentage">
+                <p v-if="type === 'country'" class="total-photos-percentage">
                     {{ (location['total_litter_redis'] / this.$store.state.locations.total_litter).toFixed(2) * 100 + "% Total Litter"  }}
                 </p>
             </div>
@@ -39,7 +39,7 @@
                     {{ location['total_photos_redis'].toLocaleString() }}
                 </strong>
 
-                <p class="total-photos-percentage">
+                <p v-if="type === 'country'" class="total-photos-percentage">
                     {{ (location['total_litter_redis'] / this.$store.state.locations.total_photos).toFixed(2) * 100 + "% Total Photos"  }}
                 </p>
             </div>
@@ -65,7 +65,6 @@ export default {
 		};
 	},
 	computed: {
-
 		/**
 		 * Name of the country (if we are viewing States, Cities)
 		 */
@@ -91,7 +90,6 @@ export default {
 		}
 	},
 	methods: {
-
 		/**
 		 * On Countries.vue, each country gets a flag when sorted by most open data
 		 */
@@ -157,9 +155,7 @@ export default {
 		{
 			return moment.localeData().ordinal(i + 1);
 		}
-
 	}
-
 }
 </script>
 
