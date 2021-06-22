@@ -7,6 +7,8 @@
     "confirm-delete": "Potwierdz usunięcie",
     "loading": "Ładowanie...",
     "created_at": "Przesłane",
+    "created": "Stworzone",
+    "created-by": "Stworzone przez",
     "datetime": "Zrobione",
     "day-names": ["Pon", "Wt", "Śr", "Czw", "Pt", "Sob", "Niedz"],
     "month-names": ["Styczeń", "Luty", "Marzec", "Kwiecień", "Maj", "Czerwiec", "Lipiec", "Sierpień", "Wrzesień", "Pażdziernik", "Listopad", "Grudzień"],
