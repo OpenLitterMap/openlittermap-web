@@ -50,10 +50,6 @@ Route::get('/user', function (Request $request) {
     return Auth::guard('api')->user();
 });
 
-/**
- * Photos
- */
-
 // Upload Photos
 Route::post('/photos/submit', 'ApiPhotosController@store')
     ->middleware('auth:api');
