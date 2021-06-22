@@ -30,7 +30,7 @@
                 </strong>
 
                 <p v-if="type === 'country'" class="total-photos-percentage">
-                    {{ (location['total_litter_redis'] / this.$store.state.locations.total_litter).toFixed(2) * 100 + "% Total Litter"  }}
+                    {{ (location['total_litter_redis'] / this.$store.state.locations.total_litter).toFixed(2) * 100 + "% Total"  }}
                 </p>
             </div>
             <div class="panel-block">
@@ -40,7 +40,7 @@
                 </strong>
 
                 <p v-if="type === 'country'" class="total-photos-percentage">
-                    {{ (location['total_litter_redis'] / this.$store.state.locations.total_photos).toFixed(2) * 100 + "% Total Photos"  }}
+                    {{ (location['total_litter_redis'] / this.$store.state.locations.total_photos).toFixed(2) * 100 + "% Total"  }}
                 </p>
             </div>
             <div class="panel-block">{{ $t('common.created') }}: <strong class="green">&nbsp; {{ location['diffForHumans'] }}</strong></div>
