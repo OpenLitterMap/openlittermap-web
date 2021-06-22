@@ -1,9 +1,9 @@
 <template>
     <div>
-        <h1 class="title is-3">Free and Open Verified Citizen Science Data on Plastic Pollution.</h1>
-        <h1 class="title is-3">Let's stop plastic going into the ocean.</h1>
+        <h1 class="title is-3">{{ $t('location.download-open-verified-data') }}</h1>
+        <h1 class="title is-3">{{ $t('location.stop-plastic-ocean') }}</h1>
 
-        <p class="mb1" v-show="!isAuth">Please enter an email address to which the data will be sent:</p>
+        <p class="mb1" v-show="!isAuth">{{ $t('location.enter-email-sent-data') }}</p>
 
         <input          
             v-show="!isAuth"
@@ -17,7 +17,7 @@
             autocomplete="email"
         />
 
-        <button :disabled="disableDownloadButton" class="button is-large is-danger mb1" @click="download">Download</button>
+        <button :disabled="disableDownloadButton" class="button is-large is-danger mb1" @click="download">{{ $t('common.download') }}</button>
 
         <p>&copy; OpenLitterMap & Contributors.</p>
     </div>

@@ -5,8 +5,8 @@
 
                 <!-- Global Leaderboard -->
                 <div class="container">
-                    <h3 class="title is-2 has-text-centered">{{ $t('location.maps4') }}</h3>
-<!--                    <h3 class="title is-2 has-text-centered">Join us and share data!</h3>-->
+                    <h3 class="title is-2 has-text-centered">{{ $t('location.global-leaderboard') }}</h3>
+                    <!-- <h3 class="title is-2 has-text-centered">Join us and share data!</h3>-->
 
                     <loading v-if="loading" :active.sync="loading" :is-full-page="true" />
 
@@ -22,16 +22,16 @@
                             <div class="columns">
                                 <div class="column flex">
                                     <h4 class="flex-1">
-                                        {{ $t('location.maps8a') }}:
+                                        {{ $t('location.previous-target') }}:
                                         <br>
                                         <strong style="color: white;">
-                                            {{ this.previousXp | commas }} {{ $t('location.maps9') }}
+                                            {{ this.previousXp | commas }} {{ $t('location.litter') }}
                                         </strong>
                                     </h4>
-                                    <h4>{{ $t('location.maps8') }}:
+                                    <h4>{{ $t('location.next-target') }}:
                                         <br>
                                         <strong style="color: white;">
-                                            {{ this.nextXp | commas }} {{ $t('location.maps9') }}
+                                            {{ this.nextXp | commas }} {{ $t('location.litter') }}
                                         </strong>
                                     </h4>
                                 </div>
@@ -55,7 +55,7 @@
                                 <div class="column is-one-third">
                                     <h1 class="subtitle is-5" style="color: black; text-align: center;">
                                         <strong style="color:black;">
-                                            {{ $t('location.maps10') }}
+                                            {{ $t('location.total-verified-litter') }}
                                         </strong>
                                     </h1>
                                     <h1 class="title is-2" style="text-align: center;">
@@ -75,7 +75,7 @@
                                 <div class="column is-one-third">
                                     <h1 class="subtitle is-5" style="color: black; text-align: center;">
                                         <strong style="color: black;">
-                                            {{ $t('location.maps11') }}
+                                            {{ $t('location.total-verified-photos') }}
                                         </strong>
                                     </h1>
                                     <h1 class="title is-2" style="text-align: center;">
@@ -95,7 +95,7 @@
                                 <div class="column is-one-third">
                                     <h1 class="subtitle is-5" style="color: black; text-align: center;">
                                         <strong style="color: black;">
-                                            {{ $t('location.maps11a') }}
+                                            {{ $t('location.total-littercoin-issued') }}
                                         </strong>
                                     </h1>
                                     <h1 class="title is-2" style="text-align: center;">
