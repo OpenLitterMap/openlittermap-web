@@ -30,7 +30,7 @@
                 </strong>
 
                 <p v-if="type === 'country'" class="total-photos-percentage">
-                    {{ (location['total_litter_redis'] / this.$store.state.locations.total_litter).toFixed(2) * 100 + "% Total"  }}
+                    {{ (location['total_litter_redis'] / this.$store.state.locations.total_litter * 100).toFixed(2) + "% Total"  }}
                 </p>
             </div>
             <div class="panel-block">
