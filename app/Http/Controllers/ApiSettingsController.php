@@ -75,33 +75,40 @@ class ApiSettingsController extends Controller
 
     /**
      * Update a setting
+     *
+     * Todo - Needs validation and cleanup
      */
-    public function update(Request $request, $type)
+    public function update (Request $request)
     {
         $user = Auth::guard('api')->user();
 
-        if ($type == "Name") {
-            $user->name = $request->Name;
+        $data = json_decode($request['dataToSend']);
+
+        try
+        {
+            if (array_key_exists('name', $data))
+            {
+                $user->name = $data->name;
+            }
+            else if (array_key_exists('username', $data))
+            {
+                $user->username = $data->username;
+            }
+            else if (array_key_exists('email', $data))
+            {
+                $user->email = $data->email;
+            }
+
             $user->save();
+        }
+        catch (\Exception $e)
+        {
+            \Log::info(['ApiSettingsController@update', $e->getMessage()]);
 
-            return ['name' => $user->name];
-
-        } else if ($type == "Username") {
-            $user->username = $request->Username;
-            $user->save();
-
-            return ['username' => $user->username];
-
-        } else {
-            $user->email = $request->Email;
-            $user->save();
-
-            // todo - send email to confirm updated email
-
-            return ['email' => $user->email];
+            return ['success' => false, 'msg' => $e->getMessage()];
         }
 
-        return ['error' => 'Wrong key?'];
+        return ['success' => true];
     }
 
     /**
@@ -110,7 +117,7 @@ class ApiSettingsController extends Controller
     public function togglePreviousTags (Request $request)
     {
         $user = Auth::guard('api')->user();
-        
+
         $user->previous_tags = ! $user->previous_tags;
 
         $user->save();

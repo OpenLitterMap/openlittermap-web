@@ -90,7 +90,7 @@ Route::post('/settings/privacy/createdby/name', 'ApiSettingsController@createdBy
 Route::post('/settings/privacy/createdby/username', 'ApiSettingsController@createdByUsername')
     ->middleware('auth:api');
 
-Route::post('/settings/update/{type}', 'ApiSettingsController@update')
+Route::post('/settings/update', 'ApiSettingsController@update')
     ->middleware('auth:api');
 
 Route::post('/settings/privacy/toggle-previous-tags', 'ApiSettingsController@togglePreviousTags')

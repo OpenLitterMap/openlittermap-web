@@ -14,7 +14,9 @@ class AccessTokenController extends ATC
 {
     public function issueToken (ServerRequestInterface $request)
     {
-        try {
+        \Log::info('hit');
+        try
+        {
             // get email as :username (default)
             $email = $request->getParsedBody()['username'];
 
@@ -30,11 +32,11 @@ class AccessTokenController extends ATC
             // convert json to array
             $data = json_decode($content, true);
 
-            // if (isset($data["error"])) {
-            //     throw new OAuthServerException(
-            //     	'The user credentials were incorrect.', 6, 'invalid_credentials', 401
-            //     );
-            // }
+            if (isset($data["error"])) {
+                throw new OAuthServerException(
+                    'The user credentials were incorrect.', 6, 'invalid_credentials', 401
+                );
+            }
 
             // add access token to user
             $user = collect($user);
@@ -59,7 +61,7 @@ class AccessTokenController extends ATC
             // return error message
             \Log::error(['AccessTokenController.server_error', $e->getMessage()]);
 
-            return response(["message" => "Internal server error!!"], 500);
+            return response(["message" => "Internal server error"], 500);
         }
     }
 }

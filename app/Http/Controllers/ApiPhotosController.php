@@ -14,6 +14,7 @@ use App\Events\ImageUploaded;
 use App\Jobs\UploadData;
 use App\Jobs\Api\AddTags;
 use Illuminate\Support\Facades\Log;
+use Intervention\Image\Facades\Image;
 
 class ApiPhotosController extends Controller
 {
@@ -41,7 +42,7 @@ class ApiPhotosController extends Controller
                 'originalName' => 'IMG_2624.JPG',
                 'mimeType' => 'image/jpeg',
                 'error' => 0,
-                'hashName' => NULL,
+                'hashName' => NULL
             )),
         );
      */
@@ -56,18 +57,28 @@ class ApiPhotosController extends Controller
 
         $user = Auth::guard('api')->user();
 
-        Log::channel('photos')->info((string)[
+        Log::channel('photos')->info([
             'app_upload' => $request->all(),
-            'user_id' => $user->id
+            'user_id' => $user['id']
         ]);
 
         $model = ($request->has('model'))
             ? $request->model
             : 'Mobile app v2';
 
+        $image = Image::make($file);
+
+        $image->resize(500, 500);
+
+        $image->resize(500, 500, function ($constraint) {
+            $constraint->aspectRatio();
+        });
+
         $filename = $file->getClientOriginalName();
 
-		$lat  = $request['lat'];
+        $hashname = $file->hashName();
+
+        $lat  = $request['lat'];
 		$lon  = $request['lon'];
 		$date = $request['date'];
 
@@ -76,7 +87,7 @@ class ApiPhotosController extends Controller
         $m = $explode[1];
         $d = substr($explode[2], 0, 2);
 
-	    $filepath = $y.'/'.$m.'/'.$d.'/'.$filename;
+	    $filepath = $y.'/'.$m.'/'.$d.'/'.$hashname;
 
         // convert to YYYY-MM-DD hh:mm:ss format
         $date = Carbon::parse($date);
@@ -87,8 +98,20 @@ class ApiPhotosController extends Controller
             $s3->put($filepath, file_get_contents($file), 'public');
             $imageName = $s3->url($filepath);
         }
-	    else $imageName = 'test';
+        else
+        {
+            $public_path = public_path('local-uploads/'.$y.'/'.$m.'/'.$d);
 
+            // home/vagrant/Code/openlittermap-web/public/local-uploads/y/m/d
+            if (!file_exists($public_path))
+            {
+                mkdir($public_path, 666, true);
+            }
+
+            $image->save($public_path . '/' . $hashname);
+
+            $imageName = config('app.url') . '/local-uploads/'.$y.'/'.$m.'/'.$d .'/'.$hashname;
+        }
         $apiKey = config('services.location.secret');
         $url =  "http://locationiq.org/v1/reverse.php?format=json&key=".$apiKey."&lat=".$lat."&lon=".$lon."&zoom=20";
 
@@ -104,9 +127,9 @@ class ApiPhotosController extends Controller
         $location = array_values($addressArray)[0];
         $road = array_values($addressArray)[1];
 
-        $this->checkCountry($addressArray, $user->id);
-        $this->checkState($addressArray, $user->id);
-        $this->checkCity($addressArray, $user->id);
+        $this->checkCountry($addressArray, $user['id']);
+        $this->checkState($addressArray, $user['id']);
+        $this->checkCity($addressArray, $user['id']);
 
 	    $photo = $user->photos()->create([
 			'filename' => $imageName,
@@ -116,16 +139,14 @@ class ApiPhotosController extends Controller
             'display_name' => $display_name,
             'location' => $location,
             'road' => $road,
-            'suburb' => $this->suburb,
-            'city' => $this->city,
-            'county' => $this->state,
-            'state_district' => $this->district,
-            'country' => $this->country,
-            'country_code' => $this->countryCode,
-            'model' => $model,
             'country_id' => $this->countryId,
             'state_id' => $this->stateId,
             'city_id' => $this->cityId,
+            'country' => $this->country,
+            'county' => $this->state,
+            'city' => $this->city,
+            'country_code' => $this->countryCode,
+            'model' => $model,
             'remaining' => $request['presence'],
             'platform' => 'mobile',
             'geohash' => GeoHash::encode($lat, $lon)
@@ -141,7 +162,7 @@ class ApiPhotosController extends Controller
             $this->countryCode,
             $imageName,
             $teamName,
-            $user->id,
+            $user['id'],
             $this->countryId,
             $this->stateId,
             $this->cityId
