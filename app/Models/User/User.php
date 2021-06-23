@@ -102,6 +102,11 @@ class User extends Authenticatable
 
     protected $appends = ['total_categories'];
 
+    /**
+     * Get total categories attribute
+     *
+     * @return array
+     */
     public function getTotalCategoriesAttribute ()
     {
         $categories = Photo::categories();
@@ -153,8 +158,9 @@ class User extends Authenticatable
     }
 
     /**
-     ** A Mutator
-     * Automatic hashing
+     * A Mutator - Automatic hashing
+     *
+     * return void
      */
     public function setPasswordAttribute ($password)
     {
