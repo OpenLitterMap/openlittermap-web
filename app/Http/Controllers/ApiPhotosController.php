@@ -48,6 +48,7 @@ class ApiPhotosController extends Controller
      */
     public function store (Request $request)
     {
+        \Log::info(['hit store', $request->all()]);
         $file = $request->file('photo');
 
         if ($file->getError() === 3)
@@ -56,6 +57,7 @@ class ApiPhotosController extends Controller
         }
 
         $user = Auth::guard('api')->user();
+        \Log::info(['user.id', $user->id]);
 
         Log::channel('photos')->info([
             'app_upload' => $request->all(),
@@ -218,6 +220,7 @@ class ApiPhotosController extends Controller
      */
     public function addTags (Request $request)
     {
+        \Log::info(['addTags', $request->all()]);
         $userId = Auth::guard('api')->user()->id;
 
         \Log::channel('tags')->info([

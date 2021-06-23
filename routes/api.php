@@ -2,9 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 
-// use Image;
-use App\User;
-
 use Illuminate\Http\Request;
 use App\Events\PhotoVerifiedByAdmin;
 use Illuminate\Support\Facades\Log;
@@ -20,13 +17,9 @@ use Illuminate\Support\Facades\Auth;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
-
-
 Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function(){
 
     // Route::get('/user/setup-intent', 'API\UserController@getSetupIntent');
-
-    Route::post('add-tags', 'ApiPhotosController@addTags');
 
     Route::get('/photos/web/index', 'API\WebPhotosController@index');
 
@@ -34,8 +27,14 @@ Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function(){
 
 });
 
+Route::post('add-tags', 'ApiPhotosController@addTags')
+    ->middleware('auth:api');
+
+
 // Check if current token is valid
 Route::post('/validate-token', function(Request $request) {
+
+    \Log::info(['validate_token', $request->all()]);
     return ['message' => 'valid'];
 })->middleware('auth:api');
 

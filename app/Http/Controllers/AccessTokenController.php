@@ -14,7 +14,6 @@ class AccessTokenController extends ATC
 {
     public function issueToken (ServerRequestInterface $request)
     {
-        \Log::info('hit');
         try
         {
             // get email as :username (default)
