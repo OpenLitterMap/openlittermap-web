@@ -120,7 +120,9 @@ class User extends Authenticatable
     }
 
     /**
+     * Get all payments
      *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
     public function payments ()
     {
@@ -128,7 +130,9 @@ class User extends Authenticatable
     }
 
     /**
-     * The user has many photos
+     * Get all photos
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
     public function photos ()
     {
@@ -137,6 +141,8 @@ class User extends Authenticatable
 
     /**
      * Get the registered user to confirm their email
+     *
+     * return boolean
      */
     public function confirmEmail ()
     {
@@ -215,6 +221,8 @@ class User extends Authenticatable
 
     /**
      * Currently active team
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function team ()
     {
