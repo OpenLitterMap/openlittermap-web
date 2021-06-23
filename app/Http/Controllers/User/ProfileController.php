@@ -25,6 +25,8 @@ class ProfileController extends Controller
 
     /**
      * Dispatch a request to download the users data
+     *
+     * @return array
      */
     public function download ()
     {
@@ -61,6 +63,8 @@ class ProfileController extends Controller
      *
      * start null? yyyy-mm-dd
      * end null? yyyy-mm-dd
+     *
+     * @return array
      */
     public function geojson ()
     {
@@ -122,8 +126,9 @@ class ProfileController extends Controller
 
     /**
      * Get the total number of users, and the current users position
-     *
      * To get the current position, we need to count how many users have more XP than current users
+     *
+     * @return array
      */
     public function index ()
     {
