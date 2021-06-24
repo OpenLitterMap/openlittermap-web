@@ -30,10 +30,8 @@ Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function(){
 Route::post('add-tags', 'ApiPhotosController@addTags')
     ->middleware('auth:api');
 
-
 // Check if current token is valid
 Route::post('/validate-token', function(Request $request) {
-
     \Log::info(['validate_token', $request->all()]);
     return ['message' => 'valid'];
 })->middleware('auth:api');
@@ -50,8 +48,7 @@ Route::get('/user', function (Request $request) {
 });
 
 // Upload Photos
-Route::post('/photos/submit', 'ApiPhotosController@store')
-    ->middleware('auth:api');
+Route::post('/photos/submit', 'ApiPhotosController@store');
 
 // Tag Litter to Photos
 Route::post('/photos/update', 'ApiPhotosController@dynamicUpdate')
