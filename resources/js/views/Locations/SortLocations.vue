@@ -1,5 +1,5 @@
 <template>
-    <section :class="container" style="background-color: #23d160; min-height: 100%;">
+    <section class="locations-main" :class="container">
 		<!-- Location Navbar -->
 		<location-navbar @selectedCategory="updateCategory($event)" />
 
@@ -7,7 +7,7 @@
 		<section v-for="(location, index) in orderedBy" :key="index"  v-show="location.total_litter_redis > 0">
 			<div v-show="category !== 'A-Z'">
 				<br>
-				<h1 style="color: #34495e;" class="title is-1 has-text-centered">
+				<h1 class="title is-1 has-text-centered world-cup-title">
 					#LitterWorldCup
 				</h1>
 			</div>
@@ -23,27 +23,27 @@
 
 						<p class="show-mobile">Drag these across for more options</p>
 
-							<div class="tabs is-center">
+						<div class="tabs is-center">
 
-								<!-- Components within Tabs -->
-								<a v-for="(tab, idx) in tabs" :key="idx" v-show="showTab(tab.in_location)" @click="loadTab(index, tab.component)" :class="tabClass(tab)">
-									{{ tab.title }}
-								</a>
-							</div>
+							<!-- Components within Tabs -->
+							<a v-for="(tab, idx) in tabs" :key="idx" v-show="showTab(tab.in_location)" @click="loadTab(index, tab.component)" :class="tabClass(tab)">
+								{{ tab.title }}
+							</a>
+						</div>
 
-							<component
-								:is="tab"
-								:litter_data="location.litter_data"
-								:brands_data="location.brands_data"
-								:total_brands="location.total_brands"
-								:ppm="location.photos_per_month"
-								:leaderboard="location.leaderboard"
-								:time="location.time"
-								@dateschanged="updateUrl"
-								:index="index"
-								:type="type"
-								:locationId="location.id"
-							/>
+						<component
+							:is="tab"
+							:litter_data="location.litter_data"
+							:brands_data="location.brands_data"
+							:total_brands="location.total_brands"
+							:ppm="location.photos_per_month"
+							:leaderboard="location.leaderboard"
+							:time="location.time"
+							@dateschanged="updateUrl"
+							:index="index"
+							:type="type"
+							:locationId="location.id"
+						/>
 					</div>
 				</div>
 			</div>
@@ -86,8 +86,8 @@ export default {
 				{ title: this.$t('location.litter'), component: 'ChartsContainer', in_location: 'all' },
 				{ title: this.$t('location.time-series'), component: 'TimeSeriesContainer', in_location: 'all'},
 				{ title: this.$t('location.leaderboard'), component: 'Leaderboard', in_location: 'all'},
-                { title: this.$t('location.options'), component: 'Options', in_location: 'city'},
-                { title: this.$t('common.download'), component: 'Download', in_location: 'all'}
+				{ title: this.$t('location.options'), component: 'Options', in_location: 'city'},
+				{ title: this.$t('common.download'), component: 'Download', in_location: 'all'}
 			]
 		};
 	},
@@ -191,7 +191,22 @@ export default {
 
 <style lang="scss" scoped>
 
+	.locations-main {
+		background-color: #23d160;
+		min-height: 100%;background-color: #23d160; 
+		min-height: 100%;
+	}
+
+	.l-tab.is-active {
+		border-bottom: 2px solid white !important;
+	}
+
 	.h65pc {
 			height: 65%;
 		}
+
+	.world-cup-title {
+		color: #34495e;
+		
+	}
 </style>

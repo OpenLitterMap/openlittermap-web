@@ -9,8 +9,6 @@
                         </div>
 
                         <!-- Todo - put country metadata here -->
-                        
-                        
                     </div>
                 </div>
             </div>

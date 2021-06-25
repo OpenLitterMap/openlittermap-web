@@ -8,7 +8,7 @@
             <!-- Flag -->
             <img v-if="type === 'country'"
                     height="15"
-                    style="padding-right: 1.5em; border-radius: 1px; flex: 0.1;"
+                    class="img-flag"
                     :src="getCountryFlag(location.shortcode)"
             />
 
@@ -57,7 +57,7 @@ import moment from 'moment'
 
 export default {
     name: 'LocationMetadata',
-	props:['index', 'location', 'type', 'category'],
+    props:['index', 'location', 'type', 'category'],
 	data ()
 	{
 		return {
@@ -169,23 +169,25 @@ export default {
             color: black;
             background-color: white;
         }
-    .location-container {
+    /* .location-container {
             padding-top: 3em;
             padding-bottom: 5em;
-        }
+        } */
 
     .location-title:hover {
         color: green !important;
         border-bottom: 1px solid green;
     }
 
-    .l-tab.is-active {
-		border-bottom: 2px solid white !important;
-	}
-
     .total-photos-percentage {
         color: green;
         font-weight: 700;
+    }
+
+    .img-flag {
+        padding-right: 1.5em; 
+        border-radius: 1px; 
+        flex: 0.1;
     }
 
 </style>

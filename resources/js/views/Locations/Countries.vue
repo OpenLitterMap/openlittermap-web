@@ -24,13 +24,13 @@
                                     <h4 class="flex-1">
                                         {{ $t('location.previous-target') }}:
                                         <br>
-                                        <strong style="color: white;">
+                                        <strong class="has-text-white">
                                             {{ this.previousXp | commas }} {{ $t('location.litter') }}
                                         </strong>
                                     </h4>
                                     <h4>{{ $t('location.next-target') }}:
                                         <br>
-                                        <strong style="color: white;">
+                                        <strong class="has-text-white">
                                             {{ this.nextXp | commas }} {{ $t('location.litter') }}
                                         </strong>
                                     </h4>
@@ -53,12 +53,12 @@
                         <div class="column is-half is-offset-3">
                             <div class="columns">
                                 <div class="column is-one-third">
-                                    <h1 class="subtitle is-5" style="color: black; text-align: center;">
-                                        <strong style="color:black;">
+                                    <h1 class="subtitle is-5 has-text-centered">
+                                        <strong class="has-text-black">
                                             {{ $t('location.total-verified-litter') }}
                                         </strong>
                                     </h1>
-                                    <h1 class="title is-2" style="text-align: center;">
+                                    <h1 class="title is-2 has-text-centered">
                                         <strong>
                                             <number
                                                 :from="previous_total_litter"
@@ -73,12 +73,12 @@
                                 </div>
 
                                 <div class="column is-one-third">
-                                    <h1 class="subtitle is-5" style="color: black; text-align: center;">
-                                        <strong style="color: black;">
+                                    <h1 class="subtitle is-5 has-text-centered">
+                                        <strong class="has-text-black">
                                             {{ $t('location.total-verified-photos') }}
                                         </strong>
                                     </h1>
-                                    <h1 class="title is-2" style="text-align: center;">
+                                    <h1 class="title is-2 has-text-centered">
                                         <strong>
                                             <number
                                                 :from="previous_total_photos"
@@ -93,12 +93,12 @@
                                 </div>
 
                                 <div class="column is-one-third">
-                                    <h1 class="subtitle is-5" style="color: black; text-align: center;">
-                                        <strong style="color: black;">
+                                    <h1 class="subtitle is-5 has-text-centered">
+                                        <strong class="has-text-black">
                                             {{ $t('location.total-littercoin-issued') }}
                                         </strong>
                                     </h1>
-                                    <h1 class="title is-2" style="text-align: center;">
+                                    <h1 class="title is-2 has-text-centered">
                                         <strong>
                                             <number
                                                 :from="previous_littercoin"
