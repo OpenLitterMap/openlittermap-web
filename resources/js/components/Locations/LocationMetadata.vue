@@ -56,8 +56,8 @@
 import moment from 'moment'
 
 export default {
-    props:['index', 'location', 'type', 'category'],
     name: 'LocationMetadata',
+	props:['index', 'location', 'type', 'category'],
 	data ()
 	{
 		return {

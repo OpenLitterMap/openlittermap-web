@@ -4,7 +4,7 @@
 		<location-navbar @selectedCategory="updateCategory($event)" />
 
 	    <!-- v-show is a temp bug fix until cities table has working total_litter column -->
-		<section v-for="location, index in orderedBy" v-show="location.total_litter_redis > 0">
+		<section v-for="(location, index) in orderedBy" :key="index"  v-show="location.total_litter_redis > 0">
 			<div v-show="category !== 'A-Z'">
 				<br>
 				<h1 style="color: #34495e;" class="title is-1 has-text-centered">
@@ -23,51 +23,27 @@
 
 						<p class="show-mobile">Drag these across for more options</p>
 
-						<div class="tabs is-center">
+							<div class="tabs is-center">
 
-							<!-- Pie Charts -->
-							<a @click="loadTab(index, 'litter')" :class="tabClass('litter')">
-								{{ $t('location.litter') }}
-							</a>
+								<!-- Components within Tabs -->
+								<a v-for="(tab, idx) in tabs" :key="idx" v-show="showTab(tab.in_location)" @click="loadTab(index, tab.component)" :class="tabClass(tab)">
+									{{ tab.title }}
+								</a>
+							</div>
 
-							<!-- Leaderboard -->
-							<a @click="loadTab(index, 'leaderboard')" :class="tabClass('leaderboard')">
-								{{ $t('location.leaderboard') }}
-							</a>
-
-							<!-- Time-series -->
-							<a @click="loadTab(index, 'time_series')" :class="tabClass('time_series')">
-								{{ $t('location.time-series') }}
-							</a>
-
-							<!-- Options (City only) -->
-							<a
-								v-show="type === 'city'"
-								@click="loadTab(index, 'options')" :class="tabClass('options')">
-								{{ $t('location.options') }}
-							</a>
-
-							<!-- Download -->
-							<a
-								@click="loadTab(index, 'download')" :class="tabClass('download')">
-								{{ $t('common.download') }}
-							</a>
-						</div>
-
-						<component
-							:is="tabs[tab]"
-							:litter_data="location.litter_data"
-							:brands_data="location.brands_data"
-							:total_brands="location.total_brands"
-							:ppm="location.photos_per_month"
-							:leaderboard="location.leaderboard"
-							:time="location.time"
-							@dateschanged="updateUrl"
-							:index="index"
-							:type="type"
-							:locationId="location.id"
-						/>
-
+							<component
+								:is="tab"
+								:litter_data="location.litter_data"
+								:brands_data="location.brands_data"
+								:total_brands="location.total_brands"
+								:ppm="location.photos_per_month"
+								:leaderboard="location.leaderboard"
+								:time="location.time"
+								@dateschanged="updateUrl"
+								:index="index"
+								:type="type"
+								:locationId="location.id"
+							/>
 					</div>
 				</div>
 			</div>
@@ -106,13 +82,13 @@ export default {
 		return {
 			'category': this.$t('location.most-data'),
 			tab: '',
-			tabs: {
-				litter: 'ChartsContainer',
-				time_series: 'TimeSeriesContainer',
-				leaderboard: 'Leaderboard',
-                options: 'Options',
-                download: 'Download'
-			}
+			tabs: [
+				{ title: this.$t('location.litter'), component: 'ChartsContainer', in_location: 'all' },
+				{ title: this.$t('location.time-series'), component: 'TimeSeriesContainer', in_location: 'all'},
+				{ title: this.$t('location.leaderboard'), component: 'Leaderboard', in_location: 'all'},
+                { title: this.$t('location.options'), component: 'Options', in_location: 'city'},
+                { title: this.$t('common.download'), component: 'Download', in_location: 'all'}
+			]
 		};
 	},
     computed: {
@@ -177,6 +153,21 @@ export default {
 		tabClass (tab)
 		{
 			return tab === this.tab ? 'l-tab is-active' : 'l-tab';
+		},
+
+		/**
+		 * Show tab dependeing on location type
+		 */
+		showTab (tab) 
+		{
+			if ( tab === 'all' || this.type === tab) 
+			{
+				return true
+			} 
+			else 
+			{
+				return false
+			}
 		},
 		
 		/**
