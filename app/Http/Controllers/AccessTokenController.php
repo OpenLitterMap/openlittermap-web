@@ -30,6 +30,7 @@ class AccessTokenController extends ATC
 
             // convert json to array
             $data = json_decode($content, true);
+            \Log::info(['data', $data]);
 
             if (isset($data["error"])) {
                 throw new OAuthServerException(
@@ -46,6 +47,7 @@ class AccessTokenController extends ATC
         catch (ModelNotFoundException $e) { // email notfound
             // return error message
             \Log::error(['AccessTokenController.not_found', $e->getMessage()]);
+
             return response(["message" => "User not found"], 500);
         }
         catch (OAuthServerException $e) { //password not correct..token not granted
@@ -58,7 +60,7 @@ class AccessTokenController extends ATC
         }
         catch (Exception $e) {
             // return error message
-            \Log::error(['AccessTokenController.server_error', $e->getMessage()]);
+            \Log::error(['AccessTokenController.server_error', $e->getMessage(), $e->getCode()]);
 
             return response(["message" => "Internal server error"], 500);
         }
