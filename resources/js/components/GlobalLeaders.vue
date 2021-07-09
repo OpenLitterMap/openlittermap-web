@@ -4,9 +4,9 @@
 			<table class="table is-fullwidth" style="background-color: transparent;">
 				<thead>
 					<tr>
-						<th>{{ $t('location.maps5') }}</th>
-						<th>{{ $t('location.maps6') }}</th>
-						<th>{{ $t('location.maps7') }}</th>
+						<th>{{ $t('location.position') }}</th>
+						<th>{{ $t('location.name') }}</th>
+						<th>{{ $t('location.xp') }}</th>
 					</tr>
 				</thead>
 				<tbody>

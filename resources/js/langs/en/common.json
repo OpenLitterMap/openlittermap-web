@@ -7,6 +7,8 @@
     "confirm-delete": "Confirm Delete",
     "loading": "Loading...",
     "created_at": "Uploaded at",
+    "created": "Created",
+    "created-by": "Created by",
     "datetime": "Taken at",
     "day-names": ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
     "month-names": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],

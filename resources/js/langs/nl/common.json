@@ -7,6 +7,8 @@
     "confirm-delete": "Bevestig de verwijdering",
     "loading": "Laden...",
     "created_at": "Ge-Upload op",
+    "created": "Aangemaakt",
+    "created-by": "Gemaakt door",
     "datetime": "Genomen op",
     "day-names": ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"],
     "month-names": ["Januari", "Februari", "Maart", "April", "Mei", "Juni", "Juli", "Augustus", "September", "Oktober", "November", "December"],
