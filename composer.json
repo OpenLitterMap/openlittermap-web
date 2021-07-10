@@ -13,6 +13,7 @@
         "ahmedsaoud31/laravel-permission-to-vuejs": "dev-master",
         "benjamincrozat/laravel-dropbox-driver": "^3.0",
         "beyondcode/laravel-websockets": "^1.8",
+        "darkaonline/l5-swagger": "^8.0",
         "doctrine/dbal": "^2.10",
         "fideloper/proxy": "^4.2",
         "fruitcake/laravel-cors": "^2.0",
