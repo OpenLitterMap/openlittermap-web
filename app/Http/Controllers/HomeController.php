@@ -5,20 +5,13 @@ namespace App\Http\Controllers;
 // use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-/**
- * @OA\Info(
- *     title="Homepage API",
- *     version="1.0.0"
- * )
- */
 class HomeController extends Controller
 {
     /**
-     * @OA\Get(
-     *     path="/",
-     *     description="The main homepage",
-     *     @OA\Response(response="default", description="Welcome page")
-     * )
+     * The main homepage
+     *
+     * @auth bool, logged in or guest
+     * @user null, or authenticated user
      */
     public function index ()
     {
