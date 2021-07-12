@@ -22,28 +22,27 @@ class ApiPhotosController extends Controller
 	use CheckLocations;
 
     /**
-     * Save a photo to the database
+     * @OA\Post(path="/api/photos/submit",
+     *   operationId="store",
+     *   summary="Save a photo to the database",
+     *   @OA\Parameter(in="query", name="lat", required=true, @OA\Schema(type="float"), description="E.g. 55.455525"),
+     *   @OA\Parameter(in="query", name="lon", required=true, @OA\Schema(type="float"), description="E.g. 55.455525"),
+     *   @OA\Parameter(in="query", name="date", required=true, @OA\Schema(type="string"), description="Formatted as 2021:06:04 15:50:55"),
+     *   @OA\Parameter(in="query", name="presence", required=true, @OA\Schema(type="boolean")),
+     *   @OA\Parameter(in="query", name="model", @OA\Schema(type="string"), description="Phone model, like iPhone12"),
+     *   @OA\Parameter(in="query", name="photo", required=true, @OA\Schema(type="string", format="binary"), description="The actual Photo file"),
+     *   @OA\Response(response=200,
+     *     description="the uploaded photo Id",
+     *     @OA\JsonContent()
+     *   ),
+     *   @OA\Response(response=401,
+     *     description="Unauthenticated",
+     *     @OA\JsonContent()
+     *   )
+     * )
      *
      * Todo - Accept the image and data and process it is a job,
      * Then return as quickly as possible.
-     *
-     * @param Request $request
-     *
-     * array (
-        'lat' => '55.455525',
-        'lon' => '-5.713071670000001',
-        'date' => '2021:06:04 15:50:55',
-        'presence' => 'true',
-        'model' => 'iPhone 12',
-        'photo' =>
-            Illuminate\Http\UploadedFile::__set_state(array(
-                'test' => false,
-                'originalName' => 'IMG_2624.JPG',
-                'mimeType' => 'image/jpeg',
-                'error' => 0,
-                'hashName' => NULL,
-            )),
-        );
      */
     public function store (Request $request)
     {
