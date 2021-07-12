@@ -16,7 +16,12 @@
         		<div class="columns">
 		
 					<!-- Location Metadata -->
-					<location-metadata :index="index" :location="location" :type="type" :category="category" />
+					<location-metadata 
+						:index="index" 
+						:location="location" 
+						:type="type" 
+						:category="category" 
+					/>
 
 					<!-- Charts -->
 					<div class="column is-half is-offset-1">
@@ -26,7 +31,10 @@
 						<div class="tabs is-center">
 
 							<!-- Components within Tabs -->
-							<a v-for="(tab, idx) in tabs" :key="idx" v-show="showTab(tab.in_location)" @click="loadTab(index, tab.component)" :class="tabClass(tab)">
+							<a v-for="(tab, idx) in tabs" 	
+								:key="idx" v-show="showTab(tab.in_location)" 
+								@click="loadTab(index, tab.component)" 
+								:class="tabClass(tab)">
 								{{ tab.title }}
 							</a>
 						</div>
@@ -156,18 +164,11 @@ export default {
 		},
 
 		/**
-		 * Show tab dependeing on location type
+		 * Show tab depending on location type
 		 */
 		showTab (tab) 
 		{
-			if ( tab === 'all' || this.type === tab) 
-			{
-				return true
-			} 
-			else 
-			{
-				return false
-			}
+			return (tab === 'all' || this.type === tab); // this will return true or false
 		},
 		
 		/**

@@ -50,14 +50,16 @@ export default {
                 locationId: this.locationId,
                 email: this.email
             });
+
+            // Clean email input field after requesting download
             this.email = '';
             this.emailEntered = false;
         },
 
         textEntered()
         {
-            let regexEmail = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/
-            if(this.email.match(regexEmail)) 
+            const regexEmail = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/
+            if (this.email.match(regexEmail)) 
             {
                 this.emailEntered = true;
             }
