@@ -21,6 +21,8 @@ class BoundingBoxController extends Controller
      * Bring the image to stage 3 level of verifiation
      *
      * 4 = Annotations confirmed by superadmin
+     *
+     * @return array
      */
     public function create (Request $request)
     {
@@ -80,6 +82,8 @@ class BoundingBoxController extends Controller
 
     /**
      * Get the next image to add bounding box coordinates
+     *
+     * @return array
      */
     public function index ()
     {
@@ -152,6 +156,8 @@ class BoundingBoxController extends Controller
 
     /**
      * Mark this image as not compatible for annotations
+     *
+     * @return array
      */
     public function skip (Request $request)
     {
@@ -166,8 +172,10 @@ class BoundingBoxController extends Controller
 
     /**
      * Update the tags on this image
-     *
+
      * Admin only
+     *
+     * @return array
      */
     public function updateTags (Request $request)
     {
@@ -194,6 +202,8 @@ class BoundingBoxController extends Controller
      * This helps us prevent against
      *
      * Only admin can update the tags
+     *
+     * @return array
      */
     public function wrongTags (Request $request)
     {
@@ -204,6 +214,4 @@ class BoundingBoxController extends Controller
 
         return ['success' => true];
     }
-
-
 }

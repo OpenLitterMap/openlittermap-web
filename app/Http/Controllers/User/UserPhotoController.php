@@ -17,6 +17,8 @@ class UserPhotoController extends Controller
 
     /**
      * Add Many Tags to Many Photos
+     *
+     * @return array
      */
     public function create (Request $request)
     {
@@ -34,6 +36,8 @@ class UserPhotoController extends Controller
 
     /**
      * Todo - test this on production
+     *
+     * @return array
      */
     public function destroy (Request $request)
     {
@@ -86,6 +90,8 @@ class UserPhotoController extends Controller
 
     /**
      * Return non-filtered array of the users photos
+     *
+     * @return array
      */
     public function index ()
     {
