@@ -26,10 +26,10 @@
                             @click="android"
                         />
 
-                        <Languages class="is-hidden-mobile" />
+                        <!-- <Languages class="is-hidden-mobile" /> -->
                     </div>
 
-                    <Languages class="show-mobile has-text-centered" />
+                    <!-- <Languages class="show-mobile has-text-centered" /> -->
                 </div>
 
                 <div class="column is-half">
@@ -123,11 +123,10 @@
 
 <script>
 import Footer from './Footer'
-import Languages from '../../components/global/Languages'
 
 export default {
     name: 'Welcome',
-    components: { Footer, Languages },
+    components: { Footer },
     computed: {
 
         /**
