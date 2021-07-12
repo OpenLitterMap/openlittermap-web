@@ -178,11 +178,39 @@ class ApiPhotosController extends Controller
     }
 
     /**
-     * Save litter data to a recently uploaded photo
-     *
-     * version 1
-     *
-     * This is used to add tags to web images, and session photos
+     * @OA\Post(path="/api/photos/update",
+     *   operationId="dynamicUpdate",
+     *   summary="Save litter data to a recently uploaded photo",
+     *   description="This is used to add tags to web images, and session photos. Version 1.",
+     *   @OA\RequestBody(
+     *       required=true,
+     *       @OA\JsonContent(
+     *         type="object",
+     *         @OA\Property(title="Photo Id", property="photo_id", type="integer", description="The recently uploaded photo ID", default=154),
+     *         @OA\Property(title="Litter", property="litter", type="object",
+     *             @OA\Property(title="Smoking", property="smoking", type="object",
+     *               @OA\Property(title="Butts", property="butts", type="integer", default=5),
+     *               @OA\Property(title="Lighters", property="lighters", type="integer", default=1),
+     *               @OA\Property(title="Cigarette Box", property="cigaretteBox", type="integer", default=1),
+     *               @OA\Property(title="Tobacco Pouch", property="tobaccoPouch", type="integer", default=1),
+     *             ),
+     *             @OA\Property(title="Alcohol", property="alcohol", type="object",
+     *               @OA\Property(title="Beer Bottle", property="beerBottle", type="integer", default=5),
+     *               @OA\Property(title="Spirit Bottle", property="spiritBottle", type="integer", default=1),
+     *             )
+     *         ),
+     *         @OA\MediaType(mediaType="application/json")
+     *       )
+     *   ),
+     *   @OA\Response(response=200,
+     *     description="A message that the processing job is dispatched.",
+     *     @OA\JsonContent()
+     *   ),
+     *   @OA\Response(response=401,
+     *     description="Unauthenticated",
+     *     @OA\JsonContent()
+     *   )
+     * )
      */
     public function dynamicUpdate (Request $request)
     {
