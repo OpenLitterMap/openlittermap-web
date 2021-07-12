@@ -29,10 +29,12 @@ class WebPhotosController extends Controller
         $count = $query->count();
 
         if ($count > 0)
+        {
             $photos = $query->select('id', 'filename')
                 ->orderBy('id')
                 ->take(100)
                 ->get();
+        }
 
         return [
             'count' => $count,

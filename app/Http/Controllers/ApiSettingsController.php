@@ -10,11 +10,11 @@ class ApiSettingsController extends Controller
     /**
      * Toggle privacy of users name on the maps
      */
-    public function mapsName(Request $request)
+    public function mapsName (Request $request)
     {
 		$user = Auth::guard('api')->user();
-    	$user->show_name_maps = ! $user->show_name_maps;
-    	$user->save();
+        $user->show_name_maps = !$user->show_name_maps;
+        $user->save();
     	return ['show_name_maps' => $user->show_name_maps];
     }
 

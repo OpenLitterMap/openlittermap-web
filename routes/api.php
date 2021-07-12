@@ -3,8 +3,6 @@
 use Illuminate\Support\Facades\Route;
 
 use Illuminate\Http\Request;
-use App\Events\PhotoVerifiedByAdmin;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 
 /*
@@ -32,7 +30,6 @@ Route::post('add-tags', 'ApiPhotosController@addTags')
 
 // Check if current token is valid
 Route::post('/validate-token', function(Request $request) {
-    \Log::info(['validate_token', $request->all()]);
     return ['message' => 'valid'];
 })->middleware('auth:api');
 
