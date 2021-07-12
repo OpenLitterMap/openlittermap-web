@@ -11,6 +11,8 @@ class TeamsDataController extends Controller
 {
     /**
      * Get the combined effort for 1 or all of the users teams for the time-period
+     *
+     * @return array
      */
     public function index ()
     {

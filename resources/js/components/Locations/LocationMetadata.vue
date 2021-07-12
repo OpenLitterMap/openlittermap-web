@@ -40,7 +40,7 @@
                 </strong>
 
                 <p v-if="type === 'country'" class="total-photos-percentage">
-                    {{ (location['total_litter_redis'] / this.$store.state.locations.total_photos).toFixed(2) * 100 + "% Total"  }}
+                    {{ (location['total_photos_redis'] / this.$store.state.locations.total_photos * 100).toFixed(2) + "% Total"  }}
                 </p>
             </div>
             <div class="panel-block">{{ $t('common.created') }}: <strong class="green">&nbsp; {{ location['diffForHumans'] }}</strong></div>

@@ -18,6 +18,8 @@ class VerifyBoxController extends Controller
      * Don't load an image the user created boxes for
      *
      * Todo - show level 4 counts so far
+     *
+     * @return array
      */
     public function index ()
     {
@@ -73,6 +75,8 @@ class VerifyBoxController extends Controller
      * if hasChanged is true, update boxes for the image
      *
      * Add "boxes_verified_by"
+     *
+     * @return array
      */
     public function update (Request $request)
     {

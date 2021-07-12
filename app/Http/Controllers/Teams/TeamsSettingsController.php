@@ -12,6 +12,8 @@ class TeamsSettingsController extends Controller
 {
     /**
      * Apply settings to 1 or all teams
+     *
+     * @return array
      */
     public function index (Request  $request)
     {
