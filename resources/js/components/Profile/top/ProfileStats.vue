@@ -118,7 +118,7 @@ export default {
     }
 
     .profile-text {
-        color: #8e7fd6 !important;
+        color: #1DD3B0 !important;
 }
 
 </style>
