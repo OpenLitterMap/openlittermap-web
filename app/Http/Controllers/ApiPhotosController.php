@@ -146,27 +146,34 @@ class ApiPhotosController extends Controller
 
         \Log::info(['addressArray', $addressArray]);
 
-	    $photo = $user->photos()->create([
-			'filename' => $imageName,
-			'datetime' => $date,
-            'lat' => $lat,
-            'lon' => $lon,
-            'display_name' => $display_name,
-            'location' => $location,
-            'road' => $road,
-            'country_id' => $this->countryId,
-            'state_id' => $this->stateId,
-            'city_id' => $this->cityId,
-            'country' => $this->country,
-            'county' => $this->state,
-            'city' => $this->city,
-            'country_code' => $this->countryCode,
-            'model' => $model,
-            'remaining' => $request['presence'],
-            'platform' => 'mobile',
-            'geohash' => GeoHash::encode($lat, $lon),
-            'address_array' => json_encode($addressArray)
-        ]);
+        try
+        {
+            $photo = $user->photos()->create([
+                'filename' => $imageName,
+                'datetime' => $date,
+                'lat' => $lat,
+                'lon' => $lon,
+                'display_name' => $display_name,
+                'location' => $location,
+                'road' => $road,
+                'country_id' => $this->countryId,
+                'state_id' => $this->stateId,
+                'city_id' => $this->cityId,
+                'country' => $this->country,
+                'county' => $this->state,
+                'city' => $this->city,
+                'country_code' => $this->countryCode,
+                'model' => $model,
+                'remaining' => $request['presence'],
+                'platform' => 'mobile',
+                'geohash' => GeoHash::encode($lat, $lon),
+                'address_array' => json_encode($addressArray)
+            ]);
+        }
+        catch (\Exception $e)
+        {
+            \Log::info(['ApiPhotosController@store', $e->getMessage()]);
+        };
 
         $teamName = null;
         if ($user->team) $teamName = $user->team->name;
