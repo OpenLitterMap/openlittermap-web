@@ -95,16 +95,12 @@ trait CheckLocations
 
         if ($this->state !== 'error')
         {
-            $state = State::select('id', 'state', 'statenameb')
+            $state = State::select('id', 'country_id', 'state', 'statenameb')
                 ->where([
                     'state' => $this->state,
                     'country_id' => $this->countryId
                 ])
-                ->orWhere([
-                    'statenameb' => $this->state,
-                    'country_id' => $this->countryId
-                ])
-                ->firstOrCreate();
+               ->firstOrCreate();
 
             if ($state->wasRecentlyCreated)
             {
