@@ -45,6 +45,7 @@ trait CheckLocations
 
             if ($country->wasRecentlyCreated)
             {
+                // Broadcast an event to anyone viewing the Global Map
                 event (new NewCountryAdded($this->country, $this->countryCode, now(), $userId));
             }
 
@@ -55,24 +56,17 @@ trait CheckLocations
     /**
      * Check addressArray for State value
      *
-     * The word "State" is used loosely and is the second layer in a Location.
+     * The "State" is the second layer in a Location.
      *
-     * Country -> many states -> many cities.
-     *
-     * More generally, State means 2nd sub-country level.
-     *
-     * Eg. Country = USA, has many States (Cali, Texas etc.)
-     * Eg. Country = UK,  has many "States", eg. England, Wales, Scotland, (even though they are countries).
-     * Eg. Country = Ireland, has many "States", eg. County Cork, County Dublin, (even though they are counties).
-     *
-     * Not perfect, but it helps us divide a Country into 3 layers.
+     * Country -> many states
+     * State -> many cities
      *
      * Additional keys may need to be checked here.
      *
      * The address values in OpenStreetMap are also not very consistent.
      *
-     * For example, in Australia, a State can be saved as "Queensland", but "QLD" is also used.
-     * Therefore, we have "state" and "statenameb" to represent the name of the state as a string.
+     * For example, in Australia, a State can be saved as "Queensland", or "QLD"
+     * Therefore, we have "state" and "statenameb" to represent different values
      */
     protected function checkState ($addressArray, $userId)
     {
@@ -114,6 +108,7 @@ trait CheckLocations
 
             if ($state->wasRecentlyCreated)
             {
+                // Broadcast an event to anyone viewing the Global Map
                 event(new NewStateAdded($this->state, $this->country, now(),$userId));
             }
 
@@ -123,20 +118,15 @@ trait CheckLocations
 
     /**
      * Check addressArray for "City"
-     *
-     * A "City" is the 3rd layer in the Location model
-     *
+
      * Country -> State -> Cities
      *
      * A State has many "cities"
-     *
-     * The word "City" can also mean town, village, etc.
      *
      * Additional keys may need to be checked here.
      */
     protected function checkCity ($addressArray, $userId)
     {
-        // city, town, hamlet, city_district, village
         if (array_key_exists('city', $addressArray))
         {
             $this->city = $addressArray['city'];
@@ -200,6 +190,7 @@ trait CheckLocations
 
             if ($city->wasRecentlyCreated)
             {
+                // Broadcast an event to anyone viewing the Global Map
                 event(new NewCityAdded($this->city, $this->state, $this->country, now(), $userId));
             }
 

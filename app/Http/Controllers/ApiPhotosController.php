@@ -67,10 +67,10 @@ class ApiPhotosController extends Controller
 
         $user = Auth::guard('api')->user();
 
-        Log::channel('photos')->info([
-            'app_upload' => $request->all(),
-            'user_id' => $user['id']
-        ]);
+//        Log::channel('photos')->info([
+//            'app_upload' => $request->all(),
+//            'user_id' => $user['id']
+//        ]);
 
         $model = ($request->has('model'))
             ? $request->model

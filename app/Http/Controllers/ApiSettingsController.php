@@ -76,29 +76,18 @@ class ApiSettingsController extends Controller
     /**
      * Update a setting
      *
-     * Todo - Needs validation and cleanup
+     * Todo - Needs validation
      */
     public function update (Request $request)
     {
         $user = Auth::guard('api')->user();
 
-        $data = json_decode($request['dataToSend']);
+        $key = $request['key'];
+        $value = $request['value'];
 
         try
         {
-            if (array_key_exists('name', $data))
-            {
-                $user->name = $data->name;
-            }
-            else if (array_key_exists('username', $data))
-            {
-                $user->username = $data->username;
-            }
-            else if (array_key_exists('email', $data))
-            {
-                $user->email = $data->email;
-            }
-
+            $user->$key = $value;
             $user->save();
         }
         catch (\Exception $e)
