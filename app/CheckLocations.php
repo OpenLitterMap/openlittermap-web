@@ -180,6 +180,9 @@ trait CheckLocations
 
         if ($this->city != 'error')
         {
+            \Log::info(['countryId', $this->countryId]);
+            \Log::info(['stateId', $this->stateId]);
+            \Log::info(['city', $this->city]);
             $city = City::select('id')
                 ->where([
                     'country_id' => $this->countryId,
