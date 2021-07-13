@@ -183,7 +183,7 @@ trait CheckLocations
             \Log::info(['countryId', $this->countryId]);
             \Log::info(['stateId', $this->stateId]);
             \Log::info(['city', $this->city]);
-            $city = City::select('id')
+            $city = City::select('id', 'country_id', 'state_id', 'city')
                 ->where([
                     'country_id' => $this->countryId,
                     'state_id' => $this->stateId,

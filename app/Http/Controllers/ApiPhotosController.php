@@ -162,7 +162,8 @@ class ApiPhotosController extends Controller
             'model' => $model,
             'remaining' => $request['presence'],
             'platform' => 'mobile',
-            'geohash' => GeoHash::encode($lat, $lon)
+            'geohash' => GeoHash::encode($lat, $lon),
+            'address_array' => json_encode($addressArray)
         ]);
 
         $teamName = null;
