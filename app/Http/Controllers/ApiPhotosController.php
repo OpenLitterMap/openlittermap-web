@@ -173,7 +173,9 @@ class ApiPhotosController extends Controller
         catch (\Exception $e)
         {
             \Log::info(['ApiPhotosController@store', $e->getMessage()]);
-        };
+        }
+
+        \Log::info(['photo.id', $photo->id]);
 
         $teamName = null;
         if ($user->team) $teamName = $user->team->name;
