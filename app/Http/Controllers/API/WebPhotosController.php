@@ -14,6 +14,8 @@ class WebPhotosController extends Controller
      * Get the total number of photos to tag that were uploaded via web
      *
      * And get the first 10 photos to tag
+     *
+     * @return array
      */
     public function index ()
     {
@@ -44,6 +46,8 @@ class WebPhotosController extends Controller
 
     /**
      * Load the next 10 images that were uploaded via web
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
      */
     public function loadMore ()
     {

@@ -90,6 +90,9 @@
 
                                     <!-- Logout -->
                                     <a class="navbar-item drop-item" @click="logout"> {{ $t('nav.logout')}}</a>
+
+                                    <!-- Menu for available languages -->
+                                    <Languages />
                                 </div>
                             </div>
                         </div>
@@ -103,6 +106,10 @@
                             <router-link to="/signup" class="navbar-item">
                                  {{ $t('nav.signup')}}
                             </router-link>
+                            
+                            <!-- Menu for available languages -->
+                            <Languages />
+
                         </div>
                     </div>
                 </div>
@@ -112,8 +119,11 @@
 </template>
 
 <script>
+import Languages from '../global/Languages'
+
 export default {
     name: 'Nav',
+    components: { Languages },
     data ()
     {
         return {

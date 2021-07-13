@@ -1,134 +1,100 @@
 <template>
     <section :class="container" style="background-color: #23d160; min-height: 100%;">
-        <div class="container w100">
-            <div class="control locations-control">
-                <br>
-                <div class="select">
-                    <select v-model="category">
-                        <option v-for="cat in catnames">{{ cat }}</option>
-                    </select>
-                </div>
-            </div>
-        </div>
+		<!-- Location Navbar -->
+		<location-navbar @selectedCategory="updateCategory($event)" />
 
-        <!-- v-show is a temp bug fix until cities table has working total_litter column -->
-        <section v-for="location, index in orderedBy">
-            <div v-show="category !== 'A-Z'">
-                <br>
-                <h1 style="color: #34495e;" class="title is-1 has-text-centered">
-                    #LitterWorldCup
-                </h1>
-            </div>
+	    <!-- v-show is a temp bug fix until cities table has working total_litter column -->
+		<section v-for="location, index in orderedBy" v-show="location.total_litter_redis > 0">
+			<div v-show="category !== 'A-Z'">
+				<br>
+				<h1 style="color: #34495e;" class="title is-1 has-text-centered">
+					#LitterWorldCup
+				</h1>
+			</div>
 
-            <div class="hero-body location-container">
-                <div class="columns">
+			<div class="hero-body location-container">
+        		<div class="columns">
+		
+					<!-- Location Metadata -->
+					<location-metadata :index="index" :location="location" :type="type" :category="category" />
 
-                    <!-- Left column (metadata) -->
-                    <div class="column is-3">
+					<!-- Charts -->
+					<div class="column is-half is-offset-1">
 
-                        <!-- Name, Position and Flag-->
-                        <div class="flex pb1">
+						<p class="show-mobile">Drag these across for more options</p>
 
-                            <!-- Flag -->
-                            <img v-if="type === 'country' && category !== 'A-Z'"
-                                 height="15"
-                                 style="padding-right: 1.5em; border-radius: 1px; flex: 0.1;"
-                                 :src="getCountryFlag(location.shortcode)"
-                            />
+						<div class="tabs is-center">
 
-                            <h2 :class="textSize">
-                                <a @click="goTo(index)" :id="location[type]" class="is-link has-text-centered location-title">
-                                    <!-- Position -->
-                                    <span v-show="category !== 'A-Z' && index < 30">{{ positions(index) }} -</span>
-                                    <!-- Name -->
-                                    <span>{{ getName(location) }}</span>
-                                </a>
-                            </h2>
-                        </div>
+							<!-- Pie Charts -->
+							<a @click="loadTab(index, 'litter')" :class="tabClass('litter')">
+								{{ $t('location.litter') }}
+							</a>
 
-                        <!-- Location metadata -->
-                        <div class="panel">
-                            <div class="panel-block">{{ $t('location.maps10') }}: <strong class="green">&nbsp; {{ location['total_litter_redis'].toLocaleString() }}</strong></div>
-                            <div class="panel-block">{{ $t('location.maps11') }}: <strong class="green">&nbsp; {{ location['total_photos_redis'].toLocaleString() }}</strong></div>
-                            <div class="panel-block">{{ $t('location.maps12') }}: <strong class="green">&nbsp; {{ location['diffForHumans'] }}</strong></div>
-                            <div class="panel-block">{{ $t('location.maps13') }}: <strong class="green">&nbsp; {{ location['total_contributors_redis'].toLocaleString() }}</strong></div>
-                            <div class="panel-block">{{ $t('location.maps14') }}: <strong class="green">&nbsp; {{ location['avg_photo_per_user'].toLocaleString() }}</strong></div>
-                            <div class="panel-block">{{ $t('location.maps15') }}: <strong class="green">&nbsp; {{ location['avg_litter_per_user'].toLocaleString() }}</strong></div>
-                            <div class="panel-block">{{ $t('location.maps16') }}: <strong class="green">&nbsp; {{ location['created_by_name'] }} {{ location['created_by_username'] }}</strong></div>
-                        </div>
-                    </div>
+							<!-- Leaderboard -->
+							<a @click="loadTab(index, 'leaderboard')" :class="tabClass('leaderboard')">
+								{{ $t('location.leaderboard') }}
+							</a>
 
-                    <!-- Charts -->
-                    <div class="column is-half is-offset-1">
+							<!-- Time-series -->
+							<a @click="loadTab(index, 'time_series')" :class="tabClass('time_series')">
+								{{ $t('location.time-series') }}
+							</a>
 
-                        <p class="show-mobile">Drag these across for more options</p>
+							<!-- Options (City only) -->
+							<a
+								v-show="type === 'city'"
+								@click="loadTab(index, 'options')" :class="tabClass('options')">
+								{{ $t('location.options') }}
+							</a>
 
-                        <div class="tabs is-center">
+							<!-- Download -->
+							<a
+								@click="loadTab(index, 'download')" :class="tabClass('download')">
+								{{ $t('common.download') }}
+							</a>
+						</div>
 
-                            <!-- Pie Charts -->
-                            <a @click="loadTab(index, 'litter')" :class="tabClass('litter')">
-                                {{ $t('location.maps9') }}
-                            </a>
+						<component
+							:is="tabs[tab]"
+							:litter_data="location.litter_data"
+							:brands_data="location.brands_data"
+							:total_brands="location.total_brands"
+							:ppm="location.photos_per_month"
+							:leaderboard="location.leaderboard"
+							:time="location.time"
+							@dateschanged="updateUrl"
+							:index="index"
+							:type="type"
+							:locationId="location.id"
+						/>
 
-                            <!-- Leaderboard -->
-                            <a @click="loadTab(index, 'leaderboard')" :class="tabClass('leaderboard')">
-                                {{ $t('location.maps17') }}
-                            </a>
+					</div>
+				</div>
+			</div>
 
-                            <!-- Time-series -->
-                            <a @click="loadTab(index, 'time_series')" :class="tabClass('time_series')">
-                                {{ $t('location.maps18') }}
-                            </a>
+		</section>
 
-                            <!-- Options (City only) -->
-                            <a
-                                v-show="type === 'city'"
-                                @click="loadTab(index, 'options')" :class="tabClass('options')">
-                                Options
-                            </a>
-
-                            <!-- Download -->
-                            <a
-                                @click="loadTab(index, 'download')" :class="tabClass('download')">
-                                {{ $t('location.maps19') }}
-                            </a>
-                        </div>
-
-                        <component
-                            :is="tabs[tab]"
-                            :litter_data="location.litter_data"
-                            :brands_data="location.brands_data"
-                            :total_brands="location.total_brands"
-                            :ppm="location.photos_per_month"
-                            :leaderboard="location.leaderboard"
-                            :time="location.time"
-                            @dateschanged="updateUrl"
-                            :index="index"
-                            :type="type"
-                            :locationId="location.id"
-                        />
-
-                    </div>
-                </div>
-            </div>
-        </section>
     </section>
 </template>
 
 <script>
-import moment from 'moment'
 let sortBy = require('lodash.sortby')
 
+import LocationNavbar from '../../components/Locations/LocationNavBar'
+import LocationMetadata from '../../components/Locations/LocationMetadata'
 import ChartsContainer from '../../components/Locations/Charts/PieCharts/ChartsContainer'
 import TimeSeriesContainer from '../../components/Locations/Charts/TimeSeries/TimeSeriesContainer'
 import Leaderboard from '../../components/Locations/Charts/Leaderboard/Leaderboard'
 import Options from '../../components/Locations/Charts/Options/Options'
 import Download from '../../components/Locations/Charts/Download/Download'
 
+
 export default {
 	props: ['type'], // country, state, or city
 	name: 'SortLocations',
 	components: {
+		LocationNavbar,
+		LocationMetadata,
 		ChartsContainer,
 		TimeSeriesContainer,
 		Leaderboard,
@@ -138,15 +104,7 @@ export default {
 	data ()
 	{
 		return {
-			'category': 'Most Open Data',
-			'catnames': [
-				'A-Z',
-				'Most Open Data',
-				'Most Open Data Per Person'
-			],
-			'openDataOrder': null,
-			'mostLitterPP': null,
-			dir: '/assets/icons/flags/',
+			'category': this.$t('location.most-data'),
 			tab: '',
 			tabs: {
 				litter: 'ChartsContainer',
@@ -157,24 +115,16 @@ export default {
 			}
 		};
 	},
-	computed: {
+    computed: {
 
-	    /**
+		/**
          * Expand container to fullscreen when orderedBy is empty/loading
          */
 	    container ()
         {
             return this.orderedBy.length === 0 ? 'vh65' : '';
         },
-
-		/**
-		 * Name of the country (if we are viewing States, Cities)
-		 */
-		country ()
-		{
-			return this.$store.state.locations.country;
-		},
-
+		
 		/**
 		 * Is the user authenticated?
 		 */
@@ -193,11 +143,11 @@ export default {
 			{
 				return this.locations;
 			}
-			else if (this.category === "Most Open Data")
-			{
+			else if (this.category === this.$t('location.most-data'))
+			{   
 				return sortBy(this.locations, 'total_litter_redis').reverse();
 			}
-			else if (this.category === "Most Open Data Per Person")
+			else if (this.category === this.$t('location.most-data-person'))
 			{
 				return sortBy(this.locations, 'avg_litter_per_user').reverse();
 			}
@@ -209,98 +159,16 @@ export default {
 		locations ()
 		{
 			return this.$store.state.locations.locations;
-		},
-
-		/**
-		 * Name of the state (if we are viewing cities)
-		 */
-		state ()
-		{
-			return this.$store.state.locations.state;
-		},
-
-		/**
-		 * We have a smaller font-size when a flag is present
-		 */
-		textSize ()
-		{
-			return this.category === 'A-Z' ? 'title is-1 flex-1 ma' : 'title is-3 flex-1 ma';
 		}
-	},
+	}, 
 	methods: {
 
 		/**
-		 * On Countries.vue, each country gets a flag when sorted by most open data
-		 */
-		getCountryFlag (iso)
-		{
-		    if (iso)
-            {
-                iso = iso.toLowerCase();
-
-                return this.dir + iso + '.png';
-            }
-		},
-
-		/**
-		 * Name of a location
-		 */
-		getName (location)
-		{
-			return location[this.type];
-		},
-
-		/**
-		 * When user clicks on a location name
-		 */
-		goTo (index)
-		{
-			if (this.type === 'country')
-			{
-			    let country = this.orderedBy[index].country;
-
-			    this.$store.commit('setCountry', country);
-
-				this.$router.push({ path:  '/world/' + country });
-			}
-			else if (this.type === 'state')
-			{
-			    let state = this.orderedBy[index].state;
-
-			    this.$store.commit('setState', state);
-
-				this.$router.push({ path:  '/world/' + this.country + '/' + state });
-			}
-			else if (this.type === 'city')
-			{
-			    // if the object has "hex" key, the slider has updated
-                if (this.orderedBy[index].hasOwnProperty('hex'))
-                {
-                    this.$router.push({
-                        path:
-                            '/world/' + this.country + '/' + this.state + '/' + this.orderedBy[index].city + '/map/'
-                            + this.orderedBy[index].minDate + '/' + this.orderedBy[index].maxDate + '/' + this.orderedBy[index].hex
-                    });
-                }
-
-				this.$router.push({ path:  '/world/' + this.country + '/' + this.state + '/' + this.orderedBy[index].city + '/map' });
-			}
-		},
-
-		/**
-		 * Load a tab component Litter, Leaderboard, Time-series
-		 */
+		* Load a tab component Litter, Leaderboard, Time-series
+		*/
 		loadTab (index, tab)
 		{
 			this.tab = tab;
-		},
-
-		/**
-		 *
-		 */
-		positions (i)
-		{
-			return moment.localeData().ordinal(i + 1);
 		},
 
 		/**
@@ -310,58 +178,29 @@ export default {
 		{
 			return tab === this.tab ? 'l-tab is-active' : 'l-tab';
 		},
-
+		
 		/**
 		 *
 		 */
 		updateUrl (url)
 		{
             console.log({ url });
-		}
+		},
+
+		/**
+		* Update selected category from LocationNavBar component
+		*/
+		updateCategory (updatedCategory) 
+		{
+			this.category = updatedCategory
+		},
 	}
 }
 </script>
 
 <style lang="scss" scoped>
 
-    .h65pc {
-        height: 65%;
-    }
-
-	.green {
-		color: green !important;
-	}
-
-	.panel-block {
-		color: black;
-		background-color: white;
-	}
-
-    .location-container {
-        padding-top: 3em;
-        padding-bottom: 5em;
-    }
-
-    .locations-control {
-        text-align: right;
-    }
-
-    .location-title:hover {
-        color: green !important;
-        border-bottom: 1px solid green;
-    }
-
-	.l-tab.is-active {
-		border-bottom: 2px solid white !important;
-	}
-
-    /* Small devices */
-    @media screen and (max-width: 768px)
-    {
-
-        .locations-control {
-            text-align: center;
-        }
-    }
-
+	.h65pc {
+			height: 65%;
+		}
 </style>

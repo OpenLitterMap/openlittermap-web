@@ -66,13 +66,6 @@ class PhotosController extends Controller
 
         if (!$user->has_uploaded) $user->has_uploaded = 1;
 
-        // we don't need this for now
-        //if (!$user->images_remaining)
-        //{
-        //    // todo - make message show by default
-        //    abort(500, "Sorry, your max upload limit has been reached.");
-        //}
-
         $file = $request->file('file'); // /tmp/php7S8v..
 
         $image = Image::make($file);

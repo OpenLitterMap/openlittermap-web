@@ -22,6 +22,8 @@ class TeamsController extends Controller
 
     /**
      * Change the users currently active team
+     *
+     * @return array
      */
     public function active (Request $request)
     {
@@ -46,6 +48,8 @@ class TeamsController extends Controller
 
     /**
      * The user wants to create a new team
+     *
+     * @return array
      */
     public function create (Request $request)
     {
@@ -82,6 +86,8 @@ class TeamsController extends Controller
 
     /**
      * The user wants to download data from a specific team
+     *
+     * @return array
      */
     public function download (Request $request)
     {
@@ -113,6 +119,8 @@ class TeamsController extends Controller
 
     /**
      * The user wants to join a new team
+     *
+     * @return array
      */
     public function join (Request $request)
     {
@@ -161,6 +169,8 @@ class TeamsController extends Controller
      *
      * We need to check the privacy settings for each user on the team,
      * and only load the columns (show_name_leaderboard) that each user has allowed.
+     *
+     * @return array
      */
     public function members ()
     {
@@ -199,6 +209,8 @@ class TeamsController extends Controller
 
     /**
      * Return the types of available teams
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
      */
     public function types ()
     {

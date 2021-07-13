@@ -1,7 +1,7 @@
 <template>
 	<div :class="checkOpen">
 	  	<div class="dropdown-trigger" @click.stop="toggleOpen" >
-	    	<button class="button" aria-haspopup="true">
+	    	<button class="button is-small" aria-haspopup="true">
 	      		<!-- Current Language -->
       			<img :src="getFlag(this.$i18n.locale)" class="lang-flag-small" />
 				<span>{{ this.currentLang }}</span>
