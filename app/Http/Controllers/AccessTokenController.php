@@ -30,7 +30,6 @@ class AccessTokenController extends ATC
 
             // convert json to array
             $data = json_decode($content, true);
-            \Log::info(['data', $data]);
 
             if (isset($data["error"])) {
                 throw new OAuthServerException(

@@ -2,18 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\Photo\IncrementPhotoMonth;
 use GeoHash;
+use Carbon\Carbon;
 
 use App\CheckLocations;
-use Carbon\Carbon;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
-use App\Events\ImageUploaded;
 use App\Jobs\UploadData;
 use App\Jobs\Api\AddTags;
+use App\Events\ImageUploaded;
+use App\Events\Photo\IncrementPhotoMonth;
+
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Intervention\Image\Facades\Image;
 
 class ApiPhotosController extends Controller
@@ -55,8 +56,10 @@ class ApiPhotosController extends Controller
                 'hashName' => NULL
             )),
         );
+     *
+     * @return array
      */
-    public function store (Request $request)
+    public function store (Request $request) :array
     {
         $file = $request->file('photo');
 
@@ -67,10 +70,10 @@ class ApiPhotosController extends Controller
 
         $user = Auth::guard('api')->user();
 
-//        Log::channel('photos')->info([
-//            'app_upload' => $request->all(),
-//            'user_id' => $user['id']
-//        ]);
+        Log::channel('photos')->info([
+            'app_upload' => $request->all(),
+            'user_id' => $user['id']
+        ]);
 
         $model = ($request->has('model'))
             ? $request->model
@@ -165,6 +168,7 @@ class ApiPhotosController extends Controller
         $teamName = null;
         if ($user->team) $teamName = $user->team->name;
 
+        // Broadcast an event to anyone viewing the Global Map
         event (new ImageUploaded(
             $this->city,
             $this->state,
