@@ -104,20 +104,36 @@ trait CheckLocations
         {
             \Log::info(['getState.name', $this->state]);
 
-            $state = State::select('id', 'country_id', 'state', 'statenameb')
-                ->where([
-                    'state' => $this->state,
-                    'country_id' => $this->countryId
-                ])
-               ->firstOrCreate();
-
-            if ($state->wasRecentlyCreated)
+            try
             {
-                // Broadcast an event to anyone viewing the Global Map
-                event(new NewStateAdded($this->state, $this->country, now(),$userId));
-            }
+                $state = State::select('id', 'country_id', 'state', 'statenameb')
+                    ->where([
+                        'state' => $this->state,
+                        'country_id' => $this->countryId
+                    ])
+                    ->first();
 
-            $this->stateId = $state->id;
+                if (!$state)
+                {
+                    \Log::info('state not found. creating...');
+                    $state = State::create([
+                        'country_id' => $this->countryId,
+                        'state' => $this->state
+                    ]);
+                }
+
+                if ($state->wasRecentlyCreated)
+                {
+                    // Broadcast an event to anyone viewing the Global Map
+                    event(new NewStateAdded($this->state, $this->country, now(),$userId));
+                }
+
+                $this->stateId = $state->id;
+            }
+            catch (\Exception $e)
+            {
+                \Log::info(['CheckLocations.checkState', $e->getMessage()]);
+            }
         }
     }
 
