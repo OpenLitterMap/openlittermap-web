@@ -1,6 +1,5 @@
 <?php
 
-// A data container which holds the information related to the event
 namespace App\Events;
 
 use App\Models\Location\Country;

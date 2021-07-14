@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import i18n from '../../../i18n'
+import routes from '../../../routes';
 
 export const actions = {
 
@@ -77,7 +78,9 @@ export const actions = {
         .then(response => {
             console.log('get_states', response);
 
-            context.commit('setStates', response.data);
+            (response.data.success)
+                ? context.commit('setStates', response.data)
+                : routes.push({ 'path': '/world' });
         })
         .catch(error => {
             console.log('error.get_states', error);
@@ -99,7 +102,9 @@ export const actions = {
         .then(response => {
             console.log('get_cities', response);
 
-            context.commit('setCities', response.data);
+            (response.data.success)
+                ? context.commit('setCities', response.data)
+                : routes.push({ 'path': '/world' });
         })
         .catch(error => {
             console.log('error.get_cities', error);

@@ -10,11 +10,11 @@ class ApiSettingsController extends Controller
     /**
      * Toggle privacy of users name on the maps
      */
-    public function mapsName(Request $request)
+    public function mapsName (Request $request)
     {
 		$user = Auth::guard('api')->user();
-    	$user->show_name_maps = ! $user->show_name_maps;
-    	$user->save();
+        $user->show_name_maps = !$user->show_name_maps;
+        $user->save();
     	return ['show_name_maps' => $user->show_name_maps];
     }
 
@@ -75,33 +75,29 @@ class ApiSettingsController extends Controller
 
     /**
      * Update a setting
+     *
+     * Todo - Needs validation
      */
-    public function update(Request $request, $type)
+    public function update (Request $request)
     {
         $user = Auth::guard('api')->user();
 
-        if ($type == "Name") {
-            $user->name = $request->Name;
+        $key = $request['key'];
+        $value = $request['value'];
+
+        try
+        {
+            $user->$key = $value;
             $user->save();
+        }
+        catch (\Exception $e)
+        {
+            \Log::info(['ApiSettingsController@update', $e->getMessage()]);
 
-            return ['name' => $user->name];
-
-        } else if ($type == "Username") {
-            $user->username = $request->Username;
-            $user->save();
-
-            return ['username' => $user->username];
-
-        } else {
-            $user->email = $request->Email;
-            $user->save();
-
-            // todo - send email to confirm updated email
-
-            return ['email' => $user->email];
+            return ['success' => false, 'msg' => $e->getMessage()];
         }
 
-        return ['error' => 'Wrong key?'];
+        return ['success' => true];
     }
 
     /**
@@ -110,7 +106,7 @@ class ApiSettingsController extends Controller
     public function togglePreviousTags (Request $request)
     {
         $user = Auth::guard('api')->user();
-        
+
         $user->previous_tags = ! $user->previous_tags;
 
         $user->save();

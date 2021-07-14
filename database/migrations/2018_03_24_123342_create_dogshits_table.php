@@ -13,12 +13,8 @@ class CreateDogshitsTable extends Migration
      */
     public function up()
     {
-        Schema::create('dogshits', function (Blueprint $table) {
+        Schema::create('dogshit', function (Blueprint $table) {
             $table->increments('id');
-            $table->integer('warm')->unsigned()->nullable();
-            $table->integer('salty')->unsigned()->nullable();
-            $table->integer('nutty')->unsigned()->nullable();
-            $table->integer('fresh')->unsigned()->nullable();
             $table->timestamps();
         });
     }
@@ -30,6 +26,6 @@ class CreateDogshitsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('dogshits');
+        Schema::dropIfExists('dogshit');
     }
 }
