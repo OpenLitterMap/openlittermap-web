@@ -5,21 +5,10 @@ namespace App\Listeners\UpdateTimes;
 use App\Models\Location\Country;
 use Carbon\Carbon;
 use App\Events\Photo\IncrementPhotoMonth;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class IncrementCountryMonth
+class IncrementCountryMonth implements ShouldQueue
 {
-    /**
-     * Create the event listener.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        //
-    }
-
     /**
      * Handle the event.
      *
@@ -28,26 +17,23 @@ class IncrementCountryMonth
      */
     public function handle (IncrementPhotoMonth $event)
     {
-        if ($country = Country::find($event->country_id))
+        $country = Country::find($event->country_id);
+
+        if ($country)
         {
             $ppm = json_decode($country->photos_per_month, true);
-
             $date = Carbon::parse($event->created_at)->format('m-y');
 
             if (! is_null($ppm) && array_key_exists($date, $ppm))
             {
                 $ppm[$date]++;
             }
-
             else
             {
                 $ppm[$date] = 1;
             }
 
-            $ppm = json_encode($ppm);
-
-            $country->photos_per_month = $ppm;
-
+            $country->photos_per_month = json_encode($ppm);
             $country->save();
         }
     }

@@ -17,10 +17,15 @@ class UpdateCountriesTable
      */
     public function handle (NewCountryAdded $event)
     {
-        Country::create([
+        $country = Country::firstOrCreate([
             'country' => $event->country,
-            'shortcode' => $event->countryCode,
-            'created_by' => $event->userId
+            'shortcode' => $event->countryCode
         ]);
+
+        if ($country && is_null($country->created_by))
+        {
+            $country->created_by = $event->userId;
+            $country->save();
+        }
     }
 }

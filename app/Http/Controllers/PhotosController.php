@@ -42,6 +42,11 @@ class PhotosController extends Controller
     }
 
     /**
+     * The user wants to upload a photo
+     *
+     * Check for GPS co-ordinates or abort
+     * Get/Create Country, State, and City for the lat/lon
+     *
      * Move photo to AWS S3 in production || local in development
      * then persist new record to photos table
      *
@@ -55,14 +60,12 @@ class PhotosController extends Controller
 
         $user = Auth::user();
 
-        if (!$user->has_uploaded) $user->has_uploaded = 1;
+        \Log::channel('photos')->info([
+            'web_upload' => $request->all(),
+            'user_id' => $user->id
+        ]);
 
-        // we don't need this for now
-        //if (!$user->images_remaining)
-        //{
-        //    // todo - make message show by default
-        //    abort(500, "Sorry, your max upload limit has been reached.");
-        //}
+        if (!$user->has_uploaded) $user->has_uploaded = 1;
 
         $file = $request->file('file'); // /tmp/php7S8v..
 
@@ -91,7 +94,7 @@ class PhotosController extends Controller
 
         $dateTime = '';
 
-        // Some devices store this key in a different format. We need to check for many key types.
+        // Some devices store the timestamp key in a different format and using a different key.
         if (array_key_exists('DateTimeOriginal', $exif))
         {
             $dateTime = $exif["DateTimeOriginal"];
@@ -165,24 +168,25 @@ class PhotosController extends Controller
             : 'Unknown';
 
         // Get coordinates
-         $lat_ref = $exif["GPSLatitudeRef"];
-             $lat = $exif["GPSLatitude"];
-        $long_ref = $exif["GPSLongitudeRef"];
-            $long = $exif["GPSLongitude"];
+        $lat_ref   = $exif["GPSLatitudeRef"];
+        $lat       = $exif["GPSLatitude"];
+        $long_ref  = $exif["GPSLongitudeRef"];
+        $long      = $exif["GPSLongitude"];
 
         $latlong = self::dmsToDec($lat, $long, $lat_ref, $long_ref);
         $latitude = $latlong[0];
         $longitude = $latlong[1];
 
         // todo - let horizon process address details as a Job.
-        // Reverse Geocode = 10,000 - 30,000 requests per day
         $apiKey = config('services.location.secret');
         $url =  "https://locationiq.org/v1/reverse.php?format=json&key=".$apiKey."&lat=".$latitude."&lon=".$longitude."&zoom=20";
 
         // The entire reverse geocoded result
         $revGeoCode = json_decode(file_get_contents($url), true);
+
         // The entire address as a string
         $display_name = $revGeoCode["display_name"];
+
         // Extract the address array
         $addressArray = $revGeoCode["address"];
          // \Log::info(['Address', $addressArray]);
@@ -191,23 +195,10 @@ class PhotosController extends Controller
         $road = array_values($addressArray)[1];
 
         // todo- check all locations for "/" and replace with "-"
-        // todo - return country/state/city without having to check again
         // todo - process this as a job when request is made to get reverse geocoded data
-        // todo - check country by shortcode not the full string
-        $this->checkCountry($addressArray);
-        $this->checkState($addressArray);
-        $this->checkDistrict($addressArray);
-        $this->checkCity($addressArray);
-        $this->checkSuburb($addressArray);
-
-        $countryId = Country::where('country', $this->country)
-                    ->orWhere('countrynameb', $this->country)
-                    ->orWhere('countrynamec', $this->country)->first()->id;
-
-        $stateId = State::where('state', $this->state)
-                  ->orWhere('statenameb', $this->state)->first()->id;
-
-        $cityId = City::where('city', $this->city)->first()->id;
+        $this->checkCountry($addressArray, $user->id);
+        $this->checkState($addressArray, $user->id);
+        $this->checkCity($addressArray, $user->id);
 
         $geohash = GeoHash::encode($latlong[0], $latlong[1]);
 
@@ -219,20 +210,19 @@ class PhotosController extends Controller
             'display_name' => $display_name,
             'location' => $location,
             'road' => $road,
-            'suburb' => $this->suburb,
             'city' => $this->city,
             'county' => $this->state,
-            'state_district' => $this->district,
             'country' => $this->country,
             'country_code' => $this->countryCode,
             'model' => $model,
-            'country_id' => $countryId,
-            'state_id' => $stateId,
-            'city_id' => $cityId,
+            'country_id' => $this->countryId,
+            'state_id' => $this->stateId,
+            'city_id' => $this->cityId,
             'platform' => 'web',
             'geohash' => $geohash,
             'team_id' => $user->active_team,
-            'five_hundred_square_filepath' => $imageName // new 10th April 2021
+            'five_hundred_square_filepath' => $imageName,
+            'address_array' => json_encode($addressArray)
         ]);
 
         // $user->images_remaining -= 1;
@@ -254,29 +244,30 @@ class PhotosController extends Controller
             $imageName,
             $teamName,
             $user->id,
-            $countryId,
-            $stateId,
-            $cityId
+            $this->countryId,
+            $this->stateId,
+            $this->cityId
         ));
 
         // Increment the { Month-Year: int } value for each location
         // Todo - this needs debugging
-        // This should dispatch a job
-        event (new IncrementPhotoMonth($countryId, $stateId, $cityId, $dateTime));
+        event (new IncrementPhotoMonth($this->countryId, $this->stateId, $this->cityId, $dateTime));
 
-        return ['msg' => 'success'];
+        return ['success' => true];
     }
 
     /**
-      * TODO - Need to sort AWS permissions
+     * TODO - Need to sort AWS permissions
       * Delete an image
     */
     public function deleteImage (Request $request)
     {
         $user = Auth::user();
+
         $photo = Photo::find($request->photoid);
 
-        try {
+        try
+        {
             if ($user->id === $photo->user_id)
             {
                 if (app()->environment('production'))
@@ -301,9 +292,10 @@ class PhotosController extends Controller
                 $user->total_images--;
                 $user->save();
             }
-        } catch (Exception $e) {
-            // could not be deleted
-            Log::info(["Photo could not be deleted", $e->getMessage()]);
+        }
+        catch (Exception $e)
+        {
+            Log::info(["PhotosController@deleteImage", $e->getMessage()]);
         }
 
       	return ['message' => 'Photo deleted successfully!'];

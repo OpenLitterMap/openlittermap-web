@@ -52,12 +52,12 @@ class GenerateTimeSeries extends Command
             $photosPerMonth = [];
 
             $photos = Photo::select('id', 'datetime', 'verified', 'country_id')
-            ->where([
-                'country_id' => $country->id,
-                'verified' => 2
-            ])
-            ->orderBy('datetime', 'asc')
-            ->get();
+                ->where([
+                    'country_id' => $country->id,
+                    'verified' => 2
+                ])
+                ->orderBy('datetime', 'asc')
+                ->get();
 
             $photos = $photos->groupBy(function($val) {
                 return Carbon::parse($val->datetime)->format('m-y');
