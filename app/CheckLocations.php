@@ -29,6 +29,9 @@ trait CheckLocations
      */
     protected function checkCountry ($addressArray, $userId)
     {
+        \Log::info(['checkCountry.countryId', $this->countryId]);
+        \Log::info(['checkCountry.country', $this->country]);
+
         $this->country = (array_key_exists('country', $addressArray))
             ? $addressArray['country']
             : 'error';
@@ -70,6 +73,10 @@ trait CheckLocations
      */
     protected function checkState ($addressArray, $userId)
     {
+        \Log::info(['checkState.countryId', $this->countryId]);
+        \Log::info(['checkState.stateId', $this->stateId]);
+        \Log::info(['checkState.state', $this->state]);
+
         if (array_key_exists('state', $addressArray))
         {
             $this->state = $addressArray["state"];
@@ -123,6 +130,10 @@ trait CheckLocations
      */
     protected function checkCity ($addressArray, $userId)
     {
+        \Log::info(['checkCity.countryId', $this->countryId]);
+        \Log::info(['checkCity.stateId', $this->stateId]);
+        \Log::info(['checkCity.city', $this->city]);
+
         if (array_key_exists('city', $addressArray))
         {
             $this->city = $addressArray['city'];
