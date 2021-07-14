@@ -2,11 +2,11 @@
     <div class="profile-card">
         <p class="mb1">{{ $t('profile.dashboard.your-level') }}</p>
 
-        <p class="is-purp">{{ $t('profile.dashboard.reached-level') }} <strong class="is-white">{{ currentLevel }}</strong></p>
+        <p class="is-secondary">{{ $t('profile.dashboard.reached-level') }} <strong class="is-white">{{ currentLevel }}</strong></p>
 
-        <p class="is-purp mb1">{{ $t('profile.dashboard.have-xp') }} <strong class="is-white">{{ currentXp }} xp</strong></p>
+        <p class="is-secondary mb1">{{ $t('profile.dashboard.have-xp') }} <strong class="is-white">{{ currentXp }} xp</strong></p>
 
-        <p class="is-purp mb2">{{ $t('profile.dashboard.need-xp') }} <strong class="is-white">{{ neededXp }} xp</strong> {{ $t('profile.dashboard.to-reach-level') }}</p>
+        <p class="is-secondary mb2">{{ $t('profile.dashboard.need-xp') }} <strong class="is-white">{{ neededXp }} xp</strong> {{ $t('profile.dashboard.to-reach-level') }}</p>
     </div>
 </template>
 
@@ -58,5 +58,9 @@ export default {
 
     .is-white {
         color: white !important;
+    }
+
+    .is-secondary {
+        color: #1DD3B0;
     }
 </style>
