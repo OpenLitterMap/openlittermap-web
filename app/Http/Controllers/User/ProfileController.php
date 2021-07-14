@@ -146,8 +146,8 @@ class ProfileController extends Controller
 
         $usersTotalTags = $user->total_litter + $user->total_brands;
 
-        $photoPercent = ($user->total_images / $totalPhotosAllUsers);
-        $tagPercent = ($usersTotalTags / $totalLitterAllUsers);
+        $photoPercent = $user->total_images ? ($user->total_images / $totalPhotosAllUsers) : 0;
+        $tagPercent = $usersTotalTags ? ($usersTotalTags / $totalLitterAllUsers) : 0;
 
         // XP needed to reach the next level
         $nextLevelXp = Level::where('xp', '>=', $user->xp)->first()->xp;

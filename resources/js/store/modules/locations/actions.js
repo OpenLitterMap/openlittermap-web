@@ -14,7 +14,7 @@ export const actions = {
         let title = i18n.t('notifications.success');
         let body  = 'Your download is being processed and will be emailed to you soon';
 
-        await axios.post('download', {
+        await axios.post('/download', {
             type: payload.type,
             locationId: payload.locationId,
             email: payload.email

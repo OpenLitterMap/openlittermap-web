@@ -13,27 +13,26 @@ export default {
         /**
          * Todo - make this work
          */
-        confirmDelete ()
+        async confirmDelete ()
         {
-            alert("Sorry, this is not working yet.");
-            // if (confirm("Do you want to delete this image? This cannot be undone."))
-            // {
-            //     await axios.post('/en/profile/photos/delete', {
-            //         photoid: this.photoid
-            //     })
-            //     .then(response => {
-            //         console.log(response);
-            //         if (response.status === 200)
-            //         {
-            //             window.location.href = window.location.href;
-            //         }
-            //     })
-            //     .catch(error => {
-            //         console.log(error);
-            //     });
-            // } else {
-            //     console.log("Not deleted");
-            // }
+            if (confirm("Do you want to delete this image? This cannot be undone."))
+            {
+                await axios.post('/profile/photos/delete', {
+                    photoid: this.photoid
+                })
+                .then(response => {
+                    console.log(response);
+                    if (response.status === 200)
+                    {
+                        window.location.href = window.location.href;
+                    }
+                })
+                .catch(error => {
+                    console.log(error);
+                });
+            } else {
+                console.log("Not deleted");
+            }
         }
     }
 }
