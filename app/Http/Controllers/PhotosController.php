@@ -190,15 +190,13 @@ class PhotosController extends Controller
         // Extract the address array
         $addressArray = $revGeoCode["address"];
          // \Log::info(['Address', $addressArray]);
-        // dd($addressArray);
         $location = array_values($addressArray)[0];
         $road = array_values($addressArray)[1];
 
         // todo- check all locations for "/" and replace with "-"
-        // todo - process this as a job when request is made to get reverse geocoded data
-        $this->checkCountry($addressArray, $user->id);
-        $this->checkState($addressArray, $user->id);
-        $this->checkCity($addressArray, $user->id);
+        $country = Country::getCountryFromAddressArray($addressArray);
+        $state = State::getStateFromAddressArray($country->id, $addressArray);
+        $city = City::getCityFromAddressArray($country->id, $state->id, $addressArray);
 
         $geohash = GeoHash::encode($latlong[0], $latlong[1]);
 
@@ -210,14 +208,14 @@ class PhotosController extends Controller
             'display_name' => $display_name,
             'location' => $location,
             'road' => $road,
-            'city' => $this->city,
-            'county' => $this->state,
-            'country' => $this->country,
-            'country_code' => $this->countryCode,
+            'city' => $city->city,
+            'county' => $state->state,
+            'country' => $country->country,
+            'country_code' => $country->shortcode,
             'model' => $model,
-            'country_id' => $this->countryId,
-            'state_id' => $this->stateId,
-            'city_id' => $this->cityId,
+            'country_id' => $country->id,
+            'state_id' => $state->id,
+            'city_id' => $city->id,
             'platform' => 'web',
             'geohash' => $geohash,
             'team_id' => $user->active_team,

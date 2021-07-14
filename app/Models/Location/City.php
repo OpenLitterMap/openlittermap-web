@@ -2,6 +2,7 @@
 
 namespace App\Models\Location;
 
+use App\Events\NewCityAdded;
 use App\Models\Photo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\Redis;
@@ -137,4 +138,89 @@ class City extends Location
     	return $this->hasMany('App\Models\User\User');
     }
 
+    /**
+     * Return a city from Country, State, addressArrray
+     */
+    public function getCityFromAddressArray (Country $country, State $state, $addressArray)
+    {
+        $cityName = null;
+
+        if (array_key_exists('city', $addressArray))
+        {
+            $cityName = $addressArray['city'];
+        }
+        if (!$cityName)
+        {
+            if (array_key_exists('town', $addressArray))
+            {
+                $cityName = $addressArray['town'];
+            }
+        }
+        if (!$cityName)
+        {
+            if (array_key_exists('city_district', $addressArray))
+            {
+                $cityName = $addressArray['city_district'];
+            }
+        }
+        if (!$cityName)
+        {
+            if (array_key_exists('village', $addressArray))
+            {
+                $cityName = $addressArray['village'];
+            }
+        }
+        if (!$cityName)
+        {
+            if (array_key_exists('hamlet', $addressArray))
+            {
+                $cityName = $addressArray['hamlet'];
+            }
+        }
+        if (!$cityName)
+        {
+            if (array_key_exists('locality', $addressArray))
+            {
+                $cityName = $addressArray['locality'];
+            }
+        }
+        if (!$cityName)
+        {
+            if (array_key_exists('county', $addressArray))
+            {
+                $cityName = $addressArray['county'];
+            }
+        }
+        if (!$cityName)
+        {
+            $cityName = 'error';
+        }
+
+        if ($cityName !== 'error')
+        {
+            try
+            {
+                $city = City::select('id', 'country_id', 'state_id', 'city')
+                    ->where([
+                        'country_id' => $country->id,
+                        'state_id' => $state->id,
+                        'city' => $cityName
+                    ])
+                    ->firstOrCreate();
+
+                if ($city->wasRecentlyCreated)
+                {
+                    // Broadcast an event to anyone viewing the Global Map
+                    event(new NewCityAdded($cityName, $this->state, $this->country, now(), $userId));
+                }
+            }
+            catch (\Exception $e)
+            {
+                \Log::info(['CheckLocations@createCity', $e->getMessage()]);
+            }
+        }
+
+        // Return error city
+        return City::find(404);
+    }
 }

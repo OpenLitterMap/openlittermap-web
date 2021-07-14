@@ -2,6 +2,7 @@
 
 namespace App\Models\Location;
 
+use App\Events\NewStateAdded;
 use App\Models\Photo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\Redis;
@@ -99,6 +100,9 @@ class State extends Location
         return $totals;
     }
 
+    /**
+     * Relationships
+     */
 	public function creator () {
 		return $this->belongsTo('App\Models\User\User', 'created_by');
 	}
@@ -113,5 +117,68 @@ class State extends Location
 
     public function photos () {
     	return $this->hasMany('App\Models\Photo');
+    }
+
+    /**
+     * Return State.id from $addressArray
+     *
+     * @param array $addressArray
+     * @param $country
+     */
+    public static function getStateFromAddressArray (Country $country, array $addressArray)
+    {
+        $stateName = null;
+
+        // Extract state name to get state.id
+        if (array_key_exists('state', $addressArray))
+        {
+            $stateName = $addressArray["state"];
+        }
+        if (!$stateName)
+        {
+            if (array_key_exists('county', $addressArray))
+            {
+                $stateName = $addressArray["county"];
+            }
+        }
+        if (!$stateName)
+        {
+            if (array_key_exists('region', $addressArray))
+            {
+                $stateName = $addressArray["region"];
+            }
+        }
+        if (!$stateName)
+        {
+            $stateName = 'error';
+        }
+
+        if ($stateName !== 'error')
+        {
+            try
+            {
+                $state = State::select('id', 'country_id', 'state', 'statenameb')
+                    ->where([
+                        'state' => $stateName,
+                        'country_id' => $country->id
+                    ])
+                    ->firstOrCreate();
+
+                if ($state->wasRecentlyCreated)
+                {
+                    // Broadcast an event to anyone viewing the Global Map
+                    event(new NewStateAdded($stateName, $country->country, now()));
+                }
+
+                return $state;
+            }
+            catch (\Exception $e)
+            {
+                \Log::info(['CheckLocations.checkState', $e->getMessage()]);
+            }
+        }
+
+        // Return error state
+        return State::find(404);
     }
 }
