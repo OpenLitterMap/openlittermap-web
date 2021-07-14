@@ -179,21 +179,32 @@ trait CheckLocations
             \Log::info(['countryId', $this->countryId]);
             \Log::info(['stateId', $this->stateId]);
             \Log::info(['city', $this->city]);
-            $city = City::select('id', 'country_id', 'state_id', 'city')
-                ->where([
-                    'country_id' => $this->countryId,
-                    'state_id' => $this->stateId,
-                    'city' => $this->city
-                ])
-                ->firstOrCreate();
 
-            if ($city->wasRecentlyCreated)
+            try
             {
-                // Broadcast an event to anyone viewing the Global Map
-                event(new NewCityAdded($this->city, $this->state, $this->country, now(), $userId));
-            }
+                $city = City::select('id', 'country_id', 'state_id', 'city')
+                    ->where([
+                        'country_id' => $this->countryId,
+                        'state_id' => $this->stateId,
+                        'city' => $this->city
+                    ])
+                    ->firstOrCreate();
 
-            $this->cityId = $city->id;
+                if ($city)
+                {
+                    $this->cityId = $city->id;
+
+                    if ($city->wasRecentlyCreated)
+                    {
+                        // Broadcast an event to anyone viewing the Global Map
+                        event(new NewCityAdded($this->city, $this->state, $this->country, now(), $userId));
+                    }
+                }
+            }
+            catch (\Exception $e)
+            {
+                \Log::info(['CheckLocations@createCity', $e->getMessage()]);
+            }
         }
     }
 }
