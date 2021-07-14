@@ -29,9 +29,6 @@ trait CheckLocations
      */
     protected function checkCountry ($addressArray, $userId)
     {
-        \Log::info(['checkCountry.countryId', $this->countryId]);
-        \Log::info(['checkCountry.country', $this->country]);
-
         $this->country = (array_key_exists('country', $addressArray))
             ? $addressArray['country']
             : 'error';
@@ -102,7 +99,6 @@ trait CheckLocations
 
         if ($this->state !== 'error')
         {
-            \Log::info(['getState.name', $this->state]);
 
             try
             {
@@ -115,7 +111,6 @@ trait CheckLocations
 
                 if (!$state)
                 {
-                    \Log::info('state not found. creating...');
                     $state = State::create([
                         'country_id' => $this->countryId,
                         'state' => $this->state
@@ -148,10 +143,6 @@ trait CheckLocations
      */
     protected function checkCity ($addressArray, $userId)
     {
-        \Log::info(['checkCity.countryId', $this->countryId]);
-        \Log::info(['checkCity.stateId', $this->stateId]);
-        \Log::info(['checkCity.city', $this->city]);
-
         if (array_key_exists('city', $addressArray))
         {
             $this->city = $addressArray['city'];
@@ -205,10 +196,6 @@ trait CheckLocations
 
         if ($this->city != 'error')
         {
-            \Log::info(['countryId', $this->countryId]);
-            \Log::info(['stateId', $this->stateId]);
-            \Log::info(['city', $this->city]);
-
             try
             {
                 $city = City::select('id', 'country_id', 'state_id', 'city')
@@ -221,7 +208,6 @@ trait CheckLocations
 
                 if (!$city)
                 {
-                    \Log::info('city not found');
                     $city = City::create([
                         'country_id' => $this->countryId,
                         'state_id' => $this->stateId,
