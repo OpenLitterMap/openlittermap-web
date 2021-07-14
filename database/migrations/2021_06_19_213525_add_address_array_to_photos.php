@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class ChangeDogshitTable extends Migration
+class AddAddressArrayToPhotos extends Migration
 {
     /**
      * Run the migrations.
@@ -13,9 +13,8 @@ class ChangeDogshitTable extends Migration
      */
     public function up()
     {
-        Schema::table('dogshit', function (Blueprint $table) {
-            $table->unsignedInteger('poo')->nullable();
-            $table->unsignedInteger('poo_in_bag')->nullable();
+        Schema::table('photos', function (Blueprint $table) {
+            $table->text('address_array')->nullable();
         });
     }
 
@@ -26,6 +25,8 @@ class ChangeDogshitTable extends Migration
      */
     public function down()
     {
-        Schema::dropColumn(['poo', 'poo_in_bag']);
+        Schema::table('photos', function (Blueprint $table) {
+            $table->dropColumn('address_array');
+        });
     }
 }

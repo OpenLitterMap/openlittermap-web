@@ -8,7 +8,7 @@
         <input          
             v-show="!isAuth"
             class="input mb1em fs125"
-            placeholder="you@email.com"
+            :placeholder="$t('common.your-email')"
             type="email"
             name="email"
             required
@@ -50,11 +50,24 @@ export default {
                 locationId: this.locationId,
                 email: this.email
             });
+
+            // Clean email input field after requesting download
+            this.email = '';
+            this.emailEntered = false;
         },
 
         textEntered()
         {
-            this.emailEntered = true;
+            const regexEmail = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/
+            if (this.email.match(regexEmail)) 
+            {
+                this.emailEntered = true;
+            }
+            else
+            {
+                this.emailEntered = false;
+                this.disableDownloadButton;
+            }
         }
     },
 
@@ -67,11 +80,10 @@ export default {
 
         disableDownloadButton()
         {
-            if(this.isAuth)
+            if (this.isAuth)
             {
                 return false;
             }
-
             else 
             {
                 return !this.emailEntered;

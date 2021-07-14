@@ -2,12 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-// use Image;
-use App\User;
-
 use Illuminate\Http\Request;
-use App\Events\PhotoVerifiedByAdmin;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 
 /*
@@ -20,19 +15,18 @@ use Illuminate\Support\Facades\Auth;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
-
-
 Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function(){
 
     // Route::get('/user/setup-intent', 'API\UserController@getSetupIntent');
-
-    Route::post('add-tags', 'ApiPhotosController@addTags');
 
     Route::get('/photos/web/index', 'API\WebPhotosController@index');
 
     Route::get('/photos/web/load-more', 'API\WebPhotosController@loadMore');
 
 });
+
+Route::post('add-tags', 'ApiPhotosController@addTags')
+    ->middleware('auth:api');
 
 // Check if current token is valid
 Route::post('/validate-token', function(Request $request) {
@@ -50,13 +44,11 @@ Route::get('/user', function (Request $request) {
     return Auth::guard('api')->user();
 });
 
-/**
- * Photos
- */
+// Reset Password
+Route::post('/password/email', 'Auth\ForgotPasswordController@sendResetLinkEmail');
 
 // Upload Photos
-Route::post('/photos/submit', 'ApiPhotosController@store')
-    ->middleware('auth:api');
+Route::post('/photos/submit', 'ApiPhotosController@store');
 
 // Tag Litter to Photos
 Route::post('/photos/update', 'ApiPhotosController@dynamicUpdate')
@@ -90,7 +82,7 @@ Route::post('/settings/privacy/createdby/name', 'ApiSettingsController@createdBy
 Route::post('/settings/privacy/createdby/username', 'ApiSettingsController@createdByUsername')
     ->middleware('auth:api');
 
-Route::post('/settings/update/{type}', 'ApiSettingsController@update')
+Route::post('/settings/update', 'ApiSettingsController@update')
     ->middleware('auth:api');
 
 Route::post('/settings/privacy/toggle-previous-tags', 'ApiSettingsController@togglePreviousTags')

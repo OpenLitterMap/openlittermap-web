@@ -2,24 +2,36 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\Photo\IncrementPhotoMonth;
 use GeoHash;
-use App\Models\Location\Country;
-use App\Models\Location\State;
-use App\Models\Location\City;
+use Carbon\Carbon;
 
 use App\CheckLocations;
-use Carbon\Carbon;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
-use App\Events\ImageUploaded;
 use App\Jobs\UploadData;
 use App\Jobs\Api\AddTags;
+use App\Events\ImageUploaded;
+use App\Events\Photo\IncrementPhotoMonth;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use Intervention\Image\Facades\Image;
 
 class ApiPhotosController extends Controller
 {
 	use CheckLocations;
+
+	protected $userId;
+
+    /**
+     * Apply middleware to all of these routes
+     */
+    public function __construct ()
+    {
+        return $this->middleware('auth:api');
+
+        parent::__construct();
+    }
 
     /**
      * Save a photo to the database
@@ -41,14 +53,14 @@ class ApiPhotosController extends Controller
                 'originalName' => 'IMG_2624.JPG',
                 'mimeType' => 'image/jpeg',
                 'error' => 0,
-                'hashName' => NULL,
+                'hashName' => NULL
             )),
         );
+     *
+     * @return array
      */
-    public function store (Request $request)
+    public function store (Request $request) :array
     {
-        \Log::info(['app.upload', $request->all()]);
-
         $file = $request->file('photo');
 
         if ($file->getError() === 3)
@@ -58,13 +70,28 @@ class ApiPhotosController extends Controller
 
         $user = Auth::guard('api')->user();
 
+        Log::channel('photos')->info([
+            'app_upload' => $request->all(),
+            'user_id' => $user['id']
+        ]);
+
         $model = ($request->has('model'))
             ? $request->model
             : 'Mobile app v2';
 
+        $image = Image::make($file);
+
+        $image->resize(500, 500);
+
+        $image->resize(500, 500, function ($constraint) {
+            $constraint->aspectRatio();
+        });
+
         $filename = $file->getClientOriginalName();
 
-		$lat  = $request['lat'];
+        $hashname = $file->hashName();
+
+        $lat  = $request['lat'];
 		$lon  = $request['lon'];
 		$date = $request['date'];
 
@@ -73,7 +100,7 @@ class ApiPhotosController extends Controller
         $m = $explode[1];
         $d = substr($explode[2], 0, 2);
 
-	    $filepath = $y.'/'.$m.'/'.$d.'/'.$filename;
+	    $filepath = $y.'/'.$m.'/'.$d.'/'.$hashname;
 
         // convert to YYYY-MM-DD hh:mm:ss format
         $date = Carbon::parse($date);
@@ -84,8 +111,20 @@ class ApiPhotosController extends Controller
             $s3->put($filepath, file_get_contents($file), 'public');
             $imageName = $s3->url($filepath);
         }
-	    else $imageName = 'test';
+        else
+        {
+            $public_path = public_path('local-uploads/'.$y.'/'.$m.'/'.$d);
 
+            // home/vagrant/Code/openlittermap-web/public/local-uploads/y/m/d
+            if (!file_exists($public_path))
+            {
+                mkdir($public_path, 666, true);
+            }
+
+            $image->save($public_path . '/' . $hashname);
+
+            $imageName = config('app.url') . '/local-uploads/'.$y.'/'.$m.'/'.$d .'/'.$hashname;
+        }
         $apiKey = config('services.location.secret');
         $url =  "http://locationiq.org/v1/reverse.php?format=json&key=".$apiKey."&lat=".$lat."&lon=".$lon."&zoom=20";
 
@@ -101,47 +140,45 @@ class ApiPhotosController extends Controller
         $location = array_values($addressArray)[0];
         $road = array_values($addressArray)[1];
 
-        $this->checkCountry($addressArray);
-        $this->checkState($addressArray);
-        $this->checkDistrict($addressArray);
-        $this->checkCity($addressArray);
-        $this->checkSuburb($addressArray);
+        $this->checkCountry($addressArray, $user['id']);
+        $this->checkState($addressArray, $user['id']);
+        $this->checkCity($addressArray, $user['id']);
 
-        $countryId = Country::where('country', $this->country)
-                    ->orWhere('countrynameb', $this->country)
-                    ->orWhere('countrynamec', $this->country)->first()->id;
+        try
+        {
+            $photo = $user->photos()->create([
+                'filename' => $imageName,
+                'datetime' => $date,
+                'lat' => $lat,
+                'lon' => $lon,
+                'display_name' => $display_name,
+                'location' => $location,
+                'road' => $road,
+                'country_id' => $this->countryId,
+                'state_id' => $this->stateId,
+                'city_id' => $this->cityId,
+                'country' => $this->country,
+                'county' => $this->state,
+                'city' => $this->city,
+                'country_code' => $this->countryCode,
+                'model' => $model,
+                'remaining' => $request['presence'],
+                'platform' => 'mobile',
+                'geohash' => GeoHash::encode($lat, $lon),
+                'address_array' => json_encode($addressArray)
+            ]);
+        }
+        catch (\Exception $e)
+        {
+            \Log::info(['ApiPhotosController@store', $e->getMessage()]);
+        }
 
-        $stateId = State::where('state', $this->state)
-                  ->orWhere('statenameb', $this->state)->first()->id;
-
-        $cityId = City::where('city', $this->city)->first()->id;
-
-	    $photo = $user->photos()->create([
-			'filename' => $imageName,
-			'datetime' => $date,
-            'lat' => $lat,
-            'lon' => $lon,
-            'display_name' => $display_name,
-            'location' => $location,
-            'road' => $road,
-            'suburb' => $this->suburb,
-            'city' => $this->city,
-            'county' => $this->state,
-            'state_district' => $this->district,
-            'country' => $this->country,
-            'country_code' => $this->countryCode,
-            'model' => $model,
-            'country_id' => $countryId,
-            'state_id' => $stateId,
-            'city_id' => $cityId,
-            'remaining' => $request['presence'],
-            'platform' => 'mobile',
-            'geohash' => GeoHash::encode($lat, $lon)
-        ]);
+        \Log::info(['photo.id', $photo->id]);
 
         $teamName = null;
         if ($user->team) $teamName = $user->team->name;
 
+        // Broadcast an event to anyone viewing the Global Map
         event (new ImageUploaded(
             $this->city,
             $this->state,
@@ -149,17 +186,14 @@ class ApiPhotosController extends Controller
             $this->countryCode,
             $imageName,
             $teamName,
-            $user->id,
-            $countryId,
-            $stateId,
-            $cityId
+            $user['id'],
+            $this->countryId,
+            $this->stateId,
+            $this->cityId
         ));
 
-        // Increment the { Month-Year: int } value for each location
-        // Todo - this needs debugging
-        // This should dispatch a job
         // Move this to redis
-        event (new IncrementPhotoMonth($countryId, $stateId, $cityId, $date));
+        event (new IncrementPhotoMonth($this->countryId, $this->stateId, $this->cityId, $date));
 
 //        if ($user->has_uploaded_today === 0)
 //        {
@@ -187,9 +221,12 @@ class ApiPhotosController extends Controller
      */
     public function dynamicUpdate (Request $request)
     {
-        \Log::info(['dynamicUpdate', $request->all()]);
-
 		$userId = Auth::guard('api')->user()->id;
+
+        \Log::channel('tags')->info([
+            'dynamicUpdate' => 'mobile',
+            'request' => $request->all()
+        ]);
 
         dispatch (new UploadData($request->all(), $userId));
 
@@ -205,9 +242,12 @@ class ApiPhotosController extends Controller
      */
     public function addTags (Request $request)
     {
-        \Log::info(['addTags', $request->all()]);
-
         $userId = Auth::guard('api')->user()->id;
+
+        \Log::channel('tags')->info([
+            'add_tags' => 'mobile',
+            'request' => $request->all()
+        ]);
 
         dispatch (new AddTags($request->all(), $userId));
 
