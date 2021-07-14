@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Exception;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Facades\Image;
@@ -256,17 +257,14 @@ class PhotosController extends Controller
     }
 
     /**
-     ****** TODO - Configure Delete ONLY when user owns the image
-     ** - Need to sort AWS permissions
-     * Delete an image
-     */
+     * TODO - Need to sort AWS permissions
+      * Delete an image
+    */
     public function deleteImage (Request $request)
     {
         $user = Auth::user();
 
         $photo = Photo::find($request->photoid);
-
-        $s3 = Storage::disk('s3');
 
         try
         {
@@ -275,9 +273,24 @@ class PhotosController extends Controller
                 if (app()->environment('production'))
                 {
                     $path = substr($photo->filename, 42);
-                    $s3->delete($path);
+                    Storage::disk('s3')->delete($path);
                 }
+                else
+                {
+                    // Strip the app name from the filename
+                    // Resulting path is like 'local-uploads/2021/07/07/photo.jpg'
+                    $path = public_path(substr($photo->filename, strlen(config('app.url'))));
+
+                    if (File::exists($path)) {
+                        File::delete($path);
+                    }
+                }
+
                 $photo->delete();
+
+                $user->xp--;
+                $user->total_images--;
+                $user->save();
             }
         }
         catch (Exception $e)
@@ -285,7 +298,7 @@ class PhotosController extends Controller
             Log::info(["PhotosController@deleteImage", $e->getMessage()]);
         }
 
-      	return redirect()->back();
+      	return ['message' => 'Photo deleted successfully!'];
     }
 
     /**

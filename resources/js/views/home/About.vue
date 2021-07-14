@@ -228,7 +228,7 @@
         <br>
         <br>
         <div class="container">
-            <h1 class="title is-1 has-text-right">
+            <h1 class="title is-1 has-text-left">
                 {{ $t('home.about.about34') }}
             </h1>
             <br>
