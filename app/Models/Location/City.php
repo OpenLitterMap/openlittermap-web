@@ -211,7 +211,7 @@ class City extends Location
                 if ($city->wasRecentlyCreated)
                 {
                     // Broadcast an event to anyone viewing the Global Map
-                    event(new NewCityAdded($cityName, $this->state, $this->country, now(), $userId));
+                    event(new NewCityAdded($cityName, $this->state, $this->country, now()));
                 }
             }
             catch (\Exception $e)
