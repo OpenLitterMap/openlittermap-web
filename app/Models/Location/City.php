@@ -221,6 +221,6 @@ class City extends Location
         }
 
         // Return error city
-        return City::find(404);
+        return City::where('city', 'error_city')->first();
     }
 }

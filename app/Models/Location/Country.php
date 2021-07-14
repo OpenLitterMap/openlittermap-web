@@ -161,6 +161,7 @@ class Country extends Location
             return $country;
         }
 
-        return false;
+        // If you don't have this locally, create it
+        return Country::where('country', 'error_country')->first();
     }
 }

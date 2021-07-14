@@ -179,6 +179,6 @@ class State extends Location
         }
 
         // Return error state
-        return State::find(404);
+        return State::where('state', 'error_state')->first();
     }
 }
