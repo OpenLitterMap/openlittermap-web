@@ -102,6 +102,8 @@ trait CheckLocations
 
         if ($this->state !== 'error')
         {
+            \Log::info(['getState.name', $this->state]);
+
             $state = State::select('id', 'country_id', 'state', 'statenameb')
                 ->where([
                     'state' => $this->state,
