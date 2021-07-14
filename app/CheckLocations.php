@@ -188,17 +188,24 @@ trait CheckLocations
                         'state_id' => $this->stateId,
                         'city' => $this->city
                     ])
-                    ->firstOrCreate();
+                    ->first();
 
-                if ($city)
+                if (!$city)
                 {
-                    $this->cityId = $city->id;
+                    \Log::info('city not found');
+                    $city = City::create([
+                        'country_id' => $this->countryid,
+                        'state_id' => $this->stateId,
+                        'city' => $this->city
+                    ]);
+                }
 
-                    if ($city->wasRecentlyCreated)
-                    {
-                        // Broadcast an event to anyone viewing the Global Map
-                        event(new NewCityAdded($this->city, $this->state, $this->country, now(), $userId));
-                    }
+                $this->cityId = $city->id;
+
+                if ($city->wasRecentlyCreated)
+                {
+                    // Broadcast an event to anyone viewing the Global Map
+                    event(new NewCityAdded($this->city, $this->state, $this->country, now(), $userId));
                 }
             }
             catch (\Exception $e)
