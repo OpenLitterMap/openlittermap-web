@@ -25,7 +25,6 @@ use Excel;
 
 class TotalDataController extends Controller
 {
-
     /**
      * Export some data for machine learning
      */

@@ -18,7 +18,7 @@ class ApiRegisterController extends Controller
     /**
      * Create a new account via API
      */
-    public function register(Request $request)
+    public function register (Request $request)
     {
     	$this->validate($request, [
             'email'    => 'required|email|max:75|unique:users',
@@ -30,15 +30,17 @@ class ApiRegisterController extends Controller
 
         event(new Registered($user = $this->create($request->all())));
 
-        if(app()->environment('production')) {
+        if (app()->environment('production'))
+        {
             Mail::to($email)->send(new NewUserRegMail($user));
+
             event(new UserSignedUp(now()));
         }
 
         return ['success' => 'Success! Your account has been created.'];
     }
 
-    protected function create(array $data)
+    protected function create (array $data)
     {
         return User::create([
             'name' => 'default',

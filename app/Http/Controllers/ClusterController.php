@@ -15,7 +15,7 @@ class ClusterController extends Controller
     /**
      * Get clusters for the global map
      *
-     * @return geojson
+     * @return array
      */
     public function index ()
     {
