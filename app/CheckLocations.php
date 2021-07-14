@@ -194,7 +194,7 @@ trait CheckLocations
                 {
                     \Log::info('city not found');
                     $city = City::create([
-                        'country_id' => $this->countryid,
+                        'country_id' => $this->countryId,
                         'state_id' => $this->stateId,
                         'city' => $this->city
                     ]);
