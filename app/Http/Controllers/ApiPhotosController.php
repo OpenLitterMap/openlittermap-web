@@ -182,20 +182,25 @@ class ApiPhotosController extends Controller
 
         // Broadcast an event to anyone viewing the Global Map
         event (new ImageUploaded(
-            $this->city,
-            $this->state,
-            $this->country,
-            $this->countryCode,
+            $city->city,
+            $state->state,
+            $country->country,
+            $country->shortcode,
             $imageName,
             $teamName,
             $user['id'],
-            $this->countryId,
-            $this->stateId,
-            $this->cityId
+            $country->id,
+            $state->id,
+            $city->id
         ));
 
         // Move this to redis
-        event (new IncrementPhotoMonth($this->countryId, $this->stateId, $this->cityId, $date));
+        event(new IncrementPhotoMonth(
+            $country->id,
+            $state->id,
+            $city->id,
+            $date
+        ));
 
 //        if ($user->has_uploaded_today === 0)
 //        {

@@ -10,8 +10,6 @@ use App\Events\NewStateAdded;
 use App\Models\Location\City;
 use App\Models\Location\Country;
 use App\Models\Location\State;
-use Exception;
-use Illuminate\Support\Facades\Log;
 
 class LocationService
 {
@@ -19,37 +17,37 @@ class LocationService
      * From an array of data, return $countryId
      *
      * @param array $addressArray
-     *
-     * @return int $countryId
+     * @return Country
      */
     public function getCountryFromAddressArray(array $addressArray)
     {
-        $countryCode = (array_key_exists('country_code', $addressArray))
-            ? $addressArray["country_code"]
-            : 'error';
+        $countryCode = $addressArray["country_code"] ?? '';
+        $country = $addressArray["country"] ?? '';
 
-        if ($countryCode !== 'error') {
-            $country = Country::select('id', 'country')
-                ->where('shortcode', $countryCode)
-                ->firstOrCreate();
-
-            if ($country->wasRecentlyCreated) {
-                // Broadcast an event to anyone viewing the Global Map
-                event(new NewCountryAdded($country->country, $countryCode, now()));
-            }
-
-            return $country;
+        if (!$countryCode) {
+            return Country::where('country', 'error_country')->first();
         }
 
-        // If you don't have this locally, create it
-        return Country::where('country', 'error_country')->first();
+        $country = Country::select('id', 'country')
+            ->firstOrCreate([
+                'shortcode' => $countryCode,
+                'country' => $country
+            ]);
+
+        if ($country->wasRecentlyCreated) {
+            // Broadcast an event to anyone viewing the Global Map
+            event(new NewCountryAdded($country->country, $countryCode, now()));
+        }
+
+        return $country;
     }
 
     /**
      * Return State.id from $addressArray
      *
+     * @param Country $country
      * @param array $addressArray
-     * @param $country
+     * @return State
      */
     public function getStateFromAddressArray(Country $country, array $addressArray)
     {
@@ -70,116 +68,83 @@ class LocationService
             }
         }
         if (!$stateName) {
-            $stateName = 'error';
+            // Return error state
+            return State::where('state', 'error_state')->first();
         }
 
-        if ($stateName !== 'error') {
-            try {
-                $state = State::select('id', 'country_id', 'state', 'statenameb')
-                    ->where([
-                        'state' => $stateName,
-                        'country_id' => $country->id
-                    ])
-                    ->firstOrCreate();
+        $state = State::select('id', 'country_id', 'state', 'statenameb')
+            ->firstOrCreate([
+                'state' => $stateName,
+                'country_id' => $country->id
+            ]);
 
-                if ($state->wasRecentlyCreated) {
-                    // Broadcast an event to anyone viewing the Global Map
-                    event(new NewStateAdded($stateName, $country->country, now()));
-                }
-
-                return $state;
-            } catch (Exception $e) {
-                Log::info(['LocationService.checkState', $e->getMessage()]);
-            }
+        if ($state->wasRecentlyCreated) {
+            // Broadcast an event to anyone viewing the Global Map
+            event(new NewStateAdded($stateName, $country->country, now()));
         }
 
-        // Return error state
-        return State::where('state', 'error_state')->first();
+        return $state;
     }
 
     /**
-     * Return a city from Country, State, addressArrray
+     * Return a city from Country, State, addressArray
+     *
+     * @return City
      */
-    public function getCityFromAddressArray (Country $country, State $state, $addressArray)
+    public function getCityFromAddressArray(Country $country, State $state, $addressArray)
     {
         $cityName = null;
 
-        if (array_key_exists('city', $addressArray))
-        {
+        if (array_key_exists('city', $addressArray)) {
             $cityName = $addressArray['city'];
         }
-        if (!$cityName)
-        {
-            if (array_key_exists('town', $addressArray))
-            {
+        if (!$cityName) {
+            if (array_key_exists('town', $addressArray)) {
                 $cityName = $addressArray['town'];
             }
         }
-        if (!$cityName)
-        {
-            if (array_key_exists('city_district', $addressArray))
-            {
+        if (!$cityName) {
+            if (array_key_exists('city_district', $addressArray)) {
                 $cityName = $addressArray['city_district'];
             }
         }
-        if (!$cityName)
-        {
-            if (array_key_exists('village', $addressArray))
-            {
+        if (!$cityName) {
+            if (array_key_exists('village', $addressArray)) {
                 $cityName = $addressArray['village'];
             }
         }
-        if (!$cityName)
-        {
-            if (array_key_exists('hamlet', $addressArray))
-            {
+        if (!$cityName) {
+            if (array_key_exists('hamlet', $addressArray)) {
                 $cityName = $addressArray['hamlet'];
             }
         }
-        if (!$cityName)
-        {
-            if (array_key_exists('locality', $addressArray))
-            {
+        if (!$cityName) {
+            if (array_key_exists('locality', $addressArray)) {
                 $cityName = $addressArray['locality'];
             }
         }
-        if (!$cityName)
-        {
-            if (array_key_exists('county', $addressArray))
-            {
+        if (!$cityName) {
+            if (array_key_exists('county', $addressArray)) {
                 $cityName = $addressArray['county'];
             }
         }
-        if (!$cityName)
-        {
-            $cityName = 'error';
+        if (!$cityName) {
+            // Return error city
+            return City::where('city', 'error_city')->first();
         }
 
-        if ($cityName !== 'error')
-        {
-            try
-            {
-                $city = City::select('id', 'country_id', 'state_id', 'city')
-                    ->where([
-                        'country_id' => $country->id,
-                        'state_id' => $state->id,
-                        'city' => $cityName
-                    ])
-                    ->firstOrCreate();
+        $city = City::select('id', 'country_id', 'state_id', 'city')
+            ->firstOrCreate([
+                'country_id' => $country->id,
+                'state_id' => $state->id,
+                'city' => $cityName
+            ]);
 
-                if ($city->wasRecentlyCreated)
-                {
-                    // Broadcast an event to anyone viewing the Global Map
-                    event(new NewCityAdded($cityName, $this->state, $this->country, now()));
-                }
-            }
-            catch (Exception $e)
-            {
-                Log::info(['LocationService@createCity', $e->getMessage()]);
-            }
+        if ($city->wasRecentlyCreated) {
+            // Broadcast an event to anyone viewing the Global Map
+            event(new NewCityAdded($cityName, $state->state, $country->country, now()));
         }
 
-        // Return error city
-        return City::where('city', 'error_city')->first();
+        return $city;
     }
 }

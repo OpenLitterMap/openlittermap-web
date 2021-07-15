@@ -199,8 +199,8 @@ class PhotosController extends Controller
 
         // todo- check all locations for "/" and replace with "-"
         $country = $this->locationService->getCountryFromAddressArray($addressArray);
-        $state = $this->locationService->getStateFromAddressArray($country->id, $addressArray);
-        $city = $this->locationService->getCityFromAddressArray($country->id, $state->id, $addressArray);
+        $state = $this->locationService->getStateFromAddressArray($country, $addressArray);
+        $city = $this->locationService->getCityFromAddressArray($country, $state, $addressArray);
 
         $geohash = GeoHash::encode($latlong[0], $latlong[1]);
 
@@ -238,22 +238,27 @@ class PhotosController extends Controller
 
         // Broadcast this event to anyone viewing the global map
         // This will also update country, state, and city.total_contributors_redis
-        event (new ImageUploaded(
-            $this->city,
-            $this->state,
-            $this->country,
-            $this->countryCode,
+        event(new ImageUploaded(
+            $city->city,
+            $state->state,
+            $country->country,
+            $country->shortcode,
             $imageName,
             $teamName,
             $user->id,
-            $this->countryId,
-            $this->stateId,
-            $this->cityId
+            $country->id,
+            $state->id,
+            $city->id
         ));
 
         // Increment the { Month-Year: int } value for each location
         // Todo - this needs debugging
-        event (new IncrementPhotoMonth($this->countryId, $this->stateId, $this->cityId, $dateTime));
+        event(new IncrementPhotoMonth(
+            $country->id,
+            $state->id,
+            $city->id,
+            $dateTime
+        ));
 
         return ['success' => true];
     }

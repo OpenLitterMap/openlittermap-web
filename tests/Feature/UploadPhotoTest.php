@@ -4,6 +4,9 @@ namespace Tests\Feature;
 
 use App\Events\ImageUploaded;
 use App\Events\Photo\IncrementPhotoMonth;
+use App\Models\Location\City;
+use App\Models\Location\Country;
+use App\Models\Location\State;
 use App\Models\Teams\Team;
 use App\Models\User\User;
 use Illuminate\Http\UploadedFile;
@@ -25,6 +28,10 @@ class UploadPhotoTest extends TestCase
         parent::setUp();
 
         $this->imagePath = storage_path('framework/testing/1x1.jpg');
+
+        $country = Country::create(['country' => 'error_country', 'shortcode' => 'error']);
+        $state = State::create(['state' => 'error_state', 'country_id' => $country->id]);
+        City::create(['city' => 'error_city', 'country_id' => $country->id, 'state_id' => $state->id]);
     }
 
     protected function getImageAndAttributes(): array
@@ -53,10 +60,11 @@ class UploadPhotoTest extends TestCase
 
         // Since these models are created on runtime
         // and we haven't uploaded any images before
-        // their ids should be 1
-        $countryId = 1;
-        $stateId = 1;
-        $cityId = 1;
+        // their ids should be 1. BUT, on the setUp method
+        // we create three error models, so these id's are now 2
+        $countryId = 2;
+        $stateId = 2;
+        $cityId = 2;
 
         $dateTime = now();
         $year = $dateTime->year;
@@ -93,7 +101,7 @@ class UploadPhotoTest extends TestCase
             'file' => $imageAttributes['file'],
         ]);
 
-        $response->assertOk()->assertJson(['msg' => 'success']);
+        $response->assertOk()->assertJson(['success' => true]);
 
         // Image is uploaded
         $this->assertFileExists($imageAttributes['filepath']);
@@ -117,10 +125,8 @@ class UploadPhotoTest extends TestCase
         $this->assertEquals($imageAttributes['displayName'], $photo->display_name);
         $this->assertEquals($imageAttributes['address']['house_number'], $photo->location);
         $this->assertEquals($imageAttributes['address']['road'], $photo->road);
-        $this->assertEquals($imageAttributes['address']['suburb'], $photo->suburb);
         $this->assertEquals($imageAttributes['address']['city'], $photo->city);
         $this->assertEquals($imageAttributes['address']['state'], $photo->county);
-        $this->assertEquals($imageAttributes['address']['postcode'], $photo->state_district);
         $this->assertEquals($imageAttributes['address']['country'], $photo->country);
         $this->assertEquals($imageAttributes['address']['country_code'], $photo->country_code);
         $this->assertEquals('Unknown', $photo->model);
