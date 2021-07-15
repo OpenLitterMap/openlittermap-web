@@ -143,8 +143,8 @@ class ApiPhotosController extends Controller
         $road = array_values($addressArray)[1];
 
         $country = $this->locationService->getCountryFromAddressArray($addressArray);
-        $state = $this->locationService->getStateFromAddressArray($country->id, $addressArray);
-        $city = $this->locationService->getCityFromAddressArray($country->id, $state->id, $addressArray);
+        $state = $this->locationService->getStateFromAddressArray($country, $addressArray);
+        $city = $this->locationService->getCityFromAddressArray($country, $state, $addressArray);
 
         try
         {
