@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\LocationService;
 use GeoHash;
 use Carbon\Carbon;
 
-use App\CheckLocations;
 
 use App\Jobs\UploadData;
 use App\Jobs\Api\AddTags;
@@ -19,18 +19,20 @@ use Intervention\Image\Facades\Image;
 
 class ApiPhotosController extends Controller
 {
-	use CheckLocations;
 
-	protected $userId;
+    protected $userId;
+
+    /** @var LocationService */
+    protected $locationService;
 
     /**
      * Apply middleware to all of these routes
      */
-    public function __construct ()
+    public function __construct(LocationService $locationService)
     {
-        return $this->middleware('auth:api');
+        $this->locationService = $locationService;
 
-        parent::__construct();
+        $this->middleware('auth:api');
     }
 
     /**
@@ -140,9 +142,9 @@ class ApiPhotosController extends Controller
         $location = array_values($addressArray)[0];
         $road = array_values($addressArray)[1];
 
-        $this->checkCountry($addressArray, $user['id']);
-        $this->checkState($addressArray, $user['id']);
-        $this->checkCity($addressArray, $user['id']);
+        $country = $this->locationService->getCountryFromAddressArray($addressArray);
+        $state = $this->locationService->getStateFromAddressArray($country, $addressArray);
+        $city = $this->locationService->getCityFromAddressArray($country, $state, $addressArray);
 
         try
         {
@@ -154,13 +156,13 @@ class ApiPhotosController extends Controller
                 'display_name' => $display_name,
                 'location' => $location,
                 'road' => $road,
-                'country_id' => $this->countryId,
-                'state_id' => $this->stateId,
-                'city_id' => $this->cityId,
-                'country' => $this->country,
-                'county' => $this->state,
-                'city' => $this->city,
-                'country_code' => $this->countryCode,
+                'country_id' => $country->id,
+                'state_id' => $state->id,
+                'city_id' => $city->id,
+                'city' => $city->city,
+                'county' => $state->state,
+                'country' => $country->country,
+                'country_code' => $country->shortcode,
                 'model' => $model,
                 'remaining' => $request['presence'],
                 'platform' => 'mobile',
@@ -180,20 +182,25 @@ class ApiPhotosController extends Controller
 
         // Broadcast an event to anyone viewing the Global Map
         event (new ImageUploaded(
-            $this->city,
-            $this->state,
-            $this->country,
-            $this->countryCode,
+            $city->city,
+            $state->state,
+            $country->country,
+            $country->shortcode,
             $imageName,
             $teamName,
             $user['id'],
-            $this->countryId,
-            $this->stateId,
-            $this->cityId
+            $country->id,
+            $state->id,
+            $city->id
         ));
 
         // Move this to redis
-        event (new IncrementPhotoMonth($this->countryId, $this->stateId, $this->cityId, $date));
+        event(new IncrementPhotoMonth(
+            $country->id,
+            $state->id,
+            $city->id,
+            $date
+        ));
 
 //        if ($user->has_uploaded_today === 0)
 //        {

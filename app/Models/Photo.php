@@ -74,9 +74,10 @@ class Photo extends Model
 
     protected $appends = ['selected'];
 
+    protected $casts = ['datetime'];
+
     /**
-     * Create an Accessor that adds ['selected' => false] to each order
-     * The user can select an order to export it
+     * Create an Accessor that adds ['selected' => false] to each record
      */
     public function getSelectedAttribute ()
     {
