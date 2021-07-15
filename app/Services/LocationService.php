@@ -28,9 +28,10 @@ class LocationService
         }
 
         $country = Country::select('id', 'country', 'shortcode')
-            ->firstOrCreate([
-                'shortcode' => $countryCode,
-            ]);
+            ->firstOrCreate(
+                ['shortcode' => $countryCode],
+                ['country' => $addressArray["country"] ?? '']
+            );
 
         if ($country->wasRecentlyCreated) {
             // Broadcast an event to anyone viewing the Global Map
