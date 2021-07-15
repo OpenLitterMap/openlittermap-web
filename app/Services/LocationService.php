@@ -28,7 +28,7 @@ class LocationService
             return Country::where('country', 'error_country')->first();
         }
 
-        $country = Country::select('id', 'country')
+        $country = Country::select('id', 'country', 'shortcode')
             ->firstOrCreate([
                 'shortcode' => $countryCode,
                 'country' => $country

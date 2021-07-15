@@ -15,6 +15,7 @@ class City extends Location
 		'id',
 		'city',
 		'country_id',
+		'state_id',
 		'created_at',
 		'updated_at',
 		'total_smoking',
