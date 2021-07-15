@@ -14,15 +14,14 @@ use App\Models\Location\State;
 class LocationService
 {
     /**
-     * From an array of data, return $countryId
+     * Get or Create Country from $addressArray
      *
      * @param array $addressArray
      * @return Country
      */
-    public function getCountryFromAddressArray(array $addressArray)
+    public function getCountryFromAddressArray (array $addressArray)
     {
         $countryCode = $addressArray["country_code"] ?? '';
-        $country = $addressArray["country"] ?? '';
 
         if (!$countryCode) {
             return Country::where('country', 'error_country')->first();
@@ -31,7 +30,6 @@ class LocationService
         $country = Country::select('id', 'country', 'shortcode')
             ->firstOrCreate([
                 'shortcode' => $countryCode,
-                'country' => $country
             ]);
 
         if ($country->wasRecentlyCreated) {
@@ -43,13 +41,13 @@ class LocationService
     }
 
     /**
-     * Return State.id from $addressArray
+     * Get or Create State from $addressArray
      *
      * @param Country $country
      * @param array $addressArray
      * @return State
      */
-    public function getStateFromAddressArray(Country $country, array $addressArray)
+    public function getStateFromAddressArray (Country $country, array $addressArray)
     {
         $stateName = null;
 
@@ -78,7 +76,8 @@ class LocationService
                 'country_id' => $country->id
             ]);
 
-        if ($state->wasRecentlyCreated) {
+        if ($state->wasRecentlyCreated)
+        {
             // Broadcast an event to anyone viewing the Global Map
             event(new NewStateAdded($stateName, $country->country, now()));
         }
@@ -87,11 +86,11 @@ class LocationService
     }
 
     /**
-     * Return a city from Country, State, addressArray
+     * Get or Create City from $addressArray
      *
      * @return City
      */
-    public function getCityFromAddressArray(Country $country, State $state, $addressArray)
+    public function getCityFromAddressArray (Country $country, State $state, $addressArray)
     {
         $cityName = null;
 
