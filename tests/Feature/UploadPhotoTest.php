@@ -4,6 +4,9 @@ namespace Tests\Feature;
 
 use App\Events\ImageUploaded;
 use App\Events\Photo\IncrementPhotoMonth;
+use App\Models\Location\City;
+use App\Models\Location\Country;
+use App\Models\Location\State;
 use App\Models\Teams\Team;
 use App\Models\User\User;
 use Illuminate\Http\UploadedFile;
@@ -25,22 +28,14 @@ class UploadPhotoTest extends TestCase
         parent::setUp();
 
         $this->imagePath = storage_path('framework/testing/1x1.jpg');
+
+        $country = Country::create(['country' => 'error_country', 'shortcode' => 'error']);
+        $state = State::create(['state' => 'error_state', 'country_id' => $country->id]);
+        City::create(['city' => 'error_city', 'country_id' => $country->id, 'state_id' => $state->id]);
     }
 
-    public function test_a_user_can_upload_a_photo()
+    protected function getImageAndAttributes(): array
     {
-        Storage::fake();
-        Event::fake([ImageUploaded::class, IncrementPhotoMonth::class]);
-
-        Carbon::setTestNow();
-
-        $user = User::factory()->create([
-            'active_team' => Team::factory()
-        ]);
-
-        $this->actingAs($user);
-
-        // Test image attributes ----------------------------
         $exifImage = file_get_contents($this->imagePath);
         $file = UploadedFile::fake()->createWithContent(
             'image.jpg',
@@ -65,10 +60,11 @@ class UploadPhotoTest extends TestCase
 
         // Since these models are created on runtime
         // and we haven't uploaded any images before
-        // their ids should be 1
-        $countryId = 1;
-        $stateId = 1;
-        $cityId = 1;
+        // their ids should be 1. BUT, on the setUp method
+        // we create three error models, so these id's are now 2
+        $countryId = 2;
+        $stateId = 2;
+        $cityId = 2;
 
         $dateTime = now();
         $year = $dateTime->year;
@@ -78,25 +74,121 @@ class UploadPhotoTest extends TestCase
         $localUploadsPath = "/local-uploads/$year/$month/$day/{$file->hashName()}";
         $filepath = public_path($localUploadsPath);
         $imageName = config('app.url') . $localUploadsPath;
-        // Test image attributes ----------------------------
+
+        return compact(
+            'latitude', 'longitude', 'geoHash', 'displayName', 'address',
+            'countryId', 'stateId', 'cityId', 'dateTime', 'filepath', 'file', 'imageName'
+        );
+    }
+
+    public function test_a_user_can_upload_a_photo()
+    {
+        Storage::fake();
+
+        Event::fake([ImageUploaded::class, IncrementPhotoMonth::class]);
+
+        Carbon::setTestNow();
+
+        $user = User::factory()->create([
+            'active_team' => Team::factory()
+        ]);
+
+        $this->actingAs($user);
+
+        $imageAttributes = $this->getImageAndAttributes();
+
+        $response = $this->post('/submit', [
+            'file' => $imageAttributes['file'],
+        ]);
+
+        $response->assertOk()->assertJson(['success' => true]);
+
+        // Image is uploaded
+        $this->assertFileExists($imageAttributes['filepath']);
+
+        // Image has the right dimensions
+        $image = Image::make(file_get_contents($imageAttributes['filepath']));
+        $this->assertEquals(500, $image->width());
+        $this->assertEquals(500, $image->height());
+
+        $user->refresh();
+
+        // The Photo is persisted correctly
+        $this->assertCount(1, $user->photos);
+        /** @var Photo $photo */
+        $photo = $user->photos->last();
+
+        $this->assertEquals($imageAttributes['imageName'], $photo->filename);
+        $this->assertEquals($imageAttributes['dateTime'], $photo->datetime);
+        $this->assertEquals($imageAttributes['latitude'], $photo->lat);
+        $this->assertEquals($imageAttributes['longitude'], $photo->lon);
+        $this->assertEquals($imageAttributes['displayName'], $photo->display_name);
+        $this->assertEquals($imageAttributes['address']['house_number'], $photo->location);
+        $this->assertEquals($imageAttributes['address']['road'], $photo->road);
+        $this->assertEquals($imageAttributes['address']['city'], $photo->city);
+        $this->assertEquals($imageAttributes['address']['state'], $photo->county);
+        $this->assertEquals($imageAttributes['address']['country'], $photo->country);
+        $this->assertEquals($imageAttributes['address']['country_code'], $photo->country_code);
+        $this->assertEquals('Unknown', $photo->model);
+        $this->assertEquals($imageAttributes['countryId'], $photo->country_id);
+        $this->assertEquals($imageAttributes['stateId'], $photo->state_id);
+        $this->assertEquals($imageAttributes['cityId'], $photo->city_id);
+        $this->assertEquals('web', $photo->platform);
+        $this->assertEquals($imageAttributes['geoHash'], $photo->geohash);
+        $this->assertEquals($user->active_team, $photo->team_id);
+        $this->assertEquals($imageAttributes['imageName'], $photo->five_hundred_square_filepath);
+
+        Event::assertDispatched(
+            ImageUploaded::class,
+            function (ImageUploaded $e) use ($user, $imageAttributes) {
+                return $e->city === $imageAttributes['address']['city'] &&
+                    $e->state === $imageAttributes['address']['state'] &&
+                    $e->country === $imageAttributes['address']['country'] &&
+                    $e->countryCode === $imageAttributes['address']['country_code'] &&
+                    $e->imageName === $imageAttributes['imageName'] &&
+                    $e->teamName === $user->team->name &&
+                    $e->userId === $user->id &&
+                    $e->countryId === $imageAttributes['countryId'] &&
+                    $e->stateId === $imageAttributes['stateId'] &&
+                    $e->cityId === $imageAttributes['cityId'];
+            }
+        );
+
+        Event::assertDispatched(
+            IncrementPhotoMonth::class,
+            function (IncrementPhotoMonth $e) use ($imageAttributes) {
+                return $e->country_id === $imageAttributes['countryId'] &&
+                    $e->state_id === $imageAttributes['stateId'] &&
+                    $e->city_id === $imageAttributes['cityId'] &&
+                    $imageAttributes['dateTime']->is($e->created_at);
+            }
+        );
+
+        // Tear down
+        File::delete($imageAttributes['filepath']);
+    }
+
+    public function test_a_users_info_is_updated_when_they_upload_a_photo()
+    {
+        Storage::fake();
+
+        Carbon::setTestNow();
+
+        $user = User::factory()->create([
+            'active_team' => Team::factory()
+        ]);
+
+        $this->actingAs($user);
+
+        $imageAttributes = $this->getImageAndAttributes();
 
         $this->assertEquals(0, $user->has_uploaded);
         $this->assertEquals(0, $user->xp);
         $this->assertEquals(0, $user->total_images);
 
-        $response = $this->post('/submit', [
-            'file' => $file,
+        $this->post('/submit', [
+            'file' => $imageAttributes['file'],
         ]);
-
-        $response->assertOk()->assertJson(['msg' => 'success']);
-
-        // Image is uploaded
-        $this->assertFileExists($filepath);
-
-        // Image has the right dimensions
-        $image = Image::make(file_get_contents($filepath));
-        $this->assertEquals(500, $image->width());
-        $this->assertEquals(500, $image->height());
 
         // User info gets updated
         $user->refresh();
@@ -104,61 +196,8 @@ class UploadPhotoTest extends TestCase
         $this->assertEquals(1, $user->xp);
         $this->assertEquals(1, $user->total_images);
 
-        // The Photo is persisted correctly
-        $this->assertCount(1, $user->photos);
-        /** @var Photo $photo */
-        $photo = $user->photos->first();
-
-        $this->assertEquals($imageName, $photo->filename);
-        $this->assertEquals($dateTime, $photo->datetime);
-        $this->assertEquals($latitude, $photo->lat);
-        $this->assertEquals($longitude, $photo->lon);
-        $this->assertEquals($displayName, $photo->display_name);
-        $this->assertEquals($address['house_number'], $photo->location);
-        $this->assertEquals($address['road'], $photo->road);
-        $this->assertEquals($address['suburb'], $photo->suburb);
-        $this->assertEquals($address['city'], $photo->city);
-        $this->assertEquals($address['state'], $photo->county);
-        $this->assertEquals($address['postcode'], $photo->state_district);
-        $this->assertEquals($address['country'], $photo->country);
-        $this->assertEquals($address['country_code'], $photo->country_code);
-        $this->assertEquals('Unknown', $photo->model);
-        $this->assertEquals($countryId, $photo->country_id);
-        $this->assertEquals($stateId, $photo->state_id);
-        $this->assertEquals($cityId, $photo->city_id);
-        $this->assertEquals('web', $photo->platform);
-        $this->assertEquals($geoHash, $photo->geohash);
-        $this->assertEquals($user->active_team, $photo->team_id);
-        $this->assertEquals($imageName, $photo->five_hundred_square_filepath);
-
-        // The right events are fired
-        Event::assertDispatched(
-            ImageUploaded::class,
-            function (ImageUploaded $e) use ($user, $address, $imageName, $countryId, $stateId, $cityId) {
-                return $e->city === $address['city'] &&
-                    $e->state === $address['state'] &&
-                    $e->country === $address['country'] &&
-                    $e->countryCode === $address['country_code'] &&
-                    $e->imageName === $imageName &&
-                    $e->userId === $user->id &&
-                    $e->countryId === $countryId &&
-                    $e->stateId === $stateId &&
-                    $e->cityId === $cityId;
-            }
-        );
-
-        Event::assertDispatched(
-            IncrementPhotoMonth::class,
-            function (IncrementPhotoMonth $e) use ($countryId, $stateId, $cityId, $dateTime) {
-                return $e->country_id === $countryId &&
-                    $e->state_id === $stateId &&
-                    $e->city_id === $cityId &&
-                    $dateTime->is($e->created_at);
-            }
-        );
-
         // Tear down
-        File::delete($filepath);
+        File::delete($imageAttributes['filepath']);
     }
 
     public function test_unauthenticated_users_cannot_upload_photos()
@@ -189,28 +228,6 @@ class UploadPhotoTest extends TestCase
         ])
             ->assertStatus(422)
             ->assertJsonValidationErrors('file');
-    }
-
-    public function test_it_throws_server_error_when_user_has_no_images_remaining()
-    {
-        Storage::fake();
-
-        $user = User::factory()->create([
-            'images_remaining' => 0
-        ]);
-
-        $this->actingAs($user);
-
-        $image = UploadedFile::fake()->createWithContent(
-            'image.jpg',
-            file_get_contents($this->imagePath)
-        );
-
-        $response = $this->post('/submit', [
-            'file' => $image
-        ]);
-
-        $response->assertStatus(500);
     }
 
     public function test_it_throws_server_error_when_photo_has_no_location_data()

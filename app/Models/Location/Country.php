@@ -2,7 +2,6 @@
 
 namespace App\Models\Location;
 
-use App\Events\NewCountryAdded;
 use App\Models\Photo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\Redis;
@@ -131,37 +130,5 @@ class Country extends Location
 
     public function users () {
     	return $this->hasMany('App\Models\User\User');
-    }
-
-    /**
-     * From an array of data, return $countryId
-     *
-     * @param array $addressArray
-     *
-     * @return int $countryId
-     */
-    public static function getCountryFromAddressArray (array $addressArray)
-    {
-        $countryCode = (array_key_exists('country_code', $addressArray))
-            ? $addressArray["country_code"]
-            : 'error';
-
-        if ($countryCode !== 'error')
-        {
-            $country = Country::select('id', 'country')
-                ->where('shortcode', $countryCode)
-                ->firstOrCreate();
-
-            if ($country->wasRecentlyCreated)
-            {
-                // Broadcast an event to anyone viewing the Global Map
-                event(new NewCountryAdded($country->country, $countryCode, now()));
-            }
-
-            return $country;
-        }
-
-        // If you don't have this locally, create it
-        return Country::where('country', 'error_country')->first();
     }
 }
