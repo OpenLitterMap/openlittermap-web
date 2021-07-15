@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\LocationService;
 use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Intervention\Image\Facades\Image;
 use GeoHash;
 
 use Carbon\Carbon;
-use App\CheckLocations;
 
 use App\Models\Photo;
 use App\Models\Location\City;
@@ -29,16 +30,17 @@ use Illuminate\Support\Facades\Redis;
 
 class PhotosController extends Controller
 {
-    use CheckLocations;
+    /** @var LocationService */
+    protected $locationService;
 
-   /**
-    * Apply middleware to all of these routes
-    */
-    public function __construct ()
+    /**
+     * Apply middleware to all of these routes
+     */
+    public function __construct(LocationService $locationService)
     {
-    	return $this->middleware('auth');
+        $this->locationService = $locationService;
 
-    	parent::__construct();
+        $this->middleware('auth');
     }
 
     /**
@@ -51,6 +53,8 @@ class PhotosController extends Controller
      * then persist new record to photos table
      *
      * @param Request $request
+     * @return bool[]
+     * @throws ValidationException
      */
     public function store (Request $request)
     {
@@ -194,9 +198,9 @@ class PhotosController extends Controller
         $road = array_values($addressArray)[1];
 
         // todo- check all locations for "/" and replace with "-"
-        $country = Country::getCountryFromAddressArray($addressArray);
-        $state = State::getStateFromAddressArray($country->id, $addressArray);
-        $city = City::getCityFromAddressArray($country->id, $state->id, $addressArray);
+        $country = $this->locationService->getCountryFromAddressArray($addressArray);
+        $state = $this->locationService->getStateFromAddressArray($country, $addressArray);
+        $city = $this->locationService->getCityFromAddressArray($country, $state, $addressArray);
 
         $geohash = GeoHash::encode($latlong[0], $latlong[1]);
 
@@ -234,22 +238,27 @@ class PhotosController extends Controller
 
         // Broadcast this event to anyone viewing the global map
         // This will also update country, state, and city.total_contributors_redis
-        event (new ImageUploaded(
-            $this->city,
-            $this->state,
-            $this->country,
-            $this->countryCode,
+        event(new ImageUploaded(
+            $city->city,
+            $state->state,
+            $country->country,
+            $country->shortcode,
             $imageName,
             $teamName,
             $user->id,
-            $this->countryId,
-            $this->stateId,
-            $this->cityId
+            $country->id,
+            $state->id,
+            $city->id
         ));
 
         // Increment the { Month-Year: int } value for each location
         // Todo - this needs debugging
-        event (new IncrementPhotoMonth($this->countryId, $this->stateId, $this->cityId, $dateTime));
+        event(new IncrementPhotoMonth(
+            $country->id,
+            $state->id,
+            $city->id,
+            $dateTime
+        ));
 
         return ['success' => true];
     }
