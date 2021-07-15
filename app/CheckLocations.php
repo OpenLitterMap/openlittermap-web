@@ -70,6 +70,10 @@ trait CheckLocations
      */
     protected function checkState ($addressArray, $userId)
     {
+        \Log::info(['checkState.countryId', $this->countryId]);
+        \Log::info(['checkState.stateId', $this->stateId]);
+        \Log::info(['checkState.state', $this->state]);
+
         if (array_key_exists('state', $addressArray))
         {
             $this->state = $addressArray["state"];
@@ -95,20 +99,36 @@ trait CheckLocations
 
         if ($this->state !== 'error')
         {
-            $state = State::select('id', 'country_id', 'state', 'statenameb')
-                ->where([
-                    'state' => $this->state,
-                    'country_id' => $this->countryId
-                ])
-               ->firstOrCreate();
 
-            if ($state->wasRecentlyCreated)
+            try
             {
-                // Broadcast an event to anyone viewing the Global Map
-                event(new NewStateAdded($this->state, $this->country, now(),$userId));
-            }
+                $state = State::select('id', 'country_id', 'state', 'statenameb')
+                    ->where([
+                        'state' => $this->state,
+                        'country_id' => $this->countryId
+                    ])
+                    ->first();
 
-            $this->stateId = $state->id;
+                if (!$state)
+                {
+                    $state = State::create([
+                        'country_id' => $this->countryId,
+                        'state' => $this->state
+                    ]);
+                }
+
+                if ($state->wasRecentlyCreated)
+                {
+                    // Broadcast an event to anyone viewing the Global Map
+                    event(new NewStateAdded($this->state, $this->country, now(),$userId));
+                }
+
+                $this->stateId = $state->id;
+            }
+            catch (\Exception $e)
+            {
+                \Log::info(['CheckLocations.checkState', $e->getMessage()]);
+            }
         }
     }
 
@@ -176,24 +196,37 @@ trait CheckLocations
 
         if ($this->city != 'error')
         {
-            \Log::info(['countryId', $this->countryId]);
-            \Log::info(['stateId', $this->stateId]);
-            \Log::info(['city', $this->city]);
-            $city = City::select('id', 'country_id', 'state_id', 'city')
-                ->where([
-                    'country_id' => $this->countryId,
-                    'state_id' => $this->stateId,
-                    'city' => $this->city
-                ])
-                ->firstOrCreate();
-
-            if ($city->wasRecentlyCreated)
+            try
             {
-                // Broadcast an event to anyone viewing the Global Map
-                event(new NewCityAdded($this->city, $this->state, $this->country, now(), $userId));
-            }
+                $city = City::select('id', 'country_id', 'state_id', 'city')
+                    ->where([
+                        'country_id' => $this->countryId,
+                        'state_id' => $this->stateId,
+                        'city' => $this->city
+                    ])
+                    ->first();
 
-            $this->cityId = $city->id;
+                if (!$city)
+                {
+                    $city = City::create([
+                        'country_id' => $this->countryId,
+                        'state_id' => $this->stateId,
+                        'city' => $this->city
+                    ]);
+                }
+
+                $this->cityId = $city->id;
+
+                if ($city->wasRecentlyCreated)
+                {
+                    // Broadcast an event to anyone viewing the Global Map
+                    event(new NewCityAdded($this->city, $this->state, $this->country, now(), $userId));
+                }
+            }
+            catch (\Exception $e)
+            {
+                \Log::info(['CheckLocations@createCity', $e->getMessage()]);
+            }
         }
     }
 }

@@ -144,8 +144,6 @@ class ApiPhotosController extends Controller
         $this->checkState($addressArray, $user['id']);
         $this->checkCity($addressArray, $user['id']);
 
-        \Log::info(['addressArray', $addressArray]);
-
         try
         {
             $photo = $user->photos()->create([

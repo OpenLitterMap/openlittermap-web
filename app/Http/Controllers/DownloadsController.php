@@ -29,19 +29,10 @@ use Illuminate\Http\Request;
 class DownloadsController extends Controller
 {
 
-   /**
-    * Apply middleware to all of these routes
-    */
-	// public function __construct() {
-	//   	return $this->middleware('auth');
-	//   	parent::__construct();
-	// }
-
-    public function getDataByState($state = null) {
-
-    	// return [$country, $state, $city];
-
-    	if($state) {
+    public function getDataByState ($state = null)
+    {
+    	if ($state)
+    	{
     		// State only
     		// need to pass the variable down the chain
 	    	Excel::create('Open Litter Map', function($excel) use ($state) {
