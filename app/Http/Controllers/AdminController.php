@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Events\ResetTagsCountAdmin;
 use App\Litterrata;
+use Illuminate\Support\Facades\File;
 use Log;
 use Auth;
-use File;
 
 use App\Models\Photo;
 use App\Models\User\User;
@@ -173,23 +173,29 @@ class AdminController extends Controller
     /**
      * Delete an image and its records
      */
-    public function destroy (Request $request)
+    public function destroy(Request $request)
     {
         $photo = Photo::find($request->photoId);
-        $s3 = \Storage::disk('s3');
 
         try {
-            if (app()->environment('production'))
-            {
+            if (app()->environment('production')) {
                 $path = substr($photo->filename, 42);
-                $s3->delete($path);
+                \Storage::disk('s3')->delete($path);
+            } else {
+                // Strip the app name from the filename
+                // Resulting path is like 'local-uploads/2021/07/07/photo.jpg'
+                $path = public_path(substr($photo->filename, strlen(config('app.url'))));
+
+                if (File::exists($path)) {
+                    File::delete($path);
+                }
             }
             $photo->delete();
         } catch (Exception $e) {
             \Log::info(["Admin delete failed", $e]);
         }
 
-        return redirect()->back();
+        return ['success' => true];
     }
 
     /**

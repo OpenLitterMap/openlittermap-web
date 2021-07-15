@@ -3,7 +3,7 @@
         <add-tags :id="0" class="mb1" />
 
         <!-- These are the tags the user has added -->
-        <Tags class="mb1" />
+        <Tags class="mb1" :photo-id="0" />
 
         <button
             :class="button"

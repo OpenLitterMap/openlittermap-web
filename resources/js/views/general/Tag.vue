@@ -87,7 +87,7 @@
                             </div>
 
                             <!-- These are the tags the user has added -->
-                            <Tags />
+                            <Tags :photo-id="photo.id"/>
                         </div>
                     </div>
 

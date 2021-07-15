@@ -210,7 +210,7 @@ export default {
 		 */
 		clearTags ()
 		{
-			this.$store.commit('setAllTagsToZero');
+			this.$store.commit('setAllTagsToZero', this.photo.id);
 		},
 
         /**

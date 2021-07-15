@@ -30,9 +30,6 @@ export const actions = {
     {
         await axios.get('photos')
             .then(response => {
-                console.log('get_photos_for_tagging', response);
-
-                context.commit('clearTags');
                 context.commit('photosForTagging', response.data);
             })
             .catch(error => {
@@ -87,9 +84,6 @@ export const actions = {
     {
         await axios.get('/photos?page=' + context.state.paginate.current_page)
             .then(response => {
-                console.log('load_next_image', response);
-
-                context.commit('clearTags');
                 context.commit('photosForTagging', response.data);
             })
             .catch(error => {
@@ -104,9 +98,6 @@ export const actions = {
     {
         await axios.get(context.state.paginate.next_page_url)
             .then(response => {
-                console.log('next_image', response);
-
-                context.commit('clearTags');
                 context.commit('photosForTagging', response.data);
             })
             .catch(error => {
@@ -121,9 +112,6 @@ export const actions = {
     {
         await axios.get(context.state.paginate.prev_page_url)
             .then(response => {
-                console.log('previous_image', response);
-
-                context.commit('clearTags');
                 context.commit('photosForTagging', response.data);
             })
             .catch(error => {
@@ -174,9 +162,6 @@ export const actions = {
     {
         await axios.get(`/photos?page=${payload}`)
             .then(response => {
-                console.log('select_image', response);
-
-                context.commit('clearTags');
                 context.commit('photosForTagging', response.data);
             })
             .catch(error => {

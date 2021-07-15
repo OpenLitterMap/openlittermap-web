@@ -91,9 +91,11 @@ export const actions = {
      */
     async ADMIN_UPDATE_WITH_NEW_TAGS (context)
     {
+        let photoId = context.state.photo.id;
+
         await axios.post('/admin/update-tags', {
-            photoId: context.state.photo.id,
-            tags: context.rootState.litter.tags
+            photoId: photoId,
+            tags: context.rootState.litter.tags[photoId]
         })
         .then(response => {
             console.log('admin_verify_keep', response);
@@ -124,7 +126,7 @@ export const actions = {
                 context.commit('initAdminPhoto', resp.data.photo);
 
                 // init litter data for verification (litter.js)
-                if (resp.data.photo.verification > 0) context.commit('initAdminItems', resp.data.photo);
+                if (resp.data.photo?.verification > 0) context.commit('initAdminItems', resp.data.photo);
 
                 context.commit('initAdminMetadata', {
                     not_processed: resp.data.photosNotProcessed,

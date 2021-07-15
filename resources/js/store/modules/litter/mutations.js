@@ -24,13 +24,15 @@ export const mutations = {
     },
 
     /**
-     * Add a Tag.
+     * Add a Tag to a photo.
      *
-     * This will set Category => Tag.key: Tag.quantity
+     * This will set Photo.id => Category => Tag.key: Tag.quantity
      *
      * state.tags = {
-     *     category.key = {
-     *         tag.key: tag.quantity
+     *     photo.id = {
+     *         category.key = {
+     *             tag.key: tag.quantity
+     *         }
      *     }
      * }
      */
@@ -42,9 +44,12 @@ export const mutations = {
 
         tags = {
             ...tags,
-            [payload.category]: {
-                ...tags[payload.category],
-                [payload.tag]: payload.quantity
+            [payload.photoId]: {
+                ...tags[payload.photoId],
+                [payload.category]: {
+                    ...(tags[payload.photoId] ? tags[payload.photoId][payload.category] : {}),
+                    [payload.tag]: payload.quantity
+                }
             }
         };
 
@@ -54,9 +59,13 @@ export const mutations = {
     /**
      * Clear the tags object (When we click next/previous image on pagination)
      */
-    clearTags (state)
+    clearTags (state, photoId)
     {
-        state.tags = Object.assign({});
+        if (photoId !== null) {
+            delete state.tags[photoId];
+        } else {
+            state.tags = Object.assign({});
+        }
     },
 
     /**
@@ -98,9 +107,12 @@ export const mutations = {
                     {
                         tags = {
                             ...tags,
-                            [category]: {
-                                ...tags[category],
-                                [item]: payload[category][item]
+                            [payload.id]: {
+                                ...tags[payload.id],
+                                [category]: {
+                                    ...(tags[payload.id] ? tags[payload.id][category] : {}),
+                                    [item]: payload[category][item]
+                                }
                             }
                         };
                     }
@@ -136,11 +148,11 @@ export const mutations = {
     {
         let tags = Object.assign({}, state.tags);
 
-        delete tags[payload.category][payload.tag_key];
+        delete tags[payload.photoId][payload.category][payload.tag_key];
 
-        if (Object.keys(tags[payload.category]).length === 0)
+        if (Object.keys(tags[payload.photoId][payload.category]).length === 0)
         {
-            delete tags[payload.category];
+            delete tags[payload.photoId][payload.category];
         }
 
         state.tags = tags;
@@ -148,13 +160,13 @@ export const mutations = {
 
     /**
      * Admin
-     * Change category[tag] = 0;
+     * Change photo[category][tag] = 0;
      */
     resetTag (state, payload)
     {
         let tags = Object.assign({}, state.tags);
 
-        tags[payload.category][payload.tag_key] = 0;
+        tags[payload.photoId][payload.category][payload.tag_key] = 0;
 
         state.tags = tags;
         state.hasAddedNewTag = true; // activate update_with_new_tags button
@@ -197,9 +209,9 @@ export const mutations = {
      *
      * Admin @ reset
      */
-    setAllTagsToZero (state)
+    setAllTagsToZero (state, photoId)
     {
-        let original_tags = Object.assign({}, state.tags);
+        let original_tags = Object.assign({}, state.tags[photoId]);
 
         Object.entries(original_tags).map(keys => {
 
@@ -214,7 +226,10 @@ export const mutations = {
             }
         });
 
-        state.tags = original_tags;
+        state.tags = {
+            ...state.tags,
+            [photoId]: original_tags
+        };
     },
 
     /**
