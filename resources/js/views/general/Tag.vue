@@ -72,6 +72,11 @@
                             <div class="image-content">
                                 <img :src="photo.filename" class="img">
                             </div>
+
+                            <!-- Add & Submit Tags -->
+                            <div class="column is-10 is-offset-1 mt-4">
+                                <add-tags :id="photo.id" />
+                            </div>
                         </div>
 
                         <!-- Info, Tags, Right -->
@@ -88,13 +93,6 @@
 
                             <!-- These are the tags the user has added -->
                             <Tags />
-                        </div>
-                    </div>
-
-                    <!-- Add & Submit Tags -->
-                    <div class="columns">
-                        <div class="column is-10 is-offset-1">
-                            <add-tags :id="photo.id" />
                         </div>
                     </div>
 
