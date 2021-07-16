@@ -253,35 +253,6 @@ export default {
         },
 
         /**
-         * Todo - Dispatch request to delete an image
-         */
-        async confirmDelete (photoid)
-        {
-            if (confirm(this.$i18n.t('confirm-delete')))
-            {
-                await axios.post('/en/profile/photos/delete', {
-                    photoid
-                })
-                    .then(response =>
-                    {
-                        console.log(response);
-                        if (response.status === 200)
-                        {
-                            window.location.href = window.location.href;
-                        }
-                    })
-                    .catch(error =>
-                    {
-                        console.log(error);
-                    });
-            }
-            else
-            {
-                console.log('Not deleted');
-            }
-        },
-
-        /**
          * Format date
          */
         getDate (date)
