@@ -1,107 +1,133 @@
 <template>
-    <div class="control has-text-centered">
-
-        <!-- Categories -->
-        <div class="select">
-            <vue-simple-suggest
-                ref="categories"
-                display-attribute="title"
-                value-attribute="key"
-                :filter-by-query="true"
-                :list="categories"
-                :min-length="0"
-                :max-suggestions="0"
-                mode="select"
-                :styles="autoCompleteStyle"
-                v-model="category"
-                @suggestion-click="onSuggestion()"
-                @focus="onFocusCategories()"
-                v-click-outside="clickOutsideCategory"
-            />
-        </div>
-
-        <!-- Tags per category -->
-        <div class="select">
-            <vue-simple-suggest
-                ref="tags"
-                display-attribute="title"
-                value-attribute="key"
-                :filter-by-query="true"
-                :list="tags"
-                :min-length="0"
-                :max-suggestions="0"
-                mode="select"
-                :styles="autoCompleteStyle"
-                v-model="tag"
-                @suggestion-click="onSuggestion()"
-                @focus="onFocusTags()"
-                v-click-outside="clickOutsideTag"
-            />
-        </div>
-
-        <!-- Quantity -->
-        <div class="select" id="int">
-            <select v-model="quantity">
-                <option v-for="int in integers">{{ int }}</option>
-            </select>
-        </div>
-
-        <br><br>
-
-        <div v-if="Object.keys(recentTags).length > 0 && this.annotations !== true && this.id !== 0" class="mb-5">
-
-            <p class="mb-05">{{ $t('tags.recently-tags') }}</p>
-
-            <div v-for="category in Object.keys(recentTags)">
-                <p>{{ getCategoryName(category) }}</p>
-
-                <transition-group name="list" class="recent-tags" tag="div" :key="category">
-                    <div
-                        v-for="tag in Object.keys(recentTags[category])"
-                        class="litter-tag"
-                        :key="tag"
-                        @click="addRecentTag(category, tag)"
-                    ><p>{{ getTagName(category, tag) }}</p></div>
-                </transition-group>
+    <div>
+        <!-- Search -->
+        <div class="columns">
+            <div class="column is-half is-offset-3">
+                <div class="control">
+                    <div class="select is-fullwidth">
+                        <vue-simple-suggest
+                            ref="search"
+                            display-attribute="title"
+                            value-attribute="key"
+                            :filter-by-query="true"
+                            :list="tagsAndCategories"
+                            :min-length="1"
+                            :max-suggestions="10"
+                            mode="input"
+                            :styles="autoCompleteStyle"
+                            placeholder="Search all tags (Ctrl + Q)"
+                            @focus="onFocusSearch"
+                            @select="search"
+                        />
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div>
-            <button
-                :disabled="checkDecr"
-                class="button is-medium is-danger"
-                @click="decr"
-            >-</button>
+        <div class="control has-text-centered">
 
-            <button
-                class="button is-medium is-info"
-                @click="addTag"
-            >{{ $t('tags.add-tag') }}</button>
+            <!-- Categories -->
+            <div class="select">
+                <vue-simple-suggest
+                    ref="categories"
+                    display-attribute="title"
+                    value-attribute="key"
+                    :filter-by-query="true"
+                    :list="categories"
+                    :min-length="0"
+                    :max-suggestions="0"
+                    mode="select"
+                    :styles="autoCompleteStyle"
+                    v-model="category"
+                    @suggestion-click="onSuggestion()"
+                    @focus="onFocusCategories()"
+                    v-click-outside="clickOutsideCategory"
+                />
+            </div>
 
-            <button
-                :disabled="checkIncr"
-                class="button is-medium is-dark"
-                @click="incr"
-            >+</button>
-        </div>
+            <!-- Tags per category -->
+            <div class="select">
+                <vue-simple-suggest
+                    ref="tags"
+                    display-attribute="title"
+                    value-attribute="key"
+                    :filter-by-query="true"
+                    :list="tags"
+                    :min-length="0"
+                    :max-suggestions="0"
+                    mode="select"
+                    :styles="autoCompleteStyle"
+                    v-model="tag"
+                    @suggestion-click="onSuggestion()"
+                    @focus="onFocusTags()"
+                    v-click-outside="clickOutsideTag"
+                />
+            </div>
 
-        <br>
+            <!-- Quantity -->
+            <div class="select" id="int">
+                <select v-model="quantity">
+                    <option v-for="int in integers">{{ int }}</option>
+                </select>
+            </div>
 
-        <button
-            v-show="! admin && this.id !== 0"
-            :disabled="checkTags"
-            :class="button"
-            @click="submit"
-        >{{ $t('common.submit') }}</button>
+            <br><br>
 
-        <!-- Only show these on mobile <= 768px, and when not using MyPhotos => AddManyTagsToPhotos (id = 0) -->
-        <div class="show-mobile" v-show="this.id !== 0">
+            <div v-if="Object.keys(recentTags).length > 0 && this.annotations !== true && this.id !== 0" class="mb-5">
+
+                <p class="mb-05">{{ $t('tags.recently-tags') }}</p>
+
+                <div v-for="category in Object.keys(recentTags)">
+                    <p>{{ getCategoryName(category) }}</p>
+
+                    <transition-group name="list" class="recent-tags" tag="div" :key="category">
+                        <div
+                            v-for="tag in Object.keys(recentTags[category])"
+                            class="litter-tag"
+                            :key="tag"
+                            @click="addRecentTag(category, tag)"
+                        ><p>{{ getTagName(category, tag) }}</p></div>
+                    </transition-group>
+                </div>
+            </div>
+
+            <div>
+                <button
+                    :disabled="checkDecr"
+                    class="button is-medium is-danger"
+                    @click="decr"
+                >-</button>
+
+                <button
+                    class="button is-medium is-info"
+                    @click="addTag"
+                >{{ $t('tags.add-tag') }}</button>
+
+                <button
+                    :disabled="checkIncr"
+                    class="button is-medium is-dark"
+                    @click="incr"
+                >+</button>
+            </div>
+
             <br>
-            <tags />
 
-            <div class="custom-buttons">
-                <profile-delete :photoid="id" />
-                <presence :itemsr="true" />
+            <button
+                v-show="! admin && this.id !== 0"
+                :disabled="checkTags"
+                :class="button"
+                @click="submit"
+            >{{ $t('common.submit') }}</button>
+
+            <!-- Only show these on mobile <= 768px, and when not using MyPhotos => AddManyTagsToPhotos (id = 0) -->
+            <div class="show-mobile" v-show="this.id !== 0">
+                <br>
+                <tags />
+
+                <div class="custom-buttons">
+                    <profile-delete :photoid="id" />
+                    <presence :itemsr="true" />
+                </div>
             </div>
         </div>
     </div>
@@ -141,6 +167,13 @@ export default {
         {
             this.$store.commit('initRecentTags', JSON.parse(this.$localStorage.get('recentTags')));
         }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key.toLowerCase() === 'q') {
+                this.$refs.search.input.focus();
+                e.preventDefault();
+            }
+        });
     },
     data ()
     {
@@ -291,6 +324,30 @@ export default {
                 };
             });
         },
+
+        /**
+         * Litter tags for all categories, used by the Search field
+         */
+        tagsAndCategories ()
+        {
+            let results = [];
+
+            categories.forEach(cat => {
+                if (litterkeys.hasOwnProperty(cat)) {
+                    results = [
+                        ...results,
+                        ...litterkeys[cat].map(tag => {
+                            return {
+                                key: cat + ':' + tag,
+                                title: this.$i18n.t('litter.categories.' + cat) + ': ' + this.$i18n.t(`litter.${cat}.${tag}`)
+                            };
+                        })
+                    ];
+                }
+            });
+
+            return results;
+        },
     },
     methods: {
 
@@ -407,6 +464,14 @@ export default {
         },
 
         /**
+         * Clear the input field to allow the user to begin typing
+         */
+        onFocusSearch ()
+        {
+            this.$refs.search.setText('');
+        },
+
+        /**
          * The input field has been selected.
          * Show all suggestions, not just those limited by text.
          *
@@ -441,6 +506,16 @@ export default {
                     el.blur();
                 });
             });
+        },
+
+        search (input)
+        {
+            let searchValues = input.key.split(":");
+
+            this.category = {key: searchValues[0]};
+            this.tag = {key: searchValues[1]};
+
+            this.onSuggestion();
         },
 
         /**
