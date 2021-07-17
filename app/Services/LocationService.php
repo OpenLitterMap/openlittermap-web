@@ -50,22 +50,12 @@ class LocationService
      */
     public function getStateFromAddressArray (Country $country, array $addressArray)
     {
-        $stateName = null;
+        $stateName = $addressArray['state'] ?? null;
 
-        // Extract state name to get state.id
-        if (array_key_exists('state', $addressArray)) {
-            $stateName = $addressArray["state"];
-        }
-        if (!$stateName) {
-            if (array_key_exists('county', $addressArray)) {
-                $stateName = $addressArray["county"];
-            }
-        }
-        if (!$stateName) {
-            if (array_key_exists('region', $addressArray)) {
-                $stateName = $addressArray["region"];
-            }
-        }
+        $stateName = $stateName ?: ($addressArray['county'] ?? null);
+
+        $stateName = $stateName ?: ($addressArray['region'] ?? null);
+
         if (!$stateName) {
             // Return error state
             return State::where('state', 'error_state')->first();
@@ -93,41 +83,20 @@ class LocationService
      */
     public function getCityFromAddressArray (Country $country, State $state, $addressArray)
     {
-        $cityName = null;
+        $cityName = $addressArray['city'] ?? null;
 
-        if (array_key_exists('city', $addressArray)) {
-            $cityName = $addressArray['city'];
-        }
-        if (!$cityName) {
-            if (array_key_exists('town', $addressArray)) {
-                $cityName = $addressArray['town'];
-            }
-        }
-        if (!$cityName) {
-            if (array_key_exists('city_district', $addressArray)) {
-                $cityName = $addressArray['city_district'];
-            }
-        }
-        if (!$cityName) {
-            if (array_key_exists('village', $addressArray)) {
-                $cityName = $addressArray['village'];
-            }
-        }
-        if (!$cityName) {
-            if (array_key_exists('hamlet', $addressArray)) {
-                $cityName = $addressArray['hamlet'];
-            }
-        }
-        if (!$cityName) {
-            if (array_key_exists('locality', $addressArray)) {
-                $cityName = $addressArray['locality'];
-            }
-        }
-        if (!$cityName) {
-            if (array_key_exists('county', $addressArray)) {
-                $cityName = $addressArray['county'];
-            }
-        }
+        $cityName = $cityName ?: ($addressArray['town'] ?? null);
+
+        $cityName = $cityName ?: ($addressArray['city_district'] ?? null);
+
+        $cityName = $cityName ?: ($addressArray['village'] ?? null);
+
+        $cityName = $cityName ?: ($addressArray['hamlet'] ?? null);
+
+        $cityName = $cityName ?: ($addressArray['locality'] ?? null);
+
+        $cityName = $cityName ?: ($addressArray['county'] ?? null);
+
         if (!$cityName) {
             // Return error city
             return City::where('city', 'error_city')->first();
