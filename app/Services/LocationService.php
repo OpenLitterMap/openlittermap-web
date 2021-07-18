@@ -21,7 +21,7 @@ class LocationService
      */
     public function getCountryFromAddressArray (array $addressArray)
     {
-        $countryCode = $addressArray["country_code"] ?? '';
+        $countryCode = $this->lookupPlace($addressArray, ['country_code']);
 
         if (!$countryCode) {
             return Country::where('country', 'error_country')->first();
@@ -50,11 +50,10 @@ class LocationService
      */
     public function getStateFromAddressArray (Country $country, array $addressArray)
     {
-        $stateName = $addressArray['state'] ?? null;
-
-        $stateName = $stateName ?: ($addressArray['county'] ?? null);
-
-        $stateName = $stateName ?: ($addressArray['region'] ?? null);
+        $stateName = $this->lookupPlace(
+            $addressArray,
+            ['state', 'county', 'region']
+        );
 
         if (!$stateName) {
             // Return error state
@@ -83,19 +82,10 @@ class LocationService
      */
     public function getCityFromAddressArray (Country $country, State $state, $addressArray)
     {
-        $cityName = $addressArray['city'] ?? null;
-
-        $cityName = $cityName ?: ($addressArray['town'] ?? null);
-
-        $cityName = $cityName ?: ($addressArray['city_district'] ?? null);
-
-        $cityName = $cityName ?: ($addressArray['village'] ?? null);
-
-        $cityName = $cityName ?: ($addressArray['hamlet'] ?? null);
-
-        $cityName = $cityName ?: ($addressArray['locality'] ?? null);
-
-        $cityName = $cityName ?: ($addressArray['county'] ?? null);
+        $cityName = $this->lookupPlace(
+            $addressArray,
+            ['city', 'town', 'city_district', 'village', 'hamlet', 'locality', 'county']
+        );
 
         if (!$cityName) {
             // Return error city
@@ -115,5 +105,23 @@ class LocationService
         }
 
         return $city;
+    }
+
+    /**
+     * @param $addressArray
+     * @param $keys
+     * @return string|null
+     */
+    protected function lookupPlace($addressArray, $keys): ?string
+    {
+        foreach ($keys as $key) {
+            $place = $addressArray[$key] ?? null;
+
+            if ($place) {
+                return $place;
+            }
+        }
+
+        return null;
     }
 }
