@@ -174,6 +174,10 @@ export default {
                 e.preventDefault();
             }
         });
+
+        this.$nextTick(function () {
+            this.$refs.search.input.focus();
+        });
     },
     data ()
     {
@@ -515,7 +519,11 @@ export default {
             this.category = {key: searchValues[0]};
             this.tag = {key: searchValues[1]};
 
-            this.onSuggestion();
+            this.addTag();
+
+            this.$nextTick(function () {
+                this.onFocusSearch();
+            })
         },
 
         /**
