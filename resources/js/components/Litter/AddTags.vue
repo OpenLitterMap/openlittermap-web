@@ -567,7 +567,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "../../styles/variables.scss";
+
+    @import "../../styles/variables.scss";
 
     .hide-br {
         display: none;
@@ -620,11 +621,5 @@ export default {
         opacity: 0;
         transform: translateX(30px);
     }
-
-    .search-all-tags {
-        height: 26em;
-        overflow-y: auto;
-    }
-
 
 </style>
