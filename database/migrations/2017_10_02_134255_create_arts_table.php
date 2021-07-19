@@ -15,8 +15,6 @@ class CreateArtsTable extends Migration
     {
         Schema::create('arts', function (Blueprint $table) {
             $table->increments('id');
-            $table->integer('photo_id')->unsigned();
-            $table->foreign('photo_id')->references('id')->on('photos');
             $table->integer('item')->unsigned()->nullable();
             $table->timestamps();
         });

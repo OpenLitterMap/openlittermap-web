@@ -10,7 +10,6 @@ class Food extends LitterCategory
 
     protected $fillable = [
 	    'sweetWrappers',
-    	'cardboardFoodPackaging',
     	'paperFoodPackaging',
     	'plasticFoodPackaging',
     	'plasticCutlery',
@@ -38,7 +37,6 @@ class Food extends LitterCategory
     {
         return [
             'sweetWrappers',
-            'cardboardFoodPackaging',
             'paperFoodPackaging',
             'plasticFoodPackaging',
             'plasticCutlery',

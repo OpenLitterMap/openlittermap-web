@@ -2,19 +2,13 @@
 
 namespace App\Models\Litter\Categories;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Models\Litter\LitterCategory;
 
-class Pathway extends Model
+class Pathway extends LitterCategory
 {
     protected $table = 'pathways';
 
-    public function photo() {
-    	return $this->hasOne('App\Models\Photo');
-    }
-
     protected $fillable = [
-    	'id',
-    	'photo_id',
     	'gutter',
     	'gutter_long',
     	'kerb_hole_small',

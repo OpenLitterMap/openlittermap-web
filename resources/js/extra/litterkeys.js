@@ -29,6 +29,9 @@ export const litterkeys = {
         'alcohol_plastic_cups',     // Plastic Cups
         'alcoholOther'              // Alcohol-Other
     ],
+    art: [
+        'item'
+    ],
     coffee: [
         'coffeeCups', // Coffee Cups
         'coffeeLids', // Coffee Lids
