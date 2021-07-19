@@ -74,8 +74,6 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             'FOOD',
 
             'sweet_wrapper',
-//           cardboard_food_packiging is not an option in web/app
-            'cardboard_food_packaging',
             'paper_cardboard_food_packaging',
             'plastic_food_packaging',
             'plastic_cutlery',
@@ -135,6 +133,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             'energy_can',
             'styrofoam_cup',
             'softdrink_other',
+            'broken_glass',
 
             'SANITARY',
 
@@ -320,7 +319,11 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             'walkers',
             'woolworths',
             'wilde_and_greene',
-            'wrigleys'
+            'wrigleys',
+
+            'ART',
+
+            'item',
         ];
     }
 
@@ -420,6 +423,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             $row->softdrinks ? $row->softdrinks->energy_can : null,
             $row->softdrinks ? $row->softdrinks->styro_cup : null,
             $row->softdrinks ? $row->softdrinks->softDrinkOther : null,
+            $row->softdrinks ? $row->softdrinks->broken_glass : null,
 
             NULL,
 
@@ -605,21 +609,23 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             $row->brands ? $row->brands->walkers : null,
             $row->brands ? $row->brands->woolworths : null,
             $row->brands ? $row->brands->wilde_and_greene : null,
-            $row->brands ? $row->brands->wrigleys : null
+            $row->brands ? $row->brands->wrigleys : null,
+
+            NULL,
+
+            $row->art ? $row->art->item : null,
         ];
     }
 
     /**
      * Create a query which we will loop over in the map function
      * no need to use ->get();
-     *
-     * Todo - Industrial, Art
      */
     public function query ()
     {
         if ($this->user_id)
         {
-            return Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands', 'dumping', 'industrial'])
+            return Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands', 'dumping', 'industrial', 'art'])
                 ->where([
                     'user_id' => $this->user_id
                 ]);
@@ -627,7 +633,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
 
         else if ($this->team_id)
         {
-            return Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands', 'dumping', 'industrial'])
+            return Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands', 'dumping', 'industrial', 'art'])
                 ->where([
                     'team_id' => $this->team_id,
                     'verified' => 2
@@ -638,7 +644,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
         {
             if ($this->location_type === 'city')
             {
-                return Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands', 'dumping', 'industrial'])
+                return Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands', 'dumping', 'industrial', 'art'])
                     ->where([
                         'city_id' => $this->location_id,
                         'verified' => 2
@@ -647,7 +653,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
 
             else if ($this->location_type === 'state')
             {
-                return Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands', 'dumping', 'industrial'])
+                return Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands', 'dumping', 'industrial', 'art'])
                     ->where([
                         'state_id' => $this->location_id,
                         'verified' => 2
@@ -656,7 +662,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
 
             else
             {
-                return Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands', 'dumping', 'industrial'])
+                return Photo::with(['smoking', 'food', 'coffee', 'alcohol', 'softdrinks', 'other', 'sanitary', 'brands', 'dumping', 'industrial', 'art'])
                     ->where([
                         'country_id' => $this->location_id,
                         'verified' => 2
