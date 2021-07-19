@@ -19,11 +19,11 @@
         "lighters": "Zapalniczka",
         "cigaretteBox": "Paczka po papierosach",
         "tobaccoPouch": "Paczka tytoniu",
-        "skins": "papier do skręcania",
+        "skins": "Papier do skręcania",
         "smoking_plastic": "Plastikowe opakowanie",
         "filters": "Filtry",
-        "filterbox": "pudełko po filtrach",
-        "vape_pen": "e-papieros",
+        "filterbox": "Pudełko po filtrach",
+        "vape_pen": "E-papieros",
         "vape_oil": "Olejek e-papierosowy",
         "smokingOther": "Palenie (Inne)"
     },
@@ -37,7 +37,7 @@
         "paperCardAlcoholPackaging": "Papierowe opakowanie po alkoholu",
         "plasticAlcoholPackaging": "Plastikowe opakowanie po alkoholu",
         "pint": "Szklany kufel",
-        "six_pack_rings": "plastikowe kółka po szescio-paku",
+        "six_pack_rings": "Plastikowe kółka po szescio-paku",
         "alcohol_plastic_cups": "Plastikowy kubeczek",
         "alcoholOther": "Akohol (inne)"
     },
@@ -81,8 +81,8 @@
         "ice_tea_bottles": "Butelka po Ice Tea",
         "ice_tea_can": "puszka Ice Tea",
         "energy_can": "Puszka po energetyku",
-        "pullring": "zawleczka od puszki",
-        "strawpacket": "opakowanie po słomkach",
+        "pullring": "Zawleczka od puszki",
+        "strawpacket": "Opakowanie po słomkach",
         "styro_cup": "Styropianowy kubeczek",
         "broken_glass": "Zbite szkło",
         "softDrinkOther": "Napoje (inne)"
@@ -117,24 +117,24 @@
     "coastal": {
         "microplastics": "Microplastiki",
         "mediumplastics": "Średnie tworzywa sztuczne",
-        "macroplastics": "makroplastiki",
+        "macroplastics": "Makroplastiki",
         "rope_small": "Lina (krótka)",
         "rope_medium": "Lina (Średnia)",
         "rope_large": "Lina (Duża)",
         "fishing_gear_nets": "Siatka/sprzęt rybacki",
         "ghost_nets": "Sieci widma",
         "buoys": "Boja",
-        "degraded_plasticbottle": "zdegradowana plastikowa butelka",
-        "degraded_plasticbag": "zdegradowana plastikowa siatka",
-        "degraded_straws": "zdegradowana plastikowa słomka",
-        "degraded_lighters": "zdegradowana plastikowa zapalniczka",
+        "degraded_plasticbottle": "Zdegradowana plastikowa butelka",
+        "degraded_plasticbag": "Zdegradowana plastikowa siatka",
+        "degraded_straws": "Zdegradowana plastikowa słomka",
+        "degraded_lighters": "Zdegradowana plastikowa zapalniczka",
         "balloons": "Balony",
         "lego": "Lego",
         "shotgun_cartridges": "Kartridż do broni",
         "styro_small": "Styropian (Mały)",
         "styro_medium": "Styropian (Średni)",
         "styro_large": "Styropian (Duży)",
-        "coastal_other": "przybrzeżny (inne)"
+        "coastal_other": "Przybrzeżny (inne)"
     },
     "brands": {
         "adidas": "Adidas",
@@ -225,7 +225,7 @@
         "dogshit": "Psia kupa",
         "pooinbag": "Psia kupa w workeczku",
         "automobile": "Auto",
-        "clothing": "ubrania",
+        "clothing": "Ubrania",
         "traffic_cone": "Pachołek drogowy",
         "life_buoy": "Koło ratunkowe",
         "plastic": "Niezidentyfikowany plastik",
@@ -259,9 +259,9 @@
         "still-there-text": "The litter is still there!"
     },
     "no-tags": "Bez tagów",
-    "not-verified": "oczekiwanie na weryfikację",
+    "not-verified": "Oczekiwanie na weryfikację",
     "dogshit": {
-        "poo": "niespodzianka!",
-        "poo_in_bag": "niespodzianka w woreczku!"
+        "poo": "Niespodzianka!",
+        "poo_in_bag": "Niespodzianka w woreczku!"
     }
 }

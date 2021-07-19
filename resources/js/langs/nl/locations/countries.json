@@ -6,12 +6,12 @@
 
     "en": {
         "name": "Engeland",
-        "lang": "English"
+        "lang": "Engels"
     },
 
     "es": {
         "name": "Spanje",
-        "lang": "Español"
+        "lang": "Spaans"
     },
 
     "fr": {
@@ -34,7 +34,7 @@
         "lang": "Maleis"
     },
 
-        "nl": {
+    "nl": {
         "name": "Nederland",
         "lang": "Nederlands"
     },
@@ -46,6 +46,16 @@
 
     "uk": {
         "name": "Engeland",
-        "lang": "English"
+        "lang": "Engels"
+    },
+
+    "pl": {
+        "name": "Polen",
+        "lang": "Pools"
+    },
+
+    "hi": {
+        "name": "India",
+        "lang": "Hindi"
     }
 }

@@ -1,12 +1,12 @@
 {
     "de": {
         "name": "Alemania",
-        "lang": "Aleman"
+        "lang": "Alemán"
     },
 
     "en": {
-        "name": "UK",
-        "lang": "English"
+        "name": "Reino Unido",
+        "lang": "Inglés"
     },
 
     "es": {
@@ -35,8 +35,8 @@
     },
 
     "nl": {
-        "name": "Holanda",
-        "lang": "Nederlands"
+        "name": "Países Bajos",
+        "lang": "Neerlandés"
     },
 
     "tk": {
@@ -45,12 +45,17 @@
     },
 
     "uk": {
-        "name": "UK",
-        "lang": "English"
+        "name": "Reino Unido",
+        "lang": "Inglés"
     },
 
     "pl": {
-        "name": "Poland",
-        "lang": "Polski"
+        "name": "Polonia",
+        "lang": "Polaco"
+    },
+
+    "hi": {
+        "name": "India",
+        "lang": "Hindi"
     }
 }
