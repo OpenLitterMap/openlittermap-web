@@ -17,7 +17,7 @@
                 <!-- Progress -->
                 <div class="container mt2" v-if="! loading">
                     <div class="columns">
-                        <div class="column is-half is-offset-3">
+                        <div class="column is-half is-offset-3 px-0">
                             <!-- XP bar variables -->
                             <div class="columns">
                                 <div class="column flex">
@@ -51,8 +51,8 @@
 
                     <div class="columns">
                         <div class="column is-half is-offset-3">
-                            <div class="columns">
-                                <div class="column is-one-third">
+                            <div class="columns is-desktop">
+                                <div class="column">
                                     <h1 class="subtitle is-5 has-text-centered">
                                         <strong class="has-text-black">
                                             {{ $t('location.total-verified-litter') }}
@@ -72,7 +72,7 @@
                                     </h1>
                                 </div>
 
-                                <div class="column is-one-third">
+                                <div class="column">
                                     <h1 class="subtitle is-5 has-text-centered">
                                         <strong class="has-text-black">
                                             {{ $t('location.total-verified-photos') }}
@@ -92,7 +92,7 @@
                                     </h1>
                                 </div>
 
-                                <div class="column is-one-third">
+                                <div class="column">
                                     <h1 class="subtitle is-5 has-text-centered">
                                         <strong class="has-text-black">
                                             {{ $t('location.total-littercoin-issued') }}

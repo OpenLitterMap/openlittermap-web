@@ -32,10 +32,10 @@ export default {
                 datasets: [
                     {
                         label: this.$t('profile.dashboard.timeseries-verified-photos'),
-                        backgroundColor: '#8e7fd6',
+                        backgroundColor: '#1DD3B0',
                         data: values,
                         fill: false,
-                        borderColor: '#8e7fd6',
+                        borderColor: '#1DD3B0',
                         maxBarThickness: '50'
                     }
                 ]
@@ -46,7 +46,7 @@ export default {
                 maintainAspectRatio: false,
                 legend: {
                     labels: {
-                        fontColor: '#8e7fd6'
+                        fontColor: '#1DD3B0'
                     }
                 },
                 scales: {
@@ -58,7 +58,7 @@ export default {
                             drawOnChartArea: false
                         },
                         ticks: {
-                            fontColor: '#8e7fd6'
+                            fontColor: '#1DD3B0'
                         },
                     }],
                     yAxes:[{
@@ -69,7 +69,7 @@ export default {
                             drawOnChartArea: false
                         },
                         ticks: {
-                            fontColor: '#8e7fd6'
+                            fontColor: '#1DD3B0'
                         },
                     }],
                 }
