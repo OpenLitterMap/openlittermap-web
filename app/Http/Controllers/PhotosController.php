@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\LocationService;
 use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Intervention\Image\Facades\Image;
 use GeoHash;
 
 use Carbon\Carbon;
-use App\CheckLocations;
 
 use App\Models\Photo;
 use App\Models\Location\City;
@@ -29,16 +30,17 @@ use Illuminate\Support\Facades\Redis;
 
 class PhotosController extends Controller
 {
-    use CheckLocations;
+    /** @var LocationService */
+    protected $locationService;
 
-   /**
-    * Apply middleware to all of these routes
-    */
-    public function __construct ()
+    /**
+     * Apply middleware to all of these routes
+     */
+    public function __construct(LocationService $locationService)
     {
-    	return $this->middleware('auth');
+        $this->locationService = $locationService;
 
-    	parent::__construct();
+        $this->middleware('auth');
     }
 
     /**
@@ -51,6 +53,8 @@ class PhotosController extends Controller
      * then persist new record to photos table
      *
      * @param Request $request
+     * @return bool[]
+     * @throws ValidationException
      */
     public function store (Request $request)
     {
@@ -190,15 +194,13 @@ class PhotosController extends Controller
         // Extract the address array
         $addressArray = $revGeoCode["address"];
          // \Log::info(['Address', $addressArray]);
-        // dd($addressArray);
         $location = array_values($addressArray)[0];
         $road = array_values($addressArray)[1];
 
         // todo- check all locations for "/" and replace with "-"
-        // todo - process this as a job when request is made to get reverse geocoded data
-        $this->checkCountry($addressArray, $user->id);
-        $this->checkState($addressArray, $user->id);
-        $this->checkCity($addressArray, $user->id);
+        $country = $this->locationService->getCountryFromAddressArray($addressArray);
+        $state = $this->locationService->getStateFromAddressArray($country, $addressArray);
+        $city = $this->locationService->getCityFromAddressArray($country, $state, $addressArray);
 
         $geohash = GeoHash::encode($latlong[0], $latlong[1]);
 
@@ -210,14 +212,14 @@ class PhotosController extends Controller
             'display_name' => $display_name,
             'location' => $location,
             'road' => $road,
-            'city' => $this->city,
-            'county' => $this->state,
-            'country' => $this->country,
-            'country_code' => $this->countryCode,
+            'city' => $city->city,
+            'county' => $state->state,
+            'country' => $country->country,
+            'country_code' => $country->shortcode,
             'model' => $model,
-            'country_id' => $this->countryId,
-            'state_id' => $this->stateId,
-            'city_id' => $this->cityId,
+            'country_id' => $country->id,
+            'state_id' => $state->id,
+            'city_id' => $city->id,
             'platform' => 'web',
             'geohash' => $geohash,
             'team_id' => $user->active_team,
@@ -236,22 +238,27 @@ class PhotosController extends Controller
 
         // Broadcast this event to anyone viewing the global map
         // This will also update country, state, and city.total_contributors_redis
-        event (new ImageUploaded(
-            $this->city,
-            $this->state,
-            $this->country,
-            $this->countryCode,
+        event(new ImageUploaded(
+            $city->city,
+            $state->state,
+            $country->country,
+            $country->shortcode,
             $imageName,
             $teamName,
             $user->id,
-            $this->countryId,
-            $this->stateId,
-            $this->cityId
+            $country->id,
+            $state->id,
+            $city->id
         ));
 
         // Increment the { Month-Year: int } value for each location
         // Todo - this needs debugging
-        event (new IncrementPhotoMonth($this->countryId, $this->stateId, $this->cityId, $dateTime));
+        event(new IncrementPhotoMonth(
+            $country->id,
+            $state->id,
+            $city->id,
+            $dateTime
+        ));
 
         return ['success' => true];
     }

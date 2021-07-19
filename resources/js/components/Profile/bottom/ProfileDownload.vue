@@ -47,13 +47,13 @@ export default {
 <style scoped>
 
     .profile-dl-title {
-        color: #8e7fd6;
+        color: #1DD3B0;
         margin-bottom: 1em;
         font-weight: 600;
     }
 
     .profile-dl-subtitle {
-        color: #8e7fd6;
+        color: #1DD3B0;
         margin-bottom: 1em;
     }
 
