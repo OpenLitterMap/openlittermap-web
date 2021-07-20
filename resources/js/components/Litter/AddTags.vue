@@ -11,11 +11,11 @@
                             value-attribute="key"
                             :filter-by-query="true"
                             :list="allTags"
-                            :min-length="0"
+                            :min-length="1"
                             :max-suggestions="0"
-                            mode="select"
-                            :styles="autoCompleteStyleAllTags"
-                            placeholder="Press Spacebar to Search All Tags"
+                            mode="input"
+                            :styles="autoCompleteStyle"
+                            placeholder="Press Ctrl + Spacebar to Search All Tags"
                             @focus="onFocusSearch"
                             @select="search"
                         />
@@ -168,9 +168,9 @@ export default {
             this.$store.commit('initRecentTags', JSON.parse(this.$localStorage.get('recentTags')));
         }
 
-        // If the user hits the Spacebar, search all tags
+        // If the user hits Ctrl + Spacebar, search all tags
         window.addEventListener('keydown', (e) => {
-            if (e.key.toLowerCase() === ' ') {
+            if (e.ctrlKey && e.key.toLowerCase() === ' ') {
                 this.$refs.search.input.focus();
                 e.preventDefault();
             }
@@ -191,14 +191,7 @@ export default {
                 vueSimpleSuggest: 'position-relative',
                 inputWrapper: '',
                 defaultInput : 'input',
-                suggestions: 'position-absolute list-group',
-                suggestItem: 'list-group-item'
-            },
-            autoCompleteStyleAllTags: {
-                vueSimpleSuggest: 'position-relative',
-                inputWrapper: '',
-                defaultInput : 'input',
-                suggestions: 'position-absolute list-group search-all-tags',
+                suggestions: 'position-absolute list-group search-fixed-height',
                 suggestItem: 'list-group-item'
             }
         };
@@ -525,19 +518,16 @@ export default {
          */
         search (input)
         {
-            if (input)
-            {
-                let searchValues = input.key.split(":");
+            let searchValues = input.key.split(':');
 
-                this.category = {key: searchValues[0]};
-                this.tag = {key: searchValues[1]};
+            this.category = {key: searchValues[0]};
+            this.tag = {key: searchValues[1]};
 
-                this.addTag();
+            this.addTag();
 
-                this.$nextTick(function () {
-                    this.onFocusSearch();
-                });
-            }
+            this.$nextTick(function () {
+                this.onFocusSearch();
+            });
         },
 
         /**
