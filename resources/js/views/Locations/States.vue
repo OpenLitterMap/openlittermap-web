@@ -29,7 +29,9 @@ export default {
     {
         this.loading = true;
 
-        await this.$store.dispatch('GET_STATES', window.location.href.split('/')[4]);
+        const countryText = window.location.href.split('/')[4]
+
+        await this.$store.dispatch('GET_STATES', countryText);
 
         this.loading = false;
     },

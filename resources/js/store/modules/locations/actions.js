@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import i18n from '../../../i18n'
 import routes from '../../../routes';
+import router from '../../../routes';
 
 export const actions = {
 
@@ -50,6 +51,45 @@ export const actions = {
     },
 
     /**
+     * Load the data for any location
+     */
+    async GET_LOCATION_DATA (context, payload)
+    {
+        await axios.get('location', {
+            params: {
+                locationType: payload.locationType,
+                id: payload.id
+            }
+        })
+        .then(response => {
+            console.log('get_location_data', response);
+
+            if (payload.locationType === 'country')
+            {
+                context.commit('setStates', response.data)
+            }
+            else if (payload.locationType === 'state')
+            {
+                context.commit('setCities', response.data)
+            }
+            else if (payload.locationType === 'city')
+            {
+                console.log('set cities?');
+            }
+            else
+            {
+                console.log('wrong location type');
+            }
+
+            // router.push({ path:  '/world/' + response.data.countryName });
+
+        })
+        .catch(error => {
+            console.log('get_location_data', error);
+        });
+    },
+
+    /**
      * Get all countries data + global metadata
      */
     async GET_COUNTRIES (context)
@@ -70,7 +110,7 @@ export const actions = {
      */
     async GET_STATES (context, payload)
     {
-        await axios.get(window.location.origin + '/states', {
+        await axios.get('/states', {
             params: {
                 country: payload
             }
@@ -92,7 +132,6 @@ export const actions = {
      */
     async GET_CITIES (context, payload)
     {
-        console.log('get_cities', payload);
         await axios.get(window.location.origin + '/cities', {
             params: {
                 country: payload.country,

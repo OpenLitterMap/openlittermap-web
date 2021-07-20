@@ -2,43 +2,44 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\LocationService;
-use Exception;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\ValidationException;
-use Intervention\Image\Facades\Image;
 use GeoHash;
-
+use Exception;
 use Carbon\Carbon;
 
 use App\Models\Photo;
+use App\Models\LitterTags;
 use App\Models\Location\City;
 use App\Models\Location\State;
 use App\Models\Location\Country;
 
-use App\Models\LitterTags;
+use App\Helpers\Locations;
 
-use Illuminate\Http\Request;
 use App\Events\ImageUploaded;
 use App\Events\TagsVerifiedByAdmin;
 use App\Events\Photo\IncrementPhotoMonth;
 
+use Intervention\Image\Facades\Image;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class PhotosController extends Controller
 {
-    /** @var LocationService */
-    protected $locationService;
+    /** @var Locations */
+    protected $locations;
 
     /**
      * Apply middleware to all of these routes
+     * @param Locations $locations
      */
-    public function __construct(LocationService $locationService)
+    public function __construct(Locations $locations)
     {
-        $this->locationService = $locationService;
+        $this->checkForLocationHelper = $locations;
 
         $this->middleware('auth');
     }
@@ -198,9 +199,9 @@ class PhotosController extends Controller
         $road = array_values($addressArray)[1];
 
         // todo- check all locations for "/" and replace with "-"
-        $country = $this->locationService->getCountryFromAddressArray($addressArray);
-        $state = $this->locationService->getStateFromAddressArray($country, $addressArray);
-        $city = $this->locationService->getCityFromAddressArray($country, $state, $addressArray);
+        $country = $this->checkForLocationHelper->getCountryFromAddressArray($addressArray);
+        $state = $this->checkForLocationHelper->getStateFromAddressArray($country, $addressArray);
+        $city = $this->checkForLocationHelper->getCityFromAddressArray($country, $state, $addressArray);
 
         $geohash = GeoHash::encode($latlong[0], $latlong[1]);
 

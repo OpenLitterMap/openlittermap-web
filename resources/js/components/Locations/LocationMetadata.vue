@@ -6,14 +6,14 @@
         <div class="flex pb1">
 
             <!-- Flag -->
-            <img v-if="type === 'country'"
+            <img v-if="locationType === 'country'"
                     height="15"
                     class="img-flag"
                     :src="getCountryFlag(location.shortcode)"
             />
 
             <h2 :class="textSize">
-                <a @click="goTo(location)" :id="location[type]" class="is-link has-text-centered location-title">
+                <a @click="loadLocationData(location.id)" :id="location[locationType]" class="is-link has-text-centered location-title">
                     <!-- Position -->
                     <span v-show="category !== 'A-Z' && index < 100">{{ positions(index) }} -</span>
                     <!-- Name -->
@@ -29,7 +29,7 @@
                     {{ location['total_litter_redis'].toLocaleString() }}
                 </strong>
 
-                <p v-if="type === 'country'" class="total-photos-percentage">
+                <p v-if="locationType === 'country'" class="total-photos-percentage">
                     {{ (location['total_litter_redis'] / this.$store.state.locations.total_litter * 100).toFixed(2) + "% Total"  }}
                 </p>
             </div>
@@ -39,7 +39,7 @@
                     {{ location['total_photos_redis'].toLocaleString() }}
                 </strong>
 
-                <p v-if="type === 'country'" class="total-photos-percentage">
+                <p v-if="locationType === 'country'" class="total-photos-percentage">
                     {{ (location['total_photos_redis'] / this.$store.state.locations.total_photos * 100).toFixed(2) + "% Total"  }}
                 </p>
             </div>
@@ -57,9 +57,13 @@ import moment from 'moment'
 
 export default {
     name: 'LocationMetadata',
-    props:['index', 'location', 'type', 'category'],
-	data ()
-	{
+    props:[
+        'index',
+        'location',
+        'locationType',
+        'category'
+    ],
+	data () {
 		return {
 			dir: '/assets/icons/flags/',
 		};
@@ -108,44 +112,49 @@ export default {
 		 */
 		getName (location)
 		{
-			return location[this.type];
+			return location[this.locationType];
 		},
 
         /**
 		 * When user clicks on a location name
 		 */
-		goTo (location)
+		loadLocationData (id)
 		{
-			if (this.type === 'country')
-			{
-			    let country = location.country;
+            this.$store.dispatch('GET_LOCATION_DATA', {
+                id,
+                locationType: this.locationType
+            });
 
-			    this.$store.commit('setCountry', country);
-
-				this.$router.push({ path:  '/world/' + country });
-			}
-			else if (this.type === 'state')
-			{
-			    let state = location.state;
-
-			    this.$store.commit('setState', state);
-
-				this.$router.push({ path:  '/world/' + this.country + '/' + state });
-			}
-			else if (this.type === 'city')
-			{
-			    // if the object has "hex" key, the slider has updated
-                if (location.hasOwnProperty('hex'))
-                {
-                    this.$router.push({
-                        path:
-                            '/world/' + this.country + '/' + this.state + '/' + location.city + '/map/'
-                            + location.minDate + '/' + location.maxDate + '/' + location.hex
-                    });
-                }
-
-				this.$router.push({ path:  '/world/' + this.country + '/' + this.state + '/' + location.city + '/map' });
-			}
+			// if (this.locationType === 'country')
+			// {
+			//     let country = location.country;
+            //
+			//     this.$store.commit('setCountry', country);
+            //
+			// 	this.$router.push({ path:  '/world/' + country });
+			// }
+			// else if (this.locationType === 'state')
+			// {
+			//     let state = location.state;
+            //
+			//     this.$store.commit('setState', state);
+            //
+			// 	this.$router.push({ path:  '/world/' + this.country + '/' + state });
+			// }
+			// else if (this.locationType === 'city')
+			// {
+			//     // if the object has "hex" key, the slider has updated
+            //     if (location.hasOwnProperty('hex'))
+            //     {
+            //         this.$router.push({
+            //             path:
+            //                 '/world/' + this.country + '/' + this.state + '/' + location.city + '/map/'
+            //                 + location.minDate + '/' + location.maxDate + '/' + location.hex
+            //         });
+            //     }
+            //
+			// 	this.$router.push({ path:  '/world/' + this.country + '/' + this.state + '/' + location.city + '/map' });
+			// }
 		},
 
         /**
@@ -185,8 +194,8 @@ export default {
     }
 
     .img-flag {
-        padding-right: 1.5em; 
-        border-radius: 1px; 
+        padding-right: 1.5em;
+        border-radius: 1px;
         flex: 0.1;
     }
 

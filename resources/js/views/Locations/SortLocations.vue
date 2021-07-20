@@ -14,13 +14,13 @@
 
 			<div class="hero-body location-container">
         		<div class="columns">
-		
+
 					<!-- Location Metadata -->
-					<location-metadata 
-						:index="index" 
-						:location="location" 
-						:type="type" 
-						:category="category" 
+					<location-metadata
+						:index="index"
+						:location="location"
+						:locationType="type"
+						:category="category"
 					/>
 
 					<!-- Charts -->
@@ -31,9 +31,9 @@
 						<div class="tabs is-center">
 
 							<!-- Components within Tabs -->
-							<a v-for="(tab, idx) in tabs" 	
-								:key="idx" v-show="showTab(tab.in_location)" 
-								@click="loadTab(index, tab.component)" 
+							<a v-for="(tab, idx) in tabs"
+								:key="idx" v-show="showTab(tab.in_location)"
+								@click="loadTab(index, tab.component)"
 								:class="tabClass(tab)">
 								{{ tab.title }}
 							</a>
@@ -55,9 +55,7 @@
 					</div>
 				</div>
 			</div>
-
 		</section>
-
     </section>
 </template>
 
@@ -71,7 +69,6 @@ import TimeSeriesContainer from '../../components/Locations/Charts/TimeSeries/Ti
 import Leaderboard from '../../components/Locations/Charts/Leaderboard/Leaderboard'
 import Options from '../../components/Locations/Charts/Options/Options'
 import Download from '../../components/Locations/Charts/Download/Download'
-
 
 export default {
 	props: ['type'], // country, state, or city
@@ -108,7 +105,7 @@ export default {
         {
             return this.orderedBy.length === 0 ? 'vh65' : '';
         },
-		
+
 		/**
 		 * Is the user authenticated?
 		 */
@@ -128,7 +125,7 @@ export default {
 				return this.locations;
 			}
 			else if (this.category === this.$t('location.most-data'))
-			{   
+			{
 				return sortBy(this.locations, 'total_litter_redis').reverse();
 			}
 			else if (this.category === this.$t('location.most-data-person'))
@@ -144,7 +141,7 @@ export default {
 		{
 			return this.$store.state.locations.locations;
 		}
-	}, 
+	},
 	methods: {
 
 		/**
@@ -166,11 +163,11 @@ export default {
 		/**
 		 * Show tab depending on location type
 		 */
-		showTab (tab) 
+		showTab (tab)
 		{
 			return (tab === 'all' || this.type === tab); // this will return true or false
 		},
-		
+
 		/**
 		 *
 		 */
@@ -182,7 +179,7 @@ export default {
 		/**
 		* Update selected category from LocationNavBar component
 		*/
-		updateCategory (updatedCategory) 
+		updateCategory (updatedCategory)
 		{
 			this.category = updatedCategory
 		},
@@ -194,7 +191,7 @@ export default {
 
 	.locations-main {
 		background-color: #23d160;
-		min-height: 100%;background-color: #23d160; 
+		min-height: 100%;background-color: #23d160;
 		min-height: 100%;
 	}
 
@@ -208,6 +205,6 @@ export default {
 
 	.world-cup-title {
 		color: #34495e;
-		
+
 	}
 </style>
