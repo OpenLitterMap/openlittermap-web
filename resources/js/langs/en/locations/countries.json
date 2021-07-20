@@ -11,7 +11,7 @@
 
     "es": {
         "name": "Spain",
-        "lang": "Español"
+        "lang": "Spanish"
     },
 
     "fr": {
@@ -51,6 +51,11 @@
 
     "pl": {
         "name": "Poland",
-        "lang": "Polski"
+        "lang": "Polish"
+    },
+
+    "hi": {
+        "name": "India",
+        "lang": "Hindi"
     }
 }

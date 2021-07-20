@@ -15,15 +15,12 @@
   "number-of-contributors": "Aantal Bijdragers",
   "avg-img-per-person": "Gemiddeld Aantal Foto's per Persoon",
   "avg-litter-per-person": "Gemiddeld Aantal Items per Persoon",
-  "maps16": "Gemaakt door",
   "leaderboard": "Scorebord",
   "time-series": "Tijdreeks",
-  "options": "Options",
-  "most-data": "Most Open Data",
-  "most-data-person": "Most Open Data Per Person",
-  "download-open-verified-data": "Free and Open Verified Citizen Science Data on Plastic Pollution.",
-  "stop-plastic-ocean": "Let's stop plastic going into the ocean.",
-  "enter-email-sent-data": "Please enter an email address to which the data will be sent:"
+  "options": "Opties",
+  "most-data": "Meeste open data",
+  "most-data-person": "Meeste open data per persoon",
+  "download-open-verified-data": "Gratis en Open Gecontroleerde Data over Plastic Vervuiling.",
+  "stop-plastic-ocean": "Laten we voorkomen dat plastic in de oceaan komt.",
+  "enter-email-sent-data": "Geef een emailadres op waar de data naartoe verzonden moet worden:"
 }
-
-

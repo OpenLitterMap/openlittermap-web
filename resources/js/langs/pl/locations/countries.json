@@ -52,5 +52,10 @@
     "pl": {
         "name": "Polska",
         "lang": "Polski"
+    },
+
+    "hi": {
+        "name": "India",
+        "lang": "Hindi"
     }
 }

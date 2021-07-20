@@ -14,6 +14,10 @@
 	      			<img :src="getFlag(lang.url)" class="lang-flag" />
 	      			<p>{{ getLang(lang.url) }}</p>
 	      		</div>
+				<div class="dropdown-item flex">
+					<a href="https://airtable.com/invite/l?inviteId=invooqVMIlQhyHcQy&inviteToken=cc4d36216d5a7a78be587281a080d6a265e81ac258c8c8e118a99ea5568ee02f" target="_blank" 
+					class="button is-small is-info is-light">Add your language!</a>
+				</div>
 			</div>
 	  	</div>
 	</div>
