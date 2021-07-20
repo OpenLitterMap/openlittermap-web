@@ -271,34 +271,35 @@ class PhotosController extends Controller
     {
         $user = Auth::user();
 
-        $photo = Photo::find($request->photoid);
+        $photo = Photo::findOrFail($request->photoid);
+
+        if ($user->id !== $photo->user_id) {
+            abort(403);
+        }
 
         try
         {
-            if ($user->id === $photo->user_id)
+            if (app()->environment('production'))
             {
-                if (app()->environment('production'))
-                {
-                    $path = substr($photo->filename, 42);
-                    Storage::disk('s3')->delete($path);
-                }
-                else
-                {
-                    // Strip the app name from the filename
-                    // Resulting path is like 'local-uploads/2021/07/07/photo.jpg'
-                    $path = public_path(substr($photo->filename, strlen(config('app.url'))));
-
-                    if (File::exists($path)) {
-                        File::delete($path);
-                    }
-                }
-
-                $photo->delete();
-
-                $user->xp = $user->xp > 0 ? $user->xp - 1 : 0;
-                $user->total_images = $user->total_images > 0 ? $user->total_images - 1 : 0;
-                $user->save();
+                $path = substr($photo->filename, 42);
+                Storage::disk('s3')->delete($path);
             }
+            else
+            {
+                // Strip the app name from the filename
+                // Resulting path is like 'local-uploads/2021/07/07/photo.jpg'
+                $path = public_path(substr($photo->filename, strlen(config('app.url'))));
+
+                if (File::exists($path)) {
+                    File::delete($path);
+                }
+            }
+
+            $photo->delete();
+
+            $user->xp = $user->xp > 0 ? $user->xp - 1 : 0;
+            $user->total_images = $user->total_images > 0 ? $user->total_images - 1 : 0;
+            $user->save();
         }
         catch (Exception $e)
         {
