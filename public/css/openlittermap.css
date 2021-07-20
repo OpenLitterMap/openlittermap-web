@@ -248,6 +248,11 @@ html {
     padding-top: 7em;
 }
 
+.search-all-tags {
+    height: 32em;
+    overflow-y: auto;
+}
+
 .show-mobile {
 	display: none;
 }

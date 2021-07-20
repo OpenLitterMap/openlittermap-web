@@ -1,6 +1,6 @@
 <template>
     <div>
-        <!-- Search -->
+        <!-- Search all tags -->
         <div class="columns">
             <div class="column is-half is-offset-3">
                 <div class="control">
@@ -10,12 +10,12 @@
                             display-attribute="title"
                             value-attribute="key"
                             :filter-by-query="true"
-                            :list="tagsAndCategories"
-                            :min-length="1"
-                            :max-suggestions="10"
-                            mode="input"
-                            :styles="autoCompleteStyle"
-                            placeholder="Search all tags (Ctrl + Q)"
+                            :list="allTags"
+                            :min-length="0"
+                            :max-suggestions="0"
+                            mode="select"
+                            :styles="autoCompleteStyleAllTags"
+                            placeholder="Press Spacebar to Search All Tags"
                             @focus="onFocusSearch"
                             @select="search"
                         />
@@ -168,8 +168,9 @@ export default {
             this.$store.commit('initRecentTags', JSON.parse(this.$localStorage.get('recentTags')));
         }
 
+        // If the user hits the Spacebar, search all tags
         window.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.key.toLowerCase() === 'q') {
+            if (e.key.toLowerCase() === ' ') {
                 this.$refs.search.input.focus();
                 e.preventDefault();
             }
@@ -193,9 +194,39 @@ export default {
                 suggestions: 'position-absolute list-group',
                 suggestItem: 'list-group-item'
             },
+            autoCompleteStyleAllTags: {
+                vueSimpleSuggest: 'position-relative',
+                inputWrapper: '',
+                defaultInput : 'input',
+                suggestions: 'position-absolute list-group search-all-tags',
+                suggestItem: 'list-group-item'
+            }
         };
     },
     computed: {
+        /**
+         * Litter tags for all categories, used by the Search field
+         */
+        allTags ()
+        {
+            let results = [];
+
+            categories.forEach(cat => {
+                if (litterkeys.hasOwnProperty(cat)) {
+                    results = [
+                        ...results,
+                        ...litterkeys[cat].map(tag => {
+                            return {
+                                key: cat + ':' + tag,
+                                title: this.$i18n.t('litter.categories.' + cat) + ': ' + this.$i18n.t(`litter.${cat}.${tag}`)
+                            };
+                        })
+                    ];
+                }
+            });
+
+            return results;
+        },
 
         /**
          * Show spinner when processing
@@ -255,16 +286,6 @@ export default {
             return this.quantity === 100;
         },
 
-        /**
-         * Disable button if true
-         */
-        checkTags ()
-        {
-            if (this.processing) return true;
-
-            return Object.keys(this.$store.state.litter.tags).length === 0;
-        },
-
         // /**
         //  * When adding tags to a bounding box,
         //  *
@@ -282,6 +303,16 @@ export default {
         //
         //     return disable;
         // },
+
+        /**
+         * Disable button if true
+         */
+        checkTags ()
+        {
+            if (this.processing) return true;
+
+            return Object.keys(this.$store.state.litter.tags).length === 0;
+        },
 
         /**
          * Has the litter been picked up, or is it still there?
@@ -327,30 +358,6 @@ export default {
                     title: this.$i18n.t(`litter.${this.category.key}.${tag}`)
                 };
             });
-        },
-
-        /**
-         * Litter tags for all categories, used by the Search field
-         */
-        tagsAndCategories ()
-        {
-            let results = [];
-
-            categories.forEach(cat => {
-                if (litterkeys.hasOwnProperty(cat)) {
-                    results = [
-                        ...results,
-                        ...litterkeys[cat].map(tag => {
-                            return {
-                                key: cat + ':' + tag,
-                                title: this.$i18n.t('litter.categories.' + cat) + ': ' + this.$i18n.t(`litter.${cat}.${tag}`)
-                            };
-                        })
-                    ];
-                }
-            });
-
-            return results;
         },
     },
     methods: {
@@ -501,6 +508,7 @@ export default {
 
         /**
          * Hacky solution. Waiting on fix. https://github.com/KazanExpress/vue-simple-suggest/issues/311
+         *
          * An item has been selected from the list. Blur the input focus.
          */
         onSuggestion ()
@@ -512,18 +520,24 @@ export default {
             });
         },
 
+        /**
+         *
+         */
         search (input)
         {
-            let searchValues = input.key.split(":");
+            if (input)
+            {
+                let searchValues = input.key.split(":");
 
-            this.category = {key: searchValues[0]};
-            this.tag = {key: searchValues[1]};
+                this.category = {key: searchValues[0]};
+                this.tag = {key: searchValues[1]};
 
-            this.addTag();
+                this.addTag();
 
-            this.$nextTick(function () {
-                this.onFocusSearch();
-            })
+                this.$nextTick(function () {
+                    this.onFocusSearch();
+                });
+            }
         },
 
         /**
@@ -561,7 +575,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "../../styles/variables.scss";
+
+    @import "../../styles/variables.scss";
 
     .hide-br {
         display: none;
@@ -614,6 +629,5 @@ export default {
         opacity: 0;
         transform: translateX(30px);
     }
-
 
 </style>
