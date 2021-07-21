@@ -1,5 +1,5 @@
 export const init = {
-    country: '',
+    countryName: '',
     globalLeaders: [],
     hex: null,
     level: {

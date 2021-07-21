@@ -19,7 +19,7 @@
 					<location-metadata
 						:index="index"
 						:location="location"
-						:locationType="type"
+						:locationType="locationType"
 						:category="category"
 					/>
 
@@ -49,7 +49,7 @@
 							:time="location.time"
 							@dateschanged="updateUrl"
 							:index="index"
-							:type="type"
+							:locationType="locationType"
 							:locationId="location.id"
 						/>
 					</div>
@@ -71,7 +71,7 @@ import Options from '../../components/Locations/Charts/Options/Options'
 import Download from '../../components/Locations/Charts/Download/Download'
 
 export default {
-	props: ['type'], // country, state, or city
+	props: ['locationType'], // country, state, or city
 	name: 'SortLocations',
 	components: {
 		LocationNavbar,
@@ -82,8 +82,10 @@ export default {
         Options,
         Download
 	},
-	data ()
-	{
+    created () {
+        console.log('SortLocations created');
+    },
+	data () {
 		return {
 			'category': this.$t('location.most-data'),
 			tab: '',
@@ -97,7 +99,6 @@ export default {
 		};
 	},
     computed: {
-
 		/**
          * Expand container to fullscreen when orderedBy is empty/loading
          */
@@ -161,11 +162,11 @@ export default {
 		},
 
 		/**
-		 * Show tab depending on location type
+		 * Show tab depending on location locationType
 		 */
 		showTab (tab)
 		{
-			return (tab === 'all' || this.type === tab); // this will return true or false
+			return (tab === 'all' || this.locationType === tab); // this will return true or false
 		},
 
 		/**
@@ -191,7 +192,6 @@ export default {
 
 	.locations-main {
 		background-color: #23d160;
-		min-height: 100%;background-color: #23d160;
 		min-height: 100%;
 	}
 
@@ -200,8 +200,8 @@ export default {
 	}
 
 	.h65pc {
-			height: 65%;
-		}
+        height: 65%;
+    }
 
 	.world-cup-title {
 		color: #34495e;

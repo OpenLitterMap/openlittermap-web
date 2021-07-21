@@ -1,7 +1,6 @@
 import Vue from 'vue'
 import i18n from '../../../i18n'
 import routes from '../../../routes';
-import router from '../../../routes';
 
 export const actions = {
 
@@ -32,7 +31,6 @@ export const actions = {
                     position: 'top-right'
                 });
             }
-
             else
             {
                 /* improve this */
@@ -50,44 +48,47 @@ export const actions = {
         });
     },
 
-    /**
-     * Load the data for any location
-     */
-    async GET_LOCATION_DATA (context, payload)
-    {
-        await axios.get('location', {
-            params: {
-                locationType: payload.locationType,
-                id: payload.id
-            }
-        })
-        .then(response => {
-            console.log('get_location_data', response);
-
-            if (payload.locationType === 'country')
-            {
-                context.commit('setStates', response.data)
-            }
-            else if (payload.locationType === 'state')
-            {
-                context.commit('setCities', response.data)
-            }
-            else if (payload.locationType === 'city')
-            {
-                console.log('set cities?');
-            }
-            else
-            {
-                console.log('wrong location type');
-            }
-
-            // router.push({ path:  '/world/' + response.data.countryName });
-
-        })
-        .catch(error => {
-            console.log('get_location_data', error);
-        });
-    },
+    // We don't need this yet but we might later
+    // /**
+    //  * Load the data for any location
+    //  */
+    // async GET_LOCATION_DATA (context, payload)
+    // {
+    //     await axios.get('location', {
+    //         params: {
+    //             locationType: payload.locationType,
+    //             id: payload.id
+    //         }
+    //     })
+    //     .then(response => {
+    //         console.log('get_location_data', response);
+    //
+    //         if (payload.locationType === 'country')
+    //         {
+    //             context.commit('setStates', response.data)
+    //
+    //             routes.push('/world/' + response.data.countryName);
+    //         }
+    //         else if (payload.locationType === 'state')
+    //         {
+    //             context.commit('setCities', response.data)
+    //         }
+    //         else if (payload.locationType === 'city')
+    //         {
+    //             console.log('set cities?');
+    //         }
+    //         else
+    //         {
+    //             console.log('wrong location type');
+    //         }
+    //
+    //         // router.push({ path:  '/world/' + response.data.countryName });
+    //
+    //     })
+    //     .catch(error => {
+    //         console.log('get_location_data', error);
+    //     });
+    // },
 
     /**
      * Get all countries data + global metadata
@@ -118,9 +119,16 @@ export const actions = {
         .then(response => {
             console.log('get_states', response);
 
-            (response.data.success)
-                ? context.commit('setStates', response.data)
-                : routes.push({ 'path': '/world' });
+            if (response.data.success)
+            {
+                context.commit('countryName', response.data.countryName);
+
+                context.commit('setLocations', response.data.states)
+            }
+            else
+            {
+                routes.push({ 'path': '/world' });
+            }
         })
         .catch(error => {
             console.log('error.get_states', error);
@@ -132,7 +140,7 @@ export const actions = {
      */
     async GET_CITIES (context, payload)
     {
-        await axios.get(window.location.origin + '/cities', {
+        await axios.get('/cities', {
             params: {
                 country: payload.country,
                 state: payload.state
@@ -141,9 +149,16 @@ export const actions = {
         .then(response => {
             console.log('get_cities', response);
 
-            (response.data.success)
-                ? context.commit('setCities', response.data)
-                : routes.push({ 'path': '/world' });
+            if (response.data.success)
+            {
+                context.commit('setCities', response.data.cities)
+
+                // change state name
+            }
+            else
+            {
+                routes.push({ 'path': '/world' })
+            }
         })
         .catch(error => {
             console.log('error.get_cities', error);

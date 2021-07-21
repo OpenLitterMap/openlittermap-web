@@ -9,7 +9,7 @@ use App\Models\Location\City;
 use App\Models\Location\Country;
 use App\Models\Location\State;
 
-trait UploadingPhotosHelper
+class UploadingPhotosHelper
 {
     /**
      * Get or Create Country from $addressArray

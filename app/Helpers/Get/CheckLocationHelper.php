@@ -2,6 +2,7 @@
 
 namespace App\Helpers\Get;
 
+// Used by LoadingDataHelper
 trait CheckLocationHelper
 {
     /**
@@ -43,6 +44,7 @@ trait CheckLocationHelper
     {
         $newIndex = 0;
         $arrayOfLeaders = [];
+
         foreach ($leaders as $leader)
         {
             $name = '';

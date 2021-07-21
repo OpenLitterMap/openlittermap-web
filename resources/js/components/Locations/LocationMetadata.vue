@@ -13,7 +13,7 @@
             />
 
             <h2 :class="textSize">
-                <a @click="loadLocationData(location.id)" :id="location[locationType]" class="is-link has-text-centered location-title">
+                <a @click="loadLocationData(location)" :id="location[locationType]" class="is-link has-text-centered location-title">
                     <!-- Position -->
                     <span v-show="category !== 'A-Z' && index < 100">{{ positions(index) }} -</span>
                     <!-- Name -->
@@ -118,43 +118,43 @@ export default {
         /**
 		 * When user clicks on a location name
 		 */
-		loadLocationData (id)
+		loadLocationData (location)
 		{
-            this.$store.dispatch('GET_LOCATION_DATA', {
-                id,
-                locationType: this.locationType
-            });
+            console.log('locationType', this.locationType);
+			if (this.locationType === 'country')
+			{
+			    // Get States for this Country
+			    const countryName = location.country;
 
-			// if (this.locationType === 'country')
-			// {
-			//     let country = location.country;
-            //
-			//     this.$store.commit('setCountry', country);
-            //
-			// 	this.$router.push({ path:  '/world/' + country });
-			// }
-			// else if (this.locationType === 'state')
-			// {
-			//     let state = location.state;
-            //
-			//     this.$store.commit('setState', state);
-            //
-			// 	this.$router.push({ path:  '/world/' + this.country + '/' + state });
-			// }
-			// else if (this.locationType === 'city')
-			// {
-			//     // if the object has "hex" key, the slider has updated
-            //     if (location.hasOwnProperty('hex'))
-            //     {
-            //         this.$router.push({
-            //             path:
-            //                 '/world/' + this.country + '/' + this.state + '/' + location.city + '/map/'
-            //                 + location.minDate + '/' + location.maxDate + '/' + location.hex
-            //         });
-            //     }
-            //
-			// 	this.$router.push({ path:  '/world/' + this.country + '/' + this.state + '/' + location.city + '/map' });
-			// }
+			    this.$store.commit('setCountry', countryName);
+
+				this.$router.push({ path:  '/world/' + countryName });
+			}
+			else if (this.locationType === 'state')
+			{
+			    // Get Cities for this State + Country
+			    const stateName = location.state;
+
+                console.log('country', this.country);
+
+			    this.$store.commit('setState', stateName);
+
+				this.$router.push({ path:  '/world/' + this.country + '/' + stateName });
+			}
+			else if (this.locationType === 'city')
+			{
+			    // if the object has "hex" key, the slider has updated
+                if (location.hasOwnProperty('hex'))
+                {
+                    this.$router.push({
+                        path:
+                            '/world/' + this.country + '/' + this.state + '/' + location.city + '/map/'
+                            + location.minDate + '/' + location.maxDate + '/' + location.hex
+                    });
+                }
+
+				this.$router.push({ path:  '/world/' + this.country + '/' + this.state + '/' + location.city + '/map' });
+			}
 		},
 
         /**

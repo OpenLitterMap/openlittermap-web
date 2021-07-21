@@ -9,9 +9,7 @@ use App\Models\Location\State;
 use App\Models\User\User;
 use Illuminate\Support\Facades\Redis;
 
-use App\Helpers\Get\CheckLocationHelper;
-
-trait LoadingDataHelper
+class LoadingDataHelper
 {
     use CheckLocationHelper;
 
@@ -25,16 +23,16 @@ trait LoadingDataHelper
 
         /**
          *  Todo
-        1. save user_id in country created_by column
-        2. Find out how to get top-10 more efficiently
-        3. Paginate
-        4. Automate 'manual_verify => 1'
-        5. Eager load leaders with the country model
+            1. save user_id in country created_by column
+            2. Find out how to get top-10 more efficiently
+            3. Paginate
+            4. Automate 'manual_verify => 1'
+            5. Eager load leaders with the country model
          */
-        $countries = Country::with(['creator' => function($q) {
+        $countries = Country::with(['creator' => function ($q) {
             $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby')
-                ->where('show_name_createdby', true)
-                ->orWhere('show_username_createdby', true);
+              ->where('show_name_createdby', true)
+              ->orWhere('show_username_createdby', true);
         }])
         ->where('manual_verify', '1')
         ->orderBy('country', 'asc')
@@ -72,10 +70,7 @@ trait LoadingDataHelper
          *
          * todo - Make this dynamic
          *
-         * Someone please refactor this!!!
-         *
          * See: GlobalLevels.php global_levels table
-         * We need to keep earlier levels for test databases
          */
         // level 0
         if ($total_litter <= 1000)
@@ -124,6 +119,7 @@ trait LoadingDataHelper
 
         $newIndex = 0;
         $globalLeaders = [];
+
         foreach ($users as $user)
         {
             $name = '';
@@ -165,17 +161,19 @@ trait LoadingDataHelper
     /**
      * Get the States for a Country
      *
-     * Todo: add shortcode
+     * /world/{country}
      *
-     * @param $country
+     * @param string $url
      *
      * @return array
      */
-    public static function getStates ($country) : array
+    public static function getStates (string $url) : array
     {
-        $country = Country::where('id', $country)
-            ->orWhere('country', $country)
-            ->orWhere('shortcode', $country)
+        $urlText = urldecode($url);
+
+        $country = Country::where('id', $urlText)
+            ->orWhere('country', $urlText)
+            ->orWhere('shortcode', $urlText)
             ->first();
 
         if (!$country) return ['success' => false, 'msg' => 'country not found'];
@@ -239,13 +237,21 @@ trait LoadingDataHelper
 
     /**
      * Get the cities for the /country/state
+     *
+     * @param string $url
+     *
+     * @return array
      */
-    public static function getCities ($stateId)
+    public static function getCities (string $url) : array
     {
-        $state = State::where([
-            ['id', $stateId],
-            ['total_images', '!=', null]
-        ])->first();
+        $urlText = urldecode($url);
+
+        // ['total_images', '!=', null]
+
+        $state = State::where('id', $urlText)
+            ->orWhere('state', $urlText)
+            ->orWhere('statenameb', $urlText)
+            ->first();
 
         if (!$state) return ['success' => false, 'msg' => 'state not found'];
 

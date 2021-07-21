@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Location;
 
+use App\Helpers\Get\LoadingDataHelper;
 use App\Http\Controllers\Controller;
 
 use App\Helpers\Locations;
@@ -31,7 +32,7 @@ class LocationsController extends Controller
      */
     public static function getCountries ()
     {
-        return Locations::getCountries();
+        return LoadingDataHelper::getCountries();
     }
 
     /**
@@ -45,7 +46,7 @@ class LocationsController extends Controller
     {
         // todo - validate text
 
-        return Locations::getStates(request()->country);
+        return LoadingDataHelper::getStates(request()->country);
     }
 
     /**
@@ -55,7 +56,6 @@ class LocationsController extends Controller
      */
     public static function getCities ()
     {
-        return ['todo - cities'];
-//        return Locations::getCities();
+        return LoadingDataHelper::getCities();
     }
 }

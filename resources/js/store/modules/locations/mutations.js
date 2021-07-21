@@ -25,11 +25,11 @@ export const mutations = {
     },
 
     /**
-     * Set the country (when clicking into it)
+     * Set the country name (when clicking into it)
      */
-    setCountry (state, payload)
+    countryName (state, payload)
     {
-        state.country = payload;
+        state.countryName = payload;
     },
 
     /**
@@ -43,20 +43,9 @@ export const mutations = {
     /**
      * Update States + parent country
      */
-    setStates (state, payload)
+    setLocations (state, payload)
     {
-        state.locations = payload.states;
-        state.country = payload.country;
-    },
-
-    /**
-     * Update Cities + parent country, state
-     */
-    setCities (state, payload)
-    {
-        state.locations = payload.cities;
-        state.country = payload.country;
-        state.state = payload.state;
+        state.locations = payload;
     },
 
     /**
