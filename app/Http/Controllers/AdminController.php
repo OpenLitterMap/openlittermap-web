@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\ResetTagsCountAdmin;
-use App\Litterrata;
 use Log;
 use Auth;
 use File;
@@ -15,9 +13,7 @@ use App\Traits\AddTagsTrait;
 
 use Carbon\Carbon;
 
-// use App\Http\Requests;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Redis;
 
 use App\Events\TagsVerifiedByAdmin;
 
@@ -30,10 +26,8 @@ class AdminController extends Controller
      */
     public function __construct ()
     {
-    	return $this->middleware('admin');
-
-    	parent::__construct();
-	}
+    	$this->middleware('admin');
+    }
 
     public function getUserCount ()
     {
@@ -208,57 +202,7 @@ class AdminController extends Controller
         $photo->verified = 2;
         $photo->total_litter = 0;
 
-        $litterTotal = 0;
-
-        $jsonDecoded = Litterrata::INSTANCE()->getDecodedJSON();
-
-        // for each categories as category => values eg. Smoking, Butts: 3;
-        foreach ($request['categories'] as $category => $values)
-        {
-            $total = 0;
-            foreach ($values as $item => $quantity)
-            {
-                // reference the dynamic id on the photos table eg. smoking_id
-                $id          = $jsonDecoded->$category->id;
-                // The current Class as a string
-                $clazz       = $jsonDecoded->$category->class;
-                // Reference the name of the column we want to edit
-                // $col         = $jsonDecoded->$category->types->$item->att;
-                $col         = $jsonDecoded->$category->types->$item->col;
-
-                $dynamicClassName = 'App\\Categories\\'.$clazz;
-
-                // Check if photo id already exists in the dynamic table
-                // .... not actually sure if this 2-way binding this necessary
-                if (!$dynamicClassName::where(['photo_id' => $photo->id])->first()){
-                    // if not, create it
-                    $dynamicClassName::create(['photo_id' => $photo->id]);
-                }
-
-                // Get the row (id) in the dynamic class we are currently working on
-                $row = $dynamicClassName::where(['photo_id' => $photo->id])->first();
-                // was previously named type
-
-                // Does the photos table have a reference to the dynamic row id yet?
-                if ($photo->$id == null) {
-                    // if null, create the link
-                    $photo->$id = $row->id;
-                    $photo->save();
-                }
-
-                // Now that the tables are linked, update the dynamic row/col quantity and save
-                // row = id, photo id, all attriubutes for that specific row
-                // col == butts
-                $row->$col = $quantity;
-                $row->save();
-
-                $litterTotal += $quantity;
-
-            }
-        }
-
-        $photo->total_litter = $litterTotal;
-        $photo->save();
+        $this->addTags($request->categories, $photo->id);
 
         // todo - horizon
         event(new TagsVerifiedByAdmin($photo->id));

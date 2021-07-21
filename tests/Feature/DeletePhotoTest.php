@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 
 use App\Models\User\User;
+use Illuminate\Support\Facades\File;
 use Tests\TestCase;
 
 class DeletePhotoTest extends TestCase
@@ -41,7 +42,7 @@ class DeletePhotoTest extends TestCase
         $this->post('/profile/photos/delete', ['photoid' => $photo->id]);
 
         $user->refresh();
-        $this->assertEquals(1, $user->has_uploaded); // TODO should it happen?
+        $this->assertEquals(1, $user->has_uploaded); // TODO shouldn't it decrement?
         $this->assertEquals(0, $user->xp);
         $this->assertEquals(0, $user->total_images);
         $this->assertFileDoesNotExist($imageAttributes['filepath']);
@@ -75,6 +76,9 @@ class DeletePhotoTest extends TestCase
         $response = $this->post('/profile/photos/delete', ['photoid' => $photo->id]);
 
         $response->assertForbidden();
+
+        // Tear down
+        File::delete($imageAttributes['filepath']);
     }
 
     public function test_it_throws_not_found_exception_if_photo_doesnt_exist()
