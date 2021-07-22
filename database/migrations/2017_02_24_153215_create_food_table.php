@@ -16,7 +16,6 @@ class CreateFoodTable extends Migration
         Schema::create('food', function (Blueprint $table) {
             $table->increments('id');
             $table->integer('sweetWrappers')->unsigned()->nullable();
-            $table->integer('cardboardFoodPackaging')->unsigned()->nullable();
             $table->integer('paperFoodPackaging')->unsigned()->nullable();
             $table->integer('plasticFoodPackaging')->unsigned()->nullable();
             $table->integer('plasticCutlery')->unsigned()->nullable();

@@ -41,6 +41,9 @@
         "alcohol_plastic_cups": "Plastikowy kubeczek",
         "alcoholOther": "Akohol (inne)"
     },
+    "art": {
+        "item": "Pozycja"
+    },
     "coffee": {
         "coffeeCups": "Kubeczek po kawie",
         "coffeeLids": "Wieczko po kawie",

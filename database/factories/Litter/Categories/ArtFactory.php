@@ -23,7 +23,6 @@ class ArtFactory extends Factory
     public function definition()
     {
         return [
-            'photo_id' => Photo::factory()->create(),
             'item' => $this->faker->randomDigit
         ];
     }

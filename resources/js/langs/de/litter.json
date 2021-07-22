@@ -41,6 +41,9 @@
         "six_pack_rings": "Six-pack rings",
         "alcohol_plastic_cups": "Plastic Cups"
     },
+    "art": {
+        "item": "Kunstwerk"
+    },
     "coffee": {
         "coffeeCups": "Coffee Cups",
         "coffeeLids": "Coffee Lids",

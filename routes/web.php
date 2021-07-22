@@ -1,7 +1,5 @@
 <?php
 
-use App\Models\Photo;
-use App\Models\User\User;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', 'HomeController@index');
