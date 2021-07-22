@@ -9,6 +9,13 @@ class Art extends LitterCategory
     protected $table = 'arts';
 
     protected $fillable = [
-    	'item'
+        'item'
     ];
+
+    public function types()
+    {
+        return [
+            'item'
+        ];
+    }
 }

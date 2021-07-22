@@ -7,11 +7,12 @@ use App\Models\Photo;
 class AddTagsToPhotoAction
 {
     /**
-     * Execute the action and return a result.
+     * Adds tags to the photo.
+     * Creates new rows on respective category tables
      *
      * @param Photo $photo
      * @param array $tags
-     * @return int
+     * @return int number of added tags, excluding brands
      */
     public function run(Photo $photo, array $tags): int
     {
@@ -22,7 +23,9 @@ class AddTagsToPhotoAction
 
             $photo->fresh()->$category->update($items);
 
-            $litterTotal += array_sum($items);
+            if ($category !== 'brands') {
+                $litterTotal += array_sum($items);
+            }
         }
 
         return $litterTotal;
@@ -30,9 +33,9 @@ class AddTagsToPhotoAction
 
     /**
      * @param Photo $photo
-     * @param $category
+     * @param string $category
      */
-    protected function createCategory(Photo $photo, $category): void
+    protected function createCategory(Photo $photo, string $category): void
     {
         if ($photo->$category) {
             return;

@@ -10,7 +10,7 @@ class ClearTagsOfPhotoAction
 {
     /**
      * Clear all tags on an image
-     * Returns the total number of tags that were deleted
+     * Returns the total number of tags that were deleted, excluding brands
      */
     public function run(Photo $photo)
     {
@@ -18,7 +18,10 @@ class ClearTagsOfPhotoAction
 
         foreach ($photo->categories() as $category) {
             if ($photo->$category) {
-                $totalDeletedTags += $photo->$category->total();
+                if ($category !== 'brands') {
+                    $totalDeletedTags += $photo->$category->total();
+                }
+
                 $photo->$category->delete();
             }
         }
