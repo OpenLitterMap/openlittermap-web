@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use Log;
-use Auth;
-use File;
+use Exception;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 use App\Models\Photo;
 use App\Models\User\User;
@@ -120,48 +121,25 @@ class AdminController extends Controller
      */
     public function incorrect (Request $request)
     {
-        $this->reset($request->photoId);
-
-        $user = Auth::user();
-        $user->count_correctly_verified = 0;
-        $user->save();
-
-        return ['success' => true];
-    }
-
-    /**
-     * Delete litter data associated with a photo
-     */
-    protected function reset ($id)
-    {
-        $photo = Photo::find($id);
+        /** @var Photo $photo */
+        $photo = Photo::findOrFail($request->photoId);
 
         $photo->verification = 0;
         $photo->verified = 0;
         $photo->total_litter = 0;
         $photo->result_string = null;
-
-        $categories = Photo::categories();
-
-        foreach ($categories as $category)
-        {
-            if ($photo->$category)
-            {
-                // hold instance of the relationship to delete
-                $d = $photo->$category;
-
-                // remove the model from the photo
-                $category_id = $category . '_id';
-                $photo->$category_id = null;
-                $photo->save();
-
-                // delete the relationship
-                $d->delete();
-            }
-        }
-
-        // persist reset verification changes
         $photo->save();
+
+        $totalDeletedTags = $this->clearTags($photo);
+
+        $user = $photo->user;
+        $user->xp = max(0, $user->xp - $totalDeletedTags);
+        $user->count_correctly_verified = 0;
+        $user->save();
+
+        $this->updateLeaderboards($user, $photo);
+
+        return ['success' => true];
     }
 
     /**
@@ -169,18 +147,37 @@ class AdminController extends Controller
      */
     public function destroy (Request $request)
     {
-        $photo = Photo::find($request->photoId);
-        $s3 = \Storage::disk('s3');
+        $photo = Photo::findOrFail($request->photoId);
+        $user = User::find($photo->user_id);
 
         try {
             if (app()->environment('production'))
             {
                 $path = substr($photo->filename, 42);
-                $s3->delete($path);
+                Storage::disk('s3')->delete($path);
             }
+            else
+            {
+                // Strip the app name from the filename
+                // Resulting path is like 'local-uploads/2021/07/07/photo.jpg'
+                $path = public_path(substr($photo->filename, strlen(config('app.url'))));
+
+                if (File::exists($path)) {
+                    File::delete($path);
+                }
+            }
+
+            $totalDeletedTags = $this->clearTags($photo);
+
             $photo->delete();
+
+            $user->xp = max(0, $user->xp - $totalDeletedTags - 1); // Subtract 1xp for uploading
+            $user->total_images = $user->total_images > 0 ? $user->total_images - 1 : 0;
+            $user->save();
+
+            $this->updateLeaderboards($user, $photo);
         } catch (Exception $e) {
-            \Log::info(["Admin delete failed", $e]);
+            Log::info(["Admin delete failed", $e]);
         }
 
         return redirect()->back();
@@ -192,15 +189,29 @@ class AdminController extends Controller
     public function updateDelete (Request $request)
     {
         $photo = Photo::find($request->photoId);
-        $user = User::find($photo->user_id);
 
-        $filepath = $photo->filename;
-        // unlink(public_path($filepath));
+        if (app()->environment('production'))
+        {
+            $path = substr($photo->filename, 42);
+            Storage::disk('s3')->delete($path);
+        }
+        else
+        {
+            // Strip the app name from the filename
+            // Resulting path is like 'local-uploads/2021/07/07/photo.jpg'
+            $path = public_path(substr($photo->filename, strlen(config('app.url'))));
+
+            if (File::exists($path)) {
+                File::delete($path);
+            }
+        }
+
         $photo->filename = '/assets/verified.jpg';
 
         $photo->verification = 1;
         $photo->verified = 2;
         $photo->total_litter = 0;
+        $photo->save();
 
         $this->addTags($request->categories, $photo->id);
 

@@ -4,10 +4,10 @@ namespace Tests\Feature\Admin;
 
 use App\Events\TagsVerifiedByAdmin;
 use App\Models\Litter\Categories\Alcohol;
-use App\Models\Litter\Categories\Smoking;
 use App\Models\Location\City;
 use App\Models\Location\Country;
 use App\Models\Location\State;
+use App\Models\Photo;
 use App\Models\User\User;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\File;
@@ -20,9 +20,13 @@ class UpdateDeleteTagsTest extends TestCase
 {
     use HasPhotoUploads;
 
+    /** @var User */
     protected $admin;
+    /** @var User */
     protected $user;
+    /** @var Photo */
     protected $photo;
+    /** @var array */
     private $imageAndAttributes;
 
     protected function setUp(): void
@@ -82,10 +86,12 @@ class UpdateDeleteTagsTest extends TestCase
         $route, $deletesPhoto, $tagsKey
     )
     {
-        // Admin updates the tags and deletes the photo -------------------
+        // Admin updates the tags -------------------
         $this->actingAs($this->admin);
 
         $this->assertFileExists($this->imageAndAttributes['filepath']);
+
+        $smokingId = $this->photo->smoking_id;
 
         $this->post($route, [
             'photoId' => $this->photo->id,
@@ -99,9 +105,8 @@ class UpdateDeleteTagsTest extends TestCase
         // Assert tags are stored correctly ------------
         $this->photo->refresh();
 
-        $this->assertNotNull($this->photo->smoking_id);
-        $this->assertInstanceOf(Smoking::class, $this->photo->smoking);
-        $this->assertEquals(3, $this->photo->smoking->butts);
+        $this->assertNull($this->photo->smoking_id);
+        $this->assertDatabaseMissing('smoking', ['id' => $smokingId]);
 
         $this->assertNotNull($this->photo->alcohol_id);
         $this->assertInstanceOf(Alcohol::class, $this->photo->alcohol);
@@ -110,6 +115,7 @@ class UpdateDeleteTagsTest extends TestCase
         if ($deletesPhoto) {
             // Assert photo is deleted
             $this->assertFileDoesNotExist($this->imageAndAttributes['filepath']);
+            $this->assertEquals('/assets/verified.jpg', $this->photo->filename);
             // TODO this checks only local envs, should add tests for s3
         }
     }
@@ -121,7 +127,7 @@ class UpdateDeleteTagsTest extends TestCase
         $route, $deletesPhoto, $tagsKey
     )
     {
-        // Admin updates the tags and deletes the photo -------------------
+        // Admin updates the tags -------------------
         $this->actingAs($this->admin);
 
         $this->post($route, [
@@ -133,15 +139,13 @@ class UpdateDeleteTagsTest extends TestCase
             ]
         ])->assertOk();
 
-        // Assert tags are stored correctly ------------
-        $this->photo->refresh();
-
+        // Assert user and photo info are stored correctly ------------
         $this->user->refresh();
         $this->photo->refresh();
 
-        $this->assertEquals(14, $this->user->xp); // 1 xp from uploading, + 3xp from smoking + 10xp from alcohol
+        $this->assertEquals(11, $this->user->xp); // 1 xp from uploading, + 10xp from alcohol
 
-        $this->assertEquals(13, $this->photo->total_litter);
+        $this->assertEquals(10, $this->photo->total_litter);
         $this->assertEquals(1, $this->photo->remaining);
         $this->assertEquals(1, $this->photo->verification);
         $this->assertEquals(2, $this->photo->verified);
@@ -156,7 +160,7 @@ class UpdateDeleteTagsTest extends TestCase
     {
         Event::fake(TagsVerifiedByAdmin::class);
 
-        // Admin updates the tags and deletes the photo -------------------
+        // Admin updates the tags -------------------
         $this->actingAs($this->admin);
 
         $this->post($route, [
@@ -189,7 +193,7 @@ class UpdateDeleteTagsTest extends TestCase
             'show_username' => true
         ]);
 
-        // Admin updates the tags and deletes the photo -------------------
+        // Admin updates the tags -------------------
         $this->actingAs($this->admin);
 
         $country = Country::find($this->photo->country_id)->country;
@@ -214,9 +218,9 @@ class UpdateDeleteTagsTest extends TestCase
         ]);
 
         // Assert leaderboards are updated ------------
-        $this->assertEquals(1, Redis::zscore("{$country}:Leaderboard", $this->user->id));
-        $this->assertEquals(1, Redis::zscore("{$country}:{$state}:Leaderboard", $this->user->id));
-        $this->assertEquals(1, Redis::zscore("{$country}:{$state}:{$city}:Leaderboard", $this->user->id));
+        $this->assertEquals(11, Redis::zscore("{$country}:Leaderboard", $this->user->id));
+        $this->assertEquals(11, Redis::zscore("{$country}:{$state}:Leaderboard", $this->user->id));
+        $this->assertEquals(11, Redis::zscore("{$country}:{$state}:{$city}:Leaderboard", $this->user->id));
     }
 
     /**
@@ -231,7 +235,7 @@ class UpdateDeleteTagsTest extends TestCase
             'show_username' => false
         ]);
 
-        // Admin updates the tags and deletes the photo -------------------
+        // Admin updates the tags -------------------
         $this->actingAs($this->admin);
 
         $country = Country::find($this->photo->country_id)->country;

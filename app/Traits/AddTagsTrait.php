@@ -20,6 +20,8 @@ trait AddTagsTrait
         $photo = Photo::find($photo_id);
         $user = User::find($photo->user_id);
 
+        $totalDeletedTags = $this->clearTags($photo);
+
         $schema = LitterTags::INSTANCE()->getDecodedJSON();
 
         $litterTotal = 0;
@@ -50,28 +52,56 @@ trait AddTagsTrait
                 $row->$column = $quantity;
                 $row->save();
 
-                // Update Leaderboards if user has public privacy settings
-                // todo - save data per leaderboard
-                if (($user->show_name) || ($user->show_username))
-                {
-                    $country = Country::find($photo->country_id);
-                    $state = State::find($photo->state_id);
-                    $city = City::find($photo->city_id);
-                    Redis::zadd($country->country . ':Leaderboard', $user->xp, $user->id);
-                    Redis::zadd($country->country . ':' . $state->state . ':Leaderboard', $user->xp, $user->id);
-                    Redis::zadd($country->country . ':' . $state->state . ':' . $city->city . ':Leaderboard', $user->xp, $user->id);
-                }
-
                 $litterTotal += $quantity;
             }
         }
 
+        $user->xp -= $totalDeletedTags; // Decrement the XP since old tags no longer exist
         $user->xp += $litterTotal; // we are duplicating this if we are updating tags....
+        $user->xp = max(0, $user->xp);
         $user->save();
 
         // photo->verified_by ;
         $photo->total_litter = $litterTotal;
         $photo->result_string = null; // Updated on PhotoVerifiedByAdmin only. Must be reset if we are applying new tags.
         $photo->save();
+
+        $this->updateLeaderboards($user, $photo);
+    }
+
+    /**
+     * Clear all tags on an image
+     * Returns the total number of tags that were deleted
+     */
+    protected function clearTags(Photo $photo)
+    {
+        $totalDeletedTags = 0;
+
+        foreach ($photo->categories() as $category) {
+            if ($photo->$category) {
+                $totalDeletedTags += $photo->$category->total();
+                $photo->$category->delete();
+            }
+        }
+
+        return $totalDeletedTags;
+    }
+
+    /**
+     * @param $user
+     * @param $photo
+     */
+    protected function updateLeaderboards($user, $photo): void
+    {
+        // Update Leaderboards if user has public privacy settings
+        if ($user->show_name || $user->show_username) {
+            $country = Country::find($photo->country_id);
+            $state = State::find($photo->state_id);
+            $city = City::find($photo->city_id);
+
+            Redis::zadd($country->country . ':Leaderboard', $user->xp, $user->id);
+            Redis::zadd($country->country . ':' . $state->state . ':Leaderboard', $user->xp, $user->id);
+            Redis::zadd($country->country . ':' . $state->state . ':' . $city->city . ':Leaderboard', $user->xp, $user->id);
+        }
     }
 }

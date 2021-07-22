@@ -354,24 +354,23 @@ class PhotosController extends Controller
                 $row->$column = $quantity;
                 $row->save();
 
-                // Update Leaderboards if user has public privacy settings
-                // todo - save data per leaderboard
-                if (($user->show_name) || ($user->show_username))
-                {
-                    $country = Country::find($photo->country_id);
-                    $state = State::find($photo->state_id);
-                    $city = City::find($photo->city_id);
-                    Redis::zadd($country->country.':Leaderboard', $user->xp, $user->id);
-                    Redis::zadd($country->country.':'.$state->state.':Leaderboard', $user->xp, $user->id);
-                    Redis::zadd($country->country.':'.$state->state.':'.$city->city.':Leaderboard', $user->xp, $user->id);
-                }
-
                 $litterTotal += $quantity;
             }
         }
 
         $user->xp += $litterTotal;
         $user->save();
+
+        // Update Leaderboards if user has public privacy settings
+        if ($user->show_name || $user->show_username)
+        {
+            $country = Country::find($photo->country_id);
+            $state = State::find($photo->state_id);
+            $city = City::find($photo->city_id);
+            Redis::zadd($country->country.':Leaderboard', $user->xp, $user->id);
+            Redis::zadd($country->country.':'.$state->state.':Leaderboard', $user->xp, $user->id);
+            Redis::zadd($country->country.':'.$state->state.':'.$city->city.':Leaderboard', $user->xp, $user->id);
+        }
 
         $photo->remaining = $request->presence;
         $photo->total_litter = $litterTotal;

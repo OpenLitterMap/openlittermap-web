@@ -199,9 +199,10 @@ class AddTagsToPhotoTest extends TestCase
         ])->assertOk();
 
         // Assert leaderboards are updated ------------
-        $this->assertEquals(1, Redis::zscore("{$country}:Leaderboard", $user->id));
-        $this->assertEquals(1, Redis::zscore("{$country}:{$state}:Leaderboard", $user->id));
-        $this->assertEquals(1, Redis::zscore("{$country}:{$state}:{$city}:Leaderboard", $user->id));
+        // 1xp from uploading the image + 3xp from tags
+        $this->assertEquals(4, Redis::zscore("{$country}:Leaderboard", $user->id));
+        $this->assertEquals(4, Redis::zscore("{$country}:{$state}:Leaderboard", $user->id));
+        $this->assertEquals(4, Redis::zscore("{$country}:{$state}:{$city}:Leaderboard", $user->id));
     }
 
     public function test_leaderboards_are_not_updated_when_a_user_with_private_name_adds_tags_to_a_photo()
@@ -228,9 +229,9 @@ class AddTagsToPhotoTest extends TestCase
         Redis::del("{$country}:{$state}:Leaderboard");
         Redis::del("{$country}:{$state}:{$city}:Leaderboard");
 
-        $this->assertEquals(0, Redis::zscore("{$country}:Leaderboard", $user->id));
-        $this->assertEquals(0, Redis::zscore("{$country}:{$state}:Leaderboard", $user->id));
-        $this->assertEquals(0, Redis::zscore("{$country}:{$state}:{$city}:Leaderboard", $user->id));
+        $this->assertNull(Redis::zscore("{$country}:Leaderboard", $user->id));
+        $this->assertNull(Redis::zscore("{$country}:{$state}:Leaderboard", $user->id));
+        $this->assertNull(Redis::zscore("{$country}:{$state}:{$city}:Leaderboard", $user->id));
 
         // User adds tags to an image -------------------
         $this->post('/add-tags', [
@@ -244,8 +245,8 @@ class AddTagsToPhotoTest extends TestCase
         ])->assertOk();
 
         // Assert leaderboards are not updated ------------
-        $this->assertEquals(0, Redis::zscore("{$country}:Leaderboard", $user->id));
-        $this->assertEquals(0, Redis::zscore("{$country}:{$state}:Leaderboard", $user->id));
-        $this->assertEquals(0, Redis::zscore("{$country}:{$state}:{$city}:Leaderboard", $user->id));
+        $this->assertNull(Redis::zscore("{$country}:Leaderboard", $user->id));
+        $this->assertNull(Redis::zscore("{$country}:{$state}:Leaderboard", $user->id));
+        $this->assertNull(Redis::zscore("{$country}:{$state}:{$city}:Leaderboard", $user->id));
     }
 }
