@@ -16,6 +16,8 @@ class AddTagsToPhotoAction
      */
     public function run(Photo $photo, array $tags): int
     {
+        $photo->refresh();
+
         $litterTotal = 0;
 
         foreach ($tags as $category => $items) {

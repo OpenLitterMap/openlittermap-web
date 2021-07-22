@@ -13,9 +13,9 @@ trait AddTagsTrait
     /**
      * Add or Update tags on an image
      */
-    public function addTags ($tags, $photo_id)
+    public function addTags ($tags, $photoId)
     {
-        $photo = Photo::find($photo_id);
+        $photo = Photo::find($photoId);
         $user = User::find($photo->user_id);
 
         /** @var ClearTagsOfPhotoAction $clearTagsAction */
