@@ -2,17 +2,11 @@
 
 namespace App\Jobs;
 
+use App\Actions\Photos\AddTagsToPhotoAction;
+use App\Actions\Photos\UpdateLeaderboardsFromPhotoAction;
 use App\Events\TagsVerifiedByAdmin;
-use App\Models\LitterTags;
 use App\Models\User\User;
 use App\Models\Photo;
-use App\Models\Location\Country;
-use App\Models\Location\State;
-use App\Models\Location\City;
-use App\Litterrata;
-use App\Events\ImageUploaded;
-use App\Events\PhotoVerifiedByAdmin;
-use Illuminate\Support\Facades\Redis;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
@@ -47,71 +41,36 @@ class UploadData implements ShouldQueue
     {
         $user = User::find($this->userId);
         $photo = Photo::find($this->request['photo_id']);
-        $schema = LitterTags::INSTANCE()->getDecodedJSON();
 
-        $litterTotal = 0;
+        /** @var AddTagsToPhotoAction $addTagsAction */
+        $addTagsAction = app(AddTagsToPhotoAction::class);
+        $totalLitter = $addTagsAction->run($photo, $this->request['litter']);
 
-        foreach ($this->request['litter'] as $category => $values)
+        $user->xp += $totalLitter;
+        $user->save();
+
+        /** @var UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction */
+        $updateLeaderboardsAction = app(UpdateLeaderboardsFromPhotoAction::class);
+        $updateLeaderboardsAction->run($user, $photo);
+
+        // $photo->remaining = $this->request->presence ?? false;
+        $photo->total_litter = $totalLitter;
+
+        // Check if the User is a trusted user => photos do not require verification.
+        if ($user->verification_required == 0)
         {
-            foreach ($values as $column => $quantity) // butts => 3
-            {
-                // Column on photos table to make a relationship with current category eg smoking_id
-                $id_table = $schema->$category->id_table;
-
-                // Full class path
-                $class = 'App\\Models\\Litter\\Categories\\'.$schema->$category->class;
-
-                // Create reference to category.$id_table on photos if it does not exist
-                if (is_null($photo->$id_table))
-                {
-                    $row = $class::create();
-                    $photo->$id_table = $row->id;
-                    $photo->save();
-                }
-
-                // If it does exist, get it
-                else $row = $class::find($photo->$id_table);
-
-                // Update quantity on the category table
-                $row->$column = $quantity;
-                $row->save();
-
-                // todo - Update Leaderboards if user has changed privacy settings
-                if (($user->show_name == 1) || ($user->show_username == 1))
-                {
-                    $country = Country::find($photo->country_id);
-                    $state = State::find($photo->state_id);
-                    $city = City::find($photo->city_id);
-                    Redis::zadd($country->country.':Leaderboard', $user->xp, $user->id);
-                    Redis::zadd($country->country.':'.$state->state.':Leaderboard', $user->xp, $user->id);
-                    Redis::zadd($country->country.':'.$state->state.':'.$city->city.':Leaderboard', $user->xp, $user->id);
-                }
-
-                $litterTotal += $quantity;
-            }
-
-            // $photo->remaining = true;
-            $photo->total_litter = $litterTotal;
-
-            // Check if the User is a trusted user => photos do not require verification.
-            if ($user->verification_required == 0)
-            {
-                $photo->verification = 1;
-                $photo->verified = 2;
-                event(new TagsVerifiedByAdmin($photo->id));
-            }
-
-            else
-            {
-                // Bring the photo to an initial state of verification
-                /* 0 for testing, 0.1 for production */
-                $photo->verification = 0.1;
-            }
-
-            $photo->save();
+            $photo->verification = 1;
+            $photo->verified = 2;
+            event(new TagsVerifiedByAdmin($photo->id));
         }
 
-        $user->xp += $litterTotal;
-        $user->save();
+        else
+        {
+            // Bring the photo to an initial state of verification
+            /* 0 for testing, 0.1 for production */
+            $photo->verification = 0.1;
+        }
+
+        $photo->save();
     }
 }

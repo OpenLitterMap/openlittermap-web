@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Photos\AddTagsToPhotoAction;
+use App\Actions\Photos\DeletePhotoAction;
+use App\Actions\Photos\UpdateLeaderboardsFromPhotoAction;
 use App\Services\LocationService;
 use Exception;
 use Illuminate\Support\Facades\Auth;
@@ -18,15 +21,10 @@ use App\Models\Photo;
 use App\Models\Location\City;
 use App\Models\Location\State;
 use App\Models\Location\Country;
-
-use App\Models\LitterTags;
-
 use Illuminate\Http\Request;
 use App\Events\ImageUploaded;
 use App\Events\TagsVerifiedByAdmin;
 use App\Events\Photo\IncrementPhotoMonth;
-
-use Illuminate\Support\Facades\Redis;
 
 class PhotosController extends Controller
 {
@@ -267,7 +265,7 @@ class PhotosController extends Controller
      * TODO - Need to sort AWS permissions
       * Delete an image
     */
-    public function deleteImage (Request $request)
+    public function deleteImage (Request $request, DeletePhotoAction $deletePhotoAction)
     {
         $user = Auth::user();
 
@@ -279,21 +277,7 @@ class PhotosController extends Controller
 
         try
         {
-            if (app()->environment('production'))
-            {
-                $path = substr($photo->filename, 42);
-                Storage::disk('s3')->delete($path);
-            }
-            else
-            {
-                // Strip the app name from the filename
-                // Resulting path is like 'local-uploads/2021/07/07/photo.jpg'
-                $path = public_path(substr($photo->filename, strlen(config('app.url'))));
-
-                if (File::exists($path)) {
-                    File::delete($path);
-                }
-            }
+            $deletePhotoAction->run($photo);
 
             $photo->delete();
 
@@ -315,62 +299,25 @@ class PhotosController extends Controller
      * Note! The $column passed through must match the column name on the table.
      * eg 'butts' must be a column on the smoking table.
      *
-     * We use the $schema json object from LitterTags to get our class references
-     *
      * If the user is new, we submit the image for verification.
      * If the user is trusted, we can update OLM.
      */
-    public function addTags (Request $request)
+    public function addTags (
+        Request $request,
+        AddTagsToPhotoAction $addTagsAction,
+        UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction
+    )
     {
         $user = Auth::user();
         $photo = Photo::findOrFail($request->photo_id);
         if ($photo->verified > 0) return redirect()->back();
 
-        $schema = LitterTags::INSTANCE()->getDecodedJSON();
-
-        $litterTotal = 0;
-        foreach ($request['tags'] as $category => $items)
-        {
-            foreach ($items as $column => $quantity)
-            {
-                // Column on photos table to make a relationship with current category eg smoking_id
-                $id_table = $schema->$category->id_table;
-
-                // Full class path
-                $class = 'App\\Models\\Litter\\Categories\\'.$schema->$category->class;
-
-                // Create reference to category.$id_table on photos if it does not exist
-                if (is_null($photo->$id_table))
-                {
-                    $row = $class::create();
-                    $photo->$id_table = $row->id;
-                    $photo->save();
-                }
-
-                // If it does exist, get it
-                else $row = $class::find($photo->$id_table);
-
-                // Update quantity on the category table
-                $row->$column = $quantity;
-                $row->save();
-
-                $litterTotal += $quantity;
-            }
-        }
+        $litterTotal = $addTagsAction->run($photo, $request['tags']);
 
         $user->xp += $litterTotal;
         $user->save();
 
-        // Update Leaderboards if user has public privacy settings
-        if ($user->show_name || $user->show_username)
-        {
-            $country = Country::find($photo->country_id);
-            $state = State::find($photo->state_id);
-            $city = City::find($photo->city_id);
-            Redis::zadd($country->country.':Leaderboard', $user->xp, $user->id);
-            Redis::zadd($country->country.':'.$state->state.':Leaderboard', $user->xp, $user->id);
-            Redis::zadd($country->country.':'.$state->state.':'.$city->city.':Leaderboard', $user->xp, $user->id);
-        }
+        $updateLeaderboardsAction->run($user, $photo);
 
         $photo->remaining = $request->presence;
         $photo->total_litter = $litterTotal;

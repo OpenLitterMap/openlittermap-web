@@ -109,7 +109,8 @@ class Photo extends Model
             'dumping',
             'industrial',
             'brands',
-            'dogshit'
+            'dogshit',
+            'art'
         ];
     }
 

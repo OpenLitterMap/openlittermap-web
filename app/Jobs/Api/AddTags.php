@@ -2,6 +2,8 @@
 
 namespace App\Jobs\Api;
 
+use App\Actions\Photos\AddTagsToPhotoAction;
+use App\Actions\Photos\UpdateLeaderboardsFromPhotoAction;
 use App\Models\User\User;
 use App\Models\Photo;
 
@@ -51,52 +53,18 @@ class AddTags implements ShouldQueue
 
         $photo = Photo::find($this->request['photo_id']);
 
-        $schema = LitterTags::INSTANCE()->getDecodedJSON();
+        $tags = $this->request['litter'];
 
-        $litterTotal = 0;
-        foreach ($this->request['litter'] as $category => $items)
-        {
-            foreach ($items as $column => $quantity)
-            {
-                // Column on photos table to make a relationship with current category eg smoking_id
-                $id_table = $schema->$category->id_table;
-
-                // Full class path
-                $class = 'App\\Models\\Litter\\Categories\\'.$schema->$category->class;
-
-                // Create reference to category.$id_table on photos if it does not exist
-                if (is_null($photo->$id_table))
-                {
-                    $row = $class::create();
-                    $photo->$id_table = $row->id;
-                    $photo->save();
-                }
-
-                // If it does exist, get it
-                else $row = $class::find($photo->$id_table);
-
-                // Update quantity on the category table
-                $row->$column = $quantity;
-                $row->save();
-
-                // Update Leaderboards if user has public privacy settings
-                // todo - save data per leaderboard
-                if (($user->show_name) || ($user->show_username))
-                {
-                    $country = Country::find($photo->country_id);
-                    $state = State::find($photo->state_id);
-                    $city = City::find($photo->city_id);
-                    Redis::zadd($country->country.':Leaderboard', $user->xp, $user->id);
-                    Redis::zadd($country->country.':'.$state->state.':Leaderboard', $user->xp, $user->id);
-                    Redis::zadd($country->country.':'.$state->state.':'.$city->city.':Leaderboard', $user->xp, $user->id);
-                }
-
-                $litterTotal += $quantity;
-            }
-        }
+        /** @var AddTagsToPhotoAction $addTagsAction */
+        $addTagsAction = app(AddTagsToPhotoAction::class);
+        $litterTotal = $addTagsAction->run($photo, $tags);
 
         $user->xp += $litterTotal;
         $user->save();
+
+        /** @var UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction */
+        $updateLeaderboardsAction = app(UpdateLeaderboardsFromPhotoAction::class);
+        $updateLeaderboardsAction->run($user, $photo);
 
         $photo->total_litter = $litterTotal;
 

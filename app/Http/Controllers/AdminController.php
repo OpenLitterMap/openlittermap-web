@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Photos\ClearTagsOfPhotoAction;
+use App\Actions\Photos\DeletePhotoAction;
+use App\Actions\Photos\UpdateLeaderboardsFromPhotoAction;
 use Exception;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 use App\Models\Photo;
 use App\Models\User\User;
@@ -22,12 +23,27 @@ class AdminController extends Controller
 {
     use AddTagsTrait;
 
+    /** @var ClearTagsOfPhotoAction */
+    protected $clearTagsAction;
+    /** @var UpdateLeaderboardsFromPhotoAction */
+    protected $updateLeaderboardsAction;
+    /** @var DeletePhotoAction */
+    protected $deletePhotoAction;
+
     /**
      * Apply IsAdmin middleware to all of these routes
      */
-    public function __construct ()
+    public function __construct (
+        ClearTagsOfPhotoAction $clearTagsAction,
+        UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction,
+        DeletePhotoAction $deletePhotoAction
+    )
     {
-    	$this->middleware('admin');
+        $this->middleware('admin');
+
+        $this->clearTagsAction = $clearTagsAction;
+        $this->updateLeaderboardsAction = $updateLeaderboardsAction;
+        $this->deletePhotoAction = $deletePhotoAction;
     }
 
     public function getUserCount ()
@@ -130,14 +146,14 @@ class AdminController extends Controller
         $photo->result_string = null;
         $photo->save();
 
-        $totalDeletedTags = $this->clearTags($photo);
+        $totalDeletedTags = $this->clearTagsAction->run($photo);
 
         $user = $photo->user;
         $user->xp = max(0, $user->xp - $totalDeletedTags);
         $user->count_correctly_verified = 0;
         $user->save();
 
-        $this->updateLeaderboards($user, $photo);
+        $this->updateLeaderboardsAction->run($user, $photo);
 
         return ['success' => true];
     }
@@ -151,23 +167,9 @@ class AdminController extends Controller
         $user = User::find($photo->user_id);
 
         try {
-            if (app()->environment('production'))
-            {
-                $path = substr($photo->filename, 42);
-                Storage::disk('s3')->delete($path);
-            }
-            else
-            {
-                // Strip the app name from the filename
-                // Resulting path is like 'local-uploads/2021/07/07/photo.jpg'
-                $path = public_path(substr($photo->filename, strlen(config('app.url'))));
+            $this->deletePhotoAction->run($photo);
 
-                if (File::exists($path)) {
-                    File::delete($path);
-                }
-            }
-
-            $totalDeletedTags = $this->clearTags($photo);
+            $totalDeletedTags = $this->clearTagsAction->run($photo);
 
             $photo->delete();
 
@@ -175,7 +177,7 @@ class AdminController extends Controller
             $user->total_images = $user->total_images > 0 ? $user->total_images - 1 : 0;
             $user->save();
 
-            $this->updateLeaderboards($user, $photo);
+            $this->updateLeaderboardsAction->run($user, $photo);
         } catch (Exception $e) {
             Log::info(["Admin delete failed", $e]);
         }
@@ -190,21 +192,7 @@ class AdminController extends Controller
     {
         $photo = Photo::find($request->photoId);
 
-        if (app()->environment('production'))
-        {
-            $path = substr($photo->filename, 42);
-            Storage::disk('s3')->delete($path);
-        }
-        else
-        {
-            // Strip the app name from the filename
-            // Resulting path is like 'local-uploads/2021/07/07/photo.jpg'
-            $path = public_path(substr($photo->filename, strlen(config('app.url'))));
-
-            if (File::exists($path)) {
-                File::delete($path);
-            }
-        }
+        $this->deletePhotoAction->run($photo);
 
         $photo->filename = '/assets/verified.jpg';
 
