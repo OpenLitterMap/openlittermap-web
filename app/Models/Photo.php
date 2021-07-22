@@ -121,6 +121,7 @@ class Photo extends Model
         return [
             'adidas',
             'amazon',
+            'albertheijn',
             'apple',
             'applegreen',
             'avoca',
