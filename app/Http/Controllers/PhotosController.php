@@ -295,8 +295,8 @@ class PhotosController extends Controller
 
                 $photo->delete();
 
-                $user->xp--;
-                $user->total_images--;
+                $user->xp = $user->xp > 0 ? $user->xp - 1 : 0;
+                $user->total_images = $user->total_images > 0 ? $user->total_images - 1 : 0;
                 $user->save();
             }
         }

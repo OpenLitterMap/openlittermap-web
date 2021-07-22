@@ -9,7 +9,6 @@ class Art extends LitterCategory
     protected $table = 'arts';
 
     protected $fillable = [
-    	'photo_id',
     	'item'
     ];
 }
