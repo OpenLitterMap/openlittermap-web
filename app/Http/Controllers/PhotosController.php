@@ -193,6 +193,7 @@ class PhotosController extends Controller
 
         // todo - let horizon process address details as a Job.
         $apiKey = config('services.location.secret');
+        \Log::info(['apiKey', $apiKey]);
         $url =  "https://locationiq.org/v1/reverse.php?format=json&key=".$apiKey."&lat=".$latitude."&lon=".$longitude."&zoom=20";
 
         // The entire reverse geocoded result
