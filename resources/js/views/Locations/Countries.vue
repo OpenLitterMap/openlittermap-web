@@ -17,7 +17,7 @@
                 <!-- Progress -->
                 <div class="container mt2" v-if="! loading">
                     <div class="columns">
-                        <div class="column is-half is-offset-3 px-0">
+                        <div class="column is-half is-offset-3">
                             <!-- XP bar variables -->
                             <div class="columns">
                                 <div class="column flex">
@@ -50,7 +50,7 @@
                     </div>
 
                     <div class="columns">
-                        <div class="column is-half is-offset-3">
+                        <div class="column is-half is-offset-3 px-0">
                             <div class="columns is-desktop">
                                 <div class="column">
                                     <h1 class="subtitle is-5 has-text-centered">

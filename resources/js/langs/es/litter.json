@@ -41,6 +41,9 @@
         "alcohol_plastic_cups": "Vasos de plástico",
         "alcoholOther": "Alcohol-Otros"
     },
+    "art": {
+        "item": "Articulo"
+    },
     "coffee": {
         "coffeeCups": "Vasos de café",
         "coffeeLids": "Tapas de café",

@@ -73,7 +73,6 @@ class DownloadsController extends Controller
 			    		$export[$index]['smokingOther'] = 0;
 
 			    		$export[$index]['sweetWrappers'] = 0;
-			    		$export[$index]['cardboardFoodPackaging'] = 0;
 			    		$export[$index]['paperFoodPackaging'] = 0;
 			    		$export[$index]['plasticFoodPackaging'] = 0;
 			    		$export[$index]['plasticCutlery'] = 0;
@@ -297,10 +296,6 @@ class DownloadsController extends Controller
 			    			$food = Food::find($photo['food_id']);
 			    			if($food['sweetWrappers']) {
 			    				$export[$index]['sweetWrappers'] = $food['sweetWrappers'];
-			    			}
-			    			// these 2 need to be merged
-			    			if($food['cardboardFoodPackaging']) {
-			    				$export[$index]['cardboardFoodPackaging'] = $food['cardboardFoodPackaging'];
 			    			}
 			    			if($food['paperFoodPackaging']) {
 			    				$export[$index]['paperFoodPackaging'] = $food['paperFoodPackaging'];
@@ -677,7 +672,6 @@ class DownloadsController extends Controller
 		    		$export[$index]['smokingOther'] = 0;
 
 		    		$export[$index]['sweetWrappers'] = 0;
-		    		$export[$index]['cardboardFoodPackaging'] = 0;
 		    		$export[$index]['paperFoodPackaging'] = 0;
 		    		$export[$index]['plasticFoodPackaging'] = 0;
 		    		$export[$index]['plasticCutlery'] = 0;
@@ -903,10 +897,6 @@ class DownloadsController extends Controller
 		    			$food = Food::find($photo['food_id']);
 		    			if($food['sweetWrappers']) {
 		    				$export[$index]['sweetWrappers'] = $food['sweetWrappers'];
-		    			}
-		    			// these 2 need to be merged
-		    			if($food['cardboardFoodPackaging']) {
-		    				$export[$index]['cardboardFoodPackaging'] = $food['cardboardFoodPackaging'];
 		    			}
 		    			if($food['paperFoodPackaging']) {
 		    				$export[$index]['paperFoodPackaging'] = $food['paperFoodPackaging'];
@@ -1451,7 +1441,6 @@ class DownloadsController extends Controller
 			    		$export[$index]['smokingOther'] = 0;
 
 			    		$export[$index]['sweetWrappers'] = 0;
-			    		$export[$index]['cardboardFoodPackaging'] = 0;
 			    		$export[$index]['paperFoodPackaging'] = 0;
 			    		$export[$index]['plasticFoodPackaging'] = 0;
 			    		$export[$index]['plasticCutlery'] = 0;
@@ -1678,10 +1667,6 @@ class DownloadsController extends Controller
 			    			$food = Food::find($photo['food_id']);
 			    			if($food['sweetWrappers']) {
 			    				$export[$index]['sweetWrappers'] = $food['sweetWrappers'];
-			    			}
-			    			// these 2 need to be merged
-			    			if($food['cardboardFoodPackaging']) {
-			    				$export[$index]['cardboardFoodPackaging'] = $food['cardboardFoodPackaging'];
 			    			}
 			    			if($food['paperFoodPackaging']) {
 			    				$export[$index]['paperFoodPackaging'] = $food['paperFoodPackaging'];
