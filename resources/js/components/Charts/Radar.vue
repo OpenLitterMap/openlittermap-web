@@ -42,6 +42,11 @@ export default {
                 pointLabels: {
                     fontColor: 'white'
                 }
+            },
+            tooltips: {
+                callbacks: {
+                    title: (tooltipItem, data) => data.labels[tooltipItem[0].index]
+                }
             }
         })
     }

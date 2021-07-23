@@ -140,7 +140,7 @@ class PhotosController extends Controller
         $filename = $file->hashName();
         $filepath = $y.'/'.$m.'/'.$d.'/'.$filename;
 
-        // Upload the image to AWS
+        // Upload image to AWS
         if (app()->environment('production'))
         {
             $s3 = Storage::disk('s3');
@@ -149,6 +149,16 @@ class PhotosController extends Controller
 
             $imageName = $s3->url($filepath);
         }
+        // Upload image to Digital Ocean
+        else if (app()->environment('staging'))
+        {
+            $s3 = Storage::disk('staging');
+
+            $s3->put($filepath, $image->stream(), 'public');
+
+            $imageName = $s3->url($filepath);
+        }
+        // Save image locally
         else
         {
             $public_path = public_path('local-uploads/'.$y.'/'.$m.'/'.$d);

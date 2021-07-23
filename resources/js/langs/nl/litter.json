@@ -41,6 +41,9 @@
         "alcohol_plastic_cups": "Plastic Bekers",
         "alcoholOther": "Alcohol-Overig"
     },
+    "art": {
+        "item": "Item"
+    },
     "coffee": {
         "coffeeCups": "Koffie Bekers",
         "coffeeLids": "Koffie Deksels",
