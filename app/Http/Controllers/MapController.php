@@ -64,8 +64,8 @@ class MapController extends Controller
         	$country['leaderboard'] = json_encode($arrayOfLeaders);
 
         	// Total values
-        	$country['avg_photo_per_user'] = round($country->total_photos_redis / $country->total_contributors, 2);
-        	$country['avg_litter_per_user'] = round($country->total_litter_redis / $country->total_contributors, 2);
+        	$country['avg_photo_per_user'] = round($country->total_photos_redis / $country->getTotalPhotosRedisAttribute(), 2);
+        	$country['avg_litter_per_user'] = round($country->total_litter_redis / $country->getTotalPhotosRedisAttribute(), 2);
 
             $total_photos += $country->total_photos_redis;
             $total_litter += $country->total_litter_redis;
@@ -118,7 +118,7 @@ class MapController extends Controller
         }
 
         /** GLOBAL LITTER MAPPERS */
-	    $users = User::where('xp', '>', 9000)
+        $users = User::where('xp', '>', -1)
             ->orderBy('xp', 'desc')
             ->where('show_name', 1)
             ->orWhere('show_username', 1)

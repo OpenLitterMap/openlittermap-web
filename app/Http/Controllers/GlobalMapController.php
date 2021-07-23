@@ -17,7 +17,6 @@ class GlobalMapController extends Controller
     public function index (): array
     {
         $photos = $this->filterPhotosByGeoHash(request()->zoom, request()->bbox)->get();
-
         // We need to return geojson object to the frontend
         $geojson = [
             'type'      => 'FeatureCollection',

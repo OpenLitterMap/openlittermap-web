@@ -54,9 +54,9 @@ class City extends Location
      */
     public function getTotalLitterRedisAttribute ()
     {
-        return Redis::hexists("city:$this->id", "total_litter")
+        return (Redis::hexists("city:$this->id", "total_litter"))
             ? (int)Redis::hget("city:$this->id", "total_litter")
-            : 0;
+            : 1;
     }
 
     /**
@@ -64,9 +64,9 @@ class City extends Location
      */
     public function getTotalPhotosRedisAttribute ()
     {
-        return Redis::hexists("city:$this->id", "total_photos")
+        return (Redis::hexists("city:$this->id", "total_photos"))
             ? (int)Redis::hget("city:$this->id", "total_photos")
-            : 0;
+            : 1;
     }
 
     /**
@@ -74,7 +74,9 @@ class City extends Location
      */
     public function getTotalContributorsRedisAttribute ()
     {
-        return Redis::scard("city:$this->id:user_ids");
+        return (Redis::scard("city:$this->id:user_ids") > 0)
+            ? Redis::scard("city:$this->id:user_ids")
+            : 1;
     }
 
     /**

@@ -49,7 +49,7 @@ class Country extends Location
     {
         return Redis::hexists("country:$this->id", "total_litter")
             ? (int)Redis::hget("country:$this->id", "total_litter")
-            : 0;
+            : 1;
     }
 
     /**
@@ -59,7 +59,7 @@ class Country extends Location
     {
         return Redis::hexists("country:$this->id", "total_photos")
             ? (int)Redis::hget("country:$this->id", "total_photos")
-            : 0;
+            : 1;
     }
 
     /**
@@ -67,7 +67,9 @@ class Country extends Location
      */
     public function getTotalContributorsRedisAttribute ()
     {
-        return Redis::scard("country:$this->id:user_ids");
+        return (Redis::scard("country:$this->id:user_ids") > 0)
+            ? Redis::scard("country:$this->id:user_ids")
+            : 1;
     }
 
     /**
