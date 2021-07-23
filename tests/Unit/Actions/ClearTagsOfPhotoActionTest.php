@@ -9,7 +9,7 @@ use Tests\TestCase;
 
 class ClearTagsOfPhotoActionTest extends TestCase
 {
-    public function test_it_excludes_brands_from_total_deleted_tags_result()
+    public function test_it_returns_the_correct_number_of_deleted_litter_and_brands()
     {
         /** @var Photo $photo */
         $photo = Photo::factory()->create();
@@ -29,6 +29,9 @@ class ClearTagsOfPhotoActionTest extends TestCase
         $clearTagsAction = app(ClearTagsOfPhotoAction::class);
         $deletedTags = $clearTagsAction->run($photo->fresh());
 
-        $this->assertEquals(2, $deletedTags);
+        $this->assertEquals(
+            ['all' => 7, 'litter' => 2, 'brands' => 5],
+            $deletedTags
+        );
     }
 }

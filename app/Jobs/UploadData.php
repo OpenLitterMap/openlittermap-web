@@ -44,9 +44,9 @@ class UploadData implements ShouldQueue
 
         /** @var AddTagsToPhotoAction $addTagsAction */
         $addTagsAction = app(AddTagsToPhotoAction::class);
-        $totalLitter = $addTagsAction->run($photo, $this->request['litter']);
+        $litterTotals = $addTagsAction->run($photo, $this->request['litter']);
 
-        $user->xp += $totalLitter;
+        $user->xp += $litterTotals['all'];
         $user->save();
 
         /** @var UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction */
@@ -54,7 +54,7 @@ class UploadData implements ShouldQueue
         $updateLeaderboardsAction->run($user, $photo);
 
         // $photo->remaining = $this->request->presence ?? false;
-        $photo->total_litter = $totalLitter;
+        $photo->total_litter = $litterTotals['litter'];
 
         // Check if the User is a trusted user => photos do not require verification.
         if ($user->verification_required == 0)

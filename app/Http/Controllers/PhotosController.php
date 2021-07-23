@@ -322,15 +322,15 @@ class PhotosController extends Controller
         $photo = Photo::findOrFail($request->photo_id);
         if ($photo->verified > 0) return redirect()->back();
 
-        $litterTotal = $addTagsAction->run($photo, $request['tags']);
+        $litterTotals = $addTagsAction->run($photo, $request['tags']);
 
-        $user->xp += $litterTotal;
+        $user->xp += $litterTotals['all'];
         $user->save();
 
         $updateLeaderboardsAction->run($user, $photo);
 
         $photo->remaining = $request->presence;
-        $photo->total_litter = $litterTotal;
+        $photo->total_litter = $litterTotals['litter'];
 
         if ($user->verification_required)
         {

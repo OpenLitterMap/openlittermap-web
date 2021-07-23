@@ -146,10 +146,10 @@ class AdminController extends Controller
         $photo->result_string = null;
         $photo->save();
 
-        $totalDeletedTags = $this->clearTagsAction->run($photo);
+        $deletedTags = $this->clearTagsAction->run($photo);
 
         $user = $photo->user;
-        $user->xp = max(0, $user->xp - $totalDeletedTags);
+        $user->xp = max(0, $user->xp - $deletedTags['all']);
         $user->count_correctly_verified = 0;
         $user->save();
 
@@ -169,11 +169,11 @@ class AdminController extends Controller
         try {
             $this->deletePhotoAction->run($photo);
 
-            $totalDeletedTags = $this->clearTagsAction->run($photo);
+            $deletedTags = $this->clearTagsAction->run($photo);
 
             $photo->delete();
 
-            $user->xp = max(0, $user->xp - $totalDeletedTags - 1); // Subtract 1xp for uploading
+            $user->xp = max(0, $user->xp - $deletedTags['all'] - 1); // Subtract 1xp for uploading
             $user->total_images = $user->total_images > 0 ? $user->total_images - 1 : 0;
             $user->save();
 

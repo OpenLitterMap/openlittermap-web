@@ -20,19 +20,19 @@ trait AddTagsTrait
 
         /** @var ClearTagsOfPhotoAction $clearTagsAction */
         $clearTagsAction = app(ClearTagsOfPhotoAction::class);
-        $totalDeletedTags = $clearTagsAction->run($photo);
+        $deletedTags = $clearTagsAction->run($photo);
 
         /** @var AddTagsToPhotoAction $addTagsAction */
         $addTagsAction = app(AddTagsToPhotoAction::class);
-        $totalLitter = $addTagsAction->run($photo, $tags);
+        $litterTotals = $addTagsAction->run($photo, $tags);
 
-        $user->xp -= $totalDeletedTags; // Decrement the XP since old tags no longer exist
-        $user->xp += $totalLitter; // we are duplicating this if we are updating tags....
+        $user->xp -= $deletedTags['all']; // Decrement the XP since old tags no longer exist
+        $user->xp += $litterTotals['all'];
         $user->xp = max(0, $user->xp);
         $user->save();
 
         // photo->verified_by ;
-        $photo->total_litter = $totalLitter;
+        $photo->total_litter = $litterTotals['litter'];
         $photo->result_string = null; // Updated on PhotoVerifiedByAdmin only. Must be reset if we are applying new tags.
         $photo->save();
 

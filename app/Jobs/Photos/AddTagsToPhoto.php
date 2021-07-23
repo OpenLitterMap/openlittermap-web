@@ -50,9 +50,9 @@ class AddTagsToPhoto implements ShouldQueue
 
         /** @var AddTagsToPhotoAction $addTagsAction */
         $addTagsAction = app(AddTagsToPhotoAction::class);
-        $litterTotal = $addTagsAction->run($photo, $this->tags);
+        $litterTotals = $addTagsAction->run($photo, $this->tags);
 
-        $user->xp += $litterTotal;
+        $user->xp += $litterTotals['all'];
         $user->save();
 
         /** @var UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction */
@@ -60,7 +60,7 @@ class AddTagsToPhoto implements ShouldQueue
         $updateLeaderboardsAction->run($user, $photo);
 
         $photo->remaining = false; // todo
-        $photo->total_litter = $litterTotal;
+        $photo->total_litter = $litterTotals['litter'];
 
         if ($user->verification_required)
         {

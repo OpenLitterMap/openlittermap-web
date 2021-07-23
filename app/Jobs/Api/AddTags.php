@@ -57,16 +57,16 @@ class AddTags implements ShouldQueue
 
         /** @var AddTagsToPhotoAction $addTagsAction */
         $addTagsAction = app(AddTagsToPhotoAction::class);
-        $litterTotal = $addTagsAction->run($photo, $tags);
+        $litterTotals = $addTagsAction->run($photo, $tags);
 
-        $user->xp += $litterTotal;
+        $user->xp += $litterTotals['all'];
         $user->save();
 
         /** @var UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction */
         $updateLeaderboardsAction = app(UpdateLeaderboardsFromPhotoAction::class);
         $updateLeaderboardsAction->run($user, $photo);
 
-        $photo->total_litter = $litterTotal;
+        $photo->total_litter = $litterTotals['litter'];
 
         if ($user->verification_required)
         {

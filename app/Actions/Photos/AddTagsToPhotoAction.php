@@ -12,25 +12,30 @@ class AddTagsToPhotoAction
      *
      * @param Photo $photo
      * @param array $tags
-     * @return int number of added tags, excluding brands
+     * @return array number of added tags, total litter and brands
      */
-    public function run(Photo $photo, array $tags): int
+    public function run(Photo $photo, array $tags): array
     {
         $photo->refresh();
 
-        $totalLitter = 0;
+        $litter = 0;
+        $brands = 0;
 
         foreach ($tags as $category => $items) {
             $this->createCategory($photo, $category);
 
             $photo->fresh()->$category->update($items);
 
-            if ($category !== 'brands') {
-                $totalLitter += array_sum($items);
+            if ($category === 'brands') {
+                $brands += array_sum($items);
+            } else {
+                $litter += array_sum($items);
             }
         }
 
-        return $totalLitter;
+        $all = $litter + $brands;
+
+        return compact('litter', 'brands', 'all');
     }
 
     /**
@@ -39,10 +44,6 @@ class AddTagsToPhotoAction
      */
     protected function createCategory(Photo $photo, string $category): void
     {
-        if ($photo->$category) {
-            return;
-        }
-
         $createdCategory = $photo->$category()->create();
 
         $photo->update([
