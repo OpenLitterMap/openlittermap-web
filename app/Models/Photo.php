@@ -13,6 +13,7 @@ class Photo extends Model
     use HasFactory;
 
     protected $fillable = [
+        'user_id',
     	'filename',
     	'model',
     	'datetime',

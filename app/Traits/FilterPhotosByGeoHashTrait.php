@@ -51,7 +51,6 @@ trait FilterPhotosByGeoHashTrait
             'lon',
             'datetime'
         );
-
         $query->with([
             'user' => function ($query) {
                 $query->where('users.show_name_maps', 1)
@@ -73,7 +72,6 @@ trait FilterPhotosByGeoHashTrait
                 ]);
             }
         });
-
         return $query;
     }
 }
