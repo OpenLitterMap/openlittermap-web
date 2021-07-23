@@ -16,7 +16,7 @@ use Spatie\Permission\Models\Role;
 use Tests\Feature\HasPhotoUploads;
 use Tests\TestCase;
 
-class UpdateDeleteTagsTest extends TestCase
+class UpdateTagsDeletePhotoTest extends TestCase
 {
     use HasPhotoUploads;
 

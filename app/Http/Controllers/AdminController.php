@@ -48,11 +48,6 @@ class AdminController extends Controller
 
     public function getUserCount ()
     {
-        // $users = User::where([
-        //     ['verified', 1],
-        //     ['has_uploaded', 1]
-        // ])->orderBy('xp', 'desc')->get();
-
         $users = User::where('verified', 1)
             ->orWhere('name', 'default')
             ->get()
@@ -62,18 +57,15 @@ class AdminController extends Controller
 
         $users = $users->groupBy(function($val) {
             return Carbon::parse($val->created_at)->format('m-y');
-        });;
+        });
 
         $upm = [];
         $months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        // $itr = 0;
         foreach($users as $index => $monthlyUser)
         {
-            // return [$index, $monthlyUser->count()];
-            $month = $months[(int)$substr = substr($index, 0, 2)];
+            $month = $months[(int) substr($index, 0, 2)];
             $year = substr($index, 2, 5);
             $upm[$month.$year] = $monthlyUser->count(); // Mar-17
-            // $total_photos += $monthlyUser->count();
         }
         $upm = json_encode($upm);
 
@@ -86,12 +78,9 @@ class AdminController extends Controller
         $uupm = [];
         foreach($usersUploaded as $index => $userUploaded)
         {
-            // return $userUploaded->count();
-            // return [$index, $userUploaded->count(), $userUploaded];
             $month = $months[(int)$substr = substr($index, 0, 2)];
             $year = substr($index, 2, 5);
             $uupm[$month.$year] = $userUploaded->count(); // Mar-17
-            // $total_photos += $monthlyUser->count();
         }
         $uupm = json_encode($uupm);
 
@@ -100,21 +89,20 @@ class AdminController extends Controller
 
     /**
      * Verify an image, delete the image
-     ** todo - fix this with correct AWS permissions
      */
-    // public function verify(Request $request) {
-    //     $photo = Photo::find($request->photoId);
-    //     $filepath = $photo->filename;
-    //     unlink(public_path($filepath));
-    //     $photo->filename = '/assets/verified.jpg';
-    //     $photo->verified = 2;
-    //     $photo->verification = 1;
-    //     $photo->save();
-    //     $user = User::find($photo->user_id);
-    //     $user->xp += 1;
-    //     $user->save();
-    //     event(new TagsVerifiedByAdmin($photo->id));
-    // }
+    public function verify(Request $request)
+    {
+        $photo = Photo::findOrFail($request->photoId);
+
+        $this->deletePhotoAction->run($photo);
+
+        $photo->verification = 1;
+        $photo->verified = 2;
+        $photo->filename = '/assets/verified.jpg';
+        $photo->save();
+
+        event(new TagsVerifiedByAdmin($photo->id));
+    }
 
     /**
      * The image and the tags are correct
@@ -123,7 +111,7 @@ class AdminController extends Controller
      */
     public function verifykeepimage (Request $request)
     {
-        $photo = Photo::find($request->photoId);
+        $photo = Photo::findOrFail($request->photoId);
         $photo->verified = 2;
         $photo->verification = 1;
         $photo->save();
@@ -148,7 +136,7 @@ class AdminController extends Controller
 
         $deletedTags = $this->clearTagsAction->run($photo);
 
-        $user = $photo->user;
+        $user = User::find($photo->user_id);
         $user->xp = max(0, $user->xp - $deletedTags['all']);
         $user->count_correctly_verified = 0;
         $user->save();
@@ -166,21 +154,17 @@ class AdminController extends Controller
         $photo = Photo::findOrFail($request->photoId);
         $user = User::find($photo->user_id);
 
-        try {
-            $this->deletePhotoAction->run($photo);
+        $this->deletePhotoAction->run($photo);
 
-            $deletedTags = $this->clearTagsAction->run($photo);
+        $deletedTags = $this->clearTagsAction->run($photo);
 
-            $photo->delete();
+        $photo->delete();
 
-            $user->xp = max(0, $user->xp - $deletedTags['all'] - 1); // Subtract 1xp for uploading
-            $user->total_images = $user->total_images > 0 ? $user->total_images - 1 : 0;
-            $user->save();
+        $user->xp = max(0, $user->xp - $deletedTags['all'] - 1); // Subtract 1xp for uploading
+        $user->total_images = $user->total_images > 0 ? $user->total_images - 1 : 0;
+        $user->save();
 
-            $this->updateLeaderboardsAction->run($user, $photo);
-        } catch (Exception $e) {
-            Log::info(["Admin delete failed", $e]);
-        }
+        $this->updateLeaderboardsAction->run($user, $photo);
 
         return redirect()->back();
     }
