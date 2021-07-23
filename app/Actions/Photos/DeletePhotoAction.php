@@ -14,6 +14,8 @@ class DeletePhotoAction
     {
         if (app()->environment('production')) {
             $this->deletePhotoOnProduction($photo);
+        } else if (app()->environment('staging')) {
+            $this->deletePhotoOnStaging($photo);
         } else {
             $this->deletePhoto($photo);
         }
@@ -26,6 +28,15 @@ class DeletePhotoAction
     {
         $path = substr($photo->filename, 42);
         Storage::disk('s3')->delete($path);
+    }
+
+    /**
+     * @param Photo $photo
+     */
+    protected function deletePhotoOnStaging(Photo $photo): void
+    {
+        $path = substr($photo->filename, 58);
+        Storage::disk('staging')->delete($path);
     }
 
     /**

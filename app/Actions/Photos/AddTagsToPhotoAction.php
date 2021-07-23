@@ -18,7 +18,7 @@ class AddTagsToPhotoAction
     {
         $photo->refresh();
 
-        $litterTotal = 0;
+        $totalLitter = 0;
 
         foreach ($tags as $category => $items) {
             $this->createCategory($photo, $category);
@@ -26,11 +26,11 @@ class AddTagsToPhotoAction
             $photo->fresh()->$category->update($items);
 
             if ($category !== 'brands') {
-                $litterTotal += array_sum($items);
+                $totalLitter += array_sum($items);
             }
         }
 
-        return $litterTotal;
+        return $totalLitter;
     }
 
     /**
