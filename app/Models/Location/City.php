@@ -2,6 +2,7 @@
 
 namespace App\Models\Location;
 
+use App\Events\NewCityAdded;
 use App\Models\Photo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\Redis;
@@ -14,6 +15,7 @@ class City extends Location
 		'id',
 		'city',
 		'country_id',
+		'state_id',
 		'created_at',
 		'updated_at',
 		'total_smoking',
@@ -138,5 +140,4 @@ class City extends Location
     public function users() {
     	return $this->hasMany('App\Models\User\User');
     }
-
 }

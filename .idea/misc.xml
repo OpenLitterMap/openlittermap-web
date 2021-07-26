@@ -4,6 +4,7 @@
     <option name="languageLevel" value="ES6" />
   </component>
   <component name="ProjectPlainTextFileTypeManager">
-    <file url="file://$PROJECT_DIR$/app/Http/Controllers/TeamController.php" />
+    <file url="file://$PROJECT_DIR$/storage/logs/laravel-2021-06-22.log" />
+    <file url="file://$PROJECT_DIR$/storage/logs/laravel-2021-06-23.log" />
   </component>
 </project>

@@ -21,10 +21,10 @@ export default {
             datasets: [
                 {
                     label: this.$t('profile.dashboard.total-categories'),
-                    backgroundColor: '#8e7fd6',
+                    backgroundColor: '#1DD3B0',
                     data: this.categories,
                     fill: true,
-                    borderColor: '#8e7fd6',
+                    borderColor: '#1DD3B0',
                     maxBarThickness: '10'
                 }
             ]
@@ -35,12 +35,17 @@ export default {
             maintainAspectRatio: false,
             legend: {
                 labels: {
-                    fontColor: '#8e7fd6'
+                    fontColor: '#1DD3B0'
                 }
             },
             scale: {
                 pointLabels: {
                     fontColor: 'white'
+                }
+            },
+            tooltips: {
+                callbacks: {
+                    title: (tooltipItem, data) => data.labels[tooltipItem[0].index]
                 }
             }
         })

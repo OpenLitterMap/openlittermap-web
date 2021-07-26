@@ -10,8 +10,9 @@ class TeamsLeaderboardController extends Controller
 {
     /**
      * Load Teams ranked by total litter
-     *
      * Todo - paginate this
+     *
+     * @return \Illuminate\Database\Eloquent\Collection;
      */
     public function index ()
     {
@@ -22,7 +23,9 @@ class TeamsLeaderboardController extends Controller
     }
 
     /**
+     * Toggle team leaderboard
      *
+     * @return mixed
      */
     public function toggle (Request $request)
     {

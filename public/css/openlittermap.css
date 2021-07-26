@@ -248,6 +248,11 @@ html {
     padding-top: 7em;
 }
 
+.search-fixed-height {
+    max-height: 18em;
+    overflow-y: auto;
+}
+
 .show-mobile {
 	display: none;
 }

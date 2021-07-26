@@ -85,7 +85,13 @@ export const actions = {
      */
     async LOAD_NEXT_IMAGE (context)
     {
-        await axios.get('/photos?page=' + context.state.paginate.current_page)
+        // When on the last page, next_page_url is null
+        // So we need to use current_page - 1 as the correct value
+        let currentPage = context.state.paginate.next_page_url || context.state.paginate.current_page === 1
+                ? context.state.paginate.current_page
+                : context.state.paginate.current_page - 1;
+
+        await axios.get('/photos?page=' + currentPage)
             .then(response => {
                 console.log('load_next_image', response);
 

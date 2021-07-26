@@ -78,6 +78,15 @@ return [
         'dropbox' => [
             'driver' => 'dropbox',
             'token' => env('DROPBOX_TOKEN'),
+        ],
+
+        'staging' => [
+            'driver' => 's3',
+            'key' => env('DIGITAL_OCEAN_KEY'),
+            'secret' => env('DIGITAL_OCEAN_SECRET'),
+            'endpoint' => env('DIGITAL_OCEAN_ENDPOINT'),
+            'region' => env('DIGITAL_OCEAN_REGION'),
+            'bucket' => env('DIGITAL_OCEAN_BUCKET'),
         ]
 
     ],

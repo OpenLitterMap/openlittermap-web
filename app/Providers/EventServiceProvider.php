@@ -21,25 +21,7 @@ class EventServiceProvider extends ServiceProvider
         'App\Events\ImageUploaded' => [
               'App\Listeners\Locations\CheckContributors'
         ],
-        'App\Events\NewCountryAdded' => [
-            'App\Listeners\AddLocation\UpdateCountriesTable',
-            // 'App\Listeners\GenerateLitterCoin',
-            // 'App\Listeners\SendNewCountryEmail',
-            // 'App\Listeners\UpdateSlackChannel',
-        ],
-        'App\Events\NewStateAdded' => [
-            'App\Listeners\AddLocation\UpdateStatesTable',
-            // 'App\Listeners\GenerateLitterCoin',
-        ],
-        'App\Events\NewCityAdded' => [
-            'App\Listeners\AddLocation\UpdateCitiesTable',
-            // 'App\Listeners\GenerateLitterCoin',
-            // 'App\Listeners\SendNewCityEmail'
-        ],
-        // 'App\Events\DynamicUpdate' => [
-        //     'App\Listeners\UpdateUsersTotals',
-        // ],
-        // stage-1 verification is not up to date
+        // stage-1 verification is not currently in use
         'App\Events\PhotoVerifiedByUser' => [
 //            'App\Listeners\UpdateUsersTotals',
 //            'App\Listeners\UpdateCitiesTotals',
@@ -47,9 +29,9 @@ class EventServiceProvider extends ServiceProvider
 //            'App\Listeners\UpdateCountriesTotals',
 //            'App\Listeners\UpdateLeaderboards',
         ],
-        // Several UpdateUser Listeners could be merged
+        // Several Listeners could be merged. Add ProofOfWork
         'App\Events\TagsVerifiedByAdmin' => [
-            'App\Listeners\AddTags\UpdateUser', // ProofOfWork
+            'App\Listeners\AddTags\UpdateUser',
             'App\Listeners\AddTags\IncrementCity',
             'App\Listeners\AddTags\IncrementState',
             'App\Listeners\AddTags\IncrementCountry',
@@ -80,13 +62,9 @@ class EventServiceProvider extends ServiceProvider
 
     /**
      * Register any events for your application.
-     *
-     * @return void
      */
     public function boot()
     {
         parent::boot();
-
-        //
     }
 }

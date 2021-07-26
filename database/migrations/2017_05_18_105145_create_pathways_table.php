@@ -15,8 +15,6 @@ class CreatePathwaysTable extends Migration
     {
         Schema::create('pathways', function (Blueprint $table) {
             $table->increments('id');
-            $table->integer('photo_id')->unsigned();
-            $table->foreign('photo_id')->references('id')->on('photos');
             $table->integer('gutter')->unsigned()->nullable();
             $table->integer('gutter_long')->unsigned()->nullable();
             $table->integer('kerb_hole_small')->unsigned()->nullable();

@@ -5,8 +5,17 @@
                 {{ $t('upload.click-to-upload') }}
             </h1>
 
-            <vue-dropzone id="customdropzone" :options="options" :use-custom-slot="true" @vdropzone-error="failed">
-                <i class="fa fa-image upload-icon" aria-hidden="true" />
+            <vue-dropzone
+                id="customdropzone"
+                :options="options"
+                :use-custom-slot="true"
+                @vdropzone-error="failed"
+                @vdropzone-files-added="uploadStarted"
+                @vdropzone-file-added="uploadStarted"
+                @vdropzone-complete-multiple="uploadCompleted"
+                @vdropzone-complete="uploadCompleted"
+            >
+                <i class="fa fa-image upload-icon" aria-hidden="true"/>
             </vue-dropzone>
 
             <h2 class="title is-2">
@@ -17,7 +26,7 @@
                 {{ $t('upload.need-tag-litter') }}
             </h3>
 
-            <button class="button is-medium is-info hov" @click="tag">
+            <button class="button is-medium is-info hov" @click="tag" v-if="showTagLitterButton">
                 {{ $t('upload.tag-litter') }}<i class="fa fa-arrow-right" aria-hidden="true" />
             </button>
         </div>
@@ -46,7 +55,8 @@ export default {
                 includeStyling: true,
                 duplicateCheck: true,
                 paramName: 'file'
-            }
+            },
+            showTagLitterButton: true
         };
     },
     async created ()
@@ -83,12 +93,28 @@ export default {
         },
 
         /**
+         * A file has been added to the Dropzone
+         */
+        uploadStarted (file)
+        {
+            this.showTagLitterButton = false;
+        },
+
+        /**
+         * All file uploads have finished
+         */
+        uploadCompleted (response)
+        {
+            this.showTagLitterButton = true;
+        },
+
+        /**
          * Redirect the user to /tag
          */
         tag ()
         {
             this.$router.push({ path: '/tag' });
-        },
+        }
     }
 };
 </script>

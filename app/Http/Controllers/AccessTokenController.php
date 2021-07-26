@@ -14,7 +14,8 @@ class AccessTokenController extends ATC
 {
     public function issueToken (ServerRequestInterface $request)
     {
-        try {
+        try
+        {
             // get email as :username (default)
             $email = $request->getParsedBody()['username'];
 
@@ -30,11 +31,11 @@ class AccessTokenController extends ATC
             // convert json to array
             $data = json_decode($content, true);
 
-            // if (isset($data["error"])) {
-            //     throw new OAuthServerException(
-            //     	'The user credentials were incorrect.', 6, 'invalid_credentials', 401
-            //     );
-            // }
+            if (isset($data["error"])) {
+                throw new OAuthServerException(
+                    'The user credentials were incorrect.', 6, 'invalid_credentials', 401
+                );
+            }
 
             // add access token to user
             $user = collect($user);
@@ -45,6 +46,7 @@ class AccessTokenController extends ATC
         catch (ModelNotFoundException $e) { // email notfound
             // return error message
             \Log::error(['AccessTokenController.not_found', $e->getMessage()]);
+
             return response(["message" => "User not found"], 500);
         }
         catch (OAuthServerException $e) { //password not correct..token not granted
@@ -57,9 +59,9 @@ class AccessTokenController extends ATC
         }
         catch (Exception $e) {
             // return error message
-            \Log::error(['AccessTokenController.server_error', $e->getMessage()]);
+            \Log::error(['AccessTokenController.server_error', $e->getMessage(), $e->getCode()]);
 
-            return response(["message" => "Internal server error!!"], 500);
+            return response(["message" => "Internal server error"], 500);
         }
     }
 }

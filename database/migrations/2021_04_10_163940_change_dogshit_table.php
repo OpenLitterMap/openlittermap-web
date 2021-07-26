@@ -13,11 +13,7 @@ class ChangeDogshitTable extends Migration
      */
     public function up()
     {
-        Schema::rename('dogshits', 'dogshit');
-
         Schema::table('dogshit', function (Blueprint $table) {
-            $table->dropColumn(['warm', 'salty', 'nutty', 'fresh']);
-
             $table->unsignedInteger('poo')->nullable();
             $table->unsignedInteger('poo_in_bag')->nullable();
         });
@@ -30,6 +26,6 @@ class ChangeDogshitTable extends Migration
      */
     public function down()
     {
-        Schema::rename('dogshit', 'dogshits');
+        Schema::dropColumn(['poo', 'poo_in_bag']);
     }
 }

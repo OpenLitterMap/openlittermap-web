@@ -40,6 +40,13 @@ class PhotoTest extends TestCase
         );
     }
 
+    public function test_a_photo_has_proper_casts()
+    {
+        $casts = Photo::factory()->create()->getCasts();
+
+        $this->assertContains('datetime', $casts);
+    }
+
     public function test_a_photo_has_selected_attribute()
     {
         $photo = Photo::factory()->create();

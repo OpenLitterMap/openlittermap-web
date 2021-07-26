@@ -1,13 +1,13 @@
 <template>
-    <section :class="container" style="background-color: #23d160; min-height: 100%;">
+    <section class="locations-main" :class="container">
 		<!-- Location Navbar -->
 		<location-navbar @selectedCategory="updateCategory($event)" />
 
 	    <!-- v-show is a temp bug fix until cities table has working total_litter column -->
-		<section v-for="location, index in orderedBy" v-show="location.total_litter_redis > 0">
+		<section v-for="(location, index) in orderedBy" :key="index"  v-show="location.total_litter_redis > 0">
 			<div v-show="category !== 'A-Z'">
 				<br>
-				<h1 style="color: #34495e;" class="title is-1 has-text-centered">
+				<h1 class="title is-1 has-text-centered world-cup-title">
 					#LitterWorldCup
 				</h1>
 			</div>
@@ -16,7 +16,12 @@
         		<div class="columns">
 		
 					<!-- Location Metadata -->
-					<location-metadata :index="index" :location="location" :type="type" :category="category" />
+					<location-metadata 
+						:index="index" 
+						:location="location" 
+						:type="type" 
+						:category="category" 
+					/>
 
 					<!-- Charts -->
 					<div class="column is-half is-offset-1">
@@ -25,37 +30,17 @@
 
 						<div class="tabs is-center">
 
-							<!-- Pie Charts -->
-							<a @click="loadTab(index, 'litter')" :class="tabClass('litter')">
-								{{ $t('location.litter') }}
-							</a>
-
-							<!-- Leaderboard -->
-							<a @click="loadTab(index, 'leaderboard')" :class="tabClass('leaderboard')">
-								{{ $t('location.leaderboard') }}
-							</a>
-
-							<!-- Time-series -->
-							<a @click="loadTab(index, 'time_series')" :class="tabClass('time_series')">
-								{{ $t('location.time-series') }}
-							</a>
-
-							<!-- Options (City only) -->
-							<a
-								v-show="type === 'city'"
-								@click="loadTab(index, 'options')" :class="tabClass('options')">
-								{{ $t('location.options') }}
-							</a>
-
-							<!-- Download -->
-							<a
-								@click="loadTab(index, 'download')" :class="tabClass('download')">
-								{{ $t('common.download') }}
+							<!-- Components within Tabs -->
+							<a v-for="(tab, idx) in tabs" 	
+								:key="idx" v-show="showTab(tab.in_location)" 
+								@click="loadTab(index, tab.component)" 
+								:class="tabClass(tab)">
+								{{ tab.title }}
 							</a>
 						</div>
 
 						<component
-							:is="tabs[tab]"
+							:is="tab"
 							:litter_data="location.litter_data"
 							:brands_data="location.brands_data"
 							:total_brands="location.total_brands"
@@ -67,7 +52,6 @@
 							:type="type"
 							:locationId="location.id"
 						/>
-
 					</div>
 				</div>
 			</div>
@@ -106,13 +90,13 @@ export default {
 		return {
 			'category': this.$t('location.most-data'),
 			tab: '',
-			tabs: {
-				litter: 'ChartsContainer',
-				time_series: 'TimeSeriesContainer',
-				leaderboard: 'Leaderboard',
-                options: 'Options',
-                download: 'Download'
-			}
+			tabs: [
+				{ title: this.$t('location.litter'), component: 'ChartsContainer', in_location: 'all' },
+				{ title: this.$t('location.time-series'), component: 'TimeSeriesContainer', in_location: 'all'},
+				{ title: this.$t('location.leaderboard'), component: 'Leaderboard', in_location: 'all'},
+				{ title: this.$t('location.options'), component: 'Options', in_location: 'city'},
+				{ title: this.$t('common.download'), component: 'Download', in_location: 'all'}
+			]
 		};
 	},
     computed: {
@@ -178,6 +162,14 @@ export default {
 		{
 			return tab === this.tab ? 'l-tab is-active' : 'l-tab';
 		},
+
+		/**
+		 * Show tab depending on location type
+		 */
+		showTab (tab) 
+		{
+			return (tab === 'all' || this.type === tab); // this will return true or false
+		},
 		
 		/**
 		 *
@@ -200,7 +192,22 @@ export default {
 
 <style lang="scss" scoped>
 
+	.locations-main {
+		background-color: #23d160;
+		min-height: 100%;background-color: #23d160; 
+		min-height: 100%;
+	}
+
+	.l-tab.is-active {
+		border-bottom: 2px solid white !important;
+	}
+
 	.h65pc {
 			height: 65%;
 		}
+
+	.world-cup-title {
+		color: #34495e;
+		
+	}
 </style>

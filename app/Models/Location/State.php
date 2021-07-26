@@ -101,6 +101,9 @@ class State extends Location
         return $totals;
     }
 
+    /**
+     * Relationships
+     */
 	public function creator () {
 		return $this->belongsTo('App\Models\User\User', 'created_by');
 	}

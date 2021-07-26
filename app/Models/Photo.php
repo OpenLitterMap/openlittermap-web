@@ -68,14 +68,17 @@ class Photo extends Model
 
         // Introduced after resizing images to 500x500
         'five_hundred_square_filepath',
-        'bbox_500_assigned_to'
+        'bbox_500_assigned_to',
+
+        'address_array'
     ];
 
     protected $appends = ['selected'];
 
+    protected $casts = ['datetime'];
+
     /**
-     * Create an Accessor that adds ['selected' => false] to each order
-     * The user can select an order to export it
+     * Create an Accessor that adds ['selected' => false] to each record
      */
     public function getSelectedAttribute ()
     {

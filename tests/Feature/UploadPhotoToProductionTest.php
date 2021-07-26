@@ -55,7 +55,7 @@ class UploadPhotoToProductionTest extends TestCase
             'file' => $file,
         ]);
 
-        $response->assertOk()->assertJson(['msg' => 'success']);
+        $response->assertOk()->assertJson(['success' => true]);
 
         // Image is uploaded
         Storage::disk('s3')->assertExists($filepath);
