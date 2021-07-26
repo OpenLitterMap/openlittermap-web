@@ -53,7 +53,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
 //            'city',
 //            'state',
 //            'country',
-            'remaining_beta',
+            'picked up',
             'address',
             'total_litter',
 
@@ -343,7 +343,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
 //            $row->city_id, // todo -> name
 //            $row->state_id, // todo -> name
 //            $row->country_id, // todo -> name
-            $row->remaining_beta,
+            $row->remaining ? 'No' : 'Yes', // column name is "picked up"
             $row->address,
             $row->total_litter,
 

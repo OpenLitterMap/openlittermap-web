@@ -14,6 +14,7 @@ use App\Events\Photo\IncrementPhotoMonth;
 use App\Helpers\Post\UploadHelper;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Intervention\Image\Facades\Image;
@@ -180,6 +181,14 @@ class ApiPhotosController extends Controller
         {
             \Log::info(['ApiPhotosController@store', $e->getMessage()]);
         }
+
+        // Since a user can upload multiple photos at once,
+        // we might get old values for xp, so we update the values directly
+        // without retrieving them
+        $user->update([
+            'xp' => DB::raw('xp + 1'),
+            'total_images' => DB::raw('total_images + 1')
+        ]);
 
         $teamName = null;
         if ($user->team) $teamName = $user->team->name;

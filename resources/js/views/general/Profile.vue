@@ -58,8 +58,10 @@ export default {
         ProfileDownload,
         ProfilePhotos
     },
-    async created ()
+    async mounted ()
     {
+        await this.$store.dispatch('GET_CURRENT_USER');
+
         await this.$store.dispatch('GET_USERS_PROFILE_DATA');
     }
 }

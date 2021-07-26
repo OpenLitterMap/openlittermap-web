@@ -35,6 +35,6 @@ class EmailUserExportCompleted implements ShouldQueue
      */
     public function handle()
     {
-        Mail::to($this->email)->send(new ExportWithLink($this->path, $this->path));
+        Mail::to($this->email)->send(new ExportWithLink($this->email, $this->path));
     }
 }

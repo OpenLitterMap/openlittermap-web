@@ -9,7 +9,9 @@ use App\Models\Location\Country;
 use App\Models\Location\State;
 use App\Models\Location\City;
 
+use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class DownloadControllerNew extends Controller
 {
@@ -77,9 +79,9 @@ class DownloadControllerNew extends Controller
             return ['success' => true];
         }
 
-        catch (\Exception $e)
+        catch (Exception $e)
         {
-            \Log::info(['download failed', $e->getMessage()]);
+            Log::info(['download failed', $e->getMessage()]);
 
             return ['success' => false];
         }
