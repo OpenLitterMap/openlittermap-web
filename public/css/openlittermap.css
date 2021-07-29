@@ -48,6 +48,12 @@ html {
 }
 /* End extra leaflet styles */
 
+.locations-container {
+    display: flex;
+    flex-direction: column;
+    height: calc(100% - 72px);
+}
+
 .app-icon {
 	cursor: pointer;
 	max-height: 10em;

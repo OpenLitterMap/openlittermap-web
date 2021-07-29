@@ -238,19 +238,28 @@ class LoadingDataHelper
     /**
      * Get the cities for the /country/state
      *
-     * @param string $url
+     * @param string $country
+     * @param string $state
      *
      * @return array
      */
-    public static function getCities (string $url) : array
+    public static function getCities (string $country, string $state) : array
     {
-        $urlText = urldecode($url);
+        $countryText = urldecode($country);
+
+        $country = Country::where('id', $countryText)
+            ->orWhere('country', $countryText)
+            ->orWhere('shortcode', $countryText)
+            ->first();
+
+        if (!$country) return ['success' => false, 'msg' => 'country not found'];
+
+        $stateText = urldecode($state);
 
         // ['total_images', '!=', null]
-
-        $state = State::where('id', $urlText)
-            ->orWhere('state', $urlText)
-            ->orWhere('statenameb', $urlText)
+        $state = State::where('id', $stateText)
+            ->orWhere('state', $stateText)
+            ->orWhere('statenameb', $stateText)
             ->first();
 
         if (!$state) return ['success' => false, 'msg' => 'state not found'];
@@ -274,7 +283,7 @@ class LoadingDataHelper
             ->orderBy('city', 'asc')
             ->get();
 
-        $countryName = $state->country->country;
+        $countryName = $country->country;
         $stateName = $state->state;
 
         foreach ($cities as $city)

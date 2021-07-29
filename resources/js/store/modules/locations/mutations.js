@@ -33,11 +33,11 @@ export const mutations = {
     },
 
     /**
-     * Set the state (when clicking into it)
+     * Set the state name (when clicking into it)
      */
-    setState (state, payload)
+    stateName (state, payload)
     {
-        state.state = payload;
+        state.stateName = payload;
     },
 
     /**
@@ -61,6 +61,4 @@ export const mutations = {
 
         state.locations = locations;
     }
-
-
 };

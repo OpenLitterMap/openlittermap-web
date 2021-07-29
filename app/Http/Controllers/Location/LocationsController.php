@@ -52,10 +52,15 @@ class LocationsController extends Controller
     /**
      * The Cities page of the LitterWorldCup has been refreshed
      *
+     * @param $country. Should be the name, id, or shortcode of a Country.
+     * @param $state. Should be the name or id of a State.
+     *
      * @return array
      */
     public static function getCities ()
     {
-        return LoadingDataHelper::getCities();
+        // todo - validate text
+
+        return LoadingDataHelper::getCities(request()->country, request()->state);
     }
 }

@@ -7,23 +7,29 @@
 
             <!-- Flag -->
             <img v-if="locationType === 'country'"
-                    height="15"
-                    class="img-flag"
-                    :src="getCountryFlag(location.shortcode)"
+                height="15"
+                class="img-flag"
+                :src="getCountryFlag(location.shortcode)"
             />
 
+            <!-- Rank, Location Name, href -->
             <h2 :class="textSize">
-                <a @click="loadLocationData(location)" :id="location[locationType]" class="is-link has-text-centered location-title">
+                <a
+                    @click="getDataForLocation(location)"
+                    :id="location[locationType]"
+                    class="is-link has-text-centered location-title"
+                >
                     <!-- Position -->
                     <span v-show="category !== 'A-Z' && index < 100">{{ positions(index) }} -</span>
                     <!-- Name -->
-                    <span>{{ getName(location) }}</span>
+                    <span>{{ getLocationName(location) }}</span>
                 </a>
             </h2>
         </div>
 
-        <!-- Location metadata -->
+        <!-- White box with data -->
         <div class="panel">
+            <!-- Total Litter -->
             <div class="panel-block">{{ $t('location.total-verified-litter') }}:
                 <strong class="green flex-1">&nbsp;
                     {{ location['total_litter_redis'].toLocaleString() }}
@@ -33,6 +39,8 @@
                     {{ (location['total_litter_redis'] / this.$store.state.locations.total_litter * 100).toFixed(2) + "% Total"  }}
                 </p>
             </div>
+
+            <!-- Total Photos -->
             <div class="panel-block">
                 {{ $t('location.total-verified-photos') }}:
                 <strong class="green flex-1">&nbsp;
@@ -43,10 +51,20 @@
                     {{ (location['total_photos_redis'] / this.$store.state.locations.total_photos * 100).toFixed(2) + "% Total"  }}
                 </p>
             </div>
+
+            <!-- Created at -->
             <div class="panel-block">{{ $t('common.created') }}: <strong class="green">&nbsp; {{ location['diffForHumans'] }}</strong></div>
+
+            <!-- Number of Contributors -->
             <div class="panel-block">{{ $t('location.number-of-contributors') }}: <strong class="green">&nbsp; {{ location['total_contributors_redis'].toLocaleString() }}</strong></div>
+
+            <!-- Average Image per person -->
             <div class="panel-block">{{ $t('location.avg-img-per-person') }}: <strong class="green">&nbsp; {{ location['avg_photo_per_user'].toLocaleString() }}</strong></div>
+
+            <!-- Average Litter per person -->
             <div class="panel-block">{{ $t('location.avg-litter-per-person') }}: <strong class="green">&nbsp; {{ location['avg_litter_per_user'].toLocaleString() }}</strong></div>
+
+            <!-- Created By -->
             <div class="panel-block">{{ $t('common.created-by') }}: <strong class="green">&nbsp; {{ location['created_by_name'] }} {{ location['created_by_username'] }}</strong></div>
         </div>
     </div>
@@ -65,7 +83,7 @@ export default {
     ],
 	data () {
 		return {
-			dir: '/assets/icons/flags/',
+			dir: '/assets/icons/flags/'
 		};
 	},
 	computed: {
@@ -76,6 +94,22 @@ export default {
 		{
 			return this.$store.state.locations.country;
 		},
+
+        /**
+         * Name of the Country we are viewing the states of
+         */
+        countryName ()
+        {
+            return this.$store.state.locations.countryName;
+        },
+
+        /**
+         * Name of the STate we are viewing the cities of
+         */
+        stateName ()
+        {
+            return this.$store.state.locations.stateName;
+        },
 
 		/**
 		 * Name of the state (if we are viewing cities)
@@ -107,43 +141,37 @@ export default {
             }
 		},
 
-		/**
-		 * Name of a location
-		 */
-		getName (location)
-		{
-			return location[this.locationType];
-		},
-
         /**
-		 * When user clicks on a location name
-		 */
-		loadLocationData (location)
-		{
-            console.log('locationType', this.locationType);
-			if (this.locationType === 'country')
-			{
-			    // Get States for this Country
-			    const countryName = location.country;
+         * When user clicks on a location name
+         *
+         * @param location Location
+         */
+        getDataForLocation (location)
+        {
+            this.$store.commit('setLocations', []);
 
-			    this.$store.commit('setCountry', countryName);
+            if (this.locationType === 'country')
+            {
+                // Get States for this Country
+                const countryName = location.country;
 
-				this.$router.push({ path:  '/world/' + countryName });
-			}
-			else if (this.locationType === 'state')
-			{
-			    // Get Cities for this State + Country
-			    const stateName = location.state;
+                this.$store.commit('countryName', countryName);
 
-                console.log('country', this.country);
+                this.$router.push({ path:  '/world/' + countryName });
+            }
+            else if (this.locationType === 'state')
+            {
+                // Get Cities for this State + Country
+                const countryName = this.countryName;
+                const stateName = location.state;
 
-			    this.$store.commit('setState', stateName);
+                this.$store.commit('stateName', stateName);
 
-				this.$router.push({ path:  '/world/' + this.country + '/' + stateName });
-			}
-			else if (this.locationType === 'city')
-			{
-			    // if the object has "hex" key, the slider has updated
+                this.$router.push({ path:  '/world/' + countryName + '/' + stateName });
+            }
+            else if (this.locationType === 'city')
+            {
+                // if the object has "hex" key, the slider has updated
                 if (location.hasOwnProperty('hex'))
                 {
                     this.$router.push({
@@ -153,8 +181,16 @@ export default {
                     });
                 }
 
-				this.$router.push({ path:  '/world/' + this.country + '/' + this.state + '/' + location.city + '/map' });
-			}
+                this.$router.push({ path:  '/world/' + this.country + '/' + this.state + '/' + location.city + '/map' });
+            }
+        },
+
+		/**
+		 * Name of a location
+		 */
+		getLocationName (location)
+		{
+			return location[this.locationType];
 		},
 
         /**

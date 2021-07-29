@@ -151,9 +151,10 @@ export const actions = {
 
             if (response.data.success)
             {
-                context.commit('setCities', response.data.cities)
+                context.commit('countryName', response.data.country);
+                context.commit('stateName', response.data.state);
 
-                // change state name
+                context.commit('setLocations', response.data.cities)
             }
             else
             {
