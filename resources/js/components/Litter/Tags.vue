@@ -21,7 +21,7 @@
 /*** Tags (previously AddedItems) is quite similar to AdminItems except here we remove the tag, on AdminItems we reset the tag.*/
 export default {
     name: 'Tags',
-    props: ['admin'], // bool
+    props: ['admin', 'photoId'], // bool
     computed: {
 
         /**
@@ -31,7 +31,7 @@ export default {
         {
             let categories = [];
 
-            Object.entries(this.$store.state.litter.tags).map(entries => {
+            Object.entries(this.$store.state.litter.tags[this.photoId] || {}).map(entries => {
                 if (Object.keys(entries[1]).length > 0)
                 {
                     categories.push({
@@ -77,6 +77,7 @@ export default {
             else commit = 'removeTag';
 
             this.$store.commit(commit, {
+                photoId: this.photoId,
                 category,
                 tag_key
             });

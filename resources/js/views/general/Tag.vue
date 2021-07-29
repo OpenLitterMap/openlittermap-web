@@ -72,6 +72,11 @@
                             <div class="image-content">
                                 <img :src="photo.filename" class="img">
                             </div>
+
+                            <!-- Add & Submit Tags -->
+                            <div class="column is-10 is-offset-1 mt-4">
+                                <add-tags :id="photo.id" />
+                            </div>
                         </div>
 
                         <!-- Info, Tags, Right -->
@@ -87,14 +92,7 @@
                             </div>
 
                             <!-- These are the tags the user has added -->
-                            <Tags />
-                        </div>
-                    </div>
-
-                    <!-- Add & Submit Tags -->
-                    <div class="columns">
-                        <div class="column is-10 is-offset-1">
-                            <add-tags :id="photo.id" />
+                            <Tags :photo-id="photo.id"/>
                         </div>
                     </div>
 
@@ -252,35 +250,6 @@ export default {
             this.$store.commit('initRecentTags', {});
 
             this.$localStorage.remove('recentTags');
-        },
-
-        /**
-         * Todo - Dispatch request to delete an image
-         */
-        async confirmDelete (photoid)
-        {
-            if (confirm(this.$i18n.t('confirm-delete')))
-            {
-                await axios.post('/en/profile/photos/delete', {
-                    photoid
-                })
-                    .then(response =>
-                    {
-                        console.log(response);
-                        if (response.status === 200)
-                        {
-                            window.location.href = window.location.href;
-                        }
-                    })
-                    .catch(error =>
-                    {
-                        console.log(error);
-                    });
-            }
-            else
-            {
-                console.log('Not deleted');
-            }
         },
 
         /**
