@@ -30,8 +30,8 @@ class AuthServiceProvider extends ServiceProvider
         Passport::tokensExpireIn(now()->addDays(365));
         Passport::refreshTokensExpireIn(now()->addDays(365));
 
+        // I think we can delete this which is duplicated by HorizonServiceProvider.php
         Gate::define('viewWebSocketsDashboard', function ($user = null) {
-            \Log::info(['user.horizon', $user]);
             return in_array($user->email, [
                 'seanlynch@umail.ucc.ie',
                 'info@openlittermap.com'
