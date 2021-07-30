@@ -16,7 +16,7 @@ export const actions = {
             inclIds: context.rootState.photos.inclIds,
             exclIds: context.rootState.photos.exclIds,
             filters: context.rootState.photos.filters,
-            tags: context.state.tags
+            tags: context.state.tags[0]
         })
         .then(response => {
             console.log('add_many_tags_to_many_photos', response);
@@ -45,15 +45,14 @@ export const actions = {
     {
         let title = i18n.t('notifications.success');
         let body  = i18n.t('notifications.tags-added');
+        let photoId = context.rootState.photos.paginate.data[0].id;
 
         await axios.post('add-tags', {
-            tags: context.state.tags,
+            tags: context.state.tags[photoId],
             presence: context.state.presence,
-            photo_id: context.rootState.photos.paginate.data[0].id
+            photo_id: photoId
         })
         .then(response => {
-            console.log('add_tags_to_image', response);
-
             /* improve this */
             Vue.$vToastify.success({
                 title,
@@ -63,7 +62,7 @@ export const actions = {
 
             // todo - update XP bar
 
-            context.commit('clearTags');
+            context.commit('clearTags', photoId);
             context.dispatch('LOAD_NEXT_IMAGE');
         })
         .catch(error => console.log(error));

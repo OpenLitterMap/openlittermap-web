@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\LocationService;
 use GeoHash;
 use Carbon\Carbon;
 
-
 use App\Jobs\UploadData;
 use App\Jobs\Api\AddTags;
+
 use App\Events\ImageUploaded;
 use App\Events\Photo\IncrementPhotoMonth;
+
+use App\Helpers\Post\UploadHelper;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -19,18 +20,19 @@ use Intervention\Image\Facades\Image;
 
 class ApiPhotosController extends Controller
 {
-
     protected $userId;
 
-    /** @var LocationService */
-    protected $locationService;
+    /** @var UploadHelper */
+    protected $uploadHelper;
 
     /**
      * Apply middleware to all of these routes
+     *
+     * @param UploadHelper $uploadHelper
      */
-    public function __construct(LocationService $locationService)
+    public function __construct (UploadHelper $uploadHelper)
     {
-        $this->locationService = $locationService;
+        $this->uploadHelper = $uploadHelper;
 
         $this->middleware('auth:api');
     }
@@ -72,7 +74,7 @@ class ApiPhotosController extends Controller
 
         $user = Auth::guard('api')->user();
 
-        Log::channel('photos')->info([
+        \Log::channel('photos')->info([
             'app_upload' => $request->all(),
             'user_id' => $user['id']
         ]);
@@ -110,7 +112,9 @@ class ApiPhotosController extends Controller
 	    if (app()->environment('production'))
 	    {
             $s3 = \Storage::disk('s3');
+
             $s3->put($filepath, file_get_contents($file), 'public');
+
             $imageName = $s3->url($filepath);
         }
         else
@@ -127,6 +131,8 @@ class ApiPhotosController extends Controller
 
             $imageName = config('app.url') . '/local-uploads/'.$y.'/'.$m.'/'.$d .'/'.$hashname;
         }
+
+        /** Reverse Geocode the GPS coordinates from OpenStreetMap to get an array of key-value address pairs */
         $apiKey = config('services.location.secret');
         $url =  "http://locationiq.org/v1/reverse.php?format=json&key=".$apiKey."&lat=".$lat."&lon=".$lon."&zoom=20";
 
@@ -142,9 +148,9 @@ class ApiPhotosController extends Controller
         $location = array_values($addressArray)[0];
         $road = array_values($addressArray)[1];
 
-        $country = $this->locationService->getCountryFromAddressArray($addressArray);
-        $state = $this->locationService->getStateFromAddressArray($country, $addressArray);
-        $city = $this->locationService->getCityFromAddressArray($country, $state, $addressArray);
+        $country = $this->uploadHelper->getCountryFromAddressArray($addressArray);
+        $state = $this->uploadHelper->getStateFromAddressArray($country, $addressArray);
+        $city = $this->uploadHelper->getCityFromAddressArray($country, $state, $addressArray);
 
         try
         {

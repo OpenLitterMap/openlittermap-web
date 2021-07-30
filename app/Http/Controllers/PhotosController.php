@@ -5,38 +5,38 @@ namespace App\Http\Controllers;
 use App\Actions\Photos\AddTagsToPhotoAction;
 use App\Actions\Photos\DeletePhotoAction;
 use App\Actions\Photos\UpdateLeaderboardsFromPhotoAction;
-use App\Services\LocationService;
-use Exception;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\ValidationException;
-use Intervention\Image\Facades\Image;
 use GeoHash;
-
+use Exception;
 use Carbon\Carbon;
 
 use App\Models\Photo;
-use App\Models\Location\City;
-use App\Models\Location\State;
-use App\Models\Location\Country;
 use Illuminate\Http\Request;
 use App\Events\ImageUploaded;
 use App\Events\TagsVerifiedByAdmin;
 use App\Events\Photo\IncrementPhotoMonth;
 
+use App\Helpers\Post\UploadHelper;
+
+use Intervention\Image\Facades\Image;
+
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
+
 class PhotosController extends Controller
 {
-    /** @var LocationService */
-    protected $locationService;
+    /** @var UploadHelper */
+    protected $uploadHelper;
 
     /**
      * Apply middleware to all of these routes
+     *
+     * @param UploadHelper $uploadHelper
      */
-    public function __construct(LocationService $locationService)
+    public function __construct(UploadHelper $uploadHelper)
     {
-        $this->locationService = $locationService;
+        $this->uploadHelper = $uploadHelper;
 
         $this->middleware('auth');
     }
@@ -206,9 +206,9 @@ class PhotosController extends Controller
         $road = array_values($addressArray)[1];
 
         // todo- check all locations for "/" and replace with "-"
-        $country = $this->locationService->getCountryFromAddressArray($addressArray);
-        $state = $this->locationService->getStateFromAddressArray($country, $addressArray);
-        $city = $this->locationService->getCityFromAddressArray($country, $state, $addressArray);
+        $country = $this->uploadHelper->getCountryFromAddressArray($addressArray);
+        $state = $this->uploadHelper->getStateFromAddressArray($country, $addressArray);
+        $city = $this->uploadHelper->getCityFromAddressArray($country, $state, $addressArray);
 
         $geohash = GeoHash::encode($latlong[0], $latlong[1]);
 

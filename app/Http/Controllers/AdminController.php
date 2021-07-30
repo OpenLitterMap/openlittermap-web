@@ -5,8 +5,6 @@ namespace App\Http\Controllers;
 use App\Actions\Photos\ClearTagsOfPhotoAction;
 use App\Actions\Photos\DeletePhotoAction;
 use App\Actions\Photos\UpdateLeaderboardsFromPhotoAction;
-use Exception;
-use Illuminate\Support\Facades\Log;
 
 use App\Models\Photo;
 use App\Models\User\User;
@@ -149,7 +147,7 @@ class AdminController extends Controller
     /**
      * Delete an image and its records
      */
-    public function destroy (Request $request)
+    public function destroy(Request $request)
     {
         $photo = Photo::findOrFail($request->photoId);
         $user = User::find($photo->user_id);
@@ -166,7 +164,7 @@ class AdminController extends Controller
 
         $this->updateLeaderboardsAction->run($user, $photo);
 
-        return redirect()->back();
+        return ['success' => true];
     }
 
     /**

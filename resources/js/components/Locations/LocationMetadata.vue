@@ -6,47 +6,65 @@
         <div class="flex pb1">
 
             <!-- Flag -->
-            <img v-if="type === 'country'"
-                    height="15"
-                    class="img-flag"
-                    :src="getCountryFlag(location.shortcode)"
+            <img v-if="locationType === 'country'"
+                height="15"
+                class="img-flag"
+                :src="getCountryFlag(location.shortcode)"
             />
 
+            <!-- Rank, Location Name, href -->
             <h2 :class="textSize">
-                <a @click="goTo(location)" :id="location[type]" class="is-link has-text-centered location-title">
+                <a
+                    @click="getDataForLocation(location)"
+                    :id="location[locationType]"
+                    class="is-link has-text-centered location-title"
+                >
                     <!-- Position -->
                     <span v-show="category !== 'A-Z' && index < 100">{{ positions(index) }} -</span>
                     <!-- Name -->
-                    <span>{{ getName(location) }}</span>
+                    <span>{{ getLocationName(location) }}</span>
                 </a>
             </h2>
         </div>
 
-        <!-- Location metadata -->
+        <!-- White box with data -->
         <div class="panel">
+            <!-- Total Litter -->
             <div class="panel-block">{{ $t('location.total-verified-litter') }}:
                 <strong class="green flex-1">&nbsp;
                     {{ location['total_litter_redis'].toLocaleString() }}
                 </strong>
 
-                <p v-if="type === 'country'" class="total-photos-percentage">
+                <p v-if="locationType === 'country'" class="total-photos-percentage">
                     {{ (location['total_litter_redis'] / this.$store.state.locations.total_litter * 100).toFixed(2) + "% Total"  }}
                 </p>
             </div>
+
+            <!-- Total Photos -->
             <div class="panel-block">
                 {{ $t('location.total-verified-photos') }}:
                 <strong class="green flex-1">&nbsp;
                     {{ location['total_photos_redis'].toLocaleString() }}
                 </strong>
 
-                <p v-if="type === 'country'" class="total-photos-percentage">
+                <p v-if="locationType === 'country'" class="total-photos-percentage">
                     {{ (location['total_photos_redis'] / this.$store.state.locations.total_photos * 100).toFixed(2) + "% Total"  }}
                 </p>
             </div>
+
+            <!-- Created at -->
             <div class="panel-block">{{ $t('common.created') }}: <strong class="green">&nbsp; {{ location['diffForHumans'] }}</strong></div>
+
+            <!-- Number of Contributors -->
             <div class="panel-block">{{ $t('location.number-of-contributors') }}: <strong class="green">&nbsp; {{ location['total_contributors_redis'].toLocaleString() }}</strong></div>
+
+            <!-- Average Image per person -->
             <div class="panel-block">{{ $t('location.avg-img-per-person') }}: <strong class="green">&nbsp; {{ location['avg_photo_per_user'].toLocaleString() }}</strong></div>
+
+            <!-- Average Litter per person -->
             <div class="panel-block">{{ $t('location.avg-litter-per-person') }}: <strong class="green">&nbsp; {{ location['avg_litter_per_user'].toLocaleString() }}</strong></div>
+
+            <!-- Created By -->
             <div class="panel-block">{{ $t('common.created-by') }}: <strong class="green">&nbsp; {{ location['created_by_name'] }} {{ location['created_by_username'] }}</strong></div>
         </div>
     </div>
@@ -57,11 +75,15 @@ import moment from 'moment'
 
 export default {
     name: 'LocationMetadata',
-    props:['index', 'location', 'type', 'category'],
-	data ()
-	{
+    props:[
+        'index',
+        'location',
+        'locationType',
+        'category'
+    ],
+	data () {
 		return {
-			dir: '/assets/icons/flags/',
+			dir: '/assets/icons/flags/'
 		};
 	},
 	computed: {
@@ -72,6 +94,22 @@ export default {
 		{
 			return this.$store.state.locations.country;
 		},
+
+        /**
+         * Name of the Country we are viewing the states of
+         */
+        countryName ()
+        {
+            return this.$store.state.locations.countryName;
+        },
+
+        /**
+         * Name of the State we are viewing the cities of
+         */
+        stateName ()
+        {
+            return this.$store.state.locations.stateName;
+        },
 
 		/**
 		 * Name of the state (if we are viewing cities)
@@ -103,38 +141,37 @@ export default {
             }
 		},
 
-		/**
-		 * Name of a location
-		 */
-		getName (location)
-		{
-			return location[this.type];
-		},
-
         /**
-		 * When user clicks on a location name
-		 */
-		goTo (location)
-		{
-			if (this.type === 'country')
-			{
-			    let country = location.country;
+         * When user clicks on a location name
+         *
+         * @param location Location
+         */
+        getDataForLocation (location)
+        {
+            this.$store.commit('setLocations', []);
 
-			    this.$store.commit('setCountry', country);
+            if (this.locationType === 'country')
+            {
+                // Get States for this Country
+                const countryName = location.country;
 
-				this.$router.push({ path:  '/world/' + country });
-			}
-			else if (this.type === 'state')
-			{
-			    let state = location.state;
+                this.$store.commit('countryName', countryName);
 
-			    this.$store.commit('setState', state);
+                this.$router.push({ path:  '/world/' + countryName });
+            }
+            else if (this.locationType === 'state')
+            {
+                // Get Cities for this State + Country
+                const countryName = this.countryName;
+                const stateName = location.state;
 
-				this.$router.push({ path:  '/world/' + this.country + '/' + state });
-			}
-			else if (this.type === 'city')
-			{
-			    // if the object has "hex" key, the slider has updated
+                this.$store.commit('stateName', stateName);
+
+                this.$router.push({ path:  '/world/' + countryName + '/' + stateName });
+            }
+            else if (this.locationType === 'city')
+            {
+                // if the object has "hex" key, the slider has updated
                 if (location.hasOwnProperty('hex'))
                 {
                     this.$router.push({
@@ -144,8 +181,16 @@ export default {
                     });
                 }
 
-				this.$router.push({ path:  '/world/' + this.country + '/' + this.state + '/' + location.city + '/map' });
-			}
+                this.$router.push({ path:  '/world/' + this.country + '/' + this.state + '/' + location.city + '/map' });
+            }
+        },
+
+		/**
+		 * Name of a location
+		 */
+		getLocationName (location)
+		{
+			return location[this.locationType];
 		},
 
         /**
@@ -185,8 +230,8 @@ export default {
     }
 
     .img-flag {
-        padding-right: 1.5em; 
-        border-radius: 1px; 
+        padding-right: 1.5em;
+        border-radius: 1px;
         flex: 0.1;
     }
 

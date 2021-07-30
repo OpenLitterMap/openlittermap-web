@@ -24,9 +24,10 @@ Route::post('/stripe/delete', 'StripeController@delete');
 Route::post('/stripe/resubscribe', 'StripeController@resubscribe');
 
 /* Locations */
-Route::get('countries', 'MapController@getCountries');
-Route::get('states', 'MapController@getStates');
-Route::get('cities', 'MapController@getCities');
+Route::get('location', 'Location\LocationsController@index');
+Route::get('countries', 'Location\LocationsController@getCountries');
+Route::get('states', 'Location\LocationsController@getStates');
+Route::get('cities', 'Location\LocationsController@getCities');
 
 /* Download data */
 Route::post('download', 'DownloadControllerNew@index');
