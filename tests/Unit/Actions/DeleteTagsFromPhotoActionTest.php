@@ -3,11 +3,11 @@
 namespace Tests\Unit\Actions;
 
 use App\Actions\Photos\AddTagsToPhotoAction;
-use App\Actions\Photos\ClearTagsOfPhotoAction;
+use App\Actions\Photos\DeleteTagsFromPhotoAction;
 use App\Models\Photo;
 use Tests\TestCase;
 
-class ClearTagsOfPhotoActionTest extends TestCase
+class DeleteTagsFromPhotoActionTest extends TestCase
 {
     public function test_it_returns_the_correct_number_of_deleted_litter_and_brands()
     {
@@ -25,9 +25,9 @@ class ClearTagsOfPhotoActionTest extends TestCase
             ]
         ]);
 
-        /** @var ClearTagsOfPhotoAction $clearTagsAction */
-        $clearTagsAction = app(ClearTagsOfPhotoAction::class);
-        $deletedTags = $clearTagsAction->run($photo->fresh());
+        /** @var DeleteTagsFromPhotoAction $deleteTagsAction */
+        $deleteTagsAction = app(DeleteTagsFromPhotoAction::class);
+        $deletedTags = $deleteTagsAction->run($photo->fresh());
 
         $this->assertEquals(
             ['all' => 7, 'litter' => 2, 'brands' => 5],

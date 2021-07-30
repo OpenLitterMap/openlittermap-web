@@ -6,7 +6,7 @@ namespace App\Actions\Photos;
 
 use App\Models\Photo;
 
-class ClearTagsOfPhotoAction
+class DeleteTagsFromPhotoAction
 {
     /**
      * Clear all tags on an image

@@ -3,7 +3,7 @@
 namespace App\Traits;
 
 use App\Actions\Photos\AddTagsToPhotoAction;
-use App\Actions\Photos\ClearTagsOfPhotoAction;
+use App\Actions\Photos\DeleteTagsFromPhotoAction;
 use App\Actions\Photos\UpdateLeaderboardsFromPhotoAction;
 use App\Models\Photo;
 use App\Models\User\User;
@@ -18,9 +18,9 @@ trait AddTagsTrait
         $photo = Photo::find($photoId);
         $user = User::find($photo->user_id);
 
-        /** @var ClearTagsOfPhotoAction $clearTagsAction */
-        $clearTagsAction = app(ClearTagsOfPhotoAction::class);
-        $deletedTags = $clearTagsAction->run($photo);
+        /** @var DeleteTagsFromPhotoAction $deleteTagsAction */
+        $deleteTagsAction = app(DeleteTagsFromPhotoAction::class);
+        $deletedTags = $deleteTagsAction->run($photo);
 
         /** @var AddTagsToPhotoAction $addTagsAction */
         $addTagsAction = app(AddTagsToPhotoAction::class);
