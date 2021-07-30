@@ -104,7 +104,7 @@ export default {
         },
 
         /**
-         * Name of the STate we are viewing the cities of
+         * Name of the State we are viewing the cities of
          */
         stateName ()
         {
