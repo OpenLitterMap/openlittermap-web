@@ -31,6 +31,7 @@ class AuthServiceProvider extends ServiceProvider
         Passport::refreshTokensExpireIn(now()->addDays(365));
 
         Gate::define('viewWebSocketsDashboard', function ($user = null) {
+            \Log::info(['user.horizon', $user]);
             return in_array($user->email, [
                 'seanlynch@umail.ucc.ie',
                 'info@openlittermap.com'
