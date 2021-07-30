@@ -1,5 +1,5 @@
 export const init = {
-    country: '',
+    countryName: '',
     globalLeaders: [],
     hex: null,
     level: {
@@ -12,8 +12,7 @@ export const init = {
     maxDate: null,
     previousLevelInt: 0,
     progressPercent: 0,
-    state: '',
-    states: [],
+    stateName: '',
     totalLitterInt: 0,
     total_litter: 0,
     total_photos: 0,

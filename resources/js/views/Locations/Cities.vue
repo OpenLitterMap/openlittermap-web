@@ -1,12 +1,15 @@
 <template>
-    <div>
+    <div class="locations-container">
         <section class="hero is-info is-medium">
             <div class="hero-body">
                 <div class="container">
                     <div class="columns">
                         <div class="column is-4">
-                            <h1 class="title is-1 flex pointer" @click="goBack"><i v-show="! loading" class="fa fa-chevron-left country-back" /> {{ country }}</h1>
-                            <h1 class="subtitle is-3">{{ state }}</h1>
+                            <h1 class="title is-1 flex pointer" @click="goBack">
+                                <i v-show="!loading" class="fa fa-chevron-left country-back" />
+                                {{ countryName }}
+                            </h1>
+                            <h1 class="subtitle is-3">{{ stateName }}</h1>
                         </div>
 
                         <!-- Todo - put Country & State metadata here -->
@@ -15,7 +18,7 @@
             </div>
         </section>
 
-        <sort-locations type="city" />
+        <sort-locations locationType="city" />
     </div>
 </template>
 
@@ -48,31 +51,31 @@ export default {
         };
     },
     computed: {
-
         /**
          * The parent Country
          */
-        country ()
+        countryName ()
         {
-            return this.$store.state.locations.country;
+            return this.$store.state.locations.countryName;
         },
 
         /**
          * The parent State
          */
-        state ()
+        stateName ()
         {
-            return this.$store.state.locations.state;
+            return this.$store.state.locations.stateName;
         }
     },
     methods: {
-
         /**
-         * Go to country
+         * Go to country and load States
          */
         goBack ()
         {
-            return this.$router.push({ path: '/world/' + this.country });
+            this.$store.commit('setLocations', []);
+
+            return this.$router.push({ path: '/world/' + this.countryName });
         }
     }
 }
