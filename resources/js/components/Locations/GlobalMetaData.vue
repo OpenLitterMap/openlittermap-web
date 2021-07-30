@@ -39,11 +39,19 @@
                             class="mb1em"
                         />
 
-                        <p class="has-text-centered mb2em">{{ this.progress }}%</p>
+                        <p
+                            v-if="loading"
+                            class="has-text-centered mb2"
+                        >...%</p>
+
+                        <p
+                            v-else
+                            class="has-text-centered mb2"
+                        >{{ this.progress }}%</p>
                     </div>
                 </div>
 
-                <div class="columns" v-if="!loading">
+                <div class="columns">
                     <div class="column is-half is-offset-3">
                         <div class="columns is-desktop">
                             <div class="column">
@@ -54,7 +62,10 @@
                                 </h1>
                                 <h1 class="title is-2 has-text-centered">
                                     <strong>
+                                        <span v-if="loading">...</span>
+
                                         <number
+                                            v-else
                                             :from="previous_total_litter"
                                             :to="total_litter"
                                             :duration="3"
@@ -74,7 +85,10 @@
                                 </h1>
                                 <h1 class="title is-2 has-text-centered">
                                     <strong>
+                                        <span v-if="loading">...</span>
+
                                         <number
+                                            v-else
                                             :from="previous_total_photos"
                                             :to="total_photos"
                                             :duration="3"
@@ -94,7 +108,10 @@
                                 </h1>
                                 <h1 class="title is-2 has-text-centered">
                                     <strong>
+                                        <span v-if="loading">...</span>
+
                                         <number
+                                            v-else
                                             :from="previous_littercoin"
                                             :to="littercoin"
                                             :duration="3"

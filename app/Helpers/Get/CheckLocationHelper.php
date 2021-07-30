@@ -3,15 +3,20 @@
 namespace App\Helpers\Get;
 
 // Used by LoadingDataHelper
+use App\Models\Location\Location;
+
 trait CheckLocationHelper
 {
     /**
-     * Who created this resource?
-     * Is their name or username public or private?
+     * Get the name, username for whoever added this Location
      *
-     * @return string name || username || anonymous
+     * We need to check if their settings are set to public.
+     *
+     * @param Location $location
+     *
+     * @return Location with name || username || anonymous
      */
-    public static function getCreatorInfo ($location)
+    public static function getCreatorInfo (Location $location): Location
     {
         if ($location->creator)
         {
@@ -38,7 +43,8 @@ trait CheckLocationHelper
 
     /**
      * Get the leaderboard for this location
-     * @return array position, name || username & xp
+     *
+     * @return array position, name && / || username & xp
      */
     public static function getLeaders ($leaders)
     {
@@ -54,8 +60,7 @@ trait CheckLocationHelper
             {
                 $name = $leader->name;
             }
-
-            else if ($leader->show_username)
+            if ($leader->show_username)
             {
                 $username = '@'.$leader->username;
             }
@@ -69,6 +74,7 @@ trait CheckLocationHelper
             ];
 
             $newIndex++;
+
             if (sizeof($arrayOfLeaders) == 10) break;
         }
 

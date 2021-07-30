@@ -1,6 +1,5 @@
 <?php
 
-
 namespace App\Helpers\Get;
 
 use App\Models\Location\City;
@@ -14,7 +13,16 @@ class LoadingDataHelper
     use CheckLocationHelper;
 
     /**
-     * Get the Maps & Data page, incl all Countries metadata
+     * Get the World Cup page
+     *
+     * - Global Metadata
+     *   - total photos
+     *   - total litter
+     *   - total littercoin
+     *
+     * - Countries array
+     *
+     * @return array $countries...
      */
     public static function getCountries ()
     {
@@ -22,8 +30,9 @@ class LoadingDataHelper
         $littercoin = \DB::table('users')->sum(\DB::raw('littercoin_owed + littercoin_allowance'));
 
         /**
+         * Get the countries
          *  Todo
-            1. save user_id in country created_by column
+            1. update all user_ids in country.created_by column
             2. Find out how to get top-10 more efficiently
             3. Paginate
             4. Automate 'manual_verify => 1'
@@ -201,7 +210,7 @@ class LoadingDataHelper
         foreach ($states as $state)
         {
             // Get Creator info
-            $state = CheckLocationHelper::getCreatorInfo($state);
+            $state = CheckLocationHelper::getCreatorInfo();
 
             // Get Leaderboard
             $leaderboard_ids = Redis::zrevrange($countryName.':'.$state->state.':Leaderboard',0,9);
@@ -289,7 +298,7 @@ class LoadingDataHelper
         foreach ($cities as $city)
         {
             // Get Creator info
-            $city = CheckLocationHelper::getCreatorInfo($city);
+            $city = CheckLocationHelper::getCreatorInfo();
 
             // Get Leaderboard
             $leaderboard_ids = Redis::zrevrange($countryName . ':' . $stateName . ':' . $city->city . ':Leaderboard', 0, 9);
