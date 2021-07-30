@@ -1,18 +1,18 @@
 {
     "categories": {
         "alcohol": "Alcohol",
-        "art": "Art",
-        "brands": "Brands",
-        "coastal": "Coastal",
-        "coffee": "Coffee",
-        "dumping": "Dumping",
-        "food": "Food",
-        "industrial": "Industrial",
-        "sanitary": "Sanitary",
-        "softdrinks": "Soft Drinks",
-        "smoking": "Smoking",
-        "other": "Other",
-        "dogshit": "Pets"
+        "art": "Sztuka",
+        "brands": "Marki",
+        "coastal": "Przybrzeżny",
+        "coffee": "Kawa",
+        "dumping": "Zaśmiecanie",
+        "food": "Jedzenie",
+        "industrial": "Przemysłowy",
+        "sanitary": "Sanitarny",
+        "softdrinks": "Napoje",
+        "smoking": "Palenie",
+        "other": "Inne",
+        "dogshit": "Psia kupa"
     },
     "smoking": {
         "butts": "Filtr po papierosie",
