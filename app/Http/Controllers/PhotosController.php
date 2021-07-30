@@ -28,15 +28,32 @@ class PhotosController extends Controller
 {
     /** @var UploadHelper */
     protected $uploadHelper;
+    /** @var AddTagsToPhotoAction */
+    private $addTagsAction;
+    /** @var UpdateLeaderboardsFromPhotoAction */
+    private $updateLeaderboardsAction;
+    /** @var DeletePhotoAction  */
+    private $deletePhotoAction;
 
     /**
      * Apply middleware to all of these routes
      *
      * @param UploadHelper $uploadHelper
+     * @param AddTagsToPhotoAction $addTagsAction
+     * @param UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction
+     * @param DeletePhotoAction $deletePhotoAction
      */
-    public function __construct(UploadHelper $uploadHelper)
+    public function __construct(
+        UploadHelper $uploadHelper,
+        AddTagsToPhotoAction $addTagsAction,
+        UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction,
+        DeletePhotoAction $deletePhotoAction
+    )
     {
         $this->uploadHelper = $uploadHelper;
+        $this->addTagsAction = $addTagsAction;
+        $this->updateLeaderboardsAction = $updateLeaderboardsAction;
+        $this->deletePhotoAction = $deletePhotoAction;
 
         $this->middleware('auth');
     }
@@ -275,7 +292,7 @@ class PhotosController extends Controller
      * TODO - Need to sort AWS permissions
       * Delete an image
     */
-    public function deleteImage (Request $request, DeletePhotoAction $deletePhotoAction)
+    public function deleteImage (Request $request)
     {
         $user = Auth::user();
 
@@ -287,7 +304,7 @@ class PhotosController extends Controller
 
         try
         {
-            $deletePhotoAction->run($photo);
+            $this->deletePhotoAction->run($photo);
 
             $photo->delete();
 
@@ -312,22 +329,18 @@ class PhotosController extends Controller
      * If the user is new, we submit the image for verification.
      * If the user is trusted, we can update OLM.
      */
-    public function addTags (
-        Request $request,
-        AddTagsToPhotoAction $addTagsAction,
-        UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction
-    )
+    public function addTags (Request $request)
     {
         $user = Auth::user();
         $photo = Photo::findOrFail($request->photo_id);
         if ($photo->verified > 0) return redirect()->back();
 
-        $litterTotals = $addTagsAction->run($photo, $request['tags']);
+        $litterTotals = $this->addTagsAction->run($photo, $request['tags']);
 
         $user->xp += $litterTotals['all'];
         $user->save();
 
-        $updateLeaderboardsAction->run($user, $photo);
+        $this->updateLeaderboardsAction->run($user, $photo);
 
         $photo->remaining = $request->presence;
         $photo->total_litter = $litterTotals['litter'];
