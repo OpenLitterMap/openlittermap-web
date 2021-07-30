@@ -12,11 +12,11 @@ use App\Models\Location\City;
 use App\Models\Location\State;
 use App\Models\Location\Country;
 
-use App\Helpers\Locations;
-
 use App\Events\ImageUploaded;
 use App\Events\TagsVerifiedByAdmin;
 use App\Events\Photo\IncrementPhotoMonth;
+
+use App\Helpers\Post\UploadHelper;
 
 use Intervention\Image\Facades\Image;
 
@@ -30,16 +30,17 @@ use Illuminate\Validation\ValidationException;
 
 class PhotosController extends Controller
 {
-    /** @var Locations */
-    protected $locations;
+    /** @var UploadHelper */
+    protected $uploadHelper;
 
     /**
      * Apply middleware to all of these routes
-     * @param Locations $locations
+     *
+     * @param UploadHelper $uploadHelper
      */
-    public function __construct(Locations $locations)
+    public function __construct(UploadHelper $uploadHelper)
     {
-        $this->checkForLocationHelper = $locations;
+        $this->uploadHelper = $uploadHelper;
 
         $this->middleware('auth');
     }
@@ -209,9 +210,9 @@ class PhotosController extends Controller
         $road = array_values($addressArray)[1];
 
         // todo- check all locations for "/" and replace with "-"
-        $country = $this->checkForLocationHelper->getCountryFromAddressArray($addressArray);
-        $state = $this->checkForLocationHelper->getStateFromAddressArray($country, $addressArray);
-        $city = $this->checkForLocationHelper->getCityFromAddressArray($country, $state, $addressArray);
+        $country = $this->uploadHelper->getCountryFromAddressArray($addressArray);
+        $state = $this->uploadHelper->getStateFromAddressArray($country, $addressArray);
+        $city = $this->uploadHelper->getCityFromAddressArray($country, $state, $addressArray);
 
         $geohash = GeoHash::encode($latlong[0], $latlong[1]);
 

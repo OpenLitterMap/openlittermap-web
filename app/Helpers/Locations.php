@@ -2,7 +2,7 @@
 
 namespace App\Helpers;
 
-use App\Helpers\Get\LoadingDataHelper;
+use App\Helpers\Get\LoadDataHelper;
 
 class Locations
 {
@@ -17,11 +17,11 @@ class Locations
     {
         if ($locationType === "country")
         {
-            return LoadingDataHelper::getStates($locationId);
+            return LoadDataHelper::getStates($locationId);
         }
         else if ($locationType === "state")
         {
-            return LoadingDataHelper::getCities($locationId);
+            return LoadDataHelper::getCities($country = null, $locationId);
         }
         else {
             return 'no location type';

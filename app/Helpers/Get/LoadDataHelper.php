@@ -247,21 +247,24 @@ class LoadDataHelper
     /**
      * Get the cities for the /country/state
      *
-     * @param string $country
+     * @param null $country (string)
      * @param string $state
      *
      * @return array
      */
-    public static function getCities (string $country, string $state) : array
+    public static function getCities ($country = null, string $state) : array
     {
-        $countryText = urldecode($country);
+        if ($country)
+        {
+            $countryText = urldecode($country);
 
-        $country = Country::where('id', $countryText)
-            ->orWhere('country', $countryText)
-            ->orWhere('shortcode', $countryText)
-            ->first();
+            $country = Country::where('id', $countryText)
+                ->orWhere('country', $countryText)
+                ->orWhere('shortcode', $countryText)
+                ->first();
 
-        if (!$country) return ['success' => false, 'msg' => 'country not found'];
+            if (!$country) return ['success' => false, 'msg' => 'country not found'];
+        }
 
         $stateText = urldecode($state);
 
