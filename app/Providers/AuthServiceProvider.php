@@ -24,7 +24,6 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        \Log::info('boot');
         $this->registerPolicies();
 
         Passport::routes();
