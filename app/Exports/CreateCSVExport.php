@@ -223,6 +223,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             'BRANDS',
 
             'adidas',
+            'albertheijn',
             'amazon',
             'aldi',
             'apple',
@@ -513,6 +514,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             NULL,
 
             $row->brands ? $row->brands->adidas : null,
+            $row->brands ? $row->brands->albertheijn : null,
             $row->brands ? $row->brands->amazon : null,
             $row->brands ? $row->brands->aldi : null,
             $row->brands ? $row->brands->apple : null,

@@ -6,8 +6,9 @@ use App\Models\Litter\LitterCategory;
 
 class Brand extends LitterCategory
 {
-    protected $fillable = [
+    protected $guarded = [
     	'adidas',
+        'albertheijn',
     	'amazon',
         'aldi',
     	'apple',
@@ -113,6 +114,7 @@ class Brand extends LitterCategory
     {
         return [
             'adidas',
+            'albertheijn',
             'amazon',
             'aldi',
             'apple',

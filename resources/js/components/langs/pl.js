@@ -29,6 +29,7 @@ const pl = {
     ],
     Brands: [
         "Adidas",
+        "AlbertHeijn",
         "Amazon",
         "Aldi",
         "Apple",
@@ -252,4 +253,4 @@ const pl = {
     ]
 }
 
-export { en };
+export { pl };
