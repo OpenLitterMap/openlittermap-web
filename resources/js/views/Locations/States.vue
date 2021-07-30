@@ -32,6 +32,8 @@ export default {
     {
         this.loading = true;
 
+        window.scroll({ top: 0, left: 0 });
+
         const countryText = window.location.href.split('/')[4]
 
         await this.$store.dispatch('GET_STATES', countryText);

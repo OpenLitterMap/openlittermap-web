@@ -5,7 +5,7 @@ namespace App\Helpers\Get;
 // Used by LoadingDataHelper
 use App\Models\Location\Location;
 
-trait CheckLocationHelper
+trait LocationHelper
 {
     /**
      * Get the name, username for whoever added this Location
@@ -44,7 +44,7 @@ trait CheckLocationHelper
     /**
      * Get the leaderboard for this location
      *
-     * @return array position, name && / || username & xp
+     * @return array position, name / username, xp
      */
     public static function getLeaders ($leaders)
     {
@@ -65,15 +65,18 @@ trait CheckLocationHelper
                 $username = '@'.$leader->username;
             }
 
-            $arrayOfLeaders[$newIndex] = [
-                'position' => $newIndex,
-                'name' => $name,
-                'username' => $username,
-                'xp' => number_format($leader->xp),
-                'linkinsta' => $leader->link_instagram
-            ];
+            if ($name || $username)
+            {
+                $arrayOfLeaders[$newIndex] = [
+                    'position' => $newIndex,
+                    'name' => $name,
+                    'username' => $username,
+                    'xp' => number_format($leader->xp),
+                    'linkinsta' => $leader->link_instagram
+                ];
 
-            $newIndex++;
+                $newIndex++;
+            }
 
             if (sizeof($arrayOfLeaders) == 10) break;
         }

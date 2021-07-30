@@ -8,9 +8,9 @@ use App\Models\Location\State;
 use App\Models\User\User;
 use Illuminate\Support\Facades\Redis;
 
-class LoadingDataHelper
+class LoadDataHelper
 {
-    use CheckLocationHelper;
+    use LocationHelper;
 
     /**
      * Get the World Cup page
@@ -53,14 +53,14 @@ class LoadingDataHelper
         foreach ($countries as $country)
         {
             // Get Creator info
-            $country = CheckLocationHelper::getCreatorInfo($country);
+            $country = LocationHelper::getCreatorInfo($country);
 
             // Get Leaderboard per country. Should load more and stop when there are 10-max as some users settings may be off.
             $leaderboard_ids = Redis::zrevrange($country->country.':Leaderboard', 0, 9);
 
             $leaders = User::whereIn('id', $leaderboard_ids)->orderBy('xp', 'desc')->get();
 
-            $arrayOfLeaders = CheckLocationHelper::getLeaders($leaders);
+            $arrayOfLeaders = LocationHelper::getLeaders($leaders);
 
             $country['leaderboard'] = json_encode($arrayOfLeaders);
 
@@ -210,14 +210,14 @@ class LoadingDataHelper
         foreach ($states as $state)
         {
             // Get Creator info
-            $state = CheckLocationHelper::getCreatorInfo();
+            $state = LocationHelper::getCreatorInfo($state);
 
             // Get Leaderboard
             $leaderboard_ids = Redis::zrevrange($countryName.':'.$state->state.':Leaderboard',0,9);
 
             $leaders = User::whereIn('id', $leaderboard_ids)->orderBy('xp', 'desc')->get();
 
-            $arrayOfLeaders = CheckLocationHelper::getLeaders($leaders);
+            $arrayOfLeaders = LocationHelper::getLeaders($leaders);
 
             $state->leaderboard = json_encode($arrayOfLeaders);
 
@@ -298,14 +298,14 @@ class LoadingDataHelper
         foreach ($cities as $city)
         {
             // Get Creator info
-            $city = CheckLocationHelper::getCreatorInfo();
+            $city = LocationHelper::getCreatorInfo($city);
 
             // Get Leaderboard
             $leaderboard_ids = Redis::zrevrange($countryName . ':' . $stateName . ':' . $city->city . ':Leaderboard', 0, 9);
 
             $leaders = User::whereIn('id', $leaderboard_ids)->orderBy('xp', 'desc')->get();
 
-            $arrayOfLeaders = CheckLocationHelper::getLeaders($leaders);
+            $arrayOfLeaders = LocationHelper::getLeaders($leaders);
 
             $city['leaderboard'] = json_encode($arrayOfLeaders);
             $city['avg_photo_per_user'] = round($city->total_photos_redis / $city->total_contributors, 2);
