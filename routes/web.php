@@ -44,15 +44,15 @@ Route::get('/world/{country}/{state}/{city?}/download/get', 'DownloadsController
 // Todo - make this dynamic for wildcard routes prefixed by "/{lang}/maps"
 
 Route::group(['middleware' => 'fw-block-blacklisted'], function () {
-    Route::get('/maps', 'MapController@getCountries');
-    Route::get('/maps/{country}/litter', 'MapController@getCountries');
-    Route::get('/maps/{country}/leaderboard', 'MapController@getCountries');
-    Route::get('/maps/{country}/time-series', 'MapController@getCountries');
-    // Route::get('/maps/total/download', 'MapController@getCountries');
+    Route::get('/maps', 'Location\LocationsController@getCountries');
+    Route::get('/maps/{country}/litter', 'Location\LocationsController@getCountries');
+    Route::get('/maps/{country}/leaderboard', 'Location\LocationsController@getCountries');
+    Route::get('/maps/{country}/time-series', 'Location\LocationsController@getCountries');
+    // Route::get('/maps/total/download', 'Location\LocationsController@getCountries');
 
-    Route::get('/maps/{country}', 'MapController@getStates');
-    Route::get('/maps/{country}/{state}', 'MapController@getCities');
-    Route::get('/maps/{country}/{state}/{city?}/{id?}', 'MapController@getCities');
+    Route::get('/maps/{country}', 'Location\LocationsController@getStates');
+    Route::get('/maps/{country}/{state}', 'Location\LocationsController@getCities');
+    Route::get('/maps/{country}/{state}/{city?}/{id?}', 'Location\LocationsController@getCities');
     // Route::get('/maps/{country}/{city}/city_hex_map', 'MapController@getCity');
     // Similarly, get the city and pass the maps dynamically
     Route::get('/maps/{country}/{state}/{city}/city_hex_map/{minfilter?}/{maxfilter?}/{hex?}', 'MapController@getCity');
