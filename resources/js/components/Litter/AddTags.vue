@@ -122,7 +122,7 @@
             <!-- Only show these on mobile <= 768px, and when not using MyPhotos => AddManyTagsToPhotos (id = 0) -->
             <div class="show-mobile" v-show="this.id !== 0">
                 <br>
-                <tags />
+                <tags :photo-id="id"/>
 
                 <div class="custom-buttons">
                     <profile-delete :photoid="id" />
@@ -304,7 +304,7 @@ export default {
         {
             if (this.processing) return true;
 
-            return Object.keys(this.$store.state.litter.tags).length === 0;
+            return Object.keys(this.$store.state.litter.tags[this.id] || {}).length === 0;
         },
 
         /**
@@ -376,6 +376,7 @@ export default {
             }
 
             this.$store.commit('addTag', {
+                photoId: this.id,
                 category,
                 tag,
                 quantity
@@ -396,6 +397,7 @@ export default {
         addTag ()
         {
             this.$store.commit('addTag', {
+                photoId: this.id,
                 category: this.category.key,
                 tag: this.tag.key,
                 quantity: this.quantity

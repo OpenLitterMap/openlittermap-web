@@ -16,8 +16,6 @@ class AddCoastalTable extends Migration
         Schema::create('coastal', function (Blueprint $table) {
             $table->increments('id');
 
-            $table->integer('photo_id')->unsigned();
-            $table->foreign('photo_id')->references('id')->on('photos')->onDelete('cascade');
             $table->integer('microplastics')->unsigned()->nullable();
             $table->integer('mediumplastics')->unsigned()->nullable();
             $table->integer('macroplastics')->unsigned()->nullable();
