@@ -357,8 +357,6 @@ export default {
                 SoftDrinks: softdrinksGroup,
             };
 
-            console.log({ overlays, smokingGroup, groups });
-
             /** 9- Add null basemaps and overlays to the map */
             L.control.layers(null, overlays).addTo(map);
         }
