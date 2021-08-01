@@ -63,7 +63,7 @@ function style (feature)
 /**
  * Apply these to each hexgrid
  */
-function onEachFeature(feature, layer)
+function onEachFeature (feature, layer)
 {
     layer.on({
         mouseover: highlightFeature,
@@ -332,8 +332,8 @@ export default {
                 let name = '';
                 let username = '';
 
-                if (i.properties.name) name = i.properties.name;
-                if (i.properties.username) username = ' @' + i.properties.username;
+                if (i.properties.hasOwnProperty('name') && name) name = i.properties.name;
+                if (i.properties.hasOwnProperty('username') && username) username = ' @' + i.properties.username;
                 if (name === '' && username === '') name = 'Anonymous';
 
                 // Dynamically add items to the groups + add markers
