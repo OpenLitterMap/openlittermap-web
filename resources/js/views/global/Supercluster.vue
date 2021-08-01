@@ -112,7 +112,7 @@ function onEachFeature (feature, layer)
  *
  * Todo: remove glify points when the user moves the map, and is above zoom threshold
  */
-async function update (layers = null)
+async function update ()
 {
     const bounds = map.getBounds();
 
@@ -131,6 +131,8 @@ async function update (layers = null)
     if (zoom === 3 && zoom === prevZoom) return;
     if (zoom === 4 && zoom === prevZoom) return;
     if (zoom === 5 && zoom === prevZoom) return;
+
+    if (points) points.remove();
 
     // If the zoom is less than 17, we want to load cluster data
     if (zoom < CLUSTER_ZOOM_THRESHOLD)
@@ -159,7 +161,8 @@ async function update (layers = null)
     else
     {
         map.addControl(layerControls);
-        if (points) points.remove();
+
+        const layers = getActiveLayers();
 
         await axios.get('global-points', {
             params: {
@@ -253,13 +256,11 @@ async function update (layers = null)
 }
 
 /**
- * A Layer has been toggled
+ * Get any active layers
  *
- * Make a get request with the active layers
- *
- * Todo - find a better way of getting the active layers
+ * @return layers|null
  */
-function changeLayers ()
+function getActiveLayers ()
 {
     let layers = [];
 
@@ -271,7 +272,9 @@ function changeLayers ()
         }
     });
 
-    update(layers);
+    return (layers.length > 0)
+        ? layers
+        : null;
 }
 
 export default {
@@ -324,8 +327,8 @@ export default {
 
         this.createGroups();
 
-        map.on('overlayadd', changeLayers);
-        map.on('overlayremove', changeLayers)
+        map.on('overlayadd', update);
+        map.on('overlayremove', update)
     },
 
     methods: {
