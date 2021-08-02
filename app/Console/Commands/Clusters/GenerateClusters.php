@@ -78,11 +78,18 @@ class GenerateClusters extends Command
 
         Storage::put('/data/features.json', $features);
 
-        $prefix = '/home/forge/openlittermap.com';
 
         if (app()->environment() === 'local')
         {
             $prefix = '/home/vagrant/Code/olm';
+        }
+        else if (app()->environment() === 'staging')
+        {
+            $prefix = '/home/forge/olmdev.online';
+        }
+        else
+        {
+            $prefix = '/home/forge/openlittermap.com';
         }
 
         // delete all clusters?

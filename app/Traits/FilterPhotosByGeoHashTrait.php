@@ -17,10 +17,11 @@ trait FilterPhotosByGeoHashTrait
      *
      * @param $zoom int          -> zoom level of the browser
      * @param string $bbox array -> [west|left, south|bottom, east|right, north|top]
+     * @param null layers
      *
      * @return \Illuminate\Database\Eloquent\Builder $query
      */
-    public function filterPhotosByGeoHash (int $zoom, string $bbox)
+    public function filterPhotosByGeoHash (int $zoom, string $bbox, $layers = null)
     {
         $bbox = json_decode($bbox);
 
@@ -62,6 +63,14 @@ trait FilterPhotosByGeoHashTrait
                 $query->select('teams.id', 'teams.name');
             }
         ]);
+
+        if ($layers)
+        {
+            foreach ($layers as $layer)
+            {
+                $query->whereNotNull($layer . "_id");
+            }
+        }
 
         // Build cluster query
         $query->where(function ($q) use ($geos)

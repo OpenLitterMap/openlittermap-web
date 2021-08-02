@@ -171,17 +171,20 @@ export default {
             }
             else if (this.locationType === 'city')
             {
+                const countryName = this.countryName;
+                const stateName = this.stateName;
+                const cityName = location.city;
+
                 // if the object has "hex" key, the slider has updated
                 if (location.hasOwnProperty('hex'))
                 {
                     this.$router.push({
-                        path:
-                            '/world/' + this.country + '/' + this.state + '/' + location.city + '/map/'
-                            + location.minDate + '/' + location.maxDate + '/' + location.hex
+                        path: '/world/' + countryName + '/' + stateName + '/' + cityName + '/map/'
                     });
+                    // + location.minDate + '/' + location.maxDate + '/' + location.hex
                 }
 
-                this.$router.push({ path:  '/world/' + this.country + '/' + this.state + '/' + location.city + '/map' });
+                this.$router.push({ path:  '/world/' + countryName + '/' + stateName + '/' + cityName + '/map' });
             }
         },
 

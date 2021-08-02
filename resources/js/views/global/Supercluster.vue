@@ -43,6 +43,20 @@ var markers;
 var prevZoom = MIN_ZOOM;
 var points;
 
+var layerControls;
+var smokingGroup;
+var foodGroup;
+var coffeeGroup;
+var alcoholGroup;
+var softdrinksGroup;
+var sanitaryGroup;
+var otherGroup;
+var coastalGroup;
+var brandsGroup;
+var dogshitGroup;
+var dumpingGroup;
+var industrialGroup;
+
 const green_dot = L.icon({
     iconUrl: './images/vendor/leaflet/dist/dot.png',
     iconSize: [10, 10]
@@ -58,7 +72,7 @@ const grey_dot = L.icon({
  */
 function createClusterIcon (feature, latlng)
 {
-    if (! feature.properties.cluster)
+    if (!feature.properties.cluster)
     {
         return feature.properties.verified === 2
             ? L.marker(latlng, { icon: green_dot })
@@ -98,7 +112,7 @@ function onEachFeature (feature, layer)
  *
  * Todo: remove glify points when the user moves the map, and is above zoom threshold
  */
-async function update ()
+async function update (layers = null)
 {
     const bounds = map.getBounds();
 
@@ -121,8 +135,13 @@ async function update ()
     // If the zoom is less than 17, we want to load cluster data
     if (zoom < CLUSTER_ZOOM_THRESHOLD)
     {
+        map.removeControl(layerControls);
+
         await axios.get('clusters', {
-            params: { zoom, bbox }
+            params: {
+                zoom,
+                bbox
+            }
         })
         .then(response => {
             console.log('get_clusters.update', response);
@@ -139,8 +158,15 @@ async function update ()
     // otherwise, get point data
     else
     {
+        map.addControl(layerControls);
+        if (points) points.remove();
+
         await axios.get('global-points', {
-            params: { zoom, bbox, },
+            params: {
+                zoom,
+                bbox,
+                layers
+            },
         })
         .then(response => {
             console.log('get_global_points', response);
@@ -150,8 +176,6 @@ async function update ()
             {
                 markers.clearLayers();
             }
-
-            // if (points) points.remove();
 
             const data = response.data.features.map(feature => {
                 return [ feature.geometry.coordinates[1], feature.geometry.coordinates[0]];
@@ -228,6 +252,28 @@ async function update ()
     prevZoom = zoom; // hold previous zoom
 }
 
+/**
+ * A Layer has been toggled
+ *
+ * Make a get request with the active layers
+ *
+ * Todo - find a better way of getting the active layers
+ */
+function changeLayers ()
+{
+    let layers = [];
+
+    // This is not ideal but it works as the indexes are in the same order
+    layerControls._layerControlInputs.forEach((lyr, index) => {
+        if (lyr.checked)
+        {
+            layers.push(layerControls._layers[index].name.toLowerCase());
+        }
+    });
+
+    update(layers);
+}
+
 export default {
     name: 'Supercluster',
     components: {
@@ -254,6 +300,7 @@ export default {
 
         /** 2. Add tiles, attribution, set limits */
         const mapLink = '<a href="https://openstreetmap.org">OpenStreetMap</a>';
+
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: 'Map data &copy; ' + mapLink + ' & Contributors',
             maxZoom: MAX_ZOOM,
@@ -275,11 +322,13 @@ export default {
             update();
         });
 
-        // todo - getClusterExpansionZoom(clusterId); MjAyMS8wNC8yMSAwOToyNDowMA%MTAwIDc3Nw
+        this.createGroups();
+
+        map.on('overlayadd', changeLayers);
+        map.on('overlayremove', changeLayers)
     },
 
     methods: {
-
         /**
          * Close dates and language dropdowns
          */
@@ -287,6 +336,44 @@ export default {
         {
             this.$store.commit('closeDatesButton');
             this.$store.commit('closeLangsButton');
+        },
+
+        /**
+         * Add layer toggle to the map
+         */
+        createGroups ()
+        {
+            smokingGroup = new L.LayerGroup();
+            foodGroup = new L.LayerGroup();
+            coffeeGroup = new L.LayerGroup();
+            alcoholGroup = new L.LayerGroup();
+            softdrinksGroup = new L.LayerGroup();
+            sanitaryGroup = new L.LayerGroup();
+            otherGroup = new L.LayerGroup();
+            coastalGroup = new L.LayerGroup();
+            brandsGroup = new L.LayerGroup();
+            dogshitGroup = new L.LayerGroup();
+            dumpingGroup = new L.LayerGroup();
+            industrialGroup = new L.LayerGroup();
+
+            /** 8. Create overlays toggle menu */
+            let overlays = {
+                Alcohol: alcoholGroup,
+                Brands: brandsGroup,
+                Coastal: coastalGroup,
+                Coffee: coffeeGroup,
+                Dumping: dumpingGroup,
+                Food: foodGroup,
+                Industrial: industrialGroup,
+                Other: otherGroup,
+                PetSurprise: dogshitGroup,
+                Sanitary: sanitaryGroup,
+                Smoking: smokingGroup,
+                SoftDrinks: softdrinksGroup,
+            };
+
+            // Added when zoom above
+            layerControls = L.control.layers(null, overlays);
         }
     }
 };
