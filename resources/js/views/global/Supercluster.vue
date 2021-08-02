@@ -147,9 +147,7 @@ function onEachArtFeature (feature, layer)
 
 /**
  * The user dragged or zoomed the map
- *
- * Todo: remove glify points when the user moves the map, and is above zoom threshold
- */
+ **/
 async function update ()
 {
     const bounds = map.getBounds();
