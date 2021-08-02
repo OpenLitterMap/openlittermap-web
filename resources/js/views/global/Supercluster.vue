@@ -119,11 +119,21 @@ function onEachFeature (feature, layer)
 
 /**
  * On each art point...
+ *
+ * Todo: Smooth zoom to that piece
  */
 function onEachArtFeature (feature, layer)
 {
+    const lat = feature.geometry.coordinates[0];
+    const lon = feature.geometry.coordinates[1]
+
     layer.on('click', function (e)
     {
+        map.flyTo([lat, lon], 14, {
+            animate: true,
+            duration: 10
+        });
+
         const user = (feature.properties.name || feature.properties.username)
             ? `By ${feature.properties.name ? feature.properties.name : ''} ${ feature.properties.username ? '@' + feature.properties.username : ''}`
             : "";
@@ -369,15 +379,6 @@ export default {
         map.on('overlayremove', update)
     },
     methods: {
-        /**
-         * Close dates and language dropdowns
-         */
-        closeButtons ()
-        {
-            this.$store.commit('closeDatesButton');
-            this.$store.commit('closeLangsButton');
-        },
-
         /**
          * Layer Controller when above ZOOM_CLUSTER_THRESHOLD
          */
