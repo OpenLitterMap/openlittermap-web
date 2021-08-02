@@ -19,6 +19,14 @@ export const mutations = {
 	},
 
     /**
+     * Initialise the global art data
+     */
+    globalArtData (state, payload)
+    {
+        state.artData = payload;
+    },
+
+    /**
      * When changing dates
      */
 	globalLoading (state, payload)
