@@ -112,7 +112,10 @@ function onEachFeature (feature, layer)
     {
         // Zoom in cluster when click to it
         layer.on('click', function (e) {
-            map.setView(e.latlng, map.getZoom() + ZOOM_STEP);
+            map.flyTo(e.latlng, map.getZoom() + ZOOM_STEP, {
+                animate: true,
+                duration: 2
+            });
         });
     }
 }
@@ -124,12 +127,9 @@ function onEachFeature (feature, layer)
  */
 function onEachArtFeature (feature, layer)
 {
-    const lat = feature.geometry.coordinates[0];
-    const lon = feature.geometry.coordinates[1]
-
     layer.on('click', function (e)
     {
-        map.flyTo([lat, lon], 14, {
+        map.flyTo(feature.geometry.coordinates, 14, {
             animate: true,
             duration: 10
         });
