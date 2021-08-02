@@ -12,7 +12,6 @@ use App\Models\User\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Facades\Image;
 use Tests\TestCase;
@@ -26,6 +25,8 @@ class UploadPhotoTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        Storage::fake('s3');
 
         $this->setImagePath();
 
@@ -57,10 +58,10 @@ class UploadPhotoTest extends TestCase
         $response->assertOk()->assertJson(['success' => true]);
 
         // Image is uploaded
-        $this->assertFileExists($imageAttributes['filepath']);
+        Storage::disk('s3')->assertExists($imageAttributes['filepath']);
 
         // Image has the right dimensions
-        $image = Image::make(file_get_contents($imageAttributes['filepath']));
+        $image = Image::make(Storage::disk('s3')->get($imageAttributes['filepath']));
         $this->assertEquals(500, $image->width());
         $this->assertEquals(500, $image->height());
 
@@ -116,9 +117,6 @@ class UploadPhotoTest extends TestCase
                     $imageAttributes['dateTime']->is($e->created_at);
             }
         );
-
-        // Tear down
-        File::delete($imageAttributes['filepath']);
     }
 
     public function test_a_users_info_is_updated_when_they_upload_a_photo()
@@ -148,9 +146,6 @@ class UploadPhotoTest extends TestCase
         $this->assertEquals(1, $user->has_uploaded);
         $this->assertEquals(1, $user->xp);
         $this->assertEquals(1, $user->total_images);
-
-        // Tear down
-        File::delete($imageAttributes['filepath']);
     }
 
     public function test_unauthenticated_users_cannot_upload_photos()
@@ -199,4 +194,28 @@ class UploadPhotoTest extends TestCase
 
         $response->assertStatus(500);
     }
+
+    public function test_it_throws_server_error_when_user_uploads_photos_with_the_same_datetime()
+    {
+        Carbon::setTestNow();
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user);
+
+        Photo::factory()->create([
+            'user_id' => $user->id,
+            'datetime' => now()
+        ]);
+
+        $imageAttributes = $this->getImageAndAttributes();
+
+        $response = $this->post('/submit', [
+            'file' => $imageAttributes['file'],
+        ]);
+
+        $response->assertStatus(500);
+        $response->assertSee('Server Error');
+    }
+
 }

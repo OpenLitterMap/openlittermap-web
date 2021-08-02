@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 
 use App\Models\User\User;
-use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class DeletePhotoTest extends TestCase
@@ -14,6 +14,8 @@ class DeletePhotoTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        Storage::fake('s3');
 
         $this->setImagePath();
     }
@@ -30,7 +32,7 @@ class DeletePhotoTest extends TestCase
         $this->post('/submit', ['file' => $imageAttributes['file']]);
 
         // We make sure it exists
-        $this->assertFileExists($imageAttributes['filepath']);
+        Storage::disk('s3')->assertExists($imageAttributes['filepath']);
         $user->refresh();
         $this->assertEquals(1, $user->has_uploaded);
         $this->assertEquals(1, $user->xp);
@@ -45,7 +47,7 @@ class DeletePhotoTest extends TestCase
         $this->assertEquals(1, $user->has_uploaded); // TODO shouldn't it decrement?
         $this->assertEquals(0, $user->xp);
         $this->assertEquals(0, $user->total_images);
-        $this->assertFileDoesNotExist($imageAttributes['filepath']);
+        Storage::disk('s3')->assertMissing($imageAttributes['filepath']);
         $this->assertCount(0, $user->photos);
         $this->assertDatabaseMissing('photos', ['id' => $photo->id]);
     }
@@ -76,9 +78,6 @@ class DeletePhotoTest extends TestCase
         $response = $this->post('/profile/photos/delete', ['photoid' => $photo->id]);
 
         $response->assertForbidden();
-
-        // Tear down
-        File::delete($imageAttributes['filepath']);
     }
 
     public function test_it_throws_not_found_exception_if_photo_doesnt_exist()

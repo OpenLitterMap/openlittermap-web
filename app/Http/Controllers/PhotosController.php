@@ -140,56 +140,11 @@ class PhotosController extends Controller
         // Check if the user has already uploaded this image
         // todo - load error automatically without clicking it
         // todo - translate
-        if (app()->environment() === "production")
-        {
-            if (Photo::where(['user_id' => $user->id, 'datetime' => $dateTime])->first())
-            {
-                abort(500, "You have already uploaded this file!");
-            }
+        if (Photo::where(['user_id' => $user->id, 'datetime' => $dateTime])->first()) {
+            abort(500, "You have already uploaded this file!");
         }
 
-        // Create dir/filename and move to AWS S3
-        $explode = explode('-', $dateTime);
-        $y = $explode[0];
-        $m = $explode[1];
-        $d = substr($explode[2], 0, 2);
-
-        $filename = $file->hashName();
-        $filepath = $y.'/'.$m.'/'.$d.'/'.$filename;
-
-        // Upload image to AWS
-        if (app()->environment('production'))
-        {
-            $s3 = Storage::disk('s3');
-
-            $s3->put($filepath, $image->stream(), 'public');
-
-            $imageName = $s3->url($filepath);
-        }
-        // Upload image to Digital Ocean
-        else if (app()->environment('staging'))
-        {
-            $s3 = Storage::disk('staging');
-
-            $s3->put($filepath, $image->stream(), 'public');
-
-            $imageName = $s3->url($filepath);
-        }
-        // Save image locally
-        else
-        {
-            $public_path = public_path('local-uploads/'.$y.'/'.$m.'/'.$d);
-
-            // home/vagrant/Code/openlittermap-web/public/local-uploads/y/m/d
-            if (!file_exists($public_path))
-            {
-                mkdir($public_path, 666, true);
-            }
-
-            $image->save($public_path . '/' . $filename);
-
-            $imageName = config('app.url') . '/local-uploads/'.$y.'/'.$m.'/'.$d .'/'.$filename;
-        }
+        $imageName = $this->uploadImageToS3($file, $image, $dateTime);
 
         // Get phone model
         $model = (array_key_exists('Model', $exif))
@@ -430,5 +385,34 @@ class PhotosController extends Controller
             'remaining' => $remaining,
             'total' => $total
         ];
+    }
+
+    /**
+     * @param $file
+     * @param \Intervention\Image\Image $image
+     * @param Carbon $dateTime
+     * @return string
+     */
+    protected function uploadImageToS3(
+        $file,
+        \Intervention\Image\Image $image,
+        Carbon $dateTime
+    ): string
+    {
+        // Create dir/filename and move to AWS S3
+        $explode = explode('-', $dateTime);
+        $y = $explode[0];
+        $m = $explode[1];
+        $d = substr($explode[2], 0, 2);
+
+        $filename = $file->hashName();
+        $filepath = $y . '/' . $m . '/' . $d . '/' . $filename;
+
+        // Upload image to AWS
+        $s3 = Storage::disk('s3');
+
+        $s3->put($filepath, $image->stream(), 'public');
+
+        return $s3->url($filepath);
     }
 }

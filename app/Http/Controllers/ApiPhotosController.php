@@ -14,8 +14,8 @@ use App\Events\Photo\IncrementPhotoMonth;
 use App\Helpers\Post\UploadHelper;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Facades\Image;
 
 class ApiPhotosController extends Controller
@@ -91,46 +91,14 @@ class ApiPhotosController extends Controller
             $constraint->aspectRatio();
         });
 
-        $filename = $file->getClientOriginalName();
-
-        $hashname = $file->hashName();
-
         $lat  = $request['lat'];
 		$lon  = $request['lon'];
 		$date = $request['date'];
 
-		$explode = explode(':', $date);
-        $y = $explode[0];
-        $m = $explode[1];
-        $d = substr($explode[2], 0, 2);
-
-	    $filepath = $y.'/'.$m.'/'.$d.'/'.$hashname;
-
         // convert to YYYY-MM-DD hh:mm:ss format
         $date = Carbon::parse($date);
 
-	    if (app()->environment('production'))
-	    {
-            $s3 = \Storage::disk('s3');
-
-            $s3->put($filepath, file_get_contents($file), 'public');
-
-            $imageName = $s3->url($filepath);
-        }
-        else
-        {
-            $public_path = public_path('local-uploads/'.$y.'/'.$m.'/'.$d);
-
-            // home/vagrant/Code/openlittermap-web/public/local-uploads/y/m/d
-            if (!file_exists($public_path))
-            {
-                mkdir($public_path, 666, true);
-            }
-
-            $image->save($public_path . '/' . $hashname);
-
-            $imageName = config('app.url') . '/local-uploads/'.$y.'/'.$m.'/'.$d .'/'.$hashname;
-        }
+        $imageName = $this->uploadImageToS3($file, $image, $date);
 
         /** Reverse Geocode the GPS coordinates from OpenStreetMap to get an array of key-value address pairs */
         $apiKey = config('services.location.secret');
@@ -278,5 +246,28 @@ class ApiPhotosController extends Controller
         if ($photos) return ['photos' => $photos];
 
         return ['photos' => 'none'];
+    }
+
+    protected function uploadImageToS3(
+        $file,
+        \Intervention\Image\Image $image,
+        Carbon $date
+    ): string
+    {
+        // Create dir/filename and move to AWS S3
+        $explode = explode(':', $date);
+        $y = $explode[0];
+        $m = $explode[1];
+        $d = substr($explode[2], 0, 2);
+
+        $filename = $file->hashName();
+        $filepath = $y . '/' . $m . '/' . $d . '/' . $filename;
+
+        // Upload image to AWS
+        $s3 = Storage::disk('s3');
+
+        $s3->put($filepath, $image->stream(), 'public');
+
+        return $s3->url($filepath);
     }
 }

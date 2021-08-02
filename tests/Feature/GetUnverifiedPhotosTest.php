@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User\User;
-use Illuminate\Support\Facades\File;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class GetUnverifiedPhotosTest extends TestCase
@@ -21,22 +21,27 @@ class GetUnverifiedPhotosTest extends TestCase
     {
         $otherUser = User::factory()->create(['verification_required' => true]);
         $unverifiedUser = User::factory()->create(['verification_required' => true]);
-        $imageAttributes = $this->getImageAndAttributes();
 
         // Some other user uploads a photo, it shouldn't be included in our results
         $this->actingAs($otherUser);
 
-        $this->post('/submit', ['file' => $imageAttributes['file']]);
+        Carbon::setTestNow(now()->addMinute());
+
+        $this->post('/submit', ['file' => $this->getImageAndAttributes()['file']]);
 
         $this->actingAs($unverifiedUser);
 
+        Carbon::setTestNow(now()->addMinute());
+
         // We upload a photo, we expect it to be returned
-        $this->post('/submit', ['file' => $imageAttributes['file']]);
+        $this->post('/submit', ['file' => $this->getImageAndAttributes()['file']]);
 
         $unverifiedPhoto = $unverifiedUser->fresh()->photos->last();
 
+        Carbon::setTestNow(now()->addMinute());
+
         // We upload another photo, which gets verified, and shouldn't be returned
-        $this->post('/submit', ['file' => $imageAttributes['file']]);
+        $this->post('/submit', ['file' => $this->getImageAndAttributes()['file']]);
 
         $verifiedPhoto = $unverifiedUser->fresh()->photos->last();
         $verifiedPhoto->verified = 2;
@@ -51,7 +56,5 @@ class GetUnverifiedPhotosTest extends TestCase
         $this->assertEquals(2, $response['total'] ?? 0);
         $this->assertCount(1, $response['photos']['data'] ?? []);
         $this->assertEquals($unverifiedPhoto->id, $response['photos']['data'][0]['id'] ?? 0);
-
-        File::delete($imageAttributes['filepath']);
     }
 }

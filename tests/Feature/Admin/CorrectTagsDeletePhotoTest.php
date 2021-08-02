@@ -4,14 +4,10 @@ namespace Tests\Feature\Admin;
 
 
 use App\Events\TagsVerifiedByAdmin;
-use App\Models\Location\City;
-use App\Models\Location\Country;
-use App\Models\Location\State;
 use App\Models\Photo;
 use App\Models\User\User;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
 use Tests\Feature\HasPhotoUploads;
 use Tests\TestCase;
@@ -32,6 +28,8 @@ class CorrectTagsDeletePhotoTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        Storage::fake('s3');
 
         $this->setImagePath();
 
@@ -67,19 +65,10 @@ class CorrectTagsDeletePhotoTest extends TestCase
         $this->photo->refresh();
     }
 
-    protected function tearDown(): void
-    {
-        if (File::exists($this->imageAndAttributes['filepath'])) {
-            File::delete($this->imageAndAttributes['filepath']);
-        }
-
-        parent::tearDown();
-    }
-
     public function test_an_admin_can_verify_and_delete_photos_uploaded_by_users()
     {
         // We make sure the photo exists
-        $this->assertFileExists($this->imageAndAttributes['filepath']);
+        Storage::disk('s3')->assertExists($this->imageAndAttributes['filepath']);
         $this->assertEquals(4, $this->user->xp);
 
         // Admin verifies the photo -------------------
@@ -91,7 +80,7 @@ class CorrectTagsDeletePhotoTest extends TestCase
         $this->photo->refresh();
 
         // And it's gone
-        $this->assertFileDoesNotExist($this->imageAndAttributes['filepath']);
+        Storage::disk('s3')->assertMissing($this->imageAndAttributes['filepath']);
         $this->assertEquals(4, $this->user->xp);
         $this->assertEquals('/assets/verified.jpg', $this->photo->filename);
         $this->assertEquals(1, $this->photo->verification);

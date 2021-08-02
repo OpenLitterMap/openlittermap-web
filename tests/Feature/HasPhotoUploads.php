@@ -8,6 +8,7 @@ use App\Models\Location\City;
 use App\Models\Location\Country;
 use App\Models\Location\State;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 trait HasPhotoUploads
 {
@@ -20,6 +21,7 @@ trait HasPhotoUploads
 
     protected function getImageAndAttributes(): array
     {
+        // TODO we use storage now, maybe filepath or imageName are not needed
         $exifImage = file_get_contents($this->imagePath);
         $file = UploadedFile::fake()->createWithContent(
             'image.jpg',
@@ -47,14 +49,12 @@ trait HasPhotoUploads
         $month = $dateTime->month < 10 ? "0$dateTime->month" : $dateTime->month;
         $day = $dateTime->day < 10 ? "0$dateTime->day" : $dateTime->day;
 
-        $localUploadsPath = "/local-uploads/$year/$month/$day/{$file->hashName()}";
-        $filepath = public_path($localUploadsPath);
-        $imageName = config('app.url') . $localUploadsPath;
-        $productionImageName = "$year/$month/$day/{$file->hashName()}";
+        $filepath = "$year/$month/$day/{$file->hashName()}";
+        $imageName = Storage::disk('s3')->url($filepath);
 
         return compact(
             'latitude', 'longitude', 'geoHash', 'displayName', 'address',
-            'dateTime', 'filepath', 'file', 'imageName', 'productionImageName'
+            'dateTime', 'filepath', 'file', 'imageName'
         );
     }
 

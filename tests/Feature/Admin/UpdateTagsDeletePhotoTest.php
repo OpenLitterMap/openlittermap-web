@@ -10,8 +10,8 @@ use App\Models\Location\State;
 use App\Models\Photo;
 use App\Models\User\User;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
 use Tests\Feature\HasPhotoUploads;
 use Tests\TestCase;
@@ -32,6 +32,8 @@ class UpdateTagsDeletePhotoTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        Storage::fake('s3');
 
         $this->setImagePath();
 
@@ -62,15 +64,6 @@ class UpdateTagsDeletePhotoTest extends TestCase
         ]);
     }
 
-    protected function tearDown(): void
-    {
-        if (File::exists($this->imageAndAttributes['filepath'])) {
-            File::delete($this->imageAndAttributes['filepath']);
-        }
-
-        parent::tearDown();
-    }
-
     public function provider(): array
     {
         return [
@@ -89,7 +82,7 @@ class UpdateTagsDeletePhotoTest extends TestCase
         // Admin updates the tags -------------------
         $this->actingAs($this->admin);
 
-        $this->assertFileExists($this->imageAndAttributes['filepath']);
+        Storage::disk('s3')->assertExists($this->imageAndAttributes['filepath']);
 
         $smokingId = $this->photo->smoking_id;
 
@@ -114,9 +107,8 @@ class UpdateTagsDeletePhotoTest extends TestCase
 
         if ($deletesPhoto) {
             // Assert photo is deleted
-            $this->assertFileDoesNotExist($this->imageAndAttributes['filepath']);
+            Storage::disk('s3')->assertMissing($this->imageAndAttributes['filepath']);
             $this->assertEquals('/assets/verified.jpg', $this->photo->filename);
-            // TODO this checks only local envs, should add tests for s3
         }
     }
 

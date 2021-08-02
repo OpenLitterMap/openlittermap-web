@@ -61,8 +61,8 @@ return [
             'secret'   => env('AWS_SECRET'),
             'region'   => env('AWS_REGION'),
             'bucket'   => env('AWS_BUCKET'),
-            'url'      => env('AWS_URL'),
             'endpoint' => env('AWS_ENDPOINT'),
+            'use_path_style_endpoint' => true
         ],
 
         's3500x500' => [
@@ -79,16 +79,6 @@ return [
             'driver' => 'dropbox',
             'token' => env('DROPBOX_TOKEN'),
         ],
-
-        'staging' => [
-            'driver' => 's3',
-            'key' => env('DIGITAL_OCEAN_KEY'),
-            'secret' => env('DIGITAL_OCEAN_SECRET'),
-            'endpoint' => env('DIGITAL_OCEAN_ENDPOINT'),
-            'region' => env('DIGITAL_OCEAN_REGION'),
-            'bucket' => env('DIGITAL_OCEAN_BUCKET'),
-        ]
-
     ],
 
     /*

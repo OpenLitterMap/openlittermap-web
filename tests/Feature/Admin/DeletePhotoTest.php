@@ -8,8 +8,8 @@ use App\Models\Location\Country;
 use App\Models\Location\State;
 use App\Models\Photo;
 use App\Models\User\User;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
 use Tests\Feature\HasPhotoUploads;
 use Tests\TestCase;
@@ -31,6 +31,8 @@ class DeletePhotoTest extends TestCase
     {
         parent::setUp();
 
+        Storage::fake('s3');
+
         $this->setImagePath();
 
         /** @var User $admin */
@@ -50,15 +52,6 @@ class DeletePhotoTest extends TestCase
         $this->photo = $this->user->fresh()->photos->last();
     }
 
-    protected function tearDown(): void
-    {
-        if (File::exists($this->imageAndAttributes['filepath'])) {
-            File::delete($this->imageAndAttributes['filepath']);
-        }
-
-        parent::tearDown();
-    }
-
     public function test_an_admin_can_delete_photos_uploaded_by_users()
     {
         // User tags the image
@@ -75,7 +68,7 @@ class DeletePhotoTest extends TestCase
         ]);
 
         // We make sure the photo exists
-        $this->assertFileExists($this->imageAndAttributes['filepath']);
+        Storage::disk('s3')->assertExists($this->imageAndAttributes['filepath']);
         $this->assertEquals(1, $this->user->has_uploaded);
         $this->assertEquals(4, $this->user->xp);
         $this->assertEquals(1, $this->user->total_images);
@@ -92,7 +85,7 @@ class DeletePhotoTest extends TestCase
         $this->assertEquals(1, $this->user->has_uploaded); // TODO shouldn't it decrement?
         $this->assertEquals(0, $this->user->xp);
         $this->assertEquals(0, $this->user->total_images);
-        $this->assertFileDoesNotExist($this->imageAndAttributes['filepath']);
+        Storage::disk('s3')->assertMissing($this->imageAndAttributes['filepath']);
         $this->assertCount(0, $this->user->photos);
         $this->assertDatabaseMissing('photos', ['id' => $this->photo->id]);
     }
