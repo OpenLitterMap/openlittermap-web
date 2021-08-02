@@ -87,7 +87,7 @@
                                     {{ $t('tags.to-tag') }}: {{ remaining }}
                                 </li>
                                 <li class="list-group-item">
-                                    {{ $t('tags.total-uploaded') }}: {{ user.photos_count }}
+                                    {{ $t('tags.total-uploaded') }}: {{ user.total_images }}
                                 </li>
                             </div>
 
@@ -151,9 +151,11 @@ export default {
         Tags,
         ProfileDelete
     },
-    async created ()
+    async mounted ()
     {
         this.loading = true;
+
+        await this.$store.dispatch('GET_CURRENT_USER');
 
         await this.$store.dispatch('GET_PHOTOS_FOR_TAGGING');
 
@@ -221,14 +223,6 @@ export default {
         show_next_page ()
         {
             return this.$store.state.photos.paginate.next_page_url;
-        },
-
-        /**
-         * Total number of photos the user has uploaded. Verification = 0-3
-         */
-        total ()
-        {
-            return this.$store.state.photos.total;
         },
 
         /**

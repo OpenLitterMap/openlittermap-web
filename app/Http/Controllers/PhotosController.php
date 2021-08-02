@@ -20,6 +20,7 @@ use App\Helpers\Post\UploadHelper;
 use Intervention\Image\Facades\Image;
 
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -254,9 +255,15 @@ class PhotosController extends Controller
 
         // $user->images_remaining -= 1;
 
-        $user->xp++;
-        $user->total_images++;
-        $user->save();
+        // Since a user can upload multiple photos at once,
+        // we might get old values for xp, so we update the values directly
+        // without retrieving them
+        $user->update([
+            'xp' => DB::raw('ifnull(xp, 0) + 1'),
+            'total_images' => DB::raw('ifnull(total_images, 0) + 1')
+        ]);
+
+        $user->refresh();
 
         $teamName = null;
         if ($user->team) $teamName = $user->team->name;
