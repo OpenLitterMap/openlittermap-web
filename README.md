@@ -85,8 +85,8 @@ If you would like to contribute something, make a new branch locally `git checko
 ```
 In your .env file, add "WEBSOCKET_BROADCAST_HOST=192.168.10.10"
 In broadcasting.php, change 'host' => env('WEBSOCKET_BROADCAST_HOST')
-In one window, run `art websockets:serve --host=192.168.10.10`
-Then, in another window, run `art horizon`
+In one window, run `php artisan websockets:serve --host=192.168.10.10`
+Then, in another window, run `php artisan horizon`
 To test it's working, open another window. Open tinker and run event new(\App\Events\UserSignedUp(1));
 ```
 
