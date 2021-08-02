@@ -2,16 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Photos\AddTagsToPhotoAction;
+use App\Actions\Photos\DeletePhotoAction;
+use App\Actions\Photos\UpdateLeaderboardsFromPhotoAction;
 use GeoHash;
 use Exception;
 use Carbon\Carbon;
 
 use App\Models\Photo;
-use App\Models\LitterTags;
-use App\Models\Location\City;
-use App\Models\Location\State;
-use App\Models\Location\Country;
-
+use Illuminate\Http\Request;
 use App\Events\ImageUploaded;
 use App\Events\TagsVerifiedByAdmin;
 use App\Events\Photo\IncrementPhotoMonth;
@@ -20,11 +19,8 @@ use App\Helpers\Post\UploadHelper;
 
 use Intervention\Image\Facades\Image;
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
@@ -32,15 +28,32 @@ class PhotosController extends Controller
 {
     /** @var UploadHelper */
     protected $uploadHelper;
+    /** @var AddTagsToPhotoAction */
+    private $addTagsAction;
+    /** @var UpdateLeaderboardsFromPhotoAction */
+    private $updateLeaderboardsAction;
+    /** @var DeletePhotoAction  */
+    private $deletePhotoAction;
 
     /**
      * Apply middleware to all of these routes
      *
      * @param UploadHelper $uploadHelper
+     * @param AddTagsToPhotoAction $addTagsAction
+     * @param UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction
+     * @param DeletePhotoAction $deletePhotoAction
      */
-    public function __construct(UploadHelper $uploadHelper)
+    public function __construct(
+        UploadHelper $uploadHelper,
+        AddTagsToPhotoAction $addTagsAction,
+        UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction,
+        DeletePhotoAction $deletePhotoAction
+    )
     {
         $this->uploadHelper = $uploadHelper;
+        $this->addTagsAction = $addTagsAction;
+        $this->updateLeaderboardsAction = $updateLeaderboardsAction;
+        $this->deletePhotoAction = $deletePhotoAction;
 
         $this->middleware('auth');
     }
@@ -283,34 +296,21 @@ class PhotosController extends Controller
     {
         $user = Auth::user();
 
-        $photo = Photo::find($request->photoid);
+        $photo = Photo::findOrFail($request->photoid);
+
+        if ($user->id !== $photo->user_id) {
+            abort(403);
+        }
 
         try
         {
-            if ($user->id === $photo->user_id)
-            {
-                if (app()->environment('production'))
-                {
-                    $path = substr($photo->filename, 42);
-                    Storage::disk('s3')->delete($path);
-                }
-                else
-                {
-                    // Strip the app name from the filename
-                    // Resulting path is like 'local-uploads/2021/07/07/photo.jpg'
-                    $path = public_path(substr($photo->filename, strlen(config('app.url'))));
+            $this->deletePhotoAction->run($photo);
 
-                    if (File::exists($path)) {
-                        File::delete($path);
-                    }
-                }
+            $photo->delete();
 
-                $photo->delete();
-
-                $user->xp = $user->xp > 0 ? $user->xp - 1 : 0;
-                $user->total_images = $user->total_images > 0 ? $user->total_images - 1 : 0;
-                $user->save();
-            }
+            $user->xp = $user->xp > 0 ? $user->xp - 1 : 0;
+            $user->total_images = $user->total_images > 0 ? $user->total_images - 1 : 0;
+            $user->save();
         }
         catch (Exception $e)
         {
@@ -326,8 +326,6 @@ class PhotosController extends Controller
      * Note! The $column passed through must match the column name on the table.
      * eg 'butts' must be a column on the smoking table.
      *
-     * We use the $schema json object from LitterTags to get our class references
-     *
      * If the user is new, we submit the image for verification.
      * If the user is trusted, we can update OLM.
      */
@@ -337,55 +335,15 @@ class PhotosController extends Controller
         $photo = Photo::findOrFail($request->photo_id);
         if ($photo->verified > 0) return redirect()->back();
 
-        $schema = LitterTags::INSTANCE()->getDecodedJSON();
+        $litterTotals = $this->addTagsAction->run($photo, $request['tags']);
 
-        $litterTotal = 0;
-        foreach ($request['tags'] as $category => $items)
-        {
-            foreach ($items as $column => $quantity)
-            {
-                // Column on photos table to make a relationship with current category eg smoking_id
-                $id_table = $schema->$category->id_table;
-
-                // Full class path
-                $class = 'App\\Models\\Litter\\Categories\\'.$schema->$category->class;
-
-                // Create reference to category.$id_table on photos if it does not exist
-                if (is_null($photo->$id_table))
-                {
-                    $row = $class::create();
-                    $photo->$id_table = $row->id;
-                    $photo->save();
-                }
-
-                // If it does exist, get it
-                else $row = $class::find($photo->$id_table);
-
-                // Update quantity on the category table
-                $row->$column = $quantity;
-                $row->save();
-
-                // Update Leaderboards if user has public privacy settings
-                // todo - save data per leaderboard
-                if (($user->show_name) || ($user->show_username))
-                {
-                    $country = Country::find($photo->country_id);
-                    $state = State::find($photo->state_id);
-                    $city = City::find($photo->city_id);
-                    Redis::zadd($country->country.':Leaderboard', $user->xp, $user->id);
-                    Redis::zadd($country->country.':'.$state->state.':Leaderboard', $user->xp, $user->id);
-                    Redis::zadd($country->country.':'.$state->state.':'.$city->city.':Leaderboard', $user->xp, $user->id);
-                }
-
-                $litterTotal += $quantity;
-            }
-        }
-
-        $user->xp += $litterTotal;
+        $user->xp += $litterTotals['all'];
         $user->save();
 
+        $this->updateLeaderboardsAction->run($user, $photo);
+
         $photo->remaining = $request->presence;
-        $photo->total_litter = $litterTotal;
+        $photo->total_litter = $litterTotals['litter'];
 
         if ($user->verification_required)
         {

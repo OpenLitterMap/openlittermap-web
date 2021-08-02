@@ -54,7 +54,7 @@
 				  	<div class="column has-text-centered" style="position: relative;">
 
                         <!-- The list of tags associated with this image-->
-                        <Tags :admin="true" />
+                        <Tags :photo-id="photo.id" :admin="true" />
 
 						<div style="padding-top: 3em;">
 							<button class="button is-medium is-dark" @click="clearTags">Clear user input</button>

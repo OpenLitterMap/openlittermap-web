@@ -21,64 +21,17 @@ use App\Models\Photo;
 
 class UploadPhotoTest extends TestCase
 {
-    private $imagePath;
+    use HasPhotoUploads;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->imagePath = storage_path('framework/testing/1x1.jpg');
+        $this->setImagePath();
 
         $country = Country::create(['country' => 'error_country', 'shortcode' => 'error']);
         $state = State::create(['state' => 'error_state', 'country_id' => $country->id]);
         City::create(['city' => 'error_city', 'country_id' => $country->id, 'state_id' => $state->id]);
-    }
-
-    protected function getImageAndAttributes(): array
-    {
-        $exifImage = file_get_contents($this->imagePath);
-        $file = UploadedFile::fake()->createWithContent(
-            'image.jpg',
-            $exifImage
-        );
-        $latitude = 40.053030045789;
-        $longitude = -77.15449870066;
-        $geoHash = 'dr15u73vccgyzbs9w4uj';
-        $displayName = '10735, Carlisle Pike, Latimore Township,' .
-            ' Adams County, Pennsylvania, 17324, USA';
-        $address = [
-            "house_number" => "10735",
-            "road" => "Carlisle Pike",
-            "city" => "Latimore Township",
-            "county" => "Adams County",
-            "state" => "Pennsylvania",
-            "postcode" => "17324",
-            "country" => "United States of America",
-            "country_code" => "us",
-            "suburb" => "unknown"
-        ];
-
-        // Since these models are created on runtime
-        // and we haven't uploaded any images before
-        // their ids should be 1. BUT, on the setUp method
-        // we create three error models, so these id's are now 2
-        $countryId = 2;
-        $stateId = 2;
-        $cityId = 2;
-
-        $dateTime = now();
-        $year = $dateTime->year;
-        $month = $dateTime->month < 10 ? "0$dateTime->month" : $dateTime->month;
-        $day = $dateTime->day < 10 ? "0$dateTime->day" : $dateTime->day;
-
-        $localUploadsPath = "/local-uploads/$year/$month/$day/{$file->hashName()}";
-        $filepath = public_path($localUploadsPath);
-        $imageName = config('app.url') . $localUploadsPath;
-
-        return compact(
-            'latitude', 'longitude', 'geoHash', 'displayName', 'address',
-            'countryId', 'stateId', 'cityId', 'dateTime', 'filepath', 'file', 'imageName'
-        );
     }
 
     public function test_a_user_can_upload_a_photo()
@@ -130,9 +83,9 @@ class UploadPhotoTest extends TestCase
         $this->assertEquals($imageAttributes['address']['country'], $photo->country);
         $this->assertEquals($imageAttributes['address']['country_code'], $photo->country_code);
         $this->assertEquals('Unknown', $photo->model);
-        $this->assertEquals($imageAttributes['countryId'], $photo->country_id);
-        $this->assertEquals($imageAttributes['stateId'], $photo->state_id);
-        $this->assertEquals($imageAttributes['cityId'], $photo->city_id);
+        $this->assertEquals($this->getCountryId(), $photo->country_id);
+        $this->assertEquals($this->getStateId(), $photo->state_id);
+        $this->assertEquals($this->getCityId(), $photo->city_id);
         $this->assertEquals('web', $photo->platform);
         $this->assertEquals($imageAttributes['geoHash'], $photo->geohash);
         $this->assertEquals($user->active_team, $photo->team_id);
@@ -148,18 +101,18 @@ class UploadPhotoTest extends TestCase
                     $e->imageName === $imageAttributes['imageName'] &&
                     $e->teamName === $user->team->name &&
                     $e->userId === $user->id &&
-                    $e->countryId === $imageAttributes['countryId'] &&
-                    $e->stateId === $imageAttributes['stateId'] &&
-                    $e->cityId === $imageAttributes['cityId'];
+                    $e->countryId === $this->getCountryId() &&
+                    $e->stateId === $this->getStateId() &&
+                    $e->cityId === $this->getCityId();
             }
         );
 
         Event::assertDispatched(
             IncrementPhotoMonth::class,
             function (IncrementPhotoMonth $e) use ($imageAttributes) {
-                return $e->country_id === $imageAttributes['countryId'] &&
-                    $e->state_id === $imageAttributes['stateId'] &&
-                    $e->city_id === $imageAttributes['cityId'] &&
+                return $e->country_id === $this->getCountryId() &&
+                    $e->state_id === $this->getStateId() &&
+                    $e->city_id === $this->getCityId() &&
                     $imageAttributes['dateTime']->is($e->created_at);
             }
         );

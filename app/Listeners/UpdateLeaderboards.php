@@ -2,15 +2,10 @@
 
 namespace App\Listeners;
 
+use App\Actions\Photos\UpdateLeaderboardsFromPhotoAction;
 use App\Models\Photo;
 use App\Models\User\User;
-use App\Models\Location\City;
-use App\Models\Location\State;
-use App\Models\Location\Country;
 use App\Events\PhotoVerifiedByUser;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Support\Facades\Redis;
 
 class UpdateLeaderboards
 {
@@ -40,15 +35,8 @@ class UpdateLeaderboards
         $user->xp += 1;
         $user->save();
 
-        $country = Country::find($photo->country_id);
-        $state = State::find($photo->state_id);
-        $city = City::find($photo->city_id);
-
-        // Add to leaderboard if the user wants to be made public
-        if (($user->show_name == 1) || ($user->show_username == 1)) {
-            Redis::zadd($country->country.':Leaderboard', $user->xp, $user->id);
-            Redis::zadd($country->country.':'.$state->state.':Leaderboard', $user->xp, $user->id);
-            Redis::zadd($country->country.':'.$state->state.':'.$city->city.':Leaderboard', $user->xp, $user->id);
-        }
+        /** @var UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction */
+        $updateLeaderboardsAction = app(UpdateLeaderboardsFromPhotoAction::class);
+        $updateLeaderboardsAction->run($user, $photo);
     }
 }

@@ -11,7 +11,7 @@ use Tests\TestCase;
 
 use App\Models\Photo;
 
-class UploadPhotoToProductionTest extends TestCase
+class UploadPhotoOnProductionTest extends TestCase
 {
     use WithoutMiddleware;
 

@@ -63,6 +63,8 @@ class User extends Authenticatable
         'plan',
         'xp',
         'level',
+        'show_name',
+        'show_username',
 
         'stripe_id',
         'images_remaining',
@@ -98,6 +100,11 @@ class User extends Authenticatable
 
     protected $guarded = [
         'role_id'
+    ];
+
+    protected $casts = [
+        'show_name' => 'boolean',
+        'show_username' => 'boolean'
     ];
 
     protected $appends = ['total_categories'];
