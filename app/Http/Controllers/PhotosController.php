@@ -259,9 +259,11 @@ class PhotosController extends Controller
         // we might get old values for xp, so we update the values directly
         // without retrieving them
         $user->update([
-            'xp' => DB::raw('xp + 1'),
-            'total_images' => DB::raw('total_images + 1')
+            'xp' => DB::raw('ifnull(xp, 0) + 1'),
+            'total_images' => DB::raw('ifnull(total_images, 0) + 1')
         ]);
+
+        $user->refresh();
 
         $teamName = null;
         if ($user->team) $teamName = $user->team->name;
