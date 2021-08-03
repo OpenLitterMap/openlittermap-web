@@ -12,7 +12,6 @@
                 <div class="tags">
                 <span
                     v-for="tags in Object.entries(category.tags)"
-                    :key="tags"
                     class="tag is-medium litter-tag"
                     @click="removeTag(category.category, tags[0])"
                     v-html="getTags(tags, category.category)"
