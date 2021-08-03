@@ -193,11 +193,12 @@ function onEachArtFeature (feature, layer)
         L.popup()
             .setLatLng(feature.geometry.coordinates)
             .setContent(
-                '<p class="mb5p">Litter Art</p>'
-                + '<img src= "' + feature.properties.filename + '" class="mw100" />'
-                + '<p>Taken on ' + moment(feature.properties.datetime).format('LLL') +'</p>'
-                + user
-                + team
+                '<img src= "' + feature.properties.filename + '" class="litter-img" />'
+                    + '<div class="litter-img-container">'
+                        + '<p>Taken on ' + moment(feature.properties.datetime).format('LLL') +'</p>'
+                        + user
+                        + team
+                    + '</div>'
             )
             .openOn(map);
     });
@@ -326,15 +327,16 @@ async function update ()
                         L.popup()
                             .setLatLng(e.latlng)
                             .setContent(
-                                '<p class="mb5p">' + tags + ' </p>'
-                                + '<img src= "' + f.properties.filename + '" class="mw100" />'
-                                + '<p>Taken on ' + moment(f.properties.datetime).format('LLL') +'</p>'
-                                + user
-                                + team
+                                '<img src= "' + f.properties.filename + '" class="litter-img" />'
+                                    + '<div class="litter-img-container">'
+                                        + '<p class="mb5p">' + tags + ' </p>'
+                                        + '<p>Taken on ' + moment(f.properties.datetime).format('LLL') +'</p>'
+                                        + user
+                                        + team
+                                    + '</div>'
                             )
                             .openOn(map);
                     }
-
                 },
                 // hover: (e, pointOrGeoJsonFeature, xy) => {
                 //     // do something when a point is hovered
@@ -458,6 +460,24 @@ export default {
         display: flex;
         justify-content: center;
         border-radius: 20px;
+    }
+
+    .leaflet-pop-content-wrapper {
+        padding: 0 !important;
+    }
+
+    .leaflet-popup-content {
+        margin: 0 !important;
+    }
+
+    .litter-img-container {
+        padding: 0 1em 1em 1em;
+    }
+
+    .litter-img {
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
+        max-width: 100%;
     }
 
 </style>
