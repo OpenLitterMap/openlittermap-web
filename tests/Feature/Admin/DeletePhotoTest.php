@@ -67,6 +67,8 @@ class DeletePhotoTest extends TestCase
             ]
         ]);
 
+        $this->user->refresh();
+
         // We make sure the photo exists
         Storage::disk('s3')->assertExists($this->imageAndAttributes['filepath']);
         $this->assertEquals(1, $this->user->has_uploaded);
@@ -118,6 +120,8 @@ class DeletePhotoTest extends TestCase
             ]
         ]);
 
+        $this->user->refresh();
+
         $this->assertEquals(4, Redis::zscore("{$country}:Leaderboard", $this->user->id));
         $this->assertEquals(4, Redis::zscore("{$country}:{$state}:Leaderboard", $this->user->id));
         $this->assertEquals(4, Redis::zscore("{$country}:{$state}:{$city}:Leaderboard", $this->user->id));
@@ -160,6 +164,8 @@ class DeletePhotoTest extends TestCase
                 ]
             ]
         ]);
+
+        $this->user->refresh();
 
         $this->assertNull(Redis::zscore("{$country}:Leaderboard", $this->user->id));
         $this->assertNull(Redis::zscore("{$country}:{$state}:Leaderboard", $this->user->id));

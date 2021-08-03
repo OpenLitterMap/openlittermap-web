@@ -208,6 +208,5 @@ export default {
 
 	.world-cup-title {
 		color: #34495e;
-
 	}
 </style>
