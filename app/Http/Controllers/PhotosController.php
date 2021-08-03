@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Actions\Photos\AddTagsToPhotoAction;
 use App\Actions\Photos\DeletePhotoAction;
+use App\Actions\Photos\ResizePhotoAction;
+use App\Actions\Photos\ReverseGeocodeLocationAction;
 use App\Actions\Photos\UpdateLeaderboardsFromPhotoAction;
+use App\Actions\Photos\UploadPhotoAction;
 use GeoHash;
 use Exception;
 use Carbon\Carbon;
@@ -17,13 +20,8 @@ use App\Events\Photo\IncrementPhotoMonth;
 
 use App\Helpers\Post\UploadHelper;
 
-use Intervention\Image\Facades\Image;
-
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\ValidationException;
 
 class PhotosController extends Controller
 {
@@ -33,8 +31,14 @@ class PhotosController extends Controller
     private $addTagsAction;
     /** @var UpdateLeaderboardsFromPhotoAction */
     private $updateLeaderboardsAction;
-    /** @var DeletePhotoAction  */
+    /** @var UploadPhotoAction */
+    private $uploadPhotoAction;
+    /** @var DeletePhotoAction */
     private $deletePhotoAction;
+    /** @var ResizePhotoAction */
+    private $resizePhotoAction;
+    /** @var ReverseGeocodeLocationAction */
+    private $reverseGeocodeAction;
 
     /**
      * Apply middleware to all of these routes
@@ -42,19 +46,28 @@ class PhotosController extends Controller
      * @param UploadHelper $uploadHelper
      * @param AddTagsToPhotoAction $addTagsAction
      * @param UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction
+     * @param UploadPhotoAction $uploadPhotoAction
      * @param DeletePhotoAction $deletePhotoAction
+     * @param ResizePhotoAction $resizePhotoAction
+     * @param ReverseGeocodeLocationAction $reverseGeocodeAction
      */
     public function __construct(
         UploadHelper $uploadHelper,
         AddTagsToPhotoAction $addTagsAction,
         UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction,
-        DeletePhotoAction $deletePhotoAction
+        UploadPhotoAction $uploadPhotoAction,
+        DeletePhotoAction $deletePhotoAction,
+        ResizePhotoAction $resizePhotoAction,
+        ReverseGeocodeLocationAction $reverseGeocodeAction
     )
     {
         $this->uploadHelper = $uploadHelper;
         $this->addTagsAction = $addTagsAction;
         $this->updateLeaderboardsAction = $updateLeaderboardsAction;
+        $this->uploadPhotoAction = $uploadPhotoAction;
         $this->deletePhotoAction = $deletePhotoAction;
+        $this->resizePhotoAction = $resizePhotoAction;
+        $this->reverseGeocodeAction = $reverseGeocodeAction;
 
         $this->middleware('auth');
     }
@@ -70,11 +83,10 @@ class PhotosController extends Controller
      *
      * @param Request $request
      * @return bool[]
-     * @throws ValidationException
      */
     public function store (Request $request)
     {
-        $this->validate($request, [
+        $request->validate([
            'file' => 'required|mimes:jpg,png,jpeg'
         ]);
 
@@ -89,13 +101,7 @@ class PhotosController extends Controller
 
         $file = $request->file('file'); // /tmp/php7S8v..
 
-        $image = Image::make($file);
-
-        $image->resize(500, 500);
-
-        $image->resize(500, 500, function ($constraint) {
-            $constraint->aspectRatio();
-        });
+        $image = $this->resizePhotoAction->run($file);
 
         $exif = $image->exif();
 
@@ -147,7 +153,7 @@ class PhotosController extends Controller
             }
         }
 
-        $imageName = $this->uploadImageToS3($file, $image, $dateTime);
+        $imageName = $this->uploadPhotoAction->run($image, $file->hashName(), $dateTime);
 
         // Get phone model
         $model = (array_key_exists('Model', $exif))
@@ -164,19 +170,13 @@ class PhotosController extends Controller
         $latitude = $latlong[0];
         $longitude = $latlong[1];
 
-        // todo - let horizon process address details as a Job.
-        $apiKey = config('services.location.secret');
-        $url =  "https://locationiq.org/v1/reverse.php?format=json&key=".$apiKey."&lat=".$latitude."&lon=".$longitude."&zoom=20";
-
-        // The entire reverse geocoded result
-        $revGeoCode = json_decode(file_get_contents($url), true);
+        $revGeoCode = $this->reverseGeocodeAction->run($latitude, $longitude);
 
         // The entire address as a string
         $display_name = $revGeoCode["display_name"];
 
         // Extract the address array
         $addressArray = $revGeoCode["address"];
-         // \Log::info(['Address', $addressArray]);
         $location = array_values($addressArray)[0];
         $road = array_values($addressArray)[1];
 
@@ -253,9 +253,8 @@ class PhotosController extends Controller
     }
 
     /**
-     * TODO - Need to sort AWS permissions
-      * Delete an image
-    */
+     * Delete an image
+     */
     public function deleteImage(Request $request)
     {
         $user = Auth::user();
@@ -387,34 +386,5 @@ class PhotosController extends Controller
             'remaining' => $remaining,
             'total' => $total
         ];
-    }
-
-    /**
-     * @param $file
-     * @param \Intervention\Image\Image $image
-     * @param Carbon $dateTime
-     * @return string
-     */
-    protected function uploadImageToS3(
-        $file,
-        \Intervention\Image\Image $image,
-        Carbon $dateTime
-    ): string
-    {
-        // Create dir/filename and move to AWS S3
-        $explode = explode('-', $dateTime);
-        $y = $explode[0];
-        $m = $explode[1];
-        $d = substr($explode[2], 0, 2);
-
-        $filename = $file->hashName();
-        $filepath = $y . '/' . $m . '/' . $d . '/' . $filename;
-
-        // Upload image to AWS
-        $s3 = Storage::disk('s3');
-
-        $s3->put($filepath, $image->stream(), 'public');
-
-        return $s3->url($filepath);
     }
 }
