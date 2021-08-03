@@ -285,7 +285,7 @@ async function update ()
                 map,
                 data,
                 size: 10,
-                color: { r: 0.054, g: 0.819, b: 0.27 }, // 14, 209, 69 / 255
+                color: { r: 0.054, g: 0.819, b: 0.27, a: 1 }, // 14, 209, 69 / 255
                 click: (e, point, xy) => {
                     // return false to continue traversing
 
