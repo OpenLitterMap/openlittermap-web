@@ -83,11 +83,12 @@
           @click="showRecentTags = !showRecentTags"
           style="padding-bottom: 3px; color: grey"
         >
-        <img style="margin-bottom: -2px;" :style="{transform: showRecentTags ? 'rotate(90deg)' : 'rotate(0deg)'}" src="/assets/ui-icons/caret-right-fill.svg" />
+        <img style="margin-bottom: -2px; transition: .1s all ease-in-out;" :style="{transform: showRecentTags ? 'rotate(90deg)' : 'rotate(0deg)'}" src="/assets/ui-icons/caret-right-fill.svg" />
         {{ $t('tags.recently-tags') }}
         </p>
         <div v-if="showRecentTags">
           <div v-for="category in Object.keys(recentTags)" :key="category">
+              <p style="padding-top: 5px;">{{ category }} </p>
             <transition-group name="list" class="recent-tags" tag="div" :key="category">
               <div
                 v-for="tag in Object.keys(recentTags[category])"
