@@ -12,7 +12,7 @@ class DeletePhotoAction
     public function run(Photo $photo)
     {
         $path = str_replace(
-            Storage::disk('s3')->url(''),
+            rtrim(Storage::disk('s3')->url('/'), '/'),
             '',
             $photo->filename
         );

@@ -141,8 +141,10 @@ class PhotosController extends Controller
         // Check if the user has already uploaded this image
         // todo - load error automatically without clicking it
         // todo - translate
-        if (Photo::where(['user_id' => $user->id, 'datetime' => $dateTime])->first()) {
-            abort(500, "You have already uploaded this file!");
+        if (app()->environment() === "production") {
+            if (Photo::where(['user_id' => $user->id, 'datetime' => $dateTime])->first()) {
+                abort(500, "You have already uploaded this file!");
+            }
         }
 
         $imageName = $this->uploadImageToS3($file, $image, $dateTime);
@@ -254,7 +256,7 @@ class PhotosController extends Controller
      * TODO - Need to sort AWS permissions
       * Delete an image
     */
-    public function deleteImage (Request $request)
+    public function deleteImage(Request $request)
     {
         $user = Auth::user();
 
@@ -264,22 +266,15 @@ class PhotosController extends Controller
             abort(403);
         }
 
-        try
-        {
-            $this->deletePhotoAction->run($photo);
+        $this->deletePhotoAction->run($photo);
 
-            $photo->delete();
+        $photo->delete();
 
-            $user->xp = $user->xp > 0 ? $user->xp - 1 : 0;
-            $user->total_images = $user->total_images > 0 ? $user->total_images - 1 : 0;
-            $user->save();
-        }
-        catch (Exception $e)
-        {
-            Log::info(["PhotosController@deleteImage", $e->getMessage()]);
-        }
+        $user->xp = $user->xp > 0 ? $user->xp - 1 : 0;
+        $user->total_images = $user->total_images > 0 ? $user->total_images - 1 : 0;
+        $user->save();
 
-      	return ['message' => 'Photo deleted successfully!'];
+        return ['message' => 'Photo deleted successfully!'];
     }
 
     /**

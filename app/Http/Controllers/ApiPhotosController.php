@@ -259,6 +259,9 @@ class ApiPhotosController extends Controller
         return ['photos' => 'none'];
     }
 
+    /**
+     * This method is different from PhotosController counterpart
+     */
     protected function uploadImageToS3(
         $file,
         \Intervention\Image\Image $image,

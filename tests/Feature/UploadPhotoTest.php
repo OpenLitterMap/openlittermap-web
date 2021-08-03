@@ -194,28 +194,4 @@ class UploadPhotoTest extends TestCase
 
         $response->assertStatus(500);
     }
-
-    public function test_it_throws_server_error_when_user_uploads_photos_with_the_same_datetime()
-    {
-        Carbon::setTestNow();
-
-        $user = User::factory()->create();
-
-        $this->actingAs($user);
-
-        Photo::factory()->create([
-            'user_id' => $user->id,
-            'datetime' => now()
-        ]);
-
-        $imageAttributes = $this->getImageAndAttributes();
-
-        $response = $this->post('/submit', [
-            'file' => $imageAttributes['file'],
-        ]);
-
-        $response->assertStatus(500);
-        $response->assertSee('Server Error');
-    }
-
 }

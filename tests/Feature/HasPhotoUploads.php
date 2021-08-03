@@ -21,7 +21,6 @@ trait HasPhotoUploads
 
     protected function getImageAndAttributes(): array
     {
-        // TODO we use storage now, maybe filepath or imageName are not needed
         $exifImage = file_get_contents($this->imagePath);
         $file = UploadedFile::fake()->createWithContent(
             'image.jpg',

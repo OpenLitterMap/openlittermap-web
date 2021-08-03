@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User\User;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class GetUnverifiedPhotosTest extends TestCase
@@ -13,6 +13,8 @@ class GetUnverifiedPhotosTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        Storage::fake('s3');
 
         $this->setImagePath();
     }
@@ -25,20 +27,14 @@ class GetUnverifiedPhotosTest extends TestCase
         // Some other user uploads a photo, it shouldn't be included in our results
         $this->actingAs($otherUser);
 
-        Carbon::setTestNow(now()->addMinute());
-
         $this->post('/submit', ['file' => $this->getImageAndAttributes()['file']]);
 
         $this->actingAs($unverifiedUser);
-
-        Carbon::setTestNow(now()->addMinute());
 
         // We upload a photo, we expect it to be returned
         $this->post('/submit', ['file' => $this->getImageAndAttributes()['file']]);
 
         $unverifiedPhoto = $unverifiedUser->fresh()->photos->last();
-
-        Carbon::setTestNow(now()->addMinute());
 
         // We upload another photo, which gets verified, and shouldn't be returned
         $this->post('/submit', ['file' => $this->getImageAndAttributes()['file']]);
