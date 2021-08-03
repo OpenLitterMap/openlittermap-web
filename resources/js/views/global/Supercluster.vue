@@ -1,26 +1,17 @@
 <template>
-    <div style="height: 100%;" @click="closeButtons">
+    <div class="h100">
+        <!-- The map & data -->
         <div id="super" ref="super" />
 
-        <!-- Change language -->
-        <!-- <Languages />-->
-
-        <!-- Change data -->
-        <!-- <global-dates />-->
-
-        <!-- Call to Action -->
-        <!-- <global-info />-->
-
-        <!-- Live Events -->
-        <live-events />
+        <!-- Websockets -->
+        <LiveEvents />
     </div>
 </template>
 
 <script>
-import Languages from '../../components/global/Languages';
-// import GlobalDates from '../../components/global/GlobalDates'
 import LiveEvents from '../../components/LiveEvents';
-// import GlobalInfo from '../../components/global/GlobalInfo'
+// import GlobalDates from '../../components/global/GlobalDates'
+
 import {
     CLUSTER_ZOOM_THRESHOLD,
     MAX_ZOOM,
@@ -40,10 +31,13 @@ import glify from 'leaflet.glify';
 
 var map;
 var markers;
+var artMarkers;
 var prevZoom = MIN_ZOOM;
 var points;
 
-var layerControls;
+var pointsLayerControls;
+var globalLayerControls;
+
 var smokingGroup;
 var foodGroup;
 var coffeeGroup;
@@ -74,21 +68,37 @@ function createClusterIcon (feature, latlng)
 {
     if (!feature.properties.cluster)
     {
-        return feature.properties.verified === 2
+        return (feature.properties.verified === 2)
             ? L.marker(latlng, { icon: green_dot })
             : L.marker(latlng, { icon: grey_dot });
     }
 
-    let count = feature.properties.point_count;
-    let size = count < MEDIUM_CLUSTER_SIZE ? 'small' : count < LARGE_CLUSTER_SIZE ? 'medium' : 'large';
+    const count = feature.properties.point_count;
+    const size = (count < MEDIUM_CLUSTER_SIZE)
+        ? 'small'
+            : count < LARGE_CLUSTER_SIZE
+            ? 'medium'
+            : 'large';
 
-    let icon = L.divIcon({
+    const icon = L.divIcon({
         html: '<div class="mi"><span class="ma">' + feature.properties.point_count_abbreviated + '</span></div>',
         className: 'marker-cluster-' + size,
         iconSize: L.point(40, 40)
     });
 
     return L.marker(latlng, { icon });
+}
+
+/**
+ * Create the point to display for each piece of Litter Art
+ */
+function createArtIcon (feature, latlng)
+{
+    const x = [latlng.lng, latlng.lat];
+
+    return (feature.properties.verified === 2)
+        ? L.marker(x, { icon: green_dot })
+        : L.marker(x, { icon: grey_dot });
 }
 
 /**
@@ -102,28 +112,64 @@ function onEachFeature (feature, layer)
     {
         // Zoom in cluster when click to it
         layer.on('click', function (e) {
-            map.setView(e.latlng, map.getZoom() + ZOOM_STEP);
+            map.flyTo(e.latlng, map.getZoom() + ZOOM_STEP, {
+                animate: true,
+                duration: 2
+            });
         });
     }
 }
 
 /**
- * The user dragged or zoomed the map
+ * On each art point...
  *
- * Todo: remove glify points when the user moves the map, and is above zoom threshold
+ * Todo: Smooth zoom to that piece
  */
-async function update (layers = null)
+function onEachArtFeature (feature, layer)
+{
+    layer.on('click', function (e)
+    {
+        map.flyTo(feature.geometry.coordinates, 14, {
+            animate: true,
+            duration: 10
+        });
+
+        const user = (feature.properties.name || feature.properties.username)
+            ? `By ${feature.properties.name ? feature.properties.name : ''} ${ feature.properties.username ? '@' + feature.properties.username : ''}`
+            : "";
+
+        const team = (feature.properties.team)
+            ? `\nTeam ${feature.properties.team}`
+            : "";
+
+        L.popup()
+            .setLatLng(feature.geometry.coordinates)
+            .setContent(
+                '<p class="mb5p">Litter Art</p>'
+                + '<img src= "' + feature.properties.filename + '" class="mw100" />'
+                + '<p>Taken on ' + moment(feature.properties.datetime).format('LLL') +'</p>'
+                + user
+                + team
+            )
+            .openOn(map);
+    });
+}
+
+/**
+ * The user dragged or zoomed the map
+ **/
+async function update ()
 {
     const bounds = map.getBounds();
 
-    let bbox = {
+    const bbox = {
         'left': bounds.getWest(),
         'bottom': bounds.getSouth(),
         'right': bounds.getEast(),
         'top': bounds.getNorth(),
     };
 
-    let zoom = Math.round(map.getZoom());
+    const zoom = Math.round(map.getZoom());
 
     // We don't want to make a request at zoom level 2-5 if the user is just panning the map.
     // At these levels, we just load all global data for now
@@ -132,12 +178,14 @@ async function update (layers = null)
     if (zoom === 4 && zoom === prevZoom) return;
     if (zoom === 5 && zoom === prevZoom) return;
 
-    // If the zoom is less than 17, we want to load cluster data
+    if (points) points.remove();
+
     if (zoom < CLUSTER_ZOOM_THRESHOLD)
     {
-        map.removeControl(layerControls);
+        map.removeControl(pointsLayerControls);
+        map.addControl(globalLayerControls);
 
-        await axios.get('clusters', {
+        await axios.get('/global/clusters', {
             params: {
                 zoom,
                 bbox
@@ -148,25 +196,24 @@ async function update (layers = null)
 
             markers.clearLayers();
             markers.addData(response.data);
-
-            // if (points) points.remove();
         })
         .catch(error => {
             console.error('get_clusters.update', error);
         });
     }
-    // otherwise, get point data
     else
     {
-        map.addControl(layerControls);
-        if (points) points.remove();
+        map.removeControl(globalLayerControls);
+        map.addControl(pointsLayerControls);
 
-        await axios.get('global-points', {
+        const layers = getActiveLayers();
+
+        await axios.get('/global/points', {
             params: {
                 zoom,
                 bbox,
                 layers
-            },
+            }
         })
         .then(response => {
             console.log('get_global_points', response);
@@ -178,7 +225,7 @@ async function update (layers = null)
             }
 
             const data = response.data.features.map(feature => {
-                return [ feature.geometry.coordinates[1], feature.geometry.coordinates[0]];
+                return [ feature.geometry.coordinates[0], feature.geometry.coordinates[1]];
             });
 
             // New way using webGL
@@ -191,11 +238,9 @@ async function update (layers = null)
                     // return false to continue traversing
 
                     const f = response.data.features.find(feature => {
-                        return feature.geometry.coordinates[0] === point[1]
-                            && feature.geometry.coordinates[1] === point[0];
+                        return feature.geometry.coordinates[0] === point[0]
+                            && feature.geometry.coordinates[1] === point[1];
                     });
-
-                    // console.log({ f });
 
                     if (f)
                     {
@@ -249,38 +294,36 @@ async function update (layers = null)
             console.error('get_global_points', error);
         });
     }
-    prevZoom = zoom; // hold previous zoom
+
+    prevZoom = zoom;
 }
 
 /**
- * A Layer has been toggled
+ * Get any active layers
  *
- * Make a get request with the active layers
- *
- * Todo - find a better way of getting the active layers
+ * @return layers|null
  */
-function changeLayers ()
+function getActiveLayers ()
 {
     let layers = [];
 
     // This is not ideal but it works as the indexes are in the same order
-    layerControls._layerControlInputs.forEach((lyr, index) => {
+    pointsLayerControls._layerControlInputs.forEach((lyr, index) => {
         if (lyr.checked)
         {
-            layers.push(layerControls._layers[index].name.toLowerCase());
+            layers.push(pointsLayerControls._layers[index].name.toLowerCase());
         }
     });
 
-    update(layers);
+    return (layers.length > 0)
+        ? layers
+        : null;
 }
 
 export default {
     name: 'Supercluster',
     components: {
-        Languages,
-        // GlobalDates,
-        LiveEvents,
-        // GlobalInfo
+        LiveEvents
     },
     mounted ()
     {
@@ -317,63 +360,58 @@ export default {
 
         markers.addData(this.$store.state.globalmap.geojson.features);
 
+        artMarkers = L.geoJSON(null, {
+            pointToLayer: createArtIcon,
+            onEachFeature: onEachArtFeature
+        });
+
+        artMarkers.addData(this.$store.state.globalmap.artData.features);
+
         map.on('moveend', function ()
         {
             update();
         });
 
-        this.createGroups();
+        this.createPointGroups();
+        this.createGlobalGroups();
 
-        map.on('overlayadd', changeLayers);
-        map.on('overlayremove', changeLayers)
+        map.on('overlayadd', update);
+        map.on('overlayremove', update)
     },
-
     methods: {
         /**
-         * Close dates and language dropdowns
+         * Layer Controller when above ZOOM_CLUSTER_THRESHOLD
          */
-        closeButtons ()
+        createPointGroups ()
         {
-            this.$store.commit('closeDatesButton');
-            this.$store.commit('closeLangsButton');
+            /** 8. Create overlays toggle menu */
+            const overlays = {
+                Alcohol: new L.LayerGroup(),
+                Brands: new L.LayerGroup(),
+                Coastal: new L.LayerGroup(),
+                Coffee: new L.LayerGroup(),
+                Dumping: new L.LayerGroup(),
+                Food: new L.LayerGroup(),
+                Industrial: new L.LayerGroup(),
+                Other: new L.LayerGroup(),
+                PetSurprise: new L.LayerGroup(),
+                Sanitary: new L.LayerGroup(),
+                Smoking: new L.LayerGroup(),
+                SoftDrinks: new L.LayerGroup(),
+            };
+
+            pointsLayerControls = L.control.layers(null, overlays);
         },
 
         /**
-         * Add layer toggle to the map
+         * Layer controller when below ZOOM_CLUSTER_THRESHOLD
          */
-        createGroups ()
+        createGlobalGroups ()
         {
-            smokingGroup = new L.LayerGroup();
-            foodGroup = new L.LayerGroup();
-            coffeeGroup = new L.LayerGroup();
-            alcoholGroup = new L.LayerGroup();
-            softdrinksGroup = new L.LayerGroup();
-            sanitaryGroup = new L.LayerGroup();
-            otherGroup = new L.LayerGroup();
-            coastalGroup = new L.LayerGroup();
-            brandsGroup = new L.LayerGroup();
-            dogshitGroup = new L.LayerGroup();
-            dumpingGroup = new L.LayerGroup();
-            industrialGroup = new L.LayerGroup();
+            globalLayerControls = L.control.layers(null, null).addTo(map);
 
-            /** 8. Create overlays toggle menu */
-            let overlays = {
-                Alcohol: alcoholGroup,
-                Brands: brandsGroup,
-                Coastal: coastalGroup,
-                Coffee: coffeeGroup,
-                Dumping: dumpingGroup,
-                Food: foodGroup,
-                Industrial: industrialGroup,
-                Other: otherGroup,
-                PetSurprise: dogshitGroup,
-                Sanitary: sanitaryGroup,
-                Smoking: smokingGroup,
-                SoftDrinks: softdrinksGroup,
-            };
-
-            // Added when zoom above
-            layerControls = L.control.layers(null, overlays);
+            globalLayerControls.addOverlay(markers, 'Global');
+            globalLayerControls.addOverlay(artMarkers, 'Litter Art');
         }
     }
 };

@@ -1,3 +1,4 @@
+
 <img src="https://openlittermap.com/assets/logo_small.png" />
 <h3>About OpenLitterMap</h3>
 <hr>
@@ -23,19 +24,14 @@
 
 `vagrant box add laravel/homestead`
 
-<p>then clone the box with</p> 
+then clone the box with `git clone https://github.com/laravel/homestead.git ~/Homestead`
 
-`git clone https://github.com/laravel/homestead.git ~/Homestead`
-
-<p>You should now have a "Homestead" folder on your machine at </p> 
-
-`~/Users/You/Homestead`
+You should now have a "Homestead" folder on your machine at `~/Users/You/Homestead`
 
 <p>Before turning on the VM, we are going to set up the Homestead.yaml file. Every time you save a file, Homestead.yaml will mirror your local code and copy it to the VM which your web-server (VM) will interact with.</p>
 <p>Open the Homestead.yaml file, add a new site and create a database.</p>
 
 ```
----
 ip: "192.168.10.10"
 memory: 2048
 cpus: 1
@@ -67,39 +63,37 @@ buckets:
       policy: public
 ```
 
-<p>Next, update your hosts file (sudo nano /etc/hosts) and include:</p>
+Next, update your hosts file on your host machine (`sudo nano /etc/hosts` on windows it's `C:\Windows\System32\Drivers\etc\hosts`) and include `192.168.10.10 olm.test`
 
-`192.168.10.10 olm.test`
-
-<p>When you want to boot up the VM, cd into the Homestead folder and run</p>
-
-`vagrant up`
+When you want to boot up the VM, cd into the Homestead folder on your host machine and run `vagrant up`
 
 <p>Download the repo and save it locally into your "Code" folder</p> 
 
 `~/Users/You/Code/openlittermap-web`
 
-<p>If this is your first time installing, you need to run</p>
-
-`vagrant provision` 
-
-<p>You should now be able to open the browser and visit</p> 
-
-`olm.test`
+If this is your first time installing, you need to run `vagrant provision` 
 
 <p>You also need to install composer and npm dependencies.</p>
-<p>Locally, run "npm install"</p>
-<p>SSH into the VM with "vagrant ssh". cd into Code/olm, and then run "composer install"</p>
-<p>You can migrate and seed the tables with "php artisan migrate --seed"</p>
-<p>If you would like to contribute something, make a new branch locally "git checkout -b feature/my-new-feature". We would love to see your pull requests!</p>
+
+Locally, run `npm install`
+
+SSH into the VM with `vagrant ssh`. cd into Code/openlittermap-web, and then run `composer install`
+You can migrate and seed the tables with `php artisan migrate --seed`
+
+Once you're done, run `npm run watch` which will build the project into the `public` folder.
+
+You should now be able to open the browser and visit olm.test
+
+
+If you would like to contribute something, make a new branch locally `git checkout -b feature/my-new-feature`. We would love to see your pull requests!
 
 <p>You might notice there are some websocket errors in the browser. Some operations like adding photos broadcast live events to the client. It's easy to get websockets set up to resolve this.</p>
 
 ```
 In your .env file, add "WEBSOCKET_BROADCAST_HOST=192.168.10.10"
 In broadcasting.php, change 'host' => env('WEBSOCKET_BROADCAST_HOST')
-In one window, run `art websockets:serve --host=192.168.10.10`
-Then, in another window, run `art horizon`
+In one window, run `php artisan websockets:serve --host=192.168.10.10`
+Then, in another window, run `php artisan horizon`
 To test it's working, open another window. Open tinker and run event new(\App\Events\UserSignedUp(1));
 ```
 The project uses AWS S3 to store photos on production. On development, however, it uses [Minio](https://laravel.com/docs/8.x/homestead#configuring-minio),
