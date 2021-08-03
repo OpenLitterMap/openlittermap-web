@@ -56,8 +56,15 @@ sites:
 
 databases:
     - olm
+    - olm_test
 
-...
+features:
+    - mysql: true
+    - minio: true
+
+buckets:
+    - name: olm-public
+      policy: public
 ```
 
 <p>Next, update your hosts file (sudo nano /etc/hosts) and include:</p>
@@ -95,6 +102,8 @@ In one window, run `art websockets:serve --host=192.168.10.10`
 Then, in another window, run `art horizon`
 To test it's working, open another window. Open tinker and run event new(\App\Events\UserSignedUp(1));
 ```
-
+The project uses AWS S3 to store photos on production. On development, however, it uses [Minio](https://laravel.com/docs/8.x/homestead#configuring-minio),
+an open source object storage server with an Amazon S3 compatible API. If you copied the .env.example file into .env
+you should be able to access the Minio control panel at http://192.168.10.10:9600 (homestead:secretkey).
 <p>You are now ready to get started!</p>
 <p>Have fun and thanks for taking an interest in OpenLitterMap</p>

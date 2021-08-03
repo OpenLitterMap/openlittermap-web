@@ -41,15 +41,8 @@ class PhotosController extends Controller
     private $reverseGeocodeAction;
 
     /**
+     * PhotosController constructor
      * Apply middleware to all of these routes
-     *
-     * @param UploadHelper $uploadHelper
-     * @param AddTagsToPhotoAction $addTagsAction
-     * @param UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction
-     * @param UploadPhotoAction $uploadPhotoAction
-     * @param DeletePhotoAction $deletePhotoAction
-     * @param ResizePhotoAction $resizePhotoAction
-     * @param ReverseGeocodeLocationAction $reverseGeocodeAction
      */
     public function __construct(
         UploadHelper $uploadHelper,

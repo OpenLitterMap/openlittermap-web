@@ -34,12 +34,8 @@ class ApiPhotosController extends Controller
     private $reverseGeocodeAction;
 
     /**
+     * ApiPhotosController constructor
      * Apply middleware to all of these routes
-     *
-     * @param UploadHelper $uploadHelper
-     * @param UploadPhotoAction $uploadPhotoAction
-     * @param ResizePhotoAction $resizePhotoAction
-     * @param ReverseGeocodeLocationAction $reverseGeocodeAction
      */
     public function __construct (
         UploadHelper $uploadHelper,
