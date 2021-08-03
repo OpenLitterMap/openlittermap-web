@@ -190,10 +190,11 @@ function onEachArtFeature (feature, layer)
             ? `\nTeam ${feature.properties.team}`
             : "";
 
+        // todo - increase the dimensions of each art image
         L.popup()
             .setLatLng(feature.geometry.coordinates)
             .setContent(
-                '<img src= "' + feature.properties.filename + '" class="litter-img" />'
+                '<img src= "' + feature.properties.filename + '" class="litter-img art-litter-image" />'
                     + '<div class="litter-img-container">'
                         + '<p>Taken on ' + moment(feature.properties.datetime).format('LLL') +'</p>'
                         + user
@@ -478,6 +479,10 @@ export default {
         border-top-left-radius: 6px;
         border-top-right-radius: 6px;
         max-width: 100%;
+    }
+
+    .art-litter-image {
+
     }
 
 </style>
