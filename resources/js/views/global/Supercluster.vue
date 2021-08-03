@@ -30,26 +30,15 @@ import i18n from '../../i18n'
 import glify from 'leaflet.glify';
 
 var map;
-var markers;
-var artMarkers;
-var prevZoom = MIN_ZOOM;
+var clusters;
+var litterArtPoints;
 var points;
+var prevZoom = MIN_ZOOM;
 
-var pointsLayerControls;
-var globalLayerControls;
-
-var smokingGroup;
-var foodGroup;
-var coffeeGroup;
-var alcoholGroup;
-var softdrinksGroup;
-var sanitaryGroup;
-var otherGroup;
-var coastalGroup;
-var brandsGroup;
-var dogshitGroup;
-var dumpingGroup;
-var industrialGroup;
+var pointsLayerController;
+var globalLayerController;
+let pointsControllerShowing = false;
+let globalControllerShowing = false;
 
 const green_dot = L.icon({
     iconUrl: './images/vendor/leaflet/dist/dot.png',
@@ -60,6 +49,18 @@ const grey_dot = L.icon({
     iconUrl: './images/vendor/leaflet/dist/grey-dot.jpg',
     iconSize: [13, 10]
 });
+
+/**
+ * Create the point to display for each piece of Litter Art
+ */
+function createArtIcon (feature, latlng)
+{
+    const x = [latlng.lng, latlng.lat];
+
+    return (feature.properties.verified === 2)
+        ? L.marker(x, { icon: green_dot })
+        : L.marker(x, { icon: grey_dot });
+}
 
 /**
  * Create the cluster or point icon to display for each feature
@@ -90,15 +91,62 @@ function createClusterIcon (feature, latlng)
 }
 
 /**
- * Create the point to display for each piece of Litter Art
+ * Layer controller when below ZOOM_CLUSTER_THRESHOLD
  */
-function createArtIcon (feature, latlng)
+function createGlobalGroups ()
 {
-    const x = [latlng.lng, latlng.lat];
+    if (pointsControllerShowing)
+    {
+        map.removeControl(pointsLayerController);
 
-    return (feature.properties.verified === 2)
-        ? L.marker(x, { icon: green_dot })
-        : L.marker(x, { icon: grey_dot });
+        pointsControllerShowing = false;
+    }
+
+    if (!globalControllerShowing)
+    {
+        globalLayerController = L.control.layers(null, null).addTo(map);
+
+        globalLayerController.addOverlay(clusters, 'Global');
+        globalLayerController.addOverlay(litterArtPoints, 'Litter Art');
+
+        globalControllerShowing = true;
+    }
+}
+
+/**
+ * Layer Controller when above ZOOM_CLUSTER_THRESHOLD
+ */
+function createPointGroups ()
+{
+    if (globalControllerShowing)
+    {
+        map.removeControl(globalLayerController)
+
+        globalControllerShowing = false;
+    }
+
+    if (!pointsControllerShowing)
+    {
+        /** 8. Create overlays toggle menu */
+        const overlays = {
+            Alcohol: new L.LayerGroup(),
+            Brands: new L.LayerGroup(),
+            Coastal: new L.LayerGroup(),
+            Coffee: new L.LayerGroup(),
+            Dumping: new L.LayerGroup(),
+            Food: new L.LayerGroup(),
+            Industrial: new L.LayerGroup(),
+            Other: new L.LayerGroup(),
+            PetSurprise: new L.LayerGroup(),
+            Sanitary: new L.LayerGroup(),
+            Smoking: new L.LayerGroup(),
+            SoftDrinks: new L.LayerGroup(),
+        };
+
+        pointsLayerController = L.control.layers(null, overlays).addTo(map);
+
+        pointsControllerShowing = true;
+    }
 }
 
 /**
@@ -156,8 +204,8 @@ function onEachArtFeature (feature, layer)
 }
 
 /**
- * The user dragged or zoomed the map
- **/
+ * The user dragged or zoomed the map, or changed a category
+ */
 async function update ()
 {
     const bounds = map.getBounds();
@@ -166,7 +214,7 @@ async function update ()
         'left': bounds.getWest(),
         'bottom': bounds.getSouth(),
         'right': bounds.getEast(),
-        'top': bounds.getNorth(),
+        'top': bounds.getNorth()
     };
 
     const zoom = Math.round(map.getZoom());
@@ -178,12 +226,17 @@ async function update ()
     if (zoom === 4 && zoom === prevZoom) return;
     if (zoom === 5 && zoom === prevZoom) return;
 
-    if (points) points.remove();
+    // Remove points when zooming out
+    if (points)
+    {
+        clusters.clearLayers();
+        points.remove();
+    }
 
+    // Get Clusters or Points
     if (zoom < CLUSTER_ZOOM_THRESHOLD)
     {
-        map.removeControl(pointsLayerControls);
-        map.addControl(globalLayerControls);
+        createGlobalGroups();
 
         await axios.get('/global/clusters', {
             params: {
@@ -194,8 +247,8 @@ async function update ()
         .then(response => {
             console.log('get_clusters.update', response);
 
-            markers.clearLayers();
-            markers.addData(response.data);
+            clusters.clearLayers();
+            clusters.addData(response.data);
         })
         .catch(error => {
             console.error('get_clusters.update', error);
@@ -203,8 +256,7 @@ async function update ()
     }
     else
     {
-        map.removeControl(globalLayerControls);
-        map.addControl(pointsLayerControls);
+        createPointGroups()
 
         const layers = getActiveLayers();
 
@@ -221,7 +273,7 @@ async function update ()
             // Clear layer if prev layer is cluster.
             if (prevZoom < CLUSTER_ZOOM_THRESHOLD)
             {
-                markers.clearLayers();
+                clusters.clearLayers();
             }
 
             const data = response.data.features.map(feature => {
@@ -308,10 +360,10 @@ function getActiveLayers ()
     let layers = [];
 
     // This is not ideal but it works as the indexes are in the same order
-    pointsLayerControls._layerControlInputs.forEach((lyr, index) => {
+    pointsLayerController._layerControlInputs.forEach((lyr, index) => {
         if (lyr.checked)
         {
-            layers.push(pointsLayerControls._layers[index].name.toLowerCase());
+            layers.push(pointsLayerController._layers[index].name.toLowerCase());
         }
     });
 
@@ -353,96 +405,59 @@ export default {
         map.attributionControl.addAttribution('Litter data &copy OpenLitterMap & Contributors ' + year + ' Clustering @ MapBox');
 
         // Empty Layer Group that will receive the clusters data on the fly.
-        markers = L.geoJSON(null, {
+        clusters = L.geoJSON(null, {
             pointToLayer: createClusterIcon,
             onEachFeature: onEachFeature,
         }).addTo(map);
 
-        markers.addData(this.$store.state.globalmap.geojson.features);
+        clusters.addData(this.$store.state.globalmap.geojson.features);
 
-        artMarkers = L.geoJSON(null, {
+        litterArtPoints = L.geoJSON(null, {
             pointToLayer: createArtIcon,
             onEachFeature: onEachArtFeature
         });
 
-        artMarkers.addData(this.$store.state.globalmap.artData.features);
+        litterArtPoints.addData(this.$store.state.globalmap.artData.features);
 
         map.on('moveend', function ()
         {
             update();
         });
 
-        this.createPointGroups();
-        this.createGlobalGroups();
+        createGlobalGroups();
 
         map.on('overlayadd', update);
         map.on('overlayremove', update)
-    },
-    methods: {
-        /**
-         * Layer Controller when above ZOOM_CLUSTER_THRESHOLD
-         */
-        createPointGroups ()
-        {
-            /** 8. Create overlays toggle menu */
-            const overlays = {
-                Alcohol: new L.LayerGroup(),
-                Brands: new L.LayerGroup(),
-                Coastal: new L.LayerGroup(),
-                Coffee: new L.LayerGroup(),
-                Dumping: new L.LayerGroup(),
-                Food: new L.LayerGroup(),
-                Industrial: new L.LayerGroup(),
-                Other: new L.LayerGroup(),
-                PetSurprise: new L.LayerGroup(),
-                Sanitary: new L.LayerGroup(),
-                Smoking: new L.LayerGroup(),
-                SoftDrinks: new L.LayerGroup(),
-            };
-
-            pointsLayerControls = L.control.layers(null, overlays);
-        },
-
-        /**
-         * Layer controller when below ZOOM_CLUSTER_THRESHOLD
-         */
-        createGlobalGroups ()
-        {
-            globalLayerControls = L.control.layers(null, null).addTo(map);
-
-            globalLayerControls.addOverlay(markers, 'Global');
-            globalLayerControls.addOverlay(artMarkers, 'Litter Art');
-        }
     }
 };
 </script>
 
 <style>
 
-#super {
-    height: 100%;
-    margin: 0;
-    position: relative;
-}
+    #super {
+        height: 100%;
+        margin: 0;
+        position: relative;
+    }
 
-.leaflet-marker-icon {
-    border-radius: 20px;
-}
+    .leaflet-marker-icon {
+        border-radius: 20px;
+    }
 
-.mb5p {
-    margin-bottom: 5px;
-}
+    .mb5p {
+        margin-bottom: 5px;
+    }
 
-.mw100 {
-    max-width: 100%;
-}
+    .mw100 {
+        max-width: 100%;
+    }
 
-.mi {
-    height: 100%;
-    margin: auto;
-    display: flex;
-    justify-content: center;
-    border-radius: 20px;
-}
+    .mi {
+        height: 100%;
+        margin: auto;
+        display: flex;
+        justify-content: center;
+        border-radius: 20px;
+    }
 
 </style>

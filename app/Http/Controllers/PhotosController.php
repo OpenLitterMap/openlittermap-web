@@ -77,6 +77,7 @@ class PhotosController extends Controller
 
         $image = Image::make($file);
 
+// Todo : accept full resolution and resize it
 //        $image->resize(500, 500);
 //
 //        $image->resize(500, 500, function ($constraint) {
