@@ -1,5 +1,5 @@
 <template>
-    <section class="hero fullheight is-primary is-bold tag-container">
+    <section class="hero fullheight is-bold tag-container" style="max-width: 2000px; margin: auto;">
 
         <loading v-if="loading" v-model:active="loading" :is-full-page="true" />
 
@@ -35,24 +35,24 @@
                             <div class="box">
 
                                 <!-- Coordinates. was profile6 -->
-                                <p><strong>{{ $t('tags.coordinates') }}: </strong>{{ photo.lat }}, {{ photo.lon }}</p>
+                                <p><strong><img class="logo-img" src="/assets/ui-icons/geo.svg" />{{ $t('tags.coordinates') }}: </strong>{{ photo.lat }}, {{ photo.lon }}</p>
                                 <br>
 
                                 <!-- Full address. was profile7 -->
-                                <p><strong>{{ $t('tags.address') }}: </strong>{{ photo.display_name }}</p>
-                                <br>
+                                <p><strong><img class="logo-img" src="/assets/ui-icons/geo-alt.svg" />{{ $t('tags.address') }}: </strong>{{ photo.display_name }}</p>
+                                    <br>
+                               <div v-if="photo.model != 'Unknown'">
+                                    <!-- Model of the device  -->
+                                    <p><img class="logo-img" src="/assets/ui-icons/phone.svg" /><strong>{{ $t('tags.device') }}: </strong>{{ photo.model }}</p>
+                                    <br>
+                                </div>
 
                                 <!-- Presence button. was profile8 -->
                                 <div>
                                     <strong>{{ $t('tags.picked-up-title') }}</strong>
-                                    <presence />
+                                    <presence/>
                                 </div>
                                 <br>
-
-                                <!-- Model of the device -->
-                                <p><strong>{{ $t('tags.device') }}: </strong>{{ photo.model }}</p>
-                                <br>
-
                                 <!-- Delete photo button -->
                                 <profile-delete :photoid="photo.id" />
 
@@ -60,8 +60,11 @@
                                 <div v-show="hasRecentTags">
                                     <br>
                                     <p class="strong">{{ $t('tags.clear-tags') }}</p>
-
                                     <button @click="clearRecentTags">{{ $t('tags.clear-tags-btn') }}</button>
+                                </div>
+                            <div v-if='user.photos_count > 0'>
+                            <br>
+                                <p>{{ $t('tags.total-uploaded') }}: {{ user.photos_count }}</p>
                                 </div>
                             </div>
                         </div> <!-- end info box -->
@@ -81,23 +84,13 @@
 
                         <!-- Info, Tags, Right -->
                         <div id="image-counts" class="column is-3">
-                            <div class="box">
-                                <!-- was profile14, 15-->
-                                <li class="list-group-item">
-                                    {{ $t('tags.to-tag') }}: {{ remaining }}
-                                </li>
-                                <li class="list-group-item">
-                                    {{ $t('tags.total-uploaded') }}: {{ user.photos_count }}
-                                </li>
-                            </div>
-
-                            <!-- These are the tags the user has added -->
+                            <!-- These are the tags the user has added --> 
                             <Tags :photo-id="photo.id"/>
                         </div>
                     </div>
-
+                    <!-- These buttons are not neccessary -->
                     <!-- Previous, Next Image-->
-                    <div class="column" style="text-align: center;">
+                    <!-- <div class="column" style="text-align: center;">
                         <div class="has-text-centered mt3em">
                             <a
                                 v-show="previous_page"
@@ -110,10 +103,11 @@
                                 @click="nextImage"
                             >{{ $t('tags.next') }}</a>
                         </div>
-                    </div>
+                    </div> -->
 
                     <!-- Pagination -->
                     <div class="column">
+                      <p style="text-align: center; padding-bottom: 8px;">{{ $t('tags.to-tag') }}: {{ remaining }}</p>
                         <nav class="pagination is-centered" role="navigation" aria-label="pagination">
                             <ul class="pagination-list">
                                 <li v-for="i in remaining" :key="i">
@@ -291,12 +285,18 @@ export default {
 
     .img {
         max-height: 30em;
+        border-radius: 4px;
+        box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
     }
 
     .tag-container {
         padding: 0 3em;
     }
-
+    .logo-img{
+        padding-right: 4px;
+        margin-bottom: -2px;
+        margin-left: -5px;
+    }
     .image-wrapper {
         text-align: center;
         .image-content {

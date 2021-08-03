@@ -1,136 +1,143 @@
 <template>
-    <div>
-        <!-- Search all tags -->
-        <div class="columns">
-            <div class="column is-half is-offset-3">
-                <div class="control">
-                    <div class="select is-fullwidth">
-                        <vue-simple-suggest
-                            ref="search"
-                            display-attribute="title"
-                            value-attribute="key"
-                            :filter-by-query="true"
-                            :list="allTags"
-                            :min-length="1"
-                            :max-suggestions="0"
-                            mode="input"
-                            :styles="autoCompleteStyle"
-                            placeholder="Press Ctrl + Spacebar to Search All Tags"
-                            @focus="onFocusSearch"
-                            @select="search"
-                        />
-                    </div>
-                </div>
-            </div>
+  <div>
+    <!-- Search all tags -->
+    <div class="columns">
+      <div class="column is-half is-offset-3">
+        <div class="control">
+          <div class="select is-fullwidth">
+            <vue-simple-suggest
+              ref="search"
+              display-attribute="title"
+              value-attribute="key"
+              :filter-by-query="true"
+              :list="allTags"
+              :min-length="1"
+              :max-suggestions="0"
+              mode="input"
+              :styles="autoCompleteStyle"
+              placeholder="Press Ctrl + Spacebar to Search All Tags"
+              @focus="onFocusSearch"
+              @select="search"
+            />
+          </div>
         </div>
-
-        <div class="control has-text-centered">
-
-            <!-- Categories -->
-            <div class="select">
-                <vue-simple-suggest
-                    ref="categories"
-                    display-attribute="title"
-                    value-attribute="key"
-                    :filter-by-query="true"
-                    :list="categories"
-                    :min-length="0"
-                    :max-suggestions="0"
-                    mode="select"
-                    :styles="autoCompleteStyle"
-                    v-model="category"
-                    @suggestion-click="onSuggestion()"
-                    @focus="onFocusCategories()"
-                    v-click-outside="clickOutsideCategory"
-                />
-            </div>
-
-            <!-- Tags per category -->
-            <div class="select">
-                <vue-simple-suggest
-                    ref="tags"
-                    display-attribute="title"
-                    value-attribute="key"
-                    :filter-by-query="true"
-                    :list="tags"
-                    :min-length="0"
-                    :max-suggestions="0"
-                    mode="select"
-                    :styles="autoCompleteStyle"
-                    v-model="tag"
-                    @suggestion-click="onSuggestion()"
-                    @focus="onFocusTags()"
-                    v-click-outside="clickOutsideTag"
-                />
-            </div>
-
-            <!-- Quantity -->
-            <div class="select" id="int">
-                <select v-model="quantity">
-                    <option v-for="int in integers">{{ int }}</option>
-                </select>
-            </div>
-
-            <br><br>
-
-            <div v-if="Object.keys(recentTags).length > 0 && this.annotations !== true && this.id !== 0" class="mb-5">
-
-                <p class="mb-05">{{ $t('tags.recently-tags') }}</p>
-
-                <div v-for="category in Object.keys(recentTags)">
-                    <p>{{ getCategoryName(category) }}</p>
-
-                    <transition-group name="list" class="recent-tags" tag="div" :key="category">
-                        <div
-                            v-for="tag in Object.keys(recentTags[category])"
-                            class="litter-tag"
-                            :key="tag"
-                            @click="addRecentTag(category, tag)"
-                        ><p>{{ getTagName(category, tag) }}</p></div>
-                    </transition-group>
-                </div>
-            </div>
-
-            <div>
-                <button
-                    :disabled="checkDecr"
-                    class="button is-medium is-danger"
-                    @click="decr"
-                >-</button>
-
-                <button
-                    class="button is-medium is-info"
-                    @click="addTag"
-                >{{ $t('tags.add-tag') }}</button>
-
-                <button
-                    :disabled="checkIncr"
-                    class="button is-medium is-dark"
-                    @click="incr"
-                >+</button>
-            </div>
-
-            <br>
-
-            <button
-                v-show="! admin && this.id !== 0"
-                :disabled="checkTags"
-                :class="button"
-                @click="submit"
-            >{{ $t('common.submit') }}</button>
-
-            <!-- Only show these on mobile <= 768px, and when not using MyPhotos => AddManyTagsToPhotos (id = 0) -->
-            <div class="show-mobile" v-show="this.id !== 0">
-                <br>
-                <tags :photo-id="id"/>
-
-                <div class="custom-buttons">
-                    <profile-delete :photoid="id" />
-                    <presence :itemsr="true" />
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
+
+    <div class="control has-text-centered">
+        
+      <!-- Categories -->
+      <div class="select">
+        <vue-simple-suggest
+          ref="categories"
+          display-attribute="title"
+          value-attribute="key"
+          :filter-by-query="true"
+          :list="categories"
+          :min-length="0"
+          :max-suggestions="0"
+          mode="select"
+          :styles="autoCompleteStyle"
+          v-model="category"
+          @suggestion-click="onSuggestion()"
+          @focus="onFocusCategories()"
+          v-click-outside="clickOutsideCategory"
+        />
+      </div>
+
+      <!-- Tags per category -->
+      <div class="select">
+        <vue-simple-suggest
+          ref="tags"
+          display-attribute="title"
+          value-attribute="key"
+          :filter-by-query="true"
+          :list="tags"
+          :min-length="0"
+          :max-suggestions="0"
+          mode="select"
+          :styles="autoCompleteStyle"
+          v-model="tag"
+          @suggestion-click="onSuggestion()"
+          @focus="onFocusTags()"
+          v-click-outside="clickOutsideTag"
+        />
+      </div>
+
+      <!-- Quantity -->
+      <div class="select" id="int">
+        <select v-model="quantity">
+          <option v-for="int in integers" :key="int">{{ int }}</option>
+        </select>
+      </div>
+
+      <br /><br />
+
+      <div
+        v-if="
+          Object.keys(recentTags).length > 0 && this.annotations !== true && this.id !== 0
+        "
+        class="mb-5"
+      >
+        <p
+          @click="showRecentTags = !showRecentTags"
+          style="padding-bottom: 3px; color: grey"
+        >
+        <img style="margin-bottom: -2px;" :style="{transform: showRecentTags ? 'rotate(90deg)' : 'rotate(0deg)'}" src="/assets/ui-icons/caret-right-fill.svg" />
+        {{ $t('tags.recently-tags') }}
+        </p>
+        <div v-if="showRecentTags">
+          <div v-for="category in Object.keys(recentTags)" :key="category">
+            <transition-group name="list" class="recent-tags" tag="div" :key="category">
+              <div
+                v-for="tag in Object.keys(recentTags[category])"
+                class="litter-tag"
+                :key="tag"
+                @click="addRecentTag(category, tag)"
+              >
+                <p>{{ getTagName(category, tag) }}</p></div>
+            </transition-group>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <button :disabled="checkDecr" class="button is-medium is-danger" @click="decr">
+          <img src="/assets/ui-icons/dash-lg.svg" />
+        </button>
+
+        <button class="button is-medium is-info" @click="addTag">
+          {{ $t("tags.add-tag") }}
+        </button>
+
+        <button :disabled="checkIncr" class="button is-medium is-dark" @click="incr">
+          <img src="/assets/ui-icons/plus-lg.svg" />
+        </button>
+      </div>
+
+      <br>
+
+      <button
+        v-show="!admin && this.id !== 0"
+        :disabled="checkTags"
+        :class="button"
+        @click="submit"
+      >
+        {{ $t("common.submit") }}
+      </button>
+
+      <!-- Only show these on mobile <= 768px, and when not using MyPhotos => AddManyTagsToPhotos (id = 0) -->
+      <div class="show-mobile" v-show="this.id !== 0">
+        <br>
+        <tags :photo-id="id" />
+
+        <div class="custom-buttons">
+          <profile-delete :photoid="id" />
+          <presence :itemsr="true" />
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -185,6 +192,7 @@ export default {
         return {
             btn: 'button is-medium is-success',
             quantity: 1,
+            showRecentTags: true,
             processing: false,
             integers: Array.from({ length: 100 }, (_, i) => i + 1),
             autoCompleteStyle: {
@@ -609,7 +617,7 @@ export default {
         cursor: pointer;
         padding: 5px;
         border-radius: 5px;
-        background-color: $info;
+        background-color: whitesmoke;
         margin: 5px
     }
 

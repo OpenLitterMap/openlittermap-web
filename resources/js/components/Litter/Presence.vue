@@ -1,11 +1,12 @@
 <template>
     <div class="expand-mobile">
+        <!-- <strong :style="{ color: remaining ? 'green' : 'red' }"><slot>{{ remainingText }}</slot></strong> -->
         <strong :style="{ color: remaining ? 'green' : 'red' }"><slot>{{ remainingText }}</slot></strong>
         <br>
-        <button :class="toggle_class" @click="toggle">
-            <slot v-if="remaining">{{ $t('litter.presence.still-there') }}</slot>
-
-            <slot v-else>{{ $t('litter.presence.picked-up') }}</slot>
+        <button style="margin-top: 7px;" @click="toggle">
+            <!-- <slot v-if="remaining">{{ $t('litter.presence.still-there') }}</slot> -->
+            <!-- <slot v-else>{{ $t('litter.presence.picked-up') }}</slot> -->
+            <slot>{{ $t('tags.change') }}</slot>
         </button>
     </div>
 </template>

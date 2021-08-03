@@ -1,17 +1,23 @@
 <template>
     <div>
         <ul class="container">
-            <li v-for="category in categories" class="admin-item">
+            <li v-for="category,i in categories" :key="i" class="admin-item">
                 <!-- Translated Category Title -->
+                <div v-if="i != 0">
+                    <hr>
+                </div>
                 <span class="category">{{ getCategory(category.category) }}</span>
 
                 <!-- List of tags in each category -->
+                <div class="tags">
                 <span
                     v-for="tags in Object.entries(category.tags)"
-                    class="tag is-medium is-info litter-tag"
+                    :key="tags"
+                    class="tag is-medium litter-tag"
                     @click="removeTag(category.category, tags[0])"
                     v-html="getTags(tags, category.category)"
                 />
+                </div>
             </li>
         </ul>
     </div>
@@ -97,17 +103,31 @@ export default {
             padding: 10px;
         }
     }
+    hr{
+        margin-top: 15px;
+    }
     .category {
         font-size: 1.25em;
         display: flex;
         justify-content: center;
-        margin-bottom: 0.5em;
+        margin-top: -14px;
+        margin-bottom: 0.1em;
+    }
+    .tags{
+        display: flex;
+        justify-content: center;
     }
 
     .litter-tag {
         cursor: pointer;
-        margin-bottom: 10px;
-        width: 100%;
+        transition: .15s all ease-in-out;
+        margin: 5px;
+        /* margin-bottom: 10px; */
+        /* width: 100%; */
+    }
+    .litter-tag:hover {
+        background-color: #F1948A !important;
+        transform: scale(1.04);
     }
 
 </style>
