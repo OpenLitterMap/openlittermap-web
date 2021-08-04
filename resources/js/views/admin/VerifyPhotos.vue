@@ -99,7 +99,7 @@ export default {
 	{
 	    this.loading = true;
 
-        this.$store.dispatch('GET_NEXT_ADMIN_PHOTO');
+        await this.$store.dispatch('GET_NEXT_ADMIN_PHOTO');
 
         this.loading = false;
 	},

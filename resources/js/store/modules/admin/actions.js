@@ -112,8 +112,6 @@ export const actions = {
      */
     async GET_NEXT_ADMIN_PHOTO (context)
     {
-        // admin loading = true
-
         // clear previous input on litter.js
         context.commit('resetLitter');
         context.commit('clearTags');
@@ -136,8 +134,6 @@ export const actions = {
             .catch(err => {
                 console.error(err);
             });
-
-        // admin loading = false
     }
 
 };

@@ -37,7 +37,7 @@ class ApiPhotosController extends Controller
      * ApiPhotosController constructor
      * Apply middleware to all of these routes
      *
-     * @param UploadHelper $uploadHelper
+     * @param UploadHelper $uploadHelper`
      * @param UploadPhotoAction $uploadPhotoAction
      * @param MakeImageAction $makeImageAction
      * @param ReverseGeocodeLocationAction $reverseGeocodeAction
@@ -58,10 +58,7 @@ class ApiPhotosController extends Controller
     }
 
     /**
-     * Save a photo to the database
-     *
-     * Todo - Accept the image and data and process it is a job,
-     * Then return as quickly as possible.
+     * Upload Photo
      *
      * @param Request $request
      *
