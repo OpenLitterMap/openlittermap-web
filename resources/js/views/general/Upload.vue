@@ -4,7 +4,7 @@
             <h1 class="title is-1 drop-title">
                 {{ $t('upload.click-to-upload') }}
             </h1>
-
+ 
             <vue-dropzone
                 id="customdropzone"
                 :options="options"

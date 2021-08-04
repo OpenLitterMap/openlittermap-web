@@ -62,10 +62,11 @@
                                     <p class="strong">{{ $t('tags.clear-tags') }}</p>
                                     <button @click="clearRecentTags">{{ $t('tags.clear-tags-btn') }}</button>
                                 </div>
-                            <div v-if='user.photos_count > 0'>
+                            <!-- not relavent information for this page, can be viewed on profile -->
+                            <!-- <div v-if='user.photos_count > 0'>
                             <br>
                                 <p>{{ $t('tags.total-uploaded') }}: {{ user.photos_count }}</p>
-                                </div>
+                                </div> -->
                             </div>
                         </div> <!-- end info box -->
 
@@ -107,7 +108,7 @@
 
                     <!-- Pagination -->
                     <div class="column">
-                      <p style="text-align: center; padding-bottom: 8px;">{{ $t('tags.to-tag') }}: {{ remaining }}</p>
+                      <!-- <p style="text-align: center; padding-bottom: 8px;">{{ $t('tags.to-tag') }}: {{ remaining }}</p> -->
                         <nav class="pagination is-centered" role="navigation" aria-label="pagination">
                             <ul class="pagination-list">
                                 <li v-for="i in remaining" :key="i">
