@@ -5,7 +5,9 @@
             <li v-for="item in items">
                 <div class="mb1">
                     <p>{{ getDate(item.date) }}</p>
+
                     <a :href="item.link">{{ item.title }}</a>
+
                     <p>{{ item.author }}</p>
                 </div>
             </li>
@@ -35,19 +37,25 @@ export default {
                     date: '2018/12/21',
                     title: 'A Review of the Applicability of Gamification and Game-based Learning to Improve Household-level Waste Management Practices among Schoolchildren',
                     link: 'https://ijtech.eng.ui.ac.id/article/view/2644',
-                    author: 'Magista, M., et al.'
+                    author: 'Magista et al.'
                 },
                 {
-                    date: '2020/06/13',
-                    title: 'Volunteered geographic information systems: Technological design patterns',
-                    link: 'https://onlinelibrary.wiley.com/doi/abs/10.1111/tgis.12544',
-                    author: 'Gómez-Barrón, J.P., et al.'
+                    date: '2019/01/05',
+                    title: 'Needs, drivers, participants and engagement actions: a framework for motivating contributions to volunteered geographic information systems',
+                    link: 'https://link.springer.com/article/10.1007/s10109-018-00289-5',
+                    author: 'Gómez-Barrón, et al.'
+                },
+                {
+                    date: '2019/10/08',
+                    title: 'CITIZEN SCIENCE AND DATA INTEGRATION FOR UNDERSTANDING MARINE LITTER',
+                    link: 'http://pure.iiasa.ac.at/id/eprint/16095/1/22_Camera_ready_paper.pdf',
+                    author: 'Campbell et al.'
                 },
                 {
                     date: '2019/10/09',
                     title: 'Citizen science and the United Nations Sustainable Development Goals',
                     link: 'https://www.nature.com/articles/s41893-019-0390-3',
-                    author: 'Fritz, S., et al.'
+                    author: 'Fritz et al.'
                 },
                 {
                     date: '2019/12/04',
@@ -68,52 +76,82 @@ export default {
                     author: 'Kessen, M.'
                 },
                 {
+                    date: '2020/06/13',
+                    title: 'Volunteered geographic information systems: Technological design patterns',
+                    link: 'https://onlinelibrary.wiley.com/doi/abs/10.1111/tgis.12544',
+                    author: 'Gómez-Barrón, et al.'
+                },
+                {
                     date: '2020/07/02',
                     title: 'Mapping citizen science contributions to the UN sustainable development goals',
                     link: 'https://link.springer.com/article/10.1007/s11625-020-00833-7',
-                    author: 'Fraisl, D., et al.'
+                    author: 'Fraisl et al.'
+                },
+                {
+                    date: '2020/08/27',
+                    title: 'Official Survey Data and Virtual Worlds—Designing an Integrative and Economical Open Source Production Pipeline for xR-Applications in Small and Medium-Sized Enterprises',
+                    link: 'file:///Users/sean/Documents/BDCC-04-00026-v2.pdf',
+                    author: 'Höhl, W.'
                 },
                 {
                     date: '2020/11/02',
                     title: 'Citizen science and marine conservation: a global review',
                     link: 'https://royalsocietypublishing.org/doi/full/10.1098/rstb.2019.0461',
-                    author: 'Kelly, R., et al.'
+                    author: 'Kelly et al.'
                 },
                 {
                     date: '2020/11/04',
                     title: 'Towards fair and efficient task allocation in blockchain-based crowdsourcing',
                     link: 'https://link.springer.com/article/10.1007/s42045-020-00043-w',
-                    author: 'Pang, X., et al.'
+                    author: 'Pang et al.'
                 },
                 {
                     date: '2020/12/21',
                     title: 'Open-source geospatial tools and technologies for urban and environmental studies',
                     link: 'https://opengeospatialdata.springeropen.com/articles/10.1186/s40965-020-00078-2',
-                    author: 'Mobasheri, A., et al.'
+                    author: 'Mobasheri et al.'
+                },
+                {
+                    date: '2021/02/01',
+                    title: 'Analysis of plastic water pollution data',
+                    link: 'https://dspace.lib.uom.gr/bitstream/2159/25376/1/BesiouEleutheriaMsc2021.pdf',
+                    author: 'ΜΠΕΣΙΟΥ, E.'
                 },
                 {
                     date: '2021/03/04',
                     title: 'Autonomous, Onboard Vision-Based Trash and Litter Detection in Low Altitude Aerial Images Collected by an Unmanned Aerial Vehicle',
                     link: 'https://www.researchgate.net/profile/Mateusz-Piechocki-2/publication/349869848_Autonomous_Onboard_Vision-Based_Trash_and_Litter_Detection_in_Low_Altitude_Aerial_Images_Collected_by_an_Unmanned_Aerial_Vehicle/links/60450db2a6fdcc9c781dc33b/Autonomous-Onboard-Vision-Based-Trash-and-Litter-Detection-in-Low-Altitude-Aerial-Images-Collected-by-an-Unmanned-Aerial-Vehicle.pdf',
-                    author: 'Kraft, M., et al.'
+                    author: 'Kraft et al.'
                 },
                 {
                     date: '2021/05/06',
                     title: 'Blockchain technologies to address smart city and society challenges',
                     link: 'https://www.sciencedirect.com/science/article/abs/pii/S0747563221001771',
-                    author: 'Mora, M., et al.'
+                    author: 'Mora et al.'
                 },
                 {
                     date: '2021/05/17',
-                    title: 'Waste deteection in Pomerania: Non-profit project for detecting waste in environment',
+                    title: 'Waste detection in Pomerania: Non-profit project for detecting waste in environment',
                     link: 'https://arxiv.org/pdf/2105.06808.pdf',
-                    author: 'Majchrowska, S., et al.'
+                    author: 'Majchrowska et al.'
                 },
                 {
                     date: '2021/05/17',
                     title: 'This city is not a bin: Crowdmapping the distribution of urban litter',
                     link: 'https://github.com/andrea-ballatore/litter-dynamics/blob/885de9c61d0b669d007ad871c8494851ce43da9a/publications/ballatore_et_al-2021-city_not_a_bin_crowdmapping.pdf',
-                    author: 'Ballatore, A., et al.'
+                    author: 'Ballatore et al.'
+                },
+                {
+                    date: '2021/08/23',
+                    title: 'Using citizen science data to monitor the Sustainable Development Goals: a bottom-up analysis',
+                    link: 'https://link.springer.com/article/10.1007/s11625-021-01001-1',
+                    author: 'Ballerini & Bergh'
+                },
+                {
+                    date: '2021/09/30',
+                    title: 'Is Downloading this App Consistent with my Values?',
+                    link: 'https://arxiv.org/pdf/2106.12458.pdf',
+                    author: 'Carter, S.'
                 }
             ]
         }

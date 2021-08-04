@@ -64,14 +64,6 @@ trait FilterPhotosByGeoHashTrait
             }
         ]);
 
-        if ($layers)
-        {
-            foreach ($layers as $layer)
-            {
-                $query->whereNotNull($layer . "_id");
-            }
-        }
-
         // Build cluster query
         $query->where(function ($q) use ($geos)
         {
@@ -82,6 +74,21 @@ trait FilterPhotosByGeoHashTrait
                 ]);
             }
         });
+
+        if ($layers)
+        {
+            $query->where(function ($q) use ($layers)
+            {
+                foreach ($layers as $index => $layer)
+                {
+                    ($index === 0)
+                        ? $q->where($layer . "_id", '!=', null)
+                        : $q->orWhere($layer . "_id", '!=', null);
+                }
+
+                return $q;
+            });
+        }
 
         return $query;
     }

@@ -7,6 +7,7 @@
 
     </div>
 </template>
+
 <script>
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
@@ -20,14 +21,17 @@ export default {
     },
     data () {
         return {
-            mapHeight: window.outerHeight - 72
+            mapHeight: (window.outerHeight - 72)
         }
     },
     async created ()
     {
         if (this.isMobile) this.addEventListenerIfMobile();
-        // this.$store.dispatch('GLOBAL_MAP_DATA', 'one-month'); // today, one-week
+
         await this.$store.dispatch('GET_CLUSTERS', 2);
+        await this.$store.dispatch('GET_ART_DATA');
+
+        this.$store.commit('globalLoading', false);
     },
     async destroyed ()
     {
@@ -41,6 +45,7 @@ export default {
         {
             return this.$store.state.globalmap.loading;
         },
+
         /**
          * Return true if the device is mobile
          */
