@@ -3,9 +3,9 @@
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Storage;
 
 class ExportWithLink extends Mailable
 {
@@ -35,7 +35,7 @@ class ExportWithLink extends Mailable
             ->subject('OpenLitterMap Data')
             ->view('emails.downloads.opendata_link')
             ->with([
-                'url' => "https://olm-s3.s3.eu-west-1.amazonaws.com/" . $this->path, // filepath
+                'url' => Storage::disk('s3')->url($this->path)
             ]);
     }
 }
