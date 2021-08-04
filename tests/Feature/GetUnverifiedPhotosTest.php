@@ -15,31 +15,41 @@ class GetUnverifiedPhotosTest extends TestCase
         parent::setUp();
 
         Storage::fake('s3');
+        Storage::fake('bbox');
 
         $this->setImagePath();
     }
 
     public function test_it_returns_unverified_photos_for_tagging()
     {
+        $user = User::factory()->create(['verification_required' => true]);
         $otherUser = User::factory()->create(['verification_required' => true]);
-        $unverifiedUser = User::factory()->create(['verification_required' => true]);
 
         // Some other user uploads a photo, it shouldn't be included in our results
         $this->actingAs($otherUser);
 
         $this->post('/submit', ['file' => $this->getImageAndAttributes()['file']]);
 
-        $this->actingAs($unverifiedUser);
+        $this->actingAs($user);
 
         // We upload a photo, we expect it to be returned
         $this->post('/submit', ['file' => $this->getImageAndAttributes()['file']]);
 
-        $unverifiedPhoto = $unverifiedUser->fresh()->photos->last();
+        $unverifiedPhoto = $user->fresh()->photos->first();
+
+        $response = $this->get('/photos')
+            ->assertOk()
+            ->json();
+
+        $this->assertEquals(1, $response['remaining']);
+        $this->assertEquals(1, $response['total']);
+        $this->assertCount(1, $response['photos']['data']);
+        $this->assertEquals($unverifiedPhoto->id, $response['photos']['data'][0]['id']);
 
         // We upload another photo, which gets verified, and shouldn't be returned
         $this->post('/submit', ['file' => $this->getImageAndAttributes()['file']]);
 
-        $verifiedPhoto = $unverifiedUser->fresh()->photos->last();
+        $verifiedPhoto = $user->fresh()->photos->last();
         $verifiedPhoto->verified = 2;
         $verifiedPhoto->verification = 1;
         $verifiedPhoto->save();
@@ -48,9 +58,9 @@ class GetUnverifiedPhotosTest extends TestCase
             ->assertOk()
             ->json();
 
-        $this->assertEquals(1, $response['remaining'] ?? 0);
-        $this->assertEquals(2, $response['total'] ?? 0);
-        $this->assertCount(1, $response['photos']['data'] ?? []);
-        $this->assertEquals($unverifiedPhoto->id, $response['photos']['data'][0]['id'] ?? 0);
+        $this->assertEquals(1, $response['remaining']);
+        $this->assertEquals(2, $response['total']);
+        $this->assertCount(1, $response['photos']['data']);
+        $this->assertEquals($unverifiedPhoto->id, $response['photos']['data'][0]['id']);
     }
 }

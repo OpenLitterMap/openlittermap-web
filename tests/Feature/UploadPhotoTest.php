@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Actions\Photos\DeletePhotoAction;
 use App\Events\ImageUploaded;
 use App\Events\Photo\IncrementPhotoMonth;
 use App\Models\Location\City;
@@ -26,8 +27,6 @@ class UploadPhotoTest extends TestCase
     {
         parent::setUp();
 
-        Storage::fake('s3');
-
         $this->setImagePath();
 
         $country = Country::create(['country' => 'error_country', 'shortcode' => 'error']);
@@ -37,7 +36,8 @@ class UploadPhotoTest extends TestCase
 
     public function test_a_user_can_upload_a_photo()
     {
-        Storage::fake();
+        Storage::fake('s3');
+        Storage::fake('bbox');
 
         Event::fake([ImageUploaded::class, IncrementPhotoMonth::class]);
 
@@ -59,11 +59,17 @@ class UploadPhotoTest extends TestCase
 
         // Image is uploaded
         Storage::disk('s3')->assertExists($imageAttributes['filepath']);
+        Storage::disk('bbox')->assertExists($imageAttributes['filepath']);
 
-        // Image has the right dimensions
-        $image = Image::make(Storage::disk('s3')->get($imageAttributes['filepath']));
+        // Bounding Box image has the right dimensions
+        $image = Image::make(Storage::disk('bbox')->get($imageAttributes['filepath']));
         $this->assertEquals(500, $image->width());
         $this->assertEquals(500, $image->height());
+
+        // Original image has the right dimensions
+        $image = Image::make(Storage::disk('s3')->get($imageAttributes['filepath']));
+        $this->assertEquals(1, $image->width());
+        $this->assertEquals(1, $image->height());
 
         $user->refresh();
 
@@ -90,7 +96,7 @@ class UploadPhotoTest extends TestCase
         $this->assertEquals('web', $photo->platform);
         $this->assertEquals($imageAttributes['geoHash'], $photo->geohash);
         $this->assertEquals($user->active_team, $photo->team_id);
-        $this->assertEquals($imageAttributes['imageName'], $photo->five_hundred_square_filepath);
+        $this->assertEquals($imageAttributes['bboxImageName'], $photo->five_hundred_square_filepath);
 
         Event::assertDispatched(
             ImageUploaded::class,
@@ -119,9 +125,54 @@ class UploadPhotoTest extends TestCase
         );
     }
 
+    public function test_a_user_can_upload_a_photo_on_a_real_storage()
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user);
+
+        $imageAttributes = $this->getImageAndAttributes();
+
+        $response = $this->post('/submit', [
+            'file' => $imageAttributes['file'],
+        ]);
+
+        $response->assertOk()->assertJson(['success' => true]);
+
+        // Image is uploaded
+        Storage::disk('s3')->assertExists($imageAttributes['filepath']);
+        Storage::disk('bbox')->assertExists($imageAttributes['filepath']);
+
+        // Bounding Box image has the right dimensions
+        $image = Image::make(Storage::disk('bbox')->get($imageAttributes['filepath']));
+        $this->assertEquals(500, $image->width());
+        $this->assertEquals(500, $image->height());
+
+        // Original image has the right dimensions
+        $image = Image::make(Storage::disk('s3')->get($imageAttributes['filepath']));
+        $this->assertEquals(1, $image->width());
+        $this->assertEquals(1, $image->height());
+
+        $user->refresh();
+
+        // The Photo is persisted correctly
+        $this->assertCount(1, $user->photos);
+        /** @var Photo $photo */
+        $photo = $user->photos->last();
+
+        $this->assertEquals($imageAttributes['imageName'], $photo->filename);
+        $this->assertEquals($imageAttributes['bboxImageName'], $photo->five_hundred_square_filepath);
+
+        // Cleanup
+        /** @var DeletePhotoAction $deletePhotoAction */
+        $deletePhotoAction = app(DeletePhotoAction::class);
+        $deletePhotoAction->run($photo);
+    }
+
     public function test_a_users_info_is_updated_when_they_upload_a_photo()
     {
-        Storage::fake();
+        Storage::fake('s3');
+        Storage::fake('bbox');
 
         Carbon::setTestNow();
 
@@ -159,8 +210,6 @@ class UploadPhotoTest extends TestCase
 
     public function test_the_uploaded_photo_is_validated()
     {
-        Storage::fake();
-
         $user = User::factory()->create();
 
         $this->actingAs($user);
@@ -180,8 +229,6 @@ class UploadPhotoTest extends TestCase
 
     public function test_it_throws_server_error_when_photo_has_no_location_data()
     {
-        Storage::fake();
-
         $user = User::factory()->create();
 
         $this->actingAs($user);

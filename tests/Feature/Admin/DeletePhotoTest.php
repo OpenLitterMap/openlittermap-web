@@ -32,6 +32,7 @@ class DeletePhotoTest extends TestCase
         parent::setUp();
 
         Storage::fake('s3');
+        Storage::fake('bbox');
 
         $this->setImagePath();
 
@@ -71,6 +72,7 @@ class DeletePhotoTest extends TestCase
 
         // We make sure the photo exists
         Storage::disk('s3')->assertExists($this->imageAndAttributes['filepath']);
+        Storage::disk('bbox')->assertExists($this->imageAndAttributes['filepath']);
         $this->assertEquals(1, $this->user->has_uploaded);
         $this->assertEquals(4, $this->user->xp);
         $this->assertEquals(1, $this->user->total_images);
@@ -88,6 +90,7 @@ class DeletePhotoTest extends TestCase
         $this->assertEquals(0, $this->user->xp);
         $this->assertEquals(0, $this->user->total_images);
         Storage::disk('s3')->assertMissing($this->imageAndAttributes['filepath']);
+        Storage::disk('bbox')->assertMissing($this->imageAndAttributes['filepath']);
         $this->assertCount(0, $this->user->photos);
         $this->assertDatabaseMissing('photos', ['id' => $this->photo->id]);
     }

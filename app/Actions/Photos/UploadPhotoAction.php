@@ -10,15 +10,15 @@ use Intervention\Image\Image;
 
 class UploadPhotoAction
 {
-    public function run(Image $photo, string $filename, Carbon $datetime): string
+    public function run(Image $photo, Carbon $datetime, string $filename, string $disk = 's3'): string
     {
         $path = $this->extractPath($datetime, $filename);
 
-        $s3 = Storage::disk('s3');
+        $filesystem = Storage::disk($disk);
 
-        $s3->put($path, $photo->stream(), 'public');
+        $filesystem->put($path, $photo->stream(), 'public');
 
-        return $s3->url($path);
+        return $filesystem->url($path);
     }
 
     /**

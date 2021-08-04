@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\Photos\AddTagsToPhotoAction;
 use App\Actions\Photos\DeletePhotoAction;
-use App\Actions\Photos\ResizePhotoAction;
+use App\Actions\Photos\MakeImageAction;
 use App\Actions\Photos\ReverseGeocodeLocationAction;
 use App\Actions\Photos\UpdateLeaderboardsFromPhotoAction;
 use App\Actions\Photos\UploadPhotoAction;
@@ -35,8 +35,8 @@ class PhotosController extends Controller
     private $uploadPhotoAction;
     /** @var DeletePhotoAction */
     private $deletePhotoAction;
-    /** @var ResizePhotoAction */
-    private $resizePhotoAction;
+    /** @var MakeImageAction */
+    private $makeImageAction;
     /** @var ReverseGeocodeLocationAction */
     private $reverseGeocodeAction;
 
@@ -50,7 +50,7 @@ class PhotosController extends Controller
         UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction,
         UploadPhotoAction $uploadPhotoAction,
         DeletePhotoAction $deletePhotoAction,
-        ResizePhotoAction $resizePhotoAction,
+        MakeImageAction $makeImageAction,
         ReverseGeocodeLocationAction $reverseGeocodeAction
     )
     {
@@ -59,7 +59,7 @@ class PhotosController extends Controller
         $this->updateLeaderboardsAction = $updateLeaderboardsAction;
         $this->uploadPhotoAction = $uploadPhotoAction;
         $this->deletePhotoAction = $deletePhotoAction;
-        $this->resizePhotoAction = $resizePhotoAction;
+        $this->makeImageAction = $makeImageAction;
         $this->reverseGeocodeAction = $reverseGeocodeAction;
 
         $this->middleware('auth');
@@ -94,7 +94,7 @@ class PhotosController extends Controller
 
         $file = $request->file('file'); // /tmp/php7S8v..
 
-        $image = $this->resizePhotoAction->run($file);
+        $image = $this->makeImageAction->run($file);
 
         $exif = $image->exif();
 
@@ -146,7 +146,19 @@ class PhotosController extends Controller
             }
         }
 
-        $imageName = $this->uploadPhotoAction->run($image, $file->hashName(), $dateTime);
+        // Upload images to both 's3' and 'bbox' disks, resized for 'bbox'
+        $imageName = $this->uploadPhotoAction->run(
+            $image,
+            $dateTime,
+            $file->hashName()
+        );
+
+        $bboxImageName = $this->uploadPhotoAction->run(
+            $this->makeImageAction->run($file, true),
+            $dateTime,
+            $file->hashName(),
+            'bbox'
+        );
 
         // Get phone model
         $model = (array_key_exists('Model', $exif))
@@ -199,7 +211,7 @@ class PhotosController extends Controller
             'platform' => 'web',
             'geohash' => $geohash,
             'team_id' => $user->active_team,
-            'five_hundred_square_filepath' => $imageName,
+            'five_hundred_square_filepath' => $bboxImageName,
             'address_array' => json_encode($addressArray)
         ]);
 

@@ -30,6 +30,7 @@ class CorrectTagsDeletePhotoTest extends TestCase
         parent::setUp();
 
         Storage::fake('s3');
+        Storage::fake('bbox');
 
         $this->setImagePath();
 
@@ -69,6 +70,7 @@ class CorrectTagsDeletePhotoTest extends TestCase
     {
         // We make sure the photo exists
         Storage::disk('s3')->assertExists($this->imageAndAttributes['filepath']);
+        Storage::disk('bbox')->assertExists($this->imageAndAttributes['filepath']);
         $this->assertEquals(4, $this->user->xp);
 
         // Admin verifies the photo -------------------
@@ -81,6 +83,7 @@ class CorrectTagsDeletePhotoTest extends TestCase
 
         // And it's gone
         Storage::disk('s3')->assertMissing($this->imageAndAttributes['filepath']);
+        Storage::disk('bbox')->assertMissing($this->imageAndAttributes['filepath']);
         $this->assertEquals(4, $this->user->xp);
         $this->assertEquals('/assets/verified.jpg', $this->photo->filename);
         $this->assertEquals(1, $this->photo->verification);

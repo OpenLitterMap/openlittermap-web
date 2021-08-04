@@ -19,8 +19,6 @@ class UploadPhotoOnProductionTest extends TestCase
     {
         parent::setUp();
 
-        Storage::fake('s3');
-
         $this->setImagePath();
     }
 

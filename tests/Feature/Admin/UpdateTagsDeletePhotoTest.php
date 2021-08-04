@@ -34,6 +34,7 @@ class UpdateTagsDeletePhotoTest extends TestCase
         parent::setUp();
 
         Storage::fake('s3');
+        Storage::fake('bbox');
 
         $this->setImagePath();
 
@@ -83,6 +84,7 @@ class UpdateTagsDeletePhotoTest extends TestCase
         $this->actingAs($this->admin);
 
         Storage::disk('s3')->assertExists($this->imageAndAttributes['filepath']);
+        Storage::disk('bbox')->assertExists($this->imageAndAttributes['filepath']);
 
         $smokingId = $this->photo->smoking_id;
 
@@ -108,6 +110,8 @@ class UpdateTagsDeletePhotoTest extends TestCase
         if ($deletesPhoto) {
             // Assert photo is deleted
             Storage::disk('s3')->assertMissing($this->imageAndAttributes['filepath']);
+            Storage::disk('bbox')->assertMissing($this->imageAndAttributes['filepath']);
+
             $this->assertEquals('/assets/verified.jpg', $this->photo->filename);
         }
     }

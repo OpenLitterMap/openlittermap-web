@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Actions\Photos\ResizePhotoAction;
+use App\Actions\Photos\MakeImageAction;
 use App\Actions\Photos\ReverseGeocodeLocationAction;
 use App\Actions\Photos\UploadPhotoAction;
 use GeoHash;
@@ -28,8 +28,8 @@ class ApiPhotosController extends Controller
     protected $uploadHelper;
     /** @var UploadPhotoAction */
     private $uploadPhotoAction;
-    /** @var ResizePhotoAction */
-    private $resizePhotoAction;
+    /** @var MakeImageAction */
+    private $makeImageAction;
     /** @var ReverseGeocodeLocationAction */
     private $reverseGeocodeAction;
 
@@ -40,13 +40,13 @@ class ApiPhotosController extends Controller
     public function __construct (
         UploadHelper $uploadHelper,
         UploadPhotoAction $uploadPhotoAction,
-        ResizePhotoAction $resizePhotoAction,
+        MakeImageAction $makeImageAction,
         ReverseGeocodeLocationAction $reverseGeocodeAction
     )
     {
         $this->uploadHelper = $uploadHelper;
         $this->uploadPhotoAction = $uploadPhotoAction;
-        $this->resizePhotoAction = $resizePhotoAction;
+        $this->makeImageAction = $makeImageAction;
         $this->reverseGeocodeAction = $reverseGeocodeAction;
 
         $this->middleware('auth:api');
@@ -107,13 +107,25 @@ class ApiPhotosController extends Controller
             ? $request->model
             : 'Mobile app v2';
 
-        $image = $this->resizePhotoAction->run($file);
+        $image = $this->makeImageAction->run($file);
 
         $lat  = $request['lat'];
 		$lon  = $request['lon'];
 		$date = Carbon::parse($request['date']);
 
-        $imageName = $this->uploadPhotoAction->run($image, $file->hashName(), $date);
+        // Upload images to both 's3' and 'bbox' disks, resized for 'bbox'
+        $imageName = $this->uploadPhotoAction->run(
+            $image,
+            $date,
+            $file->hashName()
+        );
+
+        $bboxImageName = $this->uploadPhotoAction->run(
+            $this->makeImageAction->run($file, true),
+            $date,
+            $file->hashName(),
+            'bbox'
+        );
 
         $revGeoCode = $this->reverseGeocodeAction->run($lat, $lon);
 
@@ -148,7 +160,7 @@ class ApiPhotosController extends Controller
             'platform' => 'mobile',
             'geohash' => GeoHash::encode($lat, $lon),
             'team_id' => $user->active_team,
-            'five_hundred_square_filepath' => $imageName,
+            'five_hundred_square_filepath' => $bboxImageName,
             'address_array' => json_encode($addressArray)
         ]);
 

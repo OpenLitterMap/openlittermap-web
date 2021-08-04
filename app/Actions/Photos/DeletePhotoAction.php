@@ -11,12 +11,23 @@ class DeletePhotoAction
 {
     public function run(Photo $photo)
     {
+        $this->deletePhoto($photo->filename, 's3');
+
+        $this->deletePhoto($photo->five_hundred_square_filepath, 'bbox');
+    }
+
+    /**
+     * @param string $filename
+     * @param string $disk
+     */
+    protected function deletePhoto(string $filename, string $disk): void
+    {
         $path = str_replace(
-            rtrim(Storage::disk('s3')->url('/'), '/'),
+            rtrim(Storage::disk($disk)->url('/'), '/'),
             '',
-            $photo->filename
+            $filename
         );
 
-        Storage::disk('s3')->delete($path);
+        Storage::disk($disk)->delete($path);
     }
 }

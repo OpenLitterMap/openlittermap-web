@@ -61,6 +61,8 @@ features:
 buckets:
     - name: olm-public
       policy: public
+    - name: olm-public-bbox
+      policy: public
 ```
 
 Next, update your hosts file on your host machine (`sudo nano /etc/hosts` on windows it's `C:\Windows\System32\Drivers\etc\hosts`) and include `192.168.10.10 olm.test`
@@ -99,5 +101,6 @@ To test it's working, open another window. Open tinker and run event new(\App\Ev
 The project uses AWS S3 to store photos on production. On development, however, it uses [Minio](https://laravel.com/docs/8.x/homestead#configuring-minio),
 an open source object storage server with an Amazon S3 compatible API. If you copied the .env.example file into .env
 you should be able to access the Minio control panel at http://192.168.10.10:9600 (homestead:secretkey).
+Remember to update the Access Policy to public for your buckets, on the admin panel.
 <p>You are now ready to get started!</p>
 <p>Have fun and thanks for taking an interest in OpenLitterMap</p>

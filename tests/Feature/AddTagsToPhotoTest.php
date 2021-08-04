@@ -24,6 +24,7 @@ class AddTagsToPhotoTest extends TestCase
         parent::setUp();
 
         Storage::fake('s3');
+        Storage::fake('bbox');
 
         $this->setImagePath();
 
