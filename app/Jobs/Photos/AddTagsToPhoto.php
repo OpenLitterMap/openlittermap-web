@@ -2,6 +2,8 @@
 
 namespace App\Jobs\Photos;
 
+use App\Actions\Photos\AddTagsToPhotoAction;
+use App\Actions\Photos\UpdateLeaderboardsFromPhotoAction;
 use App\Events\TagsVerifiedByAdmin;
 use App\Models\LitterTags;
 use App\Models\Location\City;
@@ -46,54 +48,19 @@ class AddTagsToPhoto implements ShouldQueue
 
         if (! $photo || $photo->verified > 0) return;
 
-        $schema = LitterTags::INSTANCE()->getDecodedJSON();
+        /** @var AddTagsToPhotoAction $addTagsAction */
+        $addTagsAction = app(AddTagsToPhotoAction::class);
+        $litterTotals = $addTagsAction->run($photo, $this->tags);
 
-        $litterTotal = 0;
-        foreach ($this->tags as $category => $items)
-        {
-            foreach ($items as $column => $quantity)
-            {
-                // Column on photos table to make a relationship the category eg smoking_id
-                $category_id = $schema->$category->id_table;
-
-                // Full class path
-                $class = 'App\\Models\\Litter\\Categories\\'.$schema->$category->class;
-
-                // Create reference to photos.$category_id on photos if it does not exist
-                if (is_null($photo->$category_id))
-                {
-                    $row = $class::create();
-                    $photo->$category_id = $row->id;
-                    $photo->save();
-                }
-                // If it does exist, get it
-                else $row = $class::find($photo->$category_id);
-
-                // Update quantity on the category table
-                $row->$column = $quantity;
-                $row->save();
-
-                // Update Leaderboards if user has public privacy settings
-                // todo - save data per leaderboard
-                if (($user->show_name) || ($user->show_username))
-                {
-                    $country = Country::find($photo->country_id);
-                    $state = State::find($photo->state_id);
-                    $city = City::find($photo->city_id);
-                    Redis::zadd($country->country.':Leaderboard', $user->xp, $user->id);
-                    Redis::zadd($country->country.':'.$state->state.':Leaderboard', $user->xp, $user->id);
-                    Redis::zadd($country->country.':'.$state->state.':'.$city->city.':Leaderboard', $user->xp, $user->id);
-                }
-
-                $litterTotal += $quantity;
-            }
-        }
-
-        $user->xp += $litterTotal;
+        $user->xp += $litterTotals['all'];
         $user->save();
 
+        /** @var UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction */
+        $updateLeaderboardsAction = app(UpdateLeaderboardsFromPhotoAction::class);
+        $updateLeaderboardsAction->run($user, $photo);
+
         $photo->remaining = false; // todo
-        $photo->total_litter = $litterTotal;
+        $photo->total_litter = $litterTotals['litter'];
 
         if ($user->verification_required)
         {

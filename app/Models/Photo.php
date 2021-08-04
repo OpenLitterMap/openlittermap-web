@@ -109,7 +109,8 @@ class Photo extends Model
             'dumping',
             'industrial',
             'brands',
-            'dogshit'
+            'dogshit',
+            'art'
         ];
     }
 
@@ -278,75 +279,75 @@ class Photo extends Model
      */
     public function smoking ()
     {
-    	return $this->hasOne('App\Models\Litter\Categories\Smoking', 'id', 'smoking_id');
+    	return $this->belongsTo('App\Models\Litter\Categories\Smoking', 'smoking_id', 'id');
     }
 
     public function food ()
     {
-    	return $this->hasOne('App\Models\Litter\Categories\Food', 'id', 'food_id');
+    	return $this->belongsTo('App\Models\Litter\Categories\Food', 'food_id', 'id');
     }
 
     public function coffee ()
     {
-    	return $this->hasOne('App\Models\Litter\Categories\Coffee', 'id', 'coffee_id');
+    	return $this->belongsTo('App\Models\Litter\Categories\Coffee', 'coffee_id', 'id');
     }
 
     public function softdrinks ()
     {
-    	return $this->hasOne('App\Models\Litter\Categories\SoftDrinks', 'id', 'softdrinks_id');
+    	return $this->belongsTo('App\Models\Litter\Categories\SoftDrinks', 'softdrinks_id', 'id');
 	}
 
 	public function alcohol ()
     {
-		return $this->hasOne('App\Models\Litter\Categories\Alcohol', 'id', 'alcohol_id');
+		return $this->belongsTo('App\Models\Litter\Categories\Alcohol', 'alcohol_id', 'id');
 	}
 
 	public function sanitary ()
     {
-		return $this->hasOne('App\Models\Litter\Categories\Sanitary', 'id', 'sanitary_id');
+		return $this->belongsTo('App\Models\Litter\Categories\Sanitary', 'sanitary_id', 'id');
 	}
 
     public function dumping ()
     {
-        return $this->hasOne('App\Models\Litter\Categories\Dumping', 'id', 'dumping_id');
+        return $this->belongsTo('App\Models\Litter\Categories\Dumping', 'dumping_id', 'id');
     }
 
 	public function other ()
     {
-		return $this->hasOne('App\Models\Litter\Categories\Other', 'id', 'other_id');
+		return $this->belongsTo('App\Models\Litter\Categories\Other', 'other_id', 'id');
 	}
 
     public function industrial ()
     {
-        return $this->hasOne('App\Models\Litter\Categories\Industrial', 'id', 'industrial_id');
+        return $this->belongsTo('App\Models\Litter\Categories\Industrial', 'industrial_id', 'id');
     }
 
     public function coastal ()
     {
-        return $this->hasOne('App\Models\Litter\Categories\Coastal', 'id', 'coastal_id');
+        return $this->belongsTo('App\Models\Litter\Categories\Coastal', 'coastal_id', 'id');
     }
 
     public function art ()
     {
-        return $this->hasOne('App\Models\Litter\Categories\Art', 'id', 'art_id');
+        return $this->belongsTo('App\Models\Litter\Categories\Art', 'art_id', 'id');
     }
 
     public function brands ()
     {
-        return $this->hasOne('App\Models\Litter\Categories\Brand', 'id', 'brands_id');
+        return $this->belongsTo('App\Models\Litter\Categories\Brand', 'brands_id', 'id');
     }
 
     public function trashdog ()
     {
-        return $this->hasOne('App\Models\Litter\Categories\TrashDog', 'id', 'trashdog_id');
+        return $this->belongsTo('App\Models\Litter\Categories\TrashDog', 'trashdog_id', 'id');
     }
 
     public function dogshit ()
     {
-        return $this->hasOne('App\Models\Litter\Categories\Dogshit', 'id', 'dogshit_id');
+        return $this->belongsTo('App\Models\Litter\Categories\Dogshit', 'dogshit_id', 'id');
     }
 
     // public function politics() {
-    //     return $this->hasOne('App\Models\Litter\Categories\Politicals', 'id', 'political_id');
+    //     return $this->belongsTo('App\Models\Litter\Categories\Politicals', 'political_id', 'id');
     // }
 }
