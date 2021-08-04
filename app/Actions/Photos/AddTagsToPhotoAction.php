@@ -8,20 +8,21 @@ class AddTagsToPhotoAction
 {
     /**
      * Adds tags to the photo.
-     * Creates new rows on respective category tables
      *
      * @param Photo $photo
      * @param array $tags
+     *
      * @return array number of added tags, total litter and brands
      */
-    public function run(Photo $photo, array $tags): array
+    public function run (Photo $photo, array $tags) :array
     {
         $photo->refresh();
 
         $litter = 0;
         $brands = 0;
 
-        foreach ($tags as $category => $items) {
+        foreach ($tags as $category => $items)
+        {
             $this->createCategory($photo, $category);
 
             $photo->fresh()->$category->update($items);
@@ -39,10 +40,12 @@ class AddTagsToPhotoAction
     }
 
     /**
+     * Creates new rows on respective category tables
+     *
      * @param Photo $photo
      * @param string $category
      */
-    protected function createCategory(Photo $photo, string $category): void
+    protected function createCategory (Photo $photo, string $category) :void
     {
         $createdCategory = $photo->$category()->create();
 

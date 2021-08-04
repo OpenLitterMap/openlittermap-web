@@ -1,14 +1,13 @@
 <?php
 
-
 namespace App\Actions\Photos;
 
-
+use App\Models\Photo;
+use App\Models\User\User;
 use App\Models\Location\City;
 use App\Models\Location\Country;
 use App\Models\Location\State;
-use App\Models\Photo;
-use App\Models\User\User;
+
 use Illuminate\Support\Facades\Redis;
 
 class UpdateLeaderboardsFromPhotoAction
@@ -17,7 +16,7 @@ class UpdateLeaderboardsFromPhotoAction
      * @param User $user
      * @param Photo $photo
      */
-    public function run(User $user, Photo $photo): void
+    public function run (User $user, Photo $photo) :void
     {
         // Update Leaderboards if user has public privacy settings
         if (!$user->show_name && !$user->show_username) {

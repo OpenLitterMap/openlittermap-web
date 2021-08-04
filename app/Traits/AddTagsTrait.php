@@ -12,17 +12,21 @@ trait AddTagsTrait
 {
     /**
      * Add or Update tags on an image
+     *
+     * @var DeleteTagsFromPhotoAction $deleteTagsAction
+     * @var AddTagsToPhotoAction $addTagsAction
+     * @var UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction
      */
     public function addTags ($tags, $photoId)
     {
         $photo = Photo::find($photoId);
         $user = User::find($photo->user_id);
 
-        /** @var DeleteTagsFromPhotoAction $deleteTagsAction */
+        // Delete the old tags
         $deleteTagsAction = app(DeleteTagsFromPhotoAction::class);
         $deletedTags = $deleteTagsAction->run($photo);
 
-        /** @var AddTagsToPhotoAction $addTagsAction */
+        // Add the new tags
         $addTagsAction = app(AddTagsToPhotoAction::class);
         $litterTotals = $addTagsAction->run($photo, $tags);
 
@@ -36,7 +40,7 @@ trait AddTagsTrait
         $photo->result_string = null; // Updated on PhotoVerifiedByAdmin only. Must be reset if we are applying new tags.
         $photo->save();
 
-        /** @var UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction */
+        // Update the Leaderboards
         $updateLeaderboardsAction = app(UpdateLeaderboardsFromPhotoAction::class);
         $updateLeaderboardsAction->run($user, $photo);
     }

@@ -1,15 +1,18 @@
 <?php
 
-
 namespace App\Actions\Photos;
-
 
 use App\Models\Photo;
 use Illuminate\Support\Facades\Storage;
 
 class DeletePhotoAction
 {
-    public function run(Photo $photo)
+    /**
+     * Delete high-res and 500x500 photo
+     *
+     * @param Photo $photo
+     */
+    public function run (Photo $photo)
     {
         $this->deletePhoto($photo->filename, 's3');
 
@@ -17,10 +20,12 @@ class DeletePhotoAction
     }
 
     /**
+     * Delete a photo from a specified disk
+     *
      * @param string $filename
      * @param string $disk
      */
-    protected function deletePhoto(string $filename, string $disk): void
+    protected function deletePhoto (string $filename, string $disk) :void
     {
         $path = str_replace(
             rtrim(Storage::disk($disk)->url('/'), '/'),

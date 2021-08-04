@@ -30,6 +30,10 @@ class AdminController extends Controller
 
     /**
      * Apply IsAdmin middleware to all of these routes
+     *
+     * @param DeleteTagsFromPhotoAction $deleteTagsAction
+     * @param UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction
+     * @param DeletePhotoAction $deletePhotoAction
      */
     public function __construct (
         DeleteTagsFromPhotoAction $deleteTagsAction,
@@ -44,6 +48,9 @@ class AdminController extends Controller
         $this->deletePhotoAction = $deletePhotoAction;
     }
 
+    /**
+     * Get the total number of users who have signed up
+     */
     public function getUserCount ()
     {
         $users = User::where('verified', 1)
@@ -88,7 +95,7 @@ class AdminController extends Controller
     /**
      * Verify an image, delete the image
      */
-    public function verify(Request $request)
+    public function verify (Request $request)
     {
         $photo = Photo::findOrFail($request->photoId);
 
@@ -99,7 +106,7 @@ class AdminController extends Controller
         $photo->filename = '/assets/verified.jpg';
         $photo->save();
 
-        event(new TagsVerifiedByAdmin($photo->id));
+        event (new TagsVerifiedByAdmin($photo->id));
     }
 
     /**
@@ -114,8 +121,7 @@ class AdminController extends Controller
         $photo->verification = 1;
         $photo->save();
 
-        // todo - dispatch via horizon
-        event(new TagsVerifiedByAdmin($photo->id));
+        event (new TagsVerifiedByAdmin($photo->id));
     }
 
     /**
@@ -147,7 +153,7 @@ class AdminController extends Controller
     /**
      * Delete an image and its records
      */
-    public function destroy(Request $request)
+    public function destroy (Request $request)
     {
         $photo = Photo::findOrFail($request->photoId);
         $user = User::find($photo->user_id);
@@ -185,10 +191,8 @@ class AdminController extends Controller
 
         $this->addTags($request->categories, $photo->id);
 
-        // todo - horizon
         event(new TagsVerifiedByAdmin($photo->id));
     }
-
 
     /**
      * Verify the image
@@ -229,7 +233,6 @@ class AdminController extends Controller
         {
             $photo->tags();
         }
-
         else
         {
             $photo = Photo::where([

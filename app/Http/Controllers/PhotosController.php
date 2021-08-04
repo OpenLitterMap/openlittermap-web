@@ -25,24 +25,25 @@ use Illuminate\Support\Facades\Auth;
 
 class PhotosController extends Controller
 {
-    /** @var UploadHelper */
     protected $uploadHelper;
-    /** @var AddTagsToPhotoAction */
     private $addTagsAction;
-    /** @var UpdateLeaderboardsFromPhotoAction */
     private $updateLeaderboardsAction;
-    /** @var UploadPhotoAction */
     private $uploadPhotoAction;
-    /** @var DeletePhotoAction */
     private $deletePhotoAction;
-    /** @var MakeImageAction */
     private $makeImageAction;
-    /** @var ReverseGeocodeLocationAction */
     private $reverseGeocodeAction;
 
     /**
      * PhotosController constructor
      * Apply middleware to all of these routes
+     *
+     * @param UploadHelper $uploadHelper
+     * @param AddTagsToPhotoAction $addTagsAction
+     * @param UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction
+     * @param UploadPhotoAction $uploadPhotoAction
+     * @param DeletePhotoAction $deletePhotoAction
+     * @param MakeImageAction $makeImageAction
+     * @param ReverseGeocodeLocationAction $reverseGeocodeAction
      */
     public function __construct(
         UploadHelper $uploadHelper,
@@ -140,8 +141,10 @@ class PhotosController extends Controller
         // Check if the user has already uploaded this image
         // todo - load error automatically without clicking it
         // todo - translate
-        if (app()->environment() === "production") {
-            if (Photo::where(['user_id' => $user->id, 'datetime' => $dateTime])->first()) {
+        if (app()->environment() === "production")
+        {
+            if (Photo::where(['user_id' => $user->id, 'datetime' => $dateTime])->first())
+            {
                 abort(500, "You have already uploaded this file!");
             }
         }

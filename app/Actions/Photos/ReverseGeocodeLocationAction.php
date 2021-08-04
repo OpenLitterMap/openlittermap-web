@@ -12,12 +12,23 @@ class ReverseGeocodeLocationAction
     /**
      * @param Client $client
      */
-    public function __construct(Client $client)
+    public function __construct (Client $client)
     {
         $this->client = $client;
     }
 
-    public function run($latitude, $longitude): array
+    /**
+     * Using the GPS coordinates from the image, return the Reverse Geocode result from OpenStreetMap
+     *
+     * eg country => Ireland, city => Cork, country_code => ie
+     *
+     * @param $latitude
+     * @param $longitude
+     *
+     * @return array
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function run ($latitude, $longitude): array
     {
         $apiKey = config('services.location.secret');
 
