@@ -7,12 +7,12 @@ Route::get('/about', 'HomeController@index');
 Route::get('/world', 'HomeController@index');
 Route::get('/references', 'HomeController@index');
 
-Route::get('test', function () {
-
-    $user = \App\Models\User\User::first();
-
-    return view('emails.update24', compact('user'));
-});
+//Route::get('test', function () {
+//
+//    $user = \App\Models\User\User::first();
+//
+//    return view('emails.update24', compact('user'));
+//});
 
 // Registration
 Route::get('/signup', 'HomeController@index');
