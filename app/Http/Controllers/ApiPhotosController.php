@@ -103,7 +103,7 @@ class ApiPhotosController extends Controller
             'user_id' => $user['id']
         ]);
 
-        $model = ($request->has('model'))
+        $model = $request->filled('model')
             ? $request->model
             : 'Mobile app v2';
 

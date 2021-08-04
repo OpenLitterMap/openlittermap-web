@@ -161,7 +161,7 @@ class PhotosController extends Controller
         );
 
         // Get phone model
-        $model = (array_key_exists('Model', $exif))
+        $model = (array_key_exists('Model', $exif) && !empty($exif["Model"]))
             ? $exif["Model"]
             : 'Unknown';
 
