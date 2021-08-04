@@ -28,7 +28,7 @@
                     </h2>
 
                     <div class="columns">
-
+<h1>{{ show_previous_tags }}</h1>
                         <!-- Todo - Put this into a component -->
                         <!-- the Info box, Left -->
                         <div id="image-metadata" class="column">
@@ -168,6 +168,11 @@ export default {
     },
     computed: {
 
+        //whether the user wants to show previous tags. return type: boolean
+        show_previous_tags(){
+            return this.user.show_previous_tags == 1;
+        },
+
         /**
          * Get the current page the user is on
          */
@@ -231,7 +236,8 @@ export default {
         user ()
         {
             return this.$store.state.user.user;
-        }
+        },
+
     },
 
     methods: {

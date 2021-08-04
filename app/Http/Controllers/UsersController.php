@@ -345,6 +345,19 @@ class UsersController extends Controller
     }
 
     /**
+     * Toggle a Users tagging settings
+     */
+    public function toggleTagging (Request $request)
+    {
+        $user = Auth::user();
+
+        /* Whether to save the tags from a previous image */
+        $user->show_previous_tags = $request->show_previous_tags;
+
+        $user->save();
+    }
+
+    /**
      * Log the user out
      */
     public function logout ()

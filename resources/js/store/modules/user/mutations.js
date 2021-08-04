@@ -120,6 +120,14 @@ export const mutations = {
     },
 
     /**
+     * The user wants to change a tagging setting
+     */
+    tagging (state, payload)
+    {
+        state.user[payload.column] = payload.v;
+    },
+
+    /**
      * Reset state, when the user logs out
      */
     resetState (state)

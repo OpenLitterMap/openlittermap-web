@@ -2,6 +2,7 @@
     "success": "Success",
     "error": "Error!",
     "tags-added": "Success! Your tags have been added",
+    "tagging-updated": "Success! Tag settings have been changed",
     "subscription-cancelled": "Your subscription has been cancelled",
     "privacy-updated": "Your Privacy Settings have been saved",
     "litter-toggled": "Picked up value updated",

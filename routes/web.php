@@ -169,6 +169,9 @@ Route::post('/settings/security', [
 // Update the users privacy eg toggle their anonmyity
 Route::post('/settings/privacy/update', 'UsersController@togglePrivacy');
 
+// Update the users tagging eg toggle their tagging settings
+Route::post('/settings/tagging/update', 'UsersController@toggleTagging');
+
 // Control Ethereum wallet and Littercoin
 Route::post('/settings/littercoin/update', 'BlockchainController@updateWallet');
 Route::post('/settings/littercoin/removewallet', 'BlockchainController@removeWallet');

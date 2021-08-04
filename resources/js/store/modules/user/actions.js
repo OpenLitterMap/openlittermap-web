@@ -233,6 +233,32 @@ export const actions = {
     },
 
     /**
+     * Save all tag settings on Tagging.vue
+     */
+    async SAVE_TAGGING_SETTINGS (context)
+    {
+        let title = i18n.t('notifications.success');
+        let body  = i18n.t('notifications.tagging-updated');
+
+        await axios.post('/settings/tagging/update', {
+            show_previous_tags: context.state.user.show_previous_tags,
+        })
+        .then(response => {
+            console.log('save_tagging_settings', response);
+
+            /* improve css */
+            Vue.$vToastify.success({
+                title,
+                body,
+                position: 'top-right'
+            });
+        })
+        .catch(error => {
+            console.log('error.save_tagging_settings', error);
+        });
+    },
+
+    /**
      * Change value of user wants to receive emails eg updates
      */
     async TOGGLE_EMAIL_SUBSCRIPTION (context)

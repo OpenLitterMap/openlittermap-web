@@ -32,6 +32,7 @@ import Littercoin from './settings/Littercoin'
 import Presence from './settings/Presence'
 import Emails from './settings/Emails'
 import GlobalFlag from './settings/GlobalFlag'
+import Tagging from './settings/Tagging'
 
 export default {
     name: 'Settings',
@@ -45,6 +46,7 @@ export default {
         Presence,
         Emails,
         GlobalFlag,
+        Tagging,
     },
     async created ()
     {
@@ -66,6 +68,7 @@ export default {
                 'presence',
                 'emails',
                 'show-flag',
+                'tagging',
             ],
             link: 'password',
             types: {
@@ -78,6 +81,7 @@ export default {
                 'presence': 'Presence',
                 'emails': 'Emails',
                 'show-flag': 'GlobalFlag',
+                'tagging': 'Tagging',
             }
         }
     },

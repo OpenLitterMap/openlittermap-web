@@ -171,6 +171,10 @@ const router = new VueRouter({
                     path: 'show-flag',
                     component: require('./views/settings/GlobalFlag').default,
                 },
+                {
+                    path: 'tagging',
+                    component: require('./views/settings/Tagging').default,
+                },
                 // {
                 // 	path: 'phone',
                 // 	component: require('./views/Phone').default
