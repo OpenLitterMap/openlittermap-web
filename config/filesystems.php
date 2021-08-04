@@ -61,18 +61,18 @@ return [
             'secret'   => env('AWS_SECRET'),
             'region'   => env('AWS_REGION'),
             'bucket'   => env('AWS_BUCKET'),
+            'url'      => env('AWS_URL'),
             'endpoint' => env('AWS_ENDPOINT'),
-            'use_path_style_endpoint' => true
         ],
 
-        'bbox' => [
+        's3500x500' => [
             'driver'   => 's3',
             'key'      => env('x500_AWS_KEY'),
             'secret'   => env('x500_AWS_SECRET'),
             'region'   => env('x500_AWS_REGION'),
             'bucket'   => env('x500_AWS_BUCKET'),
-            'endpoint' => env('x500_AWS_ENDPOINT'),
-            'use_path_style_endpoint' => true
+            // 'url'      => env('x500_AWS_URL'),
+            // 'endpoint' => env('x500_AWS_ENDPOINT'),
         ],
 
         'dropbox' => [
