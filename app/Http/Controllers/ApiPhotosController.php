@@ -228,7 +228,7 @@ class ApiPhotosController extends Controller
     /**
      * Save litter data to a recently uploaded photo
      *
-     * version 1
+     * version 2
      *
      * This is used by gallery photos
      */
@@ -246,9 +246,8 @@ class ApiPhotosController extends Controller
         return ['success' => true, 'msg' => 'dispatched'];
     }
 
-
     /**
-     *  Check if the user has any available photos that are uploaded, but not tagged
+     * Check if the user has any available photos that are uploaded, but not tagged
      */
     public function check ()
     {
