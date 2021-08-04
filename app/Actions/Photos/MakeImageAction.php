@@ -12,6 +12,8 @@ class MakeImageAction
         $image = Image::make($file);
 
         if ($resize) {
+            $image->resize(500, 500);
+
             $image->resize(500, 500, function ($constraint) {
                 $constraint->aspectRatio();
             });
