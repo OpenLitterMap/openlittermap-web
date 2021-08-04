@@ -67,14 +67,14 @@ Route::get('donate', 'HomeController@index');
 Route::get('donate/amounts', 'DonateController@index');
 Route::post('donate', 'DonateController@submit');
 
-// Get different global data
+// Get data for the Global Map
 Route::get('global', 'HomeController@index');
-Route::get('global-data', 'MapController@getGlobalData');
-Route::get('/global/clusters', 'GlobalMapController@clusters');
-Route::get('clusters', 'ClusterController@index');
-Route::get('global-points', 'GlobalMapController@index');
+Route::get('/global/clusters', 'GlobalMap\ClusterController@index');
+Route::get('/global/points', 'GlobalMap\GlobalMapController@index');
+Route::get('/global/art-data', 'GlobalMap\GlobalMapController@artData');
 
 /** Auth Routes */
+
 // Get currently auth user when logged in
 Route::get('/current-user', 'UsersController@getAuthUser');
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\GlobalMap;
 
 use App\Models\Cluster;
 use App\Traits\FilterClustersByGeohashTrait;
