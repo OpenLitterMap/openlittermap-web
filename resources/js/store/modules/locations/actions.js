@@ -15,7 +15,7 @@ export const actions = {
         let body  = 'Your download is being processed and will be emailed to you soon';
 
         await axios.post('/download', {
-            type: payload.type,
+            locationType: payload.locationType,
             locationId: payload.locationId,
             email: payload.email
         })

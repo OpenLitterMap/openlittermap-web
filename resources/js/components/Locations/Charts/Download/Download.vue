@@ -26,7 +26,7 @@
 <script>
 export default {
     name: 'Download',
-    props: ['type', 'locationId'], // country, state or city
+    props: ['locationType', 'locationId'], // country, state or city
     data ()
     {
         return {
@@ -46,7 +46,7 @@ export default {
         async download ()
         {
             await this.$store.dispatch('DOWNLOAD_DATA', {
-                type: this.type,
+                locationType: this.locationType,
                 locationId: this.locationId,
                 email: this.email
             });
