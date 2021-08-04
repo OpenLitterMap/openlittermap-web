@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Actions\Photos\AddTagsToPhotoAction;
 use App\Actions\Photos\DeletePhotoAction;
+use App\Actions\Photos\MakeImageAction;
+use App\Actions\Photos\ReverseGeocodeLocationAction;
 use App\Actions\Photos\UpdateLeaderboardsFromPhotoAction;
+use App\Actions\Photos\UploadPhotoAction;
 use GeoHash;
 use Exception;
 use Carbon\Carbon;
@@ -17,13 +20,8 @@ use App\Events\Photo\IncrementPhotoMonth;
 
 use App\Helpers\Post\UploadHelper;
 
-use Intervention\Image\Facades\Image;
-
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\ValidationException;
 
 class PhotosController extends Controller
 {
@@ -33,28 +31,36 @@ class PhotosController extends Controller
     private $addTagsAction;
     /** @var UpdateLeaderboardsFromPhotoAction */
     private $updateLeaderboardsAction;
-    /** @var DeletePhotoAction  */
+    /** @var UploadPhotoAction */
+    private $uploadPhotoAction;
+    /** @var DeletePhotoAction */
     private $deletePhotoAction;
+    /** @var MakeImageAction */
+    private $makeImageAction;
+    /** @var ReverseGeocodeLocationAction */
+    private $reverseGeocodeAction;
 
     /**
+     * PhotosController constructor
      * Apply middleware to all of these routes
-     *
-     * @param UploadHelper $uploadHelper
-     * @param AddTagsToPhotoAction $addTagsAction
-     * @param UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction
-     * @param DeletePhotoAction $deletePhotoAction
      */
     public function __construct(
         UploadHelper $uploadHelper,
         AddTagsToPhotoAction $addTagsAction,
         UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction,
-        DeletePhotoAction $deletePhotoAction
+        UploadPhotoAction $uploadPhotoAction,
+        DeletePhotoAction $deletePhotoAction,
+        MakeImageAction $makeImageAction,
+        ReverseGeocodeLocationAction $reverseGeocodeAction
     )
     {
         $this->uploadHelper = $uploadHelper;
         $this->addTagsAction = $addTagsAction;
         $this->updateLeaderboardsAction = $updateLeaderboardsAction;
+        $this->uploadPhotoAction = $uploadPhotoAction;
         $this->deletePhotoAction = $deletePhotoAction;
+        $this->makeImageAction = $makeImageAction;
+        $this->reverseGeocodeAction = $reverseGeocodeAction;
 
         $this->middleware('auth');
     }
@@ -70,11 +76,10 @@ class PhotosController extends Controller
      *
      * @param Request $request
      * @return bool[]
-     * @throws ValidationException
      */
     public function store (Request $request)
     {
-        $this->validate($request, [
+        $request->validate([
            'file' => 'required|mimes:jpg,png,jpeg'
         ]);
 
@@ -89,14 +94,7 @@ class PhotosController extends Controller
 
         $file = $request->file('file'); // /tmp/php7S8v..
 
-        $image = Image::make($file);
-
-// Todo : accept full resolution and resize it
-//        $image->resize(500, 500);
-//
-//        $image->resize(500, 500, function ($constraint) {
-//            $constraint->aspectRatio();
-//        });
+        $image = $this->makeImageAction->run($file);
 
         $exif = $image->exif();
 
@@ -142,56 +140,25 @@ class PhotosController extends Controller
         // Check if the user has already uploaded this image
         // todo - load error automatically without clicking it
         // todo - translate
-        if (app()->environment() === "production")
-        {
-            if (Photo::where(['user_id' => $user->id, 'datetime' => $dateTime])->first())
-            {
+        if (app()->environment() === "production") {
+            if (Photo::where(['user_id' => $user->id, 'datetime' => $dateTime])->first()) {
                 abort(500, "You have already uploaded this file!");
             }
         }
 
-        // Create dir/filename and move to AWS S3
-        $explode = explode('-', $dateTime);
-        $y = $explode[0];
-        $m = $explode[1];
-        $d = substr($explode[2], 0, 2);
+        // Upload images to both 's3' and 'bbox' disks, resized for 'bbox'
+        $imageName = $this->uploadPhotoAction->run(
+            $image,
+            $dateTime,
+            $file->hashName()
+        );
 
-        $filename = $file->hashName();
-        $filepath = $y.'/'.$m.'/'.$d.'/'.$filename;
-
-        // Upload image to AWS
-        if (app()->environment('production'))
-        {
-            $s3 = Storage::disk('s3');
-
-            $s3->put($filepath, $image->stream(), 'public');
-
-            $imageName = $s3->url($filepath);
-        }
-        // Upload image to Digital Ocean
-        else if (app()->environment('staging'))
-        {
-            $s3 = Storage::disk('staging');
-
-            $s3->put($filepath, $image->stream(), 'public');
-
-            $imageName = $s3->url($filepath);
-        }
-        // Save image locally
-        else
-        {
-            $public_path = public_path('local-uploads/'.$y.'/'.$m.'/'.$d);
-
-            // home/vagrant/Code/openlittermap-web/public/local-uploads/y/m/d
-            if (!file_exists($public_path))
-            {
-                mkdir($public_path, 666, true);
-            }
-
-            $image->save($public_path . '/' . $filename);
-
-            $imageName = config('app.url') . '/local-uploads/'.$y.'/'.$m.'/'.$d .'/'.$filename;
-        }
+        $bboxImageName = $this->uploadPhotoAction->run(
+            $this->makeImageAction->run($file, true),
+            $dateTime,
+            $file->hashName(),
+            'bbox'
+        );
 
         // Get phone model
         $model = (array_key_exists('Model', $exif))
@@ -208,19 +175,13 @@ class PhotosController extends Controller
         $latitude = $latlong[0];
         $longitude = $latlong[1];
 
-        // todo - let horizon process address details as a Job.
-        $apiKey = config('services.location.secret');
-        $url =  "https://locationiq.org/v1/reverse.php?format=json&key=".$apiKey."&lat=".$latitude."&lon=".$longitude."&zoom=20";
-
-        // The entire reverse geocoded result
-        $revGeoCode = json_decode(file_get_contents($url), true);
+        $revGeoCode = $this->reverseGeocodeAction->run($latitude, $longitude);
 
         // The entire address as a string
         $display_name = $revGeoCode["display_name"];
 
         // Extract the address array
         $addressArray = $revGeoCode["address"];
-         // \Log::info(['Address', $addressArray]);
         $location = array_values($addressArray)[0];
         $road = array_values($addressArray)[1];
 
@@ -250,7 +211,7 @@ class PhotosController extends Controller
             'platform' => 'web',
             'geohash' => $geohash,
             'team_id' => $user->active_team,
-            'five_hundred_square_filepath' => $imageName,
+            'five_hundred_square_filepath' => $bboxImageName,
             'address_array' => json_encode($addressArray)
         ]);
 
@@ -297,10 +258,9 @@ class PhotosController extends Controller
     }
 
     /**
-     * TODO - Need to sort AWS permissions
-      * Delete an image
-    */
-    public function deleteImage (Request $request)
+     * Delete an image
+     */
+    public function deleteImage(Request $request)
     {
         $user = Auth::user();
 
@@ -310,22 +270,15 @@ class PhotosController extends Controller
             abort(403);
         }
 
-        try
-        {
-            $this->deletePhotoAction->run($photo);
+        $this->deletePhotoAction->run($photo);
 
-            $photo->delete();
+        $photo->delete();
 
-            $user->xp = $user->xp > 0 ? $user->xp - 1 : 0;
-            $user->total_images = $user->total_images > 0 ? $user->total_images - 1 : 0;
-            $user->save();
-        }
-        catch (Exception $e)
-        {
-            Log::info(["PhotosController@deleteImage", $e->getMessage()]);
-        }
+        $user->xp = $user->xp > 0 ? $user->xp - 1 : 0;
+        $user->total_images = $user->total_images > 0 ? $user->total_images - 1 : 0;
+        $user->save();
 
-      	return ['message' => 'Photo deleted successfully!'];
+        return ['message' => 'Photo deleted successfully!'];
     }
 
     /**

@@ -2,25 +2,16 @@
 
 namespace Tests\Feature;
 
-use App\Events\ImageUploaded;
-use App\Events\Photo\IncrementPhotoMonth;
 use App\Events\TagsVerifiedByAdmin;
 use App\Models\Litter\Categories\Smoking;
 use App\Models\Location\City;
 use App\Models\Location\Country;
 use App\Models\Location\State;
-use App\Models\Teams\Team;
 use App\Models\User\User;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Facades\Image;
 use Tests\TestCase;
-
-use App\Models\Photo;
 
 class AddTagsToPhotoTest extends TestCase
 {
@@ -32,18 +23,12 @@ class AddTagsToPhotoTest extends TestCase
     {
         parent::setUp();
 
+        Storage::fake('s3');
+        Storage::fake('bbox');
+
         $this->setImagePath();
 
         $this->imageAndAttributes = $this->getImageAndAttributes();
-    }
-
-    protected function tearDown(): void
-    {
-        if (File::exists($this->imageAndAttributes['filepath'])) {
-            File::delete($this->imageAndAttributes['filepath']);
-        }
-
-        parent::tearDown();
     }
 
     public function test_a_user_can_add_tags_to_a_photo()

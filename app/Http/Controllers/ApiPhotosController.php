@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Photos\MakeImageAction;
+use App\Actions\Photos\ReverseGeocodeLocationAction;
+use App\Actions\Photos\UploadPhotoAction;
 use GeoHash;
 use Carbon\Carbon;
 
@@ -15,9 +18,7 @@ use App\Helpers\Post\UploadHelper;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
-use Intervention\Image\Facades\Image;
 
 class ApiPhotosController extends Controller
 {
@@ -25,15 +26,28 @@ class ApiPhotosController extends Controller
 
     /** @var UploadHelper */
     protected $uploadHelper;
+    /** @var UploadPhotoAction */
+    private $uploadPhotoAction;
+    /** @var MakeImageAction */
+    private $makeImageAction;
+    /** @var ReverseGeocodeLocationAction */
+    private $reverseGeocodeAction;
 
     /**
+     * ApiPhotosController constructor
      * Apply middleware to all of these routes
-     *
-     * @param UploadHelper $uploadHelper
      */
-    public function __construct (UploadHelper $uploadHelper)
+    public function __construct (
+        UploadHelper $uploadHelper,
+        UploadPhotoAction $uploadPhotoAction,
+        MakeImageAction $makeImageAction,
+        ReverseGeocodeLocationAction $reverseGeocodeAction
+    )
     {
         $this->uploadHelper = $uploadHelper;
+        $this->uploadPhotoAction = $uploadPhotoAction;
+        $this->makeImageAction = $makeImageAction;
+        $this->reverseGeocodeAction = $reverseGeocodeAction;
 
         $this->middleware('auth:api');
     }
@@ -66,6 +80,13 @@ class ApiPhotosController extends Controller
      */
     public function store (Request $request) :array
     {
+        $request->validate([
+            'photo' => 'required|mimes:jpg,png,jpeg',
+            'lat' => 'required',
+            'lon' => 'required',
+            'date' => 'required'
+        ]);
+
         $file = $request->file('photo');
 
         if ($file->getError() === 3)
@@ -74,6 +95,8 @@ class ApiPhotosController extends Controller
         }
 
         $user = Auth::guard('api')->user();
+
+        if (!$user->has_uploaded) $user->has_uploaded = 1;
 
         \Log::channel('photos')->info([
             'app_upload' => $request->all(),
@@ -84,68 +107,32 @@ class ApiPhotosController extends Controller
             ? $request->model
             : 'Mobile app v2';
 
-        $image = Image::make($file);
-
-        $image->resize(500, 500);
-
-        $image->resize(500, 500, function ($constraint) {
-            $constraint->aspectRatio();
-        });
-
-        $filename = $file->getClientOriginalName();
-
-        $hashname = $file->hashName();
+        $image = $this->makeImageAction->run($file);
 
         $lat  = $request['lat'];
 		$lon  = $request['lon'];
-		$date = $request['date'];
+		$date = Carbon::parse($request['date']);
 
-		$explode = explode(':', $date);
-        $y = $explode[0];
-        $m = $explode[1];
-        $d = substr($explode[2], 0, 2);
+        // Upload images to both 's3' and 'bbox' disks, resized for 'bbox'
+        $imageName = $this->uploadPhotoAction->run(
+            $image,
+            $date,
+            $file->hashName()
+        );
 
-	    $filepath = $y.'/'.$m.'/'.$d.'/'.$hashname;
+        $bboxImageName = $this->uploadPhotoAction->run(
+            $this->makeImageAction->run($file, true),
+            $date,
+            $file->hashName(),
+            'bbox'
+        );
 
-        // convert to YYYY-MM-DD hh:mm:ss format
-        $date = Carbon::parse($date);
+        $revGeoCode = $this->reverseGeocodeAction->run($lat, $lon);
 
-	    if (app()->environment('production'))
-	    {
-            $s3 = \Storage::disk('s3');
-
-            $s3->put($filepath, file_get_contents($file), 'public');
-
-            $imageName = $s3->url($filepath);
-        }
-        else
-        {
-            $public_path = public_path('local-uploads/'.$y.'/'.$m.'/'.$d);
-
-            // home/vagrant/Code/openlittermap-web/public/local-uploads/y/m/d
-            if (!file_exists($public_path))
-            {
-                mkdir($public_path, 666, true);
-            }
-
-            $image->save($public_path . '/' . $hashname);
-
-            $imageName = config('app.url') . '/local-uploads/'.$y.'/'.$m.'/'.$d .'/'.$hashname;
-        }
-
-        /** Reverse Geocode the GPS coordinates from OpenStreetMap to get an array of key-value address pairs */
-        $apiKey = config('services.location.secret');
-        $url =  "http://locationiq.org/v1/reverse.php?format=json&key=".$apiKey."&lat=".$lat."&lon=".$lon."&zoom=20";
-
-        // The entire reverse geocoded result
-        $revGeoCode = json_decode(file_get_contents($url), true);
-        // \Log::info(['revGeoCode', $revGeoCode]);
         // The entire address as a string
         $display_name = $revGeoCode["display_name"];
         // Extract the address array as $key => $value pairs.
         $addressArray = $revGeoCode["address"];
-        // \Log::info(["Address", $addressArray]);
-        // Get the first 2 because keys are highly dynamic
         $location = array_values($addressArray)[0];
         $road = array_values($addressArray)[1];
 
@@ -153,34 +140,29 @@ class ApiPhotosController extends Controller
         $state = $this->uploadHelper->getStateFromAddressArray($country, $addressArray);
         $city = $this->uploadHelper->getCityFromAddressArray($country, $state, $addressArray);
 
-        try
-        {
-            $photo = $user->photos()->create([
-                'filename' => $imageName,
-                'datetime' => $date,
-                'lat' => $lat,
-                'lon' => $lon,
-                'display_name' => $display_name,
-                'location' => $location,
-                'road' => $road,
-                'country_id' => $country->id,
-                'state_id' => $state->id,
-                'city_id' => $city->id,
-                'city' => $city->city,
-                'county' => $state->state,
-                'country' => $country->country,
-                'country_code' => $country->shortcode,
-                'model' => $model,
-                'remaining' => $request['presence'],
-                'platform' => 'mobile',
-                'geohash' => GeoHash::encode($lat, $lon),
-                'address_array' => json_encode($addressArray)
-            ]);
-        }
-        catch (\Exception $e)
-        {
-            \Log::info(['ApiPhotosController@store', $e->getMessage()]);
-        }
+        $photo = $user->photos()->create([
+            'filename' => $imageName,
+            'datetime' => $date,
+            'lat' => $lat,
+            'lon' => $lon,
+            'display_name' => $display_name,
+            'location' => $location,
+            'road' => $road,
+            'country_id' => $country->id,
+            'state_id' => $state->id,
+            'city_id' => $city->id,
+            'city' => $city->city,
+            'county' => $state->state,
+            'country' => $country->country,
+            'country_code' => $country->shortcode,
+            'model' => $model,
+            'remaining' => $request['presence'],
+            'platform' => 'mobile',
+            'geohash' => GeoHash::encode($lat, $lon),
+            'team_id' => $user->active_team,
+            'five_hundred_square_filepath' => $bboxImageName,
+            'address_array' => json_encode($addressArray)
+        ]);
 
         // Since a user can upload multiple photos at once,
         // we might get old values for xp, so we update the values directly
@@ -216,20 +198,6 @@ class ApiPhotosController extends Controller
             $city->id,
             $date
         ));
-
-//        if ($user->has_uploaded_today === 0)
-//        {
-//              $user->has_uploaded_today = 1;
-//              $user->has_uploaded_counter++;
-//
-//              if ($user->has_uploaded_counter == 7)
-//              {
-//                    $user->littercoin_allowance++;
-//                    $user->has_uploaded_counter = 0;
-//              }
-//
-//              $user->save();
-//        }
 
 		return ['success' => true, 'photo_id' => $photo->id];
     }

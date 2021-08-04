@@ -57,7 +57,7 @@ class UploadData implements ShouldQueue
         $photo->total_litter = $litterTotals['litter'];
 
         // Check if the User is a trusted user => photos do not require verification.
-        if ($user->verification_required == 0)
+        if (!$user->verification_required)
         {
             $photo->verification = 1;
             $photo->verified = 2;

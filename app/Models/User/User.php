@@ -105,7 +105,8 @@ class User extends Authenticatable
 
     protected $casts = [
         'show_name' => 'boolean',
-        'show_username' => 'boolean'
+        'show_username' => 'boolean',
+        'verification_required' => 'boolean'
     ];
 
     protected $appends = ['total_categories', 'total_tags', 'total_brands_redis'];

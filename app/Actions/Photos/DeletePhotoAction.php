@@ -5,51 +5,29 @@ namespace App\Actions\Photos;
 
 
 use App\Models\Photo;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 
 class DeletePhotoAction
 {
     public function run(Photo $photo)
     {
-        if (app()->environment('production')) {
-            $this->deletePhotoOnProduction($photo);
-        } else if (app()->environment('staging')) {
-            $this->deletePhotoOnStaging($photo);
-        } else {
-            $this->deletePhoto($photo);
-        }
+        $this->deletePhoto($photo->filename, 's3');
+
+        $this->deletePhoto($photo->five_hundred_square_filepath, 'bbox');
     }
 
     /**
-     * @param Photo $photo
+     * @param string $filename
+     * @param string $disk
      */
-    protected function deletePhotoOnProduction(Photo $photo): void
+    protected function deletePhoto(string $filename, string $disk): void
     {
-        $path = substr($photo->filename, 42);
-        Storage::disk('s3')->delete($path);
-    }
+        $path = str_replace(
+            rtrim(Storage::disk($disk)->url('/'), '/'),
+            '',
+            $filename
+        );
 
-    /**
-     * @param Photo $photo
-     */
-    protected function deletePhotoOnStaging(Photo $photo): void
-    {
-        $path = substr($photo->filename, 58);
-        Storage::disk('staging')->delete($path);
-    }
-
-    /**
-     * @param Photo $photo
-     */
-    protected function deletePhoto(Photo $photo): void
-    {
-        // Strip the app name from the filename
-        // Resulting path is like 'local-uploads/2021/07/07/photo.jpg'
-        $path = public_path(substr($photo->filename, strlen(config('app.url'))));
-
-        if (File::exists($path)) {
-            File::delete($path);
-        }
+        Storage::disk($disk)->delete($path);
     }
 }

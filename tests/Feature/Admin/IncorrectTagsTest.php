@@ -9,8 +9,8 @@ use App\Models\Location\Country;
 use App\Models\Location\State;
 use App\Models\Photo;
 use App\Models\User\User;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
 use Tests\Feature\HasPhotoUploads;
 use Tests\TestCase;
@@ -25,12 +25,13 @@ class IncorrectTagsTest extends TestCase
     protected $user;
     /** @var Photo */
     protected $photo;
-    /** @var array */
-    private $imageAndAttributes;
 
     protected function setUp(): void
     {
         parent::setUp();
+
+        Storage::fake('s3');
+        Storage::fake('bbox');
 
         $this->setImagePath();
 
@@ -44,20 +45,11 @@ class IncorrectTagsTest extends TestCase
         // User uploads an image -------------------
         $this->actingAs($this->user);
 
-        $this->imageAndAttributes = $this->getImageAndAttributes();
+        $imageAndAttributes = $this->getImageAndAttributes();
 
-        $this->post('/submit', ['file' => $this->imageAndAttributes['file']]);
+        $this->post('/submit', ['file' => $imageAndAttributes['file']]);
 
         $this->photo = $this->user->fresh()->photos->last();
-    }
-
-    protected function tearDown(): void
-    {
-        if (File::exists($this->imageAndAttributes['filepath'])) {
-            File::delete($this->imageAndAttributes['filepath']);
-        }
-
-        parent::tearDown();
     }
 
     public function test_an_admin_can_mark_photos_as_incorrectly_tagged()

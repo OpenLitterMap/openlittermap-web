@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Api;
 
 use App\Actions\Photos\DeletePhotoAction;
 use App\Events\ImageUploaded;
@@ -15,6 +15,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Facades\Image;
+use Tests\Feature\HasPhotoUploads;
 use Tests\TestCase;
 
 use App\Models\Photo;
@@ -34,7 +35,23 @@ class UploadPhotoTest extends TestCase
         City::create(['city' => 'error_city', 'country_id' => $country->id, 'state_id' => $state->id]);
     }
 
-    public function test_a_user_can_upload_a_photo()
+    /**
+     * @param array $imageAttributes
+     * @return array
+     */
+    protected function getApiImageAttributes(array $imageAttributes): array
+    {
+        return [
+            'photo' => $imageAttributes['file'],
+            'lat' => $imageAttributes['latitude'],
+            'lon' => $imageAttributes['longitude'],
+            'date' => $imageAttributes['dateTime'],
+            'model' => 'test model',
+            'presence' => true
+        ];
+    }
+
+    public function test_an_api_user_can_upload_a_photo()
     {
         Storage::fake('s3');
         Storage::fake('bbox');
@@ -47,13 +64,13 @@ class UploadPhotoTest extends TestCase
             'active_team' => Team::factory()
         ]);
 
-        $this->actingAs($user);
+        $this->actingAs($user, 'api');
 
         $imageAttributes = $this->getImageAndAttributes();
 
-        $response = $this->post('/submit', [
-            'file' => $imageAttributes['file'],
-        ]);
+        $response = $this->post('/api/photos/submit',
+            $this->getApiImageAttributes($imageAttributes)
+        );
 
         $response->assertOk()->assertJson(['success' => true]);
 
@@ -89,12 +106,13 @@ class UploadPhotoTest extends TestCase
         $this->assertEquals($imageAttributes['address']['state'], $photo->county);
         $this->assertEquals($imageAttributes['address']['country'], $photo->country);
         $this->assertEquals($imageAttributes['address']['country_code'], $photo->country_code);
-        $this->assertEquals('Unknown', $photo->model);
+        $this->assertEquals('test model', $photo->model);
+        $this->assertEquals(1, $photo->remaining);
         $this->assertEquals($this->getCountryId(), $photo->country_id);
         $this->assertEquals($this->getStateId(), $photo->state_id);
         $this->assertEquals($this->getCityId(), $photo->city_id);
-        $this->assertEquals('web', $photo->platform);
-        $this->assertEquals($imageAttributes['geoHash'], $photo->geohash);
+        $this->assertEquals('mobile', $photo->platform);
+        $this->assertEquals('dr15u73vccgyzbs9w4um', $photo->geohash);
         $this->assertEquals($user->active_team, $photo->team_id);
         $this->assertEquals($imageAttributes['bboxImageName'], $photo->five_hundred_square_filepath);
 
@@ -125,17 +143,17 @@ class UploadPhotoTest extends TestCase
         );
     }
 
-    public function test_a_user_can_upload_a_photo_on_a_real_storage()
+    public function test_an_api_user_can_upload_a_photo_on_a_real_storage()
     {
         $user = User::factory()->create();
 
-        $this->actingAs($user);
+        $this->actingAs($user, 'api');
 
         $imageAttributes = $this->getImageAndAttributes();
 
-        $response = $this->post('/submit', [
-            'file' => $imageAttributes['file'],
-        ]);
+        $response = $this->post('/api/photos/submit',
+            $this->getApiImageAttributes($imageAttributes)
+        );
 
         $response->assertOk()->assertJson(['success' => true]);
 
@@ -180,7 +198,7 @@ class UploadPhotoTest extends TestCase
             'active_team' => Team::factory()
         ]);
 
-        $this->actingAs($user);
+        $this->actingAs($user, 'api');
 
         $imageAttributes = $this->getImageAndAttributes();
 
@@ -188,9 +206,9 @@ class UploadPhotoTest extends TestCase
         $this->assertEquals(0, $user->xp);
         $this->assertEquals(0, $user->total_images);
 
-        $this->post('/submit', [
-            'file' => $imageAttributes['file'],
-        ]);
+        $this->post('/api/photos/submit',
+            $this->getApiImageAttributes($imageAttributes)
+        );
 
         // User info gets updated
         $user->refresh();
@@ -201,9 +219,11 @@ class UploadPhotoTest extends TestCase
 
     public function test_unauthenticated_users_cannot_upload_photos()
     {
-        $response = $this->post('/submit', [
-            'file' => 'file',
-        ]);
+        $imageAttributes = $this->getImageAndAttributes();
+
+        $response = $this->post('/api/photos/submit',
+            $this->getApiImageAttributes($imageAttributes)
+        );
 
         $response->assertRedirect('login');
     }
@@ -212,33 +232,18 @@ class UploadPhotoTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->actingAs($user);
+        $this->actingAs($user, 'api');
 
-        $this->postJson('/submit', ['file' => null])
+        $this->postJson('/api/photos/submit', ['photo' => null])
             ->assertStatus(422)
-            ->assertJsonValidationErrors('file');
+            ->assertJsonValidationErrors(['photo', 'lat', 'lon', 'date']);
 
         $nonImage = UploadedFile::fake()->image('some.pdf');
 
-        $this->postJson('/submit', [
-            'file' => $nonImage
+        $this->postJson('/api/photos/submit', [
+            'photo' => $nonImage
         ])
             ->assertStatus(422)
-            ->assertJsonValidationErrors('file');
-    }
-
-    public function test_it_throws_server_error_when_photo_has_no_location_data()
-    {
-        $user = User::factory()->create();
-
-        $this->actingAs($user);
-
-        $image = UploadedFile::fake()->image('image.jpg');
-
-        $response = $this->post('/submit', [
-            'file' => $image
-        ]);
-
-        $response->assertStatus(500);
+            ->assertJsonValidationErrors('photo');
     }
 }
