@@ -86,7 +86,7 @@
                     <td width="75%">
                         &copy; OpenLitterMap & Contributors 2021
                         <br/>
-                        <p>If you want to unsubscribe <a href="http://olm.test/emails/unsubscribe/{{ $user->sub_token }}">click this link</a></p>
+                        <p>If you want to unsubscribe <a href="https://openlittermap.com/emails/unsubscribe/{{ $user->sub_token }}">click this link</a></p>
                         <p>(you can also un-subscribe and re-subscribe to our email updates in the settings)</p>
                     </td>
                 </tr>
