@@ -2,19 +2,20 @@
 
 namespace App\Console\Commands;
 
-use App\Models\User\User;
-use App\Mail\SmallUpdate;
 use App\Subscriber;
+use App\Models\User\User;
+use App\Jobs\Emails\DispatchEmail;
+
 use Illuminate\Console\Command;
 
-class SendEmailToAll extends Command
+class SendEmailToSubscribed extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'olm:send-email-to-all';
+    protected $signature = 'olm:send-email-to-subscribed';
 
     /**
      * The console command description.
@@ -46,7 +47,7 @@ class SendEmailToAll extends Command
         foreach ($users as $user)
         {
             echo "user.id " . $user->id . " \n \n";
-            \Mail::to($user->email)->send(new SmallUpdate($user));
+            dispatch (new DispatchEmail($user));
         }
     }
 }
