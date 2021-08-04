@@ -62,7 +62,7 @@ return [
             'region'   => env('AWS_REGION'),
             'bucket'   => env('AWS_BUCKET'),
             'endpoint' => env('AWS_ENDPOINT'),
-            'use_path_style_endpoint' => false
+//            'use_path_style_endpoint' => false
         ],
 
         'bbox' => [
@@ -72,7 +72,7 @@ return [
             'region'   => env('x500_AWS_REGION'),
             'bucket'   => env('x500_AWS_BUCKET'),
             'endpoint' => env('x500_AWS_ENDPOINT'),
-            'use_path_style_endpoint' => false
+//            'use_path_style_endpoint' => false
         ],
 
         'dropbox' => [
