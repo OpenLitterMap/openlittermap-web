@@ -281,7 +281,7 @@ async function update ()
             }
 
             const data = response.data.features.map(feature => {
-                return [ feature.geometry.coordinates[0], feature.geometry.coordinates[1]];
+                return [feature.geometry.coordinates[0], feature.geometry.coordinates[1]];
             });
 
             // New way using webGL
