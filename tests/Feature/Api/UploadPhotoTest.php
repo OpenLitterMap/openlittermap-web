@@ -219,7 +219,6 @@ class UploadPhotoTest extends TestCase
 
     public function test_unauthenticated_users_cannot_upload_photos()
     {
-        $this->withoutExceptionHandling();
         $imageAttributes = $this->getImageAndAttributes();
 
         $response = $this->post('/api/photos/submit',
