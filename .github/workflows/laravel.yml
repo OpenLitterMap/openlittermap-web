@@ -16,9 +16,9 @@ jobs:
       DB_USERNAME: root
       DB_PASSWORD: password
       BROADCAST_DRIVER: log
-      CACHE_DRIVER: redis
-      QUEUE_CONNECTION: redis
-      SESSION_DRIVER: redis   
+      CACHE_DRIVER: array
+      QUEUE_CONNECTION: sync
+      SESSION_DRIVER: array   
       AWS_KEY: minioadmin
       AWS_SECRET: minioadmin
       AWS_REGION: us-east-1
