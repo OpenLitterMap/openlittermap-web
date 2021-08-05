@@ -22,8 +22,6 @@ class UploadPhotoAction
     {
         $path = $this->extractPath($datetime, $filename);
 
-        \Log::info(['path', $path]);
-
         $filesystem = Storage::disk($disk);
 
         $filesystem->put($path, $photo->stream(), 'public');
