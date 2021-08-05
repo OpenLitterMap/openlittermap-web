@@ -18,7 +18,12 @@ jobs:
       BROADCAST_DRIVER: log
       CACHE_DRIVER: redis
       QUEUE_CONNECTION: redis
-      SESSION_DRIVER: redis    
+      SESSION_DRIVER: redis   
+      AWS_KEY: minioadmin
+      AWS_SECRET: minioadmin
+      AWS_REGION: us-east-1
+      AWS_BUCKET: olm-public
+      AWS_ENDPOINT: http://127.0.0.1:9000
     services:
       mysql:
         image: mysql:5.7
