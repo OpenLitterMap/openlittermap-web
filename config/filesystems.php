@@ -62,7 +62,7 @@ return [
             'region'   => env('AWS_REGION'),
             'bucket'   => env('AWS_BUCKET'),
             'endpoint' => env('AWS_ENDPOINT'),
-            'use_path_style_endpoint' => env('AWS_PATH_STYLE_ENDPOINT', false)
+//            'use_path_style_endpoint' => env('AWS_PATH_STYLE_ENDPOINT', false)
         ],
 
         'bbox' => [
