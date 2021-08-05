@@ -24,6 +24,11 @@ jobs:
       AWS_REGION: us-east-1
       AWS_BUCKET: olm-public
       AWS_ENDPOINT: http://127.0.0.1:9000
+      x500_AWS_KEY: minioadmin
+      x500_AWS_SECRET: minioadmin
+      x500_AWS_REGION: us-east-1
+      x500_AWS_BUCKET: olm-public-bbox
+      x500_AWS_ENDPOINT: http://127.0.0.1:9000
     services:
       mysql:
         image: mysql:5.7
