@@ -201,6 +201,7 @@ class UploadPhotoTest extends TestCase
 
     public function test_unauthenticated_users_cannot_upload_photos()
     {
+$this->withoutExceptionHandling();
         $response = $this->post('/submit', [
             'file' => 'file',
         ]);
