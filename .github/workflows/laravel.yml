@@ -76,6 +76,8 @@ jobs:
       run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
     - name: Generate key
       run: php artisan key:generate
+    - name: Install Passport
+      run: php artisan passport:keys
     - name: Clear Config
       run: php artisan config:clear
     - name: Run Migration
@@ -85,8 +87,6 @@ jobs:
           REDIS_PORT: ${{ job.services.redis.ports['6379'] }}
     - name: Directory Permissions
       run: chmod -R 777 storage bootstrap/cache
-    - name: Install Passport
-      run: php artisan passport:install
     - name: Execute tests (Unit and Feature tests) via PHPUnit
       run: vendor/bin/phpunit # --coverage-text
       env:
