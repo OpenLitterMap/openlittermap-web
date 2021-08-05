@@ -21,7 +21,7 @@ jobs:
       SESSION_DRIVER: redis    
     services:
       mysql:
-        image: mysql:8.0
+        image: mysql:5.7
         env:
           MYSQL_ALLOW_EMPTY_PASSWORD: false
           MYSQL_ROOT_PASSWORD: password
@@ -40,7 +40,7 @@ jobs:
       with:
         php-version: '7.3'
         extensions: mbstring, dom, fileinfo, mysql
-        coverage: xdebug #optional
+        # coverage: xdebug #optional
     - uses: actions/checkout@v2
     - name: Start mysql service
       run: sudo /etc/init.d/mysql start
@@ -60,7 +60,7 @@ jobs:
     - name: Directory Permissions
       run: chmod -R 777 storage bootstrap/cache
     - name: Execute tests (Unit and Feature tests) via PHPUnit
-      run: vendor/bin/phpunit --coverage-text
+      run: vendor/bin/phpunit # --coverage-text
       env:
           DB_PORT: ${{ job.services.mysql.ports['3306'] }}
           REDIS_PORT: ${{ job.services.redis.ports['6379'] }}
