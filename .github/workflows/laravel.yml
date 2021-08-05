@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     
     env:
+      APP_ENV: testing
       DB_DATABASE: olm_test
       DB_USERNAME: root
       DB_PASSWORD: password
