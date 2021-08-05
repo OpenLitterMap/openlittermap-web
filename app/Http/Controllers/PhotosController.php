@@ -156,12 +156,13 @@ class PhotosController extends Controller
             $file->hashName()
         );
 
-        $bboxImageName = $this->uploadPhotoAction->run(
-            $this->makeImageAction->run($file, true),
-            $dateTime,
-            $file->hashName(),
-            'bbox'
-        );
+        $bboxImageName = "";
+//        $this->uploadPhotoAction->run(
+//            $this->makeImageAction->run($file, true),
+//            $dateTime,
+//            $file->hashName(),
+//            'bbox'
+//        );
 
         // Get phone model
         $model = (array_key_exists('Model', $exif) && !empty($exif["Model"]))
