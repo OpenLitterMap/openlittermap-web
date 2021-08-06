@@ -48,11 +48,11 @@ export default {
          */
         maps_name: {
             get () {
-                return this.user.show_previous_tags;
+                return this.user.previous_tags;
             },
             set (v) {
                 this.$store.commit('tagging', {
-                    column: 'show_previous_tags',
+                    column: 'previous_tags',
                     v
                 });
             }

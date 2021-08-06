@@ -352,7 +352,7 @@ class UsersController extends Controller
         $user = Auth::user();
 
         /* Whether to save the tags from a previous image */
-        $user->show_previous_tags = $request->show_previous_tags;
+        $user->previous_tags = $request->previous_tags;
 
         $user->save();
     }

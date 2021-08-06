@@ -241,7 +241,7 @@ export const actions = {
         let body  = i18n.t('notifications.tagging-updated');
 
         await axios.post('/settings/tagging/update', {
-            show_previous_tags: context.state.user.show_previous_tags,
+            previous_tags: context.state.user.previous_tags,
         })
         .then(response => {
             console.log('save_tagging_settings', response);
