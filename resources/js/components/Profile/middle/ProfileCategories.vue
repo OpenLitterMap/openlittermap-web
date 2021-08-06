@@ -1,6 +1,7 @@
 <template>
     <div class="profile-card">
-        <Radar :categories="categories" />
+        <!-- Using :key helps to update the radar when tags change -->
+        <Radar :key="user.total_tags" :categories="categories" />
     </div>
 </template>
 
@@ -19,7 +20,7 @@ export default {
         {
             return [
                 this.user.total_categories.alcohol,
-                this.user.total_categories.brands || 0, // brands are not returned from the backend
+                this.user.total_brands_redis,
                 this.user.total_categories.coastal,
                 this.user.total_categories.coffee,
                 this.user.total_categories.dumping,

@@ -9,7 +9,9 @@ use App\Models\Location\Country;
 use App\Models\Location\State;
 use App\Models\Location\City;
 
+use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class DownloadControllerNew extends Controller
 {
@@ -40,7 +42,7 @@ class DownloadControllerNew extends Controller
 
         try
         {
-            if ($request->type === 'city')
+            if ($request->locationType === 'city')
             {
                 if ($city = City::find($request->locationId))
                 {
@@ -48,7 +50,7 @@ class DownloadControllerNew extends Controller
                     $location_id = $city->id;
                 }
             }
-            else if ($request->type === 'state')
+            else if ($request->locationType === 'state')
             {
                 if ($state = State::find($request->locationId))
                 {
@@ -56,7 +58,7 @@ class DownloadControllerNew extends Controller
                     $location_id = $state->id;
                 }
             }
-            else if ($request->type === 'country')
+            else if ($request->locationType === 'country')
             {
                 if ($country = Country::find($request->locationId))
                 {
@@ -66,7 +68,7 @@ class DownloadControllerNew extends Controller
             }
 
             /* Dispatch job to create CSV file for export */
-            (new CreateCSVExport($request->type, $location_id))
+            (new CreateCSVExport($request->locationType, $location_id))
                 ->queue($path, 's3', null, ['visibility' => 'public'])
                 ->chain([
                     // These jobs are executed when above is finished.
@@ -77,9 +79,9 @@ class DownloadControllerNew extends Controller
             return ['success' => true];
         }
 
-        catch (\Exception $e)
+        catch (Exception $e)
         {
-            \Log::info(['download failed', $e->getMessage()]);
+            Log::info(['download failed', $e->getMessage()]);
 
             return ['success' => false];
         }

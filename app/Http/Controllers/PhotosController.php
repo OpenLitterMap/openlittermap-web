@@ -2,43 +2,66 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\LocationService;
-use Exception;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\ValidationException;
-use Intervention\Image\Facades\Image;
+use App\Actions\Photos\AddTagsToPhotoAction;
+use App\Actions\Photos\DeletePhotoAction;
+use App\Actions\Photos\MakeImageAction;
+use App\Actions\Photos\ReverseGeocodeLocationAction;
+use App\Actions\Photos\UpdateLeaderboardsFromPhotoAction;
+use App\Actions\Photos\UploadPhotoAction;
 use GeoHash;
-
+use Exception;
 use Carbon\Carbon;
 
 use App\Models\Photo;
-use App\Models\Location\City;
-use App\Models\Location\State;
-use App\Models\Location\Country;
-
-use App\Models\LitterTags;
-
 use Illuminate\Http\Request;
 use App\Events\ImageUploaded;
 use App\Events\TagsVerifiedByAdmin;
 use App\Events\Photo\IncrementPhotoMonth;
 
-use Illuminate\Support\Facades\Redis;
+use App\Helpers\Post\UploadHelper;
+
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class PhotosController extends Controller
 {
-    /** @var LocationService */
-    protected $locationService;
+    protected $uploadHelper;
+    private $addTagsAction;
+    private $updateLeaderboardsAction;
+    private $uploadPhotoAction;
+    private $deletePhotoAction;
+    private $makeImageAction;
+    private $reverseGeocodeAction;
 
     /**
+     * PhotosController constructor
      * Apply middleware to all of these routes
+     *
+     * @param UploadHelper $uploadHelper
+     * @param AddTagsToPhotoAction $addTagsAction
+     * @param UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction
+     * @param UploadPhotoAction $uploadPhotoAction
+     * @param DeletePhotoAction $deletePhotoAction
+     * @param MakeImageAction $makeImageAction
+     * @param ReverseGeocodeLocationAction $reverseGeocodeAction
      */
-    public function __construct(LocationService $locationService)
+    public function __construct(
+        UploadHelper $uploadHelper,
+        AddTagsToPhotoAction $addTagsAction,
+        UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction,
+        UploadPhotoAction $uploadPhotoAction,
+        DeletePhotoAction $deletePhotoAction,
+        MakeImageAction $makeImageAction,
+        ReverseGeocodeLocationAction $reverseGeocodeAction
+    )
     {
-        $this->locationService = $locationService;
+        $this->uploadHelper = $uploadHelper;
+        $this->addTagsAction = $addTagsAction;
+        $this->updateLeaderboardsAction = $updateLeaderboardsAction;
+        $this->uploadPhotoAction = $uploadPhotoAction;
+        $this->deletePhotoAction = $deletePhotoAction;
+        $this->makeImageAction = $makeImageAction;
+        $this->reverseGeocodeAction = $reverseGeocodeAction;
 
         $this->middleware('auth');
     }
@@ -54,11 +77,10 @@ class PhotosController extends Controller
      *
      * @param Request $request
      * @return bool[]
-     * @throws ValidationException
      */
     public function store (Request $request)
     {
-        $this->validate($request, [
+        $request->validate([
            'file' => 'required|mimes:jpg,png,jpeg'
         ]);
 
@@ -73,13 +95,7 @@ class PhotosController extends Controller
 
         $file = $request->file('file'); // /tmp/php7S8v..
 
-        $image = Image::make($file);
-
-        $image->resize(500, 500);
-
-        $image->resize(500, 500, function ($constraint) {
-            $constraint->aspectRatio();
-        });
+        $image = $this->makeImageAction->run($file);
 
         $exif = $image->exif();
 
@@ -133,51 +149,22 @@ class PhotosController extends Controller
             }
         }
 
-        // Create dir/filename and move to AWS S3
-        $explode = explode('-', $dateTime);
-        $y = $explode[0];
-        $m = $explode[1];
-        $d = substr($explode[2], 0, 2);
+        // Upload images to both 's3' and 'bbox' disks, resized for 'bbox'
+        $imageName = $this->uploadPhotoAction->run(
+            $image,
+            $dateTime,
+            $file->hashName()
+        );
 
-        $filename = $file->hashName();
-        $filepath = $y.'/'.$m.'/'.$d.'/'.$filename;
-
-        // Upload image to AWS
-        if (app()->environment('production'))
-        {
-            $s3 = Storage::disk('s3');
-
-            $s3->put($filepath, $image->stream(), 'public');
-
-            $imageName = $s3->url($filepath);
-        }
-        // Upload image to Digital Ocean
-        else if (app()->environment('staging'))
-        {
-            $s3 = Storage::disk('staging');
-
-            $s3->put($filepath, $image->stream(), 'public');
-
-            $imageName = $s3->url($filepath);
-        }
-        // Save image locally
-        else
-        {
-            $public_path = public_path('local-uploads/'.$y.'/'.$m.'/'.$d);
-
-            // home/vagrant/Code/openlittermap-web/public/local-uploads/y/m/d
-            if (!file_exists($public_path))
-            {
-                mkdir($public_path, 666, true);
-            }
-
-            $image->save($public_path . '/' . $filename);
-
-            $imageName = config('app.url') . '/local-uploads/'.$y.'/'.$m.'/'.$d .'/'.$filename;
-        }
+        $bboxImageName = $this->uploadPhotoAction->run(
+            $this->makeImageAction->run($file, true),
+            $dateTime,
+            $file->hashName(),
+            'bbox'
+        );
 
         // Get phone model
-        $model = (array_key_exists('Model', $exif))
+        $model = (array_key_exists('Model', $exif) && !empty($exif["Model"]))
             ? $exif["Model"]
             : 'Unknown';
 
@@ -191,26 +178,20 @@ class PhotosController extends Controller
         $latitude = $latlong[0];
         $longitude = $latlong[1];
 
-        // todo - let horizon process address details as a Job.
-        $apiKey = config('services.location.secret');
-        $url =  "https://locationiq.org/v1/reverse.php?format=json&key=".$apiKey."&lat=".$latitude."&lon=".$longitude."&zoom=20";
-
-        // The entire reverse geocoded result
-        $revGeoCode = json_decode(file_get_contents($url), true);
+        $revGeoCode = $this->reverseGeocodeAction->run($latitude, $longitude);
 
         // The entire address as a string
         $display_name = $revGeoCode["display_name"];
 
         // Extract the address array
         $addressArray = $revGeoCode["address"];
-         // \Log::info(['Address', $addressArray]);
         $location = array_values($addressArray)[0];
         $road = array_values($addressArray)[1];
 
         // todo- check all locations for "/" and replace with "-"
-        $country = $this->locationService->getCountryFromAddressArray($addressArray);
-        $state = $this->locationService->getStateFromAddressArray($country, $addressArray);
-        $city = $this->locationService->getCityFromAddressArray($country, $state, $addressArray);
+        $country = $this->uploadHelper->getCountryFromAddressArray($addressArray);
+        $state = $this->uploadHelper->getStateFromAddressArray($country, $addressArray);
+        $city = $this->uploadHelper->getCityFromAddressArray($country, $state, $addressArray);
 
         $geohash = GeoHash::encode($latlong[0], $latlong[1]);
 
@@ -233,15 +214,21 @@ class PhotosController extends Controller
             'platform' => 'web',
             'geohash' => $geohash,
             'team_id' => $user->active_team,
-            'five_hundred_square_filepath' => $imageName,
+            'five_hundred_square_filepath' => $bboxImageName,
             'address_array' => json_encode($addressArray)
         ]);
 
         // $user->images_remaining -= 1;
 
-        $user->xp++;
-        $user->total_images++;
-        $user->save();
+        // Since a user can upload multiple photos at once,
+        // we might get old values for xp, so we update the values directly
+        // without retrieving them
+        $user->update([
+            'xp' => DB::raw('ifnull(xp, 0) + 1'),
+            'total_images' => DB::raw('ifnull(total_images, 0) + 1')
+        ]);
+
+        $user->refresh();
 
         $teamName = null;
         if ($user->team) $teamName = $user->team->name;
@@ -274,48 +261,27 @@ class PhotosController extends Controller
     }
 
     /**
-     * TODO - Need to sort AWS permissions
-      * Delete an image
-    */
-    public function deleteImage (Request $request)
+     * Delete an image
+     */
+    public function deleteImage(Request $request)
     {
         $user = Auth::user();
 
-        $photo = Photo::find($request->photoid);
+        $photo = Photo::findOrFail($request->photoid);
 
-        try
-        {
-            if ($user->id === $photo->user_id)
-            {
-                if (app()->environment('production'))
-                {
-                    $path = substr($photo->filename, 42);
-                    Storage::disk('s3')->delete($path);
-                }
-                else
-                {
-                    // Strip the app name from the filename
-                    // Resulting path is like 'local-uploads/2021/07/07/photo.jpg'
-                    $path = public_path(substr($photo->filename, strlen(config('app.url'))));
-
-                    if (File::exists($path)) {
-                        File::delete($path);
-                    }
-                }
-
-                $photo->delete();
-
-                $user->xp = $user->xp > 0 ? $user->xp - 1 : 0;
-                $user->total_images = $user->total_images > 0 ? $user->total_images - 1 : 0;
-                $user->save();
-            }
-        }
-        catch (Exception $e)
-        {
-            Log::info(["PhotosController@deleteImage", $e->getMessage()]);
+        if ($user->id !== $photo->user_id) {
+            abort(403);
         }
 
-      	return ['message' => 'Photo deleted successfully!'];
+        $this->deletePhotoAction->run($photo);
+
+        $photo->delete();
+
+        $user->xp = $user->xp > 0 ? $user->xp - 1 : 0;
+        $user->total_images = $user->total_images > 0 ? $user->total_images - 1 : 0;
+        $user->save();
+
+        return ['message' => 'Photo deleted successfully!'];
     }
 
     /**
@@ -323,8 +289,6 @@ class PhotosController extends Controller
      *
      * Note! The $column passed through must match the column name on the table.
      * eg 'butts' must be a column on the smoking table.
-     *
-     * We use the $schema json object from LitterTags to get our class references
      *
      * If the user is new, we submit the image for verification.
      * If the user is trusted, we can update OLM.
@@ -335,55 +299,15 @@ class PhotosController extends Controller
         $photo = Photo::findOrFail($request->photo_id);
         if ($photo->verified > 0) return redirect()->back();
 
-        $schema = LitterTags::INSTANCE()->getDecodedJSON();
+        $litterTotals = $this->addTagsAction->run($photo, $request['tags']);
 
-        $litterTotal = 0;
-        foreach ($request['tags'] as $category => $items)
-        {
-            foreach ($items as $column => $quantity)
-            {
-                // Column on photos table to make a relationship with current category eg smoking_id
-                $id_table = $schema->$category->id_table;
-
-                // Full class path
-                $class = 'App\\Models\\Litter\\Categories\\'.$schema->$category->class;
-
-                // Create reference to category.$id_table on photos if it does not exist
-                if (is_null($photo->$id_table))
-                {
-                    $row = $class::create();
-                    $photo->$id_table = $row->id;
-                    $photo->save();
-                }
-
-                // If it does exist, get it
-                else $row = $class::find($photo->$id_table);
-
-                // Update quantity on the category table
-                $row->$column = $quantity;
-                $row->save();
-
-                // Update Leaderboards if user has public privacy settings
-                // todo - save data per leaderboard
-                if (($user->show_name) || ($user->show_username))
-                {
-                    $country = Country::find($photo->country_id);
-                    $state = State::find($photo->state_id);
-                    $city = City::find($photo->city_id);
-                    Redis::zadd($country->country.':Leaderboard', $user->xp, $user->id);
-                    Redis::zadd($country->country.':'.$state->state.':Leaderboard', $user->xp, $user->id);
-                    Redis::zadd($country->country.':'.$state->state.':'.$city->city.':Leaderboard', $user->xp, $user->id);
-                }
-
-                $litterTotal += $quantity;
-            }
-        }
-
-        $user->xp += $litterTotal;
+        $user->xp += $litterTotals['all'];
         $user->save();
 
+        $this->updateLeaderboardsAction->run($user, $photo);
+
         $photo->remaining = $request->presence;
-        $photo->total_litter = $litterTotal;
+        $photo->total_litter = $litterTotals['litter'];
 
         if ($user->verification_required)
         {

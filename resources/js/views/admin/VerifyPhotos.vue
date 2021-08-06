@@ -54,7 +54,7 @@
 				  	<div class="column has-text-centered" style="position: relative;">
 
                         <!-- The list of tags associated with this image-->
-                        <Tags :admin="true" />
+                        <Tags :photo-id="photo.id" :admin="true" />
 
 						<div style="padding-top: 3em;">
 							<button class="button is-medium is-dark" @click="clearTags">Clear user input</button>
@@ -99,7 +99,7 @@ export default {
 	{
 	    this.loading = true;
 
-        this.$store.dispatch('GET_NEXT_ADMIN_PHOTO');
+        await this.$store.dispatch('GET_NEXT_ADMIN_PHOTO');
 
         this.loading = false;
 	},
@@ -210,7 +210,7 @@ export default {
 		 */
 		clearTags ()
 		{
-			this.$store.commit('setAllTagsToZero');
+			this.$store.commit('setAllTagsToZero', this.photo.id);
 		},
 
         /**

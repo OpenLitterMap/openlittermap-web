@@ -8,7 +8,6 @@ use App\Jobs\EmailUserExportCompleted;
 use App\Level;
 use App\Models\Photo;
 use App\Models\User\User;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class ProfileController extends Controller
@@ -18,9 +17,7 @@ class ProfileController extends Controller
      */
     public function __construct ()
     {
-        return $this->middleware('auth');
-
-        parent::__construct();
+        $this->middleware('auth');
     }
 
     /**
@@ -142,12 +139,12 @@ class ProfileController extends Controller
         // Todo - Store this metadata in Redis
         $totalPhotosAllUsers = Photo::count();
         // Todo - Store this metadata in Redis
-        $totalLitterAllUsers = Photo::sum('total_litter');
+        $totalTagsAllUsers = Photo::sum('total_litter'); // this doesn't include brands
 
-        $usersTotalTags = $user->total_litter + $user->total_brands;
+        $usersTotalTags = $user->total_tags;
 
-        $photoPercent = $user->total_images ? ($user->total_images / $totalPhotosAllUsers) : 0;
-        $tagPercent = $usersTotalTags ? ($usersTotalTags / $totalLitterAllUsers) : 0;
+        $photoPercent = ($user->total_images && $totalPhotosAllUsers) ? ($user->total_images / $totalPhotosAllUsers) : 0;
+        $tagPercent = ($usersTotalTags && $totalTagsAllUsers) ? ($usersTotalTags / $totalTagsAllUsers) : 0;
 
         // XP needed to reach the next level
         $nextLevelXp = Level::where('xp', '>=', $user->xp)->first()->xp;

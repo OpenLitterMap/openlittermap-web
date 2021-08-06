@@ -2,11 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\ResetTagsCountAdmin;
-use App\Litterrata;
-use Log;
-use Auth;
-use File;
+use App\Actions\Photos\DeleteTagsFromPhotoAction;
+use App\Actions\Photos\DeletePhotoAction;
+use App\Actions\Photos\UpdateLeaderboardsFromPhotoAction;
 
 use App\Models\Photo;
 use App\Models\User\User;
@@ -15,9 +13,7 @@ use App\Traits\AddTagsTrait;
 
 use Carbon\Carbon;
 
-// use App\Http\Requests;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Redis;
 
 use App\Events\TagsVerifiedByAdmin;
 
@@ -25,23 +21,38 @@ class AdminController extends Controller
 {
     use AddTagsTrait;
 
+    /** @var DeleteTagsFromPhotoAction */
+    protected $deleteTagsAction;
+    /** @var UpdateLeaderboardsFromPhotoAction */
+    protected $updateLeaderboardsAction;
+    /** @var DeletePhotoAction */
+    protected $deletePhotoAction;
+
     /**
      * Apply IsAdmin middleware to all of these routes
+     *
+     * @param DeleteTagsFromPhotoAction $deleteTagsAction
+     * @param UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction
+     * @param DeletePhotoAction $deletePhotoAction
      */
-    public function __construct ()
+    public function __construct (
+        DeleteTagsFromPhotoAction $deleteTagsAction,
+        UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction,
+        DeletePhotoAction $deletePhotoAction
+    )
     {
-    	return $this->middleware('admin');
+        $this->middleware('admin');
 
-    	parent::__construct();
-	}
+        $this->deleteTagsAction = $deleteTagsAction;
+        $this->updateLeaderboardsAction = $updateLeaderboardsAction;
+        $this->deletePhotoAction = $deletePhotoAction;
+    }
 
+    /**
+     * Get the total number of users who have signed up
+     */
     public function getUserCount ()
     {
-        // $users = User::where([
-        //     ['verified', 1],
-        //     ['has_uploaded', 1]
-        // ])->orderBy('xp', 'desc')->get();
-
         $users = User::where('verified', 1)
             ->orWhere('name', 'default')
             ->get()
@@ -51,18 +62,15 @@ class AdminController extends Controller
 
         $users = $users->groupBy(function($val) {
             return Carbon::parse($val->created_at)->format('m-y');
-        });;
+        });
 
         $upm = [];
         $months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        // $itr = 0;
         foreach($users as $index => $monthlyUser)
         {
-            // return [$index, $monthlyUser->count()];
-            $month = $months[(int)$substr = substr($index, 0, 2)];
+            $month = $months[(int) substr($index, 0, 2)];
             $year = substr($index, 2, 5);
             $upm[$month.$year] = $monthlyUser->count(); // Mar-17
-            // $total_photos += $monthlyUser->count();
         }
         $upm = json_encode($upm);
 
@@ -75,12 +83,9 @@ class AdminController extends Controller
         $uupm = [];
         foreach($usersUploaded as $index => $userUploaded)
         {
-            // return $userUploaded->count();
-            // return [$index, $userUploaded->count(), $userUploaded];
             $month = $months[(int)$substr = substr($index, 0, 2)];
             $year = substr($index, 2, 5);
             $uupm[$month.$year] = $userUploaded->count(); // Mar-17
-            // $total_photos += $monthlyUser->count();
         }
         $uupm = json_encode($uupm);
 
@@ -89,21 +94,20 @@ class AdminController extends Controller
 
     /**
      * Verify an image, delete the image
-     ** todo - fix this with correct AWS permissions
      */
-    // public function verify(Request $request) {
-    //     $photo = Photo::find($request->photoId);
-    //     $filepath = $photo->filename;
-    //     unlink(public_path($filepath));
-    //     $photo->filename = '/assets/verified.jpg';
-    //     $photo->verified = 2;
-    //     $photo->verification = 1;
-    //     $photo->save();
-    //     $user = User::find($photo->user_id);
-    //     $user->xp += 1;
-    //     $user->save();
-    //     event(new TagsVerifiedByAdmin($photo->id));
-    // }
+    public function verify (Request $request)
+    {
+        $photo = Photo::findOrFail($request->photoId);
+
+        $this->deletePhotoAction->run($photo);
+
+        $photo->verification = 1;
+        $photo->verified = 2;
+        $photo->filename = '/assets/verified.jpg';
+        $photo->save();
+
+        event (new TagsVerifiedByAdmin($photo->id));
+    }
 
     /**
      * The image and the tags are correct
@@ -112,13 +116,12 @@ class AdminController extends Controller
      */
     public function verifykeepimage (Request $request)
     {
-        $photo = Photo::find($request->photoId);
+        $photo = Photo::findOrFail($request->photoId);
         $photo->verified = 2;
         $photo->verification = 1;
         $photo->save();
 
-        // todo - dispatch via horizon
-        event(new TagsVerifiedByAdmin($photo->id));
+        event (new TagsVerifiedByAdmin($photo->id));
     }
 
     /**
@@ -126,48 +129,25 @@ class AdminController extends Controller
      */
     public function incorrect (Request $request)
     {
-        $this->reset($request->photoId);
-
-        $user = Auth::user();
-        $user->count_correctly_verified = 0;
-        $user->save();
-
-        return ['success' => true];
-    }
-
-    /**
-     * Delete litter data associated with a photo
-     */
-    protected function reset ($id)
-    {
-        $photo = Photo::find($id);
+        /** @var Photo $photo */
+        $photo = Photo::findOrFail($request->photoId);
 
         $photo->verification = 0;
         $photo->verified = 0;
         $photo->total_litter = 0;
         $photo->result_string = null;
-
-        $categories = Photo::categories();
-
-        foreach ($categories as $category)
-        {
-            if ($photo->$category)
-            {
-                // hold instance of the relationship to delete
-                $d = $photo->$category;
-
-                // remove the model from the photo
-                $category_id = $category . '_id';
-                $photo->$category_id = null;
-                $photo->save();
-
-                // delete the relationship
-                $d->delete();
-            }
-        }
-
-        // persist reset verification changes
         $photo->save();
+
+        $deletedTags = $this->deleteTagsAction->run($photo);
+
+        $user = User::find($photo->user_id);
+        $user->xp = max(0, $user->xp - $deletedTags['all']);
+        $user->count_correctly_verified = 0;
+        $user->save();
+
+        $this->updateLeaderboardsAction->run($user, $photo);
+
+        return ['success' => true];
     }
 
     /**
@@ -175,21 +155,22 @@ class AdminController extends Controller
      */
     public function destroy (Request $request)
     {
-        $photo = Photo::find($request->photoId);
-        $s3 = \Storage::disk('s3');
+        $photo = Photo::findOrFail($request->photoId);
+        $user = User::find($photo->user_id);
 
-        try {
-            if (app()->environment('production'))
-            {
-                $path = substr($photo->filename, 42);
-                $s3->delete($path);
-            }
-            $photo->delete();
-        } catch (Exception $e) {
-            \Log::info(["Admin delete failed", $e]);
-        }
+        $this->deletePhotoAction->run($photo);
 
-        return redirect()->back();
+        $deletedTags = $this->deleteTagsAction->run($photo);
+
+        $photo->delete();
+
+        $user->xp = max(0, $user->xp - $deletedTags['all'] - 1); // Subtract 1xp for uploading
+        $user->total_images = $user->total_images > 0 ? $user->total_images - 1 : 0;
+        $user->save();
+
+        $this->updateLeaderboardsAction->run($user, $photo);
+
+        return ['success' => true];
     }
 
     /**
@@ -198,72 +179,20 @@ class AdminController extends Controller
     public function updateDelete (Request $request)
     {
         $photo = Photo::find($request->photoId);
-        $user = User::find($photo->user_id);
 
-        $filepath = $photo->filename;
-        // unlink(public_path($filepath));
+        $this->deletePhotoAction->run($photo);
+
         $photo->filename = '/assets/verified.jpg';
 
         $photo->verification = 1;
         $photo->verified = 2;
         $photo->total_litter = 0;
-
-        $litterTotal = 0;
-
-        $jsonDecoded = Litterrata::INSTANCE()->getDecodedJSON();
-
-        // for each categories as category => values eg. Smoking, Butts: 3;
-        foreach ($request['categories'] as $category => $values)
-        {
-            $total = 0;
-            foreach ($values as $item => $quantity)
-            {
-                // reference the dynamic id on the photos table eg. smoking_id
-                $id          = $jsonDecoded->$category->id;
-                // The current Class as a string
-                $clazz       = $jsonDecoded->$category->class;
-                // Reference the name of the column we want to edit
-                // $col         = $jsonDecoded->$category->types->$item->att;
-                $col         = $jsonDecoded->$category->types->$item->col;
-
-                $dynamicClassName = 'App\\Categories\\'.$clazz;
-
-                // Check if photo id already exists in the dynamic table
-                // .... not actually sure if this 2-way binding this necessary
-                if (!$dynamicClassName::where(['photo_id' => $photo->id])->first()){
-                    // if not, create it
-                    $dynamicClassName::create(['photo_id' => $photo->id]);
-                }
-
-                // Get the row (id) in the dynamic class we are currently working on
-                $row = $dynamicClassName::where(['photo_id' => $photo->id])->first();
-                // was previously named type
-
-                // Does the photos table have a reference to the dynamic row id yet?
-                if ($photo->$id == null) {
-                    // if null, create the link
-                    $photo->$id = $row->id;
-                    $photo->save();
-                }
-
-                // Now that the tables are linked, update the dynamic row/col quantity and save
-                // row = id, photo id, all attriubutes for that specific row
-                // col == butts
-                $row->$col = $quantity;
-                $row->save();
-
-                $litterTotal += $quantity;
-
-            }
-        }
-
-        $photo->total_litter = $litterTotal;
         $photo->save();
 
-        // todo - horizon
+        $this->addTags($request->categories, $photo->id);
+
         event(new TagsVerifiedByAdmin($photo->id));
     }
-
 
     /**
      * Verify the image
@@ -304,7 +233,6 @@ class AdminController extends Controller
         {
             $photo->tags();
         }
-
         else
         {
             $photo = Photo::where([

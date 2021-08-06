@@ -10,7 +10,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					<tr v-for="leader, i in leaders" class="wow slideInLeft">
+					<tr v-for="(leader, i) in leaders" class="wow slideInLeft">
 						<td style="color :white; position: relative; width: 20%;">
 							{{ positions[i] }}
 							<!-- if mobile -->

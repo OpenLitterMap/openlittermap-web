@@ -17,10 +17,11 @@ trait FilterPhotosByGeoHashTrait
      *
      * @param $zoom int          -> zoom level of the browser
      * @param string $bbox array -> [west|left, south|bottom, east|right, north|top]
+     * @param null layers
      *
      * @return \Illuminate\Database\Eloquent\Builder $query
      */
-    public function filterPhotosByGeoHash (int $zoom, string $bbox)
+    public function filterPhotosByGeoHash (int $zoom, string $bbox, $layers = null)
     {
         $bbox = json_decode($bbox);
 
@@ -51,6 +52,7 @@ trait FilterPhotosByGeoHashTrait
             'lon',
             'datetime'
         );
+
         $query->with([
             'user' => function ($query) {
                 $query->where('users.show_name_maps', 1)
@@ -72,6 +74,22 @@ trait FilterPhotosByGeoHashTrait
                 ]);
             }
         });
+
+        if ($layers)
+        {
+            $query->where(function ($q) use ($layers)
+            {
+                foreach ($layers as $index => $layer)
+                {
+                    ($index === 0)
+                        ? $q->where($layer . "_id", '!=', null)
+                        : $q->orWhere($layer . "_id", '!=', null);
+                }
+
+                return $q;
+            });
+        }
+
         return $query;
     }
 }

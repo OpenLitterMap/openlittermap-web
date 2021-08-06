@@ -66,12 +66,10 @@ export default {
 
         /**
          * Total number of tags the user has submitted
-         *
-         * Todo - create new total_tags column that includes brands
          */
         userTagsCount ()
         {
-            return this.user.user.total_litter + this.user.user.total_brands;
+            return this.user.user.total_tags;
         },
 
         /**

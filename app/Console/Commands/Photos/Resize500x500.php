@@ -71,7 +71,7 @@ class Resize500x500 extends Command
                 $filename = $x[sizeof($x) -1];
                 $filepath = $year.'/'.$month.'/'.$day.'/'.$filename;
 
-                $s3 = \Storage::disk('s3500x500');
+                $s3 = \Storage::disk('bbox');
                 $s3->put($filepath, $img, 'public');
 
                 $imageName = $s3->url($filepath);

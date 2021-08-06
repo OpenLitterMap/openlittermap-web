@@ -1,26 +1,17 @@
 <template>
-    <div style="height: 100%;" @click="closeButtons">
+    <div class="h100">
+        <!-- The map & data -->
         <div id="super" ref="super" />
 
-        <!-- Change language -->
-        <!-- <Languages />-->
-
-        <!-- Change data -->
-        <!-- <global-dates />-->
-
-        <!-- Call to Action -->
-        <!-- <global-info />-->
-
-        <!-- Live Events -->
-        <live-events />
+        <!-- Websockets -->
+        <LiveEvents />
     </div>
 </template>
 
 <script>
-import Languages from '../../components/global/Languages';
-// import GlobalDates from '../../components/global/GlobalDates'
 import LiveEvents from '../../components/LiveEvents';
-// import GlobalInfo from '../../components/global/GlobalInfo'
+// import GlobalDates from '../../components/global/GlobalDates'
+
 import {
     CLUSTER_ZOOM_THRESHOLD,
     MAX_ZOOM,
@@ -39,9 +30,15 @@ import i18n from '../../i18n'
 import glify from 'leaflet.glify';
 
 var map;
-var markers;
-var prevZoom = MIN_ZOOM;
+var clusters;
+var litterArtPoints;
 var points;
+var prevZoom = MIN_ZOOM;
+
+var pointsLayerController;
+var globalLayerController;
+let pointsControllerShowing = false;
+let globalControllerShowing = false;
 
 const green_dot = L.icon({
     iconUrl: './images/vendor/leaflet/dist/dot.png',
@@ -54,21 +51,37 @@ const grey_dot = L.icon({
 });
 
 /**
+ * Create the point to display for each piece of Litter Art
+ */
+function createArtIcon (feature, latlng)
+{
+    const x = [latlng.lng, latlng.lat];
+
+    return (feature.properties.verified === 2)
+        ? L.marker(x, { icon: green_dot })
+        : L.marker(x, { icon: grey_dot });
+}
+
+/**
  * Create the cluster or point icon to display for each feature
  */
 function createClusterIcon (feature, latlng)
 {
-    if (! feature.properties.cluster)
+    if (!feature.properties.cluster)
     {
-        return feature.properties.verified === 2
+        return (feature.properties.verified === 2)
             ? L.marker(latlng, { icon: green_dot })
             : L.marker(latlng, { icon: grey_dot });
     }
 
-    let count = feature.properties.point_count;
-    let size = count < MEDIUM_CLUSTER_SIZE ? 'small' : count < LARGE_CLUSTER_SIZE ? 'medium' : 'large';
+    const count = feature.properties.point_count;
+    const size = (count < MEDIUM_CLUSTER_SIZE)
+        ? 'small'
+            : count < LARGE_CLUSTER_SIZE
+            ? 'medium'
+            : 'large';
 
-    let icon = L.divIcon({
+    const icon = L.divIcon({
         html: '<div class="mi"><span class="ma">' + feature.properties.point_count_abbreviated + '</span></div>',
         className: 'marker-cluster-' + size,
         iconSize: L.point(40, 40)
@@ -78,38 +91,137 @@ function createClusterIcon (feature, latlng)
 }
 
 /**
- * On each feature, perform this action
- *
- * This is being performed whenever the user drags the map.
+ * Layer controller when below ZOOM_CLUSTER_THRESHOLD
+ */
+function createGlobalGroups ()
+{
+    if (pointsControllerShowing)
+    {
+        map.removeControl(pointsLayerController);
+
+        pointsControllerShowing = false;
+    }
+
+    if (!globalControllerShowing)
+    {
+        globalLayerController = L.control.layers(null, null).addTo(map);
+
+        globalLayerController.addOverlay(clusters, 'Global');
+        globalLayerController.addOverlay(litterArtPoints, 'Litter Art');
+
+        globalControllerShowing = true;
+    }
+}
+
+/**
+ * Layer Controller when above ZOOM_CLUSTER_THRESHOLD
+ */
+function createPointGroups ()
+{
+    if (globalControllerShowing)
+    {
+        map.removeControl(globalLayerController)
+
+        globalControllerShowing = false;
+    }
+
+    if (!pointsControllerShowing)
+    {
+        /** 8. Create overlays toggle menu */
+        const overlays = {
+            Alcohol: new L.LayerGroup(),
+            Brands: new L.LayerGroup(),
+            Coastal: new L.LayerGroup(),
+            Coffee: new L.LayerGroup(),
+            Dumping: new L.LayerGroup(),
+            Food: new L.LayerGroup(),
+            Industrial: new L.LayerGroup(),
+            Other: new L.LayerGroup(),
+            PetSurprise: new L.LayerGroup(),
+            Sanitary: new L.LayerGroup(),
+            Smoking: new L.LayerGroup(),
+            SoftDrinks: new L.LayerGroup(),
+        };
+
+        pointsLayerController = L.control.layers(null, overlays).addTo(map);
+
+        pointsControllerShowing = true;
+    }
+}
+
+/**
+ * Zoom to a cluster when it is clicked
  */
 function onEachFeature (feature, layer)
 {
     if (feature.properties.cluster)
     {
-        // Zoom in cluster when click to it
         layer.on('click', function (e) {
-            map.setView(e.latlng, map.getZoom() + ZOOM_STEP);
+
+            const zoomTo = ((map.getZoom() + ZOOM_STEP) > MAX_ZOOM)
+                ? MAX_ZOOM
+                : (map.getZoom() + ZOOM_STEP);
+
+            map.flyTo(e.latlng, zoomTo, {
+                animate: true,
+                duration: 2
+            });
         });
     }
 }
 
 /**
- * The user dragged or zoomed the map
+ * On each art point...
  *
- * Todo: remove glify points when the user moves the map, and is above zoom threshold
+ * Todo: Smooth zoom to that piece
+ */
+function onEachArtFeature (feature, layer)
+{
+    layer.on('click', function (e)
+    {
+        map.flyTo(feature.geometry.coordinates, 14, {
+            animate: true,
+            duration: 10
+        });
+
+        const user = (feature.properties.name || feature.properties.username)
+            ? `By ${feature.properties.name ? feature.properties.name : ''} ${ feature.properties.username ? '@' + feature.properties.username : ''}`
+            : "";
+
+        const team = (feature.properties.team)
+            ? `\nTeam ${feature.properties.team}`
+            : "";
+
+        // todo - increase the dimensions of each art image
+        L.popup()
+            .setLatLng(feature.geometry.coordinates)
+            .setContent(
+                '<img src= "' + feature.properties.filename + '" class="litter-img art-litter-image" />'
+                    + '<div class="litter-img-container">'
+                        + '<p>Taken on ' + moment(feature.properties.datetime).format('LLL') +'</p>'
+                        + user
+                        + team
+                    + '</div>'
+            )
+            .openOn(map);
+    });
+}
+
+/**
+ * The user dragged or zoomed the map, or changed a category
  */
 async function update ()
 {
     const bounds = map.getBounds();
 
-    let bbox = {
+    const bbox = {
         'left': bounds.getWest(),
         'bottom': bounds.getSouth(),
         'right': bounds.getEast(),
-        'top': bounds.getNorth(),
+        'top': bounds.getNorth()
     };
 
-    let zoom = Math.round(map.getZoom());
+    const zoom = Math.round(map.getZoom());
 
     // We don't want to make a request at zoom level 2-5 if the user is just panning the map.
     // At these levels, we just load all global data for now
@@ -118,29 +230,46 @@ async function update ()
     if (zoom === 4 && zoom === prevZoom) return;
     if (zoom === 5 && zoom === prevZoom) return;
 
-    // If the zoom is less than 17, we want to load cluster data
+    // Remove points when zooming out
+    if (points)
+    {
+        clusters.clearLayers();
+        points.remove();
+    }
+
+    // Get Clusters or Points
     if (zoom < CLUSTER_ZOOM_THRESHOLD)
     {
-        await axios.get('clusters', {
-            params: { zoom, bbox }
+        createGlobalGroups();
+
+        await axios.get('/global/clusters', {
+            params: {
+                zoom,
+                bbox
+            }
         })
         .then(response => {
             console.log('get_clusters.update', response);
 
-            markers.clearLayers();
-            markers.addData(response.data);
-
-            // if (points) points.remove();
+            clusters.clearLayers();
+            clusters.addData(response.data);
         })
         .catch(error => {
             console.error('get_clusters.update', error);
         });
     }
-    // otherwise, get point data
     else
     {
-        await axios.get('global-points', {
-            params: { zoom, bbox, },
+        createPointGroups()
+
+        const layers = getActiveLayers();
+
+        await axios.get('/global/points', {
+            params: {
+                zoom,
+                bbox,
+                layers
+            }
         })
         .then(response => {
             console.log('get_global_points', response);
@@ -148,13 +277,11 @@ async function update ()
             // Clear layer if prev layer is cluster.
             if (prevZoom < CLUSTER_ZOOM_THRESHOLD)
             {
-                markers.clearLayers();
+                clusters.clearLayers();
             }
 
-            // if (points) points.remove();
-
             const data = response.data.features.map(feature => {
-                return [ feature.geometry.coordinates[1], feature.geometry.coordinates[0]];
+                return [feature.geometry.coordinates[0], feature.geometry.coordinates[1]];
             });
 
             // New way using webGL
@@ -162,16 +289,14 @@ async function update ()
                 map,
                 data,
                 size: 10,
-                color: { r: 0.054, g: 0.819, b: 0.27 }, // 14, 209, 69 / 255
+                color: { r: 0.054, g: 0.819, b: 0.27, a: 1 }, // 14, 209, 69 / 255
                 click: (e, point, xy) => {
                     // return false to continue traversing
 
                     const f = response.data.features.find(feature => {
-                        return feature.geometry.coordinates[0] === point[1]
-                            && feature.geometry.coordinates[1] === point[0];
+                        return feature.geometry.coordinates[0] === point[0]
+                            && feature.geometry.coordinates[1] === point[1];
                     });
-
-                    // console.log({ f });
 
                     if (f)
                     {
@@ -205,15 +330,16 @@ async function update ()
                         L.popup()
                             .setLatLng(e.latlng)
                             .setContent(
-                                '<p class="mb5p">' + tags + ' </p>'
-                                + '<img src= "' + f.properties.filename + '" class="mw100" />'
-                                + '<p>Taken on ' + moment(f.properties.datetime).format('LLL') +'</p>'
-                                + user
-                                + team
+                                '<img src= "' + f.properties.filename + '" class="litter-img" />'
+                                    + '<div class="litter-img-container">'
+                                        + '<p class="mb5p">' + tags + ' </p>'
+                                        + '<p>Taken on ' + moment(f.properties.datetime).format('LLL') +'</p>'
+                                        + user
+                                        + team
+                                    + '</div>'
                             )
                             .openOn(map);
                     }
-
                 },
                 // hover: (e, pointOrGeoJsonFeature, xy) => {
                 //     // do something when a point is hovered
@@ -225,16 +351,40 @@ async function update ()
             console.error('get_global_points', error);
         });
     }
-    prevZoom = zoom; // hold previous zoom
+
+    prevZoom = zoom;
+}
+
+/**
+ * Get any active layers
+ *
+ * @return layers|null
+ */
+function getActiveLayers ()
+{
+    let layers = [];
+
+    // This is not ideal but it works as the indexes are in the same order
+    pointsLayerController._layerControlInputs.forEach((lyr, index) => {
+        if (lyr.checked)
+        {
+            const name = (pointsLayerController._layers[index].name.toLowerCase() === 'petsurprise')
+                ? 'dogshit'
+                : pointsLayerController._layers[index].name.toLowerCase();
+
+            layers.push(name);
+        }
+    });
+
+    return (layers.length > 0)
+        ? layers
+        : null;
 }
 
 export default {
     name: 'Supercluster',
     components: {
-        Languages,
-        // GlobalDates,
-        LiveEvents,
-        // GlobalInfo
+        LiveEvents
     },
     mounted ()
     {
@@ -254,6 +404,7 @@ export default {
 
         /** 2. Add tiles, attribution, set limits */
         const mapLink = '<a href="https://openstreetmap.org">OpenStreetMap</a>';
+
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: 'Map data &copy; ' + mapLink + ' & Contributors',
             maxZoom: MAX_ZOOM,
@@ -263,61 +414,81 @@ export default {
         map.attributionControl.addAttribution('Litter data &copy OpenLitterMap & Contributors ' + year + ' Clustering @ MapBox');
 
         // Empty Layer Group that will receive the clusters data on the fly.
-        markers = L.geoJSON(null, {
+        clusters = L.geoJSON(null, {
             pointToLayer: createClusterIcon,
             onEachFeature: onEachFeature,
         }).addTo(map);
 
-        markers.addData(this.$store.state.globalmap.geojson.features);
+        clusters.addData(this.$store.state.globalmap.geojson.features);
+
+        litterArtPoints = L.geoJSON(null, {
+            pointToLayer: createArtIcon,
+            onEachFeature: onEachArtFeature
+        });
+
+        litterArtPoints.addData(this.$store.state.globalmap.artData.features);
 
         map.on('moveend', function ()
         {
             update();
         });
 
-        // todo - getClusterExpansionZoom(clusterId); MjAyMS8wNC8yMSAwOToyNDowMA%MTAwIDc3Nw
-    },
+        createGlobalGroups();
 
-    methods: {
-
-        /**
-         * Close dates and language dropdowns
-         */
-        closeButtons ()
-        {
-            this.$store.commit('closeDatesButton');
-            this.$store.commit('closeLangsButton');
-        }
+        map.on('overlayadd', update);
+        map.on('overlayremove', update)
     }
 };
 </script>
 
 <style>
 
-#super {
-    height: 100%;
-    margin: 0;
-    position: relative;
-}
+    #super {
+        height: 100%;
+        margin: 0;
+        position: relative;
+    }
 
-.leaflet-marker-icon {
-    border-radius: 20px;
-}
+    .leaflet-marker-icon {
+        border-radius: 20px;
+    }
 
-.mb5p {
-    margin-bottom: 5px;
-}
+    .mb5p {
+        margin-bottom: 5px;
+    }
 
-.mw100 {
-    max-width: 100%;
-}
+    .mw100 {
+        max-width: 100%;
+    }
 
-.mi {
-    height: 100%;
-    margin: auto;
-    display: flex;
-    justify-content: center;
-    border-radius: 20px;
-}
+    .mi {
+        height: 100%;
+        margin: auto;
+        display: flex;
+        justify-content: center;
+        border-radius: 20px;
+    }
+
+    .leaflet-pop-content-wrapper {
+        padding: 0 !important;
+    }
+
+    .leaflet-popup-content {
+        margin: 0 !important;
+    }
+
+    .litter-img-container {
+        padding: 0 1em 1em 1em;
+    }
+
+    .litter-img {
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
+        max-width: 100%;
+    }
+
+    .art-litter-image {
+
+    }
 
 </style>

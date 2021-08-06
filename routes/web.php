@@ -7,6 +7,13 @@ Route::get('/about', 'HomeController@index');
 Route::get('/world', 'HomeController@index');
 Route::get('/references', 'HomeController@index');
 
+//Route::get('test', function () {
+//
+//    $user = \App\Models\User\User::first();
+//
+//    return view('emails.update24', compact('user'));
+//});
+
 // Registration
 Route::get('/signup', 'HomeController@index');
 
@@ -24,9 +31,10 @@ Route::post('/stripe/delete', 'StripeController@delete');
 Route::post('/stripe/resubscribe', 'StripeController@resubscribe');
 
 /* Locations */
-Route::get('countries', 'MapController@getCountries');
-Route::get('states', 'MapController@getStates');
-Route::get('cities', 'MapController@getCities');
+Route::get('location', 'Location\LocationsController@index');
+Route::get('countries', 'Location\LocationsController@getCountries');
+Route::get('states', 'Location\LocationsController@getStates');
+Route::get('cities', 'Location\LocationsController@getCities');
 
 /* Download data */
 Route::post('download', 'DownloadControllerNew@index');
@@ -43,15 +51,15 @@ Route::get('/world/{country}/{state}/{city?}/download/get', 'DownloadsController
 // Todo - make this dynamic for wildcard routes prefixed by "/{lang}/maps"
 
 Route::group(['middleware' => 'fw-block-blacklisted'], function () {
-    Route::get('/maps', 'MapController@getCountries');
-    Route::get('/maps/{country}/litter', 'MapController@getCountries');
-    Route::get('/maps/{country}/leaderboard', 'MapController@getCountries');
-    Route::get('/maps/{country}/time-series', 'MapController@getCountries');
-    // Route::get('/maps/total/download', 'MapController@getCountries');
+    Route::get('/maps', 'Location\LocationsController@getCountries');
+    Route::get('/maps/{country}/litter', 'Location\LocationsController@getCountries');
+    Route::get('/maps/{country}/leaderboard', 'Location\LocationsController@getCountries');
+    Route::get('/maps/{country}/time-series', 'Location\LocationsController@getCountries');
+    // Route::get('/maps/total/download', 'Location\LocationsController@getCountries');
 
-    Route::get('/maps/{country}', 'MapController@getStates');
-    Route::get('/maps/{country}/{state}', 'MapController@getCities');
-    Route::get('/maps/{country}/{state}/{city?}/{id?}', 'MapController@getCities');
+    Route::get('/maps/{country}', 'Location\LocationsController@getStates');
+    Route::get('/maps/{country}/{state}', 'Location\LocationsController@getCities');
+    Route::get('/maps/{country}/{state}/{city?}/{id?}', 'Location\LocationsController@getCities');
     // Route::get('/maps/{country}/{city}/city_hex_map', 'MapController@getCity');
     // Similarly, get the city and pass the maps dynamically
     Route::get('/maps/{country}/{state}/{city}/city_hex_map/{minfilter?}/{maxfilter?}/{hex?}', 'MapController@getCity');
@@ -66,14 +74,14 @@ Route::get('donate', 'HomeController@index');
 Route::get('donate/amounts', 'DonateController@index');
 Route::post('donate', 'DonateController@submit');
 
-// Get different global data
+// Get data for the Global Map
 Route::get('global', 'HomeController@index');
-Route::get('global-data', 'MapController@getGlobalData');
-Route::get('/global/clusters', 'GlobalMapController@clusters');
-Route::get('clusters', 'ClusterController@index');
-Route::get('global-points', 'GlobalMapController@index');
+Route::get('/global/clusters', 'GlobalMap\ClusterController@index');
+Route::get('/global/points', 'GlobalMap\GlobalMapController@index');
+Route::get('/global/art-data', 'GlobalMap\GlobalMapController@artData');
 
 /** Auth Routes */
+
 // Get currently auth user when logged in
 Route::get('/current-user', 'UsersController@getAuthUser');
 

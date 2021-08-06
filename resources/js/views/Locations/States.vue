@@ -1,11 +1,14 @@
 <template>
-    <div style="height: 70%;">
+    <div class="locations-container">
         <section class="hero is-info is-medium">
             <div class="hero-body">
                 <div class="container">
                     <div class="columns">
                         <div class="column is-4">
-                            <h1 class="title is-1 flex pointer" @click="goBack"><i v-show="! loading" class="fa fa-chevron-left country-back" /> {{ country }}</h1>
+                            <h1 class="title is-1 flex pointer" @click="goBack">
+                                <i v-show="!loading" class="fa fa-chevron-left country-back" />
+                                {{ backButtonText }}
+                            </h1>
                         </div>
 
                         <!-- Todo - put country metadata here -->
@@ -14,7 +17,7 @@
             </div>
         </section>
 
-        <sort-locations type="state" />
+        <sort-locations locationType="state" />
     </div>
 </template>
 
@@ -29,7 +32,11 @@ export default {
     {
         this.loading = true;
 
-        await this.$store.dispatch('GET_STATES', window.location.href.split('/')[4]);
+        window.scroll({ top: 0, left: 0 });
+
+        const countryText = window.location.href.split('/')[4]
+
+        await this.$store.dispatch('GET_STATES', countryText);
 
         this.loading = false;
     },
@@ -44,22 +51,22 @@ export default {
         };
     },
     computed: {
-
         /**
          * The parent country for these States
          */
-        country ()
+        backButtonText ()
         {
-            return this.$store.state.locations.country;
+            return this.$store.state.locations.countryName;
         }
     },
     methods: {
-
         /**
          * Return to countries
          */
         goBack ()
         {
+            this.$store.commit('setLocations', []);
+
             this.$router.push({ path: '/world' });
         }
     }

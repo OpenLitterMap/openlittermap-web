@@ -23,7 +23,6 @@ class CoastalFactory extends Factory
     public function definition()
     {
         return [
-            'photo_id' => Photo::factory()->create(),
             'microplastics' => $this->faker->randomDigit
         ];
     }
