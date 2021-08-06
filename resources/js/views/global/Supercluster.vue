@@ -150,17 +150,19 @@ function createPointGroups ()
 }
 
 /**
- * On each feature, perform this action
- *
- * This is being performed whenever the user drags the map.
+ * Zoom to a cluster when it is clicked
  */
 function onEachFeature (feature, layer)
 {
     if (feature.properties.cluster)
     {
-        // Zoom in cluster when click to it
         layer.on('click', function (e) {
-            map.flyTo(e.latlng, map.getZoom() + ZOOM_STEP, {
+
+            const zoomTo = ((map.getZoom() + ZOOM_STEP) > MAX_ZOOM)
+                ? MAX_ZOOM
+                : (map.getZoom() + ZOOM_STEP);
+
+            map.flyTo(e.latlng, zoomTo, {
                 animate: true,
                 duration: 2
             });
@@ -279,7 +281,7 @@ async function update ()
             }
 
             const data = response.data.features.map(feature => {
-                return [ feature.geometry.coordinates[0], feature.geometry.coordinates[1]];
+                return [feature.geometry.coordinates[0], feature.geometry.coordinates[1]];
             });
 
             // New way using webGL
@@ -366,7 +368,11 @@ function getActiveLayers ()
     pointsLayerController._layerControlInputs.forEach((lyr, index) => {
         if (lyr.checked)
         {
-            layers.push(pointsLayerController._layers[index].name.toLowerCase());
+            const name = (pointsLayerController._layers[index].name.toLowerCase() === 'petsurprise')
+                ? 'dogshit'
+                : pointsLayerController._layers[index].name.toLowerCase();
+
+            layers.push(name);
         }
     });
 
