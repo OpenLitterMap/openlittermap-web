@@ -252,7 +252,8 @@ class PhotosController extends Controller
             $user->id,
             $country->id,
             $state->id,
-            $city->id
+            $city->id,
+            !$user->verification_required
         ));
 
         // Increment the { Month-Year: int } value for each location

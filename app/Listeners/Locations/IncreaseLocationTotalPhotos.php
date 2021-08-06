@@ -25,7 +25,7 @@ class IncreaseLocationTotalPhotos implements ShouldQueue
      */
     public function handle(ImageUploaded $event)
     {
-        if (User::find($event->userId)->verification_required) {
+        if (!$event->isUserVerified) {
             return;
         }
 

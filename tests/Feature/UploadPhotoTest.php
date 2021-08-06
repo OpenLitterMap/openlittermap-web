@@ -110,7 +110,8 @@ class UploadPhotoTest extends TestCase
                     $e->userId === $user->id &&
                     $e->countryId === $this->getCountryId() &&
                     $e->stateId === $this->getStateId() &&
-                    $e->cityId === $this->getCityId();
+                    $e->cityId === $this->getCityId() &&
+                    $e->isUserVerified === !$user->verification_required;
             }
         );
 
