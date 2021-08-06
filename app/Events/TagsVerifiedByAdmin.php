@@ -3,13 +3,14 @@
 namespace App\Events;
 
 use App\Models\Photo;
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class TagsVerifiedByAdmin implements ShouldQueue
+class TagsVerifiedByAdmin implements ShouldBroadcast, ShouldQueue
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -85,10 +86,10 @@ class TagsVerifiedByAdmin implements ShouldQueue
     /**
      * Get the channels the event should broadcast on.
      *
-     * @return \Illuminate\Broadcasting\Channel|array
+     * @return Channel
      */
-    public function broadcastOn()
+    public function broadcastOn(): Channel
     {
-        return new PrivateChannel('channel-name');
+        return new Channel('main');
     }
 }

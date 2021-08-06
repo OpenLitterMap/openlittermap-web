@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Actions\Photos;
+namespace App\Actions\Locations;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
 
 class ReverseGeocodeLocationAction
 {
@@ -26,7 +27,7 @@ class ReverseGeocodeLocationAction
      * @param $longitude
      *
      * @return array
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
     public function run ($latitude, $longitude): array
     {

@@ -4,8 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Actions\Photos\DeleteTagsFromPhotoAction;
 use App\Actions\Photos\DeletePhotoAction;
-use App\Actions\Photos\UpdateLeaderboardsFromPhotoAction;
+use App\Actions\Locations\UpdateLeaderboardsFromPhotoAction;
 
+use App\Events\ImageDeleted;
 use App\Models\Photo;
 use App\Models\User\User;
 
@@ -169,6 +170,13 @@ class AdminController extends Controller
         $user->save();
 
         $this->updateLeaderboardsAction->run($user, $photo);
+
+        event(new ImageDeleted(
+            $user,
+            $photo->country_id,
+            $photo->state_id,
+            $photo->city_id
+        ));
 
         return ['success' => true];
     }

@@ -41,8 +41,6 @@ class IncrementCity implements ShouldQueue
 
                 Redis::hincrby("city:$city->id", "total_brands", $event->total_brands);
             }
-
-            Redis::hincrby("city:$city->id", "total_photos", 1);
         }
     }
 }

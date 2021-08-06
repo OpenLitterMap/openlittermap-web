@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Photos\MakeImageAction;
-use App\Actions\Photos\ReverseGeocodeLocationAction;
+use App\Actions\Locations\ReverseGeocodeLocationAction;
 use App\Actions\Photos\UploadPhotoAction;
 use GeoHash;
 use Carbon\Carbon;
