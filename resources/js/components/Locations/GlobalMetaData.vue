@@ -143,6 +143,31 @@ export default {
         GlobalLeaders,
         ProgressBar
     },
+    channel: 'main',
+    echo: {
+        'ImageUploaded': (payload, vm) => {
+            if (payload.isUserVerified) {
+                vm.$store.commit('incrementTotalPhotos');
+            }
+        },
+        'ImageDeleted': (payload, vm) => {
+            if (payload.isUserVerified) {
+                vm.$store.commit('decrementTotalPhotos');
+            }
+        },
+        'TagsVerifiedByAdmin': (payload, vm) => {
+            vm.$store.commit('incrementTotalLitter', payload.total_litter_all_categories);
+
+            // If the user is verified
+            // totalPhotos has been incremented during ImageUploaded
+            if (!payload.isUserVerified) {
+                vm.$store.commit('incrementTotalPhotos');
+            }
+        },
+        'TagsDeletedByAdmin': (payload, vm) => {
+            vm.$store.commit('decrementTotalLitter', payload.totalLitter);
+        },
+    },
     computed: {
         /**
          * Total littercoin owed to users for proof of citizen science

@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 
+use App\Events\ImageDeleted;
 use App\Models\User\User;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -53,6 +55,36 @@ class DeletePhotoTest extends TestCase
         Storage::disk('bbox')->assertMissing($imageAttributes['filepath']);
         $this->assertCount(0, $user->photos);
         $this->assertDatabaseMissing('photos', ['id' => $photo->id]);
+    }
+
+    public function test_it_fires_image_deleted_event()
+    {
+        Event::fake(ImageDeleted::class);
+
+        // User uploads a photo
+        $user = User::factory()->create();
+
+        $this->actingAs($user);
+
+        $imageAttributes = $this->getImageAndAttributes();
+
+        $this->post('/submit', ['file' => $imageAttributes['file']]);
+
+        $photo = $user->fresh()->photos->last();
+
+        // User then deletes the photo
+        $this->post('/profile/photos/delete', ['photoid' => $photo->id]);
+
+        Event::assertDispatched(
+            ImageDeleted::class,
+            function (ImageDeleted $e) use ($user, $photo) {
+                return
+                    $user->is($e->user) &&
+                    $photo->country_id === $e->countryId &&
+                    $photo->state_id === $e->stateId &&
+                    $photo->city_id === $e->cityId;
+            }
+        );
     }
 
     public function test_unauthorized_users_cannot_delete_photos()

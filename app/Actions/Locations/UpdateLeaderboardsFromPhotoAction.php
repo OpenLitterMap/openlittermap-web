@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Actions\Photos;
+namespace App\Actions\Locations;
 
 use App\Models\Photo;
 use App\Models\User\User;
@@ -19,7 +19,8 @@ class UpdateLeaderboardsFromPhotoAction
     public function run (User $user, Photo $photo) :void
     {
         // Update Leaderboards if user has public privacy settings
-        if (!$user->show_name && !$user->show_username) {
+        if (!$user->show_name && !$user->show_username)
+        {
             return;
         }
 
@@ -27,8 +28,19 @@ class UpdateLeaderboardsFromPhotoAction
         $state = State::find($photo->state_id);
         $city = City::find($photo->city_id);
 
-        Redis::zadd($country->country . ':Leaderboard', $user->xp, $user->id);
-        Redis::zadd($country->country . ':' . $state->state . ':Leaderboard', $user->xp, $user->id);
-        Redis::zadd($country->country . ':' . $state->state . ':' . $city->city . ':Leaderboard', $user->xp, $user->id);
+        if ($country)
+        {
+            Redis::zadd($country->country . ':Leaderboard', $user->xp, $user->id);
+        }
+
+        if ($country && $state)
+        {
+            Redis::zadd($country->country . ':' . $state->state . ':Leaderboard', $user->xp, $user->id);
+        }
+
+        if ($country && $state && $city)
+        {
+            Redis::zadd($country->country . ':' . $state->state . ':' . $city->city . ':Leaderboard', $user->xp, $user->id);
+        }
     }
 }
