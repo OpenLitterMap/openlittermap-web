@@ -60,5 +60,37 @@ export const mutations = {
         locations[payload.index].hex = payload.hex;
 
         state.locations = locations;
-    }
+    },
+
+    /**
+     * Increment the total_photos value
+     */
+    incrementTotalPhotos (state, payload = 1)
+    {
+        state.total_photos += payload;
+    },
+
+    /**
+     * Decrement the total_photos value
+     */
+    decrementTotalPhotos (state, payload = 1)
+    {
+        state.total_photos -= payload;
+    },
+
+    /**
+     * Increment the total_litter value
+     */
+    incrementTotalLitter (state, payload)
+    {
+        state.total_litter += payload;
+    },
+
+    /**
+     * Decrement the total_litter value
+     */
+    decrementTotalLitter (state, payload)
+    {
+        state.total_litter -= payload;
+    },
 };

@@ -3,6 +3,7 @@
 namespace App\Events;
 
 use App\Models\Photo;
+use App\Models\User\User;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -23,6 +24,9 @@ class TagsVerifiedByAdmin implements ShouldBroadcast, ShouldQueue
     // total per category, or total per brand
     public $total_litter_per_category = []; // smoking => 5, alcohol => 1
     public $total_litter_per_brand = []; // mcd => 1, starbucks => 2
+
+    /** @var bool */
+    public $isUserVerified;
 
     /**
      * The tags on a single photo have been verified by an Admin
@@ -81,6 +85,8 @@ class TagsVerifiedByAdmin implements ShouldBroadcast, ShouldQueue
         }
 
         $this->total_litter_all_categories = $total_litter_all_categories;
+
+        $this->isUserVerified = !User::find($this->user_id)->verification_required;
     }
 
     /**
