@@ -206,10 +206,6 @@ class AdminController extends Controller
      * Verify the image
      * Keep the image
      * Image was not correctly inputted! LitterCorrectlyCount = 0.
-     *
-     * We need to Update the Country, State and City model
-     * - remove previous tag counts
-     * - add new tag counts
      */
     public function updateTags (Request $request)
     {
@@ -223,12 +219,8 @@ class AdminController extends Controller
         $user->count_correctly_verified = 0; // At 100, the user earns a Littercoin
         $user->save();
 
-        // this event is needed if the photo is already verified
-        // event (new ResetTagsCountAdmin($photo->id));
-
         $this->addTags($request->tags, $request->photoId);
 
-        // todo - dispatch event via horizon
         event (new TagsVerifiedByAdmin($photo->id));
     }
 

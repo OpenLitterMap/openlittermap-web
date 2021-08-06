@@ -145,9 +145,28 @@ export default {
     },
     channel: 'main',
     echo: {
-        'ImageUploaded': (payload, vm) => { vm.updateStatistics() },
-        'ImageDeleted': (payload, vm) => { vm.updateStatistics() },
-        'TagsVerifiedByAdmin': (payload, vm) => { vm.updateStatistics() },
+        'ImageUploaded': (payload, vm) => {
+            if (payload.isUserVerified) {
+                vm.$store.commit('incrementTotalPhotos');
+            }
+        },
+        'ImageDeleted': (payload, vm) => {
+            if (payload.isUserVerified) {
+                vm.$store.commit('decrementTotalPhotos');
+            }
+        },
+        'TagsVerifiedByAdmin': (payload, vm) => {
+            vm.$store.commit('incrementTotalLitter', payload.total_litter_all_categories);
+
+            // If the user is verified
+            // totalPhotos has been incremented during ImageUploaded
+            if (!payload.isUserVerified) {
+                vm.$store.commit('incrementTotalPhotos');
+            }
+        },
+        'TagsDeletedByAdmin': (payload, vm) => {
+            vm.$store.commit('decrementTotalLitter', payload.totalLitter);
+        },
     },
     computed: {
         /**
@@ -264,14 +283,6 @@ export default {
         commas (n)
         {
             return parseInt(n).toLocaleString();
-        },
-
-        /**
-         * Refresh the store with updated stats
-         */
-        updateStatistics()
-        {
-            this.$store.dispatch('GET_COUNTRIES');
         }
     }
 }

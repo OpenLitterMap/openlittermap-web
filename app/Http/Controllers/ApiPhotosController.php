@@ -190,7 +190,8 @@ class ApiPhotosController extends Controller
             $user['id'],
             $country->id,
             $state->id,
-            $city->id
+            $city->id,
+            !$user->verification_required
         ));
 
         // Move this to redis

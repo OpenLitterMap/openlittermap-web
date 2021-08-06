@@ -19,6 +19,7 @@ class ImageDeleted implements ShouldBroadcast, ShouldQueue
     public $countryId;
     public $stateId;
     public $cityId;
+    public $isUserVerified;
 
     /**
      * Create a new event instance.
@@ -31,6 +32,7 @@ class ImageDeleted implements ShouldBroadcast, ShouldQueue
         $this->countryId = $countryId;
         $this->stateId = $stateId;
         $this->cityId = $cityId;
+        $this->isUserVerified = !$user->verification_required;
     }
 
     /**
