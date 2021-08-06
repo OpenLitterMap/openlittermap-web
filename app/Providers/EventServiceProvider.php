@@ -2,10 +2,15 @@
 
 namespace App\Providers;
 
+use App\Events\ImageDeleted;
+use App\Events\ImageUploaded;
+use App\Listeners\Locations\AddLocationContributor;
+use App\Listeners\Locations\DecreaseLocationTotalPhotos;
+use App\Listeners\Locations\RemoveLocationContributor;
+use App\Listeners\Locations\IncreaseLocationTotalPhotos;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
-use Illuminate\Support\Facades\Event;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -18,8 +23,13 @@ class EventServiceProvider extends ServiceProvider
         Registered::class => [
             SendEmailVerificationNotification::class,
         ],
-        'App\Events\ImageUploaded' => [
-              'App\Listeners\Locations\CheckContributors'
+        ImageUploaded::class => [
+            AddLocationContributor::class,
+            IncreaseLocationTotalPhotos::class
+        ],
+        ImageDeleted::class => [
+            RemoveLocationContributor::class,
+            DecreaseLocationTotalPhotos::class
         ],
         // stage-1 verification is not currently in use
         'App\Events\PhotoVerifiedByUser' => [

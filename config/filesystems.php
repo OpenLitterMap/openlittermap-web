@@ -62,8 +62,7 @@ return [
             'region'   => env('AWS_REGION'),
             'bucket'   => env('AWS_BUCKET'),
             'url'      => env('AWS_URL'),
-            'endpoint' => env('AWS_ENDPOINT'),
-//            'use_path_style_endpoint' => env('AWS_PATH_STYLE_ENDPOINT', false)
+            'endpoint' => env('AWS_ENDPOINT')
         ],
 
         'bbox' => [
@@ -72,8 +71,7 @@ return [
             'secret'   => env('x500_AWS_SECRET'),
             'region'   => env('x500_AWS_REGION'),
             'bucket'   => env('x500_AWS_BUCKET'),
-            'endpoint' => env('x500_AWS_ENDPOINT'),
-            'use_path_style_endpoint' => env('AWS_PATH_STYLE_ENDPOINT', false)
+            'endpoint' => env('x500_AWS_ENDPOINT')
         ],
 
         'dropbox' => [

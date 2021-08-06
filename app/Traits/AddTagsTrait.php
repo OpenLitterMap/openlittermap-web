@@ -4,7 +4,7 @@ namespace App\Traits;
 
 use App\Actions\Photos\AddTagsToPhotoAction;
 use App\Actions\Photos\DeleteTagsFromPhotoAction;
-use App\Actions\Photos\UpdateLeaderboardsFromPhotoAction;
+use App\Actions\Locations\UpdateLeaderboardsFromPhotoAction;
 use App\Models\Photo;
 use App\Models\User\User;
 

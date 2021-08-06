@@ -5,11 +5,11 @@ namespace App\Http\Controllers;
 use App\Actions\Photos\AddTagsToPhotoAction;
 use App\Actions\Photos\DeletePhotoAction;
 use App\Actions\Photos\MakeImageAction;
-use App\Actions\Photos\ReverseGeocodeLocationAction;
-use App\Actions\Photos\UpdateLeaderboardsFromPhotoAction;
 use App\Actions\Photos\UploadPhotoAction;
+use App\Actions\Locations\ReverseGeocodeLocationAction;
+use App\Actions\Locations\UpdateLeaderboardsFromPhotoAction;
+use App\Events\ImageDeleted;
 use GeoHash;
-use Exception;
 use Carbon\Carbon;
 
 use App\Models\Photo;
@@ -25,12 +25,19 @@ use Illuminate\Support\Facades\Auth;
 
 class PhotosController extends Controller
 {
+    /** @var UploadHelper */
     protected $uploadHelper;
+    /** @var AddTagsToPhotoAction */
     private $addTagsAction;
+    /** @var UpdateLeaderboardsFromPhotoAction */
     private $updateLeaderboardsAction;
+    /** @var UploadPhotoAction */
     private $uploadPhotoAction;
+    /** @var DeletePhotoAction */
     private $deletePhotoAction;
+    /** @var MakeImageAction */
     private $makeImageAction;
+    /** @var ReverseGeocodeLocationAction */
     private $reverseGeocodeAction;
 
     /**
@@ -280,6 +287,13 @@ class PhotosController extends Controller
         $user->xp = $user->xp > 0 ? $user->xp - 1 : 0;
         $user->total_images = $user->total_images > 0 ? $user->total_images - 1 : 0;
         $user->save();
+
+        event(new ImageDeleted(
+            $user,
+            $photo->country_id,
+            $photo->state_id,
+            $photo->city_id
+        ));
 
         return ['message' => 'Photo deleted successfully!'];
     }

@@ -2,7 +2,7 @@
 
 namespace App\Listeners;
 
-use App\Actions\Photos\UpdateLeaderboardsFromPhotoAction;
+use App\Actions\Locations\UpdateLeaderboardsFromPhotoAction;
 use App\Models\Photo;
 use App\Models\User\User;
 use App\Events\PhotoVerifiedByUser;

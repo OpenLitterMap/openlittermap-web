@@ -3,27 +3,18 @@
 namespace App\Jobs\Api;
 
 use App\Actions\Photos\AddTagsToPhotoAction;
-use App\Actions\Photos\UpdateLeaderboardsFromPhotoAction;
+use App\Actions\Locations\UpdateLeaderboardsFromPhotoAction;
 use App\Models\User\User;
 use App\Models\Photo;
-
-use App\Models\LitterTags;
-
-use App\Models\Location\Country;
-use App\Models\Location\State;
-use App\Models\Location\City;
 
 use App\Events\TagsVerifiedByAdmin;
 
 use Illuminate\Bus\Queueable;
 
-use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-
-use Illuminate\Support\Facades\Redis;
 
 class AddTags implements ShouldQueue
 {

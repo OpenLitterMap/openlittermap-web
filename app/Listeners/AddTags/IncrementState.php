@@ -40,8 +40,6 @@ class IncrementState implements ShouldQueue
 
                 Redis::hincrby("state:$state->id", "total_brands", $event->total_brands);
             }
-
-            Redis::hincrby("state:$state->id", "total_photos", 1);
         }
     }
 }

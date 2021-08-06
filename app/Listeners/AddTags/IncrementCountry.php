@@ -40,8 +40,6 @@ class IncrementCountry implements ShouldQueue
 
                 Redis::hincrby("country:$country->id", "total_brands", $event->total_brands);
             }
-
-            Redis::hincrby("country:$country->id", "total_photos", 1);
         }
     }
 }

@@ -4,7 +4,7 @@
 namespace Tests\Feature;
 
 
-use App\Actions\Photos\ReverseGeocodeLocationAction;
+use App\Actions\Locations\ReverseGeocodeLocationAction;
 use App\Models\Location\City;
 use App\Models\Location\Country;
 use App\Models\Location\State;

@@ -3,11 +3,13 @@
 namespace Tests\Feature\Admin;
 
 
+use App\Events\ImageDeleted;
 use App\Models\Location\City;
 use App\Models\Location\Country;
 use App\Models\Location\State;
 use App\Models\Photo;
 use App\Models\User\User;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
@@ -93,6 +95,27 @@ class DeletePhotoTest extends TestCase
         Storage::disk('bbox')->assertMissing($this->imageAndAttributes['filepath']);
         $this->assertCount(0, $this->user->photos);
         $this->assertDatabaseMissing('photos', ['id' => $this->photo->id]);
+    }
+
+    public function test_it_fires_imaged_deleted_event_when_an_admin_deletes_a_photo()
+    {
+        Event::fake(ImageDeleted::class);
+
+        // Admin deletes the photo -------------------
+        $this->actingAs($this->admin);
+
+        $this->post('/admin/destroy', ['photoId' => $this->photo->id]);
+
+        Event::assertDispatched(
+            ImageDeleted::class,
+            function (ImageDeleted $e) {
+                return
+                    $this->user->is($e->user) &&
+                    $this->photo->country_id === $e->countryId &&
+                    $this->photo->state_id === $e->stateId &&
+                    $this->photo->city_id === $e->cityId;
+            }
+        );
     }
 
     public function test_leaderboards_are_updated_when_an_admin_deletes_a_photo_from_a_user_with_public_name()
