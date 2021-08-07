@@ -55,40 +55,40 @@ class GenerateTimeSeries extends Command
             ])->save();
         }
 
-        $dummy_id = User::where('email', 'test@test.com')->first()->id;
+        $dummyId = User::where('email', 'test@test.com')->first()->id;
         Country::firstOrCreate([
             'country' => 'Ireland',
             'shortcode' => 'ie',
-            'created_by' => $dummy_id,
+            'created_by' => $dummyId,
         ]);
 
-        $ireland_id = Country::where('country', 'Ireland')->first()->id;
+        $irelandId = Country::where('country', 'Ireland')->first()->id;
         City::firstOrCreate([
             'city' => 'Cork',
-            'country_id' => $ireland_id,
-            'created_by' => $dummy_id
+            'country_id' => $irelandId,
+            'created_by' => $dummyId
         ]);
 
         State::firstOrCreate([
             'state' => 'County Cork',
-            'country_id' => $ireland_id,
-            'created_by' => $dummy_id
+            'country_id' => $irelandId,
+            'created_by' => $dummyId
         ]);
 
-        $cork_id = City::where('city', 'Cork')->first()->id;
+        $corkId = City::where('city', 'Cork')->first()->id;
 
 
-        $photos_to_gen = $this->argument('photos');
+        $photosToGen = $this->argument('photos');
 
-        for($i=0;$i<$photos_to_gen;$i++) {
+        for($i=0;$i<$photosToGen;$i++) {
             $lat = rand(51.85391800*100000000, 51.92249800*100000000) / 100000000;
             $lon = rand(-8.53209200*100000000, -8.36823900*100000000) / 100000000;
 
             Photo::create([
                 'total_litter' => 5,
-                'user_id' => $dummy_id,
-                'country_id' => $ireland_id,
-                'city_id' => $cork_id,
+                'user_id' => $dummyId,
+                'country_id' => $irelandId,
+                'city_id' => $corkId,
                 'lat' => $lat,
                 'lon' => $lon,
                 'model' => "iPhone 5",
