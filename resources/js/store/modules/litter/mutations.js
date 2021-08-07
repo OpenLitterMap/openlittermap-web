@@ -61,6 +61,7 @@ export const mutations = {
      */
     clearTags (state, photoId)
     {
+        state.previousTags = state.tags[photoId] || {}
         if (photoId !== null) {
             delete state.tags[photoId];
         } else {

@@ -63,7 +63,6 @@
                     v-click-outside="clickOutsideTag"
                 />
             </div>
-
             <!-- Quantity -->
             <div class="select" id="int">
                 <select v-model="quantity">
@@ -72,11 +71,26 @@
             </div>
 
             <br><br>
+         
+           <div v-if="show_previous_tags && Object.keys(previousTags).length > 0 && show_previous_tags">
+            <h1>Previous Tags:</h1>
+                <div v-for="category in Object.keys(previousTags)">
+                    <p>{{ getCategoryName(category) }}</p>
+
+                    <transition-group name="list" class="recent-tags" tag="div" :key="category">
+                        <div
+                            v-for="tag in Object.keys(previousTags[category])"
+                            class="litter-tag"
+                            :key="tag"
+                            @click="addRecentTag(category, tag)"
+                        ><p>{{ getTagName(category, tag) }}</p></div>
+                    </transition-group>
+                </div>
+                <hr v-if="Object.keys(previousTags).length > 0">
+            </div>
 
             <div v-if="Object.keys(recentTags).length > 0 && this.annotations !== true && this.id !== 0" class="mb-5">
-
                 <p class="mb-05">{{ $t('tags.recently-tags') }}</p>
-
                 <div v-for="category in Object.keys(recentTags)">
                     <p>{{ getCategoryName(category) }}</p>
 
@@ -90,7 +104,6 @@
                     </transition-group>
                 </div>
             </div>
-
             <div>
                 <button
                     :disabled="checkDecr"
@@ -109,7 +122,6 @@
                     @click="incr"
                 >+</button>
             </div>
-
             <br>
 
             <button
@@ -197,6 +209,11 @@ export default {
         };
     },
     computed: {
+        
+        //whether the user wants to show previous tags. return type: boolean
+        show_previous_tags(){
+            return this.user.previous_tags == 1;
+        },
         /**
          * Litter tags for all categories, used by the Search field
          */
@@ -324,6 +341,14 @@ export default {
         },
 
         /**
+         * The previous tags the user applied
+         */
+        previousTags ()
+        {
+            return this.$store.state.litter.previousTags;
+        },
+
+        /**
          * Get / Set the current tag (category -> tag)
          */
         tag: {
@@ -351,6 +376,14 @@ export default {
                     title: this.$i18n.t(`litter.${this.category.key}.${tag}`)
                 };
             });
+        },
+
+        /**
+         * Currently authenticated user
+         */
+        user ()
+        {
+            return this.$store.state.user.user;
         },
     },
     methods: {
@@ -543,6 +576,7 @@ export default {
          */
         async submit ()
         {
+            // this.previousTags = (this.$store.state.litter.tags[this.id] || {});
             this.processing = true;
 
             let action = '';
@@ -561,7 +595,7 @@ export default {
             await this.$store.dispatch(action);
 
             this.processing = false;
-        }
+        },
     }
 };
 </script>
