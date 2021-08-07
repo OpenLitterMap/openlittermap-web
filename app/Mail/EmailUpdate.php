@@ -7,7 +7,7 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class SmallUpdate extends Mailable
+class EmailUpdate extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -17,7 +17,7 @@ class SmallUpdate extends Mailable
      *
      * @return void
      */
-    public function __construct($user)
+    public function __construct ($user)
     {
         $this->user = $user;
     }
@@ -30,7 +30,8 @@ class SmallUpdate extends Mailable
     public function build()
     {
         return $this->from('info@openlittermap.com', 'OpenLitterMap')
-            ->subject('Update #23 - Huge Update to Global Map')
-            ->view('emails.update23');
+            ->subject('Update #24 - $50,000 funding from Cardano. Partnership with University College Dublin')
+            ->view('emails.update24')
+            ->attach(public_path('/attachments/UCD_SURVEY.pdf'));
     }
 }

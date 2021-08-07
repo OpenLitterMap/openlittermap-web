@@ -119,7 +119,6 @@ return [
 
     'redis' => [
 
-
         'client' => env('REDIS_CLIENT', 'predis'), // was phpredis
 
         'options' => [

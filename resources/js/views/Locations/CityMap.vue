@@ -15,6 +15,7 @@ import { categories } from '../../extra/categories'
 import { litterkeys } from '../../extra/litterkeys'
 import {MIN_ZOOM} from '../../constants';
 
+var map;
 var info;
 var hexFiltered;
 
@@ -63,7 +64,7 @@ function style (feature)
 /**
  * Apply these to each hexgrid
  */
-function onEachFeature(feature, layer)
+function onEachFeature (feature, layer)
 {
     layer.on({
         mouseover: highlightFeature,
@@ -116,7 +117,7 @@ export default {
     mounted ()
     {
         /** 1. Create map object */
-        const map = L.map(this.$refs.map, {
+        map = L.map(this.$refs.map, {
             center: this.$store.state.citymap.center, // center_map,
             zoom: this.$store.state.citymap.zoom,
             scrollWheelZoom: false,
@@ -206,43 +207,10 @@ export default {
             legend.addTo(map);
         }
 
-        /** 6. Create Groups */
-        smokingGroup = new L.LayerGroup();
-        foodGroup = new L.LayerGroup();
-        coffeeGroup = new L.LayerGroup();
-        alcoholGroup = new L.LayerGroup();
-        softdrinksGroup = new L.LayerGroup().addTo(map);
-        sanitaryGroup = new L.LayerGroup();
-        otherGroup = new L.LayerGroup();
-        coastalGroup = new L.LayerGroup();
-        brandsGroup = new L.LayerGroup();
-        dogshitGroup = new L.LayerGroup();
-        dumpingGroup = new L.LayerGroup();
-        industrialGroup = new L.LayerGroup();
-
-        /** 7. Loop over geojson data and add to groups */
+        /** 6. Loop over geojson data and add to groups */
         this.addDataToLayerGroups();
 
-        /** 8. Create overlays toggle menu */
-        let overlays = {
-            Alcohol: alcoholGroup,
-            Brands: brandsGroup,
-            Coastal: coastalGroup,
-            Coffee: coffeeGroup,
-            Dumping: dumpingGroup,
-            Food: foodGroup,
-            Industrial: industrialGroup,
-            Other: otherGroup,
-            PetSurprise: dogshitGroup,
-            Sanitary: sanitaryGroup,
-            Smoking: smokingGroup,
-            SoftDrinks: softdrinksGroup,
-        };
-
-        /** 9- Add null basemaps and overlays to the map */
-        L.control.layers(null, overlays).addTo(map);
-
-        /** 10 - TODO - Timeslider */
+        /** 7. TODO - Timeslider */
 
     },
     computed: {
@@ -304,14 +272,25 @@ export default {
     },
 
     methods: {
-
         /**
-         * Loop over the geojson,
-         * note - these have all been defined already based on the column on each category table eg `smoking.butts`
-         * note - some of these columns have to merged and simplified
+         * Loop over the geojson
          */
         addDataToLayerGroups ()
         {
+            /** 6. Create Groups */
+            smokingGroup = new L.LayerGroup();
+            foodGroup = new L.LayerGroup();
+            coffeeGroup = new L.LayerGroup();
+            alcoholGroup = new L.LayerGroup();
+            softdrinksGroup = new L.LayerGroup().addTo(map);
+            sanitaryGroup = new L.LayerGroup();
+            otherGroup = new L.LayerGroup();
+            coastalGroup = new L.LayerGroup();
+            brandsGroup = new L.LayerGroup();
+            dogshitGroup = new L.LayerGroup();
+            dumpingGroup = new L.LayerGroup();
+            industrialGroup = new L.LayerGroup();
+
             const groups = {
                 smoking: smokingGroup,
                 food: foodGroup,
@@ -332,8 +311,8 @@ export default {
                 let name = '';
                 let username = '';
 
-                if (i.properties.name) name = i.properties.name;
-                if (i.properties.username) username = ' @' + i.properties.username;
+                if (i.properties.hasOwnProperty('name') && name) name = i.properties.name;
+                if (i.properties.hasOwnProperty('username') && username) username = ' @' + i.properties.username;
                 if (name === '' && username === '') name = 'Anonymous';
 
                 // Dynamically add items to the groups + add markers
@@ -345,9 +324,9 @@ export default {
 
                         litterkeys[category].map(item => {
 
-                            if (i.properties[category][item.key])
+                            if (i.properties[category][item])
                             {
-                                string += this.$t('litter.'+[category]+'.'+[item.key]) + ': ' + i.properties[category][item.key] + ' <br>';
+                                string += this.$t('litter.'+[category]+'.'+[item]) + ': ' + i.properties[category][item] + ' <br>';
 
                                 L.marker([i.properties.lat, i.properties.lon])
                                     .addTo(groups[category])
@@ -361,6 +340,25 @@ export default {
                     }
                 });
             });
+
+            /** 8. Create overlays toggle menu */
+            let overlays = {
+                Alcohol: alcoholGroup,
+                Brands: brandsGroup,
+                Coastal: coastalGroup,
+                Coffee: coffeeGroup,
+                Dumping: dumpingGroup,
+                Food: foodGroup,
+                Industrial: industrialGroup,
+                Other: otherGroup,
+                PetSurprise: dogshitGroup,
+                Sanitary: sanitaryGroup,
+                Smoking: smokingGroup,
+                SoftDrinks: softdrinksGroup,
+            };
+
+            /** 9- Add null basemaps and overlays to the map */
+            L.control.layers(null, overlays).addTo(map);
         }
     }
 }

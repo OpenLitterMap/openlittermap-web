@@ -1,24 +1,53 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\GlobalMap;
+
+use App\Models\Photo;
+use App\Traits\FilterPhotosByGeoHashTrait;
 
 use Illuminate\Http\Request;
-use App\Traits\FilterPhotosByGeoHashTrait;
+use App\Http\Controllers\Controller;
 
 class GlobalMapController extends Controller
 {
     use FilterPhotosByGeoHashTrait;
 
     /**
-     * Get photos point data at zoom levels 16 or above
+     * Return the Art data for the global map
+     *
+     * @return array points
+     */
+    public function artData () :array
+    {
+        $photos = Photo::select(
+            'id',
+            'verified',
+            'user_id',
+            'team_id',
+            'result_string',
+            'filename',
+            'geohash',
+            'lat',
+            'lon',
+            'datetime'
+        )
+        ->where([
+            ['verified', '>=', 2],
+            ['art_id', '!=', null]
+        ])->get();
+
+        return $this->photosToGeojson($photos);
+    }
+
+    /**
+     * Convert our photos object to a geojson array
+     *
+     * @param $photos
      *
      * @return array
      */
-    public function index (): array
+    protected function photosToGeojson ($photos) :array
     {
-        $photos = $this->filterPhotosByGeoHash(request()->zoom, request()->bbox)->get();
-
-        // We need to return geojson object to the frontend
         $geojson = [
             'type'      => 'FeatureCollection',
             'features'  => null
@@ -47,7 +76,7 @@ class GlobalMapController extends Controller
                 'type' => 'Feature',
                 'geometry' => [
                     'type' => 'Point',
-                    'coordinates' => [$photo->lon, $photo->lat]
+                    'coordinates' => [$photo->lat, $photo->lon]
                 ],
                 'properties' => [
                     'result_string' => $photo->verified >= 2 ? $photo->result_string : null,
@@ -67,5 +96,21 @@ class GlobalMapController extends Controller
         $geojson['features'] = $features;
 
         return $geojson;
+    }
+
+    /**
+     * Get photos point data at zoom levels 16 or above
+     *
+     * @return array
+     */
+    public function index (): array
+    {
+        $photos = $this->filterPhotosByGeoHash(
+            request()->zoom,
+            request()->bbox,
+            request()->layers ?: null
+        )->get();
+
+        return $this->photosToGeojson($photos);
     }
 }

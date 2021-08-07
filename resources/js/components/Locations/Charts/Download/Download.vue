@@ -5,7 +5,7 @@
 
         <p class="mb1" v-show="!isAuth">{{ $t('location.enter-email-sent-data') }}</p>
 
-        <input          
+        <input
             v-show="!isAuth"
             class="input mb1em fs125"
             :placeholder="$t('common.your-email')"
@@ -13,7 +13,7 @@
             name="email"
             required
             v-model="email"
-            @keydown="textEntered"
+            @input="textEntered"
             autocomplete="email"
         />
 
@@ -26,7 +26,7 @@
 <script>
 export default {
     name: 'Download',
-    props: ['type', 'locationId'], // country, state or city
+    props: ['locationType', 'locationId'], // country, state or city
     data ()
     {
         return {
@@ -46,7 +46,7 @@ export default {
         async download ()
         {
             await this.$store.dispatch('DOWNLOAD_DATA', {
-                type: this.type,
+                locationType: this.locationType,
                 locationId: this.locationId,
                 email: this.email
             });
@@ -59,15 +59,8 @@ export default {
         textEntered()
         {
             const regexEmail = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/
-            if (this.email.match(regexEmail)) 
-            {
-                this.emailEntered = true;
-            }
-            else
-            {
-                this.emailEntered = false;
-                this.disableDownloadButton;
-            }
+
+            this.emailEntered = !!this.email.match(regexEmail);
         }
     },
 
@@ -84,7 +77,7 @@ export default {
             {
                 return false;
             }
-            else 
+            else
             {
                 return !this.emailEntered;
             }

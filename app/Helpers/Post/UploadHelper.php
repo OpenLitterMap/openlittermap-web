@@ -1,8 +1,6 @@
 <?php
 
-
-namespace App\Services;
-
+namespace App\Helpers\Post;
 
 use App\Events\NewCityAdded;
 use App\Events\NewCountryAdded;
@@ -11,7 +9,7 @@ use App\Models\Location\City;
 use App\Models\Location\Country;
 use App\Models\Location\State;
 
-class LocationService
+class UploadHelper
 {
     /**
      * Get or Create Country from $addressArray

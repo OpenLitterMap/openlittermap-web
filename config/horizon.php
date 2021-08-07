@@ -189,5 +189,11 @@ return [
                 'maxProcesses' => 3,
             ],
         ],
-    ],
+
+        'staging' => [
+            'supervisor-1' => [
+                'maxProcesses' => 3,
+            ],
+        ]
+    ]
 ];

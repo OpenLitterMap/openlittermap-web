@@ -7,7 +7,6 @@
 </template>
 
 <script>
-/* We need to wrap the map in a container */
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
 import CityMap from './CityMap'

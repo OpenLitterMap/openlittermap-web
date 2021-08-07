@@ -63,32 +63,23 @@ return [
             'bucket'   => env('AWS_BUCKET'),
             'url'      => env('AWS_URL'),
             'endpoint' => env('AWS_ENDPOINT'),
+//            'use_path_style_endpoint' => env('AWS_PATH_STYLE_ENDPOINT', false)
         ],
 
-        's3500x500' => [
+        'bbox' => [
             'driver'   => 's3',
             'key'      => env('x500_AWS_KEY'),
             'secret'   => env('x500_AWS_SECRET'),
             'region'   => env('x500_AWS_REGION'),
             'bucket'   => env('x500_AWS_BUCKET'),
-            // 'url'      => env('x500_AWS_URL'),
-            // 'endpoint' => env('x500_AWS_ENDPOINT'),
+            'endpoint' => env('x500_AWS_ENDPOINT'),
+            'use_path_style_endpoint' => env('AWS_PATH_STYLE_ENDPOINT', false)
         ],
 
         'dropbox' => [
             'driver' => 'dropbox',
             'token' => env('DROPBOX_TOKEN'),
         ],
-
-        'staging' => [
-            'driver' => 's3',
-            'key' => env('DIGITAL_OCEAN_KEY'),
-            'secret' => env('DIGITAL_OCEAN_SECRET'),
-            'endpoint' => env('DIGITAL_OCEAN_ENDPOINT'),
-            'region' => env('DIGITAL_OCEAN_REGION'),
-            'bucket' => env('DIGITAL_OCEAN_BUCKET'),
-        ]
-
     ],
 
     /*
