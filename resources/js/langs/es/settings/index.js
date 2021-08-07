@@ -8,6 +8,7 @@ import password from './password.json'
 import payments from './payments.json'
 import presence from './presence.json'
 import privacy from './privacy.json'
+import tagging from './tagging.json'
 
 export const settings = {
     account,
@@ -19,5 +20,6 @@ export const settings = {
     password,
     payments,
     presence,
-    privacy
+    privacy,
+    tagging
 }
