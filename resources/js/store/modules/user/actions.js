@@ -206,8 +206,8 @@ export const actions = {
      */
     async SAVE_PRIVACY_SETTINGS (context)
     {
-        let title = i18n.t('notifications.success');
-        let body  = i18n.t('notifications.privacy-updated');
+        const title = i18n.t('notifications.success');
+        const body  = i18n.t('notifications.privacy-updated');
 
         await axios.post('/settings/privacy/update', {
             show_name_maps: context.state.user.show_name_maps,
@@ -237,8 +237,8 @@ export const actions = {
      */
     async SAVE_TAGGING_SETTINGS (context)
     {
-        let title = i18n.t('notifications.success');
-        let body  = i18n.t('notifications.tagging-updated');
+        const title = i18n.t('notifications.success');
+        const body  = i18n.t('notifications.tagging-updated');
 
         await axios.post('/settings/tagging/update', {
             previous_tags: context.state.user.previous_tags,
@@ -263,9 +263,9 @@ export const actions = {
      */
     async TOGGLE_EMAIL_SUBSCRIPTION (context)
     {
-        let title = i18n.t('notifications.success');
-        let sub = i18n.t('notifications.settings.subscribed');
-        let unsub = i18n.t('notifications.settings.unsubscribed');
+        const title = i18n.t('notifications.success');
+        const sub = i18n.t('notifications.settings.subscribed');
+        const unsub = i18n.t('notifications.settings.unsubscribed');
 
         await axios.post('/settings/email/toggle')
             .then(response => {
@@ -303,8 +303,8 @@ export const actions = {
      */
     async TOGGLE_LITTER_PICKED_UP_SETTING (context)
     {
-        let title = i18n.t('notifications.success');
-        let body  = i18n.t('notifications.litter-toggled');
+        const title = i18n.t('notifications.success');
+        const body  = i18n.t('notifications.litter-toggled');
 
         await axios.post('/settings/toggle')
             .then(response => {
@@ -364,8 +364,8 @@ export const actions = {
      */
     async UPDATE_GLOBAL_FLAG (context, payload)
     {
-        let title = i18n.t('notifications.success');
-        let body  = i18n.t('notifications.settings.flag-updated');
+        const title = i18n.t('notifications.success');
+        const body  = i18n.t('notifications.settings.flag-updated');
 
         await axios.post('/settings/save-flag', {
             country: payload

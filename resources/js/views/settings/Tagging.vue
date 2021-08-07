@@ -51,7 +51,7 @@ export default {
                 return this.user.previous_tags;
             },
             set (v) {
-                this.$store.commit('tagging', {
+                this.$store.commit('userColumnUpdate', {
                     column: 'previous_tags',
                     v
                 });

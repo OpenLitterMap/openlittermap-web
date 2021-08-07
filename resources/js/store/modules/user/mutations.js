@@ -112,17 +112,9 @@ export const mutations = {
     },
 
     /**
-     * The user wants to change a privacy setting
+     * The user wants to change a column in the users table
      */
-    privacy (state, payload)
-    {
-        state.user[payload.column] = payload.v;
-    },
-
-    /**
-     * The user wants to change a tagging setting
-     */
-    tagging (state, payload)
+    userColumnUpdate (state, payload)
     {
         state.user[payload.column] = payload.v;
     },

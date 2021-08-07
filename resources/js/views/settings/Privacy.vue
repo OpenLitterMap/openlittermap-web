@@ -138,7 +138,7 @@ export default {
                 return this.user.show_name_createdby;
             },
             set (v) {
-                this.$store.commit('privacy', {
+                this.$store.commit('userColumnUpdate', {
                     column: 'show_name_createdby',
                     v
                 });
@@ -153,7 +153,7 @@ export default {
                 return this.user.show_username_createdby;
             },
             set (v) {
-                this.$store.commit('privacy', {
+                this.$store.commit('userColumnUpdate', {
                     column: 'show_username_createdby',
                     v
                 });
@@ -168,7 +168,7 @@ export default {
                 return this.user.show_name;
             },
             set (v) {
-                this.$store.commit('privacy', {
+                this.$store.commit('userColumnUpdate', {
                     column: 'show_name',
                     v
                 });
@@ -183,7 +183,7 @@ export default {
                 return this.user.show_username;
             },
             set (v) {
-                this.$store.commit('privacy', {
+                this.$store.commit('userColumnUpdate', {
                     column: 'show_username',
                     v
                 });
@@ -198,7 +198,7 @@ export default {
                 return this.user.show_name_maps;
             },
             set (v) {
-                this.$store.commit('privacy', {
+                this.$store.commit('userColumnUpdate', {
                     column: 'show_name_maps',
                     v
                 });
@@ -213,7 +213,7 @@ export default {
                 return this.user.show_username_maps;
             },
             set (v) {
-                this.$store.commit('privacy', {
+                this.$store.commit('userColumnUpdate', {
                     column: 'show_username_maps',
                     v
                 });
