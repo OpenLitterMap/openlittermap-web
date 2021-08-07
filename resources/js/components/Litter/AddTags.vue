@@ -73,7 +73,7 @@
             <br><br>
          
            <div v-if="show_previous_tags && Object.keys(previousTags).length > 0 && show_previous_tags">
-            <h1>Previous Tags:</h1>
+            <h1>{{ $t('tags.previous-tags') }}:</h1>
                 <div v-for="category in Object.keys(previousTags)">
                     <p>{{ getCategoryName(category) }}</p>
 

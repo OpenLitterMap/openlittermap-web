@@ -1,6 +1,7 @@
 {
     "address": "Address",
     "add-tag": "Add Tag",
+    "previous-tags": "Previous Tags",
     "coordinates": "Coordinates",
     "device": "Device",
     "next": "Next Image",
