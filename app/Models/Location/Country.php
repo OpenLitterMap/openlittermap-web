@@ -13,7 +13,7 @@ class Country extends Location
     /**
      * Properties that are mass assignable
      */
-	protected $fillable = [
+    protected $fillable = [
         'id',
         'country',
         'shortcode',
@@ -112,9 +112,9 @@ class Country extends Location
     /**
      * Define relationships
      */
-	public function photos () {
-		return $this->hasMany('App\Models\Photo');
-	}
+    public function photos () {
+        return $this->hasMany('App\Models\Photo');
+    }
 
     public function creator () {
         return $this->belongsTo('App\Models\User\User', 'created_by');
@@ -125,10 +125,10 @@ class Country extends Location
     }
 
     public function cities () {
-    	return $this->hasMany('App\Models\Location\City');
+        return $this->hasMany('App\Models\Location\City');
     }
 
     public function users () {
-    	return $this->hasMany('App\Models\User\User');
+        return $this->hasMany('App\Models\User\User');
     }
 }

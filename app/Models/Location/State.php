@@ -11,17 +11,17 @@ class State extends Location
     use HasFactory;
 
     protected $fillable = [
-		'id',
-		'state',
-		'country_id',
-		'created_at',
-		'updated_at',
-		'manual_verify',
+        'id',
+        'state',
+        'country_id',
+        'created_at',
+        'updated_at',
+        'manual_verify',
         'littercoin_paid',
         'created_by',
     ];
 
-	/**
+    /**
      * Extra columns on our Country model
      */
     protected $appends = [
@@ -102,19 +102,19 @@ class State extends Location
     /**
      * Relationships
      */
-	public function creator () {
-		return $this->belongsTo('App\Models\User\User', 'created_by');
-	}
+    public function creator () {
+        return $this->belongsTo('App\Models\User\User', 'created_by');
+    }
 
-	public function country () {
-		return $this->belongsTo('App\Models\Location\Country');
-	}
+    public function country () {
+        return $this->belongsTo('App\Models\Location\Country');
+    }
 
     public function cities () {
-    	return $this->hasMany('App\Models\Location\City');
+        return $this->hasMany('App\Models\Location\City');
     }
 
     public function photos () {
-    	return $this->hasMany('App\Models\Photo');
+        return $this->hasMany('App\Models\Photo');
     }
 }

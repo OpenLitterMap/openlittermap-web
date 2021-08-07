@@ -11,36 +11,36 @@ class City extends Location
 {
     use HasFactory;
 
-	protected $fillable = [
-		'id',
-		'city',
-		'country_id',
-		'state_id',
-		'created_at',
-		'updated_at',
-		'total_smoking',
-		'total_cigaretteButts',
-		'total_food',
-		'total_softdrinks',
-		'total_plasticBottles',
-		'total_alcohol',
-		'total_coffee',
-		'total_drugs',
+    protected $fillable = [
+        'id',
+        'city',
+        'country_id',
+        'state_id',
+        'created_at',
+        'updated_at',
+        'total_smoking',
+        'total_cigaretteButts',
+        'total_food',
+        'total_softdrinks',
+        'total_plasticBottles',
+        'total_alcohol',
+        'total_coffee',
+        'total_drugs',
         'total_dumping',
         'total_industrial',
-		'total_needles',
-		'total_sanitary',
-		'total_other',
-		'total_coastal',
-		'total_pathways',
-		'total_art',
-		'manual_verify',
-		'littercoin_paid',
-		'created_by',
+        'total_needles',
+        'total_sanitary',
+        'total_other',
+        'total_coastal',
+        'total_pathways',
+        'total_art',
+        'manual_verify',
+        'littercoin_paid',
+        'created_by',
         'total_dogshit'
-	];
+    ];
 
-	/**
+    /**
      * Extra columns on our Country model
      */
     protected $appends = [
@@ -118,24 +118,24 @@ class City extends Location
         return $totals;
     }
 
-	public function creator()
-	{
-		return $this->belongsTo('App\Models\User\User', 'created_by');
-	}
+    public function creator()
+    {
+        return $this->belongsTo('App\Models\User\User', 'created_by');
+    }
 
     public function country() {
-    	return $this->belongsTo('App\Models\Location\Country');
+        return $this->belongsTo('App\Models\Location\Country');
     }
 
     public function state() {
-    	return $this->belongsTo('App\Models\Location\State');
+        return $this->belongsTo('App\Models\Location\State');
     }
 
     public function photos() {
-    	return $this->hasMany('App\Models\Photo');
+        return $this->hasMany('App\Models\Photo');
     }
 
     public function users() {
-    	return $this->hasMany('App\Models\User\User');
+        return $this->hasMany('App\Models\User\User');
     }
 }
