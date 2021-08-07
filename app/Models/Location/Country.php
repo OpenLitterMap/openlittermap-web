@@ -13,7 +13,7 @@ class Country extends Location
     /**
      * Properties that are mass assignable
      */
-	protected $fillable = [
+    protected $fillable = [
         'id',
         'country',
         'shortcode',
@@ -49,7 +49,7 @@ class Country extends Location
     {
         return Redis::hexists("country:$this->id", "total_litter")
             ? (int)Redis::hget("country:$this->id", "total_litter")
-            : 1;
+            : 0;
     }
 
     /**
@@ -59,7 +59,7 @@ class Country extends Location
     {
         return Redis::hexists("country:$this->id", "total_photos")
             ? (int)Redis::hget("country:$this->id", "total_photos")
-            : 1;
+            : 0;
     }
 
     /**
@@ -67,9 +67,7 @@ class Country extends Location
      */
     public function getTotalContributorsRedisAttribute ()
     {
-        return (Redis::scard("country:$this->id:user_ids") > 0)
-            ? Redis::scard("country:$this->id:user_ids")
-            : 1;
+        return Redis::scard("country:$this->id:user_ids");
     }
 
     /**
@@ -114,9 +112,9 @@ class Country extends Location
     /**
      * Define relationships
      */
-	public function photos () {
-		return $this->hasMany('App\Models\Photo');
-	}
+    public function photos () {
+        return $this->hasMany('App\Models\Photo');
+    }
 
     public function creator () {
         return $this->belongsTo('App\Models\User\User', 'created_by');
@@ -127,10 +125,10 @@ class Country extends Location
     }
 
     public function cities () {
-    	return $this->hasMany('App\Models\Location\City');
+        return $this->hasMany('App\Models\Location\City');
     }
 
     public function users () {
-    	return $this->hasMany('App\Models\User\User');
+        return $this->hasMany('App\Models\User\User');
     }
 }
