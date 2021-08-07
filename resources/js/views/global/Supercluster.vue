@@ -327,10 +327,16 @@ async function update ()
                             ? `\nTeam ${f.properties.team}`
                             : "";
 
-                        L.popup()
+                        L.popup({
+                            minWidth: 350,
+                            maxWidth: 600,
+                            maxHeight: 700,
+                            closeButton: true
+                        })
                             .setLatLng(e.latlng)
                             .setContent(
-                                '<img src= "' + f.properties.filename + '" class="litter-img" />'
+                                '<img src= "' + f.properties.filename + '" class="litter-img"' +
+                                ' onclick="document.querySelector(\'.leaflet-popup-close-button\').click();" />'
                                     + '<div class="litter-img-container">'
                                         + '<p class="mb5p">' + tags + ' </p>'
                                         + '<p>Taken on ' + moment(f.properties.datetime).format('LLL') +'</p>'
@@ -484,7 +490,9 @@ export default {
     .litter-img {
         border-top-left-radius: 6px;
         border-top-right-radius: 6px;
-        max-width: 100%;
+        object-fit: contain;
+        max-height: 100%;
+        cursor: pointer;
     }
 
     .art-litter-image {

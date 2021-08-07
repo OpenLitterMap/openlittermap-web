@@ -39,10 +39,6 @@ html {
     display: none;
 }
 
-.leaflet-popup-content {
-    width: 180px !important;
-}
-
 .leafet-popup {
     left: -106px !important;
 }

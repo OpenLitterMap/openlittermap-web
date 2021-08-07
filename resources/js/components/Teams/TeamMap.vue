@@ -92,7 +92,7 @@ export default {
     }
 
     .leaflet-popup-content {
-        width: 180px !important;
+        width: 180px;
     }
 
     .lealet-popup {
