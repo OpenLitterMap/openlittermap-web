@@ -4,7 +4,7 @@ namespace App\Traits;
 
 use App\Actions\Photos\AddTagsToPhotoAction;
 use App\Actions\Photos\DeleteTagsFromPhotoAction;
-use App\Actions\Photos\UpdateLeaderboardsFromPhotoAction;
+use App\Actions\Locations\UpdateLeaderboardsFromPhotoAction;
 use App\Models\Photo;
 use App\Models\User\User;
 
@@ -23,10 +23,12 @@ trait AddTagsTrait
         $user = User::find($photo->user_id);
 
         // Delete the old tags
+        /** @var DeleteTagsFromPhotoAction $deleteTagsAction */
         $deleteTagsAction = app(DeleteTagsFromPhotoAction::class);
         $deletedTags = $deleteTagsAction->run($photo);
 
         // Add the new tags
+        /** @var AddTagsToPhotoAction $addTagsAction */
         $addTagsAction = app(AddTagsToPhotoAction::class);
         $litterTotals = $addTagsAction->run($photo, $tags);
 

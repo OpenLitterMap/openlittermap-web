@@ -3,13 +3,15 @@
 namespace App\Events;
 
 use App\Models\Photo;
+use App\Models\User\User;
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class TagsVerifiedByAdmin implements ShouldQueue
+class TagsVerifiedByAdmin implements ShouldBroadcast, ShouldQueue
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -22,6 +24,9 @@ class TagsVerifiedByAdmin implements ShouldQueue
     // total per category, or total per brand
     public $total_litter_per_category = []; // smoking => 5, alcohol => 1
     public $total_litter_per_brand = []; // mcd => 1, starbucks => 2
+
+    /** @var bool */
+    public $isUserVerified;
 
     /**
      * The tags on a single photo have been verified by an Admin
@@ -80,15 +85,17 @@ class TagsVerifiedByAdmin implements ShouldQueue
         }
 
         $this->total_litter_all_categories = $total_litter_all_categories;
+
+        $this->isUserVerified = !User::find($this->user_id)->verification_required;
     }
 
     /**
      * Get the channels the event should broadcast on.
      *
-     * @return \Illuminate\Broadcasting\Channel|array
+     * @return Channel
      */
-    public function broadcastOn()
+    public function broadcastOn(): Channel
     {
-        return new PrivateChannel('channel-name');
+        return new Channel('main');
     }
 }

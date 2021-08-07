@@ -2,6 +2,7 @@
 
 namespace App\Actions\Photos;
 
+use App\Events\TagsDeletedByAdmin;
 use App\Models\Photo;
 
 class DeleteTagsFromPhotoAction
@@ -21,18 +22,28 @@ class DeleteTagsFromPhotoAction
 
         $litter = 0;
         $brands = 0;
+        $deletedLitterTags = [];
+        $deletedBrandsTags = [];
 
         foreach ($photo->categories() as $category)
         {
             if ($photo->$category)
             {
+                $categoryTotal = $photo->$category->total();
+
                 if ($category === 'brands')
                 {
-                    $brands += $photo->$category->total();
+                    $brands += $categoryTotal;
+
+                    foreach (Photo::getBrands() as $brand) {
+                        $deletedBrandsTags[$brand] = $photo->brands->$brand;
+                    }
                 }
                 else
                 {
-                    $litter += $photo->$category->total();
+                    $litter += $categoryTotal;
+
+                    $deletedLitterTags[$category] = $categoryTotal;
                 }
 
                 $photo->$category->delete();
@@ -40,6 +51,16 @@ class DeleteTagsFromPhotoAction
         }
 
         $all = $litter + $brands;
+
+        // Todo add a test for this
+        event(new TagsDeletedByAdmin(
+            $photo,
+            $all,
+            $litter,
+            $brands,
+            $deletedLitterTags,
+            $deletedBrandsTags
+        ));
 
         return compact('litter', 'brands', 'all');
     }

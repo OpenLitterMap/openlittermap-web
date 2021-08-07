@@ -10,11 +10,11 @@
                     <h3 class="subtitle is-1">
                         {{ $t('tags.no-tags') }}
                     </h3>
-                    <h3 class="subtitle button is-medium is-info hov">
-                        <router-link to="/submit">
+                    <router-link to="/submit">
+                        <h3 class="subtitle button is-medium is-info hov">
                             {{ $t('tags.please-upload') }}
-                        </router-link>
-                    </h3>
+                        </h3>
+                    </router-link>
                 </div>
             </div>
 

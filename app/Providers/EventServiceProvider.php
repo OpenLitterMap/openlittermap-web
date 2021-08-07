@@ -2,10 +2,19 @@
 
 namespace App\Providers;
 
+use App\Events\ImageDeleted;
+use App\Events\ImageUploaded;
+use App\Events\TagsDeletedByAdmin;
+use App\Events\TagsVerifiedByAdmin;
+use App\Listeners\AddTags\IncrementLocation;
+use App\Listeners\Locations\AddLocationContributor;
+use App\Listeners\Locations\DecreaseLocationTotalPhotos;
+use App\Listeners\Locations\RemoveLocationContributor;
+use App\Listeners\Locations\IncreaseLocationTotalPhotos;
+use App\Listeners\UpdateTags\DecrementLocation;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
-use Illuminate\Support\Facades\Event;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -18,8 +27,13 @@ class EventServiceProvider extends ServiceProvider
         Registered::class => [
             SendEmailVerificationNotification::class,
         ],
-        'App\Events\ImageUploaded' => [
-              'App\Listeners\Locations\CheckContributors'
+        ImageUploaded::class => [
+            AddLocationContributor::class,
+            IncreaseLocationTotalPhotos::class
+        ],
+        ImageDeleted::class => [
+            RemoveLocationContributor::class,
+            DecreaseLocationTotalPhotos::class
         ],
         // stage-1 verification is not currently in use
         'App\Events\PhotoVerifiedByUser' => [
@@ -30,11 +44,9 @@ class EventServiceProvider extends ServiceProvider
 //            'App\Listeners\UpdateLeaderboards',
         ],
         // Several Listeners could be merged. Add ProofOfWork
-        'App\Events\TagsVerifiedByAdmin' => [
+        TagsVerifiedByAdmin::class => [
             'App\Listeners\AddTags\UpdateUser',
-            'App\Listeners\AddTags\IncrementCity',
-            'App\Listeners\AddTags\IncrementState',
-            'App\Listeners\AddTags\IncrementCountry',
+            IncrementLocation::class,
             // 'App\Listeners\GenerateLitterCoin',
             // 'App\Listeners\UpdateLeaderboardsAdmin', happens on AddTagsTrait
             'App\Listeners\AddTags\CompileResultsString',
@@ -43,12 +55,8 @@ class EventServiceProvider extends ServiceProvider
             'App\Listeners\User\UpdateUserTimeSeries',
             'App\Listeners\User\UpdateUserCategories'
         ],
-        'App\Events\ResetTagsCountAdmin' => [ // not using this yet. Need to add a new Reset + Update tags button
-            // 'App\Listeners\DecrementUserTags', Add this in when we update UpdateUserTags
-            'App\Listeners\UpdateTags\DecrementCity',
-            'App\Listeners\UpdateTags\DecrementState',
-            'App\Listeners\UpdateTags\DecrementCountry',
-            'App\Listeners\UpdateTags\ResetCompileString',
+        TagsDeletedByAdmin::class => [
+            DecrementLocation::class
         ],
         'App\Events\UserSignedUp' => [
             'App\Listeners\SendNewUserEmail'

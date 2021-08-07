@@ -14,7 +14,7 @@ class ImageUploaded implements ShouldBroadcast, ShouldQueue
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     // For Websockets
-    public $city, $state, $country, $countryCode, $imageName, $teamName;
+    public $city, $state, $country, $countryCode, $imageName, $teamName, $isUserVerified;
 
     // For CheckContributors
     public $userId, $countryId, $stateId, $cityId;
@@ -24,7 +24,19 @@ class ImageUploaded implements ShouldBroadcast, ShouldQueue
      *
      * @return void
      */
-    public function __construct ($city, $state, $country, $countryCode, $imageName, $teamName, $userId, $countryId, $stateId, $cityId)
+    public function __construct (
+        string $city,
+        string $state,
+        string $country,
+        string $countryCode,
+        string $imageName,
+        ?string $teamName,
+        int $userId,
+        int $countryId,
+        int $stateId,
+        int $cityId,
+        bool $isUserVerified
+    )
     {
         $this->city = $city;
         $this->state = $state;
@@ -36,6 +48,7 @@ class ImageUploaded implements ShouldBroadcast, ShouldQueue
         $this->countryId = $countryId;
         $this->stateId = $stateId;
         $this->cityId = $cityId;
+        $this->isUserVerified = $isUserVerified;
     }
 
     /**
