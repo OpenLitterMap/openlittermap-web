@@ -42,8 +42,9 @@
                         v-show="isAdmin"
                         :annotations="true"
                         :isVerifying="isVerifying"
+                        :isBBox="true"
                     />
-
+{{ isVerifying }}
                 </div>
             </div>
 
@@ -52,15 +53,15 @@
                 <!-- The list of tags associated with this image -->
                 <Tags :admin="isAdmin" />
 
-                <button
+                <!-- <button
                     v-if="isAdmin"
                     :class="updateButton"
                     @click="update"
                     :disabled="disabled"
-                >Update Tags</button>
+                >Update Tags</button> -->
 
                 <button
-                    v-else
+                    v-if="!isAdmin"
                     :class="wrongTagsButton"
                     @click="wrongTags"
                     :disabled="disabled"
@@ -130,7 +131,7 @@ export default {
     data ()
     {
         return {
-            stickSize: 6,
+            stickSize: 13,
             skip_processing: false,
             update_processing: false,
             wrong_tags_processing: false,
@@ -340,7 +341,6 @@ export default {
         resize (newRect)
         {
             this.stickSize = 1;
-
             this.$store.commit('updateBoxPosition', newRect);
         },
 
@@ -349,7 +349,7 @@ export default {
          */
         resizestop ()
         {
-            this.stickSize = this.isMobile ? 30 : 6;
+            this.stickSize = this.isMobile ? 30 : 13;
         },
 
         /**
@@ -366,17 +366,17 @@ export default {
             this.skip_processing = false;
         },
 
-        /**
-         * Update the tags for this image
-         */
-        async update ()
-        {
-            this.update_processing = true;
+        // /**
+        //  * Update the tags for this image
+        //  */
+        // async update ()
+        // {
+        //     this.update_processing = true;
 
-            await this.$store.dispatch('BBOX_UPDATE_TAGS');
+        //     await this.$store.dispatch('BBOX_UPDATE_TAGS');
 
-            this.update_processing = false;
-        },
+        //     this.update_processing = false;
+        // },
 
         /**
          * For a non-admin, they can mark the image with wrong tags
@@ -407,7 +407,7 @@ export default {
     }
 
     .vdr {
-        border: 1px solid red;
+        border: 2px solid red;
     }
 
     .vdr.active:before {
@@ -415,10 +415,11 @@ export default {
     }
 
     .box-tag {
-        background-color: red;
+        background-color: white;
         position: absolute;
         top: -1.5em;
-        right: 0;
+        white-space: pre;
+        left: -2px;
         padding: 0 5px;
         margin-right: -3px;
     }

@@ -65,7 +65,7 @@
             </div>
 
             <!-- Quantity -->
-            <div class="select" id="int">
+            <div class="select" id="int" v-show="!isBBox">
                 <select v-model="quantity">
                     <option v-for="int in integers">{{ int }}</option>
                 </select>
@@ -93,6 +93,7 @@
 
             <div>
                 <button
+                    v-show="!isBBox"
                     :disabled="checkDecr"
                     class="button is-medium is-danger"
                     @click="decr"
@@ -101,9 +102,10 @@
                 <button
                     class="button is-medium is-info"
                     @click="addTag"
-                >{{ $t('tags.add-tag') }}</button>
+                >{{ isBBox ? 'Update Tag' :  $t('tags.add-tag') }}</button>
 
                 <button
+                    v-show="!isBBox"
                     :disabled="checkIncr"
                     class="button is-medium is-dark"
                     @click="incr"
@@ -159,7 +161,8 @@ export default {
         'id': { type: Number, required: true },
         'admin': Boolean,
         'annotations': { type: Boolean, required: false },
-        'isVerifying': { type: Boolean, required: false }
+        'isVerifying': { type: Boolean, required: false },
+        'isBBox': { type: Boolean, required: false, default: false },
     },
     created ()
     {
@@ -374,7 +377,6 @@ export default {
                     quantity = (this.$store.state.litter.tags[category][tag] + 1);
                 }
             }
-
             this.$store.commit('addTag', {
                 photoId: this.id,
                 category,
@@ -396,12 +398,19 @@ export default {
          */
         addTag ()
         {
-            this.$store.commit('addTag', {
-                photoId: this.id,
-                category: this.category.key,
-                tag: this.tag.key,
-                quantity: this.quantity
-            });
+            if(this.isBBox){
+                this.$store.commit('addTagToBox', {
+                    category: this.category.key,
+                    tag:  this.tag.key
+                 });
+            }else{
+                 this.$store.commit('addTag', {
+                    photoId: this.id,
+                    category: this.category.key,
+                    tag: this.tag.key,
+                    quantity: this.quantity
+                });
+            }
 
             this.quantity = 1;
 

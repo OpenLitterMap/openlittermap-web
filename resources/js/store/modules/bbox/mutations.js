@@ -64,7 +64,7 @@ export const mutations = {
             category: null,
             tag: null,
             brand: null,
-            showLabel: false,
+            showLabel: true,
             hidden: false
         });
     },
