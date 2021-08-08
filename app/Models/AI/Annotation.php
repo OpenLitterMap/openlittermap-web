@@ -21,6 +21,7 @@ class Annotation extends Model
         'brand_id',
         'supercategory_id',
         'segmentation',
+        'showLabel',
         'bbox',
         'is_crowd',
         'area',

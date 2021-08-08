@@ -132,6 +132,7 @@ class VerifyBoxController extends Controller
                 $annotation->is_crowd = false; // is this true because brand + category can be added to an image
                 $annotation->area = ($box['width'] * $box['height']);
                 $annotation->verified_by = $userDoingVerification->id;
+                $annotation->showLabel = true;
 
                 $annotation->save();
             }
