@@ -44,7 +44,6 @@
                         :isVerifying="isVerifying"
                         :isBBox="true"
                     />
-{{ isVerifying }}
                 </div>
             </div>
 
