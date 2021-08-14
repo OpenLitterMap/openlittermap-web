@@ -283,6 +283,14 @@ html {
     color: #363636 !important;
 }
 
+.w-3 {
+    width: 3em;
+}
+
+.w-15 {
+    width: 15em;
+}
+
 .w10 {
     width: 10em;
 }

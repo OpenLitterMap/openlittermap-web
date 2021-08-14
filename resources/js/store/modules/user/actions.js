@@ -277,8 +277,8 @@ export const actions = {
      */
     async TOGGLE_LITTER_PICKED_UP_SETTING (context)
     {
-        let title = i18n.t('notifications.success');
-        let body  = i18n.t('notifications.litter-toggled');
+        const title = i18n.t('notifications.success');
+        const body  = i18n.t('notifications.litter-toggled');
 
         await axios.post('/settings/toggle')
             .then(response => {
@@ -298,6 +298,38 @@ export const actions = {
             })
             .catch(error => {
                 console.log(error);
+            });
+    },
+
+    /**
+     * Toggle the privacy status of the users dashboard
+     */
+    async TOGGLE_PUBLIC_PROFILE (context)
+    {
+        const title = i18n.t('notifications.success');
+
+        const nowPublic = "Your Profile is now public";
+        const nowPrivate = "Your Profile is now private";
+
+        await axios.post('/settings/public-profile/toggle')
+            .then(response => {
+                console.log('toggle_public_profile', response);
+
+                if (response.data.success)
+                {
+                    context.commit('updateUserSettings', response.data.settings);
+
+                    Vue.$vToastify.success({
+                        title,
+                        body: (response.data.status)
+                            ? nowPublic
+                            : nowPrivate,
+                        position: 'top-right'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('toggle_public_profile', error);
             });
     },
 

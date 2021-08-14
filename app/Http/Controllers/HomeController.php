@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-// use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class HomeController extends Controller
@@ -18,15 +17,19 @@ class HomeController extends Controller
         $auth = Auth::check();
 
         $user = null;
+
         if ($auth)
         {
             $user = Auth::user();
+
+            // Load this data
             $user->roles;
+            $user->settings;
         }
 
         // We set this to true when user verifies their email
         $verified = false;
-        // or when a user unsubscribes from emails
+        // We set this to true when a user unsubscribes from communication
         $unsub = false;
 
         return view('root', compact('auth', 'user', 'verified', 'unsub'));

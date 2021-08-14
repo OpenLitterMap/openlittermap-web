@@ -141,40 +141,40 @@ const router = new VueRouter({
                 },
                 {
                     path: 'details',
-                    component: require('./views/settings/Details').default,
+                    component: require('./views/Settings/Details').default,
                 },
                 {
                     path: 'account',
-                    component: require('./views/settings/Account').default,
+                    component: require('./views/Settings/Account').default,
                 },
                 {
                     path: 'payments',
-                    component: require('./views/settings/Payments').default,
+                    component: require('./views/Settings/Payments').default,
                 },
                 {
                     path: 'privacy',
-                    component: require('./views/settings/Privacy').default,
+                    component: require('./views/Settings/Privacy').default,
                 },
                 {
                     path: 'littercoin',
-                    component: require('./views/settings/Littercoin').default,
+                    component: require('./views/Settings/Littercoin').default,
                 },
                 {
                     path: 'presence',
-                    component: require('./views/settings/Presence').default,
+                    component: require('./views/Settings/Presence').default,
                 },
                 {
                     path: 'emails',
-                    component: require('./views/settings/Emails').default,
+                    component: require('./views/Settings/Emails').default,
                 },
                 {
                     path: 'show-flag',
-                    component: require('./views/settings/GlobalFlag').default,
+                    component: require('./views/Settings/GlobalFlag').default,
                 },
-                // {
-                // 	path: 'phone',
-                // 	component: require('./views/Phone').default
-                // }
+                {
+                    path: 'public-profile',
+                    component: require('./views/Settings/PublicProfile').default
+                }
             ]
         },
         {

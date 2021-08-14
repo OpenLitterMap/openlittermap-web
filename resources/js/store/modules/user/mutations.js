@@ -143,6 +143,22 @@ export const mutations = {
         state.user.items_remaining = payload;
     },
 
+    // /**
+    //  * After successful response
+    //  */
+    // toggleUserDashboardPrivacyStatus (state, payload)
+    // {
+    //     state.user.show_public_profile = ! state.user.show_public_profile;
+    // },
+
+    /**
+     * Initialise settings after updating pubic profile
+     */
+    updateUserSettings (state, payload)
+    {
+        state.user.settings = payload;
+    },
+
     /**
      * Users map data for the given time-period
      */

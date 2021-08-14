@@ -127,18 +127,7 @@ Route::post('/user/profile/photos/delete', 'User\UserPhotoController@destroy');
 /**
  * USER SETTINGS
  */
-Route::get('/settings', 'HomeController@index');
-Route::get('/settings/password', 'HomeController@index');
-Route::get('/settings/details', 'HomeController@index');
-Route::get('/settings/account', 'HomeController@index');
-Route::get('/settings/payments', 'HomeController@index');
-Route::get('/settings/privacy', 'HomeController@index');
-Route::get('/settings/littercoin', 'HomeController@index');
-Route::get('/settings/phone', 'HomeController@index');
-Route::get('/settings/presence', 'HomeController@index');
-Route::get('/settings/email', 'HomeController@index');
-Route::get('/settings/show-flag', 'HomeController@index');
-Route::get('/settings/teams', 'HomeController@index');
+Route::get('/settings/{route?}', 'HomeController@index');
 
 // Game settings @ SettingsController
 // Toggle Presense of a piece of litter
@@ -187,6 +176,9 @@ Route::post('/settings/email/toggle', 'EmailSubController@toggleEmailSub');
 Route::get('/settings/flags/countries', 'SettingsController@getCountries');
 // Save Country Flag for top 10
 Route::post('/settings/save-flag', 'SettingsController@saveFlag');
+
+// Public Profile
+Route::post('/settings/public-profile/toggle', 'User\Settings\PublicProfileController@toggle');
 
 // Teams
 Route::get('/teams', 'HomeController@index');

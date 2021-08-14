@@ -19,7 +19,12 @@ import Unsubscribed from '../components/Notifications/Unsubscribed'
 
 export default {
     name: 'RootContainer',
-    props: ['auth', 'user', 'verified', 'unsub'],
+    props: [
+        'auth',
+        'user',
+        'verified',
+        'unsub'
+    ],
     components: {
         Nav,
         Modal,
@@ -47,9 +52,12 @@ export default {
             // user object is passed when the page is refreshed
             if (this.user)
             {
-                const u = JSON.parse(this.user);
-                this.$store.commit('initUser', u);
-                this.$store.commit('set_default_litter_presence', u.items_remaining);
+                const user = JSON.parse(this.user);
+
+                console.log('RootContainer.user', user);
+
+                this.$store.commit('initUser', user);
+                this.$store.commit('set_default_litter_presence', user.items_remaining);
             }
         }
 
@@ -62,7 +70,6 @@ export default {
         if (this.unsub) this.showUnsubscribed = true;
     },
     computed: {
-
         /**
          * Boolean to show or hide the modal
          */
