@@ -174,6 +174,10 @@ const router = new VueRouter({
                 {
                     path: 'public-profile',
                     component: require('./views/Settings/PublicProfile').default
+                },
+                {
+                    path: 'social-media',
+                    component: require('./views/Settings/SocialMediaIntegration').default
                 }
             ]
         },

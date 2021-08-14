@@ -179,6 +179,10 @@ Route::post('/settings/save-flag', 'SettingsController@saveFlag');
 
 // Public Profile
 Route::post('/settings/public-profile/toggle', 'User\Settings\PublicProfileController@toggle');
+Route::post('/settings/public-profile/update', 'User\Settings\PublicProfileController@update');
+
+// Social Media
+Route::post('/settings/social-media/update', 'User\Settings\SocialMediaController@update');
 
 // Teams
 Route::get('/teams', 'HomeController@index');

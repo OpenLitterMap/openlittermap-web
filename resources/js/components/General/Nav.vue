@@ -106,7 +106,7 @@
                             <router-link to="/signup" class="navbar-item">
                                  {{ $t('nav.signup')}}
                             </router-link>
-                            
+
                             <!-- Menu for available languages -->
                             <Languages />
 
@@ -131,9 +131,8 @@ export default {
         };
     },
     computed: {
-
         /**
-         * Return true if the user is logged in
+         * Return True if the user is logged in
          */
         auth ()
         {
@@ -164,9 +163,7 @@ export default {
             return this.open ? 'navbar-menu is-active' : 'navbar-menu';
         }
     },
-
     methods: {
-
         /**
          * Mobile - Close the nav
          */

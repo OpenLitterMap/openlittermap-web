@@ -7,7 +7,7 @@
 				        {{ $t('settings.common.general') }}
 				    </p>
 				    <ul class="menu-list">
-				        <li v-for="link in links">
+				        <li v-for="link in Object.keys(this.links)">
 				    	    <router-link :to="'/settings/' + link" @click.native="change(link)">
                                 {{ translate(link) }}
 				    	    </router-link>
@@ -16,7 +16,7 @@
 				</aside>
 			</div>
 			<div class="column is-three-quarters is-offset-1">
-                <component :is="this.types[this.link]" />
+                <component :is="this.links[this.link]" />
 			</div>
 		</div>
 	</div>
@@ -33,6 +33,7 @@ import Presence from './Settings/Presence'
 import Emails from './Settings/Emails'
 import GlobalFlag from './Settings/GlobalFlag'
 import PublicProfile from './Settings/PublicProfile';
+import SocialMediaIntegration from './Settings/SocialMediaIntegration';
 
 export default {
     name: 'Settings',
@@ -46,7 +47,8 @@ export default {
         Presence,
         Emails,
         GlobalFlag,
-        PublicProfile
+        PublicProfile,
+        SocialMediaIntegration
     },
     async created ()
     {
@@ -58,20 +60,9 @@ export default {
     data ()
     {
         return {
-            links: [
-                'password',
-                'details',
-                'account',
-                'payments',
-                'privacy',
-                'littercoin',
-                'presence',
-                'emails',
-                'show-flag',
-                'public-profile'
-            ],
             link: 'password',
-            types: {
+            // Link route name to Component
+            links: {
                 'password': 'Password',
                 'details': 'Details',
                 'account': 'Account',
@@ -81,7 +72,8 @@ export default {
                 'presence': 'Presence',
                 'emails': 'Emails',
                 'show-flag': 'GlobalFlag',
-                'public-profile': 'PublicProfile'
+                'public-profile': 'PublicProfile',
+                // 'social-media': 'SocialMediaIntegration'
             }
         }
     },

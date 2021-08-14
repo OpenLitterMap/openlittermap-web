@@ -205,7 +205,7 @@ class User extends Authenticatable
      */
     public function settings ()
     {
-        return $this->belongsTo('App\Models\User\UserSettings');
+        return $this->hasOne('App\Models\User\UserSettings');
     }
 
     /**

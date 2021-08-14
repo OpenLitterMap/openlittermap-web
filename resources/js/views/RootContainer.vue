@@ -63,7 +63,11 @@ export default {
 
         // This is needed to invalidate user.auth = true
         // which is persisted and not updated if the authenticated user forgets to manually log out
-        else this.$store.commit('resetState');
+        else
+        {
+            console.log('guest');
+            this.$store.commit('resetState');
+        }
 
         // If Account Verified
         if (this.verified) this.showEmailConfirmed = true;

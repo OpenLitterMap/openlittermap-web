@@ -40,4 +40,39 @@ class PublicProfileController extends Controller
             return ['success' => false];
         }
     }
+
+    /**
+     * Update the settings on the users public profile
+     *
+     * @param Request $request
+     *
+     * @return array
+     *
+     * Todo:
+     * - add validation
+     * - only update what params were changed
+     */
+    public function update (Request $request): array
+    {
+        try
+        {
+            $user = Auth::user();
+
+            $user->settings->public_profile_download_my_data = $request->download ?: false;
+            $user->settings->public_profile_show_map = $request->map ?: false;
+            $user->settings->save();
+
+            return [
+                'success' => true
+            ];
+        }
+        catch (\Exception $e)
+        {
+            \Log::info(['PublicProfileController@update', $e->getMessage()]);
+
+            return [
+                'success' => false
+            ];
+        }
+    }
 }

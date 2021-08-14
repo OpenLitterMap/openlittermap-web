@@ -28,9 +28,39 @@
                         :disabled="processing"
                     >{{ this.getButtonText }}</button>
 
-                    <SocialMediaIntegration
-                        v-if="show_public_profile"
-                    />
+                    <div v-if="show_public_profile" class="pt2">
+
+                        <p class="subtitle is-4 mb1">You can control what data you want to display</p>
+
+                        <!-- Download my data -->
+                        <div class="control mb1">
+                            <input
+                                id="download"
+                                name="download"
+                                type="checkbox"
+                                v-model="download"
+                            />
+                            <label for="download">Show button to download my data</label>
+                        </div>
+
+                        <!-- Show map with all my data -->
+                        <div class="control mb1">
+                            <input
+                                id="map"
+                                name="map"
+                                type="checkbox"
+                                v-model="map"
+                            />
+                            <label for="map">Show map with all my data</label>
+                        </div>
+
+                        <button
+                            class="button is-medium is-info mt1"
+                            :class="processing ? 'is-loading' : ''"
+                            @click="update"
+                            :disabled="processing"
+                        >Save</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -38,21 +68,11 @@
 </template>
 
 <script>
-import SocialMediaIntegration from '../../components/User/Settings/PublicProfile/SocialMediaIntegration';
-
 export default {
     name: 'PublicProfile',
-    components: {
-        SocialMediaIntegration
-    },
     data () {
         return {
-            processing: false,
-            // download: true,
-            // map: true,
-            // twitter: '',
-            // instagram: '',
-            // socialMediaLink: null
+            processing: false
         };
     },
     computed: {
@@ -110,6 +130,38 @@ export default {
                 : 'Private';
         },
 
+        download: {
+            get () {
+                return this.settings.download;
+            },
+            set (v) {
+                this.$store.commit('publicProfileSetting', {
+                    key: 'download',
+                    v
+                });
+            }
+        },
+
+        map: {
+            get () {
+                return this.settings.map;
+            },
+            set (v) {
+                this.$store.commit('publicProfileSetting', {
+                    key: 'map',
+                    v
+                });
+            }
+        },
+
+        /**
+         * Shortcut to user.settings
+         */
+        settings ()
+        {
+            return this.$store.state.user.user.settings;
+        },
+
         /**
          * Return True to make the Profile Public
          *
@@ -131,6 +183,18 @@ export default {
             await this.$store.dispatch('TOGGLE_PUBLIC_PROFILE');
 
             this.processing = false;
+        },
+
+        /**
+         * Change what components are visible on a Public Profile
+         */
+        async update ()
+        {
+            this.processing = true;
+
+            await this.$store.dispatch('UPDATE_PUBLIC_PROFILE_SETTINGS');
+
+            this.processing = false;
         }
     }
 };
@@ -138,15 +202,6 @@ export default {
 
 <style scoped>
 
-    .public-profile-icon-container {
-        display: flex;
-        margin: auto 0;
-        align-items: center;
-    }
 
-    .public-profile-icon {
-        width: 3em;
-        margin-right: 1em;
-    }
 
 </style>

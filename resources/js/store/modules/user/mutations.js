@@ -112,6 +112,18 @@ export const mutations = {
     },
 
     /**
+     * Update a value for one of the available settings params
+     */
+    publicProfileSetting (state, payload)
+    {
+        const settings = Object.assign({}, state.user.settings);
+
+        settings[payload.key] = payload.v;
+
+        state.user.settings = settings;
+    },
+
+    /**
      * The user wants to change a privacy setting
      */
     privacy (state, payload)

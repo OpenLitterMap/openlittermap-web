@@ -339,7 +339,6 @@ export const actions = {
     async UPDATE_DETAILS (context)
     {
         const title = i18n.t('notifications.success');
-        // todo - translate this
         const body  = 'Your information has been updated'
 
         await axios.post('/settings/details', {
@@ -350,7 +349,6 @@ export const actions = {
         .then(response => {
             console.log('update_details', response);
 
-            /* improve this */
             Vue.$vToastify.success({
                 title,
                 body,
@@ -358,7 +356,7 @@ export const actions = {
             });
         })
         .catch(error => {
-            console.log('error.update_details', error);
+            console.error('update_details', error);
 
             // update errors. user.js
             context.commit('errors', error.response.data.errors);
@@ -370,16 +368,15 @@ export const actions = {
      */
     async UPDATE_GLOBAL_FLAG (context, payload)
     {
-        let title = i18n.t('notifications.success');
-        let body  = i18n.t('notifications.settings.flag-updated');
+        const title = i18n.t('notifications.success');
+        const body  = i18n.t('notifications.settings.flag-updated');
 
         await axios.post('/settings/save-flag', {
             country: payload
         })
         .then(response => {
-            console.log(response);
+            console.log('update_global_flag', response);
 
-            /* improve this */
             Vue.$vToastify.success({
                 title,
                 body,
@@ -387,7 +384,65 @@ export const actions = {
             });
         })
         .catch(error => {
-            console.log(error);
+            console.log('update_global_flag', error);
+        });
+    },
+
+    /**
+     * Update the settings of the users public profile
+     */
+    async UPDATE_PUBLIC_PROFILE_SETTINGS (context)
+    {
+        const title = i18n.t('notifications.success');
+        const body = "Your settings have been updated";
+
+        await axios.post('/settings/public-profile/update', {
+            map: context.state.user.settings.map,
+            download: context.state.user.settings.download,
+        })
+        .then(response => {
+            console.log('update_public_profile_settings', response);
+
+            if (response.data.success)
+            {
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                    position: 'top-right'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('update_public_profile_settings', error);
+        });
+    },
+
+    /**
+     * Update the users links to twitter and instagram
+     */
+    async UPDATE_SOCIAL_MEDIA_LINKS (context)
+    {
+        const title = i18n.t('notifications.success');
+        const body = "Your settings have been updated";
+
+        await axios.post('/settings/social-media/update', {
+            twitter: context.state.user.settings.twitter,
+            instagram: context.state.user.settings.instagram,
+        })
+        .then(response => {
+            console.log('update_public_profile_settings', response);
+
+            if (response.data.success)
+            {
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                    position: 'top-right'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('update_public_profile_settings', error);
         });
     }
 };
