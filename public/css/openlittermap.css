@@ -39,12 +39,42 @@ html {
     display: none;
 }
 
-.leaflet-popup-content {
-    width: 180px !important;
+.leaflet-popup-content-wrapper {
+    padding: 0 !important;
 }
 
-.leafet-popup {
-    left: -106px !important;
+.leaflet-popup-content {
+    margin: 0 !important;
+}
+
+.leaflet-popup-content p {
+    margin-bottom: 10px !important;
+    margin-top: 10px !important;
+}
+
+.leaflet-popup-content p:last-of-type {
+    margin-bottom: 0 !important;
+}
+
+.leaflet-popup-content p:first-of-type {
+    margin-top: 0 !important;
+}
+
+.leaflet-litter-img-container {
+    padding: 1.2em;
+}
+
+.leaflet-litter-img-container p {
+    color: black !important;
+    font-size: 1.2em;
+}
+
+.leaflet-litter-img {
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    object-fit: contain;
+    max-height: 100%;
+    cursor: pointer;
 }
 /* End extra leaflet styles */
 

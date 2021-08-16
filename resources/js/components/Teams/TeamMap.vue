@@ -4,7 +4,7 @@
             <l-tile-layer :url="url" :attribution="attribution" />
             <v-marker-cluster v-if="geojson.length > 0">
                 <l-marker v-for="i in geojson" :lat-lng="i.properties.latlng" :key="i.properties.id">
-                    <l-popup :content="content(i.properties.img, i.properties.text, i.properties.datetime)" />
+                    <l-popup :content="content(i)" :options="options" />
                 </l-marker>
             </v-marker-cluster>
         </l-map>
@@ -14,8 +14,7 @@
 <script>
 import { LMap, LTileLayer, LMarker, LPopup } from 'vue2-leaflet';
 import Vue2LeafletMarkerCluster from 'vue2-leaflet-markercluster';
-import i18n from '../../i18n';
-import moment from 'moment';
+import {mapHelper} from '../../maps/mapHelpers';
 
 export default {
     name: 'TeamMap',
@@ -37,7 +36,8 @@ export default {
             center: L.latLng(0,0),
             url:'https://{s}.tile.osm.org/{z}/{x}/{y}.png',
             attribution:'Map Data &copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors, Litter data &copy OpenLitterMap & Contributors ',
-            loading: true
+            loading: true,
+            options: mapHelper.popupOptions
         };
     },
     computed: {
@@ -59,20 +59,16 @@ export default {
          *
          * Format datetime (time image was taken)
          */
-        content (img, text, date)
+        content (feature)
         {
-            let a = text.split(',');
-            a.pop();
-
-            let z = '';
-            a.forEach(i => {
-                let b = i.split(' ');
-
-                z += i18n.t('litter.' + b[0]) + ': ' + b[1] + ' <br>';
-            });
-
-            return '<p style="margin-bottom: 5px;">' + z + ' </p><img src= "' + img + '" style="max-width: 100%;" /><p>Taken on ' + moment(date).format('LLL') +'</p>'
-        }
+            return mapHelper.getMapImagePopupContent(
+                feature.properties.img,
+                feature.properties.text,
+                feature.properties.datetime,
+                '',
+                ''
+            );
+        },
     }
 };
 </script>
@@ -89,14 +85,6 @@ export default {
         margin: 0;
         position: relative;
         padding-top: 1em;
-    }
-
-    .leaflet-popup-content {
-        width: 180px !important;
-    }
-
-    .lealet-popup {
-        left: -106px !important;
     }
 
     @include media-breakpoint-down (sm)
