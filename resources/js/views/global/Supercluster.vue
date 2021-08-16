@@ -10,7 +10,6 @@
 
 <script>
 import LiveEvents from '../../components/LiveEvents';
-// import GlobalDates from '../../components/global/GlobalDates'
 
 import {
     CLUSTER_ZOOM_THRESHOLD,
@@ -28,17 +27,19 @@ import i18n from '../../i18n'
 
 // Todo - fix this export bug (The request of a dependency is an expression...)
 import glify from 'leaflet.glify';
+import WebGLHeatmap from 'webgl-heatmap';
 
 var map;
 var clusters;
 var litterArtPoints;
+var heatmapLayer;
 var points;
 var prevZoom = MIN_ZOOM;
 
 var pointsLayerController;
 var globalLayerController;
-let pointsControllerShowing = false;
-let globalControllerShowing = false;
+var pointsControllerShowing = false;
+var globalControllerShowing = false;
 
 const green_dot = L.icon({
     iconUrl: './images/vendor/leaflet/dist/dot.png',
@@ -49,6 +50,8 @@ const grey_dot = L.icon({
     iconUrl: './images/vendor/leaflet/dist/grey-dot.jpg',
     iconSize: [13, 10]
 });
+
+var heatmap = new WebGLHeatmap({ canvas: map });
 
 /**
  * Create the point to display for each piece of Litter Art
@@ -108,6 +111,7 @@ function createGlobalGroups ()
 
         globalLayerController.addOverlay(clusters, 'Global');
         globalLayerController.addOverlay(litterArtPoints, 'Litter Art');
+        // globalLayerController.addOverlay(heatmapLayer, 'Heatmap');
 
         globalControllerShowing = true;
     }
@@ -281,10 +285,14 @@ async function update ()
             }
 
             const data = response.data.features.map(feature => {
+                heatmap.addPoint(feature.geometry.coordinates[0], feature.geometry.coordinates[1], size, 1);
                 return [feature.geometry.coordinates[0], feature.geometry.coordinates[1]];
             });
 
-            // New way using webGL
+            heatmap.update();
+            heatmap.display();
+
+            // Initalise the Points
             points = glify.points({
                 map,
                 data,
