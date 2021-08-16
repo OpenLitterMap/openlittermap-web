@@ -98,6 +98,13 @@ In one window, run `php artisan websockets:serve --host=192.168.10.10`
 Then, in another window, run `php artisan horizon`
 To test it's working, open another window. Open tinker and run event new(\App\Events\UserSignedUp(1));
 ```
+
+If you would want to generate some dummy photos for development purposes, you can do so by
+using the `php artisan olm:photos:generate-dummy-photos` command to generate 1500 dummy photos. It also takes
+arguments so you can do for e.g. `php artisan olm:photos:generate-dummy-photos 2000` and 2000 photos will be generated.
+After running the above command, run `php artisan clusters:generate-all` and the photos should be visible in the `Global Map`
+tab and in http://olm.test/world/Ireland/County%20Cork/Cork/map
+
 The project uses AWS S3 to store photos on production. On development, however, it uses [Minio](https://laravel.com/docs/8.x/homestead#configuring-minio),
 an open source object storage server with an Amazon S3 compatible API. If you copied the .env.example file into .env
 you should be able to access the Minio control panel at http://192.168.10.10:9600 (homestead:secretkey).
