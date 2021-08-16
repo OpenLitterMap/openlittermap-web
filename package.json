@@ -75,7 +75,6 @@
         "vue2-leaflet-markercluster": "^3.1.0",
         "vuedraggable": "^2.24.3",
         "vuex": "^3.5.1",
-        "vuex-persistedstate": "^3.1.0",
-        "webgl-heatmap": "^0.2.3"
+        "vuex-persistedstate": "^3.1.0"
     }
 }
