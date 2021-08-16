@@ -21,18 +21,15 @@ import {
 } from '../../constants';
 
 import L from 'leaflet';
-import moment from 'moment';
 import './SmoothWheelZoom.js';
-import i18n from '../../i18n'
 
 // Todo - fix this export bug (The request of a dependency is an expression...)
 import glify from 'leaflet.glify';
-import WebGLHeatmap from 'webgl-heatmap';
+import { mapHelper } from '../../maps/mapHelpers';
 
 var map;
 var clusters;
 var litterArtPoints;
-var heatmapLayer;
 var points;
 var prevZoom = MIN_ZOOM;
 
@@ -50,8 +47,6 @@ const grey_dot = L.icon({
     iconUrl: './images/vendor/leaflet/dist/grey-dot.jpg',
     iconSize: [13, 10]
 });
-
-var heatmap = new WebGLHeatmap({ canvas: map });
 
 /**
  * Create the point to display for each piece of Litter Art
@@ -111,7 +106,6 @@ function createGlobalGroups ()
 
         globalLayerController.addOverlay(clusters, 'Global');
         globalLayerController.addOverlay(litterArtPoints, 'Litter Art');
-        // globalLayerController.addOverlay(heatmapLayer, 'Heatmap');
 
         globalControllerShowing = true;
     }
@@ -188,30 +182,25 @@ function onEachArtFeature (feature, layer)
             duration: 10
         });
 
-        const user = (feature.properties.name || feature.properties.username)
-            ? `By ${feature.properties.name ? feature.properties.name : ''} ${ feature.properties.username ? '@' + feature.properties.username : ''}`
-            : "";
+        const user = mapHelper.formatUserName(feature.properties.name, feature.properties.username);
 
-        const team = (feature.properties.team)
-            ? `\nTeam ${feature.properties.team}`
-            : "";
-
-        // todo - increase the dimensions of each art image
-        L.popup()
+        L.popup(mapHelper.popupOptions)
             .setLatLng(feature.geometry.coordinates)
             .setContent(
-                '<img src= "' + feature.properties.filename + '" class="litter-img art-litter-image" />'
-                    + '<div class="litter-img-container">'
-                        + '<p>Taken on ' + moment(feature.properties.datetime).format('LLL') +'</p>'
-                        + user
-                        + team
-                    + '</div>'
+                mapHelper.getMapImagePopupContent(
+                    feature.properties.filename,
+                    null,
+                    feature.properties.datetime,
+                    user,
+                    feature.properties.team
+                )
             )
             .openOn(map);
     });
 }
 
 /**
+<<<<<<< HEAD
  * The user dragged or zoomed the map, or changed a category
  */
 async function update ()
@@ -285,14 +274,9 @@ async function update ()
             }
 
             const data = response.data.features.map(feature => {
-                heatmap.addPoint(feature.geometry.coordinates[0], feature.geometry.coordinates[1], size, 1);
                 return [feature.geometry.coordinates[0], feature.geometry.coordinates[1]];
             });
 
-            heatmap.update();
-            heatmap.display();
-
-            // Initalise the Points
             points = glify.points({
                 map,
                 data,
@@ -364,6 +348,8 @@ async function update ()
 }
 
 /**
+=======
+>>>>>>> 52d7d7eed583ee9d00b7919a3edfb4292b0406b3
  * Get any active layers
  *
  * @return layers|null
@@ -393,6 +379,130 @@ export default {
     name: 'Supercluster',
     components: {
         LiveEvents
+    },
+    methods: {
+        /**
+         * The user dragged or zoomed the map, or changed a category
+         */
+        async update ()
+        {
+            const bounds = map.getBounds();
+
+            const bbox = {
+                'left': bounds.getWest(),
+                'bottom': bounds.getSouth(),
+                'right': bounds.getEast(),
+                'top': bounds.getNorth()
+            };
+
+            const zoom = Math.round(map.getZoom());
+
+            // We don't want to make a request at zoom level 2-5 if the user is just panning the map.
+            // At these levels, we just load all global data for now
+            if (zoom === 2 && zoom === prevZoom) return;
+            if (zoom === 3 && zoom === prevZoom) return;
+            if (zoom === 4 && zoom === prevZoom) return;
+            if (zoom === 5 && zoom === prevZoom) return;
+
+            // Remove points when zooming out
+            if (points)
+            {
+                clusters.clearLayers();
+                points.remove();
+            }
+
+            // Get Clusters or Points
+            if (zoom < CLUSTER_ZOOM_THRESHOLD)
+            {
+                createGlobalGroups();
+
+                await axios.get('/global/clusters', {
+                    params: {
+                        zoom,
+                        bbox
+                    }
+                })
+                    .then(response => {
+                        console.log('get_clusters.update', response);
+
+                        clusters.clearLayers();
+                        clusters.addData(response.data);
+                    })
+                    .catch(error => {
+                        console.error('get_clusters.update', error);
+                    });
+            }
+            else
+            {
+                createPointGroups()
+
+                const layers = getActiveLayers();
+
+                await axios.get('/global/points', {
+                    params: {
+                        zoom,
+                        bbox,
+                        layers
+                    }
+                })
+                    .then(response => {
+                        console.log('get_global_points', response);
+
+                        // Clear layer if prev layer is cluster.
+                        if (prevZoom < CLUSTER_ZOOM_THRESHOLD)
+                        {
+                            clusters.clearLayers();
+                        }
+
+                        const data = response.data.features.map(feature => {
+                            return [feature.geometry.coordinates[0], feature.geometry.coordinates[1]];
+                        });
+
+                        // New way using webGL
+                        points = glify.points({
+                            map,
+                            data,
+                            size: 10,
+                            color: { r: 0.054, g: 0.819, b: 0.27, a: 1 }, // 14, 209, 69 / 255
+                            click:  (e, point, xy) => {
+                                const feature = response.data.features.find(f => {
+                                    return f.geometry.coordinates[0] === point[0]
+                                        && f.geometry.coordinates[1] === point[1];
+                                });
+
+                                if (!feature) {
+                                    return;
+                                }
+
+                                return this.renderPhotoPopups(feature, e.latlng)
+                            },
+                        });
+                    })
+                    .catch(error => {
+                        console.error('get_global_points', error);
+                    });
+            }
+
+            prevZoom = zoom;
+        },
+
+        renderPhotoPopups (feature, latLng) {
+            const user = mapHelper.formatUserName(feature.properties.name, feature.properties.username);
+
+            L.popup(mapHelper.popupOptions)
+                .setLatLng(latLng)
+                .setContent(
+                    mapHelper.getMapImagePopupContent(
+                        feature.properties.filename,
+                        feature.properties.result_string,
+                        feature.properties.datetime,
+                        user,
+                        feature.properties.team
+                    )
+                )
+                .openOn(map);
+        }
+
     },
     mounted ()
     {
@@ -436,15 +546,12 @@ export default {
 
         litterArtPoints.addData(this.$store.state.globalmap.artData.features);
 
-        map.on('moveend', function ()
-        {
-            update();
-        });
+        map.on('moveend', this.update);
 
         createGlobalGroups();
 
-        map.on('overlayadd', update);
-        map.on('overlayremove', update)
+        map.on('overlayadd', this.update);
+        map.on('overlayremove', this.update)
     }
 };
 </script>
@@ -461,42 +568,12 @@ export default {
         border-radius: 20px;
     }
 
-    .mb5p {
-        margin-bottom: 5px;
-    }
-
-    .mw100 {
-        max-width: 100%;
-    }
-
     .mi {
         height: 100%;
         margin: auto;
         display: flex;
         justify-content: center;
         border-radius: 20px;
-    }
-
-    .leaflet-pop-content-wrapper {
-        padding: 0 !important;
-    }
-
-    .leaflet-popup-content {
-        margin: 0 !important;
-    }
-
-    .litter-img-container {
-        padding: 0 1em 1em 1em;
-    }
-
-    .litter-img {
-        border-top-left-radius: 6px;
-        border-top-right-radius: 6px;
-        max-width: 100%;
-    }
-
-    .art-litter-image {
-
     }
 
 </style>
