@@ -129,6 +129,7 @@ export const litterkeys = {
     ],
     brands: [
          'adidas',	 // Adidas
+         'albertheijn', //AlbertHeijn
          'aldi',	 // aldi
          'amazon',	 // Amazon
          'apple',	 // Apple

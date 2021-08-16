@@ -113,6 +113,7 @@ class Brand extends LitterCategory
     {
         return [
             'adidas',
+            'albertheijn',
             'amazon',
             'aldi',
             'apple',

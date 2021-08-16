@@ -14,13 +14,35 @@ class UserSeeder extends Seeder
      */
     public function run()
     {
-        $user = User::create(['email' => 'superadmin@example.com', 'password' => 'password', 'username' => 'superadmin', 'name' => 'superadmin','verified' => 1, 'can_bbox'=> 1]);
+        $user = User::create([
+            'email' => 'superadmin@example.com',
+            'password' => 'password',
+            'username' => 'superadmin',
+            'name' => 'superadmin',
+            'verified' => 1,
+            'can_bbox'=> 1,
+            'verification_required' => 0
+        ]);
         $user->assignRole('superadmin');
 
-        $user = User::create(['email' => 'admin@example.com', 'password' => 'password', 'username' => 'admin', 'name' => 'admin','verified' => 1, 'can_bbox'=> 1]);
+        $user = User::create(['email' => 'admin@example.com',
+            'password' => 'password',
+            'username' => 'admin',
+            'name' => 'admin',
+            'verified' => 1,
+            'can_bbox'=> 1,
+            'verification_required' => 0
+        ]);
         $user->assignRole('admin');
 
-        $user = User::create(['email' => 'helper@example.com', 'password' => 'password', 'username' => 'helper', 'name' => 'helper','verified' => 1, 'can_bbox'=> 1]);
+        $user = User::create(['email' => 'helper@example.com',
+            'password' => 'password',
+            'username' => 'helper',
+            'name' => 'helper',
+            'verified' => 1,
+            'can_bbox'=> 1,
+            'verification_required' => 0
+        ]);
         $user->assignRole('helper');
     }
 }
