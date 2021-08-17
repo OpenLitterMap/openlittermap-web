@@ -1,23 +1,17 @@
 <template>
-	<div class="sidebar-menu">
-		<transition-group name="list">
-			<span v-for="event in events" :key="getKey(event)" class="list-item">
+	<div class="sidebar-menu scrollbar-hidden">
+		<transition-group name="list" mode="out-in">
+			<span v-for="(event, index) in events" :key="getKey(event)" class="list-item">
 
-                <div v-if="event.type === 'image'" class="event" style="background-color: #88d267;">
-                    <aside class="grid-img">
-                        <img v-if="event.countryCode" :src="countryFlag(event.countryCode)" width="35" />
-
-                        <i v-else class="fa fa-image" />
-					</aside>
-					<div class="grid-main">
-						<strong>New image</strong>
-						<br>
-						<i class="event-subtitle city-name">{{ event.city }}, {{ event.state }}</i>
-						<p class="event-subtitle">{{ event.country }}</p>
-
-                        <p v-show="event.teamName">By Team: <strong>{{ event.teamName }}</strong></p>
-					</div>
-				</div>
+                <ImageUploaded
+                    v-if="event.type === 'image'"
+                    @click="removeEvent(index)"
+                    :key="index"
+                    :country="event.country"
+                    :state="event.state"
+                    :city="event.city"
+                    :team-name="event.teamName"
+                ></ImageUploaded>
 
 				<div v-else-if="event.type === 'country'" class="event" style="background-color: #4bb0e0;">
 					<aside class="grid-img">
@@ -87,10 +81,12 @@
 <script>
 import Echo from 'laravel-echo'
 import Pusher from 'pusher-js'
+import ImageUploaded from './Notifications/ImageUploaded';
 
 export default {
 	name: 'live-events',
-	channel: 'main',
+    components: {ImageUploaded},
+    channel: 'main',
 	echo: {
 	    'ImageUploaded': (payload, vm) => {
 
@@ -168,25 +164,13 @@ export default {
 	data ()
     {
 		return {
-            dir: '/assets/icons/flags/',
 			events: []
 		};
 	},
 	methods: {
 
-	    /**
-         * Return location of country_flag.png
-         */
-        countryFlag (iso)
-        {
-            if (iso)
-            {
-                iso = iso.toLowerCase();
-
-                return this.dir + iso + '.png';
-            }
-
-            return '';
+	    removeEvent(index) {
+	        this.events.splice(index, 1);
         },
 
         /**
@@ -235,21 +219,19 @@ export default {
 <style lang="scss">
 
     .list-enter-active, .list-leave-active {
-        transition: all 1s;
+        transition: all 1s ease;
+    }
+    .list-leave-active {
+        transition: all .3s ease;
     }
 
     .list-enter, .list-leave-to {
-        transform: translateX(30px);
+        transform: translateX(100px);
+        opacity: 0;
     }
 
     .list-item {
         display: grid;
-    }
-
-    .list {
-        &-move {
-            transition: all 1s ease-in-out;
-        }
     }
 
     .new-user-text-narrow {
@@ -258,55 +240,50 @@ export default {
 
     .sidebar-menu {
         position: absolute;
-        top: 0;
-        width: 20%;
-        margin-left: 80%;
-        display: table-row;
-        height: 100%;
+        top: 70px;
+        right: 10px;
+        width: 20rem;
+        max-height: 80vh;
         overflow-y: scroll;
-        padding-top: 30px;
         z-index: 999;
-        pointer-events: none;
     }
 
-    @media (max-width: 910px) {
+    .grid-img {
+        padding: 16px;
+    }
+
+    .grid-main {
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+
+    @media (max-width: 1024px) {
         .sidebar-menu {
-            width: 25%;
-            margin-left: 75%;
+            width: 18rem;
+            font-size: 0.8rem;
+        }
+        .grid-img {
+            padding: 12px;
+        }
+        .grid-main {
+            padding-top: 8px;
+            padding-bottom: 8px;
         }
     }
 
-    @media (max-width: 730px) {
+    @media (max-width: 768px) {
         .sidebar-menu {
-            width: 30%;
-            margin-left: 70%;
-        }
-    }
-
-    @media (max-width: 620px) {
-        .sidebar-menu {
-            width: 35%;
-            margin-left: 65%;
-        }
-    }
-
-    @media (max-width: 530px) {
-        .sidebar-menu {
-            width: 35%;
-            margin-left: 65%;
+            width: 16rem;
         }
         .city-name {
             display: none;
         }
     }
 
-    @media (max-width: 500px) {
+    @media (max-width: 640px) {
         .sidebar-menu {
-            width: 45%;
-            margin-left: 55%;
-        }
-        .city-name {
-            display: none;
+            width: 12rem;
+            max-height: 74vh;
         }
     }
 
@@ -318,12 +295,10 @@ export default {
     }
 
     .event {
-        border-radius: 6px;
-        width: 80%;
-        margin-left: 10%;
+        border-radius: 8px;
         margin-bottom: 10px;
-        display: grid;
-        grid-template-columns: 1fr 3fr;
+        display: flex;
+        cursor: pointer;
     }
 
     .event-title {
@@ -332,18 +307,6 @@ export default {
 
     .event-subtitle {
 
-    }
-
-    .grid-img {
-        margin: auto;
-        font-size: 22px;
-        text-align: center;
-    }
-
-    .grid-main {
-        margin-top: auto;
-        margin-bottom: auto;
-        padding: 10px;
     }
 
     .ltr-icon {
