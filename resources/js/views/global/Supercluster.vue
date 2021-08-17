@@ -10,7 +10,6 @@
 
 <script>
 import LiveEvents from '../../components/LiveEvents';
-// import GlobalDates from '../../components/global/GlobalDates'
 
 import {
     CLUSTER_ZOOM_THRESHOLD,
@@ -26,7 +25,7 @@ import './SmoothWheelZoom.js';
 
 // Todo - fix this export bug (The request of a dependency is an expression...)
 import glify from 'leaflet.glify';
-import {mapHelper} from '../../maps/mapHelpers';
+import { mapHelper } from '../../maps/mapHelpers';
 
 var map;
 var clusters;
@@ -36,8 +35,8 @@ var prevZoom = MIN_ZOOM;
 
 var pointsLayerController;
 var globalLayerController;
-let pointsControllerShowing = false;
-let globalControllerShowing = false;
+var pointsControllerShowing = false;
+var globalControllerShowing = false;
 
 const green_dot = L.icon({
     iconUrl: './images/vendor/leaflet/dist/dot.png',
@@ -231,130 +230,6 @@ export default {
     components: {
         LiveEvents
     },
-    methods: {
-        /**
-         * The user dragged or zoomed the map, or changed a category
-         */
-        async update ()
-        {
-            const bounds = map.getBounds();
-
-            const bbox = {
-                'left': bounds.getWest(),
-                'bottom': bounds.getSouth(),
-                'right': bounds.getEast(),
-                'top': bounds.getNorth()
-            };
-
-            const zoom = Math.round(map.getZoom());
-
-            // We don't want to make a request at zoom level 2-5 if the user is just panning the map.
-            // At these levels, we just load all global data for now
-            if (zoom === 2 && zoom === prevZoom) return;
-            if (zoom === 3 && zoom === prevZoom) return;
-            if (zoom === 4 && zoom === prevZoom) return;
-            if (zoom === 5 && zoom === prevZoom) return;
-
-            // Remove points when zooming out
-            if (points)
-            {
-                clusters.clearLayers();
-                points.remove();
-            }
-
-            // Get Clusters or Points
-            if (zoom < CLUSTER_ZOOM_THRESHOLD)
-            {
-                createGlobalGroups();
-
-                await axios.get('/global/clusters', {
-                    params: {
-                        zoom,
-                        bbox
-                    }
-                })
-                    .then(response => {
-                        console.log('get_clusters.update', response);
-
-                        clusters.clearLayers();
-                        clusters.addData(response.data);
-                    })
-                    .catch(error => {
-                        console.error('get_clusters.update', error);
-                    });
-            }
-            else
-            {
-                createPointGroups()
-
-                const layers = getActiveLayers();
-
-                await axios.get('/global/points', {
-                    params: {
-                        zoom,
-                        bbox,
-                        layers
-                    }
-                })
-                    .then(response => {
-                        console.log('get_global_points', response);
-
-                        // Clear layer if prev layer is cluster.
-                        if (prevZoom < CLUSTER_ZOOM_THRESHOLD)
-                        {
-                            clusters.clearLayers();
-                        }
-
-                        const data = response.data.features.map(feature => {
-                            return [feature.geometry.coordinates[0], feature.geometry.coordinates[1]];
-                        });
-
-                        // New way using webGL
-                        points = glify.points({
-                            map,
-                            data,
-                            size: 10,
-                            color: { r: 0.054, g: 0.819, b: 0.27, a: 1 }, // 14, 209, 69 / 255
-                            click:  (e, point, xy) => {
-                                const feature = response.data.features.find(f => {
-                                    return f.geometry.coordinates[0] === point[0]
-                                        && f.geometry.coordinates[1] === point[1];
-                                });
-
-                                if (!feature) {
-                                    return;
-                                }
-
-                                return this.renderPhotoPopups(feature, e.latlng)
-                            },
-                        });
-                    })
-                    .catch(error => {
-                        console.error('get_global_points', error);
-                    });
-            }
-
-            prevZoom = zoom;
-        },
-
-        renderPhotoPopups (feature, latLng) {
-            const user = mapHelper.formatUserName(feature.properties.name, feature.properties.username);
-
-            L.popup(mapHelper.popupOptions)
-                .setLatLng(latLng)
-                .setContent(
-                    mapHelper.getMapImagePopupContent(
-                        feature.properties.filename,
-                        feature.properties.result_string,
-                        feature.properties.datetime,
-                        user,
-                        feature.properties.team
-                    )
-                )
-                .openOn(map);
-        }
-
-    },
     mounted ()
     {
         /** 1. Create map object */
@@ -403,6 +278,136 @@ export default {
 
         map.on('overlayadd', this.update);
         map.on('overlayremove', this.update)
+    },
+    methods: {
+        /**
+         * The user dragged or zoomed the map, or changed a category
+         */
+        async update ()
+        {
+            const bounds = map.getBounds();
+
+            const bbox = {
+                'left': bounds.getWest(),
+                'bottom': bounds.getSouth(),
+                'right': bounds.getEast(),
+                'top': bounds.getNorth()
+            };
+
+            const zoom = Math.round(map.getZoom());
+
+            // We don't want to make a request at zoom level 2-5 if the user is just panning the map.
+            // At these levels, we just load all global data for now
+            if (zoom === 2 && zoom === prevZoom) return;
+            if (zoom === 3 && zoom === prevZoom) return;
+            if (zoom === 4 && zoom === prevZoom) return;
+            if (zoom === 5 && zoom === prevZoom) return;
+
+            // Remove points when zooming out
+            if (points)
+            {
+                clusters.clearLayers();
+                points.remove();
+            }
+
+            // Get Clusters or Points
+            if (zoom < CLUSTER_ZOOM_THRESHOLD)
+            {
+                createGlobalGroups();
+
+                await axios.get('/global/clusters', {
+                    params: {
+                        zoom,
+                        bbox
+                    }
+                })
+                .then(response => {
+                    console.log('get_clusters.update', response);
+
+                    clusters.clearLayers();
+                    clusters.addData(response.data);
+                })
+                .catch(error => {
+                    console.error('get_clusters.update', error);
+                });
+            }
+            else
+            {
+                createPointGroups()
+
+                const layers = getActiveLayers();
+
+                await axios.get('/global/points', {
+                    params: {
+                        zoom,
+                        bbox,
+                        layers
+                    }
+                })
+                .then(response => {
+                    console.log('get_global_points', response);
+
+                    // Clear layer if prev layer is cluster.
+                    if (prevZoom < CLUSTER_ZOOM_THRESHOLD)
+                    {
+                        clusters.clearLayers();
+                    }
+
+                    const data = response.data.features.map(feature => {
+                        return [feature.geometry.coordinates[0], feature.geometry.coordinates[1]];
+                    });
+
+                    // New way using webGL
+                    points = glify.points({
+                        map,
+                        data,
+                        size: 10,
+                        color: { r: 0.054, g: 0.819, b: 0.27, a: 1 }, // 14, 209, 69 / 255
+                        click:  (e, point, xy) => {
+                            const feature = response.data.features.find(f => {
+                                return f.geometry.coordinates[0] === point[0]
+                                    && f.geometry.coordinates[1] === point[1];
+                            });
+
+                            if (!feature) {
+                                return;
+                            }
+
+                            return this.renderLeafletPopup(feature, e.latlng)
+                        },
+                    });
+                })
+                .catch(error => {
+                    console.error('get_global_points', error);
+                });
+            }
+
+            prevZoom = zoom;
+        },
+
+        /**
+         * Helper method to create a Popup
+         *
+         * @param feature
+         * @param latLng
+         */
+        renderLeafletPopup (feature, latLng)
+        {
+            const user = mapHelper.formatUserName(feature.properties.name, feature.properties.username);
+
+            L.popup(mapHelper.popupOptions)
+                .setLatLng(latLng)
+                .setContent(
+                    mapHelper.getMapImagePopupContent(
+                        feature.properties.filename,
+                        feature.properties.result_string,
+                        feature.properties.datetime,
+                        user,
+                        feature.properties.team
+                    )
+                )
+                .openOn(map);
+        }
     }
 };
 </script>
