@@ -1,91 +1,46 @@
 <template>
 	<div class="sidebar-menu scrollbar-hidden">
 		<transition-group name="list" mode="out-in">
-			<span v-for="(event, index) in events" :key="getKey(event)" class="list-item">
-
-                <ImageUploaded
-                    v-if="event.type === 'image'"
-                    @click="removeEvent(index)"
-                    :key="index"
+			<span
+                v-for="(event, index) in events"
+                :key="event.id"
+                class="list-item"
+            >
+                <component
+                    :is="event.type"
                     :country="event.country"
+                    :country-code="event.countryCode"
                     :state="event.state"
                     :city="event.city"
                     :team-name="event.teamName"
-                ></ImageUploaded>
-
-				<div v-else-if="event.type === 'country'" class="event" style="background-color: #4bb0e0;">
-					<aside class="grid-img">
-						<i class="fa fa-flag" />
-					</aside>
-					<div class="grid-main">
-						<strong>New Country</strong>
-						<p>Say hello to <i>{{ event.country }}</i></p>
-					</div>
-				</div>
-
-				<div v-else-if="event.type === 'state'" class="event" style="background-color: #4bb0e0;">
-					<aside class="grid-img">
-						<i class="fa fa-flag" />
-					</aside>
-					<div class="grid-main">
-						<strong>New State</strong>
-						<p>Say hello to <i>{{ event.state }}</i></p>
-					</div>
-				</div>
-
-				<div v-else-if="event.type === 'city'" class="event" style="background-color: #4bb0e0;">
-					<aside class="grid-img">
-						<i class="fa fa-flag" />
-					</aside>
-					<div class="grid-main">
-						<strong>New City</strong>
-						<p>Say hello to <i>{{ event.city }}</i></p>
-					</div>
-				</div>
-
-				<div v-else-if="event.type === 'new-user'" class="event" style="background-color: #f1c40f;">
-					<aside class="grid-img">
-						<i class="fa fa-user" />
-					</aside>
-					<div class="grid-main">
-						<p class="new-user-text-wide">A new user has signed up!</p>
-					</div>
-				</div>
-
-                <div v-else-if="event.type === 'team-created'" class="event" style="background-color: #e256fff0;">
-					<aside class="grid-img">
-						<i class="fa fa-users" />
-					</aside>
-					<div class="grid-main">
-						<p>A new Team has been created!</p>
-                        <i>Say hello to <strong>{{ event.name }}</strong>!</i>
-					</div>
-				</div>
-
-                <div v-else-if="event.type === 'littercoin-mined'" class="event" style="background-color: #e256fff0;">
-					<aside class="grid-img">
-						<img src="/assets/icons/mining.png" class="ltr-icon" />
-					</aside>
-					<div class="grid-main">
-						<p>A Littercoin has been mined!</p>
-                        <i>Reason: <span class="ltr-strong">{{ getLittercoinReason(event.reason) }}</span></i>
-					</div>
-				</div>
-
-				<div v-else />
+                    :reason="event.reason"
+                    @click="removeEvent(index)"
+                ></component>
 			</span>
 		</transition-group>
 	</div>
 </template>
 
 <script>
-import Echo from 'laravel-echo'
-import Pusher from 'pusher-js'
 import ImageUploaded from './Notifications/ImageUploaded';
+import NewCountryAdded from './Notifications/NewCountryAdded';
+import NewStateAdded from './Notifications/NewStateAdded';
+import NewCityAdded from './Notifications/NewCityAdded';
+import UserSignedUp from './Notifications/UserSignedUp';
+import TeamCreated from './Notifications/TeamCreated';
+import LittercoinMined from './Notifications/LittercoinMined';
 
 export default {
 	name: 'live-events',
-    components: {ImageUploaded},
+    components: {
+	    LittercoinMined,
+        TeamCreated,
+        UserSignedUp,
+        NewCityAdded,
+        NewStateAdded,
+        NewCountryAdded,
+        ImageUploaded
+    },
     channel: 'main',
 	echo: {
 	    'ImageUploaded': (payload, vm) => {
@@ -93,7 +48,8 @@ export default {
 	        document.title = "OpenLitterMap (" + (vm.events.length + 1) + ")";
 
 			vm.events.unshift({
-				type: 'image',
+				id: new Date().getTime(),
+                type: 'ImageUploaded',
 				city: payload.city,
 				state: payload.state,
 				country: payload.country,
@@ -107,7 +63,8 @@ export default {
             document.title = "OpenLitterMap (" + (vm.events.length + 1) + ")";
 
             vm.events.unshift({
-				type: 'country',
+                id: new Date().getTime(),
+                type: 'NewCountryAdded',
 				country: payload.country,
 				countryId: payload.countryId
 			})
@@ -117,7 +74,8 @@ export default {
             document.title = "OpenLitterMap (" + (vm.events.length + 1) + ")";
 
             vm.events.unshift({
-				type: 'state',
+                id: new Date().getTime(),
+                type: 'NewStateAdded',
 				state: payload.state,
 				stateId: payload.stateId
 			})
@@ -127,7 +85,8 @@ export default {
             document.title = "OpenLitterMap (" + (vm.events.length + 1) + ")";
 
             vm.events.unshift({
-				type: 'city',
+                id: new Date().getTime(),
+                type: 'NewCityAdded',
 				city: payload.city,
 				cityId: payload.cityId
 			})
@@ -137,7 +96,8 @@ export default {
             document.title = "OpenLitterMap (" + (vm.events.length + 1) + ")";
 
             vm.events.unshift({
-				type: 'new-user',
+                id: new Date().getTime(),
+                type: 'UserSignedUp',
 				now: payload.now
 			})
 		},
@@ -146,8 +106,9 @@ export default {
             document.title = "OpenLitterMap (" + (vm.events.length + 1) + ")";
 
             vm.events.unshift({
-                type: 'team-created',
-                name: payload.name
+                id: new Date().getTime(),
+                type: 'TeamCreated',
+                teamName: payload.teamName
             });
         },
         '.App\\Events\\Littercoin\\LittercoinMined': (payload, vm) => {
@@ -155,7 +116,8 @@ export default {
             document.title = "OpenLitterMap (" + (vm.events.length + 1) + ")";
 
             vm.events.unshift({
-                type: 'littercoin-mined',
+                id: new Date().getTime(),
+                type: 'LittercoinMined',
                 reason: payload.reason,
                 userId: payload.userId
             });
@@ -169,49 +131,12 @@ export default {
 	},
 	methods: {
 
-	    removeEvent(index) {
-	        this.events.splice(index, 1);
+        removeEvent (index) {
+            this.events.splice(index, 1);
+            document.title = this.events.length
+                ? 'OpenLitterMap (' + this.events.length + ')'
+                : 'OpenLitterMap';
         },
-
-        /**
-         * Return a unique key for each event
-         */
-		getKey (event)
-		{
-			if (event.type === 'image') return event.type + event.imageName;
-
-			else if (event.type === 'country') return event.type + event.countryId;
-
-			else if (event.type === 'state') return event.type + event.stateId;
-
-			else if (event.type === 'city') return event.type + event.cityId;
-
-			else if (event.type === 'new-user') return event.type + event.now;
-
-			else if (event.type === 'team-created') return event.type + event.name;
-
-			else if (event.type === 'littercoin-mined') return event.type + event.userId + event.now;
-
-			return this.events.length;
-		},
-
-        /**
-         * Using the LittercoinMined event key,
-         *
-         * Todo - return translated string
-         */
-        getLittercoinReason (reason)
-        {
-            if (reason === 'verified-box')
-            {
-                return '100 OpenLitterAI boxes verified';
-            }
-
-            else if (reason === '100-images-verified')
-            {
-                return '100 images verified';
-            }
-        }
     }
 }
 </script>
@@ -232,10 +157,6 @@ export default {
 
     .list-item {
         display: grid;
-    }
-
-    .new-user-text-narrow {
-        display: none;
     }
 
     .sidebar-menu {
@@ -275,9 +196,6 @@ export default {
         .sidebar-menu {
             width: 16rem;
         }
-        .city-name {
-            display: none;
-        }
     }
 
     @media (max-width: 640px) {
@@ -292,30 +210,6 @@ export default {
         text-align: center;
         font-size: 24px;
         font-weight: 700;
-    }
-
-    .event {
-        border-radius: 8px;
-        margin-bottom: 10px;
-        display: flex;
-        cursor: pointer;
-    }
-
-    .event-title {
-        padding: 10px;
-    }
-
-    .event-subtitle {
-
-    }
-
-    .ltr-icon {
-        max-width: 55%;
-        padding-top: 0.5em;
-    }
-
-    .ltr-strong {
-        font-weight: 600;
     }
 
 </style>

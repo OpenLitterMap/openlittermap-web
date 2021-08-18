@@ -1,6 +1,8 @@
 <template>
-    <div class="event">
-        <div class="event-image">
+    <GlobalMapNotification
+        @click="$emit('click', $event)"
+    >
+        <template v-slot:image>
             <img
                 v-if="countryCode"
                 :src="countryFlag(countryCode)"
@@ -8,21 +10,24 @@
                 :alt="countryCode"/>
 
             <i v-else class="fa fa-image"/>
-        </div>
-        <div class="event-content">
+        </template>
+        <template v-slot:content>
             <strong>New image</strong>
             <br>
-            <i class="event-subtitle city-name">{{ city }}, {{ state }}</i>
-            <p class="event-subtitle">{{ country }}</p>
+            <i class="city-name">{{ city }}, {{ state }}</i>
+            <p>{{ country }}</p>
 
             <p v-show="teamName">By Team: <strong>{{ teamName }}</strong></p>
-        </div>
-    </div>
+        </template>
+    </GlobalMapNotification>
 </template>
 
 <script>
+import GlobalMapNotification from './GlobalMapNotification';
+
 export default {
     name: 'ImageUploaded',
+    components: {GlobalMapNotification},
     props: ['countryCode', 'city', 'state', 'country', 'teamName'],
     data () {
         return {
@@ -45,35 +50,7 @@ export default {
 };
 </script>
 
-<style lang="scss">
-
-.event {
-    border-radius: 8px;
-    margin-bottom: 10px;
-    background-color: #88d267;
-    display: flex;
-    cursor: pointer;
-}
-
-.event-image {
-    padding: 16px;
-}
-
-.event-content {
-    padding-top: 10px;
-    padding-bottom: 10px;
-}
-
-@media (max-width: 1024px) {
-    .event-image {
-        padding: 12px;
-    }
-    .event-content {
-        padding-top: 8px;
-        padding-bottom: 8px;
-    }
-}
-
+<style lang="scss" scoped>
 @media (max-width: 768px) {
     .city-name {
         display: none;
