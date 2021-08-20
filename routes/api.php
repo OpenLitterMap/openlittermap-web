@@ -41,7 +41,7 @@ Route::post('/oauth/token', 'AccessTokenController@issueToken');
 
 // Fetch User
 Route::get('/user', function (Request $request) {
-    return Auth::guard('api')->user();
+    return Auth::guard('api')->user()->append('position');
 });
 
 // Reset Password

@@ -2,17 +2,14 @@
 
 namespace App\Console\Commands\Photos;
 
-use App\Helpers\Get\LocationHelper;
-use App\Http\Controllers\MapController;
 use App\Models\Location\City;
 use App\Models\Location\Country;
 use App\Models\Location\State;
 use App\Models\Photo;
 use App\Models\User\User;
-use Carbon\Carbon;
 use Illuminate\Console\Command;
 
-class GenerateTimeSeries extends Command
+class GenerateDummyPhotos extends Command
 {
     /**
      * The name and signature of the console command.

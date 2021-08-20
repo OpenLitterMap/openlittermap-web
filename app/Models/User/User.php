@@ -156,6 +156,11 @@ class User extends Authenticatable
         return (int) Redis::hget("user:{$this->id}", 'total_brands');
     }
 
+    public function getPositionAttribute()
+    {
+        return User::where('xp', '>', $this->xp ?? 0)->count() + 1;
+    }
+
     /**
      * Get all payments
      *
