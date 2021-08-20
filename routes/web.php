@@ -228,9 +228,8 @@ Route::get('register/confirm/{token}', 'Auth\RegisterController@confirmEmail');
 //     $user = \App\Models\User\User::first();
 //     return view('auth.emails.confirm', ['user' => $user]);
 //  });
-Route::get('confirm/email/{token}', 'Auth\RegisterController@confirmEmail');
-
-// Route::get('confirm/email/{token}', 'Auth\RegisterController@confirmEmail');
+Route::get('confirm/email/{token}', 'Auth\RegisterController@confirmEmail')
+    ->name('confirm-email-token');
 
 // Logout
 Route::get('logout', 'UsersController@logout');

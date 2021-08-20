@@ -78,10 +78,7 @@ class RegisterController extends Controller
 
         event(new Registered($user = $this->create($request->all())));
 
-        if (app()->environment('production'))
-        {
-            Mail::to($request->email)->send(new NewUserRegMail($user));
-        }
+        Mail::to($request->email)->send(new NewUserRegMail($user));
 
         event(new UserSignedUp(now()));
 
