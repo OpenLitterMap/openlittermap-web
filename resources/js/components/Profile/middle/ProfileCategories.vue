@@ -1,7 +1,10 @@
 <template>
-    <div class="profile-card">
+    <div class="profile-card flex-1">
         <!-- Using :key helps to update the radar when tags change -->
-        <Radar :key="user.total_tags" :categories="categories" />
+        <Radar
+            :key="user.total_tags"
+            :categories="categories"
+        />
     </div>
 </template>
 

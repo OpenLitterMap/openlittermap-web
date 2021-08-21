@@ -4,38 +4,36 @@
         <!--  Todo - Show Loading -->
         <!--  Todo - Later: Add translations -->
         <!--  Todo - Animate numbers incrementing from previous to current values -->
-
-        <!-- Row 1, Column 1 -->
-        <ProfileWelcome />
-
-        <!-- Row 1, Column 2 -->
-        <ProfileStats />
-
-        <!-- Row 1, Column 3 -->
-        <ProfileNextTarget />
-
-        <!-- Row 2, Column 1 -->
-        <ProfileCategories />
-
-        <!-- Row 2, Column 2 -->
         <ProfileMap />
 
-        <!-- Row 2, Column 3 -->
+        <ProfilePosition />
+
+        <ProfileStats />
+
+        <ProfileNextTarget />
+
         <ProfileCalendar />
 
-        <!-- Row 3, Column 1 -->
-        <ProfileDownload />
+        <div class="flex">
+            <div class="empty-profile-card" />
 
-        <!-- Row 3, Column 2 -->
-        <ProfileTimeSeries />
+            <ProfileCategories />
 
-        <!-- Row 3, Column 3 -->
-        <ProfilePhotos />
+            <ProfileTimeSeries />
+
+            <div class="smaller-empty-profile-card" />
+        </div>
+
+        <div class="profile-buttons-container">
+            <ProfileDownload />
+
+            <ProfilePhotos />
+        </div>
     </section>
 </template>
 
 <script>
-import ProfileWelcome from '../../components/Profile/top/ProfileWelcome';
+import ProfilePosition from '../../components/Profile/top/ProfilePosition';
 import ProfileStats from '../../components/Profile/top/ProfileStats';
 import ProfileNextTarget from '../../components/Profile/top/ProfileNextTarget';
 import ProfileCategories from '../../components/Profile/middle/ProfileCategories';
@@ -48,7 +46,7 @@ import ProfilePhotos from '../../components/Profile/bottom/ProfilePhotos';
 export default {
     name: 'Profile',
     components: {
-        ProfileWelcome,
+        ProfilePosition,
         ProfileTimeSeries,
         ProfileStats,
         ProfileNextTarget,
@@ -60,9 +58,31 @@ export default {
     },
     async mounted ()
     {
-        await this.$store.dispatch('GET_CURRENT_USER');
+        console.log('profile created', this.publicProfile);
 
-        await this.$store.dispatch('GET_USERS_PROFILE_DATA');
+        if (!this.publicProfile)
+        {
+            await this.$store.dispatch('GET_CURRENT_USER');
+
+            await this.$store.dispatch('GET_USERS_PROFILE_DATA');
+        }
+    },
+    computed: {
+        /**
+         *
+         */
+        publicProfile ()
+        {
+            return this.$store.state.user.public_profile.publicProfile;
+        },
+
+        /**
+         *
+         */
+        user ()
+        {
+            return true;
+        }
     }
 }
 </script>
@@ -71,22 +91,12 @@ export default {
 
     .profile-container {
         min-height: calc(100vh - 82px);
-        background-color: #341f97;
-        display: grid;
-        grid-template-columns: 1fr 2fr 1fr;
-        grid-template-rows: 0.5fr 1fr 1fr;
-        column-gap: 1em;
-        row-gap: 1em;
-        padding: 3em;
     }
 
     .profile-card {
+        flex: 1;
         background-color: #292f45;
-        border-radius: 6px;
-        box-shadow: 0 0.5em 1em -0.125em rgb(10 10 10 / 10%), 0 0px 0 1px rgb(10 10 10 / 2%);
-        color: #4a4a4a;
-        display: block;
-        padding: 1.25rem;
+        padding: 1.25em;
     }
 
     .profile-card p {
@@ -95,5 +105,21 @@ export default {
 
     .profile-stat-card p {
 
+    }
+
+    .empty-profile-card {
+        background-color: #292f45;
+        flex: 0.75;
+    }
+
+    .smaller-empty-profile-card {
+        flex: 0.25;
+        background-color: #292f45;
+    }
+
+    .profile-buttons-container {
+        background-color: #292f45;
+        padding: 9em 10em;
+        display: flex;
     }
 </style>

@@ -314,3 +314,6 @@ Route::group(['prefix' => '/bbox', 'middleware' => ['can_bbox']], function () {
     Route::get('/verify/index', 'Bbox\VerifyBoxController@index');
     Route::post('/verify/update', 'Bbox\VerifyBoxController@update');
 });
+
+// Visit public profile of a User with settings on
+Route::get('{username}', 'User\Settings\PublicProfileController@index');

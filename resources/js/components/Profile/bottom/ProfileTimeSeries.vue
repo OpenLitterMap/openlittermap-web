@@ -1,6 +1,8 @@
 <template>
-    <div class="profile-card">
-       <TimeSeriesLine :ppm="ppm" />
+    <div class="profile-card flex-1">
+       <TimeSeriesLine
+           :ppm="ppm"
+       />
     </div>
 </template>
 

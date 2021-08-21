@@ -1,5 +1,5 @@
 <template>
-    <div class="profile-card">
+    <div class="profile-calendar">
         <FunctionalCalendar
             v-model="calendarData"
             :day-names="$t('common.day-names')"
@@ -41,7 +41,6 @@ export default {
         }
     },
     computed: {
-
         /**
          * Add spinner when processing
          */
@@ -65,7 +64,6 @@ export default {
         }
     },
     methods: {
-
         /**
          * Get map data
          */
@@ -95,8 +93,10 @@ export default {
 
 <style scoped>
 
-    .long-purp {
-        background-color: #8e7fd6;
-        width: 100%;
+    .profile-calendar {
+        position: absolute;
+        top: 42em;
+        left: 3em;
     }
+
 </style>

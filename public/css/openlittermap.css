@@ -73,11 +73,19 @@ html {
 }
 
 .flex {
-	display: flex;
+	display: flex !important;
+}
+
+.flex-0-25 {
+    flex: 0.25em;
 }
 
 .flex-1 {
-	flex: 1;
+	flex: 1 !important;
+}
+
+.flex-1-25 {
+    flex: 1.25 !important;
 }
 
 .fullheight {

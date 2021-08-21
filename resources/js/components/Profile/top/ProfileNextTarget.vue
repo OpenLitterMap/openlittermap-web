@@ -1,12 +1,10 @@
 <template>
-    <div class="profile-card">
-        <p class="mb1">{{ $t('profile.dashboard.your-level') }}</p>
+    <div class="profile-next-target">
+        <p class="is-secondary">Level: <strong class="is-white">{{ currentLevel }}</strong></p>
 
-        <p class="is-secondary">{{ $t('profile.dashboard.reached-level') }} <strong class="is-white">{{ currentLevel }}</strong></p>
+        <p class="is-secondary">XP: <strong class="is-white">{{ currentXp }} xp</strong></p>
 
-        <p class="is-secondary mb1">{{ $t('profile.dashboard.have-xp') }} <strong class="is-white">{{ currentXp }} xp</strong></p>
-
-        <p class="is-secondary mb2">{{ $t('profile.dashboard.need-xp') }} <strong class="is-white">{{ neededXp }} xp</strong> {{ $t('profile.dashboard.to-reach-level') }}</p>
+        <p class="is-secondary">Level up: <strong class="is-white">{{ neededXp }} xp</strong></p>
     </div>
 </template>
 
@@ -14,7 +12,6 @@
 export default {
     name: 'ProfileNextTarget',
     computed: {
-
         /**
          * The users current level, based on their XP
          */
@@ -51,6 +48,17 @@ export default {
 </script>
 
 <style scoped>
+
+    .profile-next-target {
+        position: absolute;
+        top: 33em;
+        left: 7em;
+        z-index: 999;
+    }
+
+    .profile-next-target p {
+        font-size: 1.25em;
+    }
 
     .is-purp {
         color: #8e7fd6;

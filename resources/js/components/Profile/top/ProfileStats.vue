@@ -1,43 +1,41 @@
 <template>
-    <div class="profile-card">
-        <p class="mb1">{{ $t('profile.dashboard.have-uploaded') }}</p>
+    <div class="profile-stats">
 
-        <div class="flex">
+        <div class="profile-stat-card flex-1-25" />
 
-            <div class="profile-stat-card">
-                <img src="/assets/icons/home/camera.png" />
+        <div class="profile-stat-card">
+            <img src="/assets/icons/home/camera.png" />
 
-                <div>
-                    <p class="profile-stat">{{ userPhotoCount }}</p>
-                    <p class="profile-text">{{ $t('profile.dashboard.photos') }}</p>
-                </div>
+            <div>
+                <p class="profile-stat">{{ userPhotoCount }}</p>
+                <p class="profile-text">{{ $t('profile.dashboard.photos') }}</p>
             </div>
+        </div>
 
-            <div class="profile-stat-card">
-                <img src="/assets/icons/home/phone.png" />
+        <div class="profile-stat-card">
+            <img src="/assets/icons/home/phone.png" />
 
-                <div>
-                    <p class="profile-stat">{{ userTagsCount }}</p>
-                    <p class="profile-text">{{ $t('profile.dashboard.tags') }}</p>
-                </div>
+            <div>
+                <p class="profile-stat">{{ userTagsCount }}</p>
+                <p class="profile-text">{{ $t('profile.dashboard.tags') }}</p>
             </div>
+        </div>
 
-            <div class="profile-stat-card">
-                <p class="profile-percent">%</p>
+        <div class="profile-stat-card">
+            <p class="profile-percent">%</p>
 
-                <div>
-                    <p class="profile-stat">{{ photoPercent }}</p>
-                    <p class="profile-text">{{ $t('profile.dashboard.all-photos') }}</p>
-                </div>
+            <div>
+                <p class="profile-stat">{{ photoPercent }}</p>
+                <p class="profile-text">{{ $t('profile.dashboard.all-photos') }}</p>
             </div>
+        </div>
 
-            <div class="profile-stat-card">
-                <p class="profile-percent">%</p>
+        <div class="profile-stat-card">
+            <p class="profile-percent">%</p>
 
-                <div>
-                    <p class="profile-stat">{{ tagPercent }}</p>
-                    <p class="profile-text">{{ $t('profile.dashboard.all-tags') }}</p>
-                </div>
+            <div>
+                <p class="profile-stat">{{ tagPercent }}</p>
+                <p class="profile-text">{{ $t('profile.dashboard.all-tags') }}</p>
             </div>
         </div>
     </div>
@@ -47,7 +45,6 @@
 export default {
     name: 'ProfileStats',
     computed: {
-
         /**
          *
          */
@@ -93,6 +90,12 @@ export default {
 
 <style scoped>
 
+    .profile-stats {
+        display: flex;
+        background-color: #292f45;
+        padding: 3em 0;
+    }
+
     .profile-percent {
         font-size: 3em;
         font-weight: 600;
@@ -106,13 +109,19 @@ export default {
     }
 
     .profile-stat-card img {
-        height: 3em;
+        height: 5em;
         margin: auto 1em auto 0;
     }
 
+    .profile-stat-card p {
+        color: white;
+        font-size: 2em;
+        text-transform: capitalize;
+    }
+
     .profile-stat {
-        font-size: 1.5em;
         font-weight: 600;
+        font-size: 2em;
     }
 
     .profile-text {

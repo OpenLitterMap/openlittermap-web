@@ -9,10 +9,8 @@ import can_verify_boxes from './middleware/can_verify_boxes'
 
 import middlewarePipeline from './middleware/middlewarePipeline'
 
-// The earlier a route is defined, the higher its priority.
 const router = new VueRouter({
     mode: 'history',
-    // base: process.env.BASE_URL, // not sure if we need this?
     linkActiveClass: 'is-active',
     routes: [
         // GUEST ROUTES
@@ -95,13 +93,6 @@ const router = new VueRouter({
         // AUTH ROUTES
         {
             path: '/upload',
-            component: require('./views/general/Upload').default,
-            meta: {
-                middleware: [ auth ]
-            }
-        },
-        {
-            path: '/submit', // old route
             component: require('./views/general/Upload').default,
             meta: {
                 middleware: [ auth ]
@@ -194,6 +185,11 @@ const router = new VueRouter({
             meta: {
                 middleware: [ auth, can_verify_boxes ]
             }
+        },
+        // Public Profile by Username
+        {
+            path: '/:username?',
+            component: require('./views/general/Profile').default,
         }
     ]
 });
@@ -203,7 +199,7 @@ const router = new VueRouter({
  */
 router.beforeEach((to, from, next) => {
 
-    if (! to.meta.middleware) return next();
+    if (!to.meta.middleware) return next();
 
     // testing --- this allows store to init before router finishes and returns with auth false
     // await store.dispatch('CHECK_AUTH');

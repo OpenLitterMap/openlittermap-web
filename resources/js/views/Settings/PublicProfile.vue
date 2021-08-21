@@ -81,13 +81,13 @@ export default {
          */
         getButtonClass ()
         {
-            const c = (this.show_public_profile)
+            const color = (this.show_public_profile)
                 ? 'is-danger'
                 : 'is-primary';
 
             return (this.processing)
-                ? c + ' is-loading'
-                : c;
+                ? color + ' is-loading'
+                : color;
         },
 
         /**

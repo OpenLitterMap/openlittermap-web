@@ -321,7 +321,7 @@ export const actions = {
 
                     Vue.$vToastify.success({
                         title,
-                        body: (response.data.status)
+                        body: (response.data.settings.show_public_profile)
                             ? nowPublic
                             : nowPrivate,
                         position: 'top-right'

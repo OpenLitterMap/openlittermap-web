@@ -23,7 +23,9 @@ export default {
         'auth',
         'user',
         'verified',
-        'unsub'
+        'unsub',
+        'username',
+        'publicProfile'
     ],
     components: {
         Nav,
@@ -36,15 +38,17 @@ export default {
         return {
             showEmailConfirmed: false,
             showUnsubscribed: false
-        }
+        };
     },
     created ()
     {
+        // Initialise language
         if (this.$localStorage.get('lang'))
         {
             this.$i18n.locale = this.$localStorage.get('lang');
         }
 
+        // Check if the user is authenticated
         if (this.auth)
         {
             this.$store.commit('login');
@@ -53,14 +57,12 @@ export default {
             if (this.user)
             {
                 const user = JSON.parse(this.user);
-
                 console.log('RootContainer.user', user);
 
                 this.$store.commit('initUser', user);
                 this.$store.commit('set_default_litter_presence', user.items_remaining);
             }
         }
-
         // This is needed to invalidate user.auth = true
         // which is persisted and not updated if the authenticated user forgets to manually log out
         else
@@ -72,6 +74,14 @@ export default {
         // If Account Verified
         if (this.verified) this.showEmailConfirmed = true;
         if (this.unsub) this.showUnsubscribed = true;
+
+        // If the user is visiting a username with public settings turned on
+        if (this.username)
+        {
+            const publicProfile = JSON.parse(this.publicProfile);
+
+            this.$store.commit('userByUsername', publicProfile);
+        }
     },
     computed: {
         /**

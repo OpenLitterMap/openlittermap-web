@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\User\Settings;
 
+use App\Models\User\User;
 use App\Models\User\UserSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -10,6 +11,35 @@ use App\Http\Controllers\Controller;
 
 class PublicProfileController extends Controller
 {
+    /**
+     * Visit a users public profile by Username
+     *
+     * @param string $username
+     *
+     * @return array|string
+     */
+    public function index (string $username)
+    {
+        // Todo - limit columns based on settings
+        $user = User::where([
+            'username' => $username
+        ])->first();
+
+        if (!$user || !isset($user->settings) || !$user->settings->show_public_profile) {
+            return redirect('/');
+        }
+
+        return view('root')->with([
+            'auth' => Auth::check(),
+            'success' => true,
+            'user' => Auth::user(),
+            'verified' => null,
+            'unsub' => null,
+            'username' => $username,
+            'publicProfile' => $user
+        ]);
+    }
+
     /**
      * Change the private status of a users Public Profile
      *
@@ -25,7 +55,10 @@ class PublicProfileController extends Controller
 
             $settings = UserSettings::firstOrCreate(['user_id' => $user->id]);
 
-            $settings->show_public_profile = ! $settings->show_public_profile;
+            $settings->show_public_profile = ($settings->wasRecentlyCreated)
+                ? true
+                : $settings->show_public_profile = ! $settings->show_public_profile;
+
             $settings->save();
 
             return [

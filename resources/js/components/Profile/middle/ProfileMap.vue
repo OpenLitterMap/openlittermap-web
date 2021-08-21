@@ -1,5 +1,5 @@
 <template>
-    <div class="profile-card" style="padding: 0 !important;">
+    <div class="profile-map-outer-container" style="padding: 0 !important;">
         <fullscreen ref="fullscreen" @change="fullscreenChange" class="profile-map-container">
 
             <button class="btn-map-fullscreen" @click="toggle">
@@ -117,44 +117,48 @@ export default {
 @import "~leaflet.markercluster/dist/MarkerCluster.css";
 @import "~leaflet.markercluster/dist/MarkerCluster.Default.css";
 
-//@import '../../../styles/variables.scss';
+    //@import '../../../styles/variables.scss';
 
-.btn-map-fullscreen {
-    position: absolute;
-    top: 1em;
-    right: 1em;
-    z-index: 1234;
-}
+    .profile-map-outer-container {
+        height: 20em;
+    }
 
-/* remove padding on mobile */
-.profile-map-container {
-    height: 100%;
-    position: relative;
-}
+    .btn-map-fullscreen {
+        position: absolute;
+        top: 1em;
+        right: 1em;
+        z-index: 1234;
+    }
 
-.leaflet-popup-content {
-    width: 180px !important;
-}
+    /* remove padding on mobile */
+    .profile-map-container {
+        height: 100%;
+        position: relative;
+    }
 
-.lealet-popup {
-    left: -106px !important;
-}
+    .leaflet-popup-content {
+        width: 180px !important;
+    }
 
-.img-tag {
-    margin-bottom: 5px;
-    color: black !important;
-}
+    .lealet-popup {
+        left: -106px !important;
+    }
 
-//@include media-breakpoint-down (sm)
-//{
-//    .profile-map-container {
-//        margin-left: -3em;
-//        margin-right: -3em;
-//    }
-//
-//    .temp-info {
-//        text-align: center;
-//        margin-top: 1em;
-//    }
-//}
+    .img-tag {
+        margin-bottom: 5px;
+        color: black !important;
+    }
+
+    //@include media-breakpoint-down (sm)
+    //{
+    //    .profile-map-container {
+    //        margin-left: -3em;
+    //        margin-right: -3em;
+    //    }
+    //
+    //    .temp-info {
+    //        text-align: center;
+    //        margin-top: 1em;
+    //    }
+    //}
 </style>
