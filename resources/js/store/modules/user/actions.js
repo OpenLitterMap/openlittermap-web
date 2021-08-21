@@ -88,15 +88,15 @@ export const actions = {
     async GET_CURRENT_USER (context)
     {
         await axios.get('/current-user')
-        .then(response => {
-            console.log('get_current_user', response);
+            .then(response => {
+                console.log('get_current_user', response);
 
-            context.commit('initUser', response.data);
-            context.commit('set_default_litter_presence', response.data.items_remaining);
-        })
-        .catch(error => {
-            console.log('error.get_current_user', error);
-        });
+                context.commit('initUser', response.data);
+                context.commit('set_default_litter_presence', response.data.items_remaining);
+            })
+            .catch(error => {
+                console.log('error.get_current_user', error);
+            });
     },
 
     /**

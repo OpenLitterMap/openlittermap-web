@@ -1,7 +1,7 @@
 <template>
     <div class="profile-stats">
 
-        <div class="profile-stat-card flex-1-25" />
+        <div class="profile-stat-card flex-1-15" />
 
         <div class="profile-stat-card">
             <img src="/assets/icons/home/camera.png" />
@@ -21,20 +21,16 @@
             </div>
         </div>
 
-        <div class="profile-stat-card">
-            <p class="profile-percent">%</p>
-
-            <div>
-                <p class="profile-stat">{{ photoPercent }}</p>
+        <div class="profile-percent-card">
+            <div class="inline-block">
+                <p class="profile-percent">{{ photoPercent }}%</p>
                 <p class="profile-text">{{ $t('profile.dashboard.all-photos') }}</p>
             </div>
         </div>
 
-        <div class="profile-stat-card">
-            <p class="profile-percent">%</p>
-
-            <div>
-                <p class="profile-stat">{{ tagPercent }}</p>
+        <div class="profile-percent-card">
+            <div class="inline-block">
+                <p class="profile-percent">{{ tagPercent }}%</p>
                 <p class="profile-text">{{ $t('profile.dashboard.all-tags') }}</p>
             </div>
         </div>
@@ -90,9 +86,15 @@ export default {
 
 <style scoped>
 
+    .profile-percent {
+        font-size: 3em;
+        text-align: center;
+        color: white;
+        text-transform: capitalize;
+    }
+
     .profile-stats {
         display: flex;
-        background-color: #292f45;
         padding: 3em 0;
     }
 
@@ -108,6 +110,11 @@ export default {
         text-align: center;
     }
 
+    .profile-percent-card {
+        flex: 1;
+        text-align: left;
+    }
+
     .profile-stat-card img {
         height: 5em;
         margin: auto 1em auto 0;
@@ -119,13 +126,23 @@ export default {
         text-transform: capitalize;
     }
 
+    .profile-percent-card p {
+        color: white;
+        font-size: 2em;
+        text-transform: capitalize;
+    }
+
     .profile-stat {
         font-weight: 600;
         font-size: 2em;
     }
 
     .profile-text {
-        color: #1DD3B0 !important;
-}
+        color: #7cd85e !important;
+    }
+
+    .inline-block {
+        display: inline-block;
+    }
 
 </style>

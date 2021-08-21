@@ -1,33 +1,38 @@
 <template>
-    <section class="profile-container">
+    <section class="outer-profile-container">
 
         <!--  Todo - Show Loading -->
         <!--  Todo - Later: Add translations -->
         <!--  Todo - Animate numbers incrementing from previous to current values -->
         <ProfileMap />
 
-        <ProfilePosition />
+        <div class="main-profile-container">
+            <ProfilePosition />
 
-        <ProfileStats />
+            <ProfileStats />
 
-        <ProfileNextTarget />
+            <ProfileNextTarget />
 
-        <ProfileCalendar />
+            <div class="flex">
 
-        <div class="flex">
-            <div class="empty-profile-card" />
+                <div style="flex: 0.1;" />
 
-            <ProfileCategories />
+                <ProfileCalendar />
 
-            <ProfileTimeSeries />
+                <ProfileTimeSeries />
 
-            <div class="smaller-empty-profile-card" />
-        </div>
+                <div style="flex: 0.25" />
 
-        <div class="profile-buttons-container">
-            <ProfileDownload />
+                <ProfileCategories />
 
-            <ProfilePhotos />
+                <div class="smaller-empty-profile-card" />
+            </div>
+
+            <div class="profile-buttons-container">
+                <ProfileDownload />
+
+                <ProfilePhotos />
+            </div>
         </div>
     </section>
 </template>
@@ -58,7 +63,7 @@ export default {
     },
     async mounted ()
     {
-        console.log('profile created', this.publicProfile);
+        console.log('User found by ID:', this.publicProfile);
 
         if (!this.publicProfile)
         {
@@ -89,37 +94,28 @@ export default {
 
 <style lang="scss">
 
-    .profile-container {
+    .outer-profile-container {
         min-height: calc(100vh - 82px);
+    }
+
+    .main-profile-container {
+        background-color: #292f45;
     }
 
     .profile-card {
         flex: 1;
-        background-color: #292f45;
-        padding: 1.25em;
     }
 
     .profile-card p {
         color: white;
     }
 
-    .profile-stat-card p {
-
-    }
-
-    .empty-profile-card {
-        background-color: #292f45;
-        flex: 0.75;
-    }
-
     .smaller-empty-profile-card {
         flex: 0.25;
-        background-color: #292f45;
     }
 
     .profile-buttons-container {
-        background-color: #292f45;
-        padding: 9em 10em;
+        padding: 3em 10em;
         display: flex;
     }
 </style>

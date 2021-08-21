@@ -1,8 +1,13 @@
 <template>
     <div class="profile-card">
+        <p class="profile-dl-title">View My Photos</p>
+
         <p class="mb1">{{ $t('profile.dashboard.manage-my-photos') }}</p>
 
-        <button class="button is-medium is-primary" @click="load">{{ $t('profile.dashboard.view-my-photos') }}</button>
+        <button
+            class="button is-medium is-primary"
+            @click="load"
+        >{{ $t('profile.dashboard.view-my-photos') }}</button>
     </div>
 </template>
 
@@ -30,5 +35,11 @@ export default {
 </script>
 
 <style scoped>
+
+    .profile-dl-title {
+        color: #1DD3B0;
+        margin-bottom: 1em;
+        font-weight: 600;
+    }
 
 </style>

@@ -10,7 +10,6 @@ import moment from 'moment';
 export default {
     name: 'ProfilePosition',
     computed: {
-
         /**
          * The users name
          */

@@ -1,5 +1,5 @@
 <template>
-    <div class="profile-card flex-1">
+    <div class="profile-categories">
         <!-- Using :key helps to update the radar when tags change -->
         <Radar
             :key="user.total_tags"
@@ -48,5 +48,10 @@ export default {
 </script>
 
 <style scoped>
+
+    .profile-categories {
+        flex: 1;
+        padding: 3em;
+    }
 
 </style>

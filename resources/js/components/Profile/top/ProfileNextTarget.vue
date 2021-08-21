@@ -60,10 +60,6 @@ export default {
         font-size: 1.25em;
     }
 
-    .is-purp {
-        color: #8e7fd6;
-    }
-
     .is-white {
         color: white !important;
     }

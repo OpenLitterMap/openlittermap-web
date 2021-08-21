@@ -84,6 +84,10 @@ html {
 	flex: 1 !important;
 }
 
+.flex-1-15 {
+    flex: 1.15 !important;
+}
+
 .flex-1-25 {
     flex: 1.25 !important;
 }

@@ -14,11 +14,18 @@
         />
 
         <!-- Change time period -->
-        <select v-model="period" class="input mt1 mb1">
+        <select v-model="period" class="input profile-calendar-select">
             <option v-for="time in periods" :value="time">{{ getPeriod(time) }}</option>
         </select>
 
-        <button :class="button" @click="changePeriod" :disabled="disabled">{{ $t('profile.dashboard.calendar-load-data') }}</button>
+        <br>
+
+        <button
+            :class="processing ? 'is-loading' : ''"
+            class="button"
+            @click="changePeriod"
+            :disabled="disabled"
+        >{{ $t('profile.dashboard.calendar-load-data') }}</button>
     </div>
 </template>
 
@@ -31,24 +38,16 @@ export default {
     data ()
     {
         return {
-            btn: 'button long-purp',
             calendarData: {},
             period: 'created_at',
             periods: [
                 'created_at',
                 'datetime'
-            ]
+            ],
+            processing: false
         }
     },
     computed: {
-        /**
-         * Add spinner when processing
-         */
-        button ()
-        {
-            return this.processing ? this.btn + ' is-loading' : this.btn;
-        },
-
         /**
          * Return true to disable the button
          */
@@ -71,11 +70,15 @@ export default {
         {
             if (this.disabled) return;
 
+            this.processing = true;
+
             await this.$store.dispatch('GET_USERS_PROFILE_MAP_DATA', {
                 period: this.period,
                 start: this.calendarData.dateRange.start,
                 end: this.calendarData.dateRange.end,
             });
+
+            this.processing = false;
         },
 
         /**
@@ -83,7 +86,7 @@ export default {
          */
         getPeriod (period)
         {
-            if (! period) period = this.period;
+            if (!period) period = this.period;
 
             return this.$t('teams.dashboard.times.' + period)
         },
@@ -94,9 +97,13 @@ export default {
 <style scoped>
 
     .profile-calendar {
-        position: absolute;
-        top: 42em;
-        left: 3em;
+        flex: 1;
+        padding-top: 5em;
+    }
+
+    .profile-calendar-select {
+        margin: 1em 0;
+        width: 21em;
     }
 
 </style>

@@ -21,7 +21,14 @@ class PublicProfileController extends Controller
     public function index (string $username)
     {
         // Todo - limit columns based on settings
-        $user = User::where([
+        $user = User::select([
+            'id',
+            'username',
+            'level',
+            'xp',
+            'photos_per_month'
+        ])
+        ->where([
             'username' => $username
         ])->first();
 

@@ -1,5 +1,5 @@
 <template>
-    <div class="profile-card flex-1">
+    <div class="profile-time-series">
        <TimeSeriesLine
            :ppm="ppm"
        />
@@ -27,4 +27,8 @@ export default {
 
 <style scoped>
 
+    .profile-time-series {
+        flex: 1;
+        padding: 3em;
+    }
 </style>
