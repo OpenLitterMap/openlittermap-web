@@ -42,87 +42,80 @@ export default {
         ImageUploaded
     },
     channel: 'main',
-	echo: {
-	    'ImageUploaded': (payload, vm) => {
-
-	        document.title = "OpenLitterMap (" + (vm.events.length + 1) + ")";
-
-			vm.events.unshift({
-				id: new Date().getTime(),
+    echo: {
+        'ImageUploaded': (payload, vm) => {
+            vm.events.unshift({
+                id: new Date().getTime(),
                 type: 'ImageUploaded',
-				city: payload.city,
-				state: payload.state,
-				country: payload.country,
-				imageName: payload.imageName,
+                city: payload.city,
+                state: payload.state,
+                country: payload.country,
+                imageName: payload.imageName,
                 teamName: payload.teamName,
                 countryCode: payload.countryCode
-			});
-		},
-		'NewCountryAdded': (payload, vm) => {
+            });
 
-            document.title = "OpenLitterMap (" + (vm.events.length + 1) + ")";
-
+            vm.updateDocumentTitle();
+        },
+        'NewCountryAdded': (payload, vm) => {
             vm.events.unshift({
                 id: new Date().getTime(),
                 type: 'NewCountryAdded',
-				country: payload.country,
-				countryId: payload.countryId
-			})
-		},
-		'NewStateAdded': (payload, vm) => {
+                country: payload.country,
+                countryId: payload.countryId
+            });
 
-            document.title = "OpenLitterMap (" + (vm.events.length + 1) + ")";
-
+            vm.updateDocumentTitle();
+        },
+        'NewStateAdded': (payload, vm) => {
             vm.events.unshift({
                 id: new Date().getTime(),
                 type: 'NewStateAdded',
-				state: payload.state,
-				stateId: payload.stateId
-			})
-		},
-		'NewCityAdded': (payload, vm) => {
+                state: payload.state,
+                stateId: payload.stateId
+            });
 
-            document.title = "OpenLitterMap (" + (vm.events.length + 1) + ")";
-
+            vm.updateDocumentTitle();
+        },
+        'NewCityAdded': (payload, vm) => {
             vm.events.unshift({
                 id: new Date().getTime(),
                 type: 'NewCityAdded',
-				city: payload.city,
-				cityId: payload.cityId
-			})
-		},
-		'UserSignedUp': (payload, vm) => {
+                city: payload.city,
+                cityId: payload.cityId
+            });
 
-            document.title = "OpenLitterMap (" + (vm.events.length + 1) + ")";
-
+            vm.updateDocumentTitle();
+        },
+        'UserSignedUp': (payload, vm) => {
             vm.events.unshift({
                 id: new Date().getTime(),
                 type: 'UserSignedUp',
-				now: payload.now
-			})
-		},
+                now: payload.now
+            });
+
+            vm.updateDocumentTitle();
+        },
         'TeamCreated': (payload, vm) => {
-
-            document.title = "OpenLitterMap (" + (vm.events.length + 1) + ")";
-
             vm.events.unshift({
                 id: new Date().getTime(),
                 type: 'TeamCreated',
                 teamName: payload.teamName
             });
+
+            vm.updateDocumentTitle();
         },
         '.App\\Events\\Littercoin\\LittercoinMined': (payload, vm) => {
-
-            document.title = "OpenLitterMap (" + (vm.events.length + 1) + ")";
-
             vm.events.unshift({
                 id: new Date().getTime(),
                 type: 'LittercoinMined',
                 reason: payload.reason,
                 userId: payload.userId
             });
+
+            vm.updateDocumentTitle();
         }
-	},
+    },
 	data ()
     {
 		return {
@@ -131,11 +124,23 @@ export default {
 	},
 	methods: {
 
+        /**
+         * Updates the document title depending on the number of events
+         */
+        updateDocumentTitle () {
+            document.title = this.events.length > 0
+                ? '(' + this.events.length + ') OpenLitterMap'
+                : 'OpenLitterMap';
+        },
+
+        /**
+         * Removes the event at the specified index
+         * @param index
+         */
         removeEvent (index) {
             this.events.splice(index, 1);
-            document.title = this.events.length
-                ? 'OpenLitterMap (' + this.events.length + ')'
-                : 'OpenLitterMap';
+
+            this.updateDocumentTitle();
         },
     }
 }
