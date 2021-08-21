@@ -79,6 +79,7 @@ export default {
         if (this.username)
         {
             const publicProfile = JSON.parse(this.publicProfile);
+            console.log({ publicProfile });
 
             this.$store.commit('userByUsername', publicProfile);
         }

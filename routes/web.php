@@ -201,7 +201,7 @@ Route::post('/teams/settings', 'Teams\TeamsSettingsController@index');
 Route::post('/teams/download', 'Teams\TeamsController@download');
 Route::post('/teams/leaderboard/visibility', 'Teams\TeamsLeaderboardController@toggle');
 
-// The users profile
+// The users profile. Used for Authenticated User and PublicProfile
 Route::get('/user/profile/index', 'User\ProfileController@index');
 Route::get('/user/profile/map', 'User\ProfileController@geojson');
 Route::get('/user/profile/download', 'User\ProfileController@download');

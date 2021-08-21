@@ -63,18 +63,16 @@ export default {
     },
     async mounted ()
     {
-        console.log('User found by ID:', this.publicProfile);
-
         if (!this.publicProfile)
         {
             await this.$store.dispatch('GET_CURRENT_USER');
-
-            await this.$store.dispatch('GET_USERS_PROFILE_DATA');
         }
+
+        await this.$store.dispatch('GET_USERS_PROFILE_DATA');
     },
     computed: {
         /**
-         *
+         * Publicly available data per user
          */
         publicProfile ()
         {
@@ -82,11 +80,15 @@ export default {
         },
 
         /**
+         * Return either the currently authenticated user,
          *
+         * Or show another users public profile if it exists.
          */
         user ()
         {
-            return true;
+            return (this.publicProfile)
+                ? this.publicProfile
+                : this.$store.state.user.user;
         }
     }
 }

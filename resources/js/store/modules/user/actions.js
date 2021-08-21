@@ -122,15 +122,21 @@ export const actions = {
      */
     async GET_USERS_PROFILE_DATA (context)
     {
-        await axios.get('/user/profile/index')
-            .then(response => {
-                console.log('get_users_position', response);
+        const username = context.state.public_profile.publicProfile.username;
 
-                context.commit('usersPosition', response.data);
-            })
-            .catch(error => {
-                console.error('get_users_position', error);
-            });
+        await axios.get('/user/profile/index', {
+            params: {
+                username
+            }
+        })
+        .then(response => {
+            console.log('get_users_position', response);
+
+            context.commit('usersPosition', response.data);
+        })
+        .catch(error => {
+            console.error('get_users_position', error);
+        });
     },
 
     /**

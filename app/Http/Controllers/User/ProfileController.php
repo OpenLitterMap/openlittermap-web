@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers\User;
 
-use App\Exports\CreateCSVExport;
-use App\Http\Controllers\Controller;
-use App\Jobs\EmailUserExportCompleted;
 use App\Level;
 use App\Models\Photo;
 use App\Models\User\User;
+
+use App\Exports\CreateCSVExport;
+use App\Jobs\EmailUserExportCompleted;
+
+use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\Auth;
+
+use App\Http\Controllers\Controller;
 
 class ProfileController extends Controller
 {
@@ -122,19 +126,33 @@ class ProfileController extends Controller
     }
 
     /**
-     * Get the total number of users, and the current users position
+     * Load extra data for the Users Profile Page
+     *
+     * This is also used to get extra data for a PublicProfile if allowed.
+     *
+     * Gets:
+     * - total number of users,
+     * - users position
      * To get the current position, we need to count how many users have more XP than current users
      *
      * @return array
      */
-    public function index ()
+    public function index () : array
     {
+        $user = request()->has('username')
+            ? User::where('username', request()->username)->first()
+            : Auth::user();
+
+        if (Auth::guest() && (!$user || !isset($user->settings) || !$user->settings->show_public_profile)) {
+            return [
+                'success' => false
+            ];
+        }
+
         // Todo - Store this metadata in another table
         $totalUsers = User::count();
 
-        $usersPosition = User::where('xp', '>', auth()->user()->xp)->count() + 1;
-
-        $user = Auth::user();
+        $usersPosition = User::where('xp', '>', $user->xp)->count() + 1;
 
         // Todo - Store this metadata in Redis
         $totalPhotosAllUsers = Photo::count();
@@ -151,6 +169,7 @@ class ProfileController extends Controller
         $requiredXp = $nextLevelXp - $user->xp;
 
         return [
+            'success' => true,
             'totalUsers' => $totalUsers,
             'usersPosition' => $usersPosition,
             'tagPercent' => $tagPercent,
