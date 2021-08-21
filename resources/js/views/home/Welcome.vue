@@ -5,9 +5,12 @@
             <!-- Title, Subtitle, App Icons -->
             <div class="columns c-1">
                 <div class="column is-half">
-                    <h1 class="main-title">
-                        {{ $t('home.welcome.plastic-pollution-out-of-control') }}.
-                    </h1>
+                    <transition name="slide-fade-left" mode="out-in">
+                        <h1 class="main-title"
+                            :key="activeHeading.title"
+                            v-html="activeHeading.title"
+                        ></h1>.
+                    </transition>
                     <h2 class="subtitle is-3 home-img-padding">
                         {{ $t('home.welcome.help-us') }}.
                     </h2>
@@ -31,7 +34,13 @@
                 </div>
 
                 <div class="column is-half">
-                    <img src="/assets/plastic_bottles.jpg" />
+                    <transition name="slide-fade-right" mode="out-in">
+                        <img
+                            :key="activeHeading.title"
+                            :src="activeHeading.img"
+                            :alt="activeHeading.title"
+                        />
+                    </transition>
                 </div>
             </div>
 
@@ -112,7 +121,6 @@
             </div>
 
             <!-- I want to help -->
-
         </div>
 
         <Footer />
@@ -125,7 +133,21 @@ import Footer from './Footer'
 export default {
     name: 'Welcome',
     components: { Footer },
+    data() {
+        return {
+            headings: [
+                { title: this.$t('home.welcome.plastic-pollution-out-of-control'), img: '/assets/plastic_bottles.jpg' },
+                { title: this.$t('home.welcome.fires-out-of-control'), img: '/assets/forest_fire.jpg' },
+                { title: this.$t('home.welcome.climate-change-out-of-control'), img: '/assets/climate_pollution.jpg' },
+            ],
+            activeHeadingIndex: 0
+        }
+    },
     computed: {
+
+        activeHeading() {
+            return this.headings[this.activeHeadingIndex]
+        },
 
         /**
          * Boolean to show or hide the modal
@@ -152,6 +174,11 @@ export default {
         {
             window.open('https://apps.apple.com/us/app/openlittermap/id1475982147', '_blank');
         }
+    },
+    mounted () {
+        setInterval(() => {
+            this.activeHeadingIndex = (this.activeHeadingIndex + 1) % this.headings.length;
+        }, 5000)
     }
 }
 </script>
@@ -242,6 +269,28 @@ export default {
         .why-container {
             margin-bottom: 5em;
         }
+    }
+
+    .slide-fade-left-enter-active {
+        transition: all .5s ease;
+    }
+    .slide-fade-left-leave-active {
+        transition: all .3s ease-out;
+    }
+    .slide-fade-left-enter, .slide-fade-left-leave-to {
+        transform: translateX(-100px);
+        opacity: 0;
+    }
+
+    .slide-fade-right-enter-active {
+        transition: all .5s ease;
+    }
+    .slide-fade-right-leave-active {
+        transition: all .3s ease-out;
+    }
+    .slide-fade-right-enter, .slide-fade-right-leave-to {
+        transform: translateX(100px);
+        opacity: 0;
     }
 
 </style>

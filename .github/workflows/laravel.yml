@@ -1,0 +1,94 @@
+name: Laravel
+
+on:
+  push:
+    branches: [ master, staging ]
+  pull_request:
+    branches: [ master, staging ]
+
+jobs:
+  laravel-tests:
+
+    runs-on: ubuntu-latest
+    
+    env:
+      APP_ENV: testing
+      DB_DATABASE: olm_test
+      DB_USERNAME: root
+      DB_PASSWORD: password
+      BROADCAST_DRIVER: log
+      CACHE_DRIVER: array
+      QUEUE_CONNECTION: sync
+      SESSION_DRIVER: array   
+      AWS_KEY: minioadmin
+      AWS_SECRET: minioadmin
+      AWS_REGION: us-east-1
+      AWS_BUCKET: olm-public
+      AWS_ENDPOINT: http://127.0.0.1:9000
+      x500_AWS_KEY: minioadmin
+      x500_AWS_SECRET: minioadmin
+      x500_AWS_REGION: us-east-1
+      x500_AWS_BUCKET: olm-public-bbox
+      x500_AWS_ENDPOINT: http://127.0.0.1:9000
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: false
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: olm_test
+        ports:
+          - 3306/tcp
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+      redis:
+        image: redis
+        ports:
+          - 6379/tcp
+        options: --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+    - uses: shivammathur/setup-php@15c43e89cdef867065b0213be354c2841860869e
+      with:
+        php-version: '7.3'
+        extensions: mbstring, dom, fileinfo, mysql
+        # coverage: xdebug #optional
+    - uses: actions/checkout@v2
+    - name: Start mysql service
+      run: sudo /etc/init.d/mysql start
+    - name: Setup minio
+      run: |
+          docker run -d -p 9000:9000 --name minio \
+                     -e "MINIO_ACCESS_KEY=minioadmin" \
+                     -e "MINIO_SECRET_KEY=minioadmin" \
+                     -v /tmp/data:/data \
+                     -v /tmp/config:/root/.minio \
+                     minio/minio server /data
+
+          export AWS_ACCESS_KEY_ID=minioadmin
+          export AWS_SECRET_ACCESS_KEY=minioadmin
+          export AWS_EC2_METADATA_DISABLED=true
+
+          aws --endpoint-url http://127.0.0.1:9000/ s3 mb s3://olm-public
+          aws --endpoint-url http://127.0.0.1:9000/ s3 mb s3://olm-public-bbox
+    - name: Copy .env
+      run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+    - name: Install Dependencies
+      run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+    - name: Generate key
+      run: php artisan key:generate
+    - name: Install Passport
+      run: php artisan passport:keys
+    - name: Clear Config
+      run: php artisan config:clear
+    - name: Run Migration
+      run: php artisan migrate -v
+      env:
+          DB_PORT: ${{ job.services.mysql.ports['3306'] }}
+          REDIS_PORT: ${{ job.services.redis.ports['6379'] }}
+    - name: Directory Permissions
+      run: chmod -R 777 storage bootstrap/cache
+    - name: Execute tests (Unit and Feature tests) via PHPUnit
+      run: vendor/bin/phpunit # --coverage-text
+      env:
+          DB_PORT: ${{ job.services.mysql.ports['3306'] }}
+          REDIS_PORT: ${{ job.services.redis.ports['6379'] }}
