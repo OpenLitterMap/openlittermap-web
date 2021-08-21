@@ -13,7 +13,7 @@
 
             <div class="column pt3 mobile-teams-padding" style="background-color: #edf1f4;">
                 <p v-if="loading">{{ $t('common.loading') }}</p>
-            
+
                 <component v-else :is="type" />
             </div>
         </div>
@@ -94,7 +94,7 @@ export default {
 }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 
     @import '../../styles/variables.scss';
 

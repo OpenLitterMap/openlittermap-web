@@ -1,233 +1,147 @@
 <template>
-	<div class="sidebar-menu">
-		<transition-group name="list">
-			<span v-for="event in events" :key="getKey(event)" class="list-item">
-
-                <div v-if="event.type === 'image'" class="event" style="background-color: #88d267;">
-                    <aside class="grid-img">
-                        <img v-if="event.countryCode" :src="countryFlag(event.countryCode)" width="35" />
-
-                        <i v-else class="fa fa-image" />
-					</aside>
-					<div class="grid-main">
-						<strong>New image</strong>
-						<br>
-						<i class="event-subtitle city-name">{{ event.city }}, {{ event.state }}</i>
-						<p class="event-subtitle">{{ event.country }}</p>
-
-                        <p v-show="event.teamName">By Team: <strong>{{ event.teamName }}</strong></p>
-					</div>
-				</div>
-
-				<div v-else-if="event.type === 'country'" class="event" style="background-color: #4bb0e0;">
-					<aside class="grid-img">
-						<i class="fa fa-flag" />
-					</aside>
-					<div class="grid-main">
-						<strong>New Country</strong>
-						<p>Say hello to <i>{{ event.country }}</i></p>
-					</div>
-				</div>
-
-				<div v-else-if="event.type === 'state'" class="event" style="background-color: #4bb0e0;">
-					<aside class="grid-img">
-						<i class="fa fa-flag" />
-					</aside>
-					<div class="grid-main">
-						<strong>New State</strong>
-						<p>Say hello to <i>{{ event.state }}</i></p>
-					</div>
-				</div>
-
-				<div v-else-if="event.type === 'city'" class="event" style="background-color: #4bb0e0;">
-					<aside class="grid-img">
-						<i class="fa fa-flag" />
-					</aside>
-					<div class="grid-main">
-						<strong>New City</strong>
-						<p>Say hello to <i>{{ event.city }}</i></p>
-					</div>
-				</div>
-
-				<div v-else-if="event.type === 'new-user'" class="event" style="background-color: #f1c40f;">
-					<aside class="grid-img">
-						<i class="fa fa-user" />
-					</aside>
-					<div class="grid-main">
-						<p class="new-user-text-wide">A new user has signed up!</p>
-					</div>
-				</div>
-
-                <div v-else-if="event.type === 'team-created'" class="event" style="background-color: #e256fff0;">
-					<aside class="grid-img">
-						<i class="fa fa-users" />
-					</aside>
-					<div class="grid-main">
-						<p>A new Team has been created!</p>
-                        <i>Say hello to <strong>{{ event.name }}</strong>!</i>
-					</div>
-				</div>
-
-                <div v-else-if="event.type === 'littercoin-mined'" class="event" style="background-color: #e256fff0;">
-					<aside class="grid-img">
-						<img src="/assets/icons/mining.png" class="ltr-icon" />
-					</aside>
-					<div class="grid-main">
-						<p>A Littercoin has been mined!</p>
-                        <i>Reason: <span class="ltr-strong">{{ getLittercoinReason(event.reason) }}</span></i>
-					</div>
-				</div>
-
-				<div v-else />
+	<div class="sidebar-menu scrollbar-hidden">
+		<transition-group name="list" mode="out-in">
+			<span
+                v-for="(event, index) in events"
+                :key="event.id"
+                class="list-item"
+            >
+                <component
+                    :is="event.type"
+                    :country="event.country"
+                    :country-code="event.countryCode"
+                    :state="event.state"
+                    :city="event.city"
+                    :team-name="event.teamName"
+                    :reason="event.reason"
+                    @click="removeEvent(index)"
+                ></component>
 			</span>
 		</transition-group>
 	</div>
 </template>
 
 <script>
-import Echo from 'laravel-echo'
-import Pusher from 'pusher-js'
+import ImageUploaded from './Notifications/ImageUploaded';
+import NewCountryAdded from './Notifications/NewCountryAdded';
+import NewStateAdded from './Notifications/NewStateAdded';
+import NewCityAdded from './Notifications/NewCityAdded';
+import UserSignedUp from './Notifications/UserSignedUp';
+import TeamCreated from './Notifications/TeamCreated';
+import LittercoinMined from './Notifications/LittercoinMined';
 
 export default {
 	name: 'live-events',
-	channel: 'main',
-	echo: {
-	    'ImageUploaded': (payload, vm) => {
-
-	        document.title = "OpenLitterMap (" + (vm.events.length + 1) + ")";
-
-			vm.events.unshift({
-				type: 'image',
-				city: payload.city,
-				state: payload.state,
-				country: payload.country,
-				imageName: payload.imageName,
+    components: {
+	    LittercoinMined,
+        TeamCreated,
+        UserSignedUp,
+        NewCityAdded,
+        NewStateAdded,
+        NewCountryAdded,
+        ImageUploaded
+    },
+    channel: 'main',
+    echo: {
+        'ImageUploaded': (payload, vm) => {
+            vm.events.unshift({
+                id: new Date().getTime(),
+                type: 'ImageUploaded',
+                city: payload.city,
+                state: payload.state,
+                country: payload.country,
+                imageName: payload.imageName,
                 teamName: payload.teamName,
                 countryCode: payload.countryCode
-			});
-		},
-		'NewCountryAdded': (payload, vm) => {
-
-            document.title = "OpenLitterMap (" + (vm.events.length + 1) + ")";
-
-            vm.events.unshift({
-				type: 'country',
-				country: payload.country,
-				countryId: payload.countryId
-			})
-		},
-		'NewStateAdded': (payload, vm) => {
-
-            document.title = "OpenLitterMap (" + (vm.events.length + 1) + ")";
-
-            vm.events.unshift({
-				type: 'state',
-				state: payload.state,
-				stateId: payload.stateId
-			})
-		},
-		'NewCityAdded': (payload, vm) => {
-
-            document.title = "OpenLitterMap (" + (vm.events.length + 1) + ")";
-
-            vm.events.unshift({
-				type: 'city',
-				city: payload.city,
-				cityId: payload.cityId
-			})
-		},
-		'UserSignedUp': (payload, vm) => {
-
-            document.title = "OpenLitterMap (" + (vm.events.length + 1) + ")";
-
-            vm.events.unshift({
-				type: 'new-user',
-				now: payload.now
-			})
-		},
-        'TeamCreated': (payload, vm) => {
-
-            document.title = "OpenLitterMap (" + (vm.events.length + 1) + ")";
-
-            vm.events.unshift({
-                type: 'team-created',
-                name: payload.name
             });
+
+            vm.updateDocumentTitle();
+        },
+        'NewCountryAdded': (payload, vm) => {
+            vm.events.unshift({
+                id: new Date().getTime(),
+                type: 'NewCountryAdded',
+                country: payload.country,
+                countryId: payload.countryId
+            });
+
+            vm.updateDocumentTitle();
+        },
+        'NewStateAdded': (payload, vm) => {
+            vm.events.unshift({
+                id: new Date().getTime(),
+                type: 'NewStateAdded',
+                state: payload.state,
+                stateId: payload.stateId
+            });
+
+            vm.updateDocumentTitle();
+        },
+        'NewCityAdded': (payload, vm) => {
+            vm.events.unshift({
+                id: new Date().getTime(),
+                type: 'NewCityAdded',
+                city: payload.city,
+                cityId: payload.cityId
+            });
+
+            vm.updateDocumentTitle();
+        },
+        'UserSignedUp': (payload, vm) => {
+            vm.events.unshift({
+                id: new Date().getTime(),
+                type: 'UserSignedUp',
+                now: payload.now
+            });
+
+            vm.updateDocumentTitle();
+        },
+        'TeamCreated': (payload, vm) => {
+            vm.events.unshift({
+                id: new Date().getTime(),
+                type: 'TeamCreated',
+                teamName: payload.teamName
+            });
+
+            vm.updateDocumentTitle();
         },
         '.App\\Events\\Littercoin\\LittercoinMined': (payload, vm) => {
-
-            document.title = "OpenLitterMap (" + (vm.events.length + 1) + ")";
-
             vm.events.unshift({
-                type: 'littercoin-mined',
+                id: new Date().getTime(),
+                type: 'LittercoinMined',
                 reason: payload.reason,
                 userId: payload.userId
             });
+
+            vm.updateDocumentTitle();
         }
-	},
+    },
 	data ()
     {
 		return {
-            dir: '/assets/icons/flags/',
 			events: []
 		};
 	},
 	methods: {
 
-	    /**
-         * Return location of country_flag.png
+        /**
+         * Updates the document title depending on the number of events
          */
-        countryFlag (iso)
-        {
-            if (iso)
-            {
-                iso = iso.toLowerCase();
-
-                return this.dir + iso + '.png';
-            }
-
-            return '';
+        updateDocumentTitle () {
+            document.title = this.events.length > 0
+                ? '(' + this.events.length + ') OpenLitterMap'
+                : 'OpenLitterMap';
         },
 
         /**
-         * Return a unique key for each event
+         * Removes the event at the specified index
+         * @param index
          */
-		getKey (event)
-		{
-			if (event.type === 'image') return event.type + event.imageName;
+        removeEvent (index) {
+            this.events.splice(index, 1);
 
-			else if (event.type === 'country') return event.type + event.countryId;
-
-			else if (event.type === 'state') return event.type + event.stateId;
-
-			else if (event.type === 'city') return event.type + event.cityId;
-
-			else if (event.type === 'new-user') return event.type + event.now;
-
-			else if (event.type === 'team-created') return event.type + event.name;
-
-			else if (event.type === 'littercoin-mined') return event.type + event.userId + event.now;
-
-			return this.events.length;
-		},
-
-        /**
-         * Using the LittercoinMined event key,
-         *
-         * Todo - return translated string
-         */
-        getLittercoinReason (reason)
-        {
-            if (reason === 'verified-box')
-            {
-                return '100 OpenLitterAI boxes verified';
-            }
-
-            else if (reason === '100-images-verified')
-            {
-                return '100 images verified';
-            }
-        }
+            this.updateDocumentTitle();
+        },
     }
 }
 </script>
@@ -235,78 +149,64 @@ export default {
 <style lang="scss">
 
     .list-enter-active, .list-leave-active {
-        transition: all 1s;
+        transition: all 1s ease;
+    }
+    .list-leave-active {
+        transition: all .3s ease;
     }
 
     .list-enter, .list-leave-to {
-        transform: translateX(30px);
+        transform: translateX(100px);
+        opacity: 0;
     }
 
     .list-item {
         display: grid;
     }
 
-    .list {
-        &-move {
-            transition: all 1s ease-in-out;
-        }
-    }
-
-    .new-user-text-narrow {
-        display: none;
-    }
-
     .sidebar-menu {
         position: absolute;
-        top: 0;
-        width: 20%;
-        margin-left: 80%;
-        display: table-row;
-        height: 100%;
+        top: 70px;
+        right: 10px;
+        width: 20rem;
+        max-height: 80vh;
         overflow-y: scroll;
-        padding-top: 30px;
         z-index: 999;
-        pointer-events: none;
     }
 
-    @media (max-width: 910px) {
-        .sidebar-menu {
-            width: 25%;
-            margin-left: 75%;
-        }
+    .grid-img {
+        padding: 16px;
     }
 
-    @media (max-width: 730px) {
-        .sidebar-menu {
-            width: 30%;
-            margin-left: 70%;
-        }
+    .grid-main {
+        padding-top: 10px;
+        padding-bottom: 10px;
     }
 
-    @media (max-width: 620px) {
+    @media (max-width: 1024px) {
         .sidebar-menu {
-            width: 35%;
-            margin-left: 65%;
+            width: 18rem;
+            font-size: 0.8rem;
         }
-    }
-
-    @media (max-width: 530px) {
-        .sidebar-menu {
-            width: 35%;
-            margin-left: 65%;
+        .grid-img {
+            padding: 12px;
         }
-        .city-name {
-            display: none;
+        .grid-main {
+            padding-top: 8px;
+            padding-bottom: 8px;
         }
     }
 
-    @media (max-width: 500px) {
+    @media (max-width: 768px) {
         .sidebar-menu {
-            width: 45%;
-            margin-left: 55%;
+            width: 16rem;
         }
-        .city-name {
-            display: none;
+    }
+
+    @media (max-width: 640px) {
+        .sidebar-menu {
+            width: 12rem;
+            max-height: 74vh;
         }
     }
 
@@ -315,44 +215,6 @@ export default {
         text-align: center;
         font-size: 24px;
         font-weight: 700;
-    }
-
-    .event {
-        border-radius: 6px;
-        width: 80%;
-        margin-left: 10%;
-        margin-bottom: 10px;
-        display: grid;
-        grid-template-columns: 1fr 3fr;
-    }
-
-    .event-title {
-        padding: 10px;
-    }
-
-    .event-subtitle {
-
-    }
-
-    .grid-img {
-        margin: auto;
-        font-size: 22px;
-        text-align: center;
-    }
-
-    .grid-main {
-        margin-top: auto;
-        margin-bottom: auto;
-        padding: 10px;
-    }
-
-    .ltr-icon {
-        max-width: 55%;
-        padding-top: 0.5em;
-    }
-
-    .ltr-strong {
-        font-weight: 600;
     }
 
 </style>
