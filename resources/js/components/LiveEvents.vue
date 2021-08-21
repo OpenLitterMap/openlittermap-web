@@ -148,11 +148,14 @@ export default {
 
 <style lang="scss">
 
-    .list-enter-active, .list-leave-active {
+    .list-enter-active {
         transition: all 1s ease;
     }
     .list-leave-active {
         transition: all .3s ease;
+    }
+    .list-move {
+        transition: transform 0.8s ease;
     }
 
     .list-enter, .list-leave-to {

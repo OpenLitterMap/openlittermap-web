@@ -4,14 +4,13 @@
         color="yellow"
     >
         <template v-slot:image>
-            <div class="flex items-center h-full">
+            <div class="-mt-2">
                 <i class="fa fa-user"/>
             </div>
         </template>
         <template v-slot:content>
-            <div class="flex items-center h-full">
-                <div>A new user has signed up!</div>
-            </div>
+            <strong>New User</strong>
+            <p>A new user has signed up!</p>
         </template>
     </GlobalMapNotification>
 </template>
@@ -36,5 +35,8 @@ export default {
 
 .h-full {
     height: 100%;
+}
+.-mt-2 {
+    margin-top: -2px;
 }
 </style>
