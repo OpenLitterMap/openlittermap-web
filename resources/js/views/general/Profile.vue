@@ -17,7 +17,9 @@
 
                 <div style="flex: 0.1;" />
 
-                <ProfileCalendar />
+                <ProfileCalendar
+
+                />
 
                 <ProfileTimeSeries />
 

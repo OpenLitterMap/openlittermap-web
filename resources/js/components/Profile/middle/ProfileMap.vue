@@ -14,13 +14,11 @@
                     </l-marker>
                 </v-marker-cluster>
             </l-map>
-
         </fullscreen>
     </div>
 </template>
 
 <!-- NOTE: This very similar to TeamMap.vue - We should combine them -->
-
 <script>
 import { LMap, LTileLayer, LMarker, LPopup } from 'vue2-leaflet';
 import Vue2LeafletMarkerCluster from 'vue2-leaflet-markercluster';
@@ -55,7 +53,6 @@ export default {
         };
     },
     computed: {
-
         /**
          * From backend api request
          */
@@ -65,7 +62,6 @@ export default {
         }
     },
     methods: {
-
         /**
          * Return html content for each popup
          *
@@ -91,7 +87,6 @@ export default {
             }
         },
 
-
         /**
          *
          */
@@ -106,9 +101,7 @@ export default {
         toggle ()
         {
             this.$refs['fullscreen'].toggle() // recommended
-        },
-
-
+        }
     }
 };
 </script>
@@ -116,8 +109,7 @@ export default {
 <style lang="scss">
 @import "~leaflet.markercluster/dist/MarkerCluster.css";
 @import "~leaflet.markercluster/dist/MarkerCluster.Default.css";
-
-    //@import '../../../styles/variables.scss';
+// @import '../../../styles/variables.scss';
 
     .profile-map-outer-container {
         height: 20em;

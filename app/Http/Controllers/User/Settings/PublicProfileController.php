@@ -20,7 +20,6 @@ class PublicProfileController extends Controller
      */
     public function index (string $username)
     {
-        // Todo - limit columns based on settings
         $user = User::select([
             'id',
             'username',
@@ -28,6 +27,9 @@ class PublicProfileController extends Controller
             'xp',
             'photos_per_month'
         ])
+        ->with(['settings' => function ($q) {
+            $q->select('id', 'user_id', 'public_profile_show_map', 'public_profile_download_my_data', 'show_public_profile');
+        }])
         ->where([
             'username' => $username
         ])->first();

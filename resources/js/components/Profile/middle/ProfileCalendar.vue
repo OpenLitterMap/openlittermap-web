@@ -34,7 +34,9 @@ import { FunctionalCalendar } from 'vue-functional-calendar';
 
 export default {
     name: 'ProfileCalendar',
-    components: { FunctionalCalendar },
+    components: {
+        FunctionalCalendar
+    },
     data ()
     {
         return {
