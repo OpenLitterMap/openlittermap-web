@@ -244,14 +244,16 @@ export const actions = {
             previous_tags: context.state.user.previous_tags,
         })
         .then(response => {
-            console.log('save_tagging_settings', response);
+            if (response.data.success) {
+                console.log('save_tagging_settings', response);
 
-            /* improve css */
-            Vue.$vToastify.success({
-                title,
-                body,
-                position: 'top-right'
-            });
+                /* improve css */
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                    position: 'top-right'
+             });
+         }
         })
         .catch(error => {
             console.log('error.save_tagging_settings', error);

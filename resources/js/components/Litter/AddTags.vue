@@ -576,7 +576,6 @@ export default {
          */
         async submit ()
         {
-            // this.previousTags = (this.$store.state.litter.tags[this.id] || {});
             this.processing = true;
 
             let action = '';

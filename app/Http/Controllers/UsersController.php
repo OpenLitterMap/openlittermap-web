@@ -355,6 +355,7 @@ class UsersController extends Controller
         $user->previous_tags = $request->previous_tags;
 
         $user->save();
+        return [ 'success' => true ];
     }
 
     /**
