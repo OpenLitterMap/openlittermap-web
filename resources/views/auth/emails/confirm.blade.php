@@ -348,7 +348,7 @@
 
                 {{-- Verify Your Email --}}
                 <tr>
-                    <td align="center" style="border-radius: 3px;" bgcolor="#2ecc71"><a href="https://openlittermap.com/confirm/email/{{$user->token}}" target="_blank" style="font-size: 16px; font-family: Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; color: #000000; text-decoration: none; border-radius: 3px; padding: 15px 25px; display: inline-block;" class="mobile-button">Verify Your Email Address and Log In &rarr;</a></td>
+                    <td align="center" style="border-radius: 3px;" bgcolor="#2ecc71"><a href="{{ route('confirm-email-token', $user->token) }}" target="_blank" style="font-size: 16px; font-family: Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; color: #000000; text-decoration: none; border-radius: 3px; padding: 15px 25px; display: inline-block;" class="mobile-button">Verify Your Email Address and Log In &rarr;</a></td>
                 </tr>
 
                 {{-- Slack and Community Info --}}

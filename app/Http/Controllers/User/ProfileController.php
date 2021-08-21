@@ -129,12 +129,12 @@ class ProfileController extends Controller
      */
     public function index ()
     {
+        $user = Auth::user();
+
         // Todo - Store this metadata in another table
         $totalUsers = User::count();
 
-        $usersPosition = User::where('xp', '>', auth()->user()->xp)->count() + 1;
-
-        $user = Auth::user();
+        $usersPosition = $user->position;
 
         // Todo - Store this metadata in Redis
         $totalPhotosAllUsers = Photo::count();

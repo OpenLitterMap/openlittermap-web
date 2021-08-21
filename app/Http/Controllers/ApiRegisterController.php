@@ -30,12 +30,9 @@ class ApiRegisterController extends Controller
 
         event(new Registered($user = $this->create($request->all())));
 
-        if (app()->environment('production'))
-        {
-            Mail::to($email)->send(new NewUserRegMail($user));
+        Mail::to($email)->send(new NewUserRegMail($user));
 
-            event(new UserSignedUp(now()));
-        }
+        event(new UserSignedUp(now()));
 
         return ['success' => 'Success! Your account has been created.'];
     }
@@ -43,7 +40,7 @@ class ApiRegisterController extends Controller
     protected function create (array $data)
     {
         return User::create([
-            'name' => 'default',
+            'name' => $data['name'] ?? 'default',
             'username' => $data['username'],
             'email' => $data['email'],
             'password' => $data['password'],
