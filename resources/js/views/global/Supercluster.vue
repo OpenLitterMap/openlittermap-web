@@ -125,7 +125,6 @@ function createPointGroups ()
 
     if (!pointsControllerShowing)
     {
-        /** 8. Create overlays toggle menu */
         const overlays = {
             Alcohol: new L.LayerGroup(),
             Brands: new L.LayerGroup(),
@@ -154,8 +153,8 @@ function onEachFeature (feature, layer)
 {
     if (feature.properties.cluster)
     {
-        layer.on('click', function (e) {
-
+        layer.on('click', function (e)
+        {
             const zoomTo = ((map.getZoom() + ZOOM_STEP) > MAX_ZOOM)
                 ? MAX_ZOOM
                 : (map.getZoom() + ZOOM_STEP);
@@ -212,6 +211,7 @@ function getActiveLayers ()
     pointsLayerController._layerControlInputs.forEach((lyr, index) => {
         if (lyr.checked)
         {
+            // temp fix to rename petsurprise from map to the dogshit table
             const name = (pointsLayerController._layers[index].name.toLowerCase() === 'petsurprise')
                 ? 'dogshit'
                 : pointsLayerController._layers[index].name.toLowerCase();
@@ -430,6 +430,10 @@ export default {
         display: flex;
         justify-content: center;
         border-radius: 20px;
+    }
+
+    .leaflet-control {
+        pointer-events: visiblePainted !important;
     }
 
 </style>
