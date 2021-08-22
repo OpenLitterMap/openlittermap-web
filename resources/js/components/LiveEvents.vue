@@ -15,7 +15,7 @@
                     :team-name="event.teamName"
                     :reason="event.reason"
                     @click="removeEvent(index)"
-                ></component>
+                />
 			</span>
 		</transition-group>
 	</div>
@@ -33,13 +33,13 @@ import LittercoinMined from './Notifications/LittercoinMined';
 export default {
 	name: 'live-events',
     components: {
-	    LittercoinMined,
-        TeamCreated,
         UserSignedUp,
+        ImageUploaded,
         NewCityAdded,
         NewStateAdded,
         NewCountryAdded,
-        ImageUploaded
+        TeamCreated,
+        LittercoinMined
     },
     channel: 'main',
     echo: {
@@ -123,36 +123,40 @@ export default {
 		};
 	},
 	methods: {
-
-        /**
-         * Updates the document title depending on the number of events
-         */
-        updateDocumentTitle () {
-            document.title = this.events.length > 0
-                ? '(' + this.events.length + ') OpenLitterMap'
-                : 'OpenLitterMap';
-        },
-
         /**
          * Removes the event at the specified index
          * @param index
          */
-        removeEvent (index) {
+        removeEvent (index)
+        {
             this.events.splice(index, 1);
 
             this.updateDocumentTitle();
         },
+
+        /**
+         * Updates the document title depending on the number of events
+         */
+        updateDocumentTitle ()
+        {
+            document.title = this.events.length > 0
+                ? '(' + this.events.length + ') OpenLitterMap'
+                : 'OpenLitterMap';
+        }
     }
 }
 </script>
 
 <style lang="scss">
 
-    .list-enter-active, .list-leave-active {
+    .list-enter-active {
         transition: all 1s ease;
     }
     .list-leave-active {
         transition: all .3s ease;
+    }
+    .list-move {
+        transition: transform 1s ease-in-out;
     }
 
     .list-enter, .list-leave-to {
