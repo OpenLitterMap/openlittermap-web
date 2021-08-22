@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\User;
 
+use App\Helpers\Get\User\GetUserDataHelper;
 use App\Level;
 use App\Models\Photo;
 use App\Models\User\User;
@@ -133,7 +134,6 @@ class ProfileController extends Controller
      * Gets:
      * - total number of users,
      * - users position
-     * To get the current position, we need to count how many users have more XP than current users
      *
      * @return array
      */
@@ -149,32 +149,19 @@ class ProfileController extends Controller
             ];
         }
 
-        // Todo - Store this metadata in another table
-        $totalUsers = User::count();
-
-        $usersPosition = User::where('xp', '>', $user->xp)->count() + 1;
-
-        // Todo - Store this metadata in Redis
-        $totalPhotosAllUsers = Photo::count();
-        // Todo - Store this metadata in Redis
-        $totalTagsAllUsers = Photo::sum('total_litter'); // this doesn't include brands
-
-        $usersTotalTags = $user->total_tags;
-
-        $photoPercent = ($user->total_images && $totalPhotosAllUsers) ? ($user->total_images / $totalPhotosAllUsers) : 0;
-        $tagPercent = ($usersTotalTags && $totalTagsAllUsers) ? ($usersTotalTags / $totalTagsAllUsers) : 0;
-
-        // XP needed to reach the next level
-        $nextLevelXp = Level::where('xp', '>=', $user->xp)->first()->xp;
-        $requiredXp = $nextLevelXp - $user->xp;
+        $userData = GetUserDataHelper::get(
+            $user->xp,
+            $user->total_tags,
+            $user->total_images
+        );
 
         return [
             'success' => true,
-            'totalUsers' => $totalUsers,
-            'usersPosition' => $usersPosition,
-            'tagPercent' => $tagPercent,
-            'photoPercent' => $photoPercent,
-            'requiredXp' => $requiredXp
+            'totalUsers' => $userData->totalUsers,
+            'usersPosition' => $userData->usersPosition,
+            'tagPercent' => $userData->tagPercent,
+            'photoPercent' => $userData->photoPercent,
+            'requiredXp' => $userData->requiredXp
         ];
     }
 }

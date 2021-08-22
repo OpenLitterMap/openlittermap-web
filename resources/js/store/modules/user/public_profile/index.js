@@ -1,7 +1,8 @@
 import { mutations } from './mutations';
 
 const state = {
-    publicProfile: null
+    publicProfile: null,
+    userData: null
 };
 
 export const public_profile = {

@@ -7,7 +7,7 @@
             <img src="/assets/icons/home/camera.png" />
 
             <div>
-                <p class="profile-stat">{{ userPhotoCount }}</p>
+                <p class="profile-stat">{{ this.photosCount }}</p>
                 <p class="profile-text">{{ $t('profile.dashboard.photos') }}</p>
             </div>
         </div>
@@ -16,7 +16,7 @@
             <img src="/assets/icons/home/phone.png" />
 
             <div>
-                <p class="profile-stat">{{ userTagsCount }}</p>
+                <p class="profile-stat">{{ this.tagsCount }}</p>
                 <p class="profile-text">{{ $t('profile.dashboard.tags') }}</p>
             </div>
         </div>
@@ -40,47 +40,12 @@
 <script>
 export default {
     name: 'ProfileStats',
-    computed: {
-        /**
-         *
-         */
-        photoPercent ()
-        {
-            return this.user.photoPercent;
-        },
-
-        /**
-         *
-         */
-        tagPercent ()
-        {
-            return this.user.tagPercent;
-        },
-
-        /**
-         * Total number of tags the user has submitted
-         */
-        userTagsCount ()
-        {
-            return this.user.user.total_tags;
-        },
-
-        /**
-         * Total number of photos the user has uploaded
-         */
-        userPhotoCount ()
-        {
-            return this.user.user.total_images;
-        },
-
-        /**
-         * The currently active user
-         */
-        user ()
-        {
-            return this.$store.state.user;
-        }
-    }
+    props: [
+        'photoPercent',
+        'tagPercent',
+        'tagsCount',
+        'photosCount'
+    ]
 };
 </script>
 

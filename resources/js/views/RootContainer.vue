@@ -25,7 +25,8 @@ export default {
         'verified',
         'unsub',
         'username',
-        'publicProfile'
+        'publicProfile',
+        'userData'
     ],
     components: {
         Nav,
@@ -81,7 +82,13 @@ export default {
             const publicProfile = JSON.parse(this.publicProfile);
             console.log({ publicProfile });
 
-            this.$store.commit('userByUsername', publicProfile);
+            const userData = JSON.parse(this.userData);
+            console.log({ userData });
+
+            this.$store.commit('userByUsername', {
+                publicProfile,
+                userData
+            });
         }
     },
     computed: {

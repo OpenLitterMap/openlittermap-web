@@ -7,11 +7,22 @@
         <ProfileMap />
 
         <div class="main-profile-container">
-            <ProfilePosition />
+            <ProfilePosition
+                :position="this.userData.usersPosition"
+            />
 
-            <ProfileStats />
+            <ProfileStats
+                :photo-percent="this.userData.photoPercent"
+                :photos-count="this.user.photos_count"
+                :tag-percent="this.userData.tagPercent"
+                :tags-count="this.user.total_tags"
+            />
 
-            <ProfileNextTarget />
+            <ProfileNextTarget
+                :level="this.user.level"
+                :xp="this.user.xp"
+                :xp-needed="this.userData.requiredXp"
+            />
 
             <div class="flex">
 
@@ -21,7 +32,9 @@
 
                 />
 
-                <ProfileTimeSeries />
+                <ProfileTimeSeries
+                    :ppm="this.user.photos_per_month"
+                />
 
                 <div style="flex: 0.25" />
 
@@ -68,9 +81,8 @@ export default {
         if (!this.publicProfile)
         {
             await this.$store.dispatch('GET_CURRENT_USER');
+            await this.$store.dispatch('GET_USERS_PROFILE_DATA');
         }
-
-        await this.$store.dispatch('GET_USERS_PROFILE_DATA');
     },
     computed: {
         /**
@@ -91,6 +103,14 @@ export default {
             return (this.publicProfile)
                 ? this.publicProfile
                 : this.$store.state.user.user;
+        },
+
+        /**
+         * Extra user data that is loaded separately to main user
+         */
+        userData ()
+        {
+            return this.$store.state.user.public_profile.userData;
         }
     }
 }

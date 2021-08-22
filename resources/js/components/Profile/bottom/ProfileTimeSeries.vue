@@ -11,17 +11,12 @@ import TimeSeriesLine from '../../Charts/TimeSeriesLine';
 
 export default {
     name: 'ProfileTimeSeries',
-    components: { TimeSeriesLine },
-    computed: {
-
-        /**
-         * The users photos per month, as a string. Saved as metadata because CPU.
-         */
-        ppm ()
-        {
-            return this.$store.state.user.user.photos_per_month;
-        }
-    }
+    components: {
+        TimeSeriesLine
+    },
+    props: [
+        'ppm'
+    ]
 };
 </script>
 

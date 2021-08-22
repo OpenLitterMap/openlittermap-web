@@ -95,7 +95,7 @@ Route::post('submit', 'PhotosController@store');
 // Tag litter to an image
 Route::get('tag', 'HomeController@index');
 
-// The users profile
+// The authenticated users profile
 Route::get('profile', 'HomeController@index');
 
 // Get unverified paginated photos for tagging
@@ -123,6 +123,11 @@ Route::post('/user/profile/photos/tags/create', 'User\UserPhotoController@create
 
 // Delete selected photos
 Route::post('/user/profile/photos/delete', 'User\UserPhotoController@destroy');
+
+// The users profile. Used for Authenticated User and PublicProfile
+Route::get('/user/profile/index', 'User\ProfileController@index');
+Route::get('/user/profile/map', 'User\ProfileController@geojson');
+Route::get('/user/profile/download', 'User\ProfileController@download');
 
 /**
  * USER SETTINGS
@@ -200,11 +205,6 @@ Route::post('/teams/active', 'Teams\TeamsController@active');
 Route::post('/teams/settings', 'Teams\TeamsSettingsController@index');
 Route::post('/teams/download', 'Teams\TeamsController@download');
 Route::post('/teams/leaderboard/visibility', 'Teams\TeamsLeaderboardController@toggle');
-
-// The users profile. Used for Authenticated User and PublicProfile
-Route::get('/user/profile/index', 'User\ProfileController@index');
-Route::get('/user/profile/map', 'User\ProfileController@geojson');
-Route::get('/user/profile/download', 'User\ProfileController@download');
 
 // Unsubscribe via email (user not authenticated)
 Route::get('/emails/unsubscribe/{token}', 'EmailSubController@unsubEmail');

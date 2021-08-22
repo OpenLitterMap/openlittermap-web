@@ -4,6 +4,7 @@ export const mutations = {
      */
     userByUsername (state, payload)
     {
-        state.publicProfile = payload;
+        state.publicProfile = payload.publicProfile;
+        state.userData = payload.userData;
     }
 }

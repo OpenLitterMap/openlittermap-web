@@ -7,5 +7,6 @@
         unsub="{{ $unsub }}"
         username="{{ isset($username) ? $username : false }}"
         public-profile="{{ isset($publicProfile) ? $publicProfile : null }}"
+        user-data="{{ isset($userData) ? $userData : null }}"
     ></Root-Container>
 @stop

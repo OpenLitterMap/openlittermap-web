@@ -9,37 +9,16 @@ import moment from 'moment';
 
 export default {
     name: 'ProfilePosition',
+    props: [
+        'position'
+    ],
     computed: {
-        /**
-         * The users name
-         */
-        name ()
-        {
-            return this.user.user.name;
-        },
-
-        /**
-         * The total number of accounts on OLM
-         */
-        totalUsers ()
-        {
-            return this.user.totalUsers;
-        },
-
         /**
          * The users position out of all users, based on their XP
          */
         usersPosition ()
         {
-            return moment.localeData().ordinal(this.user.position);
-        },
-
-        /**
-         * The currently active user
-         */
-        user ()
-        {
-            return this.$store.state.user;
+            return moment.localeData().ordinal(this.position);
         }
     }
 };

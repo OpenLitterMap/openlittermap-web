@@ -4,6 +4,8 @@ namespace App\Http\Controllers\User\Settings;
 
 use App\Models\User\User;
 use App\Models\User\UserSettings;
+use App\Helpers\Get\User\GetUserDataHelper;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -38,6 +40,13 @@ class PublicProfileController extends Controller
             return redirect('/');
         }
 
+        // Extra user data
+        $userData = GetUserDataHelper::get(
+            $user->xp,
+            $user->total_tags,
+            $user->total_images
+        );
+
         return view('root')->with([
             'auth' => Auth::check(),
             'success' => true,
@@ -45,12 +54,13 @@ class PublicProfileController extends Controller
             'verified' => null,
             'unsub' => null,
             'username' => $username,
-            'publicProfile' => $user
+            'publicProfile' => $user,
+            'userData' => json_encode($userData)
         ]);
     }
 
     /**
-     * Change the private status of a users Public Profile
+     * Change the privacy status of a users Public Profile setting
      *
      * @param Request $request
      *
