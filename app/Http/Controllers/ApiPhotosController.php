@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Photos\DeletePhotoAction;
 use App\Actions\Photos\MakeImageAction;
 use App\Actions\Locations\ReverseGeocodeLocationAction;
 use App\Actions\Photos\UploadPhotoAction;
+use App\Events\ImageDeleted;
+use App\Models\Photo;
 use GeoHash;
 use Carbon\Carbon;
 
@@ -19,6 +22,7 @@ use App\Helpers\Post\UploadHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Log;
 
 class ApiPhotosController extends Controller
 {
@@ -28,6 +32,8 @@ class ApiPhotosController extends Controller
     protected $uploadHelper;
     /** @var UploadPhotoAction */
     private $uploadPhotoAction;
+    /** @var DeletePhotoAction */
+    private $deletePhotoAction;
     /** @var MakeImageAction */
     private $makeImageAction;
     /** @var ReverseGeocodeLocationAction */
@@ -37,20 +43,23 @@ class ApiPhotosController extends Controller
      * ApiPhotosController constructor
      * Apply middleware to all of these routes
      *
-     * @param UploadHelper $uploadHelper`
+     * @param UploadHelper $uploadHelper
      * @param UploadPhotoAction $uploadPhotoAction
+     * @param DeletePhotoAction $deletePhotoAction
      * @param MakeImageAction $makeImageAction
      * @param ReverseGeocodeLocationAction $reverseGeocodeAction
      */
     public function __construct (
         UploadHelper $uploadHelper,
         UploadPhotoAction $uploadPhotoAction,
+        DeletePhotoAction $deletePhotoAction,
         MakeImageAction $makeImageAction,
         ReverseGeocodeLocationAction $reverseGeocodeAction
     )
     {
         $this->uploadHelper = $uploadHelper;
         $this->uploadPhotoAction = $uploadPhotoAction;
+        $this->deletePhotoAction = $deletePhotoAction;
         $this->makeImageAction = $makeImageAction;
         $this->reverseGeocodeAction = $reverseGeocodeAction;
 
@@ -100,7 +109,7 @@ class ApiPhotosController extends Controller
 
         if (!$user->has_uploaded) $user->has_uploaded = 1;
 
-        \Log::channel('photos')->info([
+        Log::channel('photos')->info([
             'app_upload' => $request->all(),
             'user_id' => $user['id']
         ]);
@@ -216,7 +225,7 @@ class ApiPhotosController extends Controller
     {
 		$userId = Auth::guard('api')->user()->id;
 
-        \Log::channel('tags')->info([
+        Log::channel('tags')->info([
             'dynamicUpdate' => 'mobile',
             'request' => $request->all()
         ]);
@@ -237,7 +246,7 @@ class ApiPhotosController extends Controller
     {
         $userId = Auth::guard('api')->user()->id;
 
-        \Log::channel('tags')->info([
+        Log::channel('tags')->info([
             'add_tags' => 'mobile',
             'request' => $request->all()
         ]);
@@ -259,5 +268,36 @@ class ApiPhotosController extends Controller
         if ($photos) return ['photos' => $photos];
 
         return ['photos' => 'none'];
+    }
+
+    /**
+     * Delete an image
+     */
+    public function deleteImage(Request $request)
+    {
+        $user = Auth::guard('api')->user();
+
+        $photo = Photo::findOrFail($request->photoId);
+
+        if ($user->id !== $photo->user_id) {
+            abort(403);
+        }
+
+        $this->deletePhotoAction->run($photo);
+
+        $photo->delete();
+
+        $user->xp = $user->xp > 0 ? $user->xp - 1 : 0;
+        $user->total_images = $user->total_images > 0 ? $user->total_images - 1 : 0;
+        $user->save();
+
+        event(new ImageDeleted(
+            $user,
+            $photo->country_id,
+            $photo->state_id,
+            $photo->city_id
+        ));
+
+        return ['success' => true];
     }
 }
