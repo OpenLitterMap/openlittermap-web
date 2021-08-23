@@ -21,7 +21,8 @@ class UserSeeder extends Seeder
             'name' => 'superadmin',
             'verified' => 1,
             'can_bbox'=> 1,
-            'verification_required' => 0
+            'verification_required' => 0,
+            'remaining_teams' => 10
         ]);
         $user->assignRole('superadmin');
 
@@ -31,7 +32,8 @@ class UserSeeder extends Seeder
             'name' => 'admin',
             'verified' => 1,
             'can_bbox'=> 1,
-            'verification_required' => 0
+            'verification_required' => 0,
+            'remaining_teams' => 10
         ]);
         $user->assignRole('admin');
 
@@ -41,7 +43,8 @@ class UserSeeder extends Seeder
             'name' => 'helper',
             'verified' => 1,
             'can_bbox'=> 1,
-            'verification_required' => 0
+            'verification_required' => 0,
+            'remaining_teams' => 1
         ]);
         $user->assignRole('helper');
     }

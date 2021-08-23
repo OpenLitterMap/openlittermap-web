@@ -2,9 +2,9 @@
     <div class="ctc">
         <h1 class="title is-2">{{ $t('teams.dashboard.create-a-team') }}</h1>
 
-        <p class="mb2">{{ $t('teams.create.allowed-to-create', { teams:  this.remaining } ) }}</p>
+        <p class="mb2">{{ $t('teams.create.allowed-to-create', { teams:  this.remaining } ) }}.</p>
 
-        <div class="columns mt3">
+        <div v-if="remaining" class="columns mt3">
 
             <div class="column is-one-third">
                 <p class="mb1">{{ $t('teams.create.what-kind-of-team') }}</p>
@@ -23,37 +23,42 @@
                         </div>
                     </div>
 
-                    <label for="name">{{ $t('teams.create.team-name') }}</label>
-                    <span
-                        class="is-danger"
-                        v-if="errorExists('name')"
-                        v-text="getFirstError('name')"
-                    />
-                    <input
-                        class="input mb2"
-                        name="name"
-                        :placeholder="$t('teams.create.my-awesome-team-placeholder')"
-                        v-model="name"
-                        type="text"
-                        required
-                        @keydown="clearError('name')"
-                    />
+                    <div class="control pb2">
+                        <label for="name">{{ $t('teams.create.team-name') }}</label>
+                        <input
+                            class="input"
+                            name="name"
+                            :placeholder="$t('teams.create.my-awesome-team-placeholder')"
+                            v-model="name"
+                            type="text"
+                            required
+                            @keydown="clearError('name')"
+                        />
+                        <p
+                            class="is-danger"
+                            v-if="errorExists('name')"
+                            v-text="getFirstError('name')"
+                        />
+                    </div>
 
-                    <label for="identifier">{{ $t('teams.create.unique-team-id') }}</label>
-                    <p>{{ $t('teams.create.id-to-join-team') }}</p>
-                    <span
-                        class="is-danger"
-                        v-if="errorExists('identifier')"
-                        v-text="getFirstError('identifier')"
-                    />
-                    <input
-                        class="input mb2"
-                        name="identifier"
-                        placeholder="Awesome2020"
-                        required
-                        v-model="identifier"
-                        @keydown="clearError('identifier')"
-                    />
+                    <div class="control pb2">
+                        <label for="identifier">{{ $t('teams.create.unique-team-id') }}</label>
+                        <br>
+                        <small>{{ $t('teams.create.id-to-join-team') }}</small>
+                        <input
+                            class="input"
+                            name="identifier"
+                            placeholder="Awesome2021"
+                            required
+                            v-model="identifier"
+                            @keydown="clearError('identifier')"
+                        />
+                        <p
+                            class="is-danger"
+                            v-if="errorExists('identifier')"
+                            v-text="getFirstError('identifier')"
+                        />
+                    </div>
 
                     <!-- Todo - Checkbox -->
                     <!-- Allow people to join your team automatically? -->
@@ -149,6 +154,9 @@ export default {
             });
 
             this.processing = false;
+
+            this.name = "";
+            this.identifier = "";
         },
 
         /**
