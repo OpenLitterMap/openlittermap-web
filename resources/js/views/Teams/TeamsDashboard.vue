@@ -82,7 +82,7 @@ export default {
          */
         litter_count ()
         {
-            return this.$store.state.teams.allTeams.litter_count;
+            return this.$store.state.teams.allTeams.litter_count ?? 0;
         },
 
         /**
@@ -90,7 +90,7 @@ export default {
          */
         photos_count ()
         {
-            return this.$store.state.teams.allTeams.photos_count;
+            return this.$store.state.teams.allTeams.photos_count ?? 0;
         },
 
         /**
@@ -98,7 +98,7 @@ export default {
          */
         members_count ()
         {
-            return this.$store.state.teams.allTeams.members_count;
+            return this.$store.state.teams.allTeams.members_count ?? 0;
         },
 
         /**

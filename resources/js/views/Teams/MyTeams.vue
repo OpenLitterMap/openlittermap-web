@@ -166,9 +166,7 @@ export default {
 
             if (! this.viewTeam) return true;
 
-            if (this.viewTeam === this.activeTeam) return true;
-
-            return false;
+            return this.viewTeam === this.activeTeam;
         },
 
         /**
@@ -186,7 +184,7 @@ export default {
         {
             const team = this.teams.find(team => team.id === this.viewTeam);
 
-            return team.leader === this.user.id;
+            return team && team.leader === this.user.id;
         },
 
         /**
