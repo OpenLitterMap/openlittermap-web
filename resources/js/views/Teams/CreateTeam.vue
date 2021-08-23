@@ -133,6 +133,14 @@ export default {
     methods: {
 
         /**
+         * Clear all errors
+         */
+        clearErrors ()
+        {
+            this.$store.commit('teamErrors', []);
+        },
+
+        /**
          * Clear an error with this key
          */
         clearError (key)
@@ -174,6 +182,9 @@ export default {
         {
             return this.errors[key][0];
         }
+    },
+    mounted () {
+        this.clearErrors();
     }
 }
 </script>
