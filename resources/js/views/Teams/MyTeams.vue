@@ -17,9 +17,9 @@
                     <p>{{ $t('teams.myteams.leader-of-team') }}</p>
                 </div>
 
-                <div v-if="teams">
+                <div v-if="teams" style="overflow-x: scroll">
                     <div class="flex mb1">
-                        <select v-model="viewTeam" class="input mtba" style="max-width: 30em;" @change="changeViewedTeam">
+                        <select v-model="viewTeam" class="input mtba" style="max-width: 30em; min-width: 5em;" @change="changeViewedTeam">
                             <option :selected="! viewTeam" :value="null" disabled>{{ $t('teams.myteams.join-team') }}</option>
                             <option v-for="team in teams" :value="team.id">{{ team.name }}</option>
                         </select>
@@ -59,7 +59,7 @@
                                 </td>
                                 <td>{{ member.name ? member.name : '-'}}</td>
                                 <td>{{ member.username ? member.username: '-' }}</td>
-                                <td style="width: 9em;">
+                                <td style="width: 9em;white-space: nowrap">
                                     <span :class="checkActiveTeam(member.active_team)">
                                         <i :class="icon(member.active_team)" />
                                         {{ checkActiveTeamText(member.active_team) }}
@@ -116,13 +116,13 @@ export default {
             leaderboardProcessing: false
         };
     },
-    async created ()
+    async mounted ()
     {
         this.loading = true;
 
-        // if (this.teams.length === 0) await this.$store.dispatch('GET_USERS_TEAMS');
+        await this.$store.dispatch('GET_USERS_TEAMS');
 
-        if (this.user.active_team)
+        if (this.activeTeam)
         {
             this.viewTeam = this.activeTeam;
 
@@ -166,9 +166,7 @@ export default {
 
             if (! this.viewTeam) return true;
 
-            if (this.viewTeam === this.activeTeam) return true;
-
-            return false;
+            return this.viewTeam === this.activeTeam;
         },
 
         /**
@@ -186,7 +184,7 @@ export default {
         {
             const team = this.teams.find(team => team.id === this.viewTeam);
 
-            return team.leader === this.user.id;
+            return team && team.leader === this.user.id;
         },
 
         /**
@@ -254,6 +252,8 @@ export default {
             await this.$store.dispatch('CHANGE_ACTIVE_TEAM', this.viewTeam);
 
             this.viewTeam = this.activeTeam;
+
+            await this.changeViewedTeam();
 
             this.processing = false;
         },

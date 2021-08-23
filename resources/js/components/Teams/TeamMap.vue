@@ -2,7 +2,7 @@
     <div class="team-map-container">
         <l-map :zoom="zoom" :center="center" :minZoom="1">
             <l-tile-layer :url="url" :attribution="attribution" />
-            <v-marker-cluster v-if="geojson.length > 0">
+            <v-marker-cluster v-if="geojson.length">
                 <l-marker v-for="i in geojson" :lat-lng="i.properties.latlng" :key="i.properties.id">
                     <l-popup :content="content(i)" :options="options" />
                 </l-marker>
@@ -47,7 +47,9 @@ export default {
          */
         geojson ()
         {
-            return this.$store.state.teams.geojson.features;
+            return this.$store.state.teams.geojson
+                ? this.$store.state.teams.geojson.features
+                : [];
         }
     },
     methods: {
