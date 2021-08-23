@@ -116,13 +116,13 @@ export default {
             leaderboardProcessing: false
         };
     },
-    async created ()
+    async mounted ()
     {
         this.loading = true;
 
-        // if (this.teams.length === 0) await this.$store.dispatch('GET_USERS_TEAMS');
+        await this.$store.dispatch('GET_USERS_TEAMS');
 
-        if (this.user.active_team)
+        if (this.activeTeam)
         {
             this.viewTeam = this.activeTeam;
 
