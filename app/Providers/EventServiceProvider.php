@@ -11,6 +11,8 @@ use App\Listeners\Locations\AddLocationContributor;
 use App\Listeners\Locations\DecreaseLocationTotalPhotos;
 use App\Listeners\Locations\RemoveLocationContributor;
 use App\Listeners\Locations\IncreaseLocationTotalPhotos;
+use App\Listeners\Teams\DecreaseActiveTeamTotalPhotos;
+use App\Listeners\Teams\IncreaseActiveTeamTotalPhotos;
 use App\Listeners\UpdateTags\DecrementLocation;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
@@ -29,11 +31,13 @@ class EventServiceProvider extends ServiceProvider
         ],
         ImageUploaded::class => [
             AddLocationContributor::class,
-            IncreaseLocationTotalPhotos::class
+            IncreaseLocationTotalPhotos::class,
+            IncreaseActiveTeamTotalPhotos::class
         ],
         ImageDeleted::class => [
             RemoveLocationContributor::class,
-            DecreaseLocationTotalPhotos::class
+            DecreaseLocationTotalPhotos::class,
+            DecreaseActiveTeamTotalPhotos::class
         ],
         // stage-1 verification is not currently in use
         'App\Events\PhotoVerifiedByUser' => [

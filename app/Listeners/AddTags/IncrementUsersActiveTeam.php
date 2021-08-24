@@ -24,15 +24,8 @@ class IncrementUsersActiveTeam implements ShouldQueue
         if ($user->active_team)
         {
             $user->team->total_litter += $event->total_litter_all_categories;
-            $user->team->total_images++;
             $user->team->save();
         }
-
-        // Update the users contribution to this team
-        DB::table('team_user')->where([
-            'team_id' => $user->active_team,
-            'user_id' => $user->id
-        ])->increment('total_photos');
 
         DB::table('team_user')->where([
             'team_id' => $user->active_team,
