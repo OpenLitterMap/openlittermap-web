@@ -4,7 +4,6 @@ namespace App\Providers;
 
 use App\Events\ImageDeleted;
 use App\Events\ImageUploaded;
-use App\Events\TagsDeletedByAdmin;
 use App\Events\TagsVerifiedByAdmin;
 use App\Listeners\AddTags\IncrementLocation;
 use App\Listeners\Locations\AddLocationContributor;
@@ -12,8 +11,8 @@ use App\Listeners\Locations\DecreaseLocationTotalPhotos;
 use App\Listeners\Locations\RemoveLocationContributor;
 use App\Listeners\Locations\IncreaseLocationTotalPhotos;
 use App\Listeners\Teams\DecreaseActiveTeamTotalPhotos;
+use App\Listeners\Teams\IncreasePhotoTeamTotalLitter;
 use App\Listeners\Teams\IncreaseActiveTeamTotalPhotos;
-use App\Listeners\UpdateTags\DecrementLocation;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
@@ -54,13 +53,9 @@ class EventServiceProvider extends ServiceProvider
             // 'App\Listeners\GenerateLitterCoin',
             // 'App\Listeners\UpdateLeaderboardsAdmin', happens on AddTagsTrait
             'App\Listeners\AddTags\CompileResultsString',
-            // todo - only call this listener if the user has active_team
-            'App\Listeners\AddTags\IncrementUsersActiveTeam',
+            IncreasePhotoTeamTotalLitter::class,
             'App\Listeners\User\UpdateUserTimeSeries',
             'App\Listeners\User\UpdateUserCategories'
-        ],
-        TagsDeletedByAdmin::class => [
-            DecrementLocation::class
         ],
         'App\Events\UserSignedUp' => [
             'App\Listeners\SendNewUserEmail'

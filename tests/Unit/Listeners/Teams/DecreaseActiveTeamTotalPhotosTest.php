@@ -31,7 +31,7 @@ class DecreaseActiveTeamTotalPhotosTest extends TestCase
         /** @var Team $team */
         $team = Team::factory()->create(['total_images' => 1]);
 
-        $user->teams()->attach($team);
+        $user->teams()->attach($team, ['total_photos' => 1]);
         $user->active_team = $team->id;
         $user->save();
 
