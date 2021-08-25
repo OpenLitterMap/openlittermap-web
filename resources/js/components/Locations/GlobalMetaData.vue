@@ -163,10 +163,7 @@ export default {
             if (!payload.isUserVerified) {
                 vm.$store.commit('incrementTotalPhotos');
             }
-        },
-        'TagsDeletedByAdmin': (payload, vm) => {
-            vm.$store.commit('decrementTotalLitter', payload.totalLitter);
-        },
+        }
     },
     computed: {
         /**
