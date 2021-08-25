@@ -3,12 +3,13 @@
 namespace Tests\Unit\Listeners\Teams;
 
 use App\Events\ImageDeleted;
-use App\Listeners\Teams\DecreaseActiveTeamTotalPhotos;
+use App\Listeners\Teams\DecreasePhotoTeamTotalPhotos;
 use App\Models\Teams\Team;
 use App\Models\User\User;
+use Carbon\Carbon;
 use Tests\TestCase;
 
-class DecreaseActiveTeamTotalPhotosTest extends TestCase
+class DecreasePhotoTeamTotalPhotosTest extends TestCase
 {
     /**
      * @param User $user
@@ -21,11 +22,14 @@ class DecreaseActiveTeamTotalPhotosTest extends TestCase
             1,
             1,
             1,
+            $user->active_team
         );
     }
 
-    public function test_it_decreases_active_team_total_photos()
+    public function test_it_decreases_photo_team_total_photos()
     {
+        Carbon::setTestNow();
+
         /** @var User $user */
         $user = User::factory()->create();
         /** @var Team $team */
@@ -37,16 +41,24 @@ class DecreaseActiveTeamTotalPhotosTest extends TestCase
 
         $this->assertEquals(1, $team->total_images);
 
-        /** @var DecreaseActiveTeamTotalPhotos $listener */
-        $listener = app(DecreaseActiveTeamTotalPhotos::class);
+        $updatedAt = $team->updated_at;
+
+        Carbon::setTestNow(now()->addMinute());
+
+        /** @var DecreasePhotoTeamTotalPhotos $listener */
+        $listener = app(DecreasePhotoTeamTotalPhotos::class);
 
         $listener->handle($this->getEvent($user));
 
-        $this->assertEquals(0, $team->fresh()->total_images);
+        $team->refresh();
+        $this->assertEquals(0, $team->total_images);
+        $this->assertTrue($updatedAt->addMinute()->is($team->updated_at));
     }
 
-    public function test_it_decreases_users_contribution_to_active_team_total_photos()
+    public function test_it_decreases_users_contribution_to_photo_team_total_photos()
     {
+        Carbon::setTestNow();
+
         /** @var User $user */
         $user = User::factory()->create();
         /** @var Team $team */
@@ -58,12 +70,21 @@ class DecreaseActiveTeamTotalPhotosTest extends TestCase
 
         $this->assertEquals(1, $user->fresh()->teams->first()->pivot->total_photos);
 
-        /** @var DecreaseActiveTeamTotalPhotos $listener */
-        $listener = app(DecreaseActiveTeamTotalPhotos::class);
+        $updatedAt = $user->fresh()->teams->first()->pivot->updated_at;
+
+        Carbon::setTestNow(now()->addMinute());
+
+        /** @var DecreasePhotoTeamTotalPhotos $listener */
+        $listener = app(DecreasePhotoTeamTotalPhotos::class);
 
         $listener->handle($this->getEvent($user));
 
-        $this->assertEquals(0, $user->fresh()->teams->first()->pivot->total_photos);
+        $user->refresh();
+        $this->assertEquals(0, $user->teams->first()->pivot->total_photos);
+        $this->assertEquals(
+            $updatedAt->addMinute()->toDateTimeString(),
+            $user->teams->first()->pivot->updated_at->toDateTimeString()
+        );
     }
 
 }
