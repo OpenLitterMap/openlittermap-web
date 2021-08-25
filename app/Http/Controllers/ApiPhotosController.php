@@ -296,7 +296,8 @@ class ApiPhotosController extends Controller
             $user,
             $photo->country_id,
             $photo->state_id,
-            $photo->city_id
+            $photo->city_id,
+            $photo->team_id
         ));
 
         return ['success' => true];
