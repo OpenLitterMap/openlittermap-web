@@ -280,6 +280,7 @@ class User extends Authenticatable
     public function teams ()
     {
         return $this->belongsToMany(Team::class)
+            ->withTimestamps()
             ->withPivot(
                 'show_name_maps',
                 'show_username_maps',

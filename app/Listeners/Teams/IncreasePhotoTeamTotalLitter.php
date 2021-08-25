@@ -31,9 +31,14 @@ class IncreasePhotoTeamTotalLitter implements ShouldQueue
         $photo->team->total_litter += $event->total_litter_all_categories;
         $photo->team->save();
 
-        DB::table('team_user')->where([
-            'team_id' => $photo->team_id,
-            'user_id' => $photo->user_id
-        ])->increment('total_litter', $event->total_litter_all_categories);
+        DB::table('team_user')
+            ->where([
+                'team_id' => $photo->team_id,
+                'user_id' => $photo->user_id
+            ])
+            ->update([
+                'total_litter' => DB::raw('ifnull(total_litter, 0) + ' . $event->total_litter_all_categories),
+                'updated_at' => now()
+            ]);
     }
 }

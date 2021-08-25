@@ -8,13 +8,13 @@
             <div v-else>
 
                 <div v-if="user.active_team" class="mb2" :key="user.team.id">
-                    <p>{{ $t('teams.myteams.currently-joined-team') }} {{ user.team.name }}</p>
+                    <p>{{ $t('teams.myteams.currently-joined-team') }} <strong>{{ user.team.name }}</strong>.</p>
                 </div>
 
-                <p v-else>{{ $t('teams..myteams.no-joined-team') }}</p>
+                <p v-else>{{ $t('teams.myteams.no-joined-team') }}.</p>
 
                 <div v-if="isLeader" class="mb2">
-                    <p>{{ $t('teams.myteams.leader-of-team') }}</p>
+                    <p>{{ $t('teams.myteams.leader-of-team') }}.</p>
                 </div>
 
                 <div v-if="teams" style="overflow-x: scroll">
@@ -67,8 +67,9 @@
                                 </td>
                                 <td>{{ member.pivot.total_photos }}</td>
                                 <td>{{ member.pivot.total_litter }}</td>
-                                <!-- todo - last_uploaded -->
-                                <td>{{ member.pivot.updated_at ? member.pivot.updated_at : "-" }}</td>
+                                <td style="max-width: 100px">
+                                    {{ member.pivot.updated_at ? formatDate(member.pivot.updated_at) : "-" }}
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -100,6 +101,8 @@
 </template>
 
 <script>
+import moment from 'moment';
+
 export default {
     name: 'MyTeams',
     data ()
@@ -358,6 +361,14 @@ export default {
         {
             await this.$store.dispatch('TOGGLE_LEADERBOARD_VISIBILITY', this.viewTeam);
         },
+
+        /**
+         *
+         */
+        formatDate(date)
+        {
+            return moment(date).format('LLL')
+        }
     }
 }
 </script>

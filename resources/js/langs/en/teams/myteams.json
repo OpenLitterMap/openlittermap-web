@@ -1,7 +1,7 @@
 {
     "title": "My Teams",
-    "currently-joined-team": "You are currently joined team",
-    "currently-not-joined-team": "You are not currently joined a team",
+    "currently-joined-team": "You are currently part of team",
+    "currently-not-joined-team": "You are not currently part of a team",
     "no-joined-team": "You have not yet joined a team",
     "leader-of-team": "You are the leader of this team",
     "join-team": "Please join a team",
