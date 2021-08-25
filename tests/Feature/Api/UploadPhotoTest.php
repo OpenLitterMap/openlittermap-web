@@ -35,22 +35,6 @@ class UploadPhotoTest extends TestCase
         City::create(['city' => 'error_city', 'country_id' => $country->id, 'state_id' => $state->id]);
     }
 
-    /**
-     * @param array $imageAttributes
-     * @return array
-     */
-    protected function getApiImageAttributes(array $imageAttributes): array
-    {
-        return [
-            'photo' => $imageAttributes['file'],
-            'lat' => $imageAttributes['latitude'],
-            'lon' => $imageAttributes['longitude'],
-            'date' => $imageAttributes['dateTime'],
-            'model' => 'test model',
-            'presence' => true
-        ];
-    }
-
     public function test_an_api_user_can_upload_a_photo()
     {
         Storage::fake('s3');
