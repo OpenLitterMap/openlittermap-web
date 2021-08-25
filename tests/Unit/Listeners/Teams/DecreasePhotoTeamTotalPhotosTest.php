@@ -28,8 +28,6 @@ class DecreasePhotoTeamTotalPhotosTest extends TestCase
 
     public function test_it_decreases_photo_team_total_photos()
     {
-        Carbon::setTestNow();
-
         /** @var User $user */
         $user = User::factory()->create();
         /** @var Team $team */
@@ -41,7 +39,7 @@ class DecreasePhotoTeamTotalPhotosTest extends TestCase
 
         $this->assertEquals(1, $team->total_images);
 
-        $updatedAt = $team->updated_at;
+        $oldUpdatedAt = $team->updated_at;
 
         Carbon::setTestNow(now()->addMinute());
 
@@ -52,13 +50,11 @@ class DecreasePhotoTeamTotalPhotosTest extends TestCase
 
         $team->refresh();
         $this->assertEquals(0, $team->total_images);
-        $this->assertTrue($updatedAt->addMinute()->is($team->updated_at));
+        $this->assertTrue($team->updated_at->greaterThan($oldUpdatedAt));
     }
 
     public function test_it_decreases_users_contribution_to_photo_team_total_photos()
     {
-        Carbon::setTestNow();
-
         /** @var User $user */
         $user = User::factory()->create();
         /** @var Team $team */
@@ -70,7 +66,7 @@ class DecreasePhotoTeamTotalPhotosTest extends TestCase
 
         $this->assertEquals(1, $user->fresh()->teams->first()->pivot->total_photos);
 
-        $updatedAt = $user->fresh()->teams->first()->pivot->updated_at;
+        $oldUpdatedAt = $user->fresh()->teams->first()->pivot->updated_at;
 
         Carbon::setTestNow(now()->addMinute());
 
@@ -81,9 +77,8 @@ class DecreasePhotoTeamTotalPhotosTest extends TestCase
 
         $user->refresh();
         $this->assertEquals(0, $user->teams->first()->pivot->total_photos);
-        $this->assertEquals(
-            $updatedAt->addMinute()->toDateTimeString(),
-            $user->teams->first()->pivot->updated_at->toDateTimeString()
+        $this->assertTrue(
+            $user->teams->first()->pivot->updated_at->greaterThan($oldUpdatedAt)
         );
     }
 

@@ -35,8 +35,6 @@ class IncreasePhotoTeamTotalPhotosTest extends TestCase
 
     public function test_it_increases_photo_team_total_photos()
     {
-        Carbon::setTestNow();
-
         /** @var User $user */
         $user = User::factory()->create();
         /** @var Team $team */
@@ -48,7 +46,7 @@ class IncreasePhotoTeamTotalPhotosTest extends TestCase
 
         $this->assertEquals(0, $user->fresh()->team->total_images);
 
-        $updatedAt = $user->fresh()->team->updated_at;
+        $oldUpdatedAt = $user->fresh()->team->updated_at;
 
         Carbon::setTestNow(now()->addMinute());
 
@@ -59,13 +57,11 @@ class IncreasePhotoTeamTotalPhotosTest extends TestCase
 
         $user->refresh();
         $this->assertEquals(1, $user->team->total_images);
-        $this->assertTrue($updatedAt->addMinute()->is($user->team->updated_at));
+        $this->assertTrue($user->team->updated_at->greaterThan($oldUpdatedAt));
     }
 
     public function test_it_increases_users_contribution_to_photo_team_total_photos()
     {
-        Carbon::setTestNow();
-
         /** @var User $user */
         $user = User::factory()->create();
         /** @var Team $team */
@@ -77,7 +73,7 @@ class IncreasePhotoTeamTotalPhotosTest extends TestCase
 
         $this->assertEquals(0, $user->fresh()->teams->first()->pivot->total_photos);
 
-        $updatedAt = $user->fresh()->teams->first()->pivot->updated_at;
+        $oldUpdatedAt = $user->fresh()->teams->first()->pivot->updated_at;
 
         Carbon::setTestNow(now()->addMinute());
 
@@ -88,9 +84,8 @@ class IncreasePhotoTeamTotalPhotosTest extends TestCase
 
         $user->refresh();
         $this->assertEquals(1, $user->teams->first()->pivot->total_photos);
-        $this->assertEquals(
-            $updatedAt->addMinute()->toDateTimeString(),
-            $user->teams->first()->pivot->updated_at->toDateTimeString()
+        $this->assertTrue(
+            $user->teams->first()->pivot->updated_at->greaterThan($oldUpdatedAt)
         );
     }
 
