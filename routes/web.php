@@ -202,6 +202,7 @@ Route::post('/teams/create', 'Teams\TeamsController@create')->middleware('auth')
 Route::post('/teams/join', 'Teams\TeamsController@join')->middleware('auth');
 Route::post('/teams/leave', 'Teams\LeaveTeamController');
 Route::post('/teams/active', 'Teams\TeamsController@active')->middleware('auth');
+Route::post('/teams/inactivate', 'Teams\TeamsController@inactivateTeam')->middleware('auth');
 Route::post('/teams/settings', 'Teams\TeamsSettingsController@index')->middleware('auth');
 Route::post('/teams/download', 'Teams\TeamsController@download');
 Route::post('/teams/leaderboard/visibility', 'Teams\TeamsLeaderboardController@toggle')->middleware('auth');

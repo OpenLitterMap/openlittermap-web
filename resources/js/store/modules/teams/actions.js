@@ -27,6 +27,7 @@ export const actions = {
                 });
 
                 context.commit('usersActiveTeam', payload);
+                context.commit('usersTeam', response.data.team);
             }
         })
         .catch(error => {
@@ -50,6 +51,25 @@ export const actions = {
                 });
 
                 context.commit('usersActiveTeam', response.data.activeTeamId);
+            }
+        })
+        .catch(error => {
+            Vue.$vToastify.error({
+                title: i18n.t('notifications.error'),
+                body: i18n.t('notifications.something-went-wrong'),
+            });
+        });
+    },
+
+    /**
+     * Inactivate the current active team
+     */
+    async INACTIVATE_TEAM (context)
+    {
+        await axios.post('/teams/inactivate')
+        .then(response => {
+            if (response.data.success) {
+                context.commit('usersActiveTeam', null);
             }
         })
         .catch(error => {
@@ -92,10 +112,12 @@ export const actions = {
 
                 context.commit('decrementUsersRemainingTeams');
 
+                context.commit('usersActiveTeam', response.data.team.id);
+
+                context.commit('usersTeam', response.data.team);
+
                 if (! context.rootState.user.user.active_team)
                 {
-                    context.commit('usersActiveTeam', response.data.team_id);
-
                     Vue.$vToastify.success({
                         title: joinedTeamTitle,
                         body: joinedTeamBody,
@@ -273,6 +295,7 @@ export const actions = {
                 });
 
                 context.commit('usersActiveTeam', response.data.team_id);
+                context.commit('usersTeam', response.data.team);
             }
 
             else if (response.data.msg === 'already-joined')

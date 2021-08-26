@@ -112,6 +112,14 @@ export const mutations = {
     },
 
     /**
+     * Updates the user's team data
+     */
+    usersTeam (state, payload)
+    {
+        state.user.team = payload;
+    },
+
+    /**
      * The user wants to change a privacy setting
      */
     privacy (state, payload)
@@ -166,13 +174,4 @@ export const mutations = {
 
         state.requiredXp = payload.requiredXp;
     },
-
-    // /**
-    //  * The user has just created and joined a team
-    //  */
-    // userJoinTeam (state, payload)
-    // {
-    //     state.user['team'] = payload;
-    // }
-
 };

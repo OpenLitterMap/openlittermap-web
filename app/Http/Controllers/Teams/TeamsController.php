@@ -6,6 +6,7 @@ use App\Exports\CreateCSVExport;
 use App\Jobs\EmailUserExportCompleted;
 use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
+use App\Models\User\User;
 use App\Traits\FilterTeamMembersTrait;
 
 use App\Events\TeamCreated;
@@ -28,21 +29,39 @@ class TeamsController extends Controller
     {
         $user = Auth::user();
 
-        if (Team::find($request->team_id))
+        $team = Team::find($request->team_id);
+
+        if ($team)
         {
-            foreach ($user->teams as $team)
+            foreach ($user->teams as $userTeam)
             {
-                if ($team->id === $request->team_id)
+                if ($userTeam->id === $request->team_id)
                 {
                     $user->active_team = $request->team_id;
                     $user->save();
 
-                    return ['success' => true];
+                    return ['success' => true, 'team' => $team];
                 }
             }
         }
 
         return ['success' => false];
+    }
+
+    /**
+     * Clears the user's active team
+     *
+     * @return array
+     */
+    public function inactivateTeam()
+    {
+        /** @var User $user */
+        $user = auth()->user();
+
+        $user->active_team = null;
+        $user->save();
+
+        return ['success' => true];
     }
 
     /**
@@ -149,7 +168,7 @@ class TeamsController extends Controller
             $team->members++;
             $team->save();
 
-            return ['success' => true, 'team_id' => $team->id];
+            return ['success' => true, 'team_id' => $team->id, 'team' => $team];
         }
 
         return ['success' => false, 'msg' => 'not-found'];

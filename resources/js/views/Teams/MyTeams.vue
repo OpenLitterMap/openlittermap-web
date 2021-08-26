@@ -7,14 +7,27 @@
 
             <div v-else>
 
-                <div v-if="user.active_team" class="mb2" :key="user.team.id">
-                    <p>{{ $t('teams.myteams.currently-joined-team') }} <strong>{{ user.team.name }}</strong>.</p>
-                </div>
+                <div class="active-team-indicator">
+                    <div>
+                        <div v-if="user.active_team" class="mb1">
+                            <p>
+                                {{ $t('teams.myteams.currently-joined-team') }} <strong>{{ user.team.name }}</strong>.
+                            </p>
+                        </div>
 
-                <p v-else>{{ $t('teams.myteams.no-joined-team') }}.</p>
+                        <p v-else class="mb1">{{ $t('teams.myteams.no-joined-team') }}.</p>
 
-                <div v-if="isLeader" class="mb2">
-                    <p>{{ $t('teams.myteams.leader-of-team') }}.</p>
+                        <div v-if="isLeader" class="mb2">
+                            <p>{{ $t('teams.myteams.leader-of-team') }}.</p>
+                        </div>
+                    </div>
+
+                    <div v-if="user.active_team"
+                         class="button is-medium is-warning"
+                         @click="inactivateTeam"
+                    >
+                        {{ $t('common.inactivate') }}
+                    </div>
                 </div>
 
                 <div v-if="teams && teams.length" style="overflow-x: scroll">
@@ -257,15 +270,33 @@ export default {
         },
 
         /**
+         * Inactivate the currently active team
+         */
+        async inactivateTeam ()
+        {
+            this.processing = true;
+
+            await this.$store.dispatch('INACTIVATE_TEAM');
+
+            this.viewTeam = this.teams[0]?.id;
+
+            await this.changeViewedTeam();
+
+            this.processing = false;
+        },
+
+        /**
          * Get the user's teams and show the active team
          */
         async getUserTeams ()
         {
             await this.$store.dispatch('GET_USERS_TEAMS');
 
-            if (this.activeTeam)
+            let teamToShow = this.activeTeam || this.teams[0]?.id;
+
+            if (teamToShow)
             {
-                this.viewTeam = this.activeTeam;
+                this.viewTeam = teamToShow;
 
                 await this.$store.dispatch('GET_TEAM_MEMBERS', this.viewTeam);
             }
@@ -426,6 +457,22 @@ export default {
         background-color: #e67e22;
         padding: 0.5em 1em;
         border-radius: 10px;
+    }
+
+    .active-team-indicator {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+    }
+
+    @media (max-width: 640px) {
+        .active-team-indicator {
+            flex-direction: column;
+        }
+        .active-team-indicator .button {
+            max-width: min-content;
+            margin-bottom: 2em;
+        }
     }
 
 </style>
