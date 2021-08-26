@@ -20,6 +20,7 @@
                             required
                             v-model="identifier"
                             @input="clearError"
+                            autofocus
                         />
                         <p
                             class="is-danger"

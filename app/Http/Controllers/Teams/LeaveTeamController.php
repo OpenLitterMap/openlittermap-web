@@ -43,7 +43,11 @@ class LeaveTeamController extends Controller
         $team->members--;
         $team->save();
 
-        return ['success' => true, 'team_id' => $team->id];
+        return [
+            'success' => true,
+            'team' => $team,
+            'activeTeamId' => $user->active_team
+        ];
     }
 
     /**

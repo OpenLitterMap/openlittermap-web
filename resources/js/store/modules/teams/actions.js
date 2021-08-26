@@ -35,6 +35,32 @@ export const actions = {
     },
 
     /**
+     * Leave the team
+     */
+    async LEAVE_TEAM (context, payload)
+    {
+        await axios.post('/teams/leave', {
+            teamId: payload
+        })
+        .then(response => {
+            if (response.data.success) {
+                Vue.$vToastify.success({
+                    title: i18n.t('notifications.success'),
+                    body: i18n.t('teams.myteams.just-left-team') + ' <i>' + response.data.team.name + '</i>.',
+                });
+
+                context.commit('usersActiveTeam', response.data.activeTeamId);
+            }
+        })
+        .catch(error => {
+            Vue.$vToastify.error({
+                title: i18n.t('notifications.error'),
+                body: i18n.t('notifications.something-went-wrong'),
+            });
+        });
+    },
+
+    /**
      * The user wants to create a new team
      */
     async CREATE_NEW_TEAM (context, payload)
@@ -245,6 +271,8 @@ export const actions = {
                     body,
                     position: 'bottom-right'
                 });
+
+                context.commit('usersActiveTeam', response.data.team_id);
             }
 
             else if (response.data.msg === 'already-joined')

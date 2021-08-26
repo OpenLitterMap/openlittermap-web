@@ -33,7 +33,9 @@ class LeaveTeamTest extends TestCase
             'teamId' => $team->id,
         ]);
 
-        $response->assertOk();
+        $response
+            ->assertOk()
+            ->assertJsonStructure(['success', 'team', 'activeTeamId']);
 
         $user->refresh();
         $team->refresh();
@@ -101,7 +103,9 @@ class LeaveTeamTest extends TestCase
             'teamId' => $activeTeam->id,
         ]);
 
-        $response->assertOk();
+        $response
+            ->assertOk()
+            ->assertJson(['activeTeamId' => $otherTeam->id]);
 
         $user->refresh();
 
@@ -133,7 +137,7 @@ class LeaveTeamTest extends TestCase
         $this->assertTrue($otherUserInTeam->is(User::find($team->fresh()->leader)));
     }
 
-    public function test_a_user_cant_leave_a_team_if_they_are_the_only_member()
+    public function test_a_user_can_not_leave_a_team_if_they_are_the_only_member()
     {
         /** @var User $user */
         $user = User::factory()->create();

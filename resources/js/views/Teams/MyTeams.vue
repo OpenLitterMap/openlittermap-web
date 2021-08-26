@@ -17,7 +17,7 @@
                     <p>{{ $t('teams.myteams.leader-of-team') }}.</p>
                 </div>
 
-                <div v-if="teams" style="overflow-x: scroll">
+                <div v-if="teams && teams.length" style="overflow-x: scroll">
                     <div class="flex mb1">
                         <select v-model="viewTeam" class="input mtba" style="max-width: 30em; min-width: 5em;" @change="changeViewedTeam">
                             <option :selected="! viewTeam" :value="null" disabled>{{ $t('teams.myteams.join-team') }}</option>
@@ -32,6 +32,11 @@
                             :disabled="leaderboardProcessing"
                             @click="toggleLeaderboardVis"
                         >{{ showLeaderboard }}</button>
+                        <button
+                            v-if="members.data && members.data.length > 1"
+                            class="button is-medium is-danger ml1"
+                            @click="leaveTeam"
+                        >{{ $t('teams.myteams.leave-team') }}</button>
                     </div>
 
                     <table class="table is-fullwidth is-hoverable has-text-centered">
@@ -92,9 +97,6 @@
                     </div>
                 </div>
 
-                <div v-else class="mb2">
-                    <p>{{ $t('teams.myteams.currently-not-joined-team') }}</p>
-                </div>
             </div>
         </div>
     </section>
@@ -123,14 +125,7 @@ export default {
     {
         this.loading = true;
 
-        await this.$store.dispatch('GET_USERS_TEAMS');
-
-        if (this.activeTeam)
-        {
-            this.viewTeam = this.activeTeam;
-
-            await this.$store.dispatch('GET_TEAM_MEMBERS', this.viewTeam);
-        }
+        await this.getUserTeams();
 
         this.loading = false;
     },
@@ -259,6 +254,35 @@ export default {
             await this.changeViewedTeam();
 
             this.processing = false;
+        },
+
+        /**
+         * Get the user's teams and show the active team
+         */
+        async getUserTeams ()
+        {
+            await this.$store.dispatch('GET_USERS_TEAMS');
+
+            if (this.activeTeam)
+            {
+                this.viewTeam = this.activeTeam;
+
+                await this.$store.dispatch('GET_TEAM_MEMBERS', this.viewTeam);
+            }
+        },
+
+        /**
+         * Leave the team
+         */
+        async leaveTeam ()
+        {
+            this.loading = true;
+
+            await this.$store.dispatch('LEAVE_TEAM', this.viewTeam);
+
+            await this.getUserTeams();
+
+            this.loading = false;
         },
 
         /**
