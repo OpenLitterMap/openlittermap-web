@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Teams;
 
 use App\Exports\CreateCSVExport;
 use App\Jobs\EmailUserExportCompleted;
-use App\Models\Photo;
 use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
 use App\Traits\FilterTeamMembersTrait;

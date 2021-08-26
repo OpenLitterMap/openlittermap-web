@@ -198,12 +198,13 @@ Route::get('/teams/joined', 'Teams\TeamsController@joined');
 // Route::get('/teams/map-data', 'Teams\TeamsMapController@index');
 Route::get('/teams/leaderboard', 'Teams\TeamsLeaderboardController@index');
 
-Route::post('/teams/create', 'Teams\TeamsController@create');
-Route::post('/teams/join', 'Teams\TeamsController@join');
-Route::post('/teams/active', 'Teams\TeamsController@active');
-Route::post('/teams/settings', 'Teams\TeamsSettingsController@index');
+Route::post('/teams/create', 'Teams\TeamsController@create')->middleware('auth');
+Route::post('/teams/join', 'Teams\TeamsController@join')->middleware('auth');
+Route::post('/teams/leave', 'Teams\LeaveTeamController');
+Route::post('/teams/active', 'Teams\TeamsController@active')->middleware('auth');
+Route::post('/teams/settings', 'Teams\TeamsSettingsController@index')->middleware('auth');
 Route::post('/teams/download', 'Teams\TeamsController@download');
-Route::post('/teams/leaderboard/visibility', 'Teams\TeamsLeaderboardController@toggle');
+Route::post('/teams/leaderboard/visibility', 'Teams\TeamsLeaderboardController@toggle')->middleware('auth');
 
 // The users profile
 Route::get('/user/profile/index', 'User\ProfileController@index');
