@@ -3,13 +3,13 @@
 namespace Tests\Unit\Listeners\Teams;
 
 use App\Events\ImageUploaded;
-use App\Listeners\Teams\IncreasePhotoTeamTotalPhotos;
+use App\Listeners\Teams\IncreaseTeamTotalPhotos;
 use App\Models\Teams\Team;
 use App\Models\User\User;
 use Carbon\Carbon;
 use Tests\TestCase;
 
-class IncreasePhotoTeamTotalPhotosTest extends TestCase
+class IncreaseTeamTotalPhotosTest extends TestCase
 {
     /**
      * @param User $user
@@ -33,7 +33,7 @@ class IncreasePhotoTeamTotalPhotosTest extends TestCase
         );
     }
 
-    public function test_it_increases_photo_team_total_photos()
+    public function test_it_increases_team_total_photos()
     {
         /** @var User $user */
         $user = User::factory()->create();
@@ -50,8 +50,8 @@ class IncreasePhotoTeamTotalPhotosTest extends TestCase
 
         Carbon::setTestNow(now()->addMinute());
 
-        /** @var IncreasePhotoTeamTotalPhotos $listener */
-        $listener = app(IncreasePhotoTeamTotalPhotos::class);
+        /** @var IncreaseTeamTotalPhotos $listener */
+        $listener = app(IncreaseTeamTotalPhotos::class);
 
         $listener->handle($this->getEvent($user));
 
@@ -60,7 +60,7 @@ class IncreasePhotoTeamTotalPhotosTest extends TestCase
         $this->assertTrue($user->team->updated_at->greaterThan($oldUpdatedAt));
     }
 
-    public function test_it_increases_users_contribution_to_photo_team_total_photos()
+    public function test_it_increases_users_contribution_to_team_total_photos()
     {
         /** @var User $user */
         $user = User::factory()->create();
@@ -77,8 +77,8 @@ class IncreasePhotoTeamTotalPhotosTest extends TestCase
 
         Carbon::setTestNow(now()->addMinute());
 
-        /** @var IncreasePhotoTeamTotalPhotos $listener */
-        $listener = app(IncreasePhotoTeamTotalPhotos::class);
+        /** @var IncreaseTeamTotalPhotos $listener */
+        $listener = app(IncreaseTeamTotalPhotos::class);
 
         $listener->handle($this->getEvent($user));
 

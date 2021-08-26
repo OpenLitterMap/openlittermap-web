@@ -10,9 +10,9 @@ use App\Listeners\Locations\AddLocationContributor;
 use App\Listeners\Locations\DecreaseLocationTotalPhotos;
 use App\Listeners\Locations\RemoveLocationContributor;
 use App\Listeners\Locations\IncreaseLocationTotalPhotos;
-use App\Listeners\Teams\DecreasePhotoTeamTotalPhotos;
-use App\Listeners\Teams\IncreasePhotoTeamTotalLitter;
-use App\Listeners\Teams\IncreasePhotoTeamTotalPhotos;
+use App\Listeners\Teams\DecreaseTeamTotalPhotos;
+use App\Listeners\Teams\IncreaseTeamTotalLitter;
+use App\Listeners\Teams\IncreaseTeamTotalPhotos;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
@@ -31,12 +31,12 @@ class EventServiceProvider extends ServiceProvider
         ImageUploaded::class => [
             AddLocationContributor::class,
             IncreaseLocationTotalPhotos::class,
-            IncreasePhotoTeamTotalPhotos::class
+            IncreaseTeamTotalPhotos::class
         ],
         ImageDeleted::class => [
             RemoveLocationContributor::class,
             DecreaseLocationTotalPhotos::class,
-            DecreasePhotoTeamTotalPhotos::class
+            DecreaseTeamTotalPhotos::class
         ],
         // stage-1 verification is not currently in use
         'App\Events\PhotoVerifiedByUser' => [
@@ -53,7 +53,7 @@ class EventServiceProvider extends ServiceProvider
             // 'App\Listeners\GenerateLitterCoin',
             // 'App\Listeners\UpdateLeaderboardsAdmin', happens on AddTagsTrait
             'App\Listeners\AddTags\CompileResultsString',
-            IncreasePhotoTeamTotalLitter::class,
+            IncreaseTeamTotalLitter::class,
             'App\Listeners\User\UpdateUserTimeSeries',
             'App\Listeners\User\UpdateUserCategories'
         ],

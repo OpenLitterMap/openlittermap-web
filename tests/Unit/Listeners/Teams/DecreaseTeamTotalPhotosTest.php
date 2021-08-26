@@ -3,13 +3,13 @@
 namespace Tests\Unit\Listeners\Teams;
 
 use App\Events\ImageDeleted;
-use App\Listeners\Teams\DecreasePhotoTeamTotalPhotos;
+use App\Listeners\Teams\DecreaseTeamTotalPhotos;
 use App\Models\Teams\Team;
 use App\Models\User\User;
 use Carbon\Carbon;
 use Tests\TestCase;
 
-class DecreasePhotoTeamTotalPhotosTest extends TestCase
+class DecreaseTeamTotalPhotosTest extends TestCase
 {
     /**
      * @param User $user
@@ -26,7 +26,7 @@ class DecreasePhotoTeamTotalPhotosTest extends TestCase
         );
     }
 
-    public function test_it_decreases_photo_team_total_photos()
+    public function test_it_decreases_team_total_photos()
     {
         /** @var User $user */
         $user = User::factory()->create();
@@ -43,8 +43,8 @@ class DecreasePhotoTeamTotalPhotosTest extends TestCase
 
         Carbon::setTestNow(now()->addMinute());
 
-        /** @var DecreasePhotoTeamTotalPhotos $listener */
-        $listener = app(DecreasePhotoTeamTotalPhotos::class);
+        /** @var DecreaseTeamTotalPhotos $listener */
+        $listener = app(DecreaseTeamTotalPhotos::class);
 
         $listener->handle($this->getEvent($user));
 
@@ -53,7 +53,7 @@ class DecreasePhotoTeamTotalPhotosTest extends TestCase
         $this->assertTrue($team->updated_at->greaterThan($oldUpdatedAt));
     }
 
-    public function test_it_decreases_users_contribution_to_photo_team_total_photos()
+    public function test_it_decreases_users_contribution_to_team_total_photos()
     {
         /** @var User $user */
         $user = User::factory()->create();
@@ -70,8 +70,8 @@ class DecreasePhotoTeamTotalPhotosTest extends TestCase
 
         Carbon::setTestNow(now()->addMinute());
 
-        /** @var DecreasePhotoTeamTotalPhotos $listener */
-        $listener = app(DecreasePhotoTeamTotalPhotos::class);
+        /** @var DecreaseTeamTotalPhotos $listener */
+        $listener = app(DecreaseTeamTotalPhotos::class);
 
         $listener->handle($this->getEvent($user));
 

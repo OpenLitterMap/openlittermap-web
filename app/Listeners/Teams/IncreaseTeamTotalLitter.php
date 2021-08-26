@@ -7,7 +7,7 @@ use App\Models\Photo;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\DB;
 
-class IncreasePhotoTeamTotalLitter implements ShouldQueue
+class IncreaseTeamTotalLitter implements ShouldQueue
 {
     /**
      * If the user had an active team when they uploaded & tagged the photo,
