@@ -19,7 +19,7 @@
 
                 <div v-if="teams && teams.length" style="overflow-x: scroll">
                     <div class="flex mb1">
-                        <select v-model="viewTeam" class="input mtba" style="max-width: 30em; min-width: 5em;" @change="changeViewedTeam">
+                        <select v-model="viewTeam" class="input mtba" style="max-width: 20em; min-width: 5em;" @change="changeViewedTeam">
                             <option :selected="! viewTeam" :value="null" disabled>{{ $t('teams.myteams.join-team') }}</option>
                             <option v-for="team in teams" :value="team.id">{{ team.name }}</option>
                         </select>

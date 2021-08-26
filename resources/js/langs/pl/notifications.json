@@ -9,5 +9,6 @@
         "subscribed": "Subskrybujesz teraz aktualizacje i dobre wieści! ",
         "unsubscribed": "Zrezygnowałeś z subskrypcji. Nie będziesz już otrzymywać dobrych wiadomości!",
         "flag-updated": "Twoja flaga została zaktualizowana"
-    }
+    },
+    "something-went-wrong": "Coś poszło nie tak. Spróbuj ponownie lub skontaktuj się z nami!"
 }
