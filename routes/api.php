@@ -23,6 +23,8 @@ Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function(){
 
     Route::get('/photos/web/load-more', 'API\WebPhotosController@loadMore');
 
+    Route::get('/global/stats-data', 'API\GlobalStatsController@index');
+
 });
 
 Route::post('add-tags', 'ApiPhotosController@addTags')
