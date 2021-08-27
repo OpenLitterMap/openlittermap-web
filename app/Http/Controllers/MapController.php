@@ -144,6 +144,7 @@ class MapController extends Controller
 			       'verified' => $c["verified"],
 				  'remaining' => $c["remaining"],
 			   'display_name' => $c["display_name"],
+			   'result_string' => $c["result_string"],
 
 					// data
 					'smoking' => $c->smoking,

@@ -50,6 +50,9 @@ Route::post('/password/email', 'Auth\ForgotPasswordController@sendResetLinkEmail
 // Upload Photos
 Route::post('/photos/submit', 'ApiPhotosController@store');
 
+// Delete Photos
+Route::delete('/photos/delete', 'ApiPhotosController@deleteImage');
+
 // Tag Litter to Photos
 Route::post('/photos/update', 'ApiPhotosController@dynamicUpdate')
     ->middleware('auth:api');

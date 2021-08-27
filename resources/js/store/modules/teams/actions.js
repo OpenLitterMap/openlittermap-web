@@ -40,7 +40,7 @@ export const actions = {
     async CREATE_NEW_TEAM (context, payload)
     {
         const title = i18n.t('notifications.success');
-        const body  = i18n.t('teams.created');
+        const body  = i18n.t('teams.create.created');
 
         const error_title = i18n.t('notifications.error');
         const error_body  = i18n.t('teams.create.max-created');
