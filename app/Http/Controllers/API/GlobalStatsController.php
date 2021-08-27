@@ -23,7 +23,8 @@ class GlobalStatsController extends Controller
 
         $totalUsers = User::count();
 
-        $countries = Country::where('manual_verify', '1')
+        $countries = Country::select('id')
+            ->where('manual_verify', '1')
             ->orderBy('country', 'asc')
             ->get();
 
