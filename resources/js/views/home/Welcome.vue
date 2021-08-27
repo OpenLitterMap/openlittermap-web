@@ -34,13 +34,15 @@
                 </div>
 
                 <div class="column is-half">
-                    <transition name="slide-fade-right" mode="out-in">
-                        <img
-                            :key="activeHeading.title"
-                            :src="activeHeading.img"
-                            :alt="activeHeading.title"
-                        />
-                    </transition>
+                    <div class="top-image">
+                        <transition name="slide-fade-right" mode="out-in">
+                            <img
+                                :key="activeHeading.title"
+                                :src="activeHeading.img"
+                                :alt="activeHeading.title"
+                            />
+                        </transition>
+                    </div>
                 </div>
             </div>
 
@@ -173,12 +175,37 @@ export default {
         ios ()
         {
             window.open('https://apps.apple.com/us/app/openlittermap/id1475982147', '_blank');
-        }
+        },
+
+        /**
+         * Switches the heading and top image every 5 seconds
+         * @see https://usefulangle.com/post/280/settimeout-setinterval-on-inactive-tab
+         */
+        startHeadingsAnimation ()
+        {
+            let vm = this;
+
+            function setAnimation () {
+                return setInterval(() => {
+                    vm.activeHeadingIndex = (vm.activeHeadingIndex + 1) % vm.headings.length;
+                }, 5000);
+            }
+
+            let interval = setAnimation();
+
+            document.addEventListener('visibilitychange', function () {
+                if (document.hidden) {
+                    // tab is now inactive
+                    clearInterval(interval);
+                } else {
+                    // tab is active again
+                    setAnimation();
+                }
+            });
+        },
     },
     mounted () {
-        setInterval(() => {
-            this.activeHeadingIndex = (this.activeHeadingIndex + 1) % this.headings.length;
-        }, 5000)
+        this.startHeadingsAnimation();
     }
 }
 </script>
@@ -268,6 +295,21 @@ export default {
 
         .why-container {
             margin-bottom: 5em;
+        }
+
+        .top-image {
+            height: 400px;
+        }
+    }
+
+    /* Extra small */
+    @media (max-width: 576px) {
+        .main-title {
+            min-height: 162px;
+        }
+
+        .top-image {
+            height: 260px;
         }
     }
 
