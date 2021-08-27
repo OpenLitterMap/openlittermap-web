@@ -184,24 +184,24 @@ export default {
         startHeadingsAnimation ()
         {
             let vm = this;
+            let interval = null;
 
             function setAnimation () {
-                return setInterval(() => {
+                if (document.hidden) {
+                    // tab is now inactive
+                    if (interval) clearInterval(interval);
+                    return;
+                }
+
+                // tab is active again
+                interval = setInterval(() => {
                     vm.activeHeadingIndex = (vm.activeHeadingIndex + 1) % vm.headings.length;
                 }, 5000);
             }
 
-            let interval = setAnimation();
+            setAnimation();
 
-            document.addEventListener('visibilitychange', function () {
-                if (document.hidden) {
-                    // tab is now inactive
-                    clearInterval(interval);
-                } else {
-                    // tab is active again
-                    setAnimation();
-                }
-            });
+            document.addEventListener('visibilitychange', setAnimation);
         },
     },
     mounted () {
