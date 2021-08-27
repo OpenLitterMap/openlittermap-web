@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Validation\Rule;
 
 class TeamsController extends Controller
 {
@@ -98,6 +99,32 @@ class TeamsController extends Controller
         $user->active_team = $team->id;
         $user->remaining_teams--;
         $user->save();
+
+        return ['success' => true, 'team' => $team];
+    }
+
+    /**
+     * The user wants to update a team
+     *
+     * @param Team $team
+     * @param Request $request
+     * @return array
+     */
+    public function update (Team $team, Request $request)
+    {
+        $request->validate([
+            'name' => ['required', 'min:3', 'max:100', Rule::unique('teams')->ignore($team)],
+            'identifier' => ['required', 'min:3', 'max:15', Rule::unique('teams')->ignore($team)],
+        ]);
+
+        if (auth()->id() != $team->leader) {
+            abort(403, 'You are not the team leader!');
+        }
+
+        $team->update([
+            'name' => $request->name,
+            'identifier' => $request->identifier
+        ]);
 
         return ['success' => true, 'team' => $team];
     }

@@ -143,6 +143,33 @@ export const actions = {
     },
 
     /**
+     * The user wants to update a team
+     */
+    async UPDATE_TEAM (context, payload)
+    {
+        const title = i18n.t('notifications.success');
+        const body  = i18n.t('teams.create.updated');
+
+        const errorTitle = i18n.t('notifications.error');
+        const errorBody  = i18n.t('notifications.something-went-wrong');
+
+        await axios.post(`/teams/update/${payload.teamId}`, {
+            name: payload.name,
+            identifier: payload.identifier
+        })
+            .then(async response => {
+                if (response.data.success) {
+                    Vue.$vToastify.success({title, body});
+                } else {
+                    Vue.$vToastify.error({title: errorTitle, body: errorBody});
+                }
+            })
+            .catch(error => {
+                context.commit('teamErrors', error.response.data.errors);
+            });
+    },
+
+    /**
      * Download the data made by a specific team
      */
     async DOWNLOAD_DATA_FOR_TEAM (context, payload)
