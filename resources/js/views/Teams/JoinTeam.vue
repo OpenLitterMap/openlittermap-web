@@ -10,20 +10,23 @@
 
             <div class="column is-half card p2">
                 <form @submit.prevent="submit">
-                    <label for="join">{{ $t('teams.join.team-identifier') }}</label>
-                    <span
-                        class="is-danger"
-                        v-if="errorExists('identifier')"
-                        v-text="getFirstError('identifier')"
-                    />
-                    <input
-                        class="input mb2"
-                        name="join"
-                        :placeholder="$t('teams.join.enter-id-to-join-placeholder')"
-                        required
-                        v-model="identifier"
-                        @input="clearError"
-                    />
+                    <div class="control mb2">
+                        <label for="join">{{ $t('teams.join.team-identifier') }}</label>
+                        <input
+                            class="input"
+                            name="join"
+                            id="join"
+                            :placeholder="$t('teams.join.enter-id-to-join-placeholder')"
+                            required
+                            v-model="identifier"
+                            @input="clearError"
+                        />
+                        <p
+                            class="is-danger"
+                            v-if="errorExists('identifier')"
+                            v-text="getFirstError('identifier')"
+                        />
+                    </div>
 
                     <div class="has-text-right">
                         <button :class="button" :disabled="processing">{{ $t('teams.join.join-team') }}</button>
@@ -67,6 +70,14 @@ export default {
     methods: {
 
         /**
+         * Clear all errors
+         */
+        clearErrors ()
+        {
+            this.$store.commit('teamErrors', []);
+        },
+
+        /**
          * Clear an error with this key
          */
         clearError (key)
@@ -101,6 +112,9 @@ export default {
 
             this.processing = false;
         }
+    },
+    mounted () {
+        this.clearErrors();
     }
 }
 </script>

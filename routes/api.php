@@ -22,8 +22,9 @@ Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function(){
     Route::get('/photos/web/index', 'API\WebPhotosController@index');
 
     Route::get('/photos/web/load-more', 'API\WebPhotosController@loadMore');
-
 });
+
+Route::get('/global/stats-data', 'API\GlobalStatsController@index');
 
 Route::post('add-tags', 'ApiPhotosController@addTags')
     ->middleware('auth:api');
@@ -49,6 +50,9 @@ Route::post('/password/email', 'Auth\ForgotPasswordController@sendResetLinkEmail
 
 // Upload Photos
 Route::post('/photos/submit', 'ApiPhotosController@store');
+
+// Delete Photos
+Route::delete('/photos/delete', 'ApiPhotosController@deleteImage');
 
 // Tag Litter to Photos
 Route::post('/photos/update', 'ApiPhotosController@dynamicUpdate')

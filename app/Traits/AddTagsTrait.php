@@ -12,10 +12,8 @@ trait AddTagsTrait
 {
     /**
      * Add or Update tags on an image
-     *
-     * @var DeleteTagsFromPhotoAction $deleteTagsAction
-     * @var AddTagsToPhotoAction $addTagsAction
-     * @var UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction
+     * @param array $tags
+     * @param int $photoId
      */
     public function addTags ($tags, $photoId)
     {

@@ -63,6 +63,18 @@ trait HasPhotoUploads
         );
     }
 
+    protected function getApiImageAttributes(array $imageAttributes): array
+    {
+        return [
+            'photo' => $imageAttributes['file'],
+            'lat' => $imageAttributes['latitude'],
+            'lon' => $imageAttributes['longitude'],
+            'date' => $imageAttributes['dateTime'],
+            'model' => 'test model',
+            'presence' => true
+        ];
+    }
+
     protected function getCountryId(): int
     {
         return Country::where('shortcode', 'us')->first()->id;
