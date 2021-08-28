@@ -96,6 +96,7 @@ class ProfileController extends Controller
             'features'  => []
         ];
 
+        // Might be big...
         $photos = $query->get();
 
         // Populate geojson object
@@ -105,7 +106,7 @@ class ProfileController extends Controller
                 'type' => 'Feature',
                 'geometry' => [
                     'type' => 'Point',
-                    'coordinates' => [$photo->lon, $photo->lat]
+                    'coordinates' => [$photo->lat, $photo->lon]
                 ],
 
                 'properties' => [
@@ -122,6 +123,7 @@ class ProfileController extends Controller
         }
 
         return [
+            'success' => true,
             'geojson' => $geojson
         ];
     }

@@ -1,21 +1,20 @@
 <template>
     <div class="profile-categories">
-        <!-- Using :key helps to update the radar when tags change -->
-        <Radar
-            :key="user.total_tags"
+        <CategoriesPieChart
             :categories="categories"
         />
     </div>
 </template>
 
 <script>
-import Radar from '../../Charts/Radar';
+import CategoriesPieChart from '../../Charts/CategoriesPieChart';
 
 export default {
     name: 'ProfileCategories',
-    components: { Radar },
+    components: {
+        CategoriesPieChart
+    },
     computed: {
-
         /**
          * The users photos per month, as a string. Saved as metadata because CPU.
          */
@@ -33,15 +32,19 @@ export default {
                 this.user.total_categories?.sanitary,
                 this.user.total_categories?.softdrinks,
                 this.user.total_categories?.smoking,
-            ]
+            ];
         },
 
         /**
-         * Currently authenticated user
+         * Return User object
+         *
+         * Currently authenticated user (Profile page) or Public Profile
          */
         user ()
         {
-            return this.$store.state.user.user;
+            return (this.$store.state.user.public_profile.publicProfile)
+                ? this.$store.state.user.public_profile.publicProfile
+                : this.$store.state.user.user;
         }
     }
 };

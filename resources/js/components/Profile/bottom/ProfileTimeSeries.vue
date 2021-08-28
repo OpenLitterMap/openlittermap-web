@@ -26,4 +26,5 @@ export default {
         flex: 1;
         padding: 3em;
     }
+
 </style>

@@ -141,20 +141,43 @@ export const actions = {
 
     /**
      * Get the geojson data for the users Profile/ProfileMap
+     *
+     * This can be for the currently authenticated user, or a public profile
      */
     async GET_USERS_PROFILE_MAP_DATA (context, payload)
     {
-        await axios.get('/user/profile/map', {
+        const url = (context.state.public_profile.publicProfile)
+            ? '/user/public-profile/map'
+            : '/user/profile/map';
+
+        const username = context.state.public_profile.publicProfile.hasOwnProperty('username')
+            ? context.state.public_profile.publicProfile.username
+            : null;
+
+        const title = i18n.t('notifications.success');
+        const body = "Map data updated";
+
+        await axios.get(url, {
             params: {
                 period: payload.period,
                 start: payload.start + ' 00:00:00',
-                end: payload.end + ' 23:59:59'
+                end: payload.end + ' 23:59:59',
+                username
             }
         })
         .then(response => {
             console.log('get_users_profile_map_data', response);
 
-            context.commit('usersGeojson', response.data.geojson);
+            if (response.data.success)
+            {
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                    position: 'top-right'
+                });
+
+                context.commit('usersGeojson', response.data.geojson);
+            }
         })
         .catch(error => {
             console.error('get_users_profile_map_data', error);

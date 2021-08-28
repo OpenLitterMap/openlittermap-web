@@ -41,6 +41,7 @@ class PublicProfileController extends Controller
         }
 
         // Extra user data
+        // totalUsers, usersPosition, tagPercent, photoPercent, requiredXp
         $userData = GetUserDataHelper::get(
             $user->xp,
             $user->total_tags,

@@ -14,8 +14,8 @@ class CompileResultsString implements ShouldQueue
      * We save the metadata on the photos table as a string to speed up page load
      * and avoid additional requests
      *
-     * When a record exists, we apply the translation key => value,
-     * for every item in each category.
+     * When a litter tag exists, we generate the translation key => value,
+     * for every tag in each category.
      *
      * with this 1 line of code!
      *

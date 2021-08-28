@@ -1,15 +1,17 @@
 <script>
 import { Radar } from 'vue-chartjs'
-import { categories} from '../../extra/categories';
+import { categories } from '../../extra/categories';
 
 export default {
     extends: Radar,
     name: 'Radar',
-    props: ['categories'],
+    props: [
+        'categories'
+    ],
     mounted ()
     {
         let labels = [];
-        //temp fix - we need to add art and dogshit
+        // temp fix - we need to add art and pet surprise / dogshit
         categories.filter((category) => (category !== 'art' && category !== 'dogshit')).map((category) => {
             labels.push(
                 this.$t('litter.categories.' + category)

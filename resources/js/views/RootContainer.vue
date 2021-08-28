@@ -24,6 +24,8 @@ export default {
         'user',
         'verified',
         'unsub',
+
+        // These exist when we are visiting olm.com/username = public profile
         'username',
         'publicProfile',
         'userData'

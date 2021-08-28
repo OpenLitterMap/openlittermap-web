@@ -315,5 +315,8 @@ Route::group(['prefix' => '/bbox', 'middleware' => ['can_bbox']], function () {
     Route::post('/verify/update', 'Bbox\VerifyBoxController@update');
 });
 
+// Public Profile Routes
+Route::get('/user/public-profile/map', 'User\PublicProfile\PublicProfileMapController@index');
+
 // Visit public profile of a User with settings on
 Route::get('{username}', 'User\Settings\PublicProfileController@index');

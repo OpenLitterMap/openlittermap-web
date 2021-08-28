@@ -29,11 +29,7 @@
                 <div style="flex: 0.1;" />
 
                 <ProfileCalendar
-
-                />
-
-                <ProfileTimeSeries
-                    :ppm="this.user.photos_per_month"
+                    v-if="canDownloadUserData"
                 />
 
                 <div style="flex: 0.25" />
@@ -43,10 +39,19 @@
                 <div class="smaller-empty-profile-card" />
             </div>
 
-            <div class="profile-buttons-container">
-                <ProfileDownload />
+            <ProfileTimeSeries
+                :ppm="this.user.photos_per_month"
+            />
 
-                <ProfilePhotos />
+            <div class="profile-buttons-container">
+                <ProfileDownload
+                    v-if="canDownloadUserData"
+                />
+
+                <!-- Hide this when viewing a public profile -->
+                <ProfilePhotos
+                    v-if="!publicProfile"
+                />
             </div>
         </div>
     </section>
@@ -86,6 +91,17 @@ export default {
     },
     computed: {
         /**
+         * Return True if we can download the users data
+         */
+        canDownloadUserData ()
+        {
+            // Return True if the user is visiting their own profile
+            if (!this.publicProfile) return true;
+
+            return this.publicProfile.settings.public_profile_download_my_data;
+        },
+
+        /**
          * Publicly available data per user
          */
         publicProfile ()
@@ -119,11 +135,14 @@ export default {
 <style lang="scss">
 
     .outer-profile-container {
+        display: flex;
+        flex-direction: column;
         min-height: calc(100vh - 82px);
     }
 
     .main-profile-container {
         background-color: #292f45;
+        flex: 1;
     }
 
     .profile-card {

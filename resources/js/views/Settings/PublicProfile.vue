@@ -10,7 +10,6 @@
                 <div class="row">
                     <p class="subtitle is-4 mb1">Do you want to make your User Dashboard public or private?</p>
 
-
                     <strong class="mb1">
                         Public Profile Status:
 
@@ -30,19 +29,9 @@
 
                     <div v-if="show_public_profile" class="pt2">
 
-                        <p class="subtitle is-4 mb1">You can control what data you want to display</p>
+                        <p class="subtitle is-4 mb1">You control what data you want to display</p>
 
                         <!-- Download my data -->
-                        <div class="control mb1">
-                            <input
-                                id="download"
-                                name="download"
-                                type="checkbox"
-                                v-model="download"
-                            />
-                            <label for="download">Show button to download my data</label>
-                        </div>
-
                         <!-- Show map with all my data -->
                         <div class="control mb1">
                             <input
@@ -51,7 +40,7 @@
                                 type="checkbox"
                                 v-model="map"
                             />
-                            <label for="map">Show map with all my data</label>
+                            <label for="map">Show map with all my data and show a button to download all my data. Does not include your email.</label>
                         </div>
 
                         <button

@@ -83,7 +83,7 @@ export default {
                     z += i18n.t('litter.' + b[0]) + ': ' + b[1] + ' <br>';
                 });
 
-                return '<p class="img-tag">' + z + ' </p><img src= "' + img + '" style="max-width: 100%;" /><p class="is-black">Taken on ' + moment(date).format('LLL') + '</p>'
+                return '<img src= "' + img + '" style="max-width: 100%;" /><p class="img-tag">' + z + ' </p><p class="is-black">Taken on ' + moment(date).format('LLL') + '</p>'
             }
         },
 

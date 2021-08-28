@@ -1,6 +1,6 @@
 export const mutations = {
     /**
-     * Initialise the public profile of a user when viewing /username
+     * Initialise the public profile and related data of a user when viewing /username
      */
     userByUsername (state, payload)
     {

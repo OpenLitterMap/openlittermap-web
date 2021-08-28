@@ -77,7 +77,7 @@ export default {
             await this.$store.dispatch('GET_USERS_PROFILE_MAP_DATA', {
                 period: this.period,
                 start: this.calendarData.dateRange.start,
-                end: this.calendarData.dateRange.end,
+                end: this.calendarData.dateRange.end
             });
 
             this.processing = false;
@@ -99,7 +99,6 @@ export default {
 <style scoped>
 
     .profile-calendar {
-        flex: 1;
         padding-top: 5em;
     }
 
