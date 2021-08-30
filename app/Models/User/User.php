@@ -286,7 +286,8 @@ class User extends Authenticatable
                 'show_username_maps',
                 'show_name_leaderboards',
                 'show_username_leaderboards',
-                'total_photos'
+                'total_photos',
+                'total_litter'
             );
     }
 

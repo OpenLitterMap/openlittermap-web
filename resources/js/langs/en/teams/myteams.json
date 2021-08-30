@@ -17,5 +17,6 @@
     "status-header": "Status",
     "photos-header": "Photos",
     "litter-header": "Litter",
-    "last-activity-header": "Last Activity"
+    "last-activity-header": "Last Activity",
+    "confirm-leave-team": "Are you sure?\nYou can always rejoin and your contributions will be saved."
 }

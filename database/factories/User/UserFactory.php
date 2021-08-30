@@ -34,4 +34,18 @@ class UserFactory extends Factory
             'images_remaining' => 1000
         ];
     }
+
+    /**
+     * Indicate that the user is verified.
+     *
+     * @return Factory
+     */
+    public function verified()
+    {
+        return $this->state(function (array $attributes) {
+            return [
+                'verification_required' => false,
+            ];
+        });
+    }
 }
