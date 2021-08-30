@@ -171,6 +171,8 @@ export const actions = {
             identifier: payload.identifier
         })
             .then(async response => {
+                console.log('update_team', response);
+
                 if (response.data.success) {
                     Vue.$vToastify.success({title, body});
                 } else {
