@@ -35,7 +35,7 @@ class LeaveTeamTest extends TestCase
 
         $response
             ->assertOk()
-            ->assertJsonStructure(['success', 'team', 'activeTeamId']);
+            ->assertJsonStructure(['success', 'team', 'activeTeam']);
 
         $user->refresh();
         $team->refresh();
@@ -103,13 +103,11 @@ class LeaveTeamTest extends TestCase
             'teamId' => $activeTeam->id,
         ]);
 
-        $response
-            ->assertOk()
-            ->assertJson(['activeTeamId' => $otherTeam->id]);
+        $response->assertOk();
 
-        $user->refresh();
+        $this->assertEquals($otherTeam->id, $response->json()['activeTeam']['id']);
 
-        $this->assertTrue($user->team->is($otherTeam));
+        $this->assertTrue($user->fresh()->team->is($otherTeam));
     }
 
     public function test_a_new_leader_is_assigned_to_the_team_when_the_leader_leaves()

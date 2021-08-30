@@ -17,5 +17,6 @@
     "status-header": "Status",
     "photos-header": "Zdjęcia",
     "litter-header": "Odpady",
-    "last-activity-header": "Ostatnia aktywność"
+    "last-activity-header": "Ostatnia aktywność",
+    "confirm-leave-team": "Jesteś pewny?\nZawsze możesz ponownie dołączyć, a Twój wkład zostanie zapisany."
 }

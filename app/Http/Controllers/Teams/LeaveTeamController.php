@@ -46,7 +46,7 @@ class LeaveTeamController extends Controller
         return [
             'success' => true,
             'team' => $team,
-            'activeTeamId' => $user->active_team
+            'activeTeam' => $user->team()->first()
         ];
     }
 

@@ -24,7 +24,7 @@ class TeamFactory extends Factory
     {
         return [
             'name' => $this->faker->name,
-            'identifier' => $this->faker->name,
+            'identifier' => $this->faker->unique()->lexify(),
             'created_by' => User::factory()
         ];
     }

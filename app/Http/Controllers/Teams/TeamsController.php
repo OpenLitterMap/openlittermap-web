@@ -173,32 +173,44 @@ class TeamsController extends Controller
             'identifier' => 'required|min:3|max:100'
         ]);
 
+        /** @var User $user */
         $user = Auth::user();
 
-        if ($team = Team::where('identifier', $request->identifier)->first())
+        $team = Team::whereIdentifier($request->identifier)->first();
+
+        if (!$team)
         {
-            // Check the user is not already in the team
-            foreach ($user->teams as $t)
-            {
-                if ($team->id === $t->id) return ['success' => false, 'msg' => 'already-joined'];
-            }
-
-            // Have the user join this team
-            $user->teams()->attach($team);
-
-            if (is_null($user->active_team))
-            {
-                $user->active_team = $team->id;
-                $user->save();
-            }
-
-            $team->members++;
-            $team->save();
-
-            return ['success' => true, 'team_id' => $team->id, 'team' => $team];
+            return ['success' => false, 'msg' => 'not-found'];
         }
 
-        return ['success' => false, 'msg' => 'not-found'];
+        // Check the user is not already in the team
+        if ($user->teams()->whereTeamId($team->id)->exists())
+        {
+            return ['success' => false, 'msg' => 'already-joined'];
+        }
+
+        // Have the user join this team and restore their contributions
+        $userPhotosOnThisTeam = $user->photos()->whereTeamId($team->id);
+
+        $user->teams()->attach($team, [
+            'total_photos' => $userPhotosOnThisTeam->count(),
+            'total_litter' => $userPhotosOnThisTeam->sum('total_litter')
+        ]);
+
+        if (is_null($user->active_team))
+        {
+            $user->active_team = $team->id;
+            $user->save();
+        }
+
+        $team->members++;
+        $team->save();
+
+        return [
+            'success' => true,
+            'team' => $team,
+            'activeTeam' => $user->team()->first()
+        ];
     }
 
     /**

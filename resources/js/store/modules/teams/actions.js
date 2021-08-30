@@ -58,7 +58,10 @@ export const actions = {
                     body: body + ' <i>' + response.data.team.name + '</i>.',
                 });
 
-                context.commit('usersActiveTeam', response.data.activeTeamId);
+                if (response.data.activeTeam) {
+                    context.commit('usersActiveTeam', response.data.activeTeam.id);
+                    context.commit('usersTeam', response.data.activeTeam);
+                }
             }
         })
         .catch(error => {
@@ -336,8 +339,8 @@ export const actions = {
                     position: 'bottom-right'
                 });
 
-                context.commit('usersActiveTeam', response.data.team_id);
-                context.commit('usersTeam', response.data.team);
+                context.commit('usersActiveTeam', response.data.activeTeam.id);
+                context.commit('usersTeam', response.data.activeTeam);
             }
 
             else if (response.data.msg === 'already-joined')

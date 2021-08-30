@@ -17,5 +17,6 @@
     "status-header": "Estado",
     "photos-header": "Fotos",
     "litter-header": "Basura",
-    "last-activity-header": "Última actividad"
+    "last-activity-header": "Última actividad",
+    "confirm-leave-team": "¿Está seguro?\nSiempre puedes volver a unirte y tus contribuciones se guardarán."
 }

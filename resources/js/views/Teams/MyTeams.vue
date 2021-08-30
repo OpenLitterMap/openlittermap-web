@@ -307,6 +307,10 @@ export default {
          */
         async leaveTeam ()
         {
+            if (!confirm(this.$t('teams.myteams.confirm-leave-team'))) {
+                return;
+            }
+
             this.loading = true;
 
             await this.$store.dispatch('LEAVE_TEAM', this.viewTeam);
