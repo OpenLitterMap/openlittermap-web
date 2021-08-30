@@ -40,14 +40,22 @@ export const actions = {
      */
     async LEAVE_TEAM (context, payload)
     {
+        let title = i18n.t('notifications.success');
+        let body = i18n.t('teams.myteams.just-left-team');
+
+        let titleError = i18n.t('notifications.error');
+        let bodyError = i18n.t('notifications.something-went-wrong');
+
         await axios.post('/teams/leave', {
             teamId: payload
         })
         .then(response => {
+            console.log('leave_team', response);
+
             if (response.data.success) {
                 Vue.$vToastify.success({
-                    title: i18n.t('notifications.success'),
-                    body: i18n.t('teams.myteams.just-left-team') + ' <i>' + response.data.team.name + '</i>.',
+                    title: title,
+                    body: body + ' <i>' + response.data.team.name + '</i>.',
                 });
 
                 context.commit('usersActiveTeam', response.data.activeTeamId);
@@ -55,8 +63,8 @@ export const actions = {
         })
         .catch(error => {
             Vue.$vToastify.error({
-                title: i18n.t('notifications.error'),
-                body: i18n.t('notifications.something-went-wrong'),
+                title: titleError,
+                body: bodyError,
             });
         });
     },
@@ -66,16 +74,21 @@ export const actions = {
      */
     async INACTIVATE_TEAM (context)
     {
+        let titleError = i18n.t('notifications.error');
+        let bodyError = i18n.t('notifications.something-went-wrong');
+
         await axios.post('/teams/inactivate')
         .then(response => {
+            console.log('inactivate_team', response);
+
             if (response.data.success) {
                 context.commit('usersActiveTeam', null);
             }
         })
         .catch(error => {
             Vue.$vToastify.error({
-                title: i18n.t('notifications.error'),
-                body: i18n.t('notifications.something-went-wrong'),
+                title: titleError,
+                body: bodyError,
             });
         });
     },
