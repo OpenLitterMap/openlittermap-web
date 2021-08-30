@@ -5,6 +5,8 @@
     "no-joined-team": "Je hebt je nog niet aangemeld bij een team",
     "leader-of-team": "Jij bent de leider van dit team",
     "join-team": "Sluit je svp aan bij een team",
+    "leave-team": "Team verlaten",
+    "just-left-team": "Je hebt net team verlaten",
     "change-active-team": "Maak een ander team het actieve team",
     "download-team-data": "Download Team Data",
     "hide-from-leaderboards": "Niet tonen op de scoreborden",
@@ -15,5 +17,6 @@
     "status-header": "Status",
     "photos-header": "Foto's",
     "litter-header": "Afval",
-    "last-activity-header": "Laatste Activiteit"
+    "last-activity-header": "Laatste Activiteit",
+    "confirm-leave-team": "Weet je zeker dat?\nJe kunt altijd weer meedoen en je bijdragen worden bewaard."
 }

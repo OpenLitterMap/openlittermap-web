@@ -7,7 +7,10 @@
     "unique-team-id": "Identificador de Equipo Único",
     "id-to-join-team": "Cualquiera con este identificador podrá unirse a tu equipo.",
     "create-team": "Crear equipo",
+    "update-team": "Actualizar el equipo",
     "created": "¡Enhorabuena! Se ha creado tu nuevo equipo.",
+    "updated": "Equipo actualizado.",
+    "select-team": "Seleccionar un equipo",
     "fail": "Hubo un error al crear tu equipo",
     "max-created": "No tienes permitido crear más equipos."
 }

@@ -8,7 +8,7 @@ use App\Models\User\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\DB;
 
-class IncreasePhotoTeamTotalPhotos implements ShouldQueue
+class IncreaseTeamTotalPhotos implements ShouldQueue
 {
     /**
      * If the user has an active team when they upload a photo,

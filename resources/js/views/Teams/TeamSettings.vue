@@ -1,19 +1,21 @@
 <template>
     <div class="tsc">
-        <h1 class="title is-2">{{ $t('teams.settings.privacy-title') }}</h1>
+        <h1 class="title is-2">{{ $t('teams.dashboard.settings') }}</h1>
 
-        <div class="columns mt3">
+        <p v-if="!loading && !teams.length" class="mb1">{{ $t('teams.myteams.no-joined-team') }}.</p>
 
-            <div class="column is-one-third">
+        <div v-if="teams.length" class="columns mt3 mb3">
+            <div class="column is-one-third pt0">
+                <h1 class="title">{{ $t('teams.settings.privacy-title') }}</h1>
                 <p class="mb1">{{ $t('teams.settings.privacy-text') }}</p>
             </div>
 
             <div class="column is-half card p2">
 
-                <p v-if="loading">Loading...</p>
+                <p v-if="loading">{{ $t('common.loading') }}</p>
 
                 <div v-else>
-                    <select v-model="viewTeam" class="input mb2">
+                    <select v-model="privacySectionSelectedTeamId" class="input mb2">
                         <option v-for="team in teams" :value="team.id">
                             {{ team.name }}
                         </option>
@@ -63,6 +65,76 @@
                 </div>
             </div>
         </div>
+
+        <div v-if="teamsLedByUser.length" class="columns mb3">
+            <div class="column is-one-third pt0">
+                <h1 class="title">{{ $t('teams.settings.team-update-title') }}</h1>
+                <p class="mb1">{{ $t('teams.settings.team-update-text') }}</p>
+            </div>
+
+            <div class="column is-half card p2">
+
+                <p v-if="loading">{{ $t('common.loading') }}</p>
+
+                <div v-else>
+                    <form method="post" @submit.prevent="updateTeam">
+                        <div class="control pb2">
+                            <p>{{ $t('teams.create.select-team') }}</p>
+                            <div class="select">
+                                <select v-model="attributesSectionSelectedTeamId">
+                                    <option v-for="team in teamsLedByUser" :value="team.id">
+                                        {{ team.name }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="control pb2">
+                            <label for="name">{{ $t('teams.create.team-name') }}</label>
+                            <input
+                                class="input"
+                                name="name"
+                                :placeholder="$t('teams.create.my-awesome-team-placeholder')"
+                                v-model="attributesTeamName"
+                                type="text"
+                                required
+                                @keydown="clearError('name')"
+                            />
+                            <p
+                                class="is-danger"
+                                v-if="getFirstError('name')"
+                                v-text="getFirstError('name')"
+                            />
+                        </div>
+
+                        <div class="control pb2">
+                            <label for="identifier">{{ $t('teams.create.unique-team-id') }}</label>
+                            <br>
+                            <small>{{ $t('teams.create.id-to-join-team') }}</small>
+                            <input
+                                class="input"
+                                id="identifier"
+                                name="identifier"
+                                placeholder="Awesome2021"
+                                required
+                                v-model="attributesTeamIdentifier"
+                                @keydown="clearError('identifier')"
+                            />
+                            <p
+                                class="is-danger"
+                                v-if="getFirstError('identifier')"
+                                v-text="getFirstError('identifier')"
+                            />
+                        </div>
+
+                        <div>
+                            <button :class="btnAll" :disabled="attributesProcessing">{{ $t('teams.create.update-team') }}</button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -73,9 +145,13 @@ export default {
     {
         return {
             loading: true,
-            viewTeam: 0,
-            allProcessing: false,
-            submitProcessing: false,
+            privacySectionSelectedTeamId: 0,
+            attributesSectionSelectedTeamId: 0,
+            privacyAllProcessing: false,
+            privacySubmitProcessing: false,
+            attributesProcessing: false,
+            attributesTeamName: '',
+            attributesTeamIdentifier: '',
             btnAll: 'button is-medium is-primary mt1',
             btn: 'button is-medium is-warning mt1 mr1',
         };
@@ -86,9 +162,18 @@ export default {
 
         if (this.teams.length === 0) await this.$store.dispatch('GET_USERS_TEAMS');
 
-        this.viewTeam = this.teams[0].id;
+        this.privacySectionSelectedTeamId = this.teams[0]?.id;
+        this.attributesSectionSelectedTeamId = this.teamsLedByUser[0]?.id;
+
+        this.clearErrors();
 
         this.loading = false;
+    },
+    watch: {
+        attributesSectionSelectedTeam () {
+            this.attributesTeamName = this.attributesSectionSelectedTeam.name;
+            this.attributesTeamIdentifier = this.attributesSectionSelectedTeam.identifier;
+        }
     },
     computed: {
 
@@ -97,7 +182,7 @@ export default {
          */
         allButton ()
         {
-            return this.allProcessing ? this.btnAll + ' is-loading' : this.btnAll;
+            return this.privacyAllProcessing ? this.btnAll + ' is-loading' : this.btnAll;
         },
 
         /**
@@ -105,7 +190,7 @@ export default {
          */
         disabled ()
         {
-            return (this.allProcessing || this.submitProcessing);
+            return (this.privacyAllProcessing || this.privacySubmitProcessing);
         },
 
         /**
@@ -113,7 +198,7 @@ export default {
          */
         submitButton ()
         {
-            return this.submitProcessing ? this.btn + ' is-loading' : this.btn;
+            return this.privacySubmitProcessing ? this.btn + ' is-loading' : this.btn;
         },
 
         /**
@@ -125,7 +210,7 @@ export default {
             },
             set (v) {
                 this.$store.commit('team_settings', {
-                    team_id: this.viewTeam,
+                    team_id: this.privacySectionSelectedTeamId,
                     key: 'show_name_leaderboards',
                     v
                 });
@@ -141,7 +226,7 @@ export default {
             },
             set (v) {
                 this.$store.commit('team_settings', {
-                    team_id: this.viewTeam,
+                    team_id: this.privacySectionSelectedTeamId,
                     key: 'show_username_leaderboards',
                     v
                 });
@@ -157,7 +242,7 @@ export default {
             },
             set (v) {
                 this.$store.commit('team_settings', {
-                    team_id: this.viewTeam,
+                    team_id: this.privacySectionSelectedTeamId,
                     key: 'show_name_maps',
                     v
                 });
@@ -173,7 +258,7 @@ export default {
             },
             set (v) {
                 this.$store.commit('team_settings', {
-                    team_id: this.viewTeam,
+                    team_id: this.privacySectionSelectedTeamId,
                     key: 'show_username_maps',
                     v
                 });
@@ -181,11 +266,19 @@ export default {
         },
 
         /**
-         * Current team we are viewing
+         * Current team we are viewing on privacy section
          */
         team ()
         {
-            return this.teams.find(team => team.id === this.viewTeam);
+            return this.teams.find(team => team.id === this.privacySectionSelectedTeamId);
+        },
+
+        /**
+         * Current team we are viewing on attributes section
+         */
+        attributesSectionSelectedTeam ()
+        {
+            return this.teamsLedByUser.find(team => team.id === this.attributesSectionSelectedTeamId);
         },
 
         /**
@@ -194,7 +287,31 @@ export default {
         teams ()
         {
             return this.$store.state.teams.teams;
-        }
+        },
+
+        /**
+         * Current user
+         */
+        user ()
+        {
+            return this.$store.state.user.user;
+        },
+
+        /**
+         * Array of the teams where the user is the leader
+         */
+        teamsLedByUser ()
+        {
+            return this.teams.filter((team) => team.leader === this.user.id);
+        },
+
+        /**
+         * Errors object from teams
+         */
+        errors ()
+        {
+            return this.$store.state.teams.errors;
+        },
     },
     methods: {
 
@@ -203,15 +320,67 @@ export default {
          */
         async submit (all)
         {
-            all ? this.allProcessing = true : this.submitProcessing = true;
+            all ? this.privacyAllProcessing = true : this.privacySubmitProcessing = true;
 
             await this.$store.dispatch('SAVE_TEAM_SETTINGS', {
                 all,
-                team_id: this.viewTeam
+                team_id: this.privacySectionSelectedTeamId
             });
 
-            this.submitProcessing = false;
-            this.allProcessing = false;
+            this.privacySubmitProcessing = false;
+            this.privacyAllProcessing = false;
+        },
+
+        /**
+         * Apply the updated attributes to this team
+         */
+        async updateTeam ()
+        {
+            this.attributesProcessing = true;
+
+            await this.$store.dispatch('UPDATE_TEAM', {
+                teamId: this.attributesSectionSelectedTeamId,
+                name: this.attributesTeamName,
+                identifier: this.attributesTeamIdentifier,
+            });
+
+            this.attributesProcessing = false;
+
+            if (Object.keys(this.errors).length) return;
+
+            // This will refresh the teams for other screens too
+            await this.$store.dispatch('GET_USERS_TEAMS');
+
+            // Refreshes the user's active team
+            if (this.user.active_team === this.attributesSectionSelectedTeamId) {
+                let updatedTeam = this.teams.find(team => team.id === this.attributesSectionSelectedTeamId)
+                this.$store.commit('usersTeam', updatedTeam)
+            }
+
+        },
+
+        /**
+         * Clear all errors
+         */
+        clearErrors ()
+        {
+            this.$store.commit('teamErrors', []);
+        },
+
+        /**
+         * Clear an error with this key
+         */
+        clearError (key)
+        {
+            if (this.errors[key]) this.$store.commit('clearTeamsError', key);
+        },
+
+        /**
+         * Get the first error from errors object
+         */
+        getFirstError (key)
+        {
+            return this.errors[key] ? this.errors[key][0] : null;
         }
     }
 };

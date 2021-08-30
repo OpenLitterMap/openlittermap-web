@@ -7,7 +7,10 @@
     "unique-team-id": "Unique Team Identifier",
     "id-to-join-team": "Anyone with this ID will be able to join your team.",
     "create-team": "Create Team",
+    "update-team": "Update Team",
     "created": "Congratulations! Your new team has been created.",
+    "updated": "Team updated.",
+    "select-team": "Select a team",
     "fail": "There was an error creating your Team",
     "max-created": "You are not allowed to create any more teams."
 }

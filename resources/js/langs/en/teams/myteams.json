@@ -5,6 +5,8 @@
     "no-joined-team": "You have not yet joined a team",
     "leader-of-team": "You are the leader of this team",
     "join-team": "Please join a team",
+    "leave-team": "Leave team",
+    "just-left-team": "You just left team",
     "change-active-team": "Change active team",
     "download-team-data": "Download Team Data",
     "hide-from-leaderboards": "Hide from Leaderboards",
@@ -15,5 +17,6 @@
     "status-header": "Status",
     "photos-header": "Photos",
     "litter-header": "Litter",
-    "last-activity-header": "Last Activity"
+    "last-activity-header": "Last Activity",
+    "confirm-leave-team": "Are you sure?\nYou can always rejoin and your contributions will be saved."
 }

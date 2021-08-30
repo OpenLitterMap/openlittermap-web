@@ -2,6 +2,9 @@
     "privacy-title": "Controla tu privacidad",
     "privacy-text": "Controla tu privacidad para cada equipo al que te hayas unido.",
 
+    "team-update-title": "Actualiza tus equipos",
+    "team-update-text": "Solo puede actualizar los equipos que lidera.",
+
     "maps": {
         "team-map": "Mapa del equipo",
         "name-will-appear": "Tu nombre aparecerá en los mapas",

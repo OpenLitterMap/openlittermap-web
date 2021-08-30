@@ -7,19 +7,32 @@
 
             <div v-else>
 
-                <div v-if="user.active_team" class="mb2" :key="user.team.id">
-                    <p>{{ $t('teams.myteams.currently-joined-team') }} <strong>{{ user.team.name }}</strong>.</p>
+                <div class="active-team-indicator">
+                    <div>
+                        <div v-if="user.active_team" class="mb1">
+                            <p>
+                                {{ $t('teams.myteams.currently-joined-team') }} <strong>{{ user.team.name }}</strong>.
+                            </p>
+                        </div>
+
+                        <p v-else class="mb1">{{ $t('teams.myteams.no-joined-team') }}.</p>
+
+                        <div v-if="isLeader" class="mb2">
+                            <p>{{ $t('teams.myteams.leader-of-team') }}.</p>
+                        </div>
+                    </div>
+
+                    <div v-if="user.active_team"
+                         class="button is-medium is-warning"
+                         @click="inactivateTeam"
+                    >
+                        {{ $t('common.inactivate') }}
+                    </div>
                 </div>
 
-                <p v-else>{{ $t('teams.myteams.no-joined-team') }}.</p>
-
-                <div v-if="isLeader" class="mb2">
-                    <p>{{ $t('teams.myteams.leader-of-team') }}.</p>
-                </div>
-
-                <div v-if="teams" style="overflow-x: scroll">
+                <div v-if="teams && teams.length" style="overflow-x: scroll">
                     <div class="flex mb1">
-                        <select v-model="viewTeam" class="input mtba" style="max-width: 30em; min-width: 5em;" @change="changeViewedTeam">
+                        <select v-model="viewTeam" class="input mtba" style="max-width: 20em; min-width: 5em;" @change="changeViewedTeam">
                             <option :selected="! viewTeam" :value="null" disabled>{{ $t('teams.myteams.join-team') }}</option>
                             <option v-for="team in teams" :value="team.id">{{ team.name }}</option>
                         </select>
@@ -32,6 +45,11 @@
                             :disabled="leaderboardProcessing"
                             @click="toggleLeaderboardVis"
                         >{{ showLeaderboard }}</button>
+                        <button
+                            v-if="members.data && members.data.length > 1"
+                            class="button is-medium is-danger ml1"
+                            @click="leaveTeam"
+                        >{{ $t('teams.myteams.leave-team') }}</button>
                     </div>
 
                     <table class="table is-fullwidth is-hoverable has-text-centered">
@@ -92,9 +110,6 @@
                     </div>
                 </div>
 
-                <div v-else class="mb2">
-                    <p>{{ $t('teams.myteams.currently-not-joined-team') }}</p>
-                </div>
             </div>
         </div>
     </section>
@@ -123,14 +138,7 @@ export default {
     {
         this.loading = true;
 
-        await this.$store.dispatch('GET_USERS_TEAMS');
-
-        if (this.activeTeam)
-        {
-            this.viewTeam = this.activeTeam;
-
-            await this.$store.dispatch('GET_TEAM_MEMBERS', this.viewTeam);
-        }
+        await this.getUserTeams();
 
         this.loading = false;
     },
@@ -259,6 +267,57 @@ export default {
             await this.changeViewedTeam();
 
             this.processing = false;
+        },
+
+        /**
+         * Inactivate the currently active team
+         */
+        async inactivateTeam ()
+        {
+            this.processing = true;
+
+            await this.$store.dispatch('INACTIVATE_TEAM');
+
+            this.viewTeam = this.teams[0]?.id;
+
+            await this.changeViewedTeam();
+
+            this.processing = false;
+        },
+
+        /**
+         * Get the user's teams and show the active team
+         */
+        async getUserTeams ()
+        {
+            await this.$store.dispatch('GET_USERS_TEAMS');
+
+            let teamToShow = this.activeTeam || this.teams[0]?.id;
+
+            if (teamToShow)
+            {
+                this.viewTeam = teamToShow;
+
+                await this.$store.dispatch('GET_TEAM_MEMBERS', this.viewTeam);
+            }
+        },
+
+        /**
+         * Leave the team
+         */
+        async leaveTeam ()
+        {
+            if (!confirm(this.$t('teams.myteams.confirm-leave-team'))) {
+                return;
+            }
+
+            this.loading = true;
+
+            await this.$store.dispatch('LEAVE_TEAM', this.viewTeam);
+
+            await this.getUserTeams();
+
+            this.loading = false;
         },
 
         /**
@@ -402,6 +461,22 @@ export default {
         background-color: #e67e22;
         padding: 0.5em 1em;
         border-radius: 10px;
+    }
+
+    .active-team-indicator {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+    }
+
+    @media (max-width: 640px) {
+        .active-team-indicator {
+            flex-direction: column;
+        }
+        .active-team-indicator .button {
+            max-width: min-content;
+            margin-bottom: 2em;
+        }
     }
 
 </style>

@@ -5,6 +5,8 @@
     "no-joined-team": "Aún no te has unido a un equipo",
     "leader-of-team": "Tu lideras este equipo",
     "join-team": "Por favor únete a un equipo",
+    "leave-team": "Dejar equipo",
+    "just-left-team": "Acabas de dejar el equipo",
     "change-active-team": "Cambiar equipo activo",
     "download-team-data": "Descargar datos del equipo",
     "hide-from-leaderboards": "Ocultarme de la clasificación",
@@ -15,5 +17,6 @@
     "status-header": "Estado",
     "photos-header": "Fotos",
     "litter-header": "Basura",
-    "last-activity-header": "Última actividad"
+    "last-activity-header": "Última actividad",
+    "confirm-leave-team": "¿Está seguro?\nSiempre puedes volver a unirte y tus contribuciones se guardarán."
 }

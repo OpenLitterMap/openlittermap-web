@@ -9,5 +9,6 @@
         "subscribed": "You have been subscribed to the updates and good news!",
         "unsubscribed": "You have unsubscribed. You will no longer receive the good news!",
         "flag-updated": "Your flag has been updated"
-    }
+    },
+    "something-went-wrong": "Etwas ist schief gelaufen. Bitte versuchen Sie es erneut oder kontaktieren Sie uns!"
 }
