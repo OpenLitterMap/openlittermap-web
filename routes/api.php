@@ -25,6 +25,7 @@ Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function(){
 });
 
 Route::get('/global/stats-data', 'API\GlobalStatsController@index');
+Route::get('/mobile-app-version', 'API\MobileAppVersionController');
 
 Route::post('add-tags', 'ApiPhotosController@addTags')
     ->middleware('auth:api');
