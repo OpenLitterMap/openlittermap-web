@@ -1,13 +1,20 @@
 <template>
     <div class="team-map-container">
-        <l-map :zoom="zoom" :center="center" :minZoom="1">
-            <l-tile-layer :url="url" :attribution="attribution" />
-            <v-marker-cluster v-if="geojson.length">
-                <l-marker v-for="i in geojson" :lat-lng="i.properties.latlng" :key="i.properties.id">
-                    <l-popup :content="content(i)" :options="options" />
-                </l-marker>
-            </v-marker-cluster>
-        </l-map>
+        <fullscreen ref="fullscreen" @change="fullscreenChange" class="profile-map-container">
+
+            <button class="btn-map-fullscreen" @click="toggle">
+                <i class="fa fa-expand"/>
+            </button>
+
+            <l-map :zoom="zoom" :center="center" :minZoom="1">
+                <l-tile-layer :url="url" :attribution="attribution"/>
+                <v-marker-cluster v-if="geojson.length">
+                    <l-marker v-for="i in geojson" :lat-lng="i.properties.latlng" :key="i.properties.id">
+                        <l-popup :content="content(i)" :options="options"/>
+                    </l-marker>
+                </v-marker-cluster>
+            </l-map>
+        </fullscreen>
     </div>
 </template>
 
@@ -37,6 +44,7 @@ export default {
             url:'https://{s}.tile.osm.org/{z}/{x}/{y}.png',
             attribution:'Map Data &copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors, Litter data &copy OpenLitterMap & Contributors ',
             loading: true,
+            fullscreen: false,
             options: mapHelper.popupOptions
         };
     },
@@ -71,6 +79,22 @@ export default {
                 ''
             );
         },
+
+        /**
+         *
+         */
+        fullscreenChange (fullscreen)
+        {
+            this.fullscreen = fullscreen
+        },
+
+        /**
+         *
+         */
+        toggle ()
+        {
+            this.$refs['fullscreen'].toggle() // recommended
+        },
     }
 };
 </script>
@@ -80,6 +104,13 @@ export default {
     @import "~leaflet.markercluster/dist/MarkerCluster.Default.css";
 
     @import '../../styles/variables.scss';
+
+    .btn-map-fullscreen {
+        position: absolute;
+        top: 1em;
+        right: 1em;
+        z-index: 1234;
+    }
 
     /* remove padding on mobile */
     .team-map-container {
