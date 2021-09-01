@@ -10,7 +10,7 @@
                         <div class="field with-x-spacing">
                             <label class="label has-text-white" for="email">E-Mail Address</label>
 
-                            <div class="control" :class="processing ? 'is-loading' : ''">
+                            <div class="control has-icons-left" :class="processing ? 'is-loading' : ''">
                                 <input
                                     id="email"
                                     type="email"
@@ -23,6 +23,9 @@
                                     autofocus
                                     placeholder="you@email.com"
                                 />
+                                <span class="icon is-small is-left">
+                                  <i class="fa fa-envelope"></i>
+                                </span>
 
                                 <p v-if="validationErrors"
                                    class="help has-text-white has-text-weight-bold"

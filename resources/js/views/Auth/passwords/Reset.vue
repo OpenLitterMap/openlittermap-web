@@ -9,7 +9,7 @@
                         <div class="field with-x-spacing">
                             <label class="label has-text-white" for="email">{{ $t('settings.details.email') }}</label>
 
-                            <div class="control" :class="processing ? 'is-loading' : ''">
+                            <div class="control has-icons-left" :class="processing ? 'is-loading' : ''">
                                 <input
                                     id="email"
                                     type="email"
@@ -17,11 +17,14 @@
                                     :class="emailErrors ? 'is-danger' : ''"
                                     name="email"
                                     v-model="email"
-                                    @input="clearErrors('email')"
+                                    @input="clearErrors"
                                     required
                                     autofocus
                                     placeholder="you@email.com"
                                 />
+                                <span class="icon is-small is-left">
+                                  <i class="fa fa-envelope"></i>
+                                </span>
 
                                 <p v-if="emailErrors"
                                    class="help has-text-white has-text-weight-bold"
@@ -32,18 +35,28 @@
                         <div class="field with-x-spacing">
                             <label class="label has-text-white" for="password">{{ $t('settings.password.enter-new-password') }}</label>
 
-                            <div class="control" :class="processing ? 'is-loading' : ''">
+                            <div class="control has-icons-left has-icons-right" :class="processing ? 'is-loading' : ''">
                                 <input
                                     id="password"
-                                    type="password"
+                                    :type="isPasswordVisible ? 'text' : 'password'"
                                     class="input"
                                     :class="passwordErrors ? 'is-danger' : ''"
                                     name="password"
                                     v-model="password"
-                                    @input="clearErrors('password')"
+                                    @input="clearErrors"
                                     required
                                     placeholder="********"
                                 />
+                                <span class="icon is-small is-left">
+                                  <i class="fa fa-lock"></i>
+                                </span>
+                                <span
+                                    class="icon is-small is-right cursor-pointer"
+                                    style="pointer-events: all;"
+                                    @click="isPasswordVisible = !isPasswordVisible"
+                                >
+                                  <i class="fa" :class="isPasswordVisible ? 'fa-eye' : 'fa-eye-slash'"></i>
+                                </span>
 
                                 <p v-if="passwordErrors"
                                    class="help has-text-white has-text-weight-bold"
@@ -54,18 +67,28 @@
                         <div class="field with-x-spacing">
                             <label class="label has-text-white" for="password_conf">{{ $t('settings.password.confirm-new-password') }}</label>
 
-                            <div class="control" :class="processing ? 'is-loading' : ''">
+                            <div class="control has-icons-left has-icons-right" :class="processing ? 'is-loading' : ''">
                                 <input
                                     id="password_conf"
-                                    type="password"
+                                    :type="isPasswordConfirmationVisible ? 'text' : 'password'"
                                     class="input"
                                     :class="passwordConfirmationErrors ? 'is-danger' : ''"
                                     name="password_conf"
                                     v-model="passwordConfirmation"
-                                    @input="clearErrors('password_confirmation')"
+                                    @input="clearErrors"
                                     required
                                     placeholder="********"
                                 />
+                                <span class="icon is-small is-left">
+                                  <i class="fa fa-lock"></i>
+                                </span>
+                                <div
+                                    class="icon is-small is-right cursor-pointer"
+                                    style="pointer-events: all;"
+                                    @click="isPasswordConfirmationVisible = !isPasswordConfirmationVisible"
+                                >
+                                  <i class="fa" :class="isPasswordConfirmationVisible ? 'fa-eye' : 'fa-eye-slash'"></i>
+                                </div>
 
                                 <p v-if="passwordConfirmationErrors"
                                    class="help has-text-white has-text-weight-bold"
@@ -97,7 +120,9 @@ export default {
             email: this.$route.query.email,
             password: '',
             passwordConfirmation: '',
-            processing: false
+            processing: false,
+            isPasswordVisible: false,
+            isPasswordConfirmationVisible: false
         };
     },
     computed: {
@@ -154,8 +179,8 @@ export default {
             this.processing = false;
         },
 
-        clearErrors (type) {
-            this.$store.commit('deleteUserError', type);
+        clearErrors () {
+            this.$store.commit('errors', []);
         }
     }
 };
@@ -170,5 +195,11 @@ export default {
 .with-x-spacing {
     padding-right: 24px;
     padding-left: 24px;
+}
+.cursor-pointer {
+    cursor: pointer;
+}
+.cursor-pointer:hover {
+    color: black;
 }
 </style>
