@@ -12,10 +12,10 @@ class Art extends LitterCategory
         'item'
     ];
 
-    public function types()
+    public function typesForExport(): array
     {
         return [
-            'item'
+            'item' => 'item'
         ];
     }
 }

@@ -5,7 +5,7 @@ namespace App\Models\Litter;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class LitterCategory extends Model
+abstract class LitterCategory extends Model
 {
     use HasFactory;
 
@@ -47,4 +47,14 @@ class LitterCategory extends Model
 
         return $string;
     }
+
+    /**
+     * Pre-defined litter types available on each class
+     */
+    public function types (): array
+    {
+        return array_keys($this->typesForExport());
+    }
+
+    abstract public function typesForExport(): array;
 }

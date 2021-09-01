@@ -30,25 +30,20 @@ class Smoking extends LitterCategory
     	return $this->belongsTo('App\Models\Photo');
     }
 
-    /**
-     * Pre-defined litter types/columns available on this class
-     *
-     * Todo - rename this tags
-     */
-    public function types ()
+    public function typesForExport (): array
     {
         return [
-            'butts',
-            'lighters',
-            'cigaretteBox',
-            'tobaccoPouch',
-            'skins',
-            'smokingOther',
-            'smoking_plastic',
-            'filters',
-            'filterbox',
-            'vape_pen',
-            'vape_oil'
+            'butts' => 'cigarette_butt',
+            'lighters' => 'lighter',
+            'cigaretteBox' => 'cigarette_box',
+            'tobaccoPouch' => 'tobacco_pouch',
+            'skins' => 'rolling_paper',
+            'smoking_plastic' => 'plastic_smoking_packaging',
+            'filters' => 'filter',
+            'filterbox' => 'filterbox',
+            'vape_pen' => 'vape_pen',
+            'vape_oil' => 'vape_oil',
+            'smokingOther' => 'smoking_other',
         ];
     }
 

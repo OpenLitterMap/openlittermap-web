@@ -102,16 +102,16 @@ class Photo extends Model
             'smoking',
             'food',
             'coffee',
-            'softdrinks',
             'alcohol',
-            'other',
-            'coastal',
+            'softdrinks',
             'sanitary',
+            'coastal',
             'dumping',
             'industrial',
             'brands',
             'dogshit',
-            'art'
+            'art',
+            'other',
         ];
     }
 

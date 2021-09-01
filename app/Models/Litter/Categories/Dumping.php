@@ -18,15 +18,12 @@ class Dumping extends LitterCategory
     	return $this->belongsTo('App\Models\Photo');
     }
 
-    /**
-     * Pre-defined litter types available on this class
-     */
-    public function types ()
+    public function typesForExport(): array
     {
         return [
-            'small',
-            'medium',
-            'large'
+            'small' => 'dumping_small',
+            'medium' => 'dumping_medium',
+            'large' => 'dumping_large',
         ];
     }
 }

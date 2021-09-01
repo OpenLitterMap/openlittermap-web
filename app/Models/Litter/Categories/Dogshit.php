@@ -18,15 +18,11 @@ class Dogshit extends LitterCategory
         'poo_in_bag'
     ];
 
-    /**
-     * Pre-defined litter types available on this class
-     */
-    public function types ()
+    public function typesForExport(): array
     {
         return [
-            'poo',
-            'poo_in_bag'
+            'poo' => 'dog_poo',
+            'poo_in_bag' => 'dog_poo_in_a_bag'
         ];
     }
-
 }

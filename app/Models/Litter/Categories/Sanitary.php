@@ -27,25 +27,21 @@ class Sanitary extends LitterCategory
     	return $this->hasOne('App\Models\Photo');
     }
 
-    /**
-     * Pre-defined litter types available on this class
-     */
-    public function types ()
+    public function typesForExport(): array
     {
         return [
-            'condoms',
-            'nappies',
-            'menstral',
-            'deodorant',
-            'ear_swabs',
-            'tooth_pick',
-            'tooth_brush',
-            'sanitaryOther',
-            'gloves',
-            'facemask',
-            'wetwipes',
-            'hand_sanitiser'
+            'condoms' => 'condom',
+            'nappies' => 'nappies',
+            'menstral' => 'menstral',
+            'deodorant' => 'deodorant',
+            'ear_swabs' => 'ear_swab',
+            'tooth_pick' => 'tooth_pick',
+            'tooth_brush' => 'tooth_brush',
+            'sanitaryOther' => 'sanitary_other',
+            'gloves' => 'glove',
+            'facemask' => 'facemask',
+            'wetwipes' => 'wet_wipe',
+            'hand_sanitiser' => 'hand_sanitiser',
         ];
     }
-
 }

@@ -2,9 +2,14 @@
 
 namespace App\Models\Litter\Categories;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Models\Litter\LitterCategory;
 
-class Political extends Model
+class Political extends LitterCategory
 {
-    //
+    protected $guarded = [];
+
+    public function typesForExport(): array
+    {
+        return [];
+    }
 }

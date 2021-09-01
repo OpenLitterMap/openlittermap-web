@@ -13,4 +13,13 @@ class TrashDog extends LitterCategory
     	'littercat',
     	'duck'
     ];
+
+    public function typesForExport(): array
+    {
+        return [
+            'trashdog' => 'trashdog',
+            'littercat' => 'littercat',
+            'duck' => 'duck',
+        ];
+    }
 }

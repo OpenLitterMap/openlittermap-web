@@ -18,15 +18,12 @@ class Coffee extends LitterCategory
     	return $this->belongsTo('App\Models\Photo');
     }
 
-    /**
-     * Pre-defined litter types available on this class
-     */
-    public function types ()
+    public function typesForExport(): array
     {
         return [
-            'coffeeCups',
-            'coffeeLids',
-            'coffeeOther'
+            'coffeeCups' => 'coffee_cup',
+            'coffeeLids' => 'coffee_lid',
+            'coffeeOther' => 'coffee_other',
         ];
     }
 }

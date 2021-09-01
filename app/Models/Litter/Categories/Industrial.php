@@ -9,10 +9,10 @@ class Industrial extends LitterCategory
     protected $fillable = [
     	'oil',
     	'chemical',
-    	'plastic',
+    	'industrial_plastic',
     	'bricks',
     	'tape',
-    	'other'
+    	'industrial_other'
     ];
 
     protected $table = 'industrial';
@@ -21,18 +21,15 @@ class Industrial extends LitterCategory
     	return $this->belongsTo('App\Models\Photo');
     }
 
-    /**
-     * Pre-defined litter types available on this class
-     */
-    public function types ()
+    public function typesForExport(): array
     {
         return [
-            'oil',
-            'chemical',
-            'plastic',
-            'bricks',
-            'tape',
-            'other'
+            'oil' => 'oil',
+            'chemical' => 'chemical',
+            'industrial_plastic' => 'industrial_plastic',
+            'bricks' => 'bricks',
+            'tape' => 'tape',
+            'industrial_other' => 'industrial_other',
         ];
     }
 }
