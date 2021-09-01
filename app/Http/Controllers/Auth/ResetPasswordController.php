@@ -43,28 +43,11 @@ class ResetPasswordController extends Controller
         $this->middleware('guest');
     }
 
-
-    /**
-     * Display the password reset view for the given token.
-     *
-     * If no token is present, display the link request form.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  string|null  $token
-     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
-     */
-    public function showResetForm(Request $request, $token = null)
-    {
-        return view('auth.passwords.reset')->with(
-            ['token' => $token, 'email' => $request->email]
-        );
-    }
-
     /**
      * Reset the given user's password.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
+     * @return \Illuminate\Http\JsonResponse
      */
     public function reset(Request $request)
     {
@@ -96,8 +79,8 @@ class ResetPasswordController extends Controller
     {
         return [
             'token' => 'required',
-            'email' => 'required|email',
-            'password' => 'required|confirmed|min:6',
+            'email' => 'required|email|max:75',
+            'password' => 'required|confirmed|min:6|case_diff|numbers|letters',
         ];
     }
 
@@ -145,13 +128,12 @@ class ResetPasswordController extends Controller
     /**
      * Get the response for a successful password reset.
      *
-     * @param  string  $response
-     * @return \Illuminate\Http\RedirectResponse
+     * @param string $response
+     * @return \Illuminate\Http\JsonResponse
      */
     protected function sendResetResponse($response)
     {
-        return redirect($this->redirectPath())
-                            ->with('status', trans($response));
+        return response()->json(['message' => trans($response)]);
     }
 
     /**
@@ -159,13 +141,13 @@ class ResetPasswordController extends Controller
      *
      * @param  \Illuminate\Http\Request
      * @param  string  $response
-     * @return \Illuminate\Http\RedirectResponse
+     * @return \Illuminate\Http\JsonResponse
      */
     protected function sendResetFailedResponse(Request $request, $response)
     {
-        return redirect()->back()
-                    ->withInput($request->only('email'))
-                    ->withErrors(['email' => trans($response)]);
+        return response()->json([
+            'errors' => ['email' => [trans($response)]]
+        ], 422);
     }
 
     /**
