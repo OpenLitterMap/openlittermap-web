@@ -239,6 +239,13 @@ Route::get('logout', 'UsersController@logout');
 
 // Register, Login
 Auth::routes();
+// Overwriting these auth blade views with Vue components
+Route::get('/password/reset', 'HomeController@index')
+    ->middleware('guest');
+Route::get('/password/reset/{token}', 'HomeController@index')
+    ->name('password.reset')
+    ->middleware('guest');
+
 
 /** PAYMENTS */
 Route::get('/join/{plan?}', 'HomeController@index');

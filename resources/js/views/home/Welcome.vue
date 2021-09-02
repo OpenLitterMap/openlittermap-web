@@ -313,6 +313,13 @@ export default {
         }
     }
 
+    /* Extra extra small */
+    @media (max-width: 430px) {
+        .main-title {
+            min-height: 220px;
+        }
+    }
+
     .slide-fade-left-enter-active {
         transition: all .5s ease;
     }

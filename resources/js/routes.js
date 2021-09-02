@@ -25,6 +25,15 @@ const router = new VueRouter({
             component: require('./views/home/Welcome').default
         },
         {
+            path: '/password/reset',
+            component: require('./views/Auth/Passwords/Email').default
+        },
+        {
+            path: '/password/reset/:token',
+            component: require('./views/Auth/Passwords/Reset').default,
+            props: true
+        },
+        {
             path: '/emails/unsubscribe/:token',
             component: require('./views/home/Welcome').default
         },
