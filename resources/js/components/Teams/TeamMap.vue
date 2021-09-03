@@ -114,10 +114,17 @@ export default {
 
     /* remove padding on mobile */
     .team-map-container {
-        height: 500px;
+        height: 750px;
         margin: 0;
         position: relative;
         padding-top: 1em;
+    }
+
+    @include media-breakpoint-down (lg)
+    {
+        .team-map-container {
+            height: 500px;
+        }
     }
 
     @include media-breakpoint-down (sm)
