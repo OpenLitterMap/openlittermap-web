@@ -127,7 +127,14 @@
                                     <table width="100%" border="0" cellspacing="0" cellpadding="0">
                                         <tr>
                                             <td align="center" class="padding">
-                                                <a href="http://www.openlittermap.com" target="_blank"><img src="https://openlittermap.com/assets/OLM_Logo.jpg" width="500" height="300" border="0" alt="Global Map Showing OpenLitterMap Data" style="display: block; padding: 0; color: #266e9c; text-decoration: none; font-family: Helvetica, arial, sans-serif; font-size: 16px;" class="img-max"></a>
+                                                <a href="http://www.openlittermap.com" target="_blank">
+                                                    <img src="https://openlittermap.com/assets/OLM_Logo.jpg"
+                                                         width="500"
+                                                         border="0"
+                                                         alt="Global Map Showing OpenLitterMap Data"
+                                                         style="display: block; padding: 0; color: #266e9c; text-decoration: none; font-family: Helvetica, arial, sans-serif; font-size: 16px;"
+                                                         class="img-max">
+                                                </a>
                                             </td>
                                         </tr>
                                         <tr>
@@ -141,6 +148,12 @@
                                                         <td align="center" style="font-size: 18px; font-family: Helvetica, Arial, sans-serif; color: #266e9c; padding-top: 15px;" class="padding-copy">Verify your email below to get started</td>
                                                     </tr>
                                                 </table>
+
+                                                <div align="center" style="border-radius: 3px;margin-top: 50px;background-color: #2ecc71">
+                                                    <a href="{{ route('confirm-email-token', $user->token) }}" target="_blank" style="font-size: 16px; font-family: Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; color: #000000; text-decoration: none; border-radius: 3px; padding: 15px 25px; display: inline-block;" class="mobile-button">
+                                                        Verify Your Email Address and Log In &rarr;
+                                                    </a>
+                                                </div>
                                             </td>
                                         </tr>
                                     </table>
@@ -163,13 +176,13 @@
                                     <table width="100%" border="0" cellspacing="0" cellpadding="0">
                                         <tr>
                                             <td align="center" style="font-size: 24px; font-family: Helvetica, Arial, sans-serif; color: #333; padding-bottom: 25px;" class="padding-copy">
-                                                <p style="padding-bottom: 0px !important; margin-bottom: 0px !important;">{{ $user->name }} ({{'@' . $user->username}}),</p>
+                                                <p style="padding-bottom: 0px !important; margin-bottom: 0px !important;">{{'@' . $user->username}}</p>
                                                 <br/>
-                                                <span>You Can Make a Difference</span>
+                                                <span>Ready to make a difference?</span>
                                             </td>
                                         </tr>
                                     </table>
-                                    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:500;">
+                                    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:500px;margin-top: 16px;">
                                         <tr>
                                             <td align="center" valign="top" style="font-size:0;">
                                                 <table align="center" border="0" cellspacing="0" cellpadding="0" width="500">
@@ -252,7 +265,6 @@
                                                                                 <img src="https://openlittermap.com/assets/icons/home/phone.png"
                                                                                      alt="smart phone with an icon indicating uploading to the cloud"
                                                                                      width="150"
-                                                                                     height="200"
                                                                                      border="0"
                                                                                      style="display: block; font-family: Arial; color: #666666; font-size: 14px;"
                                                                                 />
@@ -306,7 +318,15 @@
 
                                                                 <table align="left" border="0" cellpadding="0" cellspacing="0" width="150">
                                                                     <tr>
-                                                                        <td valign="top"><a href="http://openlittermap.com" target="_blank"><img src="https://openlittermap.com/assets/confirm/phone-upload.png" alt="map style pin indicating location" width="150" height="200" border="0" style="display: block; font-family: Arial; color: #666666; font-size: 14px;"></a></td>
+                                                                        <td valign="top">
+                                                                            <a href="http://openlittermap.com" target="_blank">
+                                                                                <img src="https://openlittermap.com/assets/confirm/phone-upload.png"
+                                                                                     alt="map style pin indicating location"
+                                                                                     width="150"
+                                                                                     border="0"
+                                                                                     style="display: block; font-family: Arial; color: #666666; font-size: 14px;">
+                                                                            </a>
+                                                                        </td>
                                                                     </tr>
                                                                 </table>
                                                             </div>
@@ -345,11 +365,6 @@
     <tr>
         <td bgcolor="#ffffff" align="center" style="padding: 25px 15px 70px 15px;" class="section-padding">
             <table border="0" cellpadding="0" cellspacing="0" width="500" class="responsive-table">
-
-                {{-- Verify Your Email --}}
-                <tr>
-                    <td align="center" style="border-radius: 3px;" bgcolor="#2ecc71"><a href="{{ route('confirm-email-token', $user->token) }}" target="_blank" style="font-size: 16px; font-family: Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; color: #000000; text-decoration: none; border-radius: 3px; padding: 15px 25px; display: inline-block;" class="mobile-button">Verify Your Email Address and Log In &rarr;</a></td>
-                </tr>
 
                 {{-- Slack and Community Info --}}
                 <tr>
