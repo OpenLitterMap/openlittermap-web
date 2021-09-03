@@ -133,7 +133,10 @@ class ResetPasswordController extends Controller
      */
     protected function sendResetResponse($response)
     {
-        return response()->json(['message' => trans($response)]);
+        return response()->json([
+            'success' => true,
+            'message' => trans($response)
+        ]);
     }
 
     /**
@@ -146,6 +149,7 @@ class ResetPasswordController extends Controller
     protected function sendResetFailedResponse(Request $request, $response)
     {
         return response()->json([
+            'success' => false,
             'errors' => ['email' => [trans($response)]]
         ], 422);
     }
