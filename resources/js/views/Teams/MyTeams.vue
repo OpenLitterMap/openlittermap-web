@@ -37,14 +37,26 @@
                             <option v-for="team in teams" :value="team.id">{{ team.name }}</option>
                         </select>
 
-                        <button :class="button" @click="changeActiveTeam" :disabled="disabled">{{ $t('teams.myteams.change-active-team') }}</button>
-                        <button :class="downloadClass" :disabled="dlProcessing" @click="download">{{ $t('teams.myteams.download-team-data') }}</button>
+                        <button
+                            v-if="activeTeam === null"
+                            :class="button"
+                            @click="changeActiveTeam"
+                            :disabled="disabled"
+                        >{{ $t('teams.myteams.change-active-team') }}</button>
+
+                        <button
+                            :class="downloadClass"
+                            :disabled="dlProcessing"
+                            @click="download"
+                        >{{ $t('teams.myteams.download-team-data') }}</button>
+
                         <button
                             v-if="isLeader"
                             :class="leaderboardClass"
                             :disabled="leaderboardProcessing"
                             @click="toggleLeaderboardVis"
                         >{{ showLeaderboard }}</button>
+
                         <button
                             v-if="members.data && members.data.length > 1"
                             class="button is-medium is-danger ml1"
@@ -143,7 +155,6 @@ export default {
         this.loading = false;
     },
     computed: {
-
         /**
          * Users currently active team
          */
