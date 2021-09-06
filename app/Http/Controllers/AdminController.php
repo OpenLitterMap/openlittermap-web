@@ -230,18 +230,11 @@ class AdminController extends Controller
      */
     public function getImage ()
     {
-        if ($photo = Photo::where('verification', 0.1)->first())
-        {
-            $photo->tags();
-        }
-        else
-        {
-            $photo = Photo::where([
-                'verification' => 0,
-                 ['user_id', '!=', 3233], // dont load freds data
-                ['user_id', '!=', 5292]  // or sarahs
-            ])->first();
-        }
+        $photo = Photo::where([
+            'verification' => 0,
+            ['user_id', '!=', 3233], // dont load freds data
+            ['user_id', '!=', 5292]  // or sarahs
+        ])->first();
 
         // Count photos that have been uploaded, but not tagged or submitted for verification
         $photosNotProcessed = Photo::where([
@@ -257,6 +250,15 @@ class AdminController extends Controller
             ['user_id', '!=', 3233],
             ['user_id', '!=', 5292]
         ])->count();
+
+        if (!$photo)
+        {
+            $photo = Photo::where([
+                'verification' => 0.1,
+                ['user_id', '!=', 3233], // dont load freds data
+                ['user_id', '!=', 5292]  // or sarahs
+            ])->first();
+        }
 
         return [
             'photo' => $photo,
