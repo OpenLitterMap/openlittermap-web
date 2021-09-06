@@ -25,22 +25,16 @@
                 @submit.prevent="submit"
                 @keydown="clearError($event.target.name)"
             >
-                <!-- NAME -->
-                <label for="name">{{ $t('auth.subscribe.form-field-name') }}</label>
-
-                <span
-                    class="is-danger"
-                    v-if="errorExists('name')"
-                    v-text="getFirstError('name')"
-                />
-                <br>
-
                 <div class="field">
+                    <!-- NAME -->
+                    <label class="label" for="name">{{ $t('auth.subscribe.form-field-name') }}</label>
+
                     <div class="control has-icons-left">
                         <input
                             name="name"
                             type="text"
                             class="input"
+                            :class="errorExists('name') ? 'is-danger' : ''"
                             placeholder="Your full name"
                             required
                             v-model="name"
@@ -48,23 +42,23 @@
                         <span class="icon is-small is-left">
                             <i class="fa fa-user" />
                         </span>
+                        <p
+                            class="help is-danger"
+                            v-if="errorExists('name')"
+                            v-text="getFirstError('name')"
+                        />
                    </div>
                 </div>
 
-                <!-- USERNAME OR ORGANISATION -->
-                <label for="username">{{ $t('auth.subscribe.form-field-unique-id') }}</label>
-
-                <span
-                    class="is-danger"
-                    v-if="errorExists('username')"
-                    v-text="getFirstError('username')"
-                />
-
                 <div class="field">
+                    <!-- USERNAME OR ORGANISATION -->
+                    <label class="label" for="username">{{ $t('auth.subscribe.form-field-unique-id') }}</label>
+
                     <div class="control has-icons-left">
                         <input
                             name="username"
                             class="input"
+                            :class="errorExists('username') ? 'is-danger' : ''"
                             placeholder="Unique Username or Organisation"
                             required
                             type="text"
@@ -73,23 +67,23 @@
                         <span class="icon is-small is-left">
                             @
                         </span>
+                        <p
+                            class="help is-danger"
+                            v-if="errorExists('username')"
+                            v-text="getFirstError('username')"
+                        />
                     </div>
                 </div>
 
-                <!-- EMAIL -->
-                <label for="email">{{ $t('auth.subscribe.form-field-email') }}</label>
-
-                <span
-                    class="is-danger"
-                    v-if="errorExists('email')"
-                    v-text="getFirstError('email')"
-                />
-
                 <div class="field">
+                    <!-- EMAIL -->
+                    <label class="label" for="email">{{ $t('auth.subscribe.form-field-email') }}</label>
+
                     <div class="control has-icons-left">
                         <input
                             name="email"
                             class="input"
+                            :class="errorExists('email') ? 'is-danger' : ''"
                             type="email"
                             placeholder="you@email.com"
                             required
@@ -98,18 +92,22 @@
                         <span class="icon is-small is-left">
                             <i class="fa fa-envelope" />
                         </span>
+                        <p
+                            class="help is-danger"
+                            v-if="errorExists('email')"
+                            v-text="getFirstError('email')"
+                        />
                     </div>
                 </div>
 
-                <!-- PASSWORD -->
-                <label for="password">{{ $t('auth.subscribe.form-field-password') }}</label>
-
-                <span class="is-danger" v-if="errorExists('password')" v-text="getFirstError('password')" />
-
                 <div class="field">
+                    <!-- PASSWORD -->
+                    <label class="label" for="password">{{ $t('auth.subscribe.form-field-password') }}</label>
+
                     <div class="control has-icons-left">
                         <input
                             class="input"
+                            :class="errorExists('password') ? 'is-danger' : ''"
                             name="password"
                             type="password"
                             placeholder="Create a strong password"
@@ -119,22 +117,22 @@
                         <span class="icon is-small is-left">
                             <i class="fa fa-key" />
                         </span>
+                        <p
+                            class="help is-danger"
+                            v-if="errorExists('password')"
+                            v-text="getFirstError('password')"
+                        />
                     </div>
                 </div>
 
-                <!-- CONFIRM PASSWORD -->
-                <label for="password_confirmation">{{ $t('auth.subscribe.form-field-pass-confirm') }}</label>
-
-                <span
-                    class="is-danger"
-                    v-if="errorExists('password_confirmation')"
-                    v-text="getFirstError('password_confirmation')"
-                />
-
                 <div class="field">
+                    <!-- CONFIRM PASSWORD -->
+                    <label class="label" for="password_confirmation">{{ $t('auth.subscribe.form-field-pass-confirm') }}</label>
+
                     <div class="control has-icons-left">
                         <input
                             class="input"
+                            :class="errorExists('password_confirmation') ? 'is-danger' : ''"
                             type="password"
                             name="password_confirmation"
                             placeholder="Confirm your Password"
@@ -144,6 +142,11 @@
                         <span class="icon is-small is-left">
                             <i class="fa fa-refresh"/>
                         </span>
+                        <p
+                            class="help is-danger"
+                            v-if="errorExists('password_confirmation')"
+                            v-text="getFirstError('password_confirmation')"
+                        />
                     </div>
                 </div>
 
@@ -162,13 +165,18 @@
                 </p>
 
                 <div class="captcha">
-                     <span class="is-danger" v-if="errorExists('g_recaptcha_response')" v-text="getFirstError('g_recaptcha_response')"></span>
-
-                    <vue-recaptcha
-                        :sitekey="computedKey"
-                        v-model="g_recaptcha_response"
-                        :loadRecaptchaScript="true"
-                        @verify="recaptcha"
+                    <div>
+                        <vue-recaptcha
+                            :sitekey="computedKey"
+                            v-model="g_recaptcha_response"
+                            :loadRecaptchaScript="true"
+                            @verify="recaptcha"
+                        />
+                    </div>
+                    <p
+                        class="help is-danger"
+                        v-if="errorExists('g_recaptcha_response')"
+                        v-text="getFirstError('g_recaptcha_response')"
                     />
                 </div>
                 <br>
@@ -354,10 +362,7 @@ export default {
                 plan_id
             });
 
-            this.name = '';
-            this.username = '';
-            this.email = '';
-            this.password = '';
+            this.password_confirmation = '';
 
             this.processing = false;
         },
@@ -369,7 +374,8 @@ export default {
 
     .captcha {
         display: flex;
-        justify-content: center;
+        align-items: center;
+        flex-direction: column;
     }
 
     .call-container {
@@ -386,10 +392,6 @@ export default {
 
 	.input-group {
 		padding-bottom: 1em;
-	}
-
-	.is-danger {
-		color: red;
 	}
 
     .signup-container {

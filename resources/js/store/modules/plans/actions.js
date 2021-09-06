@@ -50,6 +50,9 @@ export const actions = {
                 });
             }
 
+            // Clear errors
+            context.commit('createAccountErrors', []);
+
             // log the user in?
         })
         .catch(error => {
