@@ -217,22 +217,24 @@
                                                                         <td style="padding: 40px 0 0 0;" class="no-padding">
                                                                             <table border="0" cellspacing="0" cellpadding="0" width="100%">
                                                                                 <tr>
-                                                                                    <td align="left" style="padding: 0 0 5px 0; font-size: 22px; font-family: Helvetica, Arial, sans-serif; font-weight: normal; color: #333333;" class="padding-copy">1. Take a Picture</td>
+                                                                                    <td align="left" style="text-align: left; padding: 0 0 5px 0; font-size: 22px; font-family: Helvetica, Arial, sans-serif; font-weight: normal; color: #333333;" class="padding-copy">1. Take a Picture</td>
                                                                                 </tr>
                                                                                 <tr>
-                                                                                    <td align="left" style="padding: 10px 0 15px 0; font-size: 16px; line-height: 24px; font-family: Helvetica, Arial, sans-serif; color: #666666;" class="padding-copy">It's easy. Just take a picture of some litter. Make sure your location services are turned on*.</td>
+                                                                                    <td align="left" style="text-align: left; padding: 10px 0 15px 0; font-size: 16px; line-height: 24px; font-family: Helvetica, Arial, sans-serif; color: #666666;" class="padding-copy">It's easy. Just take a picture of some litter. Make sure your location services are turned on*.</td>
                                                                                 </tr>
                                                                             </table>
                                                                         </td>
                                                                     </tr>
                                                                     <td align="center" style="padding: 10px 0 15px 0; font-size: 16px; line-height: 24px; font-family: Helvetica, Arial, sans-serif; color: #666666;" class="padding-copy">
-                                                                        <strong>
-                                                                            * iPhone. Open Settings -> Privacy -> Location. Turn "Camera On While Using".
-                                                                            <br>
-                                                                            <br>
-                                                                            * Android. Open the Camera. Go to camera settings => Activate Geotagging. Pull down top-menu and Activate GPS
-                                                                        </strong>
-                                                                        <p>Your photos are now geotagged!</p>
+                                                                        <div style="text-align: left">
+                                                                            <strong>
+                                                                                * iPhone. Open Settings -> Privacy -> Location. Turn "Camera On While Using".
+                                                                                <br>
+                                                                                <br>
+                                                                                * Android. Open the Camera. Go to camera settings => Activate Geotagging. Pull down top-menu and Activate GPS
+                                                                            </strong>
+                                                                            <p>Your photos are now geotagged!</p>
+                                                                        </div>
                                                                     </td>
                                                                 </table>
                                                             </div>
@@ -281,10 +283,10 @@
                                                                         <td style="padding: 40px 0 0 0;" class="no-padding">
                                                                             <table border="0" cellspacing="0" cellpadding="0" width="100%">
                                                                                 <tr>
-                                                                                    <td align="left" style="padding: 0 0 5px 0; font-size: 22px; font-family: Helvetica, Arial, sans-serif; font-weight: normal; color: #333333;" class="padding-copy">2. Tag the litter</td>
+                                                                                    <td align="left" style="text-align: left; padding: 0 0 5px 0; font-size: 22px; font-family: Helvetica, Arial, sans-serif; font-weight: normal; color: #333333;" class="padding-copy">2. Tag the litter</td>
                                                                                 </tr>
                                                                                 <tr>
-                                                                                    <td align="left" style="padding: 10px 0 15px 0; font-size: 16px; line-height: 24px; font-family: Helvetica, Arial, sans-serif; color: #666666;" class="padding-copy">Just tag what litter you see in the photo. You can tag if the litter has been picked up or if it's still there!</td>
+                                                                                    <td align="left" style="text-align: left; padding: 10px 0 15px 0; font-size: 16px; line-height: 24px; font-family: Helvetica, Arial, sans-serif; color: #666666;" class="padding-copy">Just tag what litter you see in the photo. You can tag if the litter has been picked up or if it's still there!</td>
                                                                                 </tr>
                                                                             </table>
                                                                         </td>
@@ -338,10 +340,10 @@
                                                                         <td style="padding: 40px 0 0 0;" class="no-padding">
                                                                             <table border="0" cellspacing="0" cellpadding="0" width="100%">
                                                                                 <tr>
-                                                                                    <td align="left" style="padding: 0 0 5px 0; font-size: 22px; font-family: Helvetica, Arial, sans-serif; font-weight: normal; color: #333333;" class="padding-copy">3. Upload Your Tagged Images</td>
+                                                                                    <td align="left" style="text-align: left; padding: 0 0 5px 0; font-size: 22px; font-family: Helvetica, Arial, sans-serif; font-weight: normal; color: #333333;" class="padding-copy">3. Upload Your Tagged Images</td>
                                                                                 </tr>
                                                                                 <tr>
-                                                                                    <td align="left" style="padding: 10px 0 15px 0; font-size: 16px; line-height: 24px; font-family: Helvetica, Arial, sans-serif; color: #666666;" class="padding-copy">OpenLitterMap automatically maps your photos so you don't need to remember when or where you took the picture. Keep OpenLitterMap.com/global open to see a live feed of people uploading new photos!</td>
+                                                                                    <td align="left" style="text-align: left; padding: 10px 0 15px 0; font-size: 16px; line-height: 24px; font-family: Helvetica, Arial, sans-serif; color: #666666;" class="padding-copy">OpenLitterMap automatically maps your photos so you don't need to remember when or where you took the picture. Keep OpenLitterMap.com/global open to see a live feed of people uploading new photos!</td>
                                                                                 </tr>
                                                                             </table>
                                                                         </td>
