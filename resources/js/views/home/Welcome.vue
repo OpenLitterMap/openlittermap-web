@@ -124,7 +124,7 @@
 
             <!-- Partners -->
             <div class="partners-container container is-max-desktop">
-                <p class="has-text-centered main-title">Our partners</p>
+                <p class="has-text-centered main-title">{{ $t('home.welcome.our-partners') }}</p>
                 <div>
                   <div class="partners-list">
                       <div class="partner has-text-centered">
@@ -148,6 +148,11 @@
                           </a>
                       </div>
                   </div>
+                </div>
+                <div class="partners-action has-text-centered">
+                    <a href="mailto:info@openlittermap.com"
+                       class="button is-medium is-primary"
+                    >{{ $t('home.welcome.become-a-partner') }}</a>
                 </div>
             </div>
 
@@ -293,6 +298,10 @@ export default {
         padding-left: 72px;
         padding-right: 72px;
         margin-bottom: 36px;
+    }
+
+    .partners-action {
+        margin-top: 36px;
     }
 
     .partners-list {
