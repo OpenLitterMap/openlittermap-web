@@ -55,15 +55,8 @@ Route::post('/photos/submit', 'ApiPhotosController@store');
 // Delete Photos
 Route::delete('/photos/delete', 'ApiPhotosController@deleteImage');
 
-// Tag Litter to Photos
-Route::post('/photos/update', 'ApiPhotosController@dynamicUpdate')
-    ->middleware('auth:api');
-
 // Check for any photos uploaded on web
 Route::get('/check-web-photos', 'ApiPhotosController@check')
-    ->middleware('auth:api');
-
-Route::post('/add-tags-to-web-img', 'ApiPhotosController@confirm')
     ->middleware('auth:api');
 
 /**
