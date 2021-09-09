@@ -126,18 +126,18 @@ function createPointGroups ()
     if (!pointsControllerShowing)
     {
         const overlays = {
-            Alcohol: new L.LayerGroup(),
-            Brands: new L.LayerGroup(),
-            Coastal: new L.LayerGroup(),
-            Coffee: new L.LayerGroup(),
-            Dumping: new L.LayerGroup(),
-            Food: new L.LayerGroup(),
-            Industrial: new L.LayerGroup(),
-            Other: new L.LayerGroup(),
-            PetSurprise: new L.LayerGroup(),
-            Sanitary: new L.LayerGroup(),
-            Smoking: new L.LayerGroup(),
-            SoftDrinks: new L.LayerGroup(),
+            Alcohol: (new L.LayerGroup()).addTo(map),
+            Brands: (new L.LayerGroup()).addTo(map),
+            Coastal: (new L.LayerGroup()).addTo(map),
+            Coffee: (new L.LayerGroup()).addTo(map),
+            Dumping: (new L.LayerGroup()).addTo(map),
+            Food: (new L.LayerGroup()).addTo(map),
+            Industrial: (new L.LayerGroup()).addTo(map),
+            Other: (new L.LayerGroup()).addTo(map),
+            PetSurprise: (new L.LayerGroup()).addTo(map),
+            Sanitary: (new L.LayerGroup()).addTo(map),
+            Smoking: (new L.LayerGroup()).addTo(map),
+            SoftDrinks: (new L.LayerGroup()).addTo(map),
         };
 
         pointsLayerController = L.control.layers(null, overlays).addTo(map);
@@ -268,7 +268,7 @@ export default {
         litterArtPoints = L.geoJSON(null, {
             pointToLayer: createArtIcon,
             onEachFeature: onEachArtFeature
-        });
+        }).addTo(map);
 
         litterArtPoints.addData(this.$store.state.globalmap.artData.features);
 
