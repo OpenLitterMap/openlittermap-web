@@ -149,11 +149,11 @@
                       </div>
                   </div>
                 </div>
-                <div class="partners-action has-text-centered">
-                    <a href="mailto:info@openlittermap.com"
-                       class="button is-medium is-primary"
-                    >{{ $t('home.welcome.become-a-partner') }}</a>
-                </div>
+<!--                <div class="partners-action has-text-centered">-->
+<!--                    <a href="mailto:info@openlittermap.com"-->
+<!--                       class="button is-medium is-primary"-->
+<!--                    >{{ $t('home.welcome.become-a-partner') }}</a>-->
+<!--                </div>-->
             </div>
 
             <!-- I want to help -->
