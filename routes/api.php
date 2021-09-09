@@ -38,9 +38,6 @@ Route::post('/validate-token', function(Request $request) {
 // Create Account
 Route::post('/register', 'ApiRegisterController@register');
 
-// Try to log in
-Route::post('/oauth/token', 'AccessTokenController@issueToken');
-
 // Fetch User
 Route::get('/user', function (Request $request) {
     return Auth::guard('api')->user()->append('position');
