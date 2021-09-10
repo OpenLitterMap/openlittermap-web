@@ -44,8 +44,6 @@ export const actions = {
         .then(response => {
             console.log('send_password_reset_link', response);
 
-            if (!response.data.success) return;
-
             Vue.$vToastify.success({title, body: response.data.message});
         })
         .catch(error => {

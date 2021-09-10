@@ -27,7 +27,7 @@ trait FilterClustersByGeohashTrait
         $center_lon = ($bbox->left + $bbox->right) / 2;
 
         // zoom level will determine what level of geohash precision to use
-        $precision = $this->zoomToGeoHashPrecision[request()->zoom];
+        $precision = $this->getGeohashPrecision(request()->zoom);
 
         // Get the center of the bounding box, as a geohash
         $center_geohash = GeoHash::encode($center_lat, $center_lon, $precision); // precision 0 will return the full geohash
