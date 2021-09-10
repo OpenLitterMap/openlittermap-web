@@ -101,4 +101,18 @@ trait GeohashTrait
 
         return $neighbors;
     }
+
+    /**
+     * Handles edge cases when the zoom
+     * is more than the max allowed level of 18
+     *
+     * @param int $precision
+     * @return int
+     */
+    protected function getGeohashPrecision($precision): int
+    {
+        $precision = min($precision, 18);
+
+        return $this->zoomToGeoHashPrecision[$precision];
+    }
 }
