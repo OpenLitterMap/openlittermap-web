@@ -19,6 +19,7 @@ use App\Events\Photo\IncrementPhotoMonth;
 
 use App\Helpers\Post\UploadHelper;
 
+use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -88,13 +89,14 @@ class ApiPhotosController extends Controller
         );
      *
      * @return array
+     * @throws GuzzleException
      */
     public function store (Request $request) :array
     {
         $request->validate([
             'photo' => 'required|mimes:jpg,png,jpeg',
-            'lat' => 'required',
-            'lon' => 'required',
+            'lat' => 'required|numeric',
+            'lon' => 'required|numeric',
             'date' => 'required'
         ]);
 
