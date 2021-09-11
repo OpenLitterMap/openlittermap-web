@@ -20,11 +20,10 @@ class LitterCategoryTest extends TestCase
      * @dataProvider getCategories
      * @param $category
      */
-    public function test_categories_have_identical_fillable_and_types_as_their_schema($category)
+    public function test_categories_have_identical_types_as_their_schema($category)
     {
         $photo = Photo::factory()->make();
         $model = $photo->$category()->make([]);
-        $fillable = $model->getFillable();
         $types = $model->types();
 
         $columnListing = $this->deleteArrValues(
@@ -32,8 +31,19 @@ class LitterCategoryTest extends TestCase
             ['id', 'created_at', 'updated_at']
         );
 
-        $this->assertEqualsCanonicalizing($fillable, $types);
-        $this->assertEqualsCanonicalizing($fillable, $columnListing);
+        $this->assertEqualsCanonicalizing($types, $columnListing);
+    }
+
+    /**
+     * @dataProvider getCategories
+     * @param $category
+     */
+    public function test_categories_have_no_guarded_properties($category)
+    {
+        $photo = Photo::factory()->make();
+        $model = $photo->$category()->make([]);
+
+        $this->assertEmpty($model->getGuarded());
     }
 
     /**

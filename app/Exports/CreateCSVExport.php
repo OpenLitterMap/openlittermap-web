@@ -64,7 +64,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             // We make a temporary model to get the types, without persisting it
             $photo = new Photo;
             $model = $photo->$category()->make();
-            $result = array_merge($result, array_values($model->typesForExport()));
+            $result = array_merge($result, $model->types());
         }
 
         return $result;

@@ -17,10 +17,10 @@ class CreateCSVExportTest extends TestCase
 
         foreach (Photo::categories() as $category) {
             $photo = Photo::factory()->make();
-            $types = $photo->$category()->make()->typesForExport();
+            $types = $photo->$category()->make()->types();
 
             $expected[] = strtoupper($category);
-            $expected = array_merge($expected, array_values($types));
+            $expected = array_merge($expected, $types);
         }
 
         // We make this assertion to be sure that

@@ -9,6 +9,8 @@ abstract class LitterCategory extends Model
 {
     use HasFactory;
 
+    protected $guarded = [];
+
     /**
      * Total amount of litter on any litter category model
      */
@@ -47,14 +49,4 @@ abstract class LitterCategory extends Model
 
         return $string;
     }
-
-    /**
-     * Pre-defined litter types available on each class
-     */
-    public function types (): array
-    {
-        return array_keys($this->typesForExport());
-    }
-
-    abstract public function typesForExport(): array;
 }
