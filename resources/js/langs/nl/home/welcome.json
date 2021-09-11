@@ -1,7 +1,7 @@
 {
     "plastic-pollution-out-of-control": "Plastic vervuiling is op hol geslagen",
-    "fires-out-of-control": "Cigarette butts can start fires",
-    "climate-change-out-of-control": "Plastic is increasing climate change",
+    "fires-out-of-control": "Sigarettenpeuken kunnen brand veroorzaken",
+    "climate-change-out-of-control": "Plastic zorgt voor toenemende klimaatverandering",
     "help-us": "Help ons om de meest geavanceerde database te maken met data over afval, merken en plastic vervuiling",
     "why-collect-data": "Waarom zouden we data moeten verzamelen",
     "visibility": "Zichtbaarheid",
@@ -18,5 +18,7 @@
     "share-results": "Deel je resultaten",
     "share": "Deel de plattegronden en download onze data. Laat iedereen zien hoe het gesteld is met de vervuiling op de wereld",
     "verified": "Jouw email is bevestigd! Je kunt nu inloggen.",
-    "close": "Sluiten"
+    "close": "Sluiten",
+    "our-partners": "Onze Partners",
+    "become-a-partner": "Een partner worden"
 }

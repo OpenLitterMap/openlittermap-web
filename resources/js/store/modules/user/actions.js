@@ -1,6 +1,7 @@
 import routes from '../../../routes'
 import Vue from "vue";
 import i18n from "../../../i18n";
+import router from '../../../routes';
 
 export const actions = {
 
@@ -28,6 +29,56 @@ export const actions = {
             // update errors. user.js
             context.commit('errors', error.response.data.errors);
         });
+    },
+
+    /**
+     * The user is requesting a password reset link
+     */
+    async SEND_PASSWORD_RESET_LINK (context, payload)
+    {
+        const title = i18n.t('notifications.success');
+
+        await axios.post('/password/email', {
+            email: payload,
+        })
+        .then(response => {
+            console.log('send_password_reset_link', response);
+
+            Vue.$vToastify.success({title, body: response.data.message});
+        })
+        .catch(error => {
+            console.log('error.send_password_reset_link', error.response.data);
+
+            context.commit('errors', error.response.data.errors);
+        });
+    },
+
+    /**
+     * The user is resetting their password
+     */
+    async RESET_PASSWORD (context, payload)
+    {
+        const title = i18n.t('notifications.success');
+
+        await axios.post('/password/reset', payload)
+            .then(response => {
+                console.log('reset_password', response);
+
+                if (!response.data.success) return;
+
+                Vue.$vToastify.success({title, body: response.data.message});
+
+                // Go home and log in
+                setTimeout(function() {
+                    router.replace('/');
+                    router.go(0);
+                }, 4000);
+            })
+            .catch(error => {
+                console.log('error.reset_password', error.response.data);
+
+                context.commit('errors', error.response.data.errors);
+            });
     },
 
     /**

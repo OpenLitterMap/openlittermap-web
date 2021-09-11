@@ -213,22 +213,40 @@ class UploadPhotoTest extends TestCase
         $response->assertRedirect('login');
     }
 
-    public function test_the_uploaded_photo_is_validated()
+
+    public function validationDataProvider(): array
+    {
+        return [
+            [
+                'fields' => [],
+                'errors' => ['photo', 'lat', 'lon', 'date'],
+            ],
+            [
+                'fields' => ['photo' => UploadedFile::fake()->image('some.pdf'), 'lat' => 5, 'lon' => 5, 'date' => now()->toDateTimeString()],
+                'errors' => ['photo']
+            ],
+            [
+                'fields' => ['photo' => 'validImage', 'lat' => 'asdf', 'lon' => 'asdf', 'date' => now()->toDateTimeString()],
+                'errors' => ['lat', 'lon']
+            ],
+        ];
+    }
+
+    /**
+     * @dataProvider validationDataProvider
+     */
+    public function test_the_uploaded_photo_is_validated($fields, $errors)
     {
         $user = User::factory()->create();
 
         $this->actingAs($user, 'api');
 
-        $this->postJson('/api/photos/submit', ['photo' => null])
-            ->assertStatus(422)
-            ->assertJsonValidationErrors(['photo', 'lat', 'lon', 'date']);
+        if (($fields['photo'] ?? null) == 'validImage') {
+            $fields['photo'] = $this->getApiImageAttributes($this->getImageAndAttributes());
+        }
 
-        $nonImage = UploadedFile::fake()->image('some.pdf');
-
-        $this->postJson('/api/photos/submit', [
-            'photo' => $nonImage
-        ])
+        $this->postJson('/api/photos/submit', $fields)
             ->assertStatus(422)
-            ->assertJsonValidationErrors('photo');
+            ->assertJsonValidationErrors($errors);
     }
 }

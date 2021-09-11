@@ -43,7 +43,7 @@
                             </router-link>
 
                             <!-- Dropdown toggle -->
-                            <div class="navbar-item has-dropdown is-hoverable">
+                            <div :key="$route.fullPath" class="navbar-item has-dropdown is-hoverable">
 
                                 <!-- "More" -->
                                 <a id="more" class="navbar-item"> {{ $t('nav.more')}}</a>
@@ -106,7 +106,7 @@
                             <router-link to="/signup" class="navbar-item">
                                  {{ $t('nav.signup')}}
                             </router-link>
-                            
+
                             <!-- Menu for available languages -->
                             <Languages />
 

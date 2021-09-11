@@ -22,7 +22,7 @@ class ApiRegisterController extends Controller
     {
     	$this->validate($request, [
             'email'    => 'required|email|max:75|unique:users',
-            'password' => 'required|min:6|max:255', //case_diff|numbers|letters
+            'password' => 'required|min:6|max:255|case_diff|numbers|letters',
             'username' => 'required|min:3|max:20|unique:users|different:password',
         ]);
 

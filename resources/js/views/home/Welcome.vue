@@ -6,7 +6,7 @@
             <div class="columns c-1">
                 <div class="column is-half">
                     <transition name="slide-fade-left" mode="out-in">
-                        <h1 class="main-title"
+                        <h1 class="main-title variable-height"
                             :key="activeHeading.title"
                             v-html="activeHeading.title"
                         ></h1>.
@@ -122,6 +122,17 @@
                 </div>
             </div>
 
+            <!-- Partners -->
+            <div class="partners-container container is-max-desktop">
+                <p class="has-text-centered main-title">{{ $t('home.welcome.our-partners') }}</p>
+                <Partners/>
+<!--                <div class="partners-action has-text-centered">-->
+<!--                    <a href="mailto:info@openlittermap.com"-->
+<!--                       class="button is-medium is-primary"-->
+<!--                    >{{ $t('home.welcome.become-a-partner') }}</a>-->
+<!--                </div>-->
+            </div>
+
             <!-- I want to help -->
         </div>
 
@@ -130,11 +141,12 @@
 </template>
 
 <script>
-import Footer from './Footer'
+import Footer from './Footer';
+import Partners from './Partners';
 
 export default {
     name: 'Welcome',
-    components: { Footer },
+    components: { Partners, Footer },
     data() {
         return {
             headings: [
@@ -260,6 +272,16 @@ export default {
         line-height: 1.5;
     }
 
+    .partners-container {
+        padding-left: 72px;
+        padding-right: 72px;
+        margin-bottom: 36px;
+    }
+
+    .partners-action {
+        margin-top: 36px;
+    }
+
     /* Smaller screens */
     @media (max-width: 1024px) {
 
@@ -267,6 +289,7 @@ export default {
             padding-left: 2em;
             padding-right: 2em;
         }
+
     }
 
     /* Mobile view */
@@ -300,16 +323,29 @@ export default {
         .top-image {
             height: 400px;
         }
+
+        .partners-container {
+            padding-left: 0;
+            padding-right: 0;
+        }
     }
 
     /* Extra small */
     @media (max-width: 576px) {
-        .main-title {
+        .variable-height {
             min-height: 162px;
         }
 
         .top-image {
             height: 260px;
+        }
+
+    }
+
+    /* Extra extra small */
+    @media (max-width: 430px) {
+        .variable-height {
+            min-height: 220px;
         }
     }
 

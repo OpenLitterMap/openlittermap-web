@@ -11,7 +11,6 @@ use App\Models\Photo;
 use GeoHash;
 use Carbon\Carbon;
 
-use App\Jobs\UploadData;
 use App\Jobs\Api\AddTags;
 
 use App\Events\ImageUploaded;
@@ -19,6 +18,7 @@ use App\Events\Photo\IncrementPhotoMonth;
 
 use App\Helpers\Post\UploadHelper;
 
+use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -88,13 +88,14 @@ class ApiPhotosController extends Controller
         );
      *
      * @return array
+     * @throws GuzzleException
      */
     public function store (Request $request) :array
     {
         $request->validate([
             'photo' => 'required|mimes:jpg,png,jpeg',
-            'lat' => 'required',
-            'lon' => 'required',
+            'lat' => 'required|numeric',
+            'lon' => 'required|numeric',
             'date' => 'required'
         ]);
 
@@ -218,27 +219,6 @@ class ApiPhotosController extends Controller
     /**
      * Save litter data to a recently uploaded photo
      *
-     * version 1
-     *
-     * This is used to add tags to web images, and session photos
-     */
-    public function dynamicUpdate (Request $request)
-    {
-		$userId = Auth::guard('api')->user()->id;
-
-        Log::channel('tags')->info([
-            'dynamicUpdate' => 'mobile',
-            'request' => $request->all()
-        ]);
-
-        dispatch (new UploadData($request->all(), $userId));
-
-        return ['msg' => 'dispatched'];
-    }
-
-    /**
-     * Save litter data to a recently uploaded photo
-     *
      * version 2
      *
      * This is used by gallery photos
@@ -264,11 +244,13 @@ class ApiPhotosController extends Controller
     {
         $user = Auth::guard('api')->user();
 
-        $photos = $user->photos()->where('verification', 0)->select('id', 'filename')->get();
+        $photos = $user->photos()
+            ->where('verified', 0)
+            ->where('verification', 0)
+            ->select('id', 'filename')
+            ->get();
 
-        if ($photos) return ['photos' => $photos];
-
-        return ['photos' => 'none'];
+        return ['photos' => $photos];
     }
 
     /**
