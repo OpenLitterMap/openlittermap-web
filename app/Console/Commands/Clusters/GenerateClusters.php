@@ -55,7 +55,7 @@ class GenerateClusters extends Command
 
         $photos = Photo::select('lat', 'lon')->get();
 
-        echo "size of photos " . sizeof($photos) . "\n";
+        echo "Number of photos: " . number_format(count($photos)) . "\n";
 
         $features = [];
 
@@ -81,7 +81,7 @@ class GenerateClusters extends Command
 
         if (app()->environment() === 'local')
         {
-            $prefix = '/home/vagrant/Code/olm';
+            $prefix = config('app.root_dir');
         }
         else if (app()->environment() === 'staging')
         {

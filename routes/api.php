@@ -38,9 +38,6 @@ Route::post('/validate-token', function(Request $request) {
 // Create Account
 Route::post('/register', 'ApiRegisterController@register');
 
-// Try to log in
-Route::post('/oauth/token', 'AccessTokenController@issueToken');
-
 // Fetch User
 Route::get('/user', function (Request $request) {
     return Auth::guard('api')->user()->append('position');
@@ -55,15 +52,8 @@ Route::post('/photos/submit', 'ApiPhotosController@store');
 // Delete Photos
 Route::delete('/photos/delete', 'ApiPhotosController@deleteImage');
 
-// Tag Litter to Photos
-Route::post('/photos/update', 'ApiPhotosController@dynamicUpdate')
-    ->middleware('auth:api');
-
 // Check for any photos uploaded on web
 Route::get('/check-web-photos', 'ApiPhotosController@check')
-    ->middleware('auth:api');
-
-Route::post('/add-tags-to-web-img', 'ApiPhotosController@confirm')
     ->middleware('auth:api');
 
 /**

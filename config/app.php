@@ -123,6 +123,8 @@ return [
 
     'cipher' => 'AES-256-CBC',
 
+    'root_dir' => env('APP_ROOT_DIR', '/home/vagrant/Code/olm'),
+
     /*
     |--------------------------------------------------------------------------
     | Autoloaded Service Providers

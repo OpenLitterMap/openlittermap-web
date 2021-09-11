@@ -98,7 +98,12 @@
 
                         <div class="field has-text-centered">
                             <div class="control">
-                                <button type="submit" class="button is-primary">
+                                <button
+                                    type="submit"
+                                    class="button is-primary"
+                                    :class="processing ? 'is-loading' : ''"
+                                    :disabled="processing"
+                                >
                                     Reset Password
                                 </button>
                             </div>
@@ -189,7 +194,7 @@ export default {
 <style scoped>
 .centered {
     width: 100%;
-    margin: 12rem 0 auto;
+    margin: 12rem auto;
 }
 
 .with-x-spacing {
