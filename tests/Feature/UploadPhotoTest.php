@@ -228,6 +228,30 @@ class UploadPhotoTest extends TestCase
             ->assertJsonValidationErrors('file');
     }
 
+    public function test_uploaded_photo_can_have_different_mime_types()
+    {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+
+        Carbon::setTestNow();
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user);
+
+        // PNG
+        $imageAttributes = $this->getImageAndAttributes('png');
+        $this->post('/submit', ['file' => $imageAttributes['file'],])->assertOk();
+
+        // JPEG
+        $imageAttributes = $this->getImageAndAttributes('jpeg');
+        $this->post('/submit', ['file' => $imageAttributes['file'],])->assertOk();
+
+        // HEIC
+        $imageAttributes = $this->getImageAndAttributes('heic');
+        $this->post('/submit', ['file' => $imageAttributes['file'],])->assertOk();
+    }
+
     public function test_it_throws_server_error_when_photo_has_no_location_data()
     {
         $user = User::factory()->create();
