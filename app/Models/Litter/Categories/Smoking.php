@@ -8,7 +8,7 @@ class Smoking extends LitterCategory
 {
     protected $table = 'smoking';
 
-    public function types(): array
+    public static function types(): array
     {
         return [
             'butts',

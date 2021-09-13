@@ -8,7 +8,7 @@ class Alcohol extends LitterCategory
 {
     protected $table = 'alcohol';
 
-    public function types(): array
+    public static function types(): array
     {
         return [
             'beerCan',

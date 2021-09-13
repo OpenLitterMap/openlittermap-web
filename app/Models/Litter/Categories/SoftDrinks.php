@@ -8,7 +8,7 @@ class SoftDrinks extends LitterCategory
 {
     protected $table = 'softdrinks';
 
-    public function types(): array
+    public static function types(): array
     {
         return [
             'waterBottle',

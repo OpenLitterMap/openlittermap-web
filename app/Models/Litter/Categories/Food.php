@@ -8,7 +8,7 @@ class Food extends LitterCategory
 {
     protected $table = 'food';
 
-    public function types(): array
+    public static function types(): array
     {
         return [
             'sweetWrappers',

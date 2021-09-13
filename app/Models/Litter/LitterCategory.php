@@ -49,4 +49,6 @@ abstract class LitterCategory extends Model
 
         return $string;
     }
+
+    public static abstract function types(): array;
 }

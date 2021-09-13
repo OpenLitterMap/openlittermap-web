@@ -8,7 +8,7 @@ class Sanitary extends LitterCategory
 {
     protected $table = 'sanitary';
 
-    public function types(): array
+    public static function types(): array
     {
         return [
             'condoms',

@@ -6,7 +6,7 @@ use App\Models\Litter\LitterCategory;
 
 class Brand extends LitterCategory
 {
-    public function types(): array
+    public static function types(): array
     {
         return [
             'adidas',
@@ -17,6 +17,7 @@ class Brand extends LitterCategory
             'applegreen',
             'asahi',
             'avoca',
+
             'ballygowan',
             'bewleys',
             'brambles',
@@ -24,6 +25,7 @@ class Brand extends LitterCategory
             'bulmers',
             'burgerking',
             'butlers',
+
             'cadburys',
             'cafe_nero',
             'camel',
@@ -35,42 +37,56 @@ class Brand extends LitterCategory
             'colgate',
             'corona',
             'costa',
+
             'doritos',
             'drpepper',
             'dunnes',
             'duracell',
             'durex',
+
             'evian',
             'esquires',
+
             'fosters',
             'frank_and_honest',
             'fritolay',
+
             'gatorade',
             'gillette',
             'guinness',
+
             'haribo',
             'heineken',
+
             'insomnia',
+
             'kellogs',
             'kfc',
+
             'lego',
             'lidl',
             'lindenvillage',
             'lolly_and_cookes',
             'loreal',
             'lucozade',
+
             'marlboro',
             'mars',
             'mcdonalds',
+
             'nero',
             'nescafe',
             'nestle',
             'nike',
+
             'obriens',
+
             'pepsi',
             'powerade',
+
             'redbull',
             'ribena',
+
             'samsung',
             'sainsburys',
             'spar',
@@ -79,10 +95,13 @@ class Brand extends LitterCategory
             'supermacs',
             'supervalu',
             'starbucks',
+
             'tayto',
             'tesco',
             'thins',
+
             'volvic',
+
             'waitrose',
             'walkers',
             'woolworths',

@@ -8,7 +8,7 @@ class Coastal extends LitterCategory
 {
     protected $table = 'coastal';
 
-    public function types(): array
+    public static function types(): array
     {
         return [
             'microplastics',

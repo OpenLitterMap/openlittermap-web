@@ -8,7 +8,7 @@ class Pathway extends LitterCategory
 {
     protected $table = 'pathways';
 
-    public function types(): array
+    public static function types(): array
     {
         return [
             'gutter',

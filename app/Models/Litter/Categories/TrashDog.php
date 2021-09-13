@@ -8,7 +8,7 @@ class TrashDog extends LitterCategory
 {
     protected $table = 'trashdog';
 
-    public function types(): array
+    public static function types(): array
     {
         return [
             'trashdog',

@@ -13,7 +13,7 @@ class Dogshit extends LitterCategory
 
     protected $table = 'dogshit';
 
-    public function types(): array
+    public static function types(): array
     {
         return [
             'poo',

@@ -8,7 +8,7 @@ class Industrial extends LitterCategory
 {
     protected $table = 'industrial';
 
-    public function types(): array
+    public static function types(): array
     {
         return [
             'oil',

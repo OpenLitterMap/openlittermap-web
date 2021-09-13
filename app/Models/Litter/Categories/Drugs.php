@@ -6,7 +6,7 @@ use App\Models\Litter\LitterCategory;
 
 class Drugs extends LitterCategory
 {
-    public function types(): array
+    public static function types(): array
     {
         return [
             'needles',

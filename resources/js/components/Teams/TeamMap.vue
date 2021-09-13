@@ -80,20 +80,14 @@ export default {
             );
         },
 
-        /**
-         *
-         */
         fullscreenChange (fullscreen)
         {
             this.fullscreen = fullscreen
         },
 
-        /**
-         *
-         */
         toggle ()
         {
-            this.$refs['fullscreen'].toggle() // recommended
+            this.$refs['fullscreen'].toggle()
         },
     }
 };

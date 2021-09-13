@@ -3,6 +3,9 @@
 namespace App\Models;
 
 use App\Models\AI\Annotation;
+use App\Models\Litter\Categories\Art;
+use App\Models\Litter\Categories\Brand;
+use App\Models\Litter\Categories\Smoking;
 use App\Models\Teams\Team;
 use App\Models\User\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -120,48 +123,7 @@ class Photo extends Model
      */
     public static function getBrands ()
     {
-        return [
-            'adidas',
-            'amazon',
-            'albertheijn',
-            'apple',
-            'applegreen',
-            'avoca',
-            'bewleys',
-            'brambles',
-            'butlers',
-            'budweiser',
-            'cafe_nero',
-            'centra',
-            'coke',
-            'colgate',
-            'corona',
-            'costa',
-            'esquires',
-            'frank_and_honest',
-            'fritolay',
-            'gillette',
-            'heineken',
-            'insomnia',
-            'kellogs',
-            'lego',
-            'lolly_and_cookes',
-            'loreal',
-            'nescafe',
-            'nestle',
-            'marlboro',
-            'mcdonalds',
-            'nike',
-            'obriens',
-            'pepsi',
-            'redbull',
-            'samsung',
-            'subway',
-            'supermacs',
-            'starbucks',
-            'tayto',
-            'wilde_and_greene'
-        ];
+        return Brand::types();
     }
 
     /**

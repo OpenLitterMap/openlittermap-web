@@ -8,7 +8,7 @@ class Dumping extends LitterCategory
 {
     protected $table = 'dumping';
 
-    public function types(): array
+    public static function types(): array
     {
         return [
             'small',

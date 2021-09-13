@@ -8,7 +8,7 @@ class Coffee extends LitterCategory
 {
     protected $table = 'coffee';
 
-    public function types(): array
+    public static function types(): array
     {
         return [
             'coffeeCups',

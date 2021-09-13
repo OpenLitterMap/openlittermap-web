@@ -8,7 +8,7 @@ class Art extends LitterCategory
 {
     protected $table = 'arts';
 
-    public function types(): array
+    public static function types(): array
     {
         return [
             'item',

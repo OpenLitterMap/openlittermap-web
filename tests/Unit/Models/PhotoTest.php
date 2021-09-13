@@ -67,20 +67,33 @@ class PhotoTest extends TestCase
         $this->assertTrue($annotation->is($photo->boxes->first()));
     }
 
-    public function test_a_photo_has_categories()
+    public function test_photos_have_categories()
     {
-        $photo = Photo::factory()->create();
-
-        $this->assertIsArray($photo->categories());
-        $this->assertNotEmpty($photo->categories());
+        $this->assertNotEmpty(Photo::categories());
+        $this->assertEqualsCanonicalizing(
+            [
+                'smoking',
+                'food',
+                'coffee',
+                'alcohol',
+                'softdrinks',
+                'sanitary',
+                'coastal',
+                'dumping',
+                'industrial',
+                'brands',
+                'dogshit',
+                'art',
+                'other'
+            ],
+            Photo::categories()
+        );
     }
 
-    public function test_a_photo_has_brands()
+    public function test_photos_have_brands()
     {
-        $photo = Photo::factory()->create();
-
-        $this->assertIsArray($photo->getBrands());
-        $this->assertNotEmpty($photo->getBrands());
+        $this->assertNotEmpty(Photo::getBrands());
+        $this->assertEquals(Brand::types(), Photo::getBrands());
     }
 
     public function test_a_photo_has_a_translated_string_of_its_categories()

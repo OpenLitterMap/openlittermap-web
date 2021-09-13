@@ -8,7 +8,7 @@ class Other extends LitterCategory
 {
     protected $table = 'other';
 
-    public function types(): array
+    public static function types(): array
     {
         return [
             'random_litter',
