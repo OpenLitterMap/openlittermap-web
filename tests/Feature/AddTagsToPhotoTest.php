@@ -7,6 +7,7 @@ use App\Models\Litter\Categories\Smoking;
 use App\Models\Location\City;
 use App\Models\Location\Country;
 use App\Models\Location\State;
+use App\Models\Photo;
 use App\Models\User\User;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Redis;
@@ -101,6 +102,134 @@ class AddTagsToPhotoTest extends TestCase
         $this->assertEquals(8, $photo->total_litter);
         $this->assertEquals(0, $photo->remaining);
         $this->assertEquals(0.1, $photo->verification);
+    }
+
+    public function test_it_forbids_adding_tags_to_a_verified_photo()
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user);
+
+        $this->post('/submit', [
+            'file' => $this->imageAndAttributes['file'],
+        ]);
+
+        $photo = $user->fresh()->photos->last();
+
+        $photo->update(['verified' => 1]);
+
+        // User adds tags to the verified photo -------------------
+        $response = $this->post('/add-tags', [
+            'photo_id' => $photo->id,
+            'presence' => false,
+            'tags' => [
+                'smoking' => [
+                    'butts' => 3
+                ]
+            ]
+        ]);
+
+        $response->assertForbidden();
+        $this->assertNull($photo->fresh()->smoking_id);
+    }
+
+    public function test_request_photo_id_is_validated()
+    {
+        $user = User::factory()->create([
+            'verification_required' => true
+        ]);
+
+        $this->actingAs($user);
+
+        // Missing photo_id -------------------
+        $this->postJson('/add-tags', [
+            'tags' => ['smoking' => ['butts' => 3]],
+            'presence' => true
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['photo_id']);
+
+        // Non-existing photo_id -------------------
+        $this->postJson('/add-tags', [
+            'photo_id' => 0,
+            'tags' => ['smoking' => ['butts' => 3]],
+            'presence' => true
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['photo_id']);
+
+        // photo_id not belonging to the user -------------------
+        $this->postJson('/add-tags', [
+            'photo_id' => Photo::factory()->create()->id,
+            'tags' => ['smoking' => ['butts' => 3]],
+            'presence' => true
+        ])
+            ->assertForbidden();
+    }
+
+    public function test_request_tags_is_validated()
+    {
+        $user = User::factory()->create([
+            'verification_required' => true
+        ]);
+
+        $this->actingAs($user);
+
+        $this->post('/submit', [
+            'file' => $this->imageAndAttributes['file'],
+        ]);
+
+        $photo = $user->fresh()->photos->last();
+
+        // tags is empty -------------------
+        $this->postJson('/add-tags', [
+            'photo_id' => $photo->id,
+            'tags' => [],
+            'presence' => true
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['tags']);
+
+        // tags is not an array -------------------
+        $this->postJson('/add-tags', [
+            'photo_id' => $photo->id,
+            'tags' => "asdf",
+            'presence' => true
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['tags']);
+    }
+
+    public function test_request_presence_is_validated()
+    {
+        $user = User::factory()->create([
+            'verification_required' => true
+        ]);
+
+        $this->actingAs($user);
+
+        $this->post('/submit', [
+            'file' => $this->imageAndAttributes['file'],
+        ]);
+
+        $photo = $user->fresh()->photos->last();
+
+        // presence is missing -------------------
+        $this->postJson('/add-tags', [
+            'photo_id' => $photo->id,
+            'tags' => ['smoking' => ['butts' => 3]],
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['presence']);
+
+        // presence is not a boolean -------------------
+        $this->postJson('/add-tags', [
+            'photo_id' => $photo->id,
+            'tags' => ['smoking' => ['butts' => 3]],
+            'presence' => 'asdf'
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['presence']);
     }
 
     public function test_it_fires_tags_verified_by_admin_event_when_a_verified_user_adds_tags_to_a_photo()

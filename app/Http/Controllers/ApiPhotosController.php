@@ -7,6 +7,7 @@ use App\Actions\Photos\MakeImageAction;
 use App\Actions\Locations\ReverseGeocodeLocationAction;
 use App\Actions\Photos\UploadPhotoAction;
 use App\Events\ImageDeleted;
+use App\Http\Requests\AddTagsApiRequest;
 use App\Models\Photo;
 use GeoHash;
 use Carbon\Carbon;
@@ -223,16 +224,22 @@ class ApiPhotosController extends Controller
      *
      * This is used by gallery photos
      */
-    public function addTags (Request $request)
+    public function addTags (AddTagsApiRequest $request)
     {
-        $userId = Auth::guard('api')->user()->id;
+        $user = Auth::guard('api')->user();
+        $photo = Photo::find($request->photo_id);
+
+        if ($photo->user_id !== $user->id || $photo->verified > 0)
+        {
+            abort(403, 'Forbidden');
+        }
 
         Log::channel('tags')->info([
             'add_tags' => 'mobile',
             'request' => $request->all()
         ]);
 
-        dispatch (new AddTags($request->all(), $userId));
+        dispatch (new AddTags($request->all(), $user->id));
 
         return ['success' => true, 'msg' => 'dispatched'];
     }
