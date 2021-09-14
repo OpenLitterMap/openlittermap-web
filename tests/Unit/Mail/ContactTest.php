@@ -16,7 +16,6 @@ class ContactTest extends TestCase
 
         $mail = (new Contact($subject, $message, $name, $email))->build();
 
-        $this->assertEquals('emails.contact', $mail->view);
         $this->assertEquals($subject, $mail->subject);
         $this->assertEquals($message, $mail->message);
         $this->assertEquals($name, $mail->name);
