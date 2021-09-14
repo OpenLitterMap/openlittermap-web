@@ -71,6 +71,9 @@
                 <div class="column is-2">
                     <p class="olm-subtitle">{{ $t('home.footer.help') }}</p>
 
+                    <router-link to="/contact">
+                        <p class="footer-link">{{ $t('home.footer.contact-us') }}</p>
+                    </router-link>
                     <p class="footer-link">{{ $t('home.footer.create-account') }}</p>
                     <p class="footer-link" @click="open('https://angel.co/openlittermap/jobs')">{{ $t('home.footer.join-the-team') }}</p>
                     <p class="footer-link" @click="open('https://join.slack.com/t/openlittermap/shared_invite/zt-fdctasud-mu~OBQKReRdC9Ai9KgGROw')">{{ $t('home.footer.join-slack') }}</p>

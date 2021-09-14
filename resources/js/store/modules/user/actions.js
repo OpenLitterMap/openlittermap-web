@@ -82,6 +82,27 @@ export const actions = {
     },
 
     /**
+     * A user is contacting OLM
+     */
+    async CONTACT_US (context, payload)
+    {
+        const title = i18n.t('notifications.success');
+        const body = 'We got your email. You\'ll hear from us soon!'
+
+        await axios.post('/contact', payload)
+            .then(response => {
+                console.log('contact_us', response);
+
+                Vue.$vToastify.success({title, body});
+            })
+            .catch(error => {
+                console.log('error.contact_us', error.response.data);
+
+                context.commit('errors', error.response.data.errors);
+            });
+    },
+
+    /**
      * Throwing an await method here from router.beforeEach allows Vuex to init before vue-router returns auth false.
      */
     CHECK_AUTH (context)

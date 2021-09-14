@@ -1,12 +1,13 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Photos;
 
 
 use App\Events\ImageDeleted;
 use App\Models\User\User;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
+use Tests\Feature\HasPhotoUploads;
 use Tests\TestCase;
 
 class DeletePhotoTest extends TestCase

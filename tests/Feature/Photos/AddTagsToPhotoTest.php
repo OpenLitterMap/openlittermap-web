@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Photos;
 
 use App\Events\TagsVerifiedByAdmin;
 use App\Models\Litter\Categories\Smoking;
@@ -11,6 +11,7 @@ use App\Models\User\User;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
+use Tests\Feature\HasPhotoUploads;
 use Tests\TestCase;
 
 class AddTagsToPhotoTest extends TestCase

@@ -46,6 +46,10 @@ const router = new VueRouter({
             component: require('./views/home/Donate').default
         },
         {
+            path: '/contact',
+            component: require('./views/home/Contact').default
+        },
+        {
             path: '/global',
             component: require('./views/global/GlobalMapContainer').default
         },
