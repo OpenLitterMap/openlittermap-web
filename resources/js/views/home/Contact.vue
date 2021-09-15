@@ -1,7 +1,7 @@
 <template>
     <section class="hero is-info is-fullheight">
         <div class="columns centered">
-            <div class="column" />
+            <div class="column"/>
             <div class="column is-half-tablet is-one-third-desktop is-one-quarter-fullhd">
                 <p class="title is-1 has-text-centered">Contact Us</p>
                 <div class="panel-body">
@@ -113,6 +113,20 @@
                             </div>
                         </div>
 
+                        <div class="field with-x-spacing">
+                            <div class="control recaptcha">
+                                <vue-recaptcha
+                                    :sitekey="computedKey"
+                                    v-model="g_recaptcha_response"
+                                    :loadRecaptchaScript="true"
+                                    @verify="recaptcha"
+                                />
+                                <p v-if="hasError('g-recaptcha-response')"
+                                   class="help has-text-white has-text-weight-bold"
+                                >{{ getError('g-recaptcha-response') }}</p>
+                            </div>
+                        </div>
+
                         <div class="field has-text-centered">
                             <div class="control">
                                 <button
@@ -129,27 +143,38 @@
 
                 </div>
             </div>
-            <div class="column" />
+            <div class="column"/>
         </div>
     </section>
 </template>
 
 <script>
+import VueRecaptcha from 'vue-recaptcha';
+
 export default {
     name: 'Contact',
+    components: {VueRecaptcha},
     data () {
         return {
             name: '',
             email: '',
             subject: '',
             message: '',
+            g_recaptcha_response: '',
             processing: false
         };
     },
     computed: {
         errors () {
             return this.$store.state.user.errors;
-        }
+        },
+
+        /**
+         * Key to return for google-recaptcha
+         */
+        computedKey () {
+            return process.env.MIX_GOOGLE_RECAPTCHA_KEY;
+        },
     },
     methods: {
         async submit () {
@@ -159,7 +184,8 @@ export default {
                 name: this.name,
                 email: this.email,
                 subject: this.subject,
-                message: this.message
+                message: this.message,
+                "g-recaptcha-response": this.g_recaptcha_response
             });
 
             this.processing = false;
@@ -175,7 +201,14 @@ export default {
 
         getError (key) {
             return this.errors[key][0];
-        }
+        },
+
+        /**
+         * Google re-captcha has been verified
+         */
+        recaptcha (response) {
+            this.g_recaptcha_response = response;
+        },
     }
 };
 </script>
@@ -196,5 +229,11 @@ export default {
 .with-x-spacing {
     padding-right: 24px;
     padding-left: 24px;
+}
+
+.recaptcha {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 </style>

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Anhskohbo\NoCaptcha\Facades\NoCaptcha;
 use App\Mail\Contact;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
@@ -19,12 +20,17 @@ class ContactTest extends TestCase
     {
         Mail::fake();
 
+        // prevent validation error on captcha
+        NoCaptcha::shouldReceive('verifyResponse')
+            ->once()
+            ->andReturn(true);
+
         $response = $this->post(route('contact'), [
             'subject' => 'Test subject',
             'message' => 'Test message',
             'name' => 'Guest name',
             'email' => 'guest@email.com',
-            'g-recaptcha-response' => 'test-recaptcha'
+            'g-recaptcha-response' => '1'
         ]);
 
         $response->assertOk();
@@ -50,6 +56,11 @@ class ContactTest extends TestCase
     {
         Mail::fake();
 
+        // prevent validation error on captcha
+        NoCaptcha::shouldReceive('verifyResponse')
+            ->zeroOrMoreTimes()
+            ->andReturn(true);
+
         $response = $this->postJson(route('contact'), $fields);
 
         $response->assertStatus(422);
@@ -59,28 +70,33 @@ class ContactTest extends TestCase
         Mail::assertNothingSent();
     }
 
-    public function validationData()
+    public function validationData(): array
     {
         return [
             [
                 // Missing subject
-                'fields' => ['message' => 'message', 'email' => 'guest@email.com'],
+                'fields' => ['message' => 'message', 'email' => 'guest@email.com', 'g-recaptcha-response' => '1'],
                 'errors' => ['subject']
             ],
             [
                 // Missing message
-                'fields' => ['subject' => 'subject', 'email' => 'guest@email.com'],
+                'fields' => ['subject' => 'subject', 'email' => 'guest@email.com', 'g-recaptcha-response' => '1'],
                 'errors' => ['message']
             ],
             [
                 // Missing email
-                'fields' => ['subject' => 'subject', 'message' => 'message'],
+                'fields' => ['subject' => 'subject', 'message' => 'message', 'g-recaptcha-response' => '1'],
                 'errors' => ['email']
             ],
             [
                 // Malformed email
-                'fields' => ['subject' => 'subject', 'message' => 'message', 'email' => 'malformed email'],
+                'fields' => ['subject' => 'subject', 'message' => 'message', 'email' => 'malformed email', 'g-recaptcha-response' => '1'],
                 'errors' => ['email']
+            ],
+            [
+                // Missing recaptcha
+                'fields' => ['subject' => 'subject', 'message' => 'message', 'email' => 'guest@email.com'],
+                'errors' => ['g-recaptcha-response']
             ],
         ];
     }

@@ -73,7 +73,7 @@ class RegisterController extends Controller
             'username' => 'required|min:3|max:20|unique:users|different:password',
             'email' => 'required|email|max:75|unique:users',
             'password' => 'required|confirmed|min:6|case_diff|numbers|letters',
-            'g_recaptcha_response' => 'required'
+            'g-recaptcha-response' => 'required|captcha'
         ]);
 
         event(new Registered($user = $this->create($request->all())));
