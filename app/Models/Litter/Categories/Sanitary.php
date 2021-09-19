@@ -6,31 +6,9 @@ use App\Models\Litter\LitterCategory;
 
 class Sanitary extends LitterCategory
 {
-	protected $table = 'sanitary';
+    protected $table = 'sanitary';
 
-    protected $fillable = [
-	    'condoms',
-	    'nappies',
-	    'menstral',
-	    'deodorant',
-	    'ear_swabs',
-	    'tooth_pick',
-	    'tooth_brush',
-	    'sanitaryOther',
-        'gloves',
-        'facemask',
-        'wetwipes',
-        'hand_sanitiser'
-    ];
-
-    public function photo () {
-    	return $this->hasOne('App\Models\Photo');
-    }
-
-    /**
-     * Pre-defined litter types available on this class
-     */
-    public function types ()
+    public static function types(): array
     {
         return [
             'condoms',
@@ -44,8 +22,7 @@ class Sanitary extends LitterCategory
             'gloves',
             'facemask',
             'wetwipes',
-            'hand_sanitiser'
+            'hand_sanitiser',
         ];
     }
-
 }

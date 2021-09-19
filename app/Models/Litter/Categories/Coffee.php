@@ -8,25 +8,12 @@ class Coffee extends LitterCategory
 {
     protected $table = 'coffee';
 
-    protected $fillable = [
-	    'coffeeCups',
-	    'coffeeLids',
-	    'coffeeOther'
-    ];
-
-    public function photo () {
-    	return $this->belongsTo('App\Models\Photo');
-    }
-
-    /**
-     * Pre-defined litter types available on this class
-     */
-    public function types ()
+    public static function types(): array
     {
         return [
             'coffeeCups',
             'coffeeLids',
-            'coffeeOther'
+            'coffeeOther',
         ];
     }
 }
