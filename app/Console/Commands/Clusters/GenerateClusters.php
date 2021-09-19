@@ -78,7 +78,6 @@ class GenerateClusters extends Command
 
         Storage::put('/data/features.json', $features);
 
-
         if (app()->environment() === 'local')
         {
             $prefix = config('app.root_dir');

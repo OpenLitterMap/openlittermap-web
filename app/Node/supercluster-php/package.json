@@ -1,9 +1,17 @@
 {
   "name": "supercluster-php",
   "version": "1.0.0",
-  "description": "Run supercluster from php",
+  "description": "Run MapBox supercluster from php.",
   "main": "index.js",
-  "scripts": {
+    "keywords": [
+        "supercluster",
+        "litter",
+        "crowdsourcing",
+        "citizen science",
+        "plastic pollution",
+        "mapbox"
+    ],
+    "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "http-server"
   },
