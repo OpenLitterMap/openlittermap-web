@@ -9,6 +9,7 @@ use App\Actions\Photos\UploadPhotoAction;
 use App\Actions\Locations\ReverseGeocodeLocationAction;
 use App\Actions\Locations\UpdateLeaderboardsFromPhotoAction;
 use App\Events\ImageDeleted;
+use App\Http\Requests\AddTagsRequest;
 use GeoHash;
 use Carbon\Carbon;
 
@@ -310,11 +311,15 @@ class PhotosController extends Controller
      * If the user is new, we submit the image for verification.
      * If the user is trusted, we can update OLM.
      */
-    public function addTags (Request $request)
+    public function addTags (AddTagsRequest $request)
     {
         $user = Auth::user();
         $photo = Photo::findOrFail($request->photo_id);
-        if ($photo->verified > 0) return redirect()->back();
+
+        if ($photo->user_id !== $user->id || $photo->verified > 0)
+        {
+            abort(403, 'Forbidden');
+        }
 
         $litterTotals = $this->addTagsAction->run($photo, $request['tags']);
 
@@ -401,7 +406,9 @@ class PhotosController extends Controller
         // we need to get this before the pagination
         $remaining = $query->count();
 
-        $photos = $query->select('id', 'filename', 'lat', 'lon', 'model', 'remaining', 'display_name', 'datetime')
+        $photos = $query
+            ->with('team')
+            ->select('id', 'filename', 'lat', 'lon', 'model', 'remaining', 'display_name', 'datetime', 'team_id')
             ->simplePaginate(1);
 
         $total = Photo::where('user_id', $user->id)->count();

@@ -86,6 +86,7 @@ export const actions = {
 
             if (response.data.success) {
                 context.commit('usersActiveTeam', null);
+                context.commit('usersTeam', null);
             }
         })
         .catch(error => {

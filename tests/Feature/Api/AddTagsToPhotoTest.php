@@ -7,6 +7,7 @@ use App\Models\Litter\Categories\Smoking;
 use App\Models\Location\City;
 use App\Models\Location\Country;
 use App\Models\Location\State;
+use App\Models\Photo;
 use App\Models\User\User;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Redis;
@@ -63,6 +64,94 @@ class AddTagsToPhotoTest extends TestCase
         $this->assertNotNull($photo->smoking_id);
         $this->assertInstanceOf(Smoking::class, $photo->smoking);
         $this->assertEquals(3, $photo->smoking->butts);
+    }
+
+    public function test_it_forbids_adding_tags_to_a_verified_photo()
+    {
+        // User uploads an image -------------------------
+        $user = User::factory()->create();
+
+        $this->actingAs($user, 'api');
+
+        $this->post('/api/photos/submit',
+            $this->getApiImageAttributes($this->imageAndAttributes)
+        );
+
+        $photo = $user->fresh()->photos->last();
+
+        $photo->update(['verified' => 1]);
+
+        // User adds tags to the verified photo -------------------
+        $response = $this->postJson('/api/add-tags', [
+            'photo_id' => $photo->id,
+            'litter' => [
+                'smoking' => [
+                    'butts' => 3
+                ]
+            ]
+        ]);
+
+        $response->assertForbidden();
+        $this->assertNull($photo->fresh()->smoking_id);
+    }
+
+    public function test_request_photo_id_is_validated()
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user, 'api');
+
+        // Missing photo_id -------------------
+        $this->postJson('/api/add-tags', [
+            'litter' => ['smoking' => ['butts' => 3]]
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['photo_id']);
+
+        // Non-existing photo_id -------------------
+        $this->postJson('/api/add-tags', [
+            'photo_id' => 0,
+            'litter' => ['smoking' => ['butts' => 3]]
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['photo_id']);
+
+        // photo_id not belonging to the user -------------------
+        $this->postJson('/api/add-tags', [
+            'photo_id' => Photo::factory()->create()->id,
+            'litter' => ['smoking' => ['butts' => 3]]
+        ])
+            ->assertForbidden();
+    }
+
+    public function test_request_litter_is_validated()
+    {
+        // User uploads an image -------------------------
+        $user = User::factory()->create();
+
+        $this->actingAs($user, 'api');
+
+        $this->post('/api/photos/submit',
+            $this->getApiImageAttributes($this->imageAndAttributes)
+        );
+
+        $photo = $user->fresh()->photos->last();
+
+        // litter is empty -------------------
+        $this->postJson('/api/add-tags', [
+            'photo_id' => $photo->id,
+            'litter' => []
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['litter']);
+
+        // litter is not an array -------------------
+        $this->postJson('/api/add-tags', [
+            'photo_id' => $photo->id,
+            'litter' => "asdf"
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['litter']);
     }
 
     public function test_user_and_photo_info_are_updated_when_a_user_adds_tags_to_a_photo()
