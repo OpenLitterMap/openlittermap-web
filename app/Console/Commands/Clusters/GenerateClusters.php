@@ -7,6 +7,7 @@ use App\Models\Cluster;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\File;
 
 class GenerateClusters extends Command
 {
@@ -53,11 +54,12 @@ class GenerateClusters extends Command
         // begin timer
         $start = microtime(true);
 
-        $photos = Photo::select('lat', 'lon')->get();
+        $photos = Photo::select('lat', 'lon', 'created_at','datetime','id')->get();
 
         echo "size of photos " . sizeof($photos) . "\n";
 
         $features = [];
+        $photoDateTime = "datetime";
 
         foreach ($photos as $photo)
         {
@@ -66,9 +68,18 @@ class GenerateClusters extends Command
                 'geometry' => [
                     'type' => 'Point',
                     'coordinates' => [$photo->lon, $photo->lat]
-                ]
+                ],
+                'datetimes' => [
+                    'taken' => $photo->datetime
+                ],
+                'photo_id' => $photo->id
             ];
 
+            if ($photoDateTime != substr($photo->datetime,0, -9)) $photoDateTime = substr($photo->datetime,0, -9);
+            if (! Storage::disk('local')->exists("data/".substr($photoDateTime,0, -6)."/".substr($photoDateTime,5, -3))) {
+                Storage::disk('local')->makeDirectory("data/".substr($photoDateTime,0, -6)."/".substr($photoDateTime,5, -3));
+                echo "created directory "."data/".substr($photoDateTime,0, -6)."/".substr($photoDateTime,5, -3);
+            }
             array_push($features, $feature);
         }
 
@@ -106,8 +117,9 @@ class GenerateClusters extends Command
             echo "Zoom level " . $zoomLevel . " \n";
             exec('node app/Node/supercluster-php ' . $prefix . ' ' . $zoomLevel);
 
+            $timerS = microtime(true);
             $clusters = json_decode(Storage::get('/data/clusters.json'));
-
+            echo "Level Time: " . (microtime(true) - $timerS) . "\n";
             foreach ($clusters as $cluster)
             {
                 if (isset($cluster->properties))
