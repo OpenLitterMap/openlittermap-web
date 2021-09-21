@@ -8,32 +8,7 @@ class Food extends LitterCategory
 {
     protected $table = 'food';
 
-    protected $fillable = [
-	    'sweetWrappers',
-    	'paperFoodPackaging',
-    	'plasticFoodPackaging',
-    	'plasticCutlery',
-        'crisp_small',
-        'crisp_large',
-        'styrofoam_plate',
-        'napkins',
-        'sauce_packet',
-        'glass_jar',
-        'glass_jar_lid',
-    	'foodOther',
-        'pizza_box',
-        'aluminium_foil'
-    ];
-
-    public function photo ()
-    {
-    	return $this->hasOne('App\Models\Photo');
-    }
-
-    /**
-     * Pre-defined litter types available on this class
-     */
-    public function types ()
+    public static function types(): array
     {
         return [
             'sweetWrappers',
@@ -49,8 +24,7 @@ class Food extends LitterCategory
             'glass_jar_lid',
             'foodOther',
             'pizza_box',
-            'aluminium_foil'
+            'aluminium_foil',
         ];
     }
-
 }

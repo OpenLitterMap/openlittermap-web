@@ -8,9 +8,12 @@ class TrashDog extends LitterCategory
 {
     protected $table = 'trashdog';
 
-    protected $fillable = [
-    	'trashdog',
-    	'littercat',
-    	'duck'
-    ];
+    public static function types(): array
+    {
+        return [
+            'trashdog',
+            'littercat',
+            'duck',
+        ];
+    }
 }

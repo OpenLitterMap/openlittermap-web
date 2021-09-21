@@ -5,9 +5,11 @@ namespace App\Models\Litter;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class LitterCategory extends Model
+abstract class LitterCategory extends Model
 {
     use HasFactory;
+
+    protected $guarded = [];
 
     /**
      * Total amount of litter on any litter category model
@@ -47,4 +49,6 @@ class LitterCategory extends Model
 
         return $string;
     }
+
+    public static abstract function types(): array;
 }

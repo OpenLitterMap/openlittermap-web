@@ -35,11 +35,11 @@ trait HasPhotoUploads
         $this->setMockForGeocodingAction();
     }
 
-    protected function getImageAndAttributes(): array
+    protected function getImageAndAttributes($mimeType = 'jpg'): array
     {
         $exifImage = file_get_contents($this->imagePath);
         $file = UploadedFile::fake()->createWithContent(
-            'image.jpg',
+            'image.' . $mimeType,
             $exifImage
         );
         $latitude = 40.053030045789;

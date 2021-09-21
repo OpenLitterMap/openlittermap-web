@@ -13,20 +13,11 @@ class Dogshit extends LitterCategory
 
     protected $table = 'dogshit';
 
-    protected $fillable = [
-        'poo',
-        'poo_in_bag'
-    ];
-
-    /**
-     * Pre-defined litter types available on this class
-     */
-    public function types ()
+    public static function types(): array
     {
         return [
             'poo',
-            'poo_in_bag'
+            'poo_in_bag',
         ];
     }
-
 }

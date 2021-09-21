@@ -179,9 +179,7 @@ class UploadPhotoTest extends TestCase
 
         Carbon::setTestNow();
 
-        $user = User::factory()->create([
-            'active_team' => Team::factory()
-        ]);
+        $user = User::factory()->create();
 
         $this->actingAs($user, 'api');
 
@@ -249,4 +247,29 @@ class UploadPhotoTest extends TestCase
             ->assertStatus(422)
             ->assertJsonValidationErrors($errors);
     }
+
+    public function test_uploaded_photo_can_have_different_mime_types()
+    {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+
+        Carbon::setTestNow();
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user, 'api');
+
+        // PNG
+        $imageAttributes = $this->getImageAndAttributes('png');
+        $this->post('/api/photos/submit', $this->getApiImageAttributes($imageAttributes))->assertOk();
+
+        // JPEG
+        $imageAttributes = $this->getImageAndAttributes('jpeg');
+        $this->post('/api/photos/submit', $this->getApiImageAttributes($imageAttributes))->assertOk();
+
+        // HEIC
+        $imageAttributes = $this->getImageAndAttributes('heic');
+        $this->post('/api/photos/submit', $this->getApiImageAttributes($imageAttributes))->assertOk();
+    }
+
 }

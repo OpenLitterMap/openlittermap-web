@@ -6,27 +6,14 @@ use App\Models\Litter\LitterCategory;
 
 class Dumping extends LitterCategory
 {
-    protected $fillable = [
-    	'small',
-    	'medium',
-    	'large'
-    ];
-
     protected $table = 'dumping';
 
-    public function photo () {
-    	return $this->belongsTo('App\Models\Photo');
-    }
-
-    /**
-     * Pre-defined litter types available on this class
-     */
-    public function types ()
+    public static function types(): array
     {
         return [
             'small',
             'medium',
-            'large'
+            'large',
         ];
     }
 }

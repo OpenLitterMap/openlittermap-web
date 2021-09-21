@@ -6,31 +6,9 @@ use App\Models\Litter\LitterCategory;
 
 class Alcohol extends LitterCategory
 {
-    protected $fillable = [
-	    'beerCan',
-	    'beerBottle',
-	    'spiritBottle',
-	    'wineBottle',
-	    'brokenGlass',
-	    'bottleTops',
-        'pint',
-	    'paperCardAlcoholPackaging',
-	    'plasticAlcoholPackaging',
-	    'six_pack_rings',
-	    'alcohol_plastic_cups',
-	    'alcoholOther'
-    ];
+    protected $table = 'alcohol';
 
-	protected $table = 'alcohol';
-
-    public function photo () {
-    	return $this->belongsTo('App\Models\Photo');
-    }
-
-    /**
-     * Pre-defined litter types available on this class
-     */
-    public function types ()
+    public static function types(): array
     {
         return [
             'beerCan',
@@ -44,7 +22,7 @@ class Alcohol extends LitterCategory
             'plasticAlcoholPackaging',
             'six_pack_rings',
             'alcohol_plastic_cups',
-            'alcoholOther'
+            'alcoholOther',
         ];
     }
 }
