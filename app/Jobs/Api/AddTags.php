@@ -20,17 +20,22 @@ class AddTags implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $request, $userId;
+    public $userId;
+    public $photoId;
+    public $tags;
 
     /**
      * Create a new job instance.
      *
-     * @return void
+     * @param $userId
+     * @param $photoId
+     * @param $tags
      */
-    public function __construct ($request, $userId)
+    public function __construct ($userId, $photoId, $tags)
     {
-        $this->request = $request;
         $this->userId = $userId;
+        $this->photoId = $photoId;
+        $this->tags = $tags;
     }
 
     /**
@@ -42,13 +47,11 @@ class AddTags implements ShouldQueue
     {
         $user = User::find($this->userId);
 
-        $photo = Photo::find($this->request['photo_id']);
-
-        $tags = $this->request['litter'];
+        $photo = Photo::find($this->photoId);
 
         /** @var AddTagsToPhotoAction $addTagsAction */
         $addTagsAction = app(AddTagsToPhotoAction::class);
-        $litterTotals = $addTagsAction->run($photo, $tags);
+        $litterTotals = $addTagsAction->run($photo, $this->tags);
 
         $user->xp += $litterTotals['all'];
         $user->save();

@@ -107,6 +107,23 @@ class ApiPhotosController extends Controller
             return ['success' => false, 'msg' => 'error-3'];
         }
 
+        $photo = $this->storePhoto($request);
+
+        return ['success' => true, 'photo_id' => $photo->id];
+    }
+
+    /**
+     * Temporary method to store a photo
+     * should be refactored back to the store method
+     * This is to handle all APIs from mobile app versions
+     *
+     * @param Request $request
+     * @return Photo
+     * @throws GuzzleException
+     */
+    protected function storePhoto(Request $request): Photo
+    {
+        $file = $request->file('photo');
         $user = Auth::guard('api')->user();
 
         if (!$user->has_uploaded) $user->has_uploaded = 1;
@@ -122,9 +139,9 @@ class ApiPhotosController extends Controller
 
         $image = $this->makeImageAction->run($file);
 
-        $lat  = $request['lat'];
-		$lon  = $request['lon'];
-		$date = Carbon::parse($request['date']);
+        $lat = $request['lat'];
+        $lon = $request['lon'];
+        $date = Carbon::parse($request['date']);
 
         // Upload images to both 's3' and 'bbox' disks, resized for 'bbox'
         $imageName = $this->uploadPhotoAction->run(
@@ -191,7 +208,7 @@ class ApiPhotosController extends Controller
         if ($user->team) $teamName = $user->team->name;
 
         // Broadcast an event to anyone viewing the Global Map
-        event (new ImageUploaded(
+        event(new ImageUploaded(
             $city->city,
             $state->state,
             $country->country,
@@ -214,7 +231,7 @@ class ApiPhotosController extends Controller
             $date
         ));
 
-		return ['success' => true, 'photo_id' => $photo->id];
+        return $photo;
     }
 
     /**
@@ -239,9 +256,42 @@ class ApiPhotosController extends Controller
             'request' => $request->all()
         ]);
 
-        dispatch (new AddTags($request->all(), $user->id));
+        dispatch (new AddTags($user->id, $photo->id, $request->litter));
 
         return ['success' => true, 'msg' => 'dispatched'];
+    }
+
+    /**
+     * Upload Photo together with its tags
+     *
+     * @param Request $request
+     * @return array
+     * @throws GuzzleException
+     */
+    public function storeWithTags (Request $request) :array
+    {
+        $request->validate([
+            'photo' => 'required|mimes:jpg,png,jpeg,heic',
+            'lat' => 'required|numeric',
+            'lon' => 'required|numeric',
+            'date' => 'required',
+            'tags' => 'required|array'
+        ]);
+
+        $file = $request->file('photo');
+
+        if ($file->getError() === 3)
+        {
+            return ['success' => false, 'msg' => 'error-3'];
+        }
+
+        $photo = $this->storePhoto($request);
+
+        $userId = Auth::guard('api')->user()->id;
+
+        dispatch (new AddTags($userId, $photo->id, $request->tags));
+
+        return ['success' => true, 'photo_id' => $photo->id];
     }
 
     /**

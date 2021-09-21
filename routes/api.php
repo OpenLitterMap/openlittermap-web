@@ -49,6 +49,10 @@ Route::post('/password/email', 'Auth\ForgotPasswordController@sendResetLinkEmail
 // Upload Photos
 Route::post('/photos/submit', 'ApiPhotosController@store');
 
+// Upload Photos with tags
+Route::post('/photos/submit-with-tags', 'ApiPhotosController@storeWithTags')
+    ->middleware('auth:api');
+
 // Delete Photos
 Route::delete('/photos/delete', 'ApiPhotosController@deleteImage');
 
