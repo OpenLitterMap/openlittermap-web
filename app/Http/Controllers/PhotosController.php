@@ -87,7 +87,6 @@ class PhotosController extends Controller
      */
     public function store (Request $request)
     {
-        \Log::info(['store.web', $request->all()]);
         $request->validate([
            'file' => 'required|mimes:jpg,png,jpeg,heic'
         ]);
