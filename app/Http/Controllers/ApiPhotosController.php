@@ -94,7 +94,7 @@ class ApiPhotosController extends Controller
         \Log::info(['store', $request->all()]);
 
         $request->validate([
-            'photo' => 'required', // mime types temp removed
+            'photo' => 'required|mimes:jpg,png,jpeg,heif,heic',
             'lat' => 'required',
             'lon' => 'required',
             'date' => 'required'
