@@ -56,13 +56,13 @@ class MakeImageAction
         // Path for a temporary file from the upload -> storage/app/heic_images/sample1.heic
         $tmpFilepath = storage_path(
             self::TEMP_HEIC_STORAGE_DIR .
-            $randomFilename . $extension
+            $randomFilename . ".$extension"
         );
 
         // Path for a converted temporary file -> storage/app/heic_images/sample1.jpg
         $convertedFilepath = storage_path(
             self::TEMP_HEIC_STORAGE_DIR .
-            $randomFilename . 'jpg'
+            $randomFilename . '.jpg'
         );
 
         // Store the uploaded file on the server
