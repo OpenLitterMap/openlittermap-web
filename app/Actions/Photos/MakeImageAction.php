@@ -48,16 +48,21 @@ class MakeImageAction
             return compact('image', 'exif');
         }
 
+        // Generating a random filename, and not using the image's
+        // original filename to handle cases
+        // that contain spaces or other weird characters
+        $randomFilename = bin2hex(random_bytes(8));
+
         // Path for a temporary file from the upload -> storage/app/heic_images/sample1.heic
         $tmpFilepath = storage_path(
             self::TEMP_HEIC_STORAGE_DIR .
-            $file->getClientOriginalName()
+            $randomFilename . $extension
         );
 
         // Path for a converted temporary file -> storage/app/heic_images/sample1.jpg
         $convertedFilepath = storage_path(
             self::TEMP_HEIC_STORAGE_DIR .
-            str_replace(".$extension", '.jpg', $file->getClientOriginalName())
+            $randomFilename . 'jpg'
         );
 
         // Store the uploaded file on the server
