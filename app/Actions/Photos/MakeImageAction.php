@@ -8,45 +8,57 @@ use Intervention\Image\Facades\Image;
 
 class MakeImageAction
 {
+    private const TEMP_HEIC_STORAGE_DIR = 'app/heic_images/';
+
     /**
      * Create an instance of Intervention Image using an UploadedFile
      *
      * @param UploadedFile $file
      * @param bool $resize
      *
-     * @return \Intervention\Image\Image
+     * @return array<\Intervention\Image\Image, array>
      */
-    public function run(UploadedFile $file, bool $resize = false): \Intervention\Image\Image
+    public function run(UploadedFile $file, bool $resize = false): array
     {
-        $image = $this->getImage($file);
+        $imageAndExifData = $this->getImageAndExifData($file);
 
         if ($resize) {
-            $image->resize(500, 500);
+            $imageAndExifData['image']->resize(500, 500);
 
-            $image->resize(500, 500, function ($constraint) {
+            $imageAndExifData['image']->resize(500, 500, function ($constraint) {
                 $constraint->aspectRatio();
             });
         }
 
-        return $image;
+        return $imageAndExifData;
     }
 
     /**
      * @param UploadedFile $file
-     * @return \Intervention\Image\Image
+     * @return array<\Intervention\Image\Image, array>
      */
-    protected function getImage(UploadedFile $file): \Intervention\Image\Image
+    protected function getImageAndExifData(UploadedFile $file): array
     {
         $extension = $file->getClientOriginalExtension();
 
-        if (!in_array($extension, ['heif', 'heic'])) {
-            return Image::make($file);
+        if (!in_array(strtolower($extension), ['heif', 'heic'])) {
+            $image = Image::make($file);
+            $exif = $image->exif();
+
+            return compact('image', 'exif');
         }
 
-        // Path for a temporary file from the upload -> storage/app/sample1.heic
-        $tmpFilepath = storage_path('app/' . $file->getClientOriginalName());
-        // Path for a converted temporary file -> storage/app/sample1.jpg
-        $convertedFilepath = storage_path('app/' . str_replace(".$extension", '.jpg', $file->getClientOriginalName()));
+        // Path for a temporary file from the upload -> storage/app/heic_images/sample1.heic
+        $tmpFilepath = storage_path(
+            self::TEMP_HEIC_STORAGE_DIR .
+            $file->getClientOriginalName()
+        );
+
+        // Path for a converted temporary file -> storage/app/heic_images/sample1.jpg
+        $convertedFilepath = storage_path(
+            self::TEMP_HEIC_STORAGE_DIR .
+            str_replace(".$extension", '.jpg', $file->getClientOriginalName())
+        );
 
         // Store the uploaded file on the server
         File::put($tmpFilepath, $file->getContent());
@@ -59,11 +71,12 @@ class MakeImageAction
 
         // Make the image from the new converted file
         $image = Image::make($convertedFilepath);
+        $exif = $image->exif();
 
         // Remove the temporary files from storage
         unlink($tmpFilepath);
         unlink($convertedFilepath);
 
-        return $image;
+        return compact('image', 'exif');
     }
 }
