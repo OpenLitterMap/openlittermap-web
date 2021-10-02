@@ -91,8 +91,10 @@ class ApiPhotosController extends Controller
      */
     public function store (Request $request) :array
     {
+        \Log::info(['store', $request->all()]);
+
         $request->validate([
-            'photo' => 'required|mimes:jpg,png,jpeg',
+            'photo' => 'required', // mime types temp removed
             'lat' => 'required',
             'lon' => 'required',
             'date' => 'required'
@@ -167,7 +169,7 @@ class ApiPhotosController extends Controller
             'country' => $country->country,
             'country_code' => $country->shortcode,
             'model' => $model,
-            'remaining' => $request['presence'],
+            'remaining' => false, // TODO
             'platform' => 'mobile',
             'geohash' => GeoHash::encode($lat, $lon),
             'team_id' => $user->active_team,
