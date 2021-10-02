@@ -6,6 +6,8 @@ use App\Models\Photo;
 use App\Models\Cluster;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
 
@@ -46,6 +48,8 @@ class GenerateClusters extends Command
      * Todo - Cluster data by "today", "one-week", "one-month", "one-year"
      * Todo - Cluster data by year, 2021, 2020...
      */
+
+
     public function handle()
     {
         // 100,000 photos and growing...
@@ -59,7 +63,7 @@ class GenerateClusters extends Command
         echo "size of photos " . sizeof($photos) . "\n";
 
         $features = [];
-        $photoDateTime = "datetime";
+        $date = "datetime";
 
         foreach ($photos as $photo)
         {
@@ -75,13 +79,19 @@ class GenerateClusters extends Command
                 'photo_id' => $photo->id
             ];
 
-            if ($photoDateTime != substr($photo->datetime,0, -9)) $photoDateTime = substr($photo->datetime,0, -9);
-            if (! Storage::disk('local')->exists("data/".substr($photoDateTime,0, -6)."/".substr($photoDateTime,5, -3))) {
-                Storage::disk('local')->makeDirectory("data/".substr($photoDateTime,0, -6)."/".substr($photoDateTime,5, -3));
-                echo "created directory "."data/".substr($photoDateTime,0, -6)."/".substr($photoDateTime,5, -3);
+            $date = Carbon::parse($photo->datetime);
+
+            $y = $date->year;
+            $m = $date->month;
+
+            if (! Storage::disk('local')->exists("data/".$y."/".$m)) {
+                Storage::disk('local')->makeDirectory("data/".$y."/".$m);
+                echo "created directory "."data/".$y."/".$m."\n";
             }
             array_push($features, $feature);
         }
+
+        Storage::put('/data/lastPhotoGenerated.txt', $photos[sizeof($photos)-1]->id);
 
         unset($photos); // free up memory
 
@@ -106,7 +116,7 @@ class GenerateClusters extends Command
         // delete all clusters?
         // Or update existing ones?
 
-        Cluster::truncate();
+        //Cluster::truncate(); //removes clusters
 
         // Put "recompiling data" onto Global Map
 
@@ -124,14 +134,37 @@ class GenerateClusters extends Command
             {
                 if (isset($cluster->properties))
                 {
-                    Cluster::create([
-                        'lat' => $cluster->geometry->coordinates[1],
-                        'lon' => $cluster->geometry->coordinates[0],
-                        'point_count' => $cluster->properties->point_count,
-                        'point_count_abbreviated' => $cluster->properties->point_count_abbreviated,
-                        'geohash' => \GeoHash::encode($cluster->geometry->coordinates[1], $cluster->geometry->coordinates[0]),
-                        'zoom' => $zoomLevel
-                    ]);
+
+
+                    $data = Cluster::selectRaw('lat,lon,point_count,point_count_abbreviated,geohash,zoom,
+                        ( FLOOR(6371 * ACOS( COS( RADIANS( '.$cluster->geometry->coordinates[1].' ) ) * COS( RADIANS( lat ) ) * COS( RADIANS( lon ) - RADIANS( '.$cluster->geometry->coordinates[0].' ) ) + SIN( RADIANS( '.$cluster->geometry->coordinates[1].' ) ) * SIN( RADIANS( lat ) ) )) ) distance')
+                        ->havingRaw("distance < 10")
+                        ->where("zoom","=",$zoomLevel)
+                        ->orderBy("distance",'asc')
+                        ->take(1)
+                        ->get();
+
+                    foreach($data as $cit){
+                        echo $cit->point_count_abbreviated." of ".$cit->point_count." adding to point_count".$cluster->properties->point_count."\n";
+                        $count = $cit->point_count + $cluster->properties->point_count;
+                        $abbrev =
+                        $count >= 10000 ? round($count / 1000).'k' :
+                            $count >= 1000 ? round($count / 100) / 10 .'k' : $count;
+                        echo $abbrev."\n";
+                    }
+//                    Cluster::updateOrCreate([
+//                       'zoom' => $zoomLevel,
+//                        'lat' => $cluster->geometry->coordinates[1].rou,
+//                        'lon' => $cluster->geometry->coordinates[0]
+//                    ]);
+//                        Cluster::create([
+//                            'lat' => $cluster->geometry->coordinates[1],
+//                            'lon' => $cluster->geometry->coordinates[0],
+//                            'point_count' => $cluster->properties->point_count,
+//                            'point_count_abbreviated' => $cluster->properties->point_count_abbreviated,
+//                            'geohash' => \GeoHash::encode($cluster->geometry->coordinates[1], $cluster->geometry->coordinates[0]),
+//                            'zoom' => $zoomLevel
+//                        ]);
                 }
             }
         }
