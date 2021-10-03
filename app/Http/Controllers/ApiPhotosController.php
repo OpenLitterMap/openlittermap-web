@@ -93,10 +93,18 @@ class ApiPhotosController extends Controller
      */
     public function store (Request $request) :array
     {
+        \Log::info(['store', $request->all()]);
+
         $request->validate([
+<<<<<<< HEAD
             'photo' => 'required|mimes:jpg,png,jpeg,heic',
             'lat' => 'required|numeric',
             'lon' => 'required|numeric',
+=======
+            'photo' => 'required|mimes:jpg,png,jpeg,heif,heic',
+            'lat' => 'required',
+            'lon' => 'required',
+>>>>>>> master
             'date' => 'required'
         ]);
 
@@ -120,7 +128,7 @@ class ApiPhotosController extends Controller
             ? $request->model
             : 'Mobile app v2';
 
-        $image = $this->makeImageAction->run($file);
+        $image = $this->makeImageAction->run($file)['image'];
 
         $lat  = $request['lat'];
 		$lon  = $request['lon'];
@@ -134,7 +142,7 @@ class ApiPhotosController extends Controller
         );
 
         $bboxImageName = $this->uploadPhotoAction->run(
-            $this->makeImageAction->run($file, true),
+            $this->makeImageAction->run($file, true)['image'],
             $date,
             $file->hashName(),
             'bbox'
@@ -169,7 +177,7 @@ class ApiPhotosController extends Controller
             'country' => $country->country,
             'country_code' => $country->shortcode,
             'model' => $model,
-            'remaining' => $request['presence'],
+            'remaining' => false, // TODO
             'platform' => 'mobile',
             'geohash' => GeoHash::encode($lat, $lon),
             'team_id' => $user->active_team,
