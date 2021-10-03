@@ -93,8 +93,6 @@ class ApiPhotosController extends Controller
      */
     public function store (Request $request) :array
     {
-        \Log::info(['store', $request->all()]);
-
         $request->validate([
             'photo' => 'required|mimes:jpg,png,jpeg,heic,heif',
             'lat' => 'required',
