@@ -15,7 +15,8 @@ class AddTagsApiRequest extends FormRequest
     {
         return [
             'photo_id' => 'required|exists:photos,id',
-            'litter' => 'required|array'
+            'litter' => 'required_without:tags|array',
+            'tags' => 'required_without:litter|array'
         ];
     }
 }

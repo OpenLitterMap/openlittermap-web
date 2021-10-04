@@ -49,7 +49,7 @@ class AddTagsToPhotoTest extends TestCase
         // User adds tags to an image -------------------
         $this->post('/api/add-tags', [
             'photo_id' => $photo->id,
-            'litter' => [
+            'tags' => [
                 'smoking' => [
                     'butts' => 3
                 ]
@@ -84,7 +84,7 @@ class AddTagsToPhotoTest extends TestCase
         // User adds tags to the verified photo -------------------
         $response = $this->postJson('/api/add-tags', [
             'photo_id' => $photo->id,
-            'litter' => [
+            'tags' => [
                 'smoking' => [
                     'butts' => 3
                 ]
@@ -103,7 +103,7 @@ class AddTagsToPhotoTest extends TestCase
 
         // Missing photo_id -------------------
         $this->postJson('/api/add-tags', [
-            'litter' => ['smoking' => ['butts' => 3]]
+            'tags' => ['smoking' => ['butts' => 3]]
         ])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['photo_id']);
@@ -111,7 +111,7 @@ class AddTagsToPhotoTest extends TestCase
         // Non-existing photo_id -------------------
         $this->postJson('/api/add-tags', [
             'photo_id' => 0,
-            'litter' => ['smoking' => ['butts' => 3]]
+            'tags' => ['smoking' => ['butts' => 3]]
         ])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['photo_id']);
@@ -119,12 +119,12 @@ class AddTagsToPhotoTest extends TestCase
         // photo_id not belonging to the user -------------------
         $this->postJson('/api/add-tags', [
             'photo_id' => Photo::factory()->create()->id,
-            'litter' => ['smoking' => ['butts' => 3]]
+            'tags' => ['smoking' => ['butts' => 3]]
         ])
             ->assertForbidden();
     }
 
-    public function test_request_litter_is_validated()
+    public function test_request_tags_are_validated()
     {
         // User uploads an image -------------------------
         $user = User::factory()->create();
@@ -137,21 +137,21 @@ class AddTagsToPhotoTest extends TestCase
 
         $photo = $user->fresh()->photos->last();
 
-        // litter is empty -------------------
+        // tags are empty -------------------
         $this->postJson('/api/add-tags', [
             'photo_id' => $photo->id,
-            'litter' => []
+            'tags' => []
         ])
             ->assertStatus(422)
-            ->assertJsonValidationErrors(['litter']);
+            ->assertJsonValidationErrors(['tags']);
 
-        // litter is not an array -------------------
+        // tags is not an array -------------------
         $this->postJson('/api/add-tags', [
             'photo_id' => $photo->id,
-            'litter' => "asdf"
+            'tags' => "asdf"
         ])
             ->assertStatus(422)
-            ->assertJsonValidationErrors(['litter']);
+            ->assertJsonValidationErrors(['tags']);
     }
 
     public function test_user_and_photo_info_are_updated_when_a_user_adds_tags_to_a_photo()
@@ -172,7 +172,7 @@ class AddTagsToPhotoTest extends TestCase
         // User adds tags to an image -------------------
         $this->post('/api/add-tags', [
             'photo_id' => $photo->id,
-            'litter' => [
+            'tags' => [
                 'smoking' => [
                     'butts' => 3
                 ],
@@ -214,7 +214,7 @@ class AddTagsToPhotoTest extends TestCase
         // User adds tags to an image -------------------
         $this->post('/api/add-tags', [
             'photo_id' => $photo->id,
-            'litter' => [
+            'tags' => [
                 'smoking' => [
                     'butts' => 3
                 ]
@@ -265,7 +265,7 @@ class AddTagsToPhotoTest extends TestCase
         // User adds tags to an image -------------------
         $this->post('/api/add-tags', [
             'photo_id' => $photo->id,
-            'litter' => [
+            'tags' => [
                 'smoking' => [
                     'butts' => 3
                 ]
@@ -310,7 +310,7 @@ class AddTagsToPhotoTest extends TestCase
         // User adds tags to an image -------------------
         $this->post('/api/add-tags', [
             'photo_id' => $photo->id,
-            'litter' => [
+            'tags' => [
                 'smoking' => [
                     'butts' => 3
                 ]
