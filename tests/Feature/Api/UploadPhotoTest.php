@@ -266,10 +266,6 @@ class UploadPhotoTest extends TestCase
         // JPEG
         $imageAttributes = $this->getImageAndAttributes('jpeg');
         $this->post('/api/photos/submit', $this->getApiImageAttributes($imageAttributes))->assertOk();
-
-        // HEIC
-        $imageAttributes = $this->getImageAndAttributes('heic');
-        $this->post('/api/photos/submit', $this->getApiImageAttributes($imageAttributes))->assertOk();
     }
 
 }

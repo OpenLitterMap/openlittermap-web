@@ -124,8 +124,10 @@
 
             <!-- Partners -->
             <div class="partners-container container is-max-desktop">
+
                 <p class="has-text-centered main-title">{{ $t('home.welcome.our-partners') }}</p>
-                <Partners/>
+
+                <Partners />
 <!--                <div class="partners-action has-text-centered">-->
 <!--                    <a href="mailto:info@openlittermap.com"-->
 <!--                       class="button is-medium is-primary"-->
@@ -146,8 +148,11 @@ import Partners from './Partners';
 
 export default {
     name: 'Welcome',
-    components: { Partners, Footer },
-    data() {
+    components: {
+        Partners,
+        Footer
+    },
+    data () {
         return {
             headings: [
                 { title: this.$t('home.welcome.plastic-pollution-out-of-control'), img: '/assets/plastic_bottles.jpg' },

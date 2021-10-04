@@ -89,7 +89,7 @@ class PhotosController extends Controller
     public function store (Request $request)
     {
         $request->validate([
-           'file' => 'required|mimes:jpg,png,jpeg,heic'
+           'file' => 'required|mimes:jpg,png,jpeg'
         ]);
 
         $user = Auth::user();
