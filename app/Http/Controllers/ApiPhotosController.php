@@ -94,9 +94,9 @@ class ApiPhotosController extends Controller
     public function store (Request $request) :array
     {
         $request->validate([
-            'photo' => 'required|mimes:jpg,png,jpeg,heic,heif',
-            'lat' => 'required',
-            'lon' => 'required',
+            'photo' => 'required|mimes:jpg,png,jpeg',
+            'lat' => 'required|numeric',
+            'lon' => 'required|numeric',
             'date' => 'required'
         ]);
 
@@ -120,7 +120,7 @@ class ApiPhotosController extends Controller
             ? $request->model
             : 'Mobile app v2';
 
-        $image = $this->makeImageAction->run($file)['image'];
+        $image = $this->makeImageAction->run($file);
 
         $lat  = $request['lat'];
 		$lon  = $request['lon'];
@@ -134,7 +134,7 @@ class ApiPhotosController extends Controller
         );
 
         $bboxImageName = $this->uploadPhotoAction->run(
-            $this->makeImageAction->run($file, true)['image'],
+            $this->makeImageAction->run($file, true),
             $date,
             $file->hashName(),
             'bbox'
