@@ -71,7 +71,7 @@
                 <div class="column is-2">
                     <p class="olm-subtitle">{{ $t('home.footer.help') }}</p>
 
-                    <router-link to="/contact">
+                    <router-link to="/contact-us">
                         <p class="footer-link">{{ $t('home.footer.contact-us') }}</p>
                     </router-link>
                     <p class="footer-link">{{ $t('home.footer.create-account') }}</p>

@@ -39,7 +39,7 @@
                                     autofocus
                                 />
                                 <span class="icon is-small is-left">
-                                  <i class="fa fa-user"></i>
+                                  <i class="fa fa-user" />
                                 </span>
 
                                 <p v-if="hasError('name')"
@@ -63,7 +63,7 @@
                                     placeholder="you@email.com"
                                 />
                                 <span class="icon is-small is-left">
-                                  <i class="fa fa-envelope"></i>
+                                  <i class="fa fa-envelope" />
                                 </span>
 
                                 <p v-if="hasError('email')"
@@ -86,7 +86,7 @@
                                     required
                                 />
                                 <span class="icon is-small is-left">
-                                  <i class="fa fa-info"></i>
+                                  <i class="fa fa-info" />
                                 </span>
 
                                 <p v-if="hasError('subject')"
@@ -152,7 +152,7 @@
 import VueRecaptcha from 'vue-recaptcha';
 
 export default {
-    name: 'Contact',
+    name: 'ContactUs',
     components: {VueRecaptcha},
     data () {
         return {
@@ -180,7 +180,7 @@ export default {
         async submit () {
             this.processing = true;
 
-            await this.$store.dispatch('CONTACT_US', {
+            await this.$store.dispatch('SEND_EMAIL_TO_US', {
                 name: this.name,
                 email: this.email,
                 subject: this.subject,
@@ -214,26 +214,26 @@ export default {
 </script>
 
 <style scoped>
-.centered {
-    width: 100%;
-    margin: 6rem auto;
-}
-
-/* Mobile view */
-@media (max-width: 768px) {
     .centered {
-        margin: 2rem auto;
+        width: 100%;
+        margin: 6rem auto;
     }
-}
 
-.with-x-spacing {
-    padding-right: 24px;
-    padding-left: 24px;
-}
+    /* Mobile view */
+    @media (max-width: 768px) {
+        .centered {
+            margin: 2rem auto;
+        }
+    }
 
-.recaptcha {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
+    .with-x-spacing {
+        padding-right: 24px;
+        padding-left: 24px;
+    }
+
+    .recaptcha {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
 </style>

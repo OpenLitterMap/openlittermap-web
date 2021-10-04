@@ -46,8 +46,8 @@ const router = new VueRouter({
             component: require('./views/home/Donate').default
         },
         {
-            path: '/contact',
-            component: require('./views/home/Contact').default
+            path: '/contact-us',
+            component: require('./views/home/ContactUs').default
         },
         {
             path: '/global',

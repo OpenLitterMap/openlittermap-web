@@ -84,19 +84,19 @@ export const actions = {
     /**
      * A user is contacting OLM
      */
-    async CONTACT_US (context, payload)
+    async SEND_EMAIL_TO_US (context, payload)
     {
         const title = i18n.t('notifications.success');
         const body = 'We got your email. You\'ll hear from us soon!'
 
-        await axios.post('/contact', payload)
+        await axios.post('/contact-us', payload)
             .then(response => {
-                console.log('contact_us', response);
+                console.log('send_email_to_us', response);
 
                 Vue.$vToastify.success({title, body});
             })
             .catch(error => {
-                console.log('error.contact_us', error.response.data);
+                console.log('error.send_email_to_us', error.response.data);
 
                 context.commit('errors', error.response.data.errors);
             });

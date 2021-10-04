@@ -256,7 +256,7 @@ class ApiPhotosController extends Controller
             'request' => $request->all()
         ]);
 
-        dispatch (new AddTags($user->id, $photo->id, $request->litter));
+        dispatch (new AddTags($user->id, $photo->id, $request->litter ?? $request->tags));
 
         return ['success' => true, 'msg' => 'dispatched'];
     }

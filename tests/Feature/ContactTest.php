@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use Anhskohbo\NoCaptcha\Facades\NoCaptcha;
-use App\Mail\Contact;
+use App\Mail\ContactMail;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
@@ -11,7 +11,7 @@ class ContactTest extends TestCase
 {
     public function test_users_can_see_the_contact_page()
     {
-        $response = $this->get('/contact');
+        $response = $this->get('/contact-us');
 
         $response->assertStatus(200);
     }
@@ -36,8 +36,8 @@ class ContactTest extends TestCase
         $response->assertOk();
 
         Mail::assertSent(
-            Contact::class,
-            function (Contact $mail) {
+            ContactMail::class,
+            function (ContactMail $mail) {
                 return $mail->hasTo('info@openlittermap.com') &&
                     $mail->name === 'Guest name' &&
                     $mail->email === 'guest@email.com' &&

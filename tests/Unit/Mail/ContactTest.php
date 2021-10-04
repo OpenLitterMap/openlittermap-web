@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Mail;
 
-use App\Mail\Contact;
+use App\Mail\ContactMail;
 use Tests\TestCase;
 
 class ContactTest extends TestCase
@@ -14,7 +14,7 @@ class ContactTest extends TestCase
         $name = 'test name';
         $email = 'test email';
 
-        $mail = (new Contact($subject, $message, $name, $email))->build();
+        $mail = (new ContactMail($subject, $message, $name, $email))->build();
 
         $this->assertEquals($subject, $mail->subject);
         $this->assertEquals($message, $mail->message);

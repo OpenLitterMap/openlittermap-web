@@ -75,8 +75,8 @@ Route::get('donate/amounts', 'DonateController@index');
 Route::post('donate', 'DonateController@submit');
 
 // Contact page
-Route::get('/contact', 'HomeController@index');
-Route::post('/contact', 'ContactController')->name('contact');
+Route::get('/contact-us', 'HomeController@index');
+Route::post('/contact-us', 'ContactController')->name('contact');
 
 // Get data for the Global Map
 Route::get('global', 'HomeController@index');
