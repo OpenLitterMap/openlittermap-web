@@ -1,11 +1,12 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Photos;
 
 use App\Models\User\User;
 use Illuminate\Foundation\Testing\WithoutMiddleware;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
+use Tests\Feature\HasPhotoUploads;
 use Tests\TestCase;
 
 use App\Models\Photo;

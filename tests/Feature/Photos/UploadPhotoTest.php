@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Photos;
 
 use App\Actions\Photos\DeletePhotoAction;
 use App\Events\ImageUploaded;
@@ -15,6 +15,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Facades\Image;
+use Tests\Feature\HasPhotoUploads;
 use Tests\TestCase;
 
 use App\Models\Photo;

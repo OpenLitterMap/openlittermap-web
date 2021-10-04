@@ -1,9 +1,10 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Photos;
 
 use App\Models\User\User;
 use Illuminate\Support\Facades\Storage;
+use Tests\Feature\HasPhotoUploads;
 use Tests\TestCase;
 
 class GetUnverifiedPhotosTest extends TestCase
