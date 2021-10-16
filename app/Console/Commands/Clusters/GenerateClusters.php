@@ -58,7 +58,13 @@ class GenerateClusters extends Command
         // begin timer
         $start = microtime(true);
 
-        $photos = Photo::select('lat', 'lon', 'created_at','datetime','id')->get();
+        $lastPhotoGenerated = (int)Storage::get('/data/lastPhotoGenerated.txt');
+
+        if($lastPhotoGenerated){
+            $photos = Photo::select('lat', 'lon', 'created_at','datetime','id')->where('id','>=',$lastPhotoGenerated)->get();
+        }else{
+            $photos = Photo::select('lat', 'lon', 'created_at','datetime','id')->get();
+        }
 
         echo "size of photos " . sizeof($photos) . "\n";
 
@@ -134,29 +140,34 @@ class GenerateClusters extends Command
             {
                 if (isset($cluster->properties))
                 {
+                    $data = (new \App\Models\Cluster)->scopeRadius($cluster->geometry->coordinates[1],$cluster->geometry->coordinates[0], 10)->first();
+                    unset($data->distance);
+//                    echo $data->distance."distance\n";
 
 
-                    $data = Cluster::selectRaw('lat,lon,point_count,point_count_abbreviated,geohash,zoom,
-                        ( FLOOR(6371 * ACOS( COS( RADIANS( '.$cluster->geometry->coordinates[1].' ) ) * COS( RADIANS( lat ) ) * COS( RADIANS( lon ) - RADIANS( '.$cluster->geometry->coordinates[0].' ) ) + SIN( RADIANS( '.$cluster->geometry->coordinates[1].' ) ) * SIN( RADIANS( lat ) ) )) ) distance')
-                        ->havingRaw("distance < 10")
-                        ->where("zoom","=",$zoomLevel)
-                        ->orderBy("distance",'asc')
-                        ->take(1)
-                        ->get();
+//                    $data = Cluster::selectRaw('*,
+//                              ( FLOOR(6371 * ACOS( COS( RADIANS( '.$cluster->geometry->coordinates[1].' ) ) * COS( RADIANS( lat ) ) * COS( RADIANS( lon ) - RADIANS( '.$cluster->geometry->coordinates[0].' ) ) + SIN( RADIANS( '.$cluster->geometry->coordinates[1].' ) ) * SIN( RADIANS( lat ) ) )) ) distance')
+//                        ->havingRaw("distance < 10")
+//                        ->where("zoom","=",$zoomLevel)
+//                        ->orderBy("distance",'asc')
+//                        ->first();
 
-                    foreach($data as $cit){
-                        echo $cit->point_count_abbreviated." of ".$cit->point_count." adding to point_count".$cluster->properties->point_count."\n";
-                        $count = $cit->point_count + $cluster->properties->point_count;
-                        $abbrev =
-                        $count >= 10000 ? round($count / 1000).'k' :
-                            $count >= 1000 ? round($count / 100) / 10 .'k' : $count;
-                        echo $abbrev."\n";
-                    }
-//                    Cluster::updateOrCreate([
-//                       'zoom' => $zoomLevel,
-//                        'lat' => $cluster->geometry->coordinates[1].rou,
-//                        'lon' => $cluster->geometry->coordinates[0]
-//                    ]);
+//                    if($data) {
+//                        unset($data->distance); //unset the distance attribute.
+//
+//                        echo $data->point_count_abbreviated . " of " . $data->point_count . " adding to point_count" . $cluster->properties->point_count . "\n";
+//                        $count = $data->point_count + $cluster->properties->point_count;
+//
+//                        $abbrev =
+//                            $count >= 10000 ? round($count / 1000) . 'k' :
+//                                $count >= 1000 ? round($count / 100) / 10 . 'k' : $count;
+//                        echo $abbrev . "\n";
+//                        $data->point_count_abbreviated = $abbrev;
+//                        $data->point_count = $count;
+//                        $data->save();
+//                        echo "updated.$data->point_count \n";
+//                    }else {
+//                        echo "created.$data->point_count \n";
 //                        Cluster::create([
 //                            'lat' => $cluster->geometry->coordinates[1],
 //                            'lon' => $cluster->geometry->coordinates[0],
@@ -165,6 +176,7 @@ class GenerateClusters extends Command
 //                            'geohash' => \GeoHash::encode($cluster->geometry->coordinates[1], $cluster->geometry->coordinates[0]),
 //                            'zoom' => $zoomLevel
 //                        ]);
+//                    }
                 }
             }
         }
@@ -175,4 +187,6 @@ class GenerateClusters extends Command
         $finish = microtime(true);
         echo "Total Time: " . ($finish - $start) . "\n";
     }
+
+
 }
