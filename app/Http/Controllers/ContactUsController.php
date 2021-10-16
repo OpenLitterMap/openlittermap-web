@@ -6,7 +6,7 @@ use App\Http\Requests\ContactRequest;
 use App\Mail\ContactMail;
 use Illuminate\Support\Facades\Mail;
 
-class ContactController extends Controller
+class ContactUsController extends Controller
 {
 
     public function __invoke(ContactRequest $request)
