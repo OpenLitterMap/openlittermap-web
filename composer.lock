@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0725d288b3d3d80752368fa75d98de17",
+    "content-hash": "eca24aff12ace7fc7bb36c05ed5fe8f8",
     "packages": [
         {
             "name": "ahmedsaoud31/laravel-permission-to-vuejs",
@@ -10049,6 +10049,53 @@
                 }
             ],
             "time": "2021-06-14T14:29:26+00:00"
+        },
+        {
+            "name": "coreproc/laravel-debugbar-git-info",
+            "version": "0.1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/CoreProc/laravel-debugbar-git-info.git",
+                "reference": "c7c75de57b0108bc622201fa508bf1b2b7648503"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/CoreProc/laravel-debugbar-git-info/zipball/c7c75de57b0108bc622201fa508bf1b2b7648503",
+                "reference": "c7c75de57b0108bc622201fa508bf1b2b7648503",
+                "shasum": ""
+            },
+            "require-dev": {
+                "barryvdh/laravel-debugbar": "^3"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Coreproc\\LaravelDebugbarGitInfo\\GitInfoServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Coreproc\\LaravelDebugbarGitInfo\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Chris Bautista",
+                    "email": "chris.bautista@coreproc.ph"
+                }
+            ],
+            "description": "Add your project's Git information to your Laravel Debugbar.",
+            "support": {
+                "issues": "https://github.com/CoreProc/laravel-debugbar-git-info/issues",
+                "source": "https://github.com/CoreProc/laravel-debugbar-git-info/tree/master"
+            },
+            "time": "2020-06-25T05:51:08+00:00"
         },
         {
             "name": "doctrine/instantiator",
