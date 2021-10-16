@@ -89,7 +89,7 @@ class PhotosController extends Controller
     public function store (Request $request)
     {
         $request->validate([
-           'file' => 'required|mimes:jpg,png,jpeg,heif,heic'
+           'file' => 'required|mimes:jpg,png,jpeg'
         ]);
 
         $user = Auth::user();
@@ -103,9 +103,9 @@ class PhotosController extends Controller
 
         $file = $request->file('file'); // /tmp/php7S8v..
 
-        $imageAndExifData = $this->makeImageAction->run($file);
-        $image = $imageAndExifData['image'];
-        $exif = $imageAndExifData['exif'];
+        $image = $this->makeImageAction->run($file);
+
+        $exif = $image->exif();
 
         if (is_null($exif))
         {
@@ -165,7 +165,7 @@ class PhotosController extends Controller
         );
 
         $bboxImageName = $this->uploadPhotoAction->run(
-            $this->makeImageAction->run($file, true)['image'],
+            $this->makeImageAction->run($file, true),
             $dateTime,
             $file->hashName(),
             'bbox'

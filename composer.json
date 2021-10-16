@@ -11,6 +11,7 @@
         "php": "^7.3",
         "ext-json": "*",
         "ahmedsaoud31/laravel-permission-to-vuejs": "dev-master",
+        "anhskohbo/no-captcha": "^3.3",
         "benjamincrozat/laravel-dropbox-driver": "^3.0",
         "beyondcode/laravel-websockets": "^1.8",
         "doctrine/dbal": "^2.10",

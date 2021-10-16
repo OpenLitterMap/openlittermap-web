@@ -74,6 +74,10 @@ Route::get('donate', 'HomeController@index');
 Route::get('donate/amounts', 'DonateController@index');
 Route::post('donate', 'DonateController@submit');
 
+// Contact page
+Route::get('/contact-us', 'HomeController@index');
+Route::post('/contact-us', 'ContactUsController')->name('contact');
+
 // Get data for the Global Map
 Route::get('global', 'HomeController@index');
 Route::get('/global/clusters', 'GlobalMap\ClusterController@index');
