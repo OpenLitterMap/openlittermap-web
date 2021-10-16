@@ -63,10 +63,10 @@ class RegisterController extends Controller
     /**
      * Handle a registration request for the application.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @param  Request  $request
+     * @return array
      */
-    public function register (Request $request)
+    public function register (Request $request): array
     {
         $this->validate($request, [
             'name' => 'required|min:3|max:25',
@@ -86,7 +86,10 @@ class RegisterController extends Controller
         $user->verify_remaining = 5000;
         $user->save();
 
-        return ['user_id' => $user->id, 'email' => $user->email];
+        return [
+            'user_id' => $user->id,
+            'email' => $user->email
+        ];
     }
 
    /**

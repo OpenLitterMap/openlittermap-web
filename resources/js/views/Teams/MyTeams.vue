@@ -1,12 +1,15 @@
 <template>
     <section>
         <div class="my-teams-container">
-            <h1 class="title is-2">{{ $t('teams.myteams.title') }}</h1>
+            <h1 class="title is-2">
+                {{ $t('teams.myteams.title') }}
+            </h1>
 
-            <p v-if="loading">{{ $t('common.loading') }}</p>
+            <p v-if="loading">
+                {{ $t('common.loading') }}
+            </p>
 
             <div v-else>
-
                 <div class="active-team-indicator">
                     <div>
                         <div v-if="user.active_team" class="mb1">
@@ -15,7 +18,9 @@
                             </p>
                         </div>
 
-                        <p v-else class="mb1">{{ $t('teams.myteams.no-joined-team') }}.</p>
+                        <p v-else class="mb1">
+                            {{ $t('teams.myteams.no-joined-team') }}.
+                        </p>
 
                         <div v-if="isLeader" class="mb2">
                             <p>{{ $t('teams.myteams.leader-of-team') }}.</p>
@@ -32,36 +37,62 @@
 
                 <div v-if="teams && teams.length" style="overflow-x: scroll">
                     <div class="flex mb1">
-                        <select v-model="viewTeam" class="input mtba" style="max-width: 20em; min-width: 5em;" @change="changeViewedTeam">
-                            <option :selected="! viewTeam" :value="null" disabled>{{ $t('teams.myteams.join-team') }}</option>
-                            <option v-for="team in teams" :value="team.id">{{ team.name }}</option>
+                        <select
+                            v-model="viewTeam"
+                            class="input mtba"
+                            style="max-width: 20em; min-width: 5em;"
+                            @change="changeViewedTeam"
+                        >
+                            <option
+                                :selected="! viewTeam"
+                                :value="null"
+                                disabled
+                            >
+                                {{ $t('teams.myteams.join-team') }}
+                            </option>
+
+                            <option
+                                v-for="team in teams"
+                                :key="team.id"
+                                :value="team.id"
+                            >
+                                {{ team.name }}
+                            </option>
                         </select>
 
                         <button
                             v-if="activeTeam === null"
                             :class="button"
-                            @click="changeActiveTeam"
                             :disabled="disabled"
-                        >{{ $t('teams.myteams.change-active-team') }}</button>
+                            @click="changeActiveTeam"
+                        >
+                            {{ $t('teams.myteams.change-active-team') }}
+                        </button>
 
                         <button
                             :class="downloadClass"
                             :disabled="dlProcessing"
                             @click="download"
-                        >{{ $t('teams.myteams.download-team-data') }}</button>
+                        >
+                            {{ $t('teams.myteams.download-team-data') }}
+                        </button>
 
                         <button
                             v-if="isLeader"
                             :class="leaderboardClass"
                             :disabled="leaderboardProcessing"
                             @click="toggleLeaderboardVis"
-                        >{{ showLeaderboard }}</button>
+                        >
+                            {{ showLeaderboard }}
+                        </button>
 
                         <button
                             v-if="members.data && members.data.length > 1"
                             class="button is-medium is-danger ml1"
                             @click="leaveTeam"
-                        >{{ $t('teams.myteams.leave-team') }}</button>
+                        >
+                            {{ $t('teams.myteams.leave-team') }}
+                        </button>
                     </div>
 
                     <table class="table is-fullwidth is-hoverable has-text-centered">
@@ -76,18 +107,21 @@
                         </thead>
 
                         <tbody>
-                            <tr v-for="(member, index) in members.data">
+                            <tr
+                                v-for="(member, index) in members.data"
+                                :key="member.id"
+                            >
                                 <td>
                                     <div class="medal-container">
                                         <img
                                             v-show="index < 3"
                                             :src="medal(index)"
                                             class="medal"
-                                        />
+                                        >
                                         <span>{{ getRank(index) }}</span>
                                     </div>
                                 </td>
-                                <td>{{ member.name ? member.name : '-'}}</td>
+                                <td>{{ member.name ? member.name : '-' }}</td>
                                 <td>{{ member.username ? member.username: '-' }}</td>
                                 <td style="width: 9em;white-space: nowrap">
                                     <span :class="checkActiveTeam(member.active_team)">
@@ -121,7 +155,6 @@
                         >{{ $t('common.next-page') }}</a>
                     </div>
                 </div>
-
             </div>
         </div>
     </section>
@@ -145,14 +178,6 @@ export default {
             leaderboardClass: 'button is-medium is-warning ml1',
             leaderboardProcessing: false
         };
-    },
-    async mounted ()
-    {
-        this.loading = true;
-
-        await this.getUserTeams();
-
-        this.loading = false;
     },
     computed: {
         /**
@@ -262,8 +287,15 @@ export default {
             return this.$store.state.user.user;
         }
     },
-    methods: {
+    async mounted ()
+    {
+        this.loading = true;
 
+        await this.getUserTeams();
+
+        this.loading = false;
+    },
+    methods: {
         /**
          * Change currently active team
          */
@@ -435,12 +467,12 @@ export default {
         /**
          *
          */
-        formatDate(date)
+        formatDate (date)
         {
-            return moment(date).format('LLL')
+            return moment(date).format('LLL');
         }
     }
-}
+};
 </script>
 
 <style scoped>

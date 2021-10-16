@@ -26,7 +26,7 @@
         "no-case-declarations": 0,
         "space-before-function-paren": ["error", "always"],
         "indent": ["warn", 4],
-        "max-len": ["error", { "code": 120, "ignoreUrls": true, "ignoreComments": true }],
+        "max-len": ["error", { "code": 150, "ignoreUrls": true, "ignoreComments": true }],
         "vue/html-indent": ["error", 4],
         "vue/max-attributes-per-line": "off",
         "quotes": ["error", "single"],
