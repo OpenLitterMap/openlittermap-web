@@ -197,7 +197,6 @@
                                                                                 <img src="https://openlittermap.com/assets/icons/home/camera.png"
                                                                                      alt="Take a picture"
                                                                                      width="150"
-                                                                                     height="200"
                                                                                      border="0"
                                                                                      style="display: block; font-family: Arial; color: #266e9c; font-size: 14px;"
                                                                                 />
