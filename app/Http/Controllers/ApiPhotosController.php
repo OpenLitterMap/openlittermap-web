@@ -275,7 +275,7 @@ class ApiPhotosController extends Controller
             'lat' => 'required|numeric',
             'lon' => 'required|numeric',
             'date' => 'required',
-            'tags' => 'required|array'
+            'tags' => 'required|json'
         ]);
 
         $file = $request->file('photo');
@@ -289,7 +289,11 @@ class ApiPhotosController extends Controller
 
         $userId = Auth::guard('api')->user()->id;
 
-        dispatch (new AddTags($userId, $photo->id, $request->tags));
+        dispatch (new AddTags(
+            $userId,
+            $photo->id,
+            json_decode($request->tags, true)
+        ));
 
         return ['success' => true, 'photo_id' => $photo->id];
     }
