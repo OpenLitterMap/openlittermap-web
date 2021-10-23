@@ -57,7 +57,7 @@ class MakeImageAction
             ];
         }
 
-        // We need to convert
+        // We need to convert HEIC to PNG to get an instance of Image Intervention
 
         // Generating a random filename, and not using the image's
         // original filename to handle cases
@@ -82,7 +82,7 @@ class MakeImageAction
         // Run a shell command to execute ImageMagick conversion
         exec('magick convert ' . $tmpFilepath . ' ' . $convertedFilepath);
 
-//         Run another shell command to copy the exif data
+//        This command is supposed to copy the exif data from A -> B, but it is working locally.
 //        exec('exiftool -overwrite_original_in_place -tagsFromFile ' . $tmpFilepath . ' ' . $convertedFilepath);
 
         // Give ourserlves an instance of image intervention using the newly converted png
