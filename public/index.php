@@ -9,7 +9,6 @@
 
 define('LARAVEL_START', microtime(true));
 
-
 /*
 |--------------------------------------------------------------------------
 | Maintenance Mode Updates - added manually after updating from Laravel 7 - 8

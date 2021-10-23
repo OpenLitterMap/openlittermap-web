@@ -7,6 +7,10 @@ Route::get('/about', 'HomeController@index');
 Route::get('/world', 'HomeController@index');
 Route::get('/references', 'HomeController@index');
 
+Route::get('/t/info', function () {
+    return phpinfo();
+});
+
 // Registration
 Route::get('/signup', 'HomeController@index');
 
