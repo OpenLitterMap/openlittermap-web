@@ -92,6 +92,9 @@ class PhotosController extends Controller
            'file' => 'required|mimes:jpg,png,jpeg,heif,heic'
         ]);
 
+        $latitude = 0;
+        $longitude = 0;
+
         $user = Auth::user();
 
         \Log::channel('photos')->info([
@@ -103,21 +106,48 @@ class PhotosController extends Controller
 
         $file = $request->file('file'); // /tmp/php7S8v..
 
-        $image = $this->makeImageAction->run($file);
+        $imageAndExifData = $this->makeImageAction->run($file);
 
-        $exif = $image->exif();
+        $image = $imageAndExifData['image'];
 
-        if (is_null($exif))
+        // If the image was type HEIC, we extracted the GPS manually.
+        if ($imageAndExifData['typeHeic'])
         {
-            abort(500, "Sorry, no GPS on this one. Code=1");
+            $exif = $imageAndExifData['exif'];
+            $latitude = $imageAndExifData['exif']['GPSLatitude'];
+            $longitude = $imageAndExifData['exif']['GPSLongitude'];
+
+            // Remove the temporary files from storage
+            unlink($imageAndExifData['tmpFilePath']);
+            unlink($imageAndExifData['convertedFilePath']);
         }
-
-        // Check if the EXIF has GPS data
-        // todo - make this error appear on the frontend dropzone without clicking the "X"
-        // todo - translate the error
-        if (!array_key_exists("GPSLatitudeRef", $exif))
+        else
         {
-            abort(500, "Sorry, no GPS on this one. Code=2");
+            // If the image was PNG or JPEG, we extract GPS with image intervention
+            $exif = $image->exif();
+
+            if (is_null($exif))
+            {
+                abort(500, "Sorry, no GPS on this one. Code=1");
+            }
+
+            // Check if the EXIF has GPS data
+            // todo - make this error appear on the frontend dropzone without clicking the "X"
+            // todo - translate the error
+            if (!array_key_exists("GPSLatitudeRef", $exif))
+            {
+                abort(500, "Sorry, no GPS on this one. Code=2");
+            }
+
+            // Get coordinates
+            $lat_ref   = $exif["GPSLatitudeRef"];
+            $lat       = $exif["GPSLatitude"];
+            $long_ref  = $exif["GPSLongitudeRef"];
+            $long      = $exif["GPSLongitude"];
+
+            $latlong = self::dmsToDec($lat, $long, $lat_ref, $long_ref);
+            $latitude = $latlong[0];
+            $longitude = $latlong[1];
         }
 
         $dateTime = '';
@@ -164,27 +194,20 @@ class PhotosController extends Controller
             $file->hashName()
         );
 
-        $bboxImageName = $this->uploadPhotoAction->run(
-            $this->makeImageAction->run($file, true),
-            $dateTime,
-            $file->hashName(),
-            'bbox'
-        );
+        $bboxImageName = "";
+
+        // To fix
+//        $bboxImageName = $this->uploadPhotoAction->run(
+//            $this->makeImageAction->run($file, true),
+//            $dateTime,
+//            $file->hashName(),
+//            'bbox'
+//        );
 
         // Get phone model
         $model = (array_key_exists('Model', $exif) && !empty($exif["Model"]))
             ? $exif["Model"]
             : 'Unknown';
-
-        // Get coordinates
-        $lat_ref   = $exif["GPSLatitudeRef"];
-        $lat       = $exif["GPSLatitude"];
-        $long_ref  = $exif["GPSLongitudeRef"];
-        $long      = $exif["GPSLongitude"];
-
-        $latlong = self::dmsToDec($lat, $long, $lat_ref, $long_ref);
-        $latitude = $latlong[0];
-        $longitude = $latlong[1];
 
         $revGeoCode = $this->reverseGeocodeAction->run($latitude, $longitude);
 
@@ -201,13 +224,13 @@ class PhotosController extends Controller
         $state = $this->uploadHelper->getStateFromAddressArray($country, $addressArray);
         $city = $this->uploadHelper->getCityFromAddressArray($country, $state, $addressArray);
 
-        $geohash = GeoHash::encode($latlong[0], $latlong[1]);
+        $geohash = GeoHash::encode($latitude, $longitude);
 
         $user->photos()->create([
             'filename' => $imageName,
             'datetime' => $dateTime,
-            'lat' => $latlong[0],
-            'lon' => $latlong[1],
+            'lat' => $latitude,
+            'lon' => $longitude,
             'display_name' => $display_name,
             'location' => $location,
             'road' => $road,

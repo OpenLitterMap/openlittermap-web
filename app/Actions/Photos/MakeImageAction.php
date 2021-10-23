@@ -42,12 +42,22 @@ class MakeImageAction
     {
         $extension = $file->getClientOriginalExtension();
 
-        if (!in_array(strtolower($extension), ['heif', 'heic'])) {
+        // If the image is not type HEIC, HEIF
+        // We can assume its jpg, png, and can be handled by the default GD image library
+        // Otherwise, we are going to have to handle HEIC separately.
+        if (!in_array(strtolower($extension), ['heif', 'heic']))
+        {
             $image = Image::make($file);
             $exif = $image->exif();
 
-            return compact('image', 'exif');
+            return [
+                'image' => $image,
+                'exif' => $exif,
+                'typeHeic' => false
+            ];
         }
+
+        // We need to convert
 
         // Generating a random filename, and not using the image's
         // original filename to handle cases
@@ -70,22 +80,43 @@ class MakeImageAction
         File::put($tmpFilepath, $file->getContent());
 
         // Run a shell command to execute ImageMagick conversion
-        exec('convert ' . $tmpFilepath . ' ' . $convertedFilepath);
+        exec('magick convert ' . $tmpFilepath . ' ' . $convertedFilepath);
 
-        // Run another shell command to copy the exif data
-        exec('exiftool -overwrite_original_in_place -tagsFromFile ' . $tmpFilepath . ' ' . $convertedFilepath);
-        \Log::info('exiftool -overwrite_original_in_place -tagsFromFile ' . $tmpFilepath . ' ' . $convertedFilepath);
+//         Run another shell command to copy the exif data
+//        exec('exiftool -overwrite_original_in_place -tagsFromFile ' . $tmpFilepath . ' ' . $convertedFilepath);
 
-        // Make the image from the new converted file
+        // Give ourserlves an instance of image intervention using the newly converted png
         $image = Image::make($convertedFilepath);
 
-        $exif = $image->exif();
-        \Log::info(['exif', $exif]);
+        // Note: The EXIF is not being copied to the PNG therefore we read it from the HEIC.
 
-        // Remove the temporary files from storage
-//        unlink($tmpFilepath);
-//        unlink($convertedFilepath);
+        // Extract the coordinates
+        $gpsString = "";
+        $gpsArrayItems = [];
 
-        return compact('image', 'exif');
+        // Todo - get phone / camera model name
+        exec("exiftool $tmpFilepath -gpslatitude -gpslongitude -gpstimestamp -datetimeoriginal -n -json", $gpsArrayItems);
+
+        foreach ($gpsArrayItems as $gpsArrayItem)
+        {
+            $gpsString .= $gpsArrayItem;
+        }
+
+        $exif = json_decode($gpsString, true)[0];
+
+        // 'GPSLatitude' => 123,
+        // 'GPSLongitude' => 456,
+        // 'DateTimeOriginal' => '2021:10:23 12:33:35',
+
+        // Temp fix
+        $exif["Model"] = "iPhone";
+
+        return [
+            'image' => $image,
+            'exif' => $exif,
+            'typeHeic' => true,
+            'tmpFilePath' => $tmpFilepath,
+            'convertedFilePath' => $convertedFilepath
+        ];
     }
 }
