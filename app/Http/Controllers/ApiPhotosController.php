@@ -275,9 +275,9 @@ class ApiPhotosController extends Controller
             'lat' => 'required|numeric',
             'lon' => 'required|numeric',
             'date' => 'required',
-            'tags' => 'required|array'
+//            'tags' => 'required|array'
         ]);
-
+Log::info($request->all());
         $file = $request->file('photo');
 
         if ($file->getError() === 3)
