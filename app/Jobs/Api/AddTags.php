@@ -62,7 +62,7 @@ class AddTags implements ShouldQueue
 
         $photo->total_litter = $litterTotals['litter'];
 
-        if ($user->verification_required)
+        if (!$user->is_trusted)
         {
             /* Bring the photo to an initial state of verification */
             /* 0 for testing, 0.1 for production */

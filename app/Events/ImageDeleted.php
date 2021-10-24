@@ -33,7 +33,7 @@ class ImageDeleted implements ShouldBroadcast, ShouldQueue
         $this->countryId = $countryId;
         $this->stateId = $stateId;
         $this->cityId = $cityId;
-        $this->isUserVerified = !$user->verification_required;
+        $this->isUserVerified = $user->is_trusted;
         $this->teamId = $teamId;
     }
 
