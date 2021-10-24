@@ -254,7 +254,7 @@ export default {
          */
         computedKey ()
         {
-            return process.env.MIX_GOOGLE_RECAPTCHA_KEY;
+            return "6Le9FtwcAAAAAMOImuwEoOYssOVdNf7dfI2x8XZh";
         },
 
         /**
