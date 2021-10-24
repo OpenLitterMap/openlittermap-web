@@ -86,7 +86,7 @@ class TagsVerifiedByAdmin implements ShouldBroadcast, ShouldQueue
 
         $this->total_litter_all_categories = $total_litter_all_categories;
 
-        $this->isUserVerified = !User::find($this->user_id)->verification_required;
+        $this->isUserVerified = User::find($this->user_id)->is_trusted;
     }
 
     /**
