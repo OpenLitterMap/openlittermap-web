@@ -254,7 +254,7 @@ class PhotosController extends Controller
             $country->id,
             $state->id,
             $city->id,
-            !$user->verification_required,
+            $user->is_trusted,
             $user->active_team
         ));
 
@@ -331,7 +331,7 @@ class PhotosController extends Controller
         $photo->remaining = $request->presence;
         $photo->total_litter = $litterTotals['litter'];
 
-        if ($user->verification_required)
+        if (!$user->is_trusted)
         {
             // Bring the photo to an initial state of verification
             // 0 for testing, 0.1 for production

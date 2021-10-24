@@ -20,7 +20,12 @@ class Team extends Model
     	'leader',
         'created_by',
         'identifier',
-        'leaderboards'
+        'leaderboards',
+        'is_trusted'
+    ];
+
+    protected $casts = [
+        'is_trusted' => 'boolean'
     ];
 
     /**
