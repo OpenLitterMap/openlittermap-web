@@ -108,6 +108,7 @@
                         <input
                             class="input"
                             :class="errorExists('password') ? 'is-danger' : ''"
+                            id="password"
                             name="password"
                             type="password"
                             placeholder="Create a strong password"
@@ -134,6 +135,7 @@
                             class="input"
                             :class="errorExists('password_confirmation') ? 'is-danger' : ''"
                             type="password"
+                            id="password_confirmation"
                             name="password_confirmation"
                             placeholder="Confirm your Password"
                             required
@@ -167,7 +169,7 @@
                 <div class="captcha">
                     <div>
                         <vue-recaptcha
-                            :sitekey="computedKey"
+                            sitekey="6Le9FtwcAAAAAMOImuwEoOYssOVdNf7dfI2x8XZh"
                             v-model="g_recaptcha_response"
                             :loadRecaptchaScript="true"
                             @verify="recaptcha"
@@ -182,7 +184,11 @@
                 <br>
                 <div style="text-align: center; padding-bottom: 1em;">
 
-                    <button :class="button" :disabled="checkDisabled">{{ $t('auth.subscribe.form-btn') }}</button>
+                    <button
+                        class="button is-medium is-primary mb1"
+                        :class="processing ? 'is-loading' : ''"
+                        :disabled="checkDisabled"
+                    >{{ $t('auth.subscribe.form-btn') }}</button>
 
                     <p>{{ $t('auth.subscribe.create-account-note') }} </p>
                 </div>
@@ -196,10 +202,13 @@ import VueRecaptcha from 'vue-recaptcha'
 
 export default {
 	name: 'CreateAccount',
-	props: ['plan'],
-    components: { VueRecaptcha },
-	created ()
-	{
+	props: [
+        'plan'
+    ],
+    components: {
+        VueRecaptcha
+    },
+	created () {
 		if (this.plan)
 		{
 			if (this.plan === 'startup') this.planInt = 2;
@@ -208,10 +217,8 @@ export default {
 			else if (this.plan === 'pro') this.planInt = 5;
 		}
 	},
-	data ()
-	{
+	data () {
 		return {
-            btn: 'button is-medium is-primary mb1',
             planInt: 1,
             processing: false,
             // REGISTRATION
@@ -224,17 +231,7 @@ export default {
             g_recaptcha_response: '',
 		};
 	},
-
 	computed: {
-
-	    /**
-         * Add spinner when processing
-         */
-	    button ()
-        {
-            return this.processing ? this.btn + ' is-loading' : this.btn;
-        },
-
 	    /**
          * Return true to disable the button
          */
@@ -247,14 +244,6 @@ export default {
             // if (Object.keys(this.errors).length > 0) return true;
 
             return false;
-        },
-
-        /**
-         * Key to return for google-recaptcha
-         */
-        computedKey ()
-        {
-            return "6Le9FtwcAAAAAMOImuwEoOYssOVdNf7dfI2x8XZh";
         },
 
         /**
@@ -273,9 +262,7 @@ export default {
 			return this.$store.state.plans.plans;
 		}
 	},
-
 	methods: {
-
         /**
          * Clear an error with this key
          */
@@ -293,7 +280,9 @@ export default {
 
             this.$router.push({
                 path: 'join',
-                query: { plan }
+                query: {
+                    plan
+                }
             });
         },
 
@@ -350,7 +339,7 @@ export default {
                 email: this.email,
                 password: this.password,
                 password_confirmation: this.password_confirmation,
-                recaptcha: this.g_recaptcha_response,
+                g_recaptcha_response: this.g_recaptcha_response,
                 plan: this.planInt,
                 plan_id
             });
