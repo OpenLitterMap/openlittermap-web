@@ -85,7 +85,7 @@ class ApiPhotosController extends Controller
                 'mimeType' => 'image/jpeg',
                 'error' => 0,
                 'hashName' => NULL
-            )),
+            ))
         );
      *
      * @return array
