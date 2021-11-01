@@ -137,7 +137,7 @@ class ApiPhotosController extends Controller
             ? $request->model
             : 'Mobile app v2';
 
-        $image = $this->makeImageAction->run($file);
+        $image = $this->makeImageAction->run($file)['image'];
 
         $lat = $request['lat'];
         $lon = $request['lon'];
@@ -151,7 +151,7 @@ class ApiPhotosController extends Controller
         );
 
         $bboxImageName = $this->uploadPhotoAction->run(
-            $this->makeImageAction->run($file, true),
+            $this->makeImageAction->run($file, true)['image'],
             $date,
             $file->hashName(),
             'bbox'
@@ -275,9 +275,9 @@ class ApiPhotosController extends Controller
             'lat' => 'required|numeric',
             'lon' => 'required|numeric',
             'date' => 'required',
-//            'tags' => 'required|array'
+            'tags' => 'required|array'
         ]);
-Log::info($request->all());
+
         $file = $request->file('photo');
 
         if ($file->getError() === 3)
