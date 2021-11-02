@@ -134,6 +134,15 @@ class User extends Authenticatable
     }
 
     /**
+     * Returns true if the user is verified
+     * or is part of a trusted team
+     */
+    public function getIsTrustedAttribute(): bool
+    {
+        return !$this->verification_required || $this->team && $this->team->is_trusted;
+    }
+
+    /**
      * Get total tags attribute
      *
      * @return int total number of tags

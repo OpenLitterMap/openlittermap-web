@@ -103,9 +103,9 @@ class PhotosController extends Controller
 
         $file = $request->file('file'); // /tmp/php7S8v..
 
-        $image = $this->makeImageAction->run($file);
-
-        $exif = $image->exif();
+        $imageAndExifData = $this->makeImageAction->run($file);
+        $image = $imageAndExifData['image'];
+        $exif = $imageAndExifData['exif'];
 
         if (is_null($exif))
         {
@@ -165,7 +165,7 @@ class PhotosController extends Controller
         );
 
         $bboxImageName = $this->uploadPhotoAction->run(
-            $this->makeImageAction->run($file, true),
+            $this->makeImageAction->run($file, true)['image'],
             $dateTime,
             $file->hashName(),
             'bbox'
@@ -254,7 +254,7 @@ class PhotosController extends Controller
             $country->id,
             $state->id,
             $city->id,
-            !$user->verification_required,
+            $user->is_trusted,
             $user->active_team
         ));
 
@@ -331,7 +331,7 @@ class PhotosController extends Controller
         $photo->remaining = $request->presence;
         $photo->total_litter = $litterTotals['litter'];
 
-        if ($user->verification_required)
+        if (!$user->is_trusted)
         {
             // Bring the photo to an initial state of verification
             // 0 for testing, 0.1 for production

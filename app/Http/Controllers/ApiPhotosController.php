@@ -85,7 +85,7 @@ class ApiPhotosController extends Controller
                 'mimeType' => 'image/jpeg',
                 'error' => 0,
                 'hashName' => NULL
-            )),
+            ))
         );
      *
      * @return array
@@ -137,7 +137,7 @@ class ApiPhotosController extends Controller
             ? $request->model
             : 'Mobile app v2';
 
-        $image = $this->makeImageAction->run($file);
+        $image = $this->makeImageAction->run($file)['image'];
 
         $lat = $request['lat'];
         $lon = $request['lon'];
@@ -151,7 +151,7 @@ class ApiPhotosController extends Controller
         );
 
         $bboxImageName = $this->uploadPhotoAction->run(
-            $this->makeImageAction->run($file, true),
+            $this->makeImageAction->run($file, true)['image'],
             $date,
             $file->hashName(),
             'bbox'
@@ -219,7 +219,7 @@ class ApiPhotosController extends Controller
             $country->id,
             $state->id,
             $city->id,
-            !$user->verification_required,
+            $user->is_trusted,
             $user->active_team
         ));
 
