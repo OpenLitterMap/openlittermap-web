@@ -171,7 +171,7 @@ export default {
         },
 
         /**
-         *
+         * Open link in a new tab
          */
         open (link)
         {
