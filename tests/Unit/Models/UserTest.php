@@ -21,4 +21,15 @@ class UserTest extends TestCase
 
         $this->assertTrue($user->fresh()->is_trusted);
     }
+
+    public function test_a_user_has_a_picked_up_attribute()
+    {
+        $user = User::factory()->create(['items_remaining' => true]);
+
+        $this->assertFalse($user->picked_up);
+
+        $user = User::factory()->create(['items_remaining' => false]);
+
+        $this->assertTrue($user->picked_up);
+    }
 }

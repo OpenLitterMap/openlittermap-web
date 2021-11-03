@@ -109,7 +109,7 @@ class User extends Authenticatable
         'verification_required' => 'boolean'
     ];
 
-    protected $appends = ['total_categories', 'total_tags', 'total_brands_redis'];
+    protected $appends = ['total_categories', 'total_tags', 'total_brands_redis', 'picked_up'];
 
     /**
      * Get total categories attribute
@@ -140,6 +140,15 @@ class User extends Authenticatable
     public function getIsTrustedAttribute(): bool
     {
         return !$this->verification_required || $this->team && $this->team->is_trusted;
+    }
+
+    /**
+     * Wrapper around default setting for items_remaining,
+     * for better readability
+     */
+    public function getPickedUpAttribute ()
+    {
+        return !$this->items_remaining;
     }
 
     /**
