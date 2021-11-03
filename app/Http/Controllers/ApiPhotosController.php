@@ -256,7 +256,12 @@ class ApiPhotosController extends Controller
             'request' => $request->all()
         ]);
 
-        dispatch (new AddTags($user->id, $photo->id, $request->litter ?? $request->tags));
+        dispatch (new AddTags(
+            $user->id,
+            $photo->id,
+            $request->litter ?? $request->tags,
+            $request->picked_up
+        ));
 
         return ['success' => true, 'msg' => 'dispatched'];
     }
@@ -275,7 +280,8 @@ class ApiPhotosController extends Controller
             'lat' => 'required|numeric',
             'lon' => 'required|numeric',
             'date' => 'required',
-            'tags' => 'required|json'
+            'tags' => 'required|json',
+            'picked_up' => 'nullable|boolean'
         ]);
 
         $file = $request->file('photo');
@@ -292,7 +298,8 @@ class ApiPhotosController extends Controller
         dispatch (new AddTags(
             $userId,
             $photo->id,
-            json_decode($request->tags, true)
+            json_decode($request->tags, true),
+            $request->picked_up
         ));
 
         return ['success' => true, 'photo_id' => $photo->id];

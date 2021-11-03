@@ -17,7 +17,7 @@ class MakeImageAction
      * @param UploadedFile $file
      * @param bool $resize
      *
-     * @return array<\Intervention\Image\Image, array>
+     * @return array
      */
     public function run(UploadedFile $file, bool $resize = false): array
     {
@@ -36,7 +36,7 @@ class MakeImageAction
 
     /**
      * @param UploadedFile $file
-     * @return array<\Intervention\Image\Image, array>
+     * @return array
      * @throws Exception
      */
     protected function getImageAndExifData(UploadedFile $file): array

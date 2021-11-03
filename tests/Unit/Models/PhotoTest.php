@@ -54,6 +54,13 @@ class PhotoTest extends TestCase
         $this->assertFalse($photo->selected);
     }
 
+    public function test_a_photo_has_picked_up_attribute()
+    {
+        $photo = Photo::factory()->create();
+
+        $this->assertEquals(!$photo->remaining, $photo->picked_up);
+    }
+
     public function test_a_photo_has_many_boxes()
     {
         $photo = Photo::factory()->create();
