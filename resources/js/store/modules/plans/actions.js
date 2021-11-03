@@ -1,5 +1,4 @@
 export const actions = {
-
     /**
      * Someone wants to create a new account!
      */
@@ -11,7 +10,7 @@ export const actions = {
             email: payload.email,
             password: payload.password,
             password_confirmation: payload.password_confirmation,
-            "g-recaptcha-response": payload.recaptcha
+            "g-recaptcha-response": payload.g_recaptcha_response
         })
         .then(response => {
             console.log('create_account', response); // user_id, email

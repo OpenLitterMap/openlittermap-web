@@ -45,7 +45,7 @@ class UploadPhotoWithTagsTest extends TestCase
         $response = $this->post('/api/photos/submit-with-tags',
             array_merge(
                 $this->getApiImageAttributes($imageAttributes),
-                ['tags' => ['smoking' => ['butts' => 3]]]
+                ['tags' => json_encode(['smoking' => ['butts' => 3]])]
             )
         );
 
@@ -76,11 +76,11 @@ class UploadPhotoWithTagsTest extends TestCase
                 'errors' => ['photo', 'lat', 'lon', 'date', 'tags'],
             ],
             [
-                'fields' => ['photo' => UploadedFile::fake()->image('some.pdf'), 'lat' => 5, 'lon' => 5, 'date' => now()->toDateTimeString(), 'tags' => ['smoking' => ['butts' => 3]]],
+                'fields' => ['photo' => UploadedFile::fake()->image('some.pdf'), 'lat' => 5, 'lon' => 5, 'date' => now()->toDateTimeString(), 'tags' => json_encode(['smoking' => ['butts' => 3]])],
                 'errors' => ['photo']
             ],
             [
-                'fields' => ['photo' => 'validImage', 'lat' => 'asdf', 'lon' => 'asdf', 'date' => now()->toDateTimeString(), 'tags' => ['smoking' => ['butts' => 3]]],
+                'fields' => ['photo' => 'validImage', 'lat' => 'asdf', 'lon' => 'asdf', 'date' => now()->toDateTimeString(), 'tags' => json_encode(['smoking' => ['butts' => 3]])],
                 'errors' => ['lat', 'lon']
             ],
             [
