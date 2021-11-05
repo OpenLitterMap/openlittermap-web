@@ -2,11 +2,11 @@
     <div class="content p2">
         <p class="ref-title">OpenLitterMap has been referenced {{ items.length }} times and counting</p>
         <ul>
-            <li v-for="item in items">
+            <li v-for="item in items.slice().reverse()">
                 <div class="mb1">
                     <p>{{ getDate(item.date) }}</p>
 
-                    <a :href="item.link">{{ item.title }}</a>
+                    <a @click="open(item.link)">{{ item.title }}</a>
 
                     <p>{{ item.author }}</p>
                 </div>
@@ -23,8 +23,7 @@ export default {
     created () {
         window.scrollTo(0, 0);
     },
-    data ()
-    {
+    data () {
         return {
             items: [
                 {
@@ -152,18 +151,31 @@ export default {
                     title: 'Is Downloading this App Consistent with my Values?',
                     link: 'https://arxiv.org/pdf/2106.12458.pdf',
                     author: 'Carter, S.'
+                },
+                {
+                    date: '2021/10/27',
+                    title: 'A Systematic Literature Review of Blockchain Technology for Smart Villages',
+                    link: 'https://link.springer.com/article/10.1007/s11831-021-09659-7',
+                    author: 'Kaur & Parashar'
                 }
             ]
-        }
+        };
     },
     methods: {
-
         /**
          * Return formatted date if it exists
          */
         getDate (date)
         {
             return date ? moment(date).format('LL') : 'unknown';
+        },
+
+        /**
+         * Open link in a new tab
+         */
+        open (link)
+        {
+            window.open(link, "_blank");
         }
     }
 }
