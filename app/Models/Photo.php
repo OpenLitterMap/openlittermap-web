@@ -76,7 +76,7 @@ class Photo extends Model
         'address_array'
     ];
 
-    protected $appends = ['selected'];
+    protected $appends = ['selected', 'picked_up'];
 
     protected $casts = ['datetime'];
 
@@ -86,6 +86,14 @@ class Photo extends Model
     public function getSelectedAttribute ()
     {
         return false;
+    }
+
+    /**
+     * Wrapper around photo presence, for better readability
+     */
+    public function getPickedUpAttribute ()
+    {
+        return !$this->remaining;
     }
 
     /**

@@ -194,6 +194,49 @@ class AddTagsToPhotoTest extends TestCase
         $this->assertEquals(0.1, $photo->verification);
     }
 
+    public function test_a_photo_can_be_marked_as_picked_up_or_not()
+    {
+        // User uploads an image -------------------------
+        $user = User::factory()->create();
+        $this->actingAs($user, 'api');
+        $this->post('/api/photos/submit',
+            $this->getApiImageAttributes($this->imageAndAttributes)
+        );
+        $photo = $user->fresh()->photos->last();
+
+        // User marks the litter as picked up -------------------
+        $this->post('/api/add-tags', [
+            'photo_id' => $photo->id,
+            'picked_up' => true,
+            'tags' => ['smoking' => ['butts' => 3]]
+        ]);
+
+        $photo->refresh();
+        $this->assertTrue($photo->picked_up);
+
+        // User marks the litter as not picked up -------------------
+        $this->post('/api/add-tags', [
+            'photo_id' => $photo->id,
+            'picked_up' => false,
+            'tags' => ['smoking' => ['butts' => 3]]
+        ]);
+
+        $photo->refresh();
+        $this->assertFalse($photo->picked_up);
+
+        // User doesn't indicate whether litter is picked up -------------------
+        // So it should default to user's predefined settings
+        $user->items_remaining = false;
+        $user->save();
+        $this->post('/api/add-tags', [
+            'photo_id' => $photo->id,
+            'tags' => ['smoking' => ['butts' => 3]]
+        ]);
+
+        $photo->refresh();
+        $this->assertTrue($photo->picked_up);
+    }
+
     public function test_it_fires_tags_verified_by_admin_event_when_a_verified_user_adds_tags_to_a_photo()
     {
         Event::fake(TagsVerifiedByAdmin::class);

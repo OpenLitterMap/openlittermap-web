@@ -68,6 +68,47 @@ class UploadPhotoWithTagsTest extends TestCase
         Event::assertDispatched(IncrementPhotoMonth::class);
     }
 
+    public function test_a_photo_can_be_marked_as_picked_up_or_not()
+    {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+        $user = User::factory()->create();
+        $this->actingAs($user, 'api');
+        $imageAttributes = $this->getImageAndAttributes();
+
+        // User marks the litter as picked up -------------------
+        $this->post('/api/photos/submit-with-tags',
+            array_merge($this->getApiImageAttributes($imageAttributes), [
+                'tags' => json_encode(['smoking' => ['butts' => 3]]),
+                'picked_up' => true
+            ])
+        );
+
+        $this->assertTrue($user->fresh()->photos->last()->picked_up);
+
+        // User marks the litter as not picked up -------------------
+        $this->post('/api/photos/submit-with-tags',
+            array_merge($this->getApiImageAttributes($imageAttributes), [
+                'tags' => json_encode(['smoking' => ['butts' => 3]]),
+                'picked_up' => false
+            ])
+        );
+
+        $this->assertFalse($user->fresh()->photos->last()->picked_up);
+
+        // User doesn't indicate whether litter is picked up -------------------
+        // So it should default to user's predefined settings
+        $user->items_remaining = false;
+        $user->save();
+        $this->post('/api/photos/submit-with-tags',
+            array_merge($this->getApiImageAttributes($imageAttributes), [
+                'tags' => json_encode(['smoking' => ['butts' => 3]]),
+            ])
+        );
+
+        $this->assertTrue($user->fresh()->photos->last()->picked_up);
+    }
+
     public function validationDataProvider(): array
     {
         return [

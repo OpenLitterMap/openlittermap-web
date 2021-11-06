@@ -85,6 +85,11 @@ class ApiSettingsController extends Controller
         $key = $request['key'];
         $value = $request['value'];
 
+        if ($key == 'picked_up') {
+            $key = 'items_remaining';
+            $value = !$value;
+        }
+
         try
         {
             $user->$key = $value;

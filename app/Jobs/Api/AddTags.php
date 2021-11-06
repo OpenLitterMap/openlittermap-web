@@ -23,6 +23,7 @@ class AddTags implements ShouldQueue
     public $userId;
     public $photoId;
     public $tags;
+    public $pickedUp;
 
     /**
      * Create a new job instance.
@@ -30,12 +31,14 @@ class AddTags implements ShouldQueue
      * @param $userId
      * @param $photoId
      * @param $tags
+     * @param $pickedUp
      */
-    public function __construct ($userId, $photoId, $tags)
+    public function __construct ($userId, $photoId, $tags, $pickedUp)
     {
         $this->userId = $userId;
         $this->photoId = $photoId;
         $this->tags = $tags;
+        $this->pickedUp = $pickedUp;
     }
 
     /**
@@ -61,6 +64,7 @@ class AddTags implements ShouldQueue
         $updateLeaderboardsAction->run($user, $photo);
 
         $photo->total_litter = $litterTotals['litter'];
+        $photo->remaining = $this->isLitterRemaining($user);
 
         if (!$user->is_trusted)
         {
@@ -77,5 +81,16 @@ class AddTags implements ShouldQueue
         }
 
         $photo->save();
+    }
+
+    /**
+     * @param $user
+     * @return bool
+     */
+    protected function isLitterRemaining($user): bool
+    {
+        return is_null($this->pickedUp)
+            ? $user->items_remaining
+            : !$this->pickedUp;
     }
 }
