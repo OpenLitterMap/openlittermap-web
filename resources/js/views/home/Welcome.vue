@@ -157,7 +157,6 @@ export default {
             headings: [
                 { title: this.$t('home.welcome.plastic-pollution-out-of-control'), img: '/assets/plastic_bottles.jpg' },
                 { title: this.$t('home.welcome.fires-out-of-control'), img: '/assets/forest_fire.jpg' },
-                { title: this.$t('home.welcome.climate-change-out-of-control'), img: '/assets/climate_pollution.jpg' },
             ],
             activeHeadingIndex: 0
         }
@@ -337,6 +336,9 @@ export default {
 
     /* Extra small */
     @media (max-width: 576px) {
+        .main-title {
+            margin-bottom: 1rem;
+        }
         .variable-height {
             min-height: 162px;
         }
