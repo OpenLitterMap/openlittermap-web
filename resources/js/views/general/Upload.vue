@@ -58,7 +58,8 @@ export default {
                 },
                 includeStyling: true,
                 duplicateCheck: true,
-                paramName: 'file'
+                paramName: 'file',
+                acceptedFiles: 'image/*,.heic,.heif'
             },
             showTagLitterButton: true
         };
