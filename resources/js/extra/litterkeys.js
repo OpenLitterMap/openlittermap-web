@@ -51,7 +51,8 @@ export const litterkeys = {
         'glass_jar_lid',       // Glass Jar Lid
         'aluminium_foil',      // Aluminium Foil
         'pizza_box',           // Pizza Box
-        'foodOther'            // Food-other
+        'foodOther',            // Food-other
+        'chewing_gum',          // Chewing Gum
     ],
     softdrinks: [
         'waterBottle',      // Plastic Water bottle
@@ -128,26 +129,31 @@ export const litterkeys = {
         'coastal_other'            // Coastal (other
     ],
     brands: [
+         'aadrink',  // AA Drink
          'adidas',	 // Adidas
          'albertheijn', //AlbertHeijn
          'aldi',	 // aldi
          'amazon',	 // Amazon
+         'amstel',	 // Amstel
          'apple',	 // Apple
          'applegreen',	 // applegreen
          'asahi',	 // asahi
          'avoca',	 // avoca
 
+         'bacardi',	 // Bacardi
          'ballygowan',	 // ballygowan
          'bewleys',	 // bewleys
          'brambles',	 // brambles
          'budweiser',	 // Budweiser
          'bulmers',	 // bulmers
+         'bullit',	 // Bullit
          'burgerking',	 // burgerking
          'butlers',	 // butlers
 
          'cadburys',	 // cadburys
          'cafenero',	 // cafenero
          'camel',	 // Camel
+         'caprisun',	 // Capri Sun
          'carlsberg',	 // carlsberg
          'centra',	 // centra
          'circlek',	 // circlek
@@ -166,24 +172,30 @@ export const litterkeys = {
          'esquires',	 // Esquires
          'evian',	 // evian
 
+         'fanta',	 // Fanta
+         'fernandes',	 // Fernandes
          'fosters',	 // fosters
          'frank_and_honest',	 // Frank-and-Honest
          'fritolay',	 // Frito-Lay
 
          'gatorade',	 // Gatorade
          'gillette',	 // Gillette
+         'goldenpower',	 // goldenpower
          'guinness',	 // guinness
 
          'haribo',	 // Haribo
          'heineken',	 // Heineken
+         'hertog_jan',	 // Hertog Jan
          'insomnia',	 // Insomnia
 
          'kellogs',	 // Kellogs
          'kfc',	 // KFC
 
+         'lavish',	 // Lavish
          'lego',	 // Lego
          'lidl',	 // Lidl
          'lindenvillage',	 // Lindenvillage
+         'lipton',	 // Lipton
          'lolly_and_cookes',	 // Lolly-and-cookes
          'loreal',	 // Loreal
          'lucozade',	 // Lucozade
@@ -191,6 +203,7 @@ export const litterkeys = {
          'marlboro',	 // Marlboro
          'mars',	 // Mars
          'mcdonalds',	 // McDonalds
+         'monster',	 // Monster
 
          'nero',	 // nero
          'nescafe',	 // Nescafe
@@ -207,6 +220,9 @@ export const litterkeys = {
 
          'sainsburys',	 // Sainsburys
          'samsung',	 // Samsung
+         'schutters',	 // Schutters
+         'slammers',	 // Slammers
+         'spa',	 // SPA
          'spar',	 // Spar
          'starbucks',	 // Starbucks
          'stella',	 // Stella
