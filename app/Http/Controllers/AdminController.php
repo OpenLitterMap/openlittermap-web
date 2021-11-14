@@ -227,8 +227,10 @@ class AdminController extends Controller
 
     /**
      * Get the next image to verify
+     *
+     * @return array
      */
-    public function getImage ()
+    public function getImage (): array
     {
         $photo = Photo::where([
             'verification' => 0,
@@ -258,6 +260,8 @@ class AdminController extends Controller
                 ['user_id', '!=', 3233], // dont load freds data
                 ['user_id', '!=', 5292]  // or sarahs
             ])->first();
+
+            $photo->tags();
         }
 
         return [

@@ -162,10 +162,12 @@ class Photo extends Model
      */
     public function tags ()
     {
+        \Log::info('get tags');
         foreach ($this->categories() as $category)
         {
             if ($this->$category)
             {
+                \Log::info(['cat found', $category]);
                 foreach ($this->$category->types() as $tag)
                 {
                     if (is_null($this->$category[$tag]))
