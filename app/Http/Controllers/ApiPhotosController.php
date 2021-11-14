@@ -273,7 +273,7 @@ class ApiPhotosController extends Controller
      * @return array
      * @throws GuzzleException
      */
-    public function storeWithTags (Request $request) :array
+    public function uploadWithTags (Request $request) :array
     {
         $request->validate([
             'photo' => 'required|mimes:jpg,png,jpeg,heic',
