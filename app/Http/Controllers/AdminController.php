@@ -261,7 +261,11 @@ class AdminController extends Controller
                 ['user_id', '!=', 5292]  // or sarahs
             ])->first();
 
-            $photo->tags();
+            // Load the tags for this photo if it exists
+            if ($photo)
+            {
+                $photo->tags();
+            }
         }
 
         return [
