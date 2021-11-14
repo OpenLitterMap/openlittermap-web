@@ -305,6 +305,18 @@ html {
 	display: none;
 }
 
+.success-privacy-text {
+    color: green;
+    font-weight: 600;
+    font-family: BlinkMacSystemFont, -apple-system, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+}
+
+.failed-privacy-text {
+    color: red;
+    font-weight: 600;
+    font-family: BlinkMacSystemFont, -apple-system, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+}
+
 .suggest-item {
     color: #363636 !important;
 }
