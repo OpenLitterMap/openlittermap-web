@@ -1,6 +1,13 @@
-import { init } from './init'
+import { init } from './init';
 
 export const mutations = {
+    /**
+     * The user wants to change a privacy setting
+     */
+    changePrivacy (state, payload)
+    {
+        state.user[payload.column] = payload.v;
+    },
 
     /**
      * Settings.details
@@ -117,14 +124,6 @@ export const mutations = {
     usersTeam (state, payload)
     {
         state.user.team = payload;
-    },
-
-    /**
-     * The user wants to change a privacy setting
-     */
-    privacy (state, payload)
-    {
-        state.user[payload.column] = payload.v;
     },
 
     /**

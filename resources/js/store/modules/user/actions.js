@@ -278,8 +278,8 @@ export const actions = {
      */
     async SAVE_PRIVACY_SETTINGS (context)
     {
-        let title = i18n.t('notifications.success');
-        let body  = i18n.t('notifications.privacy-updated');
+        const title = i18n.t('notifications.success');
+        const body  = i18n.t('notifications.privacy-updated');
 
         await axios.post('/settings/privacy/update', {
             show_name_maps: context.state.user.show_name_maps,
