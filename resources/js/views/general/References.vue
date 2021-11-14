@@ -157,6 +157,12 @@ export default {
                     title: 'A Systematic Literature Review of Blockchain Technology for Smart Villages',
                     link: 'https://link.springer.com/article/10.1007/s11831-021-09659-7',
                     author: 'Kaur & Parashar'
+                },
+                {
+                    date: '2021/11/14',
+                    title: 'Environmental Governance. In: Handbook of Environmental Sociology. Handbooks of Sociology and Social Research.',
+                    link: 'https://link.springer.com/chapter/10.1007/978-3-030-77712-8_16',
+                    author: 'Fisher et al.'
                 }
             ]
         };
