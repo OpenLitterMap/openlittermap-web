@@ -119,7 +119,9 @@
 <script>
 export default {
     name: 'Email',
-    props: ['token'],
+    props: [
+        'token'
+    ],
     data () {
         return {
             email: this.$route.query.email,
@@ -160,7 +162,11 @@ export default {
         },
     },
     methods: {
-        async submit () {
+        /**
+         * Dispatch request to reset password
+         */
+        async submit ()
+        {
             if (this.password !== this.passwordConfirmation)
             {
                 let withNewError = {
@@ -169,6 +175,7 @@ export default {
                 };
 
                 this.$store.commit('errors', withNewError);
+                
                 return;
             }
 

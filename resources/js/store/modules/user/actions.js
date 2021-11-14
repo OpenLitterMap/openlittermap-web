@@ -37,19 +37,21 @@ export const actions = {
     async SEND_PASSWORD_RESET_LINK (context, payload)
     {
         const title = i18n.t('notifications.success');
+        const body = "An email will be sent with a link to reset your password if the email exists.";
+
+        Vue.$vToastify.success({
+            title,
+            body
+        });
 
         await axios.post('/password/email', {
             email: payload,
         })
         .then(response => {
-            console.log('send_password_reset_link', response);
-
-            Vue.$vToastify.success({title, body: response.data.message});
+            // console.log('send_password_reset_link', response);
         })
         .catch(error => {
-            console.log('error.send_password_reset_link', error.response.data);
-
-            context.commit('errors', error.response.data.errors);
+            // console.log('error.send_password_reset_link', error.response.data);
         });
     },
 
@@ -66,7 +68,10 @@ export const actions = {
 
                 if (!response.data.success) return;
 
-                Vue.$vToastify.success({title, body: response.data.message});
+                Vue.$vToastify.success({
+                    title,
+                    body: response.data.message
+                });
 
                 // Go home and log in
                 setTimeout(function() {
