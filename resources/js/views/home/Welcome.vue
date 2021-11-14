@@ -28,9 +28,7 @@
                             class="app-icon"
                             @click="android"
                         />
-
                     </div>
-
                 </div>
 
                 <div class="column is-half">
@@ -48,94 +46,131 @@
 
             <!-- Why its important -->
             <div class="why-container">
-                <h1 class="main-title">{{ $t('home.welcome.why-collect-data') }}?</h1>
+                <h1 class="main-title">
+                    {{ $t('home.welcome.why-collect-data') }}?
+                </h1>
 
                 <div class="columns welcome-mb">
                     <div class="column is-one-quarter icon-center">
-                        <img src="/assets/icons/home/world.png" class="about-icon" />
+                        <img
+                            src="/assets/icons/home/world.png"
+                            class="about-icon" />
                     </div>
 
                     <div class="column ma">
-                        <h2 class="main-subtitle">1. {{ $t('home.welcome.visibility') }}</h2>
-                        <h3 class="welcome-subtitle mb1em">{{ $t('home.welcome.our-maps-reveal-litter-normality') }}.</h3>
+                        <h2 class="main-subtitle">
+                            1. {{ $t('home.welcome.visibility') }}
+                        </h2>
+                        <h3 class="welcome-subtitle mb1em">
+                            {{ $t('home.welcome.our-maps-reveal-litter-normality') }}.
+                        </h3>
                     </div>
                 </div>
 
                 <div class="columns welcome-mb">
                     <div class="column is-one-quarter icon-center">
-                        <img src="/assets/icons/home/microscope.png" class="about-icon" />
+                        <img
+                            src="/assets/icons/home/microscope.png"
+                            class="about-icon"
+                        />
                     </div>
 
                     <div class="column ma">
-                        <h2 class="main-subtitle">2. {{ $t('home.welcome.science') }}</h2>
-                        <h3 class="welcome-subtitle mb1em">{{ $t('home.welcome.our-data-open-source') }}.</h3>
+                        <h2 class="main-subtitle">
+                            2. {{ $t('home.welcome.science') }}
+                        </h2>
+                        <h3 class="welcome-subtitle mb1em">
+                            {{ $t('home.welcome.our-data-open-source') }}.
+                        </h3>
                     </div>
                 </div>
 
                 <div class="columns welcome-mb">
                     <div class="column is-one-quarter icon-center">
-                        <img src="/assets/icons/home/tree.png" class="about-icon" />
+                        <img
+                            src="/assets/icons/home/tree.png"
+                            class="about-icon"
+                        />
                     </div>
 
                     <div class="column ma">
-                        <h2 class="main-subtitle">3. {{ $t('home.welcome.community') }}</h2>
-                        <h3 class="welcome-subtitle">{{ $t('home.welcome.must-work-together') }}.</h3>
+                        <h2 class="main-subtitle">
+                            3. {{ $t('home.welcome.community') }}
+                        </h2>
+                        <h3 class="welcome-subtitle">
+                            {{ $t('home.welcome.must-work-together') }}.
+                        </h3>
                     </div>
                 </div>
             </div>
 
             <!-- How does it work -->
             <div>
-                <h1 class="main-title">{{ $t('home.welcome.how-does-it-work') }}?</h1>
+                <h1 class="main-title">
+                    {{ $t('home.welcome.how-does-it-work') }}?
+                </h1>
 
                 <div class="columns welcome-mb">
                     <div class="column is-one-quarter icon-center">
-                        <img src="/assets/icons/home/camera.png" class="about-icon" />
+                        <img
+                            src="/assets/icons/home/camera.png"
+                            class="about-icon"
+                        />
                     </div>
 
                     <div class="column ma">
-                        <h2 class="main-subtitle">1. {{ $t('home.welcome.take-a-photo') }}</h2>
-                        <h3 class="welcome-subtitle mb1em">{{ $t('home.welcome.device-captures-info') }}</h3>
+                        <h2 class="main-subtitle">
+                            1. {{ $t('home.welcome.take-a-photo') }}
+                        </h2>
+                        <h3 class="welcome-subtitle mb1em">
+                            {{ $t('home.welcome.device-captures-info') }}
+                        </h3>
                     </div>
                 </div>
 
                 <div class="columns welcome-mb">
                     <div class="column is-one-quarter icon-center">
-                        <img src="/assets/icons/home/phone.png" class="about-icon" />
+                        <img
+                            src="/assets/icons/home/phone.png"
+                            class="about-icon"
+                        />
                     </div>
 
                     <div class="column ma">
-                        <h2 class="main-subtitle">2. {{ $t('home.welcome.tag-the-litter') }}</h2>
-                        <h3 class="welcome-subtitle mb1em">{{ $t('home.welcome.tag-litter-you-see') }}!</h3>
+                        <h2 class="main-subtitle">
+                            2. {{ $t('home.welcome.tag-the-litter') }}
+                        </h2>
+                        <h3 class="welcome-subtitle mb1em">
+                            {{ $t('home.welcome.tag-litter-you-see') }}!
+                        </h3>
                     </div>
                 </div>
 
                 <div class="columns welcome-mb">
                     <div class="column is-one-quarter icon-center">
-                        <img src="/assets/icons/twitter2.png" class="about-icon" />
+                        <img
+                            src="/assets/icons/twitter2.png"
+                            class="about-icon"
+                        />
                     </div>
 
                     <div class="column ma">
-                        <h2 class="main-subtitle">3. {{ $t('home.welcome.share-results') }}</h2>
-                        <h3 class="welcome-subtitle">{{ $t('home.welcome.share') }}!</h3>
+                        <h2 class="main-subtitle">
+                            3. {{ $t('home.welcome.share-results') }}
+                        </h2>
+                        <h3 class="welcome-subtitle">
+                            {{ $t('home.welcome.share') }}!
+                        </h3>
                     </div>
                 </div>
             </div>
 
             <!-- Partners -->
             <div class="partners-container container is-max-desktop">
-
                 <p class="has-text-centered main-title">{{ $t('home.welcome.our-partners') }}</p>
 
                 <Partners />
-<!--                <div class="partners-action has-text-centered">-->
-<!--                    <a href="mailto:info@openlittermap.com"-->
-<!--                       class="button is-medium is-primary"-->
-<!--                    >{{ $t('home.welcome.become-a-partner') }}</a>-->
-<!--                </div>-->
             </div>
-
-            <!-- I want to help -->
         </div>
 
         <Footer />
@@ -152,19 +187,31 @@ export default {
         Partners,
         Footer
     },
+    mounted () {
+        this.startHeadingsAnimation();
+    },
     data () {
         return {
             headings: [
-                { title: this.$t('home.welcome.plastic-pollution-out-of-control'), img: '/assets/plastic_bottles.jpg' },
-                { title: this.$t('home.welcome.fires-out-of-control'), img: '/assets/forest_fire.jpg' },
+                {
+                    title: this.$t('home.welcome.plastic-pollution-out-of-control'),
+                    img: '/assets/plastic_bottles.jpg'
+                },
+                {
+                    title: this.$t('home.welcome.fires-out-of-control'),
+                    img: '/assets/forest_fire.jpg'
+                },
             ],
             activeHeadingIndex: 0
-        }
+        };
     },
     computed: {
-
-        activeHeading() {
-            return this.headings[this.activeHeadingIndex]
+        /**
+         * Show currently active header
+         */
+        activeHeading ()
+        {
+            return this.headings[this.activeHeadingIndex];
         },
 
         /**
@@ -176,7 +223,6 @@ export default {
         }
     },
     methods: {
-
         /**
          * Open Google Play store download page
          */
@@ -219,9 +265,6 @@ export default {
 
             document.addEventListener('visibilitychange', setAnimation);
         },
-    },
-    mounted () {
-        this.startHeadingsAnimation();
     }
 }
 </script>
@@ -340,7 +383,7 @@ export default {
             margin-bottom: 1rem;
         }
         .variable-height {
-            min-height: 162px;
+            min-height: 100px;
         }
 
         .top-image {
@@ -352,7 +395,7 @@ export default {
     /* Extra extra small */
     @media (max-width: 430px) {
         .variable-height {
-            min-height: 220px;
+            min-height: 175px;
         }
     }
 
