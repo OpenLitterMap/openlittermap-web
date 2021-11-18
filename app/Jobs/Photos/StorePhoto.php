@@ -14,6 +14,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\Middleware\ThrottlesExceptions;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 
@@ -60,6 +61,19 @@ class StorePhoto implements ShouldQueue
         $this->exif = $exif;
         $this->imageName = $imageName;
         $this->bboxImageName = $bboxImageName;
+    }
+
+    /**
+     * Get the middleware the job should pass through.
+     * If the job fails once, we will wait 1 hour before retrying
+     *
+     * @return array
+     */
+    public function middleware(): array
+    {
+        return [
+            (new ThrottlesExceptions(1))->backoff(60)
+        ];
     }
 
     /**
@@ -138,7 +152,8 @@ class StorePhoto implements ShouldQueue
         // without retrieving them
         $user->update([
             'xp' => DB::raw('ifnull(xp, 0) + 1'),
-            'total_images' => DB::raw('ifnull(total_images, 0) + 1')
+            'total_images' => DB::raw('ifnull(total_images, 0) + 1'),
+            'has_uploaded' => true
         ]);
 
         $user->refresh();

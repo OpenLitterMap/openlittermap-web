@@ -83,11 +83,6 @@ class PhotosController extends Controller
             'user_id' => $user->id
         ]);
 
-        if (!$user->has_uploaded) {
-            $user->has_uploaded = 1;
-            $user->save();
-        }
-
         $file = $request->file('file'); // /tmp/php7S8v..
 
         $imageAndExifData = $this->makeImageAction->run($file);

@@ -28,11 +28,13 @@ trait HasPhotoUploads
         "suburb" => "unknown"
     ];
 
-    protected function setImagePath()
+    protected function setImagePath($withGeocodingMock = true)
     {
         $this->imagePath = storage_path('framework/testing/1x1.jpg');
 
-        $this->setMockForGeocodingAction();
+        if ($withGeocodingMock) {
+            $this->setMockForGeocodingAction();
+        }
     }
 
     protected function getImageAndAttributes($mimeType = 'jpg'): array
