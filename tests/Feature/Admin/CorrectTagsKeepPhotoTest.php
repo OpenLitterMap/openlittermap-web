@@ -47,7 +47,9 @@ class CorrectTagsKeepPhotoTest extends TestCase
 
         $this->post('/submit', ['file' => $imageAndAttributes['file']]);
 
-        $this->photo = $this->user->fresh()->photos->last();
+        $this->user->refresh();
+
+        $this->photo = $this->user->photos->last();
 
         // User tags the image
         $this->actingAs($this->user);

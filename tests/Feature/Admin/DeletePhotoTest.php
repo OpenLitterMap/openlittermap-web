@@ -52,7 +52,9 @@ class DeletePhotoTest extends TestCase
 
         $this->post('/submit', ['file' => $this->imageAndAttributes['file']]);
 
-        $this->photo = $this->user->fresh()->photos->last();
+        $this->user->refresh();
+
+        $this->photo = $this->user->photos->last();
     }
 
     public function test_an_admin_can_delete_photos_uploaded_by_users()

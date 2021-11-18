@@ -49,7 +49,9 @@ class IncorrectTagsTest extends TestCase
 
         $this->post('/submit', ['file' => $imageAndAttributes['file']]);
 
-        $this->photo = $this->user->fresh()->photos->last();
+        $this->user->refresh();
+
+        $this->photo = $this->user->photos->last();
     }
 
     public function test_an_admin_can_mark_photos_as_incorrectly_tagged()

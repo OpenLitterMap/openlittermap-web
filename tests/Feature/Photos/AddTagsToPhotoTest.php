@@ -44,18 +44,21 @@ class AddTagsToPhotoTest extends TestCase
             'file' => $this->imageAndAttributes['file'],
         ]);
 
-        $photo = $user->fresh()->photos->last();
+        $user->refresh();
+
+        $photo = $user->photos->last();
 
         // User adds tags to an image -------------------
-        $this->post('/add-tags', [
-            'photo_id' => $photo->id,
-            'presence' => true,
-            'tags' => [
-                'smoking' => [
-                    'butts' => 3
+        $this->actingAs($user)
+            ->post('/add-tags', [
+                'photo_id' => $photo->id,
+                'presence' => true,
+                'tags' => [
+                    'smoking' => [
+                        'butts' => 3
+                    ]
                 ]
-            ]
-        ])->assertOk();
+            ])->assertOk();
 
         // Assert tags are stored correctly ------------
         $photo->refresh();
@@ -79,7 +82,9 @@ class AddTagsToPhotoTest extends TestCase
             'file' => $this->imageAndAttributes['file'],
         ]);
 
-        $photo = $user->fresh()->photos->last();
+        $user->refresh();
+
+        $photo = $user->photos->last();
 
         // User adds tags to an image -------------------
         $this->post('/add-tags', [
@@ -288,7 +293,9 @@ class AddTagsToPhotoTest extends TestCase
             'file' => $this->imageAndAttributes['file'],
         ]);
 
-        $photo = $user->fresh()->photos->last();
+        $user->refresh();
+
+        $photo = $user->photos->last();
 
         $country = Country::find($photo->country_id)->country;
         $state = State::find($photo->state_id)->state;

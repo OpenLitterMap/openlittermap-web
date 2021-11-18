@@ -52,7 +52,9 @@ class UpdateTagsDeletePhotoTest extends TestCase
 
         $this->post('/submit', ['file' => $this->imageAndAttributes['file']]);
 
-        $this->photo = $this->user->fresh()->photos->last();
+        $this->user->refresh();
+
+        $this->photo = $this->user->photos->last();
 
         $this->post('/add-tags', [
             'photo_id' => $this->photo->id,
