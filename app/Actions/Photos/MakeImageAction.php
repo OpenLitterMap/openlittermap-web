@@ -48,7 +48,7 @@ class MakeImageAction
         // Otherwise, we are going to have to handle HEIC separately.
         if (!in_array(strtolower($extension), ['heif', 'heic'])) {
             $image = Image::make($file);
-            $exif = $image->exif();
+            $exif = $this->extractRequiredExifData($image);
 
             return compact('image', 'exif');
         }
@@ -78,12 +78,32 @@ class MakeImageAction
 
         // Make the image from the new converted file
         $image = Image::make($convertedFilepath);
-        $exif = $image->exif();
+        $exif = $this->extractRequiredExifData($image);
 
         // Remove the temporary files from storage
         unlink($tmpFilepath);
         unlink($convertedFilepath);
 
         return compact('image', 'exif');
+    }
+
+    /**
+     * @param \Intervention\Image\Image $image
+     * @return mixed
+     */
+    protected function extractRequiredExifData(\Intervention\Image\Image $image)
+    {
+        return collect($image->exif())
+            ->only([
+                'Model',
+                'GPSLatitudeRef',
+                'GPSLatitude',
+                'GPSLongitudeRef',
+                'GPSLongitude',
+                'DateTimeOriginal',
+                'DateTime',
+                'FileDateTime'
+            ])
+            ->toArray();
     }
 }
