@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands\Clusters;
+namespace App\Console\Commands\Photos;
 
 use App\Models\Photo;
 use App\Models\Cluster;
@@ -9,7 +9,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 
-class GeneratePhotoJsons extends Command
+class GeneratePhotoData extends Command
 {
     /**
      * The name and signature of the console command.
