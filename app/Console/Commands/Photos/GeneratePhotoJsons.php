@@ -16,7 +16,7 @@ class GeneratePhotoJsons extends Command
      *
      * @var string
      */
-    protected $signature = 'clusters:generate-all';
+    protected $signature = 'photos:generate-jsons';
 
     /**
      * The console command description.
