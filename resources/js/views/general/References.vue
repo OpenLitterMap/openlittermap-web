@@ -175,6 +175,12 @@ export default {
                     title: 'Environmental Governance. In: Handbook of Environmental Sociology. Handbooks of Sociology and Social Research.',
                     link: 'https://link.springer.com/chapter/10.1007/978-3-030-77712-8_16',
                     author: 'Fisher et al.'
+                },
+                {
+                    date: '2021/11/05',
+                    title: 'Recycling Waste Classification Using Vision Transformer on Portable Device',
+                    link: 'https://www.mdpi.com/2071-1050/13/21/11572',
+                    author: 'Huang et al.'
                 }
             ]
         };
