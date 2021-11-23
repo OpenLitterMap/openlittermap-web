@@ -141,7 +141,12 @@ class ApiPhotosController extends Controller
 
         $lat = $request['lat'];
         $lon = $request['lon'];
-        $date = Carbon::parse((int)$request['date']);
+
+        $date = str_contains($request['date'], ':')
+            ? $request['date']
+            : (int)$request['date'];
+
+        $date = Carbon::parse($date);
 
         // Upload images to both 's3' and 'bbox' disks, resized for 'bbox'
         $imageName = $this->uploadPhotoAction->run(
