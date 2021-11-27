@@ -181,6 +181,12 @@ export default {
                     title: 'Recycling Waste Classification Using Vision Transformer on Portable Device',
                     link: 'https://www.mdpi.com/2071-1050/13/21/11572',
                     author: 'Huang et al.'
+                },
+                {
+                    date: '2021/11/23',
+                    title: 'Litter origins, accumulation rates, and hierarchical composition on urban roadsides of the Inland Empire, California',
+                    link: 'https://iopscience.iop.org/article/10.1088/1748-9326/ac3c6a',
+                    author: 'W. Cowger et al.'
                 }
             ]
         };
