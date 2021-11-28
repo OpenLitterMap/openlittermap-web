@@ -46,17 +46,8 @@ class GeneratePhotoData extends Command
      * Todo - Cluster data by "today", "one-week", "one-month", "one-year"
      * Todo - Cluster data by year, 2021, 2020...
      */
-    public function handle()
-    {
-        $start = microtime(true);
 
-        $lastPhotoGenerated = (int)Storage::get('/data/lastPhotoGenerated.txt');
-
-        $lastPhotoGenerated ?
-            $photos = Photo::select('lat', 'lon', 'created_at','datetime','id')->where('id','>',$lastPhotoGenerated)->get()
-        :
-            $photos = Photo::select('lat', 'lon', 'created_at','datetime','id')->get();
-
+    private function generateData($photos){
         if(sizeof($photos) == 0){
             echo "Nothing to create/update\n";
         }else{
@@ -100,7 +91,67 @@ class GeneratePhotoData extends Command
                 $features = json_encode($features, JSON_NUMERIC_CHECK);
                 Storage::put("data/".$y."/".$m."/".$d."-".$m."-".$y."-photos.json", $features);
             }
+        }if(sizeof($photos) == 0){
+            echo "Nothing to create/update\n";
+        }else{
+            Storage::put('/data/lastPhotoGenerated.txt', $photos[sizeof($photos)-1]->id);
         }
+        echo "Appending " . sizeof($photos) . " photos\n";
+
+        foreach ($photos as $photo)
+        {
+            $feature = [
+                'type' => 'Feature',
+                'geometry' => [
+                    'type' => 'Point',
+                    'coordinates' => [$photo->lon, $photo->lat]
+                ],
+                'datetimes' => [
+                    'taken' => $photo->datetime
+                ],
+                'photo_id' => $photo->id
+            ];
+
+            $date = Carbon::parse($photo->datetime);
+
+            $y = $date->year;
+            $m = $date->month;
+            $d = $date->day;
+
+            if (!Storage::disk('local')->exists("data/".$y."/".$m)) {
+                Storage::disk('local')->makeDirectory("data/".$y."/".$m);
+                echo "created directory "."data/".$y."/".$m."\n";
+            }
+            if (Storage::disk('local')->exists("data/".$y."/".$m."/".$d."-".$m."-".$y."-photos.json")) {
+                $exist = json_decode(Storage::get("data/".$y."/".$m."/".$d."-".$m."-".$y."-photos.json"), true);
+                array_push($exist, $feature);
+                $exist = json_encode($exist, JSON_NUMERIC_CHECK);
+                Storage::put("data/".$y."/".$m."/".$d."-".$m."-".$y."-photos.json", $exist);
+            }else{
+                $features = [];
+                array_push($features, $feature);
+                $features = json_encode($features, JSON_NUMERIC_CHECK);
+                Storage::put("data/".$y."/".$m."/".$d."-".$m."-".$y."-photos.json", $features);
+            }
+        }
+    }
+
+    public function handle()
+    {
+        $start = microtime(true);
+
+        $lastPhotoGenerated = (int)Storage::get('/data/lastPhotoGenerated.txt');
+
+        echo "Creating/updating yyyy/m/dd-mm-yyyy-photos.json\nDO NOT INTERRUPT THIS PROCESS";
+        $lastPhotoGenerated ?
+            Photo::select('lat', 'lon', 'created_at','datetime','id')->where('id','>',$lastPhotoGenerated)->chunk(1000, function ($photos) {
+                $this->generateData($photos);
+            })
+        :
+            Photo::select('lat', 'lon', 'created_at','datetime','id')->chunk(1000, function ($photos) {
+                $this->generateData($photos);
+            });
+
 
         // Remove "compiling data" from global map
 
