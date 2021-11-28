@@ -35,26 +35,15 @@ class GeneratePhotoData extends Command
         parent::__construct();
     }
 
-    /**
-     * Generate Clusters for All Photos
-     *
-     * Todo - Load photos as geojson without looping over them and inserting into another array
-     * Todo - Chunk photos (ideally as geojson) without having to loop over a very large array (155k+)
-     * Todo - Append to file instead of re-writing it
-     * Todo - Split file into multiple files
-     * Todo - Find a way to update clusters instead of deleting all and re-writing all every time..
-     * Todo - Cluster data by "today", "one-week", "one-month", "one-year"
-     * Todo - Cluster data by year, 2021, 2020...
-     */
-
-    private function generateData($photos){
+    private function generateData($photos, $lastPhotoGenerated, $chunkCounter){
+        $chunkCounter++;
+        $last = floor($lastPhotoGenerated / 5000);
         if(sizeof($photos) == 0){
             echo "Nothing to create/update\n";
         }else{
             Storage::put('/data/lastPhotoGenerated.txt', $photos[sizeof($photos)-1]->id);
         }
-        echo "Creating/updating yyyy/m/dd-mm-yyyy-photos.json\n";
-        echo "Appending " . sizeof($photos) . " photos\n";
+        echo "Chunk " . $chunkCounter . " out of " . $last ."\n";
 
         foreach ($photos as $photo)
         {
@@ -141,15 +130,15 @@ class GeneratePhotoData extends Command
         $start = microtime(true);
 
         $lastPhotoGenerated = (int)Storage::get('/data/lastPhotoGenerated.txt');
-
-        echo "Creating/updating yyyy/m/dd-mm-yyyy-photos.json\nDO NOT INTERRUPT THIS PROCESS";
+        $chunkCounter = 0;
+        echo "Creating/updating yyyy/m/dd-mm-yyyy-photos.json\nDO NOT INTERRUPT THIS PROCESS\n";
         $lastPhotoGenerated ?
-            Photo::select('lat', 'lon', 'created_at','datetime','id')->where('id','>',$lastPhotoGenerated)->chunk(1000, function ($photos) {
-                $this->generateData($photos);
+            Photo::select('lat', 'lon', 'created_at','datetime','id')->where('id','>',$lastPhotoGenerated)->chunk(5000, function ($photos) use ($lastPhotoGenerated, $chunkCounter) {
+                $this->generateData($photos, $lastPhotoGenerated, $chunkCounter);
             })
-        :
-            Photo::select('lat', 'lon', 'created_at','datetime','id')->chunk(1000, function ($photos) {
-                $this->generateData($photos);
+            :
+            Photo::select('lat', 'lon', 'created_at','datetime','id')->chunk(5000, function ($photos) use ($lastPhotoGenerated, $chunkCounter) {
+                $this->generateData($photos, $lastPhotoGenerated, $chunkCounter);
             });
 
 
