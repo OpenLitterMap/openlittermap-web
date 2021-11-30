@@ -63,7 +63,7 @@ export default {
                     author: 'Fast, V. and Haworth, B.'
                 },
                 {
-                    date: null,
+                    date: '2021/01/05',
                     title: 'Workflows and Spatial Analysis in the Age of GeoBlockchain: A Land Ownership Example',
                     link: 'https://cartogis.org/docs/autocarto/2020/docs/abstracts/3e%20Workflows%20and%20Spatial%20Analysis%20in%20the%20Age%20of%20GeoBlockchain%20A%20Land.pdf',
                     author: 'Papantonioua, C. and Hilton, B.'
@@ -117,10 +117,22 @@ export default {
                     author: 'ΜΠΕΣΙΟΥ, E.'
                 },
                 {
+                    date: '2021/01/13',
+                    title: 'Enabling a large-scale assessment of litter along Saudi Arabian red sea shores by combining drones and machine learning',
+                    link: 'https://www.sciencedirect.com/science/article/abs/pii/S0269749121003109',
+                    author: 'Martin et al.'
+                },
+                {
                     date: '2021/03/04',
                     title: 'Autonomous, Onboard Vision-Based Trash and Litter Detection in Low Altitude Aerial Images Collected by an Unmanned Aerial Vehicle',
                     link: 'https://www.researchgate.net/profile/Mateusz-Piechocki-2/publication/349869848_Autonomous_Onboard_Vision-Based_Trash_and_Litter_Detection_in_Low_Altitude_Aerial_Images_Collected_by_an_Unmanned_Aerial_Vehicle/links/60450db2a6fdcc9c781dc33b/Autonomous-Onboard-Vision-Based-Trash-and-Litter-Detection-in-Low-Altitude-Aerial-Images-Collected-by-an-Unmanned-Aerial-Vehicle.pdf',
                     author: 'Kraft et al.'
+                },
+                {
+                    date: '2021/04/18',
+                    title: 'Environmental fate and impacts of microplastics in aquatic ecosystems: a review',
+                    link: 'https://pubs.rsc.org/en/content/articlehtml/2021/ra/d1ra00880c',
+                    author: 'Du et al.'
                 },
                 {
                     date: '2021/05/06',
@@ -157,6 +169,24 @@ export default {
                     title: 'A Systematic Literature Review of Blockchain Technology for Smart Villages',
                     link: 'https://link.springer.com/article/10.1007/s11831-021-09659-7',
                     author: 'Kaur & Parashar'
+                },
+                {
+                    date: '2021/11/02',
+                    title: 'Environmental Governance. In: Handbook of Environmental Sociology. Handbooks of Sociology and Social Research.',
+                    link: 'https://link.springer.com/chapter/10.1007/978-3-030-77712-8_16',
+                    author: 'Fisher et al.'
+                },
+                {
+                    date: '2021/11/05',
+                    title: 'Recycling Waste Classification Using Vision Transformer on Portable Device',
+                    link: 'https://www.mdpi.com/2071-1050/13/21/11572',
+                    author: 'Huang et al.'
+                },
+                {
+                    date: '2021/11/23',
+                    title: 'Litter origins, accumulation rates, and hierarchical composition on urban roadsides of the Inland Empire, California',
+                    link: 'https://iopscience.iop.org/article/10.1088/1748-9326/ac3c6a',
+                    author: 'W. Cowger et al.'
                 }
             ]
         };
