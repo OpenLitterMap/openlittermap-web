@@ -18,7 +18,7 @@ class MobileAppVersionController extends Controller
             ],
             'android' => [
                 'url' => 'https://play.google.com/store/apps/details?id=com.geotech.openlittermap',
-                'version' => '3.0.0'
+                'version' => '3.0.2'
             ]
         ];
     }
