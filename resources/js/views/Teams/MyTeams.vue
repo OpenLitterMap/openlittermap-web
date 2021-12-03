@@ -25,6 +25,10 @@
                         <div v-if="isLeader" class="mb2">
                             <p>{{ $t('teams.myteams.leader-of-team') }}.</p>
                         </div>
+
+                        <div v-if="viewTeam" class="mb1">
+                            <p>{{ $t('teams.myteams.team-identifier') }}: <strong>{{ selectedTeamIdentifier }}</strong>.</p>
+                        </div>
                     </div>
 
                     <div v-if="user.active_team"
@@ -232,6 +236,16 @@ export default {
             const team = this.teams.find(team => team.id === this.viewTeam);
 
             return team && team.leader === this.user.id;
+        },
+
+        /**
+         * Returns the team identifier for the selected team
+         */
+        selectedTeamIdentifier ()
+        {
+            const team = this.teams.find(team => team.id === this.viewTeam);
+
+            return team?.identifier;
         },
 
         /**
