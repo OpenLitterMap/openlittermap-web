@@ -66,6 +66,7 @@
                     <p class="footer-link" @click="open('https://www.youtube.com/watch?v=T8rGf1ScR1I')">Datapub 2020</p>
                     <p class="footer-link" @click="open('https://www.youtube.com/watch?v=5HuaQNeHuZ8')">ESA PhiWeek 2020</p>
                     <p class="footer-link" @click="open('https://www.youtube.com/watch?v=QhLsA0WIfTA')">Geneva Form, UN 2020</p>
+                    <p class="footer-link" @click="open('https://www.youtube.com/watch?v=Pe4nHdoAlu4')">Cardano4Climate Meetup 2021</p>
                 </div>
 
                 <div class="column is-2">
