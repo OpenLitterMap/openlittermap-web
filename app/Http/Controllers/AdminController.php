@@ -233,10 +233,16 @@ class AdminController extends Controller
     public function getImage (): array
     {
         $photo = Photo::where([
-            'verification' => 0,
+            'verification' => 0.1,
             ['user_id', '!=', 3233], // dont load freds data
             ['user_id', '!=', 5292]  // or sarahs
         ])->first();
+
+        // Load the tags for this photo if it exists
+        if ($photo)
+        {
+            $photo->tags();
+        }
 
         // Count photos that have been uploaded, but not tagged or submitted for verification
         $photosNotProcessed = Photo::where([
@@ -256,16 +262,10 @@ class AdminController extends Controller
         if (!$photo)
         {
             $photo = Photo::where([
-                'verification' => 0.1,
+                'verification' => 0,
                 ['user_id', '!=', 3233], // dont load freds data
                 ['user_id', '!=', 5292]  // or sarahs
             ])->first();
-
-            // Load the tags for this photo if it exists
-            if ($photo)
-            {
-                $photo->tags();
-            }
         }
 
         return [

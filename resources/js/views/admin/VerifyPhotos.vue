@@ -1,10 +1,13 @@
 <template>
 	<div class="container mt3">
 
-		<loading v-if="loading" :active.sync="loading" :is-full-page="true" />
+		<loading
+            v-if="loading"
+            :active.sync="loading"
+            :is-full-page="true"
+        />
 
 	    <div v-else>
-
             <!-- Todo , add extra loaded statement here -->
 	    	<div v-if="this.photosAwaitingVerification === 0 && this.photosNotProcessed === 0">
 	    		<p class="title is-3">All done.</p>
@@ -29,19 +32,18 @@
 
 						<div style="padding-top: 20%;">
 							<p>Accept data, verify, but delete the image.</p>
-					    <button :class="delete_verify_button" @click="verifyDelete" :disabled="processing">
-					    	Verify & Delete
-					    </button>
+                            <button :class="delete_verify_button" @click="verifyDelete" :disabled="processing">
+                                Verify & Delete
+                            </button>
 
-					    <p>Delete the image.</p>
-					    <button :class="delete_button" @click="adminDelete" :disabled="processing">
-					    	DELETE
-					    </button>
+                            <p>Delete the image.</p>
+                            <button :class="delete_button" @click="adminDelete" :disabled="processing">
+                                DELETE
+                            </button>
 
-                        <br>
+                            <br>
 
-                        <button @click="clearRecentTags">Clear recent tags</button>
-
+                            <button @click="clearRecentTags">Clear recent tags</button>
                         </div>
 					</div>
 
@@ -54,23 +56,35 @@
 				  	<div class="column has-text-centered" style="position: relative;">
 
                         <!-- The list of tags associated with this image-->
-                        <Tags :photo-id="photo.id" :admin="true" />
+                        <Tags
+                            :photo-id="photo.id"
+                            :admin="true"
+                        />
 
 						<div style="padding-top: 3em;">
-							<button class="button is-medium is-dark" @click="clearTags">Clear user input</button>
+							<button class="button is-medium is-dark" @click="clearTags">
+                                Clear user input
+                            </button>
 							<p>To undo this, just refresh the page</p>
 						</div>
 				  	</div>
 				</div>
 
 		    	<div class="has-text-centered mb1">
-					<button :class="verify_correct_button" :disabled="processing" @click="verifyCorrect">VERIFY CORRECT</button>
+					<button :class="verify_correct_button" :disabled="processing" @click="verifyCorrect">
+                        VERIFY CORRECT
+                    </button>
 
-					<button class="button is-large is-danger" :disabled="processing" @click="incorrect">FALSE</button>
+					<button class="button is-large is-danger" :disabled="processing" @click="incorrect">
+                        FALSE
+                    </button>
 				</div>
 
 				<!-- Add / edit tags -->
-                <add-tags :admin="true" :id="photo.id" />
+                <add-tags
+                    :admin="true"
+                    :id="photo.id"
+                />
 
 				<div style="padding-top: 1em; text-align: center;">
 					<p class="strong">Update the image and save the new data</p>
@@ -94,17 +108,19 @@ import moment from 'moment'
 
 export default {
 	name: 'VerifyPhotos',
-	components: { Loading, AddTags, Tags },
-	async created ()
-	{
+	components: {
+        Loading,
+        AddTags,
+        Tags
+    },
+	async created () {
 	    this.loading = true;
 
         await this.$store.dispatch('GET_NEXT_ADMIN_PHOTO');
 
         this.loading = false;
 	},
-	data ()
-	{
+	data () {
 		return {
 			loading: true,
 			processing: false,
@@ -116,7 +132,6 @@ export default {
 		};
 	},
 	computed: {
-
 		/**
 		 * Return true to disable when processing or if no new tags exist
 		 */
