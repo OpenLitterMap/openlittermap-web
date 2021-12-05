@@ -36,18 +36,13 @@ class GeneratePhotoData extends Command
     }
 
     private function generateData($photos, $lastPhotoGenerated, $chunkCounter){
-        $chunkCounter++;
         $last = floor($lastPhotoGenerated / 5000);
-        if(sizeof($photos) == 0){
-            echo "Nothing to create/update\n";
-        }else{
-            Storage::put('/data/lastPhotoGenerated.txt', $photos[sizeof($photos)-1]->id);
-        }
         echo "Chunk " . $chunkCounter . " out of " . $last ."\n";
 
         foreach ($photos as $photo)
         {
             $feature = [
+                'photo_id' => $photo->id,
                 'type' => 'Feature',
                 'geometry' => [
                     'type' => 'Point',
@@ -55,8 +50,7 @@ class GeneratePhotoData extends Command
                 ],
                 'datetimes' => [
                     'taken' => $photo->datetime
-                ],
-                'photo_id' => $photo->id
+                ]
             ];
 
             $date = Carbon::parse($photo->datetime);
@@ -74,55 +68,18 @@ class GeneratePhotoData extends Command
                 array_push($exist, $feature);
                 $exist = json_encode($exist, JSON_NUMERIC_CHECK);
                 Storage::put("data/".$y."/".$m."/".$d."-".$m."-".$y."-photos.json", $exist);
-            }else{
+            }
+            else
+            {
                 $features = [];
                 array_push($features, $feature);
                 $features = json_encode($features, JSON_NUMERIC_CHECK);
                 Storage::put("data/".$y."/".$m."/".$d."-".$m."-".$y."-photos.json", $features);
             }
-        }if(sizeof($photos) == 0){
-            echo "Nothing to create/update\n";
-        }else{
-            Storage::put('/data/lastPhotoGenerated.txt', $photos[sizeof($photos)-1]->id);
         }
+
+        Storage::put('/data/lastPhotoGenerated.txt', $photos[sizeof($photos)-1]->id);
         echo "Appending " . sizeof($photos) . " photos\n";
-
-        foreach ($photos as $photo)
-        {
-            $feature = [
-                'type' => 'Feature',
-                'geometry' => [
-                    'type' => 'Point',
-                    'coordinates' => [$photo->lon, $photo->lat]
-                ],
-                'datetimes' => [
-                    'taken' => $photo->datetime
-                ],
-                'photo_id' => $photo->id
-            ];
-
-            $date = Carbon::parse($photo->datetime);
-
-            $y = $date->year;
-            $m = $date->month;
-            $d = $date->day;
-
-            if (!Storage::disk('local')->exists("data/".$y."/".$m)) {
-                Storage::disk('local')->makeDirectory("data/".$y."/".$m);
-                echo "created directory "."data/".$y."/".$m."\n";
-            }
-            if (Storage::disk('local')->exists("data/".$y."/".$m."/".$d."-".$m."-".$y."-photos.json")) {
-                $exist = json_decode(Storage::get("data/".$y."/".$m."/".$d."-".$m."-".$y."-photos.json"), true);
-                array_push($exist, $feature);
-                $exist = json_encode($exist, JSON_NUMERIC_CHECK);
-                Storage::put("data/".$y."/".$m."/".$d."-".$m."-".$y."-photos.json", $exist);
-            }else{
-                $features = [];
-                array_push($features, $feature);
-                $features = json_encode($features, JSON_NUMERIC_CHECK);
-                Storage::put("data/".$y."/".$m."/".$d."-".$m."-".$y."-photos.json", $features);
-            }
-        }
     }
 
     public function handle()
@@ -138,6 +95,7 @@ class GeneratePhotoData extends Command
             })
             :
             Photo::select('lat', 'lon', 'created_at','datetime','id')->chunk(5000, function ($photos) use ($lastPhotoGenerated, $chunkCounter) {
+                $chunkCounter++;
                 $this->generateData($photos, $lastPhotoGenerated, $chunkCounter);
             });
 
