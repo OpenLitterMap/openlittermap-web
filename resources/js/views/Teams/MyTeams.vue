@@ -15,27 +15,42 @@
                         <div v-if="user.active_team" class="mb1">
                             <p>
                                 {{ $t('teams.myteams.currently-joined-team') }} <strong>{{ user.team.name }}</strong>.
+                                <br/>
+                                All of your contributions will count toward this team only.
                             </p>
                         </div>
+
+                        <p v-else-if="teams && teams.length" class="mb1">
+                            You have not selected an active team yet.<br>
+                            That means you are not contributing to any team at the moment.<br>
+                            You can select your active team by clicking the star icons on the bottom list.
+                        </p>
 
                         <p v-else class="mb1">
                             {{ $t('teams.myteams.no-joined-team') }}.
                         </p>
-
-                        <div v-if="isLeader" class="mb2">
-                            <p>{{ $t('teams.myteams.leader-of-team') }}.</p>
-                        </div>
-
-                        <div v-if="viewTeam" class="mb1">
-                            <p>{{ $t('teams.myteams.team-identifier') }}: <strong>{{ selectedTeamIdentifier }}</strong>.</p>
-                        </div>
                     </div>
 
                     <div v-if="user.active_team"
-                         class="button is-medium is-warning"
+                         class="button is-warning tooltip"
                          @click="inactivateTeam"
                     >
+                        <span class="tooltip-text disable-teams-tooltip">
+                            This disables your team contributions from now on.
+                            You will still be a member of your teams
+                            and can enable contributions anytime.
+                        </span>
                         {{ $t('common.inactivate') }}
+                    </div>
+                </div>
+
+                <div class="mb1" v-if="teams && teams.length">
+                    <div class="is-size-3">
+                        Team Details
+                    </div>
+
+                    <div v-if="isLeader">
+                        <p>{{ $t('teams.myteams.leader-of-team') }}.</p>
                     </div>
                 </div>
 
@@ -127,8 +142,8 @@
                 </div>
 
                 <div v-if="teams && teams.length" style="overflow-x: scroll">
-                    <div class="flex mb1">
-                        All Your Teams
+                    <div class="is-size-3 mb1">
+                        All My Teams
                     </div>
 
                     <table class="table is-fullwidth is-hoverable">
@@ -152,7 +167,7 @@
                             <td>{{ team.members }}</td>
                             <td>{{ team.total_images }}</td>
                             <td>{{ team.total_litter }}</td>
-                            <td style="max-width: 150px">
+                            <td style="min-width: 120px;max-width: 150px;">
                                 <button
                                     class="button is-small is-primary team-action tooltip"
                                     :class="processing ? 'is-loading' : ''"
@@ -245,13 +260,13 @@ export default {
         },
 
         /**
-         * Returns the team identifier for the selected team
+         * Check if the user.id
          */
-        selectedTeamIdentifier ()
+        isLeader ()
         {
             const team = this.teams.find(team => team.id === this.viewTeam);
 
-            return team?.identifier;
+            return team && team.leader === this.user.id;
         },
 
         /**
@@ -520,6 +535,11 @@ export default {
         background-color: #00c4a730;
     }
 
+    .disable-teams-tooltip {
+        width: 250px;
+        white-space: initial;
+    }
+
     .active-team-indicator {
         display: flex;
         flex-direction: row;
@@ -533,6 +553,9 @@ export default {
         .active-team-indicator .button {
             max-width: min-content;
             margin-bottom: 2em;
+        }
+        .my-teams-container {
+            padding: 0;
         }
     }
 
