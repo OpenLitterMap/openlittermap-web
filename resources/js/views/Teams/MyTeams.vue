@@ -16,14 +16,13 @@
                             <p>
                                 {{ $t('teams.myteams.currently-joined-team') }} <strong>{{ user.team.name }}</strong>.
                                 <br/>
-                                All of your contributions will count toward this team only.
+                                {{ $t('teams.myteams.enabled-contributions') }}
                             </p>
                         </div>
 
-                        <p v-else-if="teams && teams.length" class="mb1">
-                            You have not selected an active team yet.<br>
-                            That means you are not contributing to any team at the moment.<br>
-                            You can select your active team by clicking the star icons on the bottom list.
+                        <p v-else-if="teams && teams.length"
+                           class="mb1"
+                           v-html="$t('teams.myteams.disabled-contributions')">
                         </p>
 
                         <p v-else class="mb1">
@@ -36,9 +35,7 @@
                          @click="inactivateTeam"
                     >
                         <span class="tooltip-text disable-teams-tooltip">
-                            This disables your team contributions from now on.
-                            You will still be a member of your teams
-                            and can enable contributions anytime.
+                            {{ $t('teams.myteams.disable-contributions-tooltip') }}
                         </span>
                         {{ $t('common.inactivate') }}
                     </div>
@@ -46,7 +43,7 @@
 
                 <div class="mb1" v-if="teams && teams.length">
                     <div class="is-size-3">
-                        Team Details
+                        {{ $t('teams.myteams.team-details') }}
                     </div>
 
                     <div v-if="isLeader">
@@ -143,17 +140,17 @@
 
                 <div v-if="teams && teams.length" style="overflow-x: scroll">
                     <div class="is-size-3 mb1">
-                        All My Teams
+                        {{ $t('teams.myteams.all-my-teams') }}
                     </div>
 
                     <table class="table is-fullwidth is-hoverable">
                         <thead>
-                        <th>Name</th>
-                        <th>Identifier</th>
-                        <th>Members</th>
-                        <th>Total Photos</th>
-                        <th>Total Litter</th>
-                        <th>Actions</th>
+                        <th>{{ $t('teams.myteams.name-header') }}</th>
+                        <th>{{ $t('teams.myteams.identifier-header') }}</th>
+                        <th>{{ $t('teams.myteams.members-header') }}</th>
+                        <th>{{ $t('teams.myteams.photos-header') }}</th>
+                        <th>{{ $t('teams.myteams.litter-header') }}</th>
+                        <th>{{ $t('common.actions') }}</th>
                         </thead>
 
                         <tbody>
@@ -175,7 +172,11 @@
                                     @click="changeActiveTeam(team.id)"
                                 >
                                     <span class="tooltip-text">
-                                        {{ team.id === activeTeam ? 'This is your active team' : 'Set as your active team' }}
+                                        {{
+                                            team.id === activeTeam
+                                                ? $t('teams.myteams.this-is-active-team')
+                                                : $t('teams.myteams.set-as-active-team')
+                                        }}
                                     </span>
                                     <i class="fa fa-star" />
                                 </button>
@@ -196,7 +197,7 @@
                                         {{
                                             team.members > 1
                                                 ? $t('teams.myteams.leave-team')
-                                                : 'You can\'t leave this team since you\'re the only member'
+                                                : $t('teams.myteams.cant-leave-team')
                                         }}
                                     </span>
                                     <i class="fa fa-sign-out"/>
