@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Teams;
 use App\Actions\Teams\CreateTeamAction;
 use App\Actions\Teams\JoinTeamAction;
 use App\Actions\Teams\LeaveTeamAction;
+use App\Actions\Teams\UpdateTeamAction;
 use App\Exports\CreateCSVExport;
 use App\Http\Requests\Teams\CreateTeamRequest;
 use App\Http\Requests\Teams\JoinTeamRequest;
 use App\Http\Requests\Teams\LeaveTeamRequest;
+use App\Http\Requests\Teams\UpdateTeamRequest;
 use App\Jobs\EmailUserExportCompleted;
 use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
@@ -18,7 +20,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Validation\Rule;
 
 class TeamsController extends Controller
 {
@@ -87,25 +88,18 @@ class TeamsController extends Controller
     /**
      * The user wants to update a team
      *
+     * @param UpdateTeamRequest $request
+     * @param UpdateTeamAction $action
      * @param Team $team
-     * @param Request $request
      * @return array
      */
-    public function update (Team $team, Request $request)
+    public function update (UpdateTeamRequest $request, UpdateTeamAction $action, Team $team)
     {
-        $request->validate([
-            'name' => ['required', 'min:3', 'max:100', Rule::unique('teams')->ignore($team)],
-            'identifier' => ['required', 'min:3', 'max:15', Rule::unique('teams')->ignore($team)],
-        ]);
-
         if (auth()->id() != $team->leader) {
             abort(403, 'You are not the team leader!');
         }
 
-        $team->update([
-            'name' => $request->name,
-            'identifier' => $request->identifier
-        ]);
+       $team = $action->run($team, $request->all());
 
         return ['success' => true, 'team' => $team];
     }

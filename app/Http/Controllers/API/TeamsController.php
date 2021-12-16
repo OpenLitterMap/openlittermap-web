@@ -5,10 +5,12 @@ namespace App\Http\Controllers\API;
 use App\Actions\Teams\CreateTeamAction;
 use App\Actions\Teams\JoinTeamAction;
 use App\Actions\Teams\LeaveTeamAction;
+use App\Actions\Teams\UpdateTeamAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Teams\CreateTeamRequest;
 use App\Http\Requests\Teams\JoinTeamRequest;
 use App\Http\Requests\Teams\LeaveTeamRequest;
+use App\Http\Requests\Teams\UpdateTeamRequest;
 use App\Models\Teams\Team;
 use App\Models\User\User;
 use Illuminate\Support\Facades\Auth;
@@ -52,7 +54,26 @@ class TeamsController extends Controller
 
         $team = $action->run($user, $request->all());
 
-        return ['success' => true, 'team' => $team];
+        return ['team' => $team];
+    }
+
+    /**
+     * The user wants to update a team
+     *
+     * @param UpdateTeamRequest $request
+     * @param UpdateTeamAction $action
+     * @param Team $team
+     * @return array
+     */
+    public function update(UpdateTeamRequest $request, UpdateTeamAction $action, Team $team): array
+    {
+        if (Auth::guard('api')->id() != $team->leader) {
+            abort(403, 'You are not the team leader!');
+        }
+
+        $team = $action->run($team, $request->all());
+
+        return ['team' => $team];
     }
 
     /**
@@ -81,7 +102,6 @@ class TeamsController extends Controller
             'activeTeam' => $user->fresh()->team()->first()
         ];
     }
-
 
     /**
      * The user wants to leave a team

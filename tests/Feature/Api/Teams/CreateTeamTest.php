@@ -35,7 +35,7 @@ class CreateTeamTest extends TestCase
         ]);
 
         $response->assertOk();
-        $response->assertJsonStructure(['success', 'team']);
+        $response->assertJsonStructure(['team']);
 
         $team = Team::whereIdentifier('test-id')->first();
         $this->assertInstanceOf(Team::class, $team);
