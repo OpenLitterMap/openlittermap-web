@@ -114,7 +114,7 @@ export const actions = {
         await axios.post('/teams/create', {
             name: payload.name,
             identifier: payload.identifier,
-            teamType: payload.teamType
+            team_type: payload.teamType
         })
         .then(response => {
             console.log('create_new_team', response);

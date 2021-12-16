@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Teams;
 
+use App\Actions\Teams\CreateTeamAction;
 use App\Actions\Teams\JoinTeamAction;
 use App\Actions\Teams\LeaveTeamAction;
 use App\Exports\CreateCSVExport;
+use App\Http\Requests\Teams\CreateTeamRequest;
 use App\Http\Requests\Teams\JoinTeamRequest;
 use App\Http\Requests\Teams\LeaveTeamRequest;
 use App\Jobs\EmailUserExportCompleted;
@@ -12,8 +14,6 @@ use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
 use App\Models\User\User;
 use App\Traits\FilterTeamMembersTrait;
-
-use App\Events\TeamCreated;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -74,35 +74,14 @@ class TeamsController extends Controller
      *
      * @return array
      */
-    public function create (Request $request)
+    public function create (CreateTeamRequest $request, CreateTeamAction $action)
     {
-        $request->validate([
-            'name' => 'required|min:3|max:100|unique:teams',
-            'identifier' => 'required|min:3|max:15|unique:teams',
-            'teamType' => 'required'
-        ]);
-
+        /** @var User $user */
         $user = Auth::user();
 
         if ($user->remaining_teams === 0) return ['success' => false, 'msg' => 'max-created'];
 
-        $team = Team::create([
-            'created_by' => $user->id,
-            'name' => $request->name,
-            'type_id' => $request->teamType,
-            'leader' => $user->id,
-            'identifier' => $request->identifier
-        ]);
-
-        // Broadcast live event to the global map
-        event (new TeamCreated($team->name));
-
-        // Have the user join this team
-        $user->teams()->attach($team);
-
-        $user->active_team = $team->id;
-        $user->remaining_teams--;
-        $user->save();
+        $team = $action->run($user, $request->all());
 
         return ['success' => true, 'team' => $team];
     }

@@ -14,7 +14,7 @@ class JoinTeamRequest extends FormRequest
     public function rules()
     {
         return [
-            'identifier' => 'required|min:3|max:100|exists:teams,identifier'
+            'identifier' => 'required|min:3|max:15|exists:teams,identifier'
         ];
     }
 
