@@ -3,6 +3,7 @@
 namespace Tests\Feature\Teams;
 
 use App\Models\Teams\Team;
+use App\Models\Teams\TeamType;
 use App\Models\User\User;
 use Tests\TestCase;
 
@@ -28,5 +29,15 @@ class ListTeamsTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1)
             ->assertJsonFragment(['id' => $team->id]);
+    }
+
+    public function test_it_can_list_all_available_team_types()
+    {
+        $teamType = TeamType::factory()->create();
+
+        $this->getJson('/teams/get-types')
+            ->assertOk()
+            ->assertJsonCount(1)
+            ->assertJsonFragment(['id' => $teamType->id]);
     }
 }

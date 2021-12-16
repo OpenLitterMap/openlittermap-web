@@ -12,7 +12,9 @@ use App\Http\Requests\Teams\JoinTeamRequest;
 use App\Http\Requests\Teams\LeaveTeamRequest;
 use App\Http\Requests\Teams\UpdateTeamRequest;
 use App\Models\Teams\Team;
+use App\Models\Teams\TeamType;
 use App\Models\User\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 
 class TeamsController extends Controller
@@ -20,7 +22,7 @@ class TeamsController extends Controller
 
     public function __construct()
     {
-        $this->middleware('auth');
+        $this->middleware('auth')->except('types');
     }
 
     /**
@@ -133,4 +135,13 @@ class TeamsController extends Controller
         ];
     }
 
+    /**
+     * Return the types of available teams
+     *
+     * @return Collection
+     */
+    public function types()
+    {
+        return TeamType::select('id', 'team')->get();
+    }
 }

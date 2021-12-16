@@ -98,15 +98,11 @@ Route::prefix('/teams')->group(function () {
     Route::patch('/update/{team}', 'API\TeamsController@update');
     Route::post('/join', 'API\TeamsController@join');
     Route::post('/leave', 'API\TeamsController@leave');
+    Route::get('/types', 'API\TeamsController@types');
 });
 
-//Route::get('/teams/joined', 'Teams\TeamsController@joined');
-//// Route::get('/teams/map-data', 'Teams\TeamsMapController@index');
 //Route::get('/teams/leaderboard', 'Teams\TeamsLeaderboardController@index');
-//
-//Route::post('/teams/update/{team}', 'Teams\TeamsController@update')->middleware('auth');
 //Route::post('/teams/active', 'Teams\TeamsController@active')->middleware('auth');
 //Route::post('/teams/inactivate', 'Teams\TeamsController@inactivateTeam')->middleware('auth');
-//Route::post('/teams/settings', 'Teams\TeamsSettingsController@index')->middleware('auth');
 //Route::post('/teams/download', 'Teams\TeamsController@download');
 //Route::post('/teams/leaderboard/visibility', 'Teams\TeamsLeaderboardController@toggle')->middleware('auth');
