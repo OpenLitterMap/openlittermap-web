@@ -93,9 +93,9 @@ Route::post('/settings/privacy/toggle-previous-tags', 'ApiSettingsController@tog
 
 // Teams
 Route::prefix('/teams')->group(function () {
-    Route::post('/create', 'API\TeamsController@create')->middleware('auth');
-    Route::post('/join', 'API\TeamsController@join')->middleware('auth');
-    Route::post('/leave', 'API\TeamsController@leave')->middleware('auth');
+    Route::post('/create', 'API\TeamsController@create');
+    Route::post('/join', 'API\TeamsController@join');
+    Route::post('/leave', 'API\TeamsController@leave');
 });
 
 //Route::get('/teams/members', 'Teams\TeamsController@members');

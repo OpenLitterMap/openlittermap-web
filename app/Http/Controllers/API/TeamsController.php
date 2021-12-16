@@ -16,6 +16,11 @@ use Illuminate\Support\Facades\Auth;
 class TeamsController extends Controller
 {
 
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     /**
      * The user wants to create a new team
      *

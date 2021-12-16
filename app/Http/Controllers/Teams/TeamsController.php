@@ -13,7 +13,6 @@ use App\Jobs\EmailUserExportCompleted;
 use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
 use App\Models\User\User;
-use App\Traits\FilterTeamMembersTrait;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,7 +22,6 @@ use Illuminate\Validation\Rule;
 
 class TeamsController extends Controller
 {
-    use FilterTeamMembersTrait;
 
     /**
      * Change the users currently active team
@@ -219,11 +217,11 @@ class TeamsController extends Controller
      */
     public function members ()
     {
-        $query = $this->filterTeamMembers(request()->team_id);
+        $team = Team::query()->find(request()->team_id);
 
-        $total_members = $query->users->count(); // members?
+        $total_members = $team->users->count(); // members?
 
-        $result = $query->users()
+        $result = $team->users()
             ->withPivot('total_photos', 'total_litter', 'updated_at', 'show_name_leaderboards', 'show_username_leaderboards')
             ->orderBy('pivot_total_litter', 'desc')
             ->simplePaginate(10, [
