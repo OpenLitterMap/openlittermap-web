@@ -26,7 +26,8 @@
     "search-by-id": "Szukaj według ID",
     "active": "Aktywne",
     "inactive": "Nieaktywne",
-    "inactivate": "Unieczynnić",
+    "inactivate": "Wyłącz składki drużyny",
     "your-email": "you@email.com",
-    "team": "Drużyna"
+    "team": "Drużyny",
+    "actions": "Działania"
 }

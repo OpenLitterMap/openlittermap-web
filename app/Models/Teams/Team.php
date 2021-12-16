@@ -38,7 +38,7 @@ class Team extends Model
 
     public function leader ()
     {
-    	return $this->hasOne('App\Models\User\User');
+    	return $this->belongsTo('App\Models\User\User', 'leader');
     }
 
     // double check this
