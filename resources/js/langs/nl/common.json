@@ -26,7 +26,8 @@
     "search-by-id": "Zoek op ID",
     "active": "Actief",
     "inactive": "Inactief",
-    "inactivate": "Inactiveren",
+    "inactivate": "Teambijdragen uitschakelen",
     "your-email": "you@email.com",
-    "team": "Team"
+    "team": "Team",
+    "actions": "Actie"
 }

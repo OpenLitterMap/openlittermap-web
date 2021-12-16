@@ -15,27 +15,39 @@
                         <div v-if="user.active_team" class="mb1">
                             <p>
                                 {{ $t('teams.myteams.currently-joined-team') }} <strong>{{ user.team.name }}</strong>.
+                                <br/>
+                                {{ $t('teams.myteams.enabled-contributions') }}
                             </p>
                         </div>
+
+                        <p v-else-if="teams && teams.length"
+                           class="mb1"
+                           v-html="$t('teams.myteams.disabled-contributions')">
+                        </p>
 
                         <p v-else class="mb1">
                             {{ $t('teams.myteams.no-joined-team') }}.
                         </p>
-
-                        <div v-if="isLeader" class="mb2">
-                            <p>{{ $t('teams.myteams.leader-of-team') }}.</p>
-                        </div>
-
-                        <div v-if="viewTeam" class="mb1">
-                            <p>{{ $t('teams.myteams.team-identifier') }}: <strong>{{ selectedTeamIdentifier }}</strong>.</p>
-                        </div>
                     </div>
 
                     <div v-if="user.active_team"
-                         class="button is-medium is-warning"
+                         class="button is-warning tooltip"
                          @click="inactivateTeam"
                     >
+                        <span class="tooltip-text disable-teams-tooltip">
+                            {{ $t('teams.myteams.disable-contributions-tooltip') }}
+                        </span>
                         {{ $t('common.inactivate') }}
+                    </div>
+                </div>
+
+                <div class="mb1" v-if="teams && teams.length">
+                    <div class="is-size-3">
+                        {{ $t('teams.myteams.team-details') }}
+                    </div>
+
+                    <div v-if="isLeader">
+                        <p>{{ $t('teams.myteams.leader-of-team') }}.</p>
                     </div>
                 </div>
 
@@ -63,40 +75,6 @@
                                 {{ team.name }}
                             </option>
                         </select>
-
-                        <button
-                            v-if="activeTeam === null"
-                            :class="button"
-                            :disabled="disabled"
-                            @click="changeActiveTeam"
-                        >
-                            {{ $t('teams.myteams.change-active-team') }}
-                        </button>
-
-                        <button
-                            :class="downloadClass"
-                            :disabled="dlProcessing"
-                            @click="download"
-                        >
-                            {{ $t('teams.myteams.download-team-data') }}
-                        </button>
-
-                        <button
-                            v-if="isLeader"
-                            :class="leaderboardClass"
-                            :disabled="leaderboardProcessing"
-                            @click="toggleLeaderboardVis"
-                        >
-                            {{ showLeaderboard }}
-                        </button>
-
-                        <button
-                            v-if="members.data && members.data.length > 1"
-                            class="button is-medium is-danger ml1"
-                            @click="leaveTeam"
-                        >
-                            {{ $t('teams.myteams.leave-team') }}
-                        </button>
                     </div>
 
                     <table class="table is-fullwidth is-hoverable has-text-centered">
@@ -159,6 +137,92 @@
                         >{{ $t('common.next-page') }}</a>
                     </div>
                 </div>
+
+                <div v-if="teams && teams.length" style="overflow-x: scroll">
+                    <div class="is-size-3 mb1">
+                        {{ $t('teams.myteams.all-my-teams') }}
+                    </div>
+
+                    <table class="table is-fullwidth is-hoverable">
+                        <thead>
+                        <th>{{ $t('teams.myteams.name-header') }}</th>
+                        <th>{{ $t('teams.myteams.identifier-header') }}</th>
+                        <th>{{ $t('teams.myteams.members-header') }}</th>
+                        <th>{{ $t('teams.myteams.photos-header') }}</th>
+                        <th>{{ $t('teams.myteams.litter-header') }}</th>
+                        <th>{{ $t('common.actions') }}</th>
+                        </thead>
+
+                        <tbody>
+                        <tr
+                            v-for="team in teams"
+                            :key="team.id"
+                            :class="team.id === activeTeam ? 'is-primary-row' : ''"
+                        >
+                            <td>{{ team.name }}</td>
+                            <td>{{ team.identifier }}</td>
+                            <td>{{ team.members }}</td>
+                            <td>{{ team.total_images }}</td>
+                            <td>{{ team.total_litter }}</td>
+                            <td style="min-width: 120px;max-width: 150px;">
+                                <button
+                                    class="button is-small is-primary team-action tooltip"
+                                    :class="processing ? 'is-loading' : ''"
+                                    :disabled="team.id === activeTeam"
+                                    @click="changeActiveTeam(team.id)"
+                                >
+                                    <span class="tooltip-text">
+                                        {{
+                                            team.id === activeTeam
+                                                ? $t('teams.myteams.this-is-active-team')
+                                                : $t('teams.myteams.set-as-active-team')
+                                        }}
+                                    </span>
+                                    <i class="fa fa-star" />
+                                </button>
+                                <button
+                                    class="button is-small is-info team-action tooltip"
+                                    :class="dlProcessing ? 'is-loading' : ''"
+                                    @click="download(team.id)"
+                                >
+                                    <span class="tooltip-text">{{ $t('teams.myteams.download-team-data') }}</span>
+                                    <i class="fa fa-download"/>
+                                </button>
+                                <button
+                                    :disabled="team.members <= 1"
+                                    class="button is-small is-danger team-action tooltip"
+                                    @click="leaveTeam(team.id)"
+                                >
+                                    <span class="tooltip-text">
+                                        {{
+                                            team.members > 1
+                                                ? $t('teams.myteams.leave-team')
+                                                : $t('teams.myteams.cant-leave-team')
+                                        }}
+                                    </span>
+                                    <i class="fa fa-sign-out"/>
+                                </button>
+                                <button
+                                    v-if="team.leader === user.id"
+                                    class="button is-small is-warning team-action tooltip"
+                                    @click="toggleLeaderboardVis(team.id)"
+                                >
+                                    <span class="tooltip-text">
+                                        {{
+                                            team.leaderboards
+                                                ? $t('teams.myteams.hide-from-leaderboards')
+                                                : $t('teams.myteams.show-on-leaderboards')
+                                        }}
+                                    </span>
+                                    <i class="fa"
+                                       :class="team.leaderboards ? 'fa-eye-slash' : 'fa-eye'"
+                                    />
+                                </button>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </section>
@@ -172,15 +236,11 @@ export default {
     data ()
     {
         return {
-            btn: 'button is-medium is-primary ml1',
             loading: false,
             processing: false,
             changing: false,
             viewTeam: null, // the team the user is currently looking at. Different team = load different list of members
             dlProcessing: false,
-            dlButtonClass: 'button is-medium is-info ml1',
-            leaderboardClass: 'button is-medium is-warning ml1',
-            leaderboardProcessing: false
         };
     },
     computed: {
@@ -193,39 +253,11 @@ export default {
         },
 
         /**
-         * Add spinner when processing
-         */
-        button ()
-        {
-            return this.processing ? this.btn + ' is-loading' : this.btn;
-        },
-
-        /**
          * Get the current page the user is on
          */
         current_page ()
         {
             return this.members.current_page;
-        },
-
-        /**
-         * Return true to disable the JoinTeam button
-         */
-        disabled ()
-        {
-            if (this.processing) return true;
-
-            if (! this.viewTeam) return true;
-
-            return this.viewTeam === this.activeTeam;
-        },
-
-        /**
-         * Add spinner to download button class when processing
-         */
-        downloadClass ()
-        {
-            return this.dlProcessing ? this.dlButtonClass + ' is-loading' : this.dlButtonClass;
         },
 
         /**
@@ -236,16 +268,6 @@ export default {
             const team = this.teams.find(team => team.id === this.viewTeam);
 
             return team && team.leader === this.user.id;
-        },
-
-        /**
-         * Returns the team identifier for the selected team
-         */
-        selectedTeamIdentifier ()
-        {
-            const team = this.teams.find(team => team.id === this.viewTeam);
-
-            return team?.identifier;
         },
 
         /**
@@ -276,16 +298,6 @@ export default {
         },
 
         /**
-         * Return bool for current team being looked at
-         */
-        showLeaderboard ()
-        {
-            return this.teams.find(team => team.id === this.viewTeam).leaderboards
-                ? this.$t('teams.myteams.hide-from-leaderboards')
-                : this.$t('teams.myteams.show-on-leaderboards');
-        },
-
-        /**
          * Array of all teams the user has joined
          */
         teams ()
@@ -313,15 +325,11 @@ export default {
         /**
          * Change currently active team
          */
-        async changeActiveTeam ()
+        async changeActiveTeam (teamId)
         {
             this.processing = true;
 
-            await this.$store.dispatch('CHANGE_ACTIVE_TEAM', this.viewTeam);
-
-            this.viewTeam = this.activeTeam;
-
-            await this.changeViewedTeam();
+            await this.$store.dispatch('CHANGE_ACTIVE_TEAM', teamId);
 
             this.processing = false;
         },
@@ -362,7 +370,7 @@ export default {
         /**
          * Leave the team
          */
-        async leaveTeam ()
+        async leaveTeam (teamId)
         {
             if (!confirm(this.$t('teams.myteams.confirm-leave-team'))) {
                 return;
@@ -370,7 +378,7 @@ export default {
 
             this.loading = true;
 
-            await this.$store.dispatch('LEAVE_TEAM', this.viewTeam);
+            await this.$store.dispatch('LEAVE_TEAM', teamId);
 
             await this.getUserTeams();
 
@@ -412,11 +420,11 @@ export default {
         /**
          * Download the data from this Team
          */
-        async download ()
+        async download (teamId)
         {
             this.dlProcessing = true;
 
-            await this.$store.dispatch('DOWNLOAD_DATA_FOR_TEAM', this.viewTeam);
+            await this.$store.dispatch('DOWNLOAD_DATA_FOR_TEAM', teamId);
 
             this.dlProcessing = false;
         },
@@ -473,9 +481,9 @@ export default {
         /**
          *
          */
-        async toggleLeaderboardVis ()
+        async toggleLeaderboardVis (teamId)
         {
-            await this.$store.dispatch('TOGGLE_LEADERBOARD_VISIBILITY', this.viewTeam);
+            await this.$store.dispatch('TOGGLE_LEADERBOARD_VISIBILITY', teamId);
         },
 
         /**
@@ -520,6 +528,19 @@ export default {
         border-radius: 10px;
     }
 
+    .team-action {
+        border-radius: 5px;
+    }
+
+    .is-primary-row {
+        background-color: #00c4a730;
+    }
+
+    .disable-teams-tooltip {
+        width: 250px;
+        white-space: initial;
+    }
+
     .active-team-indicator {
         display: flex;
         flex-direction: row;
@@ -533,6 +554,9 @@ export default {
         .active-team-indicator .button {
             max-width: min-content;
             margin-bottom: 2em;
+        }
+        .my-teams-container {
+            padding: 0;
         }
     }
 

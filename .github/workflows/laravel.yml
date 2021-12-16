@@ -10,7 +10,7 @@ jobs:
   laravel-tests:
 
     runs-on: ubuntu-latest
-    
+
     env:
       APP_ENV: testing
       DB_DATABASE: olm_test
@@ -19,7 +19,7 @@ jobs:
       BROADCAST_DRIVER: log
       CACHE_DRIVER: array
       QUEUE_CONNECTION: sync
-      SESSION_DRIVER: array   
+      SESSION_DRIVER: array
       AWS_KEY: minioadmin
       AWS_SECRET: minioadmin
       AWS_REGION: us-east-1
@@ -54,7 +54,7 @@ jobs:
         # coverage: xdebug #optional
     - uses: actions/checkout@v2
     - name: Start mysql service
-      run: sudo /etc/init.d/mysql start
+      run: sudo service mysql start
     - name: Setup minio
       run: |
           docker run -d -p 9000:9000 --name minio \
