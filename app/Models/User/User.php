@@ -15,6 +15,9 @@ use Spatie\Permission\Traits\HasRoles;
 use Laravel\Passport\HasApiTokens;
 use LaravelAndVueJS\Traits\LaravelPermissionToVueJS;
 
+/**
+ * @property array<Team> $teams
+ */
 class User extends Authenticatable
 {
     use Notifiable, Billable, HasApiTokens, HasRoles, LaravelPermissionToVueJS, HasFactory;

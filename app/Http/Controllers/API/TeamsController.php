@@ -22,6 +22,19 @@ class TeamsController extends Controller
     }
 
     /**
+     * Array of teams the user has joined
+     *
+     * @return array<Team>
+     */
+    public function list()
+    {
+        /** @var User $user */
+        $user = Auth::guard('api')->user();
+
+        return $user->teams;
+    }
+
+    /**
      * The user wants to create a new team
      *
      * @param CreateTeamRequest $request
