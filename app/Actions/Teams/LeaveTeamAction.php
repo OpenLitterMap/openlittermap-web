@@ -1,39 +1,15 @@
 <?php
 
-namespace App\Http\Controllers\Teams;
+namespace App\Actions\Teams;
 
-use App\Http\Controllers\Controller;
 use App\Models\Teams\Team;
 use App\Models\User\User;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class LeaveTeamController extends Controller
+class LeaveTeamAction
 {
-    public function __construct()
+    public function run(User $user, Team $team)
     {
-        $this->middleware('auth');
-    }
-
-    public function __invoke(Request $request)
-    {
-        $request->validate([
-            'teamId' => 'required|exists:teams,id'
-        ]);
-
-        /** @var User $user */
-        $user = auth()->user();
-        /** @var Team $team */
-        $team = Team::find($request->teamId);
-
-        if (!$user->teams()->whereTeamId($request->teamId)->exists()) {
-            abort(403, 'You are not part of this team!');
-        }
-
-        if ($team->users()->count() <= 1) {
-            abort(403, 'You are the only member of this team!');
-        }
-
         $this->assignTeamLeader($user, $team);
 
         $this->assignActiveTeam($user, $team);
@@ -42,13 +18,8 @@ class LeaveTeamController extends Controller
 
         $team->members--;
         $team->save();
-
-        return [
-            'success' => true,
-            'team' => $team,
-            'activeTeam' => $user->team()->first()
-        ];
     }
+
 
     /**
      * If the user is the leader of the team they're leaving

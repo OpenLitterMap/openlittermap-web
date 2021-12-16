@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Teams;
+namespace Tests\Feature\Api\Teams;
 
 use App\Models\Teams\Team;
 use App\Models\User\User;
@@ -27,15 +27,15 @@ class LeaveTeamTest extends TestCase
         $this->assertCount(2, $team->fresh()->users);
 
         // User leaves a team ------------------------
-        $this->actingAs($user);
+        $this->actingAs($user, 'api');
 
-        $response = $this->postJson('/teams/leave', [
+        $response = $this->postJson('/api/teams/leave', [
             'team_id' => $team->id,
         ]);
 
         $response
             ->assertOk()
-            ->assertJsonStructure(['success', 'team', 'activeTeam']);
+            ->assertJsonStructure(['team', 'activeTeam']);
 
         $user->refresh();
         $team->refresh();
@@ -58,17 +58,17 @@ class LeaveTeamTest extends TestCase
         $this->assertCount(1, $otherUserJoinsTeam->teams);
         $this->assertCount(1, $team->fresh()->users);
 
-        $this->actingAs($user);
+        $this->actingAs($user, 'api');
 
         // Non-existing team -------------------------
-        $response = $this->postJson('/teams/leave', [
+        $response = $this->postJson('/api/teams/leave', [
             'team_id' => 0,
         ]);
 
         $response->assertStatus(422)->assertJsonValidationErrors('team_id');
 
         // Leaving a team that they are not part of ---------------
-        $response = $this->postJson('/teams/leave', [
+        $response = $this->postJson('/api/teams/leave', [
             'team_id' => $team->id,
         ]);
 
@@ -97,9 +97,9 @@ class LeaveTeamTest extends TestCase
         $this->assertTrue($user->team->is($activeTeam));
 
         // User leaves their active team ------------------------
-        $this->actingAs($user);
+        $this->actingAs($user, 'api');
 
-        $response = $this->postJson('/teams/leave', [
+        $response = $this->postJson('/api/teams/leave', [
             'team_id' => $activeTeam->id,
         ]);
 
@@ -123,10 +123,10 @@ class LeaveTeamTest extends TestCase
 
         $this->assertTrue($leader->is(User::find($team->leader)));
 
-        $this->actingAs($leader);
+        $this->actingAs($leader, 'api');
 
         // Non-existing team -------------------------
-        $response = $this->postJson('/teams/leave', [
+        $response = $this->postJson('/api/teams/leave', [
             'team_id' => $team->id,
         ]);
 
@@ -148,9 +148,9 @@ class LeaveTeamTest extends TestCase
         $this->assertCount(1, $team->fresh()->users);
 
         // User leaves a team ------------------------
-        $this->actingAs($user);
+        $this->actingAs($user, 'api');
 
-        $response = $this->postJson('/teams/leave', [
+        $response = $this->postJson('/api/teams/leave', [
             'team_id' => $team->id,
         ]);
 

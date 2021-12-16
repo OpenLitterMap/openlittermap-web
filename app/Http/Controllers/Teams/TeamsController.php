@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Teams;
 
 use App\Actions\Teams\JoinTeamAction;
+use App\Actions\Teams\LeaveTeamAction;
 use App\Exports\CreateCSVExport;
 use App\Http\Requests\Teams\JoinTeamRequest;
+use App\Http\Requests\Teams\LeaveTeamRequest;
 use App\Jobs\EmailUserExportCompleted;
 use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
@@ -183,6 +185,35 @@ class TeamsController extends Controller
         }
 
        $action->run($user, $team);
+
+        return [
+            'success' => true,
+            'team' => $team->fresh(),
+            'activeTeam' => $user->fresh()->team()->first()
+        ];
+    }
+
+    /**
+     * The user wants to leave a team
+     *
+     * @return array
+     */
+    public function leave (LeaveTeamRequest $request, LeaveTeamAction $action)
+    {
+        /** @var User $user */
+        $user = auth()->user();
+        /** @var Team $team */
+        $team = Team::find($request->team_id);
+
+        if (!$user->teams()->whereTeamId($request->team_id)->exists()) {
+            abort(403, 'You are not part of this team!');
+        }
+
+        if ($team->users()->count() <= 1) {
+            abort(403, 'You are the only member of this team!');
+        }
+
+        $action->run($user, $team);
 
         return [
             'success' => true,

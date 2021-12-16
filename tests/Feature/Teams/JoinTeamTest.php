@@ -171,7 +171,7 @@ class JoinTeamTest extends TestCase
         $this->actingAs($user);
 
         $this->postJson('/teams/leave', [
-            'teamId' => $team->id,
+            'team_id' => $team->id,
         ]);
 
         $this->assertNull($user->teams()->first());

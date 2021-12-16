@@ -100,6 +100,7 @@ Route::post('/settings/privacy/toggle-previous-tags', 'ApiSettingsController@tog
 //Route::post('/teams/create', 'Teams\TeamsController@create')->middleware('auth');
 //Route::post('/teams/update/{team}', 'Teams\TeamsController@update')->middleware('auth');
 Route::post('/teams/join', 'API\TeamsController@join')->middleware('auth');
+Route::post('/teams/leave', 'API\TeamsController@leave')->middleware('auth');
 //Route::post('/teams/leave', 'Teams\LeaveTeamController');
 //Route::post('/teams/active', 'Teams\TeamsController@active')->middleware('auth');
 //Route::post('/teams/inactivate', 'Teams\TeamsController@inactivateTeam')->middleware('auth');

@@ -47,7 +47,7 @@ export const actions = {
         let bodyError = i18n.t('notifications.something-went-wrong');
 
         await axios.post('/teams/leave', {
-            teamId: payload
+            team_id: payload
         })
         .then(response => {
             console.log('leave_team', response);
