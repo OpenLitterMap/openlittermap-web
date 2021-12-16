@@ -319,9 +319,6 @@ export const actions = {
         const title = i18n.t('notifications.success');
         const body = 'Congratulations! You have joined a new team!'; // todo - insert team name, translate
 
-        const failTitle = i18n.t('notifications.error');
-        const failBody = 'Sorry, we could not find a team with this identifier.' // todo - insert identifier, translate
-
         const alreadyJoinedbody = 'You have already joined this team!'; // todo - translate
 
         await axios.post('/teams/join', {
@@ -349,15 +346,6 @@ export const actions = {
                 Vue.$vToastify.info({
                     title: 'Hold on!',
                     body: alreadyJoinedbody,
-                    position: 'bottom-right'
-                });
-            }
-
-            else
-            {
-                Vue.$vToastify.error({
-                    title: failTitle,
-                    body: failBody,
                     position: 'bottom-right'
                 });
             }

@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Teams;
 
+use App\Actions\Teams\JoinTeamAction;
 use App\Exports\CreateCSVExport;
+use App\Http\Requests\Teams\JoinTeamRequest;
 use App\Jobs\EmailUserExportCompleted;
 use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
@@ -163,25 +165,16 @@ class TeamsController extends Controller
     }
 
     /**
-     * The user wants to join a new team
+     * The user wants to join a team
      *
      * @return array
      */
-    public function join (Request $request)
+    public function join (JoinTeamRequest $request, JoinTeamAction $action)
     {
-        $request->validate([
-            'identifier' => 'required|min:3|max:100'
-        ]);
-
         /** @var User $user */
         $user = Auth::user();
-
+        /** @var Team $team */
         $team = Team::whereIdentifier($request->identifier)->first();
-
-        if (!$team)
-        {
-            return ['success' => false, 'msg' => 'not-found'];
-        }
 
         // Check the user is not already in the team
         if ($user->teams()->whereTeamId($team->id)->exists())
@@ -189,27 +182,12 @@ class TeamsController extends Controller
             return ['success' => false, 'msg' => 'already-joined'];
         }
 
-        // Have the user join this team and restore their contributions
-        $userPhotosOnThisTeam = $user->photos()->whereTeamId($team->id);
-
-        $user->teams()->attach($team, [
-            'total_photos' => $userPhotosOnThisTeam->count(),
-            'total_litter' => $userPhotosOnThisTeam->sum('total_litter')
-        ]);
-
-        if (is_null($user->active_team))
-        {
-            $user->active_team = $team->id;
-            $user->save();
-        }
-
-        $team->members++;
-        $team->save();
+       $action->run($user, $team);
 
         return [
             'success' => true,
-            'team' => $team,
-            'activeTeam' => $user->team()->first()
+            'team' => $team->fresh(),
+            'activeTeam' => $user->fresh()->team()->first()
         ];
     }
 
