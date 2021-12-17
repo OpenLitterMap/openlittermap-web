@@ -165,6 +165,12 @@ export default {
                     author: 'Carter, S.'
                 },
                 {
+                    date: '2021/10/21',
+                    title: 'From City to Sea: Integrated Management of Litter and Plastics and Their Effects on Waterways - A Guide for Municipalities',
+                    link: 'https://openknowledge.worldbank.org/handle/10986/36523',
+                    author: 'World Bank'
+                },
+                {
                     date: '2021/10/27',
                     title: 'A Systematic Literature Review of Blockchain Technology for Smart Villages',
                     link: 'https://link.springer.com/article/10.1007/s11831-021-09659-7',
@@ -187,6 +193,12 @@ export default {
                     title: 'Litter origins, accumulation rates, and hierarchical composition on urban roadsides of the Inland Empire, California',
                     link: 'https://iopscience.iop.org/article/10.1088/1748-9326/ac3c6a',
                     author: 'W. Cowger et al.'
+                },
+                {
+                    date: '2021/12/13',
+                    title: 'Citizen science at public libraries: Data on librarians and users perceptions of participating in a citizen science project in Catalunya, Spain',
+                    link: 'https://www.sciencedirect.com/science/article/pii/S2352340921009884',
+                    author: 'Cigarini et al'
                 }
             ]
         };
