@@ -47,20 +47,35 @@ class GenerateClusters extends Command
      */
     public function handle()
     {
+        $start = microtime(true);
+
+        $this->generateFeatures();
+        $this->generateClusters();
+
+        $finish = microtime(true);
+        $this->newLine();
+        $this->info("Total Time: " . ($finish - $start) . "\n");
+    }
+
+    /**
+     * Generates features.json
+     */
+    protected function generateFeatures(): void
+    {
         // 100,000 photos and growing...
         // ->whereDate('created_at', '>', '2020-10-01 00:00:00') // for testing smaller amounts of data
 
-        // begin timer
-        $start = microtime(true);
+        $this->info('Generating features...');
+
+        $bar = $this->output->createProgressBar(Photo::count());
+        $bar->setFormat('debug');
+        $bar->start();
 
         $photos = Photo::select('lat', 'lon')->get();
 
-        echo "Number of photos: " . number_format(count($photos)) . "\n";
-
         $features = [];
 
-        foreach ($photos as $photo)
-        {
+        foreach ($photos as $photo) {
             $feature = [
                 'type' => 'Feature',
                 'geometry' => [
@@ -70,63 +85,48 @@ class GenerateClusters extends Command
             ];
 
             array_push($features, $feature);
+
+            $bar->advance();
         }
 
-        unset($photos); // free up memory
+        $bar->finish();
+
+        $this->info("\nFeatures finished...");
 
         $features = json_encode($features, JSON_NUMERIC_CHECK);
 
         Storage::put('/data/features.json', $features);
+    }
 
-        if (app()->environment() === 'local')
-        {
-            $prefix = config('app.root_dir');
-        }
-        else if (app()->environment() === 'staging')
-        {
-            $prefix = '/home/forge/olmdev.online';
-        }
-        else
-        {
-            $prefix = '/home/forge/openlittermap.com';
-        }
-
+    protected function generateClusters(): void
+    {
         // delete all clusters?
         // Or update existing ones?
-
         Cluster::truncate();
 
-        // Put "recompiling data" onto Global Map
+        $zoomLevels = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
 
-        $zoomLevels = [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16];
+        foreach ($zoomLevels as $zoomLevel) {
+            $this->line("Zoom level " . $zoomLevel);
 
-        foreach ($zoomLevels as $zoomLevel)
-        {
-            echo "Zoom level " . $zoomLevel . " \n";
-            exec('node app/Node/supercluster-php ' . $prefix . ' ' . $zoomLevel);
+            exec('node app/Node/supercluster-php ' . config('app.root_dir') . ' ' . $zoomLevel);
 
-            $clusters = json_decode(Storage::get('/data/clusters.json'));
-
-            foreach ($clusters as $cluster)
-            {
-                if (isset($cluster->properties))
-                {
-                    Cluster::create([
+            $clusters = collect(json_decode(Storage::get('/data/clusters.json')))
+                ->filter(function ($cluster) {
+                    return isset($cluster->properties);
+                })
+                ->map(function ($cluster) use ($zoomLevel) {
+                    return [
                         'lat' => $cluster->geometry->coordinates[1],
                         'lon' => $cluster->geometry->coordinates[0],
                         'point_count' => $cluster->properties->point_count,
                         'point_count_abbreviated' => $cluster->properties->point_count_abbreviated,
                         'geohash' => \GeoHash::encode($cluster->geometry->coordinates[1], $cluster->geometry->coordinates[0]),
                         'zoom' => $zoomLevel
-                    ]);
-                }
-            }
+                    ];
+                });
+
+            Cluster::insert($clusters->toArray());
         }
-
-        // Remove "compiling data" from global map
-
-        // end timer
-        $finish = microtime(true);
-        echo "Total Time: " . ($finish - $start) . "\n";
     }
 }
