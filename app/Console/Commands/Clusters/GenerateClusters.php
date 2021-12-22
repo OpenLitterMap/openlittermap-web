@@ -71,7 +71,7 @@ class GenerateClusters extends Command
         $bar->setFormat('debug');
         $bar->start();
 
-        $photos = Photo::select('lat', 'lon')->get();
+        $photos = Photo::select('lat', 'lon')->cursor();
 
         $features = [];
 
@@ -111,7 +111,7 @@ class GenerateClusters extends Command
 
             exec('node app/Node/supercluster-php ' . config('app.root_dir') . ' ' . $zoomLevel);
 
-            $clusters = collect(json_decode(Storage::get('/data/clusters.json')))
+            collect(json_decode(Storage::get('/data/clusters.json')))
                 ->filter(function ($cluster) {
                     return isset($cluster->properties);
                 })
@@ -124,9 +124,11 @@ class GenerateClusters extends Command
                         'geohash' => \GeoHash::encode($cluster->geometry->coordinates[1], $cluster->geometry->coordinates[0]),
                         'zoom' => $zoomLevel
                     ];
+                })
+                ->chunk(1000)
+                ->each(function ($chunk) {
+                    Cluster::insert($chunk->toArray());
                 });
-
-            Cluster::insert($clusters->toArray());
         }
     }
 }
