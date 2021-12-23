@@ -101,9 +101,3 @@ Route::prefix('/teams')->group(function () {
     Route::get('/types', 'API\TeamsController@types');
     Route::get('/leaderboard', 'Teams\TeamsLeaderboardController@index');
 });
-
-//Route::get('/teams/leaderboard', 'Teams\TeamsLeaderboardController@index');
-//Route::post('/teams/active', 'Teams\TeamsController@active')->middleware('auth');
-//Route::post('/teams/inactivate', 'Teams\TeamsController@inactivateTeam')->middleware('auth');
-//Route::post('/teams/download', 'Teams\TeamsController@download');
-//Route::post('/teams/leaderboard/visibility', 'Teams\TeamsLeaderboardController@toggle')->middleware('auth');
