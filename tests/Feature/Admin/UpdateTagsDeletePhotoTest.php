@@ -142,7 +142,7 @@ class UpdateTagsDeletePhotoTest extends TestCase
         $this->assertEquals(11, $this->user->xp); // 1 xp from uploading, + 10xp from alcohol
 
         $this->assertEquals(10, $this->photo->total_litter);
-        $this->assertEquals(1, $this->photo->remaining);
+        $this->assertEquals(0, $this->photo->remaining);
         $this->assertEquals(1, $this->photo->verification);
         $this->assertEquals(2, $this->photo->verified);
     }

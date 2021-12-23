@@ -75,6 +75,7 @@ export default {
                 feature.properties.img,
                 feature.properties.text,
                 feature.properties.datetime,
+                feature.properties.picked_up,
                 '',
                 ''
             );

@@ -60,7 +60,7 @@ class AddTagsToPhotoTest extends TestCase
         // Assert tags are stored correctly ------------
         $photo->refresh();
 
-        $this->assertEquals(1, $photo->remaining);
+        $this->assertEquals(0, $photo->remaining);
         $this->assertNotNull($photo->smoking_id);
         $this->assertInstanceOf(Smoking::class, $photo->smoking);
         $this->assertEquals(3, $photo->smoking->butts);
@@ -101,7 +101,7 @@ class AddTagsToPhotoTest extends TestCase
 
         $this->assertEquals(9, $user->xp); // 1 xp from uploading, + 8xp from total litter tagged
         $this->assertEquals(8, $photo->total_litter);
-        $this->assertEquals(0, $photo->remaining);
+        $this->assertEquals(1, $photo->remaining);
         $this->assertEquals(0.1, $photo->verification);
     }
 

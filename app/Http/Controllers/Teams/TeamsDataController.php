@@ -61,7 +61,8 @@ class TeamsDataController extends Controller
                     'model' => $photo->model,
                     'datetime' => $photo->datetime,
                     'latlng' => [$photo->lat, $photo->lon],
-                    'text' => $photo->result_string
+                    'text' => $photo->result_string,
+                    'picked_up'=> $photo->picked_up
                 ]
             ];
 
