@@ -1,52 +1,43 @@
 <template>
     <div class="team-map-container">
-        <fullscreen ref="fullscreen" @change="fullscreenChange" class="profile-map-container">
+        <loading v-if="loading" :active.sync="loading" :is-full-page="false"/>
 
+        <fullscreen
+            v-else-if="geojson"
+            ref="fullscreen"
+            @change="fullscreenChange"
+            class="profile-map-container"
+        >
             <button class="btn-map-fullscreen" @click="toggle">
                 <i class="fa fa-expand"/>
             </button>
-
-            <l-map :zoom="zoom" :center="center" :minZoom="1">
-                <l-tile-layer :url="url" :attribution="attribution"/>
-                <v-marker-cluster v-if="geojson.length">
-                    <l-marker v-for="i in geojson" :lat-lng="i.properties.latlng" :key="i.properties.id">
-                        <l-popup :content="content(i)" :options="options"/>
-                    </l-marker>
-                </v-marker-cluster>
-            </l-map>
+            <supercluster
+                :clusters-url="'/global/clusters'"
+                :points-url="'/global/points'"
+            />
         </fullscreen>
     </div>
 </template>
 
 <script>
-import { LMap, LTileLayer, LMarker, LPopup } from 'vue2-leaflet';
-import Vue2LeafletMarkerCluster from 'vue2-leaflet-markercluster';
-import {mapHelper} from '../../maps/mapHelpers';
+import Loading from 'vue-loading-overlay';
+import 'vue-loading-overlay/dist/vue-loading.css';
+import Supercluster from '../../views/global/Supercluster';
 
 export default {
     name: 'TeamMap',
     components: {
-        LMap,
-        LTileLayer,
-        LMarker,
-        LPopup,
-        'v-marker-cluster': Vue2LeafletMarkerCluster
+        Loading,
+        Supercluster
     },
-    created ()
+    async created ()
     {
         this.attribution += new Date().getFullYear();
-    },
-    data ()
-    {
-        return {
-            zoom: 2,
-            center: L.latLng(0,0),
-            url:'https://{s}.tile.osm.org/{z}/{x}/{y}.png',
-            attribution:'Map Data &copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors, Litter data &copy OpenLitterMap & Contributors ',
-            loading: true,
-            fullscreen: false,
-            options: mapHelper.popupOptions
-        };
+
+        await this.$store.dispatch('GET_CLUSTERS', 2);
+        await this.$store.dispatch('GET_ART_DATA');
+
+        this.$store.commit('globalLoading', false);
     },
     computed: {
 
@@ -58,8 +49,14 @@ export default {
             return this.$store.state.teams.geojson
                 ? this.$store.state.teams.geojson.features
                 : [];
-        }
+        },
+
+        loading ()
+        {
+            return this.$store.state.globalmap.loading;
+        },
     },
+
     methods: {
 
         /**
@@ -83,27 +80,24 @@ export default {
 
         fullscreenChange (fullscreen)
         {
-            this.fullscreen = fullscreen
+            this.fullscreen = fullscreen;
         },
 
         toggle ()
         {
-            this.$refs['fullscreen'].toggle()
+            this.$refs['fullscreen'].toggle();
         },
     }
 };
 </script>
 
-<style lang="scss">
-    @import "~leaflet.markercluster/dist/MarkerCluster.css";
-    @import "~leaflet.markercluster/dist/MarkerCluster.Default.css";
-
+<style lang="scss" scoped>
     @import '../../styles/variables.scss';
 
     .btn-map-fullscreen {
         position: absolute;
-        top: 1em;
-        right: 1em;
+        top: 80px;
+        left: 12px;
         z-index: 1234;
     }
 
@@ -115,15 +109,13 @@ export default {
         padding-top: 1em;
     }
 
-    @include media-breakpoint-down (lg)
-    {
+    @include media-breakpoint-down(lg) {
         .team-map-container {
             height: 500px;
         }
     }
 
-    @include media-breakpoint-down (sm)
-    {
+    @include media-breakpoint-down(sm) {
         .team-map-container {
             margin-left: -3em;
             margin-right: -3em;
