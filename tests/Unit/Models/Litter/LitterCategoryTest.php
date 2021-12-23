@@ -64,7 +64,8 @@ class LitterCategoryTest extends TestCase
 
         $expected = '';
         foreach ($types as $type) {
-            $expected .= $model->getTable() . '.' . $type . ' ' . $model->$type . ',';
+            $className = $model->getTable() == 'arts' ? 'art' : $model->getTable();
+            $expected .= $className . '.' . $type . ' ' . $model->$type . ',';
         }
 
         $this->assertEquals($expected, $model->translate());

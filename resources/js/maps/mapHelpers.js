@@ -52,6 +52,18 @@ const helper = {
     },
 
     /**
+     * Formats the picked up text for usage in Photo popups
+     *
+     * @returns {string}
+     * @param pickedUp
+     */
+    formatPickedUp: (pickedUp) => {
+        return pickedUp
+            ? `${i18n.t('litter.presence.picked-up')}`
+            : `${i18n.t('litter.presence.still-there')}`;
+    },
+
+    /**
      * Formats the team name for usage in Photo popups
      *
      * Todo translate 'team'
@@ -80,14 +92,16 @@ const helper = {
      * @param imageUrl
      * @param tagsString
      * @param takenOn
+     * @param pickedUp
      * @param user
      * @param team
      * @returns {string}
      */
-    getMapImagePopupContent: (imageUrl, tagsString, takenOn, user, team) => {
+    getMapImagePopupContent: (imageUrl, tagsString, takenOn, pickedUp, user, team) => {
         const tags = helper.parseTags(tagsString);
         const takenDateString = helper.formatPhotoTakenTime(takenOn);
         const teamFormatted = helper.formatTeam(team);
+        const pickedUpFormatted = helper.formatPickedUp(pickedUp);
 
         return `
             <img
@@ -98,6 +112,7 @@ const helper = {
             />
             <div class="leaflet-litter-img-container">
                 <p>${tags}</p>
+                <p>${pickedUpFormatted}</p>
                 <p>${takenDateString}</p>
                 ${user || teamFormatted ? ('<p>' + user + '<br>' + teamFormatted + '</p>') : ''}
             </div>`;
