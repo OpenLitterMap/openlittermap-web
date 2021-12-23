@@ -99,6 +99,7 @@ Route::prefix('/teams')->group(function () {
     Route::post('/join', 'API\TeamsController@join');
     Route::post('/leave', 'API\TeamsController@leave');
     Route::get('/types', 'API\TeamsController@types');
+    Route::get('/leaderboard', 'Teams\TeamsLeaderboardController@index');
 });
 
 //Route::get('/teams/leaderboard', 'Teams\TeamsLeaderboardController@index');
