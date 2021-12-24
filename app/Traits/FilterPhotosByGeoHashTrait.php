@@ -2,9 +2,7 @@
 
 namespace App\Traits;
 
-use GeoHash;
-use App\Models\Photo;
-use App\Traits\GeohashTrait;
+use Illuminate\Database\Eloquent\Builder;
 
 trait FilterPhotosByGeoHashTrait
 {
@@ -15,13 +13,13 @@ trait FilterPhotosByGeoHashTrait
      *
      * For a specific zoom level, we want to return the bounding box of the clusters + neighbours
      *
-     * @param $zoom int          -> zoom level of the browser
+     * @param Builder $query
      * @param string $bbox array -> [west|left, south|bottom, east|right, north|top]
      * @param null layers
      *
-     * @return \Illuminate\Database\Eloquent\Builder $query
+     * @return Builder $query
      */
-    public function filterPhotosByGeoHash (int $zoom, string $bbox, $layers = null)
+    public function filterPhotosByGeoHash(Builder $query, string $bbox, $layers = null): Builder
     {
         $bbox = json_decode($bbox);
 
@@ -35,52 +33,19 @@ trait FilterPhotosByGeoHashTrait
         // Get the center of the bounding box, as a geohash
         $center_geohash = GeoHash::encode($center_lat, $center_lon, $precision); // precision 0 will return the full geohash
 
-        $geos = [];
         // get the neighbour geohashes from our center geohash
-        $ns = $this->neighbors($center_geohash);
-        foreach ($ns as $n) array_push($geos, $n);
-
-        $query = Photo::query()->select(
-            'id',
-            'verified',
-            'user_id',
-            'team_id',
-            'result_string',
-            'filename',
-            'geohash',
-            'lat',
-            'lon',
-            'datetime'
-        );
-
-        $query->with([
-            'user' => function ($query) {
-                $query->where('users.show_name_maps', 1)
-                    ->orWhere('users.show_username_maps', 1)
-                    ->select('users.id', 'users.name', 'users.username', 'users.show_username_maps', 'users.show_name_maps');
-            },
-            'team' => function ($query) {
-                $query->select('teams.id', 'teams.name');
-            }
-        ]);
+        $geos = array_values($this->neighbors($center_geohash));
 
         // Build cluster query
-        $query->where(function ($q) use ($geos)
-        {
-            foreach ($geos as $geo)
-            {
-                $q->orWhere([
-                    ['geohash', 'like', $geo . '%'] // starts with
-                ]);
+        $query->where(function ($q) use ($geos) {
+            foreach ($geos as $geo) {
+                $q->orWhere('geohash', 'like', $geo . '%');  // starts with
             }
         });
 
-        if ($layers)
-        {
-            $query->where(function ($q) use ($layers)
-            {
-                foreach ($layers as $index => $layer)
-                {
+        if ($layers) {
+            $query->where(function ($q) use ($layers) {
+                foreach ($layers as $index => $layer) {
                     ($index === 0)
                         ? $q->where($layer . "_id", '!=', null)
                         : $q->orWhere($layer . "_id", '!=', null);
@@ -92,4 +57,47 @@ trait FilterPhotosByGeoHashTrait
 
         return $query;
     }
+
+    /**
+     * Convert our photos object to a geojson array
+     *
+     * @param $photos
+     *
+     * @return array
+     */
+    protected function photosToGeojson($photos): array
+    {
+        $features = $photos->map(function ($photo) {
+            $name = $photo->user && $photo->user->show_name_maps ? $photo->user->name : null;
+            $username = $photo->user && $photo->user->show_username_maps ? $photo->user->username : null;
+            $team = $photo->team ? $photo->team->name : null;
+            $filename = $photo->verified >= 2 ? $photo->filename : '/assets/images/waiting.png';
+            $resultString = $photo->verified >= 2 ? $photo->result_string : null;
+
+            return [
+                'type' => 'Feature',
+                'geometry' => [
+                    'type' => 'Point',
+                    'coordinates' => [$photo->lat, $photo->lon]
+                ],
+                'properties' => [
+                    'result_string' => $resultString,
+                    'filename' => $filename,
+                    'datetime' => $photo->datetime,
+                    'cluster' => false,
+                    'verified' => $photo->verified,
+                    'name' => $name,
+                    'username' => $username,
+                    'team' => $team,
+                    'picked_up' => $photo->picked_up
+                ]
+            ];
+        })->toArray();
+
+        return [
+            'type' => 'FeatureCollection',
+            'features' => $features
+        ];
+    }
+
 }

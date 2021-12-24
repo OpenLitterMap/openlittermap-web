@@ -39,7 +39,7 @@
 
         <p v-if="loading">{{ $t('common.loading') }}</p>
 
-        <TeamMap v-else />
+        <TeamMap v-else :team-id="viewTeam" />
 
     </section>
 </template>

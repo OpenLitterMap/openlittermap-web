@@ -3,7 +3,7 @@
         <loading v-if="loading" :active.sync="loading" :is-full-page="false"/>
 
         <fullscreen
-            v-else-if="geojson"
+            v-else-if="teamId > 0"
             ref="fullscreen"
             @change="fullscreenChange"
             class="profile-map-container"
@@ -12,8 +12,8 @@
                 <i class="fa fa-expand"/>
             </button>
             <supercluster
-                :clusters-url="'/global/clusters'"
-                :points-url="'/global/points'"
+                :clusters-url="`/teams/clusters/${teamId}`"
+                :points-url="`/teams/points/${teamId}`"
             />
         </fullscreen>
     </div>
@@ -26,6 +26,7 @@ import Supercluster from '../../views/global/Supercluster';
 
 export default {
     name: 'TeamMap',
+    props: ['teamId'],
     components: {
         Loading,
         Supercluster
@@ -34,48 +35,34 @@ export default {
     {
         this.attribution += new Date().getFullYear();
 
-        await this.$store.dispatch('GET_CLUSTERS', 2);
-        await this.$store.dispatch('GET_ART_DATA');
-
-        this.$store.commit('globalLoading', false);
+        await this.loadClusters();
     },
     computed: {
-
-        /**
-         * From backend api request
-         */
-        geojson ()
-        {
-            return this.$store.state.teams.geojson
-                ? this.$store.state.teams.geojson.features
-                : [];
-        },
-
         loading ()
         {
             return this.$store.state.globalmap.loading;
         },
     },
 
-    methods: {
+    // TODO this might not be needed
+    watch: {
+        teamId: function() {
+            this.loadClusters();
+        }
+    },
 
-        /**
-         * Return html content for each popup
-         *
-         * Translate tags
-         *
-         * Format datetime (time image was taken)
-         */
-        content (feature)
+    methods: {
+        async loadClusters ()
         {
-            return mapHelper.getMapImagePopupContent(
-                feature.properties.img,
-                feature.properties.text,
-                feature.properties.datetime,
-                feature.properties.picked_up,
-                '',
-                ''
-            );
+            await this.$store.dispatch('GET_TEAMS_CLUSTERS', {
+                zoom: 2,
+                team_id: this.teamId
+            });
+            await this.$store.dispatch('GET_TEAMS_ART_DATA', {
+                team_id: this.teamId
+            });
+
+            this.$store.commit('globalLoading', false);
         },
 
         fullscreenChange (fullscreen)
@@ -119,11 +106,6 @@ export default {
         .team-map-container {
             margin-left: -3em;
             margin-right: -3em;
-        }
-
-        .temp-info {
-            text-align: center;
-            margin-top: 1em;
         }
     }
 </style>
