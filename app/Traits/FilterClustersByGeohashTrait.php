@@ -31,7 +31,7 @@ trait FilterClustersByGeohashTrait
         $precision = $this->getGeohashPrecision($zoom);
 
         // Get the center of the bounding box, as a geohash
-        $center_geohash = GeoHash::encode($center_lat, $center_lon, $precision); // precision 0 will return the full geohash
+        $center_geohash = \GeoHash::encode($center_lat, $center_lon, $precision); // precision 0 will return the full geohash
 
         // get the neighbour geohashes from our center geohash
         $geos = array_values($this->neighbors($center_geohash));

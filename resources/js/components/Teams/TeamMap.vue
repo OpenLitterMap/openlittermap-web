@@ -11,7 +11,7 @@
             <button class="btn-map-fullscreen" @click="toggle">
                 <i class="fa fa-expand"/>
             </button>
-            <supercluster
+            <cluster-map
                 :clusters-url="`/teams/clusters/${teamId}`"
                 :points-url="`/teams/points/${teamId}`"
             />
@@ -22,16 +22,16 @@
 <script>
 import Loading from 'vue-loading-overlay';
 import 'vue-loading-overlay/dist/vue-loading.css';
-import Supercluster from '../../views/global/Supercluster';
+import ClusterMap from '../../views/global/ClusterMap';
 
 export default {
     name: 'TeamMap',
     props: ['teamId'],
     components: {
         Loading,
-        Supercluster
+        ClusterMap
     },
-    async created ()
+    async mounted ()
     {
         this.attribution += new Date().getFullYear();
 
@@ -44,9 +44,8 @@ export default {
         },
     },
 
-    // TODO this might not be needed
     watch: {
-        teamId: function() {
+        teamId() {
             this.loadClusters();
         }
     },
@@ -56,9 +55,6 @@ export default {
         {
             await this.$store.dispatch('GET_TEAMS_CLUSTERS', {
                 zoom: 2,
-                team_id: this.teamId
-            });
-            await this.$store.dispatch('GET_TEAMS_ART_DATA', {
                 team_id: this.teamId
             });
 
