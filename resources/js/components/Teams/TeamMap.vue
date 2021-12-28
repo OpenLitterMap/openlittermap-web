@@ -1,9 +1,9 @@
 <template>
     <div class="team-map-container">
-        <loading v-if="loading" :active.sync="loading" :is-full-page="false"/>
+        <loading v-if="loading && teamId > 0" :active.sync="loading" :is-full-page="false"/>
 
         <fullscreen
-            v-else-if="teamId > 0"
+            v-if="teamId > 0"
             ref="fullscreen"
             @change="fullscreenChange"
             class="profile-map-container"
@@ -14,6 +14,7 @@
             <cluster-map
                 :clusters-url="`/teams/clusters/${teamId}`"
                 :points-url="`/teams/points/${teamId}`"
+                @loading-complete="loading = false"
             />
         </fullscreen>
     </div>
@@ -31,36 +32,18 @@ export default {
         Loading,
         ClusterMap
     },
-    async mounted ()
-    {
-        this.attribution += new Date().getFullYear();
-
-        await this.loadClusters();
-    },
-    computed: {
-        loading ()
-        {
-            return this.$store.state.globalmap.loading;
-        },
-    },
-
-    watch: {
-        teamId() {
-            this.loadClusters();
+    data() {
+        return {
+            loading: true
         }
     },
-
-    methods: {
-        async loadClusters ()
+    watch: {
+        teamId (id)
         {
-            await this.$store.dispatch('GET_TEAMS_CLUSTERS', {
-                zoom: 2,
-                team_id: this.teamId
-            });
-
-            this.$store.commit('globalLoading', false);
-        },
-
+            if (id > 0) this.loading = true;
+        }
+    },
+    methods: {
         fullscreenChange (fullscreen)
         {
             this.fullscreen = fullscreen;

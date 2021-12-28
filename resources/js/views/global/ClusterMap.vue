@@ -70,20 +70,7 @@ export default {
             onEachFeature: this.onEachFeature,
         }).addTo(this.map);
 
-
-
-        // TODO remove this
-        await this.$store.dispatch('GET_TEAMS_CLUSTERS', {
-            zoom: 2,
-            team_id: 1
-        });
-        console.log(this.$store.state.globalmap.geojson.features)
-
-
-
-
-
-        this.clusters.addData(this.$store.state.globalmap.geojson.features);
+        await this.getClusters(2, null);
 
         this.map.on('moveend', this.update);
         this.map.on('overlayadd', this.update);
@@ -99,6 +86,14 @@ export default {
             iconSize: [13, 10]
         });
     },
+    watch: {
+        clustersUrl()
+        {
+            this.map.setZoom(2);
+
+            this.getClusters(2, null);
+        }
+    },
     methods: {
         async getClusters (zoom, bbox)
         {
@@ -110,15 +105,16 @@ export default {
             })
                 .then(response =>
                 {
-                    console.log('get_clusters.update', response);
+                    console.log('get_map_clusters', response);
 
                     this.clusters.clearLayers();
                     this.clusters.addData(response.data);
                 })
                 .catch(error =>
                 {
-                    console.error('get_clusters.update', error);
-                });
+                    console.error('get_map_clusters', error);
+                })
+                .finally(() => this.$emit('loading-complete'));
         },
 
         async getPoints (zoom, bbox, layers)
@@ -132,7 +128,7 @@ export default {
             })
                 .then(response =>
                 {
-                    console.log('get_global_points', response);
+                    console.log('get_map_points', response);
 
                     // Clear layer if prev layer is cluster.
                     if (this.prevZoom < CLUSTER_ZOOM_THRESHOLD)
@@ -170,7 +166,7 @@ export default {
                 })
                 .catch(error =>
                 {
-                    console.error('get_global_points', error);
+                    console.error('get_map_points', error);
                 });
         },
 
