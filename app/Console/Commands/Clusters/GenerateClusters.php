@@ -25,16 +25,6 @@ class GenerateClusters extends Command
     protected $description = 'Generate all clusters for all photos';
 
     /**
-     * Create a new command instance.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        parent::__construct();
-    }
-
-    /**
      * Generate Clusters for All Photos
      *
      * Todo - Load photos as geojson without looping over them and inserting into another array
@@ -84,7 +74,7 @@ class GenerateClusters extends Command
                 ]
             ];
 
-            array_push($features, $feature);
+            $features[] = $feature;
 
             $bar->advance();
         }

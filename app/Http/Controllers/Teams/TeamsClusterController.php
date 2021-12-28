@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Teams;
 
-use App\Models\Cluster;
 use App\Models\Photo;
+use App\Models\TeamCluster;
 use App\Traits\FilterClustersByGeohashTrait;
 
 use App\Http\Controllers\Controller;
@@ -89,8 +89,7 @@ class TeamsClusterController extends Controller
      */
     protected function getClusters($teamId)
     {
-        // TODO replace with teams clusters TeamCluster
-        $query = Cluster::query();
+        $query = TeamCluster::query()->whereTeamId($teamId);
 
         // If the zoom is 2,3,4,5 -> get all clusters for this zoom level
         if (request()->zoom <= 5) {

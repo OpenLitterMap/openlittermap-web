@@ -26,6 +26,7 @@ class Kernel extends ConsoleKernel
     {
         $schedule->command('sitemap:generate')->daily();
         $schedule->command('clusters:generate-all')->mondays();
+        $schedule->command('clusters:generate-team-clusters')->weeklyOn(Schedule::MONDAY, '0:20');
     }
 
     /**
