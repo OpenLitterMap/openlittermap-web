@@ -228,7 +228,6 @@ function getActiveLayers ()
 
 export default {
     name: 'Supercluster',
-    props: ['clustersUrl', 'pointsUrl'],
     components: {
         LiveEvents
     },
@@ -319,7 +318,7 @@ export default {
             {
                 createGlobalGroups();
 
-                await axios.get(this.clustersUrl, {
+                await axios.get('/global/clusters', {
                     params: {
                         zoom,
                         bbox
@@ -341,7 +340,7 @@ export default {
 
                 const layers = getActiveLayers();
 
-                await axios.get(this.pointsUrl, {
+                await axios.get('/global/points', {
                     params: {
                         zoom,
                         bbox,

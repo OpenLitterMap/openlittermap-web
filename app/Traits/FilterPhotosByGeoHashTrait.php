@@ -59,7 +59,7 @@ trait FilterPhotosByGeoHashTrait
     }
 
     /**
-     * Convert our photos object to a geojson array
+     * Convert our photos object into a geojson array
      *
      * @param $photos
      *

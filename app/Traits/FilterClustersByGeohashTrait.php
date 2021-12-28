@@ -46,6 +46,8 @@ trait FilterClustersByGeohashTrait
     }
 
     /**
+     * Converts the clusters into the format required by the map
+     *
      * @param Collection $clusters
      * @return array
      */

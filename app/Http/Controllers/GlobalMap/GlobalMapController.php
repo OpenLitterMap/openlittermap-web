@@ -15,12 +15,11 @@ class GlobalMapController extends Controller
     /**
      * Return the Art data for the global map
      *
-     * @param Request $request
      * @return array points
      */
-    public function artData(Request $request): array
+    public function artData(): array
     {
-        $query = Photo::query()
+        $photos = Photo::query()
             ->select(
                 'id',
                 'verified',
@@ -37,13 +36,10 @@ class GlobalMapController extends Controller
             ->where([
                 ['verified', '>=', 2],
                 ['art_id', '!=', null]
-            ]);
+            ])
+            ->get();
 
-        if ($request->team) {
-            $query->whereTeamId($request->team);
-        }
-
-        return $this->photosToGeojson($query->get());
+        return $this->photosToGeojson($photos);
     }
 
     /**

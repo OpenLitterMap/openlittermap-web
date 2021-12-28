@@ -191,7 +191,6 @@ Route::get('/teams/get-types', 'Teams\TeamsController@types');
 Route::get('/teams/data', 'Teams\TeamsDataController@index');
 Route::get('/teams/clusters/{team}', 'Teams\TeamsClusterController@clusters');
 Route::get('/teams/points/{team}', 'Teams\TeamsClusterController@points');
-Route::get('/teams/art-data/{team}', 'GlobalMap\GlobalMapController@artData');
 
 Route::get('/teams/members', 'Teams\TeamsController@members');
 Route::get('/teams/joined', 'Teams\TeamsController@joined');
