@@ -29,6 +29,7 @@ class GlobalMapController extends Controller
             'geohash',
             'lat',
             'lon',
+            'remaining',
             'datetime'
         )
         ->where([
@@ -86,7 +87,8 @@ class GlobalMapController extends Controller
                     'verified' => $photo->verified,
                     'name'     => $showName ? $photo->user->name : null,
                     'username' => $showUsername ? $photo->user->username : null,
-                    'team'     => $teamName ? $teamName : null
+                    'team'     => $teamName ? $teamName : null,
+                    'picked_up'=> $photo->picked_up
                 ]
             ];
 

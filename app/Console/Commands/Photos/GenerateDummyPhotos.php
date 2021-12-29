@@ -23,69 +23,70 @@ class GenerateDummyPhotos extends Command
      *
      * @var string
      */
-    protected $description = 'Generates Dummy photos in Ireland in Cork, you can add an argument of how many photos to generate by typing in a number after olm:photos:generate-dummy-photos.   e.g. php artisan olm:photos:generate-dummy-photos 1500';
-
-    /**
-     * Create a new command instance.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        parent::__construct();
-    }
+    protected $description = 'Generates Dummy photos in Ireland in Cork,' .
+    ' you can add an argument of how many photos to generate by typing in a number after' .
+    ' olm:photos:generate-dummy-photos. ' .
+    ' e.g. php artisan olm:photos:generate-dummy-photos 1500';
 
     /**
      * Execute the console command.
      *
      * @return mixed
      */
-    public function handle ()
+    public function handle()
     {
-        if(!(User::where('email', 'test@test.com')->first())) {
-            User::firstOrNew([
-                'name' => 'DummyUser',
-                'email' => 'test@test.com',
-                'password' => 'testing',
-                'username' => 'test',
-                'verified' => 1
-            ])->save();
-        }
+        $userId = User::whereEmail('admin@example.com')->first()->id;
 
-        $dummyId = User::where('email', 'test@test.com')->first()->id;
-        Country::firstOrCreate([
+        $ireland = Country::firstOrCreate([
             'country' => 'Ireland',
             'shortcode' => 'ie',
-            'created_by' => $dummyId,
+            'created_by' => $userId,
         ]);
 
-        $irelandId = Country::where('country', 'Ireland')->first()->id;
-        City::firstOrCreate([
+        $cork = City::firstOrCreate([
             'city' => 'Cork',
-            'country_id' => $irelandId,
-            'created_by' => $dummyId
+            'country_id' => $ireland->id,
+            'created_by' => $userId
         ]);
 
         State::firstOrCreate([
             'state' => 'County Cork',
-            'country_id' => $irelandId,
-            'created_by' => $dummyId
+            'country_id' => $ireland->id,
+            'created_by' => $userId
         ]);
-
-        $corkId = City::where('city', 'Cork')->first()->id;
-
 
         $photosToGen = $this->argument('photos');
 
-        for($i=0;$i<$photosToGen;$i++) {
-            $lat = rand(51.85391800*100000000, 51.92249800*100000000) / 100000000;
-            $lon = rand(-8.53209200*100000000, -8.36823900*100000000) / 100000000;
+        $photos = $this->generatePhotos($photosToGen, $userId, $ireland, $cork);
 
-            Photo::create([
+        $this->insertPhotos($photosToGen, $photos);
+    }
+
+    /**
+     * @param $photosToGen
+     * @param $userId
+     * @param $ireland
+     * @param $cork
+     * @return array
+     */
+    protected function generatePhotos($photosToGen, $userId, $ireland, $cork): array
+    {
+        $this->line('Generating photos...');
+
+        $bar = $this->output->createProgressBar($photosToGen);
+        $bar->setFormat('debug');
+        $bar->start();
+
+        $photos = [];
+        for ($i = 0; $i < $photosToGen; $i++) {
+            $lat = rand(51.85391800 * 100000000, 51.92249800 * 100000000) / 100000000;
+            $lon = rand(-8.53209200 * 100000000, -8.36823900 * 100000000) / 100000000;
+
+            $photos[] = [
                 'total_litter' => 5,
-                'user_id' => $dummyId,
-                'country_id' => $irelandId,
-                'city_id' => $corkId,
+                'user_id' => $userId,
+                'country_id' => $ireland->id,
+                'city_id' => $cork->id,
                 'lat' => $lat,
                 'lon' => $lon,
                 'model' => "iPhone 5",
@@ -95,7 +96,37 @@ class GenerateDummyPhotos extends Command
                 'verification' => 1,
                 'remaining' => 1,
                 'geohash' => \GeoHash::encode($lat, $lon),
-            ]);
+            ];
+
+            $bar->advance();
         }
+
+        $bar->finish();
+
+        return $photos;
+    }
+
+    /**
+     * @param $photosToGen
+     * @param array $photos
+     */
+    protected function insertPhotos($photosToGen, array $photos): void
+    {
+        $this->newLine();
+        $this->line('Inserting photos...');
+
+        $bar = $this->output->createProgressBar(ceil($photosToGen / 1000));
+        $bar->setFormat('debug');
+        $bar->start();
+
+        collect($photos)->chunk(1000)->each(function ($chunk) use ($bar) {
+            Photo::insert($chunk->toArray());
+            $bar->advance();
+        });
+
+        $bar->finish();
+
+        $this->newLine();
+        $this->line('Done!');
     }
 }

@@ -190,6 +190,7 @@ function onEachArtFeature (feature, layer)
                     feature.properties.filename,
                     null,
                     feature.properties.datetime,
+                    feature.properties.picked_up,
                     user,
                     feature.properties.team
                 )
@@ -402,6 +403,7 @@ export default {
                         feature.properties.filename,
                         feature.properties.result_string,
                         feature.properties.datetime,
+                        feature.properties.picked_up,
                         user,
                         feature.properties.team
                     )

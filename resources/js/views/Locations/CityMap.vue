@@ -333,6 +333,7 @@ export default {
                                     i.properties.filename,
                                     i.properties.result_string,
                                     i.properties.datetime,
+                                    i.properties.picked_up,
                                     mapHelper.formatUserName(name, username),
                                     i.properties.team
                                 ),

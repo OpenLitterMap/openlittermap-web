@@ -73,7 +73,7 @@ class ProfileController extends Controller
 //        else if (request()->period === 'all') $period = '2017-01-01 00:00:00'; // Year OLM began
 
         // Todo - Pre-cluster each users photos
-        $query = Photo::select('id', 'filename', 'datetime', 'lat', 'lon', 'model', 'result_string', 'created_at')
+        $query = Photo::select('id', 'filename', 'datetime', 'lat', 'lon', 'model', 'result_string', 'remaining', 'created_at')
             ->where([
                 ['user_id', auth()->user()->id],
                 'verified' => 2
@@ -109,7 +109,8 @@ class ProfileController extends Controller
                     'model' => $photo->model,
                     'datetime' => $photo->datetime,
                     'latlng' => [$photo->lat, $photo->lon],
-                    'text' => $photo->result_string
+                    'text' => $photo->result_string,
+                    'picked_up' => $photo->picked_up
                 ]
             ];
 

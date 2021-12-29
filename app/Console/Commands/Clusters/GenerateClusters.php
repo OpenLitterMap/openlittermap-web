@@ -38,24 +38,40 @@ class GenerateClusters extends Command
      * Generate Clusters for All Photos
      *
      * Todo - Load photos as geojson without looping over them and inserting into another array
-     * Todo - Chunk photos (ideally as geojson) without having to loop over a very large array (155k+)
-     * Todo - Append to file instead of re-writing it
-     * Todo - Split file into multiple files
      * Todo - Find a way to update clusters instead of deleting all and re-writing all every time..
      * Todo - Cluster data by "today", "one-week", "one-month", "one-year"
      * Todo - Cluster data by year, 2021, 2020...
      */
     public function handle()
     {
-        // 100,000 photos and growing...
-        // ->whereDate('created_at', '>', '2020-10-01 00:00:00') // for testing smaller amounts of data
-
-        // begin timer
         $start = microtime(true);
 
-        $photos = Photo::select('lat', 'lon')->get();
+        $this->generateFeatures();
+        $this->generateClusters();
 
-        echo "Number of photos: " . number_format(count($photos)) . "\n";
+        $finish = microtime(true);
+        $this->newLine();
+        $this->info("Total Time: " . ($finish - $start) . "\n");
+    }
+
+    /**
+     * Generates features.json
+     *
+     * This is a geojson file containing all the features we want to cluster.
+     *
+     * Currently, this is used to create 1 large file representing all our data
+     *
+     * We save this file to storage and use it to populate the clusters with a node script in the backend
+     */
+    protected function generateFeatures (): void
+    {
+        $this->info('Generating features...');
+
+        $progressBar = $this->output->createProgressBar(Photo::count());
+        $progressBar->setFormat('debug');
+        $progressBar->start();
+
+        $photos = Photo::select('lat', 'lon')->cursor();
 
         $features = [];
 
@@ -70,63 +86,62 @@ class GenerateClusters extends Command
             ];
 
             array_push($features, $feature);
+
+            $progressBar->advance();
         }
 
-        unset($photos); // free up memory
+        $progressBar->finish();
+
+        $this->info("\nFeatures finished...");
 
         $features = json_encode($features, JSON_NUMERIC_CHECK);
 
         Storage::put('/data/features.json', $features);
+    }
 
-        if (app()->environment() === 'local')
-        {
-            $prefix = config('app.root_dir');
-        }
-        else if (app()->environment() === 'staging')
-        {
-            $prefix = '/home/forge/olmdev.online';
-        }
-        else
-        {
-            $prefix = '/home/forge/openlittermap.com';
-        }
-
-        // delete all clusters?
-        // Or update existing ones?
-
+    /**
+     * Using the features.json file, we cluster our data at various zoom levels.
+     *
+     * First, we need to delete all clusters. Then we re-create them from scratch.
+     *
+     *
+     */
+    protected function generateClusters (): void
+    {
+        // Delete all clusters
         Cluster::truncate();
 
-        // Put "recompiling data" onto Global Map
+        // We want to create clusters for each of these zoom levels
+        $zoomLevels = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
 
-        $zoomLevels = [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16];
-
+        // For each zoom level, create clusters.
         foreach ($zoomLevels as $zoomLevel)
         {
-            echo "Zoom level " . $zoomLevel . " \n";
-            exec('node app/Node/supercluster-php ' . $prefix . ' ' . $zoomLevel);
+            $this->line("Zoom level: $zoomLevel");
 
-            $clusters = json_decode(Storage::get('/data/clusters.json'));
+            // Supercluster is awesome open-source javascript code from MapBox that we made executable on the backend with php
+            // This file uses features.json to create clusters.json for a specific zoom level.
+            exec('node app/Node/supercluster-php ' . config('app.root_dir') . ' ' . $zoomLevel);
 
-            foreach ($clusters as $cluster)
-            {
-                if (isset($cluster->properties))
-                {
-                    Cluster::create([
+            // We then use the clusters.json and save it to the clusters table
+            collect(json_decode(Storage::get('/data/clusters.json')))
+                ->filter(function ($cluster) {
+                    return isset($cluster->properties);
+                })
+                ->map(function ($cluster) use ($zoomLevel) {
+                    return [
                         'lat' => $cluster->geometry->coordinates[1],
                         'lon' => $cluster->geometry->coordinates[0],
                         'point_count' => $cluster->properties->point_count,
                         'point_count_abbreviated' => $cluster->properties->point_count_abbreviated,
                         'geohash' => \GeoHash::encode($cluster->geometry->coordinates[1], $cluster->geometry->coordinates[0]),
                         'zoom' => $zoomLevel
-                    ]);
-                }
-            }
+                    ];
+                })
+                ->chunk(1000)
+                ->each(function ($chunk) {
+                    Cluster::insert($chunk->toArray());
+                });
         }
-
-        // Remove "compiling data" from global map
-
-        // end timer
-        $finish = microtime(true);
-        echo "Total Time: " . ($finish - $start) . "\n";
     }
 }

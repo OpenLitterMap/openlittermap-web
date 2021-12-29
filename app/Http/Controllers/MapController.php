@@ -145,6 +145,7 @@ class MapController extends Controller
 				  'remaining' => $c["remaining"],
 			   'display_name' => $c["display_name"],
 			   'result_string' => $c["result_string"],
+			   'picked_up' => $c->picked_up,
 
 					// data
 					'smoking' => $c->smoking,
