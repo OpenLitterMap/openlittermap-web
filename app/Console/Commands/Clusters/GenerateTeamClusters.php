@@ -102,7 +102,7 @@ class GenerateTeamClusters extends Command
     {
         $this->info("Generating clusters for each zoom level...");
 
-        $rootDir = config('app.root_dir');
+        $rootDir = base_path();
         $zoomLevels = range(2, 16);
         $time = now();
 

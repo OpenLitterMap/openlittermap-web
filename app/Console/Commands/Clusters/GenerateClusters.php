@@ -99,7 +99,7 @@ class GenerateClusters extends Command
         foreach ($zoomLevels as $zoomLevel) {
             $this->line("Zoom level " . $zoomLevel);
 
-            exec('node app/Node/supercluster-php ' . config('app.root_dir') . ' ' . $zoomLevel);
+            exec('node app/Node/supercluster-php ' . base_path() . ' ' . $zoomLevel);
 
             collect(json_decode(Storage::get('/data/clusters.json')))
                 ->filter(function ($cluster) {

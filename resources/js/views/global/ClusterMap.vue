@@ -39,62 +39,89 @@ export default {
     },
     async mounted ()
     {
-        /** 1. Create map object */
-        this.map = L.map('map', {
-            center: [0, 0],
-            zoom: MIN_ZOOM,
-            scrollWheelZoom: false,
-            smoothWheelZoom: true,
-            smoothSensitivity: 1,
-        });
-
-        this.map.scrollWheelZoom = true;
-
-        const date = new Date();
-        const year = date.getFullYear();
-
-        /** 2. Add tiles, attribution, set limits */
-        const mapLink = '<a href="https://openstreetmap.org">OpenStreetMap</a>';
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: 'Map data &copy; ' + mapLink + ' & Contributors',
-            maxZoom: MAX_ZOOM,
-            minZoom: MIN_ZOOM
-        }).addTo(this.map);
-
-        this.map.attributionControl.addAttribution('Litter data &copy OpenLitterMap & Contributors ' + year + ' Clustering @ MapBox');
-
-        // Empty Layer Group that will receive the clusters data on the fly.
-        this.clusters = L.geoJSON(null, {
-            pointToLayer: this.createClusterIcon,
-            onEachFeature: this.onEachFeature,
-        }).addTo(this.map);
-
-        await this.getClusters(2, null);
-
-        this.map.on('moveend', this.update);
-        this.map.on('overlayadd', this.update);
-        this.map.on('overlayremove', this.update);
-
-        this.green_dot = L.icon({
-            iconUrl: './images/vendor/leaflet/dist/dot.png',
-            iconSize: [10, 10]
-        });
-
-        this.grey_dot = L.icon({
-            iconUrl: './images/vendor/leaflet/dist/grey-dot.jpg',
-            iconSize: [13, 10]
-        });
+        await this.setup();
     },
     watch: {
-        clustersUrl()
+        async clustersUrl ()
         {
-            this.map.setZoom(2);
+            // Cleaning is needed since this map
+            // doesn't clean up after itself properly xD
+            this.map.remove();
+            this.map = null;
+            this.prevZoom = MIN_ZOOM;
 
-            this.getClusters(2, null);
+            if (this.points?.remove) {
+                this.points.resetVertices();
+                this.points.remove();
+            }
+            this.clusters.clearLayers();
+
+            this.clusters = null;
+            this.points = null;
+            this.pointsLayerController = null;
+            this.pointsControllerShowing = false;
+
+            await this.setup();
         }
     },
     methods: {
+        async setup()
+        {
+            /** 1. Create map object */
+            this.map = L.map('map', {
+                center: [0, 0],
+                zoom: MIN_ZOOM,
+                scrollWheelZoom: false,
+                smoothWheelZoom: true,
+                smoothSensitivity: 1,
+            });
+
+            this.map.scrollWheelZoom = true;
+
+            const year = (new Date()).getFullYear();
+
+            /** 2. Add tiles, attribution, set limits */
+            const mapLink = '<a href="https://openstreetmap.org">OpenStreetMap</a>';
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: 'Map data &copy; ' + mapLink + ' & Contributors',
+                maxZoom: MAX_ZOOM,
+                minZoom: MIN_ZOOM
+            }).addTo(this.map);
+
+            this.map.attributionControl.addAttribution('Litter data &copy OpenLitterMap & Contributors ' + year + ' Clustering @ MapBox');
+
+            // Empty Layer Group that will receive the clusters data on the fly.
+            this.clusters = L.geoJSON(null, {
+                pointToLayer: this.createClusterIcon,
+                onEachFeature: this.onEachFeature,
+            }).addTo(this.map);
+
+            await this.getClusters(2, null);
+
+            this.map.on('moveend', this.update);
+            this.map.on('overlayadd', this.update);
+            this.map.on('overlayremove', this.update);
+
+            this.green_dot = L.icon({
+                iconUrl: './images/vendor/leaflet/dist/dot.png',
+                iconSize: [10, 10]
+            });
+
+            this.grey_dot = L.icon({
+                iconUrl: './images/vendor/leaflet/dist/grey-dot.jpg',
+                iconSize: [13, 10]
+            });
+        },
+
+        /**
+         * Makes a request to the given clusters endpoint
+         * and fills the clusters object
+         *
+         * @param zoom
+         * @param bbox
+         * @returns {Promise<void>}
+         */
         async getClusters (zoom, bbox)
         {
             await axios.get(this.clustersUrl, {
@@ -117,6 +144,14 @@ export default {
                 .finally(() => this.$emit('loading-complete'));
         },
 
+        /**
+         * Makes a request to the given points endpoint
+         * and fills the points object
+         *
+         * @param zoom
+         * @param bbox
+         * @param layers
+         */
         async getPoints (zoom, bbox, layers)
         {
             await axios.get(this.pointsUrl, {
@@ -188,13 +223,10 @@ export default {
 
             // We don't want to make a request at zoom level 2-5 if the user is just panning the map.
             // At these levels, we just load all global data for now
-            if (zoom === 2 && zoom === this.prevZoom) return;
-            if (zoom === 3 && zoom === this.prevZoom) return;
-            if (zoom === 4 && zoom === this.prevZoom) return;
-            if (zoom === 5 && zoom === this.prevZoom) return;
+            if (zoom === this.prevZoom && [2, 3, 4, 5].indexOf(zoom) >= 0) return;
 
             // Remove points when zooming out
-            if (this.points && this.points.length)
+            if (this.points?.remove)
             {
                 this.clusters.clearLayers();
                 this.points.remove();
