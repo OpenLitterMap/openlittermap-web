@@ -47,7 +47,7 @@ export const actions = {
         let bodyError = i18n.t('notifications.something-went-wrong');
 
         await axios.post('/teams/leave', {
-            teamId: payload
+            team_id: payload
         })
         .then(response => {
             console.log('leave_team', response);
@@ -114,7 +114,7 @@ export const actions = {
         await axios.post('/teams/create', {
             name: payload.name,
             identifier: payload.identifier,
-            teamType: payload.teamType
+            team_type: payload.teamType
         })
         .then(response => {
             console.log('create_new_team', response);
@@ -319,9 +319,6 @@ export const actions = {
         const title = i18n.t('notifications.success');
         const body = 'Congratulations! You have joined a new team!'; // todo - insert team name, translate
 
-        const failTitle = i18n.t('notifications.error');
-        const failBody = 'Sorry, we could not find a team with this identifier.' // todo - insert identifier, translate
-
         const alreadyJoinedbody = 'You have already joined this team!'; // todo - translate
 
         await axios.post('/teams/join', {
@@ -349,15 +346,6 @@ export const actions = {
                 Vue.$vToastify.info({
                     title: 'Hold on!',
                     body: alreadyJoinedbody,
-                    position: 'bottom-right'
-                });
-            }
-
-            else
-            {
-                Vue.$vToastify.error({
-                    title: failTitle,
-                    body: failBody,
                     position: 'bottom-right'
                 });
             }

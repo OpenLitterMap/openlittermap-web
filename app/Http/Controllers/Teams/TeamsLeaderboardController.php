@@ -2,24 +2,23 @@
 
 namespace App\Http\Controllers\Teams;
 
+use App\Actions\Teams\ListTeamLeaderboardsAction;
 use App\Http\Controllers\Controller;
 use App\Models\Teams\Team;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 
 class TeamsLeaderboardController extends Controller
 {
     /**
      * Load Teams ranked by total litter
-     * Todo - paginate this
      *
-     * @return \Illuminate\Database\Eloquent\Collection;
+     * @param ListTeamLeaderboardsAction $action
+     * @return Collection;
      */
-    public function index ()
+    public function index (ListTeamLeaderboardsAction $action)
     {
-        return Team::select('name', 'total_litter', 'total_images', 'created_at')
-            ->where('leaderboards', true)
-            ->orderBy('total_litter', 'desc')
-            ->get();
+        return $action->run();
     }
 
     /**

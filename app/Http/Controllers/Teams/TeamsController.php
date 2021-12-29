@@ -2,24 +2,27 @@
 
 namespace App\Http\Controllers\Teams;
 
+use App\Actions\Teams\CreateTeamAction;
+use App\Actions\Teams\JoinTeamAction;
+use App\Actions\Teams\LeaveTeamAction;
+use App\Actions\Teams\UpdateTeamAction;
 use App\Exports\CreateCSVExport;
+use App\Http\Requests\Teams\CreateTeamRequest;
+use App\Http\Requests\Teams\JoinTeamRequest;
+use App\Http\Requests\Teams\LeaveTeamRequest;
+use App\Http\Requests\Teams\UpdateTeamRequest;
 use App\Jobs\EmailUserExportCompleted;
 use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
 use App\Models\User\User;
-use App\Traits\FilterTeamMembersTrait;
-
-use App\Events\TeamCreated;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Validation\Rule;
 
 class TeamsController extends Controller
 {
-    use FilterTeamMembersTrait;
 
     /**
      * Change the users currently active team
@@ -70,35 +73,14 @@ class TeamsController extends Controller
      *
      * @return array
      */
-    public function create (Request $request)
+    public function create (CreateTeamRequest $request, CreateTeamAction $action)
     {
-        $request->validate([
-            'name' => 'required|min:3|max:100|unique:teams',
-            'identifier' => 'required|min:3|max:15|unique:teams',
-            'teamType' => 'required'
-        ]);
-
+        /** @var User $user */
         $user = Auth::user();
 
         if ($user->remaining_teams === 0) return ['success' => false, 'msg' => 'max-created'];
 
-        $team = Team::create([
-            'created_by' => $user->id,
-            'name' => $request->name,
-            'type_id' => $request->teamType,
-            'leader' => $user->id,
-            'identifier' => $request->identifier
-        ]);
-
-        // Broadcast live event to the global map
-        event (new TeamCreated($team->name));
-
-        // Have the user join this team
-        $user->teams()->attach($team);
-
-        $user->active_team = $team->id;
-        $user->remaining_teams--;
-        $user->save();
+        $team = $action->run($user, $request->all());
 
         return ['success' => true, 'team' => $team];
     }
@@ -106,25 +88,18 @@ class TeamsController extends Controller
     /**
      * The user wants to update a team
      *
+     * @param UpdateTeamRequest $request
+     * @param UpdateTeamAction $action
      * @param Team $team
-     * @param Request $request
      * @return array
      */
-    public function update (Team $team, Request $request)
+    public function update (UpdateTeamRequest $request, UpdateTeamAction $action, Team $team)
     {
-        $request->validate([
-            'name' => ['required', 'min:3', 'max:100', Rule::unique('teams')->ignore($team)],
-            'identifier' => ['required', 'min:3', 'max:15', Rule::unique('teams')->ignore($team)],
-        ]);
-
         if (auth()->id() != $team->leader) {
             abort(403, 'You are not the team leader!');
         }
 
-        $team->update([
-            'name' => $request->name,
-            'identifier' => $request->identifier
-        ]);
+       $team = $action->run($team, $request->all());
 
         return ['success' => true, 'team' => $team];
     }
@@ -163,25 +138,16 @@ class TeamsController extends Controller
     }
 
     /**
-     * The user wants to join a new team
+     * The user wants to join a team
      *
      * @return array
      */
-    public function join (Request $request)
+    public function join (JoinTeamRequest $request, JoinTeamAction $action)
     {
-        $request->validate([
-            'identifier' => 'required|min:3|max:100'
-        ]);
-
         /** @var User $user */
         $user = Auth::user();
-
+        /** @var Team $team */
         $team = Team::whereIdentifier($request->identifier)->first();
-
-        if (!$team)
-        {
-            return ['success' => false, 'msg' => 'not-found'];
-        }
 
         // Check the user is not already in the team
         if ($user->teams()->whereTeamId($team->id)->exists())
@@ -189,27 +155,41 @@ class TeamsController extends Controller
             return ['success' => false, 'msg' => 'already-joined'];
         }
 
-        // Have the user join this team and restore their contributions
-        $userPhotosOnThisTeam = $user->photos()->whereTeamId($team->id);
-
-        $user->teams()->attach($team, [
-            'total_photos' => $userPhotosOnThisTeam->count(),
-            'total_litter' => $userPhotosOnThisTeam->sum('total_litter')
-        ]);
-
-        if (is_null($user->active_team))
-        {
-            $user->active_team = $team->id;
-            $user->save();
-        }
-
-        $team->members++;
-        $team->save();
+       $action->run($user, $team);
 
         return [
             'success' => true,
-            'team' => $team,
-            'activeTeam' => $user->team()->first()
+            'team' => $team->fresh(),
+            'activeTeam' => $user->fresh()->team()->first()
+        ];
+    }
+
+    /**
+     * The user wants to leave a team
+     *
+     * @return array
+     */
+    public function leave (LeaveTeamRequest $request, LeaveTeamAction $action)
+    {
+        /** @var User $user */
+        $user = auth()->user();
+        /** @var Team $team */
+        $team = Team::find($request->team_id);
+
+        if (!$user->teams()->whereTeamId($request->team_id)->exists()) {
+            abort(403, 'You are not part of this team!');
+        }
+
+        if ($team->users()->count() <= 1) {
+            abort(403, 'You are the only member of this team!');
+        }
+
+        $action->run($user, $team);
+
+        return [
+            'success' => true,
+            'team' => $team->fresh(),
+            'activeTeam' => $user->fresh()->team()->first()
         ];
     }
 
@@ -231,11 +211,11 @@ class TeamsController extends Controller
      */
     public function members ()
     {
-        $query = $this->filterTeamMembers(request()->team_id);
+        $team = Team::query()->find(request()->team_id);
 
-        $total_members = $query->users->count(); // members?
+        $total_members = $team->users->count(); // members?
 
-        $result = $query->users()
+        $result = $team->users()
             ->withPivot('total_photos', 'total_litter', 'updated_at', 'show_name_leaderboards', 'show_username_leaderboards')
             ->orderBy('pivot_total_litter', 'desc')
             ->simplePaginate(10, [

@@ -90,3 +90,14 @@ Route::post('/settings/update', 'ApiSettingsController@update')
 
 Route::post('/settings/privacy/toggle-previous-tags', 'ApiSettingsController@togglePreviousTags')
     ->middleware('auth:api');
+
+// Teams
+Route::prefix('/teams')->group(function () {
+    Route::get('/list', 'API\TeamsController@list');
+    Route::post('/create', 'API\TeamsController@create');
+    Route::patch('/update/{team}', 'API\TeamsController@update');
+    Route::post('/join', 'API\TeamsController@join');
+    Route::post('/leave', 'API\TeamsController@leave');
+    Route::get('/types', 'API\TeamsController@types');
+    Route::get('/leaderboard', 'Teams\TeamsLeaderboardController@index');
+});

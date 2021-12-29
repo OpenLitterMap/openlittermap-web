@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Teams;
+namespace Tests\Feature\Api\Teams;
 
 use App\Models\Teams\Team;
 use App\Models\User\User;
@@ -29,16 +29,16 @@ class JoinTeamTest extends TestCase
         /** @var Team $team */
         $team = Team::factory()->create(['members' => 0]);
 
-        $this->actingAs($user);
+        $this->actingAs($user, 'api');
 
         $this->assertEquals(0, $team->fresh()->members);
 
-        $response = $this->postJson('/teams/join', [
+        $response = $this->postJson('/api/teams/join', [
             'identifier' => $team->identifier,
         ]);
 
         $response->assertOk();
-        $response->assertJsonStructure(['success', 'team', 'activeTeam']);
+        $response->assertJsonStructure(['team', 'activeTeam']);
 
         $teamPivot = $user->teams()->first();
         $this->assertNotNull($teamPivot);
@@ -54,19 +54,18 @@ class JoinTeamTest extends TestCase
         /** @var Team $team */
         $team = Team::factory()->create(['members' => 0]);
 
-        $this->actingAs($user);
+        $this->actingAs($user, 'api');
 
-        $this->postJson('/teams/join', [
+        $this->postJson('/api/teams/join', [
             'identifier' => $team->identifier,
         ]);
 
-        $response = $this->postJson('/teams/join', [
+        $response = $this->postJson('/api/teams/join', [
             'identifier' => $team->identifier,
         ]);
 
-        $response->assertOk()->assertJson([
-            'success' => false, 'msg' => 'already-joined'
-        ]);
+        $response->assertForbidden();
+
         $this->assertEquals(1, $team->fresh()->members);
     }
 
@@ -77,9 +76,9 @@ class JoinTeamTest extends TestCase
         /** @var Team $team */
         $team = Team::factory()->create();
 
-        $this->actingAs($user);
+        $this->actingAs($user, 'api');
 
-        $this->postJson('/teams/join', [
+        $this->postJson('/api/teams/join', [
             'identifier' => $team->identifier,
         ]);
 
@@ -93,13 +92,13 @@ class JoinTeamTest extends TestCase
         $team = Team::factory()->create();
         $otherTeam = Team::factory()->create();
 
-        $this->actingAs($user);
+        $this->actingAs($user, 'api');
 
-        $this->postJson('/teams/join', [
+        $this->postJson('/api/teams/join', [
             'identifier' => $team->identifier,
         ]);
 
-        $this->postJson('/teams/join', [
+        $this->postJson('/api/teams/join', [
             'identifier' => $otherTeam->identifier,
         ]);
 
@@ -113,13 +112,13 @@ class JoinTeamTest extends TestCase
         /** @var Team $team */
         $team = Team::factory()->create();
 
-        $this->actingAs($user);
+        $this->actingAs($user, 'api');
 
-        $this->postJson('/teams/join', ['identifier' => ''])
+        $this->postJson('/api/teams/join', ['identifier' => ''])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['identifier']);
 
-        $this->postJson('/teams/join', ['identifier' => 'sdfgsdfgsdfg'])
+        $this->postJson('/api/teams/join', ['identifier' => 'sdfgsdfgsdfg'])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['identifier']);
     }
@@ -177,7 +176,8 @@ class JoinTeamTest extends TestCase
         $this->assertNull($user->teams()->first());
 
         // And they join back --------------------------
-        $this->postJson('/teams/join', [
+        $this->actingAs($user, 'api');
+        $this->postJson('/api/teams/join', [
             'identifier' => $team->identifier,
         ]);
 

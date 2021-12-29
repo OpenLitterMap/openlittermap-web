@@ -24,7 +24,7 @@ class TeamTypeFactory extends Factory
         return [
             'team' => $this->faker->name,
             'price' => $this->faker->randomDigit,
-            'description' => $this->faker->paragraph
+            'description' => $this->faker->word
         ];
     }
 }
