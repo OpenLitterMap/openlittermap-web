@@ -38,9 +38,6 @@ class GenerateClusters extends Command
      * Generate Clusters for All Photos
      *
      * Todo - Load photos as geojson without looping over them and inserting into another array
-     * Todo - Chunk photos (ideally as geojson) without having to loop over a very large array (155k+)
-     * Todo - Append to file instead of re-writing it
-     * Todo - Split file into multiple files
      * Todo - Find a way to update clusters instead of deleting all and re-writing all every time..
      * Todo - Cluster data by "today", "one-week", "one-month", "one-year"
      * Todo - Cluster data by year, 2021, 2020...
@@ -59,23 +56,27 @@ class GenerateClusters extends Command
 
     /**
      * Generates features.json
+     *
+     * This is a geojson file containing all the features we want to cluster.
+     *
+     * Currently, this is used to create 1 large file representing all our data
+     *
+     * We save this file to storage and use it to populate the clusters with a node script in the backend
      */
-    protected function generateFeatures(): void
+    protected function generateFeatures (): void
     {
-        // 100,000 photos and growing...
-        // ->whereDate('created_at', '>', '2020-10-01 00:00:00') // for testing smaller amounts of data
-
         $this->info('Generating features...');
 
-        $bar = $this->output->createProgressBar(Photo::count());
-        $bar->setFormat('debug');
-        $bar->start();
+        $progressBar = $this->output->createProgressBar(Photo::count());
+        $progressBar->setFormat('debug');
+        $progressBar->start();
 
         $photos = Photo::select('lat', 'lon')->cursor();
 
         $features = [];
 
-        foreach ($photos as $photo) {
+        foreach ($photos as $photo)
+        {
             $feature = [
                 'type' => 'Feature',
                 'geometry' => [
@@ -86,10 +87,10 @@ class GenerateClusters extends Command
 
             array_push($features, $feature);
 
-            $bar->advance();
+            $progressBar->advance();
         }
 
-        $bar->finish();
+        $progressBar->finish();
 
         $this->info("\nFeatures finished...");
 
@@ -98,19 +99,31 @@ class GenerateClusters extends Command
         Storage::put('/data/features.json', $features);
     }
 
-    protected function generateClusters(): void
+    /**
+     * Using the features.json file, we cluster our data at various zoom levels.
+     *
+     * First, we need to delete all clusters. Then we re-create them from scratch.
+     *
+     *
+     */
+    protected function generateClusters (): void
     {
-        // delete all clusters?
-        // Or update existing ones?
+        // Delete all clusters
         Cluster::truncate();
 
+        // We want to create clusters for each of these zoom levels
         $zoomLevels = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
 
-        foreach ($zoomLevels as $zoomLevel) {
-            $this->line("Zoom level " . $zoomLevel);
+        // For each zoom level, create clusters.
+        foreach ($zoomLevels as $zoomLevel)
+        {
+            $this->line("Zoom level: $zoomLevel");
 
+            // Supercluster is awesome open-source javascript code from MapBox that we made executable on the backend with php
+            // This file uses features.json to create clusters.json for a specific zoom level.
             exec('node app/Node/supercluster-php ' . config('app.root_dir') . ' ' . $zoomLevel);
 
+            // We then use the clusters.json and save it to the clusters table
             collect(json_decode(Storage::get('/data/clusters.json')))
                 ->filter(function ($cluster) {
                     return isset($cluster->properties);
