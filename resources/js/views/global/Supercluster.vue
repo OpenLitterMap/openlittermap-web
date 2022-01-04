@@ -484,10 +484,4 @@ export default {
         pointer-events: visiblePainted !important;
     }
 
-    .share-map-control {
-        background: #fff;
-        padding: 4px 8px;
-        cursor: pointer !important;
-    }
-
 </style>
