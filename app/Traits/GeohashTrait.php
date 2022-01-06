@@ -86,8 +86,6 @@ trait GeohashTrait
      */
     public function neighbors ($srcHash)
     {
-        $geohashPrefix = substr($srcHash, 0, strlen($srcHash) - 1);
-
         $neighbors['top'] = $this->calculateAdjacent($srcHash, 'top');
         $neighbors['bottom'] = $this->calculateAdjacent($srcHash, 'bottom');
         $neighbors['right'] = $this->calculateAdjacent($srcHash, 'right');

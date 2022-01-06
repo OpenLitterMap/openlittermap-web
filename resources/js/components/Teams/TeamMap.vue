@@ -1,109 +1,69 @@
 <template>
     <div class="team-map-container">
-        <fullscreen ref="fullscreen" @change="fullscreenChange" class="profile-map-container">
+        <loading v-if="loading && teamId > 0" :active.sync="loading" :is-full-page="false"/>
 
+        <fullscreen
+            v-if="teamId > 0"
+            ref="fullscreen"
+            @change="fullscreenChange"
+            class="profile-map-container"
+        >
             <button class="btn-map-fullscreen" @click="toggle">
                 <i class="fa fa-expand"/>
             </button>
-
-            <l-map :zoom="zoom" :center="center" :minZoom="1">
-                <l-tile-layer :url="url" :attribution="attribution"/>
-                <v-marker-cluster v-if="geojson.length">
-                    <l-marker v-for="i in geojson" :lat-lng="i.properties.latlng" :key="i.properties.id">
-                        <l-popup :content="content(i)" :options="options"/>
-                    </l-marker>
-                </v-marker-cluster>
-            </l-map>
+            <cluster-map
+                :clusters-url="`/teams/clusters/${teamId}`"
+                :points-url="`/teams/points/${teamId}`"
+                @loading-complete="loading = false"
+            />
         </fullscreen>
     </div>
 </template>
 
 <script>
-import { LMap, LTileLayer, LMarker, LPopup } from 'vue2-leaflet';
-import Vue2LeafletMarkerCluster from 'vue2-leaflet-markercluster';
-import {mapHelper} from '../../maps/mapHelpers';
+import Loading from 'vue-loading-overlay';
+import 'vue-loading-overlay/dist/vue-loading.css';
+import ClusterMap from '../../views/global/ClusterMap';
 
 export default {
     name: 'TeamMap',
+    props: ['teamId'],
     components: {
-        LMap,
-        LTileLayer,
-        LMarker,
-        LPopup,
-        'v-marker-cluster': Vue2LeafletMarkerCluster
+        Loading,
+        ClusterMap
     },
-    created ()
-    {
-        this.attribution += new Date().getFullYear();
-    },
-    data ()
-    {
+    data() {
         return {
-            zoom: 2,
-            center: L.latLng(0,0),
-            url:'https://{s}.tile.osm.org/{z}/{x}/{y}.png',
-            attribution:'Map Data &copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors, Litter data &copy OpenLitterMap & Contributors ',
-            loading: true,
-            fullscreen: false,
-            options: mapHelper.popupOptions
-        };
+            loading: true
+        }
     },
-    computed: {
-
-        /**
-         * From backend api request
-         */
-        geojson ()
+    watch: {
+        teamId (id)
         {
-            return this.$store.state.teams.geojson
-                ? this.$store.state.teams.geojson.features
-                : [];
+            if (id > 0) this.loading = true;
         }
     },
     methods: {
-
-        /**
-         * Return html content for each popup
-         *
-         * Translate tags
-         *
-         * Format datetime (time image was taken)
-         */
-        content (feature)
-        {
-            return mapHelper.getMapImagePopupContent(
-                feature.properties.img,
-                feature.properties.text,
-                feature.properties.datetime,
-                feature.properties.picked_up,
-                '',
-                ''
-            );
-        },
-
         fullscreenChange (fullscreen)
         {
-            this.fullscreen = fullscreen
+            this.fullscreen = fullscreen;
         },
 
         toggle ()
         {
-            this.$refs['fullscreen'].toggle()
+            this.$refs['fullscreen'].toggle();
         },
     }
 };
 </script>
 
-<style lang="scss">
-    @import "~leaflet.markercluster/dist/MarkerCluster.css";
-    @import "~leaflet.markercluster/dist/MarkerCluster.Default.css";
-
+<style lang="scss" scoped>
     @import '../../styles/variables.scss';
 
     .btn-map-fullscreen {
         position: absolute;
-        top: 1em;
-        right: 1em;
+        top: 80px;
+        left: 12px;
         z-index: 1234;
     }
 
@@ -115,23 +75,16 @@ export default {
         padding-top: 1em;
     }
 
-    @include media-breakpoint-down (lg)
-    {
+    @include media-breakpoint-down(lg) {
         .team-map-container {
             height: 500px;
         }
     }
 
-    @include media-breakpoint-down (sm)
-    {
+    @include media-breakpoint-down(sm) {
         .team-map-container {
             margin-left: -3em;
             margin-right: -3em;
-        }
-
-        .temp-info {
-            text-align: center;
-            margin-top: 1em;
         }
     }
 </style>
