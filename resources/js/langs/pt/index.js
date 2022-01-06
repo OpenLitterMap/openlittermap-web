@@ -14,7 +14,7 @@ import tags from './tags.json';
 import { teams } from './teams/index';
 import upload from './upload.json';
 
-export const en = {
+export const pt = {
     auth,
     common,
     creditcard,
