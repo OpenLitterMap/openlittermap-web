@@ -25,7 +25,8 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('sitemap:generate')->daily();
-        $schedule->command('clusters:generate-all')->mondays();
+        $schedule->command('clusters:generate-all')->daily();
+        $schedule->command('clusters:generate-team-clusters')->dailyAt('0:10');
     }
 
     /**

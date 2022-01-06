@@ -93,11 +93,11 @@ Route::post('/settings/privacy/toggle-previous-tags', 'ApiSettingsController@tog
 
 // Teams
 Route::prefix('/teams')->group(function () {
+    Route::get('/leaderboard', 'Teams\TeamsLeaderboardController@index');
     Route::get('/list', 'API\TeamsController@list');
-    Route::post('/create', 'API\TeamsController@create');
+    Route::get('/types', 'API\TeamsController@types');
     Route::patch('/update/{team}', 'API\TeamsController@update');
+    Route::post('/create', 'API\TeamsController@create');
     Route::post('/join', 'API\TeamsController@join');
     Route::post('/leave', 'API\TeamsController@leave');
-    Route::get('/types', 'API\TeamsController@types');
-    Route::get('/leaderboard', 'Teams\TeamsLeaderboardController@index');
 });

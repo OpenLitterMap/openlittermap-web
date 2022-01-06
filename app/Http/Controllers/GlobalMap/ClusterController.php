@@ -6,7 +6,8 @@ use App\Models\Cluster;
 use App\Traits\FilterClustersByGeohashTrait;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 
 class ClusterController extends Controller
 {
@@ -17,50 +18,32 @@ class ClusterController extends Controller
      *
      * @return array
      */
-    public function index ()
+    public function index(): array
     {
-        // If the zoom is greater than 5, we want to filter clusters by geohash
-        if (request()->zoom > 5)
-        {
-            $clusters = $this->filterClustersByGeoHash(request()->zoom, request()->bbox)->get();
-        }
-        else
-        {
-            // If the zoom is 2,3,4 -> get all clusters for this zoom level
-            $clusters = Cluster::where([
-                'zoom' => request()->zoom
-            ])->get();
-        }
+        $clusters = $this->getClusters();
 
-        // We need to return geojson object to the frontend
-        $geojson = [
-            'type'      => 'FeatureCollection',
-            'features'  => null
+        $features = $this->getFeatures($clusters);
+
+        return [
+            'type' => 'FeatureCollection',
+            'features' => $features
         ];
+    }
 
-        $features = [];
-
-        // Loop over all clusters and add each feature to the features array
-        foreach ($clusters as $cluster)
-        {
-            $feature = [
-                'type' => 'Feature',
-                'geometry' => [
-                    'type' => 'Point',
-                    'coordinates' => [$cluster->lon, $cluster->lat]
-                ],
-                'properties' => [
-                    'point_count' => $cluster->point_count,
-                    'point_count_abbreviated' => $cluster->point_count_abbreviated,
-                    'cluster' => true
-                ]
-            ];
-
-            array_push($features, $feature);
+    /**
+     * @return Builder[]|Collection
+     */
+    protected function getClusters()
+    {
+        // If the zoom is 2,3,4,5 -> get all clusters for this zoom level
+        if (request()->zoom <= 5) {
+            return Cluster::where(['zoom' => request()->zoom])->get();
         }
 
-        $geojson['features'] = $features;
-
-        return $geojson;
+        return $this->filterClustersByGeoHash(
+            Cluster::query(),
+            request()->zoom,
+            request()->bbox
+        )->get();
     }
 }

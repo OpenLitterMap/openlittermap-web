@@ -38,42 +38,10 @@ class TeamsDataController extends Controller
             ->where('verified', 2)
             ->sum('total_litter');
 
-        $geojson = [
-            'type' => 'FeatureCollection',
-            'features' => []
-        ];
-
-        $photos = $query->get();
-
-        // Populate geojson object
-        foreach ($photos as $photo)
-        {
-            $feature = [
-                'type' => 'Feature',
-                'geometry' => [
-                    'type' => 'Point',
-                    'coordinates' => [$photo->lon, $photo->lat]
-                ],
-
-                'properties' => [
-                    'photo_id' => $photo->id,
-                    'img' => $photo->filename,
-                    'model' => $photo->model,
-                    'datetime' => $photo->datetime,
-                    'latlng' => [$photo->lat, $photo->lon],
-                    'text' => $photo->result_string,
-                    'picked_up'=> $photo->picked_up
-                ]
-            ];
-
-            array_push($geojson["features"], $feature);
-        }
-
         return [
             'photos_count' => $photosCount,
             'litter_count' => $litterCount,
-            'members_count' => $membersCount,
-            'geojson' => $geojson
+            'members_count' => $membersCount
         ];
     }
 

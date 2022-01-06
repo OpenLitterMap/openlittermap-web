@@ -264,6 +264,7 @@ export default {
             onEachFeature: onEachFeature,
         }).addTo(map);
 
+        // TODO refactor this out
         clusters.addData(this.$store.state.globalmap.geojson.features);
 
         litterArtPoints = L.geoJSON(null, {
@@ -271,6 +272,7 @@ export default {
             onEachFeature: onEachArtFeature
         });
 
+        // TODO refactor this out too
         litterArtPoints.addData(this.$store.state.globalmap.artData.features);
 
         map.on('moveend', this.update);
