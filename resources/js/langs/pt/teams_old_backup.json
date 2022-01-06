@@ -1,0 +1,33 @@
+{
+    "title": "Welcome to OpenLitterMap Teams!",
+    "created": "Congratulations! Your new team has been created.",
+    "times": {
+        "today": "Today",
+        "week": "This week",
+        "month": "This month",
+        "year": "This year",
+        "all": "All time",
+        "created_at": "Uploaded at",
+        "datetime": "Taken at"
+    },
+    "create": {
+        "fail": "There was an error creating your Team",
+        "max-created": "You are not allowed to create any more teams."
+    },
+    "settings": {
+        "maps": {
+            "team-map": "Team Map",
+            "name-will-appear": "Your name will appear on the maps",
+            "username-will-appear": "Your username will appear on the maps",
+            "will-not-appear": "Your name and username will not appear on the maps"
+        },
+        "leaderboards": {
+            "team-leaderboard": "Team Leaderboard",
+            "name-will-appear": "Your name will appear on the leaderboards",
+            "username-will-appear": "Your username will appear on the leaderboards",
+            "will-not-appear": "Your name and username will not appear on the leaderboards"
+        },
+        "submit-one-team": "Save for this Team",
+        "apply-all-teams": "Apply for all Teams"
+    }
+}
