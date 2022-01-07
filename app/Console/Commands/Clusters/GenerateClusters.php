@@ -31,7 +31,7 @@ class GenerateClusters extends Command
     {
         $start = microtime(true);
 
-        $years = array_merge([null], range(2018, now()->year));
+        $years = array_merge([null], range(2017, now()->year));
 
         foreach ($years as $year) {
             $this->line("\nYear: " . ($year ?: 'All Time'));
