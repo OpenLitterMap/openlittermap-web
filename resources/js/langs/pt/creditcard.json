@@ -1,13 +1,13 @@
 {
-    "card-number": "Card Number",
-    "card-holder": "Card Holder's Name",
-    "exp": "Expiration Date",
+    "card-number": "Números de cartão",
+    "card-holder": "Nome do titular do cartão",
+    "exp": "Data de validade",
     "cvv": "CVV",
     "placeholders": {
-        "card-number": "Your 16 digit card number",
-        "card-holder": "Card holder's name",
-        "exp-month": "Month",
-        "exp-year": "Year",
+        "card-number": "O número do seu cartão de 16 dígitos",
+        "card-holder": "Nome do titular do cartão",
+        "exp-month": "Mês",
+        "exp-year": "Ano",
         "cvv": "***"
     }
 }
