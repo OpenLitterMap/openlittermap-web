@@ -47,4 +47,31 @@ class UploadPhotoOnProductionTest extends TestCase
         $response->assertStatus(500);
         $response->assertSee('Server Error');
     }
+
+    public function test_it_does_not_allow_uploading_photos_more_than_once_in_the_mobile_app()
+    {
+        Carbon::setTestNow();
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user, 'api');
+
+        Photo::factory()->create([
+            'user_id' => $user->id,
+            'datetime' => now()
+        ]);
+
+        app()->detectEnvironment(function () {
+            return 'production';
+        });
+
+        $imageAttributes = $this->getImageAndAttributes();
+
+        $response = $this->post('/api/photos/submit',
+            $this->getApiImageAttributes($imageAttributes)
+        );
+
+        $response->assertStatus(500);
+        $response->assertSee("You have already uploaded this file!");
+    }
 }
