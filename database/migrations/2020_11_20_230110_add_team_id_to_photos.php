@@ -27,6 +27,7 @@ class AddTeamIdToPhotos extends Migration
     public function down()
     {
         Schema::table('photos', function (Blueprint $table) {
+            $table->dropForeign('photos_team_id_foreign');
             $table->dropColumn('team_id');
         });
     }
