@@ -1,8 +1,8 @@
 {
-    "show-flag": "Show Country Flag",
-    "top-10": "Top 10 Global OpenLitterMap Leaders only!",
-    "top-10-challenge": "If you can make the top 10, you can represent your country!",
-    "action-select": "Type or scroll to select from the list",
-    "select-country": "Select your country",
-    "save-flag": "Save Flag"
+    "show-flag": "Mostrar Bandeira do País",
+    "top-10": "Apenas os 10 principais líderes globais do OpenLitterMap!",
+    "top-10-challenge": "Se você pode fazer o top 10, você pode representar seu país!",
+    "action-select": "Digite ou role para selecionar na lista",
+    "select-country": "Escolha o seu país",
+    "save-flag": "Salvar Bandeira"
 }
