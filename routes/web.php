@@ -7,13 +7,6 @@ Route::get('/about', 'HomeController@index');
 Route::get('/world', 'HomeController@index');
 Route::get('/references', 'HomeController@index');
 
-//Route::get('test', function () {
-//
-//    $user = \App\Models\User\User::first();
-//
-//    return view('emails.update24', compact('user'));
-//});
-
 // Registration
 Route::get('/signup', 'HomeController@index');
 
@@ -73,6 +66,10 @@ Route::group(['middleware' => 'fw-block-blacklisted'], function () {
 Route::get('donate', 'HomeController@index');
 Route::get('donate/amounts', 'DonateController@index');
 Route::post('donate', 'DonateController@submit');
+
+// Contact page
+Route::get('/contact-us', 'HomeController@index');
+Route::post('/contact-us', 'ContactUsController')->name('contact');
 
 // Get data for the Global Map
 Route::get('global', 'HomeController@index');
@@ -193,18 +190,23 @@ Route::post('/settings/social-media/update', 'User\Settings\SocialMediaControlle
 Route::get('/teams', 'HomeController@index');
 Route::get('/teams/get-types', 'Teams\TeamsController@types');
 Route::get('/teams/data', 'Teams\TeamsDataController@index');
+Route::get('/teams/clusters/{team}', 'Teams\TeamsClusterController@clusters');
+Route::get('/teams/points/{team}', 'Teams\TeamsClusterController@points');
 
 Route::get('/teams/members', 'Teams\TeamsController@members');
 Route::get('/teams/joined', 'Teams\TeamsController@joined');
 // Route::get('/teams/map-data', 'Teams\TeamsMapController@index');
 Route::get('/teams/leaderboard', 'Teams\TeamsLeaderboardController@index');
 
-Route::post('/teams/create', 'Teams\TeamsController@create');
-Route::post('/teams/join', 'Teams\TeamsController@join');
-Route::post('/teams/active', 'Teams\TeamsController@active');
-Route::post('/teams/settings', 'Teams\TeamsSettingsController@index');
+Route::post('/teams/create', 'Teams\TeamsController@create')->middleware('auth');
+Route::post('/teams/update/{team}', 'Teams\TeamsController@update')->middleware('auth');
+Route::post('/teams/join', 'Teams\TeamsController@join')->middleware('auth');
+Route::post('/teams/leave', 'Teams\TeamsController@leave')->middleware('auth');
+Route::post('/teams/active', 'Teams\TeamsController@active')->middleware('auth');
+Route::post('/teams/inactivate', 'Teams\TeamsController@inactivateTeam')->middleware('auth');
+Route::post('/teams/settings', 'Teams\TeamsSettingsController@index')->middleware('auth');
 Route::post('/teams/download', 'Teams\TeamsController@download');
-Route::post('/teams/leaderboard/visibility', 'Teams\TeamsLeaderboardController@toggle');
+Route::post('/teams/leaderboard/visibility', 'Teams\TeamsLeaderboardController@toggle')->middleware('auth');
 
 // Unsubscribe via email (user not authenticated)
 Route::get('/emails/unsubscribe/{token}', 'EmailSubController@unsubEmail');
@@ -224,15 +226,21 @@ Route::get('register/confirm/{token}', 'Auth\RegisterController@confirmEmail');
 //     $user = \App\Models\User\User::first();
 //     return view('auth.emails.confirm', ['user' => $user]);
 //  });
-Route::get('confirm/email/{token}', 'Auth\RegisterController@confirmEmail');
-
-// Route::get('confirm/email/{token}', 'Auth\RegisterController@confirmEmail');
+Route::get('confirm/email/{token}', 'Auth\RegisterController@confirmEmail')
+    ->name('confirm-email-token');
 
 // Logout
 Route::get('logout', 'UsersController@logout');
 
 // Register, Login
 Auth::routes();
+// Overwriting these auth blade views with Vue components
+Route::get('/password/reset', 'HomeController@index')
+    ->middleware('guest');
+Route::get('/password/reset/{token}', 'HomeController@index')
+    ->name('password.reset')
+    ->middleware('guest');
+
 
 /** PAYMENTS */
 Route::get('/join/{plan?}', 'HomeController@index');

@@ -127,7 +127,14 @@
                                     <table width="100%" border="0" cellspacing="0" cellpadding="0">
                                         <tr>
                                             <td align="center" class="padding">
-                                                <a href="http://www.openlittermap.com" target="_blank"><img src="https://openlittermap.com/assets/OLM_Logo.jpg" width="500" height="300" border="0" alt="Global Map Showing OpenLitterMap Data" style="display: block; padding: 0; color: #266e9c; text-decoration: none; font-family: Helvetica, arial, sans-serif; font-size: 16px;" class="img-max"></a>
+                                                <a href="http://www.openlittermap.com" target="_blank">
+                                                    <img src="https://openlittermap.com/assets/OLM_Logo.jpg"
+                                                         width="500"
+                                                         border="0"
+                                                         alt="Global Map Showing OpenLitterMap Data"
+                                                         style="display: block; padding: 0; color: #266e9c; text-decoration: none; font-family: Helvetica, arial, sans-serif; font-size: 16px;"
+                                                         class="img-max">
+                                                </a>
                                             </td>
                                         </tr>
                                         <tr>
@@ -141,6 +148,12 @@
                                                         <td align="center" style="font-size: 18px; font-family: Helvetica, Arial, sans-serif; color: #266e9c; padding-top: 15px;" class="padding-copy">Verify your email below to get started</td>
                                                     </tr>
                                                 </table>
+
+                                                <div align="center" style="border-radius: 3px;margin-top: 50px;background-color: #2ecc71">
+                                                    <a href="{{ route('confirm-email-token', $user->token) }}" target="_blank" style="font-size: 16px; font-family: Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; color: #000000; text-decoration: none; border-radius: 3px; padding: 15px 25px; display: inline-block;" class="mobile-button">
+                                                        Verify Your Email Address and Log In &rarr;
+                                                    </a>
+                                                </div>
                                             </td>
                                         </tr>
                                     </table>
@@ -163,13 +176,13 @@
                                     <table width="100%" border="0" cellspacing="0" cellpadding="0">
                                         <tr>
                                             <td align="center" style="font-size: 24px; font-family: Helvetica, Arial, sans-serif; color: #333; padding-bottom: 25px;" class="padding-copy">
-                                                <p style="padding-bottom: 0px !important; margin-bottom: 0px !important;">{{ $user->name }} ({{'@' . $user->username}}),</p>
+                                                <p style="padding-bottom: 0px !important; margin-bottom: 0px !important;">{{'@' . $user->username}}</p>
                                                 <br/>
-                                                <span>You Can Make a Difference</span>
+                                                <span>Ready to make a difference?</span>
                                             </td>
                                         </tr>
                                     </table>
-                                    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:500;">
+                                    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:500px;margin-top: 16px;">
                                         <tr>
                                             <td align="center" valign="top" style="font-size:0;">
                                                 <table align="center" border="0" cellspacing="0" cellpadding="0" width="500">
@@ -184,7 +197,6 @@
                                                                                 <img src="https://openlittermap.com/assets/icons/home/camera.png"
                                                                                      alt="Take a picture"
                                                                                      width="150"
-                                                                                     height="200"
                                                                                      border="0"
                                                                                      style="display: block; font-family: Arial; color: #266e9c; font-size: 14px;"
                                                                                 />
@@ -204,22 +216,24 @@
                                                                         <td style="padding: 40px 0 0 0;" class="no-padding">
                                                                             <table border="0" cellspacing="0" cellpadding="0" width="100%">
                                                                                 <tr>
-                                                                                    <td align="left" style="padding: 0 0 5px 0; font-size: 22px; font-family: Helvetica, Arial, sans-serif; font-weight: normal; color: #333333;" class="padding-copy">1. Take a Picture</td>
+                                                                                    <td align="left" style="text-align: left; padding: 0 0 5px 0; font-size: 22px; font-family: Helvetica, Arial, sans-serif; font-weight: normal; color: #333333;" class="padding-copy">1. Take a Picture</td>
                                                                                 </tr>
                                                                                 <tr>
-                                                                                    <td align="left" style="padding: 10px 0 15px 0; font-size: 16px; line-height: 24px; font-family: Helvetica, Arial, sans-serif; color: #666666;" class="padding-copy">It's easy. Just take a picture of some litter. Make sure your location services are turned on*.</td>
+                                                                                    <td align="left" style="text-align: left; padding: 10px 0 15px 0; font-size: 16px; line-height: 24px; font-family: Helvetica, Arial, sans-serif; color: #666666;" class="padding-copy">It's easy. Just take a picture of some litter. Make sure your location services are turned on*.</td>
                                                                                 </tr>
                                                                             </table>
                                                                         </td>
                                                                     </tr>
                                                                     <td align="center" style="padding: 10px 0 15px 0; font-size: 16px; line-height: 24px; font-family: Helvetica, Arial, sans-serif; color: #666666;" class="padding-copy">
-                                                                        <strong>
-                                                                            * iPhone. Open Settings -> Privacy -> Location. Turn "Camera On While Using".
-                                                                            <br>
-                                                                            <br>
-                                                                            * Android. Open the Camera. Go to camera settings => Activate Geotagging. Pull down top-menu and Activate GPS
-                                                                        </strong>
-                                                                        <p>Your photos are now geotagged!</p>
+                                                                        <div style="text-align: left">
+                                                                            <strong>
+                                                                                * iPhone. Open Settings -> Privacy -> Location. Turn "Camera On While Using".
+                                                                                <br>
+                                                                                <br>
+                                                                                * Android. Open the Camera. Go to camera settings => Activate Geotagging. Pull down top-menu and Activate GPS
+                                                                            </strong>
+                                                                            <p>Your photos are now geotagged!</p>
+                                                                        </div>
                                                                     </td>
                                                                 </table>
                                                             </div>
@@ -252,7 +266,6 @@
                                                                                 <img src="https://openlittermap.com/assets/icons/home/phone.png"
                                                                                      alt="smart phone with an icon indicating uploading to the cloud"
                                                                                      width="150"
-                                                                                     height="200"
                                                                                      border="0"
                                                                                      style="display: block; font-family: Arial; color: #666666; font-size: 14px;"
                                                                                 />
@@ -269,10 +282,10 @@
                                                                         <td style="padding: 40px 0 0 0;" class="no-padding">
                                                                             <table border="0" cellspacing="0" cellpadding="0" width="100%">
                                                                                 <tr>
-                                                                                    <td align="left" style="padding: 0 0 5px 0; font-size: 22px; font-family: Helvetica, Arial, sans-serif; font-weight: normal; color: #333333;" class="padding-copy">2. Tag the litter</td>
+                                                                                    <td align="left" style="text-align: left; padding: 0 0 5px 0; font-size: 22px; font-family: Helvetica, Arial, sans-serif; font-weight: normal; color: #333333;" class="padding-copy">2. Tag the litter</td>
                                                                                 </tr>
                                                                                 <tr>
-                                                                                    <td align="left" style="padding: 10px 0 15px 0; font-size: 16px; line-height: 24px; font-family: Helvetica, Arial, sans-serif; color: #666666;" class="padding-copy">Just tag what litter you see in the photo. You can tag if the litter has been picked up or if it's still there!</td>
+                                                                                    <td align="left" style="text-align: left; padding: 10px 0 15px 0; font-size: 16px; line-height: 24px; font-family: Helvetica, Arial, sans-serif; color: #666666;" class="padding-copy">Just tag what litter you see in the photo. You can tag if the litter has been picked up or if it's still there!</td>
                                                                                 </tr>
                                                                             </table>
                                                                         </td>
@@ -306,7 +319,15 @@
 
                                                                 <table align="left" border="0" cellpadding="0" cellspacing="0" width="150">
                                                                     <tr>
-                                                                        <td valign="top"><a href="http://openlittermap.com" target="_blank"><img src="https://openlittermap.com/assets/confirm/phone-upload.png" alt="map style pin indicating location" width="150" height="200" border="0" style="display: block; font-family: Arial; color: #666666; font-size: 14px;"></a></td>
+                                                                        <td valign="top">
+                                                                            <a href="http://openlittermap.com" target="_blank">
+                                                                                <img src="https://openlittermap.com/assets/confirm/phone-upload.png"
+                                                                                     alt="map style pin indicating location"
+                                                                                     width="150"
+                                                                                     border="0"
+                                                                                     style="display: block; font-family: Arial; color: #666666; font-size: 14px;">
+                                                                            </a>
+                                                                        </td>
                                                                     </tr>
                                                                 </table>
                                                             </div>
@@ -318,10 +339,10 @@
                                                                         <td style="padding: 40px 0 0 0;" class="no-padding">
                                                                             <table border="0" cellspacing="0" cellpadding="0" width="100%">
                                                                                 <tr>
-                                                                                    <td align="left" style="padding: 0 0 5px 0; font-size: 22px; font-family: Helvetica, Arial, sans-serif; font-weight: normal; color: #333333;" class="padding-copy">3. Upload Your Tagged Images</td>
+                                                                                    <td align="left" style="text-align: left; padding: 0 0 5px 0; font-size: 22px; font-family: Helvetica, Arial, sans-serif; font-weight: normal; color: #333333;" class="padding-copy">3. Upload Your Tagged Images</td>
                                                                                 </tr>
                                                                                 <tr>
-                                                                                    <td align="left" style="padding: 10px 0 15px 0; font-size: 16px; line-height: 24px; font-family: Helvetica, Arial, sans-serif; color: #666666;" class="padding-copy">OpenLitterMap automatically maps your photos so you don't need to remember when or where you took the picture. Keep OpenLitterMap.com/global open to see a live feed of people uploading new photos!</td>
+                                                                                    <td align="left" style="text-align: left; padding: 10px 0 15px 0; font-size: 16px; line-height: 24px; font-family: Helvetica, Arial, sans-serif; color: #666666;" class="padding-copy">OpenLitterMap automatically maps your photos so you don't need to remember when or where you took the picture. Keep OpenLitterMap.com/global open to see a live feed of people uploading new photos!</td>
                                                                                 </tr>
                                                                             </table>
                                                                         </td>
@@ -345,11 +366,6 @@
     <tr>
         <td bgcolor="#ffffff" align="center" style="padding: 25px 15px 70px 15px;" class="section-padding">
             <table border="0" cellpadding="0" cellspacing="0" width="500" class="responsive-table">
-
-                {{-- Verify Your Email --}}
-                <tr>
-                    <td align="center" style="border-radius: 3px;" bgcolor="#2ecc71"><a href="https://openlittermap.com/confirm/email/{{$user->token}}" target="_blank" style="font-size: 16px; font-family: Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; color: #000000; text-decoration: none; border-radius: 3px; padding: 15px 25px; display: inline-block;" class="mobile-button">Verify Your Email Address and Log In &rarr;</a></td>
-                </tr>
 
                 {{-- Slack and Community Info --}}
                 <tr>

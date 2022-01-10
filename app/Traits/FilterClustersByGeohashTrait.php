@@ -2,9 +2,8 @@
 
 namespace App\Traits;
 
-use GeoHash;
-use App\Models\Cluster;
-use App\Traits\GeohashTrait;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 
 trait FilterClustersByGeohashTrait
 {
@@ -15,10 +14,12 @@ trait FilterClustersByGeohashTrait
      *
      * For a specific zoom level, we want to return the bounding box of the clusters + neighbours
      *
+     * @param Builder $query
      * @param $zoom int   -> zoom level of the browser
      * @param $bbox array -> [west|left, south|bottom, east|right, north|top]
+     * @return Builder
      */
-    public function filterClustersByGeoHash (int $zoom, string $bbox)
+    public function filterClustersByGeoHash (Builder $query, int $zoom, string $bbox): Builder
     {
         $bbox = json_decode($bbox);
 
@@ -27,30 +28,44 @@ trait FilterClustersByGeohashTrait
         $center_lon = ($bbox->left + $bbox->right) / 2;
 
         // zoom level will determine what level of geohash precision to use
-        $precision = $this->zoomToGeoHashPrecision[request()->zoom];
+        $precision = $this->getGeohashPrecision($zoom);
 
         // Get the center of the bounding box, as a geohash
-        $center_geohash = GeoHash::encode($center_lat, $center_lon, $precision); // precision 0 will return the full geohash
+        $center_geohash = \GeoHash::encode($center_lat, $center_lon, $precision); // precision 0 will return the full geohash
 
-        $geos = [];
         // get the neighbour geohashes from our center geohash
-        $ns = $this->neighbors($center_geohash);
-        foreach ($ns as $n) array_push($geos, $n);
+        $geos = array_values($this->neighbors($center_geohash));
 
-        $query = Cluster::query();
+        return $query
+            ->where('zoom', $zoom)
+            ->where(function ($q) use ($geos) {
+                foreach ($geos as $geo) {
+                    $q->orWhere('geohash', 'like', $geo . '%'); // starts with
+                }
+            });
+    }
 
-        // Build cluster query
-        $query->where(function ($q) use ($geos, $zoom)
-        {
-            foreach ($geos as $geo)
-            {
-                $q->orWhere([
-                    'zoom' => $zoom,
-                    ['geohash', 'like', $geo . '%'] // starts with
-                ]);
-            }
-        });
-
-        return $query;
+    /**
+     * Converts the clusters into the format required by the map
+     *
+     * @param Collection $clusters
+     * @return array
+     */
+    protected function getFeatures(Collection $clusters): array
+    {
+        return $clusters->map(function ($cluster) {
+            return [
+                'type' => 'Feature',
+                'geometry' => [
+                    'type' => 'Point',
+                    'coordinates' => [$cluster->lon, $cluster->lat]
+                ],
+                'properties' => [
+                    'point_count' => $cluster->point_count,
+                    'point_count_abbreviated' => $cluster->point_count_abbreviated,
+                    'cluster' => true
+                ]
+            ];
+        })->toArray();
     }
 }

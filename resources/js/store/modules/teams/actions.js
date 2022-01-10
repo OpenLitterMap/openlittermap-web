@@ -27,10 +27,73 @@ export const actions = {
                 });
 
                 context.commit('usersActiveTeam', payload);
+                context.commit('usersTeam', response.data.team);
             }
         })
         .catch(error => {
             console.error('change_active_team', error);
+        });
+    },
+
+    /**
+     * Leave the team
+     */
+    async LEAVE_TEAM (context, payload)
+    {
+        let title = i18n.t('notifications.success');
+        let body = i18n.t('teams.myteams.just-left-team');
+
+        let titleError = i18n.t('notifications.error');
+        let bodyError = i18n.t('notifications.something-went-wrong');
+
+        await axios.post('/teams/leave', {
+            team_id: payload
+        })
+        .then(response => {
+            console.log('leave_team', response);
+
+            if (response.data.success) {
+                Vue.$vToastify.success({
+                    title: title,
+                    body: body + ' <i>' + response.data.team.name + '</i>.',
+                });
+
+                if (response.data.activeTeam) {
+                    context.commit('usersActiveTeam', response.data.activeTeam.id);
+                    context.commit('usersTeam', response.data.activeTeam);
+                }
+            }
+        })
+        .catch(error => {
+            Vue.$vToastify.error({
+                title: titleError,
+                body: bodyError,
+            });
+        });
+    },
+
+    /**
+     * Inactivate the current active team
+     */
+    async INACTIVATE_TEAM (context)
+    {
+        let titleError = i18n.t('notifications.error');
+        let bodyError = i18n.t('notifications.something-went-wrong');
+
+        await axios.post('/teams/inactivate')
+        .then(response => {
+            console.log('inactivate_team', response);
+
+            if (response.data.success) {
+                context.commit('usersActiveTeam', null);
+                context.commit('usersTeam', null);
+            }
+        })
+        .catch(error => {
+            Vue.$vToastify.error({
+                title: titleError,
+                body: bodyError,
+            });
         });
     },
 
@@ -40,7 +103,7 @@ export const actions = {
     async CREATE_NEW_TEAM (context, payload)
     {
         const title = i18n.t('notifications.success');
-        const body  = i18n.t('teams.created');
+        const body  = i18n.t('teams.create.created');
 
         const error_title = i18n.t('notifications.error');
         const error_body  = i18n.t('teams.create.max-created');
@@ -51,7 +114,7 @@ export const actions = {
         await axios.post('/teams/create', {
             name: payload.name,
             identifier: payload.identifier,
-            teamType: payload.teamType
+            team_type: payload.teamType
         })
         .then(response => {
             console.log('create_new_team', response);
@@ -66,10 +129,12 @@ export const actions = {
 
                 context.commit('decrementUsersRemainingTeams');
 
+                context.commit('usersActiveTeam', response.data.team.id);
+
+                context.commit('usersTeam', response.data.team);
+
                 if (! context.rootState.user.user.active_team)
                 {
-                    context.commit('usersActiveTeam', response.data.team_id);
-
                     Vue.$vToastify.success({
                         title: joinedTeamTitle,
                         body: joinedTeamBody,
@@ -92,6 +157,35 @@ export const actions = {
 
             context.commit('teamErrors', error.response.data.errors);
         });
+    },
+
+    /**
+     * The user wants to update a team
+     */
+    async UPDATE_TEAM (context, payload)
+    {
+        const title = i18n.t('notifications.success');
+        const body  = i18n.t('teams.create.updated');
+
+        const errorTitle = i18n.t('notifications.error');
+        const errorBody  = i18n.t('notifications.something-went-wrong');
+
+        await axios.post(`/teams/update/${payload.teamId}`, {
+            name: payload.name,
+            identifier: payload.identifier
+        })
+            .then(async response => {
+                console.log('update_team', response);
+
+                if (response.data.success) {
+                    Vue.$vToastify.success({title, body});
+                } else {
+                    Vue.$vToastify.error({title: errorTitle, body: errorBody});
+                }
+            })
+            .catch(error => {
+                context.commit('teamErrors', error.response.data.errors);
+            });
     },
 
     /**
@@ -225,9 +319,6 @@ export const actions = {
         const title = i18n.t('notifications.success');
         const body = 'Congratulations! You have joined a new team!'; // todo - insert team name, translate
 
-        const failTitle = i18n.t('notifications.error');
-        const failBody = 'Sorry, we could not find a team with this identifier.' // todo - insert identifier, translate
-
         const alreadyJoinedbody = 'You have already joined this team!'; // todo - translate
 
         await axios.post('/teams/join', {
@@ -245,6 +336,9 @@ export const actions = {
                     body,
                     position: 'bottom-right'
                 });
+
+                context.commit('usersActiveTeam', response.data.activeTeam.id);
+                context.commit('usersTeam', response.data.activeTeam);
             }
 
             else if (response.data.msg === 'already-joined')
@@ -252,15 +346,6 @@ export const actions = {
                 Vue.$vToastify.info({
                     title: 'Hold on!',
                     body: alreadyJoinedbody,
-                    position: 'bottom-right'
-                });
-            }
-
-            else
-            {
-                Vue.$vToastify.error({
-                    title: failTitle,
-                    body: failBody,
                     position: 'bottom-right'
                 });
             }

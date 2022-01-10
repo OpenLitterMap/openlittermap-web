@@ -5,9 +5,12 @@
             <!-- Title, Subtitle, App Icons -->
             <div class="columns c-1">
                 <div class="column is-half">
-                    <h1 class="main-title">
-                        {{ $t('home.welcome.plastic-pollution-out-of-control') }}.
-                    </h1>
+                    <transition name="slide-fade-left" mode="out-in">
+                        <h1 class="main-title variable-height"
+                            :key="activeHeading.title"
+                            v-html="activeHeading.title"
+                        ></h1>.
+                    </transition>
                     <h2 class="subtitle is-3 home-img-padding">
                         {{ $t('home.welcome.help-us') }}.
                     </h2>
@@ -25,94 +28,149 @@
                             class="app-icon"
                             @click="android"
                         />
-
                     </div>
-
                 </div>
 
                 <div class="column is-half">
-                    <img src="/assets/plastic_bottles.jpg" />
+                    <div class="top-image">
+                        <transition name="slide-fade-right" mode="out-in">
+                            <img
+                                :key="activeHeading.title"
+                                :src="activeHeading.img"
+                                :alt="activeHeading.title"
+                            />
+                        </transition>
+                    </div>
                 </div>
             </div>
 
             <!-- Why its important -->
             <div class="why-container">
-                <h1 class="main-title">{{ $t('home.welcome.why-collect-data') }}?</h1>
+                <h1 class="main-title">
+                    {{ $t('home.welcome.why-collect-data') }}?
+                </h1>
 
                 <div class="columns welcome-mb">
                     <div class="column is-one-quarter icon-center">
-                        <img src="/assets/icons/home/world.png" class="about-icon" />
+                        <img
+                            src="/assets/icons/home/world.png"
+                            class="about-icon" />
                     </div>
 
                     <div class="column ma">
-                        <h2 class="main-subtitle">1. {{ $t('home.welcome.visibility') }}</h2>
-                        <h3 class="welcome-subtitle mb1em">{{ $t('home.welcome.our-maps-reveal-litter-normality') }}.</h3>
+                        <h2 class="main-subtitle">
+                            1. {{ $t('home.welcome.visibility') }}
+                        </h2>
+                        <h3 class="welcome-subtitle mb1em">
+                            {{ $t('home.welcome.our-maps-reveal-litter-normality') }}.
+                        </h3>
                     </div>
                 </div>
 
                 <div class="columns welcome-mb">
                     <div class="column is-one-quarter icon-center">
-                        <img src="/assets/icons/home/microscope.png" class="about-icon" />
+                        <img
+                            src="/assets/icons/home/microscope.png"
+                            class="about-icon"
+                        />
                     </div>
 
                     <div class="column ma">
-                        <h2 class="main-subtitle">2. {{ $t('home.welcome.science') }}</h2>
-                        <h3 class="welcome-subtitle mb1em">{{ $t('home.welcome.our-data-open-source') }}.</h3>
+                        <h2 class="main-subtitle">
+                            2. {{ $t('home.welcome.science') }}
+                        </h2>
+                        <h3 class="welcome-subtitle mb1em">
+                            {{ $t('home.welcome.our-data-open-source') }}.
+                        </h3>
                     </div>
                 </div>
 
                 <div class="columns welcome-mb">
                     <div class="column is-one-quarter icon-center">
-                        <img src="/assets/icons/home/tree.png" class="about-icon" />
+                        <img
+                            src="/assets/icons/home/tree.png"
+                            class="about-icon"
+                        />
                     </div>
 
                     <div class="column ma">
-                        <h2 class="main-subtitle">3. {{ $t('home.welcome.community') }}</h2>
-                        <h3 class="welcome-subtitle">{{ $t('home.welcome.must-work-together') }}.</h3>
+                        <h2 class="main-subtitle">
+                            3. {{ $t('home.welcome.community') }}
+                        </h2>
+                        <h3 class="welcome-subtitle">
+                            {{ $t('home.welcome.must-work-together') }}.
+                        </h3>
                     </div>
                 </div>
             </div>
 
             <!-- How does it work -->
             <div>
-                <h1 class="main-title">{{ $t('home.welcome.how-does-it-work') }}?</h1>
+                <h1 class="main-title">
+                    {{ $t('home.welcome.how-does-it-work') }}?
+                </h1>
 
                 <div class="columns welcome-mb">
                     <div class="column is-one-quarter icon-center">
-                        <img src="/assets/icons/home/camera.png" class="about-icon" />
+                        <img
+                            src="/assets/icons/home/camera.png"
+                            class="about-icon"
+                        />
                     </div>
 
                     <div class="column ma">
-                        <h2 class="main-subtitle">1. {{ $t('home.welcome.take-a-photo') }}</h2>
-                        <h3 class="welcome-subtitle mb1em">{{ $t('home.welcome.device-captures-info') }}</h3>
+                        <h2 class="main-subtitle">
+                            1. {{ $t('home.welcome.take-a-photo') }}
+                        </h2>
+                        <h3 class="welcome-subtitle mb1em">
+                            {{ $t('home.welcome.device-captures-info') }}
+                        </h3>
                     </div>
                 </div>
 
                 <div class="columns welcome-mb">
                     <div class="column is-one-quarter icon-center">
-                        <img src="/assets/icons/home/phone.png" class="about-icon" />
+                        <img
+                            src="/assets/icons/home/phone.png"
+                            class="about-icon"
+                        />
                     </div>
 
                     <div class="column ma">
-                        <h2 class="main-subtitle">2. {{ $t('home.welcome.tag-the-litter') }}</h2>
-                        <h3 class="welcome-subtitle mb1em">{{ $t('home.welcome.tag-litter-you-see') }}!</h3>
+                        <h2 class="main-subtitle">
+                            2. {{ $t('home.welcome.tag-the-litter') }}
+                        </h2>
+                        <h3 class="welcome-subtitle mb1em">
+                            {{ $t('home.welcome.tag-litter-you-see') }}!
+                        </h3>
                     </div>
                 </div>
 
                 <div class="columns welcome-mb">
                     <div class="column is-one-quarter icon-center">
-                        <img src="/assets/icons/twitter2.png" class="about-icon" />
+                        <img
+                            src="/assets/icons/twitter2.png"
+                            class="about-icon"
+                        />
                     </div>
 
                     <div class="column ma">
-                        <h2 class="main-subtitle">3. {{ $t('home.welcome.share-results') }}</h2>
-                        <h3 class="welcome-subtitle">{{ $t('home.welcome.share') }}!</h3>
+                        <h2 class="main-subtitle">
+                            3. {{ $t('home.welcome.share-results') }}
+                        </h2>
+                        <h3 class="welcome-subtitle">
+                            {{ $t('home.welcome.share') }}!
+                        </h3>
                     </div>
                 </div>
             </div>
 
-            <!-- I want to help -->
+            <!-- Partners -->
+            <div class="partners-container container is-max-desktop">
+                <p class="has-text-centered main-title">{{ $t('home.welcome.our-partners') }}</p>
 
+                <Partners />
+            </div>
         </div>
 
         <Footer />
@@ -120,12 +178,41 @@
 </template>
 
 <script>
-import Footer from './Footer'
+import Footer from './Footer';
+import Partners from './Partners';
 
 export default {
     name: 'Welcome',
-    components: { Footer },
+    components: {
+        Partners,
+        Footer
+    },
+    mounted () {
+        this.startHeadingsAnimation();
+    },
+    data () {
+        return {
+            headings: [
+                {
+                    title: this.$t('home.welcome.plastic-pollution-out-of-control'),
+                    img: '/assets/plastic_bottles.jpg'
+                },
+                {
+                    title: this.$t('home.welcome.fires-out-of-control'),
+                    img: '/assets/forest_fire.jpg'
+                },
+            ],
+            activeHeadingIndex: 0
+        };
+    },
     computed: {
+        /**
+         * Show currently active header
+         */
+        activeHeading ()
+        {
+            return this.headings[this.activeHeadingIndex];
+        },
 
         /**
          * Boolean to show or hide the modal
@@ -136,7 +223,6 @@ export default {
         }
     },
     methods: {
-
         /**
          * Open Google Play store download page
          */
@@ -151,7 +237,34 @@ export default {
         ios ()
         {
             window.open('https://apps.apple.com/us/app/openlittermap/id1475982147', '_blank');
-        }
+        },
+
+        /**
+         * Switches the heading and top image every 5 seconds
+         * @see https://usefulangle.com/post/280/settimeout-setinterval-on-inactive-tab
+         */
+        startHeadingsAnimation ()
+        {
+            let vm = this;
+            let interval = null;
+
+            function setAnimation () {
+                if (document.hidden) {
+                    // tab is now inactive
+                    if (interval) clearInterval(interval);
+                    return;
+                }
+
+                // tab is active again
+                interval = setInterval(() => {
+                    vm.activeHeadingIndex = (vm.activeHeadingIndex + 1) % vm.headings.length;
+                }, 5000);
+            }
+
+            setAnimation();
+
+            document.addEventListener('visibilitychange', setAnimation);
+        },
     }
 }
 </script>
@@ -206,6 +319,16 @@ export default {
         line-height: 1.5;
     }
 
+    .partners-container {
+        padding-left: 72px;
+        padding-right: 72px;
+        margin-bottom: 36px;
+    }
+
+    .partners-action {
+        margin-top: 36px;
+    }
+
     /* Smaller screens */
     @media (max-width: 1024px) {
 
@@ -213,6 +336,7 @@ export default {
             padding-left: 2em;
             padding-right: 2em;
         }
+
     }
 
     /* Mobile view */
@@ -242,6 +366,59 @@ export default {
         .why-container {
             margin-bottom: 5em;
         }
+
+        .top-image {
+            height: 400px;
+        }
+
+        .partners-container {
+            padding-left: 0;
+            padding-right: 0;
+        }
+    }
+
+    /* Extra small */
+    @media (max-width: 576px) {
+        .main-title {
+            margin-bottom: 1rem;
+        }
+        .variable-height {
+            min-height: 100px;
+        }
+
+        .top-image {
+            height: 260px;
+        }
+
+    }
+
+    /* Extra extra small */
+    @media (max-width: 430px) {
+        .variable-height {
+            min-height: 175px;
+        }
+    }
+
+    .slide-fade-left-enter-active {
+        transition: all .5s ease;
+    }
+    .slide-fade-left-leave-active {
+        transition: all .3s ease-out;
+    }
+    .slide-fade-left-enter, .slide-fade-left-leave-to {
+        transform: translateX(-100px);
+        opacity: 0;
+    }
+
+    .slide-fade-right-enter-active {
+        transition: all .5s ease;
+    }
+    .slide-fade-right-leave-active {
+        transition: all .3s ease-out;
+    }
+    .slide-fade-right-enter, .slide-fade-right-leave-to {
+        transform: translateX(100px);
+        opacity: 0;
     }
 
 </style>

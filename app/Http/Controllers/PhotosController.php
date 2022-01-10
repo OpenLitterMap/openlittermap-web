@@ -9,6 +9,7 @@ use App\Actions\Photos\UploadPhotoAction;
 use App\Actions\Locations\ReverseGeocodeLocationAction;
 use App\Actions\Locations\UpdateLeaderboardsFromPhotoAction;
 use App\Events\ImageDeleted;
+use App\Http\Requests\AddTagsRequest;
 use GeoHash;
 use Carbon\Carbon;
 
@@ -88,7 +89,7 @@ class PhotosController extends Controller
     public function store (Request $request)
     {
         $request->validate([
-           'file' => 'required|mimes:jpg,png,jpeg'
+           'file' => 'required|mimes:jpg,png,jpeg,heif,heic'
         ]);
 
         $user = Auth::user();
@@ -102,9 +103,9 @@ class PhotosController extends Controller
 
         $file = $request->file('file'); // /tmp/php7S8v..
 
-        $image = $this->makeImageAction->run($file);
-
-        $exif = $image->exif();
+        $imageAndExifData = $this->makeImageAction->run($file);
+        $image = $imageAndExifData['image'];
+        $exif = $imageAndExifData['exif'];
 
         if (is_null($exif))
         {
@@ -164,7 +165,7 @@ class PhotosController extends Controller
         );
 
         $bboxImageName = $this->uploadPhotoAction->run(
-            $this->makeImageAction->run($file, true),
+            $this->makeImageAction->run($file, true)['image'],
             $dateTime,
             $file->hashName(),
             'bbox'
@@ -253,7 +254,8 @@ class PhotosController extends Controller
             $country->id,
             $state->id,
             $city->id,
-            !$user->verification_required
+            $user->is_trusted,
+            $user->active_team
         ));
 
         // Increment the { Month-Year: int } value for each location
@@ -293,7 +295,8 @@ class PhotosController extends Controller
             $user,
             $photo->country_id,
             $photo->state_id,
-            $photo->city_id
+            $photo->city_id,
+            $photo->team_id
         ));
 
         return ['message' => 'Photo deleted successfully!'];
@@ -308,11 +311,15 @@ class PhotosController extends Controller
      * If the user is new, we submit the image for verification.
      * If the user is trusted, we can update OLM.
      */
-    public function addTags (Request $request)
+    public function addTags (AddTagsRequest $request)
     {
         $user = Auth::user();
         $photo = Photo::findOrFail($request->photo_id);
-        if ($photo->verified > 0) return redirect()->back();
+
+        if ($photo->user_id !== $user->id || $photo->verified > 0)
+        {
+            abort(403, 'Forbidden');
+        }
 
         $litterTotals = $this->addTagsAction->run($photo, $request['tags']);
 
@@ -321,10 +328,10 @@ class PhotosController extends Controller
 
         $this->updateLeaderboardsAction->run($user, $photo);
 
-        $photo->remaining = $request->presence;
+        $photo->remaining = !$request->presence;
         $photo->total_litter = $litterTotals['litter'];
 
-        if ($user->verification_required)
+        if (!$user->is_trusted)
         {
             // Bring the photo to an initial state of verification
             // 0 for testing, 0.1 for production
@@ -399,7 +406,9 @@ class PhotosController extends Controller
         // we need to get this before the pagination
         $remaining = $query->count();
 
-        $photos = $query->select('id', 'filename', 'lat', 'lon', 'model', 'remaining', 'display_name', 'datetime')
+        $photos = $query
+            ->with('team')
+            ->select('id', 'filename', 'lat', 'lon', 'model', 'remaining', 'display_name', 'datetime', 'team_id')
             ->simplePaginate(1);
 
         $total = Photo::where('user_id', $user->id)->count();

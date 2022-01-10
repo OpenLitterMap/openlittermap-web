@@ -22,8 +22,10 @@ Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function(){
     Route::get('/photos/web/index', 'API\WebPhotosController@index');
 
     Route::get('/photos/web/load-more', 'API\WebPhotosController@loadMore');
-
 });
+
+Route::get('/global/stats-data', 'API\GlobalStatsController@index');
+Route::get('/mobile-app-version', 'API\MobileAppVersionController');
 
 Route::post('add-tags', 'ApiPhotosController@addTags')
     ->middleware('auth:api');
@@ -36,12 +38,9 @@ Route::post('/validate-token', function(Request $request) {
 // Create Account
 Route::post('/register', 'ApiRegisterController@register');
 
-// Try to log in
-Route::post('/oauth/token', 'AccessTokenController@issueToken');
-
 // Fetch User
 Route::get('/user', function (Request $request) {
-    return Auth::guard('api')->user();
+    return Auth::guard('api')->user()->append('position');
 });
 
 // Reset Password
@@ -50,15 +49,19 @@ Route::post('/password/email', 'Auth\ForgotPasswordController@sendResetLinkEmail
 // Upload Photos
 Route::post('/photos/submit', 'ApiPhotosController@store');
 
-// Tag Litter to Photos
-Route::post('/photos/update', 'ApiPhotosController@dynamicUpdate')
+// Upload Photos with tags - old route
+Route::post('/photos/submit-with-tags', 'ApiPhotosController@uploadWithTags')
     ->middleware('auth:api');
+
+// Upload Photos with tags - new route
+Route::post('/photos/upload-with-tags', 'ApiPhotosController@uploadWithTags')
+    ->middleware('auth:api');
+
+// Delete Photos
+Route::delete('/photos/delete', 'ApiPhotosController@deleteImage');
 
 // Check for any photos uploaded on web
 Route::get('/check-web-photos', 'ApiPhotosController@check')
-    ->middleware('auth:api');
-
-Route::post('/add-tags-to-web-img', 'ApiPhotosController@confirm')
     ->middleware('auth:api');
 
 /**
@@ -87,3 +90,14 @@ Route::post('/settings/update', 'ApiSettingsController@update')
 
 Route::post('/settings/privacy/toggle-previous-tags', 'ApiSettingsController@togglePreviousTags')
     ->middleware('auth:api');
+
+// Teams
+Route::prefix('/teams')->group(function () {
+    Route::get('/leaderboard', 'Teams\TeamsLeaderboardController@index');
+    Route::get('/list', 'API\TeamsController@list');
+    Route::get('/types', 'API\TeamsController@types');
+    Route::patch('/update/{team}', 'API\TeamsController@update');
+    Route::post('/create', 'API\TeamsController@create');
+    Route::post('/join', 'API\TeamsController@join');
+    Route::post('/leave', 'API\TeamsController@leave');
+});

@@ -35,11 +35,11 @@ trait HasPhotoUploads
         $this->setMockForGeocodingAction();
     }
 
-    protected function getImageAndAttributes(): array
+    protected function getImageAndAttributes($mimeType = 'jpg'): array
     {
         $exifImage = file_get_contents($this->imagePath);
         $file = UploadedFile::fake()->createWithContent(
-            'image.jpg',
+            'image.' . $mimeType,
             $exifImage
         );
         $latitude = 40.053030045789;
@@ -61,6 +61,18 @@ trait HasPhotoUploads
             'latitude', 'longitude', 'geoHash', 'displayName', 'address',
             'dateTime', 'filepath', 'file', 'imageName', 'bboxImageName'
         );
+    }
+
+    protected function getApiImageAttributes(array $imageAttributes): array
+    {
+        return [
+            'photo' => $imageAttributes['file'],
+            'lat' => $imageAttributes['latitude'],
+            'lon' => $imageAttributes['longitude'],
+            'date' => $imageAttributes['dateTime'],
+            'model' => 'test model',
+            'presence' => true
+        ];
     }
 
     protected function getCountryId(): int

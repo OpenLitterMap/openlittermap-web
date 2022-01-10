@@ -66,11 +66,15 @@
                     <p class="footer-link" @click="open('https://www.youtube.com/watch?v=T8rGf1ScR1I')">Datapub 2020</p>
                     <p class="footer-link" @click="open('https://www.youtube.com/watch?v=5HuaQNeHuZ8')">ESA PhiWeek 2020</p>
                     <p class="footer-link" @click="open('https://www.youtube.com/watch?v=QhLsA0WIfTA')">Geneva Form, UN 2020</p>
+                    <p class="footer-link" @click="open('https://www.youtube.com/watch?v=Pe4nHdoAlu4')">Cardano4Climate Meetup 2021</p>
                 </div>
 
                 <div class="column is-2">
                     <p class="olm-subtitle">{{ $t('home.footer.help') }}</p>
 
+                    <router-link to="/contact-us">
+                        <p class="footer-link">{{ $t('home.footer.contact-us') }}</p>
+                    </router-link>
                     <p class="footer-link">{{ $t('home.footer.create-account') }}</p>
                     <p class="footer-link" @click="open('https://angel.co/openlittermap/jobs')">{{ $t('home.footer.join-the-team') }}</p>
                     <p class="footer-link" @click="open('https://join.slack.com/t/openlittermap/shared_invite/zt-fdctasud-mu~OBQKReRdC9Ai9KgGROw')">{{ $t('home.footer.join-slack') }}</p>

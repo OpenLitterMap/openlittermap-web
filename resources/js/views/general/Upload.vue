@@ -5,6 +5,10 @@
                 {{ $t('upload.click-to-upload') }}
             </h1>
 
+            <p v-if="team" class="subtitle mt-1">
+                {{ $t('common.team') }}: <strong>{{team}}</strong>
+            </p>
+
             <vue-dropzone
                 id="customdropzone"
                 :options="options"
@@ -54,10 +58,16 @@ export default {
                 },
                 includeStyling: true,
                 duplicateCheck: true,
-                paramName: 'file'
+                paramName: 'file',
+                acceptedFiles: 'image/*,.heic,.heif'
             },
             showTagLitterButton: true
         };
+    },
+    computed: {
+        team () {
+            return this.$store.state.user.user.team?.name;
+        }
     },
     async created ()
     {
@@ -123,7 +133,6 @@ export default {
     @import '../../styles/variables.scss';
 
     .drop-title {
-        margin-bottom: 1.5em;
         text-align: center;
     }
 

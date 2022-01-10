@@ -86,8 +86,6 @@ trait GeohashTrait
      */
     public function neighbors ($srcHash)
     {
-        $geohashPrefix = substr($srcHash, 0, strlen($srcHash) - 1);
-
         $neighbors['top'] = $this->calculateAdjacent($srcHash, 'top');
         $neighbors['bottom'] = $this->calculateAdjacent($srcHash, 'bottom');
         $neighbors['right'] = $this->calculateAdjacent($srcHash, 'right');
@@ -100,5 +98,19 @@ trait GeohashTrait
         $neighbors['center'] = $srcHash;
 
         return $neighbors;
+    }
+
+    /**
+     * Handles edge cases when the zoom
+     * is more than the max allowed level of 18
+     *
+     * @param int $precision
+     * @return int
+     */
+    protected function getGeohashPrecision($precision): int
+    {
+        $precision = min($precision, 18);
+
+        return $this->zoomToGeoHashPrecision[$precision];
     }
 }

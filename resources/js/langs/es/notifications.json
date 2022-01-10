@@ -9,5 +9,6 @@
         "subscribed": "¡Te has suscrito a las actualizaciones y buenas noticias!",
         "unsubscribed": "Te has dado de baja. ¡Ya no recibirás las buenas noticias!",
         "flag-updated": "Tu bandera ha sido actualizada"
-    }
+    },
+    "something-went-wrong": "Algo salió mal. ¡Inténtelo de nuevo o contáctenos!"
 }

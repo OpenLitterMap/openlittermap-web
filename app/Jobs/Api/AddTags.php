@@ -20,17 +20,25 @@ class AddTags implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $request, $userId;
+    public $userId;
+    public $photoId;
+    public $tags;
+    public $pickedUp;
 
     /**
      * Create a new job instance.
      *
-     * @return void
+     * @param $userId
+     * @param $photoId
+     * @param $tags
+     * @param $pickedUp
      */
-    public function __construct ($request, $userId)
+    public function __construct ($userId, $photoId, $tags, $pickedUp)
     {
-        $this->request = $request;
         $this->userId = $userId;
+        $this->photoId = $photoId;
+        $this->tags = $tags;
+        $this->pickedUp = $pickedUp;
     }
 
     /**
@@ -42,13 +50,11 @@ class AddTags implements ShouldQueue
     {
         $user = User::find($this->userId);
 
-        $photo = Photo::find($this->request['photo_id']);
-
-        $tags = $this->request['litter'];
+        $photo = Photo::find($this->photoId);
 
         /** @var AddTagsToPhotoAction $addTagsAction */
         $addTagsAction = app(AddTagsToPhotoAction::class);
-        $litterTotals = $addTagsAction->run($photo, $tags);
+        $litterTotals = $addTagsAction->run($photo, $this->tags);
 
         $user->xp += $litterTotals['all'];
         $user->save();
@@ -58,8 +64,9 @@ class AddTags implements ShouldQueue
         $updateLeaderboardsAction->run($user, $photo);
 
         $photo->total_litter = $litterTotals['litter'];
+        $photo->remaining = $this->isLitterRemaining($user);
 
-        if ($user->verification_required)
+        if (!$user->is_trusted)
         {
             /* Bring the photo to an initial state of verification */
             /* 0 for testing, 0.1 for production */
@@ -74,5 +81,16 @@ class AddTags implements ShouldQueue
         }
 
         $photo->save();
+    }
+
+    /**
+     * @param $user
+     * @return bool
+     */
+    protected function isLitterRemaining($user): bool
+    {
+        return is_null($this->pickedUp)
+            ? $user->items_remaining
+            : !$this->pickedUp;
     }
 }

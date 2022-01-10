@@ -26,7 +26,9 @@ class PhotoFactory extends Factory
             'user_id' => User::factory()->create(),
             'filename' => $this->faker->name . $this->faker->fileExtension,
             'model' => 'Unknown',
-            'datetime' => $this->faker->dateTime
+            'datetime' => $this->faker->dateTime,
+            'lat' => $this->faker->latitude,
+            'lon' => $this->faker->longitude
         ];
     }
 }

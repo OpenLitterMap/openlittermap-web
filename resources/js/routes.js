@@ -23,6 +23,15 @@ const router = new VueRouter({
             component: require('./views/home/Welcome').default
         },
         {
+            path: '/password/reset',
+            component: require('./views/Auth/Passwords/Email').default
+        },
+        {
+            path: '/password/reset/:token',
+            component: require('./views/Auth/Passwords/Reset').default,
+            props: true
+        },
+        {
             path: '/emails/unsubscribe/:token',
             component: require('./views/home/Welcome').default
         },
@@ -33,6 +42,10 @@ const router = new VueRouter({
         {
             path: '/donate',
             component: require('./views/home/Donate').default
+        },
+        {
+            path: '/contact-us',
+            component: require('./views/home/ContactUs').default
         },
         {
             path: '/global',

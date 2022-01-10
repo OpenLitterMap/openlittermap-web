@@ -7,7 +7,10 @@
     "unique-team-id": "Unikalny identyfikator drużyny",
     "id-to-join-team": "Każdy, kto ma ten identyfikator, będzie mógł dołączyć do Twojego drużyny.",
     "create-team": "Stwórz drużyne",
+    "update-team": "Zaktualizuj zespół",
     "created": "Gratulacje! Twoja drużyna została utworzona.",
+    "updated": "Zaktualizowano drużynę.",
+    "select-team": "Wybierz drużynę",
     "fail": "Wystąpił błąd podczas tworzenia Twojego drużyny",
     "max-created": "Nie możesz tworzyć więcej drużyn"
 }

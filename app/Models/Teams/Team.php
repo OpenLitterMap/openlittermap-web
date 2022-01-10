@@ -20,7 +20,12 @@ class Team extends Model
     	'leader',
         'created_by',
         'identifier',
-        'leaderboards'
+        'leaderboards',
+        'is_trusted'
+    ];
+
+    protected $casts = [
+        'is_trusted' => 'boolean'
     ];
 
     /**
@@ -33,7 +38,7 @@ class Team extends Model
 
     public function leader ()
     {
-    	return $this->hasOne('App\Models\User\User');
+    	return $this->belongsTo('App\Models\User\User', 'leader');
     }
 
     // double check this

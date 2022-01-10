@@ -9,11 +9,9 @@ import L from 'leaflet'
 // https://github.com/Turfjs/turf/issues/1952
 import * as turf from '../../../../public/js/turf.js'
 
-import moment from 'moment'
-
 import { categories } from '../../extra/categories'
 import { litterkeys } from '../../extra/litterkeys'
-import {MIN_ZOOM} from '../../constants';
+import {mapHelper} from '../../maps/mapHelpers';
 
 var map;
 var info;
@@ -318,26 +316,30 @@ export default {
                 // Dynamically add items to the groups + add markers
                 categories.map(category => {
 
-                    if (i.properties[category])
-                    {
-                        let string = '';
-
-                        litterkeys[category].map(item => {
-
-                            if (i.properties[category][item])
-                            {
-                                string += this.$t('litter.'+[category]+'.'+[item]) + ': ' + i.properties[category][item] + ' <br>';
-
-                                L.marker([i.properties.lat, i.properties.lon])
-                                    .addTo(groups[category])
-                                    .bindPopup(string
-                                        + '<img class="lim" src="'+ i.properties.filename + '"/>'
-                                        + '<p>' + this.$t('locations.cityVueMap.taken-on') + ' ' + moment(i.properties.datetime).format('LLL') + ' ' + this.$t('locations.cityVueMap.with-a') + ' ' + i.properties.model + '</p>'
-                                        + '<p>' + this.$t('locations.cityVueMap.by') + ': ' + name + username + '</p>'
-                                    );
-                            }
-                        });
+                    if (!i.properties[category]) {
+                        return;
                     }
+
+                    litterkeys[category].map(item => {
+
+                        if (!i.properties[category][item]) {
+                            return;
+                        }
+
+                        L.marker([i.properties.lat, i.properties.lon])
+                            .addTo(groups[category])
+                            .bindPopup(
+                                mapHelper.getMapImagePopupContent(
+                                    i.properties.filename,
+                                    i.properties.result_string,
+                                    i.properties.datetime,
+                                    i.properties.picked_up,
+                                    mapHelper.formatUserName(name, username),
+                                    i.properties.team
+                                ),
+                                mapHelper.popupOptions
+                            );
+                    });
                 });
             });
 
@@ -371,15 +373,6 @@ export default {
         margin: 0;
         position: relative;
         z-index: 0;
-    }
-
-    .leaflet-popup-content {
-        margin: 0 20px !important;
-    }
-
-    .lim {
-        max-width: 100%;
-        padding-top: 1em;
     }
 
 </style>

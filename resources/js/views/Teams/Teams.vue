@@ -13,7 +13,7 @@
 
             <div class="column pt3 mobile-teams-padding" style="background-color: #edf1f4;">
                 <p v-if="loading">{{ $t('common.loading') }}</p>
-            
+
                 <component v-else :is="type" />
             </div>
         </div>
@@ -56,7 +56,7 @@ export default {
                 { name: this.$t('teams.dashboard.dashboard'), icon: 'fa fa-home teams-icon', component: 'TeamsDashboard' },
                 { name: this.$t('teams.dashboard.join-a-team'), icon: 'fa fa-sign-in teams-icon', component: 'JoinTeam' },
                 { name: this.$t('teams.dashboard.create-a-team'), icon: 'fa fa-plus teams-icon', component: 'CreateTeam' },
-                { name: this.$t('teams.dashboard.your-teams'), icon: 'fa fa-users teams-icon', component: 'MyTeams' },
+                { name: this.$t('teams.myteams.title'), icon: 'fa fa-users teams-icon', component: 'MyTeams' },
                 { name: this.$t('teams.dashboard.leaderboard'), icon: 'fa fa-trophy teams-icon', component: 'TeamsLeaderboard' },
                 // todo - sub routes = Team members, Team charts, Team map
                 { name: this.$t('teams.dashboard.settings'), icon: 'fa fa-gear teams-icon', component: 'TeamSettings' }
@@ -94,7 +94,7 @@ export default {
 }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 
     @import '../../styles/variables.scss';
 

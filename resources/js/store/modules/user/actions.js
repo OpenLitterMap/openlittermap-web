@@ -1,6 +1,7 @@
 import routes from '../../../routes'
 import Vue from "vue";
 import i18n from "../../../i18n";
+import router from '../../../routes';
 
 export const actions = {
 
@@ -28,6 +29,82 @@ export const actions = {
             // update errors. user.js
             context.commit('errors', error.response.data.errors);
         });
+    },
+
+    /**
+     * The user is requesting a password reset link
+     */
+    async SEND_PASSWORD_RESET_LINK (context, payload)
+    {
+        const title = i18n.t('notifications.success');
+        const body = "An email will be sent with a link to reset your password if the email exists.";
+
+        Vue.$vToastify.success({
+            title,
+            body
+        });
+
+        await axios.post('/password/email', {
+            email: payload,
+        })
+        .then(response => {
+            // console.log('send_password_reset_link', response);
+        })
+        .catch(error => {
+            // console.log('error.send_password_reset_link', error.response.data);
+        });
+    },
+
+    /**
+     * The user is resetting their password
+     */
+    async RESET_PASSWORD (context, payload)
+    {
+        const title = i18n.t('notifications.success');
+
+        await axios.post('/password/reset', payload)
+            .then(response => {
+                console.log('reset_password', response);
+
+                if (!response.data.success) return;
+
+                Vue.$vToastify.success({
+                    title,
+                    body: response.data.message
+                });
+
+                // Go home and log in
+                setTimeout(function() {
+                    router.replace('/');
+                    router.go(0);
+                }, 4000);
+            })
+            .catch(error => {
+                console.log('error.reset_password', error.response.data);
+
+                context.commit('errors', error.response.data.errors);
+            });
+    },
+
+    /**
+     * A user is contacting OLM
+     */
+    async SEND_EMAIL_TO_US (context, payload)
+    {
+        const title = i18n.t('notifications.success');
+        const body = 'We got your email. You\'ll hear from us soon!'
+
+        await axios.post('/contact-us', payload)
+            .then(response => {
+                console.log('send_email_to_us', response);
+
+                Vue.$vToastify.success({title, body});
+            })
+            .catch(error => {
+                console.log('error.send_email_to_us', error.response.data);
+
+                context.commit('errors', error.response.data.errors);
+            });
     },
 
     /**
@@ -235,8 +312,8 @@ export const actions = {
      */
     async SAVE_PRIVACY_SETTINGS (context)
     {
-        let title = i18n.t('notifications.success');
-        let body  = i18n.t('notifications.privacy-updated');
+        const title = i18n.t('notifications.success');
+        const body  = i18n.t('notifications.privacy-updated');
 
         await axios.post('/settings/privacy/update', {
             show_name_maps: context.state.user.show_name_maps,

@@ -4,7 +4,18 @@
     "currently-not-joined-team": "Actualmente no estás en ningún equipo",
     "no-joined-team": "Aún no te has unido a un equipo",
     "leader-of-team": "Tu lideras este equipo",
+    "enabled-contributions": "Todas sus contribuciones contarán para este equipo únicamente.",
+    "disabled-contributions": "Aún no ha seleccionado un equipo activo.<br>Eso significa que no estás contribuyendo a ningún equipo en este momento.<br>Puede seleccionar su equipo activo haciendo clic en los íconos de estrellas en la lista inferior.",
+    "disable-contributions-tooltip": "Esto deshabilita las contribuciones de su equipo a partir de ahora. Seguirás siendo miembro de tus equipos y podrás habilitar las contribuciones en cualquier momento.",
+    "team-details": "Detalles del equipo",
+    "all-my-teams": "Todos mis equipos",
+    "this-is-active-team": "Este es tu equipo activo",
+    "set-as-active-team": "Establecer como su equipo activo",
+    "team-identifier": "Identificador de Equipo",
     "join-team": "Por favor únete a un equipo",
+    "leave-team": "Dejar equipo",
+    "just-left-team": "Acabas de dejar el equipo",
+    "cant-leave-team": "No puedes dejar este equipo porque eres el único miembro",
     "change-active-team": "Cambiar equipo activo",
     "download-team-data": "Descargar datos del equipo",
     "hide-from-leaderboards": "Ocultarme de la clasificación",
@@ -15,5 +26,8 @@
     "status-header": "Estado",
     "photos-header": "Fotos",
     "litter-header": "Basura",
-    "last-activity-header": "Última actividad"
+    "identifier-header": "Identificador",
+    "members-header": "Miembros",
+    "last-activity-header": "Última actividad",
+    "confirm-leave-team": "¿Está seguro?\nSiempre puedes volver a unirte y tus contribuciones se guardarán."
 }

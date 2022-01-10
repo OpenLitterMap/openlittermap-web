@@ -22,20 +22,17 @@ class ApiRegisterController extends Controller
     {
     	$this->validate($request, [
             'email'    => 'required|email|max:75|unique:users',
-            'password' => 'required|min:6|max:255', //case_diff|numbers|letters
-            'username' => 'required|unique:users'
+            'password' => 'required|min:6|max:255|case_diff|numbers|letters',
+            'username' => 'required|min:3|max:20|unique:users|different:password',
         ]);
 
         $email = $request->email;
 
         event(new Registered($user = $this->create($request->all())));
 
-        if (app()->environment('production'))
-        {
-            Mail::to($email)->send(new NewUserRegMail($user));
+        Mail::to($email)->send(new NewUserRegMail($user));
 
-            event(new UserSignedUp(now()));
-        }
+        event(new UserSignedUp(now()));
 
         return ['success' => 'Success! Your account has been created.'];
     }
@@ -43,7 +40,7 @@ class ApiRegisterController extends Controller
     protected function create (array $data)
     {
         return User::create([
-            'name' => 'default',
+            'name' => $data['name'] ?? 'default',
             'username' => $data['username'],
             'email' => $data['email'],
             'password' => $data['password'],

@@ -3,6 +3,9 @@
 namespace App\Models;
 
 use App\Models\AI\Annotation;
+use App\Models\Litter\Categories\Art;
+use App\Models\Litter\Categories\Brand;
+use App\Models\Litter\Categories\Smoking;
 use App\Models\Teams\Team;
 use App\Models\User\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,6 +16,7 @@ class Photo extends Model
     use HasFactory;
 
     protected $fillable = [
+        'user_id',
     	'filename',
     	'model',
     	'datetime',
@@ -72,7 +76,7 @@ class Photo extends Model
         'address_array'
     ];
 
-    protected $appends = ['selected'];
+    protected $appends = ['selected', 'picked_up'];
 
     protected $casts = ['datetime'];
 
@@ -82,6 +86,14 @@ class Photo extends Model
     public function getSelectedAttribute ()
     {
         return false;
+    }
+
+    /**
+     * Wrapper around photo presence, for better readability
+     */
+    public function getPickedUpAttribute ()
+    {
+        return !$this->remaining;
     }
 
     /**
@@ -101,16 +113,16 @@ class Photo extends Model
             'smoking',
             'food',
             'coffee',
-            'softdrinks',
             'alcohol',
-            'other',
-            'coastal',
+            'softdrinks',
             'sanitary',
+            'coastal',
             'dumping',
             'industrial',
             'brands',
             'dogshit',
-            'art'
+            'art',
+            'other',
         ];
     }
 
@@ -119,47 +131,7 @@ class Photo extends Model
      */
     public static function getBrands ()
     {
-        return [
-            'adidas',
-            'amazon',
-            'apple',
-            'applegreen',
-            'avoca',
-            'bewleys',
-            'brambles',
-            'butlers',
-            'budweiser',
-            'cafe_nero',
-            'centra',
-            'coke',
-            'colgate',
-            'corona',
-            'costa',
-            'esquires',
-            'frank_and_honest',
-            'fritolay',
-            'gillette',
-            'heineken',
-            'insomnia',
-            'kellogs',
-            'lego',
-            'lolly_and_cookes',
-            'loreal',
-            'nescafe',
-            'nestle',
-            'marlboro',
-            'mcdonalds',
-            'nike',
-            'obriens',
-            'pepsi',
-            'redbull',
-            'samsung',
-            'subway',
-            'supermacs',
-            'starbucks',
-            'tayto',
-            'wilde_and_greene'
-        ];
+        return Brand::types();
     }
 
     /**

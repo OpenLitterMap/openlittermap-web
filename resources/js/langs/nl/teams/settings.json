@@ -1,6 +1,10 @@
 {
     "privacy-title": "Controleer je Privacy",
     "privacy-text": "Controleer je privacy voor elk team waar je je bij aangesloten hebt.",
+
+    "team-update-title": "Update je teams",
+    "team-update-text": "U kunt alleen de teams bijwerken die u leidt.",
+
     "maps": {
         "team-map": "Team Plattegrond",
         "name-will-appear": "Jouw naam zal verschijnen op de plattegrond",

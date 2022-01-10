@@ -17,85 +17,29 @@ class GlobalMapController extends Controller
      *
      * @return array points
      */
-    public function artData () :array
+    public function artData(): array
     {
-        $photos = Photo::select(
-            'id',
-            'verified',
-            'user_id',
-            'team_id',
-            'result_string',
-            'filename',
-            'geohash',
-            'lat',
-            'lon',
-            'datetime'
-        )
-        ->where([
-            ['verified', '>=', 2],
-            ['art_id', '!=', null]
-        ])->get();
+        $photos = Photo::query()
+            ->select(
+                'id',
+                'verified',
+                'user_id',
+                'team_id',
+                'result_string',
+                'filename',
+                'geohash',
+                'lat',
+                'lon',
+                'remaining',
+                'datetime'
+            )
+            ->where([
+                ['verified', '>=', 2],
+                ['art_id', '!=', null]
+            ])
+            ->get();
 
         return $this->photosToGeojson($photos);
-    }
-
-    /**
-     * Convert our photos object to a geojson array
-     *
-     * @param $photos
-     *
-     * @return array
-     */
-    protected function photosToGeojson ($photos) :array
-    {
-        $geojson = [
-            'type'      => 'FeatureCollection',
-            'features'  => null
-        ];
-
-        $features = [];
-
-        // Loop over all clusters and add each feature to the features array
-        // Todo - Remove duplication as 1 user may have uploaded many photos
-        foreach ($photos as $photo)
-        {
-            $showName = $showUsername = $teamName = false;
-
-            if ($photo->user)
-            {
-                $showName = $photo->user->show_name_maps;
-                $showUsername = $photo->user->show_username_maps;
-            }
-
-            if ($photo->team)
-            {
-                $teamName = $photo->team->name;
-            }
-
-            $feature = [
-                'type' => 'Feature',
-                'geometry' => [
-                    'type' => 'Point',
-                    'coordinates' => [$photo->lat, $photo->lon]
-                ],
-                'properties' => [
-                    'result_string' => $photo->verified >= 2 ? $photo->result_string : null,
-                    'filename' => $photo->verified >= 2 ? $photo->filename : '/assets/images/waiting.png',
-                    'datetime' => $photo->datetime,
-                    'cluster'  => false,
-                    'verified' => $photo->verified,
-                    'name'     => $showName ? $photo->user->name : null,
-                    'username' => $showUsername ? $photo->user->username : null,
-                    'team'     => $teamName ? $teamName : null
-                ]
-            ];
-
-            array_push($features, $feature);
-        }
-
-        $geojson['features'] = $features;
-
-        return $geojson;
     }
 
     /**
@@ -103,10 +47,34 @@ class GlobalMapController extends Controller
      *
      * @return array
      */
-    public function index (): array
+    public function index(): array
     {
+        $query = Photo::query()
+            ->select(
+                'id',
+                'verified',
+                'user_id',
+                'team_id',
+                'result_string',
+                'filename',
+                'geohash',
+                'lat',
+                'lon',
+                'datetime'
+            )
+            ->with([
+                'user' => function ($query) {
+                    $query->where('users.show_name_maps', 1)
+                        ->orWhere('users.show_username_maps', 1)
+                        ->select('users.id', 'users.name', 'users.username', 'users.show_username_maps', 'users.show_name_maps');
+                },
+                'team' => function ($query) {
+                    $query->select('teams.id', 'teams.name');
+                }
+            ]);
+
         $photos = $this->filterPhotosByGeoHash(
-            request()->zoom,
+            $query,
             request()->bbox,
             request()->layers ?: null
         )->get();

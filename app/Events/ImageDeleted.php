@@ -20,19 +20,21 @@ class ImageDeleted implements ShouldBroadcast, ShouldQueue
     public $stateId;
     public $cityId;
     public $isUserVerified;
+    public $teamId;
 
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct (User $user, int $countryId, int $stateId, int $cityId)
+    public function __construct (User $user, int $countryId, int $stateId, int $cityId, ?int $teamId)
     {
         $this->user = $user;
         $this->countryId = $countryId;
         $this->stateId = $stateId;
         $this->cityId = $cityId;
-        $this->isUserVerified = !$user->verification_required;
+        $this->isUserVerified = $user->is_trusted;
+        $this->teamId = $teamId;
     }
 
     /**

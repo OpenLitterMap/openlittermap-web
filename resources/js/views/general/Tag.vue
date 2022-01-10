@@ -82,12 +82,14 @@
                         <!-- Info, Tags, Right -->
                         <div id="image-counts" class="column is-3">
                             <div class="box">
-                                <!-- was profile14, 15-->
                                 <li class="list-group-item">
                                     {{ $t('tags.to-tag') }}: {{ remaining }}
                                 </li>
                                 <li class="list-group-item">
                                     {{ $t('tags.total-uploaded') }}: {{ user.total_images }}
+                                </li>
+                                <li v-if="photo.team" class="list-group-item">
+                                    {{ $t('common.team') }}: <strong>{{ photo.team.name}}</strong>
                                 </li>
                             </div>
 

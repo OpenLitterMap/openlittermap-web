@@ -1,6 +1,13 @@
-import { init } from './init'
+import { init } from './init';
 
 export const mutations = {
+    /**
+     * The user wants to change a privacy setting
+     */
+    changePrivacy (state, payload)
+    {
+        state.user[payload.column] = payload.v;
+    },
 
     /**
      * Settings.details
@@ -124,11 +131,11 @@ export const mutations = {
     },
 
     /**
-     * The user wants to change a privacy setting
+     * Updates the user's team data
      */
-    privacy (state, payload)
+    usersTeam (state, payload)
     {
-        state.user[payload.column] = payload.v;
+        state.user.team = payload;
     },
 
     /**
@@ -194,13 +201,4 @@ export const mutations = {
 
         state.requiredXp = payload.requiredXp;
     },
-
-    // /**
-    //  * The user has just created and joined a team
-    //  */
-    // userJoinTeam (state, payload)
-    // {
-    //     state.user['team'] = payload;
-    // }
-
 };

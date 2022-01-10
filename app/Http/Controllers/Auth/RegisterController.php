@@ -63,25 +63,22 @@ class RegisterController extends Controller
     /**
      * Handle a registration request for the application.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @param  Request  $request
+     * @return array
      */
-    public function register (Request $request)
+    public function register (Request $request): array
     {
         $this->validate($request, [
             'name' => 'required|min:3|max:25',
-            'username' => 'required|min:3|max:20|unique:users',
+            'username' => 'required|min:3|max:20|unique:users|different:password',
             'email' => 'required|email|max:75|unique:users',
             'password' => 'required|confirmed|min:6|case_diff|numbers|letters',
-            'g_recaptcha_response' => 'required'
+//            'g-recaptcha-response' => 'required|captcha'
         ]);
 
         event(new Registered($user = $this->create($request->all())));
 
-        if (app()->environment('production'))
-        {
-            Mail::to($request->email)->send(new NewUserRegMail($user));
-        }
+        Mail::to($request->email)->send(new NewUserRegMail($user));
 
         event(new UserSignedUp(now()));
 
@@ -89,7 +86,10 @@ class RegisterController extends Controller
         $user->verify_remaining = 5000;
         $user->save();
 
-        return ['user_id' => $user->id, 'email' => $user->email];
+        return [
+            'user_id' => $user->id,
+            'email' => $user->email
+        ];
     }
 
    /**

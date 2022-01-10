@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Photos\DeletePhotoAction;
 use App\Actions\Photos\MakeImageAction;
 use App\Actions\Locations\ReverseGeocodeLocationAction;
 use App\Actions\Photos\UploadPhotoAction;
+use App\Events\ImageDeleted;
+use App\Http\Requests\AddTagsApiRequest;
+use App\Models\Photo;
 use GeoHash;
 use Carbon\Carbon;
 
-use App\Jobs\UploadData;
 use App\Jobs\Api\AddTags;
 
 use App\Events\ImageUploaded;
@@ -16,9 +19,11 @@ use App\Events\Photo\IncrementPhotoMonth;
 
 use App\Helpers\Post\UploadHelper;
 
+use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Log;
 
 class ApiPhotosController extends Controller
 {
@@ -28,6 +33,8 @@ class ApiPhotosController extends Controller
     protected $uploadHelper;
     /** @var UploadPhotoAction */
     private $uploadPhotoAction;
+    /** @var DeletePhotoAction */
+    private $deletePhotoAction;
     /** @var MakeImageAction */
     private $makeImageAction;
     /** @var ReverseGeocodeLocationAction */
@@ -37,20 +44,23 @@ class ApiPhotosController extends Controller
      * ApiPhotosController constructor
      * Apply middleware to all of these routes
      *
-     * @param UploadHelper $uploadHelper`
+     * @param UploadHelper $uploadHelper
      * @param UploadPhotoAction $uploadPhotoAction
+     * @param DeletePhotoAction $deletePhotoAction
      * @param MakeImageAction $makeImageAction
      * @param ReverseGeocodeLocationAction $reverseGeocodeAction
      */
     public function __construct (
         UploadHelper $uploadHelper,
         UploadPhotoAction $uploadPhotoAction,
+        DeletePhotoAction $deletePhotoAction,
         MakeImageAction $makeImageAction,
         ReverseGeocodeLocationAction $reverseGeocodeAction
     )
     {
         $this->uploadHelper = $uploadHelper;
         $this->uploadPhotoAction = $uploadPhotoAction;
+        $this->deletePhotoAction = $deletePhotoAction;
         $this->makeImageAction = $makeImageAction;
         $this->reverseGeocodeAction = $reverseGeocodeAction;
 
@@ -75,17 +85,18 @@ class ApiPhotosController extends Controller
                 'mimeType' => 'image/jpeg',
                 'error' => 0,
                 'hashName' => NULL
-            )),
+            ))
         );
      *
      * @return array
+     * @throws GuzzleException
      */
     public function store (Request $request) :array
     {
         $request->validate([
-            'photo' => 'required|mimes:jpg,png,jpeg',
-            'lat' => 'required',
-            'lon' => 'required',
+            'photo' => 'required|mimes:jpg,png,jpeg,heic,heif',
+            'lat' => 'required|numeric',
+            'lon' => 'required|numeric',
             'date' => 'required'
         ]);
 
@@ -96,11 +107,28 @@ class ApiPhotosController extends Controller
             return ['success' => false, 'msg' => 'error-3'];
         }
 
+        $photo = $this->storePhoto($request);
+
+        return ['success' => true, 'photo_id' => $photo->id];
+    }
+
+    /**
+     * Temporary method to store a photo
+     * should be refactored back to the store method
+     * This is to handle all APIs from mobile app versions
+     *
+     * @param Request $request
+     * @return Photo
+     * @throws GuzzleException
+     */
+    protected function storePhoto(Request $request): Photo
+    {
+        $file = $request->file('photo');
         $user = Auth::guard('api')->user();
 
         if (!$user->has_uploaded) $user->has_uploaded = 1;
 
-        \Log::channel('photos')->info([
+        Log::channel('photos')->info([
             'app_upload' => $request->all(),
             'user_id' => $user['id']
         ]);
@@ -109,11 +137,16 @@ class ApiPhotosController extends Controller
             ? $request->model
             : 'Mobile app v2';
 
-        $image = $this->makeImageAction->run($file);
+        $image = $this->makeImageAction->run($file)['image'];
 
-        $lat  = $request['lat'];
-		$lon  = $request['lon'];
-		$date = Carbon::parse($request['date']);
+        $lat = $request['lat'];
+        $lon = $request['lon'];
+
+        $date = str_contains($request['date'], ':')
+            ? $request['date']
+            : (int)$request['date'];
+
+        $date = Carbon::parse($date);
 
         // Upload images to both 's3' and 'bbox' disks, resized for 'bbox'
         $imageName = $this->uploadPhotoAction->run(
@@ -123,7 +156,7 @@ class ApiPhotosController extends Controller
         );
 
         $bboxImageName = $this->uploadPhotoAction->run(
-            $this->makeImageAction->run($file, true),
+            $this->makeImageAction->run($file, true)['image'],
             $date,
             $file->hashName(),
             'bbox'
@@ -158,7 +191,7 @@ class ApiPhotosController extends Controller
             'country' => $country->country,
             'country_code' => $country->shortcode,
             'model' => $model,
-            'remaining' => $request['presence'],
+            'remaining' => false, // TODO
             'platform' => 'mobile',
             'geohash' => GeoHash::encode($lat, $lon),
             'team_id' => $user->active_team,
@@ -180,7 +213,7 @@ class ApiPhotosController extends Controller
         if ($user->team) $teamName = $user->team->name;
 
         // Broadcast an event to anyone viewing the Global Map
-        event (new ImageUploaded(
+        event(new ImageUploaded(
             $city->city,
             $state->state,
             $country->country,
@@ -191,7 +224,8 @@ class ApiPhotosController extends Controller
             $country->id,
             $state->id,
             $city->id,
-            !$user->verification_required
+            $user->is_trusted,
+            $user->active_team
         ));
 
         // Move this to redis
@@ -202,28 +236,7 @@ class ApiPhotosController extends Controller
             $date
         ));
 
-		return ['success' => true, 'photo_id' => $photo->id];
-    }
-
-    /**
-     * Save litter data to a recently uploaded photo
-     *
-     * version 1
-     *
-     * This is used to add tags to web images, and session photos
-     */
-    public function dynamicUpdate (Request $request)
-    {
-		$userId = Auth::guard('api')->user()->id;
-
-        \Log::channel('tags')->info([
-            'dynamicUpdate' => 'mobile',
-            'request' => $request->all()
-        ]);
-
-        dispatch (new UploadData($request->all(), $userId));
-
-        return ['msg' => 'dispatched'];
+        return $photo;
     }
 
     /**
@@ -233,18 +246,68 @@ class ApiPhotosController extends Controller
      *
      * This is used by gallery photos
      */
-    public function addTags (Request $request)
+    public function addTags (AddTagsApiRequest $request)
     {
-        $userId = Auth::guard('api')->user()->id;
+        $user = Auth::guard('api')->user();
+        $photo = Photo::find($request->photo_id);
 
-        \Log::channel('tags')->info([
+        if ($photo->user_id !== $user->id || $photo->verified > 0)
+        {
+            abort(403, 'Forbidden');
+        }
+
+        Log::channel('tags')->info([
             'add_tags' => 'mobile',
             'request' => $request->all()
         ]);
 
-        dispatch (new AddTags($request->all(), $userId));
+        dispatch (new AddTags(
+            $user->id,
+            $photo->id,
+            $request->litter ?? $request->tags,
+            $request->picked_up
+        ));
 
         return ['success' => true, 'msg' => 'dispatched'];
+    }
+
+    /**
+     * Upload Photo together with its tags
+     *
+     * @param Request $request
+     * @return array
+     * @throws GuzzleException
+     */
+    public function uploadWithTags (Request $request) :array
+    {
+        $request->validate([
+            'photo' => 'required|mimes:jpg,png,jpeg,heic',
+            'lat' => 'required|numeric',
+            'lon' => 'required|numeric',
+            'date' => 'required',
+            'tags' => 'required|json',
+            'picked_up' => 'nullable|boolean'
+        ]);
+
+        $file = $request->file('photo');
+
+        if ($file->getError() === 3)
+        {
+            return ['success' => false, 'msg' => 'error-3'];
+        }
+
+        $photo = $this->storePhoto($request);
+
+        $userId = Auth::guard('api')->user()->id;
+
+        dispatch (new AddTags(
+            $userId,
+            $photo->id,
+            json_decode($request->tags, true),
+            $request->picked_up
+        ));
+
+        return ['success' => true, 'photo_id' => $photo->id];
     }
 
     /**
@@ -254,10 +317,44 @@ class ApiPhotosController extends Controller
     {
         $user = Auth::guard('api')->user();
 
-        $photos = $user->photos()->where('verification', 0)->select('id', 'filename')->get();
+        $photos = $user->photos()
+            ->where('verified', 0)
+            ->where('verification', 0)
+            ->select('id', 'filename')
+            ->get();
 
-        if ($photos) return ['photos' => $photos];
+        return ['photos' => $photos];
+    }
 
-        return ['photos' => 'none'];
+    /**
+     * Delete an image
+     */
+    public function deleteImage(Request $request)
+    {
+        $user = Auth::guard('api')->user();
+
+        $photo = Photo::findOrFail($request->photoId);
+
+        if ($user->id !== $photo->user_id) {
+            abort(403);
+        }
+
+        $this->deletePhotoAction->run($photo);
+
+        $photo->delete();
+
+        $user->xp = $user->xp > 0 ? $user->xp - 1 : 0;
+        $user->total_images = $user->total_images > 0 ? $user->total_images - 1 : 0;
+        $user->save();
+
+        event(new ImageDeleted(
+            $user,
+            $photo->country_id,
+            $photo->state_id,
+            $photo->city_id,
+            $photo->team_id
+        ));
+
+        return ['success' => true];
     }
 }

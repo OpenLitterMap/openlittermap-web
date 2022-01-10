@@ -1,5 +1,7 @@
 {
     "plastic-pollution-out-of-control": "Plastic pollution is out of control",
+    "fires-out-of-control": "Zigarettenkippen können Feuer entfachen",
+    "climate-change-out-of-control": "Plastik verstärkt den Klimawandel",
     "help-us": "Help us create the world's most advanced open database on litter, brands & plastic pollution",
     "why-collect-data": "Why should we collect data",
     "visibility": "Visibility",
@@ -16,5 +18,7 @@
     "share-results": "Share your results",
     "share": "Share the maps or download our data. Let's show everyone how badly polluted the world really is",
     "verified": "Your email has been confirmed! You can now log in.",
-    "close": "Close"
+    "close": "Close",
+    "our-partners": "Unsere Partner",
+    "become-a-partner": "Ein partner werden"
 }

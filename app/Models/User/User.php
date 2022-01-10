@@ -15,6 +15,9 @@ use Spatie\Permission\Traits\HasRoles;
 use Laravel\Passport\HasApiTokens;
 use LaravelAndVueJS\Traits\LaravelPermissionToVueJS;
 
+/**
+ * @property array<Team> $teams
+ */
 class User extends Authenticatable
 {
     use Notifiable, Billable, HasApiTokens, HasRoles, LaravelPermissionToVueJS, HasFactory;
@@ -110,7 +113,7 @@ class User extends Authenticatable
         'verification_required' => 'boolean'
     ];
 
-    protected $appends = ['total_categories', 'total_tags', 'total_brands_redis'];
+    protected $appends = ['total_categories', 'total_tags', 'total_brands_redis', 'picked_up'];
 
     /**
      * Get total categories attribute
@@ -135,6 +138,24 @@ class User extends Authenticatable
     }
 
     /**
+     * Returns true if the user is verified
+     * or is part of a trusted team
+     */
+    public function getIsTrustedAttribute(): bool
+    {
+        return !$this->verification_required || $this->team && $this->team->is_trusted;
+    }
+
+    /**
+     * Wrapper around default setting for items_remaining,
+     * for better readability
+     */
+    public function getPickedUpAttribute ()
+    {
+        return !$this->items_remaining;
+    }
+
+    /**
      * Get total tags attribute
      *
      * @return int total number of tags
@@ -155,6 +176,11 @@ class User extends Authenticatable
     public function getTotalBrandsRedisAttribute ()
     {
         return (int) Redis::hget("user:{$this->id}", 'total_brands');
+    }
+
+    public function getPositionAttribute()
+    {
+        return User::where('xp', '>', $this->xp ?? 0)->count() + 1;
     }
 
     /**
@@ -284,11 +310,14 @@ class User extends Authenticatable
     public function teams ()
     {
         return $this->belongsToMany(Team::class)
+            ->withTimestamps()
             ->withPivot(
                 'show_name_maps',
                 'show_username_maps',
                 'show_name_leaderboards',
-                'show_username_leaderboards'
+                'show_username_leaderboards',
+                'total_photos',
+                'total_litter'
             );
     }
 

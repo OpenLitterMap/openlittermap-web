@@ -5,9 +5,11 @@ namespace App\Models\Litter;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class LitterCategory extends Model
+abstract class LitterCategory extends Model
 {
     use HasFactory;
+
+    protected $guarded = [];
 
     /**
      * Total amount of litter on any litter category model
@@ -41,10 +43,14 @@ class LitterCategory extends Model
         {
             if ($this->$type)
             {
-                $string .= $this->table . '.' . $type . ' ' . $this->$type . ',';
+                $className = $this->table == 'arts' ? 'art' : $this->table;
+
+                $string .= $className . '.' . $type . ' ' . $this->$type . ',';
             }
         }
 
         return $string;
     }
+
+    public static abstract function types(): array;
 }

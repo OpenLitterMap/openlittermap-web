@@ -26,5 +26,8 @@
     "search-by-id": "Busquea por ID",
     "active": "Activo",
     "inactive": "Inactivo",
-    "your-email": "tu@correoelectronico.com"
+    "inactivate": "Deshabilitar las contribuciones del equipo",
+    "your-email": "tu@correoelectronico.com",
+    "team": "Equipo",
+    "actions": "Comportamiento"
 }

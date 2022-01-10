@@ -37,9 +37,7 @@
             </select>
         </div>
 
-        <p v-if="loading">{{ $t('common.loading') }}</p>
-
-        <TeamMap v-else />
+        <TeamMap :team-id="viewTeam" />
 
     </section>
 </template>
@@ -54,11 +52,7 @@ export default {
     },
     async created ()
     {
-        this.loading = true;
-
         await this.changeTeamOrTime();
-
-        this.loading = false;
     },
     data ()
     {
@@ -71,7 +65,6 @@ export default {
                 'year',
                 'all'
             ],
-            loading: true,
             viewTeam: 0
         };
     },
@@ -82,7 +75,7 @@ export default {
          */
         litter_count ()
         {
-            return this.$store.state.teams.allTeams.litter_count;
+            return this.$store.state.teams.allTeams.litter_count ?? 0;
         },
 
         /**
@@ -90,7 +83,7 @@ export default {
          */
         photos_count ()
         {
-            return this.$store.state.teams.allTeams.photos_count;
+            return this.$store.state.teams.allTeams.photos_count ?? 0;
         },
 
         /**
@@ -98,7 +91,7 @@ export default {
          */
         members_count ()
         {
-            return this.$store.state.teams.allTeams.members_count;
+            return this.$store.state.teams.allTeams.members_count ?? 0;
         },
 
         /**

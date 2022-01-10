@@ -26,5 +26,8 @@
     "search-by-id": "Search by ID",
     "active": "Active",
     "inactive": "Inactive",
-    "your-email": "you@email.com"
+    "inactivate": "Disable Team Contributions",
+    "your-email": "you@email.com",
+    "team": "Team",
+    "actions": "Actions"
 }

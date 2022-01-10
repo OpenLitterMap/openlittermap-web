@@ -25,22 +25,16 @@
                 @submit.prevent="submit"
                 @keydown="clearError($event.target.name)"
             >
-                <!-- NAME -->
-                <label for="name">{{ $t('auth.subscribe.form-field-name') }}</label>
-
-                <span
-                    class="is-danger"
-                    v-if="errorExists('name')"
-                    v-text="getFirstError('name')"
-                />
-                <br>
-
                 <div class="field">
+                    <!-- NAME -->
+                    <label class="label" for="name">{{ $t('auth.subscribe.form-field-name') }}</label>
+
                     <div class="control has-icons-left">
                         <input
                             name="name"
                             type="text"
                             class="input"
+                            :class="errorExists('name') ? 'is-danger' : ''"
                             placeholder="Your full name"
                             required
                             v-model="name"
@@ -48,23 +42,23 @@
                         <span class="icon is-small is-left">
                             <i class="fa fa-user" />
                         </span>
+                        <p
+                            class="help is-danger"
+                            v-if="errorExists('name')"
+                            v-text="getFirstError('name')"
+                        />
                    </div>
                 </div>
 
-                <!-- USERNAME OR ORGANISATION -->
-                <label for="username">{{ $t('auth.subscribe.form-field-unique-id') }}</label>
-
-                <span
-                    class="is-danger"
-                    v-if="errorExists('username')"
-                    v-text="getFirstError('username')"
-                />
-
                 <div class="field">
+                    <!-- USERNAME OR ORGANISATION -->
+                    <label class="label" for="username">{{ $t('auth.subscribe.form-field-unique-id') }}</label>
+
                     <div class="control has-icons-left">
                         <input
                             name="username"
                             class="input"
+                            :class="errorExists('username') ? 'is-danger' : ''"
                             placeholder="Unique Username or Organisation"
                             required
                             type="text"
@@ -73,23 +67,23 @@
                         <span class="icon is-small is-left">
                             @
                         </span>
+                        <p
+                            class="help is-danger"
+                            v-if="errorExists('username')"
+                            v-text="getFirstError('username')"
+                        />
                     </div>
                 </div>
 
-                <!-- EMAIL -->
-                <label for="email">{{ $t('auth.subscribe.form-field-email') }}</label>
-
-                <span
-                    class="is-danger"
-                    v-if="errorExists('email')"
-                    v-text="getFirstError('email')"
-                />
-
                 <div class="field">
+                    <!-- EMAIL -->
+                    <label class="label" for="email">{{ $t('auth.subscribe.form-field-email') }}</label>
+
                     <div class="control has-icons-left">
                         <input
                             name="email"
                             class="input"
+                            :class="errorExists('email') ? 'is-danger' : ''"
                             type="email"
                             placeholder="you@email.com"
                             required
@@ -98,18 +92,23 @@
                         <span class="icon is-small is-left">
                             <i class="fa fa-envelope" />
                         </span>
+                        <p
+                            class="help is-danger"
+                            v-if="errorExists('email')"
+                            v-text="getFirstError('email')"
+                        />
                     </div>
                 </div>
 
-                <!-- PASSWORD -->
-                <label for="password">{{ $t('auth.subscribe.form-field-password') }}</label>
-
-                <span class="is-danger" v-if="errorExists('password')" v-text="getFirstError('password')" />
-
                 <div class="field">
+                    <!-- PASSWORD -->
+                    <label class="label" for="password">{{ $t('auth.subscribe.form-field-password') }}</label>
+
                     <div class="control has-icons-left">
                         <input
                             class="input"
+                            :class="errorExists('password') ? 'is-danger' : ''"
+                            id="password"
                             name="password"
                             type="password"
                             placeholder="Create a strong password"
@@ -119,23 +118,24 @@
                         <span class="icon is-small is-left">
                             <i class="fa fa-key" />
                         </span>
+                        <p
+                            class="help is-danger"
+                            v-if="errorExists('password')"
+                            v-text="getFirstError('password')"
+                        />
                     </div>
                 </div>
 
-                <!-- CONFIRM PASSWORD -->
-                <label for="password_confirmation">{{ $t('auth.subscribe.form-field-pass-confirm') }}</label>
-
-                <span
-                    class="is-danger"
-                    v-if="errorExists('password_confirmation')"
-                    v-text="getFirstError('password_confirmation')"
-                />
-
                 <div class="field">
+                    <!-- CONFIRM PASSWORD -->
+                    <label class="label" for="password_confirmation">{{ $t('auth.subscribe.form-field-pass-confirm') }}</label>
+
                     <div class="control has-icons-left">
                         <input
                             class="input"
+                            :class="errorExists('password_confirmation') ? 'is-danger' : ''"
                             type="password"
+                            id="password_confirmation"
                             name="password_confirmation"
                             placeholder="Confirm your Password"
                             required
@@ -144,6 +144,11 @@
                         <span class="icon is-small is-left">
                             <i class="fa fa-refresh"/>
                         </span>
+                        <p
+                            class="help is-danger"
+                            v-if="errorExists('password_confirmation')"
+                            v-text="getFirstError('password_confirmation')"
+                        />
                     </div>
                 </div>
 
@@ -162,19 +167,28 @@
                 </p>
 
                 <div class="captcha">
-                     <span class="is-danger" v-if="errorExists('g_recaptcha_response')" v-text="getFirstError('g_recaptcha_response')"></span>
-
-                    <vue-recaptcha
-                        :sitekey="computedKey"
-                        v-model="g_recaptcha_response"
-                        :loadRecaptchaScript="true"
-                        @verify="recaptcha"
+                    <div>
+                        <vue-recaptcha
+                            sitekey="6Le9FtwcAAAAAMOImuwEoOYssOVdNf7dfI2x8XZh"
+                            v-model="g_recaptcha_response"
+                            :loadRecaptchaScript="true"
+                            @verify="recaptcha"
+                        />
+                    </div>
+                    <p
+                        class="help is-danger"
+                        v-if="errorExists('g-recaptcha-response')"
+                        v-text="getFirstError('g-recaptcha-response')"
                     />
                 </div>
                 <br>
                 <div style="text-align: center; padding-bottom: 1em;">
 
-                    <button :class="button" :disabled="checkDisabled">{{ $t('auth.subscribe.form-btn') }}</button>
+                    <button
+                        class="button is-medium is-primary mb1"
+                        :class="processing ? 'is-loading' : ''"
+                        :disabled="checkDisabled"
+                    >{{ $t('auth.subscribe.form-btn') }}</button>
 
                     <p>{{ $t('auth.subscribe.create-account-note') }} </p>
                 </div>
@@ -188,10 +202,13 @@ import VueRecaptcha from 'vue-recaptcha'
 
 export default {
 	name: 'CreateAccount',
-	props: ['plan'],
-    components: { VueRecaptcha },
-	created ()
-	{
+	props: [
+        'plan'
+    ],
+    components: {
+        VueRecaptcha
+    },
+	created () {
 		if (this.plan)
 		{
 			if (this.plan === 'startup') this.planInt = 2;
@@ -200,10 +217,8 @@ export default {
 			else if (this.plan === 'pro') this.planInt = 5;
 		}
 	},
-	data ()
-	{
+	data () {
 		return {
-            btn: 'button is-medium is-primary mb1',
             planInt: 1,
             processing: false,
             // REGISTRATION
@@ -216,17 +231,7 @@ export default {
             g_recaptcha_response: '',
 		};
 	},
-
 	computed: {
-
-	    /**
-         * Add spinner when processing
-         */
-	    button ()
-        {
-            return this.processing ? this.btn + ' is-loading' : this.btn;
-        },
-
 	    /**
          * Return true to disable the button
          */
@@ -239,21 +244,6 @@ export default {
             // if (Object.keys(this.errors).length > 0) return true;
 
             return false;
-        },
-
-        /**
-         * Key to return for google-recaptcha
-         * @olmbulma.test (old) 6Lfd4HMUAAAAAMZBVUIpBJI7OfwtPcbqR6kGndSE
-         * @olm.test (new) 6LcvHsIZAAAAAOG0q9-1vY3uWqu0iFvUC3tCNhID
-         * @production 6LciihwUAAAAADsZr0CYUoLPSMOIiwKvORj8AD9m // todo - put this on .env
-         */
-        computedKey ()
-        {
-            if (process.env.NODE_ENV === "development")
-            {
-                return "6LcvHsIZAAAAAOG0q9-1vY3uWqu0iFvUC3tCNhID"; // olm.test
-            }
-            return "6LciihwUAAAAADsZr0CYUoLPSMOIiwKvORj8AD9m" // production
         },
 
         /**
@@ -272,9 +262,7 @@ export default {
 			return this.$store.state.plans.plans;
 		}
 	},
-
 	methods: {
-
         /**
          * Clear an error with this key
          */
@@ -292,7 +280,9 @@ export default {
 
             this.$router.push({
                 path: 'join',
-                query: { plan }
+                query: {
+                    plan
+                }
             });
         },
 
@@ -349,15 +339,12 @@ export default {
                 email: this.email,
                 password: this.password,
                 password_confirmation: this.password_confirmation,
-                recaptcha: this.g_recaptcha_response,
+                g_recaptcha_response: this.g_recaptcha_response,
                 plan: this.planInt,
                 plan_id
             });
 
-            this.name = '';
-            this.username = '';
-            this.email = '';
-            this.password = '';
+            this.password_confirmation = '';
 
             this.processing = false;
         },
@@ -369,7 +356,8 @@ export default {
 
     .captcha {
         display: flex;
-        justify-content: center;
+        align-items: center;
+        flex-direction: column;
     }
 
     .call-container {
@@ -386,10 +374,6 @@ export default {
 
 	.input-group {
 		padding-bottom: 1em;
-	}
-
-	.is-danger {
-		color: red;
 	}
 
     .signup-container {

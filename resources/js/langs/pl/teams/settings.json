@@ -1,6 +1,10 @@
 {
     "privacy-title": "Kontroluj swoją prywatność",
     "privacy-text": "Kontroluj swoją prywatność każdej drużyny, do której dołączyłeś.",
+
+    "team-update-title": "Zaktualizuj swoje zespoły",
+    "team-update-text": "Możesz aktualizować tylko te drużyny, którymi kierujesz.",
+
     "maps": {
         "team-map": "Mapa drużyny",
         "name-will-appear": "Twoje imię pojawi się na mapach",

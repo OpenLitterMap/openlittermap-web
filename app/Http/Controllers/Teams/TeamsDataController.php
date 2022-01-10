@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Teams;
 
 use App\Http\Controllers\Controller;
 use App\Models\Photo;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class TeamsDataController extends Controller
@@ -16,17 +15,7 @@ class TeamsDataController extends Controller
      */
     public function index ()
     {
-        $team_ids = Auth::user()->teams->pluck('id')->toArray();
-
-        // if 0, we want to use all team_ids
-        // if its not 0, we only want the data for this team
-        if (request()->team_id !== '0')
-        {
-            if (in_array(request()->team_id, $team_ids))
-            {
-                $team_ids = [request()->team_id];
-            }
-        }
+        $teamIds = $this->getTeamIds();
 
         // period
         if (request()->period === 'today') $period = now()->startOfDay();
@@ -35,56 +24,41 @@ class TeamsDataController extends Controller
         else if (request()->period === 'year') $period = now()->startOfYear();
         else if (request()->period === 'all') $period = '2020-11-22 00:00:00'; // date of writing
 
-        $query = Photo::whereIn('team_id', $team_ids)
-            ->whereDate('created_at', '>=', $period)
-            ->where('verified', 2);
+        $query = Photo::query()
+            ->whereIn('team_id', $teamIds)
+            ->whereDate('created_at', '>=', $period);
 
-        $photos_count = $query->count();
-        $members_count = $query->distinct()->count('user_id');
+        $photosCount = $query->count();
+
+        $membersCount = $query->distinct()->count('user_id');
 
         // might need photo.verified_at
-        $litter_count = Photo::whereIn('team_id', $team_ids)
+        $litterCount = Photo::whereIn('team_id', $teamIds)
             ->whereDate('updated_at', '>=', $period)
             ->where('verified', 2)
             ->sum('total_litter');
 
-        $geojson = [
-            'type'      => 'FeatureCollection',
-            'features'  => []
+        return [
+            'photos_count' => $photosCount,
+            'litter_count' => $litterCount,
+            'members_count' => $membersCount
         ];
+    }
 
-        $photos = $query->get();
+    /**
+     * Returns the team ids depending on user request
+     * If 0, we want to use all teamIds
+     * If it's not 0, we only want the data for this team
+     */
+    protected function getTeamIds(): array
+    {
+        $teamIds = Auth::user()->teams->pluck('id')->toArray();
 
-        // Populate geojson object
-        foreach ($photos as $photo)
+        if (request()->team_id && in_array(request()->team_id, $teamIds))
         {
-            $feature = [
-                'type' => 'Feature',
-                'geometry' => [
-                    'type' => 'Point',
-                    'coordinates' => [$photo->lon, $photo->lat]
-                ],
-
-                'properties' => [
-                    'photo_id' => $photo->id,
-                    'img' => $photo->filename,
-                    'model' => $photo->model,
-                    'datetime' => $photo->datetime,
-                    'latlng' => [$photo->lat, $photo->lon],
-                    'text' => $photo->result_string
-                ]
-            ];
-
-            array_push($geojson["features"], $feature);
+            $teamIds = [request()->team_id];
         }
 
-        // json_encode($geojson, JSON_NUMERIC_CHECK);
-
-        return [
-            'photos_count' => $photos_count,
-            'litter_count' => $litter_count,
-            'members_count' => $members_count,
-            'geojson' => $geojson
-        ];
+        return $teamIds;
     }
 }

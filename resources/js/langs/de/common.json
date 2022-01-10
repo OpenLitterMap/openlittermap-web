@@ -24,5 +24,8 @@
     "search-by-id": "Search by ID",
     "active": "Active",
     "inactive": "Inactive",
-    "your-email": "you@email.com"
+    "inactivate": "Teambeiträge deaktivieren",
+    "your-email": "you@email.com",
+    "team": "Mannschaft",
+    "actions": "Actie"
 }

@@ -6,6 +6,18 @@ html {
     height: 100vh;
 }
 
+/* Hide scrollbar for Chrome, Safari and Opera */
+.scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+}
+
+/* Hide scrollbar for IE, Edge add Firefox */
+.scrollbar-hidden {
+    -ms-overflow-style: none; /* for Internet Explorer, Edge */
+    scrollbar-width: none; /* for Firefox */
+    overflow-y: scroll;
+}
+
 /* Extra leaflet styles */
 .info {
     padding: 6px 8px;
@@ -39,12 +51,42 @@ html {
     display: none;
 }
 
-.leaflet-popup-content {
-    width: 180px !important;
+.leaflet-popup-content-wrapper {
+    padding: 0 !important;
 }
 
-.leafet-popup {
-    left: -106px !important;
+.leaflet-popup-content {
+    margin: 0 !important;
+}
+
+.leaflet-popup-content p {
+    margin-bottom: 10px !important;
+    margin-top: 10px !important;
+}
+
+.leaflet-popup-content p:last-of-type {
+    margin-bottom: 0 !important;
+}
+
+.leaflet-popup-content p:first-of-type {
+    margin-top: 0 !important;
+}
+
+.leaflet-litter-img-container {
+    padding: 1.2em;
+}
+
+.leaflet-litter-img-container p {
+    color: black !important;
+    font-size: 1.2em;
+}
+
+.leaflet-litter-img {
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    object-fit: contain;
+    max-height: 100%;
+    cursor: pointer;
 }
 /* End extra leaflet styles */
 
@@ -275,6 +317,18 @@ html {
 	display: none;
 }
 
+.success-privacy-text {
+    color: green;
+    font-weight: 600;
+    font-family: BlinkMacSystemFont, -apple-system, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+}
+
+.failed-privacy-text {
+    color: red;
+    font-weight: 600;
+    font-family: BlinkMacSystemFont, -apple-system, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+}
+
 .suggest-item {
     color: #363636 !important;
 }
@@ -309,6 +363,43 @@ html {
 
 .w100 {
     width: 100%;
+}
+
+
+/**
+* Tooltip Styles
+*/
+.tooltip {
+    position: relative;
+}
+
+.tooltip .tooltip-text {
+    visibility: hidden;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 4px 8px;
+    position: absolute;
+    z-index: 30;
+    bottom: 115%;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.tooltip:hover .tooltip-text {
+    visibility: visible;
+    opacity: 0.8;
+}
+.tooltip .tooltip-text::after {
+    content: " ";
+    position: absolute;
+    top: 100%; /* At the bottom of the tooltip */
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: black transparent transparent transparent;
 }
 
 /* Desktop view */

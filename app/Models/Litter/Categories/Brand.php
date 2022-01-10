@@ -6,131 +6,34 @@ use App\Models\Litter\LitterCategory;
 
 class Brand extends LitterCategory
 {
-    protected $fillable = [
-    	'adidas',
-    	'amazon',
-        'aldi',
-    	'apple',
-        'applegreen',
-        'asahi',
-        'avoca',
-
-        'ballygowan',
-        'bewleys',
-        'brambles',
-    	'budweiser',
-        'bulmers',
-        'burgerking',
-        'butlers',
-
-        'cadburys',
-        'cafe_nero',
-        'camel',
-        'carlsberg',
-        'centra',
-    	'coke',
-        'circlek',
-        'coles',
-    	'colgate',
-    	'corona',
-        'costa',
-
-        'doritos',
-        'drpepper',
-        'dunnes',
-        'duracell',
-        'durex',
-
-        'evian',
-        'esquires',
-
-        'fosters',
-        'frank_and_honest',
-    	'fritolay',
-
-        'gatorade',
-    	'gillette',
-        'guinness',
-
-        'haribo',
-    	'heineken',
-
-        'insomnia',
-
-    	'kellogs',
-        'kfc',
-
-    	'lego',
-        'lidl',
-        'lindenvillage',
-        'lolly_and_cookes',
-    	'loreal',
-        'lucozade',
-
-    	'marlboro',
-        'mars',
-    	'mcdonalds',
-
-        'nero',
-        'nescafe',
-        'nestle',
-    	'nike',
-
-        'obriens',
-
-    	'pepsi',
-        'powerade',
-
-    	'redbull',
-        'ribena',
-
-    	'samsung',
-        'sainsburys',
-        'spar',
-        'stella',
-    	'subway',
-        'supermacs',
-        'supervalu',
-    	'starbucks',
-
-    	'tayto',
-        'tesco',
-        'thins',
-
-        'volvic',
-
-        'waitrose',
-        'walkers',
-        'woolworths',
-        'wilde_and_greene',
-        'wrigleys'
-    ];
-
-    /**
-     * Pre-defined litter types available on this class
-     */
-    public function types ()
+    public static function types(): array
     {
         return [
+            'aadrink',
             'adidas',
-            'amazon',
+            'albertheijn',
             'aldi',
+            'amazon',
+            'amstel',
             'apple',
             'applegreen',
             'asahi',
             'avoca',
 
+            'bacardi',
             'ballygowan',
             'bewleys',
             'brambles',
             'budweiser',
             'bulmers',
+            'bullit',
             'burgerking',
             'butlers',
 
             'cadburys',
             'cafe_nero',
             'camel',
+            'caprisun',
             'carlsberg',
             'centra',
             'coke',
@@ -149,25 +52,31 @@ class Brand extends LitterCategory
             'evian',
             'esquires',
 
+            'fanta',
+            'fernandes',
             'fosters',
             'frank_and_honest',
             'fritolay',
 
             'gatorade',
             'gillette',
+            'goldenpower',
             'guinness',
 
             'haribo',
             'heineken',
+            'hertog_jan',
 
             'insomnia',
 
             'kellogs',
             'kfc',
 
+            'lavish',
             'lego',
             'lidl',
             'lindenvillage',
+            'lipton',
             'lolly_and_cookes',
             'loreal',
             'lucozade',
@@ -175,6 +84,7 @@ class Brand extends LitterCategory
             'marlboro',
             'mars',
             'mcdonalds',
+            'monster',
 
             'nero',
             'nescafe',
@@ -191,6 +101,9 @@ class Brand extends LitterCategory
 
             'samsung',
             'sainsburys',
+            'schutters',
+            'slammers',
+            'spa',
             'spar',
             'stella',
             'subway',
@@ -208,7 +121,7 @@ class Brand extends LitterCategory
             'walkers',
             'woolworths',
             'wilde_and_greene',
-            'wrigleys'
+            'wrigleys',
         ];
     }
 }

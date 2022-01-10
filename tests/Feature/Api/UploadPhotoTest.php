@@ -35,22 +35,6 @@ class UploadPhotoTest extends TestCase
         City::create(['city' => 'error_city', 'country_id' => $country->id, 'state_id' => $state->id]);
     }
 
-    /**
-     * @param array $imageAttributes
-     * @return array
-     */
-    protected function getApiImageAttributes(array $imageAttributes): array
-    {
-        return [
-            'photo' => $imageAttributes['file'],
-            'lat' => $imageAttributes['latitude'],
-            'lon' => $imageAttributes['longitude'],
-            'date' => $imageAttributes['dateTime'],
-            'model' => 'test model',
-            'presence' => true
-        ];
-    }
-
     public function test_an_api_user_can_upload_a_photo()
     {
         Storage::fake('s3');
@@ -195,9 +179,7 @@ class UploadPhotoTest extends TestCase
 
         Carbon::setTestNow();
 
-        $user = User::factory()->create([
-            'active_team' => Team::factory()
-        ]);
+        $user = User::factory()->create();
 
         $this->actingAs($user, 'api');
 
@@ -229,22 +211,61 @@ class UploadPhotoTest extends TestCase
         $response->assertRedirect('login');
     }
 
-    public function test_the_uploaded_photo_is_validated()
+
+    public function validationDataProvider(): array
+    {
+        return [
+            [
+                'fields' => [],
+                'errors' => ['photo', 'lat', 'lon', 'date'],
+            ],
+            [
+                'fields' => ['photo' => UploadedFile::fake()->image('some.pdf'), 'lat' => 5, 'lon' => 5, 'date' => now()->toDateTimeString()],
+                'errors' => ['photo']
+            ],
+            [
+                'fields' => ['photo' => 'validImage', 'lat' => 'asdf', 'lon' => 'asdf', 'date' => now()->toDateTimeString()],
+                'errors' => ['lat', 'lon']
+            ],
+        ];
+    }
+
+    /**
+     * @dataProvider validationDataProvider
+     */
+    public function test_the_uploaded_photo_is_validated($fields, $errors)
     {
         $user = User::factory()->create();
 
         $this->actingAs($user, 'api');
 
-        $this->postJson('/api/photos/submit', ['photo' => null])
-            ->assertStatus(422)
-            ->assertJsonValidationErrors(['photo', 'lat', 'lon', 'date']);
+        if (($fields['photo'] ?? null) == 'validImage') {
+            $fields['photo'] = $this->getApiImageAttributes($this->getImageAndAttributes());
+        }
 
-        $nonImage = UploadedFile::fake()->image('some.pdf');
-
-        $this->postJson('/api/photos/submit', [
-            'photo' => $nonImage
-        ])
+        $this->postJson('/api/photos/submit', $fields)
             ->assertStatus(422)
-            ->assertJsonValidationErrors('photo');
+            ->assertJsonValidationErrors($errors);
     }
+
+    public function test_uploaded_photo_can_have_different_mime_types()
+    {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+
+        Carbon::setTestNow();
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user, 'api');
+
+        // PNG
+        $imageAttributes = $this->getImageAndAttributes('png');
+        $this->post('/api/photos/submit', $this->getApiImageAttributes($imageAttributes))->assertOk();
+
+        // JPEG
+        $imageAttributes = $this->getImageAndAttributes('jpeg');
+        $this->post('/api/photos/submit', $this->getApiImageAttributes($imageAttributes))->assertOk();
+    }
+
 }
