@@ -7,6 +7,7 @@ use App\Actions\Photos\DeletePhotoAction;
 use App\Actions\Locations\UpdateLeaderboardsFromPhotoAction;
 
 use App\Events\ImageDeleted;
+use App\Http\Requests\GetImageForVerificationRequest;
 use App\Models\Photo;
 use App\Models\User\User;
 
@@ -14,6 +15,7 @@ use App\Traits\AddTagsTrait;
 
 use Carbon\Carbon;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 use App\Events\TagsVerifiedByAdmin;
@@ -183,7 +185,7 @@ class AdminController extends Controller
     }
 
     /**
-      * Update the contents of an Image, Delete the image
+     * Update the contents of an Image, Delete the image
      */
     public function updateDelete (Request $request)
     {
@@ -228,38 +230,42 @@ class AdminController extends Controller
     /**
      * Get the next image to verify
      *
+     * @param GetImageForVerificationRequest $request
      * @return array
      */
-    public function getImage (): array
+    public function getImage (GetImageForVerificationRequest $request): array
     {
-        $photo = Photo::where([
-            'verification' => 0,
-            ['user_id', '!=', 3233], // dont load freds data
-            ['user_id', '!=', 5292]  // or sarahs
-        ])->first();
+        $photo = Photo::query()
+            ->where(['verification' => 0])
+            ->whereNotIn('user_id', $this->usersToSkipVerification())
+            ->when($request->country_id, function (Builder $q) use ($request) {
+                return $q->whereCountryId($request->country_id);
+            })
+            ->first();
 
         // Count photos that have been uploaded, but not tagged or submitted for verification
-        $photosNotProcessed = Photo::where([
-                ['verification', 0],
-                ['user_id', '!=', 3233],
-                ['user_id', '!=', 5292]
-        ])->count();
+        $photosNotProcessed = Photo::where([['verification', 0]])
+            ->whereNotIn('user_id', $this->usersToSkipVerification())
+            ->count();
 
         // Count photos submitted for verification
         $photosAwaitingVerification = Photo::where([
             ['verified', '<', 2], // not verified
             ['verification', '>', 0], // submitted for verification
-            ['user_id', '!=', 3233],
-            ['user_id', '!=', 5292]
-        ])->count();
+        ])
+            ->whereNotIn('user_id', $this->usersToSkipVerification())
+            ->count();
 
         if (!$photo)
         {
-            $photo = Photo::where([
-                'verification' => 0.1,
-                ['user_id', '!=', 3233], // dont load freds data
-                ['user_id', '!=', 5292]  // or sarahs
-            ])->first();
+            /** @var Photo $photo */
+            $photo = Photo::query()
+                ->where(['verification' => 0.1])
+                ->whereNotIn('user_id', $this->usersToSkipVerification())
+                ->when($request->country_id, function (Builder $q) use ($request) {
+                    return $q->whereCountryId($request->country_id);
+                })
+                ->first();
 
             // Load the tags for this photo if it exists
             if ($photo)
@@ -273,5 +279,15 @@ class AdminController extends Controller
             'photosNotProcessed' => $photosNotProcessed,
             'photosAwaitingVerification' => $photosAwaitingVerification
         ];
+    }
+
+    /**
+     * These users don't want their images verified
+     *
+     * @return int[]
+     */
+    protected function usersToSkipVerification(): array
+    {
+        return [3233, 5292];
     }
 }

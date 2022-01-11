@@ -1,86 +1,93 @@
 <template>
-	<div class="container mt3">
+    <div>
 
-		<loading v-if="loading" :active.sync="loading" :is-full-page="true" />
+        <div class="has-background-grey-light has-text-centered py-4">
+            will be here
+        </div>
 
-	    <div v-else>
+        <div class="container mt3">
 
-            <!-- Todo , add extra loaded statement here -->
-	    	<div v-if="this.photosAwaitingVerification === 0 && this.photosNotProcessed === 0">
-	    		<p class="title is-3">All done.</p>
-	    	</div>
+            <loading v-if="loading" :active.sync="loading" :is-full-page="true" />
 
-	    	<div v-else>
+            <div v-else>
 
-				<h1 class="title is-2 has-text-centered" style="margin-bottom: 1em;">
-					#{{ this.photo.id }} Uploaded {{ this.uploadedTime }}
-				</h1>
-			  	<p class="subtitle is-5 has-text-centered" style="margin-bottom: 4em;">
-			  		{{ this.photo.display_name }}
-			  	</p>
-				<!-- todo - verification bar -->
+                <!-- Todo , add extra loaded statement here -->
+                <div v-if="this.photosAwaitingVerification === 0 && this.photosNotProcessed === 0">
+                    <p class="title is-3">All done.</p>
+                </div>
 
-				<div class="columns">
+                <div v-else>
 
-				  	<!-- Left - remaining verification & other actions -->
-				  	<div class="column has-text-centered">
-						<p class="subtitle is-5">Uploaded, not tagged: {{ this.photosNotProcessed }}</p>
-						<p class="subtitle is-5">Tagged, awaiting verification: {{ this.photosAwaitingVerification }}</p>
+                    <h1 class="title is-2 has-text-centered" style="margin-bottom: 1em;">
+                        #{{ this.photo.id }} Uploaded {{ this.uploadedTime }}
+                    </h1>
+                    <p class="subtitle is-5 has-text-centered" style="margin-bottom: 4em;">
+                        {{ this.photo.display_name }}
+                    </p>
+                    <!-- todo - verification bar -->
 
-						<div style="padding-top: 20%;">
-							<p>Accept data, verify, but delete the image.</p>
-					    <button :class="delete_verify_button" @click="verifyDelete" :disabled="processing">
-					    	Verify & Delete
-					    </button>
+                    <div class="columns">
 
-					    <p>Delete the image.</p>
-					    <button :class="delete_button" @click="adminDelete" :disabled="processing">
-					    	DELETE
-					    </button>
+                        <!-- Left - remaining verification & other actions -->
+                        <div class="column has-text-centered">
+                            <p class="subtitle is-5">Uploaded, not tagged: {{ this.photosNotProcessed }}</p>
+                            <p class="subtitle is-5">Tagged, awaiting verification: {{ this.photosAwaitingVerification }}</p>
 
-                        <br>
+                            <div style="padding-top: 20%;">
+                                <p>Accept data, verify, but delete the image.</p>
+                            <button :class="delete_verify_button" @click="verifyDelete" :disabled="processing">
+                                Verify & Delete
+                            </button>
 
-                        <button @click="clearRecentTags">Clear recent tags</button>
+                            <p>Delete the image.</p>
+                            <button :class="delete_button" @click="adminDelete" :disabled="processing">
+                                DELETE
+                            </button>
 
+                            <br>
+
+                            <button @click="clearRecentTags">Clear recent tags</button>
+
+                            </div>
                         </div>
-					</div>
 
-				  	<!-- Middle - image -->
-					<div class="column is-half" style="text-align: center;">
-			      		<img :src="this.photo.filename" width="300" height="250" />
-			    	</div>
+                        <!-- Middle - image -->
+                        <div class="column is-half" style="text-align: center;">
+                            <img :src="this.photo.filename" width="300" height="250" />
+                        </div>
 
-				  	<!-- Right - Tags -->
-				  	<div class="column has-text-centered" style="position: relative;">
+                        <!-- Right - Tags -->
+                        <div class="column has-text-centered" style="position: relative;">
 
-                        <!-- The list of tags associated with this image-->
-                        <Tags :photo-id="photo.id" :admin="true" />
+                            <!-- The list of tags associated with this image-->
+                            <Tags :photo-id="photo.id" :admin="true" />
 
-						<div style="padding-top: 3em;">
-							<button class="button is-medium is-dark" @click="clearTags">Clear user input</button>
-							<p>To undo this, just refresh the page</p>
-						</div>
-				  	</div>
-				</div>
+                            <div style="padding-top: 3em;">
+                                <button class="button is-medium is-dark" @click="clearTags">Clear user input</button>
+                                <p>To undo this, just refresh the page</p>
+                            </div>
+                        </div>
+                    </div>
 
-		    	<div class="has-text-centered mb1">
-					<button :class="verify_correct_button" :disabled="processing" @click="verifyCorrect">VERIFY CORRECT</button>
+                    <div class="has-text-centered mb1">
+                        <button :class="verify_correct_button" :disabled="processing" @click="verifyCorrect">VERIFY CORRECT</button>
 
-					<button class="button is-large is-danger" :disabled="processing" @click="incorrect">FALSE</button>
-				</div>
+                        <button class="button is-large is-danger" :disabled="processing" @click="incorrect">FALSE</button>
+                    </div>
 
-				<!-- Add / edit tags -->
-                <add-tags :admin="true" :id="photo.id" />
+                    <!-- Add / edit tags -->
+                    <add-tags :admin="true" :id="photo.id" />
 
-				<div style="padding-top: 1em; text-align: center;">
-					<p class="strong">Update the image and save the new data</p>
-					<button :class="update_new_tags_button" @click="updateNewTags" :disabled="checkUpdateTagsDisabled">
-						Update with new tags
-					</button>
-				</div>
-			</div>
-		</div>
-	</div>
+                    <div style="padding-top: 1em; text-align: center;">
+                        <p class="strong">Update the image and save the new data</p>
+                        <button :class="update_new_tags_button" @click="updateNewTags" :disabled="checkUpdateTagsDisabled">
+                            Update with new tags
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </template>
 
 <script>

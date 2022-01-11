@@ -38,8 +38,6 @@ class PhotosController extends Controller
     private $deletePhotoAction;
     /** @var MakeImageAction */
     private $makeImageAction;
-    /** @var ReverseGeocodeLocationAction */
-    private $reverseGeocodeAction;
 
     /**
      * PhotosController constructor
@@ -51,7 +49,6 @@ class PhotosController extends Controller
      * @param UploadPhotoAction $uploadPhotoAction
      * @param DeletePhotoAction $deletePhotoAction
      * @param MakeImageAction $makeImageAction
-     * @param ReverseGeocodeLocationAction $reverseGeocodeAction
      */
     public function __construct(
         UploadHelper $uploadHelper,
@@ -59,8 +56,7 @@ class PhotosController extends Controller
         UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction,
         UploadPhotoAction $uploadPhotoAction,
         DeletePhotoAction $deletePhotoAction,
-        MakeImageAction $makeImageAction,
-        ReverseGeocodeLocationAction $reverseGeocodeAction
+        MakeImageAction $makeImageAction
     )
     {
         $this->uploadHelper = $uploadHelper;
@@ -69,7 +65,6 @@ class PhotosController extends Controller
         $this->uploadPhotoAction = $uploadPhotoAction;
         $this->deletePhotoAction = $deletePhotoAction;
         $this->makeImageAction = $makeImageAction;
-        $this->reverseGeocodeAction = $reverseGeocodeAction;
 
         $this->middleware('auth');
     }
@@ -186,7 +181,7 @@ class PhotosController extends Controller
         $latitude = $latlong[0];
         $longitude = $latlong[1];
 
-        $revGeoCode = $this->reverseGeocodeAction->run($latitude, $longitude);
+        $revGeoCode = app(ReverseGeocodeLocationAction::class)->run($latitude, $longitude);
 
         // The entire address as a string
         $display_name = $revGeoCode["display_name"];
