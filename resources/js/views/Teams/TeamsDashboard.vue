@@ -37,9 +37,7 @@
             </select>
         </div>
 
-        <p v-if="loading">{{ $t('common.loading') }}</p>
-
-        <TeamMap v-else />
+        <TeamMap :team-id="viewTeam" />
 
     </section>
 </template>
@@ -54,11 +52,7 @@ export default {
     },
     async created ()
     {
-        this.loading = true;
-
         await this.changeTeamOrTime();
-
-        this.loading = false;
     },
     data ()
     {
@@ -71,7 +65,6 @@ export default {
                 'year',
                 'all'
             ],
-            loading: true,
             viewTeam: 0
         };
     },

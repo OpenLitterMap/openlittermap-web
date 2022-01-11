@@ -244,6 +244,8 @@ export default {
 
         map.scrollWheelZoom = true;
 
+        this.flyToLocationFromURL();
+
         const date = new Date();
         const year = date.getFullYear();
 
@@ -264,6 +266,7 @@ export default {
             onEachFeature: onEachFeature,
         }).addTo(map);
 
+        // TODO refactor this out
         clusters.addData(this.$store.state.globalmap.geojson.features);
 
         litterArtPoints = L.geoJSON(null, {
@@ -271,6 +274,7 @@ export default {
             onEachFeature: onEachArtFeature
         });
 
+        // TODO refactor this out too
         litterArtPoints.addData(this.$store.state.globalmap.artData.features);
 
         map.on('moveend', this.update);
@@ -286,6 +290,8 @@ export default {
          */
         async update ()
         {
+            this.updateLocationInURL();
+
             const bounds = map.getBounds();
 
             const bbox = {
@@ -409,6 +415,46 @@ export default {
                     )
                 )
                 .openOn(map);
+        },
+
+        /**
+         * Goes to the location and zoom given in the URL
+         * Params are: lat, lon, zoom
+         */
+        flyToLocationFromURL ()
+        {
+            let urlParams = new URLSearchParams(window.location.search);
+            let lat = parseFloat(urlParams.get('lat') || 0);
+            let lon = parseFloat(urlParams.get('lon') || 0);
+            let zoom = parseFloat(urlParams.get('zoom') || MIN_ZOOM);
+
+            // Validate lat, lon, and zoom level
+            lat = (lat < -85 || lat > 85) ? 0 : lat;
+            lon = (lon < -180 || lon > 180) ? 0 : lon;
+            zoom = (zoom < 2 || zoom > 18) ? MIN_ZOOM : zoom;
+
+            if (lat === 0 && lon === 0 && zoom === 2) return;
+
+            map.flyTo([lat, lon], zoom, {
+                animate: true,
+                duration: 7
+            });
+        },
+
+        /**
+         * Simply updates the URL
+         * with the current map location and zoom
+         */
+        updateLocationInURL ()
+        {
+            const location = map.getCenter();
+
+            const url = new URL(window.location.href);
+            url.searchParams.set('lat', location.lat);
+            url.searchParams.set('lon', location.lng);
+            url.searchParams.set('zoom', map.getZoom());
+
+            window.history.pushState(null, '', url);
         }
     }
 };
