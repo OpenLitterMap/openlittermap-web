@@ -1,0 +1,21 @@
+{
+    "address": "Endereço",
+    "add-tag": "Adicionar Tag",
+    "coordinates": "Coordenadas",
+    "device": "Dispositivo",
+    "next": "Próxima Imagem",
+    "no-tags": "Você não tem nada para marcar no momento.",
+    "picked-up-title": "Pegou?",
+    "please-upload": "Enviar mais fotos",
+    "previous": "Imagem Anterior",
+    "removed": "O lixo foi removido",
+    "still-there": "O lixo ainda está lá",
+    "taken": "Tirada",
+    "to-tag": "Images deixadas para marcar",
+    "total-uploaded": "Total de imagens enviadas",
+    "uploaded": "Enviado",
+    "confirm-delete": "Você quer deletar essa imagem? Isso não pode ser desfeito.",
+    "recently-tags": "Tags usadas recentemente: ",
+    "clear-tags": "Limpar tags recentes?",
+    "clear-tags-btn": "Limpar tags recentes"
+}
