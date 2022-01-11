@@ -32,9 +32,7 @@ class AddYearToGlobalClusters extends Migration
     public function down()
     {
         Schema::table('clusters', function (Blueprint $table) {
-            Schema::table('clusters', function (Blueprint $table) {
-                $table->dropColumn('year');
-            });
+            $table->dropColumn('year');
         });
     }
 }
