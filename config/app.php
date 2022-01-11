@@ -123,8 +123,6 @@ return [
 
     'cipher' => 'AES-256-CBC',
 
-    'root_dir' => env('APP_ROOT_DIR', '/home/forge/openlittermap.com'),
-
     /*
     |--------------------------------------------------------------------------
     | Autoloaded Service Providers

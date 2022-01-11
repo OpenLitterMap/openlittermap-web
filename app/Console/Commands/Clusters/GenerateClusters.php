@@ -25,16 +25,6 @@ class GenerateClusters extends Command
     protected $description = 'Generate all clusters for all photos';
 
     /**
-     * Create a new command instance.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        parent::__construct();
-    }
-
-    /**
      * Generate Clusters for All Photos
      *
      * Todo - Load photos as geojson without looping over them and inserting into another array
@@ -85,7 +75,7 @@ class GenerateClusters extends Command
                 ]
             ];
 
-            array_push($features, $feature);
+            $features[] = $feature;
 
             $progressBar->advance();
         }
@@ -104,7 +94,6 @@ class GenerateClusters extends Command
      *
      * First, we need to delete all clusters. Then we re-create them from scratch.
      *
-     *
      */
     protected function generateClusters (): void
     {
@@ -121,7 +110,7 @@ class GenerateClusters extends Command
 
             // Supercluster is awesome open-source javascript code from MapBox that we made executable on the backend with php
             // This file uses features.json to create clusters.json for a specific zoom level.
-            exec('node app/Node/supercluster-php ' . config('app.root_dir') . ' ' . $zoomLevel);
+            exec('node app/Node/supercluster-php ' . base_path() . ' ' . $zoomLevel);
 
             // We then use the clusters.json and save it to the clusters table
             collect(json_decode(Storage::get('/data/clusters.json')))
