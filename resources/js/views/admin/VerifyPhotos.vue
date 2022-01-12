@@ -1,8 +1,24 @@
 <template>
     <div>
 
-        <div class="has-background-grey-light has-text-centered py-4">
-            will be here
+        <div class="has-background-grey-light has-text-centered py-2 admin-filters">
+            <p class="has-text-weight-bold">Filter photos by:</p>
+
+            <div class="control ml-4">
+                <div class="select">
+                    <select
+                        v-model="selectedCountry"
+                        @change="filterByCountry"
+                    >
+                        <option value="">All Countries</option>
+                        <option
+                            v-for="country in countriesWithPhotos"
+                            :key="country.id"
+                            :value="country.id"
+                        >{{ country.country }} ({{ country.total }})</option>
+                    </select>
+                </div>
+            </div>
         </div>
 
         <div class="container mt3">
@@ -14,6 +30,10 @@
                 <!-- Todo , add extra loaded statement here -->
                 <div v-if="this.photosAwaitingVerification === 0 && this.photosNotProcessed === 0">
                     <p class="title is-3">All done.</p>
+                </div>
+
+                <div v-else-if="!photo">
+                    <p class="title is-3">All photos for your selection are done.</p>
                 </div>
 
                 <div v-else>
@@ -120,6 +140,8 @@ export default {
 			deleteButton: 'button is-large is-danger mb1',
 			deleteVerify: 'button is-large is-warning mb1',
 			verifyClass: 'button is-large is-success mb1',
+
+            selectedCountry: '',
 		};
 	},
 	computed: {
@@ -172,6 +194,14 @@ export default {
         photosAwaitingVerification ()
         {
             return this.$store.state.admin.awaiting_verification;
+        },
+
+        /**
+         * List of countries that contain unverified photos
+         */
+        countriesWithPhotos ()
+        {
+            return this.$store.state.admin.countriesWithPhotos;
         },
 
 		/**
@@ -274,7 +304,21 @@ export default {
             await this.$store.dispatch('ADMIN_UPDATE_WITH_NEW_TAGS');
 
             this.processing = false;
-  		}
+  		},
+
+        /**
+         * Filters the photos by country
+         */
+        async filterByCountry ()
+        {
+            this.loading = true;
+
+            this.$store.commit('setFilterByCountry', this.selectedCountry);
+
+            await this.$store.dispatch('GET_NEXT_ADMIN_PHOTO');
+
+            this.loading = false;
+        },
 	}
 }
 </script>
@@ -283,6 +327,13 @@ export default {
 
     .strong {
         font-weight: 600;
+    }
+
+    .admin-filters {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
     }
 
 </style>

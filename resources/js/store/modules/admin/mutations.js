@@ -44,6 +44,24 @@ export const mutations = {
         Object.assign(state, init);
     },
 
+    /**
+     * Get all the countries that contain unverified photos
+     */
+    getCountriesWithPhotos (state, payload)
+    {
+        state.countriesWithPhotos = payload;
+    },
+
+    /**
+     * Sets the country to filter the photos
+     * @param state
+     * @param payload
+     */
+    setFilterByCountry(state, payload)
+    {
+        state.filterByCountry = payload;
+    }
+
     // adminCreated(state, payload) {
   //   Vue.set(state.items, payload.item, payload.quantity);
   //   Vue.set(state.stuff[payload.category], payload.item, payload.quantity);

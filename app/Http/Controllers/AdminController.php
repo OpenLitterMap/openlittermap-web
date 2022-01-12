@@ -19,6 +19,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 use App\Events\TagsVerifiedByAdmin;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class AdminController extends Controller
 {
@@ -235,18 +237,17 @@ class AdminController extends Controller
      */
     public function getImage (GetImageForVerificationRequest $request): array
     {
-        $photo = Photo::query()
-            ->where(['verification' => 0])
+        // Photos that have been uploaded, but not tagged or submitted for verification
+        $query = Photo::query()
+            ->where('verification', 0)
             ->whereNotIn('user_id', $this->usersToSkipVerification())
             ->when($request->country_id, function (Builder $q) use ($request) {
                 return $q->whereCountryId($request->country_id);
-            })
-            ->first();
+            });
 
-        // Count photos that have been uploaded, but not tagged or submitted for verification
-        $photosNotProcessed = Photo::where([['verification', 0]])
-            ->whereNotIn('user_id', $this->usersToSkipVerification())
-            ->count();
+        $photo = $query->first();
+
+        $photosNotProcessed = $query->count();
 
         // Count photos submitted for verification
         $photosAwaitingVerification = Photo::where([
@@ -254,6 +255,9 @@ class AdminController extends Controller
             ['verification', '>', 0], // submitted for verification
         ])
             ->whereNotIn('user_id', $this->usersToSkipVerification())
+            ->when($request->country_id, function (Builder $q) use ($request) {
+                return $q->whereCountryId($request->country_id);
+            })
             ->count();
 
         if (!$photo)
@@ -279,6 +283,26 @@ class AdminController extends Controller
             'photosNotProcessed' => $photosNotProcessed,
             'photosAwaitingVerification' => $photosAwaitingVerification
         ];
+    }
+
+    /**
+     * Returns all the countries that have unverified photos
+     * and their totals
+     */
+    public function getCountriesWithPhotos(): Collection
+    {
+        $totalsQuery = Photo::query()
+            ->selectRaw('country_id, count(*) as total')
+            ->where(['verification' => 0])
+            ->whereNotIn('user_id', $this->usersToSkipVerification())
+            ->groupBy('country_id');
+
+        // Using DB to avoid extra appended properties
+        return DB::table('countries')
+            ->selectRaw('id, country, q.total')
+            ->rightJoinSub($totalsQuery, 'q', 'countries.id', '=', 'q.country_id')
+            ->get()
+            ->keyBy('id');
     }
 
     /**

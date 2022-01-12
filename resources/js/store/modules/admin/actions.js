@@ -116,7 +116,11 @@ export const actions = {
         context.commit('resetLitter');
         context.commit('clearTags');
 
-        await axios.get('/admin/get-image')
+        await axios.get('/admin/get-image', {
+            params: {
+                country_id: context.state.filterByCountry
+            }
+        })
             .then(resp => {
                 console.log('get_next_admin_photo', resp);
 
@@ -133,10 +137,27 @@ export const actions = {
                     not_processed: resp.data.photosNotProcessed,
                     awaiting_verification: resp.data.photosAwaitingVerification
                 });
+
+                context.dispatch('GET_COUNTRIES_WITH_PHOTOS');
+            })
+            .catch(err => {
+                console.error(err);
+            });
+    },
+
+    /**
+     * Get the next photo to verify on admin account
+     */
+    async GET_COUNTRIES_WITH_PHOTOS (context)
+    {
+        await axios.get('/admin/get-countries-with-photos')
+            .then(resp => {
+                console.log('get_countries_with_photos', resp);
+
+                context.commit('getCountriesWithPhotos', resp.data);
             })
             .catch(err => {
                 console.error(err);
             });
     }
-
 };
