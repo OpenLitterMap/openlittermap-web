@@ -25,7 +25,7 @@ class UploadPhotoOnProductionTest extends TestCase
 
     public function test_it_throws_server_error_when_user_uploads_photos_with_the_same_datetime_on_production()
     {
-        Carbon::setTestNow();
+        Carbon::setTestNow(now());
 
         $user = User::factory()->create();
 
@@ -50,7 +50,7 @@ class UploadPhotoOnProductionTest extends TestCase
 
     public function test_it_does_not_allow_uploading_photos_more_than_once_in_the_mobile_app()
     {
-        Carbon::setTestNow();
+        Carbon::setTestNow(now());
 
         $user = User::factory()->create();
 
