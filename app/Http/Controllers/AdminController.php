@@ -237,46 +237,35 @@ class AdminController extends Controller
      */
     public function getImage (GetImageForVerificationRequest $request): array
     {
-        // Photos that have been uploaded, but not tagged or submitted for verification
-        $query = Photo::query()
-            ->where('verification', 0)
-            ->whereNotIn('user_id', $this->usersToSkipVerification())
-            ->when($request->country_id, function (Builder $q) use ($request) {
-                return $q->whereCountryId($request->country_id);
-            });
+        // Photos that are uploaded and tagged come first
+        /** @var Photo $photo */
+        $photo = $this->filterPhotos()->where('verification', 0.1)->first();
 
-        $photo = $query->first();
-
-        $photosNotProcessed = $query->count();
-
-        // Count photos submitted for verification
-        $photosAwaitingVerification = Photo::where([
-            ['verified', '<', 2], // not verified
-            ['verification', '>', 0], // submitted for verification
-        ])
-            ->whereNotIn('user_id', $this->usersToSkipVerification())
-            ->when($request->country_id, function (Builder $q) use ($request) {
-                return $q->whereCountryId($request->country_id);
-            })
-            ->count();
+        // Load the tags for this photo if it exists
+        if ($photo)
+        {
+            $photo->tags();
+        }
 
         if (!$photo)
         {
+            // Photos that have been uploaded, but not tagged or submitted for verification
             /** @var Photo $photo */
-            $photo = Photo::query()
-                ->where(['verification' => 0.1])
-                ->whereNotIn('user_id', $this->usersToSkipVerification())
-                ->when($request->country_id, function (Builder $q) use ($request) {
-                    return $q->whereCountryId($request->country_id);
-                })
-                ->first();
-
-            // Load the tags for this photo if it exists
-            if ($photo)
-            {
-                $photo->tags();
-            }
+            $photo = $this->filterPhotos()->where('verification', 0)->first();
         }
+
+        // Count photos that are uploaded but not tagged
+        $photosNotProcessed = $this->filterPhotos()
+            ->where('verification', 0)
+            ->count();
+
+        // Count photos submitted for verification
+        $photosAwaitingVerification = $this->filterPhotos()
+            ->where([
+                ['verified', '<', 2], // not verified
+                ['verification', '>', 0], // submitted for verification
+            ])
+            ->count();
 
         return [
             'photo' => $photo,
@@ -303,6 +292,19 @@ class AdminController extends Controller
             ->rightJoinSub($totalsQuery, 'q', 'countries.id', '=', 'q.country_id')
             ->get()
             ->keyBy('id');
+    }
+
+    /**
+     * Generates a query builder with filtered photos
+     * @return Builder|mixed
+     */
+    private function filterPhotos(): Builder
+    {
+        return Photo::query()
+            ->whereNotIn('user_id', $this->usersToSkipVerification())
+            ->when(request('country_id'), function (Builder $q) {
+                return $q->whereCountryId(request('country_id'));
+            });
     }
 
     /**
