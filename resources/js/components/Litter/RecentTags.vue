@@ -1,6 +1,6 @@
 <template>
-    <div>
-        <p class="mb-05">{{ $t('tags.recently-tags') }}</p>
+    <div class="tags-container" v-if="Object.keys(recentTags).length > 0">
+        <p class="mb-5 has-text-weight-bold">{{ $t('tags.recently-tags') }}</p>
 
         <div v-for="category in Object.keys(recentTags)">
             <p>{{ getCategoryName(category) }}</p>
@@ -11,7 +11,7 @@
                     class="litter-tag"
                     :key="tag"
                     @click="addRecentTag(category, tag)"
-                ><p>{{ getTagName(category, tag) }}</p></div>
+                ><p class="has-text-white">{{ getTagName(category, tag) }}</p></div>
             </transition-group>
         </div>
     </div>
@@ -20,7 +20,16 @@
 <script>
 export default {
     name: 'RecentTags',
-    props: ['recentTags'],
+    props: ['photoId'],
+    computed: {
+        /**
+         * The most recent tags the user has applied
+         */
+        recentTags ()
+        {
+            return this.$store.state.litter.recentTags;
+        },
+    },
     methods: {
         /**
          * Return translated category name for recent tags
@@ -39,21 +48,43 @@ export default {
         },
 
         /**
-         * Simply emits the event up
+         * When a recent tag was applied, we update the category + tag
          *
-         * @param category
-         * @param tag
+         * Todo - Persist this to local browser cache with this.$localStorage.set('recentTags', keys)
+         * Todo - Click and hold recent tag to update this.category and this.tag
+         * Todo - Allow the user to pick their top tags in Settings and load them on this page by default
+         *        (New - PopularTags, bottom-left)
          */
         addRecentTag (category, tag)
         {
-            this.$emit('add-recent-tag', category, tag);
-        }
+            let quantity = 1;
+
+            if (this.$store.state.litter.tags.hasOwnProperty(category))
+            {
+                if (this.$store.state.litter.tags[category].hasOwnProperty(tag))
+                {
+                    quantity = (this.$store.state.litter.tags[category][tag] + 1);
+                }
+            }
+
+            this.$store.commit('addTag', {
+                photoId: this.photoId,
+                category,
+                tag,
+                quantity
+            });
+        },
     }
 };
 </script>
 <style lang="scss" scoped>
 
 @import "../../styles/variables.scss";
+
+.tags-container {
+    max-height: 300px;
+    overflow-y: auto;
+}
 
 .recent-tags {
     display: flex;

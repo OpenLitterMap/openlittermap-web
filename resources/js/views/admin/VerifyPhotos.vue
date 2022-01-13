@@ -21,7 +21,7 @@
             </div>
         </div>
 
-        <div class="container mt3">
+        <div class="container is-fluid mt3">
 
             <loading v-if="loading" :active.sync="loading" :is-full-page="true" />
 
@@ -38,12 +38,9 @@
 
                 <div v-else>
 
-                    <h1 class="title is-2 has-text-centered" style="margin-bottom: 1em;">
+                    <h1 class="title is-2 has-text-centered">
                         #{{ this.photo.id }} Uploaded {{ this.uploadedTime }}
                     </h1>
-                    <p class="subtitle is-5 has-text-centered" style="margin-bottom: 4em;">
-                        {{ this.photo.display_name }}
-                    </p>
                     <!-- todo - verification bar -->
 
                     <div class="columns">
@@ -53,27 +50,53 @@
                             <p class="subtitle is-5">Uploaded, not tagged: {{ this.photosNotProcessed }}</p>
                             <p class="subtitle is-5">Tagged, awaiting verification: {{ this.photosAwaitingVerification }}</p>
 
-                            <div style="padding-top: 20%;">
+                            <div class="mt-5">
                                 <p>Accept data, verify, but delete the image.</p>
-                            <button :class="delete_verify_button" @click="verifyDelete" :disabled="processing">
-                                Verify & Delete
-                            </button>
 
-                            <p>Delete the image.</p>
-                            <button :class="delete_button" @click="adminDelete" :disabled="processing">
-                                DELETE
-                            </button>
+                                <button :class="delete_verify_button" @click="verifyDelete" :disabled="processing">
+                                    Verify & Delete
+                                </button>
 
-                            <br>
+                                <p>Delete the image.</p>
 
-                            <button @click="clearRecentTags">Clear recent tags</button>
+                                <button :class="delete_button" @click="adminDelete" :disabled="processing">
+                                    DELETE
+                                </button>
 
+                                <br>
+
+                                <button v-if="hasRecentTags" @click="clearRecentTags">Clear recent tags</button>
+
+                            </div>
+
+                            <div v-if="hasRecentTags" class="control has-text-centered has-background-light py-4 rounded">
+                                <RecentTags class="mb-5" :photo-id="photo.id" />
                             </div>
                         </div>
 
                         <!-- Middle - image -->
                         <div class="column is-half" style="text-align: center;">
-                            <img :src="this.photo.filename" width="300" height="250" />
+                            <p class="subtitle is-5 has-text-centered mb-8">
+                                {{ this.photo.display_name }}
+                            </p>
+
+                            <img class="verify-image" :src="this.photo.filename" />
+
+                            <div class="has-text-centered mb1">
+                                <button :class="verify_correct_button" :disabled="processing" @click="verifyCorrect">VERIFY CORRECT</button>
+
+                                <button class="button is-large is-danger" :disabled="processing" @click="incorrect">FALSE</button>
+                            </div>
+
+                            <!-- Add / edit tags -->
+                            <add-tags :admin="true" :id="photo.id" />
+
+                            <div style="padding-top: 1em; text-align: center;">
+                                <p class="strong">Update the image and save the new data</p>
+                                <button :class="update_new_tags_button" @click="updateNewTags" :disabled="checkUpdateTagsDisabled">
+                                    Update with new tags
+                                </button>
+                            </div>
                         </div>
 
                         <!-- Right - Tags -->
@@ -88,22 +111,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <div class="has-text-centered mb1">
-                        <button :class="verify_correct_button" :disabled="processing" @click="verifyCorrect">VERIFY CORRECT</button>
-
-                        <button class="button is-large is-danger" :disabled="processing" @click="incorrect">FALSE</button>
-                    </div>
-
-                    <!-- Add / edit tags -->
-                    <add-tags :admin="true" :id="photo.id" />
-
-                    <div style="padding-top: 1em; text-align: center;">
-                        <p class="strong">Update the image and save the new data</p>
-                        <button :class="update_new_tags_button" @click="updateNewTags" :disabled="checkUpdateTagsDisabled">
-                            Update with new tags
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>
@@ -113,15 +120,20 @@
 <script>
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
+import moment from 'moment'
 
 import AddTags from '../../components/Litter/AddTags'
 import Tags from '../../components/Litter/Tags'
-
-import moment from 'moment'
+import RecentTags from '../../components/Litter/RecentTags';
 
 export default {
 	name: 'VerifyPhotos',
-	components: { Loading, AddTags, Tags },
+	components: {
+        Loading,
+        AddTags,
+        Tags,
+        RecentTags
+    },
 	async created ()
 	{
 	    this.loading = true;
@@ -227,6 +239,14 @@ export default {
 		{
 			return this.processing ? this.btn + ' is-loading' : this.btn;
 		},
+
+        /**
+         * Return true and show Clear Recent Tags button if the user has recent tags
+         */
+        hasRecentTags ()
+        {
+            return Object.keys(this.$store.state.litter.recentTags).length > 0;
+        },
 	},
 	methods: {
 
@@ -324,6 +344,10 @@ export default {
 </script>
 
 <style scoped>
+
+    .verify-image {
+        max-height: 230px;
+    }
 
     .strong {
         font-weight: 600;

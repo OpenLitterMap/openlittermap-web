@@ -73,13 +73,6 @@
 
             <br><br>
 
-            <RecentTags
-                v-if="Object.keys(recentTags).length > 0 && this.annotations !== true && this.id !== 0"
-                class="mb-5"
-                :recent-tags="recentTags"
-                @add-recent-tag="addRecentTag"
-            />
-
             <div>
                 <button
                     :disabled="checkDecr"
@@ -131,13 +124,11 @@ import 'vue-simple-suggest/dist/styles.css';
 import { categories } from '../../extra/categories';
 import { litterkeys } from '../../extra/litterkeys';
 import ClickOutside from 'vue-click-outside';
-import RecentTags from './RecentTags';
 
 // When this.id === 0, we are using MyPhotos && AddManyTagsToManyPhotos
 export default {
     name: 'AddTags',
     components: {
-        RecentTags,
         Tags,
         Presence,
         ProfileDelete,
@@ -345,34 +336,6 @@ export default {
         },
     },
     methods: {
-
-        /**
-         * When a recent tag was applied, we update the category + tag
-         *
-         * Todo - Persist this to local browser cache with this.$localStorage.set('recentTags', keys)
-         * Todo - Click and hold recent tag to update this.category and this.tag
-         * Todo - Allow the user to pick their top tags in Settings and load them on this page by default
-         *        (New - PopularTags, bottom-left)
-         */
-        addRecentTag (category, tag)
-        {
-            let quantity = 1;
-
-            if (this.$store.state.litter.tags.hasOwnProperty(category))
-            {
-                if (this.$store.state.litter.tags[category].hasOwnProperty(tag))
-                {
-                    quantity = (this.$store.state.litter.tags[category][tag] + 1);
-                }
-            }
-
-            this.$store.commit('addTag', {
-                photoId: this.id,
-                category,
-                tag,
-                quantity
-            });
-        },
 
         /**
          * Add or increment a tag
