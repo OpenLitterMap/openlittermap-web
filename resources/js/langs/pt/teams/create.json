@@ -1,0 +1,16 @@
+{
+    "allowed-to-create": "Você tem permissão para criar {teams} equipe(s)",
+    "what-kind-of-team": "Que tipo de Equipe você gostari de criar?",
+    "team-type": "Tipo da Equipe",
+    "team-name": "Nome da Equipe",
+    "my-awesome-team-placeholder": "Minha Equipe Incrível",
+    "unique-team-id": "Identificador de equipe exclusivo",
+    "id-to-join-team": "Qualquer pessoa com este ID poderá participar da sua equipe.",
+    "create-team": "Criar Equipe",
+    "update-team": "Atualizar Equipe",
+    "created": "Parabéns! A sua nova equipe foir criada!",
+    "updated": "Equipe atualizada.",
+    "select-team": "Selecione uma equipe",
+    "fail": "Ocorreu um erro ao criar sua equipe",
+    "max-created": "Você não tem permissão para criar mais equipes."
+}

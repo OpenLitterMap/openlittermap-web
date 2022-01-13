@@ -22,55 +22,55 @@
 
                         <!-- About -->
                         <router-link to="/about" class="navbar-item" @click.native="close">
-                              {{ $t('nav.about')}}
+                            {{ $t('nav.about') }}
                         </router-link>
 
                         <!-- Global Map -->
                         <router-link to="/global" class="navbar-item" @click.native="close">
-                             {{ $t('nav.global-map')}}
+                             {{ $t('nav.global-map') }}
                         </router-link>
 
                         <!-- World Cup -->
                         <router-link to="/world" class="navbar-item" @click.native="close">
-                             {{ $t('nav.world-cup')}}
+                             {{ $t('nav.world-cup') }}
                         </router-link>
 
                         <!-- if auth -->
                         <div v-if="auth" class="flex-not-mobile">
 
                             <router-link to="/upload" class="navbar-item">
-                                 {{ $t('nav.upload')}}
+                                 {{ $t('nav.upload') }}
                             </router-link>
 
                             <!-- Dropdown toggle -->
                             <div :key="$route.fullPath" class="navbar-item has-dropdown is-hoverable">
 
                                 <!-- "More" -->
-                                <a id="more" class="navbar-item"> {{ $t('nav.more')}}</a>
+                                <a id="more" class="navbar-item"> {{ $t('nav.more') }}</a>
                                 <!-- Dropdown menu -->
                                 <div class="navbar-dropdown" style="z-index: 2;">
 
                                     <!-- Admin -->
                                     <router-link v-if="can('update tags')" to="/admin/photos" class="navbar-item drop-item" @click.native="close">
-                                        {{ $t('nav.admin-verify-photos')}}
+                                        {{ $t('nav.admin-verify-photos') }}
                                     </router-link>
 
                                     <a v-if="is('superadmin')" href="/horizon" class="navbar-item drop-item" target="_blank">
-                                        {{ $t('nav.admin-horizon')}}
+                                        {{ $t('nav.admin-horizon') }}
                                     </a>
 
                                     <a v-if="can('verify boxes')" href="/bbox/verify" class="navbar-item drop-item">
-                                        {{ $t('nav.admin-verify-boxes')}}
+                                        {{ $t('nav.admin-verify-boxes') }}
                                     </a>
 
                                     <!-- Tag Litter -->
                                     <router-link to="/tag" class="navbar-item drop-item">
-                                        {{ $t('nav.tag-litter')}}
+                                        {{ $t('nav.tag-litter') }}
                                     </router-link>
 
                                     <!-- Profile -->
                                     <router-link to="/profile" class="navbar-item drop-item">
-                                        {{ $t('nav.profile')}}
+                                        {{ $t('nav.profile') }}
                                     </router-link>
 
                                     <!-- Teams -->
@@ -80,12 +80,12 @@
 
                                     <!-- Settings -->
                                     <router-link to="/settings/password" class="navbar-item drop-item">
-                                         {{ $t('nav.settings')}}
+                                         {{ $t('nav.settings') }}
                                     </router-link>
 
                                     <!-- Bounding boxes -->
                                     <router-link v-if="can('create boxes')" to="/bbox" class="navbar-item drop-item" @click.native="close">
-                                       {{ $t('nav.bounding-boxes')}}
+                                       {{ $t('nav.bounding-boxes') }}
                                     </router-link>
 
                                     <!-- Logout -->

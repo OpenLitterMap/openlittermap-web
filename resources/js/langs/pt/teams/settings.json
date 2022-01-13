@@ -1,0 +1,22 @@
+{
+    "privacy-title": "Controle sua Privacidade",
+    "privacy-text": "Controle sua privacidade para cada equipe que você se juntou.",
+
+    "team-update-title": "Atualize suas equipes",
+    "team-update-text": "Você só pode atualizar as equipes que lidera.",
+
+    "maps": {
+        "team-map": "Mapa da equipe",
+        "name-will-appear": "Seu nome aparecerá nos mapas",
+        "username-will-appear": "Seu nome de usuário aparecerá nos mapas",
+        "will-not-appear": "Seu nome e nome de usuário não aparecerão nos mapas"
+    },
+    "leaderboards": {
+        "team-leaderboard": "Tabela de classificação da equipe",
+        "name-will-appear": "Seu nome aparecerá nas tabelas de classificação",
+        "username-will-appear": "Seu nome de usuário aparecerá nas tabelas de classificação",
+        "will-not-appear": "Seu nome e nome de usuário não aparecerão nas tabelas de classificação"
+    },
+    "submit-one-team": "Salvar para esta equipe",
+    "apply-all-teams": "Candidate-se a todas as equipes"
+}

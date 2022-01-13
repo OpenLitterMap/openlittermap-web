@@ -446,7 +446,7 @@ export default {
 
             map.flyTo([lat, lon], zoom, {
                 animate: true,
-                duration: 3
+                duration: 7
             });
         },
 

@@ -1,0 +1,20 @@
+{
+    "change-privacy": "Alterar minha privacidade",
+    "maps": "Mapas",
+    "credit-name": "Creditar meu nome",
+    "credit-username": "Creditar meu nome de usuário",
+    "name-imgs-yes": "Seu nome aparecerá em cada uma das imagens que você enviar para os mapas.",
+    "username-imgs-yes": "Seu nome de usuário aparecerá em cada uma das imagens que você enviar para os mapas.",
+    "name-username-map-no": "Seu nome e nome de usuário não aparecerão nos mapas.",
+    "leaderboards": "Placares de líderes",
+    "credit-my-name": "Creditar meu nome",
+    "credit-my-username": "Creditar meu nome de usuário",
+    "name-leaderboards-yes": "Seu nome aparecerá em todos os placares de líderes para os quais você se qualificar.",
+    "username-leaderboards-yes": "Seu nome de usuário aparecerá em todas as tabelas de classificação para as quais você se qualificar.",
+    "name-username-leaderboards-no": "Seu nome e nome de usuário não aparecerão nas tabelas de classificação.",
+    "created-by": "Criado por",
+    "name-locations-yes": "Seu nome aparecerá nas seções criadas por de qualquer local que você criar.",
+    "username-locations-yes": "Seu nome de usuário aparecerá nas seções criadas por de qualquer local que você criar.",
+    "name-username-locations-yes": "Seu nome e nome de usuário não aparecerão na seção Criado Por de nenhum local que você adicionar ao banco de dados.",
+    "update": "Atualizar"
+}

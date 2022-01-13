@@ -23,7 +23,11 @@
 
         <div class="container is-fluid mt3">
 
-            <loading v-if="loading" :active.sync="loading" :is-full-page="true" />
+            <loading
+            v-if="loading"
+            :active.sync="loading"
+            :is-full-page="true"
+        />
 
             <div v-else>
 
@@ -103,7 +107,10 @@
                         <div class="column has-text-centered" style="position: relative;">
 
                             <!-- The list of tags associated with this image-->
-                            <Tags :photo-id="photo.id" :admin="true" />
+                            <Tags
+                            :photo-id="photo.id"
+                            :admin="true"
+                        />
 
                             <div style="padding-top: 3em;">
                                 <button class="button is-medium is-dark" @click="clearTags">Clear user input</button>
@@ -136,14 +143,13 @@ export default {
     },
 	async created ()
 	{
-	    this.loading = true;
+        this.loading = true;
 
         await this.$store.dispatch('GET_NEXT_ADMIN_PHOTO');
 
         this.loading = false;
 	},
-	data ()
-	{
+	data () {
 		return {
 			loading: true,
 			processing: false,
@@ -157,7 +163,6 @@ export default {
 		};
 	},
 	computed: {
-
 		/**
 		 * Return true to disable when processing or if no new tags exist
 		 */
