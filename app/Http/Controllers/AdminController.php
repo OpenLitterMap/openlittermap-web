@@ -293,7 +293,7 @@ class AdminController extends Controller
     {
         $totalsQuery = Photo::query()
             ->selectRaw('country_id, count(*) as total')
-            ->where(['verification' => 0])
+            ->whereIn('verification', [0, 0.1])
             ->whereNotIn('user_id', $this->usersToSkipVerification())
             ->groupBy('country_id');
 
