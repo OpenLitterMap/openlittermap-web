@@ -22,7 +22,8 @@ export const actions = {
     {
         await axios.get('/global/clusters', {
             params: {
-                zoom: payload,
+                zoom: payload.zoom,
+                year: payload.year,
                 bbox: null
             }
         })

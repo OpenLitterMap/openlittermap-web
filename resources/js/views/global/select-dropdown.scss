@@ -1,0 +1,68 @@
+// Original package and full credit goes to https://github.com/adammertel/Leaflet.Control.Select
+// Code is copy-pasted here since the package does not export any objects
+// therefore making it impossible to be imported from node_modules
+// Version used: v0.2.0 on March 27, 2020
+
+
+.leaflet-control-select {
+    .leaflet-control-button {
+        cursor: pointer;
+        font-size: 20px;
+    }
+    .leaflet-control-select-menu {
+        width: auto;
+    }
+
+    .leaflet-control-select-menu:nth-of-type(1) {
+        position: absolute;
+        top: -3px;
+        left: -2px;
+    }
+    .leaflet-control-select-menu:nth-of-type(n + 2) {
+        margin-top: -7px;
+        position: absolute;
+        left: 100%;
+        margin-left: 5px;
+    }
+    .leaflet-control-select-menu {
+        background-color: white;
+        color: black;
+
+        .leaflet-control-select-menu-line {
+            &.group {
+                &.group-opened {
+                    background-color: grey;
+                    color: white;
+                }
+            }
+            padding: 7px;
+            padding-right: 20px;
+            padding-left: 10px;
+            margin: 0;
+            cursor: pointer;
+            white-space: nowrap;
+            display: -webkit-box;
+            width: auto;
+
+            .leaflet-control-select-menu-line-content {
+                .icon {
+                    position: absolute;
+                    right: 6px;
+                    margin-top: 1px;
+                    width: 10px;
+                    text-align: center;
+                }
+
+                .icon,
+                .text {
+                    display: inline;
+                }
+                width: 100%;
+            }
+
+            span {
+                display: inline;
+            }
+        }
+    }
+}

@@ -28,7 +28,12 @@ export default {
     {
         if (this.isMobile) this.addEventListenerIfMobile();
 
-        await this.$store.dispatch('GET_CLUSTERS', 2);
+        let year = parseInt((new URLSearchParams(window.location.search)).get('year')) || null;
+
+        await this.$store.dispatch('GET_CLUSTERS', {
+            zoom: 2,
+            year: year
+        });
         await this.$store.dispatch('GET_ART_DATA');
 
         this.$store.commit('globalLoading', false);
