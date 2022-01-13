@@ -73,6 +73,10 @@ class GlobalMapController extends Controller
                 }
             ]);
 
+        if (request()->year) {
+            $query->whereYear('datetime', request()->year);
+        }
+
         $photos = $this->filterPhotosByGeoHash(
             $query,
             request()->bbox,

@@ -8,6 +8,7 @@ use App\Traits\FilterClustersByGeohashTrait;
 use App\Http\Controllers\Controller;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\Request;
 
 class ClusterController extends Controller
 {
@@ -16,11 +17,12 @@ class ClusterController extends Controller
     /**
      * Get clusters for the global map
      *
+     * @param Request $request
      * @return array
      */
-    public function index(): array
+    public function index(Request $request): array
     {
-        $clusters = $this->getClusters();
+        $clusters = $this->getClusters($request);
 
         $features = $this->getFeatures($clusters);
 
@@ -31,19 +33,28 @@ class ClusterController extends Controller
     }
 
     /**
+     * @param Request $request
      * @return Builder[]|Collection
      */
-    protected function getClusters()
+    protected function getClusters(Request $request)
     {
+        $query = Cluster::query();
+
+        if ($request->year) {
+            $query->where('year', $request->year);
+        } else {
+            $query->whereNull('year');
+        }
+
         // If the zoom is 2,3,4,5 -> get all clusters for this zoom level
-        if (request()->zoom <= 5) {
-            return Cluster::where(['zoom' => request()->zoom])->get();
+        if ($request->zoom <= 5) {
+            return $query->where(['zoom' => $request->zoom])->get();
         }
 
         return $this->filterClustersByGeoHash(
-            Cluster::query(),
-            request()->zoom,
-            request()->bbox
+            $query,
+            $request->zoom,
+            $request->bbox
         )->get();
     }
 }

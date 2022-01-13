@@ -29,8 +29,6 @@ class AddMissingValuesToTeams extends Migration
     public function down()
     {
         Schema::table('teams', function (Blueprint $table) {
-            $table->dropColumn('type_id');
-            $table->dropColumn('type_name');
             $table->dropColumn('created_by');
             $table->dropColumn('identifier');
         });

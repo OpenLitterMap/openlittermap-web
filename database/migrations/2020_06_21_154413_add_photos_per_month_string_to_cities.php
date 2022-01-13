@@ -26,7 +26,7 @@ class AddPhotosPerMonthStringToCities extends Migration
     public function down()
     {
         Schema::table('cities', function (Blueprint $table) {
-            $table->dropColumn('photosPerMonth');
+            $table->dropColumn('photos_per_month');
         });
     }
 }
