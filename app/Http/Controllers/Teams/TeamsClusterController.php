@@ -17,6 +17,11 @@ class TeamsClusterController extends Controller
     use FilterClustersByGeohashTrait;
     use FilterPhotosByGeoHashTrait;
 
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     /**
      * Get clusters for the teams map
      *

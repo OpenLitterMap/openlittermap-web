@@ -8,6 +8,11 @@ use Illuminate\Support\Facades\Auth;
 
 class TeamsDataController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     /**
      * Get the combined effort for 1 or all of the users teams for the time-period
      *

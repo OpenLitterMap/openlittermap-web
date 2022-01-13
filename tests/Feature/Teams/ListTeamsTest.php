@@ -35,6 +35,8 @@ class ListTeamsTest extends TestCase
     {
         $teamType = TeamType::factory()->create();
 
+        $this->actingAs(User::factory()->create());
+
         $this->getJson('/teams/get-types')
             ->assertOk()
             ->assertJsonCount(1)

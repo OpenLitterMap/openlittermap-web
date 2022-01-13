@@ -2,14 +2,18 @@
 
 namespace App\Http\Controllers\Teams;
 
-use DB;
-use Auth;
-
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class TeamsSettingsController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     /**
      * Apply settings to 1 or all teams
      *
