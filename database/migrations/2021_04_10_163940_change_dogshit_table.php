@@ -26,6 +26,9 @@ class ChangeDogshitTable extends Migration
      */
     public function down()
     {
-        Schema::dropColumn(['poo', 'poo_in_bag']);
+        Schema::table('dogshit', function (Blueprint $table) {
+            $table->dropColumn('poo');
+            $table->dropColumn('poo_in_bag');
+        });
     }
 }

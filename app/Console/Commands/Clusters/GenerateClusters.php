@@ -26,18 +26,18 @@ class GenerateClusters extends Command
 
     /**
      * Generate Clusters for All Photos
-     *
-     * Todo - Load photos as geojson without looping over them and inserting into another array
-     * Todo - Find a way to update clusters instead of deleting all and re-writing all every time..
-     * Todo - Cluster data by "today", "one-week", "one-month", "one-year"
-     * Todo - Cluster data by year, 2021, 2020...
      */
     public function handle()
     {
         $start = microtime(true);
 
-        $this->generateFeatures();
-        $this->generateClusters();
+        $years = array_merge([null], range(2017, now()->year));
+
+        foreach ($years as $year) {
+            $this->line("\nYear: " . ($year ?: 'All Time'));
+            $this->generateFeatures($year);
+            $this->generateClusters($year);
+        }
 
         $finish = microtime(true);
         $this->newLine();
@@ -53,19 +53,23 @@ class GenerateClusters extends Command
      *
      * We save this file to storage and use it to populate the clusters with a node script in the backend
      */
-    protected function generateFeatures (): void
+    protected function generateFeatures (int $year = null): void
     {
         $this->info('Generating features...');
 
-        $progressBar = $this->output->createProgressBar(Photo::count());
+        $photos = Photo::query()->select('lat', 'lon');
+
+        if ($year) {
+            $photos->whereYear('datetime', $year);
+        }
+
+        $progressBar = $this->output->createProgressBar($photos->count());
         $progressBar->setFormat('debug');
         $progressBar->start();
 
-        $photos = Photo::select('lat', 'lon')->cursor();
-
         $features = [];
 
-        foreach ($photos as $photo)
+        foreach ($photos->cursor() as $photo)
         {
             $feature = [
                 'type' => 'Feature',
@@ -95,19 +99,27 @@ class GenerateClusters extends Command
      * First, we need to delete all clusters. Then we re-create them from scratch.
      *
      */
-    protected function generateClusters (): void
+    protected function generateClusters (int $year = null): void
     {
-        // Delete all clusters
-        Cluster::truncate();
+        $this->info("Generating clusters for each zoom level...");
+
+        // Delete all clusters for year
+        if ($year) {
+            Cluster::where('year', $year)->delete();
+        } else {
+            Cluster::whereNull('year')->delete();
+        }
+
+        $bar = $this->output->createProgressBar(16);
+        $bar->setFormat('debug');
+        $bar->start();
 
         // We want to create clusters for each of these zoom levels
-        $zoomLevels = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+        $zoomLevels = range(2, 16);
 
         // For each zoom level, create clusters.
         foreach ($zoomLevels as $zoomLevel)
         {
-            $this->line("Zoom level: $zoomLevel");
-
             // Supercluster is awesome open-source javascript code from MapBox that we made executable on the backend with php
             // This file uses features.json to create clusters.json for a specific zoom level.
             exec('node app/Node/supercluster-php ' . base_path() . ' ' . $zoomLevel);
@@ -117,20 +129,27 @@ class GenerateClusters extends Command
                 ->filter(function ($cluster) {
                     return isset($cluster->properties);
                 })
-                ->map(function ($cluster) use ($zoomLevel) {
+                ->map(function ($cluster) use ($zoomLevel, $year) {
                     return [
                         'lat' => $cluster->geometry->coordinates[1],
                         'lon' => $cluster->geometry->coordinates[0],
                         'point_count' => $cluster->properties->point_count,
                         'point_count_abbreviated' => $cluster->properties->point_count_abbreviated,
                         'geohash' => \GeoHash::encode($cluster->geometry->coordinates[1], $cluster->geometry->coordinates[0]),
-                        'zoom' => $zoomLevel
+                        'zoom' => $zoomLevel,
+                        'year' => $year
                     ];
                 })
                 ->chunk(1000)
                 ->each(function ($chunk) {
                     Cluster::insert($chunk->toArray());
                 });
+
+            $bar->advance();
         }
+
+        $bar->finish();
+
+        $this->info("\nClusters finished...");
     }
 }
