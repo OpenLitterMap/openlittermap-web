@@ -45,9 +45,9 @@ export const mutations = {
     },
 
     /**
-     * Get all the countries that contain unverified photos
+     * Set countries that contain unverified photos
      */
-    getCountriesWithPhotos (state, payload)
+    setCountriesWithPhotos (state, payload)
     {
         state.countriesWithPhotos = payload;
     },

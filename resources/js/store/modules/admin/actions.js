@@ -152,7 +152,7 @@ export const actions = {
     },
 
     /**
-     * Get the next photo to verify on admin account
+     * Get list of countries that contain photos for verification
      */
     async GET_COUNTRIES_WITH_PHOTOS (context)
     {
@@ -160,7 +160,7 @@ export const actions = {
             .then(resp => {
                 console.log('get_countries_with_photos', resp);
 
-                context.commit('getCountriesWithPhotos', resp.data);
+                context.commit('setCountriesWithPhotos', resp.data);
             })
             .catch(err => {
                 console.error(err);
