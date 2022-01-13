@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddTeamIdToPhotos extends Migration
+class AddYearToGlobalClusters extends Migration
 {
     /**
      * Run the migrations.
@@ -13,9 +13,14 @@ class AddTeamIdToPhotos extends Migration
      */
     public function up()
     {
+        Schema::table('clusters', function (Blueprint $table) {
+            $table->year('year')->nullable()->index();
+
+            $table->index(['year', 'zoom']);
+        });
+
         Schema::table('photos', function (Blueprint $table) {
-            $table->integer('team_id')->unsigned()->nullable();
-            $table->foreign('team_id')->references('id')->on('teams');
+            $table->index('datetime');
         });
     }
 
@@ -26,9 +31,8 @@ class AddTeamIdToPhotos extends Migration
      */
     public function down()
     {
-        Schema::table('photos', function (Blueprint $table) {
-            $table->dropForeign('photos_team_id_foreign');
-            $table->dropColumn('team_id');
+        Schema::table('clusters', function (Blueprint $table) {
+            $table->dropColumn('year');
         });
     }
 }

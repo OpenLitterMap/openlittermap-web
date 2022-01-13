@@ -26,6 +26,8 @@ import './SmoothWheelZoom.js';
 // Todo - fix this export bug (The request of a dependency is an expression...)
 import glify from 'leaflet.glify';
 import { mapHelper } from '../../maps/mapHelpers';
+import dropdown from './select-dropdown';
+
 
 var map;
 var clusters;
@@ -283,6 +285,8 @@ export default {
 
         map.on('overlayadd', this.update);
         map.on('overlayremove', this.update)
+
+        this.setupYearDropdown();
     },
     methods: {
         /**
@@ -317,6 +321,9 @@ export default {
                 points.remove();
             }
 
+            // Get the year from url
+            let year = parseInt((new URLSearchParams(window.location.search)).get('year')) || null;
+
             // Get Clusters or Points
             if (zoom < CLUSTER_ZOOM_THRESHOLD)
             {
@@ -325,7 +332,8 @@ export default {
                 await axios.get('/global/clusters', {
                     params: {
                         zoom,
-                        bbox
+                        bbox,
+                        year
                     }
                 })
                 .then(response => {
@@ -348,7 +356,8 @@ export default {
                     params: {
                         zoom,
                         bbox,
-                        layers
+                        layers,
+                        year
                     }
                 })
                 .then(response => {
@@ -455,10 +464,55 @@ export default {
             url.searchParams.set('zoom', map.getZoom());
 
             window.history.pushState(null, '', url);
+        },
+
+        /**
+         * Initializes the dropdown to select
+         * the year for which to show clusters, and points
+         */
+        setupYearDropdown ()
+        {
+            dropdown.initialize();
+
+            let years = [
+                {label: 'All Time', value: '*'}
+            ];
+
+            for (let y = new Date().getFullYear(); y >= 2017; y--)
+            {
+                years.push({label: y.toString(), value: y.toString()});
+            }
+
+            let selectedYear = parseInt((new URLSearchParams(window.location.search)).get('year')) || '*';
+
+            L.control.select({
+                position: 'topleft',
+                selectedDefault: selectedYear.toString(),
+                items: years,
+                onSelect: (function (year)
+                {
+                    const url = new URL(window.location.href);
+
+                    if (year === '*')
+                    {
+                        url.searchParams.delete('year');
+                    }
+                    else
+                    {
+                        url.searchParams.set('year', year);
+                    }
+
+                    // reload the site
+                    window.history.pushState(null, '', url);
+                    window.location.reload();
+                })
+            }).addTo(map);
         }
     }
 };
 </script>
+
+<style lang="scss" src="./select-dropdown.scss"></style>
 
 <style>
 
