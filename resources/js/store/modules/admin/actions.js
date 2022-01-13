@@ -122,6 +122,12 @@ export const actions = {
             }
         })
             .then(resp => {
+                window.scroll({
+                    top: 0,
+                    left: 0,
+                    behavior: 'smooth'
+                });
+
                 console.log('get_next_admin_photo', resp);
 
                 // init photo data (admin.js)
