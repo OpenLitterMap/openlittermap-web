@@ -73,23 +73,12 @@
 
             <br><br>
 
-            <div v-if="Object.keys(recentTags).length > 0 && this.annotations !== true && this.id !== 0" class="mb-5">
-
-                <p class="mb-05">{{ $t('tags.recently-tags') }}</p>
-
-                <div v-for="category in Object.keys(recentTags)">
-                    <p>{{ getCategoryName(category) }}</p>
-
-                    <transition-group name="list" class="recent-tags" tag="div" :key="category">
-                        <div
-                            v-for="tag in Object.keys(recentTags[category])"
-                            class="litter-tag"
-                            :key="tag"
-                            @click="addRecentTag(category, tag)"
-                        ><p>{{ getTagName(category, tag) }}</p></div>
-                    </transition-group>
-                </div>
-            </div>
+            <RecentTags
+                v-if="Object.keys(recentTags).length > 0 && this.annotations !== true && this.id !== 0"
+                class="mb-5"
+                :recent-tags="recentTags"
+                @add-recent-tag="addRecentTag"
+            />
 
             <div>
                 <button
@@ -142,11 +131,13 @@ import 'vue-simple-suggest/dist/styles.css';
 import { categories } from '../../extra/categories';
 import { litterkeys } from '../../extra/litterkeys';
 import ClickOutside from 'vue-click-outside';
+import RecentTags from './RecentTags';
 
 // When this.id === 0, we are using MyPhotos && AddManyTagsToManyPhotos
 export default {
     name: 'AddTags',
     components: {
+        RecentTags,
         Tags,
         Presence,
         ProfileDelete,
@@ -454,22 +445,6 @@ export default {
         },
 
         /**
-         * Return translated category name for recent tags
-         */
-        getCategoryName (category)
-        {
-            return this.$i18n.t(`litter.categories.${category}`);
-        },
-
-        /**
-         * Return translated litter.key name for recent tags
-         */
-        getTagName (category, tag)
-        {
-            return this.$i18n.t(`litter.${category}.${tag}`);
-        },
-
-        /**
          * Clear the input field to allow the user to begin typing
          */
         onFocusSearch ()
@@ -594,23 +569,6 @@ export default {
     .custom-buttons {
         display: flex;
         padding: 20px;
-    }
-
-    .recent-tags {
-        display: flex;
-        max-width: 50em;
-        margin: auto;
-        flex-wrap: wrap;
-        overflow: auto;
-        justify-content: center;
-    }
-
-    .litter-tag {
-        cursor: pointer;
-        padding: 5px;
-        border-radius: 5px;
-        background-color: $info;
-        margin: 5px
     }
 
     .list-enter-active, .list-leave-active {
