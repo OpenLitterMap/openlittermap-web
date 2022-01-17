@@ -13,6 +13,7 @@ use App\Models\User\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Facades\Image;
 use Tests\Feature\HasPhotoUploads;
@@ -176,21 +177,14 @@ class UploadPhotoTest extends TestCase
     {
         Storage::fake('s3');
         Storage::fake('bbox');
-
-        Carbon::setTestNow();
-
+        /** @var User $user */
         $user = User::factory()->create();
-
-        $this->actingAs($user, 'api');
-
-        $imageAttributes = $this->getImageAndAttributes();
-
         $this->assertEquals(0, $user->has_uploaded);
         $this->assertEquals(0, $user->xp);
         $this->assertEquals(0, $user->total_images);
 
-        $this->post('/api/photos/submit',
-            $this->getApiImageAttributes($imageAttributes)
+        $this->actingAs($user, 'api')->post('/api/photos/submit',
+            $this->getApiImageAttributes($this->getImageAndAttributes())
         );
 
         // User info gets updated
@@ -198,6 +192,36 @@ class UploadPhotoTest extends TestCase
         $this->assertEquals(1, $user->has_uploaded);
         $this->assertEquals(1, $user->xp);
         $this->assertEquals(1, $user->total_images);
+    }
+
+    public function test_a_users_xp_by_location_is_updated_when_they_upload_a_photo()
+    {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+        /** @var User $user */
+        $user = User::factory()->create();
+        $imageAttributes = $this->getImageAndAttributes();
+        $countryId = Country::factory()->create([
+            'shortcode' => $imageAttributes['address']['country_code'],
+            'country' => $imageAttributes['address']['country'],
+        ])->id;
+        $stateId = State::factory()->create(['state' => $imageAttributes['address']['state'], 'country_id' => $countryId])->id;
+        $cityId = City::factory()->create(['city' => $imageAttributes['address']['city'], 'country_id' => $countryId, 'state_id' => $stateId])->id;
+
+        Redis::del("xp.country.$countryId");
+        Redis::del("xp.country.$countryId.state.$stateId");
+        Redis::del("xp.country.$countryId.state.$stateId.city.$cityId");
+        $this->assertEquals(0, Redis::zscore("xp.country.$countryId", $user->id));
+        $this->assertEquals(0, Redis::zscore("xp.country.$countryId.state.$stateId", $user->id));
+        $this->assertEquals(0, Redis::zscore("xp.country.$countryId.state.$stateId.city.$cityId", $user->id));
+
+        $this->actingAs($user, 'api')->post('/api/photos/submit',
+            $this->getApiImageAttributes($imageAttributes)
+        );
+
+        $this->assertEquals(1, Redis::zscore("xp.country.$countryId", $user->id));
+        $this->assertEquals(1, Redis::zscore("xp.country.$countryId.state.$stateId", $user->id));
+        $this->assertEquals(1, Redis::zscore("xp.country.$countryId.state.$stateId.city.$cityId", $user->id));
     }
 
     public function test_unauthenticated_users_cannot_upload_photos()

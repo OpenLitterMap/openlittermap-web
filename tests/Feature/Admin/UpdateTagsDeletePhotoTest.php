@@ -39,9 +39,9 @@ class UpdateTagsDeletePhotoTest extends TestCase
         $this->setImagePath();
 
         /** @var User $admin */
-        $this->admin = User::factory()->create(['verification_required' => false]);
-
-        $this->admin->assignRole(Role::create(['name' => 'admin']));
+        $this->admin = User::factory()
+            ->create(['verification_required' => false])
+            ->assignRole(Role::create(['name' => 'admin']));
 
         $this->user = User::factory()->create(['verification_required' => true]);
 
@@ -180,84 +180,25 @@ class UpdateTagsDeletePhotoTest extends TestCase
     /**
      * @dataProvider provider
      */
-    public function test_leaderboards_are_updated_when_an_admin_updates_tags_of_a_photo_from_a_user_with_public_name(
+    public function test_leaderboards_are_updated_when_an_admin_updates_tags_of_a_photo(
         $route, $deletesPhoto, $tagsKey
     )
     {
-        $this->user->update([
-            'show_name' => true,
-            'show_username' => true
-        ]);
-
+        // User has already uploaded and tagged the image, so their xp is 4
+        Redis::zadd("xp.country.{$this->photo->country_id}", 4, $this->user->id);
+        Redis::zadd("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}", 4, $this->user->id);
+        Redis::zadd("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}.city.{$this->photo->city_id}", 4, $this->user->id);
         // Admin updates the tags -------------------
         $this->actingAs($this->admin);
 
-        $country = Country::find($this->photo->country_id)->country;
-        $state = State::find($this->photo->state_id)->state;
-        $city = City::find($this->photo->city_id)->city;
-
-        Redis::del("{$country}:Leaderboard");
-        Redis::del("{$country}:{$state}:Leaderboard");
-        Redis::del("{$country}:{$state}:{$city}:Leaderboard");
-
-        $this->assertEquals(0, Redis::zscore("{$country}:Leaderboard", $this->user->id));
-        $this->assertEquals(0, Redis::zscore("{$country}:{$state}:Leaderboard", $this->user->id));
-        $this->assertEquals(0, Redis::zscore("{$country}:{$state}:{$city}:Leaderboard", $this->user->id));
-
         $this->post($route, [
             'photoId' => $this->photo->id,
-            $tagsKey => [
-                'alcohol' => [
-                    'beerBottle' => 10
-                ]
-            ]
+            $tagsKey => ['alcohol' => ['beerBottle' => 10]]
         ]);
 
         // Assert leaderboards are updated ------------
-        $this->assertEquals(11, Redis::zscore("{$country}:Leaderboard", $this->user->id));
-        $this->assertEquals(11, Redis::zscore("{$country}:{$state}:Leaderboard", $this->user->id));
-        $this->assertEquals(11, Redis::zscore("{$country}:{$state}:{$city}:Leaderboard", $this->user->id));
-    }
-
-    /**
-     * @dataProvider provider
-     */
-    public function test_leaderboards_are_not_updated_when_an_admin_updates_tags_of_a_photo_from_a_user_with_private_name(
-        $route, $deletesPhoto, $tagsKey
-    )
-    {
-        $this->user->update([
-            'show_name' => false,
-            'show_username' => false
-        ]);
-
-        // Admin updates the tags -------------------
-        $this->actingAs($this->admin);
-
-        $country = Country::find($this->photo->country_id)->country;
-        $state = State::find($this->photo->state_id)->state;
-        $city = City::find($this->photo->city_id)->city;
-
-        Redis::del("{$country}:Leaderboard");
-        Redis::del("{$country}:{$state}:Leaderboard");
-        Redis::del("{$country}:{$state}:{$city}:Leaderboard");
-
-        $this->assertEquals(0, Redis::zscore("{$country}:Leaderboard", $this->user->id));
-        $this->assertEquals(0, Redis::zscore("{$country}:{$state}:Leaderboard", $this->user->id));
-        $this->assertEquals(0, Redis::zscore("{$country}:{$state}:{$city}:Leaderboard", $this->user->id));
-
-        $this->post($route, [
-            'photoId' => $this->photo->id,
-            $tagsKey => [
-                'alcohol' => [
-                    'beerBottle' => 10
-                ]
-            ]
-        ]);
-
-        // Assert leaderboards are updated ------------
-        $this->assertEquals(0, Redis::zscore("{$country}:Leaderboard", $this->user->id));
-        $this->assertEquals(0, Redis::zscore("{$country}:{$state}:Leaderboard", $this->user->id));
-        $this->assertEquals(0, Redis::zscore("{$country}:{$state}:{$city}:Leaderboard", $this->user->id));
+        $this->assertEquals(11, Redis::zscore("xp.country.{$this->photo->country_id}", $this->user->id));
+        $this->assertEquals(11, Redis::zscore("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}", $this->user->id));
+        $this->assertEquals(11, Redis::zscore("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}.city.{$this->photo->city_id}", $this->user->id));
     }
 }
