@@ -56,13 +56,9 @@ class LoadDataHelper
             $country = LocationHelper::getCreatorInfo($country);
 
             // Get Leaderboard per country. Should load more and stop when there are 10-max as some users settings may be off.
-            $leaderboard_ids = Redis::zrevrange($country->country.':Leaderboard', 0, 9);
+            $leaderboardIds = Redis::zrevrange("xp.country.$country->id", 0, 9, 'withscores');
 
-            $leaders = User::whereIn('id', $leaderboard_ids)->orderBy('xp', 'desc')->get();
-
-            $arrayOfLeaders = LocationHelper::getLeaders($leaders);
-
-            $country['leaderboard'] = json_encode($arrayOfLeaders);
+            $country['leaderboard'] = self::getLeadersFromLeaderboards($leaderboardIds);
 
             // Total values
             $country['avg_photo_per_user'] = round($country->total_photos_redis / $country->total_contributors, 2);
@@ -213,13 +209,9 @@ class LoadDataHelper
             $state = LocationHelper::getCreatorInfo($state);
 
             // Get Leaderboard
-            $leaderboard_ids = Redis::zrevrange($countryName.':'.$state->state.':Leaderboard',0,9);
+            $leaderboardIds = Redis::zrevrange("xp.country.$country->id.state.$state->id", 0, 9, 'withscores');
 
-            $leaders = User::whereIn('id', $leaderboard_ids)->orderBy('xp', 'desc')->get();
-
-            $arrayOfLeaders = LocationHelper::getLeaders($leaders);
-
-            $state->leaderboard = json_encode($arrayOfLeaders);
+            $state->leaderboard = self::getLeadersFromLeaderboards($leaderboardIds);
 
             // Get images/litter metadata
             $state->avg_photo_per_user = round($state->total_photos_redis / $state->total_contributors, 2);
@@ -304,13 +296,9 @@ class LoadDataHelper
             $city = LocationHelper::getCreatorInfo($city);
 
             // Get Leaderboard
-            $leaderboard_ids = Redis::zrevrange($countryName . ':' . $stateName . ':' . $city->city . ':Leaderboard', 0, 9);
+            $leaderboardIds = Redis::zrevrange("xp.country.$country->id.state.$state->id.city.$city->id", 0, 9, 'withscores');
 
-            $leaders = User::whereIn('id', $leaderboard_ids)->orderBy('xp', 'desc')->get();
-
-            $arrayOfLeaders = LocationHelper::getLeaders($leaders);
-
-            $city['leaderboard'] = json_encode($arrayOfLeaders);
+            $city['leaderboard'] = self::getLeadersFromLeaderboards($leaderboardIds);
             $city['avg_photo_per_user'] = round($city->total_photos_redis / $city->total_contributors, 2);
             $city['avg_litter_per_user'] = round($city->total_litter_redis / $city->total_contributors, 2);
             $city['diffForHumans'] = $city->created_at->diffForHumans();
@@ -328,5 +316,26 @@ class LoadDataHelper
             'state' => $stateName,
             'cities' => $cities
         ];
+    }
+
+    /**
+     * @param $leaderboardIds
+     * @return array
+     */
+    protected static function getLeadersFromLeaderboards($leaderboardIds): array
+    {
+        $users = User::query()
+            ->whereIn('id', array_keys($leaderboardIds))
+            ->get();
+
+        $leaders = collect($leaderboardIds)
+            ->map(function ($xp, $userId) use ($users) {
+                $user = $users->firstWhere('id', $userId);
+                $user->xp_redis = $xp;
+                return $user;
+            })
+            ->sortByDesc('xp_redis');
+
+        return LocationHelper::getLeaders($leaders);
     }
 }

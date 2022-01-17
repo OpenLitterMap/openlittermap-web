@@ -9,7 +9,8 @@ w<template>
 				</tr>
 					<tr v-for="leader in this.leaders" class="wow slideInLeft">
 						<td>{{ leader.position }}</td>
-						<td>{{ leader.name }} {{ leader.username }}</td>
+						<td v-if="leader.name || leader.username">{{ leader.name }} {{ leader.username }}</td>
+                        <td v-else>{{ $t('common.anonymous') }}</td>
 						<td>{{ leader.xp }}</td>
 					</tr>
 			</table>
@@ -23,14 +24,14 @@ export default {
 	props: ['leaderboard'],
 	mounted ()
 	{
-		let arr = JSON.parse(this.leaderboard);
+		let arr = this.leaderboard;
 
 		let positions = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th'];
 
-		for (var i=0; i<Object.keys(arr).length; i++)
-		{
-			arr[i]['position'] = positions[i];
-		};
+        for (var i = 0; i < arr.length; i++)
+        {
+            arr[i]['position'] = positions[i];
+        }
 
 		this.leaders = arr;
 	},
