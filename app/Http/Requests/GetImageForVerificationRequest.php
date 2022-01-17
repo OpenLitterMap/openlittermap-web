@@ -15,7 +15,8 @@ class GetImageForVerificationRequest extends FormRequest
     public function rules()
     {
         return [
-            'country_id' => 'nullable|exists:countries,id'
+            'country_id' => 'nullable|exists:countries,id',
+            'skip' => 'nullable|numeric'
         ];
     }
 }

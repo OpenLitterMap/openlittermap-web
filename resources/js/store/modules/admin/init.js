@@ -7,5 +7,6 @@ export const init = {
     photo: {}, // the current photo we are verifying
     loading: true, // spinner
     countriesWithPhotos: [],
-    filterByCountry: ''
+    filterByCountry: '',
+    skippedPhotos: 0,
 };

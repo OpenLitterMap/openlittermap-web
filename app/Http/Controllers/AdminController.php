@@ -239,7 +239,12 @@ class AdminController extends Controller
     {
         // Photos that are uploaded and tagged come first
         /** @var Photo $photo */
-        $photo = $this->filterPhotos()->where('verification', 0.1)->first();
+        $photo = $this->filterPhotos()
+            ->when($request->skip, function ($q) use ($request) {
+                $q->skip((int) $request->skip);
+            })
+            ->where('verification', 0.1)
+            ->first();
 
         // Load the tags for this photo if it exists
         if ($photo)
@@ -251,7 +256,12 @@ class AdminController extends Controller
         {
             // Photos that have been uploaded, but not tagged or submitted for verification
             /** @var Photo $photo */
-            $photo = $this->filterPhotos()->where('verification', 0)->first();
+            $photo = $this->filterPhotos()
+                ->when($request->skip, function ($q) use ($request) {
+                    $q->skip($request->skip);
+                })
+                ->where('verification', 0)
+                ->first();
         }
 
         // Count photos that are uploaded but not tagged

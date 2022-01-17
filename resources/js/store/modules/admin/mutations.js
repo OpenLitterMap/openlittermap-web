@@ -60,6 +60,16 @@ export const mutations = {
     setFilterByCountry(state, payload)
     {
         state.filterByCountry = payload;
+    },
+
+    /**
+     * Sets the number of photos to skip verification
+     * @param state
+     * @param payload
+     */
+    setSkippedPhotos(state, payload)
+    {
+        state.skippedPhotos = payload;
     }
 
     // adminCreated(state, payload) {

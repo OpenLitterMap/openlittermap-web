@@ -38,6 +38,7 @@
 
                 <div v-else-if="!photo">
                     <p class="title is-3">All photos for your selection are done.</p>
+                    <p class="subtitle is-5">You can refresh the page to view skipped photos.</p>
                 </div>
 
                 <div v-else>
@@ -55,25 +56,25 @@
                             <p class="subtitle is-5">Tagged, awaiting verification: {{ this.photosAwaitingVerification }}</p>
 
                             <div class="mt-5">
-                                <p>Accept data, verify, but delete the image.</p>
-
                                 <button :class="delete_verify_button" @click="verifyDelete" :disabled="processing">
+                                    <span class="tooltip-text is-size-6">Accept data, verify, but delete the image.</span>
                                     Verify & Delete
                                 </button>
 
-                                <p>Delete the image.</p>
-
                                 <button :class="delete_button" @click="adminDelete" :disabled="processing">
+                                    <span class="tooltip-text is-size-6">Delete the image.</span>
                                     DELETE
                                 </button>
 
                                 <br>
 
-                                <button v-if="hasRecentTags" @click="clearRecentTags">Clear recent tags</button>
+                                <button class="button is-medium is-dark mb-4" v-if="hasRecentTags" @click="clearRecentTags">
+                                    Clear recent tags
+                                </button>
 
                             </div>
 
-                            <div v-if="hasRecentTags" class="control has-text-centered has-background-light py-4 rounded">
+                            <div v-if="hasRecentTags" class="recent-tags control has-text-centered has-background-light py-4">
                                 <RecentTags class="mb-5" :photo-id="photo.id" />
                             </div>
                         </div>
@@ -96,9 +97,14 @@
                             <add-tags :admin="true" :id="photo.id" />
 
                             <div style="padding-top: 1em; text-align: center;">
-                                <p class="strong">Update the image and save the new data</p>
                                 <button :class="update_new_tags_button" @click="updateNewTags" :disabled="checkUpdateTagsDisabled">
+                                    <span class="tooltip-text is-size-6">Update the image and save the new data.</span>
                                     Update with new tags
+                                </button>
+
+                                <button class="button is-large is-info tooltip mb-1" @click="skipPhoto" :disabled="processing">
+                                    <span class="tooltip-text is-size-6">Skip this photo and verify the next one.</span>
+                                    Skip
                                 </button>
                             </div>
                         </div>
@@ -113,8 +119,10 @@
                         />
 
                             <div style="padding-top: 3em;">
-                                <button class="button is-medium is-dark" @click="clearTags">Clear user input</button>
-                                <p>To undo this, just refresh the page</p>
+                                <button class="button is-medium is-dark tooltip" @click="clearTags">
+                                    <span class="tooltip-text is-size-6">To undo this, just refresh the page.</span>
+                                    Clear user input
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -155,9 +163,9 @@ export default {
 			processing: false,
 			btn: 'button is-large is-success',
 			// button classes
-			deleteButton: 'button is-large is-danger mb1',
-			deleteVerify: 'button is-large is-warning mb1',
-			verifyClass: 'button is-large is-success mb1',
+			deleteButton: 'button is-large is-danger mb1 tooltip',
+			deleteVerify: 'button is-large is-warning mb1 tooltip',
+			verifyClass: 'button is-large is-success mb1 tooltip',
 
             selectedCountry: '',
 		};
@@ -344,6 +352,21 @@ export default {
 
             this.loading = false;
         },
+
+        /**
+         * Skips the current photo
+         * and loads the next
+         */
+        async skipPhoto ()
+        {
+            this.loading = true;
+
+            this.$store.commit('setSkippedPhotos', this.$store.state.admin.skippedPhotos + 1);
+
+            await this.$store.dispatch('GET_NEXT_ADMIN_PHOTO');
+
+            this.loading = false;
+        },
 	}
 }
 </script>
@@ -363,6 +386,10 @@ export default {
         flex-direction: row;
         justify-content: center;
         align-items: center;
+    }
+
+    .recent-tags {
+        border-radius: 8px;
     }
 
 </style>

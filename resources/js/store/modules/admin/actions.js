@@ -118,7 +118,8 @@ export const actions = {
 
         await axios.get('/admin/get-image', {
             params: {
-                country_id: context.state.filterByCountry
+                country_id: context.state.filterByCountry,
+                skip: context.state.skippedPhotos
             }
         })
             .then(resp => {
