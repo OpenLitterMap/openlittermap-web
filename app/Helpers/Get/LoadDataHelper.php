@@ -61,8 +61,12 @@ class LoadDataHelper
             $country['leaderboard'] = self::getLeadersFromLeaderboards($leaderboardIds);
 
             // Total values
-            $country['avg_photo_per_user'] = round($country->total_photos_redis / $country->total_contributors, 2);
-            $country['avg_litter_per_user'] = round($country->total_litter_redis / $country->total_contributors, 2);
+            $country['avg_photo_per_user'] = $country->total_contributors > 0
+                ? round($country->total_photos_redis / $country->total_contributors, 2)
+                : 0;
+            $country['avg_litter_per_user'] = $country->total_contributors > 0
+                ? round($country->total_litter_redis / $country->total_contributors, 2)
+                : 0;
 
             $total_photos += $country->total_photos_redis;
             $total_litter += $country->total_litter_redis;
@@ -127,26 +131,17 @@ class LoadDataHelper
 
         foreach ($users as $user)
         {
-            $name = '';
-            $username = '';
-            if (($user->show_name) || ($user->show_username))
-            {
-                if ($user->show_name) $name = $user->name;
+            $globalLeaders[$newIndex] = [
+                'position' => $newIndex,
+                'name' => $user->show_name ? $user->name : '',
+                'username' => $user->show_username ? ('@' . $user->username) : '',
+                'xp' => number_format($user->xp),
+                'flag' => $user->global_flag
+                // 'level' => $user->level,
+                // 'linkinsta' => $user->link_instagram
+            ];
 
-                if ($user->show_username) $username = '@' . $user->username;
-
-                $globalLeaders[$newIndex] = [
-                    'position' => $newIndex,
-                    'name' => $name,
-                    'username' => $username,
-                    'xp' => number_format($user->xp),
-                    'flag' => $user->global_flag
-                    // 'level' => $user->level,
-                    // 'linkinsta' => $user->link_instagram
-                ];
-
-                $newIndex++;
-            }
+            $newIndex++;
         }
 
         $globalLeadersString = json_encode($globalLeaders);
@@ -185,9 +180,9 @@ class LoadDataHelper
 
         $states = State::select('id', 'state', 'country_id', 'created_by', 'created_at', 'manual_verify', 'total_contributors')
             ->with(['creator' => function ($q) {
-                $q->select('id', 'name', 'username', 'show_name', 'show_username')
-                    ->where('show_name', true)
-                    ->orWhere('show_username', true);
+                $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby')
+                    ->where('show_name_createdby', true)
+                    ->orWhere('show_username_createdby', true);
             }])
             ->where([
                 'country_id' => $country->id,
@@ -214,16 +209,20 @@ class LoadDataHelper
             $state->leaderboard = self::getLeadersFromLeaderboards($leaderboardIds);
 
             // Get images/litter metadata
-            $state->avg_photo_per_user = round($state->total_photos_redis / $state->total_contributors, 2);
-            $state->avg_litter_per_user = round($state->total_litter_redis / $state->total_contributors, 2);
+            $state->avg_photo_per_user = $state->total_contributors > 0
+                ? round($state->total_photos_redis / $state->total_contributors, 2)
+                : 0;
+            $state->avg_litter_per_user = $state->total_contributors > 0
+                ? round($state->total_litter_redis / $state->total_contributors, 2)
+                : 0;
 
             $total_litter += $state->total_litter_redis;
             $state->diffForHumans = $state->created_at->diffForHumans();
 
             if ($state->creator)
             {
-                $state->creator->name = ($state->creator->show_name) ? $state->creator->name : "";
-                $state->creator->username = ($state->creator->show_username) ? $state->creator->username : "";
+                $state->creator->name = ($state->creator->show_name_createdby) ? $state->creator->name : "";
+                $state->creator->username = ($state->creator->show_username_createdby) ? ('@' . $state->creator->username) : "";
             }
         }
 
@@ -274,9 +273,9 @@ class LoadDataHelper
          */
         $cities = City::select('id', 'city', 'country_id', 'state_id', 'created_by', 'created_at', 'manual_verify', 'total_contributors')
             ->with(['creator' => function ($q) {
-                $q->select('id', 'name', 'username', 'show_name', 'show_username')
-                    ->where('show_name', true)
-                    ->orWhere('show_username', true);
+                $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby')
+                    ->where('show_name_createdby', true)
+                    ->orWhere('show_username_createdby', true);
             }])
             ->where([
                 ['state_id', $state->id],
@@ -299,14 +298,18 @@ class LoadDataHelper
             $leaderboardIds = Redis::zrevrange("xp.country.$country->id.state.$state->id.city.$city->id", 0, 9, 'withscores');
 
             $city['leaderboard'] = self::getLeadersFromLeaderboards($leaderboardIds);
-            $city['avg_photo_per_user'] = round($city->total_photos_redis / $city->total_contributors, 2);
-            $city['avg_litter_per_user'] = round($city->total_litter_redis / $city->total_contributors, 2);
+            $city['avg_photo_per_user'] = $city->total_contributors > 0
+                ? round($city->total_photos_redis / $city->total_contributors, 2)
+                : 0;
+            $city['avg_litter_per_user'] = $city->total_contributors > 0
+                ? round($city->total_litter_redis / $city->total_contributors, 2)
+                : 0;
             $city['diffForHumans'] = $city->created_at->diffForHumans();
 
             if ($city->creator)
             {
-                $city->creator->name = ($city->creator->show_name) ? $city->creator->name : "";
-                $city->creator->username = ($city->creator->show_username) ? $city->creator->username : "";
+                $city->creator->name = ($city->creator->show_name_createdby) ? $city->creator->name : "";
+                $city->creator->username = ($city->creator->show_username_createdby) ? ('@' . $city->creator->username) : "";
             }
         }
 
