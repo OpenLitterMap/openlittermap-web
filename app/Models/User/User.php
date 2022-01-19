@@ -210,8 +210,9 @@ class User extends Authenticatable
     public function confirmEmail ()
     {
         $this->verified = true;
-        $this->token = null;
+        // $this->token = null; null token gives 404 when revisting the link
         $this->save();
+
         return $this->verified;
     }
 
