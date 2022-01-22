@@ -9,6 +9,8 @@ use App\Actions\Photos\UploadPhotoAction;
 use App\Events\ImageDeleted;
 use App\Http\Requests\AddTagsApiRequest;
 use App\Models\Photo;
+use App\Models\User\User;
+use Exception;
 use GeoHash;
 use Carbon\Carbon;
 
@@ -23,7 +25,7 @@ use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use Log;
+use Illuminate\Support\Facades\Log;
 
 class ApiPhotosController extends Controller
 {
@@ -119,6 +121,7 @@ class ApiPhotosController extends Controller
     protected function storePhoto(Request $request): Photo
     {
         $file = $request->file('photo');
+        /** @var User $user */
         $user = Auth::guard('api')->user();
 
         if (!$user->has_uploaded) $user->has_uploaded = 1;
@@ -142,6 +145,12 @@ class ApiPhotosController extends Controller
             : (int)$request['date'];
 
         $date = Carbon::parse($date);
+
+        if (app()->environment() === "production") {
+            if (Photo::where(['user_id' => $user->id, 'datetime' => $date])->exists()) {
+                throw new Exception("You have already uploaded this file!");
+            }
+        }
 
         // Upload images to both 's3' and 'bbox' disks, resized for 'bbox'
         $imageName = $this->uploadPhotoAction->run(
@@ -170,6 +179,7 @@ class ApiPhotosController extends Controller
         $state = $this->uploadHelper->getStateFromAddressArray($country, $addressArray);
         $city = $this->uploadHelper->getCityFromAddressArray($country, $state, $addressArray);
 
+        /** @var Photo $photo */
         $photo = $user->photos()->create([
             'filename' => $imageName,
             'datetime' => $date,

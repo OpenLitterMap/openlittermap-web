@@ -42,7 +42,7 @@ class UploadPhotoTest extends TestCase
 
         Event::fake([ImageUploaded::class, IncrementPhotoMonth::class]);
 
-        Carbon::setTestNow();
+        Carbon::setTestNow(now());
 
         $user = User::factory()->create([
             'active_team' => Team::factory()
@@ -176,7 +176,7 @@ class UploadPhotoTest extends TestCase
         Storage::fake('s3');
         Storage::fake('bbox');
 
-        Carbon::setTestNow();
+        Carbon::setTestNow(now());
 
         $user = User::factory()->create([
             'active_team' => Team::factory()
@@ -234,7 +234,7 @@ class UploadPhotoTest extends TestCase
         Storage::fake('s3');
         Storage::fake('bbox');
 
-        Carbon::setTestNow();
+        Carbon::setTestNow(now());
 
         $user = User::factory()->create();
 
