@@ -9,6 +9,8 @@ class UpdateTeamRequest extends FormRequest
 {
     /**
      * Get the validation rules that apply to the request.
+     * Ignoring the team we're updating,
+     * since we don't want to test for uniqueness against it
      *
      * @return array
      */
@@ -19,13 +21,13 @@ class UpdateTeamRequest extends FormRequest
                 'required',
                 'min:3',
                 'max:100',
-                Rule::unique('teams')->ignore($this->get('id'))
+                Rule::unique('teams')->ignore($this->route('team'))
             ],
             'identifier' => [
                 'required',
                 'min:3',
                 'max:15',
-                Rule::unique('teams')->ignore($this->get('id'))
+                Rule::unique('teams')->ignore($this->route('team'))
             ],
         ];
     }

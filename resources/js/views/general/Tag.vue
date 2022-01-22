@@ -64,6 +64,11 @@
                                     <button @click="clearRecentTags">{{ $t('tags.clear-tags-btn') }}</button>
                                 </div>
                             </div>
+
+                            <div v-if="hasRecentTags" class="box control has-text-centered">
+                                <RecentTags :photo-id="photo.id" />
+                            </div>
+
                         </div> <!-- end info box -->
 
                         <!-- The Image, Middle -->
@@ -143,6 +148,7 @@ import AddTags from '../../components/Litter/AddTags';
 import Presence from '../../components/Litter/Presence';
 import Tags from '../../components/Litter/Tags';
 import ProfileDelete from '../../components/Litter/ProfileDelete';
+import RecentTags from '../../components/Litter/RecentTags';
 
 export default {
     name: 'Tag',
@@ -151,7 +157,8 @@ export default {
         AddTags,
         Presence,
         Tags,
-        ProfileDelete
+        ProfileDelete,
+        RecentTags
     },
     async mounted ()
     {

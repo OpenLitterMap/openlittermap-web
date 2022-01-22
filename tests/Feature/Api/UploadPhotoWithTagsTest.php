@@ -32,7 +32,7 @@ class UploadPhotoWithTagsTest extends TestCase
 
         Event::fake([ImageUploaded::class, IncrementPhotoMonth::class]);
 
-        Carbon::setTestNow();
+        Carbon::setTestNow(now());
 
         $user = User::factory()->create([
             'active_team' => Team::factory()

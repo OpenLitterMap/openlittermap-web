@@ -30,12 +30,9 @@ trait LocationHelper
             }
         }
 
-        if (!isset($location->created_by_name))
+        if (empty($location['created_by_name']) && empty($location['created_by_username']))
         {
-            if (!isset($location->created_by_username))
-            {
-                $location["created_by_name"] = 'Anonymous';
-            }
+            $location["created_by_name"] = 'Anonymous';
         }
 
         return $location;

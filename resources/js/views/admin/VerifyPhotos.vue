@@ -1,120 +1,157 @@
 <template>
-	<div class="container mt3">
+    <div>
 
-		<loading
+        <div class="has-background-grey-light has-text-centered py-2 admin-filters">
+            <p class="has-text-weight-bold">Filter photos by:</p>
+
+            <div class="control ml-4">
+                <div class="select">
+                    <select
+                        v-model="selectedCountry"
+                        @change="filterByCountry"
+                    >
+                        <option value="">All Countries</option>
+                        <option
+                            v-for="country in countriesWithPhotos"
+                            :key="country.id"
+                            :value="country.id"
+                        >{{ country.country }} ({{ country.total }})</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="container is-fluid mt3">
+
+            <loading
             v-if="loading"
             :active.sync="loading"
             :is-full-page="true"
         />
 
-	    <div v-else>
-            <!-- Todo , add extra loaded statement here -->
-	    	<div v-if="this.photosAwaitingVerification === 0 && this.photosNotProcessed === 0">
-	    		<p class="title is-3">All done.</p>
-	    	</div>
+            <div v-else>
 
-	    	<div v-else>
+                <!-- Todo , add extra loaded statement here -->
+                <div v-if="this.photosAwaitingVerification === 0 && this.photosNotProcessed === 0">
+                    <p class="title is-3">All done.</p>
+                </div>
 
-				<h1 class="title is-2 has-text-centered" style="margin-bottom: 1em;">
-					#{{ this.photo.id }} Uploaded {{ this.uploadedTime }}
-				</h1>
-			  	<p class="subtitle is-5 has-text-centered" style="margin-bottom: 4em;">
-			  		{{ this.photo.display_name }}
-			  	</p>
-				<!-- todo - verification bar -->
+                <div v-else-if="!photo">
+                    <p class="title is-3">All photos for your selection are done.</p>
+                    <p class="subtitle is-5">You can refresh the page to view skipped photos.</p>
+                </div>
 
-				<div class="columns">
+                <div v-else>
 
-				  	<!-- Left - remaining verification & other actions -->
-				  	<div class="column has-text-centered">
-						<p class="subtitle is-5">Uploaded, not tagged: {{ this.photosNotProcessed }}</p>
-						<p class="subtitle is-5">Tagged, awaiting verification: {{ this.photosAwaitingVerification }}</p>
+                    <h1 class="title is-2 has-text-centered">
+                        #{{ this.photo.id }} Uploaded {{ this.uploadedTime }}
+                    </h1>
+                    <!-- todo - verification bar -->
 
-						<div style="padding-top: 20%;">
-							<p>Accept data, verify, but delete the image.</p>
-                            <button :class="delete_verify_button" @click="verifyDelete" :disabled="processing">
-                                Verify & Delete
-                            </button>
+                    <div class="columns">
 
-                            <p>Delete the image.</p>
-                            <button :class="delete_button" @click="adminDelete" :disabled="processing">
-                                DELETE
-                            </button>
+                        <!-- Left - remaining verification & other actions -->
+                        <div class="column has-text-centered">
+                            <p class="subtitle is-5">Uploaded, not tagged: {{ this.photosNotProcessed }}</p>
+                            <p class="subtitle is-5">Tagged, awaiting verification: {{ this.photosAwaitingVerification }}</p>
 
-                            <br>
+                            <div class="mt-5">
+                                <button :class="delete_verify_button" @click="verifyDelete" :disabled="processing">
+                                    <span class="tooltip-text is-size-6">Accept data, verify, but delete the image.</span>
+                                    Verify & Delete
+                                </button>
 
-                            <button @click="clearRecentTags">Clear recent tags</button>
+                                <button :class="delete_button" @click="adminDelete" :disabled="processing">
+                                    <span class="tooltip-text is-size-6">Delete the image.</span>
+                                    DELETE
+                                </button>
+
+                                <br>
+
+                                <button class="button is-medium is-dark mb-4" v-if="hasRecentTags" @click="clearRecentTags">
+                                    Clear recent tags
+                                </button>
+
+                            </div>
+
+                            <div v-if="hasRecentTags" class="recent-tags control has-text-centered has-background-light py-4">
+                                <RecentTags class="mb-5" :photo-id="photo.id" />
+                            </div>
                         </div>
-					</div>
 
-				  	<!-- Middle - image -->
-					<div class="column is-half" style="text-align: center;">
-			      		<img :src="this.photo.filename" width="300" height="250" />
-			    	</div>
+                        <!-- Middle - image -->
+                        <div class="column is-half" style="text-align: center;">
+                            <p class="subtitle is-5 has-text-centered mb-8">
+                                {{ this.photo.display_name }}
+                            </p>
 
-				  	<!-- Right - Tags -->
-				  	<div class="column has-text-centered" style="position: relative;">
+                            <img class="verify-image" :src="this.photo.filename" />
 
-                        <!-- The list of tags associated with this image-->
-                        <Tags
+                            <div class="has-text-centered mb1">
+                                <button :class="verify_correct_button" :disabled="processing" @click="verifyCorrect">VERIFY CORRECT</button>
+
+                                <button class="button is-large is-danger" :disabled="processing" @click="incorrect">FALSE</button>
+                            </div>
+
+                            <!-- Add / edit tags -->
+                            <add-tags :admin="true" :id="photo.id" />
+
+                            <div style="padding-top: 1em; text-align: center;">
+                                <button :class="update_new_tags_button" @click="updateNewTags" :disabled="checkUpdateTagsDisabled">
+                                    <span class="tooltip-text is-size-6">Update the image and save the new data.</span>
+                                    Update with new tags
+                                </button>
+
+                                <button class="button is-large is-info tooltip mb-1" @click="skipPhoto" :disabled="processing">
+                                    <span class="tooltip-text is-size-6">Skip this photo and verify the next one.</span>
+                                    Skip
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Right - Tags -->
+                        <div class="column has-text-centered" style="position: relative;">
+
+                            <!-- The list of tags associated with this image-->
+                            <Tags
                             :photo-id="photo.id"
                             :admin="true"
                         />
 
-						<div style="padding-top: 3em;">
-							<button class="button is-medium is-dark" @click="clearTags">
-                                Clear user input
-                            </button>
-							<p>To undo this, just refresh the page</p>
-						</div>
-				  	</div>
-				</div>
-
-		    	<div class="has-text-centered mb1">
-					<button :class="verify_correct_button" :disabled="processing" @click="verifyCorrect">
-                        VERIFY CORRECT
-                    </button>
-
-					<button class="button is-large is-danger" :disabled="processing" @click="incorrect">
-                        FALSE
-                    </button>
-				</div>
-
-				<!-- Add / edit tags -->
-                <add-tags
-                    :admin="true"
-                    :id="photo.id"
-                />
-
-				<div style="padding-top: 1em; text-align: center;">
-					<p class="strong">Update the image and save the new data</p>
-					<button :class="update_new_tags_button" @click="updateNewTags" :disabled="checkUpdateTagsDisabled">
-						Update with new tags
-					</button>
-				</div>
-			</div>
-		</div>
-	</div>
+                            <div style="padding-top: 3em;">
+                                <button class="button is-medium is-dark tooltip" @click="clearTags">
+                                    <span class="tooltip-text is-size-6">To undo this, just refresh the page.</span>
+                                    Clear user input
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </template>
 
 <script>
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
+import moment from 'moment'
 
 import AddTags from '../../components/Litter/AddTags'
 import Tags from '../../components/Litter/Tags'
-
-import moment from 'moment'
+import RecentTags from '../../components/Litter/RecentTags';
 
 export default {
 	name: 'VerifyPhotos',
 	components: {
         Loading,
         AddTags,
-        Tags
+        Tags,
+        RecentTags
     },
-	async created () {
-	    this.loading = true;
+	async created ()
+	{
+        this.loading = true;
 
         await this.$store.dispatch('GET_NEXT_ADMIN_PHOTO');
 
@@ -126,9 +163,11 @@ export default {
 			processing: false,
 			btn: 'button is-large is-success',
 			// button classes
-			deleteButton: 'button is-large is-danger mb1',
-			deleteVerify: 'button is-large is-warning mb1',
-			verifyClass: 'button is-large is-success mb1',
+			deleteButton: 'button is-large is-danger mb1 tooltip',
+			deleteVerify: 'button is-large is-warning mb1 tooltip',
+			verifyClass: 'button is-large is-success mb1 tooltip',
+
+            selectedCountry: '',
 		};
 	},
 	computed: {
@@ -182,6 +221,14 @@ export default {
             return this.$store.state.admin.awaiting_verification;
         },
 
+        /**
+         * List of countries that contain unverified photos
+         */
+        countriesWithPhotos ()
+        {
+            return this.$store.state.admin.countriesWithPhotos;
+        },
+
 		/**
 		 *
 		 */
@@ -205,6 +252,14 @@ export default {
 		{
 			return this.processing ? this.btn + ' is-loading' : this.btn;
 		},
+
+        /**
+         * Return true and show Clear Recent Tags button if the user has recent tags
+         */
+        hasRecentTags ()
+        {
+            return Object.keys(this.$store.state.litter.recentTags).length > 0;
+        },
 	},
 	methods: {
 
@@ -282,15 +337,59 @@ export default {
             await this.$store.dispatch('ADMIN_UPDATE_WITH_NEW_TAGS');
 
             this.processing = false;
-  		}
+  		},
+
+        /**
+         * Filters the photos by country
+         */
+        async filterByCountry ()
+        {
+            this.loading = true;
+
+            this.$store.commit('setFilterByCountry', this.selectedCountry);
+
+            await this.$store.dispatch('GET_NEXT_ADMIN_PHOTO');
+
+            this.loading = false;
+        },
+
+        /**
+         * Skips the current photo
+         * and loads the next
+         */
+        async skipPhoto ()
+        {
+            this.loading = true;
+
+            this.$store.commit('setSkippedPhotos', this.$store.state.admin.skippedPhotos + 1);
+
+            await this.$store.dispatch('GET_NEXT_ADMIN_PHOTO');
+
+            this.loading = false;
+        },
 	}
 }
 </script>
 
 <style scoped>
 
+    .verify-image {
+        max-height: 230px;
+    }
+
     .strong {
         font-weight: 600;
+    }
+
+    .admin-filters {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .recent-tags {
+        border-radius: 8px;
     }
 
 </style>

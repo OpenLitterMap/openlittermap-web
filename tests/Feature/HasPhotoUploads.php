@@ -10,6 +10,7 @@ use App\Models\Location\Country;
 use App\Models\Location\State;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Tests\Doubles\Actions\Locations\FakeReverseGeocodingAction;
 
 trait HasPhotoUploads
 {
@@ -27,6 +28,8 @@ trait HasPhotoUploads
         "country_code" => "us",
         "suburb" => "unknown"
     ];
+    /** @var FakeReverseGeocodingAction */
+    protected $geocodingAction = null;
 
     protected function setImagePath()
     {
@@ -35,7 +38,7 @@ trait HasPhotoUploads
         $this->setMockForGeocodingAction();
     }
 
-    protected function getImageAndAttributes($mimeType = 'jpg'): array
+    protected function getImageAndAttributes($mimeType = 'jpg', $withAddress = []): array
     {
         $exifImage = file_get_contents($this->imagePath);
         $file = UploadedFile::fake()->createWithContent(
@@ -46,6 +49,7 @@ trait HasPhotoUploads
         $longitude = -77.15449870066;
         $geoHash = 'dr15u73vccgyzbs9w4uj';
         $displayName = $this->imageDisplayName;
+        $this->address = array_merge($this->address, $withAddress);
         $address = $this->address;
 
         $dateTime = now();
@@ -77,26 +81,22 @@ trait HasPhotoUploads
 
     protected function getCountryId(): int
     {
-        return Country::where('shortcode', 'us')->first()->id;
+        return Country::where('shortcode', $this->address['country_code'])->first()->id;
     }
 
     protected function getStateId(): int
     {
-        return State::where('state', 'Pennsylvania')->first()->id;
+        return State::where('state', $this->address['state'])->first()->id;
     }
 
     protected function getCityId(): int
     {
-        return City::where(['city' => 'Latimore Township'])->first()->id;
+        return City::where(['city' => $this->address['city']])->first()->id;
     }
 
     protected function setMockForGeocodingAction()
     {
-        $this->mock(ReverseGeocodeLocationAction::class)
-            ->shouldReceive('run')
-            ->andReturn([
-                'display_name' => $this->imageDisplayName,
-                'address' => $this->address
-            ]);
+        $this->geocodingAction = new FakeReverseGeocodingAction();
+        $this->swap(ReverseGeocodeLocationAction::class, $this->geocodingAction);
     }
 }

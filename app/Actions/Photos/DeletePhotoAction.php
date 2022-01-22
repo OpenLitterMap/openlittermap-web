@@ -10,13 +10,22 @@ class DeletePhotoAction
     /**
      * Delete high-res and 500x500 photo
      *
+     * If somehow a photo does not contain a filename
+     * we'll just assume the photo has already been deleted
+     * or has been partially uploaded, in which case there's nothing to delete.
+     * That's why we're not throwing an exception here
+     *
      * @param Photo $photo
      */
     public function run (Photo $photo)
     {
-        $this->deletePhoto($photo->filename, 's3');
+        if ($photo->filename) {
+            $this->deletePhoto($photo->filename, 's3');
+        }
 
-        $this->deletePhoto($photo->five_hundred_square_filepath, 'bbox');
+        if ($photo->five_hundred_square_filepath) {
+            $this->deletePhoto($photo->five_hundred_square_filepath, 'bbox');
+        }
     }
 
     /**

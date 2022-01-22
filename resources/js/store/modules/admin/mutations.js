@@ -44,6 +44,34 @@ export const mutations = {
         Object.assign(state, init);
     },
 
+    /**
+     * Set countries that contain unverified photos
+     */
+    setCountriesWithPhotos (state, payload)
+    {
+        state.countriesWithPhotos = payload;
+    },
+
+    /**
+     * Sets the country to filter the photos
+     * @param state
+     * @param payload
+     */
+    setFilterByCountry(state, payload)
+    {
+        state.filterByCountry = payload;
+    },
+
+    /**
+     * Sets the number of photos to skip verification
+     * @param state
+     * @param payload
+     */
+    setSkippedPhotos(state, payload)
+    {
+        state.skippedPhotos = payload;
+    }
+
     // adminCreated(state, payload) {
   //   Vue.set(state.items, payload.item, payload.quantity);
   //   Vue.set(state.stuff[payload.category], payload.item, payload.quantity);

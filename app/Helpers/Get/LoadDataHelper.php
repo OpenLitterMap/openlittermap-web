@@ -252,7 +252,7 @@ class LoadDataHelper
      *
      * @return array
      */
-    public static function getCities ($country = null, string $state) : array
+    public static function getCities ($country, string $state) : array
     {
         if ($country)
         {

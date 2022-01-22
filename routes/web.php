@@ -276,6 +276,7 @@ Route::group(['prefix' => '/admin'], function () {
 
     // get the data
     Route::get('get-image', 'AdminController@getImage');
+    Route::get('get-countries-with-photos', 'AdminController@getCountriesWithPhotos');
 
     // Get a list of recently registered users
     // Route::get('/users', 'AdminController@getUserCount');
