@@ -10,6 +10,11 @@ use Illuminate\Http\Request;
 
 class TeamsLeaderboardController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     /**
      * Load Teams ranked by total litter
      *

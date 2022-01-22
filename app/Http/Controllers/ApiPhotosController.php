@@ -37,8 +37,6 @@ class ApiPhotosController extends Controller
     private $deletePhotoAction;
     /** @var MakeImageAction */
     private $makeImageAction;
-    /** @var ReverseGeocodeLocationAction */
-    private $reverseGeocodeAction;
 
     /**
      * ApiPhotosController constructor
@@ -48,21 +46,18 @@ class ApiPhotosController extends Controller
      * @param UploadPhotoAction $uploadPhotoAction
      * @param DeletePhotoAction $deletePhotoAction
      * @param MakeImageAction $makeImageAction
-     * @param ReverseGeocodeLocationAction $reverseGeocodeAction
      */
     public function __construct (
         UploadHelper $uploadHelper,
         UploadPhotoAction $uploadPhotoAction,
         DeletePhotoAction $deletePhotoAction,
-        MakeImageAction $makeImageAction,
-        ReverseGeocodeLocationAction $reverseGeocodeAction
+        MakeImageAction $makeImageAction
     )
     {
         $this->uploadHelper = $uploadHelper;
         $this->uploadPhotoAction = $uploadPhotoAction;
         $this->deletePhotoAction = $deletePhotoAction;
         $this->makeImageAction = $makeImageAction;
-        $this->reverseGeocodeAction = $reverseGeocodeAction;
 
         $this->middleware('auth:api');
     }
@@ -162,7 +157,7 @@ class ApiPhotosController extends Controller
             'bbox'
         );
 
-        $revGeoCode = $this->reverseGeocodeAction->run($lat, $lon);
+        $revGeoCode = app(ReverseGeocodeLocationAction::class)->run($lat, $lon);
 
         // The entire address as a string
         $display_name = $revGeoCode["display_name"];
