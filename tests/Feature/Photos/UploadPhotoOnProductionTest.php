@@ -52,7 +52,7 @@ class UploadPhotoOnProductionTest extends TestCase
     {
         Carbon::setTestNow(now());
 
-        $user = User::factory()->create();
+        $user = User::factory()->create(['id' => 2]);
 
         $this->actingAs($user, 'api');
 
