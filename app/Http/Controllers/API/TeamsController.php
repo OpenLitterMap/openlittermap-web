@@ -22,7 +22,7 @@ class TeamsController extends Controller
 
     public function __construct()
     {
-        $this->middleware('auth')->except('types');
+        $this->middleware('auth:api')->except('types');
     }
 
     /**
@@ -33,7 +33,7 @@ class TeamsController extends Controller
     public function list()
     {
         /** @var User $user */
-        $user = Auth::guard('api')->user();
+        $user = Auth::user();
 
         return $user->teams;
     }
@@ -48,7 +48,7 @@ class TeamsController extends Controller
     public function create(CreateTeamRequest $request, CreateTeamAction $action): array
     {
         /** @var User $user */
-        $user = Auth::guard('api')->user();
+        $user = Auth::user();
 
         if ($user->remaining_teams === 0) {
             abort(403, 'You have created your maximum number of teams!');
@@ -69,7 +69,7 @@ class TeamsController extends Controller
      */
     public function update(UpdateTeamRequest $request, UpdateTeamAction $action, Team $team): array
     {
-        if (Auth::guard('api')->id() != $team->leader) {
+        if (Auth::id() != $team->leader) {
             abort(403, 'You are not the team leader!');
         }
 
@@ -88,7 +88,7 @@ class TeamsController extends Controller
     public function join(JoinTeamRequest $request, JoinTeamAction $action): array
     {
         /** @var User $user */
-        $user = Auth::guard('api')->user();
+        $user = Auth::user();
         /** @var Team $team */
         $team = Team::whereIdentifier($request->identifier)->first();
 
@@ -115,7 +115,7 @@ class TeamsController extends Controller
     public function leave(LeaveTeamRequest $request, LeaveTeamAction $action): array
     {
         /** @var User $user */
-        $user = Auth::guard('api')->user();
+        $user = Auth::user();
         /** @var Team $team */
         $team = Team::find($request->team_id);
 
