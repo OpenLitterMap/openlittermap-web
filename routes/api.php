@@ -93,7 +93,7 @@ Route::post('/settings/privacy/toggle-previous-tags', 'ApiSettingsController@tog
 
 // Teams
 Route::prefix('/teams')->group(function () {
-    Route::get('/leaderboard', 'Teams\TeamsLeaderboardController@index');
+    Route::get('/leaderboard', 'Teams\TeamsLeaderboardController@index')->middleware('auth:api');
     Route::get('/list', 'API\TeamsController@list');
     Route::get('/types', 'API\TeamsController@types');
     Route::patch('/update/{team}', 'API\TeamsController@update');

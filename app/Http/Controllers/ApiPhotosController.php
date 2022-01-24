@@ -22,6 +22,7 @@ use App\Events\Photo\IncrementPhotoMonth;
 use App\Helpers\Post\UploadHelper;
 
 use GuzzleHttp\Exception\GuzzleException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -115,10 +116,9 @@ class ApiPhotosController extends Controller
      * This is to handle all APIs from mobile app versions
      *
      * @param Request $request
-     * @return Photo
-     * @throws GuzzleException
+     * @return Photo|JsonResponse
      */
-    protected function storePhoto(Request $request): Photo
+    protected function storePhoto(Request $request)
     {
         $file = $request->file('photo');
         /** @var User $user */
@@ -146,9 +146,12 @@ class ApiPhotosController extends Controller
 
         $date = Carbon::parse($date);
 
-        if (app()->environment() === "production") {
+        // The user with id=1 needs to upload duplicate images for testing
+        if (app()->environment() === "production" && $user->id != 1) {
             if (Photo::where(['user_id' => $user->id, 'datetime' => $date])->exists()) {
-                throw new Exception("You have already uploaded this file!");
+                return response()->json(['errors' => [
+                    'photo' => 'You have already uploaded this file!'
+                ]]);
             }
         }
 
