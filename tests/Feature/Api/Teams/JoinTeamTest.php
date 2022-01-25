@@ -64,7 +64,7 @@ class JoinTeamTest extends TestCase
             'identifier' => $team->identifier,
         ]);
 
-        $response->assertForbidden();
+        $response->assertJsonFragment(['success' => false, 'message' => 'already-a-member']);
 
         $this->assertEquals(1, $team->fresh()->members);
     }
