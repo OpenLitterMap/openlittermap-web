@@ -8,6 +8,7 @@ use App\Actions\Photos\MakeImageAction;
 use App\Actions\Locations\ReverseGeocodeLocationAction;
 use App\Actions\Photos\UploadPhotoAction;
 use App\Events\ImageDeleted;
+use App\Exceptions\PhotoAlreadyUploaded;
 use App\Http\Requests\AddTagsApiRequest;
 use App\Models\Photo;
 use App\Models\User\User;
@@ -21,10 +22,8 @@ use App\Events\Photo\IncrementPhotoMonth;
 
 use App\Helpers\Post\UploadHelper;
 
-use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class ApiPhotosController extends Controller
@@ -86,7 +85,6 @@ class ApiPhotosController extends Controller
         );
      *
      * @return array
-     * @throws GuzzleException
      */
     public function store (Request $request) :array
     {
@@ -104,25 +102,28 @@ class ApiPhotosController extends Controller
             return ['success' => false, 'msg' => 'error-3'];
         }
 
-        $photo = $this->storePhoto($request);
+        try {
+            $photo = $this->storePhoto($request);
+        } catch (PhotoAlreadyUploaded $e) {
+            return ['success' => false, 'msg' => $e->getMessage()];
+        }
 
         return ['success' => true, 'photo_id' => $photo->id];
     }
 
     /**
-     * Temporary method to store a photo
-     * should be refactored back to the store method
+     * Stores a photo
      * This is to handle all APIs from mobile app versions
      *
      * @param Request $request
      * @return Photo
-     * @throws GuzzleException
+     * @throws PhotoAlreadyUploaded
      */
     protected function storePhoto(Request $request): Photo
     {
         $file = $request->file('photo');
         /** @var User $user */
-        $user = Auth::guard('api')->user();
+        $user = auth()->user();
 
         if (!$user->has_uploaded) $user->has_uploaded = 1;
 
@@ -145,6 +146,13 @@ class ApiPhotosController extends Controller
             : (int)$request['date'];
 
         $date = Carbon::parse($date);
+
+        // The user with id=1 needs to upload duplicate images for testing
+        if (app()->environment() === "production" && $user->id != 1) {
+            if (Photo::where(['user_id' => $user->id, 'datetime' => $date])->exists()) {
+                throw new PhotoAlreadyUploaded();
+            }
+        }
 
         // Upload images to both 's3' and 'bbox' disks, resized for 'bbox'
         $imageName = $this->uploadPhotoAction->run(
@@ -251,7 +259,8 @@ class ApiPhotosController extends Controller
      */
     public function addTags (AddTagsApiRequest $request)
     {
-        $user = Auth::guard('api')->user();
+        /** @var User $user */
+        $user = auth()->user();
         $photo = Photo::find($request->photo_id);
 
         if ($photo->user_id !== $user->id || $photo->verified > 0)
@@ -279,7 +288,6 @@ class ApiPhotosController extends Controller
      *
      * @param Request $request
      * @return array
-     * @throws GuzzleException
      */
     public function uploadWithTags (Request $request) :array
     {
@@ -299,12 +307,14 @@ class ApiPhotosController extends Controller
             return ['success' => false, 'msg' => 'error-3'];
         }
 
-        $photo = $this->storePhoto($request);
-
-        $userId = Auth::guard('api')->user()->id;
+        try {
+            $photo = $this->storePhoto($request);
+        } catch (PhotoAlreadyUploaded $e) {
+            return ['success' => false, 'msg' => $e->getMessage()];
+        }
 
         dispatch (new AddTags(
-            $userId,
+            auth()->id(),
             $photo->id,
             json_decode($request->tags, true),
             $request->picked_up
@@ -318,7 +328,8 @@ class ApiPhotosController extends Controller
      */
     public function check ()
     {
-        $user = Auth::guard('api')->user();
+        /** @var User $user */
+        $user = auth()->user();
 
         $photos = $user->photos()
             ->where('verified', 0)
@@ -335,7 +346,7 @@ class ApiPhotosController extends Controller
     public function deleteImage(Request $request)
     {
         /** @var User $user */
-        $user = Auth::guard('api')->user();
+        $user = auth()->user();
         /** @var Photo $photo */
         $photo = Photo::findOrFail($request->photoId);
 

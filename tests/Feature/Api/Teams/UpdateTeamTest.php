@@ -49,10 +49,8 @@ class UpdateTeamTest extends TestCase
         $team = Team::factory()->create([
             'leader' => $leader->id
         ]);
-
         $leader->teams()->attach($team);
         $member->teams()->attach($team);
-
         $newTeamName = 'New team name';
         $newTeamIdentifier = 'New identifier';
 
@@ -64,7 +62,7 @@ class UpdateTeamTest extends TestCase
             'identifier' => $newTeamIdentifier
         ]);
 
-        $response->assertForbidden();
+        $response->assertJsonFragment(['success' => false, 'message' => 'member-not-allowed']);
 
         // Members cannot update a team
         $this->actingAs($member);
@@ -74,7 +72,7 @@ class UpdateTeamTest extends TestCase
             'identifier' => $newTeamIdentifier
         ]);
 
-        $response->assertForbidden();
+        $response->assertJsonFragment(['success' => false, 'message' => 'member-not-allowed']);
     }
 
     public function test_fields_are_validated()

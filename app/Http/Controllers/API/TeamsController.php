@@ -14,7 +14,6 @@ use App\Http\Requests\Teams\UpdateTeamRequest;
 use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
 use App\Models\User\User;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 
 class TeamsController extends Controller
@@ -22,20 +21,20 @@ class TeamsController extends Controller
 
     public function __construct()
     {
-        $this->middleware('auth')->except('types');
+        $this->middleware('auth:api')->except('types');
     }
 
     /**
      * Array of teams the user has joined
      *
-     * @return array<Team>
+     * @return array
      */
     public function list()
     {
         /** @var User $user */
-        $user = Auth::guard('api')->user();
+        $user = Auth::user();
 
-        return $user->teams;
+        return $this->success(['teams' => $user->teams]);
     }
 
     /**
@@ -45,18 +44,18 @@ class TeamsController extends Controller
      * @param CreateTeamAction $action
      * @return array
      */
-    public function create(CreateTeamRequest $request, CreateTeamAction $action): array
+    public function create(CreateTeamRequest $request, CreateTeamAction $action)
     {
         /** @var User $user */
-        $user = Auth::guard('api')->user();
+        $user = Auth::user();
 
         if ($user->remaining_teams === 0) {
-            abort(403, 'You have created your maximum number of teams!');
+            return $this->fail('max-teams-created');
         }
 
         $team = $action->run($user, $request->all());
 
-        return ['team' => $team];
+        return $this->success(['team' => $team]);
     }
 
     /**
@@ -67,15 +66,15 @@ class TeamsController extends Controller
      * @param Team $team
      * @return array
      */
-    public function update(UpdateTeamRequest $request, UpdateTeamAction $action, Team $team): array
+    public function update(UpdateTeamRequest $request, UpdateTeamAction $action, Team $team)
     {
-        if (Auth::guard('api')->id() != $team->leader) {
-            abort(403, 'You are not the team leader!');
+        if (Auth::id() != $team->leader) {
+            return $this->fail('member-not-allowed');
         }
 
         $team = $action->run($team, $request->all());
 
-        return ['team' => $team];
+        return $this->success(['team' => $team]);
     }
 
     /**
@@ -85,24 +84,24 @@ class TeamsController extends Controller
      * @param JoinTeamAction $action
      * @return array
      */
-    public function join(JoinTeamRequest $request, JoinTeamAction $action): array
+    public function join(JoinTeamRequest $request, JoinTeamAction $action)
     {
         /** @var User $user */
-        $user = Auth::guard('api')->user();
+        $user = Auth::user();
         /** @var Team $team */
         $team = Team::whereIdentifier($request->identifier)->first();
 
         // Check the user is not already in the team
         if ($user->teams()->whereTeamId($team->id)->exists()) {
-            abort(403, 'You\'re already in this team!');
+            return $this->fail('already-a-member');
         }
 
         $action->run($user, $team);
 
-        return [
+        return $this->success([
             'team' => $team->fresh(),
             'activeTeam' => $user->fresh()->team()->first()
-        ];
+        ]);
     }
 
     /**
@@ -112,36 +111,59 @@ class TeamsController extends Controller
      * @param LeaveTeamAction $action
      * @return array
      */
-    public function leave(LeaveTeamRequest $request, LeaveTeamAction $action): array
+    public function leave(LeaveTeamRequest $request, LeaveTeamAction $action)
     {
         /** @var User $user */
-        $user = Auth::guard('api')->user();
+        $user = Auth::user();
         /** @var Team $team */
         $team = Team::find($request->team_id);
 
         if (!$user->teams()->whereTeamId($request->team_id)->exists()) {
-            abort(403, 'You are not part of this team!');
+            return $this->fail('not-a-member');
         }
 
         if ($team->users()->count() <= 1) {
-            abort(403, 'You are the only member of this team!');
+            return $this->fail('you-are-last-member');
         }
 
         $action->run($user, $team);
 
-        return [
+        return $this->success([
             'team' => $team->fresh(),
             'activeTeam' => $user->fresh()->team()->first()
-        ];
+        ]);
     }
 
     /**
      * Return the types of available teams
      *
-     * @return Collection
+     * @return array
      */
     public function types()
     {
-        return TeamType::select('id', 'team')->get();
+        return $this->success([
+            'types' => TeamType::select('id', 'team')->get()
+        ]);
+    }
+
+    /**
+     * Helper to output successful responses
+     * @param array $data
+     * @return array
+     */
+    private function success(array $data = []): array
+    {
+        return array_merge(['success' => true], $data);
+    }
+
+    /**
+     * Helper to output error responses
+     *
+     * @param string $message
+     * @return array
+     */
+    private function fail(string $message): array
+    {
+        return ['success' => false, 'message' => $message];
     }
 }

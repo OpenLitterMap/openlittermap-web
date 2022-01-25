@@ -44,7 +44,7 @@
                 <div v-else>
 
                     <h1 class="title is-2 has-text-centered">
-                        #{{ this.photo.id }} Uploaded {{ this.uploadedTime }}
+                        #{{ parseInt(this.photo.id).toLocaleString() }} Uploaded {{ this.uploadedTime }}
                     </h1>
                     <!-- todo - verification bar -->
 

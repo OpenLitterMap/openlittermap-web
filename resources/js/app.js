@@ -37,8 +37,7 @@ Vue.use(fullscreen);
 Vue.use(LaravelPermissionToVueJS);
 
 // Format a number with commas: "10,000"
-Vue.filter('commas', value =>
-{
+Vue.filter('commas', value => {
     return parseInt(value).toLocaleString();
 });
 
