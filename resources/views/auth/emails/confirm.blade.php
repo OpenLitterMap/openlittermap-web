@@ -386,7 +386,7 @@
                 <tr>
                     <td width="75%" align="center">
                         <br>
-                        &copy; OpenLitterMap & Contributors 2022.
+                        &copy; OpenLitterMap & Contributors {{ date('Y') }}.
                         <br/>
                         <br/>
                     </td>
