@@ -38,7 +38,7 @@ class NewUserRegMail extends Mailable
     {
         // return $this->view('view.name');
         return $this->from('welcome@openlittermap.com')
-            ->subject('Register your email for Open Litter Map')
+            ->subject('Confirm your email on OpenLitterMap')
             ->view('auth.emails.confirm')
             ->with([
                 'token' => $this->user->token
