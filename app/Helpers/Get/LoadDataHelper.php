@@ -119,38 +119,14 @@ class LoadDataHelper
         }
 
         /** GLOBAL LITTER MAPPERS */
-        $users = User::where('xp', '>', 9000)
-            ->orderBy('xp', 'desc')
-            ->where('show_name', 1)
-            ->orWhere('show_username', 1)
-            ->limit(10)
-            ->get();
-
-        $newIndex = 0;
-        $globalLeaders = [];
-
-        foreach ($users as $user)
-        {
-            $globalLeaders[$newIndex] = [
-                'position' => $newIndex,
-                'name' => $user->show_name ? $user->name : '',
-                'username' => $user->show_username ? ('@' . $user->username) : '',
-                'xp' => number_format($user->xp_redis),
-                'flag' => $user->global_flag
-                // 'level' => $user->level,
-                // 'linkinsta' => $user->link_instagram
-            ];
-
-            $newIndex++;
-        }
-
-        $globalLeadersString = json_encode($globalLeaders);
+        $leaderboardIds = Redis::zrevrange("xp.users", 0, 9, 'withscores');
+        $globalLeaders = self::getLeadersFromLeaderboards($leaderboardIds);
 
         return [
             'countries' => $countries,
             'total_litter' => $total_litter,
             'total_photos' => $total_photos,
-            'globalLeaders' => $globalLeadersString,
+            'globalLeaders' => $globalLeaders,
             'previousXp' => $previousXp,
             'nextXp' => $nextXp,
             'littercoin' => $littercoin,

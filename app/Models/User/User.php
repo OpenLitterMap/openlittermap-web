@@ -177,16 +177,6 @@ class User extends Authenticatable
         return (int) Redis::hget("user:{$this->id}", 'total_brands');
     }
 
-    /**
-     * Get user's XP from Redis
-     *
-     * @return int
-     */
-    public function getXpRedisAttribute (): int
-    {
-        return (int) Redis::zscore("xp.users", $this->id);
-    }
-
     public function getPositionAttribute()
     {
         return User::where('xp', '>', $this->xp ?? 0)->count() + 1;

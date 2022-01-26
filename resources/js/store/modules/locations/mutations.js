@@ -16,7 +16,7 @@ export const mutations = {
     setCountries (state, payload)
     {
         state.locations = payload.countries;
-        state.globalLeaders = JSON.parse(payload.globalLeaders);
+        state.globalLeaders = payload.globalLeaders;
         state.total_litter = payload.total_litter;
         state.total_photos = payload.total_photos;
         state.level.previousXp = payload.previousXp;

@@ -7,8 +7,8 @@ w<template>
 					<th>Name</th>
 					<th>XP</th>
 				</tr>
-					<tr v-for="leader in this.leaders" class="wow slideInLeft">
-						<td>{{ leader.position }}</td>
+					<tr v-for="(leader, i) in leaderboard" class="wow slideInLeft">
+						<td>{{ positions[i] }}</td>
 						<td v-if="leader.name || leader.username">{{ leader.name }} {{ leader.username }}</td>
                         <td v-else>{{ $t('common.anonymous') }}</td>
 						<td>{{ leader.xp }}</td>
@@ -22,24 +22,11 @@ w<template>
 export default {
 	name: 'Leaderboard',
 	props: ['leaderboard'],
-	mounted ()
-	{
-		let arr = this.leaderboard;
-
-		let positions = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th'];
-
-        for (var i = 0; i < arr.length; i++)
-        {
-            arr[i]['position'] = positions[i];
-        }
-
-		this.leaders = arr;
-	},
 	data ()
 	{
 		return {
-			leaders: [],
-		};
+            positions: ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th']
+        };
 	},
 }
 </script>
