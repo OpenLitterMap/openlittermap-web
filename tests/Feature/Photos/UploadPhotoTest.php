@@ -216,15 +216,18 @@ class UploadPhotoTest extends TestCase
         $stateId = State::factory()->create(['state' => $imageAttributes['address']['state'], 'country_id' => $countryId])->id;
         $cityId = City::factory()->create(['city' => $imageAttributes['address']['city'], 'country_id' => $countryId, 'state_id' => $stateId])->id;
 
+        Redis::del("xp.users");
         Redis::del("xp.country.$countryId");
         Redis::del("xp.country.$countryId.state.$stateId");
         Redis::del("xp.country.$countryId.state.$stateId.city.$cityId");
+        $this->assertEquals(0, Redis::zscore("xp.users", $user->id));
         $this->assertEquals(0, Redis::zscore("xp.country.$countryId", $user->id));
         $this->assertEquals(0, Redis::zscore("xp.country.$countryId.state.$stateId", $user->id));
         $this->assertEquals(0, Redis::zscore("xp.country.$countryId.state.$stateId.city.$cityId", $user->id));
 
         $this->actingAs($user)->post('/submit', ['file' => $imageAttributes['file']]);
 
+        $this->assertEquals(1, Redis::zscore("xp.users", $user->id));
         $this->assertEquals(1, Redis::zscore("xp.country.$countryId", $user->id));
         $this->assertEquals(1, Redis::zscore("xp.country.$countryId.state.$stateId", $user->id));
         $this->assertEquals(1, Redis::zscore("xp.country.$countryId.state.$stateId.city.$cityId", $user->id));

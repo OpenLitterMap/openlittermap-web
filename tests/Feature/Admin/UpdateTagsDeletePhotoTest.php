@@ -185,6 +185,7 @@ class UpdateTagsDeletePhotoTest extends TestCase
     )
     {
         // User has already uploaded and tagged the image, so their xp is 4
+        Redis::zadd("xp.users", 4, $this->user->id);
         Redis::zadd("xp.country.{$this->photo->country_id}", 4, $this->user->id);
         Redis::zadd("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}", 4, $this->user->id);
         Redis::zadd("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}.city.{$this->photo->city_id}", 4, $this->user->id);
@@ -197,6 +198,7 @@ class UpdateTagsDeletePhotoTest extends TestCase
         ]);
 
         // Assert leaderboards are updated ------------
+        $this->assertEquals(11, Redis::zscore("xp.users", $this->user->id));
         $this->assertEquals(11, Redis::zscore("xp.country.{$this->photo->country_id}", $this->user->id));
         $this->assertEquals(11, Redis::zscore("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}", $this->user->id));
         $this->assertEquals(11, Redis::zscore("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}.city.{$this->photo->city_id}", $this->user->id));

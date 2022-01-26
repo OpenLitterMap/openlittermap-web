@@ -118,6 +118,7 @@ class DeletePhotoTest extends TestCase
     public function test_leaderboards_are_updated_when_an_admin_deletes_a_photo()
     {
         // User has already uploaded an image, so their xp is 1
+        Redis::zadd("xp.users", 1, $this->user->id);
         Redis::zadd("xp.country.{$this->photo->country_id}", 1, $this->user->id);
         Redis::zadd("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}", 1, $this->user->id);
         Redis::zadd("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}.city.{$this->photo->city_id}", 1, $this->user->id);
@@ -127,6 +128,7 @@ class DeletePhotoTest extends TestCase
             'presence' => true,
             'tags' => ['smoking' => ['butts' => 3]]
         ]);
+        $this->assertEquals(4, Redis::zscore("xp.users", $this->user->id));
         $this->assertEquals(4, Redis::zscore("xp.country.{$this->photo->country_id}", $this->user->id));
         $this->assertEquals(4, Redis::zscore("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}", $this->user->id));
         $this->assertEquals(4, Redis::zscore("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}.city.{$this->photo->city_id}", $this->user->id));
@@ -135,6 +137,7 @@ class DeletePhotoTest extends TestCase
         $this->actingAs($this->admin)->post('/admin/destroy', ['photoId' => $this->photo->id]);
 
         // Assert leaderboards are updated ------------
+        $this->assertEquals(0, Redis::zscore("xp.users", $this->user->id));
         $this->assertEquals(0, Redis::zscore("xp.country.{$this->photo->country_id}", $this->user->id));
         $this->assertEquals(0, Redis::zscore("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}", $this->user->id));
         $this->assertEquals(0, Redis::zscore("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}.city.{$this->photo->city_id}", $this->user->id));

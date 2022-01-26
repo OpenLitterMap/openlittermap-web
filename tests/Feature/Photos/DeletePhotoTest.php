@@ -68,6 +68,7 @@ class DeletePhotoTest extends TestCase
         $photo = $user->fresh()->photos->last();
 
         // User has uploaded an image, so their xp is 1
+        Redis::zadd("xp.users", 1, $user->id);
         Redis::zadd("xp.country.$photo->country_id", 1, $user->id);
         Redis::zadd("xp.country.$photo->country_id.state.$photo->state_id", 1, $user->id);
         Redis::zadd("xp.country.$photo->country_id.state.$photo->state_id.city.$photo->city_id", 1, $user->id);
@@ -76,6 +77,7 @@ class DeletePhotoTest extends TestCase
         $this->post('/profile/photos/delete', ['photoid' => $photo->id]);
 
         // Assert leaderboards are updated ------------
+        $this->assertEquals(0, Redis::zscore("xp.users", $user->id));
         $this->assertEquals(0, Redis::zscore("xp.country.$photo->country_id", $user->id));
         $this->assertEquals(0, Redis::zscore("xp.country.$photo->country_id.state.$photo->state_id", $user->id));
         $this->assertEquals(0, Redis::zscore("xp.country.$photo->country_id.state.$photo->state_id.city.$photo->city_id", $user->id));

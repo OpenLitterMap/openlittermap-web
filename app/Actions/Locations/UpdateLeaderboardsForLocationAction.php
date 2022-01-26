@@ -16,6 +16,7 @@ class UpdateLeaderboardsForLocationAction
      */
     public function run (Photo $photo, int $userId, int $xp) :void
     {
+        Redis::zincrby("xp.users", $xp, $userId);
         Redis::zincrby("xp.country.$photo->country_id", $xp, $userId);
         Redis::zincrby("xp.country.$photo->country_id.state.$photo->state_id", $xp, $userId);
         Redis::zincrby("xp.country.$photo->country_id.state.$photo->state_id.city.$photo->city_id", $xp, $userId);
