@@ -46,9 +46,6 @@ class UpdateRedisLocationsXpTest extends TestCase
         $this->assertRedisLocationEquals(6, $user, $country2, $state2, $city2);
     }
 
-    /**
-     * @return array
-     */
     private function createLocation(): array
     {
         $country = Country::factory()->create(['shortcode' => 'us', 'country' => 'USA']);
@@ -57,12 +54,6 @@ class UpdateRedisLocationsXpTest extends TestCase
         return array($country, $state, $city);
     }
 
-    /**
-     * @param $country
-     * @param $state
-     * @param $city
-     * @return void
-     */
     private function clearRedisLocation($country, $state, $city): void
     {
         Redis::del("xp.country.$country->id");
@@ -70,14 +61,6 @@ class UpdateRedisLocationsXpTest extends TestCase
         Redis::del("xp.country.$country->id.state.$state->id.city.$city->id");
     }
 
-    /**
-     * @param $expected
-     * @param $user
-     * @param $country
-     * @param $state
-     * @param $city
-     * @return void
-     */
     private function assertRedisLocationEquals($expected, $user, $country, $state, $city): void
     {
         $this->assertEquals($expected, Redis::zscore("xp.country.$country->id", $user->id));

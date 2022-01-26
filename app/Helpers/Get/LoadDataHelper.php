@@ -298,6 +298,10 @@ class LoadDataHelper
     }
 
     /**
+     * Gets the users from the given ids
+     * Attaches to each their global or location-based XP
+     * Formats them for display on the leaderboards
+     *
      * @param $leaderboardIds
      * @return array
      */
