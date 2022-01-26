@@ -135,7 +135,7 @@ class LoadDataHelper
                 'position' => $newIndex,
                 'name' => $user->show_name ? $user->name : '',
                 'username' => $user->show_username ? ('@' . $user->username) : '',
-                'xp' => number_format($user->xp),
+                'xp' => number_format($user->xp_redis),
                 'flag' => $user->global_flag
                 // 'level' => $user->level,
                 // 'linkinsta' => $user->link_instagram
@@ -334,9 +334,13 @@ class LoadDataHelper
         $leaders = collect($leaderboardIds)
             ->map(function ($xp, $userId) use ($users) {
                 $user = $users->firstWhere('id', $userId);
+                if (!$user) {
+                    return null;
+                }
                 $user->xp_redis = $xp;
                 return $user;
             })
+            ->filter()
             ->sortByDesc('xp_redis');
 
         return LocationHelper::getLeaders($leaders);

@@ -11,7 +11,7 @@ use App\Models\User\User;
 use Illuminate\Support\Facades\Redis;
 use Tests\TestCase;
 
-class RecalculateUsersXpTest extends TestCase
+class UpdateRedisLocationsXpTest extends TestCase
 {
     public function test_it_recalculates_users_xp_by_location()
     {
@@ -32,13 +32,16 @@ class RecalculateUsersXpTest extends TestCase
             'state_id' => $state2->id,
             'city_id' => $city2->id
         ]);
+        Redis::del("xp.users");
         $this->clearRedisLocation($country1, $state1, $city1);
         $this->clearRedisLocation($country2, $state2, $city2);
+        $this->assertEquals(0, Redis::zscore("xp.users", $user->id));
         $this->assertRedisLocationEquals(0, $user, $country1, $state1, $city1);
         $this->assertRedisLocationEquals(0, $user, $country2, $state2, $city2);
 
         $this->artisan('users:update-redis-locations-xp');
 
+        $this->assertEquals(10, Redis::zscore("xp.users", $user->id));
         $this->assertRedisLocationEquals(4, $user, $country1, $state1, $city1);
         $this->assertRedisLocationEquals(6, $user, $country2, $state2, $city2);
     }
