@@ -12,13 +12,13 @@ class UpdateLeaderboardsForLocationAction
      *
      * @param Photo $photo
      * @param int $userId
-     * @param int $xp
+     * @param int $incrXp
      */
-    public function run (Photo $photo, int $userId, int $xp) :void
+    public function run (Photo $photo, int $userId, int $incrXp) :void
     {
-        Redis::zincrby("xp.users", $xp, $userId);
-        Redis::zincrby("xp.country.$photo->country_id", $xp, $userId);
-        Redis::zincrby("xp.country.$photo->country_id.state.$photo->state_id", $xp, $userId);
-        Redis::zincrby("xp.country.$photo->country_id.state.$photo->state_id.city.$photo->city_id", $xp, $userId);
+        Redis::zincrby("xp.users", $incrXp, $userId);
+        Redis::zincrby("xp.country.$photo->country_id", $incrXp, $userId);
+        Redis::zincrby("xp.country.$photo->country_id.state.$photo->state_id", $incrXp, $userId);
+        Redis::zincrby("xp.country.$photo->country_id.state.$photo->state_id.city.$photo->city_id", $incrXp, $userId);
     }
 }

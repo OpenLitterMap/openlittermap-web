@@ -66,6 +66,7 @@ class UpdateRedisLocationsXp extends Command
      */
     private function calculateXp(Photo $photo): int
     {
+        $xpFromPhoto = 1;
         $xpFromTags = (int) collect($photo->categories())
             ->filter(function ($category) use ($photo) {
                 return $photo->$category;
@@ -74,6 +75,6 @@ class UpdateRedisLocationsXp extends Command
                 return $photo->$category->total();
             });
 
-        return 1 + $xpFromTags;
+        return $xpFromPhoto + $xpFromTags;
     }
 }
