@@ -72,7 +72,7 @@ class LeaveTeamTest extends TestCase
             'team_id' => $team->id,
         ]);
 
-        $response->assertForbidden();
+        $response->assertJsonFragment(['success' => false, 'message' => 'not-a-member']);
     }
 
     public function test_a_user_is_assigned_their_next_team_as_active_if_they_leave_the_active_team()
@@ -154,7 +154,7 @@ class LeaveTeamTest extends TestCase
             'team_id' => $team->id,
         ]);
 
-        $response->assertForbidden();
+        $response->assertJsonFragment(['success' => false, 'message' => 'you-are-last-member']);
 
         $this->assertCount(1, $user->teams);
         $this->assertCount(1, $team->fresh()->users);

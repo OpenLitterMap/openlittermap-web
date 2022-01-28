@@ -18,26 +18,28 @@ class ListTeamsTest extends TestCase
         /** @var Team $team */
         $team = Team::factory()->create();
         $otherTeam = Team::factory()->create();
-
         $user->teams()->attach($team);
         $team->update(['members' => 2]);
 
         // User lists his teams ------------------------
-        $this->actingAs($user, 'api');
-
-        $this->getJson('/api/teams/list')
+        $response = $this->actingAs($user, 'api')
+            ->getJson('/api/teams/list')
             ->assertOk()
-            ->assertJsonCount(1)
-            ->assertJsonFragment(['id' => $team->id]);
+            ->json('teams');
+
+        $this->assertCount(1, $response);
+        $this->assertEquals($team->id, $response[0]['id']);
     }
 
     public function test_it_can_list_all_available_team_types()
     {
         $teamType = TeamType::factory()->create();
 
-        $this->getJson('/api/teams/types')
+        $response = $this->getJson('/api/teams/types')
             ->assertOk()
-            ->assertJsonCount(1)
-            ->assertJsonFragment(['id' => $teamType->id]);
+            ->json('types');
+
+        $this->assertCount(1, $response);
+        $this->assertEquals($teamType->id, $response[0]['id']);
     }
 }

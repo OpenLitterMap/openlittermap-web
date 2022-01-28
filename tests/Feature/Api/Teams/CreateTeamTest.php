@@ -54,14 +54,13 @@ class CreateTeamTest extends TestCase
             'identifier' => 'test-id',
             'team_type' => $this->teamTypeId
         ]);
-
         $response = $this->postJson('/api/teams/create', [
             'name' => 'team name 2',
             'identifier' => 'test-id-2',
             'team_type' => $this->teamTypeId
         ]);
 
-        $response->assertForbidden();
+        $response->assertJsonFragment(['success' => false, 'message' => 'max-teams-created']);
 
         $this->assertDatabaseCount('teams', 1);
     }

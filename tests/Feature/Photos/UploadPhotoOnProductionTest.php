@@ -52,7 +52,7 @@ class UploadPhotoOnProductionTest extends TestCase
     {
         Carbon::setTestNow(now());
 
-        $user = User::factory()->create();
+        $user = User::factory()->create(['id' => 2]);
 
         $this->actingAs($user, 'api');
 
@@ -71,7 +71,10 @@ class UploadPhotoOnProductionTest extends TestCase
             $this->getApiImageAttributes($imageAttributes)
         );
 
-        $response->assertStatus(500);
-        $response->assertSee("You have already uploaded this file!");
+        $response->assertOk();
+        $response->assertJson([
+            'success' => false,
+            'msg' => "photo-already-uploaded"
+        ]);
     }
 }

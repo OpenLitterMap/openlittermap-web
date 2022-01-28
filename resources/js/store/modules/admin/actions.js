@@ -145,7 +145,7 @@ export const actions = {
                     awaiting_verification: resp.data.photosAwaitingVerification
                 });
 
-                context.dispatch('GET_COUNTRIES_WITH_PHOTOS');
+                context.dispatch('ADMIN_GET_COUNTRIES_WITH_PHOTOS');
             })
             .catch(err => {
                 console.error(err);
@@ -155,11 +155,11 @@ export const actions = {
     /**
      * Get list of countries that contain photos for verification
      */
-    async GET_COUNTRIES_WITH_PHOTOS (context)
+    async ADMIN_GET_COUNTRIES_WITH_PHOTOS (context)
     {
         await axios.get('/admin/get-countries-with-photos')
             .then(resp => {
-                console.log('get_countries_with_photos', resp);
+                console.log('admin_get_countries_with_photos', resp);
 
                 context.commit('setCountriesWithPhotos', resp.data);
             })
