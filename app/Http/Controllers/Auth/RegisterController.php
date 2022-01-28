@@ -97,7 +97,10 @@ class RegisterController extends Controller
     */
     public function confirmEmail ($token)
     {
-        $verified = User::whereToken($token)->firstOrFail()->confirmEmail();
+        /** @var User $user */
+        $user = User::whereToken($token)->first();
+
+        $verified = $user && $user->confirmEmail();
 
         $auth = false;
         $user = null;
