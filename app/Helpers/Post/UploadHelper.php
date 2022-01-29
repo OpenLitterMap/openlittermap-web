@@ -28,7 +28,7 @@ class UploadHelper
         $country = Country::select('id', 'country', 'shortcode')
             ->firstOrCreate(
                 ['shortcode' => $countryCode],
-                ['country' => $addressArray["country"] ?? '']
+                ['country' => $addressArray["country"] ?? '', 'created_by' => auth()->id()]
             );
 
         if ($country->wasRecentlyCreated) {
@@ -59,10 +59,10 @@ class UploadHelper
         }
 
         $state = State::select('id', 'country_id', 'state', 'statenameb')
-            ->firstOrCreate([
-                'state' => $stateName,
-                'country_id' => $country->id
-            ]);
+            ->firstOrCreate(
+                ['state' => $stateName, 'country_id' => $country->id],
+                ['created_by' => auth()->id()]
+            );
 
         if ($state->wasRecentlyCreated)
         {
@@ -91,11 +91,14 @@ class UploadHelper
         }
 
         $city = City::select('id', 'country_id', 'state_id', 'city')
-            ->firstOrCreate([
-                'country_id' => $country->id,
-                'state_id' => $state->id,
-                'city' => $cityName
-            ]);
+            ->firstOrCreate(
+                [
+                    'country_id' => $country->id,
+                    'state_id' => $state->id,
+                    'city' => $cityName
+                ],
+                ['created_by' => auth()->id()]
+            );
 
         if ($city->wasRecentlyCreated) {
             // Broadcast an event to anyone viewing the Global Map

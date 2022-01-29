@@ -2,9 +2,9 @@
 
 namespace App\Traits;
 
+use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 use App\Actions\Photos\AddTagsToPhotoAction;
 use App\Actions\Photos\DeleteTagsFromPhotoAction;
-use App\Actions\Locations\UpdateLeaderboardsFromPhotoAction;
 use App\Models\Photo;
 use App\Models\User\User;
 
@@ -30,8 +30,10 @@ trait AddTagsTrait
         $addTagsAction = app(AddTagsToPhotoAction::class);
         $litterTotals = $addTagsAction->run($photo, $tags);
 
-        $user->xp -= $deletedTags['all']; // Decrement the XP since old tags no longer exist
-        $user->xp += $litterTotals['all'];
+        // Decrement the XP since old tags no longer exist
+        $xpDifference = $litterTotals['all'] - $deletedTags['all'];
+
+        $user->xp += $xpDifference;
         $user->xp = max(0, $user->xp);
         $user->save();
 
@@ -41,7 +43,7 @@ trait AddTagsTrait
         $photo->save();
 
         // Update the Leaderboards
-        $updateLeaderboardsAction = app(UpdateLeaderboardsFromPhotoAction::class);
-        $updateLeaderboardsAction->run($user, $photo);
+        $updateLeaderboardsAction = app(UpdateLeaderboardsForLocationAction::class);
+        $updateLeaderboardsAction->run($photo, $user->id, $xpDifference);
     }
 }

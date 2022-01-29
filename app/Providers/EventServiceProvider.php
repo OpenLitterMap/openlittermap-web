@@ -38,20 +38,10 @@ class EventServiceProvider extends ServiceProvider
             DecreaseLocationTotalPhotos::class,
             DecreaseTeamTotalPhotos::class
         ],
-        // stage-1 verification is not currently in use
-        'App\Events\PhotoVerifiedByUser' => [
-//            'App\Listeners\UpdateUsersTotals',
-//            'App\Listeners\UpdateCitiesTotals',
-//            'App\Listeners\UpdateStatesTotals',
-//            'App\Listeners\UpdateCountriesTotals',
-//            'App\Listeners\UpdateLeaderboards',
-        ],
         // Several Listeners could be merged. Add ProofOfWork
         TagsVerifiedByAdmin::class => [
             'App\Listeners\AddTags\UpdateUser',
             IncrementLocation::class,
-            // 'App\Listeners\GenerateLitterCoin',
-            // 'App\Listeners\UpdateLeaderboardsAdmin', happens on AddTagsTrait
             'App\Listeners\AddTags\CompileResultsString',
             IncreaseTeamTotalLitter::class,
             'App\Listeners\User\UpdateUserTimeSeries',

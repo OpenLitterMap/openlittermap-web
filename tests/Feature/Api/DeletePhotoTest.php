@@ -6,6 +6,7 @@ namespace Tests\Feature\Api;
 use App\Events\ImageDeleted;
 use App\Models\User\User;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
 use Tests\Feature\HasPhotoUploads;
 use Tests\TestCase;
@@ -60,6 +61,32 @@ class DeletePhotoTest extends TestCase
         Storage::disk('bbox')->assertMissing($imageAttributes['filepath']);
         $this->assertCount(0, $user->photos);
         $this->assertDatabaseMissing('photos', ['id' => $photo->id]);
+    }
+
+    public function test_leaderboards_are_updated_when_a_user_deletes_a_photo()
+    {
+        // User uploads a photo
+        /** @var User $user */
+        $user = User::factory()->create();
+        $this->actingAs($user, 'api')->post('/api/photos/submit',
+            $this->getApiImageAttributes($this->getImageAndAttributes())
+        );
+        $photo = $user->fresh()->photos->last();
+
+        // User has uploaded an image, so their xp is 1
+        Redis::zadd("xp.users", 1, $user->id);
+        Redis::zadd("xp.country.$photo->country_id", 1, $user->id);
+        Redis::zadd("xp.country.$photo->country_id.state.$photo->state_id", 1, $user->id);
+        Redis::zadd("xp.country.$photo->country_id.state.$photo->state_id.city.$photo->city_id", 1, $user->id);
+
+        // User then deletes the photo
+        $this->delete('/api/photos/delete', ['photoId' => $photo->id])->assertOk();
+
+        // Assert leaderboards are updated ------------
+        $this->assertEquals(0, Redis::zscore("xp.users", $user->id));
+        $this->assertEquals(0, Redis::zscore("xp.country.$photo->country_id", $user->id));
+        $this->assertEquals(0, Redis::zscore("xp.country.$photo->country_id.state.$photo->state_id", $user->id));
+        $this->assertEquals(0, Redis::zscore("xp.country.$photo->country_id.state.$photo->state_id.city.$photo->city_id", $user->id));
     }
 
     public function test_it_fires_image_deleted_event()

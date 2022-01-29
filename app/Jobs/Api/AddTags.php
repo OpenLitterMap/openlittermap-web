@@ -3,7 +3,7 @@
 namespace App\Jobs\Api;
 
 use App\Actions\Photos\AddTagsToPhotoAction;
-use App\Actions\Locations\UpdateLeaderboardsFromPhotoAction;
+use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 use App\Models\User\User;
 use App\Models\Photo;
 
@@ -59,9 +59,9 @@ class AddTags implements ShouldQueue
         $user->xp += $litterTotals['all'];
         $user->save();
 
-        /** @var UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction */
-        $updateLeaderboardsAction = app(UpdateLeaderboardsFromPhotoAction::class);
-        $updateLeaderboardsAction->run($user, $photo);
+        /** @var UpdateLeaderboardsForLocationAction $updateLeaderboardsAction */
+        $updateLeaderboardsAction = app(UpdateLeaderboardsForLocationAction::class);
+        $updateLeaderboardsAction->run($photo, $user->id, $litterTotals['all']);
 
         $photo->total_litter = $litterTotals['litter'];
         $photo->remaining = $this->isLitterRemaining($user);

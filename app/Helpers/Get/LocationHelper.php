@@ -4,6 +4,7 @@ namespace App\Helpers\Get;
 
 // Used by LoadingDataHelper
 use App\Models\Location\Location;
+use Illuminate\Support\Collection;
 
 trait LocationHelper
 {
@@ -41,43 +42,26 @@ trait LocationHelper
     /**
      * Get the leaderboard for this location
      *
+     * @param Collection $leaders
      * @return array position, name / username, xp
      */
-    public static function getLeaders ($leaders)
+    public static function getLeaders (Collection $leaders): array
     {
-        $newIndex = 0;
-        $arrayOfLeaders = [];
-
-        foreach ($leaders as $leader)
-        {
-            $name = '';
-            $username = '';
-
-            if ($leader->show_name)
-            {
-                $name = $leader->name;
-            }
-            if ($leader->show_username)
-            {
-                $username = '@'.$leader->username;
-            }
-
-            if ($name || $username)
-            {
-                $arrayOfLeaders[$newIndex] = [
-                    'position' => $newIndex,
-                    'name' => $name,
-                    'username' => $username,
-                    'xp' => number_format($leader->xp),
-                    'linkinsta' => $leader->link_instagram
+        return $leaders
+            ->take(10)
+            ->filter(function ($leader) {
+                return $leader->xp_redis > 0;
+            })
+            ->map(function ($leader) {
+                return [
+                    'name' => $leader->show_name ? $leader->name : '',
+                    'username' => $leader->show_username ? ('@' . $leader->username) : '',
+                    'xp' => number_format($leader->xp_redis),
+                    'linkinsta' => $leader->link_instagram,
+                    'flag' => $leader->global_flag
                 ];
-
-                $newIndex++;
-            }
-
-            if (sizeof($arrayOfLeaders) == 10) break;
-        }
-
-        return $arrayOfLeaders;
+            })
+            ->values()
+            ->toArray();
     }
 }
