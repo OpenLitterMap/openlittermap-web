@@ -27,7 +27,7 @@ trait LocationHelper
             }
             if ($location->creator->show_username_createdby)
             {
-                $location["created_by_username"] = $location->creator->username;
+                $location["created_by_username"] = ' @'.$location->creator->username;
             }
         }
 

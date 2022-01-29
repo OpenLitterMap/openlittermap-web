@@ -194,12 +194,6 @@ class LoadDataHelper
 
             $total_litter += $state->total_litter_redis;
             $state->diffForHumans = $state->created_at->diffForHumans();
-
-            if ($state->creator)
-            {
-                $state->creator->name = ($state->creator->show_name_createdby) ? $state->creator->name : "";
-                $state->creator->username = ($state->creator->show_username_createdby) ? ('@' . $state->creator->username) : "";
-            }
         }
 
         return [
@@ -281,12 +275,6 @@ class LoadDataHelper
                 ? round($city->total_litter_redis / $city->total_contributors, 2)
                 : 0;
             $city['diffForHumans'] = $city->created_at->diffForHumans();
-
-            if ($city->creator)
-            {
-                $city->creator->name = ($city->creator->show_name_createdby) ? $city->creator->name : "";
-                $city->creator->username = ($city->creator->show_username_createdby) ? ('@' . $city->creator->username) : "";
-            }
         }
 
         return [
