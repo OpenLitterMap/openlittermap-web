@@ -19,11 +19,9 @@
 
                         <!-- Todo .... trail characters after max-width reached -->
                         <!-- Todo .... number animation per user -->
-						<td style="color:white;">
-							{{ leader.name }}
-							{{ leader.username }}
-							<!-- if desktop -->
-						</td>
+                        <td style="color:white" v-if="leader.name || leader.username">{{ leader.name }} {{ leader.username }}</td>
+                        <td style="color:white" v-else>{{ $t('common.anonymous') }}</td>
+
 						<td style="color:white; width: 20%;">{{ leader.xp }}</td>
 					</tr>
 				</tbody>

@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\Photos\DeleteTagsFromPhotoAction;
 use App\Actions\Photos\DeletePhotoAction;
-use App\Actions\Locations\UpdateLeaderboardsFromPhotoAction;
+use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 
 use App\Events\ImageDeleted;
 use App\Http\Requests\GetImageForVerificationRequest;
@@ -28,7 +28,7 @@ class AdminController extends Controller
 
     /** @var DeleteTagsFromPhotoAction */
     protected $deleteTagsAction;
-    /** @var UpdateLeaderboardsFromPhotoAction */
+    /** @var UpdateLeaderboardsForLocationAction */
     protected $updateLeaderboardsAction;
     /** @var DeletePhotoAction */
     protected $deletePhotoAction;
@@ -37,12 +37,12 @@ class AdminController extends Controller
      * Apply IsAdmin middleware to all of these routes
      *
      * @param DeleteTagsFromPhotoAction $deleteTagsAction
-     * @param UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction
+     * @param UpdateLeaderboardsForLocationAction $updateLeaderboardsAction
      * @param DeletePhotoAction $deletePhotoAction
      */
     public function __construct (
         DeleteTagsFromPhotoAction $deleteTagsAction,
-        UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction,
+        UpdateLeaderboardsForLocationAction $updateLeaderboardsAction,
         DeletePhotoAction $deletePhotoAction
     )
     {
@@ -150,7 +150,7 @@ class AdminController extends Controller
         $user->count_correctly_verified = 0;
         $user->save();
 
-        $this->updateLeaderboardsAction->run($user, $photo);
+        $this->updateLeaderboardsAction->run($photo, $user->id, -$deletedTags['all']);
 
         return ['success' => true];
     }
@@ -169,11 +169,13 @@ class AdminController extends Controller
 
         $photo->delete();
 
-        $user->xp = max(0, $user->xp - $deletedTags['all'] - 1); // Subtract 1xp for uploading
+        $totalXp = $deletedTags['all'] + 1; // 1xp from uploading
+
+        $user->xp = max(0, $user->xp - $totalXp);
         $user->total_images = $user->total_images > 0 ? $user->total_images - 1 : 0;
         $user->save();
 
-        $this->updateLeaderboardsAction->run($user, $photo);
+        $this->updateLeaderboardsAction->run($photo, $user->id, -$totalXp);
 
         event(new ImageDeleted(
             $user,

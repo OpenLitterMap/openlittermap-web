@@ -7,9 +7,10 @@ use App\Actions\Photos\DeletePhotoAction;
 use App\Actions\Photos\MakeImageAction;
 use App\Actions\Photos\UploadPhotoAction;
 use App\Actions\Locations\ReverseGeocodeLocationAction;
-use App\Actions\Locations\UpdateLeaderboardsFromPhotoAction;
+use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 use App\Events\ImageDeleted;
 use App\Http\Requests\AddTagsRequest;
+use App\Models\User\User;
 use GeoHash;
 use Carbon\Carbon;
 
@@ -30,7 +31,7 @@ class PhotosController extends Controller
     protected $uploadHelper;
     /** @var AddTagsToPhotoAction */
     private $addTagsAction;
-    /** @var UpdateLeaderboardsFromPhotoAction */
+    /** @var UpdateLeaderboardsForLocationAction */
     private $updateLeaderboardsAction;
     /** @var UploadPhotoAction */
     private $uploadPhotoAction;
@@ -45,7 +46,7 @@ class PhotosController extends Controller
      *
      * @param UploadHelper $uploadHelper
      * @param AddTagsToPhotoAction $addTagsAction
-     * @param UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction
+     * @param UpdateLeaderboardsForLocationAction $updateLeaderboardsAction
      * @param UploadPhotoAction $uploadPhotoAction
      * @param DeletePhotoAction $deletePhotoAction
      * @param MakeImageAction $makeImageAction
@@ -53,7 +54,7 @@ class PhotosController extends Controller
     public function __construct(
         UploadHelper $uploadHelper,
         AddTagsToPhotoAction $addTagsAction,
-        UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction,
+        UpdateLeaderboardsForLocationAction $updateLeaderboardsAction,
         UploadPhotoAction $uploadPhotoAction,
         DeletePhotoAction $deletePhotoAction,
         MakeImageAction $makeImageAction
@@ -87,6 +88,7 @@ class PhotosController extends Controller
            'file' => 'required|mimes:jpg,png,jpeg,heif,heic'
         ]);
 
+        /** @var User $user */
         $user = Auth::user();
 
         \Log::channel('photos')->info([
@@ -198,7 +200,8 @@ class PhotosController extends Controller
 
         $geohash = GeoHash::encode($latlong[0], $latlong[1]);
 
-        $user->photos()->create([
+        /** @var Photo $photo */
+        $photo = $user->photos()->create([
             'filename' => $imageName,
             'datetime' => $dateTime,
             'lat' => $latlong[0],
@@ -232,6 +235,8 @@ class PhotosController extends Controller
         ]);
 
         $user->refresh();
+
+        $this->updateLeaderboardsAction->run($photo, $user->id, 1);
 
         $teamName = null;
         if ($user->team) $teamName = $user->team->name;
@@ -270,8 +275,9 @@ class PhotosController extends Controller
      */
     public function deleteImage(Request $request)
     {
+        /** @var User $user */
         $user = Auth::user();
-
+        /** @var Photo $photo */
         $photo = Photo::findOrFail($request->photoid);
 
         if ($user->id !== $photo->user_id) {
@@ -285,6 +291,8 @@ class PhotosController extends Controller
         $user->xp = $user->xp > 0 ? $user->xp - 1 : 0;
         $user->total_images = $user->total_images > 0 ? $user->total_images - 1 : 0;
         $user->save();
+
+        $this->updateLeaderboardsAction->run($photo, $user->id, -1);
 
         event(new ImageDeleted(
             $user,
@@ -308,6 +316,7 @@ class PhotosController extends Controller
      */
     public function addTags (AddTagsRequest $request)
     {
+        /** @var User $user */
         $user = Auth::user();
         $photo = Photo::findOrFail($request->photo_id);
 
@@ -321,7 +330,7 @@ class PhotosController extends Controller
         $user->xp += $litterTotals['all'];
         $user->save();
 
-        $this->updateLeaderboardsAction->run($user, $photo);
+        $this->updateLeaderboardsAction->run($photo, $user->id, $litterTotals['all']);
 
         $photo->remaining = !$request->presence;
         $photo->total_litter = $litterTotals['litter'];

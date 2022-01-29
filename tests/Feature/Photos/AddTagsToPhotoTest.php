@@ -275,93 +275,35 @@ class AddTagsToPhotoTest extends TestCase
         );
     }
 
-    public function test_leaderboards_are_updated_when_a_user_with_public_name_adds_tags_to_a_photo()
+    public function test_leaderboards_are_updated_when_a_user_adds_tags_to_a_photo()
     {
         // User uploads an image -------------------------
-        $user = User::factory()->create([
-            'show_name' => true
-        ]);
-
+        /** @var User $user */
+        $user = User::factory()->create();
         $this->actingAs($user);
-
-        $this->post('/submit', [
-            'file' => $this->imageAndAttributes['file'],
-        ]);
-
+        $this->post('/submit', ['file' => $this->imageAndAttributes['file'],]);
         $photo = $user->fresh()->photos->last();
-
-        $country = Country::find($photo->country_id)->country;
-        $state = State::find($photo->state_id)->state;
-        $city = City::find($photo->city_id)->city;
-
-        Redis::del("{$country}:Leaderboard");
-        Redis::del("{$country}:{$state}:Leaderboard");
-        Redis::del("{$country}:{$state}:{$city}:Leaderboard");
-
-        $this->assertEquals(0, Redis::zscore("{$country}:Leaderboard", $user->id));
-        $this->assertEquals(0, Redis::zscore("{$country}:{$state}:Leaderboard", $user->id));
-        $this->assertEquals(0, Redis::zscore("{$country}:{$state}:{$city}:Leaderboard", $user->id));
+        Redis::del("xp.users");
+        Redis::del("xp.country.$photo->country_id");
+        Redis::del("xp.country.$photo->country_id.state.$photo->state_id");
+        Redis::del("xp.country.$photo->country_id.state.$photo->state_id.city.$photo->city_id");
+        $this->assertEquals(0, Redis::zscore("xp.users", $user->id));
+        $this->assertEquals(0, Redis::zscore("xp.country.$photo->country_id", $user->id));
+        $this->assertEquals(0, Redis::zscore("xp.country.$photo->country_id.state.$photo->state_id", $user->id));
+        $this->assertEquals(0, Redis::zscore("xp.country.$photo->country_id.state.$photo->state_id.city.$photo->city_id", $user->id));
 
         // User adds tags to an image -------------------
         $this->post('/add-tags', [
             'photo_id' => $photo->id,
             'presence' => true,
-            'tags' => [
-                'smoking' => [
-                    'butts' => 3
-                ]
-            ]
+            'tags' => ['smoking' => ['butts' => 3]]
         ])->assertOk();
 
         // Assert leaderboards are updated ------------
-        // 1xp from uploading the image + 3xp from tags
-        $this->assertEquals(4, Redis::zscore("{$country}:Leaderboard", $user->id));
-        $this->assertEquals(4, Redis::zscore("{$country}:{$state}:Leaderboard", $user->id));
-        $this->assertEquals(4, Redis::zscore("{$country}:{$state}:{$city}:Leaderboard", $user->id));
-    }
-
-    public function test_leaderboards_are_not_updated_when_a_user_with_private_name_adds_tags_to_a_photo()
-    {
-        // User uploads an image -------------------------
-        $user = User::factory()->create([
-            'show_name' => false,
-            'show_username' => false
-        ]);
-
-        $this->actingAs($user);
-
-        $this->post('/submit', [
-            'file' => $this->imageAndAttributes['file'],
-        ]);
-
-        $photo = $user->fresh()->photos->last();
-
-        $country = Country::find($photo->country_id)->country;
-        $state = State::find($photo->state_id)->state;
-        $city = City::find($photo->city_id)->city;
-
-        Redis::del("{$country}:Leaderboard");
-        Redis::del("{$country}:{$state}:Leaderboard");
-        Redis::del("{$country}:{$state}:{$city}:Leaderboard");
-
-        $this->assertNull(Redis::zscore("{$country}:Leaderboard", $user->id));
-        $this->assertNull(Redis::zscore("{$country}:{$state}:Leaderboard", $user->id));
-        $this->assertNull(Redis::zscore("{$country}:{$state}:{$city}:Leaderboard", $user->id));
-
-        // User adds tags to an image -------------------
-        $this->post('/add-tags', [
-            'photo_id' => $photo->id,
-            'presence' => true,
-            'tags' => [
-                'smoking' => [
-                    'butts' => 3
-                ]
-            ]
-        ])->assertOk();
-
-        // Assert leaderboards are not updated ------------
-        $this->assertNull(Redis::zscore("{$country}:Leaderboard", $user->id));
-        $this->assertNull(Redis::zscore("{$country}:{$state}:Leaderboard", $user->id));
-        $this->assertNull(Redis::zscore("{$country}:{$state}:{$city}:Leaderboard", $user->id));
+        // 3xp from tags
+        $this->assertEquals(3, Redis::zscore("xp.users", $user->id));
+        $this->assertEquals(3, Redis::zscore("xp.country.$photo->country_id", $user->id));
+        $this->assertEquals(3, Redis::zscore("xp.country.$photo->country_id.state.$photo->state_id", $user->id));
+        $this->assertEquals(3, Redis::zscore("xp.country.$photo->country_id.state.$photo->state_id.city.$photo->city_id", $user->id));
     }
 }

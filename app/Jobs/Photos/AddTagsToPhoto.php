@@ -3,7 +3,7 @@
 namespace App\Jobs\Photos;
 
 use App\Actions\Photos\AddTagsToPhotoAction;
-use App\Actions\Locations\UpdateLeaderboardsFromPhotoAction;
+use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 use App\Events\TagsVerifiedByAdmin;
 use App\Models\Photo;
 use App\Models\User\User;
@@ -49,9 +49,9 @@ class AddTagsToPhoto implements ShouldQueue
         $user->xp += $litterTotals['all'];
         $user->save();
 
-        /** @var UpdateLeaderboardsFromPhotoAction $updateLeaderboardsAction */
-        $updateLeaderboardsAction = app(UpdateLeaderboardsFromPhotoAction::class);
-        $updateLeaderboardsAction->run($user, $photo);
+        /** @var UpdateLeaderboardsForLocationAction $updateLeaderboardsAction */
+        $updateLeaderboardsAction = app(UpdateLeaderboardsForLocationAction::class);
+        $updateLeaderboardsAction->run($photo, $user->id, $litterTotals['all']);
 
         $photo->remaining = false; // todo
         $photo->total_litter = $litterTotals['litter'];

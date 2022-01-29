@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 use App\Actions\Photos\DeletePhotoAction;
 use App\Actions\Photos\MakeImageAction;
 use App\Actions\Locations\ReverseGeocodeLocationAction;
@@ -215,6 +216,10 @@ class ApiPhotosController extends Controller
 
         $user->refresh();
 
+        /** @var UpdateLeaderboardsForLocationAction $action */
+        $action = app(UpdateLeaderboardsForLocationAction::class);
+        $action->run($photo, $user->id, 1);
+
         $teamName = null;
         if ($user->team) $teamName = $user->team->name;
 
@@ -342,7 +347,7 @@ class ApiPhotosController extends Controller
     {
         /** @var User $user */
         $user = auth()->user();
-
+        /** @var Photo $photo */
         $photo = Photo::findOrFail($request->photoId);
 
         if ($user->id !== $photo->user_id) {
@@ -356,6 +361,10 @@ class ApiPhotosController extends Controller
         $user->xp = $user->xp > 0 ? $user->xp - 1 : 0;
         $user->total_images = $user->total_images > 0 ? $user->total_images - 1 : 0;
         $user->save();
+
+        /** @var UpdateLeaderboardsForLocationAction $action */
+        $action = app(UpdateLeaderboardsForLocationAction::class);
+        $action->run($photo, $user->id, -1);
 
         event(new ImageDeleted(
             $user,

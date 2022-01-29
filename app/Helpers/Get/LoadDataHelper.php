@@ -56,17 +56,17 @@ class LoadDataHelper
             $country = LocationHelper::getCreatorInfo($country);
 
             // Get Leaderboard per country. Should load more and stop when there are 10-max as some users settings may be off.
-            $leaderboard_ids = Redis::zrevrange($country->country.':Leaderboard', 0, 9);
+            $leaderboardIds = Redis::zrevrange("xp.country.$country->id", 0, 9, 'withscores');
 
-            $leaders = User::whereIn('id', $leaderboard_ids)->orderBy('xp', 'desc')->get();
-
-            $arrayOfLeaders = LocationHelper::getLeaders($leaders);
-
-            $country['leaderboard'] = json_encode($arrayOfLeaders);
+            $country['leaderboard'] = self::getLeadersFromLeaderboards($leaderboardIds);
 
             // Total values
-            $country['avg_photo_per_user'] = round($country->total_photos_redis / $country->total_contributors, 2);
-            $country['avg_litter_per_user'] = round($country->total_litter_redis / $country->total_contributors, 2);
+            $country['avg_photo_per_user'] = $country->total_contributors > 0
+                ? round($country->total_photos_redis / $country->total_contributors, 2)
+                : 0;
+            $country['avg_litter_per_user'] = $country->total_contributors > 0
+                ? round($country->total_litter_redis / $country->total_contributors, 2)
+                : 0;
 
             $total_photos += $country->total_photos_redis;
             $total_litter += $country->total_litter_redis;
@@ -119,47 +119,14 @@ class LoadDataHelper
         }
 
         /** GLOBAL LITTER MAPPERS */
-        $users = User::where('xp', '>', 9000)
-            ->orderBy('xp', 'desc')
-            ->where('show_name', 1)
-            ->orWhere('show_username', 1)
-            ->limit(10)
-            ->get();
-
-        $newIndex = 0;
-        $globalLeaders = [];
-
-        foreach ($users as $user)
-        {
-            $name = '';
-            $username = '';
-            if (($user->show_name) || ($user->show_username))
-            {
-                if ($user->show_name) $name = $user->name;
-
-                if ($user->show_username) $username = '@' . $user->username;
-
-                $globalLeaders[$newIndex] = [
-                    'position' => $newIndex,
-                    'name' => $name,
-                    'username' => $username,
-                    'xp' => number_format($user->xp),
-                    'flag' => $user->global_flag
-                    // 'level' => $user->level,
-                    // 'linkinsta' => $user->link_instagram
-                ];
-
-                $newIndex++;
-            }
-        }
-
-        $globalLeadersString = json_encode($globalLeaders);
+        $leaderboardIds = Redis::zrevrange("xp.users", 0, 9, 'withscores');
+        $globalLeaders = self::getLeadersFromLeaderboards($leaderboardIds);
 
         return [
             'countries' => $countries,
             'total_litter' => $total_litter,
             'total_photos' => $total_photos,
-            'globalLeaders' => $globalLeadersString,
+            'globalLeaders' => $globalLeaders,
             'previousXp' => $previousXp,
             'nextXp' => $nextXp,
             'littercoin' => $littercoin,
@@ -189,9 +156,9 @@ class LoadDataHelper
 
         $states = State::select('id', 'state', 'country_id', 'created_by', 'created_at', 'manual_verify', 'total_contributors')
             ->with(['creator' => function ($q) {
-                $q->select('id', 'name', 'username', 'show_name', 'show_username')
-                    ->where('show_name', true)
-                    ->orWhere('show_username', true);
+                $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby')
+                    ->where('show_name_createdby', true)
+                    ->orWhere('show_username_createdby', true);
             }])
             ->where([
                 'country_id' => $country->id,
@@ -213,25 +180,25 @@ class LoadDataHelper
             $state = LocationHelper::getCreatorInfo($state);
 
             // Get Leaderboard
-            $leaderboard_ids = Redis::zrevrange($countryName.':'.$state->state.':Leaderboard',0,9);
+            $leaderboardIds = Redis::zrevrange("xp.country.$country->id.state.$state->id", 0, 9, 'withscores');
 
-            $leaders = User::whereIn('id', $leaderboard_ids)->orderBy('xp', 'desc')->get();
-
-            $arrayOfLeaders = LocationHelper::getLeaders($leaders);
-
-            $state->leaderboard = json_encode($arrayOfLeaders);
+            $state->leaderboard = self::getLeadersFromLeaderboards($leaderboardIds);
 
             // Get images/litter metadata
-            $state->avg_photo_per_user = round($state->total_photos_redis / $state->total_contributors, 2);
-            $state->avg_litter_per_user = round($state->total_litter_redis / $state->total_contributors, 2);
+            $state->avg_photo_per_user = $state->total_contributors > 0
+                ? round($state->total_photos_redis / $state->total_contributors, 2)
+                : 0;
+            $state->avg_litter_per_user = $state->total_contributors > 0
+                ? round($state->total_litter_redis / $state->total_contributors, 2)
+                : 0;
 
             $total_litter += $state->total_litter_redis;
             $state->diffForHumans = $state->created_at->diffForHumans();
 
             if ($state->creator)
             {
-                $state->creator->name = ($state->creator->show_name) ? $state->creator->name : "";
-                $state->creator->username = ($state->creator->show_username) ? $state->creator->username : "";
+                $state->creator->name = ($state->creator->show_name_createdby) ? $state->creator->name : "";
+                $state->creator->username = ($state->creator->show_username_createdby) ? ('@' . $state->creator->username) : "";
             }
         }
 
@@ -282,9 +249,9 @@ class LoadDataHelper
          */
         $cities = City::select('id', 'city', 'country_id', 'state_id', 'created_by', 'created_at', 'manual_verify', 'total_contributors')
             ->with(['creator' => function ($q) {
-                $q->select('id', 'name', 'username', 'show_name', 'show_username')
-                    ->where('show_name', true)
-                    ->orWhere('show_username', true);
+                $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby')
+                    ->where('show_name_createdby', true)
+                    ->orWhere('show_username_createdby', true);
             }])
             ->where([
                 ['state_id', $state->id],
@@ -304,21 +271,21 @@ class LoadDataHelper
             $city = LocationHelper::getCreatorInfo($city);
 
             // Get Leaderboard
-            $leaderboard_ids = Redis::zrevrange($countryName . ':' . $stateName . ':' . $city->city . ':Leaderboard', 0, 9);
+            $leaderboardIds = Redis::zrevrange("xp.country.$country->id.state.$state->id.city.$city->id", 0, 9, 'withscores');
 
-            $leaders = User::whereIn('id', $leaderboard_ids)->orderBy('xp', 'desc')->get();
-
-            $arrayOfLeaders = LocationHelper::getLeaders($leaders);
-
-            $city['leaderboard'] = json_encode($arrayOfLeaders);
-            $city['avg_photo_per_user'] = round($city->total_photos_redis / $city->total_contributors, 2);
-            $city['avg_litter_per_user'] = round($city->total_litter_redis / $city->total_contributors, 2);
+            $city['leaderboard'] = self::getLeadersFromLeaderboards($leaderboardIds);
+            $city['avg_photo_per_user'] = $city->total_contributors > 0
+                ? round($city->total_photos_redis / $city->total_contributors, 2)
+                : 0;
+            $city['avg_litter_per_user'] = $city->total_contributors > 0
+                ? round($city->total_litter_redis / $city->total_contributors, 2)
+                : 0;
             $city['diffForHumans'] = $city->created_at->diffForHumans();
 
             if ($city->creator)
             {
-                $city->creator->name = ($city->creator->show_name) ? $city->creator->name : "";
-                $city->creator->username = ($city->creator->show_username) ? $city->creator->username : "";
+                $city->creator->name = ($city->creator->show_name_createdby) ? $city->creator->name : "";
+                $city->creator->username = ($city->creator->show_username_createdby) ? ('@' . $city->creator->username) : "";
             }
         }
 
@@ -328,5 +295,34 @@ class LoadDataHelper
             'state' => $stateName,
             'cities' => $cities
         ];
+    }
+
+    /**
+     * Gets the users from the given ids
+     * Attaches to each their global or location-based XP
+     * Formats them for display on the leaderboards
+     *
+     * @param $leaderboardIds
+     * @return array
+     */
+    protected static function getLeadersFromLeaderboards($leaderboardIds): array
+    {
+        $users = User::query()
+            ->whereIn('id', array_keys($leaderboardIds))
+            ->get();
+
+        $leaders = collect($leaderboardIds)
+            ->map(function ($xp, $userId) use ($users) {
+                $user = $users->firstWhere('id', $userId);
+                if (!$user) {
+                    return null;
+                }
+                $user->xp_redis = $xp;
+                return $user;
+            })
+            ->filter()
+            ->sortByDesc('xp_redis');
+
+        return LocationHelper::getLeaders($leaders);
     }
 }
