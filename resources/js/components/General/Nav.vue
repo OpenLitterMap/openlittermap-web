@@ -1,6 +1,5 @@
 <template>
     <div>
-        <div style="height: 1px; background-color: #00CBAB;" />
         <nav class="navbar main-nav">
             <div class="container">
                 <div class="navbar-brand">
