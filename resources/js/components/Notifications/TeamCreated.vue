@@ -20,13 +20,19 @@ import GlobalMapNotification from './GlobalMapNotification';
 
 export default {
     name: 'TeamCreated',
-    components: {GlobalMapNotification},
-    props: ['teamName']
+    components: {
+        GlobalMapNotification
+    },
+    props: [
+        'teamName'
+    ]
 };
 </script>
 
 <style lang="scss" scoped>
-.-mt-2 {
-    margin-top: -2px;
-}
+
+    .-mt-2 {
+        margin-top: -2px;
+    }
+
 </style>
