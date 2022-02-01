@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Actions\Teams\CreateTeamAction;
+use App\Actions\Teams\DownloadTeamDataAction;
 use App\Actions\Teams\JoinTeamAction;
 use App\Actions\Teams\LeaveTeamAction;
 use App\Actions\Teams\ListTeamMembersAction;
@@ -189,6 +190,25 @@ class TeamsController extends Controller
         $result = $action->run($team);
 
         return $this->success(['result' => $result]);
+    }
+
+    /**
+     * The user wants to download data from a specific team
+     */
+    public function download (Request $request, DownloadTeamDataAction $action): array
+    {
+        /** @var User $user */
+        $user = auth()->user();
+        /** @var Team $team */
+        $team = Team::query()->findOrFail($request->team_id);
+
+        if (!$user->teams()->whereTeamId($request->team_id)->exists()) {
+            return $this->fail('not-a-member');
+        }
+
+        $action->run($user, $team);
+
+        return $this->success();
     }
 
     /**

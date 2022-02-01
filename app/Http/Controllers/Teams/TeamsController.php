@@ -3,22 +3,20 @@
 namespace App\Http\Controllers\Teams;
 
 use App\Actions\Teams\CreateTeamAction;
+use App\Actions\Teams\DownloadTeamDataAction;
 use App\Actions\Teams\JoinTeamAction;
 use App\Actions\Teams\LeaveTeamAction;
 use App\Actions\Teams\ListTeamMembersAction;
 use App\Actions\Teams\SetActiveTeamAction;
 use App\Actions\Teams\UpdateTeamAction;
-use App\Exports\CreateCSVExport;
 use App\Http\Requests\Teams\CreateTeamRequest;
 use App\Http\Requests\Teams\JoinTeamRequest;
 use App\Http\Requests\Teams\LeaveTeamRequest;
 use App\Http\Requests\Teams\UpdateTeamRequest;
-use App\Jobs\EmailUserExportCompleted;
 use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
 use App\Models\User\User;
 
-use DateTime;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -107,33 +105,19 @@ class TeamsController extends Controller
 
     /**
      * The user wants to download data from a specific team
-     *
-     * @return array
      */
-    public function download (Request $request)
+    public function download (Request $request, DownloadTeamDataAction $action): array
     {
-        $email = auth()->user()->email;
+        /** @var User $user */
+        $user = auth()->user();
+        /** @var Team $team */
+        $team = Team::query()->findOrFail($request->team_id);
 
-        $x     = new DateTime();
-        $date  = $x->format('Y-m-d');
-        $date  = explode('-', $date);
-        $year  = $date[0];
-        $month = $date[1];
-        $day   = $date[2];
-        $unix  = now()->timestamp;
+        if (!$user->teams()->whereTeamId($request->team_id)->exists()) {
+            return ['success' => false, 'message' => 'not-a-member'];
+        }
 
-        $path = $year.'/'.$month.'/'.$day.'/'.$unix.'/';  // 2020/10/25/unix/
-
-        $path .= '_Team_OpenLitterMap.csv';
-
-        /* Dispatch job to create CSV file for export */
-        (new CreateCSVExport($request->type, null, $request->team_id))
-            ->queue($path, 's3', null, ['visibility' => 'public'])
-            ->chain([
-                // These jobs are executed when above is finished.
-                new EmailUserExportCompleted($email, $path)
-                // new ....job
-            ]);
+        $action->run($user, $team);
 
         return ['success' => true];
     }
