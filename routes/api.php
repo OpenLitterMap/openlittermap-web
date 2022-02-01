@@ -93,6 +93,7 @@ Route::post('/settings/privacy/toggle-previous-tags', 'ApiSettingsController@tog
 
 // Teams
 Route::prefix('/teams')->group(function () {
+    Route::get('/members', 'API\TeamsController@members');
     Route::get('/leaderboard', 'Teams\TeamsLeaderboardController@index')->middleware('auth:api');
     Route::get('/list', 'API\TeamsController@list');
     Route::get('/types', 'API\TeamsController@types');

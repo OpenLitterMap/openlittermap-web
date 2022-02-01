@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Teams;
 use App\Actions\Teams\CreateTeamAction;
 use App\Actions\Teams\JoinTeamAction;
 use App\Actions\Teams\LeaveTeamAction;
+use App\Actions\Teams\ListTeamMembersAction;
 use App\Actions\Teams\SetActiveTeamAction;
 use App\Actions\Teams\UpdateTeamAction;
 use App\Exports\CreateCSVExport;
@@ -17,6 +18,8 @@ use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
 use App\Models\User\User;
 
+use DateTime;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -41,9 +44,7 @@ class TeamsController extends Controller
         /** @var Team $team */
         $team = Team::find($request->team_id);
 
-        $isTeamMember = $user->teams()->where('team_id', $request->team_id)->exists();
-
-        if (!$isTeamMember) {
+        if (!$user->teams()->where('team_id', $request->team_id)->exists()) {
             return ['success' => false];
         }
 
@@ -115,7 +116,7 @@ class TeamsController extends Controller
     {
         $email = auth()->user()->email;
 
-        $x     = new \DateTime();
+        $x     = new DateTime();
         $date  = $x->format('Y-m-d');
         $date  = explode('-', $date);
         $year  = $date[0];
@@ -205,53 +206,35 @@ class TeamsController extends Controller
 
     /**
      * Get paginated members for a team_id
-     *
-     * We need to check the privacy settings for each user on the team,
-     * and only load the columns (show_name_leaderboard) that each user has allowed.
-     *
-     * @return array
      */
-    public function members ()
+    public function members (): array
     {
-        $team = Team::query()->find(request()->team_id);
+        /** @var User $user */
+        $user = auth()->user();
+        /** @var Team $team */
+        $team = Team::query()->findOrFail(request()->team_id);
 
-        $total_members = $team->users->count(); // members?
-
-        $result = $team->users()
-            ->withPivot('total_photos', 'total_litter', 'updated_at', 'show_name_leaderboards', 'show_username_leaderboards')
-            ->orderBy('pivot_total_litter', 'desc')
-            ->simplePaginate(10, [
-                // include these fields
-                'users.id',
-                'users.name', // todo - only load this if team_user.show_name is true
-                'users.username', // todo - only load this if team_user.show_username is true
-                'users.active_team',
-                'users.updated_at', // todo add users.last_uploaded
-                'total_photos'
-            ]);
-
-        // We need to filter out name/username based on the settings
-        // For now, just remove them manually with a loop.
-        // We should figure out how to do this in the query
-        // https://stackoverflow.com/questions/65371551/filter-simplepaginate-column-select-by-pivot-table
-        foreach ($result as $r)
-        {
-            if (! $r->pivot->show_name_leaderboards) $r->name = null;
-            if (! $r->pivot->show_username_leaderboards) $r->username = null;
+        if (!$user->teams()->where('team_id', request()->team_id)->exists()) {
+            return ['success' => false, 'message' => 'not-a-member'];
         }
 
+        $totalMembers = $team->users->count();
+
+        /** @var ListTeamMembersAction $action */
+        $action = app(ListTeamMembersAction::class);
+        $result = $action->run($team);
+
         return [
-            'total_members' => $total_members,
+            'success' => true,
+            'total_members' => $totalMembers,
             'result' => $result
         ];
     }
 
     /**
      * Return the types of available teams
-     *
-     * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function types ()
+    public function types (): Collection
     {
         return TeamType::select('id', 'team')->get();
     }

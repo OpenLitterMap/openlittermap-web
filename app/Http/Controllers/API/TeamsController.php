@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Actions\Teams\CreateTeamAction;
 use App\Actions\Teams\JoinTeamAction;
 use App\Actions\Teams\LeaveTeamAction;
+use App\Actions\Teams\ListTeamMembersAction;
 use App\Actions\Teams\SetActiveTeamAction;
 use App\Actions\Teams\UpdateTeamAction;
 use App\Http\Controllers\Controller;
@@ -173,6 +174,27 @@ class TeamsController extends Controller
         $user->save();
 
         return $this->success();
+    }
+
+    /**
+     * Get paginated members for a team_id
+     */
+    public function members(): array
+    {
+        /** @var User $user */
+        $user = auth()->user();
+        /** @var Team $team */
+        $team = Team::query()->findOrFail(request()->team_id);
+
+        if (!$user->teams()->where('team_id', request()->team_id)->exists()) {
+            return $this->fail('not-a-member');
+        }
+
+        /** @var ListTeamMembersAction $action */
+        $action = app(ListTeamMembersAction::class);
+        $result = $action->run($team);
+
+        return $this->success(['result' => $result]);
     }
 
     /**
