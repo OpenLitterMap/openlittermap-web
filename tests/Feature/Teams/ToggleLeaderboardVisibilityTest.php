@@ -56,7 +56,7 @@ class ToggleLeaderboardVisibilityTest extends TestCase
         $response = $this->actingAs($member, $guard)->postJson($route, ['team_id' => $team->id]);
 
         $response->assertOk();
-        $response->assertJson(['success' => false, 'visible' => false]);
+        $response->assertJson(['success' => false, 'message' => 'member-not-allowed']);
         $this->assertEquals(0, $team->fresh()->leaderboards);
     }
 }

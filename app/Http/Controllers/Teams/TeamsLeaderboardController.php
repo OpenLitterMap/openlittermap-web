@@ -32,7 +32,7 @@ class TeamsLeaderboardController extends Controller
         $team = Team::query()->findOrFail($request->team_id);
 
         if ($team->leader !== auth()->id()) {
-            return ['success' => false, 'visible' => $team->leaderboards];
+            return ['success' => false, 'message' => 'member-not-allowed'];
         }
 
         $action->run($team);
