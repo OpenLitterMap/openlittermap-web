@@ -443,7 +443,7 @@ export const actions = {
         const body = 'Visibility changed';
 
         await axios.post('/teams/leaderboard/visibility', {
-            id: payload
+            team_id: payload
         })
         .then(response => {
             console.log('toggle_leaderboard_visibility', response);

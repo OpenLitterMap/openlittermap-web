@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\API;
 
 use App\Actions\Teams\CreateTeamAction;
+use App\Actions\Teams\DownloadTeamDataAction;
 use App\Actions\Teams\JoinTeamAction;
 use App\Actions\Teams\LeaveTeamAction;
+use App\Actions\Teams\ListTeamMembersAction;
+use App\Actions\Teams\SetActiveTeamAction;
 use App\Actions\Teams\UpdateTeamAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Teams\CreateTeamRequest;
@@ -14,6 +17,7 @@ use App\Http\Requests\Teams\UpdateTeamRequest;
 use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
 use App\Models\User\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class TeamsController extends Controller
@@ -132,6 +136,77 @@ class TeamsController extends Controller
             'team' => $team->fresh(),
             'activeTeam' => $user->fresh()->team()->first()
         ]);
+    }
+
+    /**
+     * Sets the users currently active team
+     */
+    public function setActiveTeam(Request $request, SetActiveTeamAction $action): array
+    {
+        /** @var User $user */
+        $user = auth()->user();
+        /** @var Team $team */
+        $team = Team::find($request->team_id);
+
+        if (!$user->teams()->where('team_id', $request->team_id)->exists()) {
+            return $this->fail('not-a-member');
+        }
+
+        $action->run($user, $request->team_id);
+
+        return $this->success(['team' => $team]);
+    }
+
+    /**
+     * Clears the user's active team
+     */
+    public function inactivateTeams(): array
+    {
+        /** @var User $user */
+        $user = auth()->user();
+
+        $user->active_team = null;
+        $user->save();
+
+        return $this->success();
+    }
+
+    /**
+     * Get paginated members for a team_id
+     */
+    public function members(ListTeamMembersAction $action): array
+    {
+        /** @var User $user */
+        $user = auth()->user();
+        /** @var Team $team */
+        $team = Team::query()->findOrFail(request()->team_id);
+
+        if (!$user->teams()->where('team_id', request()->team_id)->exists()) {
+            return $this->fail('not-a-member');
+        }
+
+        $result = $action->run($team);
+
+        return $this->success(['result' => $result]);
+    }
+
+    /**
+     * The user wants to download data from a specific team
+     */
+    public function download (Request $request, DownloadTeamDataAction $action): array
+    {
+        /** @var User $user */
+        $user = auth()->user();
+        /** @var Team $team */
+        $team = Team::query()->findOrFail($request->team_id);
+
+        if (!$user->teams()->whereTeamId($request->team_id)->exists()) {
+            return $this->fail('not-a-member');
+        }
+
+        $action->run($user, $team);
+
+        return $this->success();
     }
 
     /**

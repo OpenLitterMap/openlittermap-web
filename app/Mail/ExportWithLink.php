@@ -11,16 +11,15 @@ class ExportWithLink extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $email, $path;
+    public $path;
 
     /**
      * Create a new message instance.
      *
      * @return void
      */
-    public function __construct ($email, $path)
+    public function __construct ($path)
     {
-        $this->email = $email;
         $this->path = $path;
     }
 

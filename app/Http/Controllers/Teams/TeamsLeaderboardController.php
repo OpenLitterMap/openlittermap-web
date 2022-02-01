@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Teams;
 
 use App\Actions\Teams\ListTeamLeaderboardsAction;
+use App\Actions\Teams\ToggleLeaderboardVisibilityAction;
 use App\Http\Controllers\Controller;
 use App\Models\Teams\Team;
 use Illuminate\Database\Eloquent\Collection;
@@ -17,27 +18,25 @@ class TeamsLeaderboardController extends Controller
      * @param ListTeamLeaderboardsAction $action
      * @return Collection;
      */
-    public function index (ListTeamLeaderboardsAction $action)
+    public function index(ListTeamLeaderboardsAction $action)
     {
         return $action->run();
     }
 
     /**
      * Toggle team leaderboard
-     *
-     * @return mixed
      */
-    public function toggle (Request $request)
+    public function toggle(Request $request, ToggleLeaderboardVisibilityAction $action): array
     {
-        $team = Team::find($request->id);
+        /** @var Team $team */
+        $team = Team::query()->findOrFail($request->team_id);
 
-        if ($team->leader === auth()->user()->id)
-        {
-            $team->leaderboards = ! $team->leaderboards;
-
-            $team->save();
-
-            return ['success' => true];
+        if ($team->leader !== auth()->id()) {
+            return ['success' => false, 'message' => 'member-not-allowed'];
         }
+
+        $action->run($team);
+
+        return ['success' => true, 'visible' => $team->leaderboards];
     }
 }

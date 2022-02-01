@@ -7,6 +7,9 @@ use App\Models\Teams\Team;
 use App\Payment;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Redis;
 use Laravel\Cashier\Billable;
 use Illuminate\Notifications\Notifiable;
@@ -17,6 +20,8 @@ use LaravelAndVueJS\Traits\LaravelPermissionToVueJS;
 
 /**
  * @property array<Team> $teams
+ * @property Team $team
+ * @property int $active_team
  */
 class User extends Authenticatable
 {
@@ -184,20 +189,16 @@ class User extends Authenticatable
 
     /**
      * Get all payments
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function payments ()
+    public function payments (): HasMany
     {
         return $this->hasMany(Payment::class);
     }
 
     /**
      * Get all photos
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function photos ()
+    public function photos (): HasMany
     {
         return $this->hasMany(Photo::class);
     }
@@ -287,7 +288,7 @@ class User extends Authenticatable
     /**
      * Currently active team
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return BelongsTo
      */
     public function team ()
     {
@@ -299,7 +300,7 @@ class User extends Authenticatable
      *
      * Load extra columns on the pivot table
      */
-    public function teams ()
+    public function teams (): BelongsToMany
     {
         return $this->belongsToMany(Team::class)
             ->withTimestamps()
