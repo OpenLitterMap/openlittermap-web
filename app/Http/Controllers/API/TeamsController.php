@@ -148,9 +148,7 @@ class TeamsController extends Controller
         /** @var Team $team */
         $team = Team::find($request->team_id);
 
-        $isTeamMember = $user->teams()->where('team_id', $request->team_id)->exists();
-
-        if (!$isTeamMember) {
+        if (!$user->teams()->where('team_id', $request->team_id)->exists()) {
             return $this->fail('not-a-member');
         }
 
