@@ -17,6 +17,8 @@ use LaravelAndVueJS\Traits\LaravelPermissionToVueJS;
 
 /**
  * @property array<Team> $teams
+ * @property Team $team
+ * @property int $active_team
  */
 class User extends Authenticatable
 {

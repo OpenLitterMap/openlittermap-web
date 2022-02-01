@@ -97,6 +97,7 @@ Route::prefix('/teams')->group(function () {
     Route::get('/list', 'API\TeamsController@list');
     Route::get('/types', 'API\TeamsController@types');
     Route::patch('/update/{team}', 'API\TeamsController@update');
+    Route::post('/active', 'API\TeamsController@setActiveTeam');
     Route::post('/create', 'API\TeamsController@create');
     Route::post('/join', 'API\TeamsController@join');
     Route::post('/leave', 'API\TeamsController@leave');

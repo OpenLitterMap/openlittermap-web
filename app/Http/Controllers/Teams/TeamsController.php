@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Teams;
 use App\Actions\Teams\CreateTeamAction;
 use App\Actions\Teams\JoinTeamAction;
 use App\Actions\Teams\LeaveTeamAction;
+use App\Actions\Teams\SetActiveTeamAction;
 use App\Actions\Teams\UpdateTeamAction;
 use App\Exports\CreateCSVExport;
 use App\Http\Requests\Teams\CreateTeamRequest;
@@ -35,25 +36,22 @@ class TeamsController extends Controller
      */
     public function active (Request $request)
     {
-        $user = Auth::user();
-
+        /** @var User $user */
+        $user = auth()->user();
+        /** @var Team $team */
         $team = Team::find($request->team_id);
 
-        if ($team)
-        {
-            foreach ($user->teams as $userTeam)
-            {
-                if ($userTeam->id === $request->team_id)
-                {
-                    $user->active_team = $request->team_id;
-                    $user->save();
+        $isTeamMember = $user->teams()->where('team_id', $request->team_id)->exists();
 
-                    return ['success' => true, 'team' => $team];
-                }
-            }
+        if (!$isTeamMember) {
+            return ['success' => false];
         }
 
-        return ['success' => false];
+        /** @var SetActiveTeamAction $action */
+        $action = app(SetActiveTeamAction::class);
+        $action->run($user, $request->team_id);
+
+        return ['success' => true, 'team' => $team];
     }
 
     /**
