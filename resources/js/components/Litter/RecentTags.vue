@@ -59,11 +59,14 @@ export default {
         {
             let quantity = 1;
 
-            if (this.$store.state.litter.tags.hasOwnProperty(category))
+            if (this.$store.state.litter.tags.hasOwnProperty(this.photoId))
             {
-                if (this.$store.state.litter.tags[category].hasOwnProperty(tag))
+                if (this.$store.state.litter.tags[this.photoId].hasOwnProperty(category))
                 {
-                    quantity = (this.$store.state.litter.tags[category][tag] + 1);
+                    if (this.$store.state.litter.tags[this.photoId][category].hasOwnProperty(tag))
+                    {
+                        quantity = (this.$store.state.litter.tags[this.photoId][category][tag] + 1);
+                    }
                 }
             }
 

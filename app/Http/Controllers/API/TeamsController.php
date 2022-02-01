@@ -96,7 +96,7 @@ class TeamsController extends Controller
         $team = Team::whereIdentifier($request->identifier)->first();
 
         // Check the user is not already in the team
-        if ($user->teams()->whereTeamId($team->id)->exists()) {
+        if ($user->isMemberOfTeam($team->id)) {
             return $this->fail('already-a-member');
         }
 
@@ -122,7 +122,7 @@ class TeamsController extends Controller
         /** @var Team $team */
         $team = Team::find($request->team_id);
 
-        if (!$user->teams()->whereTeamId($request->team_id)->exists()) {
+        if (!$user->isMemberOfTeam($request->team_id)) {
             return $this->fail('not-a-member');
         }
 
@@ -148,7 +148,7 @@ class TeamsController extends Controller
         /** @var Team $team */
         $team = Team::find($request->team_id);
 
-        if (!$user->teams()->where('team_id', $request->team_id)->exists()) {
+        if (!$user->isMemberOfTeam($request->team_id)) {
             return $this->fail('not-a-member');
         }
 
@@ -179,9 +179,9 @@ class TeamsController extends Controller
         /** @var User $user */
         $user = auth()->user();
         /** @var Team $team */
-        $team = Team::query()->findOrFail(request()->team_id);
+        $team = Team::query()->find(request()->team_id);
 
-        if (!$user->teams()->where('team_id', request()->team_id)->exists()) {
+        if (!$user->isMemberOfTeam(request()->team_id)) {
             return $this->fail('not-a-member');
         }
 
@@ -198,9 +198,9 @@ class TeamsController extends Controller
         /** @var User $user */
         $user = auth()->user();
         /** @var Team $team */
-        $team = Team::query()->findOrFail($request->team_id);
+        $team = Team::query()->find($request->team_id);
 
-        if (!$user->teams()->whereTeamId($request->team_id)->exists()) {
+        if (!$user->isMemberOfTeam($request->team_id)) {
             return $this->fail('not-a-member');
         }
 
