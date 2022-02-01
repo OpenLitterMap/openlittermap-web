@@ -314,5 +314,11 @@ class User extends Authenticatable
             );
     }
 
-
+    /**
+     * Shows whether the user is a member of a team or not
+     */
+    public function isMemberOfTeam(int $teamId): bool
+    {
+        return $this->teams()->where('team_id', $teamId)->exists();
+    }
 }
