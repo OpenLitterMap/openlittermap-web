@@ -162,6 +162,20 @@ class TeamsController extends Controller
     }
 
     /**
+     * Clears the user's active team
+     */
+    public function inactivateTeams(): array
+    {
+        /** @var User $user */
+        $user = auth()->user();
+
+        $user->active_team = null;
+        $user->save();
+
+        return $this->success();
+    }
+
+    /**
      * Return the types of available teams
      *
      * @return array

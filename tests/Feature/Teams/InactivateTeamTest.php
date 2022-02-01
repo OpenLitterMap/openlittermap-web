@@ -8,25 +8,30 @@ use Tests\TestCase;
 
 class InactivateTeamTest extends TestCase
 {
-    public function test_a_user_can_inactivate_their_active_team()
+    public function routeDataProvider(): array
+    {
+        return [
+            ['guard' => 'web', 'route' => 'teams/inactivate'],
+            ['guard' => 'api', 'route' => 'api/teams/inactivate'],
+        ];
+    }
+
+    /**
+     * @dataProvider routeDataProvider
+     */
+    public function test_a_user_can_inactivate_their_active_team($guard, $route)
     {
         // User joins a team -------------------------
         /** @var Team $team */
         $team = Team::factory()->create();
         /** @var User $user */
-        $user = User::factory()->create([
-            'active_team' => $team->id
-        ]);
+        $user = User::factory()->create(['active_team' => $team->id]);
 
         // User inactivates their active team ------------------------
-        $this->actingAs($user);
+        $response = $this->actingAs($user, $guard)->postJson($route);
 
-        $response = $this->postJson('/teams/inactivate');
-
-        $response
-            ->assertOk()
-            ->assertJson(['success' => true]);
-
+        $response->assertOk();
+        $response->assertJson(['success' => true]);
         $this->assertNull($user->fresh()->active_team);
     }
 }
