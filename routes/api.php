@@ -103,4 +103,5 @@ Route::prefix('/teams')->group(function () {
     Route::post('/inactivate', 'API\TeamsController@inactivateTeams');
     Route::post('/join', 'API\TeamsController@join');
     Route::post('/leave', 'API\TeamsController@leave');
+    Route::post('/leaderboard/visibility', 'Teams\TeamsLeaderboardController@toggle')->middleware('auth:api');
 });

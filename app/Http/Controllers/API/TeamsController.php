@@ -139,10 +139,8 @@ class TeamsController extends Controller
 
     /**
      * Sets the users currently active team
-     *
-     * @return array
      */
-    public function setActiveTeam(Request $request)
+    public function setActiveTeam(Request $request, SetActiveTeamAction $action): array
     {
         /** @var User $user */
         $user = auth()->user();
@@ -155,8 +153,6 @@ class TeamsController extends Controller
             return $this->fail('not-a-member');
         }
 
-        /** @var SetActiveTeamAction $action */
-        $action = app(SetActiveTeamAction::class);
         $action->run($user, $request->team_id);
 
         return $this->success(['team' => $team]);
@@ -179,7 +175,7 @@ class TeamsController extends Controller
     /**
      * Get paginated members for a team_id
      */
-    public function members(): array
+    public function members(ListTeamMembersAction $action): array
     {
         /** @var User $user */
         $user = auth()->user();
@@ -190,8 +186,6 @@ class TeamsController extends Controller
             return $this->fail('not-a-member');
         }
 
-        /** @var ListTeamMembersAction $action */
-        $action = app(ListTeamMembersAction::class);
         $result = $action->run($team);
 
         return $this->success(['result' => $result]);

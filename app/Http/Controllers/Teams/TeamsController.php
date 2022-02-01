@@ -37,7 +37,7 @@ class TeamsController extends Controller
      *
      * @return array
      */
-    public function active (Request $request)
+    public function active (Request $request, SetActiveTeamAction $action)
     {
         /** @var User $user */
         $user = auth()->user();
@@ -48,8 +48,6 @@ class TeamsController extends Controller
             return ['success' => false];
         }
 
-        /** @var SetActiveTeamAction $action */
-        $action = app(SetActiveTeamAction::class);
         $action->run($user, $request->team_id);
 
         return ['success' => true, 'team' => $team];
@@ -207,7 +205,7 @@ class TeamsController extends Controller
     /**
      * Get paginated members for a team_id
      */
-    public function members (): array
+    public function members (ListTeamMembersAction $action): array
     {
         /** @var User $user */
         $user = auth()->user();
@@ -220,8 +218,6 @@ class TeamsController extends Controller
 
         $totalMembers = $team->users->count();
 
-        /** @var ListTeamMembersAction $action */
-        $action = app(ListTeamMembersAction::class);
         $result = $action->run($team);
 
         return [
