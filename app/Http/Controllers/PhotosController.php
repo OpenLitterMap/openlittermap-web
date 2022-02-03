@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Photos\AddCustomTagsToPhotoAction;
 use App\Actions\Photos\AddTagsToPhotoAction;
 use App\Actions\Photos\DeletePhotoAction;
 use App\Actions\Photos\MakeImageAction;
@@ -314,16 +315,19 @@ class PhotosController extends Controller
      * If the user is new, we submit the image for verification.
      * If the user is trusted, we can update OLM.
      */
-    public function addTags (AddTagsRequest $request)
+    public function addTags (AddTagsRequest $request, AddCustomTagsToPhotoAction $customTagsAction)
     {
         /** @var User $user */
         $user = Auth::user();
+        /** @var Photo $photo */
         $photo = Photo::findOrFail($request->photo_id);
 
         if ($photo->user_id !== $user->id || $photo->verified > 0)
         {
             abort(403, 'Forbidden');
         }
+
+        $customTagsAction->run($photo, $request->custom_tags);
 
         $litterTotals = $this->addTagsAction->run($photo, $request['tags']);
 

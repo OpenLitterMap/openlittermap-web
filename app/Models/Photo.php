@@ -3,13 +3,12 @@
 namespace App\Models;
 
 use App\Models\AI\Annotation;
-use App\Models\Litter\Categories\Art;
 use App\Models\Litter\Categories\Brand;
-use App\Models\Litter\Categories\Smoking;
 use App\Models\Teams\Team;
 use App\Models\User\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Photo extends Model
 {
@@ -322,4 +321,9 @@ class Photo extends Model
     // public function politics() {
     //     return $this->belongsTo('App\Models\Litter\Categories\Politicals', 'political_id', 'id');
     // }
+
+    public function customTags(): HasMany
+    {
+        return $this->hasMany(CustomTag::class);
+    }
 }
