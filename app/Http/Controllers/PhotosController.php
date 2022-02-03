@@ -11,6 +11,7 @@ use App\Actions\Locations\ReverseGeocodeLocationAction;
 use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 use App\Events\ImageDeleted;
 use App\Http\Requests\AddTagsRequest;
+use App\Http\Requests\UploadPhotoRequest;
 use App\Models\User\User;
 use GeoHash;
 use Carbon\Carbon;
@@ -80,15 +81,11 @@ class PhotosController extends Controller
      * Move photo to AWS S3 in production || local in development
      * then persist new record to photos table
      *
-     * @param Request $request
+     * @param UploadPhotoRequest $request
      * @return bool[]
      */
-    public function store (Request $request)
+    public function store (UploadPhotoRequest $request): array
     {
-        $request->validate([
-           'file' => 'required|mimes:jpg,png,jpeg,heif,heic'
-        ]);
-
         /** @var User $user */
         $user = Auth::user();
 

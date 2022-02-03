@@ -3,13 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
+use App\Actions\Photos\AddCustomTagsToPhotoAction;
 use App\Actions\Photos\DeletePhotoAction;
 use App\Actions\Photos\MakeImageAction;
 use App\Actions\Locations\ReverseGeocodeLocationAction;
 use App\Actions\Photos\UploadPhotoAction;
 use App\Events\ImageDeleted;
 use App\Exceptions\PhotoAlreadyUploaded;
-use App\Http\Requests\AddTagsApiRequest;
+use App\Http\Requests\Api\AddTagsRequest;
+use App\Http\Requests\Api\UploadPhotoWithTagsRequest;
 use App\Models\Photo;
 use App\Models\User\User;
 use GeoHash;
@@ -257,7 +259,7 @@ class ApiPhotosController extends Controller
      *
      * This is used by gallery photos
      */
-    public function addTags (AddTagsApiRequest $request)
+    public function addTags (AddTagsRequest $request, AddCustomTagsToPhotoAction $customTagsAction)
     {
         /** @var User $user */
         $user = auth()->user();
@@ -273,6 +275,8 @@ class ApiPhotosController extends Controller
             'request' => $request->all()
         ]);
 
+        $customTagsAction->run($photo, $request->custom_tags);
+
         dispatch (new AddTags(
             $user->id,
             $photo->id,
@@ -286,20 +290,12 @@ class ApiPhotosController extends Controller
     /**
      * Upload Photo together with its tags
      *
-     * @param Request $request
+     * @param UploadPhotoWithTagsRequest $request
+     * @param AddCustomTagsToPhotoAction $customTagsAction
      * @return array
      */
-    public function uploadWithTags (Request $request) :array
+    public function uploadWithTags (UploadPhotoWithTagsRequest $request, AddCustomTagsToPhotoAction $customTagsAction) :array
     {
-        $request->validate([
-            'photo' => 'required|mimes:jpg,png,jpeg,heic',
-            'lat' => 'required|numeric',
-            'lon' => 'required|numeric',
-            'date' => 'required',
-            'tags' => 'required|json',
-            'picked_up' => 'nullable|boolean'
-        ]);
-
         $file = $request->file('photo');
 
         if ($file->getError() === 3)
@@ -313,10 +309,12 @@ class ApiPhotosController extends Controller
             return ['success' => false, 'msg' => $e->getMessage()];
         }
 
+        $customTagsAction->run($photo, $request->custom_tags);
+
         dispatch (new AddTags(
             auth()->id(),
             $photo->id,
-            json_decode($request->tags, true),
+            $request->tags,
             $request->picked_up
         ));
 
