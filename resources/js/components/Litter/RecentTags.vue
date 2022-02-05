@@ -1,6 +1,19 @@
 <template>
-    <div class="tags-container" v-if="Object.keys(recentTags).length > 0">
+    <div class="tags-container" v-if="Object.keys(recentTags).length > 0 || recentCustomTags.length > 0">
         <p class="mb-5 has-text-weight-bold">{{ $t('tags.recently-tags') }}</p>
+
+        <div v-if="recentCustomTags.length">
+            <p>Custom Tags</p>
+
+            <transition-group name="list" class="recent-tags" tag="div">
+                <div
+                    v-for="(tag, index) in recentCustomTags"
+                    class="litter-tag"
+                    :key="index"
+                    @click="addRecentCustomTag(tag)"
+                ><p class="has-text-white">{{ tag }}</p></div>
+            </transition-group>
+        </div>
 
         <div v-for="category in Object.keys(recentTags)">
             <p>{{ getCategoryName(category) }}</p>
@@ -28,6 +41,14 @@ export default {
         recentTags ()
         {
             return this.$store.state.litter.recentTags;
+        },
+
+        /**
+         * The most recent custom tags the user has applied
+         */
+        recentCustomTags ()
+        {
+            return this.$store.state.litter.recentCustomTags;
         },
     },
     methods: {
@@ -75,6 +96,17 @@ export default {
                 category,
                 tag,
                 quantity
+            });
+        },
+
+        /**
+         * Add a recent custom tag to the existing tags
+         */
+        addRecentCustomTag (tag)
+        {
+            this.$store.commit('addCustomTag', {
+                photoId: this.photoId,
+                customTag: tag
             });
         },
     }

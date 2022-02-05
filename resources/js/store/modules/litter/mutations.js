@@ -57,14 +57,39 @@ export const mutations = {
     },
 
     /**
+     * Add a Custom Tag to a photo.
+     */
+    addCustomTag (state, payload)
+    {
+        let tags = Object.assign({}, state.customTags);
+
+        if (!tags[payload.photoId]) {
+            tags[payload.photoId] = [];
+        }
+
+        if (tags[payload.photoId].indexOf(payload.customTag) === -1 && tags[payload.photoId].length < 3) {
+            tags[payload.photoId].push(payload.customTag);
+
+            // Also add this tag to the recent custom tags
+            if (state.recentCustomTags.indexOf(payload.customTag) === -1) {
+                state.recentCustomTags.push(payload.customTag);
+            }
+        }
+
+        state.customTags = tags;
+    },
+
+    /**
      * Clear the tags object (When we click next/previous image on pagination)
      */
     clearTags (state, photoId)
     {
         if (photoId !== null) {
             delete state.tags[photoId];
+            delete state.customTags[photoId];
         } else {
             state.tags = Object.assign({});
+            state.customTags = Object.assign({});
         }
     },
 
@@ -88,6 +113,14 @@ export const mutations = {
     changeTag (state, payload)
     {
         state.tag = payload;
+    },
+
+    /**
+     * Change the currently selected custom tag
+     */
+    changeCustomTag (state, payload)
+    {
+        state.customTag = payload;
     },
 
     /**
@@ -141,6 +174,14 @@ export const mutations = {
     },
 
     /**
+     * When AddTags is created, we check localStorage for the users recentCustomTags
+     */
+    initRecentCustomTags (state, payload)
+    {
+        state.recentCustomTags = payload;
+    },
+
+    /**
      * Remove a tag from a category
      * If category is empty, delete category
      */
@@ -170,6 +211,18 @@ export const mutations = {
 
         state.tags = tags;
         state.hasAddedNewTag = true; // activate update_with_new_tags button
+    },
+
+    /**
+     * Remove a custom tag
+     */
+    removeCustomTag (state, payload)
+    {
+        let tags = Object.assign({}, state.customTags);
+
+        tags[payload.photoId] = tags[payload.photoId].filter(tag => tag !== payload.customTag);
+
+        state.customTags = tags;
     },
 
     /**

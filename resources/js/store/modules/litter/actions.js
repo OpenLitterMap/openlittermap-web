@@ -48,9 +48,10 @@ export const actions = {
         let photoId = context.rootState.photos.paginate.data[0].id;
 
         await axios.post('add-tags', {
+            photo_id: photoId,
             tags: context.state.tags[photoId],
+            custom_tags: context.state.customTags[photoId],
             presence: context.state.presence,
-            photo_id: photoId
         })
         .then(response => {
             /* improve this */

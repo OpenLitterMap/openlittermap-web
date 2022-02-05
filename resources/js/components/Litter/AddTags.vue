@@ -1,30 +1,40 @@
 <template>
     <div>
         <!-- Search all tags -->
-        <div class="columns">
-            <div class="column is-half is-offset-3">
-                <div class="control">
-                    <div class="select is-fullwidth">
-                        <vue-simple-suggest
-                            ref="search"
-                            display-attribute="title"
-                            value-attribute="key"
-                            :filter-by-query="true"
-                            :list="allTags"
-                            :min-length="1"
-                            :max-suggestions="0"
-                            mode="input"
-                            :styles="autoCompleteStyle"
-                            placeholder="Press Ctrl + Spacebar to Search All Tags"
-                            @focus="onFocusSearch"
-                            @select="search"
-                        />
-                    </div>
+        <div class="flex">
+            <div class="is-flex-grow-3">
+                <div class="select is-fullwidth">
+                    <vue-simple-suggest
+                        ref="search"
+                        display-attribute="title"
+                        value-attribute="key"
+                        :filter-by-query="true"
+                        :list="allTags"
+                        :min-length="1"
+                        :max-suggestions="0"
+                        mode="input"
+                        :styles="autoCompleteStyle"
+                        placeholder="Press Ctrl + Spacebar to Search All Tags"
+                        @focus="onFocusSearch"
+                        @select="search"
+                    />
                 </div>
+            </div>
+            <div class="is-flex-grow-1 ml-2">
+                <input
+                    class="input is-fullwidth"
+                    ref="customTagsInput"
+                    type="text"
+                    min="3"
+                    max="100"
+                    placeholder="Add your own tags"
+                    @focus="onFocusCustomTags"
+                    @keydown.enter="searchCustomTag"
+                >
             </div>
         </div>
 
-        <div class="control has-text-centered">
+        <div class="control has-text-centered mt-4">
 
             <!-- Categories -->
             <div class="select">
@@ -150,6 +160,11 @@ export default {
             this.$store.commit('initRecentTags', JSON.parse(this.$localStorage.get('recentTags')));
         }
 
+        if (this.$localStorage.get('recentCustomTags'))
+        {
+            this.$store.commit('initRecentCustomTags', JSON.parse(this.$localStorage.get('recentCustomTags')));
+        }
+
         // If the user hits Ctrl + Spacebar, search all tags
         window.addEventListener('keydown', (e) => {
             if (e.ctrlKey && e.key.toLowerCase() === ' ') {
@@ -201,6 +216,19 @@ export default {
             });
 
             return results;
+        },
+
+        /**
+         * All recently used custom tags
+         */
+        allRecentCustomTags ()
+        {
+            return this.recentCustomTags.map(tag => {
+                return {
+                    key: tag,
+                    title: tag
+                };
+            });
         },
 
         /**
@@ -306,6 +334,14 @@ export default {
         },
 
         /**
+         * The most recent tags the user has applied
+         */
+        recentCustomTags ()
+        {
+            return this.$store.state.litter.recentCustomTags;
+        },
+
+        /**
          * Get / Set the current tag (category -> tag)
          */
         tag: {
@@ -319,6 +355,18 @@ export default {
                 if (i) {
                     this.$store.commit('changeTag', i.key);
                 }
+            }
+        },
+
+        /**
+         * Get / Set the current custom tag
+         */
+        customTag: {
+            get () {
+                return this.$store.state.litter.customTag;
+            },
+            set (i) {
+                if (i) this.$store.commit('changeCustomTag', i);
             }
         },
 
@@ -365,6 +413,16 @@ export default {
             });
 
             this.$localStorage.set('recentTags', JSON.stringify(this.recentTags));
+        },
+
+        addCustomTag ()
+        {
+            this.$store.commit('addCustomTag', {
+                photoId: this.id,
+                customTag: this.customTag
+            });
+
+            this.$localStorage.set('recentCustomTags', JSON.stringify(this.recentCustomTags));
         },
 
         /**
@@ -416,6 +474,14 @@ export default {
         },
 
         /**
+         * Clear the custom tags input field to allow the user to begin typing
+         */
+        onFocusCustomTags ()
+        {
+            this.$refs.customTagsInput.value = '';
+        },
+
+        /**
          * The input field has been selected.
          * Show all suggestions, not just those limited by text.
          *
@@ -454,7 +520,7 @@ export default {
         },
 
         /**
-         *
+         * Sets the category and tag from the search results
          */
         search (input)
         {
@@ -467,6 +533,24 @@ export default {
 
             this.$nextTick(function () {
                 this.onFocusSearch();
+            });
+        },
+
+        /**
+         * Adds a new custom tag
+         */
+        searchCustomTag ()
+        {
+            let customTag = this.$refs.customTagsInput.value;
+
+            if (customTag.length < 3 || customTag.length > 100) return;
+
+            this.customTag = customTag;
+
+            this.addCustomTag();
+
+            this.$nextTick(function () {
+                this.onFocusCustomTags();
             });
         },
 
@@ -510,6 +594,14 @@ export default {
 
     .hide-br {
         display: none;
+    }
+
+    .is-flex-grow-3 {
+        flex-grow: 3;
+    }
+
+    .is-flex-grow-1 {
+        flex-grow: 1;
     }
 
     @media (max-width: 500px)

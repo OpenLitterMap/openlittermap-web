@@ -324,7 +324,7 @@ class PhotosController extends Controller
             abort(403, 'Forbidden');
         }
 
-        $customTagsAction->run($photo, $request->custom_tags);
+        $customTagsAction->run($photo, $request->custom_tags ?? []);
 
         $litterTotals = $this->addTagsAction->run($photo, $request['tags']);
 

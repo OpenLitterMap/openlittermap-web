@@ -275,7 +275,7 @@ class ApiPhotosController extends Controller
             'request' => $request->all()
         ]);
 
-        $customTagsAction->run($photo, $request->custom_tags);
+        $customTagsAction->run($photo, $request->custom_tags ?? []);
 
         dispatch (new AddTags(
             $user->id,
@@ -309,7 +309,7 @@ class ApiPhotosController extends Controller
             return ['success' => false, 'msg' => $e->getMessage()];
         }
 
-        $customTagsAction->run($photo, $request->custom_tags);
+        $customTagsAction->run($photo, $request->custom_tags ?? []);
 
         dispatch (new AddTags(
             auth()->id(),

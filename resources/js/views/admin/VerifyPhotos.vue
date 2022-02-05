@@ -289,8 +289,10 @@ export default {
         clearRecentTags ()
         {
             this.$store.commit('initRecentTags', {});
+            this.$store.commit('initRecentCustomTags', []);
 
             this.$localStorage.remove('recentTags');
+            this.$localStorage.remove('recentCustomTags');
         },
 
 		/**

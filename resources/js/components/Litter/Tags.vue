@@ -1,5 +1,17 @@
 <template>
     <div>
+        <div v-if="customTags.length" >
+            <span class="category">Custom Tags</span>
+            <ul class="container">
+                <li v-for="tag in customTags" class="admin-item">
+                    <span
+                        class="tag is-medium has-background-link has-text-white litter-tag"
+                        @click="removeCustomTag(tag)"
+                        v-html="tag"
+                    />
+                </li>
+            </ul>
+        </div>
         <ul class="container">
             <li v-for="category in categories" class="admin-item">
                 <!-- Translated Category Title -->
@@ -43,6 +55,14 @@ export default {
 
             return categories;
         },
+
+        /**
+         * Custom tags that the user has selected
+         */
+        customTags ()
+        {
+            return this.$store.state.litter.customTags[this.photoId] || [];
+        },
     },
     methods: {
 
@@ -80,6 +100,17 @@ export default {
                 photoId: this.photoId,
                 category,
                 tag_key
+            });
+        },
+
+        /**
+         * Remove the custom tag
+         */
+        removeCustomTag (tag)
+        {
+            this.$store.commit('removeCustomTag', {
+                photoId: this.photoId,
+                customTag: tag
             });
         }
     }
