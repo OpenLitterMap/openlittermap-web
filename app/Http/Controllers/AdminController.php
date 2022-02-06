@@ -313,6 +313,7 @@ class AdminController extends Controller
     private function filterPhotos(): Builder
     {
         return Photo::query()
+            ->with('customTags')
             ->whereNotIn('user_id', $this->usersToSkipVerification())
             ->when(request('country_id'), function (Builder $q) {
                 return $q->whereCountryId(request('country_id'));

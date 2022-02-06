@@ -157,6 +157,17 @@ export const mutations = {
     },
 
     /**
+     * Data from the user to verify
+     * map database column name to frontend string
+     */
+    initAdminCustomTags (state, payload)
+    {
+        state.customTags = {
+            [payload.id]: payload.custom_tags.map(t => t.tag)
+        };
+    },
+
+    /**
      * The users default presence of the litter they pick up
      * Some people leave it there, others usually pick it up
      */

@@ -1,18 +1,15 @@
 <template>
     <div>
-        <div v-if="customTags.length" >
-            <span class="category">Custom Tags</span>
-            <ul class="container">
-                <li v-for="tag in customTags" class="admin-item">
-                    <span
-                        class="tag is-medium has-background-link has-text-white litter-tag"
-                        @click="removeCustomTag(tag)"
-                        v-html="tag"
-                    />
-                </li>
-            </ul>
-        </div>
         <ul class="container">
+            <li v-if="customTags.length" class="admin-item">
+                <span class="category">Custom Tags</span>
+                <span v-for="tag in customTags"
+                      class="tag is-medium has-background-link has-text-white litter-tag"
+                      @click="removeCustomTag(tag)"
+                      v-html="tag"
+                />
+            </li>
+
             <li v-for="category in categories" class="admin-item">
                 <!-- Translated Category Title -->
                 <span class="category">{{ getCategory(category.category) }}</span>
@@ -33,7 +30,14 @@
 /*** Tags (previously AddedItems) is quite similar to AdminItems except here we remove the tag, on AdminItems we reset the tag.*/
 export default {
     name: 'Tags',
-    props: ['admin', 'photoId'], // bool
+    props: {
+        photoId: Number,
+        admin: Boolean,
+        canRemoveCustomTags: {
+            type: Boolean,
+            default: true
+        }
+    },
     computed: {
 
         /**
@@ -108,6 +112,8 @@ export default {
          */
         removeCustomTag (tag)
         {
+            if (!this.canRemoveCustomTags) return;
+
             this.$store.commit('removeCustomTag', {
                 photoId: this.photoId,
                 customTag: tag

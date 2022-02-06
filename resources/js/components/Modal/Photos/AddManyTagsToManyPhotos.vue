@@ -8,7 +8,7 @@
         <button
             :class="button"
             @click="submit"
-            :disabled="processing"
+            :disabled="checkTags"
         >{{ $t('common.submit') }}</button>
     </div>
 </template>
@@ -37,7 +37,17 @@ export default {
         button ()
         {
             return this.processing ? this.btn + ' is-loading' : this.btn;
-        }
+        },
+
+        /**
+         * Disable button if true
+         */
+        checkTags ()
+        {
+            if (this.processing) return true;
+
+            return Object.keys(this.$store.state.litter.tags[0] || {}).length === 0;
+        },
     },
     methods: {
 

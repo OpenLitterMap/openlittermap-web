@@ -75,7 +75,7 @@
                             </div>
 
                             <div v-if="hasRecentTags" class="recent-tags control has-text-centered has-background-light py-4">
-                                <RecentTags class="mb-5" :photo-id="photo.id" />
+                                <RecentTags class="mb-5" :photo-id="photo.id" :show-custom-tags="false" />
                             </div>
                         </div>
 
@@ -94,7 +94,11 @@
                             </div>
 
                             <!-- Add / edit tags -->
-                            <add-tags :admin="true" :id="photo.id" />
+                            <div class="columns">
+                                <div class="column is-two-thirds is-offset-2">
+                                    <add-tags :admin="true" :id="photo.id" :show-custom-tags="false" />
+                                </div>
+                            </div>
 
                             <div style="padding-top: 1em; text-align: center;">
                                 <button :class="update_new_tags_button" @click="updateNewTags" :disabled="checkUpdateTagsDisabled">
@@ -114,9 +118,10 @@
 
                             <!-- The list of tags associated with this image-->
                             <Tags
-                            :photo-id="photo.id"
-                            :admin="true"
-                        />
+                                :photo-id="photo.id"
+                                :admin="true"
+                                :can-remove-custom-tags="false"
+                            />
 
                             <div style="padding-top: 3em;">
                                 <button class="button is-medium is-dark tooltip" @click="clearTags">

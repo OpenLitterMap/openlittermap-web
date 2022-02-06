@@ -1,8 +1,8 @@
 <template>
     <div>
         <!-- Search all tags -->
-        <div class="flex">
-            <div class="is-flex-grow-3">
+        <div class="flex flex-column-mobile">
+            <div class="is-flex-grow-3 search-container">
                 <div class="select is-fullwidth">
                     <vue-simple-suggest
                         ref="search"
@@ -20,7 +20,7 @@
                     />
                 </div>
             </div>
-            <div class="is-flex-grow-1 ml-2">
+            <div v-if="showCustomTags" class="is-flex-grow-1">
                 <input
                     class="input is-fullwidth"
                     ref="customTagsInput"
@@ -151,7 +151,8 @@ export default {
         'id': { type: Number, required: true },
         'admin': Boolean,
         'annotations': { type: Boolean, required: false },
-        'isVerifying': { type: Boolean, required: false }
+        'isVerifying': { type: Boolean, required: false },
+        'showCustomTags': { type: Boolean, required: false, default: true }
     },
     created ()
     {
@@ -604,6 +605,10 @@ export default {
         flex-grow: 1;
     }
 
+    .search-container {
+        margin-right: 4px;
+    }
+
     @media (max-width: 500px)
     {
         .hide-br {
@@ -611,6 +616,13 @@ export default {
         }
         .v-select {
             margin-top: 10px;
+        }
+        .flex-column-mobile {
+            flex-direction: column;
+        }
+        .search-container {
+            margin-right: 0;
+            margin-bottom: 4px;
         }
     }
 

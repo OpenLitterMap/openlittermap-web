@@ -1,8 +1,8 @@
 <template>
-    <div class="tags-container" v-if="Object.keys(recentTags).length > 0 || recentCustomTags.length > 0">
+    <div class="tags-container" v-if="Object.keys(recentTags).length > 0 || (showCustomTags && recentCustomTags.length)">
         <p class="mb-5 has-text-weight-bold">{{ $t('tags.recently-tags') }}</p>
 
-        <div v-if="recentCustomTags.length">
+        <div v-if="showCustomTags && recentCustomTags.length">
             <p>Custom Tags</p>
 
             <transition-group name="list" class="recent-tags" tag="div">
@@ -33,7 +33,13 @@
 <script>
 export default {
     name: 'RecentTags',
-    props: ['photoId'],
+    props: {
+        photoId: Number,
+        showCustomTags: {
+            type: Boolean,
+            default: true
+        }
+    },
     computed: {
         /**
          * The most recent tags the user has applied

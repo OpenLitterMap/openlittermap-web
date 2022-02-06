@@ -138,6 +138,7 @@ export const actions = {
                 if (resp.data.photo?.verification > 0)
                 {
                     context.commit('initAdminItems', resp.data.photo);
+                    context.commit('initAdminCustomTags', resp.data.photo);
                 }
 
                 context.commit('initAdminMetadata', {

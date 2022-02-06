@@ -28,7 +28,7 @@ class UserPhotoController extends Controller
 
         foreach ($photos as $photo)
         {
-             dispatch (new AddTagsToPhoto($photo->id, $request->tags));
+             dispatch (new AddTagsToPhoto($photo->id, $request->tags, $request->custom_tags ?? []));
         }
 
         return ['success' => true];
