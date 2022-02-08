@@ -9,10 +9,10 @@ class AddCustomTagsToPhotoAction
     /**
      * Adds custom tags to the photo.
      */
-    public function run(Photo $photo, array $tags): void
+    public function run(Photo $photo, array $tags): int
     {
         if (empty($tags)) {
-            return;
+            return 0;
         }
 
         $photo->customTags()->createMany(
@@ -20,5 +20,7 @@ class AddCustomTagsToPhotoAction
                 return ['tag' => $tag];
             })
         );
+
+        return count($tags);
     }
 }

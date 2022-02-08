@@ -3,6 +3,7 @@
 namespace App\Actions\Photos;
 
 use App\Models\Photo;
+use Illuminate\Support\Collection;
 
 class DeleteTagsFromPhotoAction
 {
@@ -15,34 +16,56 @@ class DeleteTagsFromPhotoAction
      *
      * @return array
      */
-    public function run (Photo $photo) :array
+    public function run(Photo $photo): array
     {
         $photo->refresh();
 
-        $litter = 0;
-        $brands = 0;
+        $categories = collect($photo->categories())
+            ->filter(function ($category) use ($photo) {
+                return !!$photo->$category;
+            });
 
-        foreach ($photo->categories() as $category)
-        {
-            if ($photo->$category)
-            {
-                $categoryTotal = $photo->$category->total();
+        $litter = $this->deleteLitter($photo, $categories);
+        $brands = $this->deleteBrands($photo);
+        $custom = $this->deleteCustomTags($photo);
 
-                if ($category === 'brands')
-                {
-                    $brands += $categoryTotal;
-                }
-                else
-                {
-                    $litter += $categoryTotal;
-                }
+        $all = $litter + $brands + $custom;
 
-                $photo->$category->delete();
-            }
-        }
+        return compact('litter', 'brands', 'custom', 'all');
+    }
 
-        $all = $litter + $brands;
+    private function deleteLitter(Photo $photo, Collection $categories): int
+    {
+        $total = $categories
+            ->filter(function ($category) {
+                return $category !== 'brands';
+            })
+            ->sum(function ($category) use ($photo) {
+                return $photo->$category->total();
+            });
 
-        return compact('litter', 'brands', 'all');
+        $categories->each(function ($category) use ($photo) {
+            $photo->$category->delete();
+        });
+
+        return $total;
+    }
+
+    private function deleteBrands(Photo $photo): int
+    {
+        $total = $photo->brands->total();
+
+        $photo->brands->delete();
+
+        return $total;
+    }
+
+    private function deleteCustomTags(Photo $photo): int
+    {
+        $total = $photo->customTags->count();
+
+        $photo->customTags()->delete();
+
+        return $total;
     }
 }

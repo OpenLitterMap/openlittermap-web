@@ -52,18 +52,18 @@ class AddTagsToPhoto implements ShouldQueue
 
         /** @var AddCustomTagsToPhotoAction $addCustomTagsAction */
         $addCustomTagsAction = app(AddCustomTagsToPhotoAction::class);
-        $addCustomTagsAction->run($photo, $this->customTags);
+        $customTagsTotals = $addCustomTagsAction->run($photo, $this->customTags);
 
         /** @var AddTagsToPhotoAction $addTagsAction */
         $addTagsAction = app(AddTagsToPhotoAction::class);
         $litterTotals = $addTagsAction->run($photo, $this->tags);
 
-        $user->xp += $litterTotals['all'];
+        $user->xp += $litterTotals['all'] + $customTagsTotals;
         $user->save();
 
         /** @var UpdateLeaderboardsForLocationAction $updateLeaderboardsAction */
         $updateLeaderboardsAction = app(UpdateLeaderboardsForLocationAction::class);
-        $updateLeaderboardsAction->run($photo, $user->id, $litterTotals['all']);
+        $updateLeaderboardsAction->run($photo, $user->id, $litterTotals['all'] + $customTagsTotals);
 
         $photo->remaining = false; // todo
         $photo->total_litter = $litterTotals['litter'];

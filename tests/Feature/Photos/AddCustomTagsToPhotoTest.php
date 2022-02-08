@@ -40,6 +40,7 @@ class AddCustomTagsToPhotoTest extends TestCase
         $user = User::factory()->create();
         $this->actingAs($user)->post('/submit', ['file' => $this->imageAndAttributes['file'],]);
         $photo = $user->fresh()->photos->last();
+        $this->assertEquals(1, $user->fresh()->xp);
 
         $this->post('/add-tags', [
             'photo_id' => $photo->id,
@@ -49,6 +50,7 @@ class AddCustomTagsToPhotoTest extends TestCase
         ])->assertOk();
 
         $this->assertEquals(['tag1', 'tag2', 'tag3'], $photo->fresh()->customTags->pluck('tag')->toArray());
+        $this->assertEquals(7, $user->fresh()->xp); // 1 + 3 + 3
     }
 
     /**

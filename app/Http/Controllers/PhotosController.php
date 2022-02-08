@@ -324,14 +324,14 @@ class PhotosController extends Controller
             abort(403, 'Forbidden');
         }
 
-        $customTagsAction->run($photo, $request->custom_tags ?? []);
+        $customTagsTotal = $customTagsAction->run($photo, $request->custom_tags ?? []);
 
         $litterTotals = $this->addTagsAction->run($photo, $request['tags']);
 
-        $user->xp += $litterTotals['all'];
+        $user->xp += $litterTotals['all'] + $customTagsTotal;
         $user->save();
 
-        $this->updateLeaderboardsAction->run($photo, $user->id, $litterTotals['all']);
+        $this->updateLeaderboardsAction->run($photo, $user->id, $litterTotals['all'] + $customTagsTotal);
 
         $photo->remaining = !$request->presence;
         $photo->total_litter = $litterTotals['litter'];

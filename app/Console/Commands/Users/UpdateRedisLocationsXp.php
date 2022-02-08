@@ -74,7 +74,8 @@ class UpdateRedisLocationsXp extends Command
             ->sum(function ($category) use ($photo) {
                 return $photo->$category->total();
             });
+        $xpFromCustomTags = $photo->customTags()->count();
 
-        return $xpFromPhoto + $xpFromTags;
+        return $xpFromPhoto + $xpFromTags + $xpFromCustomTags;
     }
 }
