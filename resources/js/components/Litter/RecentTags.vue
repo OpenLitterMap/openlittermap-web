@@ -7,9 +7,9 @@
 
             <transition-group name="list" class="recent-tags" tag="div">
                 <div
-                    v-for="(tag, index) in recentCustomTags"
+                    v-for="tag in recentCustomTags"
                     class="litter-tag"
-                    :key="index"
+                    :key="tag"
                     @click="addRecentCustomTag(tag)"
                 ><p class="has-text-white">{{ tag }}</p></div>
             </transition-group>
