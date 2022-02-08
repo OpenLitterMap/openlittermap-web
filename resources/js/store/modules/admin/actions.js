@@ -95,7 +95,8 @@ export const actions = {
 
         await axios.post('/admin/update-tags', {
             photoId: photoId,
-            tags: context.rootState.litter.tags[photoId]
+            tags: context.rootState.litter.tags[photoId],
+            custom_tags: context.rootState.litter.customTags[photoId]
         })
         .then(response => {
             console.log('admin_verify_keep', response);

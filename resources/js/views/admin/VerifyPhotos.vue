@@ -75,7 +75,7 @@
                             </div>
 
                             <div v-if="hasRecentTags" class="recent-tags control has-text-centered has-background-light py-4">
-                                <RecentTags class="mb-5" :photo-id="photo.id" :show-custom-tags="false" />
+                                <RecentTags class="mb-5" :photo-id="photo.id" />
                             </div>
                         </div>
 
@@ -96,7 +96,7 @@
                             <!-- Add / edit tags -->
                             <div class="columns">
                                 <div class="column is-two-thirds is-offset-2">
-                                    <add-tags :admin="true" :id="photo.id" :show-custom-tags="false" />
+                                    <add-tags :admin="true" :id="photo.id" />
                                 </div>
                             </div>
 
@@ -120,7 +120,6 @@
                             <Tags
                                 :photo-id="photo.id"
                                 :admin="true"
-                                :can-remove-custom-tags="false"
                             />
 
                             <div style="padding-top: 3em;">

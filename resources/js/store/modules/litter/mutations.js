@@ -67,13 +67,19 @@ export const mutations = {
             tags[payload.photoId] = [];
         }
 
-        if (tags[payload.photoId].indexOf(payload.customTag) === -1 && tags[payload.photoId].length < 3) {
+        // Case-insensitive check for existing tags
+        if (tags[payload.photoId].find(tag => tag.toLowerCase() === payload.customTag.toLowerCase()) === undefined &&
+            tags[payload.photoId].length < 3
+        ) {
             tags[payload.photoId].push(payload.customTag);
 
             // Also add this tag to the recent custom tags
             if (state.recentCustomTags.indexOf(payload.customTag) === -1) {
                 state.recentCustomTags.push(payload.customTag);
             }
+
+            // And indicate that a new tag has been added
+            state.hasAddedNewTag = true; // Enable the Update Button
         }
 
         state.customTags = tags;
@@ -91,6 +97,8 @@ export const mutations = {
             state.tags = Object.assign({});
             state.customTags = Object.assign({});
         }
+
+        state.hasAddedNewTag = false; // Disable the Admin Update Button
     },
 
     /**
@@ -234,6 +242,7 @@ export const mutations = {
         tags[payload.photoId] = tags[payload.photoId].filter(tag => tag !== payload.customTag);
 
         state.customTags = tags;
+        state.hasAddedNewTag = true; // activate update_with_new_tags button
     },
 
     /**

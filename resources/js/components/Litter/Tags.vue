@@ -30,14 +30,7 @@
 /*** Tags (previously AddedItems) is quite similar to AdminItems except here we remove the tag, on AdminItems we reset the tag.*/
 export default {
     name: 'Tags',
-    props: {
-        photoId: Number,
-        admin: Boolean,
-        canRemoveCustomTags: {
-            type: Boolean,
-            default: true
-        }
-    },
+    props: ['photoId', 'admin'],
     computed: {
 
         /**
@@ -95,10 +88,7 @@ export default {
          */
         removeTag (category, tag_key)
         {
-            let commit = '';
-
-            if (this.admin)  commit = 'resetTag';
-            else commit = 'removeTag';
+            let commit = this.admin ? 'resetTag' : 'removeTag';
 
             this.$store.commit(commit, {
                 photoId: this.photoId,
@@ -112,8 +102,6 @@ export default {
          */
         removeCustomTag (tag)
         {
-            if (!this.canRemoveCustomTags) return;
-
             this.$store.commit('removeCustomTag', {
                 photoId: this.photoId,
                 customTag: tag
