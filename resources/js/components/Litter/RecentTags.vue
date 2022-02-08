@@ -80,15 +80,12 @@ export default {
         {
             let quantity = 1;
 
-            if (this.$store.state.litter.tags.hasOwnProperty(this.photoId))
-            {
-                if (this.$store.state.litter.tags[this.photoId].hasOwnProperty(category))
-                {
-                    if (this.$store.state.litter.tags[this.photoId][category].hasOwnProperty(tag))
-                    {
-                        quantity = (this.$store.state.litter.tags[this.photoId][category][tag] + 1);
-                    }
-                }
+            if (
+                this.$store.state.litter.tags.hasOwnProperty(this.photoId) &&
+                this.$store.state.litter.tags[this.photoId].hasOwnProperty(category) &&
+                this.$store.state.litter.tags[this.photoId][category].hasOwnProperty(tag)
+            ) {
+                quantity = parseInt(this.$store.state.litter.tags[this.photoId][category][tag]) + 1;
             }
 
             this.$store.commit('addTag', {
