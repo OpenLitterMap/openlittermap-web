@@ -11,18 +11,14 @@ class CreateCSVExportTest extends TestCase
 {
     public function test_it_has_correct_headings_for_all_categories_and_tags()
     {
-        $expected = [
-            'id', 'verification', 'phone', 'datetime', 'lat', 'lon', 'picked up', 'address', 'total_litter'
-        ];
-
+        $expected = ['id', 'verification', 'phone', 'datetime', 'lat', 'lon', 'picked up', 'address', 'total_litter'];
         foreach (Photo::categories() as $category) {
             $photo = Photo::factory()->make();
             $types = $photo->$category()->make()->types();
-
             $expected[] = strtoupper($category);
             $expected = array_merge($expected, $types);
         }
-
+        $expected = array_merge($expected, ['custom_tag_1', 'custom_tag_2', 'custom_tag_3']);
         // We make this assertion to be sure that
         // the exporter does not persist extra models
         $this->assertDatabaseCount('photos', 0);
@@ -30,7 +26,6 @@ class CreateCSVExportTest extends TestCase
         $export = new CreateCSVExport('null', 1, null, null);
 
         $this->assertEquals($expected, $export->headings());
-
         $this->assertDatabaseCount('photos', 0);
     }
 
@@ -47,7 +42,7 @@ class CreateCSVExportTest extends TestCase
             'display_name' => '12345 Street',
             'total_litter' => 500
         ]);
-
+        $photo->customTags()->createMany([['tag' => 'tag 1'], ['tag' => 'tag 2'], ['tag' => 'tag 3']]);
         $expected = [
             $photo->id,
             $photo->verified,
@@ -59,7 +54,6 @@ class CreateCSVExportTest extends TestCase
             $photo->display_name,
             $photo->total_litter,
         ];
-
         foreach (Photo::categories() as $category) {
             $model = $this->createCategoryWithTags($photo, $category);
 
@@ -70,7 +64,7 @@ class CreateCSVExportTest extends TestCase
                 $expected[] = $model->$type;
             }
         }
-
+        $expected = array_merge($expected, ['tag 1', 'tag 2', 'tag 3']);
         // We make this assertion to be sure that
         // the exporter does not persist extra models
         $this->assertDatabaseCount('photos', 1);
@@ -78,7 +72,6 @@ class CreateCSVExportTest extends TestCase
         $export = new CreateCSVExport('null', 1, null, null);
 
         $this->assertEquals($expected, $export->map($photo->fresh()));
-
         $this->assertDatabaseCount('photos', 1);
     }
 
