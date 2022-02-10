@@ -3,15 +3,42 @@
         <div class="hero-body is-flex">
             <div class="stats">
                 <div class="stat has-text-light has-text-centered">
-                    <div class="total has-text-weight-bold">75</div>
+                    <div class="total has-text-weight-bold">
+                        <number
+                            :from="0"
+                            :to="stats.photosPerDay"
+                            :duration="2"
+                            :delay="0"
+                            easing="Power1.easeOut"
+                            :format="commas"
+                        />
+                    </div>
                     <div class="is-size-5">photos uploaded per day</div>
                 </div>
                 <div class="stat has-text-light has-text-centered">
-                    <div class="total has-text-weight-bold">42</div>
+                    <div class="total has-text-weight-bold">
+                        <number
+                            :from="0"
+                            :to="stats.usersPerWeek"
+                            :duration="2"
+                            :delay="0"
+                            easing="Power1.easeOut"
+                            :format="commas"
+                        />
+                    </div>
                     <div class="is-size-5">new users per week</div>
                 </div>
                 <div class="stat has-text-light has-text-centered">
-                    <div class="total has-text-weight-bold">99</div>
+                    <div class="total has-text-weight-bold">
+                        <number
+                            :from="0"
+                            :to="stats.littercoinPerMonth"
+                            :duration="2"
+                            :delay="0"
+                            easing="Power1.easeOut"
+                            :format="commas"
+                        />
+                    </div>
                     <div class="is-size-5">Littercoin mined per month</div>
                 </div>
             </div>
@@ -44,15 +71,22 @@ export default {
             }
         };
     },
-    mounted ()
+    computed: {
+        stats() {
+            return this.$store.state.community;
+        }
+    },
+    async mounted ()
     {
-        this.fillData();
+        await this.fillData();
     },
     methods: {
-        fillData ()
+        async fillData ()
         {
+            await this.$store.dispatch('GET_STATS');
+
             this.yearlyStats = {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                labels: this.stats.statsByMonth.periods,
                 datasets: [
                     {
                         label: 'Photos uploaded every month',
@@ -61,7 +95,7 @@ export default {
                         pointBackgroundColor: '#008080',
                         pointBorderColor: '#008080',
                         backgroundColor: 'transparent',
-                        data: [...Array(12)].map(e => Math.random() * 100 | 0)
+                        data: this.stats.statsByMonth.photosByMonth.map(i => i.total)
                     },
                     {
                         label: 'New users every month',
@@ -70,10 +104,18 @@ export default {
                         pointBackgroundColor: '#008080',
                         pointBorderColor: '#008080',
                         backgroundColor: 'transparent',
-                        data: [...Array(12)].map(e => Math.random() * 100 | 0)
+                        data: this.stats.statsByMonth.usersByMonth.map(i => i.total)
                     }
                 ]
             };
+        },
+
+        /**
+         * Format number value
+         */
+        commas (n)
+        {
+            return parseInt(n).toLocaleString();
         }
     }
 };
