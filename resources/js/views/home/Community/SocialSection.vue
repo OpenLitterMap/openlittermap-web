@@ -27,6 +27,11 @@ export default {
         return {
             cards: [
                 {
+                    title: 'Facebook',
+                    link: 'https://www.facebook.com/openlittermap/',
+                    icon: 'fa fa-facebook'
+                },
+                {
                     title: 'Twitter',
                     link: 'https://twitter.com/OpenLitterMap',
                     icon: 'fa fa-twitter'
@@ -68,7 +73,7 @@ export default {
 </script>
 <style lang="scss" scoped>
 .section-social {
-    background-color: #008080; // #008080 teal
+    background-color: #094C54; // #008080 teal
 
     .hero-body {
         flex-direction: column;
