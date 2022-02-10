@@ -51,7 +51,7 @@ const router = new VueRouter({
         },
         {
             path: '/community',
-            component: require('./views/home/Community').default
+            component: require('./views/home/Community/Index').default
         },
         {
             path: '/global',
