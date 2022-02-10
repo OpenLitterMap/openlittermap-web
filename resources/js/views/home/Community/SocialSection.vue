@@ -68,7 +68,7 @@ export default {
 </script>
 <style lang="scss" scoped>
 .section-social {
-    background-color: #094C54; // #008080 teal
+    background-color: #008080; // #008080 teal
 
     .hero-body {
         flex-direction: column;
