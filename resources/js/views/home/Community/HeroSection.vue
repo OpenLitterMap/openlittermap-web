@@ -2,14 +2,19 @@
     <section class="community" :style="{backgroundImage: imageStyle}">
         <div class="hero is-medium container">
             <div class="hero-body community-hero">
-                <h1 class="title has-text-white has-text-weight-bold is-size-1-desktop">
+                <h1 class="title has-text-white has-text-weight-bold is-size-2 is-size-1-desktop">
                     Help us change the world.
                 </h1>
-                <h2 class="subtitle has-text-white-bis is-size-3">
+                <h2 class="subtitle has-text-white-bis is-size-4 mt-1">
                     We're growing by the day
                 </h2>
             </div>
         </div>
+        <p class="copyright">
+            <a target="_blank" href="https://www.pexels.com/photo/green-grass-field-during-sun-rise-997121/">
+                Photo by Peter Fazekas from Pexels
+            </a>
+        </p>
     </section>
 </template>
 <script>
@@ -18,7 +23,7 @@ export default {
     computed: {
         imageStyle ()
         {
-            return `linear-gradient(to left, transparent 0%, black 100%), url("${window.location.origin}/assets/litter-picking-copy.jpg")`;
+            return `linear-gradient(to left, transparent 0%, black 100%), url("${window.location.origin}/assets/grass.jpg")`;
         }
     }
 };
@@ -27,6 +32,19 @@ export default {
 .community {
     background: black no-repeat fixed top right;
     background-size: cover;
+    position: relative;
+}
+.copyright {
+    position: absolute;
+    right: 5px;
+    bottom: 5px;
+    color: gray;
+    font-size: 10px;
+
+    a, a:hover {
+        color: gray;
+        text-decoration: none;
+    }
 }
 
 @media screen and (min-width: 1280px) {
