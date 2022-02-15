@@ -23,6 +23,7 @@
             <div v-if="showCustomTags" class="is-flex-grow-1">
                 <input
                     class="input is-fullwidth"
+                    :class="customTagsError ? 'is-danger' : ''"
                     ref="customTagsInput"
                     type="text"
                     min="3"
@@ -31,6 +32,7 @@
                     @focus="onFocusCustomTags"
                     @keydown.enter="searchCustomTag"
                 >
+                <p v-if="customTagsError" class="help has-text-left">{{ customTagsError }}</p>
             </div>
         </div>
 
@@ -343,6 +345,14 @@ export default {
         },
 
         /**
+         * The latest error related to custom tags
+         */
+        customTagsError ()
+        {
+            return this.$store.state.litter.customTagsError;
+        },
+
+        /**
          * Get / Set the current tag (category -> tag)
          */
         tag: {
@@ -544,7 +554,15 @@ export default {
         {
             let customTag = this.$refs.customTagsInput.value;
 
-            if (customTag.length < 3 || customTag.length > 100) return;
+            if (customTag.length < 3) {
+                this.$store.commit('setCustomTagsError', 'It needs to be at least 3 characters long.');
+                return;
+            }
+
+            if (customTag.length > 100) {
+                this.$store.commit('setCustomTagsError', 'It needs to be at most 100 characters long.');
+                return;
+            }
 
             this.customTag = customTag;
 

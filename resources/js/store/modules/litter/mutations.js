@@ -68,20 +68,29 @@ export const mutations = {
         }
 
         // Case-insensitive check for existing tags
-        if (tags[payload.photoId].find(tag => tag.toLowerCase() === payload.customTag.toLowerCase()) === undefined &&
-            tags[payload.photoId].length < 3
-        ) {
-            tags[payload.photoId].push(payload.customTag);
-
-            // Also add this tag to the recent custom tags
-            if (state.recentCustomTags.indexOf(payload.customTag) === -1) {
-                state.recentCustomTags.push(payload.customTag);
-            }
-
-            // And indicate that a new tag has been added
-            state.hasAddedNewTag = true; // Enable the Update Button
+        if (tags[payload.photoId].find(tag => tag.toLowerCase() === payload.customTag.toLowerCase()) !== undefined)
+        {
+            state.customTagsError = 'Tag already added.';
+            return;
         }
 
+        if (tags[payload.photoId].length >= 3)
+        {
+            state.customTagsError = 'You can upload up to 3 custom tags.';
+            return;
+        }
+
+        tags[payload.photoId].push(payload.customTag);
+
+        // Also add this tag to the recent custom tags
+        if (state.recentCustomTags.indexOf(payload.customTag) === -1)
+        {
+            state.recentCustomTags.push(payload.customTag);
+        }
+
+        // And indicate that a new tag has been added
+        state.hasAddedNewTag = true; // Enable the Update Button
+        state.customTagsError = ''; // Clear the error
         state.customTags = tags;
     },
 
@@ -129,6 +138,11 @@ export const mutations = {
     changeCustomTag (state, payload)
     {
         state.customTag = payload;
+    },
+
+    setCustomTagsError (state, payload)
+    {
+        state.customTagsError = payload;
     },
 
     /**
