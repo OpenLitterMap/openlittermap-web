@@ -190,7 +190,8 @@ export default {
          */
         hasRecentTags ()
         {
-            return Object.keys(this.$store.state.litter.recentTags).length > 0;
+            return Object.keys(this.$store.state.litter.recentTags).length > 0 ||
+                this.$store.state.litter.recentCustomTags.length > 0;
         },
 
         /**
@@ -251,8 +252,10 @@ export default {
         clearRecentTags ()
         {
             this.$store.commit('initRecentTags', {});
+            this.$store.commit('initRecentCustomTags', []);
 
             this.$localStorage.remove('recentTags');
+            this.$localStorage.remove('recentCustomTags');
         },
 
         /**

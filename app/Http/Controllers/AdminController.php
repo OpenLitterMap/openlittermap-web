@@ -204,7 +204,8 @@ class AdminController extends Controller
         $photo->total_litter = 0;
         $photo->save();
 
-        $this->addTags($request->categories, $photo->id);
+        // TODO categories and custom_tags are not provided in the front-end
+        $this->addTags($request->categories, [], $photo->id);
 
         event(new TagsVerifiedByAdmin($photo->id));
     }
@@ -226,7 +227,7 @@ class AdminController extends Controller
         $user->count_correctly_verified = 0; // At 100, the user earns a Littercoin
         $user->save();
 
-        $this->addTags($request->tags, $request->photoId);
+        $this->addTags($request->tags ?? [], $request->custom_tags ?? [], $request->photoId);
 
         event (new TagsVerifiedByAdmin($photo->id));
     }
@@ -313,6 +314,7 @@ class AdminController extends Controller
     private function filterPhotos(): Builder
     {
         return Photo::query()
+            ->with('customTags')
             ->whereNotIn('user_id', $this->usersToSkipVerification())
             ->when(request('country_id'), function (Builder $q) {
                 return $q->whereCountryId(request('country_id'));

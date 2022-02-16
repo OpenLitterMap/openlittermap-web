@@ -1,6 +1,15 @@
 <template>
     <div>
         <ul class="container">
+            <li v-if="customTags.length" class="admin-item">
+                <span class="category">Custom Tags</span>
+                <span v-for="tag in customTags"
+                      class="tag is-medium has-background-link has-text-white litter-tag"
+                      @click="removeCustomTag(tag)"
+                      v-html="tag"
+                />
+            </li>
+
             <li v-for="category in categories" class="admin-item">
                 <!-- Translated Category Title -->
                 <span class="category">{{ getCategory(category.category) }}</span>
@@ -21,7 +30,7 @@
 /*** Tags (previously AddedItems) is quite similar to AdminItems except here we remove the tag, on AdminItems we reset the tag.*/
 export default {
     name: 'Tags',
-    props: ['admin', 'photoId'], // bool
+    props: ['photoId', 'admin'],
     computed: {
 
         /**
@@ -42,6 +51,14 @@ export default {
             });
 
             return categories;
+        },
+
+        /**
+         * Custom tags that the user has selected
+         */
+        customTags ()
+        {
+            return this.$store.state.litter.customTags[this.photoId] || [];
         },
     },
     methods: {
@@ -71,15 +88,23 @@ export default {
          */
         removeTag (category, tag_key)
         {
-            let commit = '';
-
-            if (this.admin)  commit = 'resetTag';
-            else commit = 'removeTag';
+            let commit = this.admin ? 'resetTag' : 'removeTag';
 
             this.$store.commit(commit, {
                 photoId: this.photoId,
                 category,
                 tag_key
+            });
+        },
+
+        /**
+         * Remove the custom tag
+         */
+        removeCustomTag (tag)
+        {
+            this.$store.commit('removeCustomTag', {
+                photoId: this.photoId,
+                customTag: tag
             });
         }
     }

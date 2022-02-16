@@ -94,7 +94,11 @@
                             </div>
 
                             <!-- Add / edit tags -->
-                            <add-tags :admin="true" :id="photo.id" />
+                            <div class="columns">
+                                <div class="column is-two-thirds is-offset-2">
+                                    <add-tags :admin="true" :id="photo.id" />
+                                </div>
+                            </div>
 
                             <div style="padding-top: 1em; text-align: center;">
                                 <button :class="update_new_tags_button" @click="updateNewTags" :disabled="checkUpdateTagsDisabled">
@@ -114,9 +118,9 @@
 
                             <!-- The list of tags associated with this image-->
                             <Tags
-                            :photo-id="photo.id"
-                            :admin="true"
-                        />
+                                :photo-id="photo.id"
+                                :admin="true"
+                            />
 
                             <div style="padding-top: 3em;">
                                 <button class="button is-medium is-dark tooltip" @click="clearTags">
@@ -289,8 +293,10 @@ export default {
         clearRecentTags ()
         {
             this.$store.commit('initRecentTags', {});
+            this.$store.commit('initRecentCustomTags', []);
 
             this.$localStorage.remove('recentTags');
+            this.$localStorage.remove('recentCustomTags');
         },
 
 		/**

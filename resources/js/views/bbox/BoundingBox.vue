@@ -42,6 +42,7 @@
                         v-show="isAdmin"
                         :annotations="true"
                         :isVerifying="isVerifying"
+                        :show-custom-tags="false"
                     />
 
                 </div>

@@ -25,6 +25,7 @@ class UpdateRedisLocationsXpTest extends TestCase
             'state_id' => $state1->id,
             'city_id' => $city1->id
         ]);
+        /** @var Photo $photo2 */
         $photo2 = Photo::factory()->create([
             'user_id' => $user->id,
             'smoking_id' => Smoking::factory()->create(['butts' => 5])->id,
@@ -32,6 +33,7 @@ class UpdateRedisLocationsXpTest extends TestCase
             'state_id' => $state2->id,
             'city_id' => $city2->id
         ]);
+        $photo2->customTags()->create(['tag' => 'custom tag example']);
         Redis::del("xp.users");
         $this->clearRedisLocation($country1, $state1, $city1);
         $this->clearRedisLocation($country2, $state2, $city2);
@@ -41,9 +43,9 @@ class UpdateRedisLocationsXpTest extends TestCase
 
         $this->artisan('users:update-redis-locations-xp');
 
-        $this->assertEquals(10, Redis::zscore("xp.users", $user->id));
+        $this->assertEquals(11, Redis::zscore("xp.users", $user->id));
         $this->assertRedisLocationEquals(4, $user, $country1, $state1, $city1);
-        $this->assertRedisLocationEquals(6, $user, $country2, $state2, $city2);
+        $this->assertRedisLocationEquals(7, $user, $country2, $state2, $city2);
     }
 
     private function createLocation(): array

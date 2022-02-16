@@ -3,6 +3,7 @@
 namespace App\Traits;
 
 use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
+use App\Actions\Photos\AddCustomTagsToPhotoAction;
 use App\Actions\Photos\AddTagsToPhotoAction;
 use App\Actions\Photos\DeleteTagsFromPhotoAction;
 use App\Models\Photo;
@@ -13,9 +14,10 @@ trait AddTagsTrait
     /**
      * Add or Update tags on an image
      * @param array $tags
+     * @param array $customTags
      * @param int $photoId
      */
-    public function addTags ($tags, $photoId)
+    public function addTags ($tags, $customTags, $photoId)
     {
         $photo = Photo::find($photoId);
         $user = User::find($photo->user_id);
@@ -30,8 +32,13 @@ trait AddTagsTrait
         $addTagsAction = app(AddTagsToPhotoAction::class);
         $litterTotals = $addTagsAction->run($photo, $tags);
 
+        // Add the new custom tags
+        /** @var AddCustomTagsToPhotoAction $addCustomTagsAction */
+        $addCustomTagsAction = app(AddCustomTagsToPhotoAction::class);
+        $customTagsTotal = $addCustomTagsAction->run($photo, $customTags);
+
         // Decrement the XP since old tags no longer exist
-        $xpDifference = $litterTotals['all'] - $deletedTags['all'];
+        $xpDifference = $litterTotals['all'] + $customTagsTotal - $deletedTags['all'];
 
         $user->xp += $xpDifference;
         $user->xp = max(0, $user->xp);

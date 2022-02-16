@@ -1,30 +1,42 @@
 <template>
     <div>
         <!-- Search all tags -->
-        <div class="columns">
-            <div class="column is-half is-offset-3">
-                <div class="control">
-                    <div class="select is-fullwidth">
-                        <vue-simple-suggest
-                            ref="search"
-                            display-attribute="title"
-                            value-attribute="key"
-                            :filter-by-query="true"
-                            :list="allTags"
-                            :min-length="1"
-                            :max-suggestions="0"
-                            mode="input"
-                            :styles="autoCompleteStyle"
-                            placeholder="Press Ctrl + Spacebar to Search All Tags"
-                            @focus="onFocusSearch"
-                            @select="search"
-                        />
-                    </div>
+        <div class="flex flex-column-mobile">
+            <div class="is-flex-grow-3 search-container">
+                <div class="select is-fullwidth">
+                    <vue-simple-suggest
+                        ref="search"
+                        display-attribute="title"
+                        value-attribute="key"
+                        :filter-by-query="true"
+                        :list="allTags"
+                        :min-length="1"
+                        :max-suggestions="0"
+                        mode="input"
+                        :styles="autoCompleteStyle"
+                        placeholder="Press Ctrl + Spacebar to Search All Tags"
+                        @focus="onFocusSearch"
+                        @select="search"
+                    />
                 </div>
+            </div>
+            <div v-if="showCustomTags" class="is-flex-grow-1">
+                <input
+                    class="input is-fullwidth"
+                    :class="customTagsError ? 'is-danger' : ''"
+                    ref="customTagsInput"
+                    type="text"
+                    min="3"
+                    max="100"
+                    placeholder="Add your own tags"
+                    @focus="onFocusCustomTags"
+                    @keydown.enter="searchCustomTag"
+                >
+                <p v-if="customTagsError" class="help has-text-left">{{ customTagsError }}</p>
             </div>
         </div>
 
-        <div class="control has-text-centered">
+        <div class="control has-text-centered mt-4">
 
             <!-- Categories -->
             <div class="select">
@@ -96,7 +108,7 @@
 
             <button
                 v-show="! admin && this.id !== 0"
-                :disabled="checkTags"
+                :disabled="!hasAddedTags"
                 :class="button"
                 @click="submit"
             >{{ $t('common.submit') }}</button>
@@ -141,13 +153,19 @@ export default {
         'id': { type: Number, required: true },
         'admin': Boolean,
         'annotations': { type: Boolean, required: false },
-        'isVerifying': { type: Boolean, required: false }
+        'isVerifying': { type: Boolean, required: false },
+        'showCustomTags': { type: Boolean, required: false, default: true }
     },
     created ()
     {
         if (this.$localStorage.get('recentTags'))
         {
             this.$store.commit('initRecentTags', JSON.parse(this.$localStorage.get('recentTags')));
+        }
+
+        if (this.$localStorage.get('recentCustomTags'))
+        {
+            this.$store.commit('initRecentCustomTags', JSON.parse(this.$localStorage.get('recentCustomTags')));
         }
 
         // If the user hits Ctrl + Spacebar, search all tags
@@ -201,6 +219,19 @@ export default {
             });
 
             return results;
+        },
+
+        /**
+         * All recently used custom tags
+         */
+        allRecentCustomTags ()
+        {
+            return this.recentCustomTags.map(tag => {
+                return {
+                    key: tag,
+                    title: tag
+                };
+            });
         },
 
         /**
@@ -280,13 +311,18 @@ export default {
         // },
 
         /**
-         * Disable button if true
+         * Disable button if false
          */
-        checkTags ()
+        hasAddedTags ()
         {
-            if (this.processing) return true;
+            if (this.processing) return false;
 
-            return Object.keys(this.$store.state.litter.tags[this.id] || {}).length === 0;
+            let tags = this.$store.state.litter.tags;
+            let customTags = this.$store.state.litter.customTags;
+            let hasTags = tags && tags[this.id] && Object.keys(tags[this.id]).length;
+            let hasCustomTags = customTags && customTags[this.id] && customTags[this.id].length;
+
+            return hasTags || hasCustomTags;
         },
 
         /**
@@ -306,6 +342,22 @@ export default {
         },
 
         /**
+         * The most recent tags the user has applied
+         */
+        recentCustomTags ()
+        {
+            return this.$store.state.litter.recentCustomTags;
+        },
+
+        /**
+         * The latest error related to custom tags
+         */
+        customTagsError ()
+        {
+            return this.$store.state.litter.customTagsError;
+        },
+
+        /**
          * Get / Set the current tag (category -> tag)
          */
         tag: {
@@ -319,6 +371,18 @@ export default {
                 if (i) {
                     this.$store.commit('changeTag', i.key);
                 }
+            }
+        },
+
+        /**
+         * Get / Set the current custom tag
+         */
+        customTag: {
+            get () {
+                return this.$store.state.litter.customTag;
+            },
+            set (i) {
+                if (i) this.$store.commit('changeCustomTag', i);
             }
         },
 
@@ -365,6 +429,16 @@ export default {
             });
 
             this.$localStorage.set('recentTags', JSON.stringify(this.recentTags));
+        },
+
+        addCustomTag ()
+        {
+            this.$store.commit('addCustomTag', {
+                photoId: this.id,
+                customTag: this.customTag
+            });
+
+            this.$localStorage.set('recentCustomTags', JSON.stringify(this.recentCustomTags));
         },
 
         /**
@@ -416,6 +490,14 @@ export default {
         },
 
         /**
+         * Clear the custom tags input field to allow the user to begin typing
+         */
+        onFocusCustomTags ()
+        {
+            this.$refs.customTagsInput.value = '';
+        },
+
+        /**
          * The input field has been selected.
          * Show all suggestions, not just those limited by text.
          *
@@ -454,7 +536,7 @@ export default {
         },
 
         /**
-         *
+         * Sets the category and tag from the search results
          */
         search (input)
         {
@@ -467,6 +549,32 @@ export default {
 
             this.$nextTick(function () {
                 this.onFocusSearch();
+            });
+        },
+
+        /**
+         * Adds a new custom tag
+         */
+        searchCustomTag ()
+        {
+            let customTag = this.$refs.customTagsInput.value;
+
+            if (customTag.length < 3) {
+                this.$store.commit('setCustomTagsError', 'It needs to be at least 3 characters long.');
+                return;
+            }
+
+            if (customTag.length > 100) {
+                this.$store.commit('setCustomTagsError', 'It needs to be at most 100 characters long.');
+                return;
+            }
+
+            this.customTag = customTag;
+
+            this.addCustomTag();
+
+            this.$nextTick(function () {
+                this.onFocusCustomTags();
             });
         },
 
@@ -512,6 +620,18 @@ export default {
         display: none;
     }
 
+    .is-flex-grow-3 {
+        flex-grow: 3;
+    }
+
+    .is-flex-grow-1 {
+        flex-grow: 1;
+    }
+
+    .search-container {
+        margin-right: 4px;
+    }
+
     @media (max-width: 500px)
     {
         .hide-br {
@@ -519,6 +639,13 @@ export default {
         }
         .v-select {
             margin-top: 10px;
+        }
+        .flex-column-mobile {
+            flex-direction: column;
+        }
+        .search-container {
+            margin-right: 0;
+            margin-bottom: 4px;
         }
     }
 
