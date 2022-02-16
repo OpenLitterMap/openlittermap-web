@@ -1,14 +1,6 @@
 <template>
     <section class="hero section-social">
-        <div class="hero-body is-flex">
-            <div class="social-heading">
-                <p class="title has-text-light">
-                    We're social
-                </p>
-                <p class="subtitle has-text-light">
-                    Hit us up
-                </p>
-            </div>
+        <div class="hero-body">
             <div class="py-2 social-links">
                 <div v-for="card in cards" class="social-card">
                     <a :href="card.link" :title="card.title" target="_blank">
@@ -73,16 +65,7 @@ export default {
 </script>
 <style lang="scss" scoped>
 .section-social {
-    background-color: #094C54; // #008080 teal
-
-    .hero-body {
-        flex-direction: column;
-    }
-
-    .social-heading {
-        flex-shrink: 0;
-        margin-bottom: 3rem;
-    }
+    background-color: #094C54;
 
     .social-links {
         display: grid;
@@ -99,19 +82,8 @@ export default {
     }
 }
 
-
 @media screen and (min-width: 1280px) {
     .section-social {
-        .hero-body {
-            flex-direction: row;
-        }
-
-        .social-heading {
-            margin-right: 3rem;
-            margin-top: auto;
-            margin-bottom: auto;
-        }
-
         .social-links {
             width: 100%;
             max-width: 1000px;
