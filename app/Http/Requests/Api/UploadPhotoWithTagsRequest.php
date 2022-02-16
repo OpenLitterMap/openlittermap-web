@@ -28,9 +28,9 @@ class UploadPhotoWithTagsRequest extends FormRequest
             'lat' => 'required|numeric',
             'lon' => 'required|numeric',
             'date' => 'required',
-            'tags' => 'required|array',
+            'tags' => 'required_without:custom_tags|array',
             'picked_up' => 'nullable|boolean',
-            'custom_tags' => 'nullable|array|max:3',
+            'custom_tags' => 'required_without:tags|array|max:3',
             'custom_tags.*' => 'distinct:ignore_case|min:3|max:100'
         ];
     }

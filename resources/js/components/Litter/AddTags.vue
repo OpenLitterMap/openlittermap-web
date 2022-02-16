@@ -108,7 +108,7 @@
 
             <button
                 v-show="! admin && this.id !== 0"
-                :disabled="checkTags"
+                :disabled="!hasAddedTags"
                 :class="button"
                 @click="submit"
             >{{ $t('common.submit') }}</button>
@@ -311,13 +311,18 @@ export default {
         // },
 
         /**
-         * Disable button if true
+         * Disable button if false
          */
-        checkTags ()
+        hasAddedTags ()
         {
-            if (this.processing) return true;
+            if (this.processing) return false;
 
-            return Object.keys(this.$store.state.litter.tags[this.id] || {}).length === 0;
+            let tags = this.$store.state.litter.tags;
+            let customTags = this.$store.state.litter.customTags;
+            let hasTags = tags && tags[this.id] && Object.keys(tags[this.id]).length;
+            let hasCustomTags = customTags && customTags[this.id] && customTags[this.id].length;
+
+            return hasTags || hasCustomTags;
         },
 
         /**

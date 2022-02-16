@@ -326,7 +326,7 @@ class PhotosController extends Controller
 
         $customTagsTotal = $customTagsAction->run($photo, $request->custom_tags ?? []);
 
-        $litterTotals = $this->addTagsAction->run($photo, $request['tags']);
+        $litterTotals = $this->addTagsAction->run($photo, $request->tags ?? []);
 
         $user->xp += $litterTotals['all'] + $customTagsTotal;
         $user->save();

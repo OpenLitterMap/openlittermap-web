@@ -277,7 +277,7 @@ class ApiPhotosController extends Controller
         dispatch (new AddTags(
             $user->id,
             $photo->id,
-            $request->litter ?? $request->tags,
+            ($request->litter ?? $request->tags) ?? [],
             $request->custom_tags ?? [],
             $request->picked_up
         ));
@@ -310,7 +310,7 @@ class ApiPhotosController extends Controller
             auth()->id(),
             $photo->id,
             $request->tags,
-            $request->custom_tags ?? [],
+            $request->custom_tags,
             $request->picked_up
         ));
 
