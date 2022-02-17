@@ -2,6 +2,7 @@
 
 namespace App\Jobs\Api;
 
+use App\Actions\Photos\AddCustomTagsToPhotoAction;
 use App\Actions\Photos\AddTagsToPhotoAction;
 use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 use App\Models\User\User;
@@ -24,6 +25,7 @@ class AddTags implements ShouldQueue
     public $photoId;
     public $tags;
     public $pickedUp;
+    public $customTags;
 
     /**
      * Create a new job instance.
@@ -31,14 +33,16 @@ class AddTags implements ShouldQueue
      * @param $userId
      * @param $photoId
      * @param $tags
+     * @param $customTags
      * @param $pickedUp
      */
-    public function __construct ($userId, $photoId, $tags, $pickedUp)
+    public function __construct ($userId, $photoId, $tags, $customTags, $pickedUp)
     {
         $this->userId = $userId;
         $this->photoId = $photoId;
         $this->tags = $tags;
         $this->pickedUp = $pickedUp;
+        $this->customTags = $customTags;
     }
 
     /**
@@ -52,16 +56,20 @@ class AddTags implements ShouldQueue
 
         $photo = Photo::find($this->photoId);
 
+        /** @var AddCustomTagsToPhotoAction $addCustomTagsAction */
+        $addCustomTagsAction = app(AddCustomTagsToPhotoAction::class);
+        $customTagsTotals = $addCustomTagsAction->run($photo, $this->customTags);
+
         /** @var AddTagsToPhotoAction $addTagsAction */
         $addTagsAction = app(AddTagsToPhotoAction::class);
         $litterTotals = $addTagsAction->run($photo, $this->tags);
 
-        $user->xp += $litterTotals['all'];
+        $user->xp += $litterTotals['all'] + $customTagsTotals;
         $user->save();
 
         /** @var UpdateLeaderboardsForLocationAction $updateLeaderboardsAction */
         $updateLeaderboardsAction = app(UpdateLeaderboardsForLocationAction::class);
-        $updateLeaderboardsAction->run($photo, $user->id, $litterTotals['all']);
+        $updateLeaderboardsAction->run($photo, $user->id, $litterTotals['all'] + $customTagsTotals);
 
         $photo->total_litter = $litterTotals['litter'];
         $photo->remaining = $this->isLitterRemaining($user);

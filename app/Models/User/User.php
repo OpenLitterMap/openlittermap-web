@@ -2,6 +2,7 @@
 
 namespace App\Models\User;
 
+use App\Models\CustomTag;
 use App\Models\Photo;
 use App\Models\Teams\Team;
 use App\Payment;
@@ -10,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Facades\Redis;
 use Laravel\Cashier\Billable;
 use Illuminate\Notifications\Notifiable;
@@ -168,8 +170,9 @@ class User extends Authenticatable
     {
         $totalBrands = (int) Redis::hget("user:{$this->id}", 'total_brands');
         $totalLitter = (int) Redis::hget("user:{$this->id}", 'total_litter');
+        $totalCustomTags = $this->customTags()->count();
 
-        return $totalLitter + $totalBrands;
+        return $totalLitter + $totalBrands + $totalCustomTags;
     }
 
     /**
@@ -230,6 +233,11 @@ class User extends Authenticatable
     /**
      * Has Many Through relationships
      */
+    public function customTags (): HasManyThrough
+    {
+        return $this->hasManyThrough(CustomTag::class, Photo::class);
+    }
+
     public function smoking ()
     {
         return $this->hasManyThrough('App\Smoking', 'App\Models\Photo');

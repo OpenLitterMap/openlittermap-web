@@ -184,7 +184,7 @@ class BoundingBoxController extends Controller
         {
             $photo = Photo::find($request->photoId);
 
-            $this->addTags($request->tags, $request->photoId);
+            $this->addTags($request->tags, [], $request->photoId);
 
             // todo - dispatch event via horizon
             event(new TagsVerifiedByAdmin($photo->id));

@@ -67,12 +67,13 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             $result = array_merge($result, $model->types());
         }
 
-        return $result;
+        return array_merge($result, ['custom_tag_1', 'custom_tag_2', 'custom_tag_3']);
     }
 
     /**
      * Map over query response
      * This will insert the each row under each heading
+     * @param Photo $row
      */
     public function map ($row): array
     {
@@ -102,7 +103,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             }
         }
 
-        return $result;
+        return array_merge($result, $row->customTags->take(3)->pluck('tag')->toArray());
     }
 
     /**

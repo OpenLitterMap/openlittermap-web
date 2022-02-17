@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Photos\AddCustomTagsToPhotoAction;
 use App\Actions\Photos\AddTagsToPhotoAction;
 use App\Actions\Photos\DeletePhotoAction;
 use App\Actions\Photos\MakeImageAction;
@@ -10,6 +11,7 @@ use App\Actions\Locations\ReverseGeocodeLocationAction;
 use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 use App\Events\ImageDeleted;
 use App\Http\Requests\AddTagsRequest;
+use App\Http\Requests\UploadPhotoRequest;
 use App\Models\User\User;
 use GeoHash;
 use Carbon\Carbon;
@@ -79,15 +81,11 @@ class PhotosController extends Controller
      * Move photo to AWS S3 in production || local in development
      * then persist new record to photos table
      *
-     * @param Request $request
+     * @param UploadPhotoRequest $request
      * @return bool[]
      */
-    public function store (Request $request)
+    public function store (UploadPhotoRequest $request): array
     {
-        $request->validate([
-           'file' => 'required|mimes:jpg,png,jpeg,heif,heic'
-        ]);
-
         /** @var User $user */
         $user = Auth::user();
 
@@ -314,10 +312,11 @@ class PhotosController extends Controller
      * If the user is new, we submit the image for verification.
      * If the user is trusted, we can update OLM.
      */
-    public function addTags (AddTagsRequest $request)
+    public function addTags (AddTagsRequest $request, AddCustomTagsToPhotoAction $customTagsAction)
     {
         /** @var User $user */
         $user = Auth::user();
+        /** @var Photo $photo */
         $photo = Photo::findOrFail($request->photo_id);
 
         if ($photo->user_id !== $user->id || $photo->verified > 0)
@@ -325,12 +324,14 @@ class PhotosController extends Controller
             abort(403, 'Forbidden');
         }
 
-        $litterTotals = $this->addTagsAction->run($photo, $request['tags']);
+        $customTagsTotal = $customTagsAction->run($photo, $request->custom_tags ?? []);
 
-        $user->xp += $litterTotals['all'];
+        $litterTotals = $this->addTagsAction->run($photo, $request->tags ?? []);
+
+        $user->xp += $litterTotals['all'] + $customTagsTotal;
         $user->save();
 
-        $this->updateLeaderboardsAction->run($photo, $user->id, $litterTotals['all']);
+        $this->updateLeaderboardsAction->run($photo, $user->id, $litterTotals['all'] + $customTagsTotal);
 
         $photo->remaining = !$request->presence;
         $photo->total_litter = $litterTotals['litter'];

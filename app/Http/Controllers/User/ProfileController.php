@@ -6,6 +6,7 @@ use App\Exports\CreateCSVExport;
 use App\Http\Controllers\Controller;
 use App\Jobs\EmailUserExportCompleted;
 use App\Level;
+use App\Models\CustomTag;
 use App\Models\Photo;
 use App\Models\User\User;
 use Illuminate\Support\Facades\Auth;
@@ -130,6 +131,7 @@ class ProfileController extends Controller
      */
     public function index ()
     {
+        /** @var User $user */
         $user = Auth::user();
 
         // Todo - Store this metadata in another table
@@ -140,7 +142,7 @@ class ProfileController extends Controller
         // Todo - Store this metadata in Redis
         $totalPhotosAllUsers = Photo::count();
         // Todo - Store this metadata in Redis
-        $totalTagsAllUsers = Photo::sum('total_litter'); // this doesn't include brands
+        $totalTagsAllUsers = Photo::sum('total_litter') + CustomTag::count(); // this doesn't include brands
 
         $usersTotalTags = $user->total_tags;
 

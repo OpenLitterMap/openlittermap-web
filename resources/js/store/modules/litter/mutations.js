@@ -57,15 +57,57 @@ export const mutations = {
     },
 
     /**
+     * Add a Custom Tag to a photo.
+     */
+    addCustomTag (state, payload)
+    {
+        let tags = Object.assign({}, state.customTags);
+
+        if (!tags[payload.photoId]) {
+            tags[payload.photoId] = [];
+        }
+
+        // Case-insensitive check for existing tags
+        if (tags[payload.photoId].find(tag => tag.toLowerCase() === payload.customTag.toLowerCase()) !== undefined)
+        {
+            state.customTagsError = 'Tag already added.';
+            return;
+        }
+
+        if (tags[payload.photoId].length >= 3)
+        {
+            state.customTagsError = 'You can upload up to 3 custom tags.';
+            return;
+        }
+
+        tags[payload.photoId].push(payload.customTag);
+
+        // Also add this tag to the recent custom tags
+        if (state.recentCustomTags.indexOf(payload.customTag) === -1)
+        {
+            state.recentCustomTags.push(payload.customTag);
+        }
+
+        // And indicate that a new tag has been added
+        state.hasAddedNewTag = true; // Enable the Update Button
+        state.customTagsError = ''; // Clear the error
+        state.customTags = tags;
+    },
+
+    /**
      * Clear the tags object (When we click next/previous image on pagination)
      */
     clearTags (state, photoId)
     {
         if (photoId !== null) {
             delete state.tags[photoId];
+            delete state.customTags[photoId];
         } else {
             state.tags = Object.assign({});
+            state.customTags = Object.assign({});
         }
+
+        state.hasAddedNewTag = false; // Disable the Admin Update Button
     },
 
     /**
@@ -88,6 +130,19 @@ export const mutations = {
     changeTag (state, payload)
     {
         state.tag = payload;
+    },
+
+    /**
+     * Change the currently selected custom tag
+     */
+    changeCustomTag (state, payload)
+    {
+        state.customTag = payload;
+    },
+
+    setCustomTagsError (state, payload)
+    {
+        state.customTagsError = payload;
     },
 
     /**
@@ -124,6 +179,17 @@ export const mutations = {
     },
 
     /**
+     * Data from the user to verify
+     * map database column name to frontend string
+     */
+    initAdminCustomTags (state, payload)
+    {
+        state.customTags = {
+            [payload.id]: payload.custom_tags.map(t => t.tag)
+        };
+    },
+
+    /**
      * The users default presence of the litter they pick up
      * Some people leave it there, others usually pick it up
      */
@@ -138,6 +204,14 @@ export const mutations = {
     initRecentTags (state, payload)
     {
         state.recentTags = payload;
+    },
+
+    /**
+     * When AddTags is created, we check localStorage for the users recentCustomTags
+     */
+    initRecentCustomTags (state, payload)
+    {
+        state.recentCustomTags = payload;
     },
 
     /**
@@ -169,6 +243,19 @@ export const mutations = {
         tags[payload.photoId][payload.category][payload.tag_key] = 0;
 
         state.tags = tags;
+        state.hasAddedNewTag = true; // activate update_with_new_tags button
+    },
+
+    /**
+     * Remove a custom tag
+     */
+    removeCustomTag (state, payload)
+    {
+        let tags = Object.assign({}, state.customTags);
+
+        tags[payload.photoId] = tags[payload.photoId].filter(tag => tag !== payload.customTag);
+
+        state.customTags = tags;
         state.hasAddedNewTag = true; // activate update_with_new_tags button
     },
 

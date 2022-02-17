@@ -148,6 +148,10 @@ class TeamsController extends Controller
         /** @var Team $team */
         $team = Team::find($request->team_id);
 
+        if (!$team) {
+            return $this->fail('team-not-found');
+        }
+
         if (!$user->isMemberOfTeam($request->team_id)) {
             return $this->fail('not-a-member');
         }
@@ -181,6 +185,10 @@ class TeamsController extends Controller
         /** @var Team $team */
         $team = Team::query()->find(request()->team_id);
 
+        if (!$team) {
+            return $this->fail('team-not-found');
+        }
+
         if (!$user->isMemberOfTeam(request()->team_id)) {
             return $this->fail('not-a-member');
         }
@@ -199,6 +207,10 @@ class TeamsController extends Controller
         $user = auth()->user();
         /** @var Team $team */
         $team = Team::query()->find($request->team_id);
+
+        if (!$team) {
+            return $this->fail('team-not-found');
+        }
 
         if (!$user->isMemberOfTeam($request->team_id)) {
             return $this->fail('not-a-member');

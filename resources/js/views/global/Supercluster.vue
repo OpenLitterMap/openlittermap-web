@@ -190,7 +190,7 @@ function onEachArtFeature (feature, layer)
             .setContent(
                 mapHelper.getMapImagePopupContent(
                     feature.properties.filename,
-                    null,
+                    feature.properties.result_string,
                     feature.properties.datetime,
                     feature.properties.picked_up,
                     user,

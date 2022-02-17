@@ -43,14 +43,11 @@ class CompileResultsString extends Command
      */
     public function handle()
     {
-        $photos = Photo::where('verified', '>', 0)->get();
-
-        foreach ($photos as $photo)
-        {
-            if (is_null($photo->result_string))
-            {
-                $photo->translate();
-            }
-        }
+        Photo::query()
+            ->where('verified', '>', 0)
+            ->whereNull('result_string')
+            ->get()
+            ->each
+            ->translate();
     }
 }
