@@ -2,13 +2,18 @@
 
 namespace App\Http\Controllers\User;
 
-use App\Exports\CreateCSVExport;
-use App\Http\Controllers\Controller;
-use App\Jobs\EmailUserExportCompleted;
+use App\Helpers\Get\User\GetUserDataHelper;
 use App\Level;
 use App\Models\Photo;
 use App\Models\User\User;
+
+use App\Exports\CreateCSVExport;
+use App\Jobs\EmailUserExportCompleted;
+
+use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\Auth;
+
+use App\Http\Controllers\Controller;
 
 class ProfileController extends Controller
 {
@@ -91,6 +96,7 @@ class ProfileController extends Controller
             'features'  => []
         ];
 
+        // Might be big...
         $photos = $query->get();
 
         // Populate geojson object
@@ -100,7 +106,7 @@ class ProfileController extends Controller
                 'type' => 'Feature',
                 'geometry' => [
                     'type' => 'Point',
-                    'coordinates' => [$photo->lon, $photo->lat]
+                    'coordinates' => [$photo->lat, $photo->lon]
                 ],
 
                 'properties' => [
@@ -118,45 +124,47 @@ class ProfileController extends Controller
         }
 
         return [
+            'success' => true,
             'geojson' => $geojson
         ];
     }
 
     /**
-     * Get the total number of users, and the current users position
-     * To get the current position, we need to count how many users have more XP than current users
+     * Load extra data for the Users Profile Page
+     *
+     * This is also used to get extra data for a PublicProfile if allowed.
+     *
+     * Gets:
+     * - total number of users,
+     * - users position
      *
      * @return array
      */
-    public function index ()
+    public function index () : array
     {
-        $user = Auth::user();
+        $user = request()->has('username')
+            ? User::where('username', request()->username)->first()
+            : Auth::user();
 
-        // Todo - Store this metadata in another table
-        $totalUsers = User::count();
+        if (Auth::guest() && (!$user || !isset($user->settings) || !$user->settings->show_public_profile)) {
+            return [
+                'success' => false
+            ];
+        }
 
-        $usersPosition = $user->position;
-
-        // Todo - Store this metadata in Redis
-        $totalPhotosAllUsers = Photo::count();
-        // Todo - Store this metadata in Redis
-        $totalTagsAllUsers = Photo::sum('total_litter'); // this doesn't include brands
-
-        $usersTotalTags = $user->total_tags;
-
-        $photoPercent = ($user->total_images && $totalPhotosAllUsers) ? ($user->total_images / $totalPhotosAllUsers) : 0;
-        $tagPercent = ($usersTotalTags && $totalTagsAllUsers) ? ($usersTotalTags / $totalTagsAllUsers) : 0;
-
-        // XP needed to reach the next level
-        $nextLevelXp = Level::where('xp', '>=', $user->xp)->first()->xp;
-        $requiredXp = $nextLevelXp - $user->xp;
+        $userData = GetUserDataHelper::get(
+            $user->xp,
+            $user->total_tags,
+            $user->total_images
+        );
 
         return [
-            'totalUsers' => $totalUsers,
-            'usersPosition' => $usersPosition,
-            'tagPercent' => $tagPercent,
-            'photoPercent' => $photoPercent,
-            'requiredXp' => $requiredXp
+            'success' => true,
+            'totalUsers' => $userData->totalUsers,
+            'usersPosition' => $userData->usersPosition,
+            'tagPercent' => $userData->tagPercent,
+            'photoPercent' => $userData->photoPercent,
+            'requiredXp' => $userData->requiredXp
         ];
     }
 }

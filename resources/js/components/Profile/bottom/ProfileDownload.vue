@@ -57,7 +57,4 @@ export default {
         margin-bottom: 1em;
     }
 
-    .is-purp {
-        background-color: #8e7fd6;
-    }
 </style>

@@ -19,7 +19,17 @@ import Unsubscribed from '../components/Notifications/Unsubscribed'
 
 export default {
     name: 'RootContainer',
-    props: ['auth', 'user', 'verified', 'unsub'],
+    props: [
+        'auth',
+        'user',
+        'verified',
+        'unsub',
+
+        // These exist when we are visiting olm.com/username = public profile
+        'username',
+        'publicProfile',
+        'userData'
+    ],
     components: {
         Nav,
         Modal,
@@ -31,15 +41,17 @@ export default {
         return {
             showEmailConfirmed: false,
             showUnsubscribed: false
-        }
+        };
     },
     created ()
     {
+        // Initialise language
         if (this.$localStorage.get('lang'))
         {
             this.$i18n.locale = this.$localStorage.get('lang');
         }
 
+        // Check if the user is authenticated
         if (this.auth)
         {
             this.$store.commit('login');
@@ -47,22 +59,41 @@ export default {
             // user object is passed when the page is refreshed
             if (this.user)
             {
-                const u = JSON.parse(this.user);
-                this.$store.commit('initUser', u);
-                this.$store.commit('set_default_litter_presence', u.items_remaining);
+                const user = JSON.parse(this.user);
+                console.log('RootContainer.user', user);
+
+                this.$store.commit('initUser', user);
+                this.$store.commit('set_default_litter_presence', user.items_remaining);
             }
         }
-
         // This is needed to invalidate user.auth = true
         // which is persisted and not updated if the authenticated user forgets to manually log out
-        else this.$store.commit('resetState');
+        else
+        {
+            console.log('guest');
+            this.$store.commit('resetState');
+        }
 
         // If Account Verified
         if (this.verified) this.showEmailConfirmed = true;
         if (this.unsub) this.showUnsubscribed = true;
+
+        // If the user is visiting a username with public settings turned on
+        if (this.username)
+        {
+            const publicProfile = JSON.parse(this.publicProfile);
+            console.log({ publicProfile });
+
+            const userData = JSON.parse(this.userData);
+            console.log({ userData });
+
+            this.$store.commit('userByUsername', {
+                publicProfile,
+                userData
+            });
+        }
     },
     computed: {
-
         /**
          * Boolean to show or hide the modal
          */

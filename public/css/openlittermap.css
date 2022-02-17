@@ -115,11 +115,23 @@ html {
 }
 
 .flex {
-	display: flex;
+	display: flex !important;
+}
+
+.flex-0-25 {
+    flex: 0.25em;
 }
 
 .flex-1 {
-	flex: 1;
+	flex: 1 !important;
+}
+
+.flex-1-15 {
+    flex: 1.15 !important;
+}
+
+.flex-1-25 {
+    flex: 1.25 !important;
 }
 
 .fullheight {
@@ -335,6 +347,14 @@ html {
 
 .vue-simple-suggest.designed .input-wrapper input {
     color: #363636 !important;
+}
+
+.w-3 {
+    width: 3em;
+}
+
+.w-15 {
+    width: 15em;
 }
 
 .w10 {

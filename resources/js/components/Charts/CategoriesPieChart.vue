@@ -1,13 +1,28 @@
 <script>
-import { Radar } from 'vue-chartjs'
+import { Pie } from 'vue-chartjs';
 import { categories } from '../../extra/categories';
 
 export default {
-    extends: Radar,
-    name: 'Radar',
-    props: [
-        'categories'
-    ],
+    extends: Pie,
+    name: 'CategoriesPieChart',
+    props: ['categories'],
+    data () {
+        return {
+            colors: [
+                '#9c88ff',
+                '#8AAE56',
+                '#B66C46',
+                '#EAE741',
+                '#BFE5A6',
+                '#FFFFFF',
+                '#BF00FE',
+                '#add8e6',
+                '#ccc',
+                '#ff4aa1',
+                '#e3a158'
+            ]
+        };
+    },
     mounted ()
     {
         let labels = [];
@@ -23,7 +38,9 @@ export default {
             datasets: [
                 {
                     label: this.$t('profile.dashboard.total-categories'),
-                    backgroundColor: '#1DD3B0',
+                    backgroundColor: this.categories.map((key, index) => {
+                        return this.colors[index];
+                    }),
                     data: this.categories,
                     fill: true,
                     borderColor: '#1DD3B0',
@@ -36,13 +53,9 @@ export default {
             responsive: true,
             maintainAspectRatio: false,
             legend: {
+                position: 'right',
                 labels: {
                     fontColor: '#1DD3B0'
-                }
-            },
-            scale: {
-                pointLabels: {
-                    fontColor: 'white'
                 }
             },
             tooltips: {
@@ -50,7 +63,7 @@ export default {
                     title: (tooltipItem, data) => data.labels[tooltipItem[0].index]
                 }
             }
-        })
+        });
     }
 }
 </script>

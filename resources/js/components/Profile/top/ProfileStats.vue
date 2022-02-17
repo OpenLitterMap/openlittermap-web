@@ -1,43 +1,37 @@
 <template>
-    <div class="profile-card">
-        <p class="mb1">{{ $t('profile.dashboard.have-uploaded') }}</p>
+    <div class="profile-stats">
 
-        <div class="flex">
+        <div class="profile-stat-card flex-1-15" />
 
-            <div class="profile-stat-card">
-                <img src="/assets/icons/home/camera.png" />
+        <div class="profile-stat-card">
+            <img src="/assets/icons/home/camera.png" />
 
-                <div>
-                    <p class="profile-stat">{{ userPhotoCount }}</p>
-                    <p class="profile-text">{{ $t('profile.dashboard.photos') }}</p>
-                </div>
+            <div>
+                <p class="profile-stat">{{ this.photosCount }}</p>
+                <p class="profile-text">{{ $t('profile.dashboard.photos') }}</p>
             </div>
+        </div>
 
-            <div class="profile-stat-card">
-                <img src="/assets/icons/home/phone.png" />
+        <div class="profile-stat-card">
+            <img src="/assets/icons/home/phone.png" />
 
-                <div>
-                    <p class="profile-stat">{{ userTagsCount }}</p>
-                    <p class="profile-text">{{ $t('profile.dashboard.tags') }}</p>
-                </div>
+            <div>
+                <p class="profile-stat">{{ this.tagsCount }}</p>
+                <p class="profile-text">{{ $t('profile.dashboard.tags') }}</p>
             </div>
+        </div>
 
-            <div class="profile-stat-card">
-                <p class="profile-percent">%</p>
-
-                <div>
-                    <p class="profile-stat">{{ photoPercent }}</p>
-                    <p class="profile-text">{{ $t('profile.dashboard.all-photos') }}</p>
-                </div>
+        <div class="profile-percent-card">
+            <div class="inline-block">
+                <p class="profile-percent">{{ photoPercent }}%</p>
+                <p class="profile-text">{{ $t('profile.dashboard.all-photos') }}</p>
             </div>
+        </div>
 
-            <div class="profile-stat-card">
-                <p class="profile-percent">%</p>
-
-                <div>
-                    <p class="profile-stat">{{ tagPercent }}</p>
-                    <p class="profile-text">{{ $t('profile.dashboard.all-tags') }}</p>
-                </div>
+        <div class="profile-percent-card">
+            <div class="inline-block">
+                <p class="profile-percent">{{ tagPercent }}%</p>
+                <p class="profile-text">{{ $t('profile.dashboard.all-tags') }}</p>
             </div>
         </div>
     </div>
@@ -46,52 +40,28 @@
 <script>
 export default {
     name: 'ProfileStats',
-    computed: {
-
-        /**
-         *
-         */
-        photoPercent ()
-        {
-            return this.user.photoPercent;
-        },
-
-        /**
-         *
-         */
-        tagPercent ()
-        {
-            return this.user.tagPercent;
-        },
-
-        /**
-         * Total number of tags the user has submitted
-         */
-        userTagsCount ()
-        {
-            return this.user.user.total_tags;
-        },
-
-        /**
-         * Total number of photos the user has uploaded
-         */
-        userPhotoCount ()
-        {
-            return this.user.user.total_images;
-        },
-
-        /**
-         * The currently active user
-         */
-        user ()
-        {
-            return this.$store.state.user;
-        }
-    }
+    props: [
+        'photoPercent',
+        'tagPercent',
+        'tagsCount',
+        'photosCount'
+    ]
 };
 </script>
 
 <style scoped>
+
+    .profile-percent {
+        font-size: 3em;
+        text-align: center;
+        color: white;
+        text-transform: capitalize;
+    }
+
+    .profile-stats {
+        display: flex;
+        padding: 3em 0;
+    }
 
     .profile-percent {
         font-size: 3em;
@@ -105,18 +75,39 @@ export default {
         text-align: center;
     }
 
+    .profile-percent-card {
+        flex: 1;
+        text-align: left;
+    }
+
     .profile-stat-card img {
-        height: 3em;
+        height: 5em;
         margin: auto 1em auto 0;
     }
 
+    .profile-stat-card p {
+        color: white;
+        font-size: 2em;
+        text-transform: capitalize;
+    }
+
+    .profile-percent-card p {
+        color: white;
+        font-size: 2em;
+        text-transform: capitalize;
+    }
+
     .profile-stat {
-        font-size: 1.5em;
         font-weight: 600;
+        font-size: 2em;
     }
 
     .profile-text {
-        color: #1DD3B0 !important;
-}
+        color: #7cd85e !important;
+    }
+
+    .inline-block {
+        display: inline-block;
+    }
 
 </style>

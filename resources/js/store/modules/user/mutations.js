@@ -119,6 +119,18 @@ export const mutations = {
     },
 
     /**
+     * Update a value for one of the available settings params
+     */
+    publicProfileSetting (state, payload)
+    {
+        const settings = Object.assign({}, state.user.settings);
+
+        settings[payload.key] = payload.v;
+
+        state.user.settings = settings;
+    },
+
+    /**
      * Updates the user's team data
      */
     usersTeam (state, payload)
@@ -148,6 +160,22 @@ export const mutations = {
     toggle_litter_picked_up (state, payload)
     {
         state.user.items_remaining = payload;
+    },
+
+    // /**
+    //  * After successful response
+    //  */
+    // toggleUserDashboardPrivacyStatus (state, payload)
+    // {
+    //     state.user.show_public_profile = ! state.user.show_public_profile;
+    // },
+
+    /**
+     * Initialise settings after updating pubic profile
+     */
+    updateUserSettings (state, payload)
+    {
+        state.user.settings = payload;
     },
 
     /**

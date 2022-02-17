@@ -27,7 +27,8 @@ class UpdateUser implements ShouldQueue
 
         if ($user->count_correctly_verified >= 100)
         {
-            $user->littercoin_allowance += 1;
+            // $user->littercoin_allowance += 1;
+            $user->littercoin_owed += 1;
             $user->count_correctly_verified = 0;
 
             event (new LittercoinMined($user->id, '100-images-verified'));

@@ -7,7 +7,7 @@
 				        {{ $t('settings.common.general') }}
 				    </p>
 				    <ul class="menu-list">
-				        <li v-for="link in links">
+				        <li v-for="link in Object.keys(this.links)">
 				    	    <router-link :to="'/settings/' + link" @click.native="change(link)">
                                 {{ translate(link) }}
 				    	    </router-link>
@@ -16,22 +16,24 @@
 				</aside>
 			</div>
 			<div class="column is-three-quarters is-offset-1">
-                <component :is="this.types[this.link]" />
+                <component :is="this.links[this.link]" />
 			</div>
 		</div>
 	</div>
 </template>
 
 <script>
-import Password from './settings/Password'
-import Details from './settings/Details'
-import Account from './settings/Account'
-import Payments from './settings/Payments'
-import Privacy from './settings/Privacy'
-import Littercoin from './settings/Littercoin'
-import Presence from './settings/Presence'
-import Emails from './settings/Emails'
-import GlobalFlag from './settings/GlobalFlag'
+import Password from './Settings/Password'
+import Details from './Settings/Details'
+import Account from './Settings/Account'
+import Payments from './Settings/Payments'
+import Privacy from './Settings/Privacy'
+import Littercoin from './Settings/Littercoin'
+import Presence from './Settings/Presence'
+import Emails from './Settings/Emails'
+import GlobalFlag from './Settings/GlobalFlag'
+import PublicProfile from './Settings/PublicProfile';
+import SocialMediaIntegration from './Settings/SocialMediaIntegration';
 
 export default {
     name: 'Settings',
@@ -45,6 +47,8 @@ export default {
         Presence,
         Emails,
         GlobalFlag,
+        PublicProfile,
+        SocialMediaIntegration
     },
     async created ()
     {
@@ -56,19 +60,9 @@ export default {
     data ()
     {
         return {
-            links: [
-                'password',
-                'details',
-                'account',
-                'payments',
-                'privacy',
-                'littercoin',
-                'presence',
-                'emails',
-                'show-flag',
-            ],
             link: 'password',
-            types: {
+            // Link route name to Component
+            links: {
                 'password': 'Password',
                 'details': 'Details',
                 'account': 'Account',
@@ -78,11 +72,12 @@ export default {
                 'presence': 'Presence',
                 'emails': 'Emails',
                 'show-flag': 'GlobalFlag',
+                'public-profile': 'PublicProfile',
+                // 'social-media': 'SocialMediaIntegration'
             }
         }
     },
     methods: {
-
         /**
          * Change link = view different component
          */

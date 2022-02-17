@@ -165,15 +165,15 @@ export const actions = {
     async GET_CURRENT_USER (context)
     {
         await axios.get('/current-user')
-        .then(response => {
-            console.log('get_current_user', response);
+            .then(response => {
+                console.log('get_current_user', response);
 
-            context.commit('initUser', response.data);
-            context.commit('set_default_litter_presence', response.data.items_remaining);
-        })
-        .catch(error => {
-            console.log('error.get_current_user', error);
-        });
+                context.commit('initUser', response.data);
+                context.commit('set_default_litter_presence', response.data.items_remaining);
+            })
+            .catch(error => {
+                console.log('error.get_current_user', error);
+            });
     },
 
     /**
@@ -199,33 +199,62 @@ export const actions = {
      */
     async GET_USERS_PROFILE_DATA (context)
     {
-        await axios.get('/user/profile/index')
-            .then(response => {
-                console.log('get_users_position', response);
+        const username = context.state.public_profile.publicProfile.username;
 
-                context.commit('usersPosition', response.data);
-            })
-            .catch(error => {
-                console.error('get_users_position', error);
-            });
+        await axios.get('/user/profile/index', {
+            params: {
+                username
+            }
+        })
+        .then(response => {
+            console.log('get_users_position', response);
+
+            context.commit('usersPosition', response.data);
+        })
+        .catch(error => {
+            console.error('get_users_position', error);
+        });
     },
 
     /**
      * Get the geojson data for the users Profile/ProfileMap
+     *
+     * This can be for the currently authenticated user, or a public profile
      */
     async GET_USERS_PROFILE_MAP_DATA (context, payload)
     {
-        await axios.get('/user/profile/map', {
+        const url = (context.state.public_profile.publicProfile)
+            ? '/user/public-profile/map'
+            : '/user/profile/map';
+
+        const username = context.state.public_profile.publicProfile.hasOwnProperty('username')
+            ? context.state.public_profile.publicProfile.username
+            : null;
+
+        const title = i18n.t('notifications.success');
+        const body = "Map data updated";
+
+        await axios.get(url, {
             params: {
                 period: payload.period,
                 start: payload.start + ' 00:00:00',
-                end: payload.end + ' 23:59:59'
+                end: payload.end + ' 23:59:59',
+                username
             }
         })
         .then(response => {
             console.log('get_users_profile_map_data', response);
 
-            context.commit('usersGeojson', response.data.geojson);
+            if (response.data.success)
+            {
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                    position: 'top-right'
+                });
+
+                context.commit('usersGeojson', response.data.geojson);
+            }
         })
         .catch(error => {
             console.error('get_users_profile_map_data', error);
@@ -354,8 +383,8 @@ export const actions = {
      */
     async TOGGLE_LITTER_PICKED_UP_SETTING (context)
     {
-        let title = i18n.t('notifications.success');
-        let body  = i18n.t('notifications.litter-toggled');
+        const title = i18n.t('notifications.success');
+        const body  = i18n.t('notifications.litter-toggled');
 
         await axios.post('/settings/toggle')
             .then(response => {
@@ -379,12 +408,43 @@ export const actions = {
     },
 
     /**
+     * Toggle the privacy status of the users dashboard
+     */
+    async TOGGLE_PUBLIC_PROFILE (context)
+    {
+        const title = i18n.t('notifications.success');
+
+        const nowPublic = "Your Profile is now public";
+        const nowPrivate = "Your Profile is now private";
+
+        await axios.post('/settings/public-profile/toggle')
+            .then(response => {
+                console.log('toggle_public_profile', response);
+
+                if (response.data.success)
+                {
+                    context.commit('updateUserSettings', response.data.settings);
+
+                    Vue.$vToastify.success({
+                        title,
+                        body: (response.data.settings.show_public_profile)
+                            ? nowPublic
+                            : nowPrivate,
+                        position: 'top-right'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('toggle_public_profile', error);
+            });
+    },
+
+    /**
      * The user wants to update name, email, username
      */
     async UPDATE_DETAILS (context)
     {
         const title = i18n.t('notifications.success');
-        // todo - translate this
         const body  = 'Your information has been updated'
 
         await axios.post('/settings/details', {
@@ -395,7 +455,6 @@ export const actions = {
         .then(response => {
             console.log('update_details', response);
 
-            /* improve this */
             Vue.$vToastify.success({
                 title,
                 body,
@@ -403,7 +462,7 @@ export const actions = {
             });
         })
         .catch(error => {
-            console.log('error.update_details', error);
+            console.error('update_details', error);
 
             // update errors. user.js
             context.commit('errors', error.response.data.errors);
@@ -415,16 +474,15 @@ export const actions = {
      */
     async UPDATE_GLOBAL_FLAG (context, payload)
     {
-        let title = i18n.t('notifications.success');
-        let body  = i18n.t('notifications.settings.flag-updated');
+        const title = i18n.t('notifications.success');
+        const body  = i18n.t('notifications.settings.flag-updated');
 
         await axios.post('/settings/save-flag', {
             country: payload
         })
         .then(response => {
-            console.log(response);
+            console.log('update_global_flag', response);
 
-            /* improve this */
             Vue.$vToastify.success({
                 title,
                 body,
@@ -432,7 +490,65 @@ export const actions = {
             });
         })
         .catch(error => {
-            console.log(error);
+            console.log('update_global_flag', error);
+        });
+    },
+
+    /**
+     * Update the settings of the users public profile
+     */
+    async UPDATE_PUBLIC_PROFILE_SETTINGS (context)
+    {
+        const title = i18n.t('notifications.success');
+        const body = "Your settings have been updated";
+
+        await axios.post('/settings/public-profile/update', {
+            map: context.state.user.settings.map,
+            download: context.state.user.settings.download,
+        })
+        .then(response => {
+            console.log('update_public_profile_settings', response);
+
+            if (response.data.success)
+            {
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                    position: 'top-right'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('update_public_profile_settings', error);
+        });
+    },
+
+    /**
+     * Update the users links to twitter and instagram
+     */
+    async UPDATE_SOCIAL_MEDIA_LINKS (context)
+    {
+        const title = i18n.t('notifications.success');
+        const body = "Your settings have been updated";
+
+        await axios.post('/settings/social-media/update', {
+            twitter: context.state.user.settings.twitter,
+            instagram: context.state.user.settings.instagram,
+        })
+        .then(response => {
+            console.log('update_public_profile_settings', response);
+
+            if (response.data.success)
+            {
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                    position: 'top-right'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('update_public_profile_settings', error);
         });
     }
 };

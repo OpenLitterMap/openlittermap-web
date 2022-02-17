@@ -130,9 +130,8 @@ export default {
         };
     },
     computed: {
-
         /**
-         * Return true if the user is logged in
+         * Return True if the user is logged in
          */
         auth ()
         {
@@ -163,9 +162,7 @@ export default {
             return this.open ? 'navbar-menu is-active' : 'navbar-menu';
         }
     },
-
     methods: {
-
         /**
          * Mobile - Close the nav
          */

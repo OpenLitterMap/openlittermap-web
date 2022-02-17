@@ -1,5 +1,5 @@
 <template>
-    <div class="profile-card">
+    <div class="profile-calendar">
         <FunctionalCalendar
             v-model="calendarData"
             :day-names="$t('common.day-names')"
@@ -14,11 +14,18 @@
         />
 
         <!-- Change time period -->
-        <select v-model="period" class="input mt1 mb1">
+        <select v-model="period" class="input profile-calendar-select">
             <option v-for="time in periods" :value="time">{{ getPeriod(time) }}</option>
         </select>
 
-        <button :class="button" @click="changePeriod" :disabled="disabled">{{ $t('profile.dashboard.calendar-load-data') }}</button>
+        <br>
+
+        <button
+            :class="processing ? 'is-loading' : ''"
+            class="button"
+            @click="changePeriod"
+            :disabled="disabled"
+        >{{ $t('profile.dashboard.calendar-load-data') }}</button>
     </div>
 </template>
 
@@ -27,29 +34,22 @@ import { FunctionalCalendar } from 'vue-functional-calendar';
 
 export default {
     name: 'ProfileCalendar',
-    components: { FunctionalCalendar },
+    components: {
+        FunctionalCalendar
+    },
     data ()
     {
         return {
-            btn: 'button long-purp',
             calendarData: {},
             period: 'created_at',
             periods: [
                 'created_at',
                 'datetime'
-            ]
+            ],
+            processing: false
         }
     },
     computed: {
-
-        /**
-         * Add spinner when processing
-         */
-        button ()
-        {
-            return this.processing ? this.btn + ' is-loading' : this.btn;
-        },
-
         /**
          * Return true to disable the button
          */
@@ -65,7 +65,6 @@ export default {
         }
     },
     methods: {
-
         /**
          * Get map data
          */
@@ -73,11 +72,15 @@ export default {
         {
             if (this.disabled) return;
 
+            this.processing = true;
+
             await this.$store.dispatch('GET_USERS_PROFILE_MAP_DATA', {
                 period: this.period,
                 start: this.calendarData.dateRange.start,
-                end: this.calendarData.dateRange.end,
+                end: this.calendarData.dateRange.end
             });
+
+            this.processing = false;
         },
 
         /**
@@ -85,7 +88,7 @@ export default {
          */
         getPeriod (period)
         {
-            if (! period) period = this.period;
+            if (!period) period = this.period;
 
             return this.$t('teams.dashboard.times.' + period)
         },
@@ -95,8 +98,13 @@ export default {
 
 <style scoped>
 
-    .long-purp {
-        background-color: #8e7fd6;
-        width: 100%;
+    .profile-calendar {
+        padding-top: 5em;
     }
+
+    .profile-calendar-select {
+        margin: 1em 0;
+        width: 21em;
+    }
+
 </style>

@@ -92,7 +92,7 @@ Route::post('submit', 'PhotosController@store');
 // Tag litter to an image
 Route::get('tag', 'HomeController@index');
 
-// The users profile
+// The authenticated users profile
 Route::get('profile', 'HomeController@index');
 
 // Get unverified paginated photos for tagging
@@ -121,21 +121,15 @@ Route::post('/user/profile/photos/tags/create', 'User\UserPhotoController@create
 // Delete selected photos
 Route::post('/user/profile/photos/delete', 'User\UserPhotoController@destroy');
 
+// The users profile. Used for Authenticated User and PublicProfile
+Route::get('/user/profile/index', 'User\ProfileController@index');
+Route::get('/user/profile/map', 'User\ProfileController@geojson');
+Route::get('/user/profile/download', 'User\ProfileController@download');
+
 /**
  * USER SETTINGS
  */
-Route::get('/settings', 'HomeController@index');
-Route::get('/settings/password', 'HomeController@index');
-Route::get('/settings/details', 'HomeController@index');
-Route::get('/settings/account', 'HomeController@index');
-Route::get('/settings/payments', 'HomeController@index');
-Route::get('/settings/privacy', 'HomeController@index');
-Route::get('/settings/littercoin', 'HomeController@index');
-Route::get('/settings/phone', 'HomeController@index');
-Route::get('/settings/presence', 'HomeController@index');
-Route::get('/settings/email', 'HomeController@index');
-Route::get('/settings/show-flag', 'HomeController@index');
-Route::get('/settings/teams', 'HomeController@index');
+Route::get('/settings/{route?}', 'HomeController@index');
 
 // Game settings @ SettingsController
 // Toggle Presense of a piece of litter
@@ -185,6 +179,13 @@ Route::get('/settings/flags/countries', 'SettingsController@getCountries');
 // Save Country Flag for top 10
 Route::post('/settings/save-flag', 'SettingsController@saveFlag');
 
+// Public Profile
+Route::post('/settings/public-profile/toggle', 'User\Settings\PublicProfileController@toggle');
+Route::post('/settings/public-profile/update', 'User\Settings\PublicProfileController@update');
+
+// Social Media
+Route::post('/settings/social-media/update', 'User\Settings\SocialMediaController@update');
+
 // Teams
 Route::get('/teams', 'HomeController@index');
 Route::get('/teams/get-types', 'Teams\TeamsController@types');
@@ -206,11 +207,6 @@ Route::post('/teams/inactivate', 'Teams\TeamsController@inactivateTeam')->middle
 Route::post('/teams/settings', 'Teams\TeamsSettingsController@index')->middleware('auth');
 Route::post('/teams/download', 'Teams\TeamsController@download');
 Route::post('/teams/leaderboard/visibility', 'Teams\TeamsLeaderboardController@toggle')->middleware('auth');
-
-// The users profile
-Route::get('/user/profile/index', 'User\ProfileController@index');
-Route::get('/user/profile/map', 'User\ProfileController@geojson');
-Route::get('/user/profile/download', 'User\ProfileController@download');
 
 // Unsubscribe via email (user not authenticated)
 Route::get('/emails/unsubscribe/{token}', 'EmailSubController@unsubEmail');
@@ -327,3 +323,9 @@ Route::group(['prefix' => '/bbox', 'middleware' => ['can_bbox']], function () {
     Route::get('/verify/index', 'Bbox\VerifyBoxController@index');
     Route::post('/verify/update', 'Bbox\VerifyBoxController@update');
 });
+
+// Public Profile Routes
+Route::get('/user/public-profile/map', 'User\PublicProfile\PublicProfileMapController@index');
+
+// Visit public profile of a User with settings on
+Route::get('{username}', 'User\Settings\PublicProfileController@index');

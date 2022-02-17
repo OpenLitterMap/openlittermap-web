@@ -11,6 +11,7 @@ export const init = {
     position: 0,
     photoPercent: 0,
     requiredXp: 0,
+    settings: null,
     tagPercent: 0,
     totalPhotos: 0,
     totalTags: 0,

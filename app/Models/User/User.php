@@ -95,7 +95,8 @@ class User extends Authenticatable
         'previous_tags',
         'remaining_teams',
         'photos_per_month',
-        'bbox_verification_count'
+        'bbox_verification_count',
+        'show_public_profile'
     ];
 
     /**
@@ -225,6 +226,14 @@ class User extends Authenticatable
     public function setPasswordAttribute ($password)
     {
         $this->attributes['password'] = bcrypt($password);
+    }
+
+    /**
+     * The users settings if they exist
+     */
+    public function settings ()
+    {
+        return $this->hasOne('App\Models\User\UserSettings');
     }
 
     /**
