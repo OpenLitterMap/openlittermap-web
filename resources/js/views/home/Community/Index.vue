@@ -4,6 +4,7 @@
         <StatsSection/>
         <SocialSection/>
         <ZoomSection/>
+        <SlackSection/>
     </div>
 </template>
 
@@ -13,6 +14,7 @@ import SocialSection from './SocialSection';
 import HeroSection from './HeroSection';
 import StatsSection from './StatsSection';
 import ZoomSection from './ZoomSection';
+import SlackSection from './SlackSection';
 
 export default {
     name: 'Index',
@@ -21,6 +23,7 @@ export default {
         StatsSection,
         HeroSection,
         SocialSection,
+        SlackSection
     },
 };
 </script>

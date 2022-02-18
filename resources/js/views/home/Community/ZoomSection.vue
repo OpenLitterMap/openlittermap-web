@@ -140,7 +140,7 @@ export default {
         img {
             width: 4rem;
             height: 4rem;
-            margin: 0 auto 20px;
+            margin: 0 auto 1rem;
         }
     }
 
