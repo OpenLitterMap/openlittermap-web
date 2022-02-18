@@ -1,6 +1,7 @@
 export const init = {
-    photosPerDay: 0,
-    usersPerWeek: 0,
+    photosPerMonth: 0,
+    litterTagsPerMonth: 0,
+    usersPerMonth: 0,
     littercoinPerMonth: 0,
     statsByMonth: []
 };

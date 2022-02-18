@@ -5,9 +5,9 @@ export const mutations = {
      */
 	setStats (state, payload)
     {
-		state.photosPerDay = payload.photosPerDay;
-		state.usersPerWeek = payload.usersPerWeek;
-		state.littercoinPerMonth = payload.littercoinPerMonth;
+		state.photosPerMonth = payload.photosPerMonth;
+		state.usersPerMonth = payload.usersPerMonth;
+		state.litterTagsPerMonth = payload.litterTagsPerMonth;
 		state.statsByMonth = payload.statsByMonth;
 	},
 };

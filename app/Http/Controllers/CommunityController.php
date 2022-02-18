@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Photo;
 use App\Models\User\User;
+use Carbon\CarbonPeriod;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class CommunityController extends Controller
@@ -11,56 +13,80 @@ class CommunityController extends Controller
     public function stats(): array
     {
         return [
-            'photosPerDay' => $this->getPhotosPerDay(),
-            'usersPerWeek' => $this->getUsersPerWeek(),
-            'littercoinPerMonth' => 100,
-            'statsByMonth' => $this->getStatsByMonth()
+            'photosPerMonth' => $this->getPhotosPerMonth(),
+            'litterTagsPerMonth' => $this->getLitterTagsPerMonth(),
+            'usersPerMonth' => $this->getUsersPerMonth(),
+            'statsByMonth' => Cache::remember(
+                self::class . 'statsByMonth',
+                // Clears cache at the start of next month
+                now()->addMonth()->startOfMonth()->startOfDay(),
+                function () {
+                    return $this->getStatsByMonth();
+                }
+            )
         ];
     }
 
-    private function getPhotosPerDay(): int
+    private function getPhotosPerMonth(): int
     {
-        $total = Photo::query()
+        return Photo::query()
             ->where('created_at', '>', now()->subDays(30)->endOfDay())
             ->count();
-
-        return round($total / 30);
     }
 
-    private function getUsersPerWeek(): int
+    private function getLitterTagsPerMonth(): int
     {
-        $total = User::query()
+        return Photo::query()
+            ->where('created_at', '>', now()->subDays(30)->endOfDay())
+            ->sum('total_litter');
+    }
+
+    private function getUsersPerMonth(): int
+    {
+        return User::query()
             ->where('created_at', '>', now()->subDays(30)->endOfDay())
             ->count();
-
-        return round($total / 4);
     }
 
     private function getStatsByMonth(): array
     {
         // Not using models to avoid appended extra queries
-        $photosByMonth = DB::table('photos')
+        $photos = DB::table('photos')
             ->selectRaw("
                 count(id) as total,
                 date_format(created_at, '%b %Y') as period
             ")
             ->orderBy('created_at')
             ->groupBy('period')
-            ->get();
+            ->get()
+            ->keyBy('period');
 
-        $usersByMonth = DB::table('users')
+        $users = DB::table('users')
             ->selectRaw("
                 count(id) as total,
                 date_format(created_at, '%b %Y') as period
             ")
             ->orderBy('created_at')
             ->groupBy('period')
-            ->get();
+            ->get()
+            ->keyBy('period');
 
-        $periods = $photosByMonth->pluck('period')->merge(
-            $usersByMonth->pluck('period')
-        )->unique();
+        $periods = [];
+        foreach (CarbonPeriod::create('2020-01-01', '1 month', now()) as $period) {
+            $periods[] = $period->format('M Y');
+        }
 
-        return compact('photosByMonth', 'usersByMonth', 'periods');
+        $photosByMonth = [];
+        $usersByMonth = [];
+        foreach ($periods as $period) {
+            $photosByMonth[] = $photos->get($period)->total ?? 0;
+            $usersByMonth[] = $users->get($period)->total ?? 0;
+        }
+
+        return [
+            'photosByMonth' => $photosByMonth,
+            'usersByMonth' => $usersByMonth,
+            'periods' => $periods
+        ];
     }
 }

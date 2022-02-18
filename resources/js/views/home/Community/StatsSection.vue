@@ -6,40 +6,40 @@
                     <div class="total has-text-weight-bold">
                         <number
                             :from="0"
-                            :to="stats.photosPerDay"
+                            :to="stats.photosPerMonth"
                             :duration="2"
                             :delay="0"
                             easing="Power1.easeOut"
                             :format="commas"
                         />
                     </div>
-                    <div class="is-size-5">photos uploaded per day</div>
+                    <div class="is-size-5">Photos uploaded last month</div>
                 </div>
                 <div class="stat has-text-light has-text-centered">
                     <div class="total has-text-weight-bold">
                         <number
                             :from="0"
-                            :to="stats.usersPerWeek"
+                            :to="stats.usersPerMonth"
                             :duration="2"
                             :delay="0"
                             easing="Power1.easeOut"
                             :format="commas"
                         />
                     </div>
-                    <div class="is-size-5">new users per week</div>
+                    <div class="is-size-5">New users last month</div>
                 </div>
                 <div class="stat has-text-light has-text-centered">
                     <div class="total has-text-weight-bold">
                         <number
                             :from="0"
-                            :to="stats.littercoinPerMonth"
+                            :to="stats.litterTagsPerMonth"
                             :duration="2"
                             :delay="0"
                             easing="Power1.easeOut"
                             :format="commas"
                         />
                     </div>
-                    <div class="is-size-5">Littercoin mined per month</div>
+                    <div class="is-size-5">Litter tagged last month</div>
                 </div>
             </div>
             <div class="charts mt-6">
@@ -95,7 +95,7 @@ export default {
                         pointBackgroundColor: '#008080',
                         pointBorderColor: '#008080',
                         backgroundColor: 'transparent',
-                        data: this.stats.statsByMonth.photosByMonth.map(i => i.total)
+                        data: this.stats.statsByMonth.photosByMonth
                     },
                     {
                         label: 'New users every month',
@@ -104,7 +104,7 @@ export default {
                         pointBackgroundColor: '#008080',
                         pointBorderColor: '#008080',
                         backgroundColor: 'transparent',
-                        data: this.stats.statsByMonth.usersByMonth.map(i => i.total)
+                        data: this.stats.statsByMonth.usersByMonth
                     }
                 ]
             };
