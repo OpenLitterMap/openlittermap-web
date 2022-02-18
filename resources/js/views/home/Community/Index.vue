@@ -5,6 +5,7 @@
         <SocialSection/>
         <ZoomSection/>
         <SlackSection/>
+        <FundraiserSection/>
     </div>
 </template>
 
@@ -15,15 +16,17 @@ import HeroSection from './HeroSection';
 import StatsSection from './StatsSection';
 import ZoomSection from './ZoomSection';
 import SlackSection from './SlackSection';
+import FundraiserSection from './FundraiserSection';
 
 export default {
     name: 'Index',
     components: {
-        ZoomSection,
-        StatsSection,
         HeroSection,
+        StatsSection,
         SocialSection,
-        SlackSection
+        ZoomSection,
+        SlackSection,
+        FundraiserSection
     },
 };
 </script>

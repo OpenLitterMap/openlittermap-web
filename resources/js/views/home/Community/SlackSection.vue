@@ -15,7 +15,9 @@
                 </div>
             </div>
             <div class="screenshot">
-                <a href="#" class="is-overlay">
+                <a href="https://join.slack.com/t/openlittermap/shared_invite/zt-fdctasud-mu~OBQKReRdC9Ai9KgGROw"
+                   class="is-overlay"
+                >
                     <i class="fa fa-external-link fa-fw fa-4x"></i>
                 </a>
                 <img src="/assets/slack-screenshot.png">
@@ -42,10 +44,6 @@ export default {
         text-decoration: underline;
     }
 
-    a:hover {
-        color: #094C54;
-    }
-
     .slack {
         max-width: 1000px;
         display: flex;
@@ -57,6 +55,10 @@ export default {
             width: 4rem;
             height: 4rem;
             margin: 0 auto 1rem;
+        }
+
+        a:hover {
+            color: #06f1f6;
         }
     }
 
@@ -77,7 +79,7 @@ export default {
             text-decoration: none;
             font-size: 0.5rem;
 
-            &:hover {
+            & i:hover {
                 color: whitesmoke;
                 transform: scale(1.05);
             }
