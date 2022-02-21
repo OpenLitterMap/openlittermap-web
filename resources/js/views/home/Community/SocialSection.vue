@@ -4,7 +4,7 @@
             <div class="py-2 social-links">
                 <div v-for="card in cards" class="social-card">
                     <a :href="card.link" :title="card.title" target="_blank">
-                        <i class="fa-5x fa-fw is-large has-text-light" :class="card.icon"></i>
+                        <i class="fa-4x fa-fw is-large has-text-light" :class="card.icon"></i>
                     </a>
                 </div>
             </div>

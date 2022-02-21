@@ -3,7 +3,7 @@
         <div class="hero-body">
             <div class="py-2 zoom">
                 <div class="image-wrapper has-text-centered">
-                    <img src="/assets/zoom-brand-logo.png">
+                    <img width="64" height="64" src="/assets/zoom-brand-logo.png" alt="Zoom">
                 </div>
                 <div class="subtitle has-text-light has-text-justified">
                     Join us on the

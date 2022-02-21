@@ -3,7 +3,7 @@
         <div class="hero-body">
             <div class="py-2 fundraiser">
                 <div class="image-wrapper has-text-centered">
-                    <img src="/assets/gofundme-brand-logo.png">
+                    <img width="64" height="64" src="/assets/gofundme-brand-logo.png" alt="GoFundMe">
                 </div>
                 <div class="subtitle has-text-light has-text-justified">
                     OpenLitterMap is entirely dependent on donations. We've set up a

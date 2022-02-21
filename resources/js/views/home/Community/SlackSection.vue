@@ -3,7 +3,7 @@
         <div class="hero-body">
             <div class="py-2 slack">
                 <div class="image-wrapper has-text-centered">
-                    <img src="/assets/slack-brand-logo.png">
+                    <img width="64" height="64" src="/assets/slack-brand-logo.png" alt="Slack">
                 </div>
                 <div class="subtitle has-text-light has-text-justified">
                     <a target="_blank"
@@ -17,10 +17,11 @@
             <div class="screenshot">
                 <a href="https://join.slack.com/t/openlittermap/shared_invite/zt-fdctasud-mu~OBQKReRdC9Ai9KgGROw"
                    class="is-overlay"
+                   title="Slack Screenshot"
                 >
                     <i class="fa fa-external-link fa-fw fa-4x"></i>
                 </a>
-                <img src="/assets/slack-screenshot.png">
+                <img loading="lazy" src="/assets/slack-screenshot.png" alt="Slack Screenshot">
             </div>
         </div>
     </section>
