@@ -15,9 +15,9 @@ class AddTagsRequest extends FormRequest
     {
         return [
             'photo_id' => 'required|exists:photos,id',
-            'tags' => 'required|array',
+            'tags' => 'required_without:custom_tags|array',
             'presence' => 'required|boolean',
-            'custom_tags' => 'nullable|array|max:3',
+            'custom_tags' => 'required_without:tags|array|max:3',
             'custom_tags.*' => 'distinct:ignore_case|min:3|max:100'
         ];
     }

@@ -23,6 +23,7 @@
             <div v-if="showCustomTags" class="is-flex-grow-1">
                 <input
                     class="input is-fullwidth"
+                    :class="customTagsError ? 'is-danger' : ''"
                     ref="customTagsInput"
                     type="text"
                     min="3"
@@ -31,6 +32,7 @@
                     @focus="onFocusCustomTags"
                     @keydown.enter="searchCustomTag"
                 >
+                <p v-if="customTagsError" class="help has-text-left">{{ customTagsError }}</p>
             </div>
         </div>
 
@@ -106,7 +108,7 @@
 
             <button
                 v-show="! admin && this.id !== 0"
-                :disabled="checkTags"
+                :disabled="!hasAddedTags"
                 :class="button"
                 @click="submit"
             >{{ $t('common.submit') }}</button>
@@ -309,13 +311,18 @@ export default {
         // },
 
         /**
-         * Disable button if true
+         * Disable button if false
          */
-        checkTags ()
+        hasAddedTags ()
         {
-            if (this.processing) return true;
+            if (this.processing) return false;
 
-            return Object.keys(this.$store.state.litter.tags[this.id] || {}).length === 0;
+            let tags = this.$store.state.litter.tags;
+            let customTags = this.$store.state.litter.customTags;
+            let hasTags = tags && tags[this.id] && Object.keys(tags[this.id]).length;
+            let hasCustomTags = customTags && customTags[this.id] && customTags[this.id].length;
+
+            return hasTags || hasCustomTags;
         },
 
         /**
@@ -340,6 +347,14 @@ export default {
         recentCustomTags ()
         {
             return this.$store.state.litter.recentCustomTags;
+        },
+
+        /**
+         * The latest error related to custom tags
+         */
+        customTagsError ()
+        {
+            return this.$store.state.litter.customTagsError;
         },
 
         /**
@@ -544,7 +559,15 @@ export default {
         {
             let customTag = this.$refs.customTagsInput.value;
 
-            if (customTag.length < 3 || customTag.length > 100) return;
+            if (customTag.length < 3) {
+                this.$store.commit('setCustomTagsError', 'It needs to be at least 3 characters long.');
+                return;
+            }
+
+            if (customTag.length > 100) {
+                this.$store.commit('setCustomTagsError', 'It needs to be at most 100 characters long.');
+                return;
+            }
 
             this.customTag = customTag;
 

@@ -18,7 +18,11 @@ class AddTagsToPhoto implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $photoId, $tags;
+    public $photoId;
+    /**
+     * @var array
+     */
+    public $tags;
     /**
      * @var array
      */
@@ -29,7 +33,7 @@ class AddTagsToPhoto implements ShouldQueue
      *
      * @return void
      */
-    public function __construct ($photoId, $tags, array $customTags = [])
+    public function __construct ($photoId, array $tags = [], array $customTags = [])
     {
         $this->photoId = $photoId;
         $this->tags = $tags;

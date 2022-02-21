@@ -42,15 +42,14 @@ class AddCustomTagsToPhotoTest extends TestCase
         $photo = $user->fresh()->photos->last();
         $this->assertEquals(1, $user->fresh()->xp);
 
-        $this->post('/add-tags', [
+        $this->postJson('/add-tags', [
             'photo_id' => $photo->id,
             'presence' => true,
-            'tags' => ['smoking' => ['butts' => 3]],
             'custom_tags' => ['tag1', 'tag2', 'tag3']
         ])->assertOk();
 
         $this->assertEquals(['tag1', 'tag2', 'tag3'], $photo->fresh()->customTags->pluck('tag')->toArray());
-        $this->assertEquals(7, $user->fresh()->xp); // 1 + 3 + 3
+        $this->assertEquals(4, $user->fresh()->xp); // 1 + 3
     }
 
     /**
@@ -65,7 +64,6 @@ class AddCustomTagsToPhotoTest extends TestCase
         $response = $this->postJson('/add-tags', [
             'photo_id' => $photo->id,
             'presence' => true,
-            'tags' => ['smoking' => ['butts' => 3]],
             'custom_tags' => $tags
         ]);
 
