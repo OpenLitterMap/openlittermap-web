@@ -3,7 +3,7 @@
         <p class="mb-5 has-text-weight-bold">{{ $t('tags.recently-tags') }}</p>
 
         <div v-if="recentCustomTags.length">
-            <p>Custom Tags</p>
+            <p>{{ $t('tags.custom-tags') }}</p>
 
             <transition-group name="list" class="recent-tags" tag="div">
                 <div
