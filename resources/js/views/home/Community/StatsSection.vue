@@ -13,7 +13,7 @@
                             :format="commas"
                         />
                     </div>
-                    <div class="is-size-5">Photos uploaded last month</div>
+                    <div class="is-size-5">{{ $t('home.community.photos-last-month') }}</div>
                 </div>
                 <div class="stat has-text-light has-text-centered">
                     <div class="total has-text-weight-bold">
@@ -26,7 +26,7 @@
                             :format="commas"
                         />
                     </div>
-                    <div class="is-size-5">New users last month</div>
+                    <div class="is-size-5">{{ $t('home.community.users-last-month') }}</div>
                 </div>
                 <div class="stat has-text-light has-text-centered">
                     <div class="total has-text-weight-bold">
@@ -39,7 +39,7 @@
                             :format="commas"
                         />
                     </div>
-                    <div class="is-size-5">Litter tagged last month</div>
+                    <div class="is-size-5">{{ $t('home.community.litter-tags-last-month') }}</div>
                 </div>
             </div>
             <div class="charts mt-6">
@@ -89,7 +89,7 @@ export default {
                 labels: this.stats.statsByMonth.periods,
                 datasets: [
                     {
-                        label: 'Photos uploaded every month',
+                        label: this.$i18n.t('home.community.photos-every-month-label'),
                         borderColor: '#1DD3B0',
                         borderWidth: 3,
                         pointBackgroundColor: '#008080',
@@ -98,7 +98,7 @@ export default {
                         data: this.stats.statsByMonth.photosByMonth
                     },
                     {
-                        label: 'New users every month',
+                        label: this.$i18n.t('home.community.users-every-month-label'),
                         borderColor: '#c2f970',
                         borderWidth: 3,
                         pointBackgroundColor: '#008080',

@@ -6,14 +6,13 @@
                     <img width="64" height="64" src="/assets/zoom-brand-logo.png" alt="Zoom">
                 </div>
                 <div class="subtitle has-text-light has-text-justified">
-                    Join us on the
-                    <a target="_blank"
-                       href="https://us02web.zoom.us/meeting/register/tZ0ud-GurTktGdQal_ChgggPl41EHmf7I2NB"
-                    >weekly Zoom calls at 6pm GMT every Thursday</a>,
-                    where we get to hear lots of new ideas and suggestions from our growing global community.
-                    Every week our users share their feedback which always helps make our app easier and better to use.
-                    Help shape the future direction of our open source data collection and environmental monitoring
-                    platform. Call starts in:
+                    <i18n path="home.community.zoom-text" tag="p">
+                        <template #link>
+                            <a target="_blank"
+                               href="https://us02web.zoom.us/meeting/register/tZ0ud-GurTktGdQal_ChgggPl41EHmf7I2NB"
+                            >{{ $t('home.community.zoom-weekly-calls') }}</a>
+                        </template>
+                    </i18n>
                 </div>
             </div>
             <div class="clock-wrapper">
@@ -22,24 +21,24 @@
                         <p>
                             <a target="_blank"
                                href="https://us02web.zoom.us/meeting/register/tZ0ud-GurTktGdQal_ChgggPl41EHmf7I2NB"
-                            >Live</a>
+                            >{{ $t('home.community.zoom-live') }}</a>
                         </p>
                     </div>
                 </div>
                 <div v-else class="clock">
                     <div class="timeframe">
                         <p>{{ days }}</p>
-                        <small>{{ days === 1 ? 'day' : 'days' }}</small>
+                        <small>{{ $tc('home.community.zoom-days', days) }}</small>
                     </div>
                     <span>:</span>
                     <div class="timeframe">
                         <p>{{ hours }}</p>
-                        <small>{{ hours === 1 ? 'hour' : 'hours' }}</small>
+                        <small>{{ $tc('home.community.zoom-hours', hours) }}</small>
                     </div>
                     <span>:</span>
                     <div class="timeframe">
                         <p>{{ minutes }}</p>
-                        <small>{{ minutes === 1 ? 'minute' : 'minutes' }}</small>
+                        <small>{{ $tc('home.community.zoom-minutes', minutes) }}</small>
                     </div>
                 </div>
             </div>

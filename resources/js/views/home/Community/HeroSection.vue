@@ -3,10 +3,10 @@
         <div class="hero is-medium container">
             <div class="hero-body community-hero">
                 <h1 class="title has-text-white has-text-weight-bold is-size-2 is-size-1-desktop">
-                    Help us change the world.
+                    {{ $t('home.community.title') }}
                 </h1>
                 <h2 class="subtitle has-text-white-bis is-size-4 mt-1">
-                    We're growing by the day
+                    {{ $t('home.community.subtitle') }}
                 </h2>
             </div>
         </div>

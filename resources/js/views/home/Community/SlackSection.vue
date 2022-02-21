@@ -6,12 +6,13 @@
                     <img width="64" height="64" src="/assets/slack-brand-logo.png" alt="Slack">
                 </div>
                 <div class="subtitle has-text-light has-text-justified">
-                    <a target="_blank"
-                       href="https://join.slack.com/t/openlittermap/shared_invite/zt-fdctasud-mu~OBQKReRdC9Ai9KgGROw"
-                    >Slack</a>
-                    is our main medium of communication and collaboration.
-                    Power-users, newcomers, developers, a community of over 370 members - we're all there.
-                    Drop us a line and you'll get an instant reply, we're online all the time.
+                    <i18n path="home.community.slack-text" tag="p">
+                        <template #slack>
+                            <a target="_blank"
+                               href="https://join.slack.com/t/openlittermap/shared_invite/zt-fdctasud-mu~OBQKReRdC9Ai9KgGROw"
+                            >Slack</a>
+                        </template>
+                    </i18n>
                 </div>
             </div>
             <div class="screenshot">

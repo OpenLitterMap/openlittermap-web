@@ -6,10 +6,14 @@
                     <img width="64" height="64" src="/assets/gofundme-brand-logo.png" alt="GoFundMe">
                 </div>
                 <div class="subtitle has-text-light has-text-justified">
-                    OpenLitterMap is entirely dependent on donations. We've set up a
-                    <a target="_blank" href="https://www.gofundme.com/f/openlittermap">GoFundMe Fundraiser</a>
-                    and we're still far away from our target.
-                    All contributions are welcome. 🤗
+                    <i18n path="home.community.fundraiser-text" tag="p">
+                        <template #link>
+                            <a target="_blank"
+                               href="https://www.gofundme.com/f/openlittermap"
+                            >{{ $t('home.community.fundraiser-link') }}</a>
+                        </template>
+                        <template #emoji>🤗</template>
+                    </i18n>
                 </div>
             </div>
             <div class="youtube-video">
@@ -18,7 +22,8 @@
                     title="OpenLitterMap GoFundMe Video"
                     frameBorder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowfullscreen></iframe>
+                    allowfullscreen
+                ></iframe>
             </div>
         </div>
     </section>
