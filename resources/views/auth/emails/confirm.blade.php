@@ -374,9 +374,42 @@
                         <br>
                         <p style=" font-family: Helvetica, Arial, sans-serif;">We use the Slack app to chat. We would love if you could join us to share ideas about the future direction of OpenLitterMap!</p>
                         <br>
-                        <p style=" font-family: Helvetica, Arial, sans-serif;">Nearly every week, we hold a community zoom calls for an hour where we discuss a different aspect of OpenLitterMap from presentations, to app design and functionality, to grant applications and just getting to know each other! These typically take place at 6pm Irish time. You will find more information on slack.</p>
+                        <p style=" font-family: Helvetica, Arial, sans-serif;">Nearly every week, we hold a community zoom call for an hour where we discuss a different aspect of OpenLitterMap from presentations, to app design and functionality, to grant applications and just getting to know each other! These typically take place at 6pm Irish time. You will find more information on slack.</p>
                         <br>
-                        <a href="https://join.slack.com/t/openlittermap/shared_invite/zt-fdctasud-mu~OBQKReRdC9Ai9KgGROw">Click here to join us on Slack</a>
+                        <a
+                           href="https://join.slack.com/t/openlittermap/shared_invite/zt-fdctasud-mu~OBQKReRdC9Ai9KgGROw" target="_blank"
+                           style="
+                                    font-size: 16px;
+                                    font-family: Helvetica, Arial, sans-serif;
+                                    color: #ffffff;
+                                    text-decoration: none;
+                                    border-radius: 3px;
+                                    padding: 15px 25px;
+                                    display: block;
+                                    background-color: #4A154B;
+                                "
+                           class="mobile-button">
+                            Join us on Slack
+                        </a>
+
+                        <p style="font-family: Helvetica, Arial, sans-serif;">OR</p>
+
+                        <a
+                            href="https://openlittermap.com/community" target="_blank"
+                            style="
+                                    font-size: 16px;
+                                    font-family: Helvetica, Arial, sans-serif;
+                                    color: #ffffff;
+                                    text-decoration: none;
+                                    border-radius: 3px;
+                                    padding: 15px 25px;
+                                    display: block;
+                                    background-color: #094C54;
+                                "
+                            class="mobile-button">
+                            Explore the Community
+                        </a>
+
                         <br>
                         <br>
                     </td>

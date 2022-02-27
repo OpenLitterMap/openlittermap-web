@@ -17,5 +17,12 @@
     "confirm-delete": "Czy chcesz usunąć to zdjęcie? Tego nie da się cofnąć.",
     "recently-tags": "Ostatnio używane tagi: ",
     "clear-tags": "Wyczyścić ostatnie tagi?",
-    "clear-tags-btn": "Wyczyść ostatnie tagi"
+    "clear-tags-btn": "Wyczyść ostatnie tagi",
+    "search-all-tags": "Naciśnij Ctrl + Spacja, aby wyszukać wszystkie tagi",
+    "search-custom-tags": "Dodaj własne tagi",
+    "custom-tags": "Tagi Niestandardowe",
+    "custom-tags-min": "Musi mieć co najmniej 3 znaki.",
+    "custom-tags-max": "Musi mieć co najwyżej 100 znaków.",
+    "tag-already-added": "Tag już dodany.",
+    "tag-limit-reached": "Możesz przesłać maksymalnie 3 niestandardowe tagi."
 }

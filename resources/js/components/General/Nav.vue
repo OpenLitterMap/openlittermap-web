@@ -34,6 +34,11 @@
                              {{ $t('nav.world-cup') }}
                         </router-link>
 
+                        <!-- Community -->
+                        <router-link to="/community" class="navbar-item" @click.native="close">
+                             {{ $t('nav.community') }}
+                        </router-link>
+
                         <!-- if auth -->
                         <div v-if="auth" class="flex-not-mobile">
 

@@ -17,5 +17,12 @@
     "confirm-delete": "Bevestig verwijdering",
     "recently-tags": "Recent gebruikte kenmerken",
     "clear-tags": "Verwijder recent gebruikte kenmerken?",
-    "clear-tags-btn": "Verwijder recent gebruikte kenmerken"
+    "clear-tags-btn": "Verwijder recent gebruikte kenmerken",
+    "search-all-tags": "Druk op Ctrl + Spatiebalk om in alle tags te zoeken",
+    "search-custom-tags": "Voeg uw eigen tags toe",
+    "custom-tags": "Aangepaste Tags",
+    "custom-tags-min": "Het moet minimaal 3 tekens lang zijn.",
+    "custom-tags-max": "Het mag maximaal 100 tekens lang zijn.",
+    "tag-already-added": "Tag al toegevoegd.",
+    "tag-limit-reached": "U kunt maximaal 3 aangepaste tags uploaden."
 }

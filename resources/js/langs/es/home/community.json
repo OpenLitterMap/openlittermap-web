@@ -1,0 +1,18 @@
+{
+    "title": "Ayúdanos a cambiar el mundo.",
+    "subtitle": "Nosotros estamos creciendo por día",
+    "photos-last-month": "Fotos subidas el mes pasado",
+    "users-last-month": "Nuevos usuarios el mes pasado",
+    "litter-tags-last-month": "Camada etiquetada el mes pasado",
+    "photos-every-month-label": "Fotos subidas cada mes",
+    "users-every-month-label": "Nuevos usuarios cada mes",
+    "zoom-text": "Únase a nosotros en {link}, donde escuchamos muchas ideas y sugerencias nuevas de nuestra creciente comunidad global. Cada semana, nuestros usuarios comparten sus comentarios, lo que siempre ayuda a que nuestra aplicación sea más fácil y mejor de usar. Ayude a dar forma a la dirección futura de nuestra plataforma de monitoreo ambiental y recopilación de datos de código abierto. La llamada comienza en:",
+    "zoom-weekly-calls": "las llamadas de Zoom semanales a las 6 p.m. GMT todos los jueves",
+    "zoom-live": "En Vivo",
+    "zoom-days": "día | días",
+    "zoom-hours": "hora | horas",
+    "zoom-minutes": "minuto | minutos",
+    "slack-text": "{slack} es nuestro principal medio de comunicación y colaboración. Usuarios avanzados, recién llegados, desarrolladores, una comunidad de más de 370 miembros: todos estamos allí. Escríbanos y obtendrá una respuesta instantánea, estamos en línea todo el tiempo.",
+    "fundraiser-text": "OpenLitterMap depende completamente de las donaciones. Hemos creado una {link} y todavía estamos lejos de nuestro objetivo. Todas las contribuciones son bienvenidas. {emoji}",
+    "fundraiser-link": "recaudación de fondos de GoFundMe"
+}

@@ -14,7 +14,7 @@
                         :max-suggestions="0"
                         mode="input"
                         :styles="autoCompleteStyle"
-                        placeholder="Press Ctrl + Spacebar to Search All Tags"
+                        :placeholder="$t('tags.search-all-tags')"
                         @focus="onFocusSearch"
                         @select="search"
                     />
@@ -28,7 +28,7 @@
                     type="text"
                     min="3"
                     max="100"
-                    placeholder="Add your own tags"
+                    :placeholder="$t('tags.search-custom-tags')"
                     @focus="onFocusCustomTags"
                     @keydown.enter="searchCustomTag"
                 >
@@ -560,12 +560,12 @@ export default {
             let customTag = this.$refs.customTagsInput.value;
 
             if (customTag.length < 3) {
-                this.$store.commit('setCustomTagsError', 'It needs to be at least 3 characters long.');
+                this.$store.commit('setCustomTagsError', this.$i18n.t('tags.custom-tags-min'));
                 return;
             }
 
             if (customTag.length > 100) {
-                this.$store.commit('setCustomTagsError', 'It needs to be at most 100 characters long.');
+                this.$store.commit('setCustomTagsError', this.$i18n.t('tags.custom-tags-max'));
                 return;
             }
 
