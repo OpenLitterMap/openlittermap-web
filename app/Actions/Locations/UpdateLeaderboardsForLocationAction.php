@@ -8,6 +8,17 @@ use Illuminate\Support\Facades\Redis;
 
 class UpdateLeaderboardsForLocationAction
 {
+    /** @var UpdateLeaderboardsXpAction */
+    protected $updateXpAction;
+
+    /**
+     * @param UpdateLeaderboardsXpAction $updateXpAction
+     */
+    public function __construct(UpdateLeaderboardsXpAction $updateXpAction)
+    {
+        $this->updateXpAction = $updateXpAction;
+    }
+
     /**
      *
      * @param Photo $photo
@@ -16,7 +27,7 @@ class UpdateLeaderboardsForLocationAction
      */
     public function run (Photo $photo, int $userId, int $incrXp) :void
     {
-        Redis::zincrby("xp.users", $incrXp, $userId);
+        $this->updateXpAction->run($userId, $incrXp);
         Redis::zincrby("xp.country.$photo->country_id", $incrXp, $userId);
         Redis::zincrby("xp.country.$photo->country_id.state.$photo->state_id", $incrXp, $userId);
         Redis::zincrby("xp.country.$photo->country_id.state.$photo->state_id.city.$photo->city_id", $incrXp, $userId);
