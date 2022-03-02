@@ -56,7 +56,6 @@ class CommunityController extends Controller
                 count(id) as total,
                 date_format(created_at, '%b %Y') as period
             ")
-            ->orderBy('created_at')
             ->groupBy('period')
             ->get()
             ->keyBy('period');
@@ -66,7 +65,6 @@ class CommunityController extends Controller
                 count(id) as total,
                 date_format(created_at, '%b %Y') as period
             ")
-            ->orderBy('created_at')
             ->groupBy('period')
             ->get()
             ->keyBy('period');
