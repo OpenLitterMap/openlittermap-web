@@ -3,7 +3,6 @@
 namespace App\Console\Commands\Users;
 
 use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
-use App\Actions\Locations\UpdateLeaderboardsXpAction;
 use App\Models\Photo;
 use App\Models\User\User;
 use Illuminate\Console\Command;
@@ -22,27 +21,22 @@ class UpdateRedisLocationsXp extends Command
      *
      * @var string
      */
-    protected $description = 'Recalculates users xp based on their photos, tags, and bounding boxes';
+    protected $description = 'Recalculates users xp based on their photos and tags';
 
-    /** @var UpdateLeaderboardsForLocationAction */
-    private $leaderboardsLocationAction;
-
-    /** @var UpdateLeaderboardsXpAction */
-    private $leaderboardsXpAction;
+    /**
+     * @var UpdateLeaderboardsForLocationAction
+     */
+    private $updateLeaderboardsAction;
 
     /**
      * Create a new command instance.
      *
      * @return void
      */
-    public function __construct(
-        UpdateLeaderboardsForLocationAction $locationAction,
-        UpdateLeaderboardsXpAction $xpAction
-    )
+    public function __construct(UpdateLeaderboardsForLocationAction $action)
     {
         parent::__construct();
-        $this->leaderboardsLocationAction = $locationAction;
-        $this->leaderboardsXpAction = $xpAction;
+        $this->updateLeaderboardsAction = $action;
     }
 
     /**
@@ -52,25 +46,15 @@ class UpdateRedisLocationsXp extends Command
      */
     public function handle()
     {
-        $this->line('Updating XP from photos and tags');
-
         $this->withProgressBar(User::all(), function (User $user) {
             $user->photos()
                 ->with(Photo::categories())
                 ->lazyById()
                 ->each(function (Photo $photo) {
-                    $xp = $this->calculatePhotoAndTagsXp($photo);
-                    $this->leaderboardsLocationAction->run($photo, $photo->user_id, $xp);
+                    $xp = $this->calculateXp($photo);
+
+                    $this->updateLeaderboardsAction->run($photo, $photo->user_id, $xp);
                 });
-        });
-
-        $this->line("\nUpdating XP from bounding boxes");
-
-        $this->withProgressBar(User::all(), function (User $user) {
-            $addedBoxes = $user->boxes()->count();
-            $verifiedBoxes = $user->boxesVerified()->count();
-
-            $this->leaderboardsXpAction->run($user->id, $addedBoxes + $verifiedBoxes);
         });
 
         return 0;
@@ -80,7 +64,7 @@ class UpdateRedisLocationsXp extends Command
      * @param Photo $photo
      * @return int
      */
-    private function calculatePhotoAndTagsXp(Photo $photo): int
+    private function calculateXp(Photo $photo): int
     {
         $xpFromPhoto = 1;
         $xpFromTags = (int) collect($photo->categories())
