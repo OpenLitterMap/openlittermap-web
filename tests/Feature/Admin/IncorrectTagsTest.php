@@ -56,7 +56,7 @@ class IncorrectTagsTest extends TestCase
 
         $this->post('/add-tags', [
             'photo_id' => $this->photo->id,
-            'presence' => true,
+            'picked_up' => false,
             'tags' => [
                 'smoking' => [
                     'butts' => 3
@@ -102,7 +102,7 @@ class IncorrectTagsTest extends TestCase
         // User tags the image
         $this->post('/add-tags', [
             'photo_id' => $this->photo->id,
-            'presence' => true,
+            'picked_up' => false,
             'tags' => ['smoking' => ['butts' => 3]]
         ]);
         $this->assertEquals(4, Redis::zscore("xp.users", $this->user->id));
@@ -132,7 +132,7 @@ class IncorrectTagsTest extends TestCase
 
         $this->post('/add-tags', [
             'photo_id' => $this->photo->id,
-            'presence' => true,
+            'picked_up' => false,
             'tags' => [
                 'smoking' => [
                     'butts' => 3

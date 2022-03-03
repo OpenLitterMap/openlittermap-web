@@ -60,6 +60,7 @@ class GlobalMapController extends Controller
                 'geohash',
                 'lat',
                 'lon',
+                'remaining',
                 'datetime'
             )
             ->with([

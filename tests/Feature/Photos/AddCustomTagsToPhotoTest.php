@@ -44,7 +44,7 @@ class AddCustomTagsToPhotoTest extends TestCase
 
         $this->postJson('/add-tags', [
             'photo_id' => $photo->id,
-            'presence' => true,
+            'picked_up' => false,
             'custom_tags' => ['tag1', 'tag2', 'tag3']
         ])->assertOk();
 

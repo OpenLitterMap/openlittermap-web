@@ -333,7 +333,7 @@ class PhotosController extends Controller
 
         $this->updateLeaderboardsAction->run($photo, $user->id, $litterTotals['all'] + $customTagsTotal);
 
-        $photo->remaining = !$request->presence;
+        $photo->remaining = !$request->picked_up;
         $photo->total_litter = $litterTotals['litter'];
 
         if (!$user->is_trusted)

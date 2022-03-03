@@ -326,14 +326,6 @@ export default {
         },
 
         /**
-         * Has the litter been picked up, or is it still there?
-         */
-        presence ()
-        {
-            return this.$store.state.litter.presence;
-        },
-
-        /**
          * The most recent tags the user has applied
          */
         recentTags ()
