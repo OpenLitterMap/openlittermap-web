@@ -30,6 +30,8 @@ class GenerateClusters extends Command
      */
     public function handle()
     {
+        \Log::info('--- Clustering began ---');
+
         $start = microtime(true);
 
         foreach ($this->getYearsWithNewPhotos() as $year) {
@@ -41,6 +43,8 @@ class GenerateClusters extends Command
         $finish = microtime(true);
         $this->newLine();
         $this->info("Total Time: " . ($finish - $start) . "\n");
+
+        \Log::info('--- Clustering finished ---');
     }
 
     /**

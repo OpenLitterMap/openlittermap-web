@@ -202,6 +202,24 @@ export default {
                     title: 'Citizen science at public libraries: Data on librarians and users perceptions of participating in a citizen science project in Catalunya, Spain',
                     link: 'https://www.sciencedirect.com/science/article/pii/S2352340921009884',
                     author: 'Cigarini et al'
+                },
+                {
+                    date: '2022/01/20',
+                    title: 'Real-Time Litter Detection System for Moving Vehicles Using YOLO\n',
+                    link: 'https://ieeexplore.ieee.org/document/9716512',
+                    author: 'Amrutha et al'
+                },
+                {
+                    date: '2022/02/24',
+                    title: 'Image Classification Approaches for Segregation of Plastic Waste Based on Resin Identification Code',
+                    link: 'https://link.springer.com/article/10.1007/s41403-022-00324-4',
+                    author: 'Agarwal et al'
+                },
+                {
+                    date: '2022/02/24',
+                    title: 'Toward smarter management and recovery of municipal solid waste: A critical review on deep learning approaches',
+                    link: 'https://www.sciencedirect.com/science/article/abs/pii/S0959652622005807',
+                    author: 'Kunsen et al'
                 }
             ]
         };

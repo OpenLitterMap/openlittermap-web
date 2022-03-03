@@ -28,7 +28,6 @@ import glify from 'leaflet.glify';
 import { mapHelper } from '../../maps/mapHelpers';
 import dropdown from './select-dropdown';
 
-
 var map;
 var clusters;
 var litterArtPoints;
