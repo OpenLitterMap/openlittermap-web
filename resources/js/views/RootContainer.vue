@@ -49,7 +49,7 @@ export default {
             {
                 const u = JSON.parse(this.user);
                 this.$store.commit('initUser', u);
-                this.$store.commit('set_default_litter_presence', u.items_remaining);
+                this.$store.commit('set_default_litter_picked_up', u.picked_up);
             }
         }
 

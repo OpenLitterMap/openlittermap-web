@@ -169,7 +169,7 @@ export const actions = {
             console.log('get_current_user', response);
 
             context.commit('initUser', response.data);
-            context.commit('set_default_litter_presence', response.data.items_remaining);
+            context.commit('set_default_litter_picked_up', response.data.picked_up);
         })
         .catch(error => {
             console.log('error.get_current_user', error);

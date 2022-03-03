@@ -151,7 +151,7 @@ class JoinTeamTest extends TestCase
         // User adds tags to the photo -------------------
         $this->post('/add-tags', [
             'photo_id' => $photo->id,
-            'presence' => true,
+            'picked_up' => false,
             'tags' => [
                 'smoking' => [
                     'butts' => 3

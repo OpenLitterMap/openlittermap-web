@@ -191,15 +191,6 @@ export const mutations = {
     },
 
     /**
-     * The users default presence of the litter they pick up
-     * Some people leave it there, others usually pick it up
-     */
-    initPresence (state, payload)
-    {
-        state.presence = payload;
-    },
-
-    /**
      * When AddTags is created, we check localStorage for the users recentTags
      */
     initRecentTags (state, payload)
@@ -322,11 +313,11 @@ export const mutations = {
 
     /**
      * When the user object is created (page refresh or login), we set the users default presence value here
-     * Presence = Is the litter picked up, or is it still there
+     * If the litter is picked up, this value will be 'true'
      */
-    set_default_litter_presence (state, payload)
+    set_default_litter_picked_up (state, payload)
     {
-        state.presence = payload;
+        state.pickedUp = payload;
     },
 
     /**
@@ -343,9 +334,9 @@ export const mutations = {
     /**
      *
      */
-    togglePresence (state)
+    togglePickedUp (state)
     {
-        state.presence = !state.presence;
+        state.pickedUp = !state.pickedUp;
     },
     /**
      *

@@ -56,6 +56,7 @@ class CommunityController extends Controller
                 count(id) as total,
                 date_format(created_at, '%b %Y') as period
             ")
+            ->whereYear('created_at', '>=', 2020)
             ->groupBy('period')
             ->get()
             ->keyBy('period');
@@ -65,12 +66,13 @@ class CommunityController extends Controller
                 count(id) as total,
                 date_format(created_at, '%b %Y') as period
             ")
+            ->whereYear('created_at', '>=', 2020)
             ->groupBy('period')
             ->get()
             ->keyBy('period');
 
         $periods = [];
-        foreach (CarbonPeriod::create('2020-01-01', '1 month', now()) as $period) {
+        foreach (CarbonPeriod::create('2020-01-01', '1 month', now()->subMonth()) as $period) {
             $periods[] = $period->format('M Y');
         }
 

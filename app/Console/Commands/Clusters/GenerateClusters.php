@@ -159,9 +159,9 @@ class GenerateClusters extends Command
      */
     private function getYearsWithNewPhotos(): array
     {
-        $yearsWithData = [null];
-
+        $yearsWithData = [];
         $years = range(2017, now()->year);
+
         foreach ($years as $year) {
             $hasRecentPhotosForYear = Photo::query()->where([
                 ['created_at', '>=', now()->subDay()->startOfDay()],
@@ -175,6 +175,8 @@ class GenerateClusters extends Command
             }
         }
 
-        return $yearsWithData;
+        return empty($yearsWithData)
+            ? []
+            : array_merge([null], $yearsWithData);
     }
 }
