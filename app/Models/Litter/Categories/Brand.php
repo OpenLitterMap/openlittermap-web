@@ -10,11 +10,13 @@ class Brand extends LitterCategory
     {
         return [
             'aadrink',
+            'acadia',
             'adidas',
             'albertheijn',
             'aldi',
             'amazon',
             'amstel',
+            'anheuser_busch',
             'apple',
             'applegreen',
             'asahi',
@@ -32,6 +34,7 @@ class Brand extends LitterCategory
 
             'cadburys',
             'cafe_nero',
+            'calanda',
             'camel',
             'caprisun',
             'carlsberg',
@@ -84,6 +87,8 @@ class Brand extends LitterCategory
             'marlboro',
             'mars',
             'mcdonalds',
+            'modelo',
+            'molson_coors',
             'monster',
 
             'nero',
@@ -92,6 +97,7 @@ class Brand extends LitterCategory
             'nike',
 
             'obriens',
+            'ok_',
 
             'pepsi',
             'powerade',
@@ -102,6 +108,7 @@ class Brand extends LitterCategory
             'samsung',
             'sainsburys',
             'schutters',
+            'seven_eleven',
             'slammers',
             'spa',
             'spar',
@@ -121,6 +128,7 @@ class Brand extends LitterCategory
             'walkers',
             'woolworths',
             'wilde_and_greene',
+            'winston',
             'wrigleys',
         ];
     }

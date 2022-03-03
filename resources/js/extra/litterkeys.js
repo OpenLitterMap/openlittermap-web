@@ -130,11 +130,13 @@ export const litterkeys = {
     ],
     brands: [
          'aadrink',  // AA Drink
+         'acadia',
          'adidas',	 // Adidas
          'albertheijn', //AlbertHeijn
          'aldi',	 // aldi
          'amazon',	 // Amazon
          'amstel',	 // Amstel
+         'anheuser_busch',	 // Anheuser-Busch
          'apple',	 // Apple
          'applegreen',	 // applegreen
          'asahi',	 // asahi
@@ -152,6 +154,7 @@ export const litterkeys = {
 
          'cadburys',	 // cadburys
          'cafenero',	 // cafenero
+         'calanda', // Calanda
          'camel',	 // Camel
          'caprisun',	 // Capri Sun
          'carlsberg',	 // carlsberg
@@ -203,6 +206,8 @@ export const litterkeys = {
          'marlboro',	 // Marlboro
          'mars',	 // Mars
          'mcdonalds',	 // McDonalds
+         'modelo',   // Modelo
+         'molson_coors', // Molson Coors
          'monster',	 // Monster
 
          'nero',	 // nero
@@ -211,6 +216,7 @@ export const litterkeys = {
          'nike',	 // Nike
 
          'obriens',	 // O-Briens
+         'ok_',      // ok.–
 
          'pepsi',	 // Pepsi
          'powerade',	 // Powerade
@@ -221,6 +227,7 @@ export const litterkeys = {
          'sainsburys',	 // Sainsburys
          'samsung',	 // Samsung
          'schutters',	 // Schutters
+         'seven_eleven', // 7-Eleven
          'slammers',	 // Slammers
          'spa',	 // SPA
          'spar',	 // Spar
@@ -239,6 +246,7 @@ export const litterkeys = {
          'waitrose',	        // Waitrose
          'walkers',	            // Walkers
          'wilde_and_greene',	// Wilde-and-Greene
+         'winston',             // Winston
          'woolworths',	        // Woolworths
          'wrigleys'	            // Wrigley
     ],
