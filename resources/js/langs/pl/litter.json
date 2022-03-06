@@ -274,7 +274,7 @@
     },
     "presence": {
         "picked-up": "Zebrałem!",
-        "still-there": "Nadal tam jest",
+        "still-there": "Nie został odebrany!",
         "picked-up-text": "It's gone.",
         "still-there-text": "The litter is still there!"
     },

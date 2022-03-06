@@ -274,7 +274,7 @@
     },
     "presence": {
         "picked-up": "¡La he recogido!",
-        "still-there": "Todavía sigue ahí.",
+        "still-there": "¡No fue recogido!",
         "picked-up-text": "Ya no está.",
         "still-there-text": "¡La basura sigue ahí!"
     },
