@@ -44,7 +44,7 @@
             </div>
             <div class="charts mt-6">
                 <div class="chart">
-                    <StatsChart :chart-data="yearlyStats" :options="options" />
+                    <StatsChart :chart-data="yearlyStats" :options="options"/>
                 </div>
             </div>
         </div>
@@ -59,7 +59,6 @@ export default {
     data ()
     {
         return {
-            yearlyStats: {},
             options: {
                 aspectRatio: 3,
                 maintainAspectRatio: false,
@@ -74,18 +73,11 @@ export default {
     computed: {
         stats() {
             return this.$store.state.community;
-        }
-    },
-    async mounted ()
-    {
-        await this.fillData();
-    },
-    methods: {
-        async fillData ()
-        {
-            await this.$store.dispatch('GET_STATS');
+        },
+        yearlyStats() {
+            if (!this.stats.statsByMonth) return {};
 
-            this.yearlyStats = {
+            return {
                 labels: this.stats.statsByMonth.periods,
                 datasets: [
                     {
@@ -108,8 +100,13 @@ export default {
                     }
                 ]
             };
-        },
-
+        }
+    },
+    async mounted ()
+    {
+        await this.$store.dispatch('GET_STATS');
+    },
+    methods: {
         /**
          * Format number value
          */
