@@ -150,8 +150,15 @@ class ProfileController extends Controller
         $tagPercent = ($usersTotalTags && $totalTagsAllUsers) ? ($usersTotalTags / $totalTagsAllUsers) : 0;
 
         // XP needed to reach the next level
-        $nextLevelXp = Level::where('xp', '>=', $user->xp)->first()->xp;
-        $requiredXp = $nextLevelXp - $user->xp;
+        $nextLevel = Level::where('xp', '>', $user->xp)->first();
+        $requiredXp = $nextLevel->xp - $user->xp;
+        $currentLevel = $nextLevel->level - 1;
+
+        // Update the user's current level if needed
+        if ($user->level != $currentLevel) {
+            $user->level = $currentLevel;
+            $user->save();
+        }
 
         return [
             'totalUsers' => $totalUsers,
