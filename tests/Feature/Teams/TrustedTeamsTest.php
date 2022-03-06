@@ -48,7 +48,7 @@ class TrustedTeamsTest extends TestCase
 
         $this->post('/add-tags', [
             'photo_id' => $photo->id,
-            'presence' => false,
+            'picked_up' => true,
             'tags' => ['smoking' => ['butts' => 3]]
         ]);
 

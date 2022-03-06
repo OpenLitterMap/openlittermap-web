@@ -66,6 +66,7 @@ class TeamsClusterController extends Controller
                 'geohash',
                 'lat',
                 'lon',
+                'remaining',
                 'datetime'
             )
             ->with([

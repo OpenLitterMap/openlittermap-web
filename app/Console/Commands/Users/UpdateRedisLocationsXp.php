@@ -46,7 +46,7 @@ class UpdateRedisLocationsXp extends Command
      */
     public function handle()
     {
-        $this->withProgressBar(User::all(), function ($user) {
+        $this->withProgressBar(User::all(), function (User $user) {
             $user->photos()
                 ->with(Photo::categories())
                 ->lazyById()

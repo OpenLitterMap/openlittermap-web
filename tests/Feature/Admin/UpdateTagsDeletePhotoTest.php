@@ -56,7 +56,7 @@ class UpdateTagsDeletePhotoTest extends TestCase
 
         $this->post('/add-tags', [
             'photo_id' => $this->photo->id,
-            'presence' => true,
+            'picked_up' => false,
             'tags' => [
                 'smoking' => [
                     'butts' => 3
@@ -142,7 +142,7 @@ class UpdateTagsDeletePhotoTest extends TestCase
         $this->assertEquals(11, $this->user->xp); // 1 xp from uploading, + 10xp from alcohol
 
         $this->assertEquals(10, $this->photo->total_litter);
-        $this->assertEquals(0, $this->photo->remaining);
+        $this->assertFalse($this->photo->picked_up);
         $this->assertEquals(1, $this->photo->verification);
         $this->assertEquals(2, $this->photo->verified);
     }

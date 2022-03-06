@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Commands;
 
+use App\Models\AI\Annotation;
 use App\Models\Litter\Categories\Smoking;
 use App\Models\Location\City;
 use App\Models\Location\Country;

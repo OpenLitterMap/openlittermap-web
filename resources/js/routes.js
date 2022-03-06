@@ -50,6 +50,10 @@ const router = new VueRouter({
             component: require('./views/home/ContactUs').default
         },
         {
+            path: '/community',
+            component: require('./views/home/Community/Index').default
+        },
+        {
             path: '/global',
             component: require('./views/global/GlobalMapContainer').default
         },

@@ -6,6 +6,7 @@ use App\Models\Photo;
 use App\Models\Cluster;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class GenerateClusters extends Command
@@ -33,9 +34,7 @@ class GenerateClusters extends Command
 
         $start = microtime(true);
 
-        $years = array_merge([null], range(2017, now()->year));
-
-        foreach ($years as $year) {
+        foreach ($this->getYearsWithNewPhotos() as $year) {
             $this->line("\nYear: " . ($year ?: 'All Time'));
             $this->generateFeatures($year);
             $this->generateClusters($year);
@@ -155,5 +154,33 @@ class GenerateClusters extends Command
         $bar->finish();
 
         $this->info("\nClusters finished...");
+    }
+
+    /**
+     * Checks the photos uploaded in the last day
+     * If any of them has been taken in the years 2017-current, that year needs re-clustering
+     * We always cluster for all years, regardless
+     */
+    private function getYearsWithNewPhotos(): array
+    {
+        $yearsWithData = [];
+        $years = range(2017, now()->year);
+
+        foreach ($years as $year) {
+            $hasRecentPhotosForYear = Photo::query()->where([
+                ['created_at', '>=', now()->subDay()->startOfDay()],
+                [DB::raw('year(datetime)'), '=', $year]
+            ])->exists();
+
+            if ($hasRecentPhotosForYear) {
+                $yearsWithData[] = $year;
+            } else {
+                $this->line("\nNo new photos for $year.");
+            }
+        }
+
+        return empty($yearsWithData)
+            ? []
+            : array_merge([null], $yearsWithData);
     }
 }

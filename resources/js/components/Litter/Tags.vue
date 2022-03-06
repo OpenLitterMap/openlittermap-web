@@ -2,7 +2,7 @@
     <div>
         <ul class="container">
             <li v-if="customTags.length" class="admin-item">
-                <span class="category">Custom Tags</span>
+                <span class="category">{{ $t('tags.custom-tags') }}</span>
                 <span v-for="tag in customTags"
                       class="tag is-medium has-background-link has-text-white litter-tag"
                       @click="removeCustomTag(tag)"

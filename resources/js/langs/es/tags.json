@@ -17,5 +17,12 @@
     "confirm-delete": "¿Quieres eliminar esta imagen? Esto no se puede deshacer.",
     "recently-tags": "Etiquetas usadas recientemente: ",
     "clear-tags": "¿Borrar etiquetas recientes?",
-    "clear-tags-btn": "Borrar etiquetas recientes"
+    "clear-tags-btn": "Borrar etiquetas recientes",
+    "search-all-tags": "Presione Ctrl + Espacio para buscar todas las etiquetas",
+    "search-custom-tags": "Agrega tus propias etiquetas",
+    "custom-tags": "Etiquetas Personalizadas",
+    "custom-tags-min": "Debe tener al menos 3 caracteres.",
+    "custom-tags-max": "Debe tener como máximo 100 caracteres.",
+    "tag-already-added": "Etiqueta ya añadida.",
+    "tag-limit-reached": "Puede cargar hasta 3 etiquetas personalizadas."
 }

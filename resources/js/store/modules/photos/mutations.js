@@ -53,7 +53,7 @@ export const mutations = {
     photosForTagging (state, payload)
     {
         state.paginate = payload.photos;
-        state.remaining = payload.remaining;
+        state.pickedUp = payload.picked_up;
         state.total = payload.total;
     },
 

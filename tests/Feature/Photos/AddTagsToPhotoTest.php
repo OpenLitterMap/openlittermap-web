@@ -49,7 +49,7 @@ class AddTagsToPhotoTest extends TestCase
         // User adds tags to an image -------------------
         $this->post('/add-tags', [
             'photo_id' => $photo->id,
-            'presence' => true,
+            'picked_up' => true,
             'tags' => [
                 'smoking' => [
                     'butts' => 3
@@ -60,7 +60,7 @@ class AddTagsToPhotoTest extends TestCase
         // Assert tags are stored correctly ------------
         $photo->refresh();
 
-        $this->assertEquals(0, $photo->remaining);
+        $this->assertTrue($photo->picked_up);
         $this->assertNotNull($photo->smoking_id);
         $this->assertInstanceOf(Smoking::class, $photo->smoking);
         $this->assertEquals(3, $photo->smoking->butts);
@@ -84,7 +84,7 @@ class AddTagsToPhotoTest extends TestCase
         // User adds tags to an image -------------------
         $this->post('/add-tags', [
             'photo_id' => $photo->id,
-            'presence' => false,
+            'picked_up' => true,
             'tags' => [
                 'smoking' => [
                     'butts' => 3
@@ -101,7 +101,7 @@ class AddTagsToPhotoTest extends TestCase
 
         $this->assertEquals(9, $user->xp); // 1 xp from uploading, + 8xp from total litter tagged
         $this->assertEquals(8, $photo->total_litter);
-        $this->assertEquals(1, $photo->remaining);
+        $this->assertTrue($photo->picked_up);
         $this->assertEquals(0.1, $photo->verification);
     }
 
@@ -122,7 +122,7 @@ class AddTagsToPhotoTest extends TestCase
         // User adds tags to the verified photo -------------------
         $response = $this->post('/add-tags', [
             'photo_id' => $photo->id,
-            'presence' => false,
+            'picked_up' => true,
             'tags' => [
                 'smoking' => [
                     'butts' => 3
@@ -145,7 +145,7 @@ class AddTagsToPhotoTest extends TestCase
         // Missing photo_id -------------------
         $this->postJson('/add-tags', [
             'tags' => ['smoking' => ['butts' => 3]],
-            'presence' => true
+            'picked_up' => false
         ])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['photo_id']);
@@ -154,7 +154,7 @@ class AddTagsToPhotoTest extends TestCase
         $this->postJson('/add-tags', [
             'photo_id' => 0,
             'tags' => ['smoking' => ['butts' => 3]],
-            'presence' => true
+            'picked_up' => false
         ])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['photo_id']);
@@ -163,7 +163,7 @@ class AddTagsToPhotoTest extends TestCase
         $this->postJson('/add-tags', [
             'photo_id' => Photo::factory()->create()->id,
             'tags' => ['smoking' => ['butts' => 3]],
-            'presence' => true
+            'picked_up' => false
         ])
             ->assertForbidden();
     }
@@ -186,7 +186,7 @@ class AddTagsToPhotoTest extends TestCase
         $this->postJson('/add-tags', [
             'photo_id' => $photo->id,
             'tags' => [],
-            'presence' => true
+            'picked_up' => false
         ])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['tags']);
@@ -195,13 +195,13 @@ class AddTagsToPhotoTest extends TestCase
         $this->postJson('/add-tags', [
             'photo_id' => $photo->id,
             'tags' => "asdf",
-            'presence' => true
+            'picked_up' => false
         ])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['tags']);
     }
 
-    public function test_request_presence_is_validated()
+    public function test_request_picked_up_is_validated()
     {
         $user = User::factory()->create([
             'verification_required' => true
@@ -221,16 +221,16 @@ class AddTagsToPhotoTest extends TestCase
             'tags' => ['smoking' => ['butts' => 3]],
         ])
             ->assertStatus(422)
-            ->assertJsonValidationErrors(['presence']);
+            ->assertJsonValidationErrors(['picked_up']);
 
-        // presence is not a boolean -------------------
+        // picked_up is not a boolean -------------------
         $this->postJson('/add-tags', [
             'photo_id' => $photo->id,
             'tags' => ['smoking' => ['butts' => 3]],
-            'presence' => 'asdf'
+            'picked_up' => 'asdf'
         ])
             ->assertStatus(422)
-            ->assertJsonValidationErrors(['presence']);
+            ->assertJsonValidationErrors(['picked_up']);
     }
 
     public function test_it_fires_tags_verified_by_admin_event_when_a_verified_user_adds_tags_to_a_photo()
@@ -253,7 +253,7 @@ class AddTagsToPhotoTest extends TestCase
         // User adds tags to an image -------------------
         $this->post('/add-tags', [
             'photo_id' => $photo->id,
-            'presence' => false,
+            'picked_up' => true,
             'tags' => [
                 'smoking' => [
                     'butts' => 3
@@ -295,7 +295,7 @@ class AddTagsToPhotoTest extends TestCase
         // User adds tags to an image -------------------
         $this->post('/add-tags', [
             'photo_id' => $photo->id,
-            'presence' => true,
+            'picked_up' => false,
             'tags' => ['smoking' => ['butts' => 3]]
         ])->assertOk();
 

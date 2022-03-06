@@ -1,6 +1,7 @@
 import { categories } from '../../../extra/categories'
 import { litterkeys } from '../../../extra/litterkeys'
 import { init } from './init'
+import i18n from "../../../i18n";
 // import { MAX_RECENTLY_TAGS } from '../../../constants'
 
 export const mutations = {
@@ -70,13 +71,13 @@ export const mutations = {
         // Case-insensitive check for existing tags
         if (tags[payload.photoId].find(tag => tag.toLowerCase() === payload.customTag.toLowerCase()) !== undefined)
         {
-            state.customTagsError = 'Tag already added.';
+            state.customTagsError = i18n.t('tags.tag-already-added');
             return;
         }
 
         if (tags[payload.photoId].length >= 3)
         {
-            state.customTagsError = 'You can upload up to 3 custom tags.';
+            state.customTagsError = i18n.t('tags.tag-limit-reached');
             return;
         }
 
@@ -187,15 +188,6 @@ export const mutations = {
         state.customTags = {
             [payload.id]: payload.custom_tags.map(t => t.tag)
         };
-    },
-
-    /**
-     * The users default presence of the litter they pick up
-     * Some people leave it there, others usually pick it up
-     */
-    initPresence (state, payload)
-    {
-        state.presence = payload;
     },
 
     /**
@@ -321,11 +313,11 @@ export const mutations = {
 
     /**
      * When the user object is created (page refresh or login), we set the users default presence value here
-     * Presence = Is the litter picked up, or is it still there
+     * If the litter is picked up, this value will be 'true'
      */
-    set_default_litter_presence (state, payload)
+    set_default_litter_picked_up (state, payload)
     {
-        state.presence = payload;
+        state.pickedUp = payload;
     },
 
     /**
@@ -342,9 +334,9 @@ export const mutations = {
     /**
      *
      */
-    togglePresence (state)
+    togglePickedUp (state)
     {
-        state.presence = !state.presence;
+        state.pickedUp = !state.pickedUp;
     },
     /**
      *

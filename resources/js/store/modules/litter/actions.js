@@ -52,7 +52,7 @@ export const actions = {
             photo_id: photoId,
             tags: context.state.tags[photoId],
             custom_tags: context.state.customTags[photoId],
-            presence: context.state.presence,
+            picked_up: context.state.pickedUp,
         })
         .then(response => {
             /* improve this */

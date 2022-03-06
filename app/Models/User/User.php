@@ -2,6 +2,7 @@
 
 namespace App\Models\User;
 
+use App\Models\AI\Annotation;
 use App\Models\CustomTag;
 use App\Models\Photo;
 use App\Models\Teams\Team;
@@ -204,6 +205,22 @@ class User extends Authenticatable
     public function photos (): HasMany
     {
         return $this->hasMany(Photo::class);
+    }
+
+    /**
+     * A user can add many bounding boxes
+     */
+    public function boxes (): HasMany
+    {
+        return $this->hasMany(Annotation::class, 'added_by');
+    }
+
+    /**
+     * A user can verify many bounding boxes
+     */
+    public function boxesVerified (): HasMany
+    {
+        return $this->hasMany(Annotation::class, 'verified_by');
     }
 
     /**

@@ -16,6 +16,7 @@ import { plans } from './modules/plans'
 import { subscriber } from './modules/subscriber'
 import { teams } from './modules/teams'
 import { user } from './modules/user'
+import { community } from './modules/community';
 
 Vue.use(Vuex)
 
@@ -39,6 +40,7 @@ export default new Vuex.Store({
         plans,
         subscriber,
         teams,
-        user
+        user,
+        community
     }
 });

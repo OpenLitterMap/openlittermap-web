@@ -1,10 +1,9 @@
 <template>
     <div class="expand-mobile">
-        <strong :style="{ color: remaining ? 'green' : 'red' }"><slot>{{ remainingText }}</slot></strong>
+        <strong :style="{ color: pickedUp ? 'green' : 'red' }"><slot>{{ pickedUpText }}</slot></strong>
         <br>
         <button :class="toggle_class" @click="toggle">
-            <slot v-if="remaining">{{ $t('litter.presence.still-there') }}</slot>
-
+            <slot v-if="pickedUp">{{ $t('litter.presence.still-there') }}</slot>
             <slot v-else>{{ $t('litter.presence.picked-up') }}</slot>
         </button>
     </div>
@@ -18,17 +17,17 @@ export default {
         /**
          * Change setting name to "picked_up"
          */
-        remaining ()
+        pickedUp ()
         {
-            return this.$store.state.litter.presence;
+            return this.$store.state.litter.pickedUp;
         },
 
         /**
          *
          */
-        remainingText ()
+        pickedUpText ()
         {
-            return this.$store.state.litter.presence ? this.$t('litter.presence.picked-up-text') : this.$t('litter.presence.still-there-text');
+            return this.pickedUp ? this.$t('litter.presence.picked-up-text') : this.$t('litter.presence.still-there-text');
         },
 
         /**
@@ -36,17 +35,17 @@ export default {
          */
         toggle_class ()
         {
-            return this.remaining ? 'button is-danger' : 'button is-success';
+            return this.pickedUp ? 'button is-danger' : 'button is-success';
         }
     },
     methods: {
 
         /**
-         * Toggle the presense of the litter
+         * Toggle the presence of the litter
          */
         toggle ()
         {
-            this.$store.commit('togglePresence');
+            this.$store.commit('togglePickedUp');
         }
     }
 }
