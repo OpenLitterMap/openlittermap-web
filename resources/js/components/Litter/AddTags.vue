@@ -118,7 +118,7 @@
                 <br>
                 <tags :photo-id="id"/>
 
-                <div class="custom-buttons">
+                <div class="box custom-buttons">
                     <profile-delete :photoid="id" />
                     <presence :itemsr="true" />
                 </div>
@@ -624,6 +624,14 @@ export default {
         margin-right: 4px;
     }
 
+    .custom-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: space-between;
+        align-items: center;
+        flex-direction: row;
+    }
+
     @media (max-width: 500px)
     {
         .hide-br {
@@ -639,6 +647,9 @@ export default {
             margin-right: 0;
             margin-bottom: 4px;
         }
+        .custom-buttons {
+            flex-direction: column;
+        }
     }
 
     @media (min-width: 768px)
@@ -646,11 +657,6 @@ export default {
         .show-mobile {
             display: none !important;
         }
-    }
-
-    .custom-buttons {
-        display: flex;
-        padding: 20px;
     }
 
     .list-enter-active, .list-leave-active {

@@ -36,32 +36,26 @@
 
                                 <!-- Coordinates. was profile6 -->
                                 <p><strong>{{ $t('tags.coordinates') }}: </strong>{{ photo.lat }}, {{ photo.lon }}</p>
-                                <br>
 
                                 <!-- Full address. was profile7 -->
                                 <p><strong>{{ $t('tags.address') }}: </strong>{{ photo.display_name }}</p>
-                                <br>
-
-                                <!-- Presence button. was profile8 -->
-                                <div>
-                                    <strong>{{ $t('tags.picked-up-title') }}</strong>
-                                    <presence />
-                                </div>
-                                <br>
 
                                 <!-- Model of the device -->
                                 <p><strong>{{ $t('tags.device') }}: </strong>{{ photo.model }}</p>
-                                <br>
 
-                                <!-- Delete photo button -->
-                                <profile-delete :photoid="photo.id" />
+                                <!-- Presence button. was profile8 -->
+                                <presence class="my-4" :key="photo.id"/>
 
-                                <!-- Clear recent tags -->
-                                <div v-show="hasRecentTags">
-                                    <br>
-                                    <p class="strong">{{ $t('tags.clear-tags') }}</p>
+                                <div class="mt-2 is-flex actions-wrapper">
+                                    <!-- Clear recent tags -->
+                                    <div v-show="hasRecentTags">
+                                        <button class="button is-info" @click="clearRecentTags">
+                                            {{ $t('tags.clear-tags-btn') }}
+                                        </button>
+                                    </div>
 
-                                    <button @click="clearRecentTags">{{ $t('tags.clear-tags-btn') }}</button>
+                                    <!-- Delete photo button -->
+                                    <profile-delete :photoid="photo.id"/>
                                 </div>
                             </div>
 
@@ -327,6 +321,11 @@ export default {
         text-align: center;
     }
 
+    .actions-wrapper {
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
     @media screen and (max-width: 768px)
     {
         .img {
@@ -339,6 +338,13 @@ export default {
 
         .taken {
             display: none;
+        }
+    }
+
+    @media screen and (max-width: 1280px)
+    {
+        .actions-wrapper {
+            flex-direction: column;
         }
     }
 
