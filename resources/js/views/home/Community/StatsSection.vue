@@ -66,8 +66,8 @@ export default {
                 scales: {
                     xAxes: [{gridLines: {display: false}, ticks: {fontColor: 'whitesmoke'}}],
                     yAxes: [
-                        {id: 'photos', gridLines: {display: false}, ticks: {fontColor: 'whitesmoke'}},
-                        {id: 'users', position: 'right', gridLines: {display: false}, ticks: {fontColor: 'whitesmoke'}}
+                        {id: 'photos', type: 'linear', position: 'left', gridLines: {display: false}, ticks: {fontColor: 'whitesmoke'}},
+                        {id: 'users', type: 'linear', position: 'right', gridLines: {display: false}, ticks: {fontColor: 'whitesmoke'}}
                     ],
                 }
             }
@@ -85,7 +85,7 @@ export default {
                 datasets: [
                     {
                         label: this.$i18n.t('home.community.photos-every-month-label'),
-                        yAxisId: 'photos',
+                        yAxisID: 'photos',
                         borderColor: '#1DD3B0',
                         borderWidth: 3,
                         pointBackgroundColor: '#008080',
@@ -95,7 +95,7 @@ export default {
                     },
                     {
                         label: this.$i18n.t('home.community.users-every-month-label'),
-                        yAxisId: 'users',
+                        yAxisID: 'users',
                         borderColor: '#c2f970',
                         borderWidth: 3,
                         pointBackgroundColor: '#008080',
