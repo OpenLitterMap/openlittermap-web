@@ -3,7 +3,7 @@
     "submit": "Enviar",
     "download": "Descargar",
     "delete": "Eliminar",
-    "delete-image": "¿Eliminar imagen?",
+    "delete-image": "Eliminar imagen",
     "confirm-delete": "Confirmar eliminar",
     "loading": "Cargando...",
     "created_at": "Subida el",
@@ -29,5 +29,6 @@
     "inactivate": "Deshabilitar las contribuciones del equipo",
     "your-email": "tu@correoelectronico.com",
     "team": "Equipo",
-    "actions": "Comportamiento"
+    "actions": "Comportamiento",
+    "photo": "Foto"
 }

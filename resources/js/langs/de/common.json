@@ -3,7 +3,7 @@
     "submit": "Submit",
     "download": "Download",
     "delete": "Delete",
-    "delete-image": "Delete the image?",
+    "delete-image": "Delete the image",
     "confirm-delete": "Confirm Delete",
     "loading": "Loading...",
     "created_at": "Uploaded at",
@@ -27,5 +27,6 @@
     "inactivate": "Teambeiträge deaktivieren",
     "your-email": "you@email.com",
     "team": "Mannschaft",
-    "actions": "Actie"
+    "actions": "Actie",
+    "photo": "Photo"
 }

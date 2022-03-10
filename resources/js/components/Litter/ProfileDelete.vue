@@ -1,8 +1,6 @@
 <template>
-	<div class="expand-mobile">
-        <strong>{{ $t('common.delete-image') }}</strong>
-        <br>
-        <button class="submit" @click="confirmDelete">{{ $t('common.delete') }}</button>
+	<div>
+        <button class="submit button is-danger" @click="confirmDelete">{{ $t('common.delete-image') }}</button>
 	</div>
 </template>
 
@@ -15,7 +13,7 @@ export default {
          */
         async confirmDelete ()
         {
-            if (confirm("Do you want to delete this image? This cannot be undone."))
+            if (confirm(this.$t('tags.confirm-delete')))
             {
                 await axios.post('/profile/photos/delete', {
                     photoid: this.photoid

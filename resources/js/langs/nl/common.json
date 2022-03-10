@@ -3,7 +3,7 @@
     "submit": "Indienen",
     "download": "Download",
     "delete": "Verwijderen",
-    "delete-image": "De afbeelding verwijderen?",
+    "delete-image": "De afbeelding verwijderen",
     "confirm-delete": "Bevestig de verwijdering",
     "loading": "Laden...",
     "created_at": "Ge-Upload op",
@@ -29,5 +29,6 @@
     "inactivate": "Teambijdragen uitschakelen",
     "your-email": "you@email.com",
     "team": "Team",
-    "actions": "Actie"
+    "actions": "Actie",
+    "photo": "Foto"
 }

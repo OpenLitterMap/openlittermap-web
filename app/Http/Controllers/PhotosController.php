@@ -252,6 +252,8 @@ class PhotosController extends Controller
             $country->id,
             $state->id,
             $city->id,
+            $latlong[0],
+            $latlong[1],
             $user->is_trusted,
             $user->active_team
         ));

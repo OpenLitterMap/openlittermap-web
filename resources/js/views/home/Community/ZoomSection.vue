@@ -185,6 +185,10 @@ export default {
         small {
             color: whitesmoke;
         }
+
+        .live {
+            white-space: nowrap;
+        }
     }
 }
 
