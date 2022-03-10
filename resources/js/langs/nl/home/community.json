@@ -1,9 +1,9 @@
 {
     "title": "Help ons de wereld te veranderen.",
     "subtitle": "We groeien met de dag",
-    "photos-last-month": "Foto's geüpload in de laatste 30 dagen",
-    "users-last-month": "Nieuwe gebruikers in de laatste 30 dagen",
-    "litter-tags-last-month": "Items getagd in de laatste 30 dagen",
+    "photos-last-30-days": "Foto's geüpload in de laatste 30 dagen",
+    "users-last-30-days": "Nieuwe gebruikers in de laatste 30 dagen",
+    "litter-tags-last-30-days": "Items getagd in de laatste 30 dagen",
     "photos-every-month-label": "Elke maand foto's geüpload",
     "users-every-month-label": "Elke maand nieuwe gebruikers",
     "zoom-text": "Doe mee met de {link}, waar we veel nieuwe ideeën en suggesties te horen krijgen van onze groeiende wereldwijde gemeenschap. Elke week delen onze gebruikers hun feedback, wat onze app altijd gemakkelijker en beter in het gebruik maakt. Help mee de toekomstige richting van ons open source-platform voor gegevensverzameling en milieumonitoring vorm te geven. Zoom call start over:",

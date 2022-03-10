@@ -1,9 +1,9 @@
 {
     "title": "Pomóż nam zmieniać świat.",
     "subtitle": "Rośniemy z dnia na dzień",
-    "photos-last-month": "Zdjęcia przesłane w ciągu ostatnich 30 dni",
-    "users-last-month": "Nowi użytkownicy ostatni 30 dni",
-    "litter-tags-last-month": "Miot oznaczony ostatnich 30 dni",
+    "photos-last-30-days": "Zdjęcia przesłane w ciągu ostatnich 30 dni",
+    "users-last-30-days": "Nowi użytkownicy ostatni 30 dni",
+    "litter-tags-last-30-days": "Miot oznaczony ostatnich 30 dni",
     "photos-every-month-label": "Zdjęcia przesyłane co miesiąc",
     "users-every-month-label": "Nowi użytkownicy co miesiąc",
     "zoom-text": "Dołącz do nas na {link}, gdzie możemy usłyszeć wiele nowych pomysłów i sugestii od naszej rosnącej globalnej społeczności. Co tydzień nasi użytkownicy dzielą się swoimi opiniami, co zawsze pomaga uczynić naszą aplikację łatwiejszą i lepszą w użyciu. Pomóż kształtować przyszły kierunek naszej otwartej platformy gromadzenia danych i monitorowania środowiska. Rozmowa rozpoczyna się za:",
