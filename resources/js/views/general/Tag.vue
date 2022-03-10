@@ -21,48 +21,29 @@
             <!-- Image is available for tagging -->
             <div v-else>
                 <div v-for="photo in photos" :key="photo.id" class="mb2">
-                    <h2 class="taken">
-                        <strong style="color: #fff;">#{{ photo.id }}</strong>
-                        <!-- was profile.profile5 "Uploaded". now "taken on" -->
-                        {{ $t('tags.taken') }}: {{ getDate(photo.datetime) }}
-                    </h2>
-
                     <div class="columns">
 
                         <!-- Todo - Put this into a component -->
                         <!-- the Info box, Left -->
                         <div id="image-metadata" class="column">
                             <div class="box">
+                                <!-- Photo taken on -->
+                                <p><strong>{{ $t('common.photo') }} #{{ photo.id }}: </strong>{{ $t('tags.taken') }} {{ getDate(photo.datetime) }}</p>
 
                                 <!-- Coordinates. was profile6 -->
                                 <p><strong>{{ $t('tags.coordinates') }}: </strong>{{ photo.lat }}, {{ photo.lon }}</p>
-                                <br>
 
                                 <!-- Full address. was profile7 -->
                                 <p><strong>{{ $t('tags.address') }}: </strong>{{ photo.display_name }}</p>
-                                <br>
-
-                                <!-- Presence button. was profile8 -->
-                                <div>
-                                    <strong>{{ $t('tags.picked-up-title') }}</strong>
-                                    <presence />
-                                </div>
-                                <br>
 
                                 <!-- Model of the device -->
                                 <p><strong>{{ $t('tags.device') }}: </strong>{{ photo.model }}</p>
-                                <br>
+
+                                <!-- Presence button. was profile8 -->
+                                <presence :key="photo.id"/>
 
                                 <!-- Delete photo button -->
-                                <profile-delete :photoid="photo.id" />
-
-                                <!-- Clear recent tags -->
-                                <div v-show="hasRecentTags">
-                                    <br>
-                                    <p class="strong">{{ $t('tags.clear-tags') }}</p>
-
-                                    <button @click="clearRecentTags">{{ $t('tags.clear-tags-btn') }}</button>
-                                </div>
+                                <profile-delete :photoid="photo.id" class="mt-4"/>
                             </div>
 
                             <div v-if="hasRecentTags" class="box control has-text-centered">
@@ -245,19 +226,6 @@ export default {
     },
 
     methods: {
-
-        /**
-         * Remove the users recent tags
-         */
-        clearRecentTags ()
-        {
-            this.$store.commit('initRecentTags', {});
-            this.$store.commit('initRecentCustomTags', []);
-
-            this.$localStorage.remove('recentTags');
-            this.$localStorage.remove('recentCustomTags');
-        },
-
         /**
          * Format date
          */
@@ -318,15 +286,6 @@ export default {
         }
     }
 
-    .taken {
-        color: #fff;
-        font-weight: 600;
-        font-size: 2.5rem;
-        line-height: 1.25;
-        margin-bottom: 1em;
-        text-align: center;
-    }
-
     @media screen and (max-width: 768px)
     {
         .img {
@@ -335,10 +294,6 @@ export default {
 
         .tag-container {
             padding: 0 1em;
-        }
-
-        .taken {
-            display: none;
         }
     }
 

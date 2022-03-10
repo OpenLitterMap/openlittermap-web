@@ -5,6 +5,7 @@
                 v-for="(event, index) in events"
                 :key="event.id"
                 class="list-item"
+                @dblclick.stop="flyToLocation(event)"
             >
                 <component
                     :is="event.type"
@@ -52,7 +53,9 @@ export default {
                 country: payload.country,
                 imageName: payload.imageName,
                 teamName: payload.teamName,
-                countryCode: payload.countryCode
+                countryCode: payload.countryCode,
+                latitude: payload.latitude,
+                longitude: payload.longitude
             });
 
             vm.updateDocumentTitle();
@@ -132,6 +135,20 @@ export default {
             this.events.splice(index, 1);
 
             this.updateDocumentTitle();
+        },
+
+        /**
+         * Emits an event to fly to the event's location, if any
+         * @param event
+         */
+        flyToLocation (event)
+        {
+            if (event.latitude && event.longitude) {
+                this.$emit('fly-to-location', {
+                    lat: event.latitude,
+                    lon: event.longitude
+                });
+            }
         },
 
         /**

@@ -50,11 +50,5 @@
             -o-transform: rotate(90deg);
             transform: rotate(90deg);
         }
-
-        #welcome {
-            font-size: 90px;
-        }
-
-        @media (max-width: 1024px) { #welcome { font-size: 60px; } }
     </style>
 </head>

@@ -282,7 +282,7 @@
     },
     "presence": {
         "picked-up": "Eu peguei!",
-        "still-there": "Ainda está lá.",
+        "still-there": "Não foi recolhido!",
         "picked-up-text": "Foi-se.",
         "still-there-text": "O lixo ainda está lá!"
     },

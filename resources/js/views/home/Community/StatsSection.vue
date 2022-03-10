@@ -44,7 +44,7 @@
             </div>
             <div class="charts mt-6">
                 <div class="chart">
-                    <StatsChart :chart-data="yearlyStats" :options="options" />
+                    <StatsChart :chart-data="yearlyStats" :options="options"/>
                 </div>
             </div>
         </div>
@@ -59,14 +59,16 @@ export default {
     data ()
     {
         return {
-            yearlyStats: {},
             options: {
                 aspectRatio: 3,
                 maintainAspectRatio: false,
                 legend: {labels: {fontColor: 'whitesmoke'}},
                 scales: {
                     xAxes: [{gridLines: {display: false}, ticks: {fontColor: 'whitesmoke'}}],
-                    yAxes: [{gridLines: {display: false}, ticks: {fontColor: 'whitesmoke'}}],
+                    yAxes: [
+                        {id: 'photos', gridLines: {display: false}, ticks: {fontColor: 'whitesmoke'}},
+                        {id: 'users', position: 'right', gridLines: {display: false}, ticks: {fontColor: 'whitesmoke'}}
+                    ],
                 }
             }
         };
@@ -74,22 +76,16 @@ export default {
     computed: {
         stats() {
             return this.$store.state.community;
-        }
-    },
-    async mounted ()
-    {
-        await this.fillData();
-    },
-    methods: {
-        async fillData ()
-        {
-            await this.$store.dispatch('GET_STATS');
+        },
+        yearlyStats() {
+            if (!this.stats.statsByMonth) return {};
 
-            this.yearlyStats = {
+            return {
                 labels: this.stats.statsByMonth.periods,
                 datasets: [
                     {
                         label: this.$i18n.t('home.community.photos-every-month-label'),
+                        yAxisId: 'photos',
                         borderColor: '#1DD3B0',
                         borderWidth: 3,
                         pointBackgroundColor: '#008080',
@@ -99,6 +95,7 @@ export default {
                     },
                     {
                         label: this.$i18n.t('home.community.users-every-month-label'),
+                        yAxisId: 'users',
                         borderColor: '#c2f970',
                         borderWidth: 3,
                         pointBackgroundColor: '#008080',
@@ -108,8 +105,13 @@ export default {
                     }
                 ]
             };
-        },
-
+        }
+    },
+    async mounted ()
+    {
+        await this.$store.dispatch('GET_STATS');
+    },
+    methods: {
         /**
          * Format number value
          */

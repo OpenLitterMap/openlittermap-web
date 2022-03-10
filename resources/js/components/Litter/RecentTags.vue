@@ -1,6 +1,6 @@
 <template>
     <div class="tags-container" v-if="Object.keys(recentTags).length > 0 || recentCustomTags.length">
-        <p class="mb-5 has-text-weight-bold">{{ $t('tags.recently-tags') }}</p>
+        <p class="recent-tags-title mb-5 has-text-weight-bold">{{ $t('tags.recently-tags') }}</p>
 
         <div v-if="recentCustomTags.length">
             <p>{{ $t('tags.custom-tags') }}</p>
@@ -26,6 +26,13 @@
                     @click="addRecentTag(category, tag)"
                 ><p class="has-text-white">{{ getTagName(category, tag) }}</p></div>
             </transition-group>
+        </div>
+
+        <div class="clear-tags-button">
+            <button class="button is-danger is-small tooltip" @click="clearRecentTags">
+                <span class="tooltip-text">{{ $t('tags.clear-tags-btn') }}</span>
+                <i class="fa fa-trash"></i>
+            </button>
         </div>
     </div>
 </template>
@@ -106,6 +113,18 @@ export default {
                 customTag: tag
             });
         },
+
+        /**
+         * Remove the users recent tags
+         */
+        clearRecentTags ()
+        {
+            this.$store.commit('initRecentTags', {});
+            this.$store.commit('initRecentCustomTags', []);
+
+            this.$localStorage.remove('recentTags');
+            this.$localStorage.remove('recentCustomTags');
+        },
     }
 };
 </script>
@@ -127,12 +146,29 @@ export default {
     justify-content: center;
 }
 
+.recent-tags-title {
+    max-width: 100px;
+}
+
+.clear-tags-button {
+    position: absolute;
+    top:20px;
+    right: 20px;
+}
+
 .litter-tag {
     cursor: pointer;
     padding: 5px;
     border-radius: 5px;
     background-color: $info;
     margin: 5px
+}
+
+@media screen and (min-width: 1280px)
+{
+    .recent-tags-title {
+        max-width: none;
+    }
 }
 
 </style>

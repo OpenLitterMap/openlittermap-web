@@ -282,7 +282,7 @@
     },
     "presence": {
         "picked-up": "Ik heb het opgeruimd!",
-        "still-there": "Het ligt er nog.",
+        "still-there": "Werd niet opgehaald!",
         "picked-up-text": "Het is opgeruimd.",
         "still-there-text": "Het afval is er nog!"
     },
