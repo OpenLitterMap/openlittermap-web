@@ -42,12 +42,6 @@
                 </div>
 
                 <div v-else>
-
-                    <h1 class="title is-2 has-text-centered">
-                        #{{ parseInt(this.photo.id).toLocaleString() }} Uploaded {{ this.uploadedTime }}
-                    </h1>
-                    <!-- todo - verification bar -->
-
                     <div class="columns">
 
                         <!-- Left - remaining verification & other actions -->
@@ -65,22 +59,20 @@
                                     <span class="tooltip-text is-size-6">Delete the image.</span>
                                     DELETE
                                 </button>
-
-                                <br>
-
-                                <button class="button is-medium is-dark mb-4" v-if="hasRecentTags" @click="clearRecentTags">
-                                    Clear recent tags
-                                </button>
-
                             </div>
 
-                            <div v-if="hasRecentTags" class="recent-tags control has-text-centered has-background-light py-4">
+                            <div v-if="hasRecentTags" class="recent-tags control has-text-centered has-background-light px-4 py-4">
                                 <RecentTags class="mb-5" :photo-id="photo.id" />
                             </div>
                         </div>
 
                         <!-- Middle - image -->
                         <div class="column is-half" style="text-align: center;">
+                            <h1 class="title is-2 has-text-centered">
+                                #{{ parseInt(this.photo.id).toLocaleString() }} Uploaded {{ this.uploadedTime }}
+                            </h1>
+                            <!-- todo - verification bar -->
+
                             <p class="subtitle is-5 has-text-centered mb-8">
                                 {{ this.photo.display_name }}
                             </p>
@@ -286,18 +278,6 @@ export default {
 		{
 			this.$store.commit('setAllTagsToZero', this.photo.id);
 		},
-
-        /**
-         * Remove the users recent tags
-         */
-        clearRecentTags ()
-        {
-            this.$store.commit('initRecentTags', {});
-            this.$store.commit('initRecentCustomTags', []);
-
-            this.$localStorage.remove('recentTags');
-            this.$localStorage.remove('recentCustomTags');
-        },
 
 		/**
 		 * Send the image back to the use

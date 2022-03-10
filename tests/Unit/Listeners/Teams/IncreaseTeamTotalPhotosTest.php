@@ -28,6 +28,8 @@ class IncreaseTeamTotalPhotosTest extends TestCase
             1,
             1,
             1,
+            123,
+            123,
             false,
             $user->active_team
         );

@@ -236,6 +236,8 @@ class ApiPhotosController extends Controller
             $country->id,
             $state->id,
             $city->id,
+            $lat,
+            $lon,
             $user->is_trusted,
             $user->active_team
         ));

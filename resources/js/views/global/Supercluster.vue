@@ -4,7 +4,7 @@
         <div id="super" ref="super" />
 
         <!-- Websockets -->
-        <LiveEvents />
+        <LiveEvents @fly-to-location="flyToLocation" />
     </div>
 </template>
 
@@ -444,6 +444,17 @@ export default {
             if (lat === 0 && lon === 0 && zoom === 2) return;
 
             map.flyTo([lat, lon], zoom, {
+                animate: true,
+                duration: 7
+            });
+        },
+
+        /**
+         * Goes to the location provided
+         */
+        flyToLocation (location)
+        {
+            map.flyTo([location.lat, location.lon], 17, {
                 animate: true,
                 duration: 7
             });

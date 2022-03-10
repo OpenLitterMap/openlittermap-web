@@ -17,7 +17,7 @@ class ImageUploaded implements ShouldBroadcast, ShouldQueue
     public $city, $state, $country, $countryCode, $imageName, $teamName, $isUserVerified;
 
     // For CheckContributors
-    public $userId, $countryId, $stateId, $cityId, $teamId;
+    public $userId, $countryId, $stateId, $cityId, $latitude, $longitude, $teamId;
 
     /**
      * Create a new event instance.
@@ -35,6 +35,8 @@ class ImageUploaded implements ShouldBroadcast, ShouldQueue
         int $countryId,
         int $stateId,
         int $cityId,
+        float $latitude,
+        float $longitude,
         bool $isUserVerified,
         ?int $teamId
     )
@@ -49,6 +51,8 @@ class ImageUploaded implements ShouldBroadcast, ShouldQueue
         $this->countryId = $countryId;
         $this->stateId = $stateId;
         $this->cityId = $cityId;
+        $this->latitude = $latitude;
+        $this->longitude = $longitude;
         $this->isUserVerified = $isUserVerified;
         $this->teamId = $teamId;
     }
