@@ -178,7 +178,7 @@ class TeamsController extends Controller
     /**
      * Get paginated members for a team_id
      */
-    public function members(ListTeamMembersAction $action): array
+    public function members (ListTeamMembersAction $action): array
     {
         /** @var User $user */
         $user = auth()->user();

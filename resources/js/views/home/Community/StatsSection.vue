@@ -13,7 +13,7 @@
                             :format="commas"
                         />
                     </div>
-                    <div class="is-size-5">{{ $t('home.community.photos-last-month') }}</div>
+                    <div class="is-size-5">{{ $t('home.community.photos-last-30-days') }}</div>
                 </div>
                 <div class="stat has-text-light has-text-centered">
                     <div class="total has-text-weight-bold">
@@ -26,7 +26,7 @@
                             :format="commas"
                         />
                     </div>
-                    <div class="is-size-5">{{ $t('home.community.users-last-month') }}</div>
+                    <div class="is-size-5">{{ $t('home.community.users-last-30-days') }}</div>
                 </div>
                 <div class="stat has-text-light has-text-centered">
                     <div class="total has-text-weight-bold">
@@ -39,7 +39,7 @@
                             :format="commas"
                         />
                     </div>
-                    <div class="is-size-5">{{ $t('home.community.litter-tags-last-month') }}</div>
+                    <div class="is-size-5">{{ $t('home.community.litter-tags-last-30-days') }}</div>
                 </div>
             </div>
             <div class="charts mt-6">
