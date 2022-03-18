@@ -126,6 +126,8 @@ class UpdateTagsDeletePhotoTest extends TestCase
         // Admin updates the tags -------------------
         $this->actingAs($this->admin);
 
+        $this->assertEquals(0, $this->admin->xp);
+
         $this->post($route, [
             'photoId' => $this->photo->id,
             $tagsKey => [
@@ -139,8 +141,9 @@ class UpdateTagsDeletePhotoTest extends TestCase
         $this->user->refresh();
         $this->photo->refresh();
 
+        // Admin is rewarded with 1 XP
+        $this->assertEquals(1, $this->admin->xp);
         $this->assertEquals(11, $this->user->xp); // 1 xp from uploading, + 10xp from alcohol
-
         $this->assertEquals(10, $this->photo->total_litter);
         $this->assertFalse($this->photo->picked_up);
         $this->assertEquals(1, $this->photo->verification);
@@ -185,10 +188,14 @@ class UpdateTagsDeletePhotoTest extends TestCase
     )
     {
         // User has already uploaded and tagged the image, so their xp is 4
+        Redis::zrem('xp.users', $this->admin->id);
         Redis::zadd("xp.users", 4, $this->user->id);
         Redis::zadd("xp.country.{$this->photo->country_id}", 4, $this->user->id);
         Redis::zadd("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}", 4, $this->user->id);
         Redis::zadd("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}.city.{$this->photo->city_id}", 4, $this->user->id);
+
+        $this->assertEquals(0, $this->admin->xp_redis);
+
         // Admin updates the tags -------------------
         $this->actingAs($this->admin);
 
@@ -198,6 +205,7 @@ class UpdateTagsDeletePhotoTest extends TestCase
         ]);
 
         // Assert leaderboards are updated ------------
+        $this->assertEquals(1, $this->admin->xp_redis);
         $this->assertEquals(11, Redis::zscore("xp.users", $this->user->id));
         $this->assertEquals(11, Redis::zscore("xp.country.{$this->photo->country_id}", $this->user->id));
         $this->assertEquals(11, Redis::zscore("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}", $this->user->id));

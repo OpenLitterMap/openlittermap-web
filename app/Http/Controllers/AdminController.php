@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Locations\UpdateLeaderboardsXpAction;
 use App\Actions\Photos\DeleteTagsFromPhotoAction;
 use App\Actions\Photos\DeletePhotoAction;
 use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
@@ -111,6 +112,8 @@ class AdminController extends Controller
         $photo->filename = '/assets/verified.jpg';
         $photo->save();
 
+        $this->rewardXpToAdmin();
+
         event (new TagsVerifiedByAdmin($photo->id));
     }
 
@@ -125,6 +128,8 @@ class AdminController extends Controller
         $photo->verified = 2;
         $photo->verification = 1;
         $photo->save();
+
+        $this->rewardXpToAdmin();
 
         event (new TagsVerifiedByAdmin($photo->id));
     }
@@ -152,6 +157,8 @@ class AdminController extends Controller
 
         $this->updateLeaderboardsAction->run($photo, $user->id, -$deletedTags['all']);
 
+        $this->rewardXpToAdmin();
+
         return ['success' => true];
     }
 
@@ -176,6 +183,8 @@ class AdminController extends Controller
         $user->save();
 
         $this->updateLeaderboardsAction->run($photo, $user->id, -$totalXp);
+
+        $this->rewardXpToAdmin();
 
         event(new ImageDeleted(
             $user,
@@ -207,6 +216,8 @@ class AdminController extends Controller
         // TODO categories and custom_tags are not provided in the front-end
         $this->addTags($request->categories, [], $photo->id);
 
+        $this->rewardXpToAdmin();
+
         event(new TagsVerifiedByAdmin($photo->id));
     }
 
@@ -228,6 +239,8 @@ class AdminController extends Controller
         $user->save();
 
         $this->addTags($request->tags ?? [], $request->custom_tags ?? [], $request->photoId);
+
+        $this->rewardXpToAdmin();
 
         event (new TagsVerifiedByAdmin($photo->id));
     }
@@ -329,5 +342,16 @@ class AdminController extends Controller
     protected function usersToSkipVerification(): array
     {
         return [3233, 5292];
+    }
+
+    /**
+     * @return void
+     */
+    private function rewardXpToAdmin(): void
+    {
+        auth()->user()->increment('xp');
+        /** @var UpdateLeaderboardsXpAction $updateLeaderboardsAction */
+        $updateLeaderboardsAction = app(UpdateLeaderboardsXpAction::class);
+        $updateLeaderboardsAction->run(auth()->id(), 1);
     }
 }
