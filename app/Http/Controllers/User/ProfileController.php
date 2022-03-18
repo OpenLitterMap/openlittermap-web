@@ -132,7 +132,7 @@ class ProfileController extends Controller
     public function index ()
     {
         /** @var User $user */
-        $user = Auth::user();
+        $user = Auth::user()->append('xp_redis');
 
         // Todo - Store this metadata in another table
         $totalUsers = User::count();
@@ -150,8 +150,8 @@ class ProfileController extends Controller
         $tagPercent = ($usersTotalTags && $totalTagsAllUsers) ? ($usersTotalTags / $totalTagsAllUsers) : 0;
 
         // XP needed to reach the next level
-        $nextLevel = Level::where('xp', '>', $user->xp)->first();
-        $requiredXp = $nextLevel->xp - $user->xp;
+        $nextLevel = Level::where('xp', '>', $user->xp_redis)->first();
+        $requiredXp = $nextLevel->xp - $user->xp_redis;
         $currentLevel = $nextLevel->level - 1;
 
         // Update the user's current level if needed
