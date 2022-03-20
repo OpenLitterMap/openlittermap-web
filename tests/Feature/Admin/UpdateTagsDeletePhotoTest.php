@@ -141,8 +141,8 @@ class UpdateTagsDeletePhotoTest extends TestCase
         $this->user->refresh();
         $this->photo->refresh();
 
-        // Admin is rewarded with 1 XP
-        $this->assertEquals(1, $this->admin->xp);
+        // Admin is rewarded with 1 XP for the effort + 1xp for deleting tag + 1xp for adding new tag
+        $this->assertEquals(3, $this->admin->xp);
         $this->assertEquals(11, $this->user->xp); // 1 xp from uploading, + 10xp from alcohol
         $this->assertEquals(10, $this->photo->total_litter);
         $this->assertFalse($this->photo->picked_up);
@@ -205,7 +205,7 @@ class UpdateTagsDeletePhotoTest extends TestCase
         ]);
 
         // Assert leaderboards are updated ------------
-        $this->assertEquals(1, $this->admin->xp_redis);
+        $this->assertEquals(3, $this->admin->xp_redis);
         $this->assertEquals(11, Redis::zscore("xp.users", $this->user->id));
         $this->assertEquals(11, Redis::zscore("xp.country.{$this->photo->country_id}", $this->user->id));
         $this->assertEquals(11, Redis::zscore("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}", $this->user->id));

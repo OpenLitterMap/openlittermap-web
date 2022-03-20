@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\CalculateTagsDifferenceAction;
 use App\Actions\Locations\UpdateLeaderboardsXpAction;
 use App\Actions\Photos\DeleteTagsFromPhotoAction;
 use App\Actions\Photos\DeletePhotoAction;
@@ -33,6 +34,8 @@ class AdminController extends Controller
     protected $updateLeaderboardsAction;
     /** @var DeletePhotoAction */
     protected $deletePhotoAction;
+    /** @var CalculateTagsDifferenceAction */
+    protected $calculateTagsDiffAction;
 
     /**
      * Apply IsAdmin middleware to all of these routes
@@ -40,11 +43,13 @@ class AdminController extends Controller
      * @param DeleteTagsFromPhotoAction $deleteTagsAction
      * @param UpdateLeaderboardsForLocationAction $updateLeaderboardsAction
      * @param DeletePhotoAction $deletePhotoAction
+     * @param CalculateTagsDifferenceAction $calculateTagsDiffAction
      */
     public function __construct (
         DeleteTagsFromPhotoAction $deleteTagsAction,
         UpdateLeaderboardsForLocationAction $updateLeaderboardsAction,
-        DeletePhotoAction $deletePhotoAction
+        DeletePhotoAction $deletePhotoAction,
+        CalculateTagsDifferenceAction $calculateTagsDiffAction
     )
     {
         $this->middleware('admin');
@@ -52,6 +57,7 @@ class AdminController extends Controller
         $this->deleteTagsAction = $deleteTagsAction;
         $this->updateLeaderboardsAction = $updateLeaderboardsAction;
         $this->deletePhotoAction = $deletePhotoAction;
+        $this->calculateTagsDiffAction = $calculateTagsDiffAction;
     }
 
     /**
@@ -103,6 +109,7 @@ class AdminController extends Controller
      */
     public function verify (Request $request)
     {
+        /** @var Photo $photo */
         $photo = Photo::findOrFail($request->photoId);
 
         $this->deletePhotoAction->run($photo);
@@ -124,6 +131,7 @@ class AdminController extends Controller
      */
     public function verifykeepimage (Request $request)
     {
+        /** @var Photo $photo */
         $photo = Photo::findOrFail($request->photoId);
         $photo->verified = 2;
         $photo->verification = 1;
@@ -167,6 +175,7 @@ class AdminController extends Controller
      */
     public function destroy (Request $request)
     {
+        /** @var Photo $photo */
         $photo = Photo::findOrFail($request->photoId);
         $user = User::find($photo->user_id);
 
@@ -202,7 +211,9 @@ class AdminController extends Controller
      */
     public function updateDelete (Request $request)
     {
+        /** @var Photo $photo */
         $photo = Photo::find($request->photoId);
+        $oldTags = $photo->tags();
 
         $this->deletePhotoAction->run($photo);
 
@@ -216,7 +227,7 @@ class AdminController extends Controller
         // TODO categories and custom_tags are not provided in the front-end
         $this->addTags($request->categories, [], $photo->id);
 
-        $this->rewardXpToAdmin();
+        $this->rewardXpToAdmin2($oldTags, $request->categories);
 
         event(new TagsVerifiedByAdmin($photo->id));
     }
@@ -228,11 +239,13 @@ class AdminController extends Controller
      */
     public function updateTags (Request $request)
     {
+        /** @var Photo $photo */
         $photo = Photo::find($request->photoId);
         $photo->verification = 1;
         $photo->verified = 2;
         $photo->total_litter = 0;
         $photo->save();
+        $oldTags = $photo->tags();
 
         $user = User::find($photo->user_id);
         $user->count_correctly_verified = 0; // At 100, the user earns a Littercoin
@@ -240,7 +253,7 @@ class AdminController extends Controller
 
         $this->addTags($request->tags ?? [], $request->custom_tags ?? [], $request->photoId);
 
-        $this->rewardXpToAdmin();
+        $this->rewardXpToAdmin2($oldTags, $request->tags ?? []);
 
         event (new TagsVerifiedByAdmin($photo->id));
     }
@@ -353,5 +366,21 @@ class AdminController extends Controller
         /** @var UpdateLeaderboardsXpAction $updateLeaderboardsAction */
         $updateLeaderboardsAction = app(UpdateLeaderboardsXpAction::class);
         $updateLeaderboardsAction->run(auth()->id(), 1);
+    }
+
+    /**
+     * @param array $oldTags
+     * @param array $newTags
+     * @return void
+     */
+    private function rewardXpToAdmin2(array $oldTags, array $newTags): void
+    {
+        $tagUpdates = $this->calculateTagsDiffAction->run($oldTags, $newTags);
+        $rewardedXp = 1 + $tagUpdates['rewardedAdminXp'];
+
+        auth()->user()->increment('xp', $rewardedXp);
+        /** @var UpdateLeaderboardsXpAction $updateLeaderboardsAction */
+        $updateLeaderboardsAction = app(UpdateLeaderboardsXpAction::class);
+        $updateLeaderboardsAction->run(auth()->id(), $rewardedXp);
     }
 }

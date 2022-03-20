@@ -163,8 +163,9 @@ class Photo extends Model
      *
      * Remove any keys with null values
      */
-    public function tags ()
+    public function tags (): array
     {
+        $tags = [];
         foreach ($this->categories() as $category)
         {
             if ($this->$category)
@@ -175,9 +176,15 @@ class Photo extends Model
                     {
                         unset ($this->$category[$tag]);
                     }
+                    else
+                    {
+                        $tags[$category][$tag] = $this->$category[$tag];
+                    }
                 }
             }
         }
+
+        return $tags;
     }
 
     /**
