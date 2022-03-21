@@ -19,13 +19,17 @@ trait AddTagsTrait
      */
     public function addTags ($tags, $customTags, $photoId)
     {
+        /** @var Photo $photo */
         $photo = Photo::find($photoId);
+        /** @var User $photo */
         $user = User::find($photo->user_id);
+
+        $tagUpdates = $this->calculateTagsDiffAction->run($photo->tags(), $tags);
 
         // Delete the old tags
         /** @var DeleteTagsFromPhotoAction $deleteTagsAction */
         $deleteTagsAction = app(DeleteTagsFromPhotoAction::class);
-        $deletedTags = $deleteTagsAction->run($photo);
+        $deleteTagsAction->run($photo);
 
         // Add the new tags
         /** @var AddTagsToPhotoAction $addTagsAction */
@@ -35,12 +39,10 @@ trait AddTagsTrait
         // Add the new custom tags
         /** @var AddCustomTagsToPhotoAction $addCustomTagsAction */
         $addCustomTagsAction = app(AddCustomTagsToPhotoAction::class);
-        $customTagsTotal = $addCustomTagsAction->run($photo, $customTags);
+        $addCustomTagsAction->run($photo, $customTags);
 
         // Decrement the XP since old tags no longer exist
-        $xpDifference = $litterTotals['all'] + $customTagsTotal - $deletedTags['all'];
-
-        $user->xp += $xpDifference;
+        $user->xp -= $tagUpdates['removedUserXp'];
         $user->xp = max(0, $user->xp);
         $user->save();
 
@@ -51,6 +53,8 @@ trait AddTagsTrait
 
         // Update the Leaderboards
         $updateLeaderboardsAction = app(UpdateLeaderboardsForLocationAction::class);
-        $updateLeaderboardsAction->run($photo, $user->id, $xpDifference);
+        $updateLeaderboardsAction->run($photo, $user->id, -$tagUpdates['removedUserXp']);
+
+        return $tagUpdates;
     }
 }

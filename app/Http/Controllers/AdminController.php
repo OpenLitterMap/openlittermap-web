@@ -156,14 +156,15 @@ class AdminController extends Controller
         $photo->result_string = null;
         $photo->save();
 
-        $deletedTags = $this->deleteTagsAction->run($photo);
+        $tagUpdates = $this->calculateTagsDiffAction->run($photo->tags(), []);
+        $this->deleteTagsAction->run($photo);
 
         $user = User::find($photo->user_id);
-        $user->xp = max(0, $user->xp - $deletedTags['all']);
+        $user->xp = max(0, $user->xp - $tagUpdates['removedUserXp']);
         $user->count_correctly_verified = 0;
         $user->save();
 
-        $this->updateLeaderboardsAction->run($photo, $user->id, -$deletedTags['all']);
+        $this->updateLeaderboardsAction->run($photo, $user->id, - $tagUpdates['removedUserXp']);
 
         $this->rewardXpToAdmin();
 
@@ -181,11 +182,13 @@ class AdminController extends Controller
 
         $this->deletePhotoAction->run($photo);
 
-        $deletedTags = $this->deleteTagsAction->run($photo);
+        $tagUpdates = $this->calculateTagsDiffAction->run($photo->tags(), []);
+
+        $this->deleteTagsAction->run($photo);
 
         $photo->delete();
 
-        $totalXp = $deletedTags['all'] + 1; // 1xp from uploading
+        $totalXp = $tagUpdates['removedUserXp'] + 1; // 1xp from uploading
 
         $user->xp = max(0, $user->xp - $totalXp);
         $user->total_images = $user->total_images > 0 ? $user->total_images - 1 : 0;
@@ -213,7 +216,6 @@ class AdminController extends Controller
     {
         /** @var Photo $photo */
         $photo = Photo::find($request->photoId);
-        $oldTags = $photo->tags();
 
         $this->deletePhotoAction->run($photo);
 
@@ -225,9 +227,9 @@ class AdminController extends Controller
         $photo->save();
 
         // TODO categories and custom_tags are not provided in the front-end
-        $this->addTags($request->categories, [], $photo->id);
+        $tagUpdates = $this->addTags($request->categories, $request->custom_tags ?? [], $photo->id);
 
-        $this->rewardXpToAdmin2($oldTags, $request->categories);
+        $this->rewardXpToAdmin(1 + $tagUpdates['rewardedAdminXp']);
 
         event(new TagsVerifiedByAdmin($photo->id));
     }
@@ -251,9 +253,9 @@ class AdminController extends Controller
         $user->count_correctly_verified = 0; // At 100, the user earns a Littercoin
         $user->save();
 
-        $this->addTags($request->tags ?? [], $request->custom_tags ?? [], $request->photoId);
+        $tagUpdates = $this->addTags($request->tags ?? [], $request->custom_tags ?? [], $request->photoId);
 
-        $this->rewardXpToAdmin2($oldTags, $request->tags ?? []);
+        $this->rewardXpToAdmin(1 + $tagUpdates['rewardedAdminXp']);
 
         event (new TagsVerifiedByAdmin($photo->id));
     }
@@ -358,29 +360,14 @@ class AdminController extends Controller
     }
 
     /**
+     * @param int $xp
      * @return void
      */
-    private function rewardXpToAdmin(): void
+    private function rewardXpToAdmin(int $xp = 1): void
     {
-        auth()->user()->increment('xp');
+        auth()->user()->increment('xp', $xp);
         /** @var UpdateLeaderboardsXpAction $updateLeaderboardsAction */
         $updateLeaderboardsAction = app(UpdateLeaderboardsXpAction::class);
-        $updateLeaderboardsAction->run(auth()->id(), 1);
-    }
-
-    /**
-     * @param array $oldTags
-     * @param array $newTags
-     * @return void
-     */
-    private function rewardXpToAdmin2(array $oldTags, array $newTags): void
-    {
-        $tagUpdates = $this->calculateTagsDiffAction->run($oldTags, $newTags);
-        $rewardedXp = 1 + $tagUpdates['rewardedAdminXp'];
-
-        auth()->user()->increment('xp', $rewardedXp);
-        /** @var UpdateLeaderboardsXpAction $updateLeaderboardsAction */
-        $updateLeaderboardsAction = app(UpdateLeaderboardsXpAction::class);
-        $updateLeaderboardsAction->run(auth()->id(), $rewardedXp);
+        $updateLeaderboardsAction->run(auth()->id(), $xp);
     }
 }

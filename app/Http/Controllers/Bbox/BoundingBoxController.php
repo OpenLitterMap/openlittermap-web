@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Bbox;
 
+use App\Actions\CalculateTagsDifferenceAction;
 use App\Events\TagsVerifiedByAdmin;
 use App\Litterrata;
 use App\Models\AI\Annotation;
@@ -14,6 +15,17 @@ use App\Http\Controllers\Controller;
 class BoundingBoxController extends Controller
 {
     use AddTagsTrait;
+
+    /** @var CalculateTagsDifferenceAction */
+    protected $calculateTagsDiffAction;
+
+    /**
+     * @param CalculateTagsDifferenceAction $calculateTagsDiffAction
+     */
+    public function __construct(CalculateTagsDifferenceAction $calculateTagsDiffAction)
+    {
+        $this->calculateTagsDiffAction = $calculateTagsDiffAction;
+    }
 
     /**
      * Add bounding boxes to an image
