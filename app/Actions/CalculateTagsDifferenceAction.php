@@ -4,7 +4,20 @@ namespace App\Actions;
 
 class CalculateTagsDifferenceAction
 {
-    public function run(array $oldTags, array $newTags): array
+    public function run(array $oldTags, array $newTags, array $oldCustomTags, array $newCustomTags): array
+    {
+        $tagsDiff = $this->tagsDiff($oldTags, $newTags);
+        $customTagsDiff = $this->customTagsDiff($oldCustomTags, $newCustomTags);
+
+        return [
+            'added' => ['tags' => $tagsDiff['added'], 'customTags' => $customTagsDiff['added']],
+            'removed' => ['tags' => $tagsDiff['removed'], 'customTags' => $customTagsDiff['removed']],
+            'removedUserXp' => $tagsDiff['removedUserXp'] + $customTagsDiff['removedUserXp'],
+            'rewardedAdminXp' => $tagsDiff['rewardedAdminXp'] + $customTagsDiff['rewardedAdminXp']
+        ];
+    }
+
+    private function tagsDiff(array $oldTags, array $newTags): array
     {
         $addedTags = array_diff_assoc_recursive($newTags, $oldTags);
         $removedTags = array_diff_assoc_recursive($oldTags, $newTags);
@@ -34,6 +47,22 @@ class CalculateTagsDifferenceAction
                 }
             }
         }
+
+        return [
+            'added' => $addedTags,
+            'removed' => $removedTags,
+            'removedUserXp' => $removedUserXp,
+            'rewardedAdminXp' => $rewardedAdminXp
+        ];
+    }
+
+    private function customTagsDiff(array $oldTags, array $newTags): array
+    {
+        $addedTags = array_diff($newTags, $oldTags);
+        $removedTags = array_diff($oldTags, $newTags);
+
+        $removedUserXp = count($removedTags);
+        $rewardedAdminXp = count($addedTags) + count($removedTags);
 
         return [
             'added' => $addedTags,

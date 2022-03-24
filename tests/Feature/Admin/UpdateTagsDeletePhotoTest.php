@@ -145,8 +145,10 @@ class UpdateTagsDeletePhotoTest extends TestCase
         $this->user->refresh();
         $this->photo->refresh();
 
-        // Admin is rewarded with 1 XP for the effort + 1xp for deleting tag + 2xp for adding new tag + custom tag
-        $this->assertEquals(4, $this->admin->xp);
+        // Admin is rewarded with 1 XP for the effort
+        // + 2xp for deleting tag and custom tag
+        // + 2xp for adding new tag + custom tag
+        $this->assertEquals(5, $this->admin->xp);
         // 1 xp from uploading, xp from other tags is removed
         $this->assertEquals(1, $this->user->xp);
         $this->assertEquals(10, $this->photo->total_litter);
@@ -195,9 +197,9 @@ class UpdateTagsDeletePhotoTest extends TestCase
         // User has already uploaded and tagged the image, so their xp is 5
         Redis::zrem('xp.users', $this->admin->id);
         Redis::zadd("xp.users", 5, $this->user->id);
-        Redis::zadd("xp.country.{$this->photo->country_id}", 4, $this->user->id);
-        Redis::zadd("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}", 4, $this->user->id);
-        Redis::zadd("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}.city.{$this->photo->city_id}", 4, $this->user->id);
+        Redis::zadd("xp.country.{$this->photo->country_id}", 5, $this->user->id);
+        Redis::zadd("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}", 5, $this->user->id);
+        Redis::zadd("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}.city.{$this->photo->city_id}", 5, $this->user->id);
 
         $this->assertEquals(0, $this->admin->xp_redis);
 
@@ -211,7 +213,7 @@ class UpdateTagsDeletePhotoTest extends TestCase
         ]);
 
         // Assert leaderboards are updated ------------
-        $this->assertEquals(4, $this->admin->xp_redis);
+        $this->assertEquals(5, $this->admin->xp_redis);
         $this->assertEquals(1, Redis::zscore("xp.users", $this->user->id));
         $this->assertEquals(1, Redis::zscore("xp.country.{$this->photo->country_id}", $this->user->id));
         $this->assertEquals(1, Redis::zscore("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}", $this->user->id));

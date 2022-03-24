@@ -156,7 +156,12 @@ class AdminController extends Controller
         $photo->result_string = null;
         $photo->save();
 
-        $tagUpdates = $this->calculateTagsDiffAction->run($photo->tags(), []);
+        $tagUpdates = $this->calculateTagsDiffAction->run(
+            $photo->tags(),
+            [],
+            $photo->customTags->pluck('tag')->toArray(),
+            []
+        );
         $this->deleteTagsAction->run($photo);
 
         $user = User::find($photo->user_id);
@@ -182,7 +187,12 @@ class AdminController extends Controller
 
         $this->deletePhotoAction->run($photo);
 
-        $tagUpdates = $this->calculateTagsDiffAction->run($photo->tags(), []);
+        $tagUpdates = $this->calculateTagsDiffAction->run(
+            $photo->tags(),
+            [],
+            $photo->customTags->pluck('tag')->toArray(),
+            []
+        );
 
         $this->deleteTagsAction->run($photo);
 

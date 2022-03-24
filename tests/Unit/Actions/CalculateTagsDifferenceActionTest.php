@@ -53,17 +53,54 @@ class CalculateTagsDifferenceActionTest extends TestCase
         ];
     }
 
+    public function customTagsDataProvider(): array
+    {
+        return [
+            'add new tag' => [
+                'oldTags' => [],
+                'newTags' => ['smokingggg'],
+                'removed' => [],
+                'added' => ['smokingggg'],
+                'removedUserXp' => 0,
+                'rewardedAdminXp' => 1
+            ],
+            'delete user tag' => [
+                'oldTags' => ['smokingggg', 'testtt'],
+                'newTags' => ['lighters'],
+                'removed' => ['smokingggg', 'testtt'],
+                'added' => ['lighters'],
+                'removedUserXp' => 2,
+                'rewardedAdminXp' => 3
+            ]
+        ];
+    }
+
     /**
      * @dataProvider tagsDataProvider
      */
-    public function test_run($oldTags, $newTags, $removed, $added, $removedUserXp, $rewardedAdminXp)
+    public function test_it_calculates_tags_diff($oldTags, $newTags, $removed, $added, $removedUserXp, $rewardedAdminXp)
     {
         /** @var CalculateTagsDifferenceAction $action */
         $action = app(CalculateTagsDifferenceAction::class);
-        $result = $action->run($oldTags, $newTags);
+        $result = $action->run($oldTags, $newTags, [], []);
 
-        $this->assertEquals($removed, $result['removed']);
-        $this->assertEquals($added, $result['added']);
+        $this->assertEquals($removed, $result['removed']['tags']);
+        $this->assertEquals($added, $result['added']['tags']);
+        $this->assertEquals($removedUserXp, $result['removedUserXp']);
+        $this->assertEquals($rewardedAdminXp, $result['rewardedAdminXp']);
+    }
+
+    /**
+     * @dataProvider customTagsDataProvider
+     */
+    public function test_it_calculates_custom_tags_diff($oldTags, $newTags, $removed, $added, $removedUserXp, $rewardedAdminXp)
+    {
+        /** @var CalculateTagsDifferenceAction $action */
+        $action = app(CalculateTagsDifferenceAction::class);
+        $result = $action->run([], [], $oldTags, $newTags);
+
+        $this->assertEquals($removed, $result['removed']['customTags']);
+        $this->assertEquals($added, $result['added']['customTags']);
         $this->assertEquals($removedUserXp, $result['removedUserXp']);
         $this->assertEquals($rewardedAdminXp, $result['rewardedAdminXp']);
     }

@@ -24,7 +24,12 @@ trait AddTagsTrait
         /** @var User $photo */
         $user = User::find($photo->user_id);
 
-        $tagUpdates = $this->calculateTagsDiffAction->run($photo->tags(), $tags);
+        $tagUpdates = $this->calculateTagsDiffAction->run(
+            $photo->tags(),
+            $tags,
+            $photo->customTags->pluck('tag')->toArray(),
+            $customTags
+        );
 
         // Delete the old tags
         /** @var DeleteTagsFromPhotoAction $deleteTagsAction */
