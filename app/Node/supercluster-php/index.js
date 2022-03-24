@@ -15,7 +15,8 @@ let features = JSON.parse(rawData);
 let index = new Supercluster({
     log: true,
     radius: 40,
-    maxZoom: 16
+    maxZoom: 16,
+    minPoints: 1
 });
 
 index.load(features);
