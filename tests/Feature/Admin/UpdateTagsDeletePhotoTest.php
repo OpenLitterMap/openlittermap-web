@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Actions\LogAdminVerificationAction;
 use App\Events\TagsVerifiedByAdmin;
 use App\Models\Litter\Categories\Alcohol;
 use App\Models\Location\City;
@@ -185,6 +186,24 @@ class UpdateTagsDeletePhotoTest extends TestCase
                 return $e->photo_id === $this->photo->id;
             }
         );
+    }
+
+    /**
+     * @dataProvider provider
+     */
+    public function test_it_logs_the_admin_action(
+        $route, $deletesPhoto, $tagsKey
+    )
+    {
+        $spy = $this->spy(LogAdminVerificationAction::class);
+
+        $this->actingAs($this->admin)
+            ->post($route, [
+                'photoId' => $this->photo->id,
+                $tagsKey => ['alcohol' => ['beerBottle' => 10]]
+            ]);
+
+        $spy->shouldHaveReceived('run');
     }
 
     /**

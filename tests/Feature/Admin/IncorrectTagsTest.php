@@ -3,6 +3,7 @@
 namespace Tests\Feature\Admin;
 
 
+use App\Actions\LogAdminVerificationAction;
 use App\Models\Litter\Categories\Smoking;
 use App\Models\Photo;
 use App\Models\User\User;
@@ -165,5 +166,16 @@ class IncorrectTagsTest extends TestCase
         $response = $this->post('/admin/incorrect', ['photoId' => 0]);
 
         $response->assertNotFound();
+    }
+
+
+    public function test_it_logs_the_admin_action()
+    {
+        $spy = $this->spy(LogAdminVerificationAction::class);
+
+        $this->actingAs($this->admin)
+            ->post('/admin/incorrect', ['photoId' => $this->photo->id]);
+
+        $spy->shouldHaveReceived('run');
     }
 }

@@ -3,6 +3,7 @@
 namespace Tests\Feature\Admin;
 
 
+use App\Actions\LogAdminVerificationAction;
 use App\Events\TagsVerifiedByAdmin;
 use App\Models\Litter\Categories\Smoking;
 use App\Models\Photo;
@@ -139,5 +140,16 @@ class CorrectTagsKeepPhotoTest extends TestCase
                 return $e->photo_id === $this->photo->id;
             }
         );
+    }
+
+
+    public function test_it_logs_the_admin_action()
+    {
+        $spy = $this->spy(LogAdminVerificationAction::class);
+
+        $this->actingAs($this->admin)
+            ->post('/admin/verifykeepimage', ['photoId' => $this->photo->id]);
+
+        $spy->shouldHaveReceived('run');
     }
 }

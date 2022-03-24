@@ -3,6 +3,7 @@
 namespace Tests\Feature\Admin;
 
 
+use App\Actions\LogAdminVerificationAction;
 use App\Events\ImageDeleted;
 use App\Models\Photo;
 use App\Models\User\User;
@@ -175,5 +176,15 @@ class DeletePhotoTest extends TestCase
         $response = $this->post('/admin/destroy', ['photoId' => 0]);
 
         $response->assertNotFound();
+    }
+
+    public function test_it_logs_the_admin_action()
+    {
+        $spy = $this->spy(LogAdminVerificationAction::class);
+
+        $this->actingAs($this->admin)
+            ->post('/admin/destroy', ['photoId' => $this->photo->id]);
+
+        $spy->shouldHaveReceived('run');
     }
 }

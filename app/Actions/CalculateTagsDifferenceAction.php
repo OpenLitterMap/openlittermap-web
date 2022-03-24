@@ -4,6 +4,12 @@ namespace App\Actions;
 
 class CalculateTagsDifferenceAction
 {
+    /**
+     * Calculates the diff between the existing user tags
+     * and the tags provided by an admin
+     *
+     * todo refactor into returning a Value Object
+     */
     public function run(array $oldTags, array $newTags, array $oldCustomTags, array $newCustomTags): array
     {
         $tagsDiff = $this->tagsDiff($oldTags, $newTags);
