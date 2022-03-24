@@ -28,7 +28,7 @@ export default {
          */
         currentXp ()
         {
-            return this.user.xp;
+            return this.user.xp_redis;
         },
 
         /**

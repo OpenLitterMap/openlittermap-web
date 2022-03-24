@@ -40,7 +40,7 @@ Route::post('/register', 'ApiRegisterController@register');
 
 // Fetch User
 Route::get('/user', function (Request $request) {
-    return Auth::guard('api')->user()->append('position');
+    return Auth::guard('api')->user()->append('position', 'xp_redis');
 });
 
 // Reset Password

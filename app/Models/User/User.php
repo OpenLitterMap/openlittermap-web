@@ -25,6 +25,7 @@ use LaravelAndVueJS\Traits\LaravelPermissionToVueJS;
  * @property array<Team> $teams
  * @property Team $team
  * @property int $active_team
+ * @property int $xp_redis
  */
 class User extends Authenticatable
 {
@@ -174,6 +175,16 @@ class User extends Authenticatable
         $totalCustomTags = $this->customTags()->count();
 
         return $totalLitter + $totalBrands + $totalCustomTags;
+    }
+
+    /**
+     * Get xp_redis attribute
+     *
+     * @return int user's total XP
+     */
+    public function getXpRedisAttribute()
+    {
+        return (int) Redis::zscore("xp.users", $this->id);
     }
 
     /**
