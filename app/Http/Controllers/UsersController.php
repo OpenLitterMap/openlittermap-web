@@ -28,7 +28,7 @@ class UsersController extends Controller
      */
     public function getAuthUser ()
     {
-        return Auth::user()->load('roles');
+        return Auth::user()->load('roles')->append('xp_redis');
     }
 
     /**
