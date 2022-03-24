@@ -123,7 +123,7 @@ class AdminController extends Controller
 
         $this->rewardXpToAdmin();
 
-        $this->logAdminAction($photo, Route::getCurrentRoute()->getActionName());
+        $this->logAdminAction($photo, Route::getCurrentRoute()->getActionMethod());
 
         event (new TagsVerifiedByAdmin($photo->id));
     }
@@ -143,7 +143,7 @@ class AdminController extends Controller
 
         $this->rewardXpToAdmin();
 
-        $this->logAdminAction($photo, Route::getCurrentRoute()->getActionName());
+        $this->logAdminAction($photo, Route::getCurrentRoute()->getActionMethod());
 
         event (new TagsVerifiedByAdmin($photo->id));
     }
@@ -179,7 +179,7 @@ class AdminController extends Controller
 
         $this->rewardXpToAdmin();
 
-        $this->logAdminAction($photo, Route::getCurrentRoute()->getActionName(), $tagUpdates);
+        $this->logAdminAction($photo, Route::getCurrentRoute()->getActionMethod(), $tagUpdates);
 
         return ['success' => true];
     }
@@ -202,7 +202,7 @@ class AdminController extends Controller
             []
         );
 
-        $this->logAdminAction($photo, Route::getCurrentRoute()->getActionName(), $tagUpdates);
+        $this->logAdminAction($photo, Route::getCurrentRoute()->getActionMethod(), $tagUpdates);
 
         $this->deleteTagsAction->run($photo);
 
@@ -247,11 +247,11 @@ class AdminController extends Controller
         $photo->save();
 
         // TODO categories and custom_tags are not provided in the front-end
-        $tagUpdates = $this->addTags($request->categories, $request->custom_tags ?? [], $photo->id);
+        $tagUpdates = $this->addTags($request->categories ?? [], $request->custom_tags ?? [], $photo->id);
 
         $this->rewardXpToAdmin(1 + $tagUpdates['rewardedAdminXp']);
 
-        $this->logAdminAction($photo, Route::getCurrentRoute()->getActionName(), $tagUpdates);
+        $this->logAdminAction($photo, Route::getCurrentRoute()->getActionMethod(), $tagUpdates);
 
         event(new TagsVerifiedByAdmin($photo->id));
     }
@@ -279,7 +279,7 @@ class AdminController extends Controller
 
         $this->rewardXpToAdmin(1 + $tagUpdates['rewardedAdminXp']);
 
-        $this->logAdminAction($photo, Route::getCurrentRoute()->getActionName(), $tagUpdates);
+        $this->logAdminAction($photo, Route::getCurrentRoute()->getActionMethod(), $tagUpdates);
 
         event (new TagsVerifiedByAdmin($photo->id));
     }
