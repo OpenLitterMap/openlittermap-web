@@ -99,9 +99,10 @@ const helper = {
      * @param pickedUp
      * @param user
      * @param team
+     * @param url
      * @returns {string}
      */
-    getMapImagePopupContent: (imageUrl, tagsString, takenOn, pickedUp, user, team) => {
+    getMapImagePopupContent: (imageUrl, tagsString, takenOn, pickedUp, user, team, url = null) => {
         const tags = helper.parseTags(tagsString);
         const takenDateString = helper.formatPhotoTakenTime(takenOn);
         const teamFormatted = helper.formatTeam(team);
@@ -119,6 +120,7 @@ const helper = {
                 <p>${pickedUpFormatted}</p>
                 <p>${takenDateString}</p>
                 ${user || teamFormatted ? ('<p>' + user + '<br>' + teamFormatted + '</p>') : ''}
+                ${url ? '<a class="link" target="_blank" href="' + url + '"><i class="fa fa-link fa-rotate-90"></i></a>' : ''}
             </div>`;
     }
 };

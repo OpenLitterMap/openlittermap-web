@@ -221,25 +221,13 @@ class ApiPhotosController extends Controller
         $action = app(UpdateLeaderboardsForLocationAction::class);
         $action->run($photo, $user->id, 1);
 
-        $teamName = null;
-        if ($user->team) $teamName = $user->team->name;
-
         // Broadcast an event to anyone viewing the Global Map
         event(new ImageUploaded(
-            $city->city,
-            $state->state,
-            $country->country,
-            $country->shortcode,
-            $imageName,
-            $teamName,
-            $user['id'],
-            $country->id,
-            $state->id,
-            $city->id,
-            $lat,
-            $lon,
-            $user->is_trusted,
-            $user->active_team
+            $user,
+            $photo,
+            $country,
+            $state,
+            $city
         ));
 
         // Move this to redis
