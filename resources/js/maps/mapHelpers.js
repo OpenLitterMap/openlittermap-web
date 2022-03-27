@@ -107,6 +107,7 @@ const helper = {
         const takenDateString = helper.formatPhotoTakenTime(takenOn);
         const teamFormatted = helper.formatTeam(team);
         const pickedUpFormatted = helper.formatPickedUp(pickedUp);
+        const isLitterArt = tagsString && tagsString.includes('art.item');
 
         return `
             <img
@@ -117,9 +118,10 @@ const helper = {
             />
             <div class="leaflet-litter-img-container">
                 <p>${tags}</p>
-                <p>${pickedUpFormatted}</p>
+                ${!isLitterArt ? ('<p>' + pickedUpFormatted + '</p>') : ''}
                 <p>${takenDateString}</p>
-                ${user || teamFormatted ? ('<p>' + user + '<br>' + teamFormatted + '</p>') : ''}
+                ${user ? ('<p>' + user + '</p>') : ''}
+                ${teamFormatted ? ('<p>' + teamFormatted + '</p>') : ''}
                 ${url ? '<a class="link" target="_blank" href="' + url + '"><i class="fa fa-link fa-rotate-90"></i></a>' : ''}
             </div>`;
     }
