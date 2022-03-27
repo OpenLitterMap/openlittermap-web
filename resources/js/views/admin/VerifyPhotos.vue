@@ -77,7 +77,7 @@
                                 {{ this.photo.display_name }}
                             </p>
 
-                            <img class="verify-image" :src="this.photo.filename" />
+                            <img v-img="{sourceButton: true}" class="verify-image" :src="this.photo.filename" />
 
                             <div class="has-text-centered mb1">
                                 <button :class="verify_correct_button" :disabled="processing" @click="verifyCorrect">VERIFY CORRECT</button>
