@@ -187,7 +187,7 @@ function onEachArtFeature (feature, layer)
         const url = new URL(window.location.href);
         url.searchParams.set('lat', feature.geometry.coordinates[0]);
         url.searchParams.set('lon', feature.geometry.coordinates[1]);
-        url.searchParams.set('zoom', 14);
+        url.searchParams.set('zoom', CLUSTER_ZOOM_THRESHOLD);
         url.searchParams.set('photo', feature.properties.photo_id);
 
         L.popup(mapHelper.popupOptions)
@@ -427,7 +427,7 @@ export default {
             const url = new URL(window.location.href);
             url.searchParams.set('lat', feature.geometry.coordinates[0]);
             url.searchParams.set('lon', feature.geometry.coordinates[1]);
-            url.searchParams.set('zoom', 17);
+            url.searchParams.set('zoom', CLUSTER_ZOOM_THRESHOLD);
             url.searchParams.set('photo', feature.properties.photo_id);
 
             L.popup(mapHelper.popupOptions)
@@ -475,8 +475,11 @@ export default {
         flyToLocation (location)
         {
             const latLng = [location.latitude, location.longitude];
+            const zoom = location.photoId && Math.round(location.zoom) < CLUSTER_ZOOM_THRESHOLD
+                ? CLUSTER_ZOOM_THRESHOLD
+                : location.zoom;
 
-            map.flyTo(latLng, location.zoom, {
+            map.flyTo(latLng, zoom, {
                 animate: true,
                 duration: 5
             });
