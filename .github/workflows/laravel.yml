@@ -92,7 +92,13 @@ jobs:
     - name: Compile NPM assets
       run: npm run dev --silent
     - name: Execute tests (Unit and Feature tests) via PHPUnit
-      run: vendor/bin/phpunit # --coverage-text
+      run: vendor/bin/phpunit --coverage-clover coverage.xml
       env:
           DB_PORT: ${{ job.services.mysql.ports['3306'] }}
           REDIS_PORT: ${{ job.services.redis.ports['6379'] }}
+    - name: Codecov
+      uses: codecov/codecov-action@v2
+      with:
+        files: ./coverage.xml # optional
+        fail_ci_if_error: true # optional (default = false)
+        verbose: true # optional (default = false)
