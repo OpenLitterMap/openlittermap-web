@@ -110,7 +110,8 @@
                 v-show="! admin && this.id !== 0"
                 :disabled="!hasAddedTags"
                 :class="button"
-                @click="submit"
+                type="submit"
+                @click.prevent="submit"
             >{{ $t('common.submit') }}</button>
 
             <!-- Only show these on mobile <= 768px, and when not using MyPhotos => AddManyTagsToPhotos (id = 0) -->
@@ -659,13 +660,9 @@ export default {
         }
     }
 
-    .list-enter-active, .list-leave-active {
-        transition: all 1s;
-    }
-
-    .list-enter, .list-leave-to {
-        opacity: 0;
-        transform: translateX(30px);
+    button:focus {
+        outline: 2px solid lightskyblue;
+        outline-offset: 2px;
     }
 
 </style>
