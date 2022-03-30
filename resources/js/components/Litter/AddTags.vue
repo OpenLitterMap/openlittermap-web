@@ -112,7 +112,10 @@
                 :class="button"
                 type="submit"
                 @click.prevent="submit"
-            >{{ $t('common.submit') }}</button>
+            >
+                <span class="tooltip-text is-size-6">Ctrl (⌘) + Enter</span>
+                {{ $t('common.submit') }}
+            </button>
 
             <!-- Only show these on mobile <= 768px, and when not using MyPhotos => AddManyTagsToPhotos (id = 0) -->
             <div class="show-mobile" v-show="this.id !== 0">
@@ -171,9 +174,21 @@ export default {
 
         // If the user hits Ctrl + Spacebar, search all tags
         window.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.key.toLowerCase() === ' ') {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === ' ') {
                 this.$refs.search.input.focus();
                 e.preventDefault();
+            }
+        });
+
+        // If the user hits Ctrl + Enter, submit the tags
+        window.addEventListener('keydown', (e) => {
+            if (
+                (e.ctrlKey || e.metaKey) &&
+                e.key.toLowerCase() === 'enter' &&
+                this.hasAddedTags
+            ) {
+                e.preventDefault();
+                this.submit();
             }
         });
 
@@ -184,7 +199,7 @@ export default {
     data ()
     {
         return {
-            btn: 'button is-medium is-success',
+            btn: 'button is-medium is-success tooltip',
             quantity: 1,
             processing: false,
             integers: Array.from({ length: 100 }, (_, i) => i + 1),
