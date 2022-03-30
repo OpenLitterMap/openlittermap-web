@@ -26,11 +26,11 @@ const router = new VueRouter({
         },
         {
             path: '/password/reset',
-            component: require('./views/Auth/Passwords/Email').default
+            component: require('./views/Auth/passwords/Email').default
         },
         {
             path: '/password/reset/:token',
-            component: require('./views/Auth/Passwords/Reset').default,
+            component: require('./views/Auth/passwords/Reset').default,
             props: true
         },
         {

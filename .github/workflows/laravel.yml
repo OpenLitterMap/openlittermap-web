@@ -87,8 +87,10 @@ jobs:
           REDIS_PORT: ${{ job.services.redis.ports['6379'] }}
     - name: Directory Permissions
       run: chmod -R 777 storage bootstrap/cache
-    - name: Compile assets
-      run: npm install && npm run dev
+    - name: Install NPM assets
+      run: npm install --silent
+    - name: Compile NPM assets
+      run: npm run dev --silent
     - name: Execute tests (Unit and Feature tests) via PHPUnit
       run: vendor/bin/phpunit # --coverage-text
       env:
