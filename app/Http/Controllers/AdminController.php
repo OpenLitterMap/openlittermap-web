@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\CalculateTagsDifferenceAction;
+use App\Actions\Locations\UpdateLeaderboardsXpAction;
+use App\Actions\LogAdminVerificationAction;
 use App\Actions\Photos\DeleteTagsFromPhotoAction;
 use App\Actions\Photos\DeletePhotoAction;
 use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
@@ -21,6 +24,7 @@ use Illuminate\Http\Request;
 use App\Events\TagsVerifiedByAdmin;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 
 class AdminController extends Controller
 {
@@ -32,6 +36,8 @@ class AdminController extends Controller
     protected $updateLeaderboardsAction;
     /** @var DeletePhotoAction */
     protected $deletePhotoAction;
+    /** @var CalculateTagsDifferenceAction */
+    protected $calculateTagsDiffAction;
 
     /**
      * Apply IsAdmin middleware to all of these routes
@@ -39,11 +45,13 @@ class AdminController extends Controller
      * @param DeleteTagsFromPhotoAction $deleteTagsAction
      * @param UpdateLeaderboardsForLocationAction $updateLeaderboardsAction
      * @param DeletePhotoAction $deletePhotoAction
+     * @param CalculateTagsDifferenceAction $calculateTagsDiffAction
      */
     public function __construct (
         DeleteTagsFromPhotoAction $deleteTagsAction,
         UpdateLeaderboardsForLocationAction $updateLeaderboardsAction,
-        DeletePhotoAction $deletePhotoAction
+        DeletePhotoAction $deletePhotoAction,
+        CalculateTagsDifferenceAction $calculateTagsDiffAction
     )
     {
         $this->middleware('admin');
@@ -51,6 +59,7 @@ class AdminController extends Controller
         $this->deleteTagsAction = $deleteTagsAction;
         $this->updateLeaderboardsAction = $updateLeaderboardsAction;
         $this->deletePhotoAction = $deletePhotoAction;
+        $this->calculateTagsDiffAction = $calculateTagsDiffAction;
     }
 
     /**
@@ -102,6 +111,7 @@ class AdminController extends Controller
      */
     public function verify (Request $request)
     {
+        /** @var Photo $photo */
         $photo = Photo::findOrFail($request->photoId);
 
         $this->deletePhotoAction->run($photo);
@@ -110,6 +120,10 @@ class AdminController extends Controller
         $photo->verified = 2;
         $photo->filename = '/assets/verified.jpg';
         $photo->save();
+
+        $this->rewardXpToAdmin();
+
+        $this->logAdminAction($photo, Route::getCurrentRoute()->getActionMethod());
 
         event (new TagsVerifiedByAdmin($photo->id));
     }
@@ -121,10 +135,15 @@ class AdminController extends Controller
      */
     public function verifykeepimage (Request $request)
     {
+        /** @var Photo $photo */
         $photo = Photo::findOrFail($request->photoId);
         $photo->verified = 2;
         $photo->verification = 1;
         $photo->save();
+
+        $this->rewardXpToAdmin();
+
+        $this->logAdminAction($photo, Route::getCurrentRoute()->getActionMethod());
 
         event (new TagsVerifiedByAdmin($photo->id));
     }
@@ -143,14 +162,24 @@ class AdminController extends Controller
         $photo->result_string = null;
         $photo->save();
 
-        $deletedTags = $this->deleteTagsAction->run($photo);
+        $tagUpdates = $this->calculateTagsDiffAction->run(
+            $photo->tags(),
+            [],
+            $photo->customTags->pluck('tag')->toArray(),
+            []
+        );
+        $this->deleteTagsAction->run($photo);
 
         $user = User::find($photo->user_id);
-        $user->xp = max(0, $user->xp - $deletedTags['all']);
+        $user->xp = max(0, $user->xp - $tagUpdates['removedUserXp']);
         $user->count_correctly_verified = 0;
         $user->save();
 
-        $this->updateLeaderboardsAction->run($photo, $user->id, -$deletedTags['all']);
+        $this->updateLeaderboardsAction->run($photo, $user->id, - $tagUpdates['removedUserXp']);
+
+        $this->rewardXpToAdmin();
+
+        $this->logAdminAction($photo, Route::getCurrentRoute()->getActionMethod(), $tagUpdates);
 
         return ['success' => true];
     }
@@ -160,22 +189,34 @@ class AdminController extends Controller
      */
     public function destroy (Request $request)
     {
+        /** @var Photo $photo */
         $photo = Photo::findOrFail($request->photoId);
         $user = User::find($photo->user_id);
 
         $this->deletePhotoAction->run($photo);
 
-        $deletedTags = $this->deleteTagsAction->run($photo);
+        $tagUpdates = $this->calculateTagsDiffAction->run(
+            $photo->tags(),
+            [],
+            $photo->customTags->pluck('tag')->toArray(),
+            []
+        );
+
+        $this->logAdminAction($photo, Route::getCurrentRoute()->getActionMethod(), $tagUpdates);
+
+        $this->deleteTagsAction->run($photo);
 
         $photo->delete();
 
-        $totalXp = $deletedTags['all'] + 1; // 1xp from uploading
+        $totalXp = $tagUpdates['removedUserXp'] + 1; // 1xp from uploading
 
         $user->xp = max(0, $user->xp - $totalXp);
         $user->total_images = $user->total_images > 0 ? $user->total_images - 1 : 0;
         $user->save();
 
         $this->updateLeaderboardsAction->run($photo, $user->id, -$totalXp);
+
+        $this->rewardXpToAdmin();
 
         event(new ImageDeleted(
             $user,
@@ -193,6 +234,7 @@ class AdminController extends Controller
      */
     public function updateDelete (Request $request)
     {
+        /** @var Photo $photo */
         $photo = Photo::find($request->photoId);
 
         $this->deletePhotoAction->run($photo);
@@ -205,7 +247,11 @@ class AdminController extends Controller
         $photo->save();
 
         // TODO categories and custom_tags are not provided in the front-end
-        $this->addTags($request->categories, [], $photo->id);
+        $tagUpdates = $this->addTags($request->categories ?? [], $request->custom_tags ?? [], $photo->id);
+
+        $this->rewardXpToAdmin(1 + $tagUpdates['rewardedAdminXp']);
+
+        $this->logAdminAction($photo, Route::getCurrentRoute()->getActionMethod(), $tagUpdates);
 
         event(new TagsVerifiedByAdmin($photo->id));
     }
@@ -217,17 +263,23 @@ class AdminController extends Controller
      */
     public function updateTags (Request $request)
     {
+        /** @var Photo $photo */
         $photo = Photo::find($request->photoId);
         $photo->verification = 1;
         $photo->verified = 2;
         $photo->total_litter = 0;
         $photo->save();
+        $oldTags = $photo->tags();
 
         $user = User::find($photo->user_id);
         $user->count_correctly_verified = 0; // At 100, the user earns a Littercoin
         $user->save();
 
-        $this->addTags($request->tags ?? [], $request->custom_tags ?? [], $request->photoId);
+        $tagUpdates = $this->addTags($request->tags ?? [], $request->custom_tags ?? [], $request->photoId);
+
+        $this->rewardXpToAdmin(1 + $tagUpdates['rewardedAdminXp']);
+
+        $this->logAdminAction($photo, Route::getCurrentRoute()->getActionMethod(), $tagUpdates);
 
         event (new TagsVerifiedByAdmin($photo->id));
     }
@@ -329,5 +381,41 @@ class AdminController extends Controller
     protected function usersToSkipVerification(): array
     {
         return [3233, 5292];
+    }
+
+    /**
+     * Rewards the admin performing the verification with xp
+     * @param int $xp
+     * @return void
+     */
+    private function rewardXpToAdmin(int $xp = 1): void
+    {
+        auth()->user()->increment('xp', $xp);
+        /** @var UpdateLeaderboardsXpAction $updateLeaderboardsAction */
+        $updateLeaderboardsAction = app(UpdateLeaderboardsXpAction::class);
+        $updateLeaderboardsAction->run(auth()->id(), $xp);
+    }
+
+    /**
+     * Logs the admin action into the database
+     * for storing xp updates on the photo's user
+     * @param Photo $photo
+     * @param string $action
+     * @param array|null $tagsDiff
+     * @return void
+     */
+    private function logAdminAction(Photo $photo, string $action, array $tagsDiff = null): void
+    {
+        /** @var LogAdminVerificationAction $action */
+        $logger = app(LogAdminVerificationAction::class);
+        $logger->run(
+            auth()->user(),
+            $photo,
+            $action,
+            $tagsDiff['added'] ?? [],
+            $tagsDiff['removed'] ?? [],
+            $tagsDiff['rewardedAdminXp'] ?? 0,
+            $tagsDiff['removedUserXp'] ?? 0
+        );
     }
 }
