@@ -3,10 +3,12 @@
 namespace Tests\Feature\Admin;
 
 
+use App\Actions\LogAdminVerificationAction;
 use App\Events\TagsVerifiedByAdmin;
 use App\Models\Photo;
 use App\Models\User\User;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
 use Tests\Feature\HasPhotoUploads;
@@ -69,9 +71,12 @@ class CorrectTagsDeletePhotoTest extends TestCase
     public function test_an_admin_can_verify_and_delete_photos_uploaded_by_users()
     {
         // We make sure the photo exists
+        Redis::zrem('xp.users', $this->admin->id);
         Storage::disk('s3')->assertExists($this->imageAndAttributes['filepath']);
         Storage::disk('bbox')->assertExists($this->imageAndAttributes['filepath']);
         $this->assertEquals(4, $this->user->xp);
+        $this->assertEquals(0, $this->admin->xp);
+        $this->assertEquals(0, $this->admin->xp_redis);
 
         // Admin verifies the photo -------------------
         $this->actingAs($this->admin);
@@ -88,6 +93,9 @@ class CorrectTagsDeletePhotoTest extends TestCase
         $this->assertEquals('/assets/verified.jpg', $this->photo->filename);
         $this->assertEquals(1, $this->photo->verification);
         $this->assertEquals(2, $this->photo->verified);
+        // Admin is rewarded with 1 XP
+        $this->assertEquals(1, $this->admin->xp);
+        $this->assertEquals(1, $this->admin->xp_redis);
     }
 
     public function test_unauthorized_users_cannot_verify_and_delete_photos()
@@ -134,5 +142,15 @@ class CorrectTagsDeletePhotoTest extends TestCase
                 return $e->photo_id === $this->photo->id;
             }
         );
+    }
+
+    public function test_it_logs_the_admin_action()
+    {
+        $spy = $this->spy(LogAdminVerificationAction::class);
+
+        $this->actingAs($this->admin)
+            ->post('/admin/verify', ['photoId' => $this->photo->id]);
+
+        $spy->shouldHaveReceived('run');
     }
 }

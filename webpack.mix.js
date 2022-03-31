@@ -12,6 +12,23 @@ const mix = require('laravel-mix');
  */
 
 mix.js('resources/js/app.js', 'public/js')
+    .extract([
+        "vue",
+        "vue-router",
+        "vue-localstorage",
+        "vue-sweetalert2",
+        "vue-toastify",
+        "vue-number-animation",
+        "vue-echo-laravel",
+        "buefy",
+        "vue-fullscreen",
+        "laravel-permission-to-vuejs",
+        "axios",
+        "moment",
+        "v-img",
+        "vue2-leaflet",
+        "vue2-leaflet-markercluster",
+    ])
     .sass('resources/sass/app.scss', 'public/css');
 
 // remove comments when in production

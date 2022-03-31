@@ -5,7 +5,7 @@
                 v-for="(event, index) in events"
                 :key="event.id"
                 class="list-item"
-                @dblclick.stop="flyToLocation(event)"
+                @dblclick.prevent.stop="flyToLocation(event)"
             >
                 <component
                     :is="event.type"
@@ -48,6 +48,7 @@ export default {
             vm.events.unshift({
                 id: new Date().getTime(),
                 type: 'ImageUploaded',
+                photoId: payload.photoId,
                 city: payload.city,
                 state: payload.state,
                 country: payload.country,
@@ -144,10 +145,7 @@ export default {
         flyToLocation (event)
         {
             if (event.latitude && event.longitude) {
-                this.$emit('fly-to-location', {
-                    lat: event.latitude,
-                    lon: event.longitude
-                });
+                this.$emit('fly-to-location', {...event, zoom: 17});
             }
         },
 

@@ -184,6 +184,12 @@ function onEachArtFeature (feature, layer)
 
         const user = mapHelper.formatUserName(feature.properties.name, feature.properties.username);
 
+        const url = new URL(window.location.href);
+        url.searchParams.set('lat', feature.geometry.coordinates[0]);
+        url.searchParams.set('lon', feature.geometry.coordinates[1]);
+        url.searchParams.set('zoom', CLUSTER_ZOOM_THRESHOLD);
+        url.searchParams.set('photo', feature.properties.photo_id);
+
         L.popup(mapHelper.popupOptions)
             .setLatLng(feature.geometry.coordinates)
             .setContent(
@@ -193,7 +199,8 @@ function onEachArtFeature (feature, layer)
                     feature.properties.datetime,
                     feature.properties.picked_up,
                     user,
-                    feature.properties.team
+                    feature.properties.team,
+                    url.toString()
                 )
             )
             .openOn(map);
@@ -231,6 +238,11 @@ export default {
     name: 'Supercluster',
     components: {
         LiveEvents
+    },
+    data() {
+        return {
+            visiblePoints: []
+        }
     },
     mounted ()
     {
@@ -362,6 +374,8 @@ export default {
                 .then(response => {
                     console.log('get_global_points', response);
 
+                    this.visiblePoints = response.data.features;
+
                     // Clear layer if prev layer is cluster.
                     if (prevZoom < CLUSTER_ZOOM_THRESHOLD)
                     {
@@ -410,6 +424,12 @@ export default {
         {
             const user = mapHelper.formatUserName(feature.properties.name, feature.properties.username);
 
+            const url = new URL(window.location.href);
+            url.searchParams.set('lat', feature.geometry.coordinates[0]);
+            url.searchParams.set('lon', feature.geometry.coordinates[1]);
+            url.searchParams.set('zoom', CLUSTER_ZOOM_THRESHOLD);
+            url.searchParams.set('photo', feature.properties.photo_id);
+
             L.popup(mapHelper.popupOptions)
                 .setLatLng(latLng)
                 .setContent(
@@ -419,7 +439,8 @@ export default {
                         feature.properties.datetime,
                         feature.properties.picked_up,
                         user,
-                        feature.properties.team
+                        feature.properties.team,
+                        url.toString()
                     )
                 )
                 .openOn(map);
@@ -427,37 +448,49 @@ export default {
 
         /**
          * Goes to the location and zoom given in the URL
-         * Params are: lat, lon, zoom
+         * Params are: lat, lon, zoom, photo
          */
         flyToLocationFromURL ()
         {
             let urlParams = new URLSearchParams(window.location.search);
-            let lat = parseFloat(urlParams.get('lat') || 0);
-            let lon = parseFloat(urlParams.get('lon') || 0);
+            let latitude = parseFloat(urlParams.get('lat') || 0);
+            let longitude = parseFloat(urlParams.get('lon') || 0);
             let zoom = parseFloat(urlParams.get('zoom') || MIN_ZOOM);
+            let photoId = parseInt(urlParams.get('photo'));
 
             // Validate lat, lon, and zoom level
-            lat = (lat < -85 || lat > 85) ? 0 : lat;
-            lon = (lon < -180 || lon > 180) ? 0 : lon;
+            latitude = (latitude < -85 || latitude > 85) ? 0 : latitude;
+            longitude = (longitude < -180 || longitude > 180) ? 0 : longitude;
             zoom = (zoom < 2 || zoom > 18) ? MIN_ZOOM : zoom;
 
-            if (lat === 0 && lon === 0 && zoom === 2) return;
+            if (latitude === 0 && longitude === 0 && zoom === 2) return;
 
-            map.flyTo([lat, lon], zoom, {
-                animate: true,
-                duration: 7
-            });
+            this.flyToLocation({latitude, longitude, zoom, photoId});
         },
 
         /**
          * Goes to the location provided
+         * Opens the photo if present
          */
         flyToLocation (location)
         {
-            map.flyTo([location.lat, location.lon], 17, {
+            const latLng = [location.latitude, location.longitude];
+            const zoom = location.photoId && Math.round(location.zoom) < CLUSTER_ZOOM_THRESHOLD
+                ? CLUSTER_ZOOM_THRESHOLD
+                : location.zoom;
+
+            map.flyTo(latLng, zoom, {
                 animate: true,
-                duration: 7
+                duration: 5
             });
+
+            if (location.photoId) {
+                setTimeout(() => {
+                    if (!this.visiblePoints.length) return;
+                    const feature = this.visiblePoints.find(f => f.properties.photo_id === location.photoId);
+                    if (feature) this.renderLeafletPopup(feature, latLng)
+                }, 8000);
+            }
         },
 
         /**

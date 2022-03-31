@@ -3,6 +3,7 @@
 namespace Tests\Feature\Admin;
 
 
+use App\Actions\LogAdminVerificationAction;
 use App\Events\ImageDeleted;
 use App\Models\Photo;
 use App\Models\User\User;
@@ -72,6 +73,7 @@ class DeletePhotoTest extends TestCase
         // We make sure the photo exists
         Storage::disk('s3')->assertExists($this->imageAndAttributes['filepath']);
         Storage::disk('bbox')->assertExists($this->imageAndAttributes['filepath']);
+        $this->assertEquals(0, $this->admin->xp);
         $this->assertEquals(1, $this->user->has_uploaded);
         $this->assertEquals(4, $this->user->xp);
         $this->assertEquals(1, $this->user->total_images);
@@ -84,6 +86,8 @@ class DeletePhotoTest extends TestCase
 
         $this->user->refresh();
 
+        // Admin is rewarded with 1 XP
+        $this->assertEquals(1, $this->admin->xp);
         // And it's gone
         $this->assertEquals(1, $this->user->has_uploaded); // TODO shouldn't it decrement?
         $this->assertEquals(0, $this->user->xp);
@@ -118,6 +122,7 @@ class DeletePhotoTest extends TestCase
     public function test_leaderboards_are_updated_when_an_admin_deletes_a_photo()
     {
         // User has already uploaded an image, so their xp is 1
+        Redis::zrem('xp.users', $this->admin->id);
         Redis::zadd("xp.users", 1, $this->user->id);
         Redis::zadd("xp.country.{$this->photo->country_id}", 1, $this->user->id);
         Redis::zadd("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}", 1, $this->user->id);
@@ -128,6 +133,7 @@ class DeletePhotoTest extends TestCase
             'picked_up' => false,
             'tags' => ['smoking' => ['butts' => 3]]
         ]);
+        $this->assertEquals(0, $this->admin->xp_redis);
         $this->assertEquals(4, Redis::zscore("xp.users", $this->user->id));
         $this->assertEquals(4, Redis::zscore("xp.country.{$this->photo->country_id}", $this->user->id));
         $this->assertEquals(4, Redis::zscore("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}", $this->user->id));
@@ -137,6 +143,7 @@ class DeletePhotoTest extends TestCase
         $this->actingAs($this->admin)->post('/admin/destroy', ['photoId' => $this->photo->id]);
 
         // Assert leaderboards are updated ------------
+        $this->assertEquals(1, $this->admin->xp_redis);
         $this->assertEquals(0, Redis::zscore("xp.users", $this->user->id));
         $this->assertEquals(0, Redis::zscore("xp.country.{$this->photo->country_id}", $this->user->id));
         $this->assertEquals(0, Redis::zscore("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}", $this->user->id));
@@ -169,5 +176,15 @@ class DeletePhotoTest extends TestCase
         $response = $this->post('/admin/destroy', ['photoId' => 0]);
 
         $response->assertNotFound();
+    }
+
+    public function test_it_logs_the_admin_action()
+    {
+        $spy = $this->spy(LogAdminVerificationAction::class);
+
+        $this->actingAs($this->admin)
+            ->post('/admin/destroy', ['photoId' => $this->photo->id]);
+
+        $spy->shouldHaveReceived('run');
     }
 }
