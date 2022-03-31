@@ -12,16 +12,23 @@ export const mutations = {
     addRecentTag (state, payload)
     {
         let tags = Object.assign({}, state.recentTags);
-
-        tags = {
-            ...tags,
+        let newTags = {
             [payload.category]: {
-                ...tags[payload.category],
                 [payload.tag]: 1 // quantity not important
             }
+        };
+
+        Object.keys(tags).forEach(category => {
+            if (!newTags[category]) newTags[category] = tags[category];
+        });
+
+        if (tags[payload.category]) {
+            Object.keys(tags[payload.category]).forEach(tag => {
+                if (!newTags[payload.category][tag]) newTags[payload.category][tag] = tags[payload.category][tag];
+            })
         }
 
-        state.recentTags = tags;
+        state.recentTags = newTags;
     },
 
     /**
@@ -81,12 +88,12 @@ export const mutations = {
             return;
         }
 
-        tags[payload.photoId].push(payload.customTag);
+        tags[payload.photoId].unshift(payload.customTag);
 
         // Also add this tag to the recent custom tags
         if (state.recentCustomTags.indexOf(payload.customTag) === -1)
         {
-            state.recentCustomTags.push(payload.customTag);
+            state.recentCustomTags.unshift(payload.customTag);
         }
 
         // And indicate that a new tag has been added

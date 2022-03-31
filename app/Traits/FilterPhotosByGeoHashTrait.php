@@ -81,6 +81,7 @@ trait FilterPhotosByGeoHashTrait
                     'coordinates' => [$photo->lat, $photo->lon]
                 ],
                 'properties' => [
+                    'photo_id' => $photo->id,
                     'result_string' => $resultString,
                     'filename' => $filename,
                     'datetime' => $photo->datetime,

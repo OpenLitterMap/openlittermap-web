@@ -2,6 +2,11 @@
 
 namespace App\Events;
 
+use App\Models\Location\City;
+use App\Models\Location\Country;
+use App\Models\Location\State;
+use App\Models\Photo;
+use App\Models\User\User;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -17,7 +22,7 @@ class ImageUploaded implements ShouldBroadcast, ShouldQueue
     public $city, $state, $country, $countryCode, $imageName, $teamName, $isUserVerified;
 
     // For CheckContributors
-    public $userId, $countryId, $stateId, $cityId, $latitude, $longitude, $teamId;
+    public $photoId, $userId, $countryId, $stateId, $cityId, $latitude, $longitude, $teamId;
 
     /**
      * Create a new event instance.
@@ -25,36 +30,28 @@ class ImageUploaded implements ShouldBroadcast, ShouldQueue
      * @return void
      */
     public function __construct (
-        string $city,
-        string $state,
-        string $country,
-        string $countryCode,
-        string $imageName,
-        ?string $teamName,
-        int $userId,
-        int $countryId,
-        int $stateId,
-        int $cityId,
-        float $latitude,
-        float $longitude,
-        bool $isUserVerified,
-        ?int $teamId
+        User $user,
+        Photo $photo,
+        Country $country,
+        State $state,
+        City $city
     )
     {
-        $this->city = $city;
-        $this->state = $state;
-        $this->country = $country;
-        $this->countryCode = $countryCode;
-        $this->imageName = $imageName;
-        $this->teamName = $teamName;
-        $this->userId = $userId;
-        $this->countryId = $countryId;
-        $this->stateId = $stateId;
-        $this->cityId = $cityId;
-        $this->latitude = $latitude;
-        $this->longitude = $longitude;
-        $this->isUserVerified = $isUserVerified;
-        $this->teamId = $teamId;
+        $this->city = $city->city;
+        $this->state = $state->state;
+        $this->country = $country->country;
+        $this->countryCode = $country->shortcode;
+        $this->imageName = $photo->filename;
+        $this->teamName = $user->team->name ?? null;
+        $this->userId = $user->id;
+        $this->photoId = $photo->id;
+        $this->countryId = $country->id;
+        $this->stateId = $state->id;
+        $this->cityId = $city->id;
+        $this->latitude = $photo->lat;
+        $this->longitude = $photo->lon;
+        $this->isUserVerified = $user->is_trusted;
+        $this->teamId = $user->active_team;
     }
 
     /**

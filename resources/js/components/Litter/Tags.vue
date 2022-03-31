@@ -1,27 +1,29 @@
 <template>
     <div>
         <ul class="container">
-            <li v-if="customTags.length" class="admin-item">
-                <span class="category">{{ $t('tags.custom-tags') }}</span>
-                <span v-for="tag in customTags"
-                      class="tag is-medium has-background-link has-text-white litter-tag"
-                      @click="removeCustomTag(tag)"
-                      v-html="tag"
-                />
-            </li>
+            <transition-group name="categories" tag="div">
+                <li v-if="customTags.length" class="admin-item" :key="'customTags'">
+                    <span class="category">{{ $t('tags.custom-tags') }}</span>
+                    <span v-for="tag in customTags"
+                          class="tag is-medium has-background-link has-text-white litter-tag"
+                          @click="removeCustomTag(tag)"
+                          v-html="tag"
+                    />
+                </li>
 
-            <li v-for="category in categories" class="admin-item">
-                <!-- Translated Category Title -->
-                <span class="category">{{ getCategory(category.category) }}</span>
+                <li v-for="category in categories" class="admin-item" :key="category.category">
+                    <!-- Translated Category Title -->
+                    <span class="category">{{ getCategory(category.category) }}</span>
 
-                <!-- List of tags in each category -->
-                <span
-                    v-for="tags in Object.entries(category.tags)"
-                    class="tag is-medium is-info litter-tag"
-                    @click="removeTag(category.category, tags[0])"
-                    v-html="getTags(tags, category.category)"
-                />
-            </li>
+                    <!-- List of tags in each category -->
+                    <span
+                        v-for="tags in Object.entries(category.tags)"
+                        class="tag is-medium is-info litter-tag"
+                        @click="removeTag(category.category, tags[0])"
+                        v-html="getTags(tags, category.category)"
+                    />
+                </li>
+            </transition-group>
         </ul>
     </div>
 </template>
@@ -133,6 +135,17 @@ export default {
         cursor: pointer;
         margin-bottom: 10px;
         width: 100%;
+    }
+
+    .categories-enter-active, .categories-leave-active {
+        transition: all 0.5s;
+    }
+    .categories-enter, .categories-leave-to {
+        opacity: 0;
+        transform: translateY(50px);
+    }
+    .categories-move {
+        transition: transform 0.5s;
     }
 
 </style>

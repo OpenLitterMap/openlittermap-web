@@ -236,26 +236,14 @@ class PhotosController extends Controller
 
         $this->updateLeaderboardsAction->run($photo, $user->id, 1);
 
-        $teamName = null;
-        if ($user->team) $teamName = $user->team->name;
-
         // Broadcast this event to anyone viewing the global map
         // This will also update country, state, and city.total_contributors_redis
         event(new ImageUploaded(
-            $city->city,
-            $state->state,
-            $country->country,
-            $country->shortcode,
-            $imageName,
-            $teamName,
-            $user->id,
-            $country->id,
-            $state->id,
-            $city->id,
-            $latlong[0],
-            $latlong[1],
-            $user->is_trusted,
-            $user->active_team
+            $user,
+            $photo,
+            $country,
+            $state,
+            $city,
         ));
 
         // Increment the { Month-Year: int } value for each location

@@ -16,11 +16,17 @@
                 @vdropzone-error="failed"
                 @vdropzone-files-added="uploadStarted"
                 @vdropzone-file-added="uploadStarted"
-                @vdropzone-complete-multiple="uploadCompleted"
-                @vdropzone-complete="uploadCompleted"
+                @vdropzone-queue-complete="uploadCompleted"
+                @vdropzone-total-upload-progress="uploadProgress"
             >
                 <i class="fa fa-image upload-icon" aria-hidden="true"/>
             </vue-dropzone>
+
+            <div class="wrapper" v-show="progress">
+                <div class="progress-bar">
+                    <span class="progress-bar-fill has-background-info" :style="{width: `${progress}%`}"></span>
+                </div>
+            </div>
 
             <h2 class="title is-2">
                 {{ $t('upload.thank-you') }}
@@ -61,7 +67,8 @@ export default {
                 paramName: 'file',
                 acceptedFiles: 'image/*,.heic,.heif'
             },
-            showTagLitterButton: true
+            showTagLitterButton: true,
+            progress: 0
         };
     },
     computed: {
@@ -124,6 +131,11 @@ export default {
         tag ()
         {
             this.$router.push({ path: '/tag' });
+        },
+
+        uploadProgress (totalUploadProgress, totalBytes, totalBytesSent)
+        {
+            this.progress = totalUploadProgress;
         }
     }
 };
@@ -149,7 +161,7 @@ export default {
         border: 2px $drop-zone-border dashed;
         border-radius: 10px;
         margin: {
-            bottom: 3rem;
+            bottom: 1rem;
         }
     }
 
@@ -178,5 +190,22 @@ export default {
             transform: translate(0px, -5px);
             transition-duration: 0.3s
         }
+    }
+
+    .wrapper {
+        margin: 0 4rem 2rem 4rem;
+    }
+
+    .progress-bar {
+        width: 100%;
+        background-color: #ffffff;
+        border-radius: 2px;
+    }
+
+    .progress-bar-fill {
+        display: block;
+        height: 4px;
+        border-radius: 2px;
+        transition: width 500ms ease-in-out;
     }
 </style>

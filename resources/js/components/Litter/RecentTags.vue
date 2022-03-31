@@ -15,18 +15,20 @@
             </transition-group>
         </div>
 
-        <div v-for="category in Object.keys(recentTags)">
-            <p>{{ getCategoryName(category) }}</p>
+        <transition-group name="categories" tag="div">
+            <div v-for="category in Object.keys(recentTags)" :key="category">
+                <p>{{ getCategoryName(category) }}</p>
 
-            <transition-group name="list" class="recent-tags" tag="div" :key="category">
-                <div
-                    v-for="tag in Object.keys(recentTags[category])"
-                    class="litter-tag"
-                    :key="tag"
-                    @click="addRecentTag(category, tag)"
-                ><p class="has-text-white">{{ getTagName(category, tag) }}</p></div>
-            </transition-group>
-        </div>
+                <transition-group name="list" class="recent-tags" tag="div">
+                    <div
+                        v-for="tag in Object.keys(recentTags[category])"
+                        class="litter-tag"
+                        :key="tag"
+                        @click="addRecentTag(category, tag)"
+                    ><p class="has-text-white">{{ getTagName(category, tag) }}</p></div>
+                </transition-group>
+            </div>
+        </transition-group>
 
         <div class="clear-tags-button">
             <button class="button is-danger is-small tooltip" @click="clearRecentTags">
@@ -133,7 +135,7 @@ export default {
 @import "../../styles/variables.scss";
 
 .tags-container {
-    max-height: 300px;
+    max-height: 450px;
     overflow-y: auto;
 }
 
@@ -171,4 +173,21 @@ export default {
     }
 }
 
+.list-enter-active, .list-leave-active,
+.categories-enter-active, .categories-leave-active {
+    transition: all 0.5s;
+}
+
+.list-enter, .list-leave-to {
+    opacity: 0;
+    transform: translateX(-30px);
+}
+
+.categories-enter, .categories-leave-to {
+    opacity: 0;
+    transform: translateY(50px);
+}
+.categories-move {
+    transition: transform 0.5s;
+}
 </style>

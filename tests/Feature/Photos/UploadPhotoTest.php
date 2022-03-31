@@ -43,8 +43,6 @@ class UploadPhotoTest extends TestCase
 
         Event::fake([ImageUploaded::class, IncrementPhotoMonth::class]);
 
-        Carbon::setTestNow(now());
-
         $user = User::factory()->create([
             'active_team' => Team::factory()
         ]);
@@ -52,6 +50,8 @@ class UploadPhotoTest extends TestCase
         $this->actingAs($user);
 
         $imageAttributes = $this->getImageAndAttributes();
+
+        Carbon::setTestNow(now());
 
         $response = $this->post('/submit', [
             'file' => $imageAttributes['file'],
