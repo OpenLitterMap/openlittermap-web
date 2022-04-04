@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div @keyup.ctrl.enter="submit">
         <add-tags :id="0" class="mb1" />
 
         <!-- These are the tags the user has added -->
@@ -61,6 +61,8 @@ export default {
          */
         async submit ()
         {
+            if (! this.hasAddedTags) return;
+
             this.processing = true;
 
             await this.$store.dispatch('ADD_MANY_TAGS_TO_MANY_PHOTOS');

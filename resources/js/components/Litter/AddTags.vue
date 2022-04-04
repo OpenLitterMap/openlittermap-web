@@ -30,7 +30,7 @@
                     max="100"
                     :placeholder="$t('tags.search-custom-tags')"
                     @focus="onFocusCustomTags"
-                    @keydown.enter="searchCustomTag"
+                    @keydown.enter.exact="searchCustomTag"
                 >
                 <p v-if="customTagsError" class="help has-text-left">{{ customTagsError }}</p>
             </div>
@@ -160,7 +160,7 @@ export default {
         'isVerifying': { type: Boolean, required: false },
         'showCustomTags': { type: Boolean, required: false, default: true }
     },
-    created ()
+    mounted ()
     {
         if (this.$localStorage.get('recentTags'))
         {
@@ -171,6 +171,8 @@ export default {
         {
             this.$store.commit('initRecentCustomTags', JSON.parse(this.$localStorage.get('recentCustomTags')));
         }
+
+        this.$store.commit('setCustomTagsError', '');
 
         // If the user hits Ctrl + Spacebar, search all tags
         window.addEventListener('keydown', (e) => {
@@ -185,9 +187,11 @@ export default {
             if (
                 (e.ctrlKey || e.metaKey) &&
                 e.key.toLowerCase() === 'enter' &&
-                this.hasAddedTags
+                this.hasAddedTags &&
+                (! this.admin && this.id !== 0)
             ) {
                 e.preventDefault();
+                e.stopPropagation();
                 this.submit();
             }
         });
@@ -390,7 +394,7 @@ export default {
                 return this.$store.state.litter.customTag;
             },
             set (i) {
-                if (i) this.$store.commit('changeCustomTag', i);
+                if (i) this.$store.commit('changeCustomTag', i.trim());
             }
         },
 
