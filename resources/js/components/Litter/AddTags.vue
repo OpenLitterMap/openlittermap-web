@@ -15,6 +15,9 @@
                         mode="input"
                         :styles="autoCompleteStyle"
                         :placeholder="$t('tags.search-all-tags')"
+                        :controls="{
+                            autocomplete: [32],
+                        }"
                         @focus="onFocusSearch"
                         @select="search"
                     />
@@ -212,7 +215,7 @@ export default {
                 inputWrapper: '',
                 defaultInput : 'input',
                 suggestions: 'position-absolute list-group search-fixed-height',
-                suggestItem: 'list-group-item'
+                suggestItem: 'list-group-item has-text-left'
             }
         };
     },
