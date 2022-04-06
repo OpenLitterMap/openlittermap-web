@@ -5,7 +5,7 @@
                 <div class="navbar-brand">
 
                     <router-link to="/" class="navbar-item">
-                        <h1 class="nav-title">#OpenLitterMap</h1>
+                        <h1 class="nav-title">#MFUA</h1>
                     </router-link>
 
                     <!-- Mobile -->

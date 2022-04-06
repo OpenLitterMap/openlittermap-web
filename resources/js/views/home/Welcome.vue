@@ -194,12 +194,12 @@ export default {
         return {
             headings: [
                 {
-                    title: this.$t('home.welcome.plastic-pollution-out-of-control'),
-                    img: '/assets/plastic_bottles.jpg'
+                    title: "Help us map, report, and remove land mines",
+                    img: '/assets/mfua/imrs.png'
                 },
                 {
-                    title: this.$t('home.welcome.fires-out-of-control'),
-                    img: '/assets/forest_fire.jpg'
+                    title: "Help us save lives, protect Ukraine and #EndWar",
+                    img: '/assets/mfua/unit.png'
                 },
             ],
             activeHeadingIndex: 0
