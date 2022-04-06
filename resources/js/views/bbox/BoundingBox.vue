@@ -77,11 +77,9 @@
             </div>
         </div>
 
-        <div class="littercoin-pos">
+        <div class="bounding-boxes">
             <p>Your boxes: {{ this.usersBoxCount }}</p>
             <p>Total Boxes: {{ this.totalBoxCount }}</p>
-            <p>Littercoin earned: {{ this.littercoinEarned }}</p>
-            <p>Next Littercoin: {{ this.littercoinProgress }}</p>
         </div>
     </div>
 </template>
@@ -227,22 +225,6 @@ export default {
         isAdmin ()
         {
             return (this.$store.state.user.admin || this.$store.state.user.helper);
-        },
-
-        /**
-         * Total number of Littercoins the user has earned
-         */
-        littercoinEarned ()
-        {
-            return this.$store.state.user.user.littercoin_owed + this.$store.state.user.user.littercoin_allowance;
-        },
-
-        /**
-         * Number of boxes the user has left to verify to earn a Littercoin
-         */
-        littercoinProgress ()
-        {
-            return this.$store.state.user.user.bbox_verification_count + "%"
         },
 
         /**
@@ -434,7 +416,7 @@ export default {
         position: absolute;
     }
 
-    .littercoin-pos {
+    .bounding-boxes {
         position: fixed;
         background: white;
         bottom: 0;

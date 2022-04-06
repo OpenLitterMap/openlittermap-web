@@ -38,9 +38,7 @@ class EventServiceProvider extends ServiceProvider
             DecreaseLocationTotalPhotos::class,
             DecreaseTeamTotalPhotos::class
         ],
-        // Several Listeners could be merged. Add ProofOfWork
         TagsVerifiedByAdmin::class => [
-            'App\Listeners\AddTags\UpdateUser',
             IncrementLocation::class,
             'App\Listeners\AddTags\CompileResultsString',
             IncreaseTeamTotalLitter::class,

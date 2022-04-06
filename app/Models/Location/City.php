@@ -35,7 +35,6 @@ class City extends Location
         'total_pathways',
         'total_art',
         'manual_verify',
-        'littercoin_paid',
         'created_by',
         'total_dogshit'
     ];

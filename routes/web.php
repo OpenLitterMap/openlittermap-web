@@ -130,9 +130,7 @@ Route::get('/settings', 'HomeController@index');
 Route::get('/settings/password', 'HomeController@index');
 Route::get('/settings/details', 'HomeController@index');
 Route::get('/settings/account', 'HomeController@index');
-Route::get('/settings/payments', 'HomeController@index');
 Route::get('/settings/privacy', 'HomeController@index');
-Route::get('/settings/littercoin', 'HomeController@index');
 Route::get('/settings/phone', 'HomeController@index');
 Route::get('/settings/presence', 'HomeController@index');
 Route::get('/settings/email', 'HomeController@index');
@@ -167,10 +165,6 @@ Route::post('/settings/security', [
 
 // Update the users privacy eg toggle their anonmyity
 Route::post('/settings/privacy/update', 'UsersController@togglePrivacy');
-
-// Control Ethereum wallet and Littercoin
-Route::post('/settings/littercoin/update', 'BlockchainController@updateWallet');
-Route::post('/settings/littercoin/removewallet', 'BlockchainController@removeWallet');
 
 // Update users phone number
 Route::post('/settings/phone/submit', 'UsersController@phone');
@@ -299,9 +293,6 @@ Route::group(['prefix' => '/admin'], function () {
 
     // Delete an image and its record
     Route::post('/destroy', 'AdminController@destroy');
-    // LTRX
-    // Reduce ltrx allowance - succesfull LTRX generation
-    Route::post('/ltrxgenerated', 'LTRXController@success');
 });
 
 Route::group(['prefix' => '/bbox', 'middleware' => ['can_bbox']], function () {

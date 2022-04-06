@@ -165,16 +165,8 @@ const router = new VueRouter({
                     component: require('./views/settings/Account').default,
                 },
                 {
-                    path: 'payments',
-                    component: require('./views/settings/Payments').default,
-                },
-                {
                     path: 'privacy',
                     component: require('./views/settings/Privacy').default,
-                },
-                {
-                    path: 'littercoin',
-                    component: require('./views/settings/Littercoin').default,
                 },
                 {
                     path: 'presence',

@@ -88,19 +88,14 @@ class User extends Authenticatable
         'emailsub',
         'sub_token',
         'eth_wallet',
-        'littercoin_allowance',
         'has_uploaded_today',
         'has_uploaded_counter',
         'active_team',
         'link_instagram',
         'verification_required',
-        'littercoin_owed',
-        'littercoin_paid',
-        'count_correctly_verified',
         'previous_tags',
         'remaining_teams',
         'photos_per_month',
-        'bbox_verification_count'
     ];
 
     /**

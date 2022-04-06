@@ -17,7 +17,6 @@ class State extends Location
         'created_at',
         'updated_at',
         'manual_verify',
-        'littercoin_paid',
         'created_by',
     ];
 

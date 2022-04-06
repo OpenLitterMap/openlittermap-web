@@ -29,7 +29,6 @@ import NewStateAdded from './Notifications/NewStateAdded';
 import NewCityAdded from './Notifications/NewCityAdded';
 import UserSignedUp from './Notifications/UserSignedUp';
 import TeamCreated from './Notifications/TeamCreated';
-import LittercoinMined from './Notifications/LittercoinMined';
 
 export default {
 	name: 'live-events',
@@ -39,8 +38,7 @@ export default {
         NewCityAdded,
         NewStateAdded,
         NewCountryAdded,
-        TeamCreated,
-        LittercoinMined
+        TeamCreated
     },
     channel: 'main',
     echo: {
@@ -109,16 +107,6 @@ export default {
 
             vm.updateDocumentTitle();
         },
-        '.App\\Events\\Littercoin\\LittercoinMined': (payload, vm) => {
-            vm.events.unshift({
-                id: new Date().getTime(),
-                type: 'LittercoinMined',
-                reason: payload.reason,
-                userId: payload.userId
-            });
-
-            vm.updateDocumentTitle();
-        }
     },
 	data ()
     {

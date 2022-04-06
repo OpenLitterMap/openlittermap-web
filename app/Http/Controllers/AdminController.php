@@ -172,7 +172,6 @@ class AdminController extends Controller
 
         $user = User::find($photo->user_id);
         $user->xp = max(0, $user->xp - $tagUpdates['removedUserXp']);
-        $user->count_correctly_verified = 0;
         $user->save();
 
         $this->updateLeaderboardsAction->run($photo, $user->id, - $tagUpdates['removedUserXp']);
@@ -272,7 +271,6 @@ class AdminController extends Controller
         $oldTags = $photo->tags();
 
         $user = User::find($photo->user_id);
-        $user->count_correctly_verified = 0; // At 100, the user earns a Littercoin
         $user->save();
 
         $tagUpdates = $this->addTags($request->tags ?? [], $request->custom_tags ?? [], $request->photoId);
