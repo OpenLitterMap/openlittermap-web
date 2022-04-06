@@ -274,6 +274,7 @@ export default {
     .about-icon {
         height: 10em;
         text-align: center;
+        margin-left: 5em;
     }
 
     .c-1 {
