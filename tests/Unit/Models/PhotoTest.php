@@ -3,9 +3,11 @@
 namespace Tests\Unit\Models;
 
 use App\Models\AI\Annotation;
+use App\Models\Category;
 use App\Models\Litter\Categories\Ordnance;
 use App\Models\Litter\Categories\MilitaryEquipmentRemnant;
 use App\Models\Photo;
+use App\Models\Tag;
 use App\Models\User\User;
 use Illuminate\Database\Eloquent\Collection;
 use Tests\TestCase;
@@ -46,33 +48,25 @@ class PhotoTest extends TestCase
         $this->assertTrue($annotation->is($photo->boxes->first()));
     }
 
-    public function test_photos_have_categories()
+    public function test_a_photo_has_a_translated_string_of_its_tags()
     {
-        $this->assertNotEmpty(Photo::categories());
-        $this->assertEqualsCanonicalizing(
-            [
-                'ordnance',
-                'military_equipment_remnant',
-            ],
-            Photo::categories()
-        );
-    }
-
-    public function test_a_photo_has_a_translated_string_of_its_categories()
-    {
-        $military = MilitaryEquipmentRemnant::factory()->create();
-        $ordnance = Ordnance::factory()->create();
-        $photo = Photo::factory()->create([
-            'military_equipment_remnant_id' => $military->id,
-            'ordnance_id' => $ordnance->id
-        ]);
+        $category = Category::factory()->create();
+        $tag1 = Tag::factory()->hasCategory($category)->create();
+        $tag2 = Tag::factory()->hasCategory($category)->create();
+        $tag3 = Tag::factory()->create();
+        /** @var Photo $photo */
+        $photo = Photo::factory()->create();
+        $photo->tags()->attach($tag1, ['quantity' => 1]);
+        $photo->tags()->attach($tag2, ['quantity' => 2]);
+        $photo->tags()->attach($tag3, ['quantity' => 3]);
 
         $photo->translate();
 
-        $this->assertEquals(
-            $ordnance->translate() . $military->translate(),
-            $photo->result_string
-        );
+        $expected = [];
+        foreach ($photo->tags as $tag) {
+            $expected[] = $tag->category->name . '.' . $tag->name . ' ' . $tag->pivot->quantity;
+        }
+        $this->assertEquals(implode(', ', $expected), $photo->result_string);
     }
 
     public function test_a_photo_has_a_count_of_total_litter_in_it()
@@ -89,44 +83,6 @@ class PhotoTest extends TestCase
         $this->assertEquals($military->total() + $ordnance->total(), $photo->total_litter);
     }
 
-    public function test_a_photo_removes_empty_tags_from_categories()
-    {
-        $military = MilitaryEquipmentRemnant::factory([
-            'weapon' => 1, 'metal_debris' => null
-        ])->create();
-        $ordnance = Ordnance::factory([
-            'shell' => 1, 'land_mine' => null
-        ])->create();
-        $photo = Photo::factory()->create([
-            'military_equipment_remnant_id' => $military->id,
-            'ordnance_id' => $ordnance->id
-        ]);
-
-        // As a sanity check, we first test that
-        // the current state is as we expect it to be
-        $this->assertEquals(1, $photo->military_equipment_remnant->weapon);
-        $this->assertEquals(1, $photo->ordnance->shell);
-
-        $this->assertArrayHasKey(
-            'metal_debris', $photo->military_equipment_remnant->getAttributes()
-        );
-        $this->assertArrayHasKey(
-            'land_mine', $photo->ordnance->getAttributes()
-        );
-
-        $photo->tags();
-
-        $this->assertEquals(1, $photo->military_equipment_remnant->weapon);
-        $this->assertEquals(1, $photo->ordnance->shell);
-
-        $this->assertArrayNotHasKey(
-            'metal_debris', $photo->military_equipment_remnant->getAttributes()
-        );
-        $this->assertArrayNotHasKey(
-            'land_mine', $photo->ordnance->getAttributes()
-        );
-    }
-
     public function test_a_photo_has_a_user()
     {
         $user = User::factory()->create();
@@ -138,23 +94,17 @@ class PhotoTest extends TestCase
         $this->assertTrue($user->is($photo->user));
     }
 
-    public function test_a_photo_has_a_military_equipment_remnant_relationship()
+    public function test_a_photo_has_a_tags_relationship()
     {
-        $military = MilitaryEquipmentRemnant::factory()->create();
-        $photo = Photo::factory()->create([
-            'military_equipment_remnant_id' => $military->id
-        ]);
+        /** @var Category $category */
+        $category = Category::factory()->create();
+        /** @var Tag $tag */
+        $tag = Tag::factory()->create();
+        /** @var Photo $photo */
+        $photo = Photo::factory()->create();
+        $photo->tags()->attach($tag);
 
-        $this->assertInstanceOf(MilitaryEquipmentRemnant::class, $photo->military_equipment_remnant);
-        $this->assertTrue($military->is($photo->military_equipment_remnant));
-    }
-
-    public function test_a_photo_has_an_ordnance_relationship()
-    {
-        $ordnance = Ordnance::factory()->create();
-        $photo = Photo::factory()->create(['ordnance_id' => $ordnance->id]);
-
-        $this->assertInstanceOf(Ordnance::class, $photo->ordnance);
-        $this->assertTrue($ordnance->is($photo->ordnance));
+        $this->assertInstanceOf(Collection::class, $photo->tags);
+        $this->assertTrue($tag->is($photo->tags->first()));
     }
 }

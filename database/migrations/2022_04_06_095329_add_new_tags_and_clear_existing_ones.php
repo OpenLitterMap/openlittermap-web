@@ -70,29 +70,55 @@ class AddNewTagsAndClearExistingOnes extends Migration
         Schema::dropIfExists('farming');
 
 
-        Schema::create('ordnance', function (Blueprint $table) {
-            $table->increments('id');
-            $table->integer('land_mine')->unsigned()->nullable();
-            $table->integer('missile')->unsigned()->nullable();
-            $table->integer('grenade')->unsigned()->nullable();
-            $table->integer('shell')->unsigned()->nullable();
-            $table->integer('other')->unsigned()->nullable();
-            $table->timestamps();
-        });
-        Schema::create('military_equipment_remnant', function (Blueprint $table) {
-            $table->increments('id');
-            $table->integer('metal_debris')->unsigned()->nullable();
-            $table->integer('armoured_vehicle')->unsigned()->nullable();
-            $table->integer('weapon')->unsigned()->nullable();
+        Schema::create('categories', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
             $table->timestamps();
         });
 
-        Schema::table('photos', function (Blueprint $table) {
-            $table->unsignedInteger('ordnance_id')->nullable();
-            $table->foreign('ordnance_id')->references('id')->on('ordnance')->nullOnDelete();
-            $table->unsignedInteger('military_equipment_remnant_id')->nullable();
-            $table->foreign('military_equipment_remnant_id')->references('id')->on('military_equipment_remnant')->nullOnDelete();
+        Schema::create('tags', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('category_id');
+            $table->string('name');
+            $table->timestamps();
+
+            $table->foreign('category_id')->references('id')->on('categories');
         });
+
+        Schema::create('photo_tag', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedInteger('photo_id');
+            $table->foreignId('tag_id');
+            $table->integer('quantity')->default(1);
+            $table->timestamps();
+
+            $table->foreign('photo_id')->references('id')->on('photos');
+            $table->foreign('tag_id')->references('id')->on('tags');
+        });
+
+//        Schema::create('ordnance', function (Blueprint $table) {
+//            $table->increments('id');
+//            $table->integer('land_mine')->unsigned()->nullable();
+//            $table->integer('missile')->unsigned()->nullable();
+//            $table->integer('grenade')->unsigned()->nullable();
+//            $table->integer('shell')->unsigned()->nullable();
+//            $table->integer('other')->unsigned()->nullable();
+//            $table->timestamps();
+//        });
+//        Schema::create('military_equipment_remnant', function (Blueprint $table) {
+//            $table->increments('id');
+//            $table->integer('metal_debris')->unsigned()->nullable();
+//            $table->integer('armoured_vehicle')->unsigned()->nullable();
+//            $table->integer('weapon')->unsigned()->nullable();
+//            $table->timestamps();
+//        });
+//
+//        Schema::table('photos', function (Blueprint $table) {
+//            $table->unsignedInteger('ordnance_id')->nullable();
+//            $table->foreign('ordnance_id')->references('id')->on('ordnance')->nullOnDelete();
+//            $table->unsignedInteger('military_equipment_remnant_id')->nullable();
+//            $table->foreign('military_equipment_remnant_id')->references('id')->on('military_equipment_remnant')->nullOnDelete();
+//        });
 
         // Other tables
         Schema::table('users', function (Blueprint $table) {

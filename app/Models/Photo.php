@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -129,33 +130,12 @@ class Photo extends Model
         return $this->belongsTo(Team::class, 'team_id');
     }
 
-    /**
-     * Return the tags for an image
-     *
-     * Remove any keys with null values
-     */
-    public function tags (): array
+    public function tags(): BelongsToMany
     {
-        $tags = [];
-        foreach ($this->categories() as $category)
-        {
-            if ($this->$category)
-            {
-                foreach ($this->$category->types() as $tag)
-                {
-                    if (is_null($this->$category[$tag]))
-                    {
-                        unset ($this->$category[$tag]);
-                    }
-                    else
-                    {
-                        $tags[$category][$tag] = $this->$category[$tag];
-                    }
-                }
-            }
-        }
-
-        return $tags;
+        return $this->belongsToMany(Tag::class)
+            ->using(PhotoTag::class)
+            ->withPivot(['quantity'])
+            ->withTimestamps();
     }
 
     /**
@@ -190,17 +170,14 @@ class Photo extends Model
      */
     public function translate ()
     {
-        $result_string = '';
+        $this->load('tags.category');
 
-        foreach ($this->categories() as $category)
-        {
-            if ($this->$category)
-            {
-                $result_string .= $this->$category->translate();
-            }
+        $result = [];
+        foreach ($this->tags as $tag) {
+            $result[] = $tag->category->name . '.' . $tag->name . ' ' . $tag->pivot->quantity;
         }
 
-        $this->result_string = $result_string;
+        $this->result_string = implode(', ', $result);
         $this->save();
     }
 
