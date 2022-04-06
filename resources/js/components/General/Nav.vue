@@ -73,14 +73,14 @@
                                     </router-link>
 
                                     <!-- Profile -->
-                                    <router-link to="/profile" class="navbar-item drop-item">
-                                        {{ $t('nav.profile') }}
-                                    </router-link>
+<!--                                    <router-link to="/profile" class="navbar-item drop-item">-->
+<!--                                        {{ $t('nav.profile') }}-->
+<!--                                    </router-link>-->
 
                                     <!-- Teams -->
-                                    <router-link to="/teams" class="navbar-item drop-item">
-                                        {{ $t('nav.teams') }}
-                                    </router-link>
+<!--                                    <router-link to="/teams" class="navbar-item drop-item">-->
+<!--                                        {{ $t('nav.teams') }}-->
+<!--                                    </router-link>-->
 
                                     <!-- Settings -->
                                     <router-link to="/settings/password" class="navbar-item drop-item">
@@ -88,9 +88,9 @@
                                     </router-link>
 
                                     <!-- Bounding boxes -->
-                                    <router-link v-if="can('create boxes')" to="/bbox" class="navbar-item drop-item" @click.native="close">
-                                       {{ $t('nav.bounding-boxes') }}
-                                    </router-link>
+<!--                                    <router-link v-if="can('create boxes')" to="/bbox" class="navbar-item drop-item" @click.native="close">-->
+<!--                                       {{ $t('nav.bounding-boxes') }}-->
+<!--                                    </router-link>-->
 
                                     <!-- Logout -->
                                     <a class="navbar-item drop-item" @click="logout"> {{ $t('nav.logout')}}</a>
@@ -107,7 +107,7 @@
                             <a class="navbar-item" @click="login">{{ $t('nav.login')}}</a>
 
                             <!-- Signup -->
-                            <router-link to="/signup" class="navbar-item">
+                            <router-link to="/join" class="navbar-item">
                                  {{ $t('nav.signup')}}
                             </router-link>
 
@@ -128,14 +128,12 @@ import Languages from '../global/Languages'
 export default {
     name: 'Nav',
     components: { Languages },
-    data ()
-    {
+    data () {
         return {
             open: false
         };
     },
     computed: {
-
         /**
          * Return true if the user is logged in
          */

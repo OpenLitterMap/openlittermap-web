@@ -1,19 +1,7 @@
 <template>
 	<div class="container">
 		<div class="call-container">
-            <div class="has-text-centered">
-                <strong>{{ $t('auth.subscribe.crowdfunding-message') }}</strong>
 
-                <div class="control mt2">
-                    <div class="select">
-                        <select v-model="planInt" @change="changeUrl">
-                            <option v-for="plan in plans" :value="plan.id">
-                                {{ plan.name }} &mdash; €{{ plan.price / 100 }}
-                            </option>
-                        </select>
-                    </div>
-                </div>
-			</div>
 		</div>
 
 		<div class="signup-container">
@@ -27,7 +15,7 @@
             >
                 <div class="field">
                     <!-- NAME -->
-                    <label class="label" for="name">{{ $t('auth.subscribe.form-field-name') }}</label>
+                    <label class="label" for="name">Optional: {{ $t('auth.subscribe.form-field-name') }}</label>
 
                     <div class="control has-icons-left">
                         <input
@@ -52,7 +40,7 @@
 
                 <div class="field">
                     <!-- USERNAME OR ORGANISATION -->
-                    <label class="label" for="username">{{ $t('auth.subscribe.form-field-unique-id') }}</label>
+                    <label class="label" for="username">Required: {{ $t('auth.subscribe.form-field-unique-id') }}</label>
 
                     <div class="control has-icons-left">
                         <input
@@ -77,7 +65,7 @@
 
                 <div class="field">
                     <!-- EMAIL -->
-                    <label class="label" for="email">{{ $t('auth.subscribe.form-field-email') }}</label>
+                    <label class="label" for="email">Required: {{ $t('auth.subscribe.form-field-email') }}</label>
 
                     <div class="control has-icons-left">
                         <input
@@ -169,7 +157,7 @@
                 <div class="captcha">
                     <div>
                         <vue-recaptcha
-                            sitekey="6Le9FtwcAAAAAMOImuwEoOYssOVdNf7dfI2x8XZh"
+                            sitekey="6Lc3L04fAAAAAIvkn7hM6h2Pb7cmjYNl_HmY00YO"
                             v-model="g_recaptcha_response"
                             :loadRecaptchaScript="true"
                             @verify="recaptcha"
@@ -208,15 +196,15 @@ export default {
     components: {
         VueRecaptcha
     },
-	created () {
-		if (this.plan)
-		{
-			if (this.plan === 'startup') this.planInt = 2;
-			else if (this.plan === 'basic') this.planInt = 3;
-			else if (this.plan === 'advanced') this.planInt = 4;
-			else if (this.plan === 'pro') this.planInt = 5;
-		}
-	},
+	// created () {
+	// 	if (this.plan)
+	// 	{
+	// 		if (this.plan === 'startup') this.planInt = 2;
+	// 		else if (this.plan === 'basic') this.planInt = 3;
+	// 		else if (this.plan === 'advanced') this.planInt = 4;
+	// 		else if (this.plan === 'pro') this.planInt = 5;
+	// 	}
+	// },
 	data () {
 		return {
             planInt: 1,

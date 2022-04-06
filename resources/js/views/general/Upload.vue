@@ -33,11 +33,11 @@
             </h2>
 
             <h3 class="title is-3 mb2r">
-                {{ $t('upload.need-tag-litter') }}
+                Next, you need to tag your photos.
             </h3>
 
             <button class="button is-medium is-info hov" @click="tag" v-if="showTagLitterButton">
-                {{ $t('upload.tag-litter') }}<i class="fa fa-arrow-right" aria-hidden="true" />
+                Tag Photos<i class="fa fa-arrow-right" aria-hidden="true" />
             </button>
         </div>
     </section>

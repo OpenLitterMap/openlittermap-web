@@ -69,7 +69,7 @@ class RegisterController extends Controller
     public function register (Request $request): array
     {
         $this->validate($request, [
-            'name' => 'required|min:3|max:25',
+            'name' => 'min:3|max:25',
             'username' => 'required|min:3|max:20|unique:users|different:password',
             'email' => 'required|email|max:75|unique:users',
             'password' => 'required|confirmed|min:6|case_diff|numbers|letters',
