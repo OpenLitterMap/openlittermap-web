@@ -63,9 +63,9 @@
                                         {{ $t('nav.admin-horizon') }}
                                     </a>
 
-                                    <a v-if="can('verify boxes')" href="/bbox/verify" class="navbar-item drop-item">
-                                        {{ $t('nav.admin-verify-boxes') }}
-                                    </a>
+<!--                                    <a v-if="can('verify boxes')" href="/bbox/verify" class="navbar-item drop-item">-->
+<!--                                        {{ $t('nav.admin-verify-boxes') }}-->
+<!--                                    </a>-->
 
                                     <!-- Tag Litter -->
                                     <router-link to="/tag" class="navbar-item drop-item">
