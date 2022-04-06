@@ -261,7 +261,7 @@ export default {
         /**
          * Get / Set the current category
          *
-         * @value category (smoking)
+         * @value category
          */
         category: {
             get () {
@@ -415,8 +415,8 @@ export default {
          * Also used by Admin/BBox to add annotations to an image
          *
          * tags: {
-         *     smoking: {
-         *         butts: 1
+         *     ordnance: {
+         *         shell: 1
          *     }
          * }
          */

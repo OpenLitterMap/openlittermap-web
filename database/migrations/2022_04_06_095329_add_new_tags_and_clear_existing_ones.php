@@ -53,19 +53,20 @@ class AddNewTagsAndClearExistingOnes extends Migration
         Schema::dropIfExists('brands');
         Schema::dropIfExists('other');
         Schema::dropIfExists('trashdog');
-        Schema::dropIfExists('alcohol_id');
-        Schema::dropIfExists('art_id');
-        Schema::dropIfExists('coastal_id');
-        Schema::dropIfExists('coffee_id');
-        Schema::dropIfExists('dogshit_id');
-        Schema::dropIfExists('drugs_id');
-        Schema::dropIfExists('dumping_id');
-        Schema::dropIfExists('food_id');
-        Schema::dropIfExists('industrial_id');
-        Schema::dropIfExists('pathways_id');
-        Schema::dropIfExists('political_id');
-        Schema::dropIfExists('sanitary_id');
-        Schema::dropIfExists('softdrinks_id');
+        Schema::dropIfExists('alcohol');
+        Schema::dropIfExists('arts');
+        Schema::dropIfExists('coastal');
+        Schema::dropIfExists('coffee');
+        Schema::dropIfExists('dogshit');
+        Schema::dropIfExists('drugs');
+        Schema::dropIfExists('dumping');
+        Schema::dropIfExists('food');
+        Schema::dropIfExists('industrial');
+        Schema::dropIfExists('pathways');
+        Schema::dropIfExists('politicals');
+        Schema::dropIfExists('sanitary');
+        Schema::dropIfExists('softdrinks');
+        Schema::dropIfExists('farming');
 
 
         Schema::create('ordnance', function (Blueprint $table) {

@@ -1,0 +1,22 @@
+{
+    "privacy-title": "Control your Privacy",
+    "privacy-text": "Control your privacy for every team you have joined.",
+
+    "team-update-title": "Update your teams",
+    "team-update-text": "You can only update the teams you are leading.",
+
+    "maps": {
+        "team-map": "Team Map",
+        "name-will-appear": "Your name will appear on the maps",
+        "username-will-appear": "Your username will appear on the maps",
+        "will-not-appear": "Your name and username will not appear on the maps"
+    },
+    "leaderboards": {
+        "team-leaderboard": "Team Leaderboard",
+        "name-will-appear": "Your name will appear on the leaderboards",
+        "username-will-appear": "Your username will appear on the leaderboards",
+        "will-not-appear": "Your name and username will not appear on the leaderboards"
+    },
+    "submit-one-team": "Save for this Team",
+    "apply-all-teams": "Apply for all Teams"
+}

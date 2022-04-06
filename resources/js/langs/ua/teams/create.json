@@ -1,0 +1,16 @@
+{
+    "allowed-to-create": "You are allowed to create {teams} team(s)",
+    "what-kind-of-team": "What kind of Team would you like to create?",
+    "team-type": "Team Type",
+    "team-name": "Team Name",
+    "my-awesome-team-placeholder": "My Awesome Team",
+    "unique-team-id": "Unique Team Identifier",
+    "id-to-join-team": "Anyone with this ID will be able to join your team.",
+    "create-team": "Create Team",
+    "update-team": "Update Team",
+    "created": "Congratulations! Your new team has been created.",
+    "updated": "Team updated.",
+    "select-team": "Select a team",
+    "fail": "There was an error creating your Team",
+    "max-created": "You are not allowed to create any more teams."
+}
