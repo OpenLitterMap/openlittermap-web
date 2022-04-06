@@ -2,8 +2,7 @@
 
 namespace Tests\Unit\Commands;
 
-use App\Models\AI\Annotation;
-use App\Models\Litter\Categories\Smoking;
+use App\Models\Litter\Categories\MilitaryEquipmentRemnant;
 use App\Models\Location\City;
 use App\Models\Location\Country;
 use App\Models\Location\State;
@@ -21,7 +20,7 @@ class UpdateRedisLocationsXpTest extends TestCase
         $user = User::factory()->create();
         $photo1 = Photo::factory()->create([
             'user_id' => $user->id,
-            'smoking_id' => Smoking::factory()->create(['butts' => 3])->id,
+            'military_equipment_remnant_id' => MilitaryEquipmentRemnant::factory()->create(['weapon' => 3])->id,
             'country_id' => $country1->id,
             'state_id' => $state1->id,
             'city_id' => $city1->id
@@ -29,7 +28,7 @@ class UpdateRedisLocationsXpTest extends TestCase
         /** @var Photo $photo2 */
         $photo2 = Photo::factory()->create([
             'user_id' => $user->id,
-            'smoking_id' => Smoking::factory()->create(['butts' => 5])->id,
+            'military_equipment_remnant_id' => MilitaryEquipmentRemnant::factory()->create(['weapon' => 5])->id,
             'country_id' => $country2->id,
             'state_id' => $state2->id,
             'city_id' => $city2->id

@@ -28,10 +28,7 @@ export default {
 			dir: '/assets/icons/flags/',
 			langs: [
 				{ url: 'en' }, // We have these languages mostly done but they are in php code with the old keys
-				{ url: 'es' },
-				{ url: 'nl' },
-                { url: 'pl' },
-                { url: 'pt' }
+				{ url: 'ua' },
 			]
 		};
 	},
@@ -83,11 +80,7 @@ export default {
 		getFlag (lang)
 		{
 			if (lang === 'en') return this.dir + 'gb.png'; // english
-			if (lang === 'es') return this.dir + 'es.png'; // spanish
-            if (lang === 'pl') return this.dir + 'pl.png';
-            if (lang === 'pt') return this.dir + 'br.png';
-			if (lang === 'ms') return this.dir + 'my.png'; // malaysian
-			if (lang === 'tk') return this.dir + 'tr.png'; // turkish
+			if (lang === 'ua') return this.dir + 'ua.png'; // ukrainian
 
 			return this.dir + lang.toLowerCase() + '.png';
 		},
@@ -131,12 +124,15 @@ export default {
 	}
 
 	.lang-flag {
-		max-height: 1.25em !important;
 		margin-right: 1em;
+        width: 36px;
+        height: 20px;
 	}
 
 	.lang-flag-small {
 		max-height: 1em !important;
 		margin-right: 0.5em;
-	}
+        width: 20px;
+        height: 16px;
+    }
 </style>

@@ -3,10 +3,7 @@
 namespace Tests\Feature\Photos;
 
 use App\Events\TagsVerifiedByAdmin;
-use App\Models\Litter\Categories\Smoking;
-use App\Models\Location\City;
-use App\Models\Location\Country;
-use App\Models\Location\State;
+use App\Models\Litter\Categories\MilitaryEquipmentRemnant;
 use App\Models\Photo;
 use App\Models\User\User;
 use Illuminate\Support\Facades\Event;
@@ -51,8 +48,8 @@ class AddTagsToPhotoTest extends TestCase
             'photo_id' => $photo->id,
             'picked_up' => true,
             'tags' => [
-                'smoking' => [
-                    'butts' => 3
+                'military_equipment_remnant' => [
+                    'weapon' => 3
                 ]
             ]
         ])->assertOk();
@@ -61,9 +58,9 @@ class AddTagsToPhotoTest extends TestCase
         $photo->refresh();
 
         $this->assertTrue($photo->picked_up);
-        $this->assertNotNull($photo->smoking_id);
-        $this->assertInstanceOf(Smoking::class, $photo->smoking);
-        $this->assertEquals(3, $photo->smoking->butts);
+        $this->assertNotNull($photo->military_equipment_remnant_id);
+        $this->assertInstanceOf(MilitaryEquipmentRemnant::class, $photo->military_equipment_remnant);
+        $this->assertEquals(3, $photo->military_equipment_remnant->weapon);
     }
 
     public function test_user_and_photo_info_are_updated_when_a_user_adds_tags_to_a_photo()
@@ -86,11 +83,11 @@ class AddTagsToPhotoTest extends TestCase
             'photo_id' => $photo->id,
             'picked_up' => true,
             'tags' => [
-                'smoking' => [
-                    'butts' => 3
+                'military_equipment_remnant' => [
+                    'weapon' => 3
                 ],
-                'alcohol' => [
-                    'beerBottle' => 5
+                'ordnance' => [
+                    'shell' => 5
                 ]
             ]
         ])->assertOk();
@@ -124,14 +121,14 @@ class AddTagsToPhotoTest extends TestCase
             'photo_id' => $photo->id,
             'picked_up' => true,
             'tags' => [
-                'smoking' => [
-                    'butts' => 3
+                'military_equipment_remnant' => [
+                    'weapon' => 3
                 ]
             ]
         ]);
 
         $response->assertForbidden();
-        $this->assertNull($photo->fresh()->smoking_id);
+        $this->assertNull($photo->fresh()->military_equipment_remnant_id);
     }
 
     public function test_request_photo_id_is_validated()
@@ -144,7 +141,7 @@ class AddTagsToPhotoTest extends TestCase
 
         // Missing photo_id -------------------
         $this->postJson('/add-tags', [
-            'tags' => ['smoking' => ['butts' => 3]],
+            'tags' => ['military_equipment_remnant' => ['weapon' => 3]],
             'picked_up' => false
         ])
             ->assertStatus(422)
@@ -153,7 +150,7 @@ class AddTagsToPhotoTest extends TestCase
         // Non-existing photo_id -------------------
         $this->postJson('/add-tags', [
             'photo_id' => 0,
-            'tags' => ['smoking' => ['butts' => 3]],
+            'tags' => ['military_equipment_remnant' => ['weapon' => 3]],
             'picked_up' => false
         ])
             ->assertStatus(422)
@@ -162,7 +159,7 @@ class AddTagsToPhotoTest extends TestCase
         // photo_id not belonging to the user -------------------
         $this->postJson('/add-tags', [
             'photo_id' => Photo::factory()->create()->id,
-            'tags' => ['smoking' => ['butts' => 3]],
+            'tags' => ['military_equipment_remnant' => ['weapon' => 3]],
             'picked_up' => false
         ])
             ->assertForbidden();
@@ -218,7 +215,7 @@ class AddTagsToPhotoTest extends TestCase
         // presence is missing -------------------
         $this->postJson('/add-tags', [
             'photo_id' => $photo->id,
-            'tags' => ['smoking' => ['butts' => 3]],
+            'tags' => ['military_equipment_remnant' => ['weapon' => 3]],
         ])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['picked_up']);
@@ -226,7 +223,7 @@ class AddTagsToPhotoTest extends TestCase
         // picked_up is not a boolean -------------------
         $this->postJson('/add-tags', [
             'photo_id' => $photo->id,
-            'tags' => ['smoking' => ['butts' => 3]],
+            'tags' => ['military_equipment_remnant' => ['weapon' => 3]],
             'picked_up' => 'asdf'
         ])
             ->assertStatus(422)
@@ -255,8 +252,8 @@ class AddTagsToPhotoTest extends TestCase
             'photo_id' => $photo->id,
             'picked_up' => true,
             'tags' => [
-                'smoking' => [
-                    'butts' => 3
+                'military_equipment_remnant' => [
+                    'weapon' => 3
                 ]
             ]
         ])->assertOk();
@@ -296,7 +293,7 @@ class AddTagsToPhotoTest extends TestCase
         $this->post('/add-tags', [
             'photo_id' => $photo->id,
             'picked_up' => false,
-            'tags' => ['smoking' => ['butts' => 3]]
+            'tags' => ['military_equipment_remnant' => ['weapon' => 3]]
         ])->assertOk();
 
         // Assert leaderboards are updated ------------

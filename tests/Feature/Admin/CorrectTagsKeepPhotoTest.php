@@ -5,7 +5,7 @@ namespace Tests\Feature\Admin;
 
 use App\Actions\LogAdminVerificationAction;
 use App\Events\TagsVerifiedByAdmin;
-use App\Models\Litter\Categories\Smoking;
+use App\Models\Litter\Categories\MilitaryEquipmentRemnant;
 use App\Models\Photo;
 use App\Models\User\User;
 use Illuminate\Support\Facades\Event;
@@ -58,8 +58,8 @@ class CorrectTagsKeepPhotoTest extends TestCase
             'photo_id' => $this->photo->id,
             'picked_up' => false,
             'tags' => [
-                'smoking' => [
-                    'butts' => 3
+                'military_equipment_remnant' => [
+                    'weapon' => 3
                 ]
             ]
         ]);
@@ -74,7 +74,7 @@ class CorrectTagsKeepPhotoTest extends TestCase
         $this->assertEquals(4, $this->user->xp);
         $this->assertEquals(0, $this->admin->xp);
         $this->assertEquals(0, $this->admin->xp_redis);
-        $this->assertInstanceOf(Smoking::class, $this->photo->smoking);
+        $this->assertInstanceOf(MilitaryEquipmentRemnant::class, $this->photo->military_equipment_remnant);
 
         // Admin marks the tagging as correct -------------------
         $this->actingAs($this->admin);
@@ -90,7 +90,7 @@ class CorrectTagsKeepPhotoTest extends TestCase
         $this->assertEquals(1, $this->photo->verification);
         $this->assertEquals(2, $this->photo->verified);
         $this->assertEquals(3, $this->photo->total_litter);
-        $this->assertInstanceOf(Smoking::class, $this->photo->smoking);
+        $this->assertInstanceOf(MilitaryEquipmentRemnant::class, $this->photo->military_equipment_remnant);
         // Admin is rewarded with 1 XP
         $this->assertEquals(1, $this->admin->xp);
         $this->assertEquals(1, $this->admin->xp_redis);

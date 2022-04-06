@@ -1,0 +1,14 @@
+{
+    "title": "Are you ready?",
+    "subtitle": "Sign up to become an expert litter mapper and help us defeat plastic pollution.",
+    "crowdfunding-message": "Please consider supporting our work by crowdfunding OpenLitterMap with as little as 6 cents a day with a monthly subscription to help grow and develop this important platform.",
+    "form-create-account": "Create your account",
+    "form-field-name": "Name",
+    "form-field-unique-id": "Unique Identifier",
+    "form-field-email": "E-Mail Address",
+    "form-field-password": "Password. Must contain Uppercase, lowercase and a number.", 
+    "form-field-pass-confirm": "Confirm Password",
+    "form-account-conditions": "I have read and agree to the <a href='/terms'>Terms and Conditions of use</a> and <a href='/privacy'>Privacy Policy</a>",
+    "form-btn": "Sign up",
+    "create-account-note": "Note: If you do not recieve the verification e-mail in your inbox, please check your spam/junk folder."
+}

@@ -19,17 +19,8 @@ export default {
         categories ()
         {
             return [
-                this.user.total_categories.alcohol,
-                this.user.total_brands_redis,
-                this.user.total_categories.coastal,
-                this.user.total_categories.coffee,
-                this.user.total_categories.dumping,
-                this.user.total_categories.food,
-                this.user.total_categories.industrial,
-                this.user.total_categories.other,
-                this.user.total_categories.sanitary,
-                this.user.total_categories.softdrinks,
-                this.user.total_categories.smoking,
+                this.user.total_categories.ordnance,
+                this.user.total_categories.military_equipment_remnant,
             ]
         },
 

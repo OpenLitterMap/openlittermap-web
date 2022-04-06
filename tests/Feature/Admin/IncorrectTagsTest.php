@@ -4,7 +4,7 @@ namespace Tests\Feature\Admin;
 
 
 use App\Actions\LogAdminVerificationAction;
-use App\Models\Litter\Categories\Smoking;
+use App\Models\Litter\Categories\MilitaryEquipmentRemnant;
 use App\Models\Photo;
 use App\Models\User\User;
 use Illuminate\Support\Facades\Redis;
@@ -59,20 +59,20 @@ class IncorrectTagsTest extends TestCase
             'photo_id' => $this->photo->id,
             'picked_up' => false,
             'tags' => [
-                'smoking' => [
-                    'butts' => 3
+                'military_equipment_remnant' => [
+                    'weapon' => 3
                 ]
             ]
         ]);
 
         $this->photo->refresh();
 
-        $smokingId = $this->photo->smoking_id;
+        $militaryEquipmentRemnantId = $this->photo->military_equipment_remnant_id;
 
         // We make sure xp and tags are correct
         $this->assertEquals(4, $this->user->xp);
         $this->assertEquals(0, $this->admin->xp);
-        $this->assertInstanceOf(Smoking::class, $this->photo->smoking);
+        $this->assertInstanceOf(MilitaryEquipmentRemnant::class, $this->photo->military_equipment_remnant);
 
         // Admin marks the tagging as incorrect -------------------
         $this->actingAs($this->admin);
@@ -90,8 +90,8 @@ class IncorrectTagsTest extends TestCase
         $this->assertEquals(0, $this->photo->verified);
         $this->assertEquals(0, $this->photo->total_litter);
         $this->assertNull($this->photo->result_string);
-        $this->assertNull($this->photo->smoking_id);
-        $this->assertDatabaseMissing('smoking', ['id' => $smokingId]);
+        $this->assertNull($this->photo->military_equipment_remnant_id);
+        $this->assertDatabaseMissing('military_equipment_remnant', ['id' => $militaryEquipmentRemnantId]);
         // Admin is rewarded with 1 XP
         $this->assertEquals(1, $this->admin->xp);
     }
@@ -108,7 +108,7 @@ class IncorrectTagsTest extends TestCase
         $this->post('/add-tags', [
             'photo_id' => $this->photo->id,
             'picked_up' => false,
-            'tags' => ['smoking' => ['butts' => 3]]
+            'tags' => ['military_equipment_remnant' => ['weapon' => 3]]
         ]);
         $this->assertEquals(0, $this->admin->xp_redis);
         $this->assertEquals(4, Redis::zscore("xp.users", $this->user->id));
@@ -141,8 +141,8 @@ class IncorrectTagsTest extends TestCase
             'photo_id' => $this->photo->id,
             'picked_up' => false,
             'tags' => [
-                'smoking' => [
-                    'butts' => 3
+                'military_equipment_remnant' => [
+                    'weapon' => 3
                 ]
             ]
         ]);
@@ -156,7 +156,7 @@ class IncorrectTagsTest extends TestCase
 
         $response->assertRedirect('/');
 
-        $this->assertInstanceOf(Smoking::class, $this->photo->fresh()->smoking);
+        $this->assertInstanceOf(MilitaryEquipmentRemnant::class, $this->photo->fresh()->military_equipment_remnant);
     }
 
     public function test_it_throws_not_found_exception_if_photo_doesnt_exist()

@@ -152,11 +152,11 @@ class JoinTeamTest extends TestCase
             'photo_id' => $photo->id,
             'picked_up' => false,
             'tags' => [
-                'smoking' => [
-                    'butts' => 3
+                'military_equipment_remnant' => [
+                    'weapon' => 3
                 ],
-                'brands' => [
-                    'aldi' => 2
+                'ordnance' => [
+                    'shell' => 2
                 ]
             ]
         ]);
@@ -164,7 +164,7 @@ class JoinTeamTest extends TestCase
         $teamContributions = $user->teams()->first();
 
         $this->assertEquals(1, $teamContributions->pivot->total_photos);
-        $this->assertEquals(3, $teamContributions->pivot->total_litter);
+        $this->assertEquals(5, $teamContributions->pivot->total_litter);
 
         // User leaves the team ------------------------
         $this->actingAs($user);
@@ -186,6 +186,6 @@ class JoinTeamTest extends TestCase
 
         $this->assertNotNull($teamContributions);
         $this->assertEquals(1, $teamContributions->pivot->total_photos);
-        $this->assertEquals(3, $teamContributions->pivot->total_litter);
+        $this->assertEquals(5, $teamContributions->pivot->total_litter);
     }
 }

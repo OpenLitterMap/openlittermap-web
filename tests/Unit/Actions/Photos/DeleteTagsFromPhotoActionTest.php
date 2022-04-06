@@ -17,8 +17,7 @@ class DeleteTagsFromPhotoActionTest extends TestCase
         /** @var AddTagsToPhotoAction $addTagsAction */
         $addTagsAction = app(AddTagsToPhotoAction::class);
         $addTagsAction->run($photo, [
-            'brands' => ['adidas' => 5],
-            'art' => ['item' => 2]
+            'ordnance' => ['shell' => 2]
         ]);
         /** @var AddCustomTagsToPhotoAction $addTagsAction */
         $addTagsAction = app(AddCustomTagsToPhotoAction::class);
@@ -29,22 +28,18 @@ class DeleteTagsFromPhotoActionTest extends TestCase
         $deleteTagsAction->run($photo->fresh());
 
         $photo->refresh();
-        $this->assertNull($photo->brands);
-        $this->assertNull($photo->art);
+        $this->assertNull($photo->ordnance);
         $this->assertEmpty($photo->customTags);
     }
 
-    public function test_it_returns_the_correct_number_of_deleted_litter_brands_and_custom_tags()
+    public function test_it_returns_the_correct_number_of_deleted_litter_and_custom_tags()
     {
         /** @var Photo $photo */
         $photo = Photo::factory()->create();
 
         /** @var AddTagsToPhotoAction $addTagsAction */
         $addTagsAction = app(AddTagsToPhotoAction::class);
-        $addTagsAction->run($photo, [
-            'brands' => ['adidas' => 5],
-            'art' => ['item' => 2]
-        ]);
+        $addTagsAction->run($photo, ['ordnance' => ['shell' => 2]]);
         /** @var AddCustomTagsToPhotoAction $addTagsAction */
         $addTagsAction = app(AddCustomTagsToPhotoAction::class);
         $addTagsAction->run($photo, ['tag1', 'tag2', 'tag3']);
@@ -54,7 +49,7 @@ class DeleteTagsFromPhotoActionTest extends TestCase
         $deletedTags = $deleteTagsAction->run($photo->fresh());
 
         $this->assertEquals(
-            ['all' => 10, 'litter' => 2, 'brands' => 5, 'custom' => 3],
+            ['all' => 5, 'litter' => 2, 'custom' => 3],
             $deletedTags
         );
     }

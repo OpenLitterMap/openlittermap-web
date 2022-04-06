@@ -1,4 +1,4 @@
-const en = {
+const ua = {
 	cats: {
         Ordnance: "Ordnance",
         MilitaryEquipmentRemnant: "Military Equipment Remnant",
@@ -17,4 +17,4 @@ const en = {
 	],
 }
 
-export { en };
+export { ua };

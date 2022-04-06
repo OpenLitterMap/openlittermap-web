@@ -47,7 +47,6 @@ class TagsVerifiedByAdmin implements ShouldBroadcast, ShouldQueue
         $total_litter_all_categories = 0;
 
         $categories = Photo::categories();
-        $brands = Photo::getBrands();
 
         // Count the total category values on this photo
         // We will use this data to update the total category values...
@@ -56,31 +55,13 @@ class TagsVerifiedByAdmin implements ShouldBroadcast, ShouldQueue
         {
             if ($photo->$category)
             {
-                if ($category === "brands")
-                {
-                    $this->total_brands = $photo->brands->total();
+                $categoryTotal = $photo->$category->total();
 
-                    foreach ($brands as $brand)
-                    {
-                        if ($photo->brands->$brand)
-                        {
-                            // This parent class will hold each brand total
-                            // and use it to update each listener
-                            $this->total_litter_per_brand[$brand] = $photo->brands->$brand;
-                        }
-                    }
-                }
-                // Don't include brands in total_litter. We keep total_brands separate.
-                else
-                {
-                    $categoryTotal = $photo->$category->total();
+                // This parent class will hold each category total
+                // and use it to update each listener
+                $this->total_litter_per_category[$category] = $categoryTotal;
 
-                    // This parent class will hold each category total
-                    // and use it to update each listener
-                    $this->total_litter_per_category[$category] = $categoryTotal;
-
-                    $total_litter_all_categories += $categoryTotal;
-                }
+                $total_litter_all_categories += $categoryTotal;
             }
         }
 

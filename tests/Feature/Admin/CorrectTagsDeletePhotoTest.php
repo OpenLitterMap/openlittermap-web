@@ -59,8 +59,8 @@ class CorrectTagsDeletePhotoTest extends TestCase
             'photo_id' => $this->photo->id,
             'picked_up' => false,
             'tags' => [
-                'smoking' => [
-                    'butts' => 3
+                'military_equipment_remnant' => [
+                    'weapon' => 3
                 ]
             ]
         ]);
