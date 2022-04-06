@@ -30,13 +30,13 @@
                         </router-link>
 
                         <!-- World Cup -->
-                        <router-link to="/world" class="navbar-item" @click.native="close">
-                             {{ $t('nav.world-cup') }}
-                        </router-link>
+<!--                        <router-link to="/world" class="navbar-item" @click.native="close">-->
+<!--                             {{ $t('nav.world-cup') }}-->
+<!--                        </router-link>-->
 
                         <!-- Community -->
                         <router-link to="/community" class="navbar-item" @click.native="close">
-                             {{ $t('nav.community') }}
+                             Join us
                         </router-link>
 
                         <!-- if auth -->
