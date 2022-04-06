@@ -45,64 +45,64 @@
             </div>
 
             <!-- Why its important -->
-            <div class="why-container">
-                <h1 class="main-title">
-                    {{ $t('home.welcome.why-collect-data') }}?
-                </h1>
+<!--            <div class="why-container">-->
+<!--                <h1 class="main-title">-->
+<!--                    {{ $t('home.welcome.why-collect-data') }}?-->
+<!--                </h1>-->
 
-                <div class="columns welcome-mb">
-                    <div class="column is-one-quarter icon-center">
-                        <img
-                            src="/assets/icons/home/world.png"
-                            class="about-icon" />
-                    </div>
+<!--                <div class="columns welcome-mb">-->
+<!--                    <div class="column is-one-quarter icon-center">-->
+<!--                        <img-->
+<!--                            src="/assets/icons/home/world.png"-->
+<!--                            class="about-icon" />-->
+<!--                    </div>-->
 
-                    <div class="column ma">
-                        <h2 class="main-subtitle">
-                            1. {{ $t('home.welcome.visibility') }}
-                        </h2>
-                        <h3 class="welcome-subtitle mb1em">
-                            {{ $t('home.welcome.our-maps-reveal-litter-normality') }}.
-                        </h3>
-                    </div>
-                </div>
+<!--                    <div class="column ma">-->
+<!--                        <h2 class="main-subtitle">-->
+<!--                            1. {{ $t('home.welcome.visibility') }}-->
+<!--                        </h2>-->
+<!--                        <h3 class="welcome-subtitle mb1em">-->
+<!--                            {{ $t('home.welcome.our-maps-reveal-litter-normality') }}.-->
+<!--                        </h3>-->
+<!--                    </div>-->
+<!--                </div>-->
 
-                <div class="columns welcome-mb">
-                    <div class="column is-one-quarter icon-center">
-                        <img
-                            src="/assets/icons/home/microscope.png"
-                            class="about-icon"
-                        />
-                    </div>
+<!--                <div class="columns welcome-mb">-->
+<!--                    <div class="column is-one-quarter icon-center">-->
+<!--                        <img-->
+<!--                            src="/assets/icons/home/microscope.png"-->
+<!--                            class="about-icon"-->
+<!--                        />-->
+<!--                    </div>-->
 
-                    <div class="column ma">
-                        <h2 class="main-subtitle">
-                            2. {{ $t('home.welcome.science') }}
-                        </h2>
-                        <h3 class="welcome-subtitle mb1em">
-                            {{ $t('home.welcome.our-data-open-source') }}.
-                        </h3>
-                    </div>
-                </div>
+<!--                    <div class="column ma">-->
+<!--                        <h2 class="main-subtitle">-->
+<!--                            2. {{ $t('home.welcome.science') }}-->
+<!--                        </h2>-->
+<!--                        <h3 class="welcome-subtitle mb1em">-->
+<!--                            {{ $t('home.welcome.our-data-open-source') }}.-->
+<!--                        </h3>-->
+<!--                    </div>-->
+<!--                </div>-->
 
-                <div class="columns welcome-mb">
-                    <div class="column is-one-quarter icon-center">
-                        <img
-                            src="/assets/icons/home/tree.png"
-                            class="about-icon"
-                        />
-                    </div>
+<!--                <div class="columns welcome-mb">-->
+<!--                    <div class="column is-one-quarter icon-center">-->
+<!--                        <img-->
+<!--                            src="/assets/icons/home/tree.png"-->
+<!--                            class="about-icon"-->
+<!--                        />-->
+<!--                    </div>-->
 
-                    <div class="column ma">
-                        <h2 class="main-subtitle">
-                            3. {{ $t('home.welcome.community') }}
-                        </h2>
-                        <h3 class="welcome-subtitle">
-                            {{ $t('home.welcome.must-work-together') }}.
-                        </h3>
-                    </div>
-                </div>
-            </div>
+<!--                    <div class="column ma">-->
+<!--                        <h2 class="main-subtitle">-->
+<!--                            3. {{ $t('home.welcome.community') }}-->
+<!--                        </h2>-->
+<!--                        <h3 class="welcome-subtitle">-->
+<!--                            {{ $t('home.welcome.must-work-together') }}.-->
+<!--                        </h3>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--            </div>-->
 
             <!-- How does it work -->
             <div>
