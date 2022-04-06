@@ -166,11 +166,11 @@
             </div>
 
             <!-- Partners -->
-            <div class="partners-container container is-max-desktop">
-                <p class="has-text-centered main-title">{{ $t('home.welcome.our-partners') }}</p>
+<!--            <div class="partners-container container is-max-desktop">-->
+<!--                <p class="has-text-centered main-title">{{ $t('home.welcome.our-partners') }}</p>-->
 
-                <Partners />
-            </div>
+<!--                <Partners />-->
+<!--            </div>-->
         </div>
 
         <Footer />

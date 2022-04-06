@@ -20,9 +20,9 @@
                     <div class="navbar-end">
 
                         <!-- About -->
-                        <router-link to="/about" class="navbar-item" @click.native="close">
-                            {{ $t('nav.about') }}
-                        </router-link>
+<!--                        <router-link to="/about" class="navbar-item" @click.native="close">-->
+<!--                            {{ $t('nav.about') }}-->
+<!--                        </router-link>-->
 
                         <!-- Global Map -->
                         <router-link to="/global" class="navbar-item" @click.native="close">
@@ -36,7 +36,7 @@
 
                         <!-- Community -->
                         <router-link to="/community" class="navbar-item" @click.native="close">
-                             Join us
+                             Help us
                         </router-link>
 
                         <!-- if auth -->

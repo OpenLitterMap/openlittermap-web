@@ -36,7 +36,7 @@
             <!-- Bottom Section -->
             <div class="columns">
                 <div class="column is-half foot-container-left">
-                    <p class="olm-title">#OpenLitterMap</p>
+                    <p class="olm-title">#MFUA</p>
 
                     <p class="footer-text mb1">{{ $t('home.footer.need-your-help') }}.</p>
 
@@ -195,7 +195,8 @@ export default {
         bottom: 0;
         left: 25%;
         border-top: 1px solid #3c6fcd;
-        padding: 1em 0;
+        padding: 2em 0;
+        width: 50%;
     }
 
     .foot-container-left {
