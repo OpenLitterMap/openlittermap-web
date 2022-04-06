@@ -3,10 +3,7 @@
 namespace Tests\Feature\Api;
 
 use App\Events\TagsVerifiedByAdmin;
-use App\Models\Litter\Categories\Smoking;
-use App\Models\Location\City;
-use App\Models\Location\Country;
-use App\Models\Location\State;
+use App\Models\Litter\Categories\MilitaryEquipmentRemnant;
 use App\Models\Photo;
 use App\Models\User\User;
 use Illuminate\Support\Facades\Event;
@@ -50,8 +47,8 @@ class AddTagsToPhotoTest extends TestCase
         $this->post('/api/add-tags', [
             'photo_id' => $photo->id,
             'tags' => [
-                'smoking' => [
-                    'butts' => 3
+                'military_equipment_remnant' => [
+                    'weapon' => 3
                 ]
             ]
         ])
@@ -61,9 +58,9 @@ class AddTagsToPhotoTest extends TestCase
         // Assert tags are stored correctly ------------
         $photo->refresh();
 
-        $this->assertNotNull($photo->smoking_id);
-        $this->assertInstanceOf(Smoking::class, $photo->smoking);
-        $this->assertEquals(3, $photo->smoking->butts);
+        $this->assertNotNull($photo->military_equipment_remnant_id);
+        $this->assertInstanceOf(MilitaryEquipmentRemnant::class, $photo->military_equipment_remnant);
+        $this->assertEquals(3, $photo->military_equipment_remnant->weapon);
     }
 
     public function test_it_forbids_adding_tags_to_a_verified_photo()
@@ -85,14 +82,14 @@ class AddTagsToPhotoTest extends TestCase
         $response = $this->postJson('/api/add-tags', [
             'photo_id' => $photo->id,
             'tags' => [
-                'smoking' => [
-                    'butts' => 3
+                'military_equipment_remnant' => [
+                    'weapon' => 3
                 ]
             ]
         ]);
 
         $response->assertForbidden();
-        $this->assertNull($photo->fresh()->smoking_id);
+        $this->assertNull($photo->fresh()->military_equipment_remnant_id);
     }
 
     public function test_request_photo_id_is_validated()
@@ -103,7 +100,7 @@ class AddTagsToPhotoTest extends TestCase
 
         // Missing photo_id -------------------
         $this->postJson('/api/add-tags', [
-            'tags' => ['smoking' => ['butts' => 3]]
+            'tags' => ['military_equipment_remnant' => ['weapon' => 3]]
         ])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['photo_id']);
@@ -111,7 +108,7 @@ class AddTagsToPhotoTest extends TestCase
         // Non-existing photo_id -------------------
         $this->postJson('/api/add-tags', [
             'photo_id' => 0,
-            'tags' => ['smoking' => ['butts' => 3]]
+            'tags' => ['military_equipment_remnant' => ['weapon' => 3]]
         ])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['photo_id']);
@@ -119,7 +116,7 @@ class AddTagsToPhotoTest extends TestCase
         // photo_id not belonging to the user -------------------
         $this->postJson('/api/add-tags', [
             'photo_id' => Photo::factory()->create()->id,
-            'tags' => ['smoking' => ['butts' => 3]]
+            'tags' => ['military_equipment_remnant' => ['weapon' => 3]]
         ])
             ->assertForbidden();
     }
@@ -173,15 +170,12 @@ class AddTagsToPhotoTest extends TestCase
         $this->post('/api/add-tags', [
             'photo_id' => $photo->id,
             'tags' => [
-                'smoking' => [
-                    'butts' => 3
+                'military_equipment_remnant' => [
+                    'weapon' => 3
                 ],
-                'alcohol' => [
-                    'beerBottle' => 5
+                'ordnance' => [
+                    'shell' => 5
                 ],
-                'brands' => [
-                    'aldi' => 1
-                ]
             ]
         ])->assertOk();
 
@@ -189,7 +183,7 @@ class AddTagsToPhotoTest extends TestCase
         $user->refresh();
         $photo->refresh();
 
-        $this->assertEquals(10, $user->xp); // 1 xp from uploading, + 8xp from total litter + 1xp from brand
+        $this->assertEquals(9, $user->xp); // 1 xp from uploading, + 8xp from total litter
         $this->assertEquals(8, $photo->total_litter);
         $this->assertEquals(0.1, $photo->verification);
     }
@@ -208,7 +202,7 @@ class AddTagsToPhotoTest extends TestCase
         $this->post('/api/add-tags', [
             'photo_id' => $photo->id,
             'picked_up' => true,
-            'tags' => ['smoking' => ['butts' => 3]]
+            'tags' => ['military_equipment_remnant' => ['weapon' => 3]]
         ]);
 
         $photo->refresh();
@@ -218,7 +212,7 @@ class AddTagsToPhotoTest extends TestCase
         $this->post('/api/add-tags', [
             'photo_id' => $photo->id,
             'picked_up' => false,
-            'tags' => ['smoking' => ['butts' => 3]]
+            'tags' => ['military_equipment_remnant' => ['weapon' => 3]]
         ]);
 
         $photo->refresh();
@@ -230,7 +224,7 @@ class AddTagsToPhotoTest extends TestCase
         $user->save();
         $this->post('/api/add-tags', [
             'photo_id' => $photo->id,
-            'tags' => ['smoking' => ['butts' => 3]]
+            'tags' => ['military_equipment_remnant' => ['weapon' => 3]]
         ]);
 
         $photo->refresh();
@@ -258,8 +252,8 @@ class AddTagsToPhotoTest extends TestCase
         $this->post('/api/add-tags', [
             'photo_id' => $photo->id,
             'tags' => [
-                'smoking' => [
-                    'butts' => 3
+                'military_equipment_remnant' => [
+                    'weapon' => 3
                 ]
             ]
         ])->assertOk();
@@ -298,7 +292,7 @@ class AddTagsToPhotoTest extends TestCase
         // User adds tags to an image -------------------
         $this->post('/api/add-tags', [
             'photo_id' => $photo->id,
-            'tags' => ['smoking' => ['butts' => 3]]
+            'tags' => ['military_equipment_remnant' => ['weapon' => 3]]
         ])->assertOk();
 
         // Assert leaderboards are updated ------------

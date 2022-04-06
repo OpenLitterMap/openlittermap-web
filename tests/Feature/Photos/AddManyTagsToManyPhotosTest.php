@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Photos;
 
-use App\Models\Litter\Categories\Smoking;
+use App\Models\Litter\Categories\MilitaryEquipmentRemnant;
 use App\Models\Photo;
 use App\Models\User\User;
 use Tests\TestCase;
@@ -24,14 +24,14 @@ class AddManyTagsToManyPhotosTest extends TestCase
             'selectAll' => false,
             'filters' => [],
             'inclIds' => $photos->pluck('id')->toArray(),
-            'tags' => ['smoking' => ['butts' => 3]],
+            'tags' => ['military_equipment_remnant' => ['weapon' => 3]],
         ]);
 
         $response->assertOk();
         $response->assertJson(['success' => true]);
         foreach ($photos as $photo) {
-            $this->assertInstanceOf(Smoking::class, $photo->fresh()->smoking);
-            $this->assertEquals(3, $photo->fresh()->smoking->butts);
+            $this->assertInstanceOf(MilitaryEquipmentRemnant::class, $photo->fresh()->military_equipment_remnant);
+            $this->assertEquals(3, $photo->fresh()->military_equipment_remnant->weapon);
         }
         $this->assertEquals(8, $user->fresh()->xp); // 2 + 6
     }
@@ -77,15 +77,15 @@ class AddManyTagsToManyPhotosTest extends TestCase
             'selectAll' => false,
             'filters' => [],
             'inclIds' => $photos->pluck('id')->toArray(),
-            'tags' => ['smoking' => ['butts' => 3]],
+            'tags' => ['military_equipment_remnant' => ['weapon' => 3]],
             'custom_tags' => ['tag1', 'tag2', 'tag3']
         ]);
 
         $response->assertOk();
         $response->assertJson(['success' => true]);
         foreach ($photos as $photo) {
-            $this->assertInstanceOf(Smoking::class, $photo->fresh()->smoking);
-            $this->assertEquals(3, $photo->fresh()->smoking->butts);
+            $this->assertInstanceOf(MilitaryEquipmentRemnant::class, $photo->fresh()->military_equipment_remnant);
+            $this->assertEquals(3, $photo->fresh()->military_equipment_remnant->weapon);
             $this->assertEquals(['tag1', 'tag2', 'tag3'], $photo->fresh()->customTags->pluck('tag')->toArray());
         }
         $this->assertEquals(14, $user->fresh()->xp); // 2 + (6 + 6)

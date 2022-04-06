@@ -3,12 +3,14 @@
 namespace App\Models;
 
 use App\Models\AI\Annotation;
-use App\Models\Litter\Categories\Brand;
+use App\Models\Litter\Categories\MilitaryEquipmentRemnant;
+use App\Models\Litter\Categories\Ordnance;
 use App\Models\Teams\Team;
 use App\Models\User\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -44,20 +46,8 @@ class Photo extends Model
         'state_id',
         'country_id',
 
-    	'smoking_id',
-        'alcohol_id',
-        'coffee_id',
-    	'food_id',
-    	'softdrinks_id',
-        'dumping_id',
-        'sanitary_id',
-        'industrial_id',
-        'other_id',
-        'coastal_id',
-        'art_id',
-        'brands_id',
-        'trashdog_id',
-        'dogshit_id',
+    	'military_equipment_remnant_id',
+        'ordnance_id',
 
         'platform',
         'bounding_box',
@@ -113,28 +103,9 @@ class Photo extends Model
     public static function categories ()
     {
         return [
-            'smoking',
-            'food',
-            'coffee',
-            'alcohol',
-            'softdrinks',
-            'sanitary',
-            'coastal',
-            'dumping',
-            'industrial',
-            'brands',
-            'dogshit',
-            'art',
-            'other',
+            'ordnance',
+            'military_equipment_remnant',
         ];
-    }
-
-    /**
-     * All Currently available Brands
-     */
-    public static function getBrands ()
-    {
-        return Brand::types();
     }
 
     /**
@@ -198,12 +169,7 @@ class Photo extends Model
         {
             if ($this->$category)
             {
-                // We dont want to include brands in total_litter
-                // Increment total_litter when its not brands
-                if ($category !== 'brands')
-                {
-                    $total += $this->$category->total();
-                }
+                $total += $this->$category->total();
             }
         }
 
@@ -256,82 +222,15 @@ class Photo extends Model
     	return $this->hasOne('App\Models\Location\City');
     }
 
-    /**
-     * Litter categories
-     */
-    public function smoking ()
+    public function military_equipment_remnant (): BelongsTo
     {
-    	return $this->belongsTo('App\Models\Litter\Categories\Smoking', 'smoking_id', 'id');
+    	return $this->belongsTo(MilitaryEquipmentRemnant::class, 'military_equipment_remnant_id', 'id');
     }
 
-    public function food ()
+    public function ordnance (): BelongsTo
     {
-    	return $this->belongsTo('App\Models\Litter\Categories\Food', 'food_id', 'id');
+        return $this->belongsTo(Ordnance::class, 'ordnance_id', 'id');
     }
-
-    public function coffee ()
-    {
-    	return $this->belongsTo('App\Models\Litter\Categories\Coffee', 'coffee_id', 'id');
-    }
-
-    public function softdrinks ()
-    {
-    	return $this->belongsTo('App\Models\Litter\Categories\SoftDrinks', 'softdrinks_id', 'id');
-	}
-
-	public function alcohol ()
-    {
-		return $this->belongsTo('App\Models\Litter\Categories\Alcohol', 'alcohol_id', 'id');
-	}
-
-	public function sanitary ()
-    {
-		return $this->belongsTo('App\Models\Litter\Categories\Sanitary', 'sanitary_id', 'id');
-	}
-
-    public function dumping ()
-    {
-        return $this->belongsTo('App\Models\Litter\Categories\Dumping', 'dumping_id', 'id');
-    }
-
-	public function other ()
-    {
-		return $this->belongsTo('App\Models\Litter\Categories\Other', 'other_id', 'id');
-	}
-
-    public function industrial ()
-    {
-        return $this->belongsTo('App\Models\Litter\Categories\Industrial', 'industrial_id', 'id');
-    }
-
-    public function coastal ()
-    {
-        return $this->belongsTo('App\Models\Litter\Categories\Coastal', 'coastal_id', 'id');
-    }
-
-    public function art ()
-    {
-        return $this->belongsTo('App\Models\Litter\Categories\Art', 'art_id', 'id');
-    }
-
-    public function brands ()
-    {
-        return $this->belongsTo('App\Models\Litter\Categories\Brand', 'brands_id', 'id');
-    }
-
-    public function trashdog ()
-    {
-        return $this->belongsTo('App\Models\Litter\Categories\TrashDog', 'trashdog_id', 'id');
-    }
-
-    public function dogshit ()
-    {
-        return $this->belongsTo('App\Models\Litter\Categories\Dogshit', 'dogshit_id', 'id');
-    }
-
-    // public function politics() {
-    //     return $this->belongsTo('App\Models\Litter\Categories\Politicals', 'political_id', 'id');
-    // }
 
     public function customTags(): HasMany
     {

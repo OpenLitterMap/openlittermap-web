@@ -21,12 +21,11 @@ class DeleteTagsFromPhotoAction
         $photo->refresh();
 
         $litter = $this->deleteLitter($photo);
-        $brands = $this->deleteBrands($photo);
         $custom = $this->deleteCustomTags($photo);
 
-        $all = $litter + $brands + $custom;
+        $all = $litter + $custom;
 
-        return compact('litter', 'brands', 'custom', 'all');
+        return compact('litter', 'custom', 'all');
     }
 
     private function deleteLitter(Photo $photo): int
@@ -43,19 +42,6 @@ class DeleteTagsFromPhotoAction
         $categories->each(function ($category) use ($photo) {
             $photo->$category->delete();
         });
-
-        return $total;
-    }
-
-    private function deleteBrands(Photo $photo): int
-    {
-        if (!$photo->brands) {
-            return 0;
-        }
-
-        $total = $photo->brands->total();
-
-        $photo->brands->delete();
 
         return $total;
     }

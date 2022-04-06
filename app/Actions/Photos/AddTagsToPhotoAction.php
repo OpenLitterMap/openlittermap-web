@@ -19,7 +19,6 @@ class AddTagsToPhotoAction
         $photo->refresh();
 
         $litter = 0;
-        $brands = 0;
 
         foreach ($tags as $category => $items)
         {
@@ -27,16 +26,12 @@ class AddTagsToPhotoAction
 
             $photo->fresh()->$category->update($items);
 
-            if ($category === 'brands') {
-                $brands += array_sum($items);
-            } else {
-                $litter += array_sum($items);
-            }
+            $litter += array_sum($items);
         }
 
-        $all = $litter + $brands;
+        $all = $litter;
 
-        return compact('litter', 'brands', 'all');
+        return compact('litter', 'all');
     }
 
     /**

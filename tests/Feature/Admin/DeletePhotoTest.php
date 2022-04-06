@@ -62,8 +62,8 @@ class DeletePhotoTest extends TestCase
             'photo_id' => $this->photo->id,
             'picked_up' => false,
             'tags' => [
-                'smoking' => [
-                    'butts' => 3
+                'military_equipment_remnant' => [
+                    'weapon' => 3
                 ]
             ]
         ]);
@@ -131,7 +131,7 @@ class DeletePhotoTest extends TestCase
         $this->post('/add-tags', [
             'photo_id' => $this->photo->id,
             'picked_up' => false,
-            'tags' => ['smoking' => ['butts' => 3]]
+            'tags' => ['military_equipment_remnant' => ['weapon' => 3]]
         ]);
         $this->assertEquals(0, $this->admin->xp_redis);
         $this->assertEquals(4, Redis::zscore("xp.users", $this->user->id));

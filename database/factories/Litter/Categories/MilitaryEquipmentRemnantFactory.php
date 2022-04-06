@@ -2,17 +2,17 @@
 
 namespace Database\Factories\Litter\Categories;
 
-use App\Models\Litter\Categories\Brand;
+use App\Models\Litter\Categories\MilitaryEquipmentRemnant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-class BrandFactory extends Factory
+class MilitaryEquipmentRemnantFactory extends Factory
 {
     /**
      * The name of the factory's corresponding model.
      *
      * @var string
      */
-    protected $model = Brand::class;
+    protected $model = MilitaryEquipmentRemnant::class;
 
     /**
      * Define the model's default state.
@@ -22,8 +22,7 @@ class BrandFactory extends Factory
     public function definition()
     {
         return [
-            'walkers' => $this->faker->randomDigit,
-            'amazon' => $this->faker->randomDigit,
+            'weapon' => $this->faker->randomDigit,
         ];
     }
 }

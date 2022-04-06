@@ -49,7 +49,7 @@ class TrustedTeamsTest extends TestCase
         $this->post('/add-tags', [
             'photo_id' => $photo->id,
             'picked_up' => true,
-            'tags' => ['smoking' => ['butts' => 3]]
+            'tags' => ['military_equipment_remnant' => ['weapon' => 3]]
         ]);
 
         // The photo is automatically verified
@@ -83,7 +83,7 @@ class TrustedTeamsTest extends TestCase
         $photo = $user->fresh()->photos->last();
         $this->post('/api/add-tags', [
             'photo_id' => $photo->id,
-            'tags' => ['smoking' => ['butts' => 3]]
+            'tags' => ['military_equipment_remnant' => ['weapon' => 3]]
         ]);
 
         // The photo is automatically verified

@@ -4,10 +4,7 @@ namespace Tests\Feature\Admin;
 
 use App\Actions\LogAdminVerificationAction;
 use App\Events\TagsVerifiedByAdmin;
-use App\Models\Litter\Categories\Alcohol;
-use App\Models\Location\City;
-use App\Models\Location\Country;
-use App\Models\Location\State;
+use App\Models\Litter\Categories\Ordnance;
 use App\Models\Photo;
 use App\Models\User\User;
 use Illuminate\Support\Facades\Event;
@@ -59,8 +56,8 @@ class UpdateTagsDeletePhotoTest extends TestCase
             'photo_id' => $this->photo->id,
             'picked_up' => false,
             'tags' => [
-                'smoking' => [
-                    'butts' => 3
+                'military_equipment_remnant' => [
+                    'weapon' => 3
                 ]
             ],
             'custom_tags' => ['test']
@@ -88,13 +85,13 @@ class UpdateTagsDeletePhotoTest extends TestCase
         Storage::disk('s3')->assertExists($this->imageAndAttributes['filepath']);
         Storage::disk('bbox')->assertExists($this->imageAndAttributes['filepath']);
 
-        $smokingId = $this->photo->smoking_id;
+        $militaryEquipmentRemnantId = $this->photo->military_equipment_remnant_id;
 
         $this->post($route, [
             'photoId' => $this->photo->id,
             $tagsKey => [
-                'alcohol' => [
-                    'beerBottle' => 10
+                'ordnance' => [
+                    'shell' => 10
                 ]
             ],
             'custom_tags' => ['new-test']
@@ -103,12 +100,12 @@ class UpdateTagsDeletePhotoTest extends TestCase
         // Assert tags are stored correctly ------------
         $this->photo->refresh();
 
-        $this->assertNull($this->photo->smoking_id);
-        $this->assertDatabaseMissing('smoking', ['id' => $smokingId]);
+        $this->assertNull($this->photo->military_equipment_remnant_id);
+        $this->assertDatabaseMissing('military_equipment_remnant', ['id' => $militaryEquipmentRemnantId]);
 
-        $this->assertNotNull($this->photo->alcohol_id);
-        $this->assertInstanceOf(Alcohol::class, $this->photo->alcohol);
-        $this->assertEquals(10, $this->photo->alcohol->beerBottle);
+        $this->assertNotNull($this->photo->ordnance_id);
+        $this->assertInstanceOf(Ordnance::class, $this->photo->ordnance);
+        $this->assertEquals(10, $this->photo->ordnance->shell);
         $this->assertEquals('new-test', $this->photo->customTags->first()->tag);
 
         if ($deletesPhoto) {
@@ -135,8 +132,8 @@ class UpdateTagsDeletePhotoTest extends TestCase
         $this->post($route, [
             'photoId' => $this->photo->id,
             $tagsKey => [
-                'alcohol' => [
-                    'beerBottle' => 10
+                'ordnance' => [
+                    'shell' => 10
                 ]
             ],
             'custom_tags' => ['new-test']
@@ -173,8 +170,8 @@ class UpdateTagsDeletePhotoTest extends TestCase
         $this->post($route, [
             'photoId' => $this->photo->id,
             $tagsKey => [
-                'alcohol' => [
-                    'beerBottle' => 10
+                'ordnance' => [
+                    'shell' => 10
                 ]
             ]
         ]);
@@ -200,7 +197,7 @@ class UpdateTagsDeletePhotoTest extends TestCase
         $this->actingAs($this->admin)
             ->post($route, [
                 'photoId' => $this->photo->id,
-                $tagsKey => ['alcohol' => ['beerBottle' => 10]]
+                $tagsKey => ['ordnance' => ['shell' => 10]]
             ]);
 
         $spy->shouldHaveReceived('run');
@@ -227,7 +224,7 @@ class UpdateTagsDeletePhotoTest extends TestCase
 
         $this->post($route, [
             'photoId' => $this->photo->id,
-            $tagsKey => ['alcohol' => ['beerBottle' => 10]],
+            $tagsKey => ['ordnance' => ['shell' => 10]],
             'custom_tags' => ['new-test']
         ]);
 

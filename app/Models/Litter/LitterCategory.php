@@ -43,9 +43,7 @@ abstract class LitterCategory extends Model
         {
             if ($this->$type)
             {
-                $className = $this->table == 'arts' ? 'art' : $this->table;
-
-                $string .= $className . '.' . $type . ' ' . $this->$type . ',';
+                $string .= $this->table . '.' . $type . ' ' . $this->$type . ',';
             }
         }
 
