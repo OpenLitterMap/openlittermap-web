@@ -13,7 +13,7 @@ jobs:
 
     env:
       APP_ENV: testing
-      DB_DATABASE: olm_test
+      DB_DATABASE: mfua_test
       DB_USERNAME: root
       DB_PASSWORD: password
       BROADCAST_DRIVER: log
@@ -23,12 +23,12 @@ jobs:
       AWS_KEY: minioadmin
       AWS_SECRET: minioadmin
       AWS_REGION: us-east-1
-      AWS_BUCKET: olm-public
+      AWS_BUCKET: mfua-public
       AWS_ENDPOINT: http://127.0.0.1:9000
       x500_AWS_KEY: minioadmin
       x500_AWS_SECRET: minioadmin
       x500_AWS_REGION: us-east-1
-      x500_AWS_BUCKET: olm-public-bbox
+      x500_AWS_BUCKET: mfua-public-bbox
       x500_AWS_ENDPOINT: http://127.0.0.1:9000
     services:
       mysql:
@@ -36,7 +36,7 @@ jobs:
         env:
           MYSQL_ALLOW_EMPTY_PASSWORD: false
           MYSQL_ROOT_PASSWORD: password
-          MYSQL_DATABASE: olm_test
+          MYSQL_DATABASE: mfua_test
         ports:
           - 3306/tcp
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
@@ -68,8 +68,8 @@ jobs:
           export AWS_SECRET_ACCESS_KEY=minioadmin
           export AWS_EC2_METADATA_DISABLED=true
 
-          aws --endpoint-url http://127.0.0.1:9000/ s3 mb s3://olm-public
-          aws --endpoint-url http://127.0.0.1:9000/ s3 mb s3://olm-public-bbox
+          aws --endpoint-url http://127.0.0.1:9000/ s3 mb s3://mfua-public
+          aws --endpoint-url http://127.0.0.1:9000/ s3 mb s3://mfua-public-bbox
     - name: Copy .env
       run: php -r "file_exists('.env') || copy('.env.example', '.env');"
     - name: Install Dependencies
@@ -92,13 +92,7 @@ jobs:
     - name: Compile NPM assets
       run: npm run dev --silent
     - name: Execute tests (Unit and Feature tests) via PHPUnit
-      run: vendor/bin/phpunit --coverage-clover coverage.xml
+      run: vendor/bin/phpunit
       env:
           DB_PORT: ${{ job.services.mysql.ports['3306'] }}
           REDIS_PORT: ${{ job.services.redis.ports['6379'] }}
-    - name: Codecov
-      uses: codecov/codecov-action@v2
-      with:
-        files: ./coverage.xml # optional
-        fail_ci_if_error: true # optional (default = false)
-        verbose: true # optional (default = false)

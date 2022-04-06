@@ -43,35 +43,41 @@ keys:
     - ~/.ssh/id_rsa
 
 folders:
-    - map: ~/Code
-      to: /home/vagrant/Code
+    - map: ~/Code/mfua
+      to: /home/vagrant/Code/mfua
 
 sites:
-    - map: olm.test
-      to: /home/vagrant/Code/openlittermap-web/public
+    - map: mfua.test
+      to: /home/vagrant/Code/mfua/public
 
 databases:
-    - olm
-    - olm_test
+    - mfua
+    - mfua_test
 
 features:
     - mysql: true
     - minio: true
 
+ports:
+    - send: 33060
+      to: 3306
+    - send: 8025
+      to: 8025
+
 buckets:
-    - name: olm-public
+    - name: mfua-public
       policy: public
-    - name: olm-public-bbox
+    - name: mfua-public-bbox
       policy: public
 ```
 
-Next, update your hosts file on your host machine (`sudo nano /etc/hosts` on windows it's `C:\Windows\System32\Drivers\etc\hosts`) and include `192.168.10.10 olm.test`
+Next, update your hosts file on your host machine (`sudo nano /etc/hosts` on windows it's `C:\Windows\System32\Drivers\etc\hosts`) and include `192.168.10.10 mfua.test`
 
 When you want to boot up the VM, cd into the Homestead folder on your host machine and run `vagrant up`
 
 <p>Download the repo and save it locally into your "Code" folder</p> 
 
-`~/Users/You/Code/openlittermap-web`
+`~/Users/You/Code/mfua`
 
 If this is your first time installing, you need to run `vagrant provision` 
 
@@ -79,12 +85,12 @@ If this is your first time installing, you need to run `vagrant provision`
 
 Locally, run `npm install`
 
-SSH into the VM with `vagrant ssh`. cd into Code/openlittermap-web, and then run `composer install`
+SSH into the VM with `vagrant ssh`. cd into Code/mfua, and then run `composer install`
 You can migrate and seed the tables with `php artisan migrate --seed`
 
 Once you're done, run `npm run watch` which will build the project into the `public` folder.
 
-You should now be able to open the browser and visit olm.test
+You should now be able to open the browser and visit mfua.test
 
 
 If you would like to contribute something, make a new branch locally `git checkout -b feature/my-new-feature`. We would love to see your pull requests!
@@ -103,11 +109,11 @@ If you would want to generate some dummy photos for development purposes, you ca
 using the `php artisan olm:photos:generate-dummy-photos` command to generate 1500 dummy photos. It also takes
 arguments so you can do for e.g. `php artisan olm:photos:generate-dummy-photos 2000` and 2000 photos will be generated.
 After running the above command, run `php artisan clusters:generate-all` and the photos should be visible in the `Global Map`
-tab and in http://olm.test/world/Ireland/County%20Cork/Cork/map
+tab and in http://mfua.test/world/Ireland/County%20Cork/Cork/map
 
 The project uses AWS S3 to store photos on production. On development, however, it uses [Minio](https://laravel.com/docs/8.x/homestead#configuring-minio),
 an open source object storage server with an Amazon S3 compatible API. If you copied the .env.example file into .env
 you should be able to access the Minio control panel at http://192.168.10.10:9600 (homestead:secretkey).
 Remember to update the Access Policy to public for your buckets, on the admin panel.
 <p>You are now ready to get started!</p>
-<p>Have fun and thanks for taking an interest in OpenLitterMap</p>
+<p>Have fun and thanks for taking an interest in #MineFreeUkraine</p>
