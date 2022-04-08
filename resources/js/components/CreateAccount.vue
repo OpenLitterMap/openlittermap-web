@@ -318,7 +318,7 @@ export default {
 
             this.processing = true;
 
-            let plan_id = this.plans[this.planInt -1].plan_id;
+            // let plan_id = this.plans[this.planInt -1].plan_id;
 
             await this.$store.dispatch('CREATE_ACCOUNT', {
                 name: this.name,
@@ -328,7 +328,7 @@ export default {
                 password_confirmation: this.password_confirmation,
                 g_recaptcha_response: this.g_recaptcha_response,
                 plan: this.planInt,
-                plan_id
+                plan_id: 1
             });
 
             this.password_confirmation = '';
