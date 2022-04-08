@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Bbox;
 
-use App\Events\Littercoin\LittercoinMined;
 use App\Http\Controllers\Controller;
 use App\Litterrata;
 use App\Models\AI\Annotation;
@@ -82,8 +81,6 @@ class VerifyBoxController extends Controller
     {
         $photo = Photo::find($request->photo_id);
 
-        // increment Littercoin reward for person who added the boxes
-        // increment Littercoin reward for person who verified the boxes
         // increment XP for person doing the verification
         $userAddedBoxes = User::where('id', $photo->bbox_assigned_to)->first();
         $userDoingVerification = auth()->user();
@@ -135,20 +132,6 @@ class VerifyBoxController extends Controller
 
                 $annotation->save();
             }
-
-            // Update Littercoin and XP
-            // Todo - move this outside of the foreach loop to avoid additional requests
-            // we need to make sure Littercoin is rewarded at 100 and additional counts are rewarded
-            $userAddedBoxes->bbox_verification_count++;
-
-            if ($userAddedBoxes->bbox_verification_count === 100)
-            {
-                $userAddedBoxes->bbox_verification_count = 0;
-                $userAddedBoxes->littercoin_owed++;
-
-                event (new LittercoinMined($userAddedBoxes->id, 'verified-box'));
-            }
-            $userAddedBoxes->save();
 
             $userDoingVerification->xp++;
             $userDoingVerification->save();

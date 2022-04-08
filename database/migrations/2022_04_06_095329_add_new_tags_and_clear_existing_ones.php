@@ -13,6 +13,7 @@ class AddNewTagsAndClearExistingOnes extends Migration
      */
     public function up()
     {
+        // Photos and categories + tags
         Schema::table('photos', function (Blueprint $table) {
             $table->dropForeign('photos_smoking_id_foreign');
             $table->dropColumn('smoking_id');
@@ -91,6 +92,27 @@ class AddNewTagsAndClearExistingOnes extends Migration
             $table->foreign('ordnance_id')->references('id')->on('ordnance')->nullOnDelete();
             $table->unsignedInteger('military_equipment_remnant_id')->nullable();
             $table->foreign('military_equipment_remnant_id')->references('id')->on('military_equipment_remnant')->nullOnDelete();
+        });
+
+        // Other tables
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn('bbox_verification_count');
+            $table->dropColumn('littercoin_owed');
+            $table->dropColumn('littercoin_allowance');
+            $table->dropColumn('littercoin_instructions_received');
+            $table->dropColumn('count_correctly_verified');
+        });
+        Schema::table('countries', function (Blueprint $table) {
+            $table->dropColumn('littercoin_paid');
+            $table->dropColumn('littercoin_issued');
+        });
+        Schema::table('states', function (Blueprint $table) {
+            $table->dropColumn('littercoin_paid');
+            $table->dropColumn('littercoin_issued');
+        });
+        Schema::table('cities', function (Blueprint $table) {
+            $table->dropColumn('littercoin_paid');
+            $table->dropColumn('littercoin_issued');
         });
     }
 

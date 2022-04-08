@@ -18,7 +18,6 @@
                             <ul>
                                 <li>{{ $t('auth.signup.free-plan-feature1') }}</li>
                                 <li>{{ $t('auth.signup.free-plan-feature2') }}</li>
-                                <li>{{ $t('auth.signup.free-plan-feature3') }}</li>
                                 <li>{{ $t('auth.signup.free-plan-feature4') }}</li>
                             </ul>
                         </div>

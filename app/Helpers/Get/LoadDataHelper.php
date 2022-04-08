@@ -18,7 +18,6 @@ class LoadDataHelper
      * - Global Metadata
      *   - total photos
      *   - total litter
-     *   - total littercoin
      *
      * - Countries array
      *
@@ -26,9 +25,6 @@ class LoadDataHelper
      */
     public static function getCountries ()
     {
-        // first - global metadata
-        $littercoin = \DB::table('users')->sum(\DB::raw('littercoin_owed + littercoin_allowance'));
-
         /**
          * Get the countries
          *  Todo
@@ -129,7 +125,6 @@ class LoadDataHelper
             'globalLeaders' => $globalLeaders,
             'previousXp' => $previousXp,
             'nextXp' => $nextXp,
-            'littercoin' => $littercoin,
             'owed' => 0
         ];
     }

@@ -7,7 +7,6 @@ export const init = {
         nextXp: 0
     },
     locations: [], // counties, states, cities
-    littercoin: 0, // owed to users
     minDate: null,
     maxDate: null,
     previousLevelInt: 0,

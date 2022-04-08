@@ -19,8 +19,6 @@ class GlobalStatsController extends Controller
      */
     public function index () : array
     {
-        $littercoin = \DB::table('users')->sum(\DB::raw('littercoin_owed + littercoin_allowance'));
-
         $totalUsers = User::count();
 
         $countries = Country::select('id')
@@ -79,7 +77,6 @@ class GlobalStatsController extends Controller
             'total_photos' => $total_photos,
             'previousXp' => $previousXp,
             'nextXp' => $nextXp,
-            'littercoin' => $littercoin,
             'total_users' => $totalUsers
         ];
     }

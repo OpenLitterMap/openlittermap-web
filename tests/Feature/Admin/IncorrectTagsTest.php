@@ -85,7 +85,6 @@ class IncorrectTagsTest extends TestCase
 
         // Assert xp is decreased, and tags are cleared
         $this->assertEquals(1, $this->user->xp);
-        $this->assertEquals(0, $this->user->count_correctly_verified);
         $this->assertEquals(0, $this->photo->verification);
         $this->assertEquals(0, $this->photo->verified);
         $this->assertEquals(0, $this->photo->total_litter);

@@ -26,9 +26,7 @@
 import Password from './settings/Password'
 import Details from './settings/Details'
 import Account from './settings/Account'
-import Payments from './settings/Payments'
 import Privacy from './settings/Privacy'
-import Littercoin from './settings/Littercoin'
 import Presence from './settings/Presence'
 import Emails from './settings/Emails'
 import GlobalFlag from './settings/GlobalFlag'
@@ -39,9 +37,7 @@ export default {
         Password,
         Details,
         Account,
-        Payments,
         Privacy,
-        Littercoin,
         Presence,
         Emails,
         GlobalFlag,
@@ -60,9 +56,7 @@ export default {
                 'password',
                 'details',
                 'account',
-                'payments',
                 'privacy',
-                'littercoin',
                 'presence',
                 'emails',
                 'show-flag',
@@ -72,9 +66,7 @@ export default {
                 'password': 'Password',
                 'details': 'Details',
                 'account': 'Account',
-                'payments': 'Payments',
                 'privacy': 'Privacy',
-                'littercoin': 'Littercoin',
                 'presence': 'Presence',
                 'emails': 'Emails',
                 'show-flag': 'GlobalFlag',

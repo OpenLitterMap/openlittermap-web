@@ -21,7 +21,6 @@ class Country extends Location
         'updated_at',
         'manual_verify',
         'countrynameb',
-        'littercoin_paid',
         'created_by',
         'photos_per_month'
     ];
