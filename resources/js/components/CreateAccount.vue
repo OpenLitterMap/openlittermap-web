@@ -24,7 +24,6 @@
                             class="input"
                             :class="errorExists('name') ? 'is-danger' : ''"
                             placeholder="Your full name"
-                            required
                             v-model="name"
                         />
                         <span class="icon is-small is-left">
