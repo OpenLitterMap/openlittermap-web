@@ -196,6 +196,10 @@ class PhotosController extends Controller
         $state = $this->uploadHelper->getStateFromAddressArray($country, $addressArray);
         $city = $this->uploadHelper->getCityFromAddressArray($country, $state, $addressArray);
 
+        if ($country->shortcode !== "ua") {
+            abort(500, "Only images from Ukraine can currently be uploaded");
+        }
+
         $geohash = GeoHash::encode($latlong[0], $latlong[1]);
 
         /** @var Photo $photo */
