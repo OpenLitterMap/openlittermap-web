@@ -97,6 +97,9 @@ export default {
                 quantity = parseInt(this.$store.state.litter.tags[this.photoId][category][tag]) + 1;
             }
 
+            this.$store.commit('changeCategory', category);
+            this.$store.commit('changeTag', tag);
+
             this.$store.commit('addTag', {
                 photoId: this.photoId,
                 category,
