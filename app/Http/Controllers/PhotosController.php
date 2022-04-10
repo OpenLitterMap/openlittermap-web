@@ -12,6 +12,8 @@ use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 use App\Events\ImageDeleted;
 use App\Http\Requests\AddTagsRequest;
 use App\Http\Requests\UploadPhotoRequest;
+use App\Models\Category;
+use App\Models\Tag;
 use App\Models\User\User;
 use GeoHash;
 use Carbon\Carbon;
@@ -315,16 +317,15 @@ class PhotosController extends Controller
         }
 
         $customTagsTotal = $customTagsAction->run($photo, $request->custom_tags ?? []);
+        $tagsTotal = $this->addTagsAction->run($photo, convert_tags($request->tags ?? []));
 
-        $litterTotals = $this->addTagsAction->run($photo, $request->tags ?? []);
-
-        $user->xp += $litterTotals['all'] + $customTagsTotal;
+        $user->xp += $tagsTotal + $customTagsTotal;
         $user->save();
 
-        $this->updateLeaderboardsAction->run($photo, $user->id, $litterTotals['all'] + $customTagsTotal);
+        $this->updateLeaderboardsAction->run($photo, $user->id, $tagsTotal + $customTagsTotal);
 
         $photo->remaining = !$request->picked_up;
-        $photo->total_litter = $litterTotals['litter'];
+        $photo->total_litter = $tagsTotal;
 
         if (!$user->is_trusted)
         {

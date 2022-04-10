@@ -3,72 +3,23 @@
 namespace App\Models;
 
 use App\Models\AI\Annotation;
-use App\Models\Litter\Categories\MilitaryEquipmentRemnant;
-use App\Models\Litter\Categories\Ordnance;
 use App\Models\Teams\Team;
 use App\Models\User\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property Collection $customTags
+ * @property Collection $tags
  */
 class Photo extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'user_id',
-    	'filename',
-    	'model',
-    	'datetime',
-    	'lat',
-        'lon',
-        'verification',
-        'verified',
-        'result_string',
-        'total_litter',
-
-        'display_name',
-    	'location',
-    	'road',
-    	'suburb',
-    	'city',
-    	'county',
-    	'state_district',
-    	'country',
-    	'country_code',
-
-        'city_id',
-        'state_id',
-        'country_id',
-
-    	'military_equipment_remnant_id',
-        'ordnance_id',
-
-        'platform',
-        'bounding_box',
-        'geohash',
-        'team_id',
-
-        // annotations
-        'bbox_skipped',
-        'skipped_by',
-        'bbox_assigned_to',
-        'wrong_tags',
-        'wrong_tags_by',
-        'bbox_verification_assigned_to',
-
-        // Introduced after resizing images to 500x500
-        'five_hundred_square_filepath',
-        'bbox_500_assigned_to',
-
-        'address_array'
-    ];
+    protected $guarded = [];
 
     protected $appends = ['selected', 'picked_up'];
 
@@ -99,17 +50,6 @@ class Photo extends Model
     }
 
     /**
-     * All Categories
-     */
-    public static function categories ()
-    {
-        return [
-            'ordnance',
-            'military_equipment_remnant',
-        ];
-    }
-
-    /**
      * User who uploaded the photo
      *
      * This is unnecessarily loading
@@ -136,25 +76,6 @@ class Photo extends Model
             ->using(PhotoTag::class)
             ->withPivot(['quantity'])
             ->withTimestamps();
-    }
-
-    /**
-     * Update and return the total amount of litter in a photo
-     */
-    public function total ()
-    {
-        $total = 0;
-
-        foreach ($this->categories() as $category)
-        {
-            if ($this->$category)
-            {
-                $total += $this->$category->total();
-            }
-        }
-
-        $this->total_litter = $total;
-        $this->save();
     }
 
     /**
@@ -197,16 +118,6 @@ class Photo extends Model
     public function city ()
     {
     	return $this->hasOne('App\Models\Location\City');
-    }
-
-    public function military_equipment_remnant (): BelongsTo
-    {
-    	return $this->belongsTo(MilitaryEquipmentRemnant::class, 'military_equipment_remnant_id', 'id');
-    }
-
-    public function ordnance (): BelongsTo
-    {
-        return $this->belongsTo(Ordnance::class, 'ordnance_id', 'id');
     }
 
     public function customTags(): HasMany

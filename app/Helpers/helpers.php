@@ -28,3 +28,26 @@ if (!function_exists('array_diff_assoc_recursive')) {
         return $difference;
     }
 }
+
+
+if (!function_exists('convert_tags')) {
+    /**
+     * Converts the tags from a category/tag name representation
+     * into an ID based format.
+     *
+     * @param array $tags
+     * @return array
+     */
+    function convert_tags(array $tags): array
+    {
+        $result = [];
+        foreach ($tags as $categoryName => $categoryTags) {
+            $category = \App\Models\Category::query()->where('name', $categoryName)->first();
+            foreach ($categoryTags as $tagName => $quantity) {
+                $tag = \App\Models\Tag::query()->where(['category_id' => $category->id, 'name' => $tagName])->first();
+                $result[$tag->id] = $quantity;
+            }
+        }
+        return $result;
+    }
+}

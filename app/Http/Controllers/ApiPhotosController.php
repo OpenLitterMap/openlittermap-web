@@ -199,7 +199,7 @@ class ApiPhotosController extends Controller
             'country' => $country->country,
             'country_code' => $country->shortcode,
             'model' => $model,
-            'remaining' => false, // TODO
+            'remaining' => $request->presence,
             'platform' => 'mobile',
             'geohash' => GeoHash::encode($lat, $lon),
             'team_id' => $user->active_team,
@@ -267,7 +267,7 @@ class ApiPhotosController extends Controller
         dispatch (new AddTags(
             $user->id,
             $photo->id,
-            ($request->litter ?? $request->tags) ?? [],
+            convert_tags(($request->litter ?? $request->tags) ?? []),
             $request->custom_tags ?? [],
             $request->picked_up
         ));
@@ -299,7 +299,7 @@ class ApiPhotosController extends Controller
         dispatch (new AddTags(
             auth()->id(),
             $photo->id,
-            $request->tags,
+            convert_tags($request->tags),
             $request->custom_tags,
             $request->picked_up
         ));

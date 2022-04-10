@@ -2,7 +2,9 @@
 
 namespace App\Events;
 
+use App\Models\Category;
 use App\Models\Photo;
+use App\Models\PhotoTag;
 use App\Models\User\User;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
@@ -35,7 +37,8 @@ class TagsVerifiedByAdmin implements ShouldBroadcast, ShouldQueue
      */
     public function __construct ($photo_id)
     {
-        $photo = Photo::find($photo_id);
+        /** @var Photo $photo */
+        $photo = Photo::with('tags.category')->find($photo_id);
         $this->photo_id = $photo_id;
 
         $this->city_id = $photo->city_id;
@@ -46,23 +49,21 @@ class TagsVerifiedByAdmin implements ShouldBroadcast, ShouldQueue
 
         $total_litter_all_categories = 0;
 
-        $categories = Photo::categories();
-
         // Count the total category values on this photo
         // We will use this data to update the total category values...
         // for each Country, State and City the photo was uploaded from
-        foreach ($categories as $category)
-        {
-            if ($photo->$category)
-            {
-                $categoryTotal = $photo->$category->total();
+        /** @var Category $category */
+        foreach (Category::with('tags')->get() as $category) {
+            $categoryTotal = PhotoTag::query()
+                ->where(['photo_id' => $photo->id])
+                ->whereIn('tag_id', $category->tags()->get('id'))
+                ->sum('quantity');
 
-                // This parent class will hold each category total
-                // and use it to update each listener
-                $this->total_litter_per_category[$category] = $categoryTotal;
+            // This parent class will hold each category total
+            // and use it to update each listener
+            $this->total_litter_per_category[$category->name] = $categoryTotal;
 
-                $total_litter_all_categories += $categoryTotal;
-            }
+            $total_litter_all_categories += $categoryTotal;
         }
 
         $this->total_litter_all_categories = $total_litter_all_categories;

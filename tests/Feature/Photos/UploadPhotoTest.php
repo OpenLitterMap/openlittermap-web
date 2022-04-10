@@ -51,7 +51,7 @@ class UploadPhotoTest extends TestCase
 
         $imageAttributes = $this->getImageAndAttributes();
 
-        Carbon::setTestNow(now());
+        Carbon::setTestNow($imageAttributes['dateTime']);
 
         $response = $this->post('/submit', [
             'file' => $imageAttributes['file'],

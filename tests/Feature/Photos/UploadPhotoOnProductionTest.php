@@ -25,10 +25,9 @@ class UploadPhotoOnProductionTest extends TestCase
 
     public function test_it_throws_server_error_when_user_uploads_photos_with_the_same_datetime_on_production()
     {
+        $imageAndAttributes = $this->getImageAndAttributes();
         Carbon::setTestNow(now());
-
         $user = User::factory()->create();
-
         $this->actingAs($user);
 
         Photo::factory()->create([
@@ -41,7 +40,7 @@ class UploadPhotoOnProductionTest extends TestCase
         });
 
         $response = $this->post('/submit', [
-            'file' => $this->getImageAndAttributes()['file'],
+            'file' => $imageAndAttributes['file'],
         ]);
 
         $response->assertStatus(500);

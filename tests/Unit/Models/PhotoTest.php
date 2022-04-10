@@ -69,20 +69,6 @@ class PhotoTest extends TestCase
         $this->assertEquals(implode(', ', $expected), $photo->result_string);
     }
 
-    public function test_a_photo_has_a_count_of_total_litter_in_it()
-    {
-        $military = MilitaryEquipmentRemnant::factory(['weapon' => 1])->create();
-        $ordnance = Ordnance::factory(['shell' => 1])->create();
-        $photo = Photo::factory()->create([
-            'military_equipment_remnant_id' => $military->id,
-            'ordnance_id' => $ordnance->id
-        ]);
-
-        $photo->total();
-
-        $this->assertEquals($military->total() + $ordnance->total(), $photo->total_litter);
-    }
-
     public function test_a_photo_has_a_user()
     {
         $user = User::factory()->create();

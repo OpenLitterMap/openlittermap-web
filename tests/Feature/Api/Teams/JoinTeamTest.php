@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api\Teams;
 
+use App\Models\Tag;
 use App\Models\Teams\Team;
 use App\Models\User\User;
 use Illuminate\Support\Facades\Storage;
@@ -125,6 +126,8 @@ class JoinTeamTest extends TestCase
 
     public function test_user_contributions_are_restored_when_they_rejoin_a_team()
     {
+        $tag1 = Tag::factory()->create();
+        $tag2 = Tag::factory()->create();
         // User joins a team -------------------------
         /** @var User $user */
         $user = User::factory()->verified()->create();
@@ -152,12 +155,8 @@ class JoinTeamTest extends TestCase
             'photo_id' => $photo->id,
             'picked_up' => false,
             'tags' => [
-                'military_equipment_remnant' => [
-                    'weapon' => 3
-                ],
-                'ordnance' => [
-                    'shell' => 2
-                ]
+                $tag1->category->name => [$tag1->name => 3],
+                $tag2->category->name => [$tag2->name => 2],
             ]
         ]);
 

@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use App\Models\Category;
 use App\Models\Photo;
 
 use Illuminate\Bus\Queueable;
@@ -58,13 +59,9 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             'total_litter',
         ];
 
-        foreach (Photo::categories() as $category) {
-            $result[] = strtoupper($category);
-
-            // We make a temporary model to get the types, without persisting it
-            $photo = new Photo;
-            $model = $photo->$category()->make();
-            $result = array_merge($result, $model->types());
+        foreach (Category::with('tags')->get() as $category) {
+            $result[] = strtoupper($category->name);
+            $result = array_merge($result, $category->tags->pluck('name')->toArray());
         }
 
         return array_merge($result, ['custom_tag_1', 'custom_tag_2', 'custom_tag_3']);
@@ -92,14 +89,12 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             $row->total_litter,
         ];
 
-        foreach (Photo::categories() as $category) {
+        /** @var Category $category */
+        foreach (Category::with('tags')->get() as $category) {
             $result[] = null;
 
-            // We make a temporary model to get the types, without persisting it
-            $tags = $row->$category()->make()->types();
-
-            foreach ($tags as $tag) {
-                $result[] = $row->$category ? $row->$category->$tag : null;
+            foreach ($category->tags as $tag) {
+                $result[] = $row->tags->where('pivot.tag_id', $tag->id)->first()->quantity ?? null;
             }
         }
 
@@ -114,14 +109,14 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
     {
         if ($this->user_id)
         {
-            return Photo::with(Photo::categories())->where([
+            return Photo::with('tags')->where([
                 'user_id' => $this->user_id
             ]);
         }
 
         else if ($this->team_id)
         {
-            return Photo::with(Photo::categories())->where([
+            return Photo::with('tags')->where([
                 'team_id' => $this->team_id,
                 'verified' => 2
             ]);
@@ -131,7 +126,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
         {
             if ($this->location_type === 'city')
             {
-                return Photo::with(Photo::categories())->where([
+                return Photo::with('tags')->where([
                     'city_id' => $this->location_id,
                     'verified' => 2
                 ]);
@@ -139,7 +134,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
 
             else if ($this->location_type === 'state')
             {
-                return Photo::with(Photo::categories())->where([
+                return Photo::with('tags')->where([
                     'state_id' => $this->location_id,
                     'verified' => 2
                 ]);
@@ -147,7 +142,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
 
             else
             {
-                return Photo::with(Photo::categories())->where([
+                return Photo::with('tags')->where([
                     'country_id' => $this->location_id,
                     'verified' => 2
                 ]);

@@ -3,8 +3,8 @@
 namespace Tests\Feature\Photos;
 
 use App\Events\TagsVerifiedByAdmin;
-use App\Models\Litter\Categories\MilitaryEquipmentRemnant;
 use App\Models\Photo;
+use App\Models\Tag;
 use App\Models\User\User;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Redis;
@@ -42,14 +42,15 @@ class AddTagsToPhotoTest extends TestCase
         ]);
 
         $photo = $user->fresh()->photos->last();
+        $tag = Tag::factory()->create();
 
         // User adds tags to an image -------------------
         $this->post('/add-tags', [
             'photo_id' => $photo->id,
             'picked_up' => true,
             'tags' => [
-                'military_equipment_remnant' => [
-                    'weapon' => 3
+                $tag->category->name => [
+                    $tag->name => 3
                 ]
             ]
         ])->assertOk();
@@ -58,9 +59,9 @@ class AddTagsToPhotoTest extends TestCase
         $photo->refresh();
 
         $this->assertTrue($photo->picked_up);
-        $this->assertNotNull($photo->military_equipment_remnant_id);
-        $this->assertInstanceOf(MilitaryEquipmentRemnant::class, $photo->military_equipment_remnant);
-        $this->assertEquals(3, $photo->military_equipment_remnant->weapon);
+        $this->assertCount(1, $photo->tags);
+        $this->assertEquals($tag->id, $photo->tags->first()->id);
+        $this->assertEquals(3, $photo->tags->first()->pivot->quantity);
     }
 
     public function test_user_and_photo_info_are_updated_when_a_user_adds_tags_to_a_photo()
@@ -77,18 +78,16 @@ class AddTagsToPhotoTest extends TestCase
         ]);
 
         $photo = $user->fresh()->photos->last();
+        $tag1 = Tag::factory()->create();
+        $tag2 = Tag::factory()->create();
 
         // User adds tags to an image -------------------
         $this->post('/add-tags', [
             'photo_id' => $photo->id,
             'picked_up' => true,
             'tags' => [
-                'military_equipment_remnant' => [
-                    'weapon' => 3
-                ],
-                'ordnance' => [
-                    'shell' => 5
-                ]
+                $tag1->category->name => [$tag1->name => 3],
+                $tag2->category->name => [$tag2->name => 5]
             ]
         ])->assertOk();
 
@@ -97,7 +96,6 @@ class AddTagsToPhotoTest extends TestCase
         $photo->refresh();
 
         $this->assertEquals(9, $user->xp); // 1 xp from uploading, + 8xp from total litter tagged
-        $this->assertEquals(8, $photo->total_litter);
         $this->assertTrue($photo->picked_up);
         $this->assertEquals(0.1, $photo->verification);
     }
@@ -115,20 +113,19 @@ class AddTagsToPhotoTest extends TestCase
         $photo = $user->fresh()->photos->last();
 
         $photo->update(['verified' => 1]);
+        $tag = Tag::factory()->create();
 
         // User adds tags to the verified photo -------------------
         $response = $this->post('/add-tags', [
             'photo_id' => $photo->id,
             'picked_up' => true,
             'tags' => [
-                'military_equipment_remnant' => [
-                    'weapon' => 3
-                ]
+                $tag->category->name => [$tag->name => 3]
             ]
         ]);
 
         $response->assertForbidden();
-        $this->assertNull($photo->fresh()->military_equipment_remnant_id);
+        $this->assertEmpty($photo->fresh()->tags);
     }
 
     public function test_request_photo_id_is_validated()
@@ -136,12 +133,13 @@ class AddTagsToPhotoTest extends TestCase
         $user = User::factory()->create([
             'verification_required' => true
         ]);
+        $tag = Tag::factory()->create();
 
         $this->actingAs($user);
 
         // Missing photo_id -------------------
         $this->postJson('/add-tags', [
-            'tags' => ['military_equipment_remnant' => ['weapon' => 3]],
+            'tags' => [$tag->category->name => [$tag->name => 3]],
             'picked_up' => false
         ])
             ->assertStatus(422)
@@ -150,7 +148,7 @@ class AddTagsToPhotoTest extends TestCase
         // Non-existing photo_id -------------------
         $this->postJson('/add-tags', [
             'photo_id' => 0,
-            'tags' => ['military_equipment_remnant' => ['weapon' => 3]],
+            'tags' => [$tag->category->name => [$tag->name => 3]],
             'picked_up' => false
         ])
             ->assertStatus(422)
@@ -159,7 +157,7 @@ class AddTagsToPhotoTest extends TestCase
         // photo_id not belonging to the user -------------------
         $this->postJson('/add-tags', [
             'photo_id' => Photo::factory()->create()->id,
-            'tags' => ['military_equipment_remnant' => ['weapon' => 3]],
+            'tags' => [$tag->category->name => [$tag->name => 3]],
             'picked_up' => false
         ])
             ->assertForbidden();
@@ -203,6 +201,7 @@ class AddTagsToPhotoTest extends TestCase
         $user = User::factory()->create([
             'verification_required' => true
         ]);
+        $tag = Tag::factory()->create();
 
         $this->actingAs($user);
 
@@ -215,7 +214,7 @@ class AddTagsToPhotoTest extends TestCase
         // presence is missing -------------------
         $this->postJson('/add-tags', [
             'photo_id' => $photo->id,
-            'tags' => ['military_equipment_remnant' => ['weapon' => 3]],
+            'tags' => [$tag->category->name => [$tag->name => 3]],
         ])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['picked_up']);
@@ -223,7 +222,7 @@ class AddTagsToPhotoTest extends TestCase
         // picked_up is not a boolean -------------------
         $this->postJson('/add-tags', [
             'photo_id' => $photo->id,
-            'tags' => ['military_equipment_remnant' => ['weapon' => 3]],
+            'tags' => [$tag->category->name => [$tag->name => 3]],
             'picked_up' => 'asdf'
         ])
             ->assertStatus(422)
@@ -238,6 +237,7 @@ class AddTagsToPhotoTest extends TestCase
         $user = User::factory()->create([
             'verification_required' => false
         ]);
+        $tag = Tag::factory()->create();
 
         $this->actingAs($user);
 
@@ -251,11 +251,7 @@ class AddTagsToPhotoTest extends TestCase
         $this->post('/add-tags', [
             'photo_id' => $photo->id,
             'picked_up' => true,
-            'tags' => [
-                'military_equipment_remnant' => [
-                    'weapon' => 3
-                ]
-            ]
+            'tags' => [$tag->category->name => [$tag->name => 3]]
         ])->assertOk();
 
         // Assert event is fired ------------
@@ -275,6 +271,7 @@ class AddTagsToPhotoTest extends TestCase
     public function test_leaderboards_are_updated_when_a_user_adds_tags_to_a_photo()
     {
         // User uploads an image -------------------------
+        $tag = Tag::factory()->create();
         /** @var User $user */
         $user = User::factory()->create();
         $this->actingAs($user);
@@ -293,7 +290,7 @@ class AddTagsToPhotoTest extends TestCase
         $this->post('/add-tags', [
             'photo_id' => $photo->id,
             'picked_up' => false,
-            'tags' => ['military_equipment_remnant' => ['weapon' => 3]]
+            'tags' => [$tag->category->name => [$tag->name => 3]]
         ])->assertOk();
 
         // Assert leaderboards are updated ------------

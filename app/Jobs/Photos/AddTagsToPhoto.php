@@ -36,7 +36,7 @@ class AddTagsToPhoto implements ShouldQueue
     public function __construct ($photoId, array $tags = [], array $customTags = [])
     {
         $this->photoId = $photoId;
-        $this->tags = $tags;
+        $this->tags = convert_tags($tags);
         $this->customTags = $customTags;
     }
 
@@ -60,17 +60,17 @@ class AddTagsToPhoto implements ShouldQueue
 
         /** @var AddTagsToPhotoAction $addTagsAction */
         $addTagsAction = app(AddTagsToPhotoAction::class);
-        $litterTotals = $addTagsAction->run($photo, $this->tags);
+        $tagsTotals = $addTagsAction->run($photo, $this->tags);
 
-        $user->xp += $litterTotals['all'] + $customTagsTotals;
+        $user->xp += $tagsTotals + $customTagsTotals;
         $user->save();
 
         /** @var UpdateLeaderboardsForLocationAction $updateLeaderboardsAction */
         $updateLeaderboardsAction = app(UpdateLeaderboardsForLocationAction::class);
-        $updateLeaderboardsAction->run($photo, $user->id, $litterTotals['all'] + $customTagsTotals);
+        $updateLeaderboardsAction->run($photo, $user->id, $tagsTotals + $customTagsTotals);
 
         $photo->remaining = false; // todo
-        $photo->total_litter = $litterTotals['litter'];
+        $photo->total_litter = $tagsTotals;
 
         if (!$user->is_trusted)
         {

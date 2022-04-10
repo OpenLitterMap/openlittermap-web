@@ -3,6 +3,7 @@
 namespace App\Models\User;
 
 use App\Models\AI\Annotation;
+use App\Models\Category;
 use App\Models\CustomTag;
 use App\Models\Photo;
 use App\Models\Teams\Team;
@@ -126,16 +127,11 @@ class User extends Authenticatable
      */
     public function getTotalCategoriesAttribute ()
     {
-        $categories = Photo::categories();
-
         $totals = [];
 
-        foreach ($categories as $category)
-        {
-            if ($category !== "brands")
-            {
-                $totals[$category] = (int)Redis::hget("user:$this->id", $category);
-            }
+        /** @var Category $category */
+        foreach (Category::all() as $category) {
+            $totals[$category->name] = (int)Redis::hget("user:$this->id", $category->name);
         }
 
         return $totals;
