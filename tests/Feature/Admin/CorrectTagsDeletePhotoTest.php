@@ -6,6 +6,7 @@ namespace Tests\Feature\Admin;
 use App\Actions\LogAdminVerificationAction;
 use App\Events\TagsVerifiedByAdmin;
 use App\Models\Photo;
+use App\Models\Tag;
 use App\Models\User\User;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Redis;
@@ -35,37 +36,28 @@ class CorrectTagsDeletePhotoTest extends TestCase
         Storage::fake('bbox');
 
         $this->setImagePath();
+        $tag = Tag::factory()->create();
 
         /** @var User $admin */
         $this->admin = User::factory()->create(['verification_required' => false]);
-
         $this->admin->assignRole(Role::create(['name' => 'admin']));
-
         $this->user = User::factory()->create(['verification_required' => true]);
 
         // User uploads an image -------------------
         $this->actingAs($this->user);
-
         $this->imageAndAttributes = $this->getImageAndAttributes();
-
         $this->post('/submit', ['file' => $this->imageAndAttributes['file']]);
-
         $this->photo = $this->user->fresh()->photos->last();
 
         // User tags the image
         $this->actingAs($this->user);
-
         $this->post('/add-tags', [
             'photo_id' => $this->photo->id,
             'picked_up' => false,
-            'tags' => [
-                'military_equipment_remnant' => [
-                    'weapon' => 3
-                ]
-            ]
+            'tags' => [$tag->category->name => [$tag->name => 3]]
         ]);
-
         $this->photo->refresh();
+        $this->user->refresh();
     }
 
     public function test_an_admin_can_verify_and_delete_photos_uploaded_by_users()

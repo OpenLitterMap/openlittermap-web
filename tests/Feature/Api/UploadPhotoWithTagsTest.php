@@ -4,7 +4,6 @@ namespace Tests\Feature\Api;
 
 use App\Events\ImageUploaded;
 use App\Events\Photo\IncrementPhotoMonth;
-use App\Models\Litter\Categories\MilitaryEquipmentRemnant;
 use App\Models\Tag;
 use App\Models\Teams\Team;
 use App\Models\User\User;

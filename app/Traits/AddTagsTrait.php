@@ -24,8 +24,19 @@ trait AddTagsTrait
         /** @var User $photo */
         $user = User::find($photo->user_id);
 
+        $formatted = $photo->tags->groupBy('category.name')
+            ->map(function ($tags) {
+                return $tags
+                    ->keyBy('name')
+                    ->map(function ($tag) {
+                        return $tag->pivot->quantity;
+                    })
+                    ->toArray();
+            })
+            ->toArray();
+
         $tagUpdates = $this->calculateTagsDiffAction->run(
-            $photo->tags(),
+            $formatted,
             $tags,
             $photo->customTags->pluck('tag')->toArray(),
             $customTags
@@ -39,7 +50,7 @@ trait AddTagsTrait
         // Add the new tags
         /** @var AddTagsToPhotoAction $addTagsAction */
         $addTagsAction = app(AddTagsToPhotoAction::class);
-        $litterTotals = $addTagsAction->run($photo, $tags);
+        $tagTotals = $addTagsAction->run($photo, convert_tags($tags));
 
         // Add the new custom tags
         /** @var AddCustomTagsToPhotoAction $addCustomTagsAction */
@@ -52,7 +63,7 @@ trait AddTagsTrait
         $user->save();
 
         // photo->verified_by ;
-        $photo->total_litter = $litterTotals['litter'];
+        $photo->total_litter = $tagTotals;
         $photo->result_string = null; // Updated on PhotoVerifiedByAdmin only. Must be reset if we are applying new tags.
         $photo->save();
 

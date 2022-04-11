@@ -48,7 +48,7 @@ class UpdateRedisLocationsXp extends Command
     {
         $this->withProgressBar(User::all(), function (User $user) {
             $user->photos()
-                ->with(Photo::categories())
+                ->with('tags.category')
                 ->lazyById()
                 ->each(function (Photo $photo) {
                     $xp = $this->calculateXp($photo);
@@ -67,13 +67,7 @@ class UpdateRedisLocationsXp extends Command
     private function calculateXp(Photo $photo): int
     {
         $xpFromPhoto = 1;
-        $xpFromTags = (int) collect($photo->categories())
-            ->filter(function ($category) use ($photo) {
-                return $photo->$category;
-            })
-            ->sum(function ($category) use ($photo) {
-                return $photo->$category->total();
-            });
+        $xpFromTags = $photo->tags->sum('pivot.quantity');
         $xpFromCustomTags = $photo->customTags()->count();
 
         return $xpFromPhoto + $xpFromTags + $xpFromCustomTags;

@@ -5,8 +5,8 @@ namespace Tests\Feature\Admin;
 
 use App\Actions\LogAdminVerificationAction;
 use App\Events\TagsVerifiedByAdmin;
-use App\Models\Litter\Categories\MilitaryEquipmentRemnant;
 use App\Models\Photo;
+use App\Models\Tag;
 use App\Models\User\User;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Redis;
@@ -34,36 +34,26 @@ class CorrectTagsKeepPhotoTest extends TestCase
         Storage::fake('bbox');
 
         $this->setImagePath();
+        $tag = Tag::factory()->create();
 
         /** @var User $admin */
         $this->admin = User::factory()->create(['verification_required' => false]);
-
         $this->admin->assignRole(Role::create(['name' => 'admin']));
-
         $this->user = User::factory()->create(['verification_required' => true]);
 
         // User uploads an image -------------------
         $this->actingAs($this->user);
-
         $imageAndAttributes = $this->getImageAndAttributes();
-
         $this->post('/submit', ['file' => $imageAndAttributes['file']]);
-
         $this->photo = $this->user->fresh()->photos->last();
 
         // User tags the image
         $this->actingAs($this->user);
-
         $this->post('/add-tags', [
             'photo_id' => $this->photo->id,
             'picked_up' => false,
-            'tags' => [
-                'military_equipment_remnant' => [
-                    'weapon' => 3
-                ]
-            ]
+            'tags' => [$tag->category->name => [$tag->name => 3]]
         ]);
-
         $this->photo->refresh();
     }
 
@@ -74,13 +64,12 @@ class CorrectTagsKeepPhotoTest extends TestCase
         $this->assertEquals(4, $this->user->xp);
         $this->assertEquals(0, $this->admin->xp);
         $this->assertEquals(0, $this->admin->xp_redis);
-        $this->assertInstanceOf(MilitaryEquipmentRemnant::class, $this->photo->military_equipment_remnant);
+        $this->assertCount(1, $this->photo->tags);
 
         // Admin marks the tagging as correct -------------------
         $this->actingAs($this->admin);
 
-        $this->post('/admin/verifykeepimage', ['photoId' => $this->photo->id])
-            ->assertOk();
+        $this->post('/admin/verifykeepimage', ['photoId' => $this->photo->id])->assertOk();
 
         $this->user->refresh();
         $this->photo->refresh();
@@ -90,7 +79,7 @@ class CorrectTagsKeepPhotoTest extends TestCase
         $this->assertEquals(1, $this->photo->verification);
         $this->assertEquals(2, $this->photo->verified);
         $this->assertEquals(3, $this->photo->total_litter);
-        $this->assertInstanceOf(MilitaryEquipmentRemnant::class, $this->photo->military_equipment_remnant);
+        $this->assertCount(1, $this->photo->tags);
         // Admin is rewarded with 1 XP
         $this->assertEquals(1, $this->admin->xp);
         $this->assertEquals(1, $this->admin->xp_redis);

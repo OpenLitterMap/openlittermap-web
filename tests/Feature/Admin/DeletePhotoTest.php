@@ -6,6 +6,7 @@ namespace Tests\Feature\Admin;
 use App\Actions\LogAdminVerificationAction;
 use App\Events\ImageDeleted;
 use App\Models\Photo;
+use App\Models\Tag;
 use App\Models\User\User;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Redis;
@@ -38,34 +39,26 @@ class DeletePhotoTest extends TestCase
 
         /** @var User $admin */
         $this->admin = User::factory()->create(['verification_required' => false]);
-
         $this->admin->assignRole(Role::create(['name' => 'admin']));
-
         $this->user = User::factory()->create(['verification_required' => true]);
 
         // User uploads an image -------------------
         $this->actingAs($this->user);
-
         $this->imageAndAttributes = $this->getImageAndAttributes();
-
         $this->post('/submit', ['file' => $this->imageAndAttributes['file']]);
-
         $this->photo = $this->user->fresh()->photos->last();
     }
 
     public function test_an_admin_can_delete_photos_uploaded_by_users()
     {
+        $tag = Tag::factory()->create();
         // User tags the image
         $this->actingAs($this->user);
 
         $this->post('/add-tags', [
             'photo_id' => $this->photo->id,
             'picked_up' => false,
-            'tags' => [
-                'military_equipment_remnant' => [
-                    'weapon' => 3
-                ]
-            ]
+            'tags' => [$tag->category->name => [$tag->name => 3]]
         ]);
 
         $this->user->refresh();
@@ -81,7 +74,7 @@ class DeletePhotoTest extends TestCase
 
         // Admin deletes the photo -------------------
         $this->actingAs($this->admin);
-
+$this->withoutExceptionHandling();
         $this->post('/admin/destroy', ['photoId' => $this->photo->id]);
 
         $this->user->refresh();
@@ -121,6 +114,7 @@ class DeletePhotoTest extends TestCase
 
     public function test_leaderboards_are_updated_when_an_admin_deletes_a_photo()
     {
+        $tag = Tag::factory()->create();
         // User has already uploaded an image, so their xp is 1
         Redis::zrem('xp.users', $this->admin->id);
         Redis::zadd("xp.users", 1, $this->user->id);
@@ -131,7 +125,7 @@ class DeletePhotoTest extends TestCase
         $this->post('/add-tags', [
             'photo_id' => $this->photo->id,
             'picked_up' => false,
-            'tags' => ['military_equipment_remnant' => ['weapon' => 3]]
+            'tags' => [$tag->category->name => [$tag->name => 3]]
         ]);
         $this->assertEquals(0, $this->admin->xp_redis);
         $this->assertEquals(4, Redis::zscore("xp.users", $this->user->id));

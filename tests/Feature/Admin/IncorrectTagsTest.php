@@ -35,18 +35,13 @@ class IncorrectTagsTest extends TestCase
 
         /** @var User $admin */
         $this->admin = User::factory()->create(['verification_required' => false]);
-
         $this->admin->assignRole(Role::create(['name' => 'admin']));
-
         $this->user = User::factory()->create(['verification_required' => true]);
 
         // User uploads an image -------------------
         $this->actingAs($this->user);
-
         $imageAndAttributes = $this->getImageAndAttributes();
-
         $this->post('/submit', ['file' => $imageAndAttributes['file']]);
-
         $this->photo = $this->user->fresh()->photos->last();
     }
 
@@ -63,8 +58,6 @@ class IncorrectTagsTest extends TestCase
         ]);
 
         $this->photo->refresh();
-
-        $militaryEquipmentRemnantId = $this->photo->military_equipment_remnant_id;
 
         // We make sure xp and tags are correct
         $this->assertEquals(4, $this->user->xp);

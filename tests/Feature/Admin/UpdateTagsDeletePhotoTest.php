@@ -4,8 +4,8 @@ namespace Tests\Feature\Admin;
 
 use App\Actions\LogAdminVerificationAction;
 use App\Events\TagsVerifiedByAdmin;
-use App\Models\Litter\Categories\Ordnance;
 use App\Models\Photo;
+use App\Models\Tag;
 use App\Models\User\User;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Redis;
@@ -35,31 +35,23 @@ class UpdateTagsDeletePhotoTest extends TestCase
         Storage::fake('bbox');
 
         $this->setImagePath();
+        $tag = Tag::factory()->create();
 
         /** @var User $admin */
         $this->admin = User::factory()
             ->create(['verification_required' => false])
             ->assignRole(Role::create(['name' => 'admin']));
-
         $this->user = User::factory()->create(['verification_required' => true]);
 
         // User uploads and tags an image -------------------
         $this->actingAs($this->user);
-
         $this->imageAndAttributes = $this->getImageAndAttributes();
-
         $this->post('/submit', ['file' => $this->imageAndAttributes['file']]);
-
         $this->photo = $this->user->fresh()->photos->last();
-
         $this->post('/add-tags', [
             'photo_id' => $this->photo->id,
             'picked_up' => false,
-            'tags' => [
-                'military_equipment_remnant' => [
-                    'weapon' => 3
-                ]
-            ],
+            'tags' => [$tag->category->name => [$tag->name => 3]],
             'custom_tags' => ['test']
         ]);
     }
@@ -81,31 +73,23 @@ class UpdateTagsDeletePhotoTest extends TestCase
     {
         // Admin updates the tags -------------------
         $this->actingAs($this->admin);
-
         Storage::disk('s3')->assertExists($this->imageAndAttributes['filepath']);
         Storage::disk('bbox')->assertExists($this->imageAndAttributes['filepath']);
 
-        $militaryEquipmentRemnantId = $this->photo->military_equipment_remnant_id;
+        $tagId = $this->photo->tags()->first()->id;
 
+        $newTag = Tag::factory()->create();
         $this->post($route, [
             'photoId' => $this->photo->id,
-            $tagsKey => [
-                'ordnance' => [
-                    'shell' => 10
-                ]
-            ],
+            $tagsKey => [$newTag->category->name => [$newTag->name => 10]],
             'custom_tags' => ['new-test']
         ])->assertOk();
 
         // Assert tags are stored correctly ------------
         $this->photo->refresh();
-
-        $this->assertNull($this->photo->military_equipment_remnant_id);
-        $this->assertDatabaseMissing('military_equipment_remnant', ['id' => $militaryEquipmentRemnantId]);
-
-        $this->assertNotNull($this->photo->ordnance_id);
-        $this->assertInstanceOf(Ordnance::class, $this->photo->ordnance);
-        $this->assertEquals(10, $this->photo->ordnance->shell);
+        $this->assertCount(1, $this->photo->tags);
+        $this->assertDatabaseHas('photo_tag', ['photo_id' => $this->photo->id, 'tag_id' => $newTag->id, 'quantity' => 10]);
+        $this->assertDatabaseMissing('photo_tag', ['photo_id' => $this->photo->id, 'tag_id' => $tagId]);
         $this->assertEquals('new-test', $this->photo->customTags->first()->tag);
 
         if ($deletesPhoto) {
@@ -126,16 +110,12 @@ class UpdateTagsDeletePhotoTest extends TestCase
     {
         // Admin updates the tags -------------------
         $this->actingAs($this->admin);
-
         $this->assertEquals(0, $this->admin->xp);
 
+        $newTag = Tag::factory()->create();
         $this->post($route, [
             'photoId' => $this->photo->id,
-            $tagsKey => [
-                'ordnance' => [
-                    'shell' => 10
-                ]
-            ],
+            $tagsKey => [$newTag->category->name => [$newTag->name => 10]],
             'custom_tags' => ['new-test']
         ])->assertOk();
 
@@ -166,14 +146,10 @@ class UpdateTagsDeletePhotoTest extends TestCase
 
         // Admin updates the tags -------------------
         $this->actingAs($this->admin);
-
+        $newTag = Tag::factory()->create();
         $this->post($route, [
             'photoId' => $this->photo->id,
-            $tagsKey => [
-                'ordnance' => [
-                    'shell' => 10
-                ]
-            ]
+            $tagsKey => [$newTag->category->name => [$newTag->name => 10]]
         ]);
 
         // Assert event is fired ------------
@@ -194,10 +170,11 @@ class UpdateTagsDeletePhotoTest extends TestCase
     {
         $spy = $this->spy(LogAdminVerificationAction::class);
 
+        $newTag = Tag::factory()->create();
         $this->actingAs($this->admin)
             ->post($route, [
                 'photoId' => $this->photo->id,
-                $tagsKey => ['ordnance' => ['shell' => 10]]
+                $tagsKey => [$newTag->category->name => [$newTag->name => 10]]
             ]);
 
         $spy->shouldHaveReceived('run');
@@ -221,10 +198,10 @@ class UpdateTagsDeletePhotoTest extends TestCase
 
         // Admin updates the tags -------------------
         $this->actingAs($this->admin);
-
+        $newTag = Tag::factory()->create();
         $this->post($route, [
             'photoId' => $this->photo->id,
-            $tagsKey => ['ordnance' => ['shell' => 10]],
+            $tagsKey => [$newTag->category->name => [$newTag->name => 10]],
             'custom_tags' => ['new-test']
         ]);
 

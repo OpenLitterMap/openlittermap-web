@@ -4,8 +4,6 @@ namespace Tests\Unit\Models;
 
 use App\Models\AI\Annotation;
 use App\Models\Category;
-use App\Models\Litter\Categories\Ordnance;
-use App\Models\Litter\Categories\MilitaryEquipmentRemnant;
 use App\Models\Photo;
 use App\Models\Tag;
 use App\Models\User\User;

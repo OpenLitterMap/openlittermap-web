@@ -2,11 +2,11 @@
 
 namespace Tests\Unit\Commands;
 
-use App\Models\Litter\Categories\MilitaryEquipmentRemnant;
 use App\Models\Location\City;
 use App\Models\Location\Country;
 use App\Models\Location\State;
 use App\Models\Photo;
+use App\Models\Tag;
 use App\Models\User\User;
 use Illuminate\Support\Facades\Redis;
 use Tests\TestCase;
@@ -18,9 +18,9 @@ class UpdateRedisLocationsXpTest extends TestCase
         list($country1, $state1, $city1) = $this->createLocation();
         list($country2, $state2, $city2) = $this->createLocation();
         $user = User::factory()->create();
+        $tag = Tag::factory()->create();
         $photo1 = Photo::factory()->create([
             'user_id' => $user->id,
-            'military_equipment_remnant_id' => MilitaryEquipmentRemnant::factory()->create(['weapon' => 3])->id,
             'country_id' => $country1->id,
             'state_id' => $state1->id,
             'city_id' => $city1->id
@@ -28,12 +28,15 @@ class UpdateRedisLocationsXpTest extends TestCase
         /** @var Photo $photo2 */
         $photo2 = Photo::factory()->create([
             'user_id' => $user->id,
-            'military_equipment_remnant_id' => MilitaryEquipmentRemnant::factory()->create(['weapon' => 5])->id,
             'country_id' => $country2->id,
             'state_id' => $state2->id,
             'city_id' => $city2->id
         ]);
+
+        $photo1->tags()->attach($tag, ['quantity' => 3]);
+        $photo2->tags()->attach($tag, ['quantity' => 5]);
         $photo2->customTags()->create(['tag' => 'custom tag example']);
+
         Redis::del("xp.users");
         $this->clearRedisLocation($country1, $state1, $city1);
         $this->clearRedisLocation($country2, $state2, $city2);

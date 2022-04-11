@@ -205,8 +205,19 @@ class AdminController extends Controller
 
         $this->deletePhotoAction->run($photo);
 
+        $formatted = $photo->tags->groupBy('category.name')
+            ->map(function ($tags) {
+                return $tags
+                    ->keyBy('name')
+                    ->map(function ($tag) {
+                        return $tag->pivot->quantity;
+                    })
+                    ->toArray();
+            })
+            ->toArray();
+
         $tagUpdates = $this->calculateTagsDiffAction->run(
-            $photo->tags(),
+            $formatted,
             [],
             $photo->customTags->pluck('tag')->toArray(),
             []
