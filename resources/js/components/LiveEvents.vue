@@ -5,7 +5,6 @@
                 v-for="(event, index) in events"
                 :key="event.id"
                 class="list-item"
-                @dblclick.prevent.stop="flyToLocation(event)"
             >
                 <component
                     :is="event.type"
@@ -15,7 +14,7 @@
                     :city="event.city"
                     :team-name="event.teamName"
                     :reason="event.reason"
-                    @click="removeEvent(index)"
+                    @click="click(event, index)"
                 />
 			</span>
 		</transition-group>
@@ -123,10 +122,34 @@ export default {
 	data ()
     {
 		return {
-			events: []
+			events: [],
+            clicks: 0,
+            timer: null
 		};
 	},
 	methods: {
+        /**
+         * This is usually how double-clicks are handled
+         * without overlapping with the click events
+         * @see https://stackoverflow.com/a/41309853/5828796
+         * @param event
+         * @param index
+         */
+        click(event, index)
+        {
+            this.clicks++;
+            if (this.clicks === 1) {
+                this.timer = setTimeout(() => {
+                    this.removeEvent(index);
+                    this.clicks = 0
+                }, 300);
+            } else {
+                clearTimeout(this.timer);
+                this.flyToLocation(event);
+                this.clicks = 0;
+            }
+        },
+
         /**
          * Removes the event at the specified index
          * @param index
