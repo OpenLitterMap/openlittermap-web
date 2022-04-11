@@ -4,8 +4,8 @@ namespace Tests\Feature\Admin;
 
 
 use App\Actions\LogAdminVerificationAction;
-use App\Models\Litter\Categories\MilitaryEquipmentRemnant;
 use App\Models\Photo;
+use App\Models\Tag;
 use App\Models\User\User;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
@@ -52,17 +52,14 @@ class IncorrectTagsTest extends TestCase
 
     public function test_an_admin_can_mark_photos_as_incorrectly_tagged()
     {
+        $tag = Tag::factory()->create();
         // User tags the image
         $this->actingAs($this->user);
 
         $this->post('/add-tags', [
             'photo_id' => $this->photo->id,
             'picked_up' => false,
-            'tags' => [
-                'military_equipment_remnant' => [
-                    'weapon' => 3
-                ]
-            ]
+            'tags' => [$tag->category->name => [$tag->name => 3]]
         ]);
 
         $this->photo->refresh();
@@ -72,7 +69,7 @@ class IncorrectTagsTest extends TestCase
         // We make sure xp and tags are correct
         $this->assertEquals(4, $this->user->xp);
         $this->assertEquals(0, $this->admin->xp);
-        $this->assertInstanceOf(MilitaryEquipmentRemnant::class, $this->photo->military_equipment_remnant);
+        $this->assertCount(1, $this->photo->fresh()->tags);
 
         // Admin marks the tagging as incorrect -------------------
         $this->actingAs($this->admin);
@@ -89,14 +86,14 @@ class IncorrectTagsTest extends TestCase
         $this->assertEquals(0, $this->photo->verified);
         $this->assertEquals(0, $this->photo->total_litter);
         $this->assertNull($this->photo->result_string);
-        $this->assertNull($this->photo->military_equipment_remnant_id);
-        $this->assertDatabaseMissing('military_equipment_remnant', ['id' => $militaryEquipmentRemnantId]);
+        $this->assertCount(0, $this->photo->fresh()->tags);
         // Admin is rewarded with 1 XP
         $this->assertEquals(1, $this->admin->xp);
     }
 
     public function test_leaderboards_are_updated_when_an_admin_marks_tagging_incorrect()
     {
+        $tag = Tag::factory()->create();
         // User has already uploaded an image, so their xp is 1
         Redis::zrem('xp.users', $this->admin->id);
         Redis::zadd("xp.users", 1, $this->user->id);
@@ -107,7 +104,7 @@ class IncorrectTagsTest extends TestCase
         $this->post('/add-tags', [
             'photo_id' => $this->photo->id,
             'picked_up' => false,
-            'tags' => ['military_equipment_remnant' => ['weapon' => 3]]
+            'tags' => [$tag->category->name => [$tag->name => 3]]
         ]);
         $this->assertEquals(0, $this->admin->xp_redis);
         $this->assertEquals(4, Redis::zscore("xp.users", $this->user->id));
@@ -128,6 +125,7 @@ class IncorrectTagsTest extends TestCase
 
     public function test_unauthorized_users_cannot_mark_tagging_as_incorrect()
     {
+        $tag = Tag::factory()->create();
         // Unauthenticated users ---------------------
         $response = $this->post('/admin/incorrect', ['photoId' => 1]);
 
@@ -139,11 +137,7 @@ class IncorrectTagsTest extends TestCase
         $this->post('/add-tags', [
             'photo_id' => $this->photo->id,
             'picked_up' => false,
-            'tags' => [
-                'military_equipment_remnant' => [
-                    'weapon' => 3
-                ]
-            ]
+            'tags' => [$tag->category->name => [$tag->name => 3]]
         ]);
 
         // A non-admin user tries to perform the action ------------
@@ -155,7 +149,7 @@ class IncorrectTagsTest extends TestCase
 
         $response->assertRedirect('/');
 
-        $this->assertInstanceOf(MilitaryEquipmentRemnant::class, $this->photo->fresh()->military_equipment_remnant);
+        $this->assertCount(1, $this->photo->fresh()->tags);
     }
 
     public function test_it_throws_not_found_exception_if_photo_doesnt_exist()

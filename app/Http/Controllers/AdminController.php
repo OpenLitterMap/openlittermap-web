@@ -154,7 +154,7 @@ class AdminController extends Controller
     public function incorrect (Request $request)
     {
         /** @var Photo $photo */
-        $photo = Photo::findOrFail($request->photoId);
+        $photo = Photo::with('tags.category')->findOrFail($request->photoId);
 
         $photo->verification = 0;
         $photo->verified = 0;
@@ -162,8 +162,19 @@ class AdminController extends Controller
         $photo->result_string = null;
         $photo->save();
 
+        $formatted = $photo->tags->groupBy('category.name')
+            ->map(function ($tags) {
+                return $tags
+                    ->keyBy('name')
+                    ->map(function ($tag) {
+                        return $tag->pivot->quantity;
+                    })
+                    ->toArray();
+            })
+            ->toArray();
+
         $tagUpdates = $this->calculateTagsDiffAction->run(
-            $photo->tags(),
+            $formatted,
             [],
             $photo->customTags->pluck('tag')->toArray(),
             []
