@@ -4,7 +4,7 @@
         <div id="super" ref="super" />
 
         <!-- Websockets -->
-        <LiveEvents @fly-to-location="flyToLocation" />
+        <LiveEvents @fly-to-location="updateUrlPhotoIdAndFlyToLocation" />
     </div>
 </template>
 
@@ -340,6 +340,11 @@ export default {
             {
                 createGlobalGroups();
 
+                // Remove photo id from the url when zooming out
+                const url = new URL(window.location.href);
+                url.searchParams.delete('photo');
+                window.history.pushState(null, '', url);
+
                 await axios.get('/global/clusters', {
                     params: {
                         zoom,
@@ -402,9 +407,28 @@ export default {
                                 return;
                             }
 
+                            // Set the photo id in the url when opening a photo
+                            const url = new URL(window.location.href);
+                            url.searchParams.set('photo', feature.properties.photo_id);
+                            window.history.pushState(null, '', url);
+
                             return this.renderLeafletPopup(feature, e.latlng)
                         },
                     });
+
+                    // If there is a photo id in the url, open it
+                    let urlParams = new URLSearchParams(window.location.search);
+                    let photoId = parseInt(urlParams.get('photo'));
+                    if (photoId) {
+                        if (!this.visiblePoints.length) return;
+                        const feature = this.visiblePoints.find(f => f.properties.photo_id === photoId);
+                        if (feature) {
+                            this.renderLeafletPopup(
+                                feature,
+                                [feature.geometry.coordinates[0], feature.geometry.coordinates[1]]
+                            )
+                        }
+                    }
                 })
                 .catch(error => {
                     console.error('get_global_points', error);
@@ -469,8 +493,20 @@ export default {
         },
 
         /**
+         * Updates the url with the photoId
+         * and goes to the location
+         */
+        updateUrlPhotoIdAndFlyToLocation (location)
+        {
+            const url = new URL(window.location.href);
+            url.searchParams.set('photo', location.photoId);
+            window.history.pushState(null, '', url);
+
+            this.flyToLocation(location);
+        },
+
+        /**
          * Goes to the location provided
-         * Opens the photo if present
          */
         flyToLocation (location)
         {
@@ -483,14 +519,6 @@ export default {
                 animate: true,
                 duration: 5
             });
-
-            if (location.photoId) {
-                setTimeout(() => {
-                    if (!this.visiblePoints.length) return;
-                    const feature = this.visiblePoints.find(f => f.properties.photo_id === location.photoId);
-                    if (feature) this.renderLeafletPopup(feature, latLng)
-                }, 8000);
-            }
         },
 
         /**
