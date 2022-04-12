@@ -37,20 +37,6 @@ export default {
         {
             this.plan = window.location.href.split('?')[1].split('=')[1];
         }
-
-        // Success or Fail response from Stripe Checkout
-        if (window.location.href.includes('&'))
-        {
-            // 'success', or 'error'
-            let status = window.location.href.split('&')[1].split('=')[1];
-
-            let title    = this.$t('signup.' + status + '-title');
-            let subtitle = this.$t('signup.' + status + '-subtitle');
-
-            this.$swal(title, subtitle, status);
-        }
-
-        await this.$store.dispatch('GET_PLANS');
     },
     data ()
     {
