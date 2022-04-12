@@ -2,7 +2,7 @@ export const init = {
     category: 'ordnance', // currently selected category.
     hasAddedNewTag: false, // Has the admin added a new tag yet? If FALSE, disable "Update With New Tags button"
     pickedUp: null, // true = picked up
-    tag: 'land_mine', // currently selected item
+    tag: 'small_arms', // currently selected item
     customTag: '', // currently selected custom tag
     loading: false,
     photos: {}, // paginated photos object

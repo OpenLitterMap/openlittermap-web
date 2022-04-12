@@ -47,7 +47,9 @@ class CompileResultsString extends Command
             ->where('verified', '>', 0)
             ->whereNull('result_string')
             ->get()
-            ->each
-            ->translate();
+            ->each(function (Photo $photo) {
+                // Not simplifying the 'each' to be able to know the $photo type
+                $photo->translate();
+            });
     }
 }

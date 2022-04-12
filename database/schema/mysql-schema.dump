@@ -6,16 +6,16 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 DROP TABLE IF EXISTS `admin_verification_logs`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `admin_verification_logs` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `admin_id` int unsigned NOT NULL,
-  `photo_id` int unsigned NOT NULL,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `admin_id` int(10) unsigned NOT NULL,
+  `photo_id` int(10) unsigned NOT NULL,
   `action` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `added_tags` json NOT NULL,
-  `removed_tags` json NOT NULL,
-  `rewarded_admin_xp` int NOT NULL,
-  `removed_user_xp` int NOT NULL,
+  `added_tags` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`added_tags`)),
+  `removed_tags` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`removed_tags`)),
+  `rewarded_admin_xp` int(11) NOT NULL,
+  `removed_user_xp` int(11) NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -25,36 +25,36 @@ CREATE TABLE `admin_verification_logs` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `annotations`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `annotations` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `photo_id` bigint unsigned NOT NULL,
-  `category_id` int unsigned NOT NULL,
-  `supercategory_id` int unsigned DEFAULT NULL,
-  `segmentation` text COLLATE utf8mb4_unicode_ci,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `photo_id` bigint(20) unsigned NOT NULL,
+  `category_id` int(10) unsigned NOT NULL,
+  `supercategory_id` int(10) unsigned DEFAULT NULL,
+  `segmentation` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `bbox` text COLLATE utf8mb4_unicode_ci NOT NULL,
-  `is_crowd` tinyint(1) NOT NULL DEFAULT '0',
+  `is_crowd` tinyint(1) NOT NULL DEFAULT 0,
   `area` double(8,2) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `category` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `tag` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `tag_id` int unsigned DEFAULT NULL,
+  `tag_id` int(10) unsigned DEFAULT NULL,
   `brand` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `brand_id` int unsigned DEFAULT NULL,
-  `added_by` int unsigned DEFAULT NULL,
-  `verified_by` int unsigned DEFAULT NULL,
+  `brand_id` int(10) unsigned DEFAULT NULL,
+  `added_by` int(10) unsigned DEFAULT NULL,
+  `verified_by` int(10) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `awards`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `awards` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `item` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `quantity` int unsigned NOT NULL DEFAULT '0',
+  `quantity` int(10) unsigned NOT NULL DEFAULT 0,
   `reward` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
@@ -63,10 +63,11 @@ CREATE TABLE `awards` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `categories`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `categories` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `slug` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
@@ -74,77 +75,77 @@ CREATE TABLE `categories` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `cities`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `cities` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `city` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'not found',
-  `country_id` int unsigned NOT NULL,
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `city` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'not found',
+  `country_id` int(10) unsigned NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  `total_images` int unsigned DEFAULT NULL,
-  `total_smoking` int unsigned DEFAULT NULL,
-  `total_cigaretteButts` int unsigned DEFAULT NULL,
-  `total_food` int unsigned DEFAULT NULL,
-  `total_softdrinks` int unsigned DEFAULT NULL,
-  `total_plasticBottles` int unsigned DEFAULT NULL,
-  `total_alcohol` int unsigned DEFAULT NULL,
-  `total_coffee` int unsigned DEFAULT NULL,
-  `total_drugs` int unsigned DEFAULT NULL,
-  `total_needles` int unsigned DEFAULT NULL,
-  `total_sanitary` int unsigned DEFAULT NULL,
-  `total_other` int unsigned DEFAULT NULL,
-  `total_contributors` int unsigned NOT NULL DEFAULT '0',
-  `total_coastal` int unsigned NOT NULL DEFAULT '0',
-  `state_id` int unsigned DEFAULT NULL,
-  `total_pathways` int unsigned DEFAULT NULL,
-  `manual_verify` tinyint(1) NOT NULL DEFAULT '0',
-  `total_art` int unsigned DEFAULT NULL,
-  `created_by` int unsigned DEFAULT NULL,
-  `total_brands` int unsigned DEFAULT NULL,
-  `total_adidas` int unsigned DEFAULT NULL,
-  `total_amazon` int unsigned DEFAULT NULL,
-  `total_apple` int unsigned DEFAULT NULL,
-  `total_budweiser` int unsigned DEFAULT NULL,
-  `total_coke` int unsigned DEFAULT NULL,
-  `total_colgate` int unsigned DEFAULT NULL,
-  `total_corona` int unsigned DEFAULT NULL,
-  `total_fritolay` int unsigned DEFAULT NULL,
-  `total_gillette` int unsigned DEFAULT NULL,
-  `total_heineken` int unsigned DEFAULT NULL,
-  `total_kellogs` int unsigned DEFAULT NULL,
-  `total_lego` int unsigned DEFAULT NULL,
-  `total_loreal` int unsigned DEFAULT NULL,
-  `total_nescafe` int unsigned DEFAULT NULL,
-  `total_nestle` int unsigned DEFAULT NULL,
-  `total_marlboro` int unsigned DEFAULT NULL,
-  `total_mcdonalds` int unsigned DEFAULT NULL,
-  `total_nike` int unsigned DEFAULT NULL,
-  `total_pepsi` int unsigned DEFAULT NULL,
-  `total_redbull` int unsigned DEFAULT NULL,
-  `total_samsung` int unsigned DEFAULT NULL,
-  `total_subway` int unsigned DEFAULT NULL,
-  `total_starbucks` int unsigned DEFAULT NULL,
-  `total_tayto` int unsigned DEFAULT NULL,
-  `total_applegreen` int unsigned DEFAULT NULL,
-  `total_avoca` int unsigned DEFAULT NULL,
-  `total_bewleys` int unsigned DEFAULT NULL,
-  `total_brambles` int unsigned DEFAULT NULL,
-  `total_butlers` int unsigned DEFAULT NULL,
-  `total_cafe_nero` int unsigned DEFAULT NULL,
-  `total_centra` int unsigned DEFAULT NULL,
-  `total_costa` int unsigned DEFAULT NULL,
-  `total_esquires` int unsigned DEFAULT NULL,
-  `total_frank_and_honest` int unsigned DEFAULT NULL,
-  `total_insomnia` int unsigned DEFAULT NULL,
-  `total_obriens` int unsigned DEFAULT NULL,
-  `total_lolly_and_cookes` int unsigned DEFAULT NULL,
-  `total_supermacs` int unsigned DEFAULT NULL,
-  `total_wilde_and_greene` int unsigned DEFAULT NULL,
-  `total_dumping` int unsigned DEFAULT NULL,
-  `total_industrial` int unsigned DEFAULT NULL,
-  `photos_per_month` text COLLATE utf8mb4_unicode_ci,
-  `total_litter` bigint unsigned NOT NULL DEFAULT '0',
-  `total_dogshit` bigint unsigned DEFAULT NULL,
+  `total_images` int(10) unsigned DEFAULT NULL,
+  `total_smoking` int(10) unsigned DEFAULT NULL,
+  `total_cigaretteButts` int(10) unsigned DEFAULT NULL,
+  `total_food` int(10) unsigned DEFAULT NULL,
+  `total_softdrinks` int(10) unsigned DEFAULT NULL,
+  `total_plasticBottles` int(10) unsigned DEFAULT NULL,
+  `total_alcohol` int(10) unsigned DEFAULT NULL,
+  `total_coffee` int(10) unsigned DEFAULT NULL,
+  `total_drugs` int(10) unsigned DEFAULT NULL,
+  `total_needles` int(10) unsigned DEFAULT NULL,
+  `total_sanitary` int(10) unsigned DEFAULT NULL,
+  `total_other` int(10) unsigned DEFAULT NULL,
+  `total_contributors` int(10) unsigned NOT NULL DEFAULT 0,
+  `total_coastal` int(10) unsigned NOT NULL DEFAULT 0,
+  `state_id` int(10) unsigned DEFAULT NULL,
+  `total_pathways` int(10) unsigned DEFAULT NULL,
+  `manual_verify` tinyint(1) NOT NULL DEFAULT 0,
+  `total_art` int(10) unsigned DEFAULT NULL,
+  `created_by` int(10) unsigned DEFAULT NULL,
+  `total_brands` int(10) unsigned DEFAULT NULL,
+  `total_adidas` int(10) unsigned DEFAULT NULL,
+  `total_amazon` int(10) unsigned DEFAULT NULL,
+  `total_apple` int(10) unsigned DEFAULT NULL,
+  `total_budweiser` int(10) unsigned DEFAULT NULL,
+  `total_coke` int(10) unsigned DEFAULT NULL,
+  `total_colgate` int(10) unsigned DEFAULT NULL,
+  `total_corona` int(10) unsigned DEFAULT NULL,
+  `total_fritolay` int(10) unsigned DEFAULT NULL,
+  `total_gillette` int(10) unsigned DEFAULT NULL,
+  `total_heineken` int(10) unsigned DEFAULT NULL,
+  `total_kellogs` int(10) unsigned DEFAULT NULL,
+  `total_lego` int(10) unsigned DEFAULT NULL,
+  `total_loreal` int(10) unsigned DEFAULT NULL,
+  `total_nescafe` int(10) unsigned DEFAULT NULL,
+  `total_nestle` int(10) unsigned DEFAULT NULL,
+  `total_marlboro` int(10) unsigned DEFAULT NULL,
+  `total_mcdonalds` int(10) unsigned DEFAULT NULL,
+  `total_nike` int(10) unsigned DEFAULT NULL,
+  `total_pepsi` int(10) unsigned DEFAULT NULL,
+  `total_redbull` int(10) unsigned DEFAULT NULL,
+  `total_samsung` int(10) unsigned DEFAULT NULL,
+  `total_subway` int(10) unsigned DEFAULT NULL,
+  `total_starbucks` int(10) unsigned DEFAULT NULL,
+  `total_tayto` int(10) unsigned DEFAULT NULL,
+  `total_applegreen` int(10) unsigned DEFAULT NULL,
+  `total_avoca` int(10) unsigned DEFAULT NULL,
+  `total_bewleys` int(10) unsigned DEFAULT NULL,
+  `total_brambles` int(10) unsigned DEFAULT NULL,
+  `total_butlers` int(10) unsigned DEFAULT NULL,
+  `total_cafe_nero` int(10) unsigned DEFAULT NULL,
+  `total_centra` int(10) unsigned DEFAULT NULL,
+  `total_costa` int(10) unsigned DEFAULT NULL,
+  `total_esquires` int(10) unsigned DEFAULT NULL,
+  `total_frank_and_honest` int(10) unsigned DEFAULT NULL,
+  `total_insomnia` int(10) unsigned DEFAULT NULL,
+  `total_obriens` int(10) unsigned DEFAULT NULL,
+  `total_lolly_and_cookes` int(10) unsigned DEFAULT NULL,
+  `total_supermacs` int(10) unsigned DEFAULT NULL,
+  `total_wilde_and_greene` int(10) unsigned DEFAULT NULL,
+  `total_dumping` int(10) unsigned DEFAULT NULL,
+  `total_industrial` int(10) unsigned DEFAULT NULL,
+  `photos_per_month` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `total_litter` bigint(20) unsigned NOT NULL DEFAULT 0,
+  `total_dogshit` bigint(20) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `cities_country_id_foreign` (`country_id`),
   KEY `cities_state_id_foreign` (`state_id`),
@@ -156,18 +157,18 @@ CREATE TABLE `cities` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `clusters`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `clusters` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `lat` double NOT NULL,
   `lon` double NOT NULL,
-  `point_count` bigint unsigned NOT NULL,
+  `point_count` bigint(20) unsigned NOT NULL,
   `point_count_abbreviated` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `geohash` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  `zoom` int NOT NULL,
-  `year` year DEFAULT NULL,
+  `zoom` int(11) NOT NULL,
+  `year` year(4) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `clusters_year_zoom_index` (`year`,`zoom`),
   KEY `clusters_year_index` (`year`)
@@ -175,78 +176,78 @@ CREATE TABLE `clusters` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `countries`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `countries` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `country` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'not found',
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `country` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'not found',
   `shortcode` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  `total_images` int unsigned DEFAULT NULL,
-  `total_smoking` int unsigned DEFAULT NULL,
-  `total_cigaretteButts` int unsigned DEFAULT NULL,
-  `total_food` int unsigned DEFAULT NULL,
-  `total_softdrinks` int unsigned DEFAULT NULL,
-  `total_plasticBottles` int unsigned DEFAULT NULL,
-  `total_alcohol` int unsigned DEFAULT NULL,
-  `total_coffee` int unsigned DEFAULT NULL,
-  `total_drugs` int unsigned DEFAULT NULL,
-  `total_needles` int unsigned DEFAULT NULL,
-  `total_sanitary` int unsigned DEFAULT NULL,
-  `total_other` int unsigned DEFAULT NULL,
-  `total_contributors` int unsigned NOT NULL DEFAULT '0',
-  `total_pathways` int unsigned DEFAULT NULL,
-  `manual_verify` tinyint(1) NOT NULL DEFAULT '0',
+  `total_images` int(10) unsigned DEFAULT NULL,
+  `total_smoking` int(10) unsigned DEFAULT NULL,
+  `total_cigaretteButts` int(10) unsigned DEFAULT NULL,
+  `total_food` int(10) unsigned DEFAULT NULL,
+  `total_softdrinks` int(10) unsigned DEFAULT NULL,
+  `total_plasticBottles` int(10) unsigned DEFAULT NULL,
+  `total_alcohol` int(10) unsigned DEFAULT NULL,
+  `total_coffee` int(10) unsigned DEFAULT NULL,
+  `total_drugs` int(10) unsigned DEFAULT NULL,
+  `total_needles` int(10) unsigned DEFAULT NULL,
+  `total_sanitary` int(10) unsigned DEFAULT NULL,
+  `total_other` int(10) unsigned DEFAULT NULL,
+  `total_contributors` int(10) unsigned NOT NULL DEFAULT 0,
+  `total_pathways` int(10) unsigned DEFAULT NULL,
+  `manual_verify` tinyint(1) NOT NULL DEFAULT 0,
   `countrynameb` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `created_by` int unsigned DEFAULT NULL,
-  `total_brands` int unsigned DEFAULT NULL,
-  `total_coastal` int unsigned DEFAULT NULL,
-  `total_adidas` int unsigned DEFAULT NULL,
-  `total_amazon` int unsigned DEFAULT NULL,
-  `total_apple` int unsigned DEFAULT NULL,
-  `total_budweiser` int unsigned DEFAULT NULL,
-  `total_coke` int unsigned DEFAULT NULL,
-  `total_colgate` int unsigned DEFAULT NULL,
-  `total_corona` int unsigned DEFAULT NULL,
-  `total_fritolay` int unsigned DEFAULT NULL,
-  `total_gillette` int unsigned DEFAULT NULL,
-  `total_heineken` int unsigned DEFAULT NULL,
-  `total_kellogs` int unsigned DEFAULT NULL,
-  `total_lego` int unsigned DEFAULT NULL,
-  `total_loreal` int unsigned DEFAULT NULL,
-  `total_nescafe` int unsigned DEFAULT NULL,
-  `total_nestle` int unsigned DEFAULT NULL,
-  `total_marlboro` int unsigned DEFAULT NULL,
-  `total_mcdonalds` int unsigned DEFAULT NULL,
-  `total_nike` int unsigned DEFAULT NULL,
-  `total_pepsi` int unsigned DEFAULT NULL,
-  `total_redbull` int unsigned DEFAULT NULL,
-  `total_samsung` int unsigned DEFAULT NULL,
-  `total_subway` int unsigned DEFAULT NULL,
-  `total_starbucks` int unsigned DEFAULT NULL,
-  `total_tayto` int unsigned DEFAULT NULL,
-  `total_applegreen` int unsigned DEFAULT NULL,
-  `total_avoca` int unsigned DEFAULT NULL,
-  `total_bewleys` int unsigned DEFAULT NULL,
-  `total_brambles` int unsigned DEFAULT NULL,
-  `total_butlers` int unsigned DEFAULT NULL,
-  `total_cafe_nero` int unsigned DEFAULT NULL,
-  `total_centra` int unsigned DEFAULT NULL,
-  `total_costa` int unsigned DEFAULT NULL,
-  `total_esquires` int unsigned DEFAULT NULL,
-  `total_frank_and_honest` int unsigned DEFAULT NULL,
-  `total_insomnia` int unsigned DEFAULT NULL,
-  `total_obriens` int unsigned DEFAULT NULL,
-  `total_lolly_and_cookes` int unsigned DEFAULT NULL,
-  `total_supermacs` int unsigned DEFAULT NULL,
-  `total_wilde_and_greene` int unsigned DEFAULT NULL,
+  `created_by` int(10) unsigned DEFAULT NULL,
+  `total_brands` int(10) unsigned DEFAULT NULL,
+  `total_coastal` int(10) unsigned DEFAULT NULL,
+  `total_adidas` int(10) unsigned DEFAULT NULL,
+  `total_amazon` int(10) unsigned DEFAULT NULL,
+  `total_apple` int(10) unsigned DEFAULT NULL,
+  `total_budweiser` int(10) unsigned DEFAULT NULL,
+  `total_coke` int(10) unsigned DEFAULT NULL,
+  `total_colgate` int(10) unsigned DEFAULT NULL,
+  `total_corona` int(10) unsigned DEFAULT NULL,
+  `total_fritolay` int(10) unsigned DEFAULT NULL,
+  `total_gillette` int(10) unsigned DEFAULT NULL,
+  `total_heineken` int(10) unsigned DEFAULT NULL,
+  `total_kellogs` int(10) unsigned DEFAULT NULL,
+  `total_lego` int(10) unsigned DEFAULT NULL,
+  `total_loreal` int(10) unsigned DEFAULT NULL,
+  `total_nescafe` int(10) unsigned DEFAULT NULL,
+  `total_nestle` int(10) unsigned DEFAULT NULL,
+  `total_marlboro` int(10) unsigned DEFAULT NULL,
+  `total_mcdonalds` int(10) unsigned DEFAULT NULL,
+  `total_nike` int(10) unsigned DEFAULT NULL,
+  `total_pepsi` int(10) unsigned DEFAULT NULL,
+  `total_redbull` int(10) unsigned DEFAULT NULL,
+  `total_samsung` int(10) unsigned DEFAULT NULL,
+  `total_subway` int(10) unsigned DEFAULT NULL,
+  `total_starbucks` int(10) unsigned DEFAULT NULL,
+  `total_tayto` int(10) unsigned DEFAULT NULL,
+  `total_applegreen` int(10) unsigned DEFAULT NULL,
+  `total_avoca` int(10) unsigned DEFAULT NULL,
+  `total_bewleys` int(10) unsigned DEFAULT NULL,
+  `total_brambles` int(10) unsigned DEFAULT NULL,
+  `total_butlers` int(10) unsigned DEFAULT NULL,
+  `total_cafe_nero` int(10) unsigned DEFAULT NULL,
+  `total_centra` int(10) unsigned DEFAULT NULL,
+  `total_costa` int(10) unsigned DEFAULT NULL,
+  `total_esquires` int(10) unsigned DEFAULT NULL,
+  `total_frank_and_honest` int(10) unsigned DEFAULT NULL,
+  `total_insomnia` int(10) unsigned DEFAULT NULL,
+  `total_obriens` int(10) unsigned DEFAULT NULL,
+  `total_lolly_and_cookes` int(10) unsigned DEFAULT NULL,
+  `total_supermacs` int(10) unsigned DEFAULT NULL,
+  `total_wilde_and_greene` int(10) unsigned DEFAULT NULL,
   `slug` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `countrynamec` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `total_dumping` int unsigned DEFAULT NULL,
-  `total_industrial` int unsigned DEFAULT NULL,
-  `photos_per_month` text COLLATE utf8mb4_unicode_ci,
-  `total_litter` bigint unsigned NOT NULL DEFAULT '0',
-  `total_dogshit` bigint unsigned DEFAULT NULL,
+  `total_dumping` int(10) unsigned DEFAULT NULL,
+  `total_industrial` int(10) unsigned DEFAULT NULL,
+  `photos_per_month` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `total_litter` bigint(20) unsigned NOT NULL DEFAULT 0,
+  `total_dogshit` bigint(20) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `countries_slug_unique` (`slug`),
   KEY `countries_created_by_foreign` (`created_by`),
@@ -255,10 +256,10 @@ CREATE TABLE `countries` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `custom_tags`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `custom_tags` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `photo_id` int unsigned NOT NULL,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `photo_id` int(10) unsigned NOT NULL,
   `tag` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
@@ -270,10 +271,10 @@ CREATE TABLE `custom_tags` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `donates`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `donates` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `amount` int unsigned NOT NULL,
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `amount` int(10) unsigned NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
@@ -281,9 +282,9 @@ CREATE TABLE `donates` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `email_subscriptions`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `email_subscriptions` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
@@ -293,32 +294,32 @@ CREATE TABLE `email_subscriptions` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `experience`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `experience` (
-  `xp` int NOT NULL,
-  `level` int NOT NULL
+  `xp` int(11) NOT NULL,
+  `level` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `failed_jobs`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `failed_jobs` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `connection` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `queue` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `payload` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
   `exception` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
-  `failed_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `failed_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `firewall`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `firewall` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `ip_address` varchar(39) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `whitelisted` tinyint(1) NOT NULL DEFAULT '0',
+  `whitelisted` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -327,10 +328,10 @@ CREATE TABLE `firewall` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `global_levels`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `global_levels` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `xp` int unsigned DEFAULT NULL,
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `xp` int(10) unsigned DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
@@ -338,11 +339,11 @@ CREATE TABLE `global_levels` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `halls`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `halls` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `user_id` int unsigned NOT NULL,
+  `user_id` int(10) unsigned NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
@@ -350,11 +351,11 @@ CREATE TABLE `halls` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `levels`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `levels` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `xp` int NOT NULL,
-  `level` int NOT NULL,
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `xp` int(11) NOT NULL,
+  `level` int(11) NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
@@ -362,21 +363,21 @@ CREATE TABLE `levels` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `migrations`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `migrations` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `migration` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `batch` int NOT NULL,
+  `batch` int(11) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `model_has_permissions`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `model_has_permissions` (
-  `permission_id` bigint unsigned NOT NULL,
+  `permission_id` bigint(20) unsigned NOT NULL,
   `model_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `model_id` bigint unsigned NOT NULL,
+  `model_id` bigint(20) unsigned NOT NULL,
   PRIMARY KEY (`permission_id`,`model_id`,`model_type`),
   KEY `model_has_permissions_model_id_model_type_index` (`model_id`,`model_type`),
   CONSTRAINT `model_has_permissions_permission_id_foreign` FOREIGN KEY (`permission_id`) REFERENCES `permissions` (`id`) ON DELETE CASCADE
@@ -384,11 +385,11 @@ CREATE TABLE `model_has_permissions` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `model_has_roles`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `model_has_roles` (
-  `role_id` bigint unsigned NOT NULL,
+  `role_id` bigint(20) unsigned NOT NULL,
   `model_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `model_id` bigint unsigned NOT NULL,
+  `model_id` bigint(20) unsigned NOT NULL,
   PRIMARY KEY (`role_id`,`model_id`,`model_type`),
   KEY `model_has_roles_model_id_model_type_index` (`model_id`,`model_type`),
   CONSTRAINT `model_has_roles_role_id_foreign` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE
@@ -396,13 +397,13 @@ CREATE TABLE `model_has_roles` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `oauth_access_tokens`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `oauth_access_tokens` (
   `id` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `user_id` bigint unsigned DEFAULT NULL,
-  `client_id` bigint unsigned NOT NULL,
+  `user_id` bigint(20) unsigned DEFAULT NULL,
+  `client_id` bigint(20) unsigned NOT NULL,
   `name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `scopes` text COLLATE utf8mb4_unicode_ci,
+  `scopes` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `revoked` tinyint(1) NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
@@ -413,12 +414,12 @@ CREATE TABLE `oauth_access_tokens` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `oauth_auth_codes`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `oauth_auth_codes` (
   `id` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `user_id` bigint unsigned NOT NULL,
-  `client_id` bigint unsigned NOT NULL,
-  `scopes` text COLLATE utf8mb4_unicode_ci,
+  `user_id` bigint(20) unsigned NOT NULL,
+  `client_id` bigint(20) unsigned NOT NULL,
+  `scopes` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `revoked` tinyint(1) NOT NULL,
   `expires_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -427,10 +428,10 @@ CREATE TABLE `oauth_auth_codes` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `oauth_clients`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `oauth_clients` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` bigint unsigned DEFAULT NULL,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) unsigned DEFAULT NULL,
   `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `secret` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `provider` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -446,10 +447,10 @@ CREATE TABLE `oauth_clients` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `oauth_personal_access_clients`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `oauth_personal_access_clients` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `client_id` bigint unsigned NOT NULL,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `client_id` bigint(20) unsigned NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
@@ -457,7 +458,7 @@ CREATE TABLE `oauth_personal_access_clients` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `oauth_refresh_tokens`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `oauth_refresh_tokens` (
   `id` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
   `access_token_id` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -469,9 +470,9 @@ CREATE TABLE `oauth_refresh_tokens` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `old_roles`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `old_roles` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
@@ -480,7 +481,7 @@ CREATE TABLE `old_roles` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `password_resets`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `password_resets` (
   `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `token` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -491,12 +492,12 @@ CREATE TABLE `password_resets` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `payments`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `payments` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `stripe_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `user_id` int NOT NULL,
-  `amount` smallint NOT NULL,
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `stripe_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `user_id` int(11) NOT NULL,
+  `amount` smallint(6) NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
@@ -504,9 +505,9 @@ CREATE TABLE `payments` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `permissions`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `permissions` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `guard_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
@@ -517,12 +518,12 @@ CREATE TABLE `permissions` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `photo_tag`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `photo_tag` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `photo_id` int unsigned NOT NULL,
-  `tag_id` bigint unsigned NOT NULL,
-  `quantity` int NOT NULL DEFAULT '1',
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `photo_id` int(10) unsigned NOT NULL,
+  `tag_id` bigint(20) unsigned NOT NULL,
+  `quantity` int(11) NOT NULL DEFAULT 1,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -534,16 +535,16 @@ CREATE TABLE `photo_tag` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `photos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `photos` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` int unsigned NOT NULL,
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(10) unsigned NOT NULL,
   `filename` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `model` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `datetime` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `verified` tinyint(1) NOT NULL DEFAULT '0',
-  `verification` double NOT NULL DEFAULT '0',
-  `remaining` tinyint(1) NOT NULL DEFAULT '1',
+  `verified` tinyint(1) NOT NULL DEFAULT 0,
+  `verification` double NOT NULL DEFAULT 0,
+  `remaining` tinyint(1) NOT NULL DEFAULT 1,
   `lat` double DEFAULT NULL,
   `lon` double DEFAULT NULL,
   `display_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -557,26 +558,26 @@ CREATE TABLE `photos` (
   `country_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  `country_id` int unsigned DEFAULT NULL,
-  `city_id` int unsigned DEFAULT NULL,
-  `incorrect_verification` int unsigned NOT NULL DEFAULT '0',
-  `total_litter` int unsigned NOT NULL DEFAULT '0',
-  `state_id` int unsigned DEFAULT NULL,
-  `generated` tinyint(1) NOT NULL DEFAULT '0',
-  `result_string` text COLLATE utf8mb4_unicode_ci,
+  `country_id` int(10) unsigned DEFAULT NULL,
+  `city_id` int(10) unsigned DEFAULT NULL,
+  `incorrect_verification` int(10) unsigned NOT NULL DEFAULT 0,
+  `total_litter` int(10) unsigned NOT NULL DEFAULT 0,
+  `state_id` int(10) unsigned DEFAULT NULL,
+  `generated` tinyint(1) NOT NULL DEFAULT 0,
+  `result_string` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `platform` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `verified_by` int unsigned DEFAULT NULL,
-  `bounding_box` text COLLATE utf8mb4_unicode_ci,
+  `verified_by` int(10) unsigned DEFAULT NULL,
+  `bounding_box` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `geohash` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `team_id` int unsigned DEFAULT NULL,
-  `bbox_skipped` tinyint(1) NOT NULL DEFAULT '0',
-  `skipped_by` int unsigned DEFAULT NULL,
-  `bbox_assigned_to` int unsigned DEFAULT NULL,
-  `wrong_tags` tinyint(1) NOT NULL DEFAULT '0',
-  `wrong_tags_by` int unsigned DEFAULT NULL,
-  `bbox_verification_assigned_to` bigint unsigned DEFAULT NULL,
+  `team_id` int(10) unsigned DEFAULT NULL,
+  `bbox_skipped` tinyint(1) NOT NULL DEFAULT 0,
+  `skipped_by` int(10) unsigned DEFAULT NULL,
+  `bbox_assigned_to` int(10) unsigned DEFAULT NULL,
+  `wrong_tags` tinyint(1) NOT NULL DEFAULT 0,
+  `wrong_tags_by` int(10) unsigned DEFAULT NULL,
+  `bbox_verification_assigned_to` bigint(20) unsigned DEFAULT NULL,
   `five_hundred_square_filepath` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `address_array` text COLLATE utf8mb4_unicode_ci,
+  `address_array` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `photos_user_id_foreign` (`user_id`),
   KEY `photos_country_id_foreign` (`country_id`),
@@ -597,16 +598,16 @@ CREATE TABLE `photos` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `plans`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `plans` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `price` int NOT NULL,
+  `price` int(11) NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `subtitle` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `images` int unsigned NOT NULL DEFAULT '0',
-  `verify` int unsigned NOT NULL DEFAULT '0',
+  `images` int(10) unsigned NOT NULL DEFAULT 0,
+  `verify` int(10) unsigned NOT NULL DEFAULT 0,
   `product_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `plan_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`)
@@ -614,12 +615,12 @@ CREATE TABLE `plans` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `products`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `products` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `description` text COLLATE utf8mb4_unicode_ci NOT NULL,
-  `price` int NOT NULL,
+  `price` int(11) NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
@@ -627,9 +628,9 @@ CREATE TABLE `products` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `quotes`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `quotes` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
@@ -637,10 +638,10 @@ CREATE TABLE `quotes` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `role_has_permissions`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `role_has_permissions` (
-  `permission_id` bigint unsigned NOT NULL,
-  `role_id` bigint unsigned NOT NULL,
+  `permission_id` bigint(20) unsigned NOT NULL,
+  `role_id` bigint(20) unsigned NOT NULL,
   PRIMARY KEY (`permission_id`,`role_id`),
   KEY `role_has_permissions_role_id_foreign` (`role_id`),
   CONSTRAINT `role_has_permissions_permission_id_foreign` FOREIGN KEY (`permission_id`) REFERENCES `permissions` (`id`) ON DELETE CASCADE,
@@ -649,9 +650,9 @@ CREATE TABLE `role_has_permissions` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `roles`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `roles` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `guard_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
@@ -662,76 +663,76 @@ CREATE TABLE `roles` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `states`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `states` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `state` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'not found',
-  `country_id` int unsigned NOT NULL,
-  `total_images` int unsigned DEFAULT NULL,
-  `total_smoking` int unsigned DEFAULT NULL,
-  `total_cigaretteButts` int unsigned DEFAULT NULL,
-  `total_food` int unsigned DEFAULT NULL,
-  `total_softdrinks` int unsigned DEFAULT NULL,
-  `total_plasticBottles` int unsigned DEFAULT NULL,
-  `total_alcohol` int unsigned DEFAULT NULL,
-  `total_coffee` int unsigned DEFAULT NULL,
-  `total_drugs` int unsigned DEFAULT NULL,
-  `total_needles` int unsigned DEFAULT NULL,
-  `total_sanitary` int unsigned DEFAULT NULL,
-  `total_other` int unsigned DEFAULT NULL,
-  `total_coastal` int unsigned DEFAULT NULL,
-  `total_contributors` int unsigned DEFAULT NULL,
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `state` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'not found',
+  `country_id` int(10) unsigned NOT NULL,
+  `total_images` int(10) unsigned DEFAULT NULL,
+  `total_smoking` int(10) unsigned DEFAULT NULL,
+  `total_cigaretteButts` int(10) unsigned DEFAULT NULL,
+  `total_food` int(10) unsigned DEFAULT NULL,
+  `total_softdrinks` int(10) unsigned DEFAULT NULL,
+  `total_plasticBottles` int(10) unsigned DEFAULT NULL,
+  `total_alcohol` int(10) unsigned DEFAULT NULL,
+  `total_coffee` int(10) unsigned DEFAULT NULL,
+  `total_drugs` int(10) unsigned DEFAULT NULL,
+  `total_needles` int(10) unsigned DEFAULT NULL,
+  `total_sanitary` int(10) unsigned DEFAULT NULL,
+  `total_other` int(10) unsigned DEFAULT NULL,
+  `total_coastal` int(10) unsigned DEFAULT NULL,
+  `total_contributors` int(10) unsigned DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  `total_pathways` int unsigned DEFAULT NULL,
-  `manual_verify` tinyint(1) NOT NULL DEFAULT '0',
-  `created_by` int unsigned DEFAULT NULL,
-  `total_brands` int unsigned DEFAULT NULL,
-  `total_adidas` int unsigned DEFAULT NULL,
-  `total_amazon` int unsigned DEFAULT NULL,
-  `total_apple` int unsigned DEFAULT NULL,
-  `total_budweiser` int unsigned DEFAULT NULL,
-  `total_coke` int unsigned DEFAULT NULL,
-  `total_colgate` int unsigned DEFAULT NULL,
-  `total_corona` int unsigned DEFAULT NULL,
-  `total_fritolay` int unsigned DEFAULT NULL,
-  `total_gillette` int unsigned DEFAULT NULL,
-  `total_heineken` int unsigned DEFAULT NULL,
-  `total_kellogs` int unsigned DEFAULT NULL,
-  `total_lego` int unsigned DEFAULT NULL,
-  `total_loreal` int unsigned DEFAULT NULL,
-  `total_nescafe` int unsigned DEFAULT NULL,
-  `total_nestle` int unsigned DEFAULT NULL,
-  `total_marlboro` int unsigned DEFAULT NULL,
-  `total_mcdonalds` int unsigned DEFAULT NULL,
-  `total_nike` int unsigned DEFAULT NULL,
-  `total_pepsi` int unsigned DEFAULT NULL,
-  `total_redbull` int unsigned DEFAULT NULL,
-  `total_samsung` int unsigned DEFAULT NULL,
-  `total_subway` int unsigned DEFAULT NULL,
-  `total_starbucks` int unsigned DEFAULT NULL,
-  `total_tayto` int unsigned DEFAULT NULL,
+  `total_pathways` int(10) unsigned DEFAULT NULL,
+  `manual_verify` tinyint(1) NOT NULL DEFAULT 0,
+  `created_by` int(10) unsigned DEFAULT NULL,
+  `total_brands` int(10) unsigned DEFAULT NULL,
+  `total_adidas` int(10) unsigned DEFAULT NULL,
+  `total_amazon` int(10) unsigned DEFAULT NULL,
+  `total_apple` int(10) unsigned DEFAULT NULL,
+  `total_budweiser` int(10) unsigned DEFAULT NULL,
+  `total_coke` int(10) unsigned DEFAULT NULL,
+  `total_colgate` int(10) unsigned DEFAULT NULL,
+  `total_corona` int(10) unsigned DEFAULT NULL,
+  `total_fritolay` int(10) unsigned DEFAULT NULL,
+  `total_gillette` int(10) unsigned DEFAULT NULL,
+  `total_heineken` int(10) unsigned DEFAULT NULL,
+  `total_kellogs` int(10) unsigned DEFAULT NULL,
+  `total_lego` int(10) unsigned DEFAULT NULL,
+  `total_loreal` int(10) unsigned DEFAULT NULL,
+  `total_nescafe` int(10) unsigned DEFAULT NULL,
+  `total_nestle` int(10) unsigned DEFAULT NULL,
+  `total_marlboro` int(10) unsigned DEFAULT NULL,
+  `total_mcdonalds` int(10) unsigned DEFAULT NULL,
+  `total_nike` int(10) unsigned DEFAULT NULL,
+  `total_pepsi` int(10) unsigned DEFAULT NULL,
+  `total_redbull` int(10) unsigned DEFAULT NULL,
+  `total_samsung` int(10) unsigned DEFAULT NULL,
+  `total_subway` int(10) unsigned DEFAULT NULL,
+  `total_starbucks` int(10) unsigned DEFAULT NULL,
+  `total_tayto` int(10) unsigned DEFAULT NULL,
   `statenameb` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `total_applegreen` int unsigned DEFAULT NULL,
-  `total_avoca` int unsigned DEFAULT NULL,
-  `total_bewleys` int unsigned DEFAULT NULL,
-  `total_brambles` int unsigned DEFAULT NULL,
-  `total_butlers` int unsigned DEFAULT NULL,
-  `total_cafe_nero` int unsigned DEFAULT NULL,
-  `total_centra` int unsigned DEFAULT NULL,
-  `total_costa` int unsigned DEFAULT NULL,
-  `total_esquires` int unsigned DEFAULT NULL,
-  `total_frank_and_honest` int unsigned DEFAULT NULL,
-  `total_insomnia` int unsigned DEFAULT NULL,
-  `total_obriens` int unsigned DEFAULT NULL,
-  `total_lolly_and_cookes` int unsigned DEFAULT NULL,
-  `total_supermacs` int unsigned DEFAULT NULL,
-  `total_wilde_and_greene` int unsigned DEFAULT NULL,
-  `total_dumping` int unsigned DEFAULT NULL,
-  `total_industrial` int unsigned DEFAULT NULL,
-  `photos_per_month` text COLLATE utf8mb4_unicode_ci,
-  `total_litter` bigint unsigned NOT NULL DEFAULT '0',
-  `total_dogshit` bigint unsigned DEFAULT NULL,
+  `total_applegreen` int(10) unsigned DEFAULT NULL,
+  `total_avoca` int(10) unsigned DEFAULT NULL,
+  `total_bewleys` int(10) unsigned DEFAULT NULL,
+  `total_brambles` int(10) unsigned DEFAULT NULL,
+  `total_butlers` int(10) unsigned DEFAULT NULL,
+  `total_cafe_nero` int(10) unsigned DEFAULT NULL,
+  `total_centra` int(10) unsigned DEFAULT NULL,
+  `total_costa` int(10) unsigned DEFAULT NULL,
+  `total_esquires` int(10) unsigned DEFAULT NULL,
+  `total_frank_and_honest` int(10) unsigned DEFAULT NULL,
+  `total_insomnia` int(10) unsigned DEFAULT NULL,
+  `total_obriens` int(10) unsigned DEFAULT NULL,
+  `total_lolly_and_cookes` int(10) unsigned DEFAULT NULL,
+  `total_supermacs` int(10) unsigned DEFAULT NULL,
+  `total_wilde_and_greene` int(10) unsigned DEFAULT NULL,
+  `total_dumping` int(10) unsigned DEFAULT NULL,
+  `total_industrial` int(10) unsigned DEFAULT NULL,
+  `photos_per_month` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `total_litter` bigint(20) unsigned NOT NULL DEFAULT 0,
+  `total_dogshit` bigint(20) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `states_country_id_foreign` (`country_id`),
   KEY `states_created_by_foreign` (`created_by`),
@@ -741,12 +742,12 @@ CREATE TABLE `states` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `stripe`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `stripe` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` int unsigned NOT NULL,
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(10) unsigned NOT NULL,
   `stripe_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `stripe_active` tinyint(1) NOT NULL DEFAULT '0',
+  `stripe_active` tinyint(1) NOT NULL DEFAULT 0,
   `subscription_end_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
@@ -758,9 +759,9 @@ CREATE TABLE `stripe` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `subscribers`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `subscribers` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
@@ -769,13 +770,13 @@ CREATE TABLE `subscribers` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `subscription_items`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `subscription_items` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `subscription_id` bigint unsigned NOT NULL,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `subscription_id` bigint(20) unsigned NOT NULL,
   `stripe_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `stripe_plan` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `quantity` int NOT NULL,
+  `quantity` int(11) NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -785,19 +786,19 @@ CREATE TABLE `subscription_items` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `subscriptions`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `subscriptions` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` bigint unsigned NOT NULL,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) unsigned NOT NULL,
   `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `stripe_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `stripe_plan` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `quantity` int DEFAULT NULL,
+  `stripe_plan` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `quantity` int(11) DEFAULT NULL,
   `trial_ends_at` timestamp NULL DEFAULT NULL,
   `ends_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  `stripe_active` int unsigned NOT NULL DEFAULT '0',
+  `stripe_active` int(10) unsigned NOT NULL DEFAULT 0,
   `stripe_status` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   PRIMARY KEY (`id`),
   KEY `subscriptions_user_id_stripe_status_index` (`user_id`,`stripe_status`)
@@ -805,16 +806,16 @@ CREATE TABLE `subscriptions` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `suburbs`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `suburbs` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `suburb` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `needles` int unsigned NOT NULL DEFAULT '0',
+  `needles` int(10) unsigned NOT NULL DEFAULT 0,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  `country_id` int unsigned DEFAULT NULL,
-  `state_id` int unsigned DEFAULT NULL,
-  `city_id` int unsigned DEFAULT NULL,
+  `country_id` int(10) unsigned DEFAULT NULL,
+  `state_id` int(10) unsigned DEFAULT NULL,
+  `city_id` int(10) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `suburbs_country_id_foreign` (`country_id`),
   KEY `suburbs_state_id_foreign` (`state_id`),
@@ -826,11 +827,12 @@ CREATE TABLE `suburbs` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `tags`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `tags` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `category_id` bigint unsigned NOT NULL,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `category_id` bigint(20) unsigned NOT NULL,
   `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `slug` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -840,14 +842,14 @@ CREATE TABLE `tags` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `team_clusters`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `team_clusters` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `team_id` int unsigned NOT NULL,
-  `zoom` int NOT NULL,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `team_id` int(10) unsigned NOT NULL,
+  `zoom` int(11) NOT NULL,
   `lat` double NOT NULL,
   `lon` double NOT NULL,
-  `point_count` bigint unsigned NOT NULL,
+  `point_count` bigint(20) unsigned NOT NULL,
   `point_count_abbreviated` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `geohash` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
@@ -859,11 +861,11 @@ CREATE TABLE `team_clusters` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `team_types`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `team_types` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `team` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `price` int unsigned NOT NULL,
+  `price` int(10) unsigned NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -872,19 +874,19 @@ CREATE TABLE `team_types` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `team_user`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `team_user` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` int unsigned NOT NULL,
-  `team_id` int unsigned NOT NULL,
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(10) unsigned NOT NULL,
+  `team_id` int(10) unsigned NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  `total_photos` int unsigned NOT NULL DEFAULT '0',
-  `total_litter` int unsigned NOT NULL DEFAULT '0',
-  `show_name_maps` tinyint(1) NOT NULL DEFAULT '0',
-  `show_username_maps` tinyint(1) NOT NULL DEFAULT '0',
-  `show_name_leaderboards` tinyint(1) NOT NULL DEFAULT '0',
-  `show_username_leaderboards` tinyint(1) NOT NULL DEFAULT '0',
+  `total_photos` int(10) unsigned NOT NULL DEFAULT 0,
+  `total_litter` int(10) unsigned NOT NULL DEFAULT 0,
+  `show_name_maps` tinyint(1) NOT NULL DEFAULT 0,
+  `show_username_maps` tinyint(1) NOT NULL DEFAULT 0,
+  `show_name_leaderboards` tinyint(1) NOT NULL DEFAULT 0,
+  `show_username_leaderboards` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `team_user_user_id_foreign` (`user_id`),
   KEY `team_user_team_id_foreign` (`team_id`),
@@ -894,23 +896,23 @@ CREATE TABLE `team_user` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `teams`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `teams` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `members` int unsigned NOT NULL DEFAULT '1',
-  `images_remaining` int unsigned NOT NULL DEFAULT '0',
-  `total_images` int unsigned NOT NULL DEFAULT '0',
-  `total_litter` int unsigned NOT NULL DEFAULT '0',
-  `leader` int unsigned DEFAULT NULL,
+  `members` int(10) unsigned NOT NULL DEFAULT 1,
+  `images_remaining` int(10) unsigned NOT NULL DEFAULT 0,
+  `total_images` int(10) unsigned NOT NULL DEFAULT 0,
+  `total_litter` int(10) unsigned NOT NULL DEFAULT 0,
+  `leader` int(10) unsigned DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  `type_id` int unsigned DEFAULT NULL,
+  `type_id` int(10) unsigned DEFAULT NULL,
   `type_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `created_by` bigint unsigned NOT NULL,
+  `created_by` bigint(20) unsigned NOT NULL,
   `identifier` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `leaderboards` tinyint(1) NOT NULL DEFAULT '1',
-  `is_trusted` tinyint(1) NOT NULL DEFAULT '0',
+  `leaderboards` tinyint(1) NOT NULL DEFAULT 1,
+  `is_trusted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `teams_name_unique` (`name`),
   KEY `teams_leader_foreign` (`leader`),
@@ -921,72 +923,72 @@ CREATE TABLE `teams` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `users`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `users` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `verified` tinyint(1) NOT NULL DEFAULT '0',
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `verified` tinyint(1) NOT NULL DEFAULT 0,
   `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `username` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `avatar` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'default.jpg',
   `password` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `token` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `show_name` tinyint(1) NOT NULL DEFAULT '0',
-  `show_username` tinyint(1) NOT NULL DEFAULT '0',
-  `items_remaining` tinyint(1) NOT NULL DEFAULT '1',
-  `role_id` int unsigned DEFAULT NULL,
+  `show_name` tinyint(1) NOT NULL DEFAULT 0,
+  `show_username` tinyint(1) NOT NULL DEFAULT 0,
+  `items_remaining` tinyint(1) NOT NULL DEFAULT 1,
+  `role_id` int(10) unsigned DEFAULT NULL,
   `billing_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `remember_token` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  `xp` int unsigned NOT NULL DEFAULT '0',
-  `level` int unsigned NOT NULL DEFAULT '0',
-  `total_images` int unsigned DEFAULT NULL,
-  `total_smoking` int unsigned DEFAULT NULL,
-  `total_cigaretteButts` int unsigned DEFAULT NULL,
-  `total_food` int unsigned DEFAULT NULL,
-  `total_softdrinks` int unsigned DEFAULT NULL,
-  `total_plasticBottles` int unsigned DEFAULT NULL,
-  `total_alcohol` int unsigned DEFAULT NULL,
-  `total_coffee` int unsigned DEFAULT NULL,
-  `total_sanitary` int unsigned DEFAULT NULL,
-  `total_other` int unsigned DEFAULT NULL,
+  `xp` int(10) unsigned NOT NULL DEFAULT 0,
+  `level` int(10) unsigned NOT NULL DEFAULT 0,
+  `total_images` int(10) unsigned DEFAULT NULL,
+  `total_smoking` int(10) unsigned DEFAULT NULL,
+  `total_cigaretteButts` int(10) unsigned DEFAULT NULL,
+  `total_food` int(10) unsigned DEFAULT NULL,
+  `total_softdrinks` int(10) unsigned DEFAULT NULL,
+  `total_plasticBottles` int(10) unsigned DEFAULT NULL,
+  `total_alcohol` int(10) unsigned DEFAULT NULL,
+  `total_coffee` int(10) unsigned DEFAULT NULL,
+  `total_sanitary` int(10) unsigned DEFAULT NULL,
+  `total_other` int(10) unsigned DEFAULT NULL,
   `stripe_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `card_brand` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `card_last_four` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `trial_ends_at` timestamp NULL DEFAULT NULL,
-  `images_remaining` int unsigned NOT NULL DEFAULT '0',
-  `verify_remaining` int unsigned NOT NULL DEFAULT '0',
-  `has_uploaded` int unsigned NOT NULL DEFAULT '0',
-  `total_verified` int NOT NULL DEFAULT '0',
-  `total_litter` int NOT NULL DEFAULT '0',
-  `total_verified_litter` int unsigned NOT NULL DEFAULT '0',
-  `emailsub` int unsigned NOT NULL DEFAULT '1',
+  `images_remaining` int(10) unsigned NOT NULL DEFAULT 0,
+  `verify_remaining` int(10) unsigned NOT NULL DEFAULT 0,
+  `has_uploaded` int(10) unsigned NOT NULL DEFAULT 0,
+  `total_verified` int(11) NOT NULL DEFAULT 0,
+  `total_litter` int(11) NOT NULL DEFAULT 0,
+  `total_verified_litter` int(10) unsigned NOT NULL DEFAULT 0,
+  `emailsub` int(10) unsigned NOT NULL DEFAULT 1,
   `sub_token` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `total_pathways` int unsigned DEFAULT NULL,
+  `total_pathways` int(10) unsigned DEFAULT NULL,
   `eth_wallet` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `has_uploaded_today` int unsigned NOT NULL DEFAULT '0',
-  `has_uploaded_counter` int unsigned NOT NULL DEFAULT '0',
+  `has_uploaded_today` int(10) unsigned NOT NULL DEFAULT 0,
+  `has_uploaded_counter` int(10) unsigned NOT NULL DEFAULT 0,
   `phone` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `active_team` int unsigned DEFAULT NULL,
-  `link_instagram` int unsigned NOT NULL DEFAULT '0',
-  `total_art` int unsigned DEFAULT NULL,
-  `verification_required` tinyint(1) NOT NULL DEFAULT '1',
-  `littercoin_paid` int unsigned DEFAULT NULL,
-  `show_name_maps` tinyint(1) NOT NULL DEFAULT '0',
-  `show_username_maps` tinyint(1) NOT NULL DEFAULT '0',
-  `show_name_createdby` tinyint(1) NOT NULL DEFAULT '0',
-  `show_username_createdby` tinyint(1) NOT NULL DEFAULT '0',
+  `active_team` int(10) unsigned DEFAULT NULL,
+  `link_instagram` int(10) unsigned NOT NULL DEFAULT 0,
+  `total_art` int(10) unsigned DEFAULT NULL,
+  `verification_required` tinyint(1) NOT NULL DEFAULT 1,
+  `littercoin_paid` int(10) unsigned DEFAULT NULL,
+  `show_name_maps` tinyint(1) NOT NULL DEFAULT 0,
+  `show_username_maps` tinyint(1) NOT NULL DEFAULT 0,
+  `show_name_createdby` tinyint(1) NOT NULL DEFAULT 0,
+  `show_username_createdby` tinyint(1) NOT NULL DEFAULT 0,
   `global_flag` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `previous_tags` int NOT NULL DEFAULT '0',
-  `remaining_teams` int NOT NULL DEFAULT '1',
-  `photos_per_month` text COLLATE utf8mb4_unicode_ci,
-  `total_dumping` bigint unsigned DEFAULT NULL,
-  `total_industrial` bigint unsigned DEFAULT NULL,
-  `total_coastal` bigint unsigned DEFAULT NULL,
-  `total_brands` bigint unsigned DEFAULT NULL,
-  `can_bbox` tinyint(1) NOT NULL DEFAULT '0',
-  `total_dogshit` bigint unsigned DEFAULT NULL,
+  `previous_tags` int(11) NOT NULL DEFAULT 0,
+  `remaining_teams` int(11) NOT NULL DEFAULT 1,
+  `photos_per_month` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `total_dumping` bigint(20) unsigned DEFAULT NULL,
+  `total_industrial` bigint(20) unsigned DEFAULT NULL,
+  `total_coastal` bigint(20) unsigned DEFAULT NULL,
+  `total_brands` bigint(20) unsigned DEFAULT NULL,
+  `can_bbox` tinyint(1) NOT NULL DEFAULT 0,
+  `total_dogshit` bigint(20) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `users_email_unique` (`email`),
   UNIQUE KEY `users_username_unique` (`username`),
@@ -998,13 +1000,13 @@ CREATE TABLE `users` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `websockets_statistics_entries`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `websockets_statistics_entries` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `app_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `peak_connection_count` int NOT NULL,
-  `websocket_message_count` int NOT NULL,
-  `api_message_count` int NOT NULL,
+  `peak_connection_count` int(11) NOT NULL,
+  `websocket_message_count` int(11) NOT NULL,
+  `api_message_count` int(11) NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
@@ -1259,4 +1261,3 @@ INSERT INTO `migrations` VALUES (239,'2022_02_03_173026_create_custom_tags_table
 INSERT INTO `migrations` VALUES (240,'2022_03_02_145633_add_new_brand_tags',1);
 INSERT INTO `migrations` VALUES (241,'2022_03_03_140223_add_created_at_indexes',1);
 INSERT INTO `migrations` VALUES (242,'2022_03_24_123909_create_admin_verification_logs_table',1);
-INSERT INTO `migrations` VALUES (243,'2022_04_06_095329_add_new_tags_and_clear_existing_ones',1);

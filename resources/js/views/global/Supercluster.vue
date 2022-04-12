@@ -127,18 +127,9 @@ function createPointGroups ()
     if (!pointsControllerShowing)
     {
         const overlays = {
-            Alcohol: new L.LayerGroup(),
-            Brands: new L.LayerGroup(),
-            Coastal: new L.LayerGroup(),
-            Coffee: new L.LayerGroup(),
-            Dumping: new L.LayerGroup(),
-            Food: new L.LayerGroup(),
-            Industrial: new L.LayerGroup(),
-            Other: new L.LayerGroup(),
-            PetSurprise: new L.LayerGroup(),
-            Sanitary: new L.LayerGroup(),
-            Smoking: new L.LayerGroup(),
-            SoftDrinks: new L.LayerGroup(),
+            "Ordnance": new L.LayerGroup(),
+            "Military equipment or weaponry": new L.LayerGroup(),
+            "Military personnel": new L.LayerGroup(),
         };
 
         pointsLayerController = L.control.layers(null, overlays).addTo(map);
@@ -220,11 +211,7 @@ function getActiveLayers ()
     pointsLayerController._layerControlInputs.forEach((lyr, index) => {
         if (lyr.checked)
         {
-            // temp fix to rename petsurprise from map to the dogshit table
-            const name = (pointsLayerController._layers[index].name.toLowerCase() === 'petsurprise')
-                ? 'dogshit'
-                : pointsLayerController._layers[index].name.toLowerCase();
-
+            const name = pointsLayerController._layers[index].name.toLowerCase().replaceAll(' ', '_');
             layers.push(name);
         }
     });

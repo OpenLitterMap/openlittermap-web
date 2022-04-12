@@ -44,15 +44,7 @@ trait FilterPhotosByGeoHashTrait
         });
 
         if ($layers) {
-            $query->where(function ($q) use ($layers) {
-                foreach ($layers as $index => $layer) {
-                    ($index === 0)
-                        ? $q->where($layer . "_id", '!=', null)
-                        : $q->orWhere($layer . "_id", '!=', null);
-                }
-
-                return $q;
-            });
+            $query->inCategories($layers);
         }
 
         return $query;

@@ -62,7 +62,7 @@ class PhotoTest extends TestCase
 
         $expected = [];
         foreach ($photo->tags as $tag) {
-            $expected[] = $tag->category->name . '.' . $tag->name . ' ' . $tag->pivot->quantity;
+            $expected[] = $tag->category->slug . '.' . $tag->slug . ' ' . $tag->pivot->quantity;
         }
         $this->assertEquals(implode(', ', $expected), $photo->result_string);
     }

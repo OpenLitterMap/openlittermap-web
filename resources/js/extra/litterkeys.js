@@ -1,17 +1,19 @@
 export const litterkeys = {
-    // todo - Import these by category
-    // Todo - Split brands by A-Z/
-    // todo - rename this tags
     ordnance: [
+        'small_arms',
         'land_mine',
         'missile',
         'grenade',
-        'shell',
-        'other'
+        'shell_or_projectile',
+        'other_explosive_hazards_or_its_parts'
     ],
-    military_equipment_remnant: [
-        'metal_debris',
-        'armoured_vehicle',
-        'weapon',
+    military_equipment_or_weaponry: [
+        'armoured_vehicle_or_its_parts',
+        'light_weaponry_or_its_parts',
+    ],
+    military_personnel: [
+        'suspected_humane_remains',
+        'personal_items',
+        'documents',
     ],
 };

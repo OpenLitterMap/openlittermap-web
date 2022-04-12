@@ -154,7 +154,7 @@ class AdminController extends Controller
     public function incorrect (Request $request)
     {
         /** @var Photo $photo */
-        $photo = Photo::with('tags.category')->findOrFail($request->photoId);
+        $photo = Photo::findOrFail($request->photoId);
 
         $photo->verification = 0;
         $photo->verified = 0;
@@ -162,19 +162,8 @@ class AdminController extends Controller
         $photo->result_string = null;
         $photo->save();
 
-        $formatted = $photo->tags->groupBy('category.name')
-            ->map(function ($tags) {
-                return $tags
-                    ->keyBy('name')
-                    ->map(function ($tag) {
-                        return $tag->pivot->quantity;
-                    })
-                    ->toArray();
-            })
-            ->toArray();
-
         $tagUpdates = $this->calculateTagsDiffAction->run(
-            $formatted,
+            $photo->compiled_tags,
             [],
             $photo->customTags->pluck('tag')->toArray(),
             []
@@ -205,19 +194,8 @@ class AdminController extends Controller
 
         $this->deletePhotoAction->run($photo);
 
-        $formatted = $photo->tags->groupBy('category.name')
-            ->map(function ($tags) {
-                return $tags
-                    ->keyBy('name')
-                    ->map(function ($tag) {
-                        return $tag->pivot->quantity;
-                    })
-                    ->toArray();
-            })
-            ->toArray();
-
         $tagUpdates = $this->calculateTagsDiffAction->run(
-            $formatted,
+            $photo->compiled_tags,
             [],
             $photo->customTags->pluck('tag')->toArray(),
             []
@@ -290,7 +268,6 @@ class AdminController extends Controller
         $photo->verified = 2;
         $photo->total_litter = 0;
         $photo->save();
-        $oldTags = $photo->tags();
 
         $user = User::find($photo->user_id);
         $user->save();
@@ -353,7 +330,7 @@ class AdminController extends Controller
             ->count();
 
         return [
-            'photo' => $photo,
+            'photo' => $photo ? $photo->append('compiled_tags') : null,
             'photosNotProcessed' => $photosNotProcessed,
             'photosAwaitingVerification' => $photosAwaitingVerification
         ];

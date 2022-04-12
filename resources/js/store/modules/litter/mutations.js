@@ -160,13 +160,14 @@ export const mutations = {
     initAdminItems (state, payload)
     {
         let tags = {};
+        const compiledTags = payload.compiled_tags;
 
         categories.map(category => {
-            if (payload.hasOwnProperty(category) && payload[category])
+            if (compiledTags.hasOwnProperty(category) && compiledTags[category])
             {
                 litterkeys[category].map(item => {
 
-                    if (payload[category][item])
+                    if (compiledTags[category][item])
                     {
                         tags = {
                             ...tags,
@@ -174,7 +175,7 @@ export const mutations = {
                                 ...tags[payload.id],
                                 [category]: {
                                     ...(tags[payload.id] ? tags[payload.id][category] : {}),
-                                    [item]: payload[category][item]
+                                    [item]: compiledTags[category][item]
                                 }
                             }
                         };
@@ -268,25 +269,14 @@ export const mutations = {
 
     /**
      * Reset empty state
+     * todo not sure why this is used
      */
     resetLitter (state)
     {
-        // state.items = {};
         state.categories = {
-            'Alcohol': {},
-            'Art': {},
-            'Brands': {},
-            'Coastal': {},
-            'Coffee': {},
-            'Dumping': {},
-            'Drugs': {},
-            'Food': {},
-            'Industrial': {},
-            'Other': {},
-            'Sanitary': {},
-            'Smoking': {},
-            'SoftDrinks': {},
-            'TrashDog': {}
+            'Ordnance': {},
+            'Military equipment or weaponry': {},
+            'Military personnel': {},
         }
     },
 

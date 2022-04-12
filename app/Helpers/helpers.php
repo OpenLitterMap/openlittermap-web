@@ -29,7 +29,6 @@ if (!function_exists('array_diff_assoc_recursive')) {
     }
 }
 
-
 if (!function_exists('convert_tags')) {
     /**
      * Converts the tags from a category/tag name representation
@@ -41,10 +40,10 @@ if (!function_exists('convert_tags')) {
     function convert_tags(array $tags): array
     {
         $result = [];
-        foreach ($tags as $categoryName => $categoryTags) {
-            $category = \App\Models\Category::query()->where('name', $categoryName)->first();
-            foreach ($categoryTags as $tagName => $quantity) {
-                $tag = \App\Models\Tag::query()->where(['category_id' => $category->id, 'name' => $tagName])->first();
+        foreach ($tags as $categorySlug => $categoryTags) {
+            $category = \App\Models\Category::query()->where('slug', $categorySlug)->first();
+            foreach ($categoryTags as $tagSlug => $quantity) {
+                $tag = \App\Models\Tag::query()->where(['category_id' => $category->id, 'slug' => $tagSlug])->first();
                 $result[$tag->id] = $quantity;
             }
         }

@@ -27,9 +27,9 @@ class TrustedTeamsTest extends TestCase
 
     public function test_photos_uploaded_by_users_of_trusted_teams_are_verified_automatically()
     {
+        $tag = Tag::factory()->create();
         Event::fake();
 
-        $tag = Tag::factory()->create();
         // User is not verified
         /** @var User $user */
         $user = User::factory()->create(['verification_required' => true]);
@@ -65,9 +65,9 @@ class TrustedTeamsTest extends TestCase
 
     public function test_photos_uploaded_by_api_users_of_trusted_teams_are_verified_automatically()
     {
+        $tag = Tag::factory()->create();
         Event::fake();
 
-        $tag = Tag::factory()->create();
         // User is not verified
         /** @var User $user */
         $user = User::factory()->create(['verification_required' => true]);

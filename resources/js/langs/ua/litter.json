@@ -1,19 +1,25 @@
 {
     "categories": {
         "ordnance": "Ordnance",
-        "military_equipment_remnant": "Military Equipment Remnant"
+        "military_equipment_or_weaponry": "Military equipment or weaponry",
+        "military_personnel": "Military personnel"
     },
     "ordnance": {
+        "small_arms": "Small arms",
         "land_mine": "Land Mine",
         "missile": "Missile",
         "grenade": "Grenade",
-        "shell": "Shell",
-        "other": "Other"
+        "shell_or_projectile": "Shell or projectile",
+        "other_explosive_hazards_or_its_parts": "Other explosive hazards or its parts"
     },
-    "military_equipment_remnant": {
-        "metal_debris": "Metal Debris",
-        "armoured_vehicle": "Armoured Vehicle",
-        "weapon": "Weapon"
+    "military_equipment_or_weaponry": {
+        "armoured_vehicle_or_its_parts": "Armoured vehicle or its parts",
+        "light_weaponry_or_its_parts": "Light weaponry or its parts"
+    },
+    "military_personnel": {
+        "suspected_humane_remains": "Suspected humane remains",
+        "personal_items": "Personal items",
+        "documents": "Documents"
     },
     "presence": {
         "picked-up": "I picked it up!",

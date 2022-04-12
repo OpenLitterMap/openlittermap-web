@@ -32,11 +32,7 @@ const helper = {
         a.forEach(i => {
             let b = i.split(' ');
 
-            if (b[0] === 'art.item') {
-                tags += i18n.t('litter.' + b[0]) + '<br>';
-            } else {
-                tags += i18n.t('litter.' + b[0]) + ': ' + b[1] + '<br>';
-            }
+            tags += i18n.t('litter.' + b[0]) + ': ' + b[1] + '<br>';
         });
 
         return tags;

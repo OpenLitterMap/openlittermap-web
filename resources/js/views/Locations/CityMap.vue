@@ -17,18 +17,9 @@ var map;
 var info;
 var hexFiltered;
 
-var smokingGroup;
-var foodGroup;
-var coffeeGroup;
-var alcoholGroup;
-var softdrinksGroup;
-var sanitaryGroup;
-var otherGroup;
-var coastalGroup;
-var brandsGroup;
-var dogshitGroup;
-var dumpingGroup;
-var industrialGroup;
+var ordnanceGroup;
+var militaryEquipmentGroup;
+var militaryPersonnel;
 
 /**
  * The colour for each hex grid
@@ -276,32 +267,14 @@ export default {
         addDataToLayerGroups ()
         {
             /** 6. Create Groups */
-            smokingGroup = new L.LayerGroup();
-            foodGroup = new L.LayerGroup();
-            coffeeGroup = new L.LayerGroup();
-            alcoholGroup = new L.LayerGroup();
-            softdrinksGroup = new L.LayerGroup().addTo(map);
-            sanitaryGroup = new L.LayerGroup();
-            otherGroup = new L.LayerGroup();
-            coastalGroup = new L.LayerGroup();
-            brandsGroup = new L.LayerGroup();
-            dogshitGroup = new L.LayerGroup();
-            dumpingGroup = new L.LayerGroup();
-            industrialGroup = new L.LayerGroup();
+            ordnanceGroup = new L.LayerGroup();
+            militaryEquipmentGroup = new L.LayerGroup();
+            militaryPersonnel = new L.LayerGroup();
 
             const groups = {
-                smoking: smokingGroup,
-                food: foodGroup,
-                coffee: coffeeGroup,
-                alcohol: alcoholGroup,
-                softdrinks: softdrinksGroup,
-                sanitary: sanitaryGroup,
-                other: otherGroup,
-                coastal: coastalGroup,
-                brands: brandsGroup,
-                dogshit: dogshitGroup,
-                industrial: industrialGroup,
-                dumping: dumpingGroup
+                ordnance: ordnanceGroup,
+                military_equipment_or_weaponry: militaryEquipmentGroup,
+                military_personnel: militaryPersonnel,
             };
 
             this.geojson.features.map(i => {
@@ -345,18 +318,9 @@ export default {
 
             /** 8. Create overlays toggle menu */
             let overlays = {
-                Alcohol: alcoholGroup,
-                Brands: brandsGroup,
-                Coastal: coastalGroup,
-                Coffee: coffeeGroup,
-                Dumping: dumpingGroup,
-                Food: foodGroup,
-                Industrial: industrialGroup,
-                Other: otherGroup,
-                PetSurprise: dogshitGroup,
-                Sanitary: sanitaryGroup,
-                Smoking: smokingGroup,
-                SoftDrinks: softdrinksGroup,
+                "Ordnance": ordnanceGroup,
+                "Military equipment or weaponry": militaryEquipmentGroup,
+                "Military personnel": militaryPersonnel,
             };
 
             /** 9- Add null basemaps and overlays to the map */

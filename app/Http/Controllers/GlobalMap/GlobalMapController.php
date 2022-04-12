@@ -19,27 +19,7 @@ class GlobalMapController extends Controller
      */
     public function artData(): array
     {
-        $photos = Photo::query()
-            ->select(
-                'id',
-                'verified',
-                'user_id',
-                'team_id',
-                'result_string',
-                'filename',
-                'geohash',
-                'lat',
-                'lon',
-                'remaining',
-                'datetime'
-            )
-            ->where([
-                ['verified', '>=', 2],
-                ['art_id', '!=', null]
-            ])
-            ->get();
-
-        return $this->photosToGeojson($photos);
+        return $this->photosToGeojson(collect([]));
     }
 
     /**

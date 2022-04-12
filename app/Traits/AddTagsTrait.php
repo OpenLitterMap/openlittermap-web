@@ -24,19 +24,8 @@ trait AddTagsTrait
         /** @var User $photo */
         $user = User::find($photo->user_id);
 
-        $formatted = $photo->tags->groupBy('category.name')
-            ->map(function ($tags) {
-                return $tags
-                    ->keyBy('name')
-                    ->map(function ($tag) {
-                        return $tag->pivot->quantity;
-                    })
-                    ->toArray();
-            })
-            ->toArray();
-
         $tagUpdates = $this->calculateTagsDiffAction->run(
-            $formatted,
+            $photo->compiled_tags,
             $tags,
             $photo->customTags->pluck('tag')->toArray(),
             $customTags

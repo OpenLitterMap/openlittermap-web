@@ -18,10 +18,7 @@ export default {
          */
         categories ()
         {
-            return [
-                this.user.total_categories.ordnance,
-                this.user.total_categories.military_equipment_remnant,
-            ]
+            return this.user.total_categories.values();
         },
 
         /**
