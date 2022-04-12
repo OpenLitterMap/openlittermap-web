@@ -27,5 +27,6 @@
         <server name="SESSION_DRIVER" value="array" />
         <server name="TELESCOPE_ENABLED" value="false" />
         <server name="BROADCAST_DRIVER" value="log" />
+        <server name="ALLOW_ONLY_UPLOADS_FROM_COUNTRY" value="us" />
     </php>
 </phpunit>

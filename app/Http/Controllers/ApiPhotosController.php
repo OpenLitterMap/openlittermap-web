@@ -182,6 +182,10 @@ class ApiPhotosController extends Controller
         $state = $this->uploadHelper->getStateFromAddressArray($country, $addressArray);
         $city = $this->uploadHelper->getCityFromAddressArray($country, $state, $addressArray);
 
+        if ($country->shortcode !== config('app.allow_only_uploads_from_country')) {
+            abort(500, "Only images from ".config('app.allow_only_uploads_from_country')." can currently be uploaded");
+        }
+
         /** @var Photo $photo */
         $photo = $user->photos()->create([
             'filename' => $imageName,

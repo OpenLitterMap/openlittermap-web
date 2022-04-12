@@ -123,6 +123,8 @@ return [
 
     'cipher' => 'AES-256-CBC',
 
+    'allow_only_uploads_from_country' => env('ALLOW_ONLY_UPLOADS_FROM_COUNTRY', 'ua'),
+
     /*
     |--------------------------------------------------------------------------
     | Autoloaded Service Providers
