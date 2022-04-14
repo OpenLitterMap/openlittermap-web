@@ -91,10 +91,8 @@ export const mutations = {
         tags[payload.photoId].unshift(payload.customTag);
 
         // Also add this tag to the recent custom tags
-        if (state.recentCustomTags.indexOf(payload.customTag) === -1)
-        {
-            state.recentCustomTags.unshift(payload.customTag);
-        }
+        state.recentCustomTags = state.recentCustomTags.filter(tag => tag !== payload.customTag);
+        state.recentCustomTags.unshift(payload.customTag);
 
         // And indicate that a new tag has been added
         state.hasAddedNewTag = true; // Enable the Update Button

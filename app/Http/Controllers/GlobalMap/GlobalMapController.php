@@ -5,8 +5,8 @@ namespace App\Http\Controllers\GlobalMap;
 use App\Models\Photo;
 use App\Traits\FilterPhotosByGeoHashTrait;
 
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Carbon;
 
 class GlobalMapController extends Controller
 {
@@ -74,8 +74,25 @@ class GlobalMapController extends Controller
                 }
             ]);
 
-        if (request()->year) {
+        if (request()->fromDate || request()->toDate) {
+            $startDate = request()->fromDate && Carbon::hasFormat(request()->fromDate, 'Y-m-d')
+                ? Carbon::createFromFormat('Y-m-d', request()->fromDate)->startOfDay()
+                : Carbon::create(2017);
+            $endDate = request()->toDate && Carbon::hasFormat(request()->toDate, 'Y-m-d')
+                ? Carbon::createFromFormat('Y-m-d', request()->toDate)->endOfDay()
+                : now()->addDay();
+            $query->whereBetween('datetime', [$startDate, $endDate]);
+        } else if (request()->year) {
             $query->whereYear('datetime', request()->year);
+        }
+
+        if (request()->username) {
+            $query->whereHas('user', function ($q) {
+                $q->where([
+                    'users.show_username_maps' => 1,
+                    'users.username' => request()->username
+                ]);
+            });
         }
 
         $photos = $this->filterPhotosByGeoHash(
