@@ -333,7 +333,11 @@ export default {
             }
 
             // Get the year from url
-            let year = parseInt((new URLSearchParams(window.location.search)).get('year')) || null;
+            const searchParams = new URLSearchParams(window.location.search);
+            const year = parseInt(searchParams.get('year')) || null;
+            const fromDate = searchParams.get('fromDate') || null;
+            const toDate = searchParams.get('toDate') || null;
+            const username = searchParams.get('username') || null;
 
             // Get Clusters or Points
             if (zoom < CLUSTER_ZOOM_THRESHOLD)
@@ -373,7 +377,10 @@ export default {
                         zoom,
                         bbox,
                         layers,
-                        year
+                        year,
+                        fromDate,
+                        toDate,
+                        username
                     }
                 })
                 .then(response => {
