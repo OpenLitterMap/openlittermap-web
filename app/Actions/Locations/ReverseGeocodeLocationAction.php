@@ -33,7 +33,7 @@ class ReverseGeocodeLocationAction
     {
         $apiKey = config('services.location.secret');
 
-        $url = "https://locationiq.org/v1/reverse.php?format=json" .
+        $url = "https://eu1.locationiq.com/v1/reverse.php?format=json" .
             "&key=" . $apiKey . "&lat=" . $latitude . "&lon=" . $longitude . "&zoom=20";
 
         return json_decode(

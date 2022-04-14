@@ -27,23 +27,15 @@
                         <!-- the Info box, Left -->
                         <div id="image-metadata" class="column">
                             <div class="box">
-                                <!-- Photo taken on -->
-                                <p><strong>{{ $t('common.photo') }} #{{ photo.id }}: </strong>{{ $t('tags.taken') }} {{ getDate(photo.datetime) }}</p>
-
-                                <!-- Coordinates. was profile6 -->
-                                <p><strong>{{ $t('tags.coordinates') }}: </strong>{{ photo.lat }}, {{ photo.lon }}</p>
-
-                                <!-- Full address. was profile7 -->
-                                <p><strong>{{ $t('tags.address') }}: </strong>{{ photo.display_name }}</p>
-
-                                <!-- Model of the device -->
-                                <p><strong>{{ $t('tags.device') }}: </strong>{{ photo.model }}</p>
-
-                                <!-- Presence button. was profile8 -->
-                                <presence :key="photo.id"/>
-
-                                <!-- Delete photo button -->
-                                <profile-delete :photoid="photo.id" class="mt-4"/>
+                                <li class="list-group-item">
+                                    {{ $t('tags.to-tag') }}: {{ remaining }}
+                                </li>
+                                <li class="list-group-item">
+                                    {{ $t('tags.total-uploaded') }}: {{ user.total_images }}
+                                </li>
+                                <li v-if="photo.team" class="list-group-item">
+                                    {{ $t('common.team') }}: <strong>{{ photo.team.name}}</strong>
+                                </li>
                             </div>
 
                             <div v-if="hasRecentTags" class="box control has-text-centered">
@@ -68,15 +60,23 @@
                         <!-- Info, Tags, Right -->
                         <div id="image-counts" class="column is-3">
                             <div class="box">
-                                <li class="list-group-item">
-                                    {{ $t('tags.to-tag') }}: {{ remaining }}
-                                </li>
-                                <li class="list-group-item">
-                                    {{ $t('tags.total-uploaded') }}: {{ user.total_images }}
-                                </li>
-                                <li v-if="photo.team" class="list-group-item">
-                                    {{ $t('common.team') }}: <strong>{{ photo.team.name}}</strong>
-                                </li>
+                                <!-- Photo taken on -->
+                                <p><strong>{{ $t('common.photo') }} #{{ photo.id }}: </strong>{{ $t('tags.taken') }} {{ getDate(photo.datetime) }}</p>
+
+                                <!-- Coordinates. was profile6 -->
+                                <p><strong>{{ $t('tags.coordinates') }}: </strong>{{ photo.lat }}, {{ photo.lon }}</p>
+
+                                <!-- Full address. was profile7 -->
+                                <p><strong>{{ $t('tags.address') }}: </strong>{{ photo.display_name }}</p>
+
+                                <!-- Model of the device -->
+                                <p><strong>{{ $t('tags.device') }}: </strong>{{ photo.model }}</p>
+
+                                <!-- Presence button. was profile8 -->
+                                <presence :key="photo.id"/>
+
+                                <!-- Delete photo button -->
+                                <profile-delete :photoid="photo.id" class="mt-4"/>
                             </div>
 
                             <!-- These are the tags the user has added -->
@@ -265,6 +265,7 @@ export default {
 
     .img {
         max-height: 30em;
+        border-radius: 5px;
     }
 
     .tag-container {

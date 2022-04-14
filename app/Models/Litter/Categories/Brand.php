@@ -120,12 +120,14 @@ class Brand extends LitterCategory
 
             'tayto',
             'tesco',
+            'tim_hortons',
             'thins',
 
             'volvic',
 
             'waitrose',
             'walkers',
+            'wendys',
             'woolworths',
             'wilde_and_greene',
             'winston',

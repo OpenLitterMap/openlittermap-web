@@ -97,12 +97,20 @@ export default {
                 quantity = parseInt(this.$store.state.litter.tags[this.photoId][category][tag]) + 1;
             }
 
+            this.$store.commit('changeCategory', category);
+            this.$store.commit('changeTag', tag);
+
             this.$store.commit('addTag', {
                 photoId: this.photoId,
                 category,
                 tag,
                 quantity
             });
+
+            // This will move the newly added recent tag
+            // to the top of the list
+            this.$store.commit('addRecentTag', {category, tag});
+            this.$localStorage.set('recentTags', JSON.stringify(this.recentTags));
         },
 
         /**
@@ -135,7 +143,7 @@ export default {
 @import "../../styles/variables.scss";
 
 .tags-container {
-    max-height: 450px;
+    max-height: 650px;
     overflow-y: auto;
 }
 
