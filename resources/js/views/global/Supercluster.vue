@@ -296,6 +296,11 @@ export default {
 
         map.on('overlayadd', this.update);
         map.on('overlayremove', this.update)
+        map.on('popupclose', () => {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('photo');
+            window.history.pushState(null, '', url);
+        })
 
         this.setupYearDropdown();
     },
