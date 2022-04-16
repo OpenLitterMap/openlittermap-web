@@ -27,6 +27,7 @@ use LaravelAndVueJS\Traits\LaravelPermissionToVueJS;
  * @property int $active_team
  * @property int $xp
  * @property int $xp_redis
+ * @property bool $picked_up
  */
 class User extends Authenticatable
 {

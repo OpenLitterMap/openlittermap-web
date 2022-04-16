@@ -18,66 +18,7 @@ class Photo extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'user_id',
-    	'filename',
-    	'model',
-    	'datetime',
-    	'lat',
-        'lon',
-        'verification',
-        'verified',
-        'result_string',
-        'total_litter',
-
-        'display_name',
-    	'location',
-    	'road',
-    	'suburb',
-    	'city',
-    	'county',
-    	'state_district',
-    	'country',
-    	'country_code',
-
-        'city_id',
-        'state_id',
-        'country_id',
-
-    	'smoking_id',
-        'alcohol_id',
-        'coffee_id',
-    	'food_id',
-    	'softdrinks_id',
-        'dumping_id',
-        'sanitary_id',
-        'industrial_id',
-        'other_id',
-        'coastal_id',
-        'art_id',
-        'brands_id',
-        'trashdog_id',
-        'dogshit_id',
-
-        'platform',
-        'bounding_box',
-        'geohash',
-        'team_id',
-
-        // annotations
-        'bbox_skipped',
-        'skipped_by',
-        'bbox_assigned_to',
-        'wrong_tags',
-        'wrong_tags_by',
-        'bbox_verification_assigned_to',
-
-        // Introduced after resizing images to 500x500
-        'five_hundred_square_filepath',
-        'bbox_500_assigned_to',
-
-        'address_array'
-    ];
+    protected $guarded = [];
 
     protected $appends = ['selected', 'picked_up'];
 

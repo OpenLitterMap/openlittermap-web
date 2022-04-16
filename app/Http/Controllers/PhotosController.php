@@ -202,6 +202,7 @@ class PhotosController extends Controller
         $photo = $user->photos()->create([
             'filename' => $imageName,
             'datetime' => $dateTime,
+            'remaining' => !$user->picked_up,
             'lat' => $latlong[0],
             'lon' => $latlong[1],
             'display_name' => $display_name,
