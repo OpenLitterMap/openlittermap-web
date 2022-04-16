@@ -349,8 +349,11 @@ export default {
             {
                 createGlobalGroups();
 
-                // Remove photo id from the url when zooming out
+                // Remove photo id and filters from the url when zooming out
                 const url = new URL(window.location.href);
+                url.searchParams.delete('fromDate');
+                url.searchParams.delete('toDate');
+                url.searchParams.delete('username');
                 url.searchParams.delete('photo');
                 window.history.pushState(null, '', url);
 
