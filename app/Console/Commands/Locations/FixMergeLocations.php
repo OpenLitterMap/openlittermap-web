@@ -127,6 +127,11 @@ class FixMergeLocations extends Command
             echo "Replacing state_id: $stateFromPhoto->id with $stateExistsInRealCountry->id \n";
 
             $realStateId = $stateExistsInRealCountry->id;
+
+            if (is_null($stateExistsInRealCountry->created_by)) {
+                $stateExistsInRealCountry->created_by = $photo->user_id;
+                $stateExistsInRealCountry->save();
+            }
         }
         else
         {
@@ -172,6 +177,11 @@ class FixMergeLocations extends Command
             echo "Replacing state_id: $cityFromPhoto->id with $cityExistsWithinState->id \n";
 
             $realCityId = $cityExistsWithinState->id;
+
+            if (is_null($cityExistsWithinState->created_by)) {
+                $cityExistsWithinState->created_by = $photo->user_id;
+                $cityExistsWithinState->save();
+            }
         } else {
             echo "Creating new city: $cityFromPhoto->city for realStateId: $realStateId \n";
 
