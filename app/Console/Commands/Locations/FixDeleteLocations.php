@@ -11,7 +11,7 @@ use Illuminate\Console\Command;
 class FixDeleteLocations extends Command
 {
     /**
-     * The name and signature of the console command.
+     * Do this after the photo location_ids have been fixed (FixMergeLocations.php)
      *
      * @var string
      */
