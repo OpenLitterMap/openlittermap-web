@@ -76,7 +76,7 @@ class FixMergeLocations extends Command
                     echo "Processing country index: " . $index . " \n";
 
                     $photos = Photo::where('country_id', $country->id)
-                        ->select('id', 'country_id', 'state_id', 'city_id')
+                        ->select('id', 'country_id', 'state_id', 'city_id', 'user_id')
                         ->orderBy('id')
                         ->get();
 
