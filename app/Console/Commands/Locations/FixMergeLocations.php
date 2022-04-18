@@ -48,7 +48,7 @@ class FixMergeLocations extends Command
             ->havingRaw('COUNT(*) > 1')
             ->get();
 
-        echo "Found duplicates: " . sizeof($duplicatedCountries) . " \n";
+        echo "Found " . sizeof($duplicatedCountries) . " duplicates \n";
 
         foreach ($duplicatedCountries as $duplicatedCountry)
         {
