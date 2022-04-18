@@ -73,19 +73,19 @@ class FixMergeLocations extends Command
                 }
                 else
                 {
-                    echo "Processing index: " . $index . " \n";
+                    echo "Processing country index: " . $index . " \n";
 
                     $photos = Photo::where('country_id', $country->id)
                         ->select('id', 'country_id', 'state_id', 'city_id')
                         ->orderBy('id')
                         ->get();
 
-                    echo "Wrong photos: " . sizeof($photos) . " \n";
+                    echo "Found " . sizeof($photos) . " wrong photos \n";
 
                     foreach ($photos as $photo)
                     {
                         $realStateId = $this->getRealStateId($photo, $realCountryId);
-                        $realCityId = $this->getRealCityId($photo, $realCountryId, $realStateId);
+                        $realCityId = $this->getRealCityId($photo, $realStateId);
 
                         if ($photo->country_id != $realCountryId)
                         {
