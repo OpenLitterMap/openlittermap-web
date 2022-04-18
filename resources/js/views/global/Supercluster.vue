@@ -109,6 +109,8 @@ function createGlobalGroups ()
         globalLayerController.addOverlay(litterArtPoints, 'Litter Art');
 
         globalControllerShowing = true;
+
+        console.log({ globalLayerController });
     }
 }
 
