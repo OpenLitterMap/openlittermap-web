@@ -108,6 +108,7 @@ const helper = {
         const teamFormatted = helper.formatTeam(team);
         const pickedUpFormatted = helper.formatPickedUp(pickedUp);
         const isLitterArt = tagsString && tagsString.includes('art.item');
+        const isVerified = imageUrl !== '/assets/images/waiting.png';
 
         return `
             <img
@@ -115,6 +116,7 @@ const helper = {
                 class="leaflet-litter-img"
                 onclick="document.querySelector('.leaflet-popup-close-button').click();"
                 alt="Litter photo"
+                ${(isVerified ? '' : ('style="padding: 16px;"'))}
             />
             <div class="leaflet-litter-img-container">
                 <p>${tags}</p>
