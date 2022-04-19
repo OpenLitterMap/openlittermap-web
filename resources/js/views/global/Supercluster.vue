@@ -109,6 +109,8 @@ function createGlobalGroups ()
         globalLayerController.addOverlay(litterArtPoints, 'Litter Art');
 
         globalControllerShowing = true;
+
+        console.log({ globalLayerController });
     }
 }
 
@@ -296,6 +298,11 @@ export default {
 
         map.on('overlayadd', this.update);
         map.on('overlayremove', this.update)
+        map.on('popupclose', () => {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('photo');
+            window.history.pushState(null, '', url);
+        })
 
         this.setupYearDropdown();
     },
@@ -344,8 +351,11 @@ export default {
             {
                 createGlobalGroups();
 
-                // Remove photo id from the url when zooming out
+                // Remove photo id and filters from the url when zooming out
                 const url = new URL(window.location.href);
+                url.searchParams.delete('fromDate');
+                url.searchParams.delete('toDate');
+                url.searchParams.delete('username');
                 url.searchParams.delete('photo');
                 window.history.pushState(null, '', url);
 
