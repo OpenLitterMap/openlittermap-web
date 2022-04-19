@@ -44,7 +44,8 @@ class UploadPhotoTest extends TestCase
         Event::fake([ImageUploaded::class, IncrementPhotoMonth::class]);
 
         $user = User::factory()->create([
-            'active_team' => Team::factory()
+            'active_team' => Team::factory(),
+            'items_remaining' => 0
         ]);
 
         $this->actingAs($user, 'api');
@@ -92,7 +93,7 @@ class UploadPhotoTest extends TestCase
         $this->assertEquals($imageAttributes['address']['country'], $photo->country);
         $this->assertEquals($imageAttributes['address']['country_code'], $photo->country_code);
         $this->assertEquals('test model', $photo->model);
-        $this->assertEquals(1, $photo->remaining);
+        $this->assertEquals(0, $photo->remaining);
         $this->assertEquals($this->getCountryId(), $photo->country_id);
         $this->assertEquals($this->getStateId(), $photo->state_id);
         $this->assertEquals($this->getCityId(), $photo->city_id);
