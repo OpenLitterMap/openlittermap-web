@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property Collection $customTags
+ * @property User $user
  */
 class Photo extends Model
 {

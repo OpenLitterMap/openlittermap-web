@@ -17,11 +17,14 @@ const helper = {
      * Returns th HTML that displays tags on Photo popups
      *
      * @param tagsString
+     * @param isTrustedUser
      * @returns {string}
      */
-    parseTags: (tagsString) => {
+    parseTags: (tagsString, isTrustedUser) => {
         if (!tagsString) {
-            return i18n.t('litter.not-verified');
+            return isTrustedUser
+                ? i18n.t('litter.not-tagged-yet')
+                : i18n.t('litter.not-verified');
         }
 
         let tags = '';
@@ -103,12 +106,12 @@ const helper = {
      * @returns {string}
      */
     getMapImagePopupContent: (imageUrl, tagsString, takenOn, pickedUp, user, team, url = null) => {
-        const tags = helper.parseTags(tagsString);
+        const isTrustedUser = imageUrl !== '/assets/images/waiting.png';
+        const tags = helper.parseTags(tagsString, isTrustedUser);
         const takenDateString = helper.formatPhotoTakenTime(takenOn);
         const teamFormatted = helper.formatTeam(team);
         const pickedUpFormatted = helper.formatPickedUp(pickedUp);
         const isLitterArt = tagsString && tagsString.includes('art.item');
-        const isVerified = imageUrl !== '/assets/images/waiting.png';
 
         return `
             <img
@@ -116,7 +119,7 @@ const helper = {
                 class="leaflet-litter-img"
                 onclick="document.querySelector('.leaflet-popup-close-button').click();"
                 alt="Litter photo"
-                ${(isVerified ? '' : ('style="padding: 16px;"'))}
+                ${(isTrustedUser ? '' : ('style="padding: 16px;"'))}
             />
             <div class="leaflet-litter-img-container">
                 <p>${tags}</p>
