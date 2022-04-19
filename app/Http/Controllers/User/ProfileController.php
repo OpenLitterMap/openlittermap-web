@@ -82,11 +82,12 @@ class ProfileController extends Controller
 //        else if (request()->period === 'all') $period = '2017-01-01 00:00:00'; // Year OLM began
 
         // Todo - Pre-cluster each users photos
-        $query = Photo::select('id', 'filename', 'datetime', 'lat', 'lon', 'model', 'result_string', 'remaining', 'created_at')
+        $query = Photo::query()
             ->where([
                 ['user_id', auth()->user()->id],
                 'verified' => 2
             ])
+            ->with(['user.team', 'team'])
             ->whereDate(request()->period, '>=', request()->start)
             ->whereDate(request()->period, '<=', request()->end);
 
@@ -105,20 +106,29 @@ class ProfileController extends Controller
         // Populate geojson object
         foreach ($photos as $photo)
         {
+            $name = $photo->user->show_name_maps ? $photo->user->name : null;
+            $username = $photo->user->show_username_maps ? $photo->user->username : null;
+            $team = $photo->team ? $photo->team->name : null;
+            $filename = ($photo->user->is_trusted || $photo->verified >= 2) ? $photo->filename : '/assets/images/waiting.png';
+            $resultString = $photo->verified >= 2 ? $photo->result_string : null;
+
             $feature = [
                 'type' => 'Feature',
                 'geometry' => [
                     'type' => 'Point',
-                    'coordinates' => [$photo->lon, $photo->lat]
+                    'coordinates' => [$photo->lat, $photo->lon]
                 ],
 
                 'properties' => [
-                    // 'photo_id' => $photo->id,
-                    'img' => $photo->filename,
-                    'model' => $photo->model,
+                    'photo_id' => $photo->id,
+                    'result_string' => $resultString,
+                    'filename' => $filename,
                     'datetime' => $photo->datetime,
-                    'latlng' => [$photo->lat, $photo->lon],
-                    'text' => $photo->result_string,
+                    'cluster' => false,
+                    'verified' => $photo->verified,
+                    'name' => $name,
+                    'username' => $username,
+                    'team' => $team,
                     'picked_up' => $photo->picked_up
                 ]
             ];
