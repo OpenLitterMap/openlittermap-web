@@ -9,6 +9,8 @@ use App\Level;
 use App\Models\CustomTag;
 use App\Models\Photo;
 use App\Models\User\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class ProfileController extends Controller
@@ -26,9 +28,11 @@ class ProfileController extends Controller
      *
      * @return array
      */
-    public function download ()
+    public function download (Request $request)
     {
         $user = Auth::user();
+
+        $dateFilter = $this->getDownloadDateFilter($request);
 
         $x     = new \DateTime();
         $date  = $x->format('Y-m-d');
@@ -38,12 +42,16 @@ class ProfileController extends Controller
         $day   = $date[2];
         $unix  = now()->timestamp;
 
-        $path = $year.'/'.$month.'/'.$day.'/'.$unix.'/';  // 2020/10/25/unix/
+        $path = $year.'/'.$month.'/'.$day.'/'.$unix;  // 2020/10/25/unix/
+
+        if (!empty($dateFilter)) {
+            $path .= "_from_{$dateFilter['fromDate']}_to_{$dateFilter['toDate']}";
+        }
 
         $path .= '_MyData_OpenLitterMap.csv';
 
         /* Dispatch job to create CSV file for export */
-        (new CreateCSVExport(null, null, null, $user->id))
+        (new CreateCSVExport(null, null, null, $user->id, $dateFilter))
             ->queue($path, 's3', null, ['visibility' => 'public'])
             ->chain([
                 // These jobs are executed when above is finished.
@@ -166,6 +174,32 @@ class ProfileController extends Controller
             'tagPercent' => $tagPercent,
             'photoPercent' => $photoPercent,
             'requiredXp' => $requiredXp
+        ];
+    }
+
+    /**
+     * Returns an array of values
+     * so that users can filter their own data
+     *
+     * @param Request $request
+     * @return array
+     */
+    private function getDownloadDateFilter(Request $request): array
+    {
+        if (!$request->dateField || !($request->fromDate || $request->toDate)) {
+            return [];
+        }
+
+        $fromDate = $request->fromDate
+            ? Carbon::parse($request->fromDate)
+            : Carbon::create(2017);
+        $toDate = $request->toDate
+            ? Carbon::parse($request->toDate)
+            : now();
+        return [
+            'column' => $request->dateField,
+            'fromDate' => $fromDate->toDateString(),
+            'toDate' => $toDate->toDateString()
         ];
     }
 }

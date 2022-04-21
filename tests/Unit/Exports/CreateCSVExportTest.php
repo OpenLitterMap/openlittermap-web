@@ -11,7 +11,7 @@ class CreateCSVExportTest extends TestCase
 {
     public function test_it_has_correct_headings_for_all_categories_and_tags()
     {
-        $expected = ['id', 'verification', 'phone', 'datetime', 'lat', 'lon', 'picked up', 'address', 'total_litter'];
+        $expected = ['id', 'verification', 'phone', 'date_taken', 'date_uploaded', 'lat', 'lon', 'picked up', 'address', 'total_litter'];
         foreach (Photo::categories() as $category) {
             $photo = Photo::factory()->make();
             $types = $photo->$category()->make()->types();
@@ -48,6 +48,7 @@ class CreateCSVExportTest extends TestCase
             $photo->verified,
             $photo->model,
             $photo->datetime,
+            $photo->created_at,
             $photo->lat,
             $photo->lon,
             $photo->remaining ? 'No' : 'Yes',
@@ -94,6 +95,7 @@ class CreateCSVExportTest extends TestCase
             $photo->verified,
             $photo->model,
             $photo->datetime,
+            $photo->created_at,
             $photo->lat,
             $photo->lon,
             $photo->remaining ? 'No' : 'Yes',

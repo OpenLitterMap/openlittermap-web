@@ -139,12 +139,12 @@ export const actions = {
     /**
      * Send the user an email containing a CSV with all of their data
      */
-    async DOWNLOAD_MY_DATA (context)
+    async DOWNLOAD_MY_DATA (context, payload)
     {
         const title = i18n.t('notifications.success');
         const body = 'Your download is being processed and will be emailed to you.'
 
-        await axios.get('/user/profile/download')
+        await axios.get('/user/profile/download', {params: payload})
             .then(response => {
                 console.log('download_my_data', response);
 

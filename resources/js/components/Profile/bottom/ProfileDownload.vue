@@ -2,20 +2,49 @@
     <div class="profile-card">
         <p class="profile-dl-title">{{ $t('profile.dashboard.download-data') }}</p>
 
-        <p class="profile-dl-subtitle">{{ $t('profile.dashboard.email-send-msg') }}</p>
+        <FunctionalCalendar
+            v-model="calendarData"
+            :day-names="$t('common.day-names')"
+            :month-names="$t('common.month-names')"
+            :short-month-names="$t('common.short-month-names')"
+            :sundayStart="false"
+            :date-format="'yyyy-mm-dd'"
+            :is-date-range="true"
+            :is-date-picker="false"
+            :change-month-function="true"
+            :change-year-function="true"
+        />
 
-        <button :class="button" @click="download" :disabled="processing">{{ $t('common.download') }}</button>
+        <div class="inputs-wrapper">
+            <select v-model="period" class="input mt1 mb1">
+                <option v-for="time in periods" :value="time">{{ $t('teams.dashboard.times.' + time) }}</option>
+            </select>
+
+            <button :class="button" @click="download" :disabled="processing">
+                <span class="tooltip-text is-size-6">{{ $t('profile.dashboard.email-send-msg') }}</span>
+                {{ $t('common.download') }}
+            </button>
+        </div>
     </div>
 </template>
 
 <script>
+import { FunctionalCalendar } from 'vue-functional-calendar';
+
 export default {
     name: 'ProfileDownload',
+    components: { FunctionalCalendar },
     data ()
     {
         return {
-            btn: 'button is-medium is-purp',
-            processing: false
+            btn: 'button tooltip is-primary',
+            processing: false,
+            calendarData: {},
+            period: 'created_at',
+            periods: [
+                'created_at',
+                'datetime'
+            ]
         };
     },
     computed: {
@@ -36,7 +65,11 @@ export default {
         {
             this.processing = true;
 
-            await this.$store.dispatch('DOWNLOAD_MY_DATA');
+            await this.$store.dispatch('DOWNLOAD_MY_DATA', {
+                dateField: this.period,
+                fromDate: this.calendarData?.dateRange?.start,
+                toDate: this.calendarData?.dateRange?.end,
+            });
 
             this.processing = false;
         }
@@ -57,7 +90,9 @@ export default {
         margin-bottom: 1em;
     }
 
-    .is-purp {
-        background-color: #8e7fd6;
+    .inputs-wrapper {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
     }
 </style>

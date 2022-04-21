@@ -31,7 +31,7 @@ export default {
     data ()
     {
         return {
-            btn: 'button long-purp',
+            btn: 'button is-primary is-fullwidth',
             calendarData: {},
             period: 'created_at',
             periods: [
@@ -93,10 +93,4 @@ export default {
 };
 </script>
 
-<style scoped>
-
-    .long-purp {
-        background-color: #8e7fd6;
-        width: 100%;
-    }
-</style>
+<style scoped></style>

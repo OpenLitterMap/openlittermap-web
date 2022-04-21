@@ -140,12 +140,12 @@ export default {
             this.clicks++;
             if (this.clicks === 1) {
                 this.timer = setTimeout(() => {
-                    this.removeEvent(index);
+                    this.flyToLocation(event);
                     this.clicks = 0
                 }, 300);
             } else {
                 clearTimeout(this.timer);
-                this.flyToLocation(event);
+                this.removeEvent(index);
                 this.clicks = 0;
             }
         },

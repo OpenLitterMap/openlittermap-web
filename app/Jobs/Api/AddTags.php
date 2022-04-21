@@ -98,7 +98,7 @@ class AddTags implements ShouldQueue
     protected function isLitterRemaining($user): bool
     {
         return is_null($this->pickedUp)
-            ? $user->items_remaining
+            ? !$user->picked_up
             : !$this->pickedUp;
     }
 }

@@ -199,7 +199,7 @@ class ApiPhotosController extends Controller
             'country' => $country->country,
             'country_code' => $country->shortcode,
             'model' => $model,
-            'remaining' => false, // TODO
+            'remaining' => !$user->picked_up,
             'platform' => 'mobile',
             'geohash' => GeoHash::encode($lat, $lon),
             'team_id' => $user->active_team,
