@@ -45,6 +45,7 @@ export default {
             map: null,
             loading: true,
             fullscreen: false,
+            points: null
         };
     },
     computed: {
@@ -57,8 +58,9 @@ export default {
     },
     watch: {
         geojson (newVal) {
-            // clear prev points first
-            L.geoJSON(newVal, {
+            if (this.points) this.points.remove();
+
+            this.points = L.geoJSON(newVal, {
                 pointToLayer: (feature, latLng) => {
                     return L.marker([latLng.lng, latLng.lat])
                 },
