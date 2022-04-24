@@ -83,7 +83,7 @@
                                     </router-link>
 
                                     <!-- Settings -->
-                                    <router-link to="/settings/password" class="navbar-item drop-item">
+                                    <router-link to="/settings/details" class="navbar-item drop-item">
                                          {{ $t('nav.settings') }}
                                     </router-link>
 

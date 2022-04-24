@@ -28,6 +28,7 @@ use LaravelAndVueJS\Traits\LaravelPermissionToVueJS;
  * @property int $xp
  * @property int $xp_redis
  * @property bool $picked_up
+ * @property array $settings
  */
 class User extends Authenticatable
 {
@@ -120,7 +121,8 @@ class User extends Authenticatable
     protected $casts = [
         'show_name' => 'boolean',
         'show_username' => 'boolean',
-        'verification_required' => 'boolean'
+        'verification_required' => 'boolean',
+        'settings' => 'array'
     ];
 
     protected $appends = ['total_categories', 'total_tags', 'total_brands_redis', 'picked_up'];
@@ -358,5 +360,28 @@ class User extends Authenticatable
     public function isMemberOfTeam(int $teamId): bool
     {
         return $this->teams()->where('team_id', $teamId)->exists();
+    }
+
+    /**
+     * Retrieve a setting with a given name or fall back to the default.
+     */
+    public function setting(string $name, $default = null)
+    {
+        if (array_key_exists($name, $this->settings)) {
+            return $this->settings[$name];
+        }
+
+        return $default;
+    }
+
+    /**
+     * Update one or more settings and save the model.
+     */
+    public function settings(array $revisions): self
+    {
+        $this->settings = array_merge($this->settings ?? [], $revisions);
+        $this->save();
+
+        return $this;
     }
 }

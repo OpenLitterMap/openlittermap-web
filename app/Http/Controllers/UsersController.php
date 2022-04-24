@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Plan;
-use App\Level;
 use App\Models\User\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -16,10 +14,8 @@ class UsersController extends Controller
     */
     public function __construct ()
     {
-    	return $this->middleware('auth');
-
-    	parent::__construct();
-	}
+        return $this->middleware('auth');
+    }
 
     /**
      * Get the currently authenticated user on login

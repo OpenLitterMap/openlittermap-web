@@ -23,9 +23,10 @@
 </template>
 
 <script>
-import Password from './settings/Password'
 import Details from './settings/Details'
+import Social from './settings/Social';
 import Account from './settings/Account'
+import Password from './settings/Password'
 import Payments from './settings/Payments'
 import Privacy from './settings/Privacy'
 import Littercoin from './settings/Littercoin'
@@ -36,9 +37,10 @@ import GlobalFlag from './settings/GlobalFlag'
 export default {
     name: 'Settings',
     components: {
-        Password,
         Details,
+        Social,
         Account,
+        Password,
         Payments,
         Privacy,
         Littercoin,
@@ -57,9 +59,10 @@ export default {
     {
         return {
             links: [
-                'password',
                 'details',
+                'social',
                 'account',
+                'password',
                 'payments',
                 'privacy',
                 'littercoin',
@@ -69,9 +72,10 @@ export default {
             ],
             link: 'password',
             types: {
-                'password': 'Password',
                 'details': 'Details',
+                'social': 'Social',
                 'account': 'Account',
+                'password': 'Password',
                 'payments': 'Payments',
                 'privacy': 'Privacy',
                 'littercoin': 'Littercoin',
