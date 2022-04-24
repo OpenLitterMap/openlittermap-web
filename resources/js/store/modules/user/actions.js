@@ -442,7 +442,7 @@ export const actions = {
     async UPDATE_SETTINGS (context, payload)
     {
         let title = i18n.t('notifications.success');
-        let body = 'Settings updated successfully!';
+        let body = i18n.t('notifications.settings-updated');
 
         await axios.patch('/settings', payload)
             .then(response =>

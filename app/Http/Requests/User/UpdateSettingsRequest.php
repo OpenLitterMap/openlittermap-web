@@ -25,17 +25,21 @@ class UpdateSettingsRequest extends FormRequest
     {
         return [
             'social_twitter' => 'nullable|url',
-            'social_instagram' => 'nullable|url',
-            'social_reddit' => 'nullable|url',
-            'social_linkedin' => 'nullable|url',
             'social_facebook' => 'nullable|url',
+            'social_instagram' => 'nullable|url',
+            'social_linkedin' => 'nullable|url',
+            'social_reddit' => 'nullable|url',
         ];
     }
 
     public function messages()
     {
         return [
-            'social_twitter.url' => 'The Twitter URL is invalid.'
+            'social_twitter.url' => 'The Twitter URL is invalid.',
+            'social_facebook.url' => 'The Facebook URL is invalid.',
+            'social_instagram.url' => 'The Instagram URL is invalid.',
+            'social_linkedin.url' => 'The LinkedIn URL is invalid.',
+            'social_reddit.url' => 'The Reddit URL is invalid.',
         ];
     }
 }

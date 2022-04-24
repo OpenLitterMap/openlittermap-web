@@ -93,7 +93,11 @@ trait FilterPhotosByGeoHashTrait
                     'team' => $team,
                     'picked_up' => $photo->picked_up,
                     'social' => [
-                        'twitter' => $photo->user->setting('social_twitter')
+                        'twitter' => $photo->user->setting('social_twitter'),
+                        'facebook' => $photo->user->setting('social_facebook'),
+                        'instagram' => $photo->user->setting('social_instagram'),
+                        'linkedin' => $photo->user->setting('social_linkedin'),
+                        'reddit' => $photo->user->setting('social_reddit'),
                     ],
                 ]
             ];

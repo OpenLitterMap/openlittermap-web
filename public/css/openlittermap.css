@@ -89,6 +89,17 @@ html {
     font-size: 1.5rem;
 }
 
+.leaflet-litter-img-container .social-container {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+}
+.leaflet-litter-img-container .social-container a {
+    width: 1.5rem;
+    font-size: 1.5rem;
+    margin-top: 0.25rem;
+}
+
 .leaflet-litter-img {
     border-top-left-radius: 6px;
     border-top-right-radius: 6px;

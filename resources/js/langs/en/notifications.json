@@ -1,6 +1,7 @@
 {
     "success": "Success",
     "error": "Error!",
+    "settings-updated": "Settings updated successfully!",
     "tags-added": "Success! Your tags have been added",
     "subscription-cancelled": "Your subscription has been cancelled",
     "privacy-updated": "Your Privacy Settings have been saved",

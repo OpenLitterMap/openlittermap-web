@@ -1,4 +1,5 @@
 import account from './account.json'
+import social from './social.json'
 import common from './common.json'
 import details from './details.json'
 import emails from './emails.json'
@@ -11,6 +12,7 @@ import privacy from './privacy.json'
 
 export const settings = {
     account,
+    social,
     common,
     details,
     emails,

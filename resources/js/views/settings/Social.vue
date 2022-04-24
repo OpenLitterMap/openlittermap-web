@@ -1,14 +1,14 @@
 <template>
     <div style="padding-left: 1em; padding-right: 1em;">
-        <h1 class="title is-4">{{ $t('settings.details.change-details') }}</h1>
+        <h1 class="title is-4">{{ $t('settings.common.social') }}</h1>
         <hr>
+        <p>{{ $t('settings.social.description') }}</p>
         <br>
         <div class="columns">
             <div class="column is-one-third is-offset-1">
 
-                <form @submit.prevent="submit" @keydown="clearError($event.target.name)">
+                <form @submit.prevent="submit">
 
-                    <!-- The users name -->
                     <label for="twitter">Twitter</label>
                     <div class="field">
                         <div class="control has-icons-left">
@@ -20,19 +20,96 @@
                                 placeholder="Twitter URL"
                                 v-model="twitter"
                             />
-                            <span class="icon is-small is-left">
-                                <i class="fa fa-user"/>
-                            </span>
+                            <span class="icon is-small is-left"><i class="fa fa-twitter"/></span>
                         </div>
-
                         <p
                             class="help is-danger is-size-6"
-                            v-if="errorExists('social_twitter')"
+                            v-if="getFirstError('social_twitter')"
                             v-text="getFirstError('social_twitter')"
                         />
                     </div>
 
-                    <button :class="button" :disabled="processing">Update</button>
+                    <label for="facebook">Facebook</label>
+                    <div class="field">
+                        <div class="control has-icons-left">
+                            <input
+                                type="text"
+                                name="facebook"
+                                id="facebook"
+                                class="input"
+                                placeholder="Facebook URL"
+                                v-model="facebook"
+                            />
+                            <span class="icon is-small is-left"><i class="fa fa-facebook"/></span>
+                        </div>
+                        <p
+                            class="help is-danger is-size-6"
+                            v-if="getFirstError('social_facebook')"
+                            v-text="getFirstError('social_facebook')"
+                        />
+                    </div>
+
+                    <label for="instagram">Instagram</label>
+                    <div class="field">
+                        <div class="control has-icons-left">
+                            <input
+                                type="text"
+                                name="instagram"
+                                id="instagram"
+                                class="input"
+                                placeholder="Instagram URL"
+                                v-model="instagram"
+                            />
+                            <span class="icon is-small is-left"><i class="fa fa-instagram"/></span>
+                        </div>
+                        <p
+                            class="help is-danger is-size-6"
+                            v-if="getFirstError('social_instagram')"
+                            v-text="getFirstError('social_instagram')"
+                        />
+                    </div>
+
+                    <label for="linkedin">LinkedIn</label>
+                    <div class="field">
+                        <div class="control has-icons-left">
+                            <input
+                                type="text"
+                                name="linkedin"
+                                id="linkedin"
+                                class="input"
+                                placeholder="LinkedIn URL"
+                                v-model="linkedin"
+                            />
+                            <span class="icon is-small is-left"><i class="fa fa-linkedin"/></span>
+                        </div>
+                        <p
+                            class="help is-danger is-size-6"
+                            v-if="getFirstError('social_linkedin')"
+                            v-text="getFirstError('social_linkedin')"
+                        />
+                    </div>
+
+                    <label for="reddit">Reddit</label>
+                    <div class="field">
+                        <div class="control has-icons-left">
+                            <input
+                                type="text"
+                                name="reddit"
+                                id="reddit"
+                                class="input"
+                                placeholder="Reddit URL"
+                                v-model="reddit"
+                            />
+                            <span class="icon is-small is-left"><i class="fa fa-reddit"/></span>
+                        </div>
+                        <p
+                            class="help is-danger is-size-6"
+                            v-if="getFirstError('social_reddit')"
+                            v-text="getFirstError('social_reddit')"
+                        />
+                    </div>
+
+                    <button :class="button" :disabled="processing">{{ $t('common.submit') }}</button>
                 </form>
             </div>
         </div>
@@ -48,6 +125,10 @@ export default {
             btn: 'button is-medium is-info',
             processing: false,
             twitter: null,
+            facebook: null,
+            instagram: null,
+            linkedin: null,
+            reddit: null,
         };
     },
     mounted ()
@@ -55,6 +136,10 @@ export default {
         this.$store.commit('errors', {});
 
         this.twitter = this.user.settings.social_twitter;
+        this.facebook = this.user.settings.social_facebook;
+        this.instagram = this.user.settings.social_instagram;
+        this.linkedin = this.user.settings.social_linkedin;
+        this.reddit = this.user.settings.social_reddit;
     },
     computed: {
 
@@ -83,40 +168,29 @@ export default {
         },
     },
     methods: {
-
-        /**
-         * Clear an error with this key
-         */
-        clearError (key)
-        {
-            if (this.errors[key]) this.$store.commit('deleteUserError', key);
-        },
-
         /**
          * Get the first error from errors object
          */
         getFirstError (key)
         {
-            return this.errors[key][0];
+            return this.errors.hasOwnProperty(key)
+                ? this.errors[key][0]
+                : null;
         },
 
         /**
-         * Check if any errors exist for this key
-         */
-        errorExists (key)
-        {
-            return this.errors.hasOwnProperty(key);
-        },
-
-        /**
-         * Update the users personal details (Name, Username, Email)
+         * Update the users social media account links
          */
         async submit ()
         {
             this.processing = true;
 
             await this.$store.dispatch('UPDATE_SETTINGS', {
-                social_twitter: this.twitter
+                social_twitter: this.twitter,
+                social_facebook: this.facebook,
+                social_instagram: this.instagram,
+                social_linkedin: this.linkedin,
+                social_reddit: this.reddit,
             });
 
             this.processing = false;

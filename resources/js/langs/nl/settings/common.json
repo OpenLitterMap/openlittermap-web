@@ -2,6 +2,7 @@
     "general": "Algemeen",
     "password": "Wachtwoord",
     "details": "Persoonlijke  Details",
+    "social": "Sociale Accounts",
     "account": "Mijn Account",
     "payments": "Mijn Betalingen",
     "privacy": "Privacy",
@@ -10,4 +11,4 @@
     "emails": "Emails",
     "show-flag": "Toon vlag",
     "teams": "Teams"
-} 
+}
