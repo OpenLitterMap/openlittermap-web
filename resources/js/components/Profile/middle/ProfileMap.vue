@@ -66,19 +66,9 @@ export default {
                 },
                 onEachFeature: (feature, layer) => {
                     layer.on('click', (e) => {
-                        const user = mapHelper.formatUserName(feature.properties.name, feature.properties.username);
                         L.popup(mapHelper.popupOptions)
                             .setLatLng(feature.geometry.coordinates)
-                            .setContent(
-                                mapHelper.getMapImagePopupContent(
-                                    feature.properties.filename,
-                                    feature.properties.result_string,
-                                    feature.properties.datetime,
-                                    feature.properties.picked_up,
-                                    user,
-                                    feature.properties.team
-                                )
-                            )
+                            .setContent(mapHelper.getMapImagePopupContent(feature.properties))
                             .openOn(this.map);
                     });
                 }

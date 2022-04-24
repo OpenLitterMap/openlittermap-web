@@ -96,26 +96,22 @@ const helper = {
     /**
      * Returns the HTML that displays the Photo popups
      *
-     * @param imageUrl
-     * @param tagsString
-     * @param takenOn
-     * @param pickedUp
-     * @param user
-     * @param team
+     * @param properties
      * @param url
      * @returns {string}
      */
-    getMapImagePopupContent: (imageUrl, tagsString, takenOn, pickedUp, user, team, url = null) => {
-        const isTrustedUser = imageUrl !== '/assets/images/waiting.png';
-        const tags = helper.parseTags(tagsString, isTrustedUser);
-        const takenDateString = helper.formatPhotoTakenTime(takenOn);
-        const teamFormatted = helper.formatTeam(team);
-        const pickedUpFormatted = helper.formatPickedUp(pickedUp);
-        const isLitterArt = tagsString && tagsString.includes('art.item');
+    getMapImagePopupContent: (properties, url = null) => {
+        const user = helper.formatUserName(properties.name, properties.username)
+        const isTrustedUser = properties.filename !== '/assets/images/waiting.png';
+        const tags = helper.parseTags(properties.result_string, isTrustedUser);
+        const takenDateString = helper.formatPhotoTakenTime(properties.datetime);
+        const teamFormatted = helper.formatTeam(properties.team);
+        const pickedUpFormatted = helper.formatPickedUp(properties.picked_up);
+        const isLitterArt = properties.result_string && properties.result_string.includes('art.item');
 
         return `
             <img
-                src="${imageUrl}"
+                src="${properties.filename}"
                 class="leaflet-litter-img"
                 onclick="document.querySelector('.leaflet-popup-close-button').click();"
                 alt="Litter photo"
