@@ -14,7 +14,7 @@ class AddUserSettings extends Migration
     public function up()
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->json('settings')->default('{}')->after('token');
+            $table->json('settings')->nullable()->after('token');
         });
     }
 

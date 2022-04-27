@@ -5,7 +5,7 @@
         <p>{{ $t('settings.social.description') }}</p>
         <br>
         <div class="columns">
-            <div class="column is-one-third is-offset-1">
+            <div class="column is-half">
 
                 <form @submit.prevent="submit">
 
@@ -109,6 +109,27 @@
                         />
                     </div>
 
+
+                    <label for="personal">Personal Website</label>
+                    <div class="field">
+                        <div class="control has-icons-left">
+                            <input
+                                type="text"
+                                name="personal"
+                                id="personal"
+                                class="input"
+                                placeholder="Personal Website URL"
+                                v-model="personal"
+                            />
+                            <span class="icon is-small is-left"><i class="fa fa-link"/></span>
+                        </div>
+                        <p
+                            class="help is-danger is-size-6"
+                            v-if="getFirstError('social_personal')"
+                            v-text="getFirstError('social_personal')"
+                        />
+                    </div>
+
                     <button :class="button" :disabled="processing">{{ $t('common.submit') }}</button>
                 </form>
             </div>
@@ -129,17 +150,19 @@ export default {
             instagram: null,
             linkedin: null,
             reddit: null,
+            personal: null,
         };
     },
     mounted ()
     {
         this.$store.commit('errors', {});
 
-        this.twitter = this.user.settings.social_twitter;
-        this.facebook = this.user.settings.social_facebook;
-        this.instagram = this.user.settings.social_instagram;
-        this.linkedin = this.user.settings.social_linkedin;
-        this.reddit = this.user.settings.social_reddit;
+        this.twitter = this.user.settings?.social_twitter;
+        this.facebook = this.user.settings?.social_facebook;
+        this.instagram = this.user.settings?.social_instagram;
+        this.linkedin = this.user.settings?.social_linkedin;
+        this.reddit = this.user.settings?.social_reddit;
+        this.personal = this.user.settings?.social_personal;
     },
     computed: {
 
@@ -191,6 +214,7 @@ export default {
                 social_instagram: this.instagram,
                 social_linkedin: this.linkedin,
                 social_reddit: this.reddit,
+                social_personal: this.personal,
             });
 
             this.processing = false;

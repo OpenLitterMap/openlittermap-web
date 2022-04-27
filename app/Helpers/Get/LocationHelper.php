@@ -57,8 +57,8 @@ trait LocationHelper
                     'name' => $leader->show_name ? $leader->name : '',
                     'username' => $leader->show_username ? ('@' . $leader->username) : '',
                     'xp' => number_format($leader->xp_redis),
-                    'linkinsta' => $leader->link_instagram,
-                    'flag' => $leader->global_flag
+                    'flag' => $leader->global_flag,
+                    'social' => !empty($leader->social_links) ? $leader->social_links : null,
                 ];
             })
             ->values()

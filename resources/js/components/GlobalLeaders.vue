@@ -19,9 +19,17 @@
 
                         <!-- Todo .... trail characters after max-width reached -->
                         <!-- Todo .... number animation per user -->
-                        <td style="color:white" v-if="leader.name || leader.username">{{ leader.name }} {{ leader.username }}</td>
-                        <td style="color:white" v-else>{{ $t('common.anonymous') }}</td>
-
+                        <td>
+                            <div class="leader-name">
+                                <span v-if="leader.name || leader.username">{{ leader.name }} {{ leader.username }}</span>
+                                <span v-else>{{ $t('common.anonymous') }}</span>
+                            </div>
+                            <span v-if="leader.social" class="social-container">
+                                <a v-for="(link, type) in leader.social" target="_blank" :href="link">
+                                    <i class="fa" :class="type === 'personal' ? 'fa-link' : `fa-${type}`"></i>
+                                </a>
+                            </span>
+                        </td>
 						<td style="color:white; width: 20%;">{{ leader.xp }}</td>
 					</tr>
 				</tbody>
@@ -78,6 +86,48 @@ export default {
 		left: 50%;
 		top: 30%;
 	}
+
+    .leader-name {
+        color: white;
+    }
+
+    .social-container {
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        height: 32px;
+        margin: auto 0;
+        visibility: hidden;
+        background-color: black;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 4px 8px;
+        z-index: 30;
+        opacity: 0;
+        transition: opacity 0.3s;
+        display: flex;
+        flex-direction: row;
+        gap: 0.5rem;
+    }
+
+    tr:hover .social-container {
+        visibility: visible;
+        opacity: 0.8;
+    }
+
+    .social-container a {
+        width: 1.5rem;
+    }
+
+    .social-container a:hover {
+        transform: scale(1.1)
+    }
+
+    td {
+        position: relative;
+    }
 
     @media screen and (max-width: 678px)
     {

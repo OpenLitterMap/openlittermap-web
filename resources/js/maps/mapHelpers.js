@@ -124,13 +124,14 @@ const helper = {
                 ${user ? ('<p>' + user + '</p>') : ''}
                 ${teamFormatted ? ('<p>' + teamFormatted + '</p>') : ''}
                 <div class="social-container">
+                    ${properties.social?.personal ? '<a target="_blank" href="' + properties.social.personal + '"><i class="fa fa-link"></i></a>' : ''}
                     ${properties.social?.twitter ? '<a target="_blank" href="' + properties.social.twitter + '"><i class="fa fa-twitter"></i></a>' : ''}
                     ${properties.social?.facebook ? '<a target="_blank" href="' + properties.social.facebook + '"><i class="fa fa-facebook"></i></a>' : ''}
                     ${properties.social?.instagram ? '<a target="_blank" href="' + properties.social.instagram + '"><i class="fa fa-instagram"></i></a>' : ''}
                     ${properties.social?.linkedin ? '<a target="_blank" href="' + properties.social.linkedin + '"><i class="fa fa-linkedin"></i></a>' : ''}
                     ${properties.social?.reddit ? '<a target="_blank" href="' + properties.social.reddit + '"><i class="fa fa-reddit"></i></a>' : ''}
                 </div>
-                ${url ? '<a class="link" target="_blank" href="' + url + '"><i class="fa fa-link fa-rotate-90"></i></a>' : ''}
+                ${url ? '<a class="link" target="_blank" href="' + url + '"><i class="fa fa-share-alt"></i></a>' : ''}
             </div>`;
     }
 };

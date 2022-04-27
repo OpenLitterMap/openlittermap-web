@@ -30,6 +30,7 @@ class SettingsTest extends TestCase
             'instagram not link' => [['social_instagram' => 'not url'], ['social_instagram']],
             'linkedin not link' => [['social_linkedin' => 'not url'], ['social_linkedin']],
             'reddit not link' => [['social_reddit' => 'not url'], ['social_reddit']],
+            'personal not link' => [['social_personal' => 'not url'], ['social_personal']],
         ];
     }
 

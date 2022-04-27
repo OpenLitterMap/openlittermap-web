@@ -29,6 +29,7 @@ use LaravelAndVueJS\Traits\LaravelPermissionToVueJS;
  * @property int $xp_redis
  * @property bool $picked_up
  * @property array $settings
+ * @property array $social_links
  */
 class User extends Authenticatable
 {
@@ -367,7 +368,7 @@ class User extends Authenticatable
      */
     public function setting(string $name, $default = null)
     {
-        if (array_key_exists($name, $this->settings)) {
+        if (array_key_exists($name, $this->settings ?? [])) {
             return $this->settings[$name];
         }
 
@@ -383,5 +384,17 @@ class User extends Authenticatable
         $this->save();
 
         return $this;
+    }
+
+    public function getSocialLinksAttribute(): array
+    {
+        return array_filter([
+            'personal' => $this->setting('social_personal'),
+            'twitter' => $this->setting('social_twitter'),
+            'facebook' => $this->setting('social_facebook'),
+            'instagram' => $this->setting('social_instagram'),
+            'linkedin' => $this->setting('social_linkedin'),
+            'reddit' => $this->setting('social_reddit'),
+        ]);
     }
 }
