@@ -220,6 +220,18 @@ export default {
                     title: 'Toward smarter management and recovery of municipal solid waste: A critical review on deep learning approaches',
                     link: 'https://www.sciencedirect.com/science/article/abs/pii/S0959652622005807',
                     author: 'Kunsen et al'
+                },
+                {
+                    date: '2022/04/26',
+                    title: 'Beach beauty in Bengal: Perception of scenery and its implications for coastal management in Purba Medinipur district, eastern India',
+                    link: 'https://www.sciencedirect.com/science/article/abs/pii/S0308597X22000811',
+                    author: 'Chatterjee et al'
+                },
+                {
+                    date: '2022/04/26',
+                    title: 'Application of blockchain technology for geospatial data protection and management',
+                    link: 'http://zgt.com.ua/en/%D0%B7%D0%B0%D1%81%D1%82%D0%BE%D1%81%D1%83%D0%B2%D0%B0%D0%BD%D0%BD%D1%8F-%D1%82%D0%B5%D1%85%D0%BD%D0%BE%D0%BB%D0%BE%D0%B3%D1%96%D1%97-blockchain-%D0%B4%D0%BB%D1%8F-%D0%B7%D0%B0%D1%85%D0%B8%D1%81%D1%82/',
+                    author: 'Chetverikov, B & Kilaru, V'
                 }
             ]
         };
