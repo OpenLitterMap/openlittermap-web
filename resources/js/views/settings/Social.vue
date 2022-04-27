@@ -110,7 +110,7 @@
                     </div>
 
 
-                    <label for="personal">Personal Website</label>
+                    <label for="personal">{{ $t('settings.social.personal-website') }}</label>
                     <div class="field">
                         <div class="control has-icons-left">
                             <input
@@ -118,7 +118,7 @@
                                 name="personal"
                                 id="personal"
                                 class="input"
-                                placeholder="Personal Website URL"
+                                :placeholder="$t('settings.social.personal-website-url')"
                                 v-model="personal"
                             />
                             <span class="icon is-small is-left"><i class="fa fa-link"/></span>
