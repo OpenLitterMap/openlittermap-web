@@ -4,10 +4,16 @@ namespace App\Providers;
 
 use App\Events\ImageDeleted;
 use App\Events\ImageUploaded;
+use App\Events\NewCityAdded;
+use App\Events\NewCountryAdded;
+use App\Events\NewStateAdded;
 use App\Events\TagsVerifiedByAdmin;
 use App\Listeners\AddTags\IncrementLocation;
 use App\Listeners\Locations\AddLocationContributor;
 use App\Listeners\Locations\DecreaseLocationTotalPhotos;
+use App\Listeners\Locations\NotifySlackOfNewCity;
+use App\Listeners\Locations\NotifySlackOfNewCountry;
+use App\Listeners\Locations\NotifySlackOfNewState;
 use App\Listeners\Locations\RemoveLocationContributor;
 use App\Listeners\Locations\IncreaseLocationTotalPhotos;
 use App\Listeners\Teams\DecreaseTeamTotalPhotos;
@@ -54,7 +60,16 @@ class EventServiceProvider extends ServiceProvider
             'App\Listeners\UpdateTimes\IncrementCountryMonth',
             'App\Listeners\UpdateTimes\IncrementStateMonth',
             'App\Listeners\UpdateTimes\IncrementCityMonth',
-        ]
+        ],
+        NewCountryAdded::class => [
+            NotifySlackOfNewCountry::class
+        ],
+        NewStateAdded::class => [
+            NotifySlackOfNewState::class
+        ],
+        NewCityAdded::class => [
+            NotifySlackOfNewCity::class
+        ],
     ];
 
     /**

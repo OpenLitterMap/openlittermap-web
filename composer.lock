@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "cb71a9710413d3d48a8700eaf32313f8",
+    "content-hash": "e7e4d8bb982acceed7348724e9266b66",
     "packages": [
         {
             "name": "ahmedsaoud31/laravel-permission-to-vuejs",
@@ -1693,6 +1693,68 @@
                 }
             ],
             "time": "2021-04-26T11:24:25+00:00"
+        },
+        {
+            "name": "gpressutto5/laravel-slack",
+            "version": "2.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/gpressutto5/laravel-slack.git",
+                "reference": "dbe6f875ba284f7f1a5eb017480a8308b2c64db6"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/gpressutto5/laravel-slack/zipball/dbe6f875ba284f7f1a5eb017480a8308b2c64db6",
+                "reference": "dbe6f875ba284f7f1a5eb017480a8308b2c64db6",
+                "shasum": ""
+            },
+            "require": {
+                "guzzlehttp/guzzle": "^6.3 || ^7.0",
+                "illuminate/notifications": "^5.8 || ^6.0 || ^7.0 || ^8.0",
+                "illuminate/support": "^5.8 || ^6.0 || ^7.0 || ^8.0",
+                "laravel/slack-notification-channel": "^2.0",
+                "php": ">=7.1.3"
+            },
+            "require-dev": {
+                "orchestra/testbench": "*",
+                "phpunit/phpunit": "^7.0 || ^8.0 || ^9.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Pressutto\\LaravelSlack\\ServiceProvider"
+                    ],
+                    "aliases": {
+                        "Slack": "Pressutto\\LaravelSlack\\Facades\\Slack"
+                    }
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Pressutto\\LaravelSlack\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Guilherme Pressutto",
+                    "email": "gpressutto5@gmail.com"
+                }
+            ],
+            "description": "Slack notification for Laravel as it should be.",
+            "keywords": [
+                "laravel",
+                "slack"
+            ],
+            "support": {
+                "issues": "https://github.com/gpressutto5/laravel-slack/issues",
+                "source": "https://github.com/gpressutto5/laravel-slack/tree/2.2.0"
+            },
+            "time": "2021-04-22T12:48:51+00:00"
         },
         {
             "name": "graham-campbell/guzzle-factory",
@@ -12735,5 +12797,5 @@
         "ext-json": "*"
     },
     "platform-dev": [],
-    "plugin-api-version": "2.2.0"
+    "plugin-api-version": "2.3.0"
 }
