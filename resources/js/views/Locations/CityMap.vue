@@ -305,14 +305,6 @@ export default {
             };
 
             this.geojson.features.map(i => {
-
-                let name = '';
-                let username = '';
-
-                if (i.properties.hasOwnProperty('name') && name) name = i.properties.name;
-                if (i.properties.hasOwnProperty('username') && username) username = ' @' + i.properties.username;
-                if (name === '' && username === '') name = 'Anonymous';
-
                 // Dynamically add items to the groups + add markers
                 categories.map(category => {
 
@@ -329,14 +321,7 @@ export default {
                         L.marker([i.properties.lat, i.properties.lon])
                             .addTo(groups[category])
                             .bindPopup(
-                                mapHelper.getMapImagePopupContent(
-                                    i.properties.filename,
-                                    i.properties.result_string,
-                                    i.properties.datetime,
-                                    i.properties.picked_up,
-                                    mapHelper.formatUserName(name, username),
-                                    i.properties.team
-                                ),
+                                mapHelper.getMapImagePopupContent(i.properties),
                                 mapHelper.popupOptions
                             );
                     });

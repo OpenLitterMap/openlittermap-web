@@ -86,7 +86,23 @@ html {
     position: absolute;
     bottom: 10px;
     right: 16px;
-    font-size: 1.5rem;
+    font-size: 1.2rem;
+}
+
+.leaflet-litter-img-container .social-container {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    transform: translate(0, 5px);
+}
+.leaflet-litter-img-container .social-container a {
+    width: 1.5rem;
+    font-size: 1.2rem;
+    margin-top: 0.25rem;
+}
+.leaflet-litter-img-container .link:hover,
+.leaflet-litter-img-container .social-container a:hover {
+    transform: scale(1.1);
 }
 
 .leaflet-litter-img {

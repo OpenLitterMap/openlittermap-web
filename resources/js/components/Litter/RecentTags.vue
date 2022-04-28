@@ -106,11 +106,6 @@ export default {
                 tag,
                 quantity
             });
-
-            // This will move the newly added recent tag
-            // to the top of the list
-            this.$store.commit('addRecentTag', {category, tag});
-            this.$localStorage.set('recentTags', JSON.stringify(this.recentTags));
         },
 
         /**
@@ -188,7 +183,7 @@ export default {
 
 .list-enter, .list-leave-to {
     opacity: 0;
-    transform: translateX(-30px);
+    transform: translateX(30px);
 }
 
 .categories-enter, .categories-leave-to {

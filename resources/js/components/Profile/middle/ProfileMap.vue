@@ -3,114 +3,97 @@
         <fullscreen ref="fullscreen" @change="fullscreenChange" class="profile-map-container">
 
             <button class="btn-map-fullscreen" @click="toggle">
-                <i class="fa fa-expand" />
+                <i class="fa fa-expand"/>
             </button>
 
-            <l-map :zoom="zoom" :center="center" :minZoom="1">
-                <l-tile-layer :url="url" :attribution="attribution" />
-                <v-marker-cluster v-if="geojson.length > 0">
-                    <l-marker v-for="i in geojson" :lat-lng="i.properties.latlng" :key="i.properties.id">
-                        <l-popup :content="content(i)" :options="options"/>
-                    </l-marker>
-                </v-marker-cluster>
-            </l-map>
-
+            <div id="hexmap" ref="hexmap"/>
         </fullscreen>
     </div>
 </template>
 
-<!-- NOTE: This very similar to TeamMap.vue - We should combine them -->
-
 <script>
-import { LMap, LTileLayer, LMarker, LPopup } from 'vue2-leaflet';
-import Vue2LeafletMarkerCluster from 'vue2-leaflet-markercluster';
+import L from 'leaflet'
 import {mapHelper} from '../../../maps/mapHelpers';
 
 export default {
     name: 'ProfileMap',
-    components: {
-        LMap,
-        LTileLayer,
-        LMarker,
-        LPopup,
-        'v-marker-cluster': Vue2LeafletMarkerCluster
-    },
-    async created ()
-    {
-        this.attribution += new Date().getFullYear();
-
-        // Todo - we need to add back a way to get data by string eg "today" or "this year", etc.
-        // await this.$store.dispatch('GET_USERS_PROFILE_MAP_DATA', 'today');
-    },
-    data ()
-    {
-        return {
+    async mounted() {
+        /** 1. Create map object */
+        this.map = L.map('hexmap', {
+            center: [0, 0],
             zoom: 2,
-            center: L.latLng(0,0),
-            url:'https://{s}.tile.osm.org/{z}/{x}/{y}.png',
-            attribution:'Map Data &copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors, Litter data &copy OpenLitterMap & Contributors ',
+            scrollWheelZoom: false,
+            smoothWheelZoom: true,
+            smoothSensitivity: 1,
+        });
+
+        // /** 2. Add attribution to the map */
+        const date = new Date();
+        const year = date.getFullYear();
+
+        let mapLink = '<a href="https://openstreetmap.org">OpenStreetMap</a>';
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: 'Map data &copy; ' + mapLink + ' & Contributors',
+            maxZoom: 20,
+            minZoom: 1,
+        }).addTo(this.map);
+
+        this.map.attributionControl.addAttribution('Litter data &copy; OpenLitterMap & Contributors ' + year);
+    },
+    data() {
+        return {
+            map: null,
             loading: true,
             fullscreen: false,
-            options: mapHelper.popupOptions
+            points: null
         };
     },
     computed: {
-
         /**
          * From backend api request
          */
-        geojson ()
-        {
+        geojson() {
             return this.$store.state.user.geojson.features;
         }
     },
+    watch: {
+        geojson (newVal) {
+            if (this.points) this.points.remove();
+
+            this.points = L.geoJSON(newVal, {
+                pointToLayer: (feature, latLng) => {
+                    return L.marker([latLng.lng, latLng.lat])
+                },
+                onEachFeature: (feature, layer) => {
+                    layer.on('click', (e) => {
+                        L.popup(mapHelper.popupOptions)
+                            .setLatLng(feature.geometry.coordinates)
+                            .setContent(mapHelper.getMapImagePopupContent(feature.properties))
+                            .openOn(this.map);
+                    });
+                }
+            }).addTo(this.map);
+        }
+    },
     methods: {
-
-        /**
-         * Return html content for each popup
-         *
-         * Translate tags
-         *
-         * Format datetime (time image was taken)
-         */
-        content (feature)
-        {
-            return mapHelper.getMapImagePopupContent(
-                feature.properties.img,
-                feature.properties.text,
-                feature.properties.datetime,
-                feature.properties.picked_up,
-                '',
-                ''
-            );
-        },
-
-        /**
-         *
-         */
-        fullscreenChange (fullscreen)
-        {
+        fullscreenChange(fullscreen) {
             this.fullscreen = fullscreen
         },
 
-        /**
-         *
-         */
-        toggle ()
-        {
+        toggle() {
             this.$refs['fullscreen'].toggle() // recommended
         },
-
-
     }
 };
 </script>
 
-<style lang="scss">
-@import "~leaflet.markercluster/dist/MarkerCluster.css";
-@import "~leaflet.markercluster/dist/MarkerCluster.Default.css";
+<style lang="css" scoped>
 
-//@import '../../../styles/variables.scss';
+#hexmap {
+    height: 100%;
+    margin: 0;
+    position: relative;
+}
 
 .btn-map-fullscreen {
     position: absolute;

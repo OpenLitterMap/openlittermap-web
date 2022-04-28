@@ -12,23 +12,16 @@ export const mutations = {
     addRecentTag (state, payload)
     {
         let tags = Object.assign({}, state.recentTags);
-        let newTags = {
+
+        tags = {
+            ...tags,
             [payload.category]: {
+                ...tags[payload.category],
                 [payload.tag]: 1 // quantity not important
             }
-        };
-
-        Object.keys(tags).forEach(category => {
-            if (!newTags[category]) newTags[category] = tags[category];
-        });
-
-        if (tags[payload.category]) {
-            Object.keys(tags[payload.category]).forEach(tag => {
-                if (!newTags[payload.category][tag]) newTags[payload.category][tag] = tags[payload.category][tag];
-            })
         }
 
-        state.recentTags = newTags;
+        state.recentTags = tags;
     },
 
     /**
@@ -91,8 +84,10 @@ export const mutations = {
         tags[payload.photoId].unshift(payload.customTag);
 
         // Also add this tag to the recent custom tags
-        state.recentCustomTags = state.recentCustomTags.filter(tag => tag !== payload.customTag);
-        state.recentCustomTags.unshift(payload.customTag);
+        if (state.recentCustomTags.indexOf(payload.customTag) === -1)
+        {
+            state.recentCustomTags.unshift(payload.customTag);
+        }
 
         // And indicate that a new tag has been added
         state.hasAddedNewTag = true; // Enable the Update Button

@@ -70,7 +70,7 @@ class TeamsClusterController extends Controller
                 'datetime'
             )
             ->with([
-                'user:id,name,username,show_username_maps,show_name_maps',
+                'user:id,name,username,show_username_maps,show_name_maps,settings',
                 'user.team:is_trusted',
                 'team:id,name',
             ])

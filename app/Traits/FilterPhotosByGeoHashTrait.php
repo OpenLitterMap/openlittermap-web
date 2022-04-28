@@ -91,7 +91,8 @@ trait FilterPhotosByGeoHashTrait
                     'name' => $name,
                     'username' => $username,
                     'team' => $team,
-                    'picked_up' => $photo->picked_up
+                    'picked_up' => $photo->picked_up,
+                    'social' => $photo->user->social_links,
                 ]
             ];
         })->toArray();

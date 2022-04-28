@@ -146,6 +146,7 @@ class MapController extends Controller
 			   'display_name' => $c["display_name"],
 			   'result_string' => $c["result_string"],
 			   'picked_up' => $c->picked_up,
+                    'social' => $c->user ? $c->user->social_links : null,
 
 					// data
 					'smoking' => $c->smoking,

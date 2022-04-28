@@ -38,7 +38,7 @@ class GlobalMapController extends Controller
                 ['art_id', '!=', null]
             ])
             ->with([
-                'user:id,name,username,show_username_maps,show_name_maps',
+                'user:id,name,username,show_username_maps,show_name_maps,settings',
                 'user.team:is_trusted',
                 'team:id,name',
             ])
@@ -69,7 +69,7 @@ class GlobalMapController extends Controller
                 'datetime'
             )
             ->with([
-                'user:id,name,username,show_username_maps,show_name_maps',
+                'user:id,name,username,show_username_maps,show_name_maps,settings',
                 'user.team:is_trusted',
                 'team:id,name',
             ]);

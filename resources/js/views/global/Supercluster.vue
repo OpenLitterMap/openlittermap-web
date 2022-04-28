@@ -184,8 +184,6 @@ function onEachArtFeature (feature, layer)
             duration: 10
         });
 
-        const user = mapHelper.formatUserName(feature.properties.name, feature.properties.username);
-
         const url = new URL(window.location.href);
         url.searchParams.set('lat', feature.geometry.coordinates[0]);
         url.searchParams.set('lon', feature.geometry.coordinates[1]);
@@ -194,17 +192,7 @@ function onEachArtFeature (feature, layer)
 
         L.popup(mapHelper.popupOptions)
             .setLatLng(feature.geometry.coordinates)
-            .setContent(
-                mapHelper.getMapImagePopupContent(
-                    feature.properties.filename,
-                    feature.properties.result_string,
-                    feature.properties.datetime,
-                    feature.properties.picked_up,
-                    user,
-                    feature.properties.team,
-                    url.toString()
-                )
-            )
+            .setContent(mapHelper.getMapImagePopupContent(feature.properties, url.toString()))
             .openOn(map);
     });
 }
@@ -463,8 +451,6 @@ export default {
          */
         renderLeafletPopup (feature, latLng)
         {
-            const user = mapHelper.formatUserName(feature.properties.name, feature.properties.username);
-
             const url = new URL(window.location.href);
             url.searchParams.set('lat', feature.geometry.coordinates[0]);
             url.searchParams.set('lon', feature.geometry.coordinates[1]);
@@ -473,17 +459,7 @@ export default {
 
             L.popup(mapHelper.popupOptions)
                 .setLatLng(latLng)
-                .setContent(
-                    mapHelper.getMapImagePopupContent(
-                        feature.properties.filename,
-                        feature.properties.result_string,
-                        feature.properties.datetime,
-                        feature.properties.picked_up,
-                        user,
-                        feature.properties.team,
-                        url.toString()
-                    )
-                )
+                .setContent(mapHelper.getMapImagePopupContent(feature.properties, url.toString()))
                 .openOn(map);
         },
 

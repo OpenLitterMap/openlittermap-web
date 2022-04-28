@@ -434,5 +434,36 @@ export const actions = {
         .catch(error => {
             console.log(error);
         });
+    },
+
+    /**
+     * Single endpoint to update all settings using the same format
+     */
+    async UPDATE_SETTINGS (context, payload)
+    {
+        let title = i18n.t('notifications.success');
+        let body = i18n.t('notifications.settings-updated');
+
+        await axios.patch('/settings', payload)
+            .then(response =>
+            {
+                console.log(response);
+
+                Object.keys(payload).forEach((key) =>
+                {
+                    context.commit('deleteUserError', key);
+                });
+
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                    position: 'top-right'
+                });
+            })
+            .catch(error =>
+            {
+                context.commit('errors', error.response.data.errors);
+                console.log(error);
+            });
     }
 };

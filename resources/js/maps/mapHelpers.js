@@ -96,26 +96,22 @@ const helper = {
     /**
      * Returns the HTML that displays the Photo popups
      *
-     * @param imageUrl
-     * @param tagsString
-     * @param takenOn
-     * @param pickedUp
-     * @param user
-     * @param team
+     * @param properties
      * @param url
      * @returns {string}
      */
-    getMapImagePopupContent: (imageUrl, tagsString, takenOn, pickedUp, user, team, url = null) => {
-        const isTrustedUser = imageUrl !== '/assets/images/waiting.png';
-        const tags = helper.parseTags(tagsString, isTrustedUser);
-        const takenDateString = helper.formatPhotoTakenTime(takenOn);
-        const teamFormatted = helper.formatTeam(team);
-        const pickedUpFormatted = helper.formatPickedUp(pickedUp);
-        const isLitterArt = tagsString && tagsString.includes('art.item');
+    getMapImagePopupContent: (properties, url = null) => {
+        const user = helper.formatUserName(properties.name, properties.username)
+        const isTrustedUser = properties.filename !== '/assets/images/waiting.png';
+        const tags = helper.parseTags(properties.result_string, isTrustedUser);
+        const takenDateString = helper.formatPhotoTakenTime(properties.datetime);
+        const teamFormatted = helper.formatTeam(properties.team);
+        const pickedUpFormatted = helper.formatPickedUp(properties.picked_up);
+        const isLitterArt = properties.result_string && properties.result_string.includes('art.item');
 
         return `
             <img
-                src="${imageUrl}"
+                src="${properties.filename}"
                 class="leaflet-litter-img"
                 onclick="document.querySelector('.leaflet-popup-close-button').click();"
                 alt="Litter photo"
@@ -127,7 +123,15 @@ const helper = {
                 <p>${takenDateString}</p>
                 ${user ? ('<p>' + user + '</p>') : ''}
                 ${teamFormatted ? ('<p>' + teamFormatted + '</p>') : ''}
-                ${url ? '<a class="link" target="_blank" href="' + url + '"><i class="fa fa-link fa-rotate-90"></i></a>' : ''}
+                <div class="social-container">
+                    ${properties.social?.personal ? '<a target="_blank" href="' + properties.social.personal + '"><i class="fa fa-link"></i></a>' : ''}
+                    ${properties.social?.twitter ? '<a target="_blank" href="' + properties.social.twitter + '"><i class="fa fa-twitter"></i></a>' : ''}
+                    ${properties.social?.facebook ? '<a target="_blank" href="' + properties.social.facebook + '"><i class="fa fa-facebook"></i></a>' : ''}
+                    ${properties.social?.instagram ? '<a target="_blank" href="' + properties.social.instagram + '"><i class="fa fa-instagram"></i></a>' : ''}
+                    ${properties.social?.linkedin ? '<a target="_blank" href="' + properties.social.linkedin + '"><i class="fa fa-linkedin"></i></a>' : ''}
+                    ${properties.social?.reddit ? '<a target="_blank" href="' + properties.social.reddit + '"><i class="fa fa-reddit"></i></a>' : ''}
+                </div>
+                ${url ? '<a class="link" target="_blank" href="' + url + '"><i class="fa fa-share-alt"></i></a>' : ''}
             </div>`;
     }
 };

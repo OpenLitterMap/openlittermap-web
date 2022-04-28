@@ -161,6 +161,10 @@ const router = new VueRouter({
                     component: require('./views/settings/Details').default,
                 },
                 {
+                    path: 'social',
+                    component: require('./views/settings/Social').default,
+                },
+                {
                     path: 'account',
                     component: require('./views/settings/Account').default,
                 },

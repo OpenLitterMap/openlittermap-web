@@ -74,60 +74,55 @@ class ProfileController extends Controller
      */
     public function geojson ()
     {
-        // we might need this again
-//        if (request()->period === 'today') $period = now()->startOfDay();
-//        else if (request()->period === 'week') $period = now()->startOfWeek();
-//        else if (request()->period === 'month') $period = now()->startOfMonth();
-//        else if (request()->period === 'year') $period = now()->startOfYear();
-//        else if (request()->period === 'all') $period = '2017-01-01 00:00:00'; // Year OLM began
-
-        // Todo - Pre-cluster each users photos
-        $query = Photo::select('id', 'filename', 'datetime', 'lat', 'lon', 'model', 'result_string', 'remaining', 'created_at')
+        $photos = Photo::query()
             ->where([
                 ['user_id', auth()->user()->id],
                 'verified' => 2
             ])
+            ->with([
+                'user:id,name,username,show_username_maps,show_name_maps,settings',
+                'user.team:is_trusted',
+                'team:id,name',
+            ])
             ->whereDate(request()->period, '>=', request()->start)
-            ->whereDate(request()->period, '<=', request()->end);
-
-        // Note, we need a total_tags column as this does not contain brands
-        // Note, we need to save this metadata into another table
-        // $photos_count = $query->count();
-        // $litter_count = $query->sum('total_litter');
-
-        $geojson = [
-            'type'      => 'FeatureCollection',
-            'features'  => []
-        ];
-
-        $photos = $query->get();
+            ->whereDate(request()->period, '<=', request()->end)
+            ->get();
 
         // Populate geojson object
-        foreach ($photos as $photo)
-        {
-            $feature = [
+        $features = [];
+        foreach ($photos as $photo) {
+            $name = $photo->user->show_name_maps ? $photo->user->name : null;
+            $username = $photo->user->show_username_maps ? $photo->user->username : null;
+            $team = $photo->team ? $photo->team->name : null;
+            $filename = ($photo->user->is_trusted || $photo->verified >= 2) ? $photo->filename : '/assets/images/waiting.png';
+            $resultString = $photo->verified >= 2 ? $photo->result_string : null;
+
+            $features[] = [
                 'type' => 'Feature',
                 'geometry' => [
                     'type' => 'Point',
-                    'coordinates' => [$photo->lon, $photo->lat]
+                    'coordinates' => [$photo->lat, $photo->lon]
                 ],
-
                 'properties' => [
-                    // 'photo_id' => $photo->id,
-                    'img' => $photo->filename,
-                    'model' => $photo->model,
+                    'photo_id' => $photo->id,
+                    'result_string' => $resultString,
+                    'filename' => $filename,
                     'datetime' => $photo->datetime,
-                    'latlng' => [$photo->lat, $photo->lon],
-                    'text' => $photo->result_string,
+                    'cluster' => false,
+                    'verified' => $photo->verified,
+                    'name' => $name,
+                    'username' => $username,
+                    'team' => $team,
                     'picked_up' => $photo->picked_up
                 ]
             ];
-
-            array_push($geojson["features"], $feature);
         }
 
         return [
-            'geojson' => $geojson
+            'geojson' => [
+                'type' => 'FeatureCollection',
+                'features' => $features
+            ]
         ];
     }
 
