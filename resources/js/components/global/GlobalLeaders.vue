@@ -40,15 +40,15 @@
 			</table>
 
             <!-- Pagination Buttons -->
-            <div v-if="leaderboard.paginatedLeadboard">
+            <div v-if="leaderboard.paginatedLeadboard !== null">
                 <button
-                    v-show="leaderboard.current_page > 1"
+                    v-show="leaderboard.paginatedLeaderboard.prev_page_url !== null"
                     class="button is-medium"
                     @click="loadPreviousPage"
                 >Previous</button>
 
                 <button
-                    v-show="true"
+                    v-show="leaderboard.paginatedLeaderboard.next_page_url !== null"
                     class="button is-medium"
                     @click="loadNextPage"
                 >Next</button>
@@ -97,12 +97,12 @@ export default {
             return moment.localeData().ordinal(index + 1);
         },
 
-        loadNextPage () {
-
+        async loadPreviousPage () {
+            await this.$store.dispatch('GET_PREVIOUS_LEADERBOARD_PAGE');
         },
 
-        loadPreviousPage () {
-
+        async loadNextPage () {
+            await this.$store.dispatch('GET_NEXT_LEADERBOARD_PAGE');
         }
     }
 }
