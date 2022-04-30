@@ -4,13 +4,23 @@
 
             <!-- Global Leaderboard -->
             <div class="container has-text-centered">
-                <h3
-                    @click="openLeaderboard"
-                    class="title is-2 has-text-centered"
-                >{{ $t('location.global-leaderboard') }}</h3>
+
+                <div class="flex jc">
+                    <h3
+                        @click="openLeaderboard"
+                        class="title is-2 has-text-centered pointer"
+                        style="margin-bottom: 0; padding-right: 1em;"
+                    >{{ $t('location.global-leaderboard') }}</h3>
+
+                    <i
+                        class="fa fa-arrow-right mtba"
+                        style="font-size: 20px;"
+                    />
+                </div>
 
                 <GlobalLeaders
                     :leaders="leaders"
+                    :show-pagination="false"
                 />
             </div>
 
@@ -68,7 +78,7 @@ export default {
     },
     methods: {
         /**
-         *
+         * Navigate to the Leaderboard page
          */
         openLeaderboard (view) {
             this.$router.push({ path: '/leaderboard' });

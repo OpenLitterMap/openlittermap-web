@@ -10,6 +10,7 @@
             <GlobalLeaders
                 v-else
                 :leaders="leaders"
+                :show-pagination="true"
             />
         </section>
     </section>

@@ -10,13 +10,15 @@
 					</tr>
 				</thead>
 				<tbody>
-					<tr v-for="(leader, i) in leaders" class="wow slideInLeft">
+					<tr v-for="(leader, index) in leaders" class="wow slideInLeft">
 						<td style="color :white; position: relative; width: 20%;">
-							<span>{{ getPosition(i) }}</span>
+
+                            <span v-if="leader.rank">{{ getPosition(leader.rank) }}</span>
+                            <span v-else>{{ getPosition(index) }}</span>
 							<!-- if mobile -->
 							<img
-                                v-show="leader.flag"
-                                :src="getCountryFlag(leader.flag)"
+                                v-show="leader.global_flag"
+                                :src="getCountryFlag(leader.global_flag)"
                                 class="leader-flag"
                             />
 						</td>
@@ -40,10 +42,13 @@
 			</table>
 
             <!-- Pagination Buttons -->
-            <div v-if="leaderboard.paginatedLeadboard !== null">
+            <div
+                v-if="this.showPagination === true && leaderboard.paginatedLeadboard !== null"
+                class="flex jc"
+            >
                 <button
                     v-show="leaderboard.paginatedLeaderboard.prev_page_url !== null"
-                    class="button is-medium"
+                    class="button is-medium mr-1"
                     @click="loadPreviousPage"
                 >Previous</button>
 
@@ -63,7 +68,8 @@ import moment from 'moment';
 export default {
 	name: 'GlobalLeaders',
     props: [
-        'leaders'
+        'leaders',
+        'showPagination'
     ],
     computed: {
         /**
@@ -92,9 +98,9 @@ export default {
         /**
          * Only simple way I know how to get the ordinal number in javascript
          */
-        getPosition (index) {
+        getPosition (rank) {
             // 1st, 2nd, 3rd
-            return moment.localeData().ordinal(index + 1);
+            return moment.localeData().ordinal(rank);
         },
 
         async loadPreviousPage () {
