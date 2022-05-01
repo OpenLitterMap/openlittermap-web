@@ -34,6 +34,7 @@ class LeaderboardController extends Controller
         $userIds = Redis::zrevrange("xp.users", $start, $end);
 
         $users = User::whereIn('id', $userIds)
+            ->select('id', 'show_name', 'show_username', 'name', 'username')
             ->where(function ($query) {
                 $query->where('show_name', true)
                     ->orWhere('show_username', true);
@@ -50,6 +51,14 @@ class LeaderboardController extends Controller
             }
 
             $user['rank'] = $index + 1;
+
+            if (!$user->show_name) $user['name'] = null;
+
+            if ($user->show_username) {
+                $user['username'] = "@" . $user->username;
+            } else {
+                $user['username'] = null;
+            }
         }
 
         return [
