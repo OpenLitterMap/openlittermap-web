@@ -12,6 +12,7 @@ export const init = {
     maxDate: null,
     previousLevelInt: 0,
     progressPercent: 0,
+    sortLocationsBy: 'most-data',
     stateName: '',
     totalLitterInt: 0,
     total_litter: 0,

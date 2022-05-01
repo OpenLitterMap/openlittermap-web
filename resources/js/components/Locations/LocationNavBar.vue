@@ -1,48 +1,79 @@
 <template>
-<div class="container w100">
-	<br>
-    <div class="control locations-control">
-        <div class="select">
-            <select v-model="category" @change="onChange(category)">
-                <option v-for="cat in catnames" :key="cat">{{ cat }}</option>
-            </select>
+    <div class="container w100">
+        <br>
+        <div class="control locations-control">
+            <div class="select">
+                <select v-model="sortLocationsBy">
+                    <option
+                        v-for="opt in options"
+                        :key="opt.value"
+                        :value="opt.value"
+                    >{{ opt.text }}</option>
+                </select>
+            </div>
         </div>
     </div>
-</div>
 </template>
 
 <script>
 export default {
     name: 'LocationNavbar',
-    data() {
+    data () {
         return {
-            'category': this.$t('location.most-data'),
-			'catnames': [
-				'A-Z',
-				this.$t('location.most-data'),
-				this.$t('location.most-data-person')
-			]
+            'options': [
+                {
+                    text: 'A-Z',
+                    value: 'alphabetical'
+                },
+                {
+                    text: this.$t('location.most-data'),
+                    value: 'most-data'
+                },
+                {
+                    text: this.$t('location.most-data-person'),
+                    value: 'most-data-per-person'
+                },
+                {
+                    text: 'Most Recent Upload',
+                    value: 'most-recent'
+                },
+                {
+                    text: 'Total Contributors',
+                    value: 'total-contributors'
+                },
+                {
+                    text: 'First Created',
+                    value: 'first-created'
+                }
+            ]
         }
     },
-    methods: {
-        onChange() {
-            this.$emit('selectedCategory', this.category);
+    computed: {
+        /**
+         * Key to sort the locations by
+         */
+        sortLocationsBy: {
+            get () {
+                return this.$store.state.locations.sortLocationsBy;
+            },
+            set (v) {
+                this.$store.commit('setSortLocationsBy', v);
+            }
         }
     }
 }
 </script>
 
 <style scoped>
+
     .locations-control {
-            text-align: right;
-        }
+        text-align: right;
+    }
 
     /* Small devices */
-    @media screen and (max-width: 768px)
-        {
-
-            .locations-control {
-                text-align: center;
-            }
+    @media screen and (max-width: 768px) {
+        .locations-control {
+            text-align: center;
         }
+    }
 </style>
