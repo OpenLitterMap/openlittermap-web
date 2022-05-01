@@ -37,7 +37,7 @@
                             </span>
                         </td>
 						<td style="color:white; width: 20%;">
-                            {{ leader.xp }}
+                            {{ leader.xp_redis }}
                         </td>
 					</tr>
 				</tbody>
