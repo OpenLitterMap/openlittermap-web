@@ -65,6 +65,8 @@ class User extends Authenticatable
      */
      protected $with = ['team'];
 
+
+
     /**
      * The attributes that are mass assignable.
      *
@@ -126,7 +128,13 @@ class User extends Authenticatable
         'settings' => 'array'
     ];
 
-    protected $appends = ['total_categories', 'total_tags', 'total_brands_redis', 'picked_up'];
+    protected $appends = [
+        'total_categories',
+        'total_tags',
+        'total_brands_redis',
+        'picked_up',
+        'xp_redis'
+    ];
 
     /**
      * Get total categories attribute

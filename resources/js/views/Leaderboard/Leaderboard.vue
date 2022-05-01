@@ -41,7 +41,7 @@ export default {
          * Array of users from the leaderboard
          */
         leaders () {
-            return this.$store.state.leaderboard.paginatedLeaderboard.data ?? [];
+            return this.$store.state.leaderboard.users ?? [];
         }
     }
 }

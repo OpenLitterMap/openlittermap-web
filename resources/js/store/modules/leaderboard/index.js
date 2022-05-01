@@ -2,7 +2,8 @@ import { actions } from "./actions";
 import { mutations } from "./mutations";
 
 const state = {
-    paginatedLeaderboard: null
+    currentPage: 0,
+    users: null
 };
 
 export const leaderboard = {

@@ -8,7 +8,7 @@ export const actions = {
             .then(response => {
                 console.log('get_global_leaderboard', response);
 
-                context.commit('setGlobalLeaderboard', response.data.paginated);
+                context.commit('setGlobalLeaderboard', response.data.users);
             })
             .catch(error => {
                 console.error('get_global_leaderboard', error);
@@ -20,15 +20,21 @@ export const actions = {
      */
     async GET_NEXT_LEADERBOARD_PAGE (context)
     {
-        await axios.get(context.state.paginatedLeaderboard.next_page_url)
-            .then(response => {
-                console.log('get_next_leaderboard_page', response);
+        context.commit('incrementLeaderboardPage');
 
-                context.commit('setGlobalLeaderboard', response.data.paginated);
-            })
-            .catch(error => {
-                console.error('get_next_leaderboard_page', error);
-            });
+        await axios.get('/global/leaderboard', {
+            params: {
+                page: context.state.currentPage
+            }
+        })
+        .then(response => {
+            console.log('get_next_leaderboard_page', response);
+
+            context.commit('setGlobalLeaderboard', response.data.users);
+        })
+        .catch(error => {
+            console.error('get_next_leaderboard_page', error);
+        });
     },
 
     /**
@@ -36,14 +42,20 @@ export const actions = {
      */
     async GET_PREVIOUS_LEADERBOARD_PAGE (context)
     {
-        await axios.get(context.state.paginatedLeaderboard.prev_page_url)
-            .then(response => {
-                console.log('get_previous_leaderboard_page', response);
+        context.commit('decrementLeaderboardPage');
 
-                context.commit('setGlobalLeaderboard', response.data.paginated);
-            })
-            .catch(error => {
-                console.error('get_previous_leaderboard_page', error);
-            });
+        await axios.get('/global/leaderboard', {
+            params: {
+                page: context.state.currentPage
+            }
+        })
+        .then(response => {
+            console.log('get_previous_leaderboard_page', response);
+
+            context.commit('setGlobalLeaderboard', response.data.users);
+        })
+        .catch(error => {
+            console.error('get_previous_leaderboard_page', error);
+        });
     }
 }

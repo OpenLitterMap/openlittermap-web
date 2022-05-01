@@ -14,7 +14,7 @@
 						<td style="color :white; position: relative; width: 20%;">
 
                             <span v-if="leader.rank">{{ getPosition(leader.rank) }}</span>
-                            <span v-else>{{ getPosition(index) }}</span>
+                            <span v-else>{{ getPosition(index + 1) }}</span>
 							<!-- if mobile -->
 							<img
                                 v-show="leader.global_flag"
@@ -36,24 +36,26 @@
                                 </a>
                             </span>
                         </td>
-						<td style="color:white; width: 20%;">{{ leader.xp }}</td>
+						<td style="color:white; width: 20%;">
+                            {{ leader.xp }}
+                        </td>
 					</tr>
 				</tbody>
 			</table>
 
             <!-- Pagination Buttons -->
             <div
-                v-if="this.showPagination === true && leaderboard.paginatedLeadboard !== null"
+                v-if="this.showPagination === true && leaderboard.users !== null"
                 class="flex jc"
             >
                 <button
-                    v-show="leaderboard.paginatedLeaderboard.prev_page_url !== null"
+                    v-show="currentPage > 0"
                     class="button is-medium mr-1"
                     @click="loadPreviousPage"
                 >Previous</button>
 
                 <button
-                    v-show="leaderboard.paginatedLeaderboard.next_page_url !== null"
+                    v-show="leaderboard.users.length === 100"
                     class="button is-medium"
                     @click="loadNextPage"
                 >Next</button>
@@ -72,6 +74,15 @@ export default {
         'showPagination'
     ],
     computed: {
+        /**
+         * Current paginated leaderboard index
+         *
+         * Default = 0
+         */
+        currentPage () {
+            return this.$store.state.leaderboard.currentPage;
+        },
+
         /**
          * Shortcut to leaderboard state
          */

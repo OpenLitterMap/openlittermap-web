@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Leaderboard;
 use App\Http\Controllers\Controller;
 use App\Models\User\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Redis;
 
 class LeaderboardController extends Controller
 {
@@ -15,16 +16,30 @@ class LeaderboardController extends Controller
     {
         $perPage = 100;
 
-        $users = User::where('show_username', true)
-            ->orWhere('show_name', true)
-            ->orderBy('xp', 'desc')
-            ->paginate($perPage);
+        $start = 0;
+        $end = 100;
 
         // Get the current page
-        $currentPage = request('page') ?: 1;
+        $currentPage = request('page') ?: 0;
 
-        // Decrement the current page to use 0-index
-        $currentPage--;
+        if ($currentPage > 0)
+        {
+            // 101
+            $start = ($currentPage * $perPage) + 1;
+
+            // 200
+            $end = $end + ($currentPage * $perPage);
+        }
+
+        $userIds = Redis::zrevrange("xp.users", $start, $end);
+
+        $users = User::whereIn('id', $userIds)
+            ->where(function ($query) {
+                $query->where('show_name', true)
+                    ->orWhere('show_username', true);
+            })
+            ->limit($perPage)
+            ->get();
 
         // Loop over our users to attach their rank by index
         foreach ($users as $index => $user)
@@ -39,7 +54,7 @@ class LeaderboardController extends Controller
 
         return [
             'success' => true,
-            'paginated' => $users
+            'users' => $users
         ];
     }
 }
