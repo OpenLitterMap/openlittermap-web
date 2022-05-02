@@ -6,7 +6,6 @@
 
 	    <!-- v-show is a temp bug fix until cities table has working total_litter column -->
 		<section
-            v-show="location.total_litter_redis > 0"
             v-for="(location, index) in orderedBy"
             :key="index"
         >
@@ -139,7 +138,7 @@ export default {
 			}
             else if (this.sortedBy === 'most-recent')
             {
-                return sortBy(this.locations, 'updated_at').reverse();
+                return sortBy(this.locations, 'updated_at');
             }
             else if (this.sortedBy === 'total-contributors')
             {
