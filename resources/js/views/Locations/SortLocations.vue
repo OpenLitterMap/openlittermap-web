@@ -5,7 +5,8 @@
 		<location-navbar />
 
 	    <!-- v-show is a temp bug fix until cities table has working total_litter column -->
-		<section
+        <!-- v-show="location.total_litter_redis > 0"-->
+        <section
             v-for="(location, index) in orderedBy"
             :key="index"
         >
@@ -132,7 +133,7 @@ export default {
 			{
 				return sortBy(this.locations, 'total_litter_redis').reverse();
 			}
-			else if (this.sortedBy === 'most-data-person')
+			else if (this.sortedBy === 'most-data-per-person')
 			{
 				return sortBy(this.locations, 'avg_litter_per_user').reverse();
 			}
@@ -142,9 +143,14 @@ export default {
             }
             else if (this.sortedBy === 'total-contributors')
             {
-                return sortBy(this.locations, 'total_contributors').reverse();
+                return sortBy(this.locations, 'total_contributors_redis').reverse();
             }
-            else if (this.sortedBy === 'first-created') {
+            else if (this.sortedBy === 'first-created')
+            {
+                return sortBy(this.locations, 'created_at');
+            }
+            else if (this.sortedBy === 'most-recently-created')
+            {
                 return sortBy(this.locations, 'created_at').reverse();
             }
 

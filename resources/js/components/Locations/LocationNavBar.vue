@@ -34,16 +34,20 @@ export default {
                     value: 'most-data-per-person'
                 },
                 {
-                    text: 'Most Recent Upload',
-                    value: 'most-recent'
-                },
-                {
                     text: 'Total Contributors',
                     value: 'total-contributors'
                 },
                 {
                     text: 'First Created',
                     value: 'first-created'
+                },
+                {
+                    text: 'Most Recently Created',
+                    value: 'most-recently-created'
+                },
+                {
+                    text: 'Most Recently Updated',
+                    value: 'most-recent'
                 }
             ]
         }
