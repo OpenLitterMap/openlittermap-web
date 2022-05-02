@@ -96,14 +96,14 @@ export const actions = {
     async GET_COUNTRIES (context)
     {
         await axios.get('countries')
-        .then(response => {
-            console.log('get_countries', response);
+            .then(response => {
+                console.log('get_countries', response);
 
-            context.commit('setCountries', response.data);
-        })
-        .catch(error => {
-            console.log('error.get_countries', error);
-        });
+                context.commit('setCountries', response.data);
+            })
+            .catch(error => {
+                console.log('error.get_countries', error);
+            });
     },
 
     /**
