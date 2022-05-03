@@ -73,6 +73,7 @@ class TeamsClusterController extends Controller
                 'user:id,name,username,show_username_maps,show_name_maps,settings',
                 'user.team:is_trusted',
                 'team:id,name',
+                'customTags:photo_id,tag',
             ])
             ->whereTeamId($request->team);
 

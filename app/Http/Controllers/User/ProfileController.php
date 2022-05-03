@@ -83,6 +83,7 @@ class ProfileController extends Controller
                 'user:id,name,username,show_username_maps,show_name_maps,settings',
                 'user.team:is_trusted',
                 'team:id,name',
+                'customTags:photo_id,tag',
             ])
             ->whereDate(request()->period, '>=', request()->start)
             ->whereDate(request()->period, '<=', request()->end)
@@ -113,7 +114,9 @@ class ProfileController extends Controller
                     'name' => $name,
                     'username' => $username,
                     'team' => $team,
-                    'picked_up' => $photo->picked_up
+                    'picked_up' => $photo->picked_up,
+                    'social' => $photo->user->social_links,
+                    'custom_tags' => $photo->customTags->pluck('tag')
                 ]
             ];
         }

@@ -371,7 +371,7 @@ export default {
 };
 </script>
 
-<style>
+<style lang="css" scoped>
 
     #map {
         height: 100%;
