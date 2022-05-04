@@ -42,24 +42,6 @@
 					</tr>
 				</tbody>
 			</table>
-
-            <!-- Pagination Buttons -->
-            <div
-                v-if="this.showPagination === true && leaderboard.users !== null"
-                class="flex jc"
-            >
-                <button
-                    v-show="currentPage > 1"
-                    class="button is-medium mr-1"
-                    @click="loadPreviousPage"
-                >Previous</button>
-
-                <button
-                    v-show="leaderboard.hasNextPage"
-                    class="button is-medium"
-                    @click="loadNextPage"
-                >Next</button>
-            </div>
 		</div>
 	</div>
 </template>
@@ -69,27 +51,7 @@ import moment from 'moment';
 
 export default {
 	name: 'GlobalLeaders',
-    props: [
-        'leaders',
-        'showPagination'
-    ],
-    computed: {
-        /**
-         * Current paginated leaderboard index
-         *
-         * Default = 0
-         */
-        currentPage () {
-            return this.$store.state.leaderboard.currentPage;
-        },
-
-        /**
-         * Shortcut to leaderboard state
-         */
-        leaderboard () {
-            return this.$store.state.leaderboard;
-        }
-    },
+    props: ['leaders'],
 	methods: {
 		/**
 		 * Show flag for a leader if they have country set
@@ -112,14 +74,6 @@ export default {
         getPosition (rank) {
             // 1st, 2nd, 3rd
             return moment.localeData().ordinal(rank);
-        },
-
-        async loadPreviousPage () {
-            await this.$store.dispatch('GET_PREVIOUS_LEADERBOARD_PAGE');
-        },
-
-        async loadNextPage () {
-            await this.$store.dispatch('GET_NEXT_LEADERBOARD_PAGE');
         }
     }
 }

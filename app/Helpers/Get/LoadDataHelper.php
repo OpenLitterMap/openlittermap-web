@@ -311,7 +311,7 @@ class LoadDataHelper
                     'social' => !empty($leader->social_links) ? $leader->social_links : null,
                 ];
             })
-            ->sortByDesc('xp_redis')
+            ->sortByDesc('xp')
             ->values()
             ->toArray();
     }

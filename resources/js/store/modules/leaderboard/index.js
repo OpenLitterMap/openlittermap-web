@@ -4,7 +4,7 @@ import { mutations } from "./mutations";
 const state = {
     currentPage: 1,
     hasNextPage: false,
-    users: null
+    users: []
 };
 
 export const leaderboard = {
