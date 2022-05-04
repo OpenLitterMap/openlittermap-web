@@ -4,7 +4,8 @@ export const mutations = {
      */
     setGlobalLeaderboard (state, payload)
     {
-        state.users = payload;
+        state.users = payload.users;
+        state.hasNextPage = payload.hasNextPage;
     },
 
     incrementLeaderboardPage (state)

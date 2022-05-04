@@ -9,61 +9,43 @@ use Illuminate\Support\Facades\Redis;
 
 class LeaderboardController extends Controller
 {
+    private const PER_PAGE = 100;
+
     /**
      * Get the first paginated section of the global leaderboard
      */
-    public function getPaginated ()
+    public function index()
     {
-        $perPage = 100;
-
-        $start = 0;
-        $end = 100;
-
         // Get the current page
-        $currentPage = request('page') ?: 0;
+        $page = (int) request('page', 1); // 1, 2, 3...
+        $start = ($page - 1) * self::PER_PAGE; // 0, 100, 200...
+        $end = $start + self::PER_PAGE - 1; // 99, 199, 299...
 
-        if ($currentPage > 0)
-        {
-            // 101
-            $start = ($currentPage * $perPage) + 1;
-
-            // 200
-            $end = $end + ($currentPage * $perPage);
-        }
-
+        $total = Redis::zcount('xp.users', '-inf', '+inf');
         $userIds = Redis::zrevrange("xp.users", $start, $end);
 
-        $users = User::whereIn('id', $userIds)
-            ->select('id', 'show_name', 'show_username', 'name', 'username')
-            ->where(function ($query) {
-                $query->where('show_name', true)
-                    ->orWhere('show_username', true);
+        $users = User::query()
+            ->whereIn('id', $userIds)
+            ->get()
+            ->append('xp_redis')
+            ->sortByDesc('xp_redis')
+            ->values()
+            ->map(function (User $user, $index) use ($start) {
+                return [
+                    'name' => $user->show_name ? $user->name : '',
+                    'username' => $user->show_username ? ('@' . $user->username) : '',
+                    'xp' => number_format($user->xp_redis),
+                    'global_flag' => $user->global_flag,
+                    'social' => !empty($user->social_links) ? $user->social_links : null,
+                    'rank' => $start + $index + 1
+                ];
             })
-            ->limit($perPage)
-            ->get();
-
-        // Loop over our users to attach their rank by index
-        foreach ($users as $index => $user)
-        {
-            if ($currentPage > 0)
-            {
-                $index = $index + ($currentPage * $perPage);
-            }
-
-            $user['rank'] = $index + 1;
-
-            if (!$user->show_name) $user['name'] = null;
-
-            if ($user->show_username) {
-                $user['username'] = "@" . $user->username;
-            } else {
-                $user['username'] = null;
-            }
-        }
+            ->toArray();
 
         return [
             'success' => true,
-            'users' => $users
+            'users' => $users,
+            'hasNextPage' => $total > $end + 1
         ];
     }
 }

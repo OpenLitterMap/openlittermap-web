@@ -131,7 +131,6 @@ class User extends Authenticatable
         'total_tags',
         'total_brands_redis',
         'picked_up',
-        'xp_redis'
     ];
 
     /**

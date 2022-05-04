@@ -8,7 +8,7 @@ export const actions = {
             .then(response => {
                 console.log('get_global_leaderboard', response);
 
-                context.commit('setGlobalLeaderboard', response.data.users);
+                context.commit('setGlobalLeaderboard', response.data);
             })
             .catch(error => {
                 console.error('get_global_leaderboard', error);
@@ -30,7 +30,7 @@ export const actions = {
         .then(response => {
             console.log('get_next_leaderboard_page', response);
 
-            context.commit('setGlobalLeaderboard', response.data.users);
+            context.commit('setGlobalLeaderboard', response.data);
         })
         .catch(error => {
             console.error('get_next_leaderboard_page', error);
@@ -52,7 +52,7 @@ export const actions = {
         .then(response => {
             console.log('get_previous_leaderboard_page', response);
 
-            context.commit('setGlobalLeaderboard', response.data.users);
+            context.commit('setGlobalLeaderboard', response.data);
         })
         .catch(error => {
             console.error('get_previous_leaderboard_page', error);

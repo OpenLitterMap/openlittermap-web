@@ -33,7 +33,7 @@
 </template>
 
 <script>
-import GlobalLeaders from '../../components/Global/GlobalLeaders'
+import GlobalLeaders from '../global/GlobalLeaders'
 import Progress from "../General/Progress";
 
 export default {

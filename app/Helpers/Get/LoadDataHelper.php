@@ -295,22 +295,24 @@ class LoadDataHelper
      */
     protected static function getLeadersFromLeaderboards($leaderboardIds): array
     {
-        $users = User::query()
+        return User::query()
             ->whereIn('id', array_keys($leaderboardIds))
-            ->get();
-
-        $leaders = collect($leaderboardIds)
-            ->map(function ($xp, $userId) use ($users) {
-                $user = $users->firstWhere('id', $userId);
-                if (!$user) {
-                    return null;
-                }
-                $user->xp_redis = $xp;
-                return $user;
+            ->get()
+            ->append('xp_redis')
+            ->filter(function ($leader) {
+                return $leader->xp_redis > 0;
             })
-            ->filter()
-            ->sortByDesc('xp_redis');
-
-        return LocationHelper::getLeaders($leaders);
+            ->map(function ($leader) {
+                return [
+                    'name' => $leader->show_name ? $leader->name : '',
+                    'username' => $leader->show_username ? ('@' . $leader->username) : '',
+                    'xp' => number_format($leader->xp_redis),
+                    'global_flag' => $leader->global_flag,
+                    'social' => !empty($leader->social_links) ? $leader->social_links : null,
+                ];
+            })
+            ->sortByDesc('xp_redis')
+            ->values()
+            ->toArray();
     }
 }

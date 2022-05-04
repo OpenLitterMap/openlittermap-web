@@ -37,7 +37,7 @@
                             </span>
                         </td>
 						<td style="color:white; width: 20%;">
-                            {{ leader.xp_redis }}
+                            {{ leader.xp }}
                         </td>
 					</tr>
 				</tbody>
@@ -49,13 +49,13 @@
                 class="flex jc"
             >
                 <button
-                    v-show="currentPage > 0"
+                    v-show="currentPage > 1"
                     class="button is-medium mr-1"
                     @click="loadPreviousPage"
                 >Previous</button>
 
                 <button
-                    v-show="leaderboard.users.length === 100"
+                    v-show="leaderboard.hasNextPage"
                     class="button is-medium"
                     @click="loadNextPage"
                 >Next</button>
