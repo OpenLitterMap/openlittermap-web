@@ -155,7 +155,7 @@ class LoadDataHelper
 
         if (!$country) return ['success' => false, 'msg' => 'country not found'];
 
-        $states = State::select('id', 'state', 'country_id', 'created_by', 'created_at', 'manual_verify', 'total_contributors')
+        $states = State::select('id', 'state', 'country_id', 'created_by', 'created_at', 'manual_verify', 'total_contributors', 'updated_at')
             ->with(['creator' => function ($q) {
                 $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby')
                     ->where('show_name_createdby', true)
