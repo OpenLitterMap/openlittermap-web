@@ -43,7 +43,7 @@
         "leaflet.markercluster": "^1.4.1",
         "lodash.sortby": "^4.7.0",
         "mapbox-gl": "^1.12.0",
-        "moment": "^2.27.0",
+        "moment": "^2.29.2",
         "pusher-js": "^4.4.0",
         "supercluster": "^7.1.0",
         "v-img": "^0.2.0",
