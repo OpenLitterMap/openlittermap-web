@@ -102,6 +102,11 @@ export default {
             this.map.on('moveend', this.update);
             this.map.on('overlayadd', this.update);
             this.map.on('overlayremove', this.update);
+            this.map.on('zoom', () => {
+                if (this.points?.remove) {
+                    this.points.remove();
+                }
+            });
 
             this.green_dot = L.icon({
                 iconUrl: './images/vendor/leaflet/dist/dot.png',
@@ -371,7 +376,7 @@ export default {
 };
 </script>
 
-<style>
+<style lang="css" scoped>
 
     #map {
         height: 100%;

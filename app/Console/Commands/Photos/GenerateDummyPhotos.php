@@ -96,6 +96,8 @@ class GenerateDummyPhotos extends Command
                 'verification' => 1,
                 'remaining' => 1,
                 'geohash' => \GeoHash::encode($lat, $lon),
+                'created_at' => now(),
+                'updated_at' => now(),
             ];
 
             $bar->advance();

@@ -2,6 +2,7 @@
 /public/hot
 /public/storage
 /public/local-uploads/*
+/public/css/app.css
 /public/sitemap.xml
 /storage/*.key
 /vendor

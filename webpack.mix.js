@@ -29,7 +29,7 @@ mix.js('resources/js/app.js', 'public/js')
         "vue2-leaflet",
         "vue2-leaflet-markercluster",
     ])
-    .sass('resources/sass/app.scss', 'public/css');
+    .postCss('resources/css/app.css', 'public/css/app.css');
 
 // remove comments when in production
 if (mix.inProduction())

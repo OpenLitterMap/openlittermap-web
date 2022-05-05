@@ -17,11 +17,12 @@ const helper = {
      * Returns th HTML that displays tags on Photo popups
      *
      * @param tagsString
+     * @param customTags
      * @param isTrustedUser
      * @returns {string}
      */
-    parseTags: (tagsString, isTrustedUser) => {
-        if (!tagsString) {
+    parseTags: (tagsString, customTags, isTrustedUser) => {
+        if (!tagsString && !customTags) {
             return isTrustedUser
                 ? i18n.t('litter.not-tagged-yet')
                 : i18n.t('litter.not-verified');
@@ -103,7 +104,8 @@ const helper = {
     getMapImagePopupContent: (properties, url = null) => {
         const user = helper.formatUserName(properties.name, properties.username)
         const isTrustedUser = properties.filename !== '/assets/images/waiting.png';
-        const tags = helper.parseTags(properties.result_string, isTrustedUser);
+        const customTags = properties.custom_tags?.join('<br>');
+        const tags = helper.parseTags(properties.result_string, customTags, isTrustedUser);
         const takenDateString = helper.formatPhotoTakenTime(properties.datetime);
         const teamFormatted = helper.formatTeam(properties.team);
         const pickedUpFormatted = helper.formatPickedUp(properties.picked_up);
@@ -118,7 +120,8 @@ const helper = {
                 ${(isTrustedUser ? '' : ('style="padding: 16px;"'))}
             />
             <div class="leaflet-litter-img-container">
-                <p>${tags}</p>
+                ${tags ? ('<p>' + tags + '</p>') : ''}
+                ${customTags ? ('<p>' + customTags + '</p>') : ''}
                 ${!isLitterArt ? ('<p>' + pickedUpFormatted + '</p>') : ''}
                 <p>${takenDateString}</p>
                 ${user ? ('<p>' + user + '</p>') : ''}

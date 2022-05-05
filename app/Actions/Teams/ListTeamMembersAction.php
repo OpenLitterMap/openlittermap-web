@@ -20,7 +20,7 @@ class ListTeamMembersAction
             ->users()
             ->withPivot('total_photos', 'total_litter', 'updated_at', 'show_name_leaderboards', 'show_username_leaderboards')
             ->orderBy('pivot_total_litter', 'desc')
-            ->simplePaginate(10, [
+            ->simplePaginate(2, [
                 'users.id',
                 DB::raw("if(`team_user`.`show_name_leaderboards` = 1, `name`, '') as name"),
                 DB::raw("if(`team_user`.`show_username_leaderboards` = 1, `username`, '') as username"),

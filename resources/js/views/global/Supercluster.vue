@@ -285,12 +285,17 @@ export default {
         createGlobalGroups();
 
         map.on('overlayadd', this.update);
-        map.on('overlayremove', this.update)
+        map.on('overlayremove', this.update);
         map.on('popupclose', () => {
             const url = new URL(window.location.href);
             url.searchParams.delete('photo');
             window.history.pushState(null, '', url);
-        })
+        });
+        map.on('zoom', () => {
+            if (points?.remove) {
+                points.remove();
+            }
+        });
 
         this.setupYearDropdown();
     },
@@ -491,11 +496,22 @@ export default {
          */
         updateUrlPhotoIdAndFlyToLocation (location)
         {
+            const zoom = Math.round(map.getZoom());
             const url = new URL(window.location.href);
             url.searchParams.set('photo', location.photoId);
             window.history.pushState(null, '', url);
 
-            this.flyToLocation(location);
+            const flyDistanceInMeters = map.distance(
+                map.getCenter(),
+                [location.latitude, location.longitude]
+            )
+
+            // If we're viewing points and moving within 2km
+            if (zoom >= CLUSTER_ZOOM_THRESHOLD && flyDistanceInMeters <= 2000) {
+                this.flyToLocation({...location, duration: 1});
+            } else {
+                this.flyToLocation(location);
+            }
         },
 
         /**
@@ -510,7 +526,7 @@ export default {
 
             map.flyTo(latLng, zoom, {
                 animate: true,
-                duration: 5
+                duration: location.duration ?? 5
             });
         },
 
