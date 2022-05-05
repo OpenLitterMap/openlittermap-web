@@ -12,7 +12,9 @@
 </template>
 
 <script>
-import L from 'leaflet'
+import L from 'leaflet';
+import 'leaflet-timedimension'
+import "leaflet-timedimension/dist/leaflet.timedimension.control.css"
 import {mapHelper} from '../../../maps/mapHelpers';
 
 export default {
@@ -39,13 +41,36 @@ export default {
         }).addTo(this.map);
 
         this.map.attributionControl.addAttribution('Litter data &copy; OpenLitterMap & Contributors ' + year);
+
+        // Time player settings
+        let timeDimension = new L.TimeDimension({});
+        this.map.timeDimension = timeDimension;
+        this.player = new L.TimeDimension.Player({
+            transitionTime: 1000,
+            loop: true
+        }, timeDimension);
+        this.player.on('play', () => {
+            if (this.map?.hasLayer(this.pointsLayer)) {
+                this.map.removeLayer(this.pointsLayer);
+            }
+        })
+
+        this.map.addControl(new L.Control.TimeDimension({
+            player: this.player,
+            timeDimension: timeDimension,
+            timeSliderDragUpdate: true,
+            loopButton: true,
+            autoPlay: false,
+        }));
     },
     data() {
         return {
             map: null,
             loading: true,
             fullscreen: false,
-            points: null
+            pointsLayer: null,
+            timeLayer: null,
+            player: null
         };
     },
     computed: {
@@ -58,9 +83,11 @@ export default {
     },
     watch: {
         geojson (newVal) {
-            if (this.points) this.points.remove();
+            if (this.pointsLayer) this.pointsLayer.remove();
+            if (this.timeLayer) this.timeLayer.remove();
+            if (this.player) this.player.stop();
 
-            this.points = L.geoJSON(newVal, {
+            this.pointsLayer = L.geoJSON(newVal, {
                 pointToLayer: (feature, latLng) => {
                     return L.marker([latLng.lng, latLng.lat])
                 },
@@ -72,7 +99,15 @@ export default {
                             .openOn(this.map);
                     });
                 }
-            }).addTo(this.map);
+            });
+
+            this.timeLayer = L.timeDimension.layer.geoJson(this.pointsLayer, {
+                updateTimeDimension: true,
+                updateTimeDimensionMode: 'replace',
+            });
+
+            this.pointsLayer.addTo(this.map);
+            this.timeLayer.addTo(this.map);
         }
     },
     methods: {

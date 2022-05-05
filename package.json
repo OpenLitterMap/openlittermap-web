@@ -38,6 +38,7 @@
         "laravel-echo": "^1.8.1",
         "laravel-permission-to-vuejs": "^2.0.5",
         "leaflet": "^1.7.1",
+        "leaflet-timedimension": "^1.1.1",
         "leaflet-webgl-heatmap": "github:xlcrr/leaflet-webgl-heatmap",
         "leaflet.glify": "^3.1.0",
         "leaflet.markercluster": "^1.4.1",
