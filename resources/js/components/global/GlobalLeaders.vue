@@ -11,8 +11,7 @@
 				</thead>
 				<tbody>
 					<tr v-for="(leader, index) in leaders" class="wow slideInLeft">
-						<td style="color :white; position: relative; width: 20%;">
-
+						<td style="color: white;">
                             <span v-if="leader.rank">{{ getPosition(leader.rank) }}</span>
                             <span v-else>{{ getPosition(index + 1) }}</span>
 							<!-- if mobile -->
@@ -20,6 +19,7 @@
                                 v-show="leader.global_flag"
                                 :src="getCountryFlag(leader.global_flag)"
                                 class="leader-flag"
+                                :alt="leader.global_flag"
                             />
 						</td>
 

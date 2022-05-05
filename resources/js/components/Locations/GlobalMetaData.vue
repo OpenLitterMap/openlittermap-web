@@ -3,25 +3,19 @@
         <section class="section is-link is-bold">
 
             <!-- Global Leaderboard -->
-            <div class="container has-text-centered">
+            <div class="container">
 
-                <div class="flex jc">
-                    <h3
-                        @click="openLeaderboard"
-                        class="title is-2 has-text-centered pointer"
-                        style="margin-bottom: 0; padding-right: 1em;"
-                    >{{ $t('location.global-leaderboard') }}</h3>
+                <div class="leaderboard-heading"
+                     @click="openLeaderboard"
+                >
+                    <h3 class="title is-2 has-text-centered">
+                        {{ $t('location.global-leaderboard') }}
+                    </h3>
 
-                    <i
-                        class="fa fa-arrow-right mtba"
-                        style="font-size: 20px;"
-                    />
+                    <i class="fa fa-arrow-right"/>
                 </div>
 
-                <GlobalLeaders
-                    :leaders="leaders"
-                    :show-pagination="false"
-                />
+                <GlobalLeaders :leaders="leaders"/>
             </div>
 
             <Progress
@@ -87,6 +81,31 @@ export default {
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+.leaderboard-heading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    cursor: pointer;
 
+    &:hover {
+        .title {
+            text-decoration: underline;
+        }
+        i {
+            transform: translateX(1rem);
+        }
+    }
+
+    .title {
+        margin-bottom: 0;
+    }
+
+    i {
+        font-size: 20px;
+        transition: all 0.3s;
+    }
+}
 </style>

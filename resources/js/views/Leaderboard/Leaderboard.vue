@@ -1,9 +1,15 @@
 <template>
     <section class="hero is-link is-bold is-fullheight">
         <section class="section is-link is-bold">
-            <h3 class="title is-2 has-text-centered">
-                {{ $t('location.global-leaderboard') }}
-            </h3>
+
+            <div class="leaderboard-heading"
+                 @click="openWorldCup"
+            >
+                <i class="fa fa-arrow-left"/>
+                <h3 class="title is-2 has-text-centered">
+                    {{ $t('location.global-leaderboard') }}
+                </h3>
+            </div>
 
             <loading
                 v-if="loading"
@@ -84,11 +90,43 @@ export default {
             await this.$store.dispatch('GET_NEXT_LEADERBOARD_PAGE');
             window.scrollTo({top: 0, behavior: 'smooth'});
             this.loading = false;
+        },
+
+        /**
+         * Navigate to the World Cup page
+         */
+        openWorldCup () {
+            this.$router.push({ path: '/world' });
         }
     }
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+.leaderboard-heading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    cursor: pointer;
 
+    &:hover {
+        .title {
+            text-decoration: underline;
+        }
+        i {
+            transform: translateX(-1rem);
+        }
+    }
+
+    .title {
+        margin-bottom: 0;
+    }
+
+    i {
+        font-size: 20px;
+        transition: all 0.3s;
+    }
+}
 </style>
