@@ -78,6 +78,10 @@ const router = new VueRouter({
             component: require('./views/general/References').default
         },
         {
+            path: '/leaderboard',
+            component: require('./views/Leaderboard/Leaderboard').default
+        },
+        {
             path: '/credits',
             component: require('./views/general/Credits').default
         },
