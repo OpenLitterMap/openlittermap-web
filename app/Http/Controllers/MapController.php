@@ -66,29 +66,28 @@ class MapController extends Controller
 			$minTime = substr_replace($minTime,'2',0,1); //  2018-mm-dd hh:mm:ss
 		    $maxTime = substr_replace($maxTime,'2',0,1);
 
-			$photoData = Photo::with([
-				'smoking',
-				'food',
-				'coffee',
-				'alcohol',
-				'softdrinks',
-				'sanitary',
-				'other',
-				'coastal',
-				'brands',
-				'dumping',
-				'industrial',
+            $photoData = Photo::with([
+                'smoking',
+                'food',
+                'coffee',
+                'alcohol',
+                'softdrinks',
+                'sanitary',
+                'other',
+                'coastal',
+                'brands',
+                'dumping',
+                'industrial',
 //				 'art',
 //				'trashdog',
-				'user' => function ($q) {
-					$q->where('show_name_maps', true)
-                      ->orWhere('show_username_maps', true);
-				}])->where([
-                    ['city_id', $cityId],
-                    ['verified', '>', 0],
-                    ['datetime', '>=', $minTime],
-                    ['datetime', '<=', $maxTime]
-			])->orderBy('datetime', 'asc')->get();
+                'customTags:photo_id,tag',
+                'user'
+            ])->where([
+                ['city_id', $cityId],
+                ['verified', '>', 0],
+                ['datetime', '>=', $minTime],
+                ['datetime', '<=', $maxTime]
+            ])->orderBy('datetime', 'asc')->get();
 
 			$this->getInitialPhotoLatLon($photoData[0]);
 			$this->photoCount = $photoData->count();
@@ -99,22 +98,22 @@ class MapController extends Controller
 				'smoking',
 				'food',
 				'coffee',
-				'alcohol',
-				'softdrinks',
-				'sanitary',
-				'other',
-				'coastal',
-				'brands',
-				'dumping',
-				'industrial',
+                'alcohol',
+                'softdrinks',
+                'sanitary',
+                'other',
+                'coastal',
+                'brands',
+                'dumping',
+                'industrial',
 //				 'art',
 //				'trashdog',
-				'user' => function ($q) {
-					$q->where('show_name_maps', true)->orWhere('show_username_maps', true);
-				}])->where([
-					['city_id', $cityId],
-					['verified', '>', 0]
-				])->orderBy('datetime', 'asc')->get();
+                'customTags:photo_id,tag',
+                'user'
+            ])->where([
+                ['city_id', $cityId],
+                ['verified', '>', 0]
+            ])->orderBy('datetime', 'asc')->get();
 
 			$this->getInitialPhotoLatLon($photoData[0]);
 			$this->photoCount = $photoData->count();
@@ -146,7 +145,8 @@ class MapController extends Controller
 			   'display_name' => $c["display_name"],
 			   'result_string' => $c["result_string"],
 			   'picked_up' => $c->picked_up,
-                    'social' => $c->user ? $c->user->social_links : null,
+                    'social' => $c->user->social_links,
+                    'custom_tags' => $c->customTags->pluck('tag'),
 
 					// data
 					'smoking' => $c->smoking,
@@ -168,15 +168,13 @@ class MapController extends Controller
 				)
 			);
 
-			if ($c->user)
-			{
-				if ($c->user->show_name_maps) {
-					$feature["properties"]["fullname"] = $c->user->name;;
-				}
-				if ($c->user->show_username_maps) {
-					$feature["properties"]["username"] = $c->user->username;;
-				}
-			}
+            if ($c->user->show_name_maps) {
+                $feature["properties"]["name"] = $c->user->name;
+            }
+
+            if ($c->user->show_username_maps) {
+                $feature["properties"]["username"] = $c->user->username;
+            }
 
 			// Add features to feature collection array
 			array_push($geojson["features"], $feature);
