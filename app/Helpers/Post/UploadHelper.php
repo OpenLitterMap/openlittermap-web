@@ -50,7 +50,7 @@ class UploadHelper
     {
         $stateName = $this->lookupPlace(
             $addressArray,
-            ['state', 'county', 'region']
+            ['state', 'county', 'region', 'state_district']
         );
 
         if (!$stateName) {

@@ -10,11 +10,17 @@
 					</tr>
 				</thead>
 				<tbody>
-					<tr v-for="(leader, i) in leaders" class="wow slideInLeft">
-						<td style="color :white; position: relative; width: 20%;">
-							{{ positions[i] }}
+					<tr v-for="(leader, index) in leaders" class="wow slideInLeft">
+						<td style="color: white;">
+                            <span v-if="leader.rank">{{ getPosition(leader.rank) }}</span>
+                            <span v-else>{{ getPosition(index + 1) }}</span>
 							<!-- if mobile -->
-							<img v-show="leader.flag" :src="getCountryFlag(leader.flag)" class="leader-flag" />
+							<img
+                                v-show="leader.global_flag"
+                                :src="getCountryFlag(leader.global_flag)"
+                                class="leader-flag"
+                                :alt="leader.global_flag"
+                            />
 						</td>
 
                         <!-- Todo .... trail characters after max-width reached -->
@@ -26,11 +32,13 @@
                             </div>
                             <span v-if="leader.social" class="social-container">
                                 <a v-for="(link, type) in leader.social" target="_blank" :href="link">
-                                    <i class="fa" :class="type === 'personal' ? 'fa-link' : `fa-${type}`"></i>
+                                    <i class="fa" :class="type === 'personal' ? 'fa-link' : `fa-${type}`" />
                                 </a>
                             </span>
                         </td>
-						<td style="color:white; width: 20%;">{{ leader.xp }}</td>
+						<td style="color:white; width: 20%;">
+                            {{ leader.xp }}
+                        </td>
 					</tr>
 				</tbody>
 			</table>
@@ -39,27 +47,12 @@
 </template>
 
 <script>
+import moment from 'moment';
+
 export default {
 	name: 'GlobalLeaders',
-	data ()
-	{
-		return {
-			dir: '/assets/icons/flags/',
-			positions: ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th']
-		};
-	},
-	computed: {
-
-		/**
-		 * Top-10 leaderboard
-		 */
-		leaders ()
-		{
-			return this.$store.state.locations.globalLeaders;
-		}
-	},
+    props: ['leaders'],
 	methods: {
-
 		/**
 		 * Show flag for a leader if they have country set
 		 */
@@ -69,12 +62,20 @@ export default {
 			{
 				country = country.toLowerCase();
 
-				return this.dir + country + '.png';
+				return '/assets/icons/flags/' + country + '.png';
 			}
 
 			return '';
-		}
-	}
+		},
+
+        /**
+         * Only simple way I know how to get the ordinal number in javascript
+         */
+        getPosition (rank) {
+            // 1st, 2nd, 3rd
+            return moment.localeData().ordinal(rank);
+        }
+    }
 }
 </script>
 

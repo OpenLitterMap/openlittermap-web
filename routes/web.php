@@ -8,6 +8,7 @@ Route::get('/world', 'HomeController@index');
 Route::get('/community', 'HomeController@index');
 Route::get('/community/stats', 'CommunityController@stats');
 Route::get('/references', 'HomeController@index');
+Route::get('/leaderboard', 'HomeController@index');
 
 // Registration
 Route::get('/signup', 'HomeController@index');
@@ -78,6 +79,9 @@ Route::get('global', 'HomeController@index');
 Route::get('/global/clusters', 'GlobalMap\ClusterController@index');
 Route::get('/global/points', 'GlobalMap\GlobalMapController@index');
 Route::get('/global/art-data', 'GlobalMap\GlobalMapController@artData');
+
+// Get data for the Global Leaderboard
+Route::get('/global/leaderboard', 'Leaderboard\LeaderboardController@index');
 
 /** Auth Routes */
 

@@ -1,16 +1,19 @@
 <template>
     <section class="inner-locations-container" :class="container">
-		<!-- Location Navbar -->
-		<location-navbar @selectedCategory="updateCategory($event)" />
+
+        <!-- Location Navbar -->
+		<location-navbar />
 
 	    <!-- v-show is a temp bug fix until cities table has working total_litter column -->
-		<section v-for="(location, index) in orderedBy" :key="index"  v-show="location.total_litter_redis > 0">
-			<div v-show="category !== 'A-Z'">
-				<br>
-				<h1 class="title is-1 has-text-centered world-cup-title">
-					#LitterWorldCup
-				</h1>
-			</div>
+        <!-- v-show="location.total_litter_redis > 0"-->
+        <section
+            v-for="(location, index) in orderedBy"
+            :key="index"
+        >
+            <br>
+            <h1 class="title is-1 has-text-centered world-cup-title">
+                #LitterWorldCup
+            </h1>
 
 			<div class="hero-body location-container">
         		<div class="columns">
@@ -20,7 +23,7 @@
 						:index="index"
 						:location="location"
 						:locationType="locationType"
-						:category="category"
+						:category="sortedBy"
 					/>
 
 					<!-- Charts -->
@@ -71,8 +74,10 @@ import Options from '../../components/Locations/Charts/Options/Options'
 import Download from '../../components/Locations/Charts/Download/Download'
 
 export default {
-	props: ['locationType'],
-	name: 'SortLocations',
+    name: 'SortLocations',
+    props: [
+        'locationType'
+    ],
 	components: {
 		LocationNavbar,
 		LocationMetadata,
@@ -84,7 +89,6 @@ export default {
 	},
 	data () {
 		return {
-			'category': this.$t('location.most-data'),
 			tab: '',
 			tabs: [
 				{ title: this.$t('location.litter'), component: 'ChartsContainer', in_location: 'all' },
@@ -115,24 +119,42 @@ export default {
 		},
 
 		/**
-		 * We can sort all locations A-Z, Most Open Data, or Most Open Data Per Person
+         * Return sorted array of locations
          *
-		 * Todo: add new options: created_at, etc.
+         * Determined by this.locations.sortedByOption in LocationNavBar
 		 */
 		orderedBy ()
 		{
-			if (this.category === "A-Z")
+			if (this.sortedBy === "alphabetical")
 			{
 				return this.locations;
 			}
-			else if (this.category === this.$t('location.most-data'))
+			else if (this.sortedBy === 'most-data')
 			{
 				return sortBy(this.locations, 'total_litter_redis').reverse();
 			}
-			else if (this.category === this.$t('location.most-data-person'))
+			else if (this.sortedBy === 'most-data-per-person')
 			{
 				return sortBy(this.locations, 'avg_litter_per_user').reverse();
 			}
+            else if (this.sortedBy === 'most-recent')
+            {
+                return sortBy(this.locations, 'updated_at');
+            }
+            else if (this.sortedBy === 'total-contributors')
+            {
+                return sortBy(this.locations, 'total_contributors_redis').reverse();
+            }
+            else if (this.sortedBy === 'first-created')
+            {
+                return sortBy(this.locations, 'created_at');
+            }
+            else if (this.sortedBy === 'most-recently-created')
+            {
+                return sortBy(this.locations, 'created_at').reverse();
+            }
+
+            return [];
 		},
 
 		/**
@@ -141,9 +163,23 @@ export default {
 		locations ()
 		{
 			return this.$store.state.locations.locations;
-		}
-	},
-	methods: {
+		},
+
+        /**
+         * String that determines how to sort the order of locations
+         *
+         * Includes:
+         * - alphabetical
+         * - most-data
+         * - most-data-per-person
+         * - total-contributors
+         * - most-recent
+         */
+        sortedBy () {
+            return this.$store.state.locations.sortLocationsBy;
+        }
+    },
+    methods: {
 		/**
 		 * Load a tab component: Litter, Leaderboard, Time-series
 		 */
@@ -178,15 +214,7 @@ export default {
 		updateUrl (url)
 		{
             console.log({ url });
-		},
-
-		/**
-		 * Update selected category from LocationNavBar component
-		 */
-		updateCategory (updatedCategory)
-		{
-			this.category = updatedCategory
-		},
+		}
 	}
 }
 </script>

@@ -39,11 +39,11 @@ class LoadDataHelper
             5. Eager load leaders with the country model
          */
         $countries = Country::with(['creator' => function ($q) {
-            $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby')
+            $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby', 'created_at', 'updated_at')
               ->where('show_name_createdby', true)
               ->orWhere('show_username_createdby', true);
         }])
-        ->where('manual_verify', '1')
+        ->where('manual_verify', true)
         ->orderBy('country', 'asc')
         ->get();
 
@@ -72,6 +72,7 @@ class LoadDataHelper
             $total_litter += $country->total_litter_redis;
 
             $country['diffForHumans'] = $country->created_at->diffForHumans();
+            $country['updatedAtDiffForHumans'] = $country->updated_at->diffForHumans();
         }
 
         /**
@@ -295,22 +296,24 @@ class LoadDataHelper
      */
     protected static function getLeadersFromLeaderboards($leaderboardIds): array
     {
-        $users = User::query()
+        return User::query()
             ->whereIn('id', array_keys($leaderboardIds))
-            ->get();
-
-        $leaders = collect($leaderboardIds)
-            ->map(function ($xp, $userId) use ($users) {
-                $user = $users->firstWhere('id', $userId);
-                if (!$user) {
-                    return null;
-                }
-                $user->xp_redis = $xp;
-                return $user;
+            ->get()
+            ->append('xp_redis')
+            ->filter(function ($leader) {
+                return $leader->xp_redis > 0;
             })
-            ->filter()
-            ->sortByDesc('xp_redis');
-
-        return LocationHelper::getLeaders($leaders);
+            ->map(function ($leader) {
+                return [
+                    'name' => $leader->show_name ? $leader->name : '',
+                    'username' => $leader->show_username ? ('@' . $leader->username) : '',
+                    'xp' => number_format($leader->xp_redis),
+                    'global_flag' => $leader->global_flag,
+                    'social' => !empty($leader->social_links) ? $leader->social_links : null,
+                ];
+            })
+            ->sortByDesc('xp')
+            ->values()
+            ->toArray();
     }
 }

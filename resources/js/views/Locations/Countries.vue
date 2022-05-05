@@ -2,9 +2,13 @@
     <div>
         <loading v-show="loading" :active.sync="loading" :is-full-page="true" />
 
-        <GlobalMetaData :loading="loading" />
+        <GlobalMetaData
+            :loading="loading"
+        />
 
-        <SortLocations locationType="country" />
+        <SortLocations
+            locationType="country"
+        />
     </div>
 </template>
 

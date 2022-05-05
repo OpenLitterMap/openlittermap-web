@@ -126,7 +126,12 @@ class User extends Authenticatable
         'settings' => 'array'
     ];
 
-    protected $appends = ['total_categories', 'total_tags', 'total_brands_redis', 'picked_up'];
+    protected $appends = [
+        'total_categories',
+        'total_tags',
+        'total_brands_redis',
+        'picked_up',
+    ];
 
     /**
      * Get total categories attribute
