@@ -93,4 +93,12 @@ export const mutations = {
     {
         state.total_litter -= payload;
     },
+
+    /**
+     * Change how to sort the order of the locations on the LitterWorldCup
+     */
+    setSortLocationsBy (state, payload)
+    {
+        state.sortLocationsBy = payload;
+    }
 };

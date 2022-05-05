@@ -66,6 +66,10 @@
 
             <!-- Created By -->
             <div class="panel-block">{{ $t('common.created-by') }}: <strong class="green">&nbsp; {{ location['created_by_name'] }} {{ location['created_by_username'] }}</strong></div>
+
+            <!-- Last Updated -->
+            <div class="panel-block">Last Updated: <strong class="green">&nbsp; {{ location.updatedAtDiffForHumans }}</strong></div>
+
         </div>
     </div>
 </template>

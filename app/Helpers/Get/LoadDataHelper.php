@@ -39,11 +39,11 @@ class LoadDataHelper
             5. Eager load leaders with the country model
          */
         $countries = Country::with(['creator' => function ($q) {
-            $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby')
+            $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby', 'created_at', 'updated_at')
               ->where('show_name_createdby', true)
               ->orWhere('show_username_createdby', true);
         }])
-        ->where('manual_verify', '1')
+        ->where('manual_verify', true)
         ->orderBy('country', 'asc')
         ->get();
 
@@ -72,6 +72,7 @@ class LoadDataHelper
             $total_litter += $country->total_litter_redis;
 
             $country['diffForHumans'] = $country->created_at->diffForHumans();
+            $country['updatedAtDiffForHumans'] = $country->updated_at->diffForHumans();
         }
 
         /**
