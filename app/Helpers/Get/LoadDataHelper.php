@@ -303,6 +303,7 @@ class LoadDataHelper
             ->filter(function ($leader) {
                 return $leader->xp_redis > 0;
             })
+            ->sortByDesc('xp_redis')
             ->map(function ($leader) {
                 return [
                     'name' => $leader->show_name ? $leader->name : '',
@@ -312,7 +313,6 @@ class LoadDataHelper
                     'social' => !empty($leader->social_links) ? $leader->social_links : null,
                 ];
             })
-            ->sortByDesc('xp')
             ->values()
             ->toArray();
     }
