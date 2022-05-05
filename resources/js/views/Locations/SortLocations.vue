@@ -137,9 +137,9 @@ export default {
 			{
 				return sortBy(this.locations, 'avg_litter_per_user').reverse();
 			}
-            else if (this.sortedBy === 'most-recent')
+            else if (this.sortedBy === 'most-recently-updated')
             {
-                return sortBy(this.locations, 'updated_at');
+                return sortBy(this.locations, 'updated_at').reverse();
             }
             else if (this.sortedBy === 'total-contributors')
             {
