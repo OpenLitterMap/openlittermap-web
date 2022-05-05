@@ -47,7 +47,7 @@ class MakeImageAction
         // We can assume its jpg, png, and can be handled by the default GD image library
         // Otherwise, we are going to have to handle HEIC separately.
         if (!in_array(strtolower($extension), ['heif', 'heic'])) {
-            $image = Image::make($file);
+            $image = Image::make($file)->orientate();
             $exif = $image->exif();
 
             return compact('image', 'exif');
@@ -77,7 +77,7 @@ class MakeImageAction
         exec('magick convert ' . $tmpFilepath . ' ' . $convertedFilepath);
 
         // Make the image from the new converted file
-        $image = Image::make($convertedFilepath);
+        $image = Image::make($convertedFilepath)->orientate();
         $exif = $image->exif();
 
         // Remove the temporary files from storage
