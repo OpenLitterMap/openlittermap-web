@@ -47,7 +47,7 @@ export default {
                 },
                 {
                     text: 'Most Recently Updated',
-                    value: 'most-recent'
+                    value: 'most-recently-updated'
                 }
             ]
         }
