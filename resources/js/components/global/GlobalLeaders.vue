@@ -4,7 +4,7 @@
 			<table class="table is-fullwidth" style="background-color: transparent;">
 				<thead>
 					<tr>
-						<th class="has-text-centered" style="width: 12.5%;">{{ $t('location.position') }}</th>
+						<th class="has-text-centered" style="width: 15%;">{{ $t('location.position') }}</th>
 						<th>{{ $t('location.name') }}</th>
 						<th class="has-text-centered">{{ $t('location.xp') }}</th>
                         <th class="has-text-centered">Socials</th>
@@ -12,8 +12,8 @@
 				</thead>
 				<tbody>
 					<tr v-for="(leader, index) in leaders" class="wow slideInLeft">
-						<td style="color: white;" :class="!leader.global_flag ? 'has-text-centered' : 'ml-10px'">
-                            <span v-if="leader.rank">{{ getPosition(leader.rank) }}</span>
+						<td style="color: white;" :class="!leader.global_flag ? 'has-text-centered' : ''">
+                            <span v-if="leader.rank" class="ml-10px">{{ getPosition(leader.rank) }}</span>
                             <span v-else>{{ getPosition(index + 1) }}</span>
 							<!-- if mobile -->
 							<img
