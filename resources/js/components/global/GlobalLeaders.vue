@@ -12,7 +12,7 @@
 				</thead>
 				<tbody>
 					<tr v-for="(leader, index) in leaders" class="wow slideInLeft">
-						<td style="color: white;" class="has-text-centered">
+						<td style="color: white;" :class="!leader.global_flag ? 'has-text-centered' : 'ml-10px'">
                             <span v-if="leader.rank">{{ getPosition(leader.rank) }}</span>
                             <span v-else>{{ getPosition(index + 1) }}</span>
 							<!-- if mobile -->
@@ -85,14 +85,14 @@ export default {
 
 <style scoped>
 
-    .leaderboard-heading {
-        text-align: center !important;
+    .ml-10px {
+        margin-left: 10px;
     }
 
 	.leader-flag {
 		height: 1em !important;
 		position: absolute;
-		right: 0;
+		right: 2em;
 		top: 30%;
 	}
 
