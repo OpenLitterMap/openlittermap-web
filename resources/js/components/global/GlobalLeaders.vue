@@ -12,8 +12,8 @@
 				</thead>
 				<tbody>
 					<tr v-for="(leader, index) in leaders" class="wow slideInLeft">
-						<td style="color: white;" :class="!leader.global_flag ? 'has-text-centered' : ''">
-                            <span v-if="leader.rank" class="ml-10px">{{ getPosition(leader.rank) }}</span>
+						<td style="color: white;" class="has-text-centered">
+                            <span v-if="leader.rank" class="pr2em">{{ getPosition(leader.rank) }}</span>
                             <span v-else>{{ getPosition(index + 1) }}</span>
 							<!-- if mobile -->
 							<img
