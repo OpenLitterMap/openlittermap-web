@@ -92,7 +92,7 @@ export default {
 	.leader-flag {
 		height: 1em !important;
 		position: absolute;
-		right: 3em;
+		right: 0;
 		top: 30%;
 	}
 
