@@ -12,7 +12,7 @@
 				</thead>
 				<tbody>
 					<tr v-for="(leader, index) in leaders" class="wow slideInLeft">
-						<td class="position-container" :style="!leader.global_flag ? 'text-align: center;' : '' ">
+						<td class="position-container">
                             <span v-if="leader.rank" :class="leader.global_flag ? 'pr2em' : ''">{{ getPosition(leader.rank) }}</span>
                             <span v-else :class="leader.global_flag ? 'pr2em' : ''">{{ getPosition(index + 1) }}</span>
 							<!-- if mobile -->
@@ -135,7 +135,7 @@ export default {
 
     .position-container {
         color: white;
-        text-align: center;
+        padding-left: 2.5em;
     }
 
     @media screen and (max-width: 678px)
