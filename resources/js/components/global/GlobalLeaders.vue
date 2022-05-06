@@ -31,11 +31,6 @@
                                 <span v-if="leader.name || leader.username">{{ leader.name }} {{ leader.username }}</span>
                                 <span v-else>{{ $t('common.anonymous') }}</span>
                             </div>
-<!--                            <span v-if="leader.social" class="social-container">-->
-<!--                                <a v-for="(link, type) in leader.social" target="_blank" :href="link">-->
-<!--                                    <i class="fa" :class="type === 'personal' ? 'fa-link' : `fa-${type}`" />-->
-<!--                                </a>-->
-<!--                            </span>-->
                         </td>
 						<td style="color:white; width: 20%;" class="has-text-centered">
                             {{ leader.xp }}
