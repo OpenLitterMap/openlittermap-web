@@ -15,6 +15,7 @@
 						<td class="position-container" :style="!leader.global_flag ? 'text-align: center;' : '' ">
                             <span v-if="leader.rank">{{ getPosition(leader.rank) }}</span>
                             <span v-else>{{ getPosition(index + 1) }}</span>
+
 							<!-- if mobile -->
 							<img
                                 v-show="leader.global_flag"
@@ -135,7 +136,7 @@ export default {
 
     .position-container {
         color: white;
-        text-align: center;
+        padding-left: 2.5em;
     }
 
     @media screen and (max-width: 678px)
