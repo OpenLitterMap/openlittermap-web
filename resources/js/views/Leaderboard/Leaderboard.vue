@@ -20,7 +20,9 @@
             />
 
             <div v-if="!loading">
-                <GlobalLeaders :leaders="leaderboard.users"/>
+                <GlobalLeaders
+                    :leaders="leaderboard.users"
+                />
 
                 <!-- Pagination Buttons -->
                 <div
