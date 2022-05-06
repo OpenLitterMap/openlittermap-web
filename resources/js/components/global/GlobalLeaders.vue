@@ -4,7 +4,7 @@
 			<table class="table is-fullwidth" style="background-color: transparent;">
 				<thead>
 					<tr>
-						<th class="has-text-centered">{{ $t('location.position') }}</th>
+						<th class="has-text-centered" style="width: 12.5%;">{{ $t('location.position') }}</th>
 						<th>{{ $t('location.name') }}</th>
 						<th class="has-text-centered">{{ $t('location.xp') }}</th>
                         <th class="has-text-centered">Socials</th>
