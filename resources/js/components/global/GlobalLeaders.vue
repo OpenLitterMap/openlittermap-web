@@ -13,8 +13,8 @@
 				<tbody>
 					<tr v-for="(leader, index) in leaders" class="wow slideInLeft">
 						<td style="color: white;" class="has-text-centered">
-                            <span v-if="leader.rank" class="pr2em">{{ getPosition(leader.rank) }}</span>
-                            <span v-else>{{ getPosition(index + 1) }}</span>
+                            <span v-if="leader.rank" :class="leader.global_flag ? 'pr2em' : ''">{{ getPosition(leader.rank) }}</span>
+                            <span v-else :class="leader.global_flag ? 'pr2em' : ''">{{ getPosition(index + 1) }}</span>
 							<!-- if mobile -->
 							<img
                                 v-show="leader.global_flag"
