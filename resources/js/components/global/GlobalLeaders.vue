@@ -1,17 +1,18 @@
 <template>
 	<div class="columns is-centered">
-		<div class="column is-half">
+		<div class="column is-two-thirds">
 			<table class="table is-fullwidth" style="background-color: transparent;">
 				<thead>
 					<tr>
-						<th>{{ $t('location.position') }}</th>
-						<th>{{ $t('location.name') }}</th>
-						<th>{{ $t('location.xp') }}</th>
+						<th class="leaderboard-heading">{{ $t('location.position') }}</th>
+						<th class="leaderboard-heading">{{ $t('location.name') }}</th>
+						<th class="leaderboard-heading">{{ $t('location.xp') }}</th>
+                        <th class="leaderboard-heading">Socials</th>
 					</tr>
 				</thead>
 				<tbody>
 					<tr v-for="(leader, index) in leaders" class="wow slideInLeft">
-						<td style="color: white;">
+						<td style="color: white;" :class="!leader.global_flag ? 'has-text-centered' : ''">
                             <span v-if="leader.rank">{{ getPosition(leader.rank) }}</span>
                             <span v-else>{{ getPosition(index + 1) }}</span>
 							<!-- if mobile -->
@@ -30,14 +31,17 @@
                                 <span v-if="leader.name || leader.username">{{ leader.name }} {{ leader.username }}</span>
                                 <span v-else>{{ $t('common.anonymous') }}</span>
                             </div>
+                        </td>
+						<td style="color:white; width: 20%;" class="has-text-centered">
+                            {{ leader.xp }}
+                        </td>
+
+                        <td>
                             <span v-if="leader.social" class="social-container">
                                 <a v-for="(link, type) in leader.social" target="_blank" :href="link">
                                     <i class="fa" :class="type === 'personal' ? 'fa-link' : `fa-${type}`" />
                                 </a>
                             </span>
-                        </td>
-						<td style="color:white; width: 20%;">
-                            {{ leader.xp }}
                         </td>
 					</tr>
 				</tbody>
@@ -81,6 +85,10 @@ export default {
 
 <style scoped>
 
+    .leaderboard-heading {
+        text-align: center !important;
+    }
+
 	.leader-flag {
 		height: 1em !important;
 		position: absolute;
@@ -93,30 +101,25 @@ export default {
     }
 
     .social-container {
-        position: absolute;
-        right: 0;
-        top: 0;
-        bottom: 0;
         height: 32px;
         margin: auto 0;
-        visibility: hidden;
-        background-color: black;
+        background-color: transparent;
         color: #fff;
         text-align: center;
         border-radius: 6px;
         padding: 4px 8px;
         z-index: 30;
-        opacity: 0;
         transition: opacity 0.3s;
         display: flex;
         flex-direction: row;
         gap: 0.5rem;
+        justify-content: center;
     }
 
-    tr:hover .social-container {
-        visibility: visible;
-        opacity: 0.8;
-    }
+    /*tr:hover .social-container {*/
+    /*    visibility: visible;*/
+    /*    opacity: 0.8;*/
+    /*}*/
 
     .social-container a {
         width: 1.5rem;
