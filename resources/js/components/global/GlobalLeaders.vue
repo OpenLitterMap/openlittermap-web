@@ -4,15 +4,15 @@
 			<table class="table is-fullwidth" style="background-color: transparent;">
 				<thead>
 					<tr>
-						<th class="leaderboard-heading">{{ $t('location.position') }}</th>
-						<th class="leaderboard-heading">{{ $t('location.name') }}</th>
-						<th class="leaderboard-heading">{{ $t('location.xp') }}</th>
-                        <th class="leaderboard-heading">Socials</th>
+						<th class="has-text-centered">{{ $t('location.position') }}</th>
+						<th>{{ $t('location.name') }}</th>
+						<th class="has-text-centered">{{ $t('location.xp') }}</th>
+                        <th class="has-text-centered">Socials</th>
 					</tr>
 				</thead>
 				<tbody>
 					<tr v-for="(leader, index) in leaders" class="wow slideInLeft">
-						<td style="color: white;" :class="!leader.global_flag ? 'has-text-centered' : ''">
+						<td style="color: white;" class="has-text-centered">
                             <span v-if="leader.rank">{{ getPosition(leader.rank) }}</span>
                             <span v-else>{{ getPosition(index + 1) }}</span>
 							<!-- if mobile -->
@@ -92,7 +92,7 @@ export default {
 	.leader-flag {
 		height: 1em !important;
 		position: absolute;
-		left: 50%;
+        right: 3em;
 		top: 30%;
 	}
 
