@@ -12,7 +12,7 @@
 				</thead>
 				<tbody>
 					<tr v-for="(leader, index) in leaders" class="wow slideInLeft">
-						<td class="position-container" :style="!leader.global_flag ? 'text-align: center;' : '' ">
+						<td class="position-container">
                             <span v-if="leader.rank">{{ getPosition(leader.rank) }}</span>
                             <span v-else>{{ getPosition(index + 1) }}</span>
 
