@@ -7,7 +7,7 @@
 						<th class="has-text-centered" style="width: 15%;">{{ $t('location.position') }}</th>
 						<th>{{ $t('location.name') }}</th>
 						<th class="has-text-centered">{{ $t('location.xp') }}</th>
-                        <th class="has-text-centered hide-mobile">Socials</th>
+                        <th class="has-text-centered hide-mobile">Social</th>
 					</tr>
 				</thead>
 				<tbody>
