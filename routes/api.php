@@ -90,6 +90,7 @@ Route::post('/settings/update', 'ApiSettingsController@update')
 
 Route::post('/settings/privacy/toggle-previous-tags', 'ApiSettingsController@togglePreviousTags')
     ->middleware('auth:api');
+Route::patch('/settings', 'SettingsController@update')->middleware('auth:api');
 
 // Teams
 Route::prefix('/teams')->group(function () {
