@@ -296,22 +296,27 @@ class LoadDataHelper
      */
     protected static function getLeadersFromLeaderboards($leaderboardIds): array
     {
-        return User::query()
+        $users = User::query()
             ->whereIn('id', array_keys($leaderboardIds))
-            ->get()
-            ->append('xp_redis')
-            ->filter(function ($leader) {
-                return $leader->xp_redis > 0;
-            })
-            ->sortByDesc('xp_redis')
-            ->map(function ($leader) {
+            ->get();
+
+        return collect($leaderboardIds)
+            ->map(function ($xp, $userId) use ($users) {
+                $user = $users->firstWhere('id', $userId);
+                if (!$user) {
+                    return null;
+                }
+
                 return [
-                    'name' => $leader->show_name ? $leader->name : '',
-                    'username' => $leader->show_username ? ('@' . $leader->username) : '',
-                    'xp' => number_format($leader->xp_redis),
-                    'global_flag' => $leader->global_flag,
-                    'social' => !empty($leader->social_links) ? $leader->social_links : null,
+                    'name' => $user->show_name ? $user->name : '',
+                    'username' => $user->show_username ? ('@' . $user->username) : '',
+                    'xp' => number_format($xp),
+                    'global_flag' => $user->global_flag,
+                    'social' => !empty($user->social_links) ? $user->social_links : null,
                 ];
+            })
+            ->filter(function ($user) {
+                return $user && $user['xp'] > 0;
             })
             ->values()
             ->toArray();
