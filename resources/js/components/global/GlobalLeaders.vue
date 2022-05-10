@@ -7,14 +7,15 @@
 						<th class="has-text-centered" style="width: 15%;">{{ $t('location.position') }}</th>
 						<th>{{ $t('location.name') }}</th>
 						<th class="has-text-centered">{{ $t('location.xp') }}</th>
-                        <th class="has-text-centered hide-mobile">Socials</th>
+                        <th class="has-text-centered hide-mobile">Social</th>
 					</tr>
 				</thead>
 				<tbody>
 					<tr v-for="(leader, index) in leaders" class="wow slideInLeft">
 						<td class="position-container">
-                            <span v-if="leader.rank" :class="leader.global_flag ? 'pr2em' : ''">{{ getPosition(leader.rank) }}</span>
-                            <span v-else :class="leader.global_flag ? 'pr2em' : ''">{{ getPosition(index + 1) }}</span>
+                            <span v-if="leader.rank">{{ getPosition(leader.rank) }}</span>
+                            <span v-else>{{ getPosition(index + 1) }}</span>
+
 							<!-- if mobile -->
 							<img
                                 v-show="leader.global_flag"
@@ -92,7 +93,7 @@ export default {
 	.leader-flag {
 		height: 1em !important;
 		position: absolute;
-		right: 2em;
+		right: 1.5em;
 		top: 30%;
 	}
 
