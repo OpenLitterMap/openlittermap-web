@@ -28,9 +28,8 @@
                 <!-- Todo .... number animation per user -->
                 <td>
                     <div class="leader-name">
-                        <span v-if="leader.name">{{ leader.name }}</span>
-                        <span v-if="leader.username">{{ leader.username }}</span>
-                        <span v-if="!(leader.name || leader.username)">{{ $t('common.anonymous') }}</span>
+                        <span v-if="leader.name || leader.username">{{ leader.name }} {{ leader.username }}</span>
+                        <span v-else>{{ $t('common.anonymous') }}</span>
                     </div>
 
                     <div class="leader-team" v-if="leader.team">
