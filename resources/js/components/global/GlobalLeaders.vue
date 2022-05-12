@@ -128,6 +128,7 @@ export default {
         display: flex;
         flex-direction: row;
         gap: 0.5rem;
+        justify-content: center;
 
         a {
             width: 1.5rem;
@@ -177,6 +178,7 @@ export default {
 
         .social-container {
             flex-wrap: wrap;
+            justify-content: start;
         }
     }
 
