@@ -7,21 +7,6 @@ use Tests\TestCase;
 
 class SettingsTest extends TestCase
 {
-    public function test_a_user_can_update_their_settings()
-    {
-        /** @var User $user */
-        $user = User::factory()->create();
-
-        $response = $this->actingAs($user)->patchJson('/settings', [
-            'social_twitter' => 'https://twitter.com/user',
-            'test setting' => 'this should not be stored',
-        ]);
-
-        $response->assertOk();
-        $this->assertEquals('https://twitter.com/user', $user->fresh()->setting('social_twitter'));
-        $this->assertNull($user->fresh()->setting('test setting'));
-    }
-
     public function settingsDataProvider(): array
     {
         return [
@@ -34,6 +19,32 @@ class SettingsTest extends TestCase
         ];
     }
 
+    public function routeDataProvider(): array
+    {
+        return [
+            'web' => ['guard' => 'web', 'route' => '/settings'],
+            'api' => ['guard' => 'api', 'route' => '/api/settings'],
+        ];
+    }
+
+    /**
+     * @dataProvider routeDataProvider
+     */
+    public function test_a_user_can_update_their_settings($guard, $route)
+    {
+        /** @var User $user */
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user, $guard)->patchJson($route, [
+            'social_twitter' => 'https://twitter.com/user',
+            'test setting' => 'this should not be stored',
+        ]);
+
+        $response->assertOk();
+        $this->assertEquals('https://twitter.com/user', $user->fresh()->setting('social_twitter'));
+        $this->assertNull($user->fresh()->setting('test setting'));
+    }
+
     /**
      * @dataProvider settingsDataProvider
      */
@@ -43,6 +54,20 @@ class SettingsTest extends TestCase
         $user = User::factory()->create();
 
         $response = $this->actingAs($user)->patchJson('/settings', $settings);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors($errors);
+    }
+
+    /**
+     * @dataProvider settingsDataProvider
+     */
+    public function test_it_validates_settings_updates_from_api($settings, $errors)
+    {
+        /** @var User $user */
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user, 'api')->patchJson('/api/settings', $settings);
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors($errors);

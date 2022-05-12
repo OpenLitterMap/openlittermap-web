@@ -8,6 +8,7 @@ use App\Models\Photo;
 use App\Models\Teams\Team;
 use App\Payment;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -22,7 +23,7 @@ use Laravel\Passport\HasApiTokens;
 use LaravelAndVueJS\Traits\LaravelPermissionToVueJS;
 
 /**
- * @property array<Team> $teams
+ * @property Collection<Team> | array<Team> $teams
  * @property Team $team
  * @property int $active_team
  * @property int $xp

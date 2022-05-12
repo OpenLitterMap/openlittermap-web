@@ -82,15 +82,15 @@ export default {
     methods: {
         async loadPreviousPage () {
             this.loading = true;
-            await this.$store.dispatch('GET_PREVIOUS_LEADERBOARD_PAGE');
             window.scrollTo({top: 0, behavior: 'smooth'});
+            await this.$store.dispatch('GET_PREVIOUS_LEADERBOARD_PAGE');
             this.loading = false;
         },
 
         async loadNextPage () {
             this.loading = true;
-            await this.$store.dispatch('GET_NEXT_LEADERBOARD_PAGE');
             window.scrollTo({top: 0, behavior: 'smooth'});
+            await this.$store.dispatch('GET_NEXT_LEADERBOARD_PAGE');
             this.loading = false;
         },
 
