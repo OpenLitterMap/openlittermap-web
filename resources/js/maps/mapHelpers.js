@@ -74,13 +74,12 @@ const helper = {
     /**
      * Formats the team name for usage in Photo popups
      *
-     * Todo translate 'team'
      * @param teamName
      * @returns {string}
      */
     formatTeam: (teamName) => {
         return teamName
-            ? `Team ${teamName}`
+            ? `${i18n.t('common.team')} ${teamName}`
             : '';
     },
 
