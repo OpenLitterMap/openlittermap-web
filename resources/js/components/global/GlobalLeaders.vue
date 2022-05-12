@@ -31,14 +31,18 @@
                         <span v-if="leader.name">{{ leader.name }}</span>
                         <span v-if="leader.username">{{ leader.username }}</span>
                         <span v-if="!(leader.name || leader.username)">{{ $t('common.anonymous') }}</span>
+                    </div>
 
-                        <div class="hide-desktop">
-                            <span v-if="leader.social" class="social-container">
-                                <a v-for="(link, type) in leader.social" target="_blank" :href="link">
-                                    <i class="fa" :class="type === 'personal' ? 'fa-link' : `fa-${type}`" />
-                                </a>
-                            </span>
-                        </div>
+                    <div class="leader-team" v-if="leader.team">
+                        {{ $t('common.team') }} {{ leader.team }}
+                    </div>
+
+                    <div class="hide-desktop">
+                        <span v-if="leader.social" class="social-container">
+                            <a v-for="(link, type) in leader.social" target="_blank" :href="link">
+                                <i class="fa" :class="type === 'personal' ? 'fa-link' : `fa-${type}`"/>
+                            </a>
+                        </span>
                     </div>
                 </td>
                 <td style="color:white; width: 20%;" class="has-text-centered">
@@ -105,6 +109,10 @@ export default {
 		top: 30%;
 	}
 
+    .leader-team {
+        color: white;
+    }
+
     .leader-name {
         color: white;
         display: flex;
@@ -135,6 +143,7 @@ export default {
 
     td {
         position: relative;
+        vertical-align: middle;
     }
 
     .position-container {

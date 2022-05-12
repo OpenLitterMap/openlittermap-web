@@ -297,15 +297,23 @@ class LoadDataHelper
     protected static function getLeadersFromLeaderboards($leaderboardIds): array
     {
         $users = User::query()
+            ->with(['teams:id,name'])
             ->whereIn('id', array_keys($leaderboardIds))
             ->get();
 
         return collect($leaderboardIds)
             ->map(function ($xp, $userId) use ($users) {
+                /** @var User $user */
                 $user = $users->firstWhere('id', $userId);
                 if (!$user) {
                     return null;
                 }
+
+                $showTeamName = $user->active_team && $user->teams
+                        ->where('pivot.team_id', $user->active_team)
+                        ->first(function ($value, $key) {
+                            return $value->pivot->show_name_leaderboards || $value->pivot->show_username_leaderboards;
+                        });
 
                 return [
                     'name' => $user->show_name ? $user->name : '',
@@ -313,6 +321,7 @@ class LoadDataHelper
                     'xp' => number_format($xp),
                     'global_flag' => $user->global_flag,
                     'social' => !empty($user->social_links) ? $user->social_links : null,
+                    'team' => $showTeamName ? $user->team->name : ''
                 ];
             })
             ->filter(function ($user) {

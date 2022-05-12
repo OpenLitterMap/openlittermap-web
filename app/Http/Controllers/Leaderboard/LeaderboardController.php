@@ -25,18 +25,26 @@ class LeaderboardController extends Controller
         $userIds = Redis::zrevrange("xp.users", $start, $end);
 
         $users = User::query()
+            ->with(['teams:id,name'])
             ->whereIn('id', $userIds)
             ->get()
             ->append('xp_redis')
             ->sortByDesc('xp_redis')
             ->values()
             ->map(function (User $user, $index) use ($start) {
+                $showTeamName = $user->active_team && $user->teams
+                        ->where('pivot.team_id', $user->active_team)
+                        ->first(function ($value, $key) {
+                            return $value->pivot->show_name_leaderboards || $value->pivot->show_username_leaderboards;
+                        });
+
                 return [
                     'name' => $user->show_name ? $user->name : '',
                     'username' => $user->show_username ? ('@' . $user->username) : '',
                     'xp' => number_format($user->xp_redis),
                     'global_flag' => $user->global_flag,
                     'social' => !empty($user->social_links) ? $user->social_links : null,
+                    'team' => $showTeamName ? $user->team->name : '',
                     'rank' => $start + $index + 1
                 ];
             })
