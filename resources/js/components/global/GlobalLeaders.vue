@@ -1,54 +1,61 @@
 <template>
-	<div class="columns is-centered">
-		<div class="column is-two-thirds">
-			<table class="table is-fullwidth" style="background-color: transparent;">
-				<thead>
-					<tr>
-						<th class="has-text-centered" style="width: 15%;">{{ $t('location.position') }}</th>
-						<th>{{ $t('location.name') }}</th>
-						<th class="has-text-centered">{{ $t('location.xp') }}</th>
-                        <th class="has-text-centered hide-mobile">Social</th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr v-for="(leader, index) in leaders" class="wow slideInLeft">
-						<td class="position-container">
-                            <span v-if="leader.rank">{{ getPosition(leader.rank) }}</span>
-                            <span v-else>{{ getPosition(index + 1) }}</span>
+    <div class="global-leaders">
+        <table class="table is-fullwidth" style="background-color: transparent;">
+            <thead>
+            <tr>
+                <th class="has-text-centered" style="width: 15%;">{{ $t('location.position') }}</th>
+                <th>{{ $t('location.name') }}</th>
+                <th class="has-text-centered">{{ $t('location.xp') }}</th>
+                <th class="has-text-centered hide-mobile">{{ $t('location.social') }}</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr v-for="(leader, index) in leaders" class="wow slideInLeft">
+                <td class="position-container">
+                    <span v-if="leader.rank">{{ getPosition(leader.rank) }}</span>
+                    <span v-else>{{ getPosition(index + 1) }}</span>
 
-							<!-- if mobile -->
-							<img
-                                v-show="leader.global_flag"
-                                :src="getCountryFlag(leader.global_flag)"
-                                class="leader-flag"
-                                :alt="leader.global_flag"
-                            />
-						</td>
+                    <!-- if mobile -->
+                    <img
+                        v-show="leader.global_flag"
+                        :src="getCountryFlag(leader.global_flag)"
+                        class="leader-flag"
+                        :alt="leader.global_flag"
+                    />
+                </td>
 
-                        <!-- Todo .... trail characters after max-width reached -->
-                        <!-- Todo .... number animation per user -->
-                        <td>
-                            <div class="leader-name">
-                                <span v-if="leader.name || leader.username">{{ leader.name }} {{ leader.username }}</span>
-                                <span v-else>{{ $t('common.anonymous') }}</span>
-                            </div>
-                        </td>
-						<td style="color:white; width: 20%;" class="has-text-centered">
-                            {{ leader.xp }}
-                        </td>
+                <!-- Todo .... trail characters after max-width reached -->
+                <!-- Todo .... number animation per user -->
+                <td>
+                    <div class="leader-name">
+                        <span v-if="leader.name">{{ leader.name }}</span>
+                        <span v-if="leader.username">{{ leader.username }}</span>
+                        <span v-if="!(leader.name || leader.username)">{{ $t('common.anonymous') }}</span>
 
-                        <td class="hide-mobile">
+                        <div class="hide-desktop">
                             <span v-if="leader.social" class="social-container">
                                 <a v-for="(link, type) in leader.social" target="_blank" :href="link">
                                     <i class="fa" :class="type === 'personal' ? 'fa-link' : `fa-${type}`" />
                                 </a>
                             </span>
-                        </td>
-					</tr>
-				</tbody>
-			</table>
-		</div>
-	</div>
+                        </div>
+                    </div>
+                </td>
+                <td style="color:white; width: 20%;" class="has-text-centered">
+                    {{ leader.xp }}
+                </td>
+
+                <td class="hide-mobile">
+                    <span v-if="leader.social" class="social-container">
+                        <a v-for="(link, type) in leader.social" target="_blank" :href="link">
+                            <i class="fa" :class="type === 'personal' ? 'fa-link' : `fa-${type}`" />
+                        </a>
+                    </span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
 </template>
 
 <script>
@@ -84,10 +91,11 @@ export default {
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 
-    .ml-10px {
-        margin-left: 10px;
+    .global-leaders {
+        max-width: 1000px;
+        margin: 0 auto;
     }
 
 	.leader-flag {
@@ -99,35 +107,30 @@ export default {
 
     .leader-name {
         color: white;
+        display: flex;
+        flex-direction: row;
+        gap: 4px;
+
+        span {
+            flex-shrink: 0;
+        }
     }
 
     .social-container {
-        height: 32px;
         margin: auto 0;
-        background-color: transparent;
         color: #fff;
-        text-align: center;
-        border-radius: 6px;
-        padding: 4px 8px;
-        z-index: 30;
         transition: opacity 0.3s;
         display: flex;
         flex-direction: row;
         gap: 0.5rem;
-        justify-content: center;
-    }
 
-    /*tr:hover .social-container {*/
-    /*    visibility: visible;*/
-    /*    opacity: 0.8;*/
-    /*}*/
+        a {
+            width: 1.5rem;
+        }
 
-    .social-container a {
-        width: 1.5rem;
-    }
-
-    .social-container a:hover {
-        transform: scale(1.1)
+        a:hover {
+            transform: scale(1.1)
+        }
     }
 
     td {
@@ -137,6 +140,10 @@ export default {
     .position-container {
         color: white;
         padding-left: 2.5em;
+    }
+
+    .hide-desktop {
+        display: none;
     }
 
     @media screen and (max-width: 678px)
@@ -149,6 +156,10 @@ export default {
             display: none;
         }
 
+        .hide-desktop {
+            display: block;
+        }
+
         .leader-flag {
             right: 1em !important;
         }
@@ -158,5 +169,20 @@ export default {
             padding-left: 0
         }
 
+        .social-container {
+            flex-wrap: wrap;
+        }
+    }
+
+    @media screen and (max-width: 1023px)
+    {
+        .leader-name {
+            flex-direction: column;
+            gap: 0;
+
+            span {
+                flex-shrink: 1;
+            }
+        }
     }
 </style>
