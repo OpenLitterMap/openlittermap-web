@@ -104,9 +104,7 @@ export default {
 
 	.leader-flag {
 		height: 1em !important;
-		position: absolute;
-		right: 1.5em;
-		top: 30%;
+        margin-left: 1em;
 	}
 
     .leader-team {
