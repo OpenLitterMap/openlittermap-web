@@ -1,63 +1,41 @@
 <template>
     <div class="global-leaders">
-        <table class="table is-fullwidth" style="background-color: transparent;">
-            <thead>
-            <tr>
-                <th class="has-text-centered" style="width: 15%;">{{ $t('location.position') }}</th>
-                <th>{{ $t('location.name') }}</th>
-                <th class="has-text-centered">{{ $t('location.xp') }}</th>
-                <th class="has-text-centered hide-mobile">{{ $t('location.social') }}</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr v-for="(leader, index) in leaders" class="wow slideInLeft">
-                <td class="position-container">
-                    <span v-if="leader.rank">{{ getPosition(leader.rank) }}</span>
-                    <span v-else>{{ getPosition(index + 1) }}</span>
-
-                    <!-- if mobile -->
+        <div v-for="(leader, index) in leaders" class="user wow rollIn">
+            <div class="rank">
+                <span v-if="leader.rank">{{ getPosition(leader.rank) }}</span>
+                <span v-else>{{ getPosition(index + 1) }}</span>
+                <div class="flag">
                     <img
                         v-show="leader.global_flag"
                         :src="getCountryFlag(leader.global_flag)"
-                        class="leader-flag"
                         :alt="leader.global_flag"
                     />
-                </td>
-
-                <!-- Todo .... trail characters after max-width reached -->
-                <!-- Todo .... number animation per user -->
-                <td>
-                    <div class="leader-name">
-                        <span v-if="leader.name || leader.username">{{ leader.name }} {{ leader.username }}</span>
-                        <span v-else>{{ $t('common.anonymous') }}</span>
-                    </div>
-
-                    <div class="leader-team" v-if="leader.team">
-                        {{ $t('common.team') }} {{ leader.team }}
-                    </div>
-
-                    <div class="hide-desktop">
-                        <span v-if="leader.social" class="social-container">
-                            <a v-for="(link, type) in leader.social" target="_blank" :href="link">
-                                <i class="fa" :class="type === 'personal' ? 'fa-link' : `fa-${type}`"/>
-                            </a>
-                        </span>
-                    </div>
-                </td>
-                <td style="color:white; width: 20%;" class="has-text-centered">
-                    {{ leader.xp }}
-                </td>
-
-                <td class="hide-mobile">
-                    <span v-if="leader.social" class="social-container">
-                        <a v-for="(link, type) in leader.social" target="_blank" :href="link">
-                            <i class="fa" :class="type === 'personal' ? 'fa-link' : `fa-${type}`" />
-                        </a>
-                    </span>
-                </td>
-            </tr>
-            </tbody>
-        </table>
+                </div>
+            </div>
+            <div class="details">
+                <div class="name">
+                    <span v-if="leader.name || leader.username">{{ leader.name }} {{ leader.username }}</span>
+                    <span v-else>{{ $t('common.anonymous') }}</span>
+                </div>
+                <div class="team" v-if="leader.team">
+                    {{ $t('common.team') }} {{ leader.team }}
+                </div>
+                <div v-if="leader.social" class="social-container">
+                    <a v-for="(link, type) in leader.social" target="_blank" :href="link">
+                        <i class="fa" :class="type === 'personal' ? 'fa-link' : `fa-${type}`"/>
+                    </a>
+                </div>
+            </div>
+            <div v-if="leader.social" class="social-container">
+                <a v-for="(link, type) in leader.social" target="_blank" :href="link">
+                    <i class="fa" :class="type === 'personal' ? 'fa-link' : `fa-${type}`"/>
+                </a>
+            </div>
+            <div class="xp">
+                <div class="value">{{ leader.xp }}0</div>
+                <div class="text">XP</div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -97,99 +75,131 @@ export default {
 <style lang="scss" scoped>
 
     .global-leaders {
-        max-width: 1000px;
+        max-width: 800px;
         margin: 0 auto;
-    }
-
-	.leader-flag {
-		height: 1em !important;
-        margin-left: 1em;
-	}
-
-    .leader-team {
-        color: white;
-    }
-
-    .leader-name {
-        color: white;
-        display: flex;
-        flex-direction: row;
-        gap: 4px;
-
-        span {
-            flex-shrink: 0;
-        }
-    }
-
-    .social-container {
-        margin: auto 0;
-        color: #fff;
-        transition: opacity 0.3s;
-        display: flex;
-        flex-direction: row;
-        gap: 0.5rem;
-        justify-content: center;
-
-        a {
-            width: 1.5rem;
-        }
-
-        a:hover {
-            transform: scale(1.1)
-        }
-    }
-
-    td {
-        position: relative;
-        vertical-align: middle;
-    }
-
-    .position-container {
-        color: white;
-        padding-left: 2.5em;
-    }
-
-    .hide-desktop {
-        display: none;
-    }
-
-    @media screen and (max-width: 678px)
-    {
-        td {
-            padding: 0.5em;
-        }
-
-        .hide-mobile {
-            display: none;
-        }
-
-        .hide-desktop {
-            display: block;
-        }
-
-        .leader-flag {
-            right: 1em !important;
-        }
-
-        .position-container {
-            text-align: left;
-            padding-left: 0
-        }
 
         .social-container {
+            display: none;
+            transition: opacity 0.3s;
+            flex-direction: row;
+            gap: 0.3rem;
+            justify-content: center;
             flex-wrap: wrap;
-            justify-content: start;
+            min-width: 140px;
+            color: #3273dc;
+
+            a {
+                width: 20px;
+            }
+            a:hover {
+                transform: scale(1.1)
+            }
+        }
+
+        .user {
+            background-color: white;
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            padding: 5px 4px;
+            margin-bottom: 5px;
+            color: #555;
+            display: flex;
+            align-items: start;
+            font-size: 14px;
+
+            .rank {
+                width: 48px;
+                display: flex;
+                flex-direction: column;
+                text-align: center;
+                align-items: center;
+                gap: 4px;
+
+                .flag {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    width: 48px;
+                    img {
+                        border-radius: 50%;
+                        width: 32px;
+                        height: 32px;
+                    }
+                }
+            }
+            .details {
+                flex: 1;
+                .name {
+                    font-weight: bold;
+                }
+                .team {
+                    font-size: 12px;
+                }
+                .social-container {
+                    display: flex;
+                    justify-content: start;
+                }
+            }
+            .xp {
+                display: flex;
+                flex-direction: column;
+                padding-right: 4px;
+                .value {
+                    font-weight: bold;
+                }
+                .text {
+                    text-align: center;
+                }
+            }
         }
     }
 
-    @media screen and (max-width: 1023px)
+    @media screen and (min-width: 768px)
     {
-        .leader-name {
-            flex-direction: column;
-            gap: 0;
+        .global-leaders {
+            .social-container {
+                display: flex;
+                gap: 0.5rem;
+                margin-top: auto;
+                margin-bottom: auto;
+                margin-right: 16px;
 
-            span {
-                flex-shrink: 1;
+                a {
+                    width: 24px;
+                }
+            }
+            .user {
+                border-radius: 8px;
+                padding: 10px 8px;
+                margin-bottom: 10px;
+                font-size: 16px;
+                align-items: center;
+
+                .rank {
+                    flex-direction: row;
+                    gap: 0;
+                    width: 96px;
+
+                    span,
+                    .flag {
+                        width: 48px;
+                    }
+                }
+                .details {
+                    .team {
+                        font-size: 14px;
+                    }
+                    .social-container {
+                        display: none;
+                    }
+                }
+                .xp {
+                    padding-right: 0;
+                    width: 100px;
+                    flex-direction: row;
+                    justify-content: space-evenly;
+                }
             }
         }
     }
