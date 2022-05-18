@@ -1,6 +1,6 @@
 <template>
     <div class="global-leaders">
-        <div v-for="(leader, index) in leaders" class="user wow rollIn">
+        <div v-for="(leader, index) in leaders" class="user wow slideInLeft">
             <div class="rank">
                 <span v-if="leader.rank">{{ getPosition(leader.rank) }}</span>
                 <span v-else>{{ getPosition(index + 1) }}</span>
@@ -83,7 +83,7 @@ export default {
             transition: opacity 0.3s;
             flex-direction: row;
             gap: 0.3rem;
-            justify-content: center;
+            justify-content: end;
             flex-wrap: wrap;
             min-width: 140px;
             color: #3273dc;
@@ -92,7 +92,8 @@ export default {
                 width: 20px;
             }
             a:hover {
-                transform: scale(1.1)
+                transform: scale(1.1);
+                color: #3273dc;
             }
         }
 
@@ -103,10 +104,15 @@ export default {
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
             padding: 5px 4px;
             margin-bottom: 5px;
-            color: #555;
+            color: #011638;
             display: flex;
             align-items: start;
             font-size: 14px;
+            transition: all 0.1s;
+
+            &:hover {
+                transform: scale(1.05);
+            }
 
             .rank {
                 width: 48px;
@@ -131,7 +137,7 @@ export default {
             .details {
                 flex: 1;
                 .name {
-                    font-weight: bold;
+                    font-weight: 500;
                 }
                 .team {
                     font-size: 12px;
@@ -146,7 +152,7 @@ export default {
                 flex-direction: column;
                 padding-right: 4px;
                 .value {
-                    font-weight: bold;
+                    font-weight: 500;
                 }
                 .text {
                     text-align: center;
@@ -161,9 +167,7 @@ export default {
             .social-container {
                 display: flex;
                 gap: 0.5rem;
-                margin-top: auto;
-                margin-bottom: auto;
-                margin-right: 16px;
+                margin: auto 16px;
 
                 a {
                     width: 24px;

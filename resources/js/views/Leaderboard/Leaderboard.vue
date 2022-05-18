@@ -1,12 +1,12 @@
 <template>
-    <section class="hero is-link is-bold is-fullheight">
-        <section class="section is-link is-bold">
+    <section class="leaderboard hero is-bold is-fullheight">
+        <section class="wrapper is-link is-bold">
 
             <div class="leaderboard-heading"
                  @click="openWorldCup"
             >
-                <i class="fa fa-arrow-left"/>
-                <h3 class="title is-2 has-text-centered">
+                <i class="fa fa-arrow-left has-text-white"/>
+                <h3 class="title is-2 has-text-centered has-text-white">
                     {{ $t('location.global-leaderboard') }}
                 </h3>
             </div>
@@ -105,6 +105,12 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.leaderboard {
+    background-image: radial-gradient(circle at 1% 1%, #00d1b2, rgba(40, 180, 133, 1));
+}
+.wrapper {
+    padding: 1rem 0.5rem;
+}
 .leaderboard-heading {
     display: flex;
     justify-content: center;
@@ -129,6 +135,12 @@ export default {
     i {
         font-size: 20px;
         transition: all 0.3s;
+    }
+}
+
+@media screen and (min-width: 768px) {
+    .wrapper {
+        padding: 3rem 1.5rem;
     }
 }
 </style>
