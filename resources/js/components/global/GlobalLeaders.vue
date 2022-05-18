@@ -1,6 +1,16 @@
 <template>
     <div class="global-leaders">
-        <div v-for="(leader, index) in leaders" class="user wow slideInLeft">
+        <div v-for="(leader, index) in leaders" class="leader wow slideInLeft">
+            <div v-if="leader.rank" class="medal">
+                <img v-if="leader.rank === 1" src="/assets/icons/gold-medal-2.png" alt="Gold spot">
+                <img v-if="leader.rank === 2" src="/assets/icons/silver-medal-2.png" alt="Silver spot">
+                <img v-if="leader.rank === 3" src="/assets/icons/bronze-medal-2.png" alt="Bronze spot">
+            </div>
+            <div v-else class="medal">
+                <img v-if="index === 0" src="/assets/icons/gold-medal-2.png" alt="Gold spot">
+                <img v-if="index === 1" src="/assets/icons/silver-medal-2.png" alt="Silver spot">
+                <img v-if="index === 2" src="/assets/icons/bronze-medal-2.png" alt="Bronze spot">
+            </div>
             <div class="rank">
                 <span v-if="leader.rank">{{ getPosition(leader.rank) }}</span>
                 <span v-else>{{ getPosition(index + 1) }}</span>
@@ -97,10 +107,10 @@ export default {
             }
         }
 
-        .user {
+        .leader {
+            position: relative;
             background-color: white;
             border-radius: 4px;
-            overflow: hidden;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
             padding: 5px 4px;
             margin-bottom: 5px;
@@ -112,6 +122,14 @@ export default {
 
             &:hover {
                 transform: scale(1.05);
+            }
+
+            .medal {
+                position: absolute;
+                top: -12px;
+                left: -12px;
+                width: 32px;
+                z-index: 10;
             }
 
             .rank {
@@ -173,7 +191,7 @@ export default {
                     width: 24px;
                 }
             }
-            .user {
+            .leader {
                 border-radius: 8px;
                 padding: 10px 8px;
                 margin-bottom: 10px;
