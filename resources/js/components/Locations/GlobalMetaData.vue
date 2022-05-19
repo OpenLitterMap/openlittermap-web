@@ -1,5 +1,5 @@
 <template>
-    <section class="global-meta-data hero is-bold">
+    <section class="is-link hero is-bold">
         <section class="wrapper is-link is-bold">
 
             <!-- Global Leaderboard -->
@@ -82,44 +82,41 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.global-meta-data {
-    background-image: radial-gradient(circle at 1% 1%, #00d1b2, rgba(40, 180, 133, 1));
-}
-.wrapper {
-    padding: 1rem 0.5rem;
-}
-.leaderboard-heading {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 1rem;
-    cursor: pointer;
-
-    &:hover {
-        .title {
-            text-decoration: underline;
-        }
-        i {
-            transform: translateX(1rem);
-        }
-    }
-
-    .title {
-        color: white;
-        margin-bottom: 0;
-    }
-
-    i {
-        color: white;
-        font-size: 20px;
-        transition: all 0.3s;
-    }
-}
-
-@media screen and (min-width: 768px) {
     .wrapper {
-        padding: 3rem 1.5rem;
+        padding: 1rem 0.5rem;
     }
-}
+    .leaderboard-heading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        cursor: pointer;
+
+        &:hover {
+            .title {
+                text-decoration: underline;
+            }
+            i {
+                transform: translateX(1rem);
+            }
+        }
+
+        .title {
+            color: white;
+            margin-bottom: 0;
+        }
+
+        i {
+            color: white;
+            font-size: 20px;
+            transition: all 0.3s;
+        }
+    }
+
+    @media screen and (min-width: 768px) {
+        .wrapper {
+            padding: 3rem 1.5rem;
+        }
+    }
 </style>

@@ -242,22 +242,22 @@ export default {
 </script>
 
 <style scoped>
-.progress-bar {
-    max-width: 600px;
-}
-.stats {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-.stat {
-    padding: 12px;
-    flex: 1;
-}
-
-@media screen and (min-width: 768px) {
-    .stats {
-        flex-direction: row;
+    .progress-bar {
+        max-width: 600px;
     }
-}
+    .stats {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .stat {
+        padding: 12px;
+        flex: 1;
+    }
+
+    @media screen and (min-width: 768px) {
+        .stats {
+            flex-direction: row;
+        }
+    }
 </style>
