@@ -42,7 +42,7 @@
                 </a>
             </div>
             <div class="xp">
-                <div class="value">{{ leader.xp }}0</div>
+                <div class="value">{{ leader.xp }}</div>
                 <div class="text">XP</div>
             </div>
         </div>
