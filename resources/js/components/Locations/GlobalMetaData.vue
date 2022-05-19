@@ -1,6 +1,6 @@
 <template>
-    <section class="hero is-link is-bold">
-        <section class="section is-link is-bold">
+    <section class="is-link hero is-bold">
+        <section class="wrapper is-link is-bold">
 
             <!-- Global Leaderboard -->
             <div class="container">
@@ -82,30 +82,41 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.leaderboard-heading {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 1rem;
-    cursor: pointer;
+    .wrapper {
+        padding: 1rem 0.5rem;
+    }
+    .leaderboard-heading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        cursor: pointer;
 
-    &:hover {
+        &:hover {
+            .title {
+                text-decoration: underline;
+            }
+            i {
+                transform: translateX(1rem);
+            }
+        }
+
         .title {
-            text-decoration: underline;
+            color: white;
+            margin-bottom: 0;
         }
+
         i {
-            transform: translateX(1rem);
+            color: white;
+            font-size: 20px;
+            transition: all 0.3s;
         }
     }
 
-    .title {
-        margin-bottom: 0;
+    @media screen and (min-width: 768px) {
+        .wrapper {
+            padding: 3rem 1.5rem;
+        }
     }
-
-    i {
-        font-size: 20px;
-        transition: all 0.3s;
-    }
-}
 </style>
