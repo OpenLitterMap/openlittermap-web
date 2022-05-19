@@ -1,6 +1,6 @@
 <template>
 	<progress
-		class="progress is-large is-success"
+		class="progress is-large is-link"
 		:value="currentValue"
 		:max="100"
 	/>

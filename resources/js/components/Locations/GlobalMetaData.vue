@@ -1,6 +1,6 @@
 <template>
-    <section class="hero is-link is-bold">
-        <section class="section is-link is-bold">
+    <section class="global-meta-data hero is-bold">
+        <section class="wrapper is-link is-bold">
 
             <!-- Global Leaderboard -->
             <div class="container">
@@ -82,6 +82,12 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.global-meta-data {
+    background-image: radial-gradient(circle at 1% 1%, #00d1b2, rgba(40, 180, 133, 1));
+}
+.wrapper {
+    padding: 1rem 0.5rem;
+}
 .leaderboard-heading {
     display: flex;
     justify-content: center;
@@ -100,12 +106,20 @@ export default {
     }
 
     .title {
+        color: white;
         margin-bottom: 0;
     }
 
     i {
+        color: white;
         font-size: 20px;
         transition: all 0.3s;
+    }
+}
+
+@media screen and (min-width: 768px) {
+    .wrapper {
+        padding: 3rem 1.5rem;
     }
 }
 </style>
