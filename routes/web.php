@@ -5,10 +5,13 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', 'HomeController@index');
 Route::get('/about', 'HomeController@index');
 Route::get('/world', 'HomeController@index');
+Route::get('/tags', 'HomeController@index');
 Route::get('/community', 'HomeController@index');
 Route::get('/community/stats', 'CommunityController@stats');
 Route::get('/references', 'HomeController@index');
 Route::get('/leaderboard', 'HomeController@index');
+
+Route::get('/tags-search', 'DisplayTagsOnMapController@show');
 
 // Registration
 Route::get('/signup', 'HomeController@index');
