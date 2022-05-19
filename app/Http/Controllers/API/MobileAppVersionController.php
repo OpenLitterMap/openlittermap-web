@@ -14,11 +14,11 @@ class MobileAppVersionController extends Controller
         return [
             'ios' => [
                 'url' => 'https://apps.apple.com/us/app/openlittermap/id1475982147',
-                'version' => '3.2.2'
+                'version' => '3.2.3'
             ],
             'android' => [
                 'url' => 'https://play.google.com/store/apps/details?id=com.geotech.openlittermap',
-                'version' => '3.2.2'
+                'version' => '3.2.3'
             ]
         ];
     }
