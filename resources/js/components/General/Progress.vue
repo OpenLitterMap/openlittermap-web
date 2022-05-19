@@ -39,7 +39,7 @@
         <div class="stats">
             <div class="stat">
                 <h1 class="subtitle is-5 has-text-centered">
-                    <strong class="has-text-white">
+                    <strong class="has-text-black">
                         {{ $t('location.total-verified-litter') }}
                     </strong>
                 </h1>
@@ -62,7 +62,7 @@
 
             <div class="stat">
                 <h1 class="subtitle is-5 has-text-centered">
-                    <strong class="has-text-white">
+                    <strong class="has-text-black">
                         {{ $t('location.total-verified-photos') }}
                     </strong>
                 </h1>
@@ -85,7 +85,7 @@
 
             <div class="stat">
                 <h1 class="subtitle is-5 has-text-centered">
-                    <strong class="has-text-white">
+                    <strong class="has-text-black">
                         {{ $t('location.total-littercoin-issued') }}
                     </strong>
                 </h1>
