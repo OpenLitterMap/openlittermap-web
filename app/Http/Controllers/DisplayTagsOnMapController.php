@@ -11,6 +11,20 @@ class DisplayTagsOnMapController extends Controller
     public function show(Request $request)
     {
         $photos = Photo::query()
+            ->select(
+                'id',
+                'custom_tags',
+                'datetime',
+                'name',
+                'photo_id',
+                'picked_up',
+                'result_string',
+                'social',
+                'team',
+                'time',
+                'username',
+                'verified'
+            )
             ->whereHas('customTags', function (Builder $query) use ($request) {
                 return $query->whereTag($request->custom_tag);
             })
