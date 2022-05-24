@@ -21,7 +21,18 @@ export const mutations = {
             }
         }
 
-        state.recentTags = tags;
+        // Sort them alphabetically by translated values
+        const sortedTags = tags;
+        Object.entries(tags).forEach(([category, categoryTags]) => {
+            const sorted = Object.entries(categoryTags).sort(function (a, b) {
+                const first = i18n.t(`litter.${category}.${a[0]}`);
+                const second = i18n.t(`litter.${category}.${b[0]}`);
+                return first === second ? 0 : first < second ? -1 : 1;
+            });
+            sortedTags[category] = Object.fromEntries(sorted);
+        });
+
+        state.recentTags = sortedTags;
     },
 
     /**
@@ -86,7 +97,11 @@ export const mutations = {
         // Also add this tag to the recent custom tags
         if (state.recentCustomTags.indexOf(payload.customTag) === -1)
         {
-            state.recentCustomTags.unshift(payload.customTag);
+            state.recentCustomTags.push(payload.customTag);
+            // Sort them alphabetically
+            state.recentCustomTags.sort(function(a, b) {
+                return a === b ? 0 : a < b ? -1 : 1;
+            });
         }
 
         // And indicate that a new tag has been added
