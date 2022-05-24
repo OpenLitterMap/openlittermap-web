@@ -22,7 +22,7 @@ class ImageUploaded implements ShouldBroadcast, ShouldQueue
     public $city, $state, $country, $countryCode, $imageName, $teamName, $isUserVerified;
 
     // For CheckContributors
-    public $photoId, $userId, $countryId, $stateId, $cityId, $latitude, $longitude, $teamId;
+    public $photoId, $userId, $user, $countryId, $stateId, $cityId, $latitude, $longitude, $teamId;
 
     /**
      * Create a new event instance.
@@ -37,6 +37,10 @@ class ImageUploaded implements ShouldBroadcast, ShouldQueue
         City $city
     )
     {
+        $this->user = [
+            'name' => $user->show_name_maps ? $user->name : '',
+            'username' => $user->show_username_maps ? $user->username : '',
+        ];
         $this->city = $city->city;
         $this->state = $state->state;
         $this->country = $country->country;

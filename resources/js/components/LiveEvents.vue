@@ -8,6 +8,7 @@
             >
                 <component
                     :is="event.type"
+                    :user="event.user"
                     :country="event.country"
                     :country-code="event.countryCode"
                     :state="event.state"
@@ -48,6 +49,7 @@ export default {
                 id: new Date().getTime(),
                 type: 'ImageUploaded',
                 photoId: payload.photoId,
+                user: payload.user,
                 city: payload.city,
                 state: payload.state,
                 country: payload.country,
@@ -113,7 +115,6 @@ export default {
                 id: new Date().getTime(),
                 type: 'LittercoinMined',
                 reason: payload.reason,
-                userId: payload.userId
             });
 
             vm.updateDocumentTitle();

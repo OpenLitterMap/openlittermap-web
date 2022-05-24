@@ -16,8 +16,14 @@
             <br>
             <i class="city-name">{{ city }}, {{ state }}</i>
             <p>{{ country }}</p>
-
-            <p v-show="teamName">By Team: <strong>{{ teamName }}</strong></p>
+            <p v-if="user.name || user.username">
+                {{ $t('locations.cityVueMap.by') }}
+                <strong>
+                    {{ user.name }}
+                    {{ user.username ? ('@' + user.username) : '' }}
+                </strong>
+            </p>
+            <p v-if="teamName">{{ $t('common.team') }} <strong>{{ teamName }}</strong></p>
         </template>
     </GlobalMapNotification>
 </template>
@@ -28,7 +34,7 @@ import GlobalMapNotification from './GlobalMapNotification';
 export default {
     name: 'ImageUploaded',
     components: {GlobalMapNotification},
-    props: ['countryCode', 'city', 'state', 'country', 'teamName'],
+    props: ['user', 'countryCode', 'city', 'state', 'country', 'teamName'],
     data () {
         return {
             dir: '/assets/icons/flags/',
