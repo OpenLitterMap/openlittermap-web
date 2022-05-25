@@ -7,10 +7,20 @@ const helper = {
      * @see https://leafletjs.com/reference-1.7.1.html#popup-l-popup
      */
     popupOptions: {
-        minWidth: 350,
+        minWidth: window.innerWidth > 500 ? 350 : 150, // allow smaller widths on mobile
         maxWidth: 600,
-        maxHeight: 700,
+        maxHeight: window.innerWidth > 500 ? 500 : 300, // prevent tall popups on mobile
         closeButton: true
+    },
+
+    /**
+     * Scrolls the popup to its bottom if the image is very tall
+     * Needed to reduce the flicker when the map renders the popups
+     * @param event The event emitted by the leaflet map
+     */
+    scrollPopupToBottom: (event) => {
+        let popup = event.popup?.getElement()?.querySelector('.leaflet-popup-content');
+        if (popup) popup.scrollTop = popup.scrollHeight;
     },
 
     /**

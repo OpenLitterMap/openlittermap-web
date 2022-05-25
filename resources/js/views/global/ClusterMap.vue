@@ -102,6 +102,7 @@ export default {
             this.map.on('moveend', this.update);
             this.map.on('overlayadd', this.update);
             this.map.on('overlayremove', this.update);
+            this.map.on('popupopen', mapHelper.scrollPopupToBottom);
             this.map.on('zoom', () => {
                 if (this.points?.remove) {
                     this.points.remove();
