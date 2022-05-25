@@ -5,12 +5,12 @@
     >
         <template v-slot:image>
             <div class="-mt-2">
-                <i class="fa fa-flag"/>
+                <i class="fa fa-flag fa-fw"/>
             </div>
         </template>
         <template v-slot:content>
-            <strong>New State</strong>
-            <p>Say hello to <i>{{ payload.state }}</i></p>
+            <strong>{{ $t('home.globalMap.new-state') }}</strong>
+            <p>{{ $t('home.globalMap.say-hello-to') }} <i>{{ payload.state }}</i></p>
         </template>
     </GlobalMapNotification>
 </template>

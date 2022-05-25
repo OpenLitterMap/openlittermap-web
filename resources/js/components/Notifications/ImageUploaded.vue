@@ -12,10 +12,10 @@
             <i v-else class="fa fa-image fa-2x"/>
             <div>
                 <p class="event-bold" v-if="payload.isUserVerified">
-                    <span v-if="payload.isPickedUp">Litter Picked Up</span>
-                    <span v-else>Litter Mapped</span>
+                    <span v-if="payload.isPickedUp">{{ $t('home.globalMap.litter-picked-up') }}</span>
+                    <span v-else>{{ $t('home.globalMap.litter-mapped') }}</span>
                 </p>
-                <p class="event-bold" v-else>New image</p>
+                <p class="event-bold" v-else>{{ $t('home.globalMap.new-image') }}</p>
             </div>
         </div>
 

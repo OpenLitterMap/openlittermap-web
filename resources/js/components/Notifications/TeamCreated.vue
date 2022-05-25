@@ -5,12 +5,12 @@
     >
         <template v-slot:image>
             <div class="-mt-2">
-                <i class="fa fa-users"/>
+                <i class="fa fa-users fa-fw"/>
             </div>
         </template>
         <template v-slot:content>
-            <p>A new Team has been created!</p>
-            <i>Say hello to <strong>{{ payload.teamName }}</strong>!</i>
+            <p>{{ $t('home.globalMap.team-created') }}</p>
+            <i>{{ $t('home.globalMap.say-hello-to') }} <strong>{{ payload.teamName }}</strong>!</i>
         </template>
     </GlobalMapNotification>
 </template>

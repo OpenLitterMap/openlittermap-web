@@ -5,14 +5,14 @@
     >
         <template v-slot:image>
             <div class="flex items-center h-full">
-                <img src="/assets/icons/mining.png" class="ltr-icon"/>
+                <img src="/assets/icons/mining.png" class="ltr-icon" alt="Mining"/>
             </div>
         </template>
         <template v-slot:content>
             <div class="flex items-center h-full">
                 <div>
-                    <p>A Littercoin has been mined!</p>
-                    <i>Reason: <span class="ltr-strong">{{ getLittercoinReason(payload.reason) }}</span></i>
+                    <p>{{ $t('home.globalMap.littercoin-mined') }}</p>
+                    <i>{{ $t('common.reason') }}: <span class="ltr-strong">{{ getLittercoinReason(payload.reason) }}</span></i>
                 </div>
             </div>
         </template>
@@ -29,14 +29,12 @@ export default {
     methods: {
         /**
          * Using the LittercoinMined event key,
-         *
-         * Todo - return translated string
          */
         getLittercoinReason (reason) {
             if (reason === 'verified-box') {
-                return '100 OpenLitterAI boxes verified';
+                return this.$i18n.t('home.globalMap.littercoin-100-boxes-verified');
             } else if (reason === '100-images-verified') {
-                return '100 images verified';
+                return this.$i18n.t('home.globalMap.littercoin-100-verified');
             }
         }
     }
