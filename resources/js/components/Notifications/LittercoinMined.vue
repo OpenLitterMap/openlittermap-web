@@ -12,7 +12,7 @@
             <div class="flex items-center h-full">
                 <div>
                     <p>A Littercoin has been mined!</p>
-                    <i>Reason: <span class="ltr-strong">{{ getLittercoinReason(reason) }}</span></i>
+                    <i>Reason: <span class="ltr-strong">{{ getLittercoinReason(payload.reason) }}</span></i>
                 </div>
             </div>
         </template>
@@ -25,7 +25,7 @@ import GlobalMapNotification from './GlobalMapNotification';
 export default {
     name: 'LittercoinMined',
     components: {GlobalMapNotification},
-    props: ['reason'],
+    props: ['payload'],
     methods: {
         /**
          * Using the LittercoinMined event key,

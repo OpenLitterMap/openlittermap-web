@@ -19,7 +19,7 @@ class ImageUploaded implements ShouldBroadcast, ShouldQueue
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     // For Websockets
-    public $city, $state, $country, $countryCode, $imageName, $teamName, $isUserVerified;
+    public $city, $state, $country, $countryCode, $teamName, $isUserVerified, $isPickedUp;
 
     // For CheckContributors
     public $photoId, $userId, $user, $countryId, $stateId, $cityId, $latitude, $longitude, $teamId;
@@ -45,7 +45,6 @@ class ImageUploaded implements ShouldBroadcast, ShouldQueue
         $this->state = $state->state;
         $this->country = $country->country;
         $this->countryCode = $country->shortcode;
-        $this->imageName = $photo->filename;
         $this->teamName = $user->team->name ?? null;
         $this->userId = $user->id;
         $this->photoId = $photo->id;
@@ -56,6 +55,7 @@ class ImageUploaded implements ShouldBroadcast, ShouldQueue
         $this->longitude = $photo->lon;
         $this->isUserVerified = $user->is_trusted;
         $this->teamId = $user->active_team;
+        $this->isPickedUp = $photo->picked_up;
     }
 
     /**

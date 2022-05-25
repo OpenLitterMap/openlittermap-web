@@ -20,6 +20,7 @@ import GlobalMapNotification from './GlobalMapNotification';
 
 export default {
     name: 'UserSignedUp',
+    props: ['payload'],
     components: {
         GlobalMapNotification
     }

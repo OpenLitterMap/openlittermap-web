@@ -10,7 +10,7 @@
         </template>
         <template v-slot:content>
             <p>A new Team has been created!</p>
-            <i>Say hello to <strong>{{ teamName }}</strong>!</i>
+            <i>Say hello to <strong>{{ payload.teamName }}</strong>!</i>
         </template>
     </GlobalMapNotification>
 </template>
@@ -21,7 +21,7 @@ import GlobalMapNotification from './GlobalMapNotification';
 export default {
     name: 'TeamCreated',
     components: {GlobalMapNotification},
-    props: ['teamName']
+    props: ['payload'],
 };
 </script>
 

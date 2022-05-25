@@ -1,40 +1,47 @@
 <template>
-    <GlobalMapNotification
+    <div
+        class="event"
         @click="$emit('click', $event)"
     >
-        <template v-slot:image>
+        <div class="top-heading">
             <img
-                v-if="countryCode"
-                :src="countryFlag(countryCode)"
-                width="35"
-                :alt="countryCode"/>
+                v-if="payload.countryCode"
+                :src="countryFlag(payload.countryCode)"
+                :alt="payload.countryCode"
+            />
+            <i v-else class="fa fa-image fa-2x"/>
+            <div>
+                <p class="event-bold" v-if="payload.isUserVerified">
+                    <span v-if="payload.isPickedUp">Litter Picked Up</span>
+                    <span v-else>Litter Mapped</span>
+                </p>
+                <p class="event-bold" v-else>New image</p>
+            </div>
+        </div>
 
-            <i v-else class="fa fa-image"/>
-        </template>
-        <template v-slot:content>
-            <strong>New image</strong>
-            <br>
-            <i class="city-name">{{ city }}, {{ state }}</i>
-            <p>{{ country }}</p>
-            <p v-if="user.name || user.username">
-                {{ $t('locations.cityVueMap.by') }}
-                <strong>
-                    {{ user.name }}
-                    {{ user.username ? ('@' + user.username) : '' }}
-                </strong>
-            </p>
-            <p v-if="teamName">{{ $t('common.team') }} <strong>{{ teamName }}</strong></p>
-        </template>
-    </GlobalMapNotification>
+        <i class="city-name">{{ payload.city }}, {{ payload.state }}</i>
+        <p>{{ payload.country }}</p>
+
+        <p v-if="payload.user.name || payload.user.username">
+            {{ $t('locations.cityVueMap.by') }}
+            <span class="event-bold">
+                {{ payload.user.name }}
+                {{ payload.user.username ? ('@' + payload.user.username) : '' }}
+            </span>
+        </p>
+
+        <p v-if="payload.teamName">
+            {{ $t('common.team') }}
+            <span class="event-bold">{{ payload.teamName }}</span>
+        </p>
+    </div>
 </template>
 
 <script>
-import GlobalMapNotification from './GlobalMapNotification';
 
 export default {
     name: 'ImageUploaded',
-    components: {GlobalMapNotification},
-    props: ['user', 'countryCode', 'city', 'state', 'country', 'teamName'],
+    props: ['payload'],
     data () {
         return {
             dir: '/assets/icons/flags/',
@@ -57,6 +64,43 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.event {
+    border-radius: 8px;
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: #88d267;
+    cursor: pointer;
+
+    .event-bold {
+        font-weight: 700;
+    }
+
+    .top-heading {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 5px;
+
+        img {
+            object-fit: cover;
+            border-radius: 50%;
+            height: 24px;
+            width: 24px;
+        }
+    }
+}
+
+@media (max-width: 1024px) {
+    .event {
+        padding: 8px;
+
+        .top-heading {
+            gap: 8px;
+            margin-bottom: 2px;
+        }
+    }
+}
+
 @media (max-width: 768px) {
     .city-name {
         display: none;

@@ -10,7 +10,7 @@
         </template>
         <template v-slot:content>
             <strong>New City</strong>
-            <p>Say hello to <i>{{ city }}</i></p>
+            <p>Say hello to <i>{{ payload.city }}</i></p>
         </template>
     </GlobalMapNotification>
 </template>
@@ -21,7 +21,7 @@ import GlobalMapNotification from './GlobalMapNotification';
 export default {
     name: 'NewCityAdded',
     components: {GlobalMapNotification},
-    props: ['city']
+    props: ['payload'],
 };
 </script>
 

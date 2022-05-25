@@ -495,8 +495,10 @@ export default {
          * Updates the url with the photoId
          * and goes to the location
          */
-        updateUrlPhotoIdAndFlyToLocation (location)
+        updateUrlPhotoIdAndFlyToLocation (event)
         {
+            const location = event.payload;
+
             const zoom = Math.round(map.getZoom());
             const url = new URL(window.location.href);
             url.searchParams.set('photo', location.photoId);

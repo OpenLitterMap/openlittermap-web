@@ -107,7 +107,6 @@ class UploadPhotoTest extends TestCase
                     $e->state === $imageAttributes['address']['state'] &&
                     $e->country === $imageAttributes['address']['country'] &&
                     $e->countryCode === $imageAttributes['address']['country_code'] &&
-                    $e->imageName === $imageAttributes['imageName'] &&
                     $e->teamName === $user->team->name &&
                     $e->userId === $user->id &&
                     $e->countryId === $this->getCountryId() &&
