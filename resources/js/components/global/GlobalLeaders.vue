@@ -42,7 +42,7 @@
                 </a>
             </div>
             <div class="xp">
-                <div class="value">{{ leader.xp }}0</div>
+                <div class="value">{{ leader.xp }}</div>
                 <div class="text">XP</div>
             </div>
         </div>
@@ -138,7 +138,6 @@ export default {
                 flex-direction: column;
                 text-align: center;
                 align-items: center;
-                gap: 4px;
 
                 .flag {
                     display: flex;
@@ -149,6 +148,7 @@ export default {
                         border-radius: 50%;
                         width: 32px;
                         height: 32px;
+                        object-fit: cover;
                     }
                 }
             }

@@ -5,12 +5,12 @@
     >
         <template v-slot:image>
             <div class="-mt-2">
-                <i class="fa fa-user user-event-icon" />
+                <i class="fa fa-user fa-fw" />
             </div>
         </template>
         <template v-slot:content>
-            <strong>New User</strong>
-            <p>A new user has signed up!</p>
+            <strong>{{ $t('home.globalMap.new-user') }}</strong>
+            <p>{{ $t('home.globalMap.user-signed-up') }}</p>
         </template>
     </GlobalMapNotification>
 </template>
@@ -20,6 +20,7 @@ import GlobalMapNotification from './GlobalMapNotification';
 
 export default {
     name: 'UserSignedUp',
+    props: ['payload'],
     components: {
         GlobalMapNotification
     }
@@ -41,11 +42,6 @@ export default {
     }
     .-mt-2 {
         margin-top: -2px;
-    }
-
-    .user-event-icon {
-        font-size: 1.5em;
-        padding: 7px;
     }
 
 </style>

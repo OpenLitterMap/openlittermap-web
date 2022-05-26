@@ -57,6 +57,7 @@ html {
 
 .leaflet-popup-content {
     margin: 0 !important;
+    overflow-y: auto;
 }
 
 .leaflet-popup-content p {
@@ -110,8 +111,7 @@ html {
 .leaflet-litter-img {
     border-top-left-radius: 6px;
     border-top-right-radius: 6px;
-    object-fit: contain;
-    max-height: 100%;
+    object-fit: cover;
     cursor: pointer;
 }
 /* End extra leaflet styles */

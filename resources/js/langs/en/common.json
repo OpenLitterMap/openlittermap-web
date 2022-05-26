@@ -31,5 +31,6 @@
     "team": "Team",
     "actions": "Actions",
     "anonymous": "Anonymous",
-    "photo": "Photo"
+    "photo": "Photo",
+    "reason": "Reason"
 }

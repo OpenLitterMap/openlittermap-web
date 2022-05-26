@@ -12,7 +12,7 @@
     "zoom-days": "dia | dias",
     "zoom-hours": "hora | horas",
     "zoom-minutes": "minuto | minutos",
-    "slack-text": "O {slack} é nosso principal meio de comunicação e colaboração. Usuários avançados, recém-chegados, desenvolvedores, uma comunidade de mais de 370 membros - estamos todos lá. Envie-nos uma linha e você receberá uma resposta instantânea, estamos online o tempo todo.",
+    "slack-text": "O {slack} é nosso principal meio de comunicação e colaboração. Usuários avançados, recém-chegados, desenvolvedores, uma comunidade de mais de 400 membros - estamos todos lá. Envie-nos uma linha e você receberá uma resposta instantânea, estamos online o tempo todo.",
     "fundraiser-text": "OpenLitterMap é totalmente dependente de doações. Criamos uma {link} e ainda estamos longe do nosso objetivo. Todas as contribuições são bem-vindas. {emoji}",
     "fundraiser-link": "campanha de arrecadação de fundos do GoFundMe"
 }
