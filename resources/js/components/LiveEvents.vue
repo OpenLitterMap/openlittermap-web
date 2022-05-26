@@ -151,7 +151,7 @@ export default {
         flyToLocation (event)
         {
             if (event.payload?.latitude && event.payload?.longitude) {
-                this.$emit('fly-to-location', {...event, zoom: 17});
+                this.$emit('fly-to-location', {...event.payload, zoom: 17});
             }
         },
 
