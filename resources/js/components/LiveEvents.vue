@@ -197,6 +197,9 @@ export default {
         max-height: 80vh;
         overflow-y: scroll;
         z-index: 999;
+        .event {
+            width: 20rem;
+        }
     }
 
     .grid-img {
@@ -212,6 +215,9 @@ export default {
         .sidebar-menu {
             width: 16rem;
             font-size: 0.7rem;
+            .event {
+                width: 16rem;
+            }
         }
         .grid-img {
             padding: 12px;
@@ -225,6 +231,9 @@ export default {
     @media (max-width: 768px) {
         .sidebar-menu {
             width: 12rem;
+            .event {
+                width: 12rem;
+            }
         }
     }
 
@@ -233,6 +242,9 @@ export default {
             width: 10rem;
             max-height: 74vh;
             font-size: 0.6rem;
+            .event {
+                width: 10rem;
+            }
         }
     }
 

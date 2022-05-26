@@ -31,7 +31,7 @@
             </span>
         </p>
 
-        <p v-if="payload.teamName">
+        <p class="event-team" v-if="payload.teamName">
             {{ $t('common.team') }}
             <span class="event-bold">{{ payload.teamName }}</span>
         </p>
@@ -90,6 +90,12 @@ export default {
 
     .event-bold {
         font-weight: 700;
+    }
+
+    .event-team {
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
     }
 
     .top-heading {
