@@ -21,6 +21,9 @@
                     <i class="city-name">{{ cityText }}</i>{{ country }}
                 </p>
             </div>
+            <div class="event-source">
+                <i class="fa" :class="photoSource"></i>
+            </div>
         </div>
 
         <p v-if="payload.user.name || payload.user.username">
@@ -75,6 +78,9 @@ export default {
             let result = [this.city, this.state].filter((t) => t).join(', ');
             if (result && this.country) result += ', '
             return result;
+        },
+        photoSource() {
+            return this.payload.photoSource === 'web' ? 'fa-desktop' : 'fa-mobile large-icon';
         }
     }
 };
@@ -82,11 +88,22 @@ export default {
 
 <style lang="scss" scoped>
 .event {
+    position: relative;
     border-radius: 8px;
     margin-bottom: 10px;
     padding: 8px;
     background-color: #88d267;
     cursor: pointer;
+
+    .event-source {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+
+        .large-icon {
+            font-size: 16px;
+        }
+    }
 
     .event-bold {
         font-weight: 700;
@@ -137,6 +154,16 @@ export default {
 @media (min-width: 1024px) {
     .event {
         padding: 10px;
+
+        .event-source {
+            top: 10px;
+            right: 10px;
+
+            .large-icon {
+                font-size: 24px;
+                margin-right: 4px;
+            }
+        }
 
         .top-heading {
             gap: 10px;
