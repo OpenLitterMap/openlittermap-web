@@ -138,7 +138,6 @@ export default {
                 flex-direction: column;
                 text-align: center;
                 align-items: center;
-                gap: 4px;
 
                 .flag {
                     display: flex;
@@ -149,6 +148,7 @@ export default {
                         border-radius: 50%;
                         width: 32px;
                         height: 32px;
+                        object-fit: cover;
                     }
                 }
             }

@@ -6,12 +6,12 @@
 
     "en": {
         "name": "Reino Unido",
-        "lang": "Inglês"
+        "lang": "English"
     },
 
     "es": {
         "name": "Espanha",
-        "lang": "Espanhol"
+        "lang": "Español"
     },
 
     "fr": {
@@ -36,7 +36,7 @@
 
     "nl": {
         "name": "Holanda",
-        "lang": "Holandês"
+        "lang": "Nederlands"
     },
 
     "tk": {
@@ -51,6 +51,6 @@
 
     "pl": {
         "name": "Polônia",
-        "lang": "Polonês"
+        "lang": "Polski"
     }
 }

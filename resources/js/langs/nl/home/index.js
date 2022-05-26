@@ -3,11 +3,13 @@ import donate from './donate.json'
 import footer from './footer.json'
 import welcome from './welcome.json'
 import community from './community.json'
+import globalMap from './global-map.json'
 
 export const home = {
     about,
     donate,
     footer,
     welcome,
-    community
+    community,
+    globalMap
 }

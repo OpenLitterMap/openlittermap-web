@@ -92,6 +92,7 @@ export default {
         this.timeLayer.addTo(this.map);
 
         this.map.on('moveend', this.updateLocationInURL);
+        this.map.on('popupopen', mapHelper.scrollPopupToBottom);
     },
     methods: {
         async load () {
