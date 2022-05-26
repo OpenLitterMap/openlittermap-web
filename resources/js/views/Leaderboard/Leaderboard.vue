@@ -108,6 +108,7 @@ export default {
     .wrapper {
         padding: 1rem 0.5rem;
     }
+
     .leaderboard-heading {
         display: flex;
         justify-content: center;
