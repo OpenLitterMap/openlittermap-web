@@ -18,8 +18,8 @@
                 <p class="event-bold" v-else>{{ $t('home.globalMap.new-image') }}</p>
 
                 <p class="event-location">
-                    <i class="city-name">{{ payload.city }}, {{ payload.state }},</i>
-                    {{ payload.country }}
+                    <i class="city-name">{{ cityText }}</i>
+                    {{ country }}
                 </p>
             </div>
         </div>
@@ -61,6 +61,22 @@ export default {
             return this.dir + countryCode.toLowerCase() + '.png';
 
         },
+    },
+    computed: {
+        country() {
+            return this.payload.country?.includes('error_') ? null : this.payload.country;
+        },
+        state() {
+            return this.payload.state?.includes('error_') ? null : this.payload.state;
+        },
+        city() {
+            return this.payload.city?.includes('error_') ? null : this.payload.city;
+        },
+        cityText() {
+            let result = [this.city, this.state].filter((t) => t).join(', ');
+            if (result && this.country) result += ', '
+            return result;
+        }
     }
 };
 </script>
