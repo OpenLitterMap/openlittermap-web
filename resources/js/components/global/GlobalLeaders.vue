@@ -87,6 +87,7 @@ export default {
     .global-leaders {
         max-width: 800px;
         margin: 0 auto;
+        padding: 0 1em;
 
         .social-container {
             display: none;
@@ -148,7 +149,7 @@ export default {
                         border-radius: 50%;
                         width: 32px;
                         height: 32px;
-                        object-fit: cover;
+                        object-fit: fill;
                     }
                 }
             }
@@ -182,6 +183,7 @@ export default {
     @media screen and (min-width: 768px)
     {
         .global-leaders {
+
             .social-container {
                 display: flex;
                 gap: 0.5rem;
