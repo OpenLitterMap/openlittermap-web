@@ -18,8 +18,7 @@
                 <p class="event-bold" v-else>{{ $t('home.globalMap.new-image') }}</p>
 
                 <p class="event-location">
-                    <i class="city-name">{{ cityText }}</i>
-                    {{ country }}
+                    <i class="city-name">{{ cityText }}</i>{{ country }}
                 </p>
             </div>
         </div>
@@ -85,7 +84,7 @@ export default {
 .event {
     border-radius: 8px;
     margin-bottom: 10px;
-    padding: 10px;
+    padding: 8px;
     background-color: #88d267;
     cursor: pointer;
 
@@ -96,28 +95,32 @@ export default {
     .top-heading {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
 
         .event-location {
-            font-size: 12px;
+            font-size: 8px;
         }
 
         img {
             object-fit: cover;
             border-radius: 50%;
-            height: 24px;
-            width: 24px;
+            height: 16px;
+            width: 16px;
         }
     }
 }
 
-@media (max-width: 1024px) {
+.city-name {
+    display: none;
+}
+
+@media (min-width: 768px) {
+    .city-name {
+        display: inline;
+    }
+
     .event {
-        padding: 8px;
-
         .top-heading {
-            gap: 8px;
-
             .event-location {
                 font-size: 10px;
             }
@@ -125,9 +128,22 @@ export default {
     }
 }
 
-@media (max-width: 768px) {
-    .city-name {
-        display: none;
+@media (min-width: 1024px) {
+    .event {
+        padding: 10px;
+
+        .top-heading {
+            gap: 10px;
+
+            .event-location {
+                font-size: 12px;
+            }
+
+            img {
+                height: 24px;
+                width: 24px;
+            }
+        }
     }
 }
 </style>
