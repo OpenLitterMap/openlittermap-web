@@ -16,11 +16,13 @@
                     <span v-else>{{ $t('home.globalMap.litter-mapped') }}</span>
                 </p>
                 <p class="event-bold" v-else>{{ $t('home.globalMap.new-image') }}</p>
+
+                <p class="event-location">
+                    <i class="city-name">{{ payload.city }}, {{ payload.state }},</i>
+                    {{ payload.country }}
+                </p>
             </div>
         </div>
-
-        <i class="city-name">{{ payload.city }}, {{ payload.state }}</i>
-        <p>{{ payload.country }}</p>
 
         <p v-if="payload.user.name || payload.user.username">
             {{ $t('locations.cityVueMap.by') }}
@@ -79,7 +81,10 @@ export default {
         display: flex;
         align-items: center;
         gap: 10px;
-        margin-bottom: 5px;
+
+        .event-location {
+            font-size: 12px;
+        }
 
         img {
             object-fit: cover;
@@ -96,7 +101,10 @@ export default {
 
         .top-heading {
             gap: 8px;
-            margin-bottom: 2px;
+
+            .event-location {
+                font-size: 10px;
+            }
         }
     }
 }
