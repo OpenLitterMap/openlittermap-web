@@ -125,7 +125,7 @@ export default {
         }
 
         img {
-            object-fit: cover;
+            object-fit: fill;
             border-radius: 50%;
             height: 16px;
             width: 16px;
