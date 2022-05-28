@@ -177,27 +177,8 @@ export default {
 
         this.$store.commit('setCustomTagsError', '');
 
-        // If the user hits Ctrl + Spacebar, search all tags
-        window.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === ' ') {
-                this.$refs.search.input.focus();
-                e.preventDefault();
-            }
-        });
-
-        // If the user hits Ctrl + Enter, submit the tags
-        window.addEventListener('keydown', (e) => {
-            if (
-                (e.ctrlKey || e.metaKey) &&
-                e.key.toLowerCase() === 'enter' &&
-                this.hasAddedTags &&
-                (! this.admin && this.id !== 0)
-            ) {
-                e.preventDefault();
-                e.stopPropagation();
-                this.submit();
-            }
-        });
+        window.addEventListener('keydown', this.listenForSearchFocusEvent);
+        window.addEventListener('keydown', this.listenForSubmitEvent);
 
         this.$nextTick(function () {
             this.$refs.search.input.focus();
@@ -622,7 +603,41 @@ export default {
             await this.$store.dispatch(action);
 
             this.processing = false;
+        },
+
+        /**
+         * If the user hits Ctrl + Enter, submit the tags
+         */
+        listenForSubmitEvent(event)
+        {
+            if (
+                (event.ctrlKey || event.metaKey) &&
+                event.key.toLowerCase() === 'enter' &&
+                this.hasAddedTags &&
+                (! this.admin && this.id !== 0)
+            ) {
+                event.preventDefault();
+                event.stopPropagation();
+                this.submit();
+            }
+        },
+
+        /**
+         * If the user hits Ctrl + Space bar, search all tags
+         */
+        listenForSearchFocusEvent(event)
+        {
+            if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === ' ') {
+                this.$refs.search.input.focus();
+                event.preventDefault();
+            }
         }
+    },
+
+    destroyed ()
+    {
+        window.removeEventListener('keydown', this.listenForSearchFocusEvent);
+        window.removeEventListener('keydown', this.listenForSubmitEvent);
     }
 };
 </script>
