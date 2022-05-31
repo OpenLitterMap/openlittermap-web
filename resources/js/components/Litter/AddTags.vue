@@ -222,20 +222,15 @@ export default {
                 }
             });
 
-            return results;
-        },
-
-        /**
-         * All recently used custom tags
-         */
-        allRecentCustomTags ()
-        {
-            return this.recentCustomTags.map(tag => {
+            results = results.concat(this.recentCustomTags.map(tag => {
                 return {
                     key: tag,
-                    title: tag
+                    title: tag,
+                    custom: true
                 };
-            });
+            }))
+
+            return results;
         },
 
         /**
@@ -427,8 +422,10 @@ export default {
             this.$localStorage.set('recentTags', JSON.stringify(this.recentTags));
         },
 
-        addCustomTag ()
+        addCustomTag (tag)
         {
+            this.customTag = tag;
+
             this.$store.commit('addCustomTag', {
                 photoId: this.id,
                 customTag: this.customTag
@@ -536,12 +533,16 @@ export default {
          */
         search (input)
         {
-            let searchValues = input.key.split(':');
+            if (input.custom) {
+                this.addCustomTag(input.key);
+            } else {
+                let searchValues = input.key.split(':');
 
-            this.category = {key: searchValues[0]};
-            this.tag = {key: searchValues[1]};
+                this.category = {key: searchValues[0]};
+                this.tag = {key: searchValues[1]};
 
-            this.addTag();
+                this.addTag();
+            }
 
             this.$nextTick(function () {
                 this.onFocusSearch();
@@ -565,9 +566,7 @@ export default {
                 return;
             }
 
-            this.customTag = customTag;
-
-            this.addCustomTag();
+            this.addCustomTag(customTag);
 
             this.$nextTick(function () {
                 this.onFocusCustomTags();
