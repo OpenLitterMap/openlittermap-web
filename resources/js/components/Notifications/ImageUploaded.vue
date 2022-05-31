@@ -11,11 +11,10 @@
             />
             <i v-else class="fa fa-image fa-2x"/>
             <div>
-                <p class="event-bold" v-if="payload.isUserVerified">
+                <p class="event-bold">
                     <span v-if="payload.isPickedUp">{{ $t('home.globalMap.litter-picked-up') }}</span>
-                    <span v-else>{{ $t('home.globalMap.litter-mapped') }}</span>
+                    <span v-else>{{ $t('home.globalMap.litter-uploaded') }}</span>
                 </p>
-                <p class="event-bold" v-else>{{ $t('home.globalMap.new-image') }}</p>
 
                 <p class="event-location">
                     <i class="city-name">{{ cityText }}</i>{{ country }}
