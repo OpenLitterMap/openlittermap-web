@@ -91,6 +91,7 @@ class PhotoTest extends TestCase
                 'brands',
                 'dogshit',
                 'art',
+                'material',
                 'other'
             ],
             Photo::categories()

@@ -12,6 +12,7 @@
         "softdrinks": "Soft Drinks",
         "smoking": "Smoking",
         "other": "Other",
+        "material": "Material",
         "dogshit": "Pets"
     },
     "smoking": {
@@ -294,5 +295,15 @@
     "dogshit": {
         "poo": "Surprise!",
         "poo_in_bag": "Surprise in a bag!"
+    },
+    "material": {
+        "aluminium":  "Aluminium",
+        "glass":  "Glass",
+        "metal":  "Metal",
+        "nylon":  "Nylon",
+        "paper":  "Paper",
+        "plastic":  "Plastic",
+        "polystyrene":  "Polystyrene",
+        "wood":  "Wood"
     }
 }
