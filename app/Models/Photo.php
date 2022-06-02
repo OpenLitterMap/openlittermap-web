@@ -67,6 +67,7 @@ class Photo extends Model
             'brands',
             'dogshit',
             'art',
+            'material',
             'other',
         ];
     }
@@ -269,6 +270,11 @@ class Photo extends Model
     public function dogshit ()
     {
         return $this->belongsTo('App\Models\Litter\Categories\Dogshit', 'dogshit_id', 'id');
+    }
+
+    public function material ()
+    {
+        return $this->belongsTo('App\Models\Litter\Categories\Material', 'material_id', 'id');
     }
 
     // public function politics() {

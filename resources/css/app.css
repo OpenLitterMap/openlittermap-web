@@ -58,18 +58,15 @@ html {
 .leaflet-popup-content {
     margin: 0 !important;
     overflow-y: auto;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
 }
 
-.leaflet-popup-content p {
-    margin-bottom: 10px !important;
-    margin-top: 10px !important;
-}
-
-.leaflet-popup-content p:last-of-type {
+.leaflet-popup-content div:last-of-type {
     margin-bottom: 0 !important;
 }
 
-.leaflet-popup-content p:first-of-type {
+.leaflet-popup-content div:first-of-type {
     margin-top: 0 !important;
 }
 
@@ -78,11 +75,19 @@ html {
     padding: 1.2em;
 }
 
-.leaflet-litter-img-container p {
+.leaflet-litter-img-container div {
     color: black !important;
-    font-size: 1.2em;
+    font-size: 12px;
     word-break: break-word;
-    max-width: 320px;
+    max-width: 220px;
+    margin: 4px 0;
+}
+
+.leaflet-litter-img-container .team {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
 }
 
 .leaflet-litter-img-container .link {
@@ -113,6 +118,19 @@ html {
     border-top-right-radius: 6px;
     object-fit: cover;
     cursor: pointer;
+}
+
+/* Tablet and above */
+@media (min-width: 768px)
+{
+    .leaflet-litter-img-container div {
+        font-size: 14px;
+        max-width: 300px;
+        margin: 10px 0;
+    }
+    .leaflet-litter-img-container .team {
+        max-width: 280px;
+    }
 }
 /* End extra leaflet styles */
 

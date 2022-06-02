@@ -291,5 +291,31 @@ export const litterkeys = {
     dogshit: [
         'poo',
         'poo_in_bag'
+    ],
+    material: [
+        'aluminium',
+        'bronze',
+        'carbon_fiber',
+        'ceramic',
+        'composite',
+        'concrete',
+        'copper',
+        'fiberglass',
+        'glass',
+        'iron_or_steel',
+        'latex',
+        'metal',
+        'nickel',
+        'nylon',
+        'paper',
+        'plastic',
+        'polyethylene',
+        'polymer',
+        'polypropylene',
+        'polystyrene',
+        'pvc',
+        'rubber',
+        'titanium',
+        'wood',
     ]
 };
