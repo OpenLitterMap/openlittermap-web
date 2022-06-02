@@ -1,0 +1,14 @@
+{
+    "title": "Készen állsz?",
+    "subtitle": "Regisztráljon, és legyen szakértő szemét térképező, és segítsen legyőzni a műanyagszennyezést.",
+    "crowdfunding-message": "Kérjük, fontolja meg munkánk támogatását az OpenLitterMap közösségi finanszírozásával akár napi 6 centtel, havi előfizetéssel, hogy segítse ennek a fontos platformnak a növekedését és fejlesztését.",
+    "form-create-account": "Fiók létrehozása",
+    "form-field-name": "Név",
+    "form-field-unique-id": "Egyedi azonosító",
+    "form-field-email": "E-mail cím",
+    "form-field-password": "Jelszó. Tartalmaznia kell nagybetűt, kisbetűt és számot.",
+    "form-field-pass-confirm": "Jelszó megerősítése",
+    "form-account-conditions": "Elolvastam és elfogadom a <a href='/terms'>Felhasználási feltételeket</a> és az <a href='/privacy'>Adatvédelmi szabályzatot</a>",
+    "form-btn": "Új fiók létrehozása",
+    "create-account-note": "Megjegyzés: Ha nem kapja meg az ellenőrző e-mailt a beérkező levelek között, kérjük, ellenőrizze a spam mappáját."
+}

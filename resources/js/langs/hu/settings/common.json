@@ -1,0 +1,14 @@
+{
+    "general": "General", //
+    "password": "Password", //Jelszó
+    "details": "Personal Details", //Személyes adatok
+    "social": "Social Accounts", //Társadalmi számlák
+    "account": "My Account", //Fiókom
+    "payments": "My Payments", //Saját fizetések
+    "privacy": "Privacy", //Magánélet
+    "littercoin": "Littercoin (LTRX)", //
+    "presence": "Presence", //
+    "emails": "Emails", //
+    "show-flag": "Show Flag", //
+    "teams": "Teams" //
+}
