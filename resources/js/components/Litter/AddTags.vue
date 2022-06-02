@@ -224,7 +224,7 @@ export default {
 
             results = results.concat(this.recentCustomTags.map(tag => {
                 return {
-                    key: tag,
+                    key: 'custom-' + tag,
                     title: tag,
                     custom: true
                 };
@@ -534,7 +534,7 @@ export default {
         search (input)
         {
             if (input.custom) {
-                this.addCustomTag(input.key);
+                this.addCustomTag(input.title);
             } else {
                 let searchValues = input.key.split(':');
 
