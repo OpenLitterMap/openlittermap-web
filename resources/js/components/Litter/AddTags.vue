@@ -177,27 +177,8 @@ export default {
 
         this.$store.commit('setCustomTagsError', '');
 
-        // If the user hits Ctrl + Spacebar, search all tags
-        window.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === ' ') {
-                this.$refs.search.input.focus();
-                e.preventDefault();
-            }
-        });
-
-        // If the user hits Ctrl + Enter, submit the tags
-        window.addEventListener('keydown', (e) => {
-            if (
-                (e.ctrlKey || e.metaKey) &&
-                e.key.toLowerCase() === 'enter' &&
-                this.hasAddedTags &&
-                (! this.admin && this.id !== 0)
-            ) {
-                e.preventDefault();
-                e.stopPropagation();
-                this.submit();
-            }
-        });
+        window.addEventListener('keydown', this.listenForSearchFocusEvent);
+        window.addEventListener('keydown', this.listenForSubmitEvent);
 
         this.$nextTick(function () {
             this.$refs.search.input.focus();
@@ -241,20 +222,15 @@ export default {
                 }
             });
 
-            return results;
-        },
-
-        /**
-         * All recently used custom tags
-         */
-        allRecentCustomTags ()
-        {
-            return this.recentCustomTags.map(tag => {
+            results = results.concat(this.recentCustomTags.map(tag => {
                 return {
                     key: tag,
-                    title: tag
+                    title: tag,
+                    custom: true
                 };
-            });
+            }))
+
+            return results;
         },
 
         /**
@@ -446,8 +422,10 @@ export default {
             this.$localStorage.set('recentTags', JSON.stringify(this.recentTags));
         },
 
-        addCustomTag ()
+        addCustomTag (tag)
         {
+            this.customTag = tag;
+
             this.$store.commit('addCustomTag', {
                 photoId: this.id,
                 customTag: this.customTag
@@ -555,12 +533,16 @@ export default {
          */
         search (input)
         {
-            let searchValues = input.key.split(':');
+            if (input.custom) {
+                this.addCustomTag(input.key);
+            } else {
+                let searchValues = input.key.split(':');
 
-            this.category = {key: searchValues[0]};
-            this.tag = {key: searchValues[1]};
+                this.category = {key: searchValues[0]};
+                this.tag = {key: searchValues[1]};
 
-            this.addTag();
+                this.addTag();
+            }
 
             this.$nextTick(function () {
                 this.onFocusSearch();
@@ -584,9 +566,7 @@ export default {
                 return;
             }
 
-            this.customTag = customTag;
-
-            this.addCustomTag();
+            this.addCustomTag(customTag);
 
             this.$nextTick(function () {
                 this.onFocusCustomTags();
@@ -622,7 +602,41 @@ export default {
             await this.$store.dispatch(action);
 
             this.processing = false;
+        },
+
+        /**
+         * If the user hits Ctrl + Enter, submit the tags
+         */
+        listenForSubmitEvent(event)
+        {
+            if (
+                (event.ctrlKey || event.metaKey) &&
+                event.key.toLowerCase() === 'enter' &&
+                this.hasAddedTags &&
+                (! this.admin && this.id !== 0)
+            ) {
+                event.preventDefault();
+                event.stopPropagation();
+                this.submit();
+            }
+        },
+
+        /**
+         * If the user hits Ctrl + Space bar, search all tags
+         */
+        listenForSearchFocusEvent(event)
+        {
+            if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === ' ') {
+                this.$refs.search.input.focus();
+                event.preventDefault();
+            }
         }
+    },
+
+    destroyed ()
+    {
+        window.removeEventListener('keydown', this.listenForSearchFocusEvent);
+        window.removeEventListener('keydown', this.listenForSubmitEvent);
     }
 };
 </script>

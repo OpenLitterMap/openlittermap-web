@@ -7,9 +7,9 @@ const helper = {
      * @see https://leafletjs.com/reference-1.7.1.html#popup-l-popup
      */
     popupOptions: {
-        minWidth: window.innerWidth > 500 ? 350 : 150, // allow smaller widths on mobile
+        minWidth: window.innerWidth >= 768 ? 350 : 200, // allow smaller widths on mobile
         maxWidth: 600,
-        maxHeight: window.innerWidth > 500 ? 500 : 300, // prevent tall popups on mobile
+        maxHeight: window.innerWidth >= 768 ? 800 : 500, // prevent tall popups on mobile
         closeButton: true
     },
 
@@ -39,7 +39,7 @@ const helper = {
         }
 
         let tags = '';
-        let a = tagsString.split(',');
+        let a = tagsString ? tagsString.split(',') : [];
 
         a.pop();
 
@@ -119,6 +119,7 @@ const helper = {
         const teamFormatted = helper.formatTeam(properties.team);
         const pickedUpFormatted = helper.formatPickedUp(properties.picked_up);
         const isLitterArt = properties.result_string && properties.result_string.includes('art.item');
+        const hasSocialLinks = properties.social && Object.keys(properties.social).length
 
         return `
             <img
@@ -129,20 +130,20 @@ const helper = {
                 ${(isTrustedUser ? '' : ('style="padding: 16px;"'))}
             />
             <div class="leaflet-litter-img-container">
-                ${tags ? ('<p>' + tags + '</p>') : ''}
-                ${customTags ? ('<p>' + customTags + '</p>') : ''}
-                ${!isLitterArt ? ('<p>' + pickedUpFormatted + '</p>') : ''}
-                <p>${takenDateString}</p>
-                ${user ? ('<p>' + user + '</p>') : ''}
-                ${teamFormatted ? ('<p>' + teamFormatted + '</p>') : ''}
-                <div class="social-container">
+                ${tags ? ('<div>' + tags + '</div>') : ''}
+                ${customTags ? ('<div>' + customTags + '</div>') : ''}
+                ${!isLitterArt ? ('<div>' + pickedUpFormatted + '</div>') : ''}
+                <div>${takenDateString}</div>
+                ${user ? ('<div>' + user + '</div>') : ''}
+                ${teamFormatted ? ('<div class="team">' + teamFormatted + '</div>') : ''}
+                ${hasSocialLinks ? '<div class="social-container">' : ''}
                     ${properties.social?.personal ? '<a target="_blank" href="' + properties.social.personal + '"><i class="fa fa-link"></i></a>' : ''}
                     ${properties.social?.twitter ? '<a target="_blank" href="' + properties.social.twitter + '"><i class="fa fa-twitter"></i></a>' : ''}
                     ${properties.social?.facebook ? '<a target="_blank" href="' + properties.social.facebook + '"><i class="fa fa-facebook"></i></a>' : ''}
                     ${properties.social?.instagram ? '<a target="_blank" href="' + properties.social.instagram + '"><i class="fa fa-instagram"></i></a>' : ''}
                     ${properties.social?.linkedin ? '<a target="_blank" href="' + properties.social.linkedin + '"><i class="fa fa-linkedin"></i></a>' : ''}
                     ${properties.social?.reddit ? '<a target="_blank" href="' + properties.social.reddit + '"><i class="fa fa-reddit"></i></a>' : ''}
-                </div>
+                ${hasSocialLinks ? '</div>' : ''}
                 ${url ? '<a class="link" target="_blank" href="' + url + '"><i class="fa fa-share-alt"></i></a>' : ''}
             </div>`;
     }

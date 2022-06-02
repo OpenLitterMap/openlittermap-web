@@ -197,6 +197,7 @@ export default {
         max-height: 80vh;
         overflow-y: scroll;
         z-index: 999;
+        font-size: 0.8rem;
         .event {
             width: 20rem;
         }

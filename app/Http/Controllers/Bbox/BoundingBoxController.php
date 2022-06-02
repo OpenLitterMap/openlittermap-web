@@ -112,6 +112,7 @@ class BoundingBoxController extends Controller
             'sanitary_id',
             'dumping_id',
             'industrial_id',
+            'material_id',
             'brands_id',
             'result_string',
             'five_hundred_square_filepath'

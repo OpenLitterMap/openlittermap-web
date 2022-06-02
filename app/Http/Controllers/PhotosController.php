@@ -104,7 +104,7 @@ class PhotosController extends Controller
 
         if (is_null($exif))
         {
-            abort(500, "Sorry, no GPS on this one. Code=1");
+            abort(500, "Sorry, no GPS on this one.");
         }
 
         // Check if the EXIF has GPS data
@@ -112,7 +112,7 @@ class PhotosController extends Controller
         // todo - translate the error
         if (!array_key_exists("GPSLatitudeRef", $exif))
         {
-            abort(500, "Sorry, no GPS on this one. Code=2");
+            abort(500, "Sorry, no GPS on this one.");
         }
 
         $dateTime = '';
