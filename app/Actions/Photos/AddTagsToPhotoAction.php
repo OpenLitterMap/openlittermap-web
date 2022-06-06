@@ -2,10 +2,19 @@
 
 namespace App\Actions\Photos;
 
+use App\Actions\ConvertDeprecatedTagsAction;
 use App\Models\Photo;
 
 class AddTagsToPhotoAction
 {
+    /** @var ConvertDeprecatedTagsAction */
+    private $convertDeprecatedTagsAction;
+
+    public function __construct(ConvertDeprecatedTagsAction $convertDeprecatedTagsAction)
+    {
+        $this->convertDeprecatedTagsAction = $convertDeprecatedTagsAction;
+    }
+
     /**
      * Adds tags to the photo.
      *
@@ -21,7 +30,9 @@ class AddTagsToPhotoAction
         $litter = 0;
         $brands = 0;
 
-        foreach ($tags as $category => $items)
+        $convertedTags = $this->convertDeprecatedTagsAction->run($tags);
+
+        foreach ($convertedTags as $category => $items)
         {
             $this->createCategory($photo, $category);
 

@@ -16,17 +16,16 @@ export const litterkeys = {
         'smokingOther'      // Smoking-Other
     ],
     alcohol: [
+        'cup',                       // Cup
         'beerBottle',                // Beer Bottles
         'spiritBottle',              // Spirit Bottles
         'wineBottle',                // Wine Bottles
         'beerCan',                   // Beer Cans
         'brokenGlass',               // Broken Glass
         'bottleTops',                // Beer bottle tops
-        'paperCardAlcoholPackaging', // Paper Packaging
-        'plasticAlcoholPackaging',   // Plastic Packaging
+        'packaging',                 // Packaging
         'pint',                      // Pint Glass
         'six_pack_rings',            // Six-pack rings
-        'alcohol_plastic_cups',     // Plastic Cups
         'alcoholOther'              // Alcohol-Other
     ],
     art: [

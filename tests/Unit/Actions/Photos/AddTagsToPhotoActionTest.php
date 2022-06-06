@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Actions\Photos;
 
+use App\Actions\ConvertDeprecatedTagsAction;
 use App\Actions\Photos\AddTagsToPhotoAction;
 use App\Models\Photo;
 use Tests\TestCase;
@@ -28,5 +29,19 @@ class AddTagsToPhotoActionTest extends TestCase
             ['all' => 7, 'litter' => 2, 'brands' => 5],
             $totals
         );
+    }
+
+    public function test_it_converts_the_deprecated_tags()
+    {
+        $spy = $this->spy(ConvertDeprecatedTagsAction::class);
+
+        /** @var Photo $photo */
+        $photo = Photo::factory()->create();
+        /** @var AddTagsToPhotoAction $addTagsAction */
+        $addTagsAction = app(AddTagsToPhotoAction::class);
+
+        $addTagsAction->run($photo, ['brands' => ['adidas' => 5]]);
+
+        $spy->shouldHaveReceived('run', [['brands' => ['adidas' => 5]]]);
     }
 }

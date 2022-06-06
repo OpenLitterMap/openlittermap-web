@@ -13,10 +13,12 @@ class Alcohol extends LitterCategory
         return [
             'beerCan',
             'beerBottle',
+            'cup',
             'spiritBottle',
             'wineBottle',
             'brokenGlass',
             'bottleTops',
+            'packaging',
             'paperCardAlcoholPackaging',
             'pint',
             'plasticAlcoholPackaging',
