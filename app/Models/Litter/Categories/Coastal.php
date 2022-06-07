@@ -20,6 +20,8 @@ class Coastal extends LitterCategory
             'fishing_gear_nets',
             'ghost_nets',
             'buoys',
+            'degraded_bottle',
+            'degraded_bag',
             'degraded_plasticbottle',
             'degraded_plasticbag',
             'degraded_straws',

@@ -8,7 +8,7 @@ export const litterkeys = {
         'cigaretteBox',     // Cigarette Box
         'tobaccoPouch',     // Tobacco Pouch
         'skins',            // Rolling Papers
-        'smoking_plastic',  // Plastic Packaging
+        'packaging',        // Packaging
         'filters',          // Filters
         'filterbox',        // Filter Box
         'vape_pen',         // Vape pen
@@ -38,34 +38,32 @@ export const litterkeys = {
     ],
     food: [
         'sweetWrappers',        // Sweet Wrappers
-        'paperFoodPackaging',   // Paper/Cardboard Packaging
-        'plasticFoodPackaging', // Plastic Packaging
-        'plasticCutlery',       // Plastic Cutlery
+        'packaging',            // Packaging
+        'cutlery',              // Cutlery
         'crisp_small',          // Crisp/Chip Packet (small)
         'crisp_large',          // Crisp/Chip Packet (large)
         'styrofoam_plate',      // Styrofoam Plate
         'napkins',              // Napkins
         'sauce_packet',         // Sauce Packet
-        'glass_jar',            // Glass Jar
-        'glass_jar_lid',       // Glass Jar Lid
-        'aluminium_foil',      // Aluminium Foil
-        'pizza_box',           // Pizza Box
+        'jar',                  // Jar
+        'jar_lid',              // Jar Lid
+        'foil',                 // Foil
+        'pizza_box',            // Pizza Box
         'foodOther',            // Food-other
         'chewing_gum',          // Chewing Gum
     ],
     softdrinks: [
-        'waterBottle',      // Plastic Water bottle
-        'fizzyDrinkBottle', // Plastic Fizzy Drink bottle
+        'waterBottle',      // Water bottle
+        'fizzyDrinkBottle', // Fizzy Drink bottle
         'tinCan',           // Can
         'bottleLid',        // Bottle Tops
         'bottleLabel',      // Bottle Labels
         'sportsDrink',      // Sports Drink bottle
         'straws',           // Straws
-        'plastic_cups',     // Plastic Cups
-        'plastic_cup_tops', // Plastic Cup Tops
+        'cup',              // Cup
+        'cup_top',          // Cup Top
         'milk_bottle',      // Milk Bottle
         'milk_carton',     // Milk Carton
-        'paper_cups',      // Paper Cups
         'juice_cartons',   // Juice Cartons
         'juice_bottles',   // Juice Bottles
         'juice_packet',    // Juice Packet
@@ -115,8 +113,8 @@ export const litterkeys = {
         'fishing_gear_nets',        // Fishing gear/nets
         'ghost_nets',               // Ghost nets
         'buoys',                    // Buoys
-        'degraded_plasticbottle',   // Degraded Plastic Bottle
-        'degraded_plasticbag',      // Degraded Plastic Bag
+        'degraded_bottle',          // Degraded Bottle
+        'degraded_bag',             // Degraded Bag
         'degraded_straws',         // Degraded Drinking Straws
         'degraded_lighters',       // Degraded Lighters
         'balloons',                // Balloons

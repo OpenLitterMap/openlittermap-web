@@ -16,6 +16,7 @@ class Smoking extends LitterCategory
             'cigaretteBox',
             'tobaccoPouch',
             'skins',
+            'packaging',
             'smoking_plastic',
             'filters',
             'filterbox',
