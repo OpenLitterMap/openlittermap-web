@@ -12,7 +12,8 @@
         "sanitary": "Sanitary",
         "softdrinks": "Soft Drinks",
         "smoking": "Smoking",
-        "dogshit": "Pets"
+        "dogshit": "Pets",
+        "material": "Material"
     },
     "smoking": {
         "butts": "Cigarettes/Butts",
@@ -25,7 +26,8 @@
         "filterbox": "Filter Box",
         "smokingOther": "Smoking-Other",
         "vape_pen": "Vape pen",
-        "vape_oil": "Vape oil"
+        "vape_oil": "Vape oil",
+        "packaging": "Packaging"
     },
     "alcohol": {
         "beerBottle": "Beer Bottles",
@@ -39,7 +41,9 @@
         "alcoholOther": "Alcohol-Other",
         "pint": "Pint Glass",
         "six_pack_rings": "Six-pack rings",
-        "alcohol_plastic_cups": "Plastic Cups"
+        "alcohol_plastic_cups": "Plastic Cups",
+        "cup": "Cup",
+        "packaging": "Packaging"
     },
     "art": {
         "item": "Kunstwerk"
@@ -63,7 +67,13 @@
         "glass_jar_lid": "Glass Jar Lid",
         "foodOther": "Food-other",
         "aluminium_foil": "Aluminium Foil",
-        "chewing_gum": "Kaugummi"
+        "chewing_gum": "Kaugummi",
+        "packaging": "Packaging",
+        "cutlery": "Cutlery",
+        "jar": "Jar",
+        "jar_lid": "Jar Lid",
+        "foil": "Foil",
+        "pizza_box": "Pizza Box"
     },
     "softdrinks": {
         "waterBottle": "Plastic Water bottle",
@@ -88,7 +98,9 @@
         "strawpacket": "Straw Packaging",
         "styro_cup": "Styrofoam Cup",
         "broken_glass": "Broken Glass",
-        "softDrinkOther": "Soft Drink (other)"
+        "softDrinkOther": "Soft Drink (other)",
+        "cup": "Cup",
+        "cup_top": "Cup Top"
     },
     "sanitary": {
         "gloves": "Gloves",
@@ -129,7 +141,11 @@
         "elec_large": "Electric large",
         "other": "Other (other)",
         "random_litter": "Random Litter",
-        "balloons": "Balloons"
+        "balloons": "Balloons",
+        "bags_litter": "Bags of Litter",
+        "overflowing_bins": "Overflowing Bins",
+        "tyre": "Tyre",
+        "cable_tie": "Cable Tie"
     },
     "dumping": {
         "small": "Small",
@@ -163,7 +179,10 @@
         "styro_small": "Styrofoam small",
         "styro_medium": "Styrofoam medium",
         "styro_large": "Styrofoam large",
-        "coastal_other": "Coastal (other)"
+        "coastal_other": "Coastal (other)",
+        "ghost_nets": "Ghost nets",
+        "degraded_bottle": "Degraded Bottle",
+        "degraded_bag": "Degraded Bag"
     },
     "brands": {
         "aadrink": "AA Drink",
@@ -284,5 +303,35 @@
     },
     "no-tags": "No Tags",
     "not-verified": "Awaiting verification",
-    "not-tagged-yet": "Not tagged yet!"
+    "not-tagged-yet": "Not tagged yet!",
+    "dogshit": {
+        "poo": "Surprise!",
+        "poo_in_bag": "Surprise in a bag!"
+    },
+    "material": {
+        "aluminium": "Aluminium",
+        "bronze": "Bronze",
+        "carbon_fiber": "Carbon Fiber",
+        "ceramic": "Ceramic",
+        "composite": "Composite",
+        "concrete": "Concrete",
+        "copper": "Copper",
+        "fiberglass": "Fiberglass",
+        "glass": "Glass",
+        "iron_or_steel": "Iron/Steel",
+        "latex": "Latex",
+        "metal": "Metal",
+        "nickel": "Nickel",
+        "nylon": "Nylon",
+        "paper": "Paper",
+        "plastic": "Plastic",
+        "polyethylene": "Polyethylene",
+        "polymer": "Polymer",
+        "polypropylene": "Polypropylene",
+        "polystyrene": "Polystyrene",
+        "pvc": "PVC",
+        "rubber": "Rubber",
+        "titanium": "Titanium",
+        "wood": "Wood"
+    }
 }

@@ -12,7 +12,8 @@
         "softdrinks": "Frisdrank",
         "smoking": "Rookwaar",
         "other": "Overig",
-        "dogshit": "Huisdieren"
+        "dogshit": "Huisdieren",
+        "material": "Materiaal"
     },
     "smoking": {
         "butts": "Sigaretten/Peuken",
@@ -25,7 +26,8 @@
         "filterbox": "Filterverpakking",
         "vape_pen": "Vape pen",
         "vape_oil": "Vape olie",
-        "smokingOther": "Rookwaar-Overig"
+        "smokingOther": "Rookwaar-Overig",
+        "packaging": "Verpakking"
     },
     "alcohol": {
         "beerBottle": "Bier Flessen",
@@ -39,7 +41,9 @@
         "pint": "Bierglas",
         "six_pack_rings": "Six-pack keelclips",
         "alcohol_plastic_cups": "Plastic Bekers",
-        "alcoholOther": "Alcohol-Overig"
+        "alcoholOther": "Alcohol-Overig",
+        "cup": "Beker",
+        "packaging": "Verpakking"
     },
     "art": {
         "item": "Zwerfvuil"
@@ -64,7 +68,12 @@
         "aluminium_foil": "Aluminium folie",
         "pizza_box": "Pizza Doos",
         "foodOther": "Voedsel-Overig",
-        "chewing_gum": "Kauwgom"
+        "chewing_gum": "Kauwgom",
+        "packaging": "Verpakking",
+        "cutlery": "Bestek",
+        "jar": "Pot",
+        "jar_lid": "Pot Deksel",
+        "foil": "Folie"
     },
     "softdrinks": {
         "waterBottle": "Plastic Water Fles",
@@ -89,7 +98,9 @@
         "strawpacket": "Rietjes Verpakking",
         "styro_cup": "Piepschuim Beker",
         "broken_glass": "Gebroken Glas",
-        "softDrinkOther": "Frisdrank-Overig"
+        "softDrinkOther": "Frisdrank-Overig",
+        "cup": "Beker",
+        "cup_top": "Beker Deksel"
     },
     "sanitary": {
         "gloves": "Handschoenen",
@@ -138,7 +149,9 @@
         "styro_small": "Piepschuim klein",
         "styro_medium": "Piepschuim middel",
         "styro_large": "Piepschuim groot",
-        "coastal_other": "Kust-Overig"
+        "coastal_other": "Kust-Overig",
+        "degraded_bottle": "Gedegradeerde Fles",
+        "degraded_bag": "Gedegradeerde Tas"
     },
     "brands": {
         "aadrink": "AA Drink",
@@ -294,5 +307,31 @@
     "dogshit": {
         "poo": "Hondendrol!",
         "poo_in_bag": "Hondendrol in zakje!"
+    },
+    "material": {
+        "aluminium": "Aluminium",
+        "bronze": "Bronzen",
+        "carbon_fiber": "Koolstofvezel",
+        "ceramic": "Keramiek",
+        "composite": "Composiet",
+        "concrete": "Concreet",
+        "copper": "Koper",
+        "fiberglass": "Glasvezel",
+        "glass": "Glas",
+        "iron_or_steel": "Ijzer/Staal",
+        "latex": "Latex",
+        "metal": "Metaal",
+        "nickel": "Nikkel",
+        "nylon": "Nylon",
+        "paper": "Papier",
+        "plastic": "Plastic",
+        "polyethylene": "Polyethyleen",
+        "polymer": "Polymeer",
+        "polypropylene": "Polypropyleen",
+        "polystyrene": "Polystyreen",
+        "pvc": "PVC",
+        "rubber": "Rubber",
+        "titanium": "Titanium",
+        "wood": "Hout"
     }
 }

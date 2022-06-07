@@ -12,7 +12,8 @@
         "softdrinks": "Refrescos",
         "smoking": "Fumar",
         "other": "Otros",
-        "dogshit": "Mascotas"
+        "dogshit": "Mascotas",
+        "material": "Material"
     },
     "smoking": {
         "butts": "Cigarrillos/Colillas",
@@ -25,7 +26,8 @@
         "filterbox": "Caja de filtros",
         "vape_pen": "Vapeador (cigarrillo electrónico)",
         "vape_oil": "Líquido para vapear",
-        "smokingOther": "Fumar-Otros"
+        "smokingOther": "Fumar-Otros",
+        "packaging": "Embalaje"
     },
     "alcohol": {
         "beerBottle": "Botellas de cerveza",
@@ -39,7 +41,9 @@
         "pint": "Vaso de cerveza",
         "six_pack_rings": "Anillos para latas de cerveza",
         "alcohol_plastic_cups": "Vasos de plástico",
-        "alcoholOther": "Alcohol-Otros"
+        "alcoholOther": "Alcohol-Otros",
+        "cup": "Copa",
+        "packaging": "Embalaje"
     },
     "art": {
         "item": "Arte de la Basura"
@@ -64,7 +68,12 @@
         "aluminium_foil": "Papel aluminio",
         "pizza_box": "Caja de pizza",
         "foodOther": "Comida-Otros",
-        "chewing_gum": "Chicle"
+        "chewing_gum": "Chicle",
+        "packaging": "Embalaje",
+        "cutlery": "Cubiertos",
+        "jar": "Jarra",
+        "jar_lid": "Tapa de Jarra",
+        "foil": "Hoja"
     },
     "softdrinks": {
         "waterBottle": "Botella de plástico de agua",
@@ -89,7 +98,9 @@
         "strawpacket": "Embalaje pajitas",
         "styro_cup": "Vaso de poliestireno",
         "broken_glass": "Vidrio roto",
-        "softDrinkOther": "Bebidas-Otras"
+        "softDrinkOther": "Bebidas-Otras",
+        "cup": "Copa",
+        "cup_top": "Tapa de Copa"
     },
     "sanitary": {
         "gloves": "Guantes",
@@ -138,7 +149,9 @@
         "styro_small": "Espuma de poliestireno pequeña",
         "styro_medium": "Espuma de poliestireno mediana",
         "styro_large": "Espuma de poliestireno grande",
-        "coastal_other": "Costa-Otros"
+        "coastal_other": "Costa-Otros",
+        "degraded_bottle": "Botella Degradada",
+        "degraded_bag": "Bolsa Degradada"
     },
     "brands": {
         "aadrink": "AA Drink",
@@ -294,5 +307,31 @@
     "dogshit": {
         "poo": "¡Sorpresa!",
         "poo_in_bag": "¡Sorpresa dentro de la bolsa!"
+    },
+    "material": {
+        "aluminium": "Aluminio",
+        "bronze": "Bronce",
+        "carbon_fiber": "Fibra de Carbon",
+        "ceramic": "Cerámica",
+        "composite": "Compuesto",
+        "concrete": "Concreto",
+        "copper": "Cobre",
+        "fiberglass": "Fibra de Vidrio",
+        "glass": "Vidrio",
+        "iron_or_steel": "Hierro/Acero",
+        "latex": "Látex",
+        "metal": "Metal",
+        "nickel": "Níquel",
+        "nylon": "Nylon",
+        "paper": "Papel",
+        "plastic": "Plástica",
+        "polyethylene": "Polietileno",
+        "polymer": "Polímero",
+        "polypropylene": "Polipropileno",
+        "polystyrene": "Poliestireno",
+        "pvc": "PVC",
+        "rubber": "Goma",
+        "titanium": "Titanio",
+        "wood": "Madera"
     }
 }

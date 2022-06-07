@@ -12,7 +12,8 @@
         "softdrinks": "Palenie",
         "smoking": "Palenie",
         "other": "Inne",
-        "dogshit": "Psia kupa"
+        "dogshit": "Psia kupa",
+        "material": "Materiał"
     },
     "smoking": {
         "butts": "Filtr po papierosie",
@@ -25,7 +26,8 @@
         "filterbox": "pudełko po filtrach",
         "vape_pen": "e-papieros",
         "vape_oil": "Olejek e-papierosowy",
-        "smokingOther": "Palenie (Inne)"
+        "smokingOther": "Palenie (Inne)",
+        "packaging": "Opakowania"
     },
     "alcohol": {
         "beerBottle": "Butelka po piwie",
@@ -39,7 +41,9 @@
         "pint": "Szklany kufel",
         "six_pack_rings": "plastikowe kółka po szescio-paku",
         "alcohol_plastic_cups": "Plastikowy kubeczek",
-        "alcoholOther": "Akohol (inne)"
+        "alcoholOther": "Akohol (inne)",
+        "cup": "Kubek",
+        "packaging": "Opakowania"
     },
     "art": {
         "item": "Sztuka Miotu"
@@ -64,7 +68,12 @@
         "aluminium_foil": "Folia aluminiowa",
         "pizza_box": "Pudełko po pizzy",
         "foodOther": "Jedzenie (Inne)",
-        "chewing_gum": "Guma do żucia"
+        "chewing_gum": "Guma do żucia",
+        "packaging": "Opakowania",
+        "cutlery": "Sztućce",
+        "jar": "Słoik",
+        "jar_lid": "Pokrywka Słoika",
+        "foil": "Folia"
     },
     "softdrinks": {
         "waterBottle": "Plastikowa butelka po wodzie",
@@ -89,7 +98,9 @@
         "strawpacket": "opakowanie po słomkach",
         "styro_cup": "Styropianowy kubeczek",
         "broken_glass": "Zbite szkło",
-        "softDrinkOther": "Napoje (inne)"
+        "softDrinkOther": "Napoje (inne)",
+        "cup": "Kubek",
+        "cup_top": "Wieczko po Kubeczku"
     },
     "sanitary": {
         "gloves": "Rękawiczki",
@@ -138,7 +149,9 @@
         "styro_small": "Styropian (Mały)",
         "styro_medium": "Styropian (Średni)",
         "styro_large": "Styropian (Duży)",
-        "coastal_other": "przybrzeżny (inne)"
+        "coastal_other": "przybrzeżny (inne)",
+        "degraded_bottle": "Zdegradowana Butelka",
+        "degraded_bag": "Zdegradowana Siatka"
     },
     "brands": {
         "aadrink": "AA Drink",
@@ -294,5 +307,31 @@
     "dogshit": {
         "poo": "niespodzianka!",
         "poo_in_bag": "niespodzianka w woreczku!"
+    },
+    "material": {
+        "aluminium": "Aluminium",
+        "bronze": "Brązowy",
+        "carbon_fiber": "Włókno Węglowe",
+        "ceramic": "Ceramiczny",
+        "composite": "Złożony",
+        "concrete": "Beton",
+        "copper": "Miedź",
+        "fiberglass": "Włókno Szklane",
+        "glass": "Szkło",
+        "iron_or_steel": "Żelazna/Stal",
+        "latex": "Lateks",
+        "metal": "Metal",
+        "nickel": "Nikiel",
+        "nylon": "Nylon",
+        "paper": "Papier",
+        "plastic": "Plastikowy",
+        "polyethylene": "Polietylen",
+        "polymer": "Polimer",
+        "polypropylene": "Polipropylen",
+        "polystyrene": "Polistyren",
+        "pvc": "PVC",
+        "rubber": "Guma",
+        "titanium": "Tytan",
+        "wood": "Drewno"
     }
 }
