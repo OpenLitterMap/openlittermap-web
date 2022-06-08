@@ -240,6 +240,24 @@ export const mutations = {
     },
 
     /**
+     * Remove a recent tag
+     * If category is empty, delete category
+     */
+    removeRecentTag (state, payload)
+    {
+        let tags = Object.assign({}, state.recentTags);
+
+        delete tags[payload.category][payload.tag];
+
+        if (Object.keys(tags[payload.category]).length === 0)
+        {
+            delete tags[payload.category];
+        }
+
+        state.recentTags = tags;
+    },
+
+    /**
      * Admin
      * Change photo[category][tag] = 0;
      */
@@ -264,6 +282,18 @@ export const mutations = {
 
         state.customTags = tags;
         state.hasAddedNewTag = true; // activate update_with_new_tags button
+    },
+
+    /**
+     * Remove a recent custom tag
+     */
+    removeRecentCustomTag (state, payload)
+    {
+        let tags = Object.assign([], state.recentCustomTags);
+
+        tags = tags.filter(tag => tag !== payload);
+
+        state.recentCustomTags = tags;
     },
 
     /**
