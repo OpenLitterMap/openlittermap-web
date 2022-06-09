@@ -222,7 +222,14 @@ export default {
                 }
             });
 
-            results = results.concat(this.recentCustomTags.map(tag => {
+            // Merge recent custom tags with historic custom tags
+            // and filter out duplicates
+            const customTags = [...new Set([
+                ...this.recentCustomTags,
+                ...this.previousCustomTags
+            ])];
+
+            results = results.concat(customTags.map(tag => {
                 return {
                     key: tag,
                     title: tag,
@@ -338,6 +345,14 @@ export default {
         recentCustomTags ()
         {
             return this.$store.state.litter.recentCustomTags;
+        },
+
+        /**
+         * All the custom tags that this user has submitted
+         */
+        previousCustomTags ()
+        {
+            return this.$store.state.photos.previousCustomTags;
         },
 
         /**

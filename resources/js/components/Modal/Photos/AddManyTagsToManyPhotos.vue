@@ -60,6 +60,10 @@ export default {
             return hasTags || hasCustomTags;
         },
     },
+    async mounted ()
+    {
+        await this.$store.dispatch('LOAD_PREVIOUS_CUSTOM_TAGS');
+    },
     methods: {
 
         /**
