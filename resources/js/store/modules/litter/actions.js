@@ -17,7 +17,8 @@ export const actions = {
             exclIds: context.rootState.photos.exclIds,
             filters: context.rootState.photos.filters,
             tags: context.state.tags[0],
-            custom_tags: context.state.customTags[0]
+            custom_tags: context.state.customTags[0],
+            picked_up: context.rootState.litter.pickedUp
         })
         .then(response => {
             console.log('add_many_tags_to_many_photos', response);
