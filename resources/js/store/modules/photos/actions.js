@@ -59,7 +59,22 @@ export const actions = {
     },
 
     /**
-     * Get non filtered paginated array of the users photos
+     * Get list of the user's previously added custom tags
+     */
+    async LOAD_PREVIOUS_CUSTOM_TAGS (context)
+    {
+        await axios.get('/user/profile/photos/previous-custom-tags')
+            .then(response => {
+                console.log('load_previous_custom_tags', response);
+                context.commit('setPreviousCustomTags', response.data);
+            })
+            .catch(error => {
+                console.error('load_previous_custom_tags', error);
+            });
+    },
+
+    /**
+     * Get non-filtered paginated array of the users photos
      */
     async LOAD_MY_PHOTOS (context)
     {

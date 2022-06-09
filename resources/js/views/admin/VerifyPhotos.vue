@@ -254,7 +254,8 @@ export default {
          */
         hasRecentTags ()
         {
-            return Object.keys(this.$store.state.litter.recentTags).length > 0;
+            return Object.keys(this.$store.state.litter.recentTags).length > 0 ||
+                this.$store.state.litter.recentCustomTags.length;
         },
 	},
 	methods: {

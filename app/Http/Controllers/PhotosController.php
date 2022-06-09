@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Actions\Photos\AddCustomTagsToPhotoAction;
 use App\Actions\Photos\AddTagsToPhotoAction;
 use App\Actions\Photos\DeletePhotoAction;
+use App\Actions\Photos\GetPreviousCustomTagsAction;
 use App\Actions\Photos\MakeImageAction;
 use App\Actions\Photos\UploadPhotoAction;
 use App\Actions\Locations\ReverseGeocodeLocationAction;
@@ -389,8 +390,9 @@ class PhotosController extends Controller
     /**
      * Get unverified photos for tagging
      */
-    public function unverified ()
+    public function unverified (GetPreviousCustomTagsAction $previousTagsAction)
     {
+        /** @var User $user */
         $user = Auth::user();
 
         $query = Photo::where([
@@ -412,7 +414,8 @@ class PhotosController extends Controller
         return [
             'photos' => $photos,
             'remaining' => $remaining,
-            'total' => $total
+            'total' => $total,
+            'custom_tags' => $previousTagsAction->run($user)
         ];
     }
 }

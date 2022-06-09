@@ -121,6 +121,9 @@ Route::post('/profile/photos/delete', 'PhotosController@deleteImage');
 // Paginated array of the users photos (no filters)
 Route::get('/user/profile/photos/index', 'User\UserPhotoController@index');
 
+// List of the user's previously added custom tags
+Route::get('/user/profile/photos/previous-custom-tags', 'User\UserPhotoController@previousCustomTags');
+
 // Filtered paginated array of the users photos
 Route::get('/user/profile/photos/filter', 'User\UserPhotoController@filter');
 

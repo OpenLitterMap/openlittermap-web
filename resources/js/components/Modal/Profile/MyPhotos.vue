@@ -10,7 +10,7 @@
                 :key="photo.id"
                 @click="select(photo.id)"
             >
-                <img :src="photo.filename" />
+                <img class="litter" v-img="{sourceButton: true, openOn: 'dblclick'}" :src="photo.filename" />
 
                 <img
                     v-if="photo.selected"
@@ -21,18 +21,25 @@
 
         </div>
 
-        <div class="flex">
-            <button
-                class="button is-medium mr1"
-                v-show="this.paginate.prev_page_url"
-                @click="previous"
-            >{{$t('common.previous') }}</button>
+        <div class="flex bottom-actions">
+            <div class="bottom-navigation">
+                <button
+                    class="button is-medium mr1"
+                    v-show="this.paginate.prev_page_url"
+                    @click="previous"
+                >{{$t('common.previous') }}</button>
 
-            <button
-                class="button is-medium"
-                v-show="this.paginate.next_page_url"
-                @click="next"
-            >{{$t('common.next') }}</button>
+                <button
+                    class="button is-medium mr1"
+                    v-show="this.paginate.next_page_url"
+                    @click="next"
+                >{{$t('common.next') }}</button>
+
+                <div class="photos-info">
+                    <div class="info-icon"><i class="fa fa-info"></i></div>
+                    <div>{{ $t('profile.dashboard.bulk-tag-dblclick-info') }}</div>
+                </div>
+            </div>
 
             <div class="my-photos-buttons">
 <!-- Todo - test this on production -->
@@ -161,20 +168,27 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 
     .my-photos-grid-container {
         display: grid;
-        grid-template-rows: repeat(3, 1fr);
-        grid-template-columns: repeat(8, 1fr);
-        grid-row-gap: 1em;
-        grid-column-gap: 1em;
+        grid-template-rows: repeat(5, 1fr);
+        grid-template-columns: repeat(6, 1fr);
+        grid-row-gap: 0.5em;
+        grid-column-gap: 0.5em;
     }
 
     .my-grid-photo {
         max-height: 10em;
         max-width: 10em;
         position: relative;
+
+        .litter {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 5px;
+        }
     }
 
     .grid-checkmark {
@@ -187,10 +201,45 @@ export default {
         padding: 5px;
     }
 
-    .my-photos-buttons {
+    .photos-info {
         display: flex;
-        width: 100%;
-        justify-content: flex-end;
+        gap: 8px;
+        align-items: center;
+
+        .info-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            background-color: #00d1b2;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            i {
+                margin-top: 2px;
+            }
+        }
+    }
+
+    .bottom-actions {
+        margin-top: 16px;
+        justify-content: space-between;
+
+        .bottom-navigation {
+            display: flex;
+            flex-direction: row;
+        }
+    }
+
+    /* Laptop and above */
+    @media (min-width: 1027px)
+    {
+        .my-photos-grid-container {
+            grid-template-rows: repeat(3, 1fr);
+            grid-template-columns: repeat(10, 1fr);
+            grid-row-gap: 1em;
+            grid-column-gap: 1em;
+        }
     }
 
 </style>

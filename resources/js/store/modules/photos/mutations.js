@@ -55,6 +55,7 @@ export const mutations = {
         state.paginate = payload.photos;
         state.remaining = payload.remaining;
         state.total = payload.total;
+        state.previousCustomTags = payload.custom_tags;
     },
 
     /**
@@ -63,6 +64,14 @@ export const mutations = {
     myProfilePhotos (state, payload)
     {
         state.paginate = payload;
+    },
+
+    /**
+     * Store the user's previously added custom tags
+     */
+    setPreviousCustomTags (state, payload)
+    {
+        state.previousCustomTags = payload;
     },
 
     /**

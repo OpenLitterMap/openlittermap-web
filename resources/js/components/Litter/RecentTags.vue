@@ -11,7 +11,12 @@
                     class="litter-tag"
                     :key="tag"
                     @click="addRecentCustomTag(tag)"
-                ><p class="has-text-white">{{ tag }}</p></div>
+                >
+                    <span class="close" @click.prevent.stop="clearRecentCustomTag(tag)">
+                        <i class="fa fa-times"></i>
+                    </span>
+                    <p class="has-text-white">{{ tag }}</p>
+                </div>
             </transition-group>
         </div>
 
@@ -25,7 +30,12 @@
                         class="litter-tag"
                         :key="tag"
                         @click="addRecentTag(category, tag)"
-                    ><p class="has-text-white">{{ getTagName(category, tag) }}</p></div>
+                    >
+                        <span class="close" @click.prevent.stop="clearRecentTag(category, tag)">
+                            <i class="fa fa-times"></i>
+                        </span>
+                        <p class="has-text-white">{{ getTagName(category, tag) }}</p>
+                    </div>
                 </transition-group>
             </div>
         </transition-group>
@@ -130,6 +140,24 @@ export default {
             this.$localStorage.remove('recentTags');
             this.$localStorage.remove('recentCustomTags');
         },
+
+        /**
+         * Remove a single recent tag
+         */
+        clearRecentTag (category, tag)
+        {
+            this.$store.commit('removeRecentTag', {category, tag});
+            this.$localStorage.set('recentTags', JSON.stringify(this.recentTags));
+        },
+
+        /**
+         * Remove a single recent custom tag
+         */
+        clearRecentCustomTag (tag)
+        {
+            this.$store.commit('removeRecentCustomTag', tag);
+            this.$localStorage.set('recentCustomTags', JSON.stringify(this.recentCustomTags));
+        },
     }
 };
 </script>
@@ -162,11 +190,34 @@ export default {
 }
 
 .litter-tag {
+    position: relative;
     cursor: pointer;
     padding: 5px;
     border-radius: 5px;
     background-color: $info;
-    margin: 5px
+    margin: 5px;
+
+    .close {
+        display: none;
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        color: white;
+        font-size: 12px;
+        background-color: rgba(0,0,0,.7);
+        &:hover {
+            background-color: black;
+        }
+    }
+
+    &:hover .close {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
 }
 
 @media screen and (min-width: 1280px)
