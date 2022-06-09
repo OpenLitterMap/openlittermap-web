@@ -309,7 +309,7 @@ export default {
         position: relative;
         margin: 30px auto;
         transition: all .3s ease;
-        width: 1585px;
+        width: 90%;
 
         @media (max-width: 700px) {
             width: 80%;

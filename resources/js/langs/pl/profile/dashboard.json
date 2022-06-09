@@ -20,5 +20,6 @@
     "manage-my-photos": "Przeglądaj swoje zdjęcia, zaznacz wiele, usuń je lub dodaj tagi!",
     "view-my-photos": "Wyświetl moje zdjęcia",
     "my-photos": "Moje zdjęcia",
-    "add-tags": "Dodaj tagi"
+    "add-tags": "Dodaj tagi",
+    "bulk-tag-dblclick-info": "Kliknij dwukrotnie, aby powiększyć zdjęcia!"
 }
