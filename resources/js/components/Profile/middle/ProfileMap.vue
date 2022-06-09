@@ -61,6 +61,7 @@ export default {
             timeSliderDragUpdate: true,
             loopButton: true,
             autoPlay: false,
+            minSpeed: 5,
         }));
     },
     data() {

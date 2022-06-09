@@ -67,6 +67,7 @@ export default {
             timeSliderDragUpdate: true,
             loopButton: true,
             autoPlay: false,
+            minSpeed: 5,
         }));
 
         this.pointsLayer = L.geoJSON(this.geojson, {
