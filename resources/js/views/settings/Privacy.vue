@@ -14,6 +14,8 @@
                     <LeaderboardsPrivacy />
 
                     <CreatedByPrivacy />
+
+                    <PreventOthersTaggingMyPhotos />
                 </div>
 
                 <button
@@ -33,10 +35,12 @@
 import MapsPrivacy from '../../components/User/Settings/Privacy/MapsPrivacy';
 import LeaderboardsPrivacy from '../../components/User/Settings/Privacy/LeaderboardsPrivacy';
 import CreatedByPrivacy from '../../components/User/Settings/Privacy/CreatedByPrivacy';
+import PreventOthersTaggingMyPhotos from '../../components/User/Settings/Privacy/PreventOthersTaggingMyPhotos';
 
 export default {
     name: 'Privacy',
     components: {
+        PreventOthersTaggingMyPhotos,
         MapsPrivacy,
         LeaderboardsPrivacy,
         CreatedByPrivacy
