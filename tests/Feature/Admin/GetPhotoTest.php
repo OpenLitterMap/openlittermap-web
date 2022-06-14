@@ -42,19 +42,16 @@ class GetPhotoTest extends TestCase
 
     public function test_an_admin_can_filter_photos_by_country()
     {
-        $this->actingAs($this->user);
-
         // User uploads a photo in the US
-        $this->post('/submit', ['file' => $this->imageAndAttributes['file']]);
+        $this->actingAs($this->user)->post('/submit', ['file' => $this->imageAndAttributes['file']]);
         $photoInUS = $this->user->fresh()->photos->last();
-
         // User uploads a photo in Canada
         $canada = Country::factory(['shortcode' => 'ca', 'country' => 'Canada'])->create();
         $canadaAttributes = $this->getImageAndAttributes('jpg', [
             'country_code' => 'ca', 'country' => 'Canada'
         ])['file'];
         $this->geocodingAction->withAddress(['country_code' => 'ca', 'country' => 'Canada']);
-        $this->post('/submit', ['file' => $canadaAttributes]);
+        $this->actingAs($this->user)->post('/submit', ['file' => $canadaAttributes]);
 
         // Admin gets the next photo by country -------------------
         $response = $this->actingAs($this->admin)
@@ -76,4 +73,14 @@ class GetPhotoTest extends TestCase
             ->assertJsonValidationErrors('country_id');
     }
 
+
+    public function test_an_admin_should_not_see_photos_of_users_that_dont_want_their_photos_tagged_by_others()
+    {
+        $this->user->update(['prevent_others_tagging_my_photos' => true]);
+        $this->actingAs($this->user)->post('/submit', ['file' => $this->imageAndAttributes['file']]);
+
+        $response = $this->actingAs($this->admin)->getJson('/admin/get-image')->assertOk();
+
+        $this->assertNull($response->json('photo'));
+    }
 }
