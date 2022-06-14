@@ -36,7 +36,7 @@ export default {
 
 <style lang="scss" scoped>
 .section-fundraiser {
-    background-color: #111827;
+    background-color: #EE6C4D;
 
     .hero-body {
         margin: 0 auto;
