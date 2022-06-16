@@ -292,7 +292,8 @@ export const actions = {
             show_name: context.state.user.show_name,
             show_username: context.state.user.show_username,
             show_name_createdby: context.state.user.show_name_createdby,
-            show_username_createdby:  context.state.user.show_username_createdby
+            show_username_createdby:  context.state.user.show_username_createdby,
+            prevent_others_tagging_my_photos:  context.state.user.prevent_others_tagging_my_photos,
         })
         .then(response => {
             console.log('save_privacy_settings', response);

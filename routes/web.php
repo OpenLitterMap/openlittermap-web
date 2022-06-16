@@ -10,6 +10,7 @@ Route::get('/community', 'HomeController@index');
 Route::get('/community/stats', 'CommunityController@stats');
 Route::get('/references', 'HomeController@index');
 Route::get('/leaderboard', 'HomeController@index');
+Route::get('/faq', 'HomeController@index');
 
 Route::get('/tags-search', 'DisplayTagsOnMapController@show');
 
