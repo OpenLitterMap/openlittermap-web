@@ -55,7 +55,7 @@ const router = new VueRouter({
         },
         {
             path: '/faq',
-            component: require('./views/home/Faq').default
+            component: require('./views/home/FAQ').default
         },
         {
             path: '/global',
