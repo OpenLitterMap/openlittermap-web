@@ -54,6 +54,10 @@ const router = new VueRouter({
             component: require('./views/home/Community/Index').default
         },
         {
+            path: '/faq',
+            component: require('./views/home/Faq').default
+        },
+        {
             path: '/global',
             component: require('./views/global/GlobalMapContainer').default
         },

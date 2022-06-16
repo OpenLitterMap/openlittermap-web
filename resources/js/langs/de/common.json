@@ -28,5 +28,10 @@
     "your-email": "you@email.com",
     "team": "Mannschaft",
     "actions": "Actie",
-    "photo": "Photo"
+    "photo": "Photo",
+    "created": "Created",
+    "created-by": "Created by",
+    "anonymous": "Anonymous",
+    "reason": "Reason",
+    "faq": "Frequently Asked Questions"
 }

@@ -3,13 +3,13 @@
         <div class="hero-body">
             <div class="py-2 mb-6">
                 <div class="title has-text-light has-text-centered">
-                    Frequently asked questions
+                    {{ $t('common.faq') }}
                 </div>
             </div>
             <div class="faq">
                 <ul>
                     <li>
-                        <input type="checkbox" checked>
+                        <input type="checkbox">
                         <i></i>
                         <h2>Where can I download the pictures?</h2>
                         <p>This is probably one of the most frequently asked and logical questions.
@@ -93,20 +93,97 @@
                             that were not selected remain so you could repeat the process if you want to.
                         </p>
                     </li>
+                    <li>
+                        <input type="checkbox" checked>
+                        <i></i>
+                        <h2>How do I take pictures?</h2>
+                        <p>
+                            Firstly, make sure that your phone has the right settings:
+                            <br>&emsp; &bull; Sharing your location should be on, because that is the way to get GPS
+                            location on your photos (if you want to take pictures without draining your battery, it is
+                            okay to put it in flight-setting).
+
+                            <br><br>Next, there are different ways to take pictures:
+                            <br>&emsp; &bull; Open the camera on the phone and use that to take the photos (preferred way)
+                            <br>&emsp; &bull; Open the app and take pictures from within the app (optional way)
+
+                            <br><br>If you have taken pictures with your native camera, in order to be able to upload them,
+                            you have to set your phone to allow OLM to use your gallery, apart from approving OLM to use
+                            ‘selected photos’ you should say approve to use ‘all’ photos.‘ That should make it work
+                            <br>Check your setting: do you normally pick up the litter or not?
+                        </p>
+                    </li>
+                    <li>
+                        <input type="checkbox" checked>
+                        <i></i>
+                        <h2>What kind of pictures should I take?</h2>
+                        <p>
+                            The rule of thumb is:
+                            <br>&emsp; &bull; Take one picture per item.
+                            <br>&emsp; &bull; Try to hold your camera close to the item so the item is ‘full-screen’.
+                            <br>&emsp; &bull; If there is a brand on the item, make sure that is also visible in the
+                            picture.
+                            <br>&emsp; &bull; Try to avoid taking a picture with people visible in it.
+                            With the ‘rules’ above, you create the best pictures which make for the best data and you
+                            make life easier for those who need to check the pictures.
+                            However, there are situations where this is not possible. For instance, you see something
+                            floating in the water and are not able to pick it, or turn it to see if there is a brand on
+                            it, or to zoom in. That’s okay, it is still valuable data.
+
+                            <br>Do I have to take 1 photo per item?
+                            <br>&emsp; &bull; No, you don’t, you might also take 1 photo of several similar items, for
+                            instance if you find a spot with 50 cigarette butts, you don’t have to take 50 pictures, you
+                            can also take 1 picture. See ‘tagging’ to understand how you would tag those.
+                            <br>And if I find different objects close together, do i have to sort those first?
+                            <br>&emsp; &bull; No, you don’t, you can even take 1 photo with different items on it. See
+                            ‘tagging’ to understand how you would tag those.
+                            <br>So do whatever you prefer, but keep in mind that all photos have to be verified so the
+                            clearer the photo is, the better.
+                        </p>
+                    </li>
+                    <li>
+                        <input type="checkbox" checked>
+                        <i></i>
+                        <h2>How to tag correctly?</h2>
+                        <p>
+                            There is no single method to tag pictures, all data is valuable. It is also 'your story'
+                            to tell. However, you should try to tell what kind of item it is (it should be available
+                            under some category, and only if it is not, use 'other') and if possible add the brand as
+                            well (if the brand is not available yet, you could use the custom tags input). But try to use
+                            the pre-defined tags as much as possible.
+                            <br>If possible, tag the ‘worst’ material. So an item with both plastic and paper, tag as
+                            plastic.
+                            <br><br>Some examples:
+                            <br>red bull can → 2 tags: ‘the object’ (look for the best ‘can’ that you can find) + brand
+                            <br>Soda can with a brand that we don’t have yet → 1 predefined tag (can) + 1
+                            customtag:somebrandname
+                            <br>If you have found an energy-can, only give 1 tag for the item: so don’t tag it as ‘can’
+                            and ‘energycan’, but just as an energycan
+                            <br><br>Multiple litter items in a photo can be tagged with appropriate counts applied. A
+                            photo can contain a mixture of beer bottles, beer cans, plastic cups, or any number of
+                            recognized category items. Multiple recognized brands and their counts can also be applied.
+                        </p>
+                    </li>
                 </ul>
             </div>
         </div>
     </section>
 </template>
+
 <script>
 export default {
-    name: 'FundraiserSection',
+    name: 'FAQ',
+    mounted() {
+        window.scrollTo(0, 0);
+    }
 };
 </script>
 
 <style lang="scss" scoped>
 .section-faq {
     background-color: #111827;
+    min-height: 100%;
+    padding-bottom: 100px;
 
     .hero-body {
         margin: 0 auto;
@@ -262,3 +339,4 @@ export default {
     }
 }
 </style>
+

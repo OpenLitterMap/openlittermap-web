@@ -56,6 +56,7 @@
                     <p class="footer-link" @click="open('https://opengeospatialdata.springeropen.com/articles/10.1186/s40965-018-0050-y')">{{ $t('home.footer.research-paper') }}</p>
                     <router-link tag="p" to="/references" class="footer-link">{{ $t('home.footer.references') }}</router-link>
                     <router-link tag="p" to="/credits" class="footer-link">{{ $t('home.footer.credits') }}</router-link>
+                    <router-link tag="p" to="/faq" class="footer-link">{{ $t('common.faq') }}</router-link>
                 </div>
 
                 <div class="column is-2">
