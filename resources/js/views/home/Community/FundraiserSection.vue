@@ -26,9 +26,9 @@
                 ></iframe>
             </div>
 
-            <div class="has-text-centered title mt-6 mb-6">
-                <router-link to="/faq">{{ $t('common.faq') }}</router-link>
-            </div>
+<!--            <div class="has-text-centered title mt-6 mb-6">-->
+<!--                <router-link to="/faq">{{ $t('common.faq') }}</router-link>-->
+<!--            </div>-->
         </div>
     </section>
 </template>
