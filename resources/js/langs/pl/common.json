@@ -31,5 +31,7 @@
     "team": "Drużyny",
     "actions": "Działania",
     "photo": "Zdjęcie",
-    "reason": "Powód"
+    "reason": "Powód",
+    "anonymous": "Anonimowy",
+    "faq": "Często Zadawane Pytania"
 }

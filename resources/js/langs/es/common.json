@@ -31,5 +31,7 @@
     "team": "Equipo",
     "actions": "Comportamiento",
     "photo": "Foto",
-    "reason": "Razón"
+    "reason": "Razón",
+    "anonymous": "Anónimo",
+    "faq": "Preguntas Frecuentes"
 }
