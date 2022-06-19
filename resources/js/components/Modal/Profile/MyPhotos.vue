@@ -10,12 +10,23 @@
                 :key="photo.id"
                 @click="select(photo.id)"
             >
-                <img class="litter" v-img="{sourceButton: true, openOn: 'dblclick'}" :src="photo.filename" />
+                <img
+                    class="litter"
+                    v-img="{sourceButton: true, openOn: 'dblclick'}"
+                    :src="photo.filename"
+                />
 
                 <img
                     v-if="photo.selected"
                     src="/assets/images/checkmark.png"
                     class="grid-checkmark"
+                />
+
+                <img
+                    v-if="photoIsTagged(photo)"
+                    src="/assets/images/checkmark.png"
+                    class="grid-tagged"
+                    @click.prevent.stop="openEditPhotoModal(photo)"
                 />
             </div>
 
@@ -54,6 +65,13 @@
                     @click="addTags"
                     :disabled="selectedCount === 0"
                 >{{$t('common.add-tags') }}</button>
+
+
+                <button
+                    class="button is-medium is-primary"
+                    @click="submit"
+                    :disabled="!hasAddedTags"
+                >{{ $t('common.submit') }}</button>
             </div>
         </div>
     </div>
@@ -70,7 +88,8 @@ export default {
     },
     data () {
         return {
-            loading: true
+            loading: true,
+            processing: false,
         };
     },
     computed: {
@@ -101,13 +120,33 @@ export default {
             return this.paginate.data;
         },
 
+        tags ()
+        {
+            return this.$store.state.litter.tags;
+        },
+
+        customTags ()
+        {
+            return this.$store.state.litter.customTags;
+        },
+
         /**
          * Number of photos that have been selected
          */
         selectedCount ()
         {
             return this.$store.state.photos.selectedCount;
-        }
+        },
+
+        /**
+         * Disable button if false
+         */
+        hasAddedTags ()
+        {
+            if (this.processing) return false;
+
+            return this.photos.filter(this.photoIsTagged).length;
+        },
     },
     methods: {
 
@@ -123,6 +162,22 @@ export default {
         },
 
         /**
+         * Dispatch request
+         */
+        async submit ()
+        {
+            if (! this.hasAddedTags) return;
+
+            this.processing = true;
+
+            await this.$store.dispatch('BULK_TAG_PHOTOS');
+
+            this.processing = false;
+
+            this.$store.commit('hideModal');
+        },
+
+        /**
          * Load a modal to confirm delete of the selected photos
          */
         deletePhotos ()
@@ -130,6 +185,16 @@ export default {
             this.$store.commit('showModal', {
                 type: 'ConfirmDeleteManyPhotos',
                 title: this.$t('common.confirm-delete') //'Confirm Delete'
+            });
+        },
+
+        openEditPhotoModal (photo)
+        {
+            this.$store.commit('setChosenPhoto', photo.id);
+
+            this.$store.commit('showModal', {
+                type: 'EditPhotoModal',
+                title: 'Edit photo'
             });
         },
 
@@ -163,6 +228,13 @@ export default {
         select (photo_id)
         {
             this.$store.commit('togglePhotoSelected', photo_id);
+        },
+
+        photoIsTagged (photo)
+        {
+            const hasTags = photo.tags && Object.keys(photo.tags).length;
+            const hasCustomTags = photo.custom_tags?.length;
+            return hasTags || hasCustomTags;
         }
     }
 };
@@ -193,12 +265,23 @@ export default {
 
     .grid-checkmark {
         position: absolute;
-        height: 3em;
-        bottom: 0;
-        right: 0;
-        border: 5px solid #0ca3e0;
+        height: 32px;
+        bottom: 5px;
+        right: 5px;
+        border: 2px solid #0ca3e0;
         border-radius: 50%;
         padding: 5px;
+    }
+
+    .grid-tagged {
+        position: absolute;
+        height: 32px;
+        top: 5px;
+        right: 5px;
+        border: 2px solid green;
+        border-radius: 50%;
+        padding: 5px;
+        cursor: pointer;
     }
 
     .photos-info {

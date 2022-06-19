@@ -41,6 +41,25 @@ class UserPhotoController extends Controller
     }
 
     /**
+     * Add Many Tags to Many Photos
+     *
+     * @return array
+     */
+    public function bulkTag (Request $request)
+    {
+        foreach ($request->photos as $photoId => $data) {
+             dispatch (new AddTagsToPhoto(
+                 $photoId,
+                 $request->boolean('picked_up'),
+                 $data['tags'] ?? [],
+                 $data['custom_tags'] ?? []
+             ));
+        }
+
+        return ['success' => true];
+    }
+
+    /**
      * Todo - test this on production
      *
      * @return array

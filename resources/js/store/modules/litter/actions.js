@@ -41,6 +41,48 @@ export const actions = {
     },
 
     /**
+     * Get filtered photos and add many tags at once
+     */
+    async BULK_TAG_PHOTOS (context)
+    {
+        const title = 'Success!';
+        const body = 'Your tags were applied to the images';
+
+        let photos = {};
+        Object.entries(context.state.tags).forEach(([photoId, tags]) => {
+            if (photoId <= 0) return;
+            if (!photos[photoId]) photos[photoId] = {}
+            photos[photoId]['tags'] = tags;
+        });
+        Object.entries(context.state.customTags).forEach(([photoId, customTags]) => {
+            if (photoId <= 0) return;
+            if (!photos[photoId]) photos[photoId] = {}
+            photos[photoId]['custom_tags'] = customTags;
+        });
+
+        await axios.post('/user/profile/photos/tags/bulkTag', {
+            photos: photos,
+            picked_up: context.rootState.litter.pickedUp
+        })
+        .then(response => {
+            console.log('add_many_tags_to_many_photos', response);
+
+            // success notification
+            if (response.data.success)
+            {
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                    position: 'top-right'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('add_many_tags_to_many_photos', error);
+        });
+    },
+
+    /**
      * The user has added tags to an image and now wants to add them to the database
      */
     async ADD_TAGS_TO_IMAGE (context, payload)

@@ -110,6 +110,52 @@ export const mutations = {
         state.selectedCount = state.selectAll ? state.total : 0;
     },
 
+    addTagToPhoto (state, payload)
+    {
+        const photoIndex = state.paginate.data.findIndex(photo => photo.id === payload.photoId)
+        let photo = state.paginate.data[photoIndex];
+        let tags = Object.assign({}, photo.tags ?? {});
+
+        photo.tags = {
+            ...tags,
+            [payload.category]: {
+                ...(tags[payload.photoId] ? tags[payload.photoId][payload.category] : {}),
+                [payload.tag]: payload.quantity
+            }
+        };
+
+        state.paginate.data.splice(photoIndex, 1, photo);
+    },
+
+    addCustomTagToPhoto (state, payload)
+    {
+        const photoIndex = state.paginate.data.findIndex(photo => photo.id === payload.photoId)
+        let photo = state.paginate.data[photoIndex];
+        let tags = photo.custom_tags ?? [];
+
+        // Case-insensitive check for existing tags
+        if (tags.find(tag => tag.toLowerCase() === payload.customTag.toLowerCase()) !== undefined)
+        {
+            return;
+        }
+
+        if (tags.length >= 3)
+        {
+            return;
+        }
+
+        tags.unshift(payload.customTag);
+
+        photo.custom_tags = tags;
+
+        state.paginate.data.splice(photoIndex, 1, photo);
+    },
+
+    setChosenPhoto (state, photoId)
+    {
+        state.chosenPhotoId = photoId;
+    },
+
     /**
      * Change the selected value of a photo
      *
