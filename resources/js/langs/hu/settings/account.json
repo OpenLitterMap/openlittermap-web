@@ -1,5 +1,5 @@
 {
-    "delete-account": "Delete My Account", //A fiókom törlése
-    "delete-account?": "Do you want to delete your account?", //Törölni szeretné fiókját?
-    "enter-password": "Enter your password" //Írd be a jelszavad
+    "delete-account": "A fiókom törlése",
+    "delete-account?": "Szeretné törölni a fiókját?",
+    "enter-password": "Írd be a jelszavad"
 }

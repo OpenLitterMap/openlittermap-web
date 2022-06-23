@@ -1,21 +1,21 @@
 {
-    "profileurl": "profile", //
-    "profile1": "Congratulations! You have mined ", //
-    "profile2": "Visit", //
-    "profile3": "Settings", //
-    "profile4": "to claim your earnings", //
-    "profile5": "Uploaded", //
-    "profile6": "Coordinates", //
-    "profile7": "Address", //
-    "profile8": "Picked Up?", //
-    "profile9": "Remaining", //
-    "profile10": "True", //
-    "profile11": "False", //
-    "profile12": "The litter is still there", //
-    "profile13": "The litter has been removed!", //
-    "profile14": "Images left to categorize", //
-    "profile15": "Total images uploaded", //
-    "profile16": "This Image", //
-    "profile17": "Add data", //
-    "profile18": "Submit" //
+    "profileurl": "profil",
+    "profile1": "Gratulálunk! Bányászott ",
+    "profile2": "Látogatás",
+    "profile3": "Beállítások",
+    "profile4": "hogy követelje a keresetét",
+    "profile5": "Feltöltve",
+    "profile6": "Koordináták",
+    "profile7": "Cím",
+    "profile8": "Felvette?",
+    "profile9": "Hátralévő",
+    "profile10": "Igaz",
+    "profile11": "Hamis",
+    "profile12": "A szemét még mindig ott van",
+    "profile13": "A szemetet eltávolították!",
+    "profile14": "Hátralevő képek kategorizálásra",
+    "profile15": "Összes feltöltött kép",
+    "profile16": "Ez a kép",
+    "profile17": "Adatok hozzáadása",
+    "profile18": "Beküldés"
 }

@@ -1,35 +1,35 @@
 {
-    "cancel": "Cancel", //
-    "submit": "Submit", //
-    "download": "Download", //
-    "delete": "Delete", //
-    "delete-image": "Delete the image", //
-    "confirm-delete": "Confirm Delete", //
-    "loading": "Loading...", //
-    "created_at": "Uploaded at", //
-    "created": "Created", //
-    "created-by": "Created by", //
-    "datetime": "Taken at", //
-    "day-names": ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"], //
-    "month-names": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], //
-    "short-month-names": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], //
-    "next": "Next", //
-    "previous": "Previous", //
-    "next-page": "Next page", //
-    "add-tags": "Add Tags", //
-    "add-many-tags": "Add Many Tags", //
-    "select-all": "Select all", //
-    "de-select-all": "De-select all", //
-    "choose-dates": "Choose Dates", //
-    "not-verified": "Not Verified", //
-    "verified": "Verified", //
-    "search-by-id": "Search by ID", //
-    "active": "Active", //
-    "inactive": "Inactive", //
-    "inactivate": "Disable Team Contributions", //
-    "your-email": "you@email.com", //
-    "team": "Team", //
-    "actions": "Actions", //
-    "anonymous": "Anonymous", //
-    "photo": "Photo" //
+    "cancel": "Megszüntetés",
+    "submit": "Beküldés",
+    "download": "Letöltés",
+    "delete": "Törlés",
+    "delete-image": "Törölje a képet",
+    "confirm-delete": "Törlés jóváhagyása",
+    "loading": "Betöltés...",
+    "created_at": "Feltöltve itt",
+    "created": "Létrehozva",
+    "created-by": "Készítette",
+    "datetime": "Felvéve",
+    "day-names": ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
+    "month-names": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+    "short-month-names": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    "next": "Következő",
+    "previous": "Előző",
+    "next-page": "Következő oldal",
+    "add-tags": "Címkék hozzáadása",
+    "add-many-tags": "Több címke megadása",
+    "select-all": "Minden kiválasztása",
+    "de-select-all": "Törölje az összes kijelölését",
+    "choose-dates": "Válasszon dátumot",
+    "not-verified": "Nem ellenőrzött",
+    "verified": "Ellenőrizve",
+    "search-by-id": "Keresés azonosító alapján",
+    "active": "Aktív",
+    "inactive": "Inaktív",
+    "inactivate": "Csapat-hozzájárulás letiltása",
+    "your-email": "you@email.com",
+    "team": "Csapat",
+    "actions": "Akciók",
+    "anonymous": "Névtelen",
+    "photo": "Fénykép"
 }

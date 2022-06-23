@@ -1,33 +1,33 @@
 {
-    "title": "Welcome to OpenLitterMap Teams!", //
-    "created": "Congratulations! Your new team has been created.", //
+    "title": "Üdvözöljük az OpenLitterMap Csapatában!",
+    "created": "Gratulálunk! Új csapata létrejött.",
     "times": {
-        "today": "Today", //
-        "week": "This week", //
-        "month": "This month", //
-        "year": "This year", //
-        "all": "All time", //
-        "created_at": "Uploaded at", //
-        "datetime": "Taken at" //
+        "today": "Ma",
+        "week": "Ezen a héten",
+        "month": "Ebben a hónapban",
+        "year": "Idén",
+        "all": "Összes",
+        "created_at": "Feltöltve itt",
+        "datetime": "Felvéve ekkor"
     },
     "create": {
-        "fail": "There was an error creating your Team", //
-        "max-created": "You are not allowed to create any more teams." //
+        "fail": "Hiba történt a csapat létrehozása során",
+        "max-created": "Nem hozhat létre több csapatot."
     },
     "settings": {
         "maps": {
-            "team-map": "Team Map", //
-            "name-will-appear": "Your name will appear on the maps", //
-            "username-will-appear": "Your username will appear on the maps", //
-            "will-not-appear": "Your name and username will not appear on the maps" //
+            "team-map": "Csapattérkép",
+            "name-will-appear": "A neved megjelenik a térképeken",
+            "username-will-appear": "Felhasználóneve megjelenik a térképeken",
+            "will-not-appear": "Az Ön neve és felhasználóneve nem jelenik meg a térképeken"
         },
         "leaderboards": {
-            "team-leaderboard": "Team Leaderboard", //
-            "name-will-appear": "Your name will appear on the leaderboards", //
-            "username-will-appear": "Your username will appear on the leaderboards", //
-            "will-not-appear": "Your name and username will not appear on the leaderboards" //
+            "team-leaderboard": "Csapat ranglista",
+            "name-will-appear": "A neved megjelenik a ranglistákon",
+            "username-will-appear": "A felhasználóneved megjelenik a ranglistákon",
+            "will-not-appear": "Az Ön neve és felhasználóneve nem jelenik meg a ranglistákon"
         },
-        "submit-one-team": "Save for this Team", //
-        "apply-all-teams": "Apply for all Teams" //
+        "submit-one-team": "Mentés erre a csapatra",
+        "apply-all-teams": "Jelentkezzen minden csapatba"
     }
 }

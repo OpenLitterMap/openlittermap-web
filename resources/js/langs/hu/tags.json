@@ -1,28 +1,28 @@
 {
-    "address": "Address", //
-    "add-tag": "Add Tag", //
-    "coordinates": "Coordinates", //
-    "device": "Device", //
-    "next": "Next Image", //
-    "no-tags": "You don't have anything to tag at the moment.", //
-    "picked-up-title": "Picked Up?", //
-    "please-upload": "Upload more photos", //
-    "previous": "Previous Image", //
-    "removed": "The litter has been removed", //
-    "still-there": "The litter is still there", //
-    "taken": "Taken", //
-    "to-tag": "Images left to tag", //
-    "total-uploaded": "Total images uploaded", //
-    "uploaded": "Uploaded", //
-    "confirm-delete": "Do you want to delete this image? This cannot be undone.", //
-    "recently-tags": "Recently used tags: ", //
-    "clear-tags": "Clear recent tags?", //
-    "clear-tags-btn": "Clear recent tags", //
-    "search-all-tags": "Press Ctrl + Spacebar to Search All Tags", //
-    "search-custom-tags": "Add your own tags", //
-    "custom-tags": "Custom Tags", //
-    "custom-tags-min": "It needs to be at least 3 characters long.", //
-    "custom-tags-max": "It needs to be at most 100 characters long.", //
-    "tag-already-added": "Tag already added.", //
-    "tag-limit-reached": "You can upload up to 3 custom tags." //
+    "address": "Cím",
+    "add-tag": "Címke hozzáadása",
+    "coordinates": "Koordináták",
+    "device": "Eszköz",
+    "next": "Következő kép",
+    "no-tags": "Jelenleg nincs mit megjelölnie.",
+    "picked-up-title": "Felvette?",
+    "please-upload": "Tölts fel több fotót",
+    "previous": "Előző kép",
+    "removed": "A szemetet eltávolították",
+    "still-there": "A szemét még mindig ott van",
+    "taken": "Fényképezve",
+    "to-tag": "A hátramaradt képek megjelölésre",
+    "total-uploaded": "Összes feltöltött kép",
+    "uploaded": "Feltöltve",
+    "confirm-delete": "Törli ezt a képet? Ezt nem lehet visszacsinálni.",
+    "recently-tags": "Nemrég használt címkék: ",
+    "clear-tags": "Törli a legutóbbi címkéket?",
+    "clear-tags-btn": "Legutóbbi címkék törlése",
+    "search-all-tags": "Nyomja meg a Ctrl + szóköz billentyűt az összes címke kereséséhez",
+    "search-custom-tags": "Adja hozzá saját címkéit",
+    "custom-tags": "Egyéni címkék",
+    "custom-tags-min": "Legalább 3 karakter hosszúságúnak kell lennie.",
+    "custom-tags-max": "Legfeljebb 100 karakter hosszúságú lehet.",
+    "tag-already-added": "Címke már hozzáadva.",
+    "tag-limit-reached": "Legfeljebb 3 egyéni címkét tölthet fel."
 }

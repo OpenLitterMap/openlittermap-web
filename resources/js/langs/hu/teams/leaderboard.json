@@ -1,8 +1,8 @@
 {
-    "title": "Team Leaderboard", //
-    "position-header": "Position", //
-    "name-header": "Name", //
-    "photos-header": "Total Photos", //
-    "litter-header": "Total Litter", //
-    "created-at-header" : "Created At" //
+    "title": "Csapat ranglista",
+    "position-header": "Pozíció",
+    "name-header": "Név",
+    "photos-header": "Összes fénykép",
+    "litter-header": "Összes szemét",
+    "created-at-header" : "Létrehozva itt"
 }

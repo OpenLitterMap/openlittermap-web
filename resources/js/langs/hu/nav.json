@@ -1,20 +1,20 @@
 {
-    "admin": "Admin", //
-    "admin-verify-photos": "ADMIN - Verify Photos", //
-    "admin-horizon": "ADMIN - Horizon", //
-    "admin-verify-boxes": "ADMIN - Verify Boxes", //
-    "about": "About", //
-    "global-map": "Global Map", //
-    "world-cup": "World Cup", //
-    "community": "Community", //
-    "upload": "Upload", //
-    "more": "More", //
-    "tag-litter": "Tag Litter", //
-    "profile": "Profile", //
-    "settings": "Settings", //
-    "bounding-boxes": "Bounding Boxes", //
-    "logout": "Logout", //
-    "login": "Login", //
-    "signup": "Signup", //
-    "teams": "Teams" //
+    "admin": "Admin",
+    "admin-verify-photos": "ADMIN - Ellenörzött Fényképek",
+    "admin-horizon": "ADMIN - Horizont",
+    "admin-verify-boxes": "ADMIN - Ellenörzött Dobozok",
+    "about": "Névjegy",
+    "global-map": "Globális térkép",
+    "world-cup": "Világbajnokság",
+    "community": "Közösség",
+    "upload": "Feltöltés",
+    "more": "Több",
+    "tag-litter": "Szemét megjelölése",
+    "profile": "Profil",
+    "settings": "Beállítások",
+    "bounding-boxes": "Határoló dobozok",
+    "logout": "Kijelentkezés",
+    "login": "Belépés",
+    "signup": "Regisztrálás",
+    "teams": "Csapatok"
 }

@@ -1,14 +1,14 @@
 {
-    "general": "General", //
-    "password": "Password", //Jelszó
-    "details": "Personal Details", //Személyes adatok
-    "social": "Social Accounts", //Társadalmi számlák
-    "account": "My Account", //Fiókom
-    "payments": "My Payments", //Saját fizetések
-    "privacy": "Privacy", //Magánélet
-    "littercoin": "Littercoin (LTRX)", //
-    "presence": "Presence", //
-    "emails": "Emails", //
-    "show-flag": "Show Flag", //
-    "teams": "Teams" //
+    "general": "Általános",
+    "password": "Jelszó",
+    "details": "Személyes adatok",
+    "social": "Közösségi Fiókjaim",
+    "account": "Fiókom",
+    "payments": "Fizetéseim",
+    "privacy": "Adatvédelmi Irányelvek",
+    "littercoin": "Littercoin (LTRX)",
+    "presence": "Jelenlét",
+    "emails": "Emails",
+    "show-flag": "Zászló Mutatása",
+    "teams": "Csapatok"
 }

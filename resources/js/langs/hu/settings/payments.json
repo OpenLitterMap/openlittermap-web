@@ -1,13 +1,13 @@
 {
-    "finance": "Finance the development of OpenLitterMap", //
-    "help": "We need your help.", //
-    "support": "Support Open Data on Plastic Pollution", //
-    "help-costs": "Help cover our costs", //
-    "help-hire": "Hire developers, designers & graduates", //
-    "help-produce": "Produce videos", //
-    "help-write": "Write papers", //
-    "help-outreach": "Conferences & outreach", //
-    "help-incentivize": "Incentivize data collection with Littercoin", //
-    "more-soon": "More exciting updates coming soon", //
-    "click-to-support": "Click here to support" //
+    "finance": "Támogassa az OpenLitterMap fejlesztését",
+    "help": "Szükségünk van a segítségedre.",
+    "support": "Nyílt adatok támogatása a műanyagszennyezésről",
+    "help-costs": "Segíts költségeinket fedezni",
+    "help-hire": "Béreljen fel fejlesztőket, tervezőket és diplomásokat",
+    "help-produce": "Készíts videókat",
+    "help-write": "Irj Tanulmányokat",
+    "help-outreach": "Konferenciák és tájékoztatás",
+    "help-incentivize": "Ösztönözze az adatgyűjtést a Littercoin segítségével",
+    "more-soon": "További izgalmas frissítések hamarosan",
+    "click-to-support": "Kattintson ide a támogatáshoz"
 }

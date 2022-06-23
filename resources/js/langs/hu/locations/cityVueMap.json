@@ -1,9 +1,9 @@
 {
-    "taken-on": "Taken on", //Felvette
-    "with-a": "With a", //Val,-vel
-    "by": "By", //Által
-    "meter-hex-grids":"meter hex grids", //méteres hatszögletű rácsok
-    "hover-to-count": "Hover over to count", //Számláshoz vigye az egérmutatót fölé
+    "taken-on": "Felvette",
+    "with-a": "Ezzel",
+    "by": "Által",
+    "meter-hex-grids":"méteres hatszögletű rácsok",
+    "hover-to-count": "Számláláshoz vigye az egérmutatót fölé",
     "pieces-of-litter": "Szemétdarabok",
-    "hover-polygons-to-count":"Hover over polygons to count" //Számláshoz vigye az egérmutatót a sokszögek fölé
+    "hover-polygons-to-count":"Számláláshoz vigye az egérmutatót a sokszögek fölé"
 }

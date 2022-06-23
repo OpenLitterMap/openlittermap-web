@@ -14,5 +14,5 @@
     "zoom-minutes": "perc | percek",
     "slack-text": "A {slack} a fő kommunikációs és együttműködési médiumunk. Kiemelkedő felhasználók, újoncok, fejlesztők, több mint 370 tagú közösség – mindannyian ott vagyunk. Írjon nekünk, és azonnali választ kap, folyamatosan online vagyunk.",
     "fundraiser-text": "Az OpenLitterMap teljes mértékben az adományoktól függ. Készítettünk egy {link}, és még mindig messze vagyunk a célunktól. Minden hozzájárulást szívesen fogadunk. {emoji}",
-    "fundraiser-link": "GoFundMe Adománygyűjtést" //
+    "fundraiser-link": "GoFundMe Adománygyűjtést"
 }

@@ -1,27 +1,27 @@
 {
-    "maps1": "We are creating Open Data on Plastic Pollution", //
-    "maps2": "Anyone can download the data and use it.", //
-    "maps3": "See Global Map", //
-    "global-leaderboard": "Global Leaderboard", //
-    "position": "Position", //
-    "name": "Name", //
-    "xp": "XP", //
-    "social": "Social", //
-    "previous-target": "Previous Target", //
-    "next-target": "Next Target", //
-    "litter": "Litter", //
-    "total-verified-litter": "Total Litter", //
-    "total-verified-photos": "Total Photos", //
-    "total-littercoin-issued": "Total Littercoin", //
-    "number-of-contributors": "Number of Contributors", //
-    "avg-img-per-person": "Average Image per Person", //
-    "avg-litter-per-person": "Average Litter per Person", //
-    "leaderboard": "Leaderboard", //
-    "time-series": "Time-series", //
-    "options": "Options", //
-    "most-data": "Most Litter Tags", //
-    "most-data-person": "Most Litter Tags Per Person", //
-    "download-open-verified-data": "Free and Open Verified Citizen Science Data on Plastic Pollution.", //
-    "stop-plastic-ocean": "Let's stop plastic going into the ocean.", //
-    "enter-email-sent-data": "Please enter an email address to which the data will be sent:" //
+    "maps1": "Nyílt adatokat hozunk létre a műanyagszennyezésről",
+    "maps2": "Az adatokat bárki letöltheti és felhasználhatja.",
+    "maps3": "Lásd a Globális térképet",
+    "global-leaderboard": "Globális ranglista",
+    "position": "Pozíció",
+    "name": "Név",
+    "xp": "XP",
+    "social": "Social",
+    "previous-target": "Előző cél",
+    "next-target": "Következő cél",
+    "litter": "Szemét",
+    "total-verified-litter": "Összes szemét",
+    "total-verified-photos": "Összes fénykép",
+    "total-littercoin-issued": "Összes Littercoin",
+    "number-of-contributors": "Közreműködők száma",
+    "avg-img-per-person": "Átlagos kép személyenként",
+    "avg-litter-per-person": "Átlagos szemét személyenként",
+    "leaderboard": "Ranglista",
+    "time-series": "Idősorok",
+    "options": "Beállítások",
+    "most-data": "A legtöbb szemétcímkék",
+    "most-data-person": "A legtöbb szemétcímke személyenként",
+    "download-open-verified-data": "Ingyenes és nyílt, ellenőrzött polgári tudomány adatok a műanyagszennyezésről.",
+    "stop-plastic-ocean": "Állítsuk meg a műanyag óceánba kerülését.",
+    "enter-email-sent-data": "Kérjük, adjon meg egy e-mail címet, amelyre az adatokat el tudjuk küldeni:"
 }

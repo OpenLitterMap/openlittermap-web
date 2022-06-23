@@ -1,6 +1,6 @@
 {
-    "success-title": "Thanks for helping!", //
-    "success-subtitle": "Remember to verify your email to enable login.", //
-    "error-title": "There was a problem.", //
-    "error-subtitle": "Your card was not charged, but you can still verify your email and login." //
+    "success-title": "Köszi a segítséget!",
+    "success-subtitle": "A bejelentkezés engedélyezéséhez ne felejtse el igazolni az e-mail-címét.",
+    "error-title": "Volt egy probléma.",
+    "error-subtitle": "Kártyáját nem terhelték meg, de továbbra is ellenőrizheti e-mail-címét és bejelentkezhet."
 }

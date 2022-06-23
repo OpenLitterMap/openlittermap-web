@@ -1,250 +1,250 @@
 {
     "categories": {
-        "alcohol": "Alcohol", //
-        "art": "Art", //
-        "brands": "Brands", //
-        "coastal": "Coastal", //
-        "coffee": "Coffee", //
-        "dumping": "Dumping", //
-        "food": "Food", //
-        "industrial": "Industrial", //
-        "sanitary": "Sanitary", //
-        "softdrinks": "Soft Drinks", //
-        "smoking": "Smoking", //
-        "other": "Other", //
-        "dogshit": "Pets" //
+        "alcohol": "Alkohol",
+        "art": "Művészet",
+        "brands": "Márkák",
+        "coastal": "Tengerparti",
+        "coffee": "Kávé",
+        "dumping": "Szemétlerakó",
+        "food": "Étel",
+        "industrial": "Ipari",
+        "sanitary": "Egészségügyi",
+        "softdrinks": "Üditők",
+        "smoking": "Dohány",
+        "other": "Egyéb",
+        "dogshit": "Háziállatok"
     },
     "smoking": {
-        "butts": "Cigarettes/Butts", //
-        "lighters": "Lighters", //
-        "cigaretteBox": "Cigarette Box", //
-        "tobaccoPouch": "Tobacco Pouch", //
-        "skins": "Rolling Papers", //
-        "smoking_plastic": "Plastic Packaging", //
-        "filters": "Filters", //
-        "filterbox": "Filter Box", //
-        "vape_pen": "Vape pen", //
-        "vape_oil": "Vape oil", //
-        "smokingOther": "Smoking-Other" //
+        "butts": "Cigaretta/Csikkek",
+        "lighters": "Öngyújtók",
+        "cigaretteBox": "Cigaretta doboz",
+        "tobaccoPouch": "Dohányzacskó",
+        "skins": "Cigaretta papír",
+        "smoking_plastic": "Műanyag csomagolás",
+        "filters": "Szűrők",
+        "filterbox": "Szűrődoboz",
+        "vape_pen": "Elektromos Cigaretta",
+        "vape_oil": "Elektromos Cigaretta olaj",
+        "smokingOther": "Dohányzás-Egyéb"
     },
     "alcohol": {
-        "beerBottle": "Beer Bottles", //
-        "spiritBottle": "Spirit Bottles", //
-        "wineBottle": "Wine Bottles", //
-        "beerCan": "Beer Cans", //
-        "brokenGlass": "Broken Glass", //
-        "bottleTops": "Beer bottle tops", //
-        "paperCardAlcoholPackaging": "Paper Packaging", //
-        "plasticAlcoholPackaging": "Plastic Packaging", //
-        "pint": "Pint Glass", //
-        "six_pack_rings": "Six-pack rings", //
-        "alcohol_plastic_cups": "Plastic Cups", //
-        "alcoholOther": "Alcohol-Other" //
+        "beerBottle": "Sörösüvegek",
+        "spiritBottle": "Szeszes Üvegek",
+        "wineBottle": "Boros Üvegek",
+        "beerCan": "Sörösdobozok",
+        "brokenGlass": "Törött üveg",
+        "bottleTops": "Sörösüveg teteje",
+        "paperCardAlcoholPackaging": "Papír Csomagolás",
+        "plasticAlcoholPackaging": "Műanyag csomagolás",
+        "pint": "Pint üveg",
+        "six_pack_rings": "Hatcsomagos gyűrűk",
+        "alcohol_plastic_cups": "Műanyag poharak",
+        "alcoholOther": "Alkohol-Egyéb"
     },
     "art": {
-        "item": "Litter Art" //
+        "item": "Művészeti Szemét"
     },
     "coffee": {
-        "coffeeCups": "Coffee Cups", //
-        "coffeeLids": "Coffee Lids", //
-        "coffeeOther": "Coffee-Other" //
+        "coffeeCups": "Kávés poharak",
+        "coffeeLids": "Kávé fedők",
+        "coffeeOther": "Kávé-Egyéb"
     },
     "food": {
-        "sweetWrappers": "Sweet Wrappers", //
-        "paperFoodPackaging": "Paper/Cardboard Packaging", //
-        "plasticFoodPackaging": "Plastic Packaging", //
-        "plasticCutlery": "Plastic Cutlery", //
-        "crisp_small": "Crisp/Chip Packet (small)", //
-        "crisp_large": "Crisp/Chip Packet (large)", //
-        "styrofoam_plate": "Styrofoam Plate", //
-        "napkins": "Napkins", //
-        "sauce_packet": "Sauce Packet", //
-        "glass_jar": "Glass Jar", //
-        "glass_jar_lid": "Glass Jar Lid", //
-        "aluminium_foil": "Aluminium Foil", //
-        "pizza_box": "Pizza Box", //
-        "foodOther": "Food-Other", //
-        "chewing_gum": "Chewing Gum" //
+        "sweetWrappers": "Édesség Csomagolása",
+        "paperFoodPackaging": "Papír/karton csomagolás",
+        "plasticFoodPackaging": "Műanyag csomagolás",
+        "plasticCutlery": "Műanyag evőeszközök",
+        "crisp_small": "Csipsz csomag (kicsi)",
+        "crisp_large": "Csipsz csomag (nagy)",
+        "styrofoam_plate": "Hungarocell Lemez",
+        "napkins": "Szalvéták",
+        "sauce_packet": "Szósz csomag",
+        "glass_jar": "Befőttesüveg",
+        "glass_jar_lid": "Befőttesüveg Fedél",
+        "aluminium_foil": "Alufólia",
+        "pizza_box": "Pizza Doboz",
+        "foodOther": "Élelmiszer-Egyéb",
+        "chewing_gum": "Rágógumi"
     },
     "softdrinks": {
-        "waterBottle": "Plastic Water bottle", //
-        "fizzyDrinkBottle": "Plastic Fizzy Drink bottle", //
-        "tinCan": "Can", //
-        "bottleLid": "Bottle Tops", //
-        "bottleLabel": "Bottle Labels", //
-        "sportsDrink": "Sports Drink bottle", //
-        "straws": "Straws", //
-        "plastic_cups": "Plastic Cups", //
-        "plastic_cup_tops": "Plastic Cup Tops", //
-        "milk_bottle": "Milk Bottle", //
-        "milk_carton": "Milk Carton", //
-        "paper_cups": "Paper Cups", //
-        "juice_cartons": "Juice Cartons", //
-        "juice_bottles": "Juice Bottles", //
-        "juice_packet": "Juice Packet", //
-        "ice_tea_bottles": "Ice Tea Bottles", //
-        "ice_tea_can": "Ice Tea Can", //
-        "energy_can": "Energy Can", //
-        "pullring": "Pull-ring", //
-        "strawpacket": "Straw Packaging", //
-        "styro_cup": "Styrofoam Cup", //
-        "broken_glass": "Broken Glass", //
-        "softDrinkOther": "Soft Drink-Other" //
+        "waterBottle": "Műanyag vizes palack",
+        "fizzyDrinkBottle": "Műanyag Szénsavas Ital Palack",
+        "tinCan": "Konzervdoboz",
+        "bottleLid": "Palack Teteje",
+        "bottleLabel": "Palackcímkék",
+        "sportsDrink": "Sport italos üveg",
+        "straws": "Szívószálak",
+        "plastic_cups": "Műanyag Poharak",
+        "plastic_cup_tops": "Műanyag Pohár Teteje",
+        "milk_bottle": "Tejesüveg",
+        "milk_carton": "Tejesdoboz",
+        "paper_cups": "Papír poharak",
+        "juice_cartons": "Gyümölcslé Dobozok",
+        "juice_bottles": "Gyümölcslé Üvegek",
+        "juice_packet": "Gyümölcslé csomag",
+        "ice_tea_bottles": "Jeges teás üvegek",
+        "ice_tea_can": "Jeges tea doboz (aluminium)",
+        "energy_can": "Energia Ital doboz (aluminium)",
+        "pullring": "Húzógyűrű",
+        "strawpacket": "Szívószál Csomagolás",
+        "styro_cup": "Hungarocell Csésze",
+        "broken_glass": "Törött üveg",
+        "softDrinkOther": "Üdítőital-egyéb"
     },
     "sanitary": {
-        "gloves": "Gloves", //
-        "facemask": "Facemask", //
-        "condoms": "Condoms", //
-        "nappies": "Nappies", //
-        "menstral": "Menstral", //
-        "deodorant": "Deodorant", //
-        "ear_swabs": "Ear Swabs", //
-        "tooth_pick": "Tooth Pick", //
-        "tooth_brush": "Tooth Brush", //
-        "wetwipes": "Wet Wipes", //
-        "hand_sanitiser": "Hand Sanitiser", //
-        "sanitaryOther": "Sanitary-Other" //
+        "gloves": "Kesztyű",
+        "facemask": "Szájmaszk",
+        "condoms": "Óvszer",
+        "nappies": "Pelenkák",
+        "menstral": "Menstruációs",
+        "deodorant": "Dezodor",
+        "ear_swabs": "Fültörlőkendők",
+        "tooth_pick": "Fogpiszkáló",
+        "tooth_brush": "Fogkefe",
+        "wetwipes": "Nedves Törlőkendők",
+        "hand_sanitiser": "Kézfertőtlenítő",
+        "sanitaryOther": "Egészségügyi-egyéb"
     },
     "dumping": {
-        "small": "Small", //
-        "medium": "Medium", //
-        "large": "Large" //
+        "small": "Kicsi",
+        "medium": "Közepes",
+        "large": "Nagy"
     },
     "industrial": {
-        "oil": "Oil", //
-        "industrial_plastic": "Plastic", //
-        "chemical": "Chemical", //
-        "bricks": "Bricks", //
-        "tape": "Tape", //
-        "industrial_other": "Industrial-Other" //
+        "oil": "Olaj",
+        "industrial_plastic": "Műanyag",
+        "chemical": "Kémiai",
+        "bricks": "Téglák",
+        "tape": "Szalag",
+        "industrial_other": "Ipari-Egyéb"
     },
     "coastal": {
-        "microplastics": "Microplastics", //
-        "mediumplastics": "Mediumplastics", //
-        "macroplastics": "Macroplastics", //
-        "rope_small": "Rope small", //
-        "rope_medium": "Rope medium", //
-        "rope_large": "Rope large", //
-        "fishing_gear_nets": "Fishing gear/nets", //
-        "ghost_nets": "Ghost nets", //
-        "buoys": "Buoys", //
-        "degraded_plasticbottle": "Degraded Plastic Bottle", //
-        "degraded_plasticbag": "Degraded Plastic Bag", //
-        "degraded_straws": "Degraded Drinking Straws", //
-        "degraded_lighters": "Degraded Lighters", //
-        "balloons": "Balloons", //
-        "lego": "Lego", //
-        "shotgun_cartridges": "Shotgun Cartridges", //
-        "styro_small": "Styrofoam small", //
-        "styro_medium": "Styrofoam medium", //
-        "styro_large": "Styrofoam large", //
-        "coastal_other": "Coastal-Other" //
+        "microplastics": "Mikroműanyagok",
+        "mediumplastics": "Közepes Műanyagok",
+        "macroplastics": "Makroműanyagok",
+        "rope_small": "Kötél Kicsi",
+        "rope_medium": "Kötél Közepes",
+        "rope_large": "Kötél Nagy",
+        "fishing_gear_nets": "Horgászfelszerelés/hálók",
+        "ghost_nets": "Horgász Háló",
+        "buoys": "Bóják",
+        "degraded_plasticbottle": "Leromlott Műanyag Palack",
+        "degraded_plasticbag": "Leromlott Műanyag Zacskó",
+        "degraded_straws": "Leromlott Szívószálak",
+        "degraded_lighters": "Leromlott Öngyújtók",
+        "balloons": "Lufik",
+        "lego": "Lego",
+        "shotgun_cartridges": "Sörétes Töltények",
+        "styro_small": "Hungarocell Kicsi",
+        "styro_medium": "Hungarocell Közepes",
+        "styro_large": "Hungarocell Nagy",
+        "coastal_other": "Tengerparti-Egyéb"
     },
     "brands": {
-        "aadrink": "AA Drink", //
-        "acadia": "Acadia", //
-        "adidas": "Adidas", //
-        "albertheijn": "AlbertHeijn", //
-        "aldi": "Aldi", //
-        "amazon": "Amazon", //
-        "amstel": "Amstel", //
-        "anheuser_busch": "Anheuser-Busch", //
-        "apple": "Apple", //
-        "applegreen": "Applegreen", //
-        "asahi": "Asahi", //
-        "avoca": "Avoca", //
-        "bacardi": "Bacardi", //
-        "ballygowan": "Ballygowan", //
-        "bewleys": "Bewleys", //
-        "brambles": "Brambles", //
-        "budweiser": "Budweiser", //
-        "bulmers": "Bulmers", //
-        "bullit": "Bullit", //
-        "burgerking": "Burgerking", //
-        "butlers": "Butlers", //
-        "cadburys": "Cadburys", //
-        "cafenero": "Cafenero", //
-        "calanda": "Calanda", //
-        "camel": "Camel", //
-        "caprisun": "Capri Sun", //
-        "carlsberg": "Carlsberg", //
-        "centra": "Centra", //
-        "circlek": "Circlek", //
-        "coke": "Coca-Cola", //
-        "coles": "Coles", //
-        "colgate": "Colgate" //
-        "corona": "Corona", //
-        "costa": "Costa", //
-        "doritos": "Doritos", //
-        "drpepper": "DrPepper", //
-        "dunnes": "Dunnes", //
-        "duracell": "Duracell", //
-        "durex": "Durex", //
-        "esquires": "Esquires", //
-        "evian": "Evian", //
-        "fanta": "Fanta", //
-        "fernandes": "Fernandes", //
-        "fosters": "Fosters", //
-        "frank_and_honest": "Frank-and-Honest", //
-        "fritolay": "Frito-Lay", //
-        "gatorade": "Gatorade", //
-        "gillette": "Gillette", //
-        "goldenpower": "Golden Power", //
-        "guinness": "Guinness", //
-        "haribo": "Haribo", //
-        "heineken": "Heineken", //
-        "hertog_jan": "Hertog Jan", //
-        "insomnia": "Insomnia", //
-        "kellogs": "Kellogs", //
-        "kfc": "KFC", //
-        "lavish": "Lavish", //
-        "lego": "Lego", //
-        "lidl": "Lidl", //
-        "lindenvillage": "Lindenvillage", //
-        "lipton": "Lipton", //
-        "lolly_and_cookes": "Lolly-and-cookes", //
-        "loreal": "Loreal", //
-        "lucozade": "Lucozade", //
-        "marlboro": "Marlboro", //
-        "mars": "Mars", //
-        "mcdonalds": "McDonalds", //
-        "modelo": "Modelo", //
-        "molson_coors": "Molson Coors", //
-        "monster": "Monster", //
-        "nero": "Nero", //
-        "nescafe": "Nescafe", //
-        "nestle": "Nestle", //
-        "nike": "Nike", //
-        "obriens": "O-Briens", //
-        "ok_": "ok.–", //
-        "pepsi": "Pepsi", //
-        "powerade": "Powerade", //
-        "redbull": "Redbull", //
-        "ribena": "Ribena", //
-        "sainsburys": "Sainsburys", //
-        "samsung": "Samsung", //
-        "schutters": "Schutters", //
-        "seven_eleven": "7-Eleven", //
-        "slammers": "Slammers", //
-        "spa": "Spa", //
-        "spar": "Spar", //
-        "starbucks": "Starbucks", //
-        "stella": "Stella", //
-        "subway": "Subway", //
-        "supermacs": "Supermacs", //
-        "supervalu": "Supervalu", //
-        "tayto": "Tayto", //
-        "tesco": "Tesco", //
-        "tim_hortons": "Tim Hortons", //
-        "thins": "Thins", //
-        "volvic": "Volvic", //
-        "waitrose": "Waitrose", //
-        "walkers": "Walkers", //
-        "wendys": "Wendy's", //
-        "wilde_and_greene": "Wilde-and-Greene", //
-        "winston": "Winston", //
-        "woolworths": "Woolworths", //
-        "wrigleys": "Wrigleys" //
+        "aadrink": "AA Drink",
+        "acadia": "Acadia",
+        "adidas": "Adidas",
+        "albertheijn": "AlbertHeijn",
+        "aldi": "Aldi",
+        "amazon": "Amazon",
+        "amstel": "Amstel",
+        "anheuser_busch": "Anheuser-Busch",
+        "apple": "Apple",
+        "applegreen": "Applegreen",
+        "asahi": "Asahi",
+        "avoca": "Avoca",
+        "bacardi": "Bacardi",
+        "ballygowan": "Ballygowan",
+        "bewleys": "Bewleys",
+        "brambles": "Brambles",
+        "budweiser": "Budweiser",
+        "bulmers": "Bulmers",
+        "bullit": "Bullit",
+        "burgerking": "Burgerking",
+        "butlers": "Butlers",
+        "cadburys": "Cadburys",
+        "cafenero": "Cafenero",
+        "calanda": "Calanda",
+        "camel": "Camel",
+        "caprisun": "Capri Sun",
+        "carlsberg": "Carlsberg",
+        "centra": "Centra",
+        "circlek": "Circlek",
+        "coke": "Coca-Cola",
+        "coles": "Coles",
+        "colgate": "Colgate"
+        "corona": "Corona",
+        "costa": "Costa",
+        "doritos": "Doritos",
+        "drpepper": "DrPepper",
+        "dunnes": "Dunnes",
+        "duracell": "Duracell",
+        "durex": "Durex",
+        "esquires": "Esquires",
+        "evian": "Evian",
+        "fanta": "Fanta",
+        "fernandes": "Fernandes",
+        "fosters": "Fosters",
+        "frank_and_honest": "Frank-and-Honest",
+        "fritolay": "Frito-Lay",
+        "gatorade": "Gatorade",
+        "gillette": "Gillette",
+        "goldenpower": "Golden Power",
+        "guinness": "Guinness",
+        "haribo": "Haribo",
+        "heineken": "Heineken",
+        "hertog_jan": "Hertog Jan",
+        "insomnia": "Insomnia",
+        "kellogs": "Kellogs",
+        "kfc": "KFC",
+        "lavish": "Lavish",
+        "lego": "Lego",
+        "lidl": "Lidl",
+        "lindenvillage": "Lindenvillage",
+        "lipton": "Lipton",
+        "lolly_and_cookes": "Lolly-and-cookes",
+        "loreal": "Loreal",
+        "lucozade": "Lucozade",
+        "marlboro": "Marlboro",
+        "mars": "Mars",
+        "mcdonalds": "McDonalds",
+        "modelo": "Modelo",
+        "molson_coors": "Molson Coors",
+        "monster": "Monster",
+        "nero": "Nero",
+        "nescafe": "Nescafe",
+        "nestle": "Nestle",
+        "nike": "Nike",
+        "obriens": "O-Briens",
+        "ok_": "ok.–",
+        "pepsi": "Pepsi",
+        "powerade": "Powerade",
+        "redbull": "Redbull",
+        "ribena": "Ribena",
+        "sainsburys": "Sainsburys",
+        "samsung": "Samsung",
+        "schutters": "Schutters",
+        "seven_eleven": "7-Eleven",
+        "slammers": "Slammers",
+        "spa": "Spa",
+        "spar": "Spar",
+        "starbucks": "Starbucks",
+        "stella": "Stella",
+        "subway": "Subway",
+        "supermacs": "Supermacs",
+        "supervalu": "Supervalu",
+        "tayto": "Tayto",
+        "tesco": "Tesco",
+        "tim_hortons": "Tim Hortons",
+        "thins": "Thins",
+        "volvic": "Volvic",
+        "waitrose": "Waitrose",
+        "walkers": "Walkers",
+        "wendys": "Wendy's",
+        "wilde_and_greene": "Wilde-and-Greene",
+        "winston": "Winston",
+        "woolworths": "Woolworths",
+        "wrigleys": "Wrigleys"
     },
     "trashdog": {
         "trashdog": "TrashDog", //
@@ -252,47 +252,47 @@
         "duck": "LitterDuck" //
     },
     "other": {
-        "dogshit": "Dog Poo", //
-        "pooinbag": "Dog Poo In Bag", //
-        "automobile": "Automobile", //
-        "clothing": "Clothing", //
-        "traffic_cone": "Traffic cone", //
-        "life_buoy": "Life Buoy", //
-        "plastic": "Unidentified Plastic", //
-        "dump": "Illegal Dumping", //
-        "metal": "Metal Object", //
-        "plastic_bags": "Plastic Bags", //
-        "election_posters": "Election Posters", //
-        "forsale_posters": "For Sale Posters", //
-        "books": "Books", //
-        "magazine": "Magazines", //
-        "paper": "Paper", //
-        "stationary": "Stationery", //
-        "washing_up": "Washing-up Bottle", //
-        "hair_tie": "Hair Tie", //
-        "ear_plugs": "Ear Plugs (music)", //
-        "batteries": "Batteries", //
-        "elec_small": "Electric small", //
-        "elec_large": "Electric large", //
-        "random_litter": "Random Litter", //
-        "balloons": "Balloons", //
-        "bags_litter": "Bags of Litter", //
-        "overflowing_bins": "Overflowing Bins", //
-        "tyre": "Tyre", //
-        "cable_tie": "Cable Tie", //
-        "other": "Other-Other" //
+        "dogshit": "Kutya Kaki",
+        "pooinbag": "Kutya Kaki Szatyorban",
+        "automobile": "Autó",
+        "clothing": "Ruházat",
+        "traffic_cone": "Forgalmi Kúp",
+        "life_buoy": "Mentőöv",
+        "plastic": "Azonosítatlan Műanyag",
+        "dump": "Illegális Hulladéklerakás",
+        "metal": "Fém Tárgy",
+        "plastic_bags": "Műanyag Zacskók",
+        "election_posters": "Választási Plakátok",
+        "forsale_posters": "Eladó Plakátok",
+        "books": "Könyvek",
+        "magazine": "Magazinok",
+        "paper": "Papír",
+        "stationary": "Irodaszer",
+        "washing_up": "Mosogató Palack",
+        "hair_tie": "Hajgumi",
+        "ear_plugs": "Fülhalgatók (zene)",
+        "batteries": "Elemek",
+        "elec_small": "Elektromos Kicsi",
+        "elec_large": "Elektromos Nagy",
+        "random_litter": "Random Szemét",
+        "balloons": "Lufik",
+        "bags_litter": "Zsák Szemét",
+        "overflowing_bins": "Túlcsorduló Kukák",
+        "tyre": "Gumi",
+        "cable_tie": "Kábelkötegelő",
+        "other": "Egyéb-Egyéb"
     },
     "presence": {
-        "picked-up": "I picked it up!", //
-        "still-there": "Was not picked up!", //
-        "picked-up-text": "It's gone.", //
-        "still-there-text": "The litter is still there!" //
+        "picked-up": "Felvettem!",
+        "still-there": "Nem vették fel!",
+        "picked-up-text": "Felszívódott.",
+        "still-there-text": "A szemét még mindig ott van!"
     },
-    "no-tags": "No Tags", //
-    "not-verified": "Awaiting verification", //
-    "not-tagged-yet": "Not tagged yet!", //
+    "no-tags": "Nincsenek címkék",
+    "not-verified": "Ellenőrzésre vár",
+    "not-tagged-yet": "Még nincs címkézve!",
     "dogshit": {
-        "poo": "Surprise!", //
-        "poo_in_bag": "Surprise in a bag!" //
+        "poo": "Meglepetés!",
+        "poo_in_bag": "Meglepetés felszéve!"
     }
 }

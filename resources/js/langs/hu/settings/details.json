@@ -1,7 +1,7 @@
 {
-    "change-details": "Change Personal Details", //
-    "your-name": "Your name", //
-    "unique-id": "Unique Identifier", //
-    "email": "Email", //
-    "update-details": "Update Details" //
+    "change-details": "Személyes adatok módosítása",
+    "your-name": "Neved",
+    "unique-id": "Egyedi Azonosító",
+    "email": "Email",
+    "update-details": "Adatok Frissítése"
 }

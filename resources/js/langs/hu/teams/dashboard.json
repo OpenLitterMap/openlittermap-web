@@ -1,24 +1,24 @@
 {
-    "olm-teams": "OpenLitterMap Teams", //
-    "dashboard": "Dashboard", //
-    "join-a-team": "Join a Team", //
-    "create-a-team": "Create a Team", //
-    "your-teams": "Yours Teams", //
-    "leaderboard": "Leaderboard", //
-    "settings": "Settings", //
-    "teams-dashboard": "Teams Dashboard", //
-    "photos-uploaded": "Photos uploaded", //
-    "litter-tagged": "Litter tagged", //
-    "members-uploaded": "Team members uploaded", //
-    "all-teams": "All Teams", //
+    "olm-teams": "OpenLitterMap csapatok",
+    "dashboard": "Irányítópult",
+    "join-a-team": "Csatlakozz egy csapathoz",
+    "create-a-team": "Csapat létrehozása",
+    "your-teams": "Csapataid",
+    "leaderboard": "Ranglista",
+    "settings": "Beállítások",
+    "teams-dashboard": "Csapatok irányítópult",
+    "photos-uploaded": "Fényképek feltöltve",
+    "litter-tagged": "Szemét megjelölve",
+    "members-uploaded": "A csapat tagjai feltöltöttek",
+    "all-teams": "Minden csapat",
 
     "times": {
-        "today": "Today", //
-        "week": "This week", //
-        "month": "This month", //
-        "year": "This year", //
-        "all": "All time", //
-        "created_at": "Uploaded at", //
-        "datetime": "Taken at" //
+        "today": "Ma",
+        "week": "Ezen a héten",
+        "month": "Ebben a hónapban",
+        "year": "Idén",
+        "all": "Összes",
+        "created_at": "Feltöltve",
+        "datetime": "Felvéve"
     }
 }

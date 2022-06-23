@@ -1,15 +1,15 @@
 {
-    "success": "Success", //
-    "error": "Error!", //
-    "settings-updated": "Settings updated successfully!", //
-    "tags-added": "Success! Your tags have been added", //
-    "subscription-cancelled": "Your subscription has been cancelled", //
-    "privacy-updated": "Your Privacy Settings have been saved", //
-    "litter-toggled": "Picked up value updated", //
+    "success": "Siker",
+    "error": "Hiba!",
+    "settings-updated": "A beállítások frissítése sikeresen megtörtént!",
+    "tags-added": "Siker! A címkéket hozzáadtuk",
+    "subscription-cancelled": "Az előfizetését töröltük",
+    "privacy-updated": "Az adatvédelmi beállításait elmentettük",
+    "litter-toggled": "Felvett érték frissítve",
     "settings": {
-        "subscribed": "You have been subscribed to the updates and good news!", //
-        "unsubscribed": "You have unsubscribed. You will no longer receive the good news!", //
-        "flag-updated": "Your flag has been updated" //
+        "subscribed": "Feliratkozott a frissítésekre és a jó hírekre!",
+        "unsubscribed": "Leiratkozott. Többé nem fogod kapni a jó hírt!",
+        "flag-updated": "A zászlódat frissítettük"
     },
-    "something-went-wrong": "Something went wrong. Please, try again or contact us!" //
+    "something-went-wrong": "Valami elromlott. Kérjük, próbálja újra, vagy lépjen kapcsolatba velünk!"
 }
