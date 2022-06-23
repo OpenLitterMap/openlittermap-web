@@ -5,10 +5,14 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', 'HomeController@index');
 Route::get('/about', 'HomeController@index');
 Route::get('/world', 'HomeController@index');
+Route::get('/tags', 'HomeController@index');
 Route::get('/community', 'HomeController@index');
 Route::get('/community/stats', 'CommunityController@stats');
 Route::get('/references', 'HomeController@index');
 Route::get('/leaderboard', 'HomeController@index');
+Route::get('/faq', 'HomeController@index');
+
+Route::get('/tags-search', 'DisplayTagsOnMapController@show');
 
 // Registration
 Route::get('/signup', 'HomeController@index');
@@ -117,6 +121,9 @@ Route::post('/profile/photos/delete', 'PhotosController@deleteImage');
 
 // Paginated array of the users photos (no filters)
 Route::get('/user/profile/photos/index', 'User\UserPhotoController@index');
+
+// List of the user's previously added custom tags
+Route::get('/user/profile/photos/previous-custom-tags', 'User\UserPhotoController@previousCustomTags');
 
 // Filtered paginated array of the users photos
 Route::get('/user/profile/photos/filter', 'User\UserPhotoController@filter');

@@ -20,5 +20,6 @@
     "manage-my-photos": "View your photos, select multiple, delete them or add tags!",
     "view-my-photos": "View my Photos",
     "my-photos": "My Photos",
-    "add-tags": "Add Tags"
+    "add-tags": "Add Tags",
+    "bulk-tag-dblclick-info": "Double click to zoom photos!"
 }

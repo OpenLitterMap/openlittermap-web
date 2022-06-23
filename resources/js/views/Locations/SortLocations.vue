@@ -223,7 +223,8 @@ export default {
 
 	.inner-locations-container {
         flex: 1;
-        background-color: #23d160;
+        background-color: #48c774;
+        background-image: linear-gradient(to right bottom, rgba(126, 213, 111, 0.8), rgba(40, 180, 133, 0.8));
 	}
 
 	.l-tab.is-active {

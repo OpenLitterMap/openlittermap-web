@@ -78,6 +78,7 @@ class MapController extends Controller
                 'brands',
                 'dumping',
                 'industrial',
+                'material',
 //				 'art',
 //				'trashdog',
                 'customTags:photo_id,tag',
@@ -106,6 +107,7 @@ class MapController extends Controller
                 'brands',
                 'dumping',
                 'industrial',
+                'material',
 //				 'art',
 //				'trashdog',
                 'customTags:photo_id,tag',
@@ -163,6 +165,7 @@ class MapController extends Controller
 					 'brands' => $c->brands,
 					'dumping' => $c->dumping,
 				 'industrial' => $c->industrial,
+				 'material' => $c->material,
 //				   'trashdog' => $c->trashdog,
 			   'total_litter' => $c->total_litter
 				)

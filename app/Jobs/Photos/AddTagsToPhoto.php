@@ -27,17 +27,22 @@ class AddTagsToPhoto implements ShouldQueue
      * @var array
      */
     public $customTags;
+    /**
+     * @var bool
+     */
+    private $pickedUp;
 
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct ($photoId, array $tags = [], array $customTags = [])
+    public function __construct (int $photoId, bool $pickedUp, array $tags = [], array $customTags = [])
     {
         $this->photoId = $photoId;
         $this->tags = $tags;
         $this->customTags = $customTags;
+        $this->pickedUp = $pickedUp;
     }
 
     /**
@@ -69,7 +74,7 @@ class AddTagsToPhoto implements ShouldQueue
         $updateLeaderboardsAction = app(UpdateLeaderboardsForLocationAction::class);
         $updateLeaderboardsAction->run($photo, $user->id, $litterTotals['all'] + $customTagsTotals);
 
-        $photo->remaining = false; // todo
+        $photo->remaining = !$this->pickedUp;
         $photo->total_litter = $litterTotals['litter'];
 
         if (!$user->is_trusted)

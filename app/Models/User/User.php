@@ -98,6 +98,7 @@ class User extends Authenticatable
         'active_team',
         'link_instagram',
         'verification_required',
+        'prevent_others_tagging_my_photos',
         'littercoin_owed',
         'littercoin_paid',
         'count_correctly_verified',
@@ -124,6 +125,7 @@ class User extends Authenticatable
         'show_name' => 'boolean',
         'show_username' => 'boolean',
         'verification_required' => 'boolean',
+        'prevent_others_tagging_my_photos' => 'boolean',
         'settings' => 'array'
     ];
 

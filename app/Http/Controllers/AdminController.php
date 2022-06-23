@@ -345,10 +345,9 @@ class AdminController extends Controller
      */
     public function getCountriesWithPhotos(): Collection
     {
-        $totalsQuery = Photo::query()
+        $totalsQuery = Photo::onlyFromUsersThatAllowTagging()
             ->selectRaw('country_id, count(*) as total')
             ->whereIn('verification', [0, 0.1])
-            ->whereNotIn('user_id', $this->usersToSkipVerification())
             ->groupBy('country_id');
 
         // Using DB to avoid extra appended properties
@@ -365,22 +364,11 @@ class AdminController extends Controller
      */
     private function filterPhotos(): Builder
     {
-        return Photo::query()
+        return Photo::onlyFromUsersThatAllowTagging()
             ->with('customTags')
-            ->whereNotIn('user_id', $this->usersToSkipVerification())
             ->when(request('country_id'), function (Builder $q) {
                 return $q->whereCountryId(request('country_id'));
             });
-    }
-
-    /**
-     * These users don't want their images verified
-     *
-     * @return int[]
-     */
-    protected function usersToSkipVerification(): array
-    {
-        return [3233, 5292];
     }
 
     /**

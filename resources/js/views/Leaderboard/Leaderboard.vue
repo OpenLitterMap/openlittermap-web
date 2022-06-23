@@ -1,12 +1,12 @@
 <template>
-    <section class="hero is-link is-bold is-fullheight">
-        <section class="section is-link is-bold">
+    <section class="is-link hero is-bold is-fullheight">
+        <section class="wrapper is-link is-bold">
 
             <div class="leaderboard-heading"
                  @click="openWorldCup"
             >
-                <i class="fa fa-arrow-left"/>
-                <h3 class="title is-2 has-text-centered">
+                <i class="fa fa-arrow-left has-text-white"/>
+                <h3 class="title is-2 has-text-centered has-text-white">
                     {{ $t('location.global-leaderboard') }}
                 </h3>
             </div>
@@ -105,30 +105,40 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.leaderboard-heading {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 1rem;
-    cursor: pointer;
+    .wrapper {
+        padding: 1rem 0.5rem;
+    }
 
-    &:hover {
+    .leaderboard-heading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        cursor: pointer;
+
+        &:hover {
+            .title {
+                text-decoration: underline;
+            }
+            i {
+                transform: translateX(-1rem);
+            }
+        }
+
         .title {
-            text-decoration: underline;
+            margin-bottom: 0;
         }
+
         i {
-            transform: translateX(-1rem);
+            font-size: 20px;
+            transition: all 0.3s;
         }
     }
 
-    .title {
-        margin-bottom: 0;
+    @media screen and (min-width: 768px) {
+        .wrapper {
+            padding: 3rem 1.5rem;
+        }
     }
-
-    i {
-        font-size: 20px;
-        transition: all 0.3s;
-    }
-}
 </style>

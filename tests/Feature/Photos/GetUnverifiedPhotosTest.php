@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Photos;
 
+use App\Models\CustomTag;
+use App\Models\Photo;
 use App\Models\User\User;
 use Illuminate\Support\Facades\Storage;
 use Tests\Feature\HasPhotoUploads;
@@ -63,5 +65,24 @@ class GetUnverifiedPhotosTest extends TestCase
         $this->assertEquals(2, $response['total']);
         $this->assertCount(1, $response['photos']['data']);
         $this->assertEquals($unverifiedPhoto->id, $response['photos']['data'][0]['id']);
+    }
+
+    public function test_it_returns_the_current_users_previously_added_custom_tags()
+    {
+        $user = User::factory()->create();
+        Photo::factory()->has(CustomTag::factory(3)->sequence(
+            ['tag' => 'custom-1'], ['tag' => 'custom-2'], ['tag' => 'custom-3']
+        ))->create(['user_id' => $user->id]);
+
+        $customTags = $this->actingAs($user)
+            ->get('/photos')
+            ->assertOk()
+            ->json('custom_tags');
+
+        $this->assertCount(3, $customTags);
+        $this->assertEqualsCanonicalizing(
+            ['custom-1', 'custom-2', 'custom-3'],
+            $customTags
+        );
     }
 }

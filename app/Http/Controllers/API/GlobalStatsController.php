@@ -37,6 +37,13 @@ class GlobalStatsController extends Controller
             $total_litter += $country->total_litter_redis;
         }
 
+        /**
+         * Global levels
+         *
+         * todo - Make this dynamic
+         *
+         * See: GlobalLevels.php global_levels table
+         */
         // level 0
         if ($total_litter <= 1000)
         {
@@ -70,7 +77,7 @@ class GlobalStatsController extends Controller
         // level 5, 1M
         else if ($total_litter <= 1000000)
         {
-            $previousXp = 250000; // 250,000
+            $previousXp = 500000; // 250,000
             $nextXp = 1000000; // 500,000
         }
 

@@ -6,6 +6,7 @@ use App\Models\AI\Annotation;
 use App\Models\Litter\Categories\Brand;
 use App\Models\Teams\Team;
 use App\Models\User\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * @property Collection $customTags
  * @property User $user
+ * @method Builder onlyFromUsersThatAllowTagging
  */
 class Photo extends Model
 {
@@ -67,6 +69,7 @@ class Photo extends Model
             'brands',
             'dogshit',
             'art',
+            'material',
             'other',
         ];
     }
@@ -271,6 +274,11 @@ class Photo extends Model
         return $this->belongsTo('App\Models\Litter\Categories\Dogshit', 'dogshit_id', 'id');
     }
 
+    public function material ()
+    {
+        return $this->belongsTo('App\Models\Litter\Categories\Material', 'material_id', 'id');
+    }
+
     // public function politics() {
     //     return $this->belongsTo('App\Models\Litter\Categories\Politicals', 'political_id', 'id');
     // }
@@ -278,5 +286,14 @@ class Photo extends Model
     public function customTags(): HasMany
     {
         return $this->hasMany(CustomTag::class);
+    }
+
+    public function scopeOnlyFromUsersThatAllowTagging(Builder $query)
+    {
+        $query->whereNotIn('user_id', function ($q) {
+            $q->select('id')
+                ->from('users')
+                ->where('prevent_others_tagging_my_photos', true);
+        });
     }
 }

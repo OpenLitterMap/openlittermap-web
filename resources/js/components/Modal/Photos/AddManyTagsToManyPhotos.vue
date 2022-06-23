@@ -1,6 +1,10 @@
 <template>
     <div @keyup.ctrl.enter="submit">
-        <add-tags :id="0" class="mb1" />
+        <add-tags :id="0"/>
+
+        <div class="bulk-tag-picked-up">
+            <presence/>
+        </div>
 
         <!-- These are the tags the user has added -->
         <Tags class="mb1" :photo-id="0" />
@@ -16,12 +20,14 @@
 <script>
 import AddTags from '../../Litter/AddTags';
 import Tags from '../../Litter/Tags';
+import Presence from '../../Litter/Presence';
 
 export default {
     name: 'AddManyTagsToManyPhotos',
     components: {
         AddTags,
-        Tags
+        Tags,
+        Presence
     },
     data () {
         return {
@@ -54,6 +60,10 @@ export default {
             return hasTags || hasCustomTags;
         },
     },
+    async mounted ()
+    {
+        await this.$store.dispatch('LOAD_PREVIOUS_CUSTOM_TAGS');
+    },
     methods: {
 
         /**
@@ -74,5 +84,9 @@ export default {
 </script>
 
 <style scoped>
-
+    .bulk-tag-picked-up {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 16px;
+    }
 </style>

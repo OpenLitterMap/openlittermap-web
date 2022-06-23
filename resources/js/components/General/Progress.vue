@@ -1,117 +1,109 @@
 <template>
-    <div class="container mt2">
-        <div class="columns">
-            <div class="column is-half is-offset-3 px-0">
-                <!-- XP bar variables -->
-                <div class="columns">
-                    <div class="column flex">
-                        <h4 class="flex-1">
-                            {{ $t('location.previous-target') }}:
-                            <br>
-                            <strong class="has-text-white">
-                                {{ this.previousXp | commas }} {{ $t('location.litter') }}
-                            </strong>
-                        </h4>
-                        <h4>{{ $t('location.next-target') }}:
-                            <br>
-                            <strong class="has-text-white">
-                                {{ this.nextXp | commas }} {{ $t('location.litter') }}
-                            </strong>
-                        </h4>
-                    </div>
-                </div>
-
-                <ProgressBar
-                    :currentxp="total_litter"
-                    :startingxp="previousXp"
-                    :xpneeded="nextXp"
-                    class="mb1em"
-                />
-
-                <p
-                    v-if="loading"
-                    class="has-text-centered mb2"
-                >...%</p>
-
-                <p
-                    v-else
-                    class="has-text-centered mb2"
-                >{{ this.progress }}%</p>
+    <div class="container mt2 progress-bar">
+        <div>
+            <!-- XP bar variables -->
+            <div class="flex mb1">
+                <h4 class="flex-1 has-text-white">
+                    {{ $t('location.previous-target') }}:
+                    <br>
+                    <strong class="has-text-white">
+                        {{ this.previousXp | commas }} {{ $t('location.litter') }}
+                    </strong>
+                </h4>
+                <h4 class="has-text-white">{{ $t('location.next-target') }}:
+                    <br>
+                    <strong class="has-text-white">
+                        {{ this.nextXp | commas }} {{ $t('location.litter') }}
+                    </strong>
+                </h4>
             </div>
+
+            <ProgressBar
+                :currentxp="total_litter"
+                :startingxp="previousXp"
+                :xpneeded="nextXp"
+                class="mb1em"
+            />
+
+            <p
+                v-if="loading"
+                class="has-text-centered has-text-white mb2"
+            >...%</p>
+
+            <p
+                v-else
+                class="has-text-centered has-text-white mb2"
+            >{{ this.progress }}%</p>
         </div>
 
-        <div class="columns">
-            <div class="column is-half is-offset-3">
-                <div class="columns is-desktop">
-                    <div class="column">
-                        <h1 class="subtitle is-5 has-text-centered">
-                            <strong class="has-text-black">
-                                {{ $t('location.total-verified-litter') }}
-                            </strong>
-                        </h1>
-                        <h1 class="title is-2 has-text-centered">
-                            <strong>
-                                <span v-if="loading">...</span>
+        <div class="stats">
+            <div class="stat">
+                <h1 class="subtitle is-5 has-text-centered">
+                    <strong class="has-text-black">
+                        {{ $t('location.total-verified-litter') }}
+                    </strong>
+                </h1>
+                <h1 class="title is-2 has-text-centered has-text-white">
+                    <strong>
+                        <span v-if="loading">...</span>
 
-                                <number
-                                    v-else
-                                    :from="previous_total_litter"
-                                    :to="total_litter"
-                                    :duration="3"
-                                    :delay="1"
-                                    easing="Power1.easeOut"
-                                    :format="commas"
-                                />
-                            </strong>
-                        </h1>
-                    </div>
+                        <number
+                            v-else
+                            :from="previous_total_litter"
+                            :to="total_litter"
+                            :duration="3"
+                            :delay="1"
+                            easing="Power1.easeOut"
+                            :format="commas"
+                        />
+                    </strong>
+                </h1>
+            </div>
 
-                    <div class="column">
-                        <h1 class="subtitle is-5 has-text-centered">
-                            <strong class="has-text-black">
-                                {{ $t('location.total-verified-photos') }}
-                            </strong>
-                        </h1>
-                        <h1 class="title is-2 has-text-centered">
-                            <strong>
-                                <span v-if="loading">...</span>
+            <div class="stat">
+                <h1 class="subtitle is-5 has-text-centered">
+                    <strong class="has-text-black">
+                        {{ $t('location.total-verified-photos') }}
+                    </strong>
+                </h1>
+                <h1 class="title is-2 has-text-centered has-text-white">
+                    <strong>
+                        <span v-if="loading">...</span>
 
-                                <number
-                                    v-else
-                                    :from="previous_total_photos"
-                                    :to="total_photos"
-                                    :duration="3"
-                                    :delay="1"
-                                    easing="Power1.easeOut"
-                                    :format="commas"
-                                />
-                            </strong>
-                        </h1>
-                    </div>
+                        <number
+                            v-else
+                            :from="previous_total_photos"
+                            :to="total_photos"
+                            :duration="3"
+                            :delay="1"
+                            easing="Power1.easeOut"
+                            :format="commas"
+                        />
+                    </strong>
+                </h1>
+            </div>
 
-                    <div class="column">
-                        <h1 class="subtitle is-5 has-text-centered">
-                            <strong class="has-text-black">
-                                {{ $t('location.total-littercoin-issued') }}
-                            </strong>
-                        </h1>
-                        <h1 class="title is-2 has-text-centered">
-                            <strong>
-                                <span v-if="loading">...</span>
+            <div class="stat">
+                <h1 class="subtitle is-5 has-text-centered">
+                    <strong class="has-text-black">
+                        {{ $t('location.total-littercoin-issued') }}
+                    </strong>
+                </h1>
+                <h1 class="title is-2 has-text-centered has-text-white">
+                    <strong>
+                        <span v-if="loading">...</span>
 
-                                <number
-                                    v-else
-                                    :from="previous_littercoin"
-                                    :to="littercoin"
-                                    :duration="3"
-                                    :delay="1"
-                                    easing="Power1.easeOut"
-                                    :format="commas"
-                                />
-                            </strong>
-                        </h1>
-                    </div>
-                </div>
+                        <number
+                            v-else
+                            :from="previous_littercoin"
+                            :to="littercoin"
+                            :duration="3"
+                            :delay="1"
+                            easing="Power1.easeOut"
+                            :format="commas"
+                        />
+                    </strong>
+                </h1>
             </div>
         </div>
     </div>
@@ -250,5 +242,22 @@ export default {
 </script>
 
 <style scoped>
+    .progress-bar {
+        max-width: 600px;
+    }
+    .stats {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .stat {
+        padding: 12px;
+        flex: 1;
+    }
 
+    @media screen and (min-width: 768px) {
+        .stats {
+            flex-direction: row;
+        }
+    }
 </style>
