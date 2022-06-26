@@ -1,0 +1,8 @@
+{
+    "do-you-pickup": "Felveszed a szemetet vagy ott hagyod?",
+    "save-def-settings": "Itt mentheti el az alapértelmezett beállítást.",
+    "change-value-of-litter": "Az egyes szemetek értékét is módosíthatja a címkézés során.",
+    "status": "Jelenlegi Állapot",
+    "toggle-presence": "Beállítás megváltoztatása",
+    "pickup?": "Felveszi?"
+}

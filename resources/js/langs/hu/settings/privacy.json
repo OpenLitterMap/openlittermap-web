@@ -1,0 +1,20 @@
+{
+    "change-privacy": "Adatvédelmi Beállítások Módosítása",
+    "maps": "Térképek",
+    "credit-name": "Nevem megjelenítése",
+    "credit-username": "Felhasználónevem megjelenítése",
+    "name-imgs-yes": "Az Ön neve megjelenik a térképekre feltöltött összes képen.",
+    "username-imgs-yes": "Felhasználóneve minden egyes térképre feltöltött képen megjelenik.",
+    "name-username-map-no": "Az Ön neve és felhasználóneve nem jelenik meg a térképeken.",
+    "leaderboards": "Ranglisták",
+    "credit-my-name": "Nevem megjelenítése",
+    "credit-my-username": "Felhasználónevem megjelenítése",
+    "name-leaderboards-yes": "A neved minden olyan ranglistán megjelenik, amelyre jogosult vagy.",
+    "username-leaderboards-yes": "Felhasználóneve minden olyan ranglistán megjelenik, amelyre jogosult.",
+    "name-username-leaderboards-no": "Az Ön neve és felhasználóneve nem jelenik meg a ranglistákon.",
+    "created-by": "Készítette",
+    "name-locations-yes": "Az Ön neve megjelenik az Ön által létrehozott helyek szekcióiban.",
+    "username-locations-yes": "Felhasználóneve megjelenik az Ön által létrehozott helyek szekcióiban.",
+    "name-username-locations-yes": "Az Ön neve és felhasználóneve nem jelenik meg az adatbázishoz hozzáadott helyek szekció részében.",
+    "update": "Frissítés"
+}

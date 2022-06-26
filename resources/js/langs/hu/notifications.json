@@ -1,0 +1,15 @@
+{
+    "success": "Siker",
+    "error": "Hiba!",
+    "settings-updated": "A beállítások frissítése sikeresen megtörtént!",
+    "tags-added": "Siker! A címkéket hozzáadtuk",
+    "subscription-cancelled": "Az előfizetését töröltük",
+    "privacy-updated": "Az adatvédelmi beállításait elmentettük",
+    "litter-toggled": "Felvett érték frissítve",
+    "settings": {
+        "subscribed": "Feliratkozott a frissítésekre és a jó hírekre!",
+        "unsubscribed": "Leiratkozott. Többé nem fogod kapni a jó hírt!",
+        "flag-updated": "A zászlódat frissítettük"
+    },
+    "something-went-wrong": "Valami elromlott. Kérjük, próbálja újra, vagy lépjen kapcsolatba velünk!"
+}

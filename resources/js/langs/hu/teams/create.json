@@ -1,0 +1,16 @@
+{
+    "allowed-to-create": "{teams} csapatot hozhat létre",
+    "what-kind-of-team": "Milyen csapatot szeretnél létrehozni?",
+    "team-type": "Csapat típusa",
+    "team-name": "Csapat neve",
+    "my-awesome-team-placeholder": "Az Én Csodálatos Csapatom",
+    "unique-team-id": "Egyedi Csapatazonosító",
+    "id-to-join-team": "Bárki, aki rendelkezik ezzel az azonosítóval, csatlakozhat a csapatához.",
+    "create-team": "Csapat létrehozása",
+    "update-team": "Frissítse a csapatot",
+    "created": "Gratulálunk! Új csapata létrejött.",
+    "updated": "A csapat frissítve.",
+    "select-team": "Válasszon ki egy csapatot",
+    "fail": "Hiba történt a csapat létrehozása során",
+    "max-created": "Nem hozhat létre több csapatot."
+}
