@@ -115,7 +115,7 @@ class LoadDataHelper
         // level 5, 1M
         else if ($total_litter <= 1000000)
         {
-            $previousXp = 250000; // 250,000
+            $previousXp = 500000; // 250,000
             $nextXp = 1000000; // 500,000
         }
 

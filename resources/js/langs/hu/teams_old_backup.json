@@ -1,0 +1,33 @@
+{
+    "title": "Üdvözöljük az OpenLitterMap Csapatában!",
+    "created": "Gratulálunk! Új csapata létrejött.",
+    "times": {
+        "today": "Ma",
+        "week": "Ezen a héten",
+        "month": "Ebben a hónapban",
+        "year": "Idén",
+        "all": "Összes",
+        "created_at": "Feltöltve itt",
+        "datetime": "Felvéve ekkor"
+    },
+    "create": {
+        "fail": "Hiba történt a csapat létrehozása során",
+        "max-created": "Nem hozhat létre több csapatot."
+    },
+    "settings": {
+        "maps": {
+            "team-map": "Csapattérkép",
+            "name-will-appear": "A neved megjelenik a térképeken",
+            "username-will-appear": "Felhasználóneve megjelenik a térképeken",
+            "will-not-appear": "Az Ön neve és felhasználóneve nem jelenik meg a térképeken"
+        },
+        "leaderboards": {
+            "team-leaderboard": "Csapat ranglista",
+            "name-will-appear": "A neved megjelenik a ranglistákon",
+            "username-will-appear": "A felhasználóneved megjelenik a ranglistákon",
+            "will-not-appear": "Az Ön neve és felhasználóneve nem jelenik meg a ranglistákon"
+        },
+        "submit-one-team": "Mentés erre a csapatra",
+        "apply-all-teams": "Jelentkezzen minden csapatba"
+    }
+}

@@ -127,15 +127,15 @@ import Languages from '../global/Languages'
 
 export default {
     name: 'Nav',
-    components: { Languages },
-    data ()
-    {
+    components: {
+        Languages
+    },
+    data () {
         return {
             open: false
         };
     },
     computed: {
-
         /**
          * Return true if the user is logged in
          */
@@ -168,9 +168,7 @@ export default {
             return this.open ? 'navbar-menu is-active' : 'navbar-menu';
         }
     },
-
     methods: {
-
         /**
          * Mobile - Close the nav
          */

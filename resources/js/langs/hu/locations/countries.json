@@ -11,7 +11,7 @@
 
     "es": {
         "name": "Spain",
-        "lang": "Spanish"
+        "lang": "Español"
     },
 
     "fr": {
@@ -44,6 +44,16 @@
         "lang": "Nederlands"
     },
 
+    "pl": {
+        "name": "Poland",
+        "lang": "Polski"
+    },
+
+    "pt": {
+        "name": "Brasil",
+        "lang": "Portuguese"
+    },
+
     "tk": {
         "name": "Turkey",
         "lang": "Turkish"
@@ -52,5 +62,10 @@
     "uk": {
         "name": "UK",
         "lang": "English"
+    },
+
+    "hu": {
+        "name": "Magyarország",
+        "lang": "Magyar"
     }
 }

@@ -27,8 +27,9 @@ export default {
 			button: 'dropdown navbar-item pointer',
 			dir: '/assets/icons/flags/',
 			langs: [
-				{ url: 'en' }, // We have these languages mostly done but they are in php code with the old keys
+				{ url: 'en' },
 				{ url: 'es' },
+                { url: 'hu' },
 				{ url: 'nl' },
                 { url: 'pl' },
                 { url: 'pt' }
