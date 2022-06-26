@@ -172,7 +172,7 @@
         "circlek": "Circlek",
         "coke": "Coca-Cola",
         "coles": "Coles",
-        "colgate": "Colgate"
+        "colgate": "Colgate",
         "corona": "Corona",
         "costa": "Costa",
         "doritos": "Doritos",
@@ -247,9 +247,9 @@
         "wrigleys": "Wrigleys"
     },
     "trashdog": {
-        "trashdog": "TrashDog", //
-        "littercat": "LitterCat", //
-        "duck": "LitterDuck" //
+        "trashdog": "TrashDog",
+        "littercat": "LitterCat",
+        "duck": "LitterDuck"
     },
     "other": {
         "dogshit": "Kutya Kaki",
