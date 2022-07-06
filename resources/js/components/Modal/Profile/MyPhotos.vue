@@ -8,10 +8,10 @@
                 v-for="photo in photos"
                 class="my-grid-photo"
                 :key="photo.id"
-                @click="select(photo.id)"
             >
                 <img
                     class="litter"
+                    @click="select(photo.id)"
                     v-img="{sourceButton: true, openOn: 'dblclick'}"
                     :src="photo.filename"
                 />
@@ -22,12 +22,25 @@
                     class="grid-checkmark"
                 />
 
-                <img
+                <div
                     v-if="photoIsTagged(photo)"
-                    src="/assets/images/checkmark.png"
-                    class="grid-tagged"
+                    class="grid-tagged tooltip"
                     @click.prevent.stop="openEditPhotoModal(photo)"
-                />
+                >
+                    <span class="tooltip-text is-size-7">View tags</span>
+                    <i class="fa fa-tags fa-fw"></i>
+                </div>
+
+                <transition name="fade">
+                    <div
+                        v-if="showPhotoTags(photo)"
+                        class="photo-tags"
+                    >
+                        <EditPhotoModal
+                            @close="openEditPhotoModal(photo)"
+                        />
+                    </div>
+                </transition>
             </div>
 
         </div>
@@ -80,10 +93,12 @@
 <script>
 import moment from 'moment';
 import FilterMyPhotos from '../../Profile/bottom/MyPhotos/FilterMyPhotos';
+import EditPhotoModal from '../Photos/EditPhotoModal';
 
 export default {
     name: 'MyPhotos',
     components: {
+        EditPhotoModal,
         FilterMyPhotos
     },
     data () {
@@ -190,12 +205,11 @@ export default {
 
         openEditPhotoModal (photo)
         {
-            this.$store.commit('setChosenPhoto', photo.id);
-
-            this.$store.commit('showModal', {
-                type: 'EditPhotoModal',
-                title: 'Edit photo'
-            });
+            if (this.showPhotoTags(photo)) {
+                this.$store.commit('setChosenPhoto', null);
+            } else {
+                this.$store.commit('setChosenPhoto', photo.id);
+            }
         },
 
         /**
@@ -235,6 +249,11 @@ export default {
             const hasTags = photo.tags && Object.keys(photo.tags).length;
             const hasCustomTags = photo.custom_tags?.length;
             return hasTags || hasCustomTags;
+        },
+
+        showPhotoTags (photo)
+        {
+            return this.$store.state.photos.chosenPhotoId === photo.id;
         }
     }
 };
@@ -276,12 +295,33 @@ export default {
     .grid-tagged {
         position: absolute;
         height: 32px;
-        top: 5px;
-        right: 5px;
-        border: 2px solid green;
-        border-radius: 50%;
+        top: 0;
+        right: 0;
+        color: #00d1b2;
+        font-size: 1.25rem;
         padding: 5px;
         cursor: pointer;
+
+        .tooltip-text {
+            min-width: max-content;
+            transform: translate(-25%, 5px);
+        }
+
+        &:hover {
+            transform: scale(1.05);
+        }
+    }
+
+    .photo-tags {
+        position: absolute;
+        top: 105%;
+        right: 50%;
+        width: 300px;
+        padding: 10px;
+        background: ghostwhite;
+        box-shadow: 2px 2px 2px 1px rgba(0, 0, 0, 0.2);
+        border-radius: 5px;
+        transform: translateX(50%);
     }
 
     .photos-info {
@@ -323,6 +363,13 @@ export default {
             grid-row-gap: 1em;
             grid-column-gap: 1em;
         }
+    }
+
+    .fade-enter-active, .fade-leave-active {
+        transition: opacity .3s;
+    }
+    .fade-enter, .fade-leave-to {
+        opacity: 0;
     }
 
 </style>

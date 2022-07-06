@@ -119,7 +119,7 @@ export const mutations = {
         photo.tags = {
             ...tags,
             [payload.category]: {
-                ...(tags[payload.photoId] ? tags[payload.photoId][payload.category] : {}),
+                ...tags[payload.category],
                 [payload.tag]: payload.quantity
             }
         };
@@ -145,6 +145,45 @@ export const mutations = {
         }
 
         tags.unshift(payload.customTag);
+
+        photo.custom_tags = tags;
+
+        state.paginate.data.splice(photoIndex, 1, photo);
+    },
+
+    /**
+     * Remove a tag from a category
+     * If category is empty, delete category
+     */
+    removeTagFromPhoto (state, payload)
+    {
+        const photoIndex = state.paginate.data.findIndex(photo => photo.id === payload.photoId);
+        let photo = state.paginate.data[photoIndex];
+        let tags = Object.assign({}, photo.tags ?? {});
+
+        delete tags[payload.category][payload.tag];
+
+        if (Object.keys(tags[payload.category]).length === 0)
+        {
+            delete tags[payload.category];
+        }
+
+        photo.tags = tags;
+
+        state.paginate.data.splice(photoIndex, 1, photo);
+    },
+
+    /**
+     * Remove a custom tag from a photo
+     */
+    removeCustomTagFromPhoto (state, payload)
+    {
+        const photoIndex = state.paginate.data.findIndex(photo => photo.id === payload.photoId)
+        let photo = state.paginate.data[photoIndex];
+        let tags = photo.custom_tags ?? [];
+
+
+        tags = tags.filter(tag => tag !== payload.customTag);
 
         photo.custom_tags = tags;
 
