@@ -94,7 +94,7 @@ export default {
             transition: opacity 0.3s;
             flex-direction: row;
             gap: 0.3rem;
-            justify-content: end;
+            justify-content: flex-end;
             flex-wrap: wrap;
             min-width: 140px;
             color: #3273dc;
@@ -117,7 +117,7 @@ export default {
             margin-bottom: 5px;
             color: #011638;
             display: flex;
-            align-items: start;
+            align-items: flex-start;
             font-size: 14px;
             transition: all 0.1s;
 
@@ -163,7 +163,7 @@ export default {
                 }
                 .social-container {
                     display: flex;
-                    justify-content: start;
+                    justify-content: flex-start;
                 }
             }
             .xp {

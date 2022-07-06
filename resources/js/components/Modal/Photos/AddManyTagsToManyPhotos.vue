@@ -15,7 +15,7 @@
             class="button is-medium is-primary"
             @click="store"
             :disabled="!hasAddedTags"
-        >Store them</button>
+        >Store tags</button>
     </div>
 </template>
 
@@ -71,6 +71,12 @@ export default {
             if (! this.hasAddedTags) return;
 
             for (let index in this.selectedPhotos) {
+                // Set picked_up value for every photo
+                this.$store.commit('setPhotoPickedUp', {
+                    photoId: this.selectedPhotos[index],
+                    picked_up: this.$store.state.litter.pickedUp
+                });
+
                 // Add tags
                 Object.entries(this.$store.state.litter.tags[0] ?? {}).forEach(([category, tags]) => {
                     Object.entries(tags).forEach(([tag, quantity]) => {

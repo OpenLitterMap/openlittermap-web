@@ -110,6 +110,19 @@ export const mutations = {
         state.selectedCount = state.selectAll ? state.total : 0;
     },
 
+    /**
+     * Sets the picked up value for a single photo
+     */
+    setPhotoPickedUp (state, payload)
+    {
+        const photoIndex = state.paginate.data.findIndex(photo => photo.id === payload.photoId)
+        let photo = state.paginate.data[photoIndex];
+
+        photo.picked_up = payload.picked_up;
+
+        state.paginate.data.splice(photoIndex, 1, photo);
+    },
+
     addTagToPhoto (state, payload)
     {
         const photoIndex = state.paginate.data.findIndex(photo => photo.id === payload.photoId)
@@ -190,9 +203,9 @@ export const mutations = {
         state.paginate.data.splice(photoIndex, 1, photo);
     },
 
-    setChosenPhoto (state, photoId)
+    setPhotoToShowDetails (state, photoId)
     {
-        state.chosenPhotoId = photoId;
+        state.showDetailsPhotoId = photoId;
     },
 
     /**

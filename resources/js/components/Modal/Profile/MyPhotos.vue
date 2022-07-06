@@ -25,7 +25,7 @@
                 <div
                     v-if="photoIsTagged(photo)"
                     class="grid-tagged tooltip"
-                    @click.prevent.stop="openEditPhotoModal(photo)"
+                    @click.prevent.stop="togglePhotoDetailsPopup(photo)"
                 >
                     <span class="tooltip-text is-size-7">View tags</span>
                     <i class="fa fa-tags fa-fw"></i>
@@ -36,8 +36,8 @@
                         v-if="showPhotoTags(photo)"
                         class="photo-tags"
                     >
-                        <EditPhotoModal
-                            @close="openEditPhotoModal(photo)"
+                        <PhotoDetailsPopup
+                            @close="togglePhotoDetailsPopup(photo)"
                         />
                     </div>
                 </transition>
@@ -93,12 +93,12 @@
 <script>
 import moment from 'moment';
 import FilterMyPhotos from '../../Profile/bottom/MyPhotos/FilterMyPhotos';
-import EditPhotoModal from '../Photos/EditPhotoModal';
+import PhotoDetailsPopup from '../Photos/PhotoDetailsPopup';
 
 export default {
     name: 'MyPhotos',
     components: {
-        EditPhotoModal,
+        PhotoDetailsPopup,
         FilterMyPhotos
     },
     data () {
@@ -203,12 +203,12 @@ export default {
             });
         },
 
-        openEditPhotoModal (photo)
+        togglePhotoDetailsPopup (photo)
         {
             if (this.showPhotoTags(photo)) {
-                this.$store.commit('setChosenPhoto', null);
+                this.$store.commit('setPhotoToShowDetails', null);
             } else {
-                this.$store.commit('setChosenPhoto', photo.id);
+                this.$store.commit('setPhotoToShowDetails', photo.id);
             }
         },
 
@@ -253,7 +253,7 @@ export default {
 
         showPhotoTags (photo)
         {
-            return this.$store.state.photos.chosenPhotoId === photo.id;
+            return this.$store.state.photos.showDetailsPhotoId === photo.id;
         }
     }
 };

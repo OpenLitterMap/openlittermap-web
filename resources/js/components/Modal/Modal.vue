@@ -34,7 +34,6 @@ import CreditCard from './Payments/CreditCard'
 import MyPhotos from './Profile/MyPhotos';
 import AddManyTagsToManyPhotos from './Photos/AddManyTagsToManyPhotos';
 import ConfirmDeleteManyPhotos from './Photos/ConfirmDeleteManyPhotos';
-import EditPhotoModal from './Photos/EditPhotoModal';
 
 export default {
     name: 'Modal',
@@ -43,8 +42,7 @@ export default {
         CreditCard,
         MyPhotos,
         AddManyTagsToManyPhotos,
-        ConfirmDeleteManyPhotos,
-        EditPhotoModal
+        ConfirmDeleteManyPhotos
     },
     mounted ()
     {

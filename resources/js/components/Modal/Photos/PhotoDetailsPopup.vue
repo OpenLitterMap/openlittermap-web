@@ -2,7 +2,17 @@
     <div v-if="photo">
         <div>
             <div class="top-row">
-                <presence/>
+                <div class="switch-container">
+                    <p class="mr-2"><strong>{{ $t('tags.picked-up-title') }}</strong></p>
+                    <label class="switch">
+                        <input
+                            type="checkbox"
+                            :checked="photo.picked_up"
+                            @change="togglePickedUp"
+                        >
+                        <span class="slider round"></span>
+                    </label>
+                </div>
             </div>
             <div class="close-popup" @click="$emit('close')">
                 <i class="fa fa-times"></i>
@@ -57,14 +67,14 @@
 import Presence from '../../Litter/Presence';
 
 export default {
-    name: 'EditPhotoModal',
+    name: 'PhotoDetailsPopup',
     components: {
         Presence,
     },
     computed: {
         photo ()
         {
-            const photoId = this.$store.state.photos.chosenPhotoId;
+            const photoId = this.$store.state.photos.showDetailsPhotoId;
             return this.$store.state.photos.paginate.data.find(p => p.id === photoId);
         },
     },
@@ -107,6 +117,17 @@ export default {
                 customTag: tag
             });
         },
+
+        /**
+         * Toggles the picked_up value for the current photo
+         */
+        togglePickedUp ()
+        {
+            this.$store.commit('setPhotoPickedUp', {
+                photoId: this.photo.id,
+                picked_up: !this.photo.picked_up
+            });
+        }
     },
 };
 </script>
