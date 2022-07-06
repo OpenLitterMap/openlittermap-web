@@ -33,7 +33,7 @@
 
                 <transition name="fade">
                     <div
-                        v-if="showPhotoTags(photo)"
+                        v-if="showPhotoDetails(photo)"
                         class="photo-tags"
                     >
                         <PhotoDetailsPopup
@@ -135,16 +135,6 @@ export default {
             return this.paginate.data;
         },
 
-        tags ()
-        {
-            return this.$store.state.litter.tags;
-        },
-
-        customTags ()
-        {
-            return this.$store.state.litter.customTags;
-        },
-
         /**
          * Number of photos that have been selected
          */
@@ -203,13 +193,16 @@ export default {
             });
         },
 
+        /**
+         * Shows/Hides the PhotoDetailsPopup
+         */
         togglePhotoDetailsPopup (photo)
         {
-            if (this.showPhotoTags(photo)) {
-                this.$store.commit('setPhotoToShowDetails', null);
-            } else {
-                this.$store.commit('setPhotoToShowDetails', photo.id);
-            }
+            const photoId = this.showPhotoDetails(photo)
+                ? null
+                : photo.id;
+
+            this.$store.commit('setPhotoToShowDetails', photoId);
         },
 
         /**
@@ -244,6 +237,9 @@ export default {
             this.$store.commit('togglePhotoSelected', photo_id);
         },
 
+        /**
+         * Returns true if the photo has tags or custom tags
+         */
         photoIsTagged (photo)
         {
             const hasTags = photo.tags && Object.keys(photo.tags).length;
@@ -251,7 +247,10 @@ export default {
             return hasTags || hasCustomTags;
         },
 
-        showPhotoTags (photo)
+        /**
+         * Returns true if the photo has its details popup open
+         */
+        showPhotoDetails (photo)
         {
             return this.$store.state.photos.showDetailsPhotoId === photo.id;
         }

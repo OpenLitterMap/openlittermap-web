@@ -123,6 +123,9 @@ export const mutations = {
         state.paginate.data.splice(photoIndex, 1, photo);
     },
 
+    /**
+     * Adds a tag to a single photo
+     */
     addTagToPhoto (state, payload)
     {
         const photoIndex = state.paginate.data.findIndex(photo => photo.id === payload.photoId)
@@ -140,6 +143,9 @@ export const mutations = {
         state.paginate.data.splice(photoIndex, 1, photo);
     },
 
+    /**
+     * Adds a custom tag to a single photo
+     */
     addCustomTagToPhoto (state, payload)
     {
         const photoIndex = state.paginate.data.findIndex(photo => photo.id === payload.photoId)
@@ -165,8 +171,8 @@ export const mutations = {
     },
 
     /**
-     * Remove a tag from a category
-     * If category is empty, delete category
+     * Removes a tag from a photo
+     * If the category is empty, delete the category
      */
     removeTagFromPhoto (state, payload)
     {
@@ -187,14 +193,13 @@ export const mutations = {
     },
 
     /**
-     * Remove a custom tag from a photo
+     * Removes a custom tag from a photo
      */
     removeCustomTagFromPhoto (state, payload)
     {
         const photoIndex = state.paginate.data.findIndex(photo => photo.id === payload.photoId)
         let photo = state.paginate.data[photoIndex];
         let tags = photo.custom_tags ?? [];
-
 
         tags = tags.filter(tag => tag !== payload.customTag);
 
@@ -203,6 +208,9 @@ export const mutations = {
         state.paginate.data.splice(photoIndex, 1, photo);
     },
 
+    /**
+     * Sets the photo to show the details of
+     */
     setPhotoToShowDetails (state, photoId)
     {
         state.showDetailsPhotoId = photoId;

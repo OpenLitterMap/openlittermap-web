@@ -45,9 +45,14 @@ export default {
             return hasTags || hasCustomTags;
         },
 
+        /**
+         * Returns the ids of the selected photos
+         */
         selectedPhotos ()
         {
-            return this.$store.state.photos.paginate.data.filter(photo => photo.selected).map(photo => photo.id);
+            return this.$store.state.photos.paginate.data
+                .filter(photo => photo.selected)
+                .map(photo => photo.id);
         }
     },
     async mounted ()
@@ -55,6 +60,9 @@ export default {
         await this.$store.dispatch('LOAD_PREVIOUS_CUSTOM_TAGS');
     },
     methods: {
+        /**
+         * Hides the current modal and goes back to the photos modal
+         */
         back ()
         {
             this.$store.commit('showModal', {
@@ -64,7 +72,8 @@ export default {
         },
 
         /**
-         * Actions similar to AddTags component
+         * Stores the tags in memory for each photo
+         * without submitting them
          */
         async store ()
         {

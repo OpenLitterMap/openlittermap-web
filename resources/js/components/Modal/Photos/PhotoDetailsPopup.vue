@@ -64,14 +64,12 @@
 </template>
 
 <script>
-import Presence from '../../Litter/Presence';
-
 export default {
     name: 'PhotoDetailsPopup',
-    components: {
-        Presence,
-    },
     computed: {
+        /**
+         * The current photo to show details of
+         */
         photo ()
         {
             const photoId = this.$store.state.photos.showDetailsPhotoId;
@@ -80,7 +78,7 @@ export default {
     },
     methods: {
         /**
-         * Return translated category name for recent tags
+         * Return translated category name
          */
         getCategoryName (category)
         {
@@ -88,7 +86,7 @@ export default {
         },
 
         /**
-         * Return translated litter.key name for recent tags
+         * Return translated litter.key name for a tag
          */
         getTagName (category, tag)
         {
