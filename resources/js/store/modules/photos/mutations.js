@@ -111,6 +111,112 @@ export const mutations = {
     },
 
     /**
+     * Sets the picked up value for a single photo
+     */
+    setPhotoPickedUp (state, payload)
+    {
+        const photoIndex = state.paginate.data.findIndex(photo => photo.id === payload.photoId)
+        let photo = state.paginate.data[photoIndex];
+
+        photo.picked_up = payload.picked_up;
+
+        state.paginate.data.splice(photoIndex, 1, photo);
+    },
+
+    /**
+     * Adds a tag to a single photo
+     */
+    addTagToPhoto (state, payload)
+    {
+        const photoIndex = state.paginate.data.findIndex(photo => photo.id === payload.photoId)
+        let photo = state.paginate.data[photoIndex];
+        let tags = Object.assign({}, photo.tags ?? {});
+
+        photo.tags = {
+            ...tags,
+            [payload.category]: {
+                ...tags[payload.category],
+                [payload.tag]: payload.quantity
+            }
+        };
+
+        state.paginate.data.splice(photoIndex, 1, photo);
+    },
+
+    /**
+     * Adds a custom tag to a single photo
+     */
+    addCustomTagToPhoto (state, payload)
+    {
+        const photoIndex = state.paginate.data.findIndex(photo => photo.id === payload.photoId)
+        let photo = state.paginate.data[photoIndex];
+        let tags = photo.custom_tags ?? [];
+
+        // Case-insensitive check for existing tags
+        if (tags.find(tag => tag.toLowerCase() === payload.customTag.toLowerCase()) !== undefined)
+        {
+            return;
+        }
+
+        if (tags.length >= 3)
+        {
+            return;
+        }
+
+        tags.unshift(payload.customTag);
+
+        photo.custom_tags = tags;
+
+        state.paginate.data.splice(photoIndex, 1, photo);
+    },
+
+    /**
+     * Removes a tag from a photo
+     * If the category is empty, delete the category
+     */
+    removeTagFromPhoto (state, payload)
+    {
+        const photoIndex = state.paginate.data.findIndex(photo => photo.id === payload.photoId);
+        let photo = state.paginate.data[photoIndex];
+        let tags = Object.assign({}, photo.tags ?? {});
+
+        delete tags[payload.category][payload.tag];
+
+        if (Object.keys(tags[payload.category]).length === 0)
+        {
+            delete tags[payload.category];
+        }
+
+        photo.tags = tags;
+
+        state.paginate.data.splice(photoIndex, 1, photo);
+    },
+
+    /**
+     * Removes a custom tag from a photo
+     */
+    removeCustomTagFromPhoto (state, payload)
+    {
+        const photoIndex = state.paginate.data.findIndex(photo => photo.id === payload.photoId)
+        let photo = state.paginate.data[photoIndex];
+        let tags = photo.custom_tags ?? [];
+
+        tags = tags.filter(tag => tag !== payload.customTag);
+
+        photo.custom_tags = tags;
+
+        state.paginate.data.splice(photoIndex, 1, photo);
+    },
+
+    /**
+     * Sets the photo to show the details of
+     */
+    setPhotoToShowDetails (state, photoId)
+    {
+        state.showDetailsPhotoId = photoId;
+    },
+
+    /**
      * Change the selected value of a photo
      *
      * MyPhotos.vue

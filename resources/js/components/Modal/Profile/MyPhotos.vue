@@ -8,15 +8,39 @@
                 v-for="photo in photos"
                 class="my-grid-photo"
                 :key="photo.id"
-                @click="select(photo.id)"
             >
-                <img class="litter" v-img="{sourceButton: true, openOn: 'dblclick'}" :src="photo.filename" />
+                <img
+                    class="litter"
+                    @click="select(photo.id)"
+                    v-img="{sourceButton: true, openOn: 'dblclick'}"
+                    :src="photo.filename"
+                />
 
                 <img
                     v-if="photo.selected"
                     src="/assets/images/checkmark.png"
                     class="grid-checkmark"
                 />
+
+                <div
+                    v-if="photoIsTagged(photo)"
+                    class="grid-tagged tooltip"
+                    @click.prevent.stop="togglePhotoDetailsPopup(photo)"
+                >
+                    <span class="tooltip-text is-size-7">View tags</span>
+                    <i class="fa fa-tags fa-fw"></i>
+                </div>
+
+                <transition name="fade">
+                    <div
+                        v-if="showPhotoDetails(photo)"
+                        class="photo-tags"
+                    >
+                        <PhotoDetailsPopup
+                            @close="togglePhotoDetailsPopup(photo)"
+                        />
+                    </div>
+                </transition>
             </div>
 
         </div>
@@ -54,6 +78,13 @@
                     @click="addTags"
                     :disabled="selectedCount === 0"
                 >{{$t('common.add-tags') }}</button>
+
+
+                <button
+                    class="button is-medium is-primary"
+                    @click="submit"
+                    :disabled="!hasAddedTags"
+                >{{ $t('common.submit') }}</button>
             </div>
         </div>
     </div>
@@ -62,15 +93,18 @@
 <script>
 import moment from 'moment';
 import FilterMyPhotos from '../../Profile/bottom/MyPhotos/FilterMyPhotos';
+import PhotoDetailsPopup from '../Photos/PhotoDetailsPopup';
 
 export default {
     name: 'MyPhotos',
     components: {
+        PhotoDetailsPopup,
         FilterMyPhotos
     },
     data () {
         return {
-            loading: true
+            loading: true,
+            processing: false,
         };
     },
     computed: {
@@ -107,7 +141,17 @@ export default {
         selectedCount ()
         {
             return this.$store.state.photos.selectedCount;
-        }
+        },
+
+        /**
+         * Disable button if false
+         */
+        hasAddedTags ()
+        {
+            if (this.processing) return false;
+
+            return this.photos.filter(this.photoIsTagged).length;
+        },
     },
     methods: {
 
@@ -123,6 +167,22 @@ export default {
         },
 
         /**
+         * Dispatch request
+         */
+        async submit ()
+        {
+            if (! this.hasAddedTags) return;
+
+            this.processing = true;
+
+            await this.$store.dispatch('BULK_TAG_PHOTOS');
+
+            this.processing = false;
+
+            this.$store.commit('hideModal');
+        },
+
+        /**
          * Load a modal to confirm delete of the selected photos
          */
         deletePhotos ()
@@ -131,6 +191,18 @@ export default {
                 type: 'ConfirmDeleteManyPhotos',
                 title: this.$t('common.confirm-delete') //'Confirm Delete'
             });
+        },
+
+        /**
+         * Shows/Hides the PhotoDetailsPopup
+         */
+        togglePhotoDetailsPopup (photo)
+        {
+            const photoId = this.showPhotoDetails(photo)
+                ? null
+                : photo.id;
+
+            this.$store.commit('setPhotoToShowDetails', photoId);
         },
 
         /**
@@ -163,6 +235,24 @@ export default {
         select (photo_id)
         {
             this.$store.commit('togglePhotoSelected', photo_id);
+        },
+
+        /**
+         * Returns true if the photo has tags or custom tags
+         */
+        photoIsTagged (photo)
+        {
+            const hasTags = photo.tags && Object.keys(photo.tags).length;
+            const hasCustomTags = photo.custom_tags?.length;
+            return hasTags || hasCustomTags;
+        },
+
+        /**
+         * Returns true if the photo has its details popup open
+         */
+        showPhotoDetails (photo)
+        {
+            return this.$store.state.photos.showDetailsPhotoId === photo.id;
         }
     }
 };
@@ -193,12 +283,44 @@ export default {
 
     .grid-checkmark {
         position: absolute;
-        height: 3em;
-        bottom: 0;
-        right: 0;
-        border: 5px solid #0ca3e0;
+        height: 32px;
+        bottom: 5px;
+        right: 5px;
+        border: 2px solid #0ca3e0;
         border-radius: 50%;
         padding: 5px;
+    }
+
+    .grid-tagged {
+        position: absolute;
+        height: 32px;
+        top: 0;
+        right: 0;
+        color: #00d1b2;
+        font-size: 1.25rem;
+        padding: 5px;
+        cursor: pointer;
+
+        .tooltip-text {
+            min-width: max-content;
+            transform: translate(-25%, 5px);
+        }
+
+        &:hover {
+            transform: scale(1.05);
+        }
+    }
+
+    .photo-tags {
+        position: absolute;
+        top: 105%;
+        right: 50%;
+        width: 300px;
+        padding: 10px;
+        background: ghostwhite;
+        box-shadow: 2px 2px 2px 1px rgba(0, 0, 0, 0.2);
+        border-radius: 5px;
+        transform: translateX(50%);
     }
 
     .photos-info {
@@ -240,6 +362,13 @@ export default {
             grid-row-gap: 1em;
             grid-column-gap: 1em;
         }
+    }
+
+    .fade-enter-active, .fade-leave-active {
+        transition: opacity .3s;
+    }
+    .fade-enter, .fade-leave-to {
+        opacity: 0;
     }
 
 </style>

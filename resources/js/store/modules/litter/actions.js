@@ -6,38 +6,41 @@ export const actions = {
     /**
      * Get filtered photos and add many tags at once
      */
-    async ADD_MANY_TAGS_TO_MANY_PHOTOS (context)
+    async BULK_TAG_PHOTOS (context)
     {
         const title = 'Success!';
         const body = 'Your tags were applied to the images';
 
-        await axios.post('/user/profile/photos/tags/create', {
-            selectAll: context.rootState.photos.selectAll,
-            inclIds: context.rootState.photos.inclIds,
-            exclIds: context.rootState.photos.exclIds,
-            filters: context.rootState.photos.filters,
-            tags: context.state.tags[0],
-            custom_tags: context.state.customTags[0],
-            picked_up: context.rootState.litter.pickedUp
-        })
-        .then(response => {
-            console.log('add_many_tags_to_many_photos', response);
+        let photos = context.rootState.photos.paginate.data
+            .filter(photo => {
+                const hasTags = photo.tags && Object.keys(photo.tags).length;
+                const hasCustomTags = photo.custom_tags?.length;
+                return hasTags || hasCustomTags;
+            })
+            .reduce((map, photo) => {
+                map[photo.id] = {
+                    tags: photo.tags ?? {},
+                    custom_tags: photo.custom_tags ?? [],
+                    picked_up: !! photo.picked_up
+                };
+                return map;
+            }, {});
 
-            // success notification
-            if (response.data.success)
-            {
-                Vue.$vToastify.success({
-                    title,
-                    body,
-                    position: 'top-right'
-                });
+        await axios.post('/user/profile/photos/tags/bulkTag', {photos})
+            .then(response => {
+                console.log('bulk_tag_photos', response);
 
-                context.commit('hideModal');
-            }
-        })
-        .catch(error => {
-            console.error('add_many_tags_to_many_photos', error);
-        });
+                if (response.data.success) {
+                    Vue.$vToastify.success({
+                        title,
+                        body,
+                        position: 'top-right'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('bulk_tag_photos', error);
+            });
     },
 
     /**
