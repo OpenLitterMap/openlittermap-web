@@ -21,19 +21,14 @@ class UserPhotoController extends Controller
      *
      * @return array
      */
-    public function create (Request $request)
+    public function bulkTag (Request $request)
     {
-        $ids = ($request->selectAll) ? $request->exclIds : $request->inclIds;
-
-        $photos = $this->filterPhotos(json_encode($request->filters), $request->selectAll, $ids)->get();
-
-        foreach ($photos as $photo)
-        {
+        foreach ($request->photos as $photoId => $data) {
              dispatch (new AddTagsToPhoto(
-                 $photo->id,
-                 $request->boolean('picked_up'),
-                 $request->tags ?? [],
-                 $request->custom_tags ?? []
+                 $photoId,
+                 $data['picked_up'] ?? false,
+                 $data['tags'] ?? [],
+                 $data['custom_tags'] ?? []
              ));
         }
 

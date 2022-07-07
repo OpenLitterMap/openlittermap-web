@@ -129,7 +129,7 @@ Route::get('/user/profile/photos/previous-custom-tags', 'User\UserPhotoControlle
 Route::get('/user/profile/photos/filter', 'User\UserPhotoController@filter');
 
 // Add Many Tags to Many Photos
-Route::post('/user/profile/photos/tags/create', 'User\UserPhotoController@create');
+Route::post('/user/profile/photos/tags/bulkTag', 'User\UserPhotoController@bulkTag');
 
 // Delete selected photos
 Route::post('/user/profile/photos/delete', 'User\UserPhotoController@destroy');

@@ -21,4 +21,5 @@ export const init = {
     total: 0, // number of photos available
     verified: 0, // level of verification
     previousCustomTags: [],
+    showDetailsPhotoId: null
 };
