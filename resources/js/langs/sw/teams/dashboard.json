@@ -1,0 +1,24 @@
+{
+    "olm-teams": "Timu za OpenLitterMap",
+    "dashboard": "Ubao",
+    "join-a-team": "Jiunge na timu",
+    "create-a-team": "Unada timu",
+    "your-teams": "Timu Yako",
+    "leaderboard": "Ubao wa kiongozi",
+    "settings": "Mipangilio",
+    "teams-dashboard": "Ubao wa timu",
+    "photos-uploaded": "Picha zilizo pakiwa",
+    "litter-tagged": "Taka ziliwekewa lebo",
+    "members-uploaded": "wadau wa timu wamepakia",
+    "all-teams": "Timu zote",
+
+    "times": {
+        "today": "Leo",
+        "week": "Wiki hii",
+        "month": "Mwezi huu",
+        "year": "Mwakahuu",
+        "all": "Wakati wote",
+        "created_at": "Imepakiwa",
+        "datetime": "Imechuliwa"
+    }
+}

@@ -1,0 +1,14 @@
+{
+    "title": "Uko tayari?",
+    "subtitle": "Jisajili ili uwe mtaalamu wa ramani ya takataka na utusaidie kushinda uchafuzi wa plastiki.",
+    "crowdfunding-message": "Tafadhali unga mkono jitihada zetu kwa kufadhili OpenLitterMap kwa kutumia kiasi kidogo angalau senti 6 kwa siku na usajili wa kila mwezi ili kusaidia kukuza na kuendeleza jukwaa hili muhimu.",
+    "form-create-account": "Fungua akaunti yako",
+    "form-field-name": "Jina",
+    "form-field-unique-id": "Kitambulisho cha Kipekee",
+    "form-field-email": "Barua pepe",
+    "form-field-password": "Neno la siri. Lazima liwe na herufi kubwa, ndogo na nambari.", 
+    "form-field-pass-confirm": "Hakiki neno la siri",
+    "form-account-conditions": "Nimesoma na kukubaliana na <a href='/terms'>Sheria na Masharti</a> na <a href='/privacy'>Sera ya Faragha</a>",
+    "form-btn": "Jisajili",
+    "create-account-note": "Kumbuka: Ikiwa hujapokea barua pepe ya uthibitishaji , tafadhali angalia folda lako la spam/junk folder."
+}

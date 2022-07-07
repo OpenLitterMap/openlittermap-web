@@ -1,0 +1,16 @@
+{
+    "allowed-to-create": "Unaruhusiwa kuunda timu",
+    "what-kind-of-team": "Je, ungependa kuunda Timu ya aina gani?",
+    "team-type": "Aina za timu",
+    "team-name": "Jina la timu",
+    "my-awesome-team-placeholder": "Timu yangu bomba",
+    "unique-team-id": "Kitambulisho cha Timu cha Kipekee",
+    "id-to-join-team": "Mtu yeyote aliye na kitambulisho hiki ataweza kujiunga na timu yako.",
+    "create-team": "Tengeneza timu",
+    "update-team": "Sasisha Timu",
+    "created": "Hongera! Timu yako mpya imeundwa.",
+    "updated": "Timu imesasishwa.",
+    "select-team": "Chagua timu",
+    "fail": "Kulikuwa na hitilafu kuunda Timu yako",
+    "max-created": "Huruhusiwi kuunda timu zozote zaidi."
+}

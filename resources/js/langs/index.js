@@ -4,6 +4,7 @@ import { hu } from './hu';
 import { nl } from './nl';
 import { pl } from './pl';
 import { pt } from './pt';
+import { sw } from './sw';
 
 export const langs = {
     'en': en,
@@ -11,5 +12,6 @@ export const langs = {
     'hu': hu,
     'nl': nl,
     'pl': pl,
-    'pt': pt
+    'pt': pt,
+    'sw': sw
 };
