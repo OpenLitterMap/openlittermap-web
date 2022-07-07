@@ -39,9 +39,14 @@
         "lang": "Maleis"
     },
 
-        "nl": {
+    "nl": {
         "name": "Nederland",
         "lang": "Nederlands"
+    },
+
+    "sw" : {
+        "name": "Tanzania",
+        "lang": "Swahili"
     },
 
     "tk": {

@@ -1,0 +1,22 @@
+{
+    "privacy-title": "Dhibiti faragha yako",
+    "privacy-text": "Dhibiti faragha yako kwa kila timu uliyojiunga nayo.",
+
+    "team-update-title": "Sasisha timu zako",
+    "team-update-text": "Unaweza tu kusasisha timu unazoongoza.",
+
+    "maps": {
+        "team-map": "Ramani ya timu",
+        "name-will-appear": "Jina lako litaonekana kwenye ramani",
+        "username-will-appear": "Jina lako la mtumiaji litaonekana kwenye ramani",
+        "will-not-appear": "Jina lako na jina lako la mtumiaji hayataonekana kwenye ramani"
+    },
+    "leaderboards": {
+        "team-leaderboard": "Ubao wa Wanaoongoza wa Timu",
+        "name-will-appear": "Jina lako litaonekana kwenye bao za wanaoongoza",
+        "username-will-appear": "Jina lako la mtumiaji litaonekana kwenye bao za wanaoongoza",
+        "will-not-appear": "Jina lako na jina lako la mtumiaji hayataonekana kwenye bao za wanaoongoza"
+    },
+    "submit-one-team": "Hifadhi kwa Timu hii",
+    "apply-all-teams": "Omba kwa Timu zote"
+}

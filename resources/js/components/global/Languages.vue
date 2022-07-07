@@ -32,7 +32,8 @@ export default {
                 { url: 'hu' },
 				{ url: 'nl' },
                 { url: 'pl' },
-                { url: 'pt' }
+                { url: 'pt' },
+                { url: 'sw' }
 			]
 		};
 	},
@@ -89,6 +90,7 @@ export default {
             if (lang === 'pt') return this.dir + 'br.png';
 			if (lang === 'ms') return this.dir + 'my.png'; // malaysian
 			if (lang === 'tk') return this.dir + 'tr.png'; // turkish
+			if (lang === 'sw') return this.dir + 'tz.png'; // turkish
 
 			return this.dir + lang.toLowerCase() + '.png';
 		},

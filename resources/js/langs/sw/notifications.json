@@ -1,0 +1,15 @@
+{
+    "success": "Fanikiwa",
+    "error": "Tatizo!",
+    "settings-updated": "Mipangilio imesasishwa kikamilifu!",
+    "tags-added": "Mafanikio! Lebo zako zimeongezwa",
+    "subscription-cancelled": "Usajili wako umeghairiwa",
+    "privacy-updated": "Mipangilio yako ya Faragha imehifadhiwa",
+    "litter-toggled": "Idadi zilizookotwa imesasishwa",
+    "settings": {
+        "subscribed": "Umejiandikisha kwa sasisho na habari njema!",
+        "unsubscribed": "Umejiondoa. Hutapokea tena habari njema!",
+        "flag-updated": "Bendera yako imesasishwa"
+    },
+    "something-went-wrong": "Hitilafu fulani imetokea. Tafadhali, jaribu tena au wasiliana nasi!"
+}

@@ -11,7 +11,7 @@
 
     "es": {
         "name": "Spain",
-        "lang": "Spanish"
+        "lang": "Español"
     },
 
     "fr": {
@@ -44,6 +44,16 @@
         "lang": "Nederlands"
     },
 
+    "pl": {
+        "name": "Poland",
+        "lang": "Polski"
+    },
+
+    "pt": {
+        "name": "Brasil",
+        "lang": "Portuguese"
+    },
+
     "sw" : {
         "name": "Tanzania",
         "lang": "Swahili"
@@ -57,5 +67,10 @@
     "uk": {
         "name": "UK",
         "lang": "English"
+    },
+
+    "tz": {
+        "name": "Tanzania",
+        "lang": "Kiswahili"
     }
 }
