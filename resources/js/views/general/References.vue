@@ -205,9 +205,15 @@ export default {
                 },
                 {
                     date: '2022/01/20',
-                    title: 'Real-Time Litter Detection System for Moving Vehicles Using YOLO\n',
+                    title: 'Real-Time Litter Detection System for Moving Vehicles Using YOLO',
                     link: 'https://ieeexplore.ieee.org/document/9716512',
                     author: 'Amrutha et al'
+                },
+                {
+                    date: '2022/02/01',
+                    title: 'Deep learning-based waste detection in natural and urban environments',
+                    link: 'https://www.sciencedirect.com/science/article/pii/S0956053X21006474',
+                    author: 'Majchrowskaa et al'
                 },
                 {
                     date: '2022/02/24',
@@ -222,6 +228,12 @@ export default {
                     author: 'Kunsen et al'
                 },
                 {
+                    date: '2022/03/31',
+                    title: 'Retraining of object detectors to become suitable for trash detection in the context of autonomous driving',
+                    link: 'https://www.researchgate.net/profile/Ishan-Srivastava-8/publication/360688760_Object_detection_in_self_driving_cars_using_YOLOv5/links/6285697c50c4566fc2744ac0/Object-detection-in-self-driving-cars-using-YOLOv5.pdf',
+                    author: 'Srivastava, I'
+                },
+                {
                     date: '2022/04/26',
                     title: 'Beach beauty in Bengal: Perception of scenery and its implications for coastal management in Purba Medinipur district, eastern India',
                     link: 'https://www.sciencedirect.com/science/article/abs/pii/S0308597X22000811',
@@ -232,6 +244,18 @@ export default {
                     title: 'Application of blockchain technology for geospatial data protection and management',
                     link: 'http://zgt.com.ua/en/%D0%B7%D0%B0%D1%81%D1%82%D0%BE%D1%81%D1%83%D0%B2%D0%B0%D0%BD%D0%BD%D1%8F-%D1%82%D0%B5%D1%85%D0%BD%D0%BE%D0%BB%D0%BE%D0%B3%D1%96%D1%97-blockchain-%D0%B4%D0%BB%D1%8F-%D0%B7%D0%B0%D1%85%D0%B8%D1%81%D1%82/',
                     author: 'Chetverikov, B & Kilaru, V'
+                },
+                {
+                    date: '2022/06/11',
+                    title: 'Towards geospatial blockchain: A review of research on blockchain technology applied to geospatial data',
+                    link: 'https://agile-giss.copernicus.org/articles/3/71/2022/agile-giss-3-71-2022.pdf',
+                    author: 'Zhao et al'
+                },
+                {
+                    date: '2022/07/01',
+                    title: 'Determinants of Household Waste Disposal Practices and Implications for Practical Community Interventions: Lessons from Lilongwe',
+                    link: 'https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4151604',
+                    author: 'Kalonde et al'
                 }
             ]
         };
