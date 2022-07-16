@@ -49,6 +49,32 @@ class GlobalMapController extends Controller
     }
 
     /**
+     * Get trashdog images for the global map
+     */
+    public function getTrashDogData ()
+    {
+        $photos = Photo::query()
+            ->select(
+                'id',
+                'verified',
+                'user_id',
+                'team_id',
+                'result_string',
+                'filename',
+                'geohash',
+                'lat',
+                'lon',
+                'remaining',
+                'datetime'
+            )
+            ->where('trashdog_id', '!=', null)
+            ->where('verified', '>=', 2)
+            ->get();
+
+        return $this->photosToGeojson($photos);
+    }
+
+    /**
      * Get photos point data at zoom levels 16 or above
      *
      * @return array

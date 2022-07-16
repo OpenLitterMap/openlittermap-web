@@ -83,6 +83,7 @@ Route::get('global', 'HomeController@index');
 Route::get('/global/clusters', 'GlobalMap\ClusterController@index');
 Route::get('/global/points', 'GlobalMap\GlobalMapController@index');
 Route::get('/global/art-data', 'GlobalMap\GlobalMapController@artData');
+Route::get('/global/trashdog', 'GlobalMap\GlobalMapController@getTrashDogData');
 
 // Get data for the Global Leaderboard
 Route::get('/global/leaderboard', 'Leaderboard\LeaderboardController@index');

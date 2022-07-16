@@ -43,6 +43,14 @@ export const mutations = {
     },
 
     /**
+     * Got the data for the Global Map
+     */
+    setTrashDogGeojson (state, payload)
+    {
+        state.trashdog = payload;
+    },
+
+    /**
      *
      */
 	toggleLangsButton (state)

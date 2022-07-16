@@ -31,6 +31,7 @@ import dropdown from './select-dropdown';
 var map;
 var clusters;
 var litterArtPoints;
+var trashdog;
 var points;
 var prevZoom = MIN_ZOOM;
 
@@ -49,6 +50,11 @@ const grey_dot = L.icon({
     iconSize: [13, 10]
 });
 
+const dogeicon = L.icon({
+    iconUrl: './assets/icons/doge.jpeg',
+    iconSize: [50, 50]
+});
+
 /**
  * Create the point to display for each piece of Litter Art
  */
@@ -58,6 +64,16 @@ function createArtIcon (feature, latlng)
 
     return (feature.properties.verified === 2)
         ? L.marker(x, { icon: green_dot })
+        : L.marker(x, { icon: grey_dot });
+}
+
+
+function createTrashdogIcon (feature, latlng)
+{
+    const x = [latlng.lng, latlng.lat];
+
+    return (feature.properties.verified === 2)
+        ? L.marker(x, { icon: dogeicon })
         : L.marker(x, { icon: grey_dot });
 }
 
@@ -107,10 +123,9 @@ function createGlobalGroups ()
 
         globalLayerController.addOverlay(clusters, 'Global');
         globalLayerController.addOverlay(litterArtPoints, 'Litter Art');
+        globalLayerController.addOverlay(trashdog, 'Trashdog');
 
         globalControllerShowing = true;
-
-        console.log({ globalLayerController });
     }
 }
 
@@ -279,6 +294,13 @@ export default {
 
         // TODO refactor this out too
         litterArtPoints.addData(this.$store.state.globalmap.artData.features);
+
+        trashdog = L.geoJSON(null, {
+            pointToLayer: createTrashdogIcon,
+            onEachFeature: onEachArtFeature
+        });
+
+        trashdog.addData(this.$store.state.globalmap.trashdog.features);
 
         map.on('moveend', this.update);
 

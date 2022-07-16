@@ -35,5 +35,21 @@ export const actions = {
         .catch(error => {
             console.error('get_clusters', error);
         });
+    },
+
+    /**
+     *
+     */
+    async GET_TRASHDOG_DATA (context)
+    {
+        await axios.get('/global/trashdog')
+            .then(response => {
+                console.log('get_trashdog_data', response);
+
+                context.commit('setTrashDogGeojson', response.data);
+            })
+            .catch(error => {
+                console.log('get_trashdog_data', error);
+            });
     }
 }

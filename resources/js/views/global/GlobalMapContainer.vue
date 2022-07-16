@@ -34,7 +34,10 @@ export default {
             zoom: 2,
             year: year
         });
+
         await this.$store.dispatch('GET_ART_DATA');
+
+        await this.$store.dispatch('GET_TRASHDOG_DATA');
 
         this.$store.commit('globalLoading', false);
     },
