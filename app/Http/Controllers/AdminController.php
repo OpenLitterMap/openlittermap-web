@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Actions\CalculateTagsDifferenceAction;
-use App\Actions\Locations\UpdateLeaderboardsXpAction;
-use App\Actions\LogAdminVerificationAction;
-use App\Actions\Photos\DeleteTagsFromPhotoAction;
 use App\Actions\Photos\DeletePhotoAction;
+use App\Actions\LogAdminVerificationAction;
+use App\Actions\CalculateTagsDifferenceAction;
+use App\Actions\Photos\DeleteTagsFromPhotoAction;
+use App\Actions\Locations\UpdateLeaderboardsXpAction;
 use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
+use App\Actions\Admin\AutoVerifyUsersRemainingImagesAction;
 
 use App\Events\ImageDeleted;
 use App\Http\Requests\GetImageForVerificationRequest;
@@ -23,8 +24,10 @@ use Illuminate\Http\Request;
 
 use App\Events\TagsVerifiedByAdmin;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Redis;
 
 class AdminController extends Controller
 {
@@ -131,11 +134,12 @@ class AdminController extends Controller
     /**
      * The image and the tags are correct
      *
-     * Updates Country, State + City table
+     * - Updates Country, State + City table
+     * - Gives the Admin xp
+     * - Increases the users verification count. If 10, auto-verify user + remaining images.
      */
     public function verifykeepimage (Request $request)
     {
-        /** @var Photo $photo */
         $photo = Photo::findOrFail($request->photoId);
         $photo->verified = 2;
         $photo->verification = 1;
@@ -145,11 +149,21 @@ class AdminController extends Controller
 
         $this->logAdminAction($photo, Route::getCurrentRoute()->getActionMethod());
 
+        $counts = $this->increaseUsersVerificationCount($photo->user_id);
+
         event (new TagsVerifiedByAdmin($photo->id));
+
+        return [
+            'success' => true,
+            'userVerificationCount' => $counts['verificationCount'],
+            'photosVerified' => $counts['photosVerified']
+        ];
     }
 
     /**
      * Incorrect image - reset verification to 0
+     *
+     *  - Reset user_verification_count to 0
      */
     public function incorrect (Request $request)
     {
@@ -174,6 +188,8 @@ class AdminController extends Controller
         $user->xp = max(0, $user->xp - $tagUpdates['removedUserXp']);
         $user->count_correctly_verified = 0;
         $user->save();
+
+        Redis::hdel("user_verification_count", $user->id);
 
         $this->updateLeaderboardsAction->run($photo, $user->id, - $tagUpdates['removedUserXp']);
 
@@ -365,6 +381,9 @@ class AdminController extends Controller
     private function filterPhotos(): Builder
     {
         return Photo::onlyFromUsersThatAllowTagging()
+            ->with(['user' => function ($q) {
+                $q->select('id', 'username');
+            }])
             ->with('customTags')
             ->when(request('country_id'), function (Builder $q) {
                 return $q->whereCountryId(request('country_id'));
@@ -379,6 +398,7 @@ class AdminController extends Controller
     private function rewardXpToAdmin(int $xp = 1): void
     {
         auth()->user()->increment('xp', $xp);
+
         /** @var UpdateLeaderboardsXpAction $updateLeaderboardsAction */
         $updateLeaderboardsAction = app(UpdateLeaderboardsXpAction::class);
         $updateLeaderboardsAction->run(auth()->id(), $xp);
@@ -396,6 +416,7 @@ class AdminController extends Controller
     {
         /** @var LogAdminVerificationAction $action */
         $logger = app(LogAdminVerificationAction::class);
+
         $logger->run(
             auth()->user(),
             $photo,
@@ -405,5 +426,46 @@ class AdminController extends Controller
             $tagsDiff['rewardedAdminXp'] ?? 0,
             $tagsDiff['removedUserXp'] ?? 0
         );
+    }
+
+    /**
+     * Increase the users verification count
+     *
+     * If it reaches 10+, we update the user as verified
+     *
+     * @param User $user - user that uploaded the image being verified
+     * @return array verificationCount, photosVerified
+     */
+    private function increaseUsersVerificationCount ($userId)
+    {
+        $user = User::find($userId);
+
+        $verificationCount = Redis::hincrby("user_verification_count", $user->id, 1);
+
+        if ($verificationCount > 10)
+        {
+            $user->verification_required = false;
+            $user->save();
+
+            $photos = Photo::where([
+                'user_id' => $this->argument('user_id'),
+                'verification' => 0.1
+            ])->get();
+
+            foreach ($photos as $photo)
+            {
+                $photo->verification = 1;
+                $photo->verified = 2;
+                $photo->save();
+                event(new TagsVerifiedByAdmin($photo->id));
+            }
+
+            Redis::hdel("user_verification+count", $user->id);
+        }
+
+        return [
+            'verificationCount' => $verificationCount,
+            'photosVerified' => $photos->count ?? 0
+        ];
     }
 }

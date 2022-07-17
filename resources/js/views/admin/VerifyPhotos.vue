@@ -24,10 +24,10 @@
         <div class="container is-fluid mt3">
 
             <loading
-            v-if="loading"
-            :active.sync="loading"
-            :is-full-page="true"
-        />
+                v-if="loading"
+                :active.sync="loading"
+                :is-full-page="true"
+            />
 
             <div v-else>
 
@@ -72,23 +72,44 @@
                                 #{{ parseInt(this.photo.id).toLocaleString() }} Uploaded {{ this.uploadedTime }}
                             </h1>
                             <!-- todo - verification bar -->
+                            <p>
+                                From: <span>@{{ this.photo.user.username }} #{{ this.photo.user.id }}</span>
+                            </p>
+                            <p>
+                                Verification count: {{ parseInt(this.photo.user.user_verification_count) * 10 }}%
+                            </p>
 
                             <p class="subtitle is-5 has-text-centered mb-8">
                                 {{ this.photo.display_name }}
                             </p>
 
-                            <img v-img="{sourceButton: true}" class="verify-image" :src="this.photo.filename" />
+                            <img
+                                v-img="{sourceButton: true}"
+                                class="verify-image"
+                                :src="this.photo.filename"
+                            />
 
                             <div class="has-text-centered mb1">
-                                <button :class="verify_correct_button" :disabled="processing" @click="verifyCorrect">VERIFY CORRECT</button>
+                                <button
+                                    :class="verify_correct_button"
+                                    :disabled="processing"
+                                    @click="verifyCorrect"
+                                >VERIFY CORRECT</button>
 
-                                <button class="button is-large is-danger" :disabled="processing" @click="incorrect">FALSE</button>
+                                <button
+                                    class="button is-large is-danger"
+                                    :disabled="processing"
+                                    @click="incorrect"
+                                >FALSE</button>
                             </div>
 
                             <!-- Add / edit tags -->
                             <div class="columns">
                                 <div class="column is-two-thirds is-offset-2">
-                                    <add-tags :admin="true" :id="photo.id" />
+                                    <add-tags
+                                        :admin="true"
+                                        :id="photo.id"
+                                    />
                                 </div>
                             </div>
 

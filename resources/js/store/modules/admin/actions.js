@@ -56,11 +56,22 @@ export const actions = {
      */
     async ADMIN_VERIFY_CORRECT (context)
     {
+        const title = i18n.t('notifications.success');
+        const body = "Verified";
+
         await axios.post('/admin/verifykeepimage', {
             photoId: context.state.photo.id
         })
-        .then(resp => {
-            console.log('admin_verifiy_correct', resp);
+        .then(response => {
+            console.log('admin_verifiy_correct', response);
+
+            if (response.data.success)
+            {
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                });
+            }
 
             context.dispatch('GET_NEXT_ADMIN_PHOTO');
         })
@@ -123,35 +134,37 @@ export const actions = {
                 skip: context.state.skippedPhotos
             }
         })
-            .then(resp => {
-                window.scroll({
-                    top: 0,
-                    left: 0,
-                    behavior: 'smooth'
-                });
+        .then(resp => {
+            console.log('get_next_admin_photo', resp);
 
-                console.log('get_next_admin_photo', resp);
+            console.log(resp.data.photo.user.user_verification_count);
 
-                // init photo data (admin.js)
-                context.commit('initAdminPhoto', resp.data.photo);
-
-                // init litter data for verification (litter.js)
-                if (resp.data.photo?.verification > 0)
-                {
-                    context.commit('initAdminItems', resp.data.photo);
-                    context.commit('initAdminCustomTags', resp.data.photo);
-                }
-
-                context.commit('initAdminMetadata', {
-                    not_processed: resp.data.photosNotProcessed,
-                    awaiting_verification: resp.data.photosAwaitingVerification
-                });
-
-                context.dispatch('ADMIN_GET_COUNTRIES_WITH_PHOTOS');
-            })
-            .catch(err => {
-                console.error(err);
+            window.scroll({
+                top: 0,
+                left: 0,
+                behavior: 'smooth'
             });
+
+            // init photo data (admin.js)
+            context.commit('initAdminPhoto', resp.data.photo);
+
+            // init litter data for verification (litter.js)
+            if (resp.data.photo?.verification > 0)
+            {
+                context.commit('initAdminItems', resp.data.photo);
+                context.commit('initAdminCustomTags', resp.data.photo);
+            }
+
+            context.commit('initAdminMetadata', {
+                not_processed: resp.data.photosNotProcessed,
+                awaiting_verification: resp.data.photosAwaitingVerification
+            });
+
+            context.dispatch('ADMIN_GET_COUNTRIES_WITH_PHOTOS');
+        })
+        .catch(err => {
+            console.error(err);
+        });
     },
 
     /**
