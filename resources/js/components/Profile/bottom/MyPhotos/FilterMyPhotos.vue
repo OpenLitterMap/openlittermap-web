@@ -2,7 +2,11 @@
     <!-- Filters -->
     <div class="flex mb1">
 
-        <div class="field flex-1 mb0 pt0 mr1">
+        <router-link to="/tag">
+            <button class="button is-primary mr1">Tag individually</button>
+        </router-link>
+
+        <div class="field mb0 pt0 mr1">
             <div class="control has-icons-left">
                 <input
                     class="input w10"
@@ -46,14 +50,19 @@
             </div>
         </div>
 
-        <select class="input mr1" v-model="period" @change="getPhotos">
-            <option v-for="time in periods" :value="time">{{ getPeriod(time) }}</option>
-        </select>
+        <div>
+            <select class="input mr1" v-model="period" @change="getPhotos">
+                <option v-for="time in periods" :value="time">{{ getPeriod(time) }}</option>
+            </select>
+        </div>
 
-<!--        <select class="input" v-model="verifiedIndex" @change="getPhotos">-->
-<!--            <option disabled :value="null">Verification</option>-->
-<!--            <option v-for="i in verifiedIndices" :value="i">{{ getVerifiedText(i) }}</option>-->
-<!--        </select>-->
+        <!--        <select class="input" v-model="verifiedIndex" @change="getPhotos">-->
+        <!--            <option disabled :value="null">Verification</option>-->
+        <!--            <option v-for="i in verifiedIndices" :value="i">{{ getVerifiedText(i) }}</option>-->
+        <!--        </select>-->
+
+        <p v-show="selectedCount" class="selected-count">{{ getSelectedCount }}</p>
+
     </div>
 </template>
 
@@ -205,7 +214,23 @@ export default {
                     v
                 });
             }
-        }
+        },
+
+        /**
+         * Number of photos that have been selected
+         */
+        selectedCount ()
+        {
+            return this.$store.state.photos.selectedCount;
+        },
+
+        /**
+         * Show x / total
+         */
+        getSelectedCount ()
+        {
+            return `${this.selectedCount} / ${this.$store.state.photos.total}`;
+        },
     },
     methods: {
 
@@ -279,6 +304,11 @@ export default {
     .select-all-photos {
         min-width: 9em;
         margin-right: 1em;
+    }
+
+    .selected-count {
+        align-self: center;
+        margin-left: auto;
     }
 
 </style>

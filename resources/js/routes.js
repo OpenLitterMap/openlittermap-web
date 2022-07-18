@@ -144,6 +144,13 @@ const router = new VueRouter({
             }
         },
         {
+            path: '/bulk-tag',
+            component: require('./views/general/BulkTag').default,
+            meta: {
+                middleware: [ auth ]
+            }
+        },
+        {
             path: '/profile',
             component: require('./views/general/Profile').default,
             meta: {

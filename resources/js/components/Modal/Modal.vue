@@ -5,8 +5,6 @@
 
                 <!-- Header -->
                 <header :class="header">
-                    <p v-show="hasSelected" class="top-left">{{ getSelectedCount }}</p>
-
                     <p class="modal-card-title">{{ title }}</p>
 
                     <i v-show="showIcon" class="fa fa-times close-login" @click="close" />
@@ -81,21 +79,6 @@ export default {
             else if (this.type === 'MyPhotos') return 'wide-modal-container';
 
             return 'modal-container';
-        },
-
-        /**
-         * When selecting photos from the MyPhotos table,
-         *
-         * Show x / total
-         */
-        getSelectedCount ()
-        {
-            if (this.type === 'MyPhotos')
-            {
-                return `${this.$store.state.photos.selectedCount} / ${this.$store.state.photos.total}`;
-            }
-
-            return '';
         },
 
         /**
