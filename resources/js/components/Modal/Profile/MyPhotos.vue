@@ -16,19 +16,21 @@
                     :src="photo.filename"
                 />
 
-                <img
-                    v-if="photo.selected"
-                    src="/assets/images/checkmark.png"
-                    class="grid-checkmark"
-                />
+                <div v-if="photo.selected" class="grid-checkmark">
+                    <div class="tag-icon">
+                        <i class="fa fa-check"></i>
+                    </div>
+                </div>
 
                 <div
                     v-if="photoIsTagged(photo)"
                     class="grid-tagged tooltip"
                     @click.prevent.stop="togglePhotoDetailsPopup(photo)"
                 >
-                    <span class="tooltip-text is-size-7">View tags</span>
-                    <i class="fa fa-tags fa-fw"></i>
+                    <div class="tag-icon">
+                        <span class="tooltip-text is-size-7">View tags</span>
+                        <i class="fa fa-tags"></i>
+                    </div>
                 </div>
 
                 <transition name="fade">
@@ -284,11 +286,26 @@ export default {
     .grid-checkmark {
         position: absolute;
         height: 32px;
-        bottom: 5px;
-        right: 5px;
-        border: 2px solid #0ca3e0;
-        border-radius: 50%;
+        bottom: 8px;
+        right: 0;
+        color: #0ca3e0;
+        font-size: 1rem;
         padding: 5px;
+
+        .tag-icon {
+            position: relative;
+            height: 30px;
+            width: 30px;
+            border-radius: 50%;
+            background-color: black;
+
+            i {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }
+        }
     }
 
     .grid-tagged {
@@ -297,13 +314,28 @@ export default {
         top: 0;
         right: 0;
         color: #00d1b2;
-        font-size: 1.25rem;
+        font-size: 1rem;
         padding: 5px;
         cursor: pointer;
 
+        .tag-icon {
+            position: relative;
+            height: 30px;
+            width: 30px;
+            border-radius: 50%;
+            background-color: black;
+
+            i {
+                position: absolute;
+                top: 52%;
+                left: 52%;
+                transform: translate(-50%, -50%);
+            }
+        }
+
         .tooltip-text {
             min-width: max-content;
-            transform: translate(-25%, 5px);
+            transform: translate(-50%, -5px);
         }
 
         &:hover {
@@ -321,6 +353,7 @@ export default {
         box-shadow: 2px 2px 2px 1px rgba(0, 0, 0, 0.2);
         border-radius: 5px;
         transform: translateX(50%);
+        z-index: 10;
     }
 
     .photos-info {
