@@ -46,7 +46,6 @@ class EventServiceProvider extends ServiceProvider
         ],
         // Several Listeners could be merged. Add ProofOfWork
         TagsVerifiedByAdmin::class => [
-            'App\Listeners\AddTags\UpdateUser',
             IncrementLocation::class,
             'App\Listeners\AddTags\CompileResultsString',
             IncreaseTeamTotalLitter::class,

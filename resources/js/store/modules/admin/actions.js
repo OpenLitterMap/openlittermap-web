@@ -53,13 +53,23 @@ export const actions = {
 
     /**
      * Verify the image as correct (stage 2)
+     *
+     * Updates user_verification_count to earn Littercoin
+     * If a Littercoin is mined, the user becomes Trusted.
+     * All remaining images are verified.
+     * Email should be sent to the user encouraging them to continue.
+     *
+     * Updates photo as verified
+     * Updates locations, charts, time-series, teams, etc.
+     *
+     * Returns user_verification_count and number of images verified.
      */
     async ADMIN_VERIFY_CORRECT (context)
     {
         const title = i18n.t('notifications.success');
         const body = "Verified";
 
-        await axios.post('/admin/verifykeepimage', {
+        await axios.post('/admin/verify-correct', {
             photoId: context.state.photo.id
         })
         .then(response => {
