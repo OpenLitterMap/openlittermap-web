@@ -40,7 +40,7 @@ export const mutations = {
     },
 
     /**
-     * Number of photos available (MyPhotos)
+     * Number of photos available (BulkTag)
      */
     photosCount (state, payload)
     {
@@ -78,14 +78,6 @@ export const mutations = {
      * Called when the user logs out
      */
     resetState (state)
-    {
-        Object.assign(state, init);
-    },
-
-    /**
-     * Called when MyPhotos is loaded
-     */
-    resetPhotoState (state)
     {
         Object.assign(state, init);
     },
@@ -219,7 +211,7 @@ export const mutations = {
     /**
      * Change the selected value of a photo
      *
-     * MyPhotos.vue
+     * BulkTag.vue
      */
     togglePhotoSelected (state, payload)
     {
