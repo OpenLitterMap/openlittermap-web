@@ -83,6 +83,14 @@ export const mutations = {
     },
 
     /**
+     * Called when BulkTag is loaded
+     */
+    resetPhotoState (state)
+    {
+        Object.assign(state, init);
+    },
+
+    /**
      * Toggle selected value of all photos
      *
      * Update selectedCount

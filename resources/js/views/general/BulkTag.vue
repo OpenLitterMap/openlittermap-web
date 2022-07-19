@@ -1,5 +1,7 @@
 <template>
     <section class="hero fullheight bulk-tag">
+        <loading v-show="processing" v-model:active="processing" :is-full-page="true" />
+
         <FilterMyPhotos />
 
         <div class="my-photos-grid-container">
@@ -67,7 +69,7 @@
                 </div>
             </div>
 
-            <div class="my-photos-buttons">
+            <div>
                 <!-- Todo - test this on production -->
                 <!--                <button-->
                 <!--                    class="button is-medium is-danger mr1"-->
@@ -80,7 +82,14 @@
                     @click="addTags"
                     :disabled="selectedCount === 0"
                 >{{$t('common.add-tags') }}</button>
+            </div>
 
+            <div>
+                <button
+                    class="button is-medium is-primary"
+                    @click="applyTags"
+                    :disabled="!hasAddedTags"
+                >Add and tag one by one</button>
 
                 <button
                     class="button is-medium is-primary"
@@ -95,22 +104,26 @@
 <script>
 import PhotoDetailsPopup from '../../components/Modal/Photos/PhotoDetailsPopup';
 import FilterMyPhotos from '../../components/Profile/bottom/MyPhotos/FilterMyPhotos';
+import Loading from 'vue-loading-overlay';
+import 'vue-loading-overlay/dist/vue-loading.css';
 import moment from 'moment';
 
 export default {
     name: 'BulkTag',
     components: {
+        Loading,
         PhotoDetailsPopup,
         FilterMyPhotos
     },
     data () {
         return {
-            loading: true,
             processing: false,
         };
     },
-    async created ()
+    async mounted ()
     {
+        this.$store.commit('resetPhotoState');
+
         await this.$store.dispatch('LOAD_MY_PHOTOS');
     },
     computed: {
@@ -188,6 +201,46 @@ export default {
             setTimeout(() => {
                 window.location.reload();
             }, 2000);
+        },
+
+        /**
+         * Apply tags and submit individually
+         */
+        async applyTags ()
+        {
+            if (! this.hasAddedTags) return;
+
+            this.processing = true;
+
+            const taggedPhotos = this.photos.filter(this.photoIsTagged);
+
+            for (let index in taggedPhotos) {
+                // Add tags
+                Object.entries(taggedPhotos[index].tags ?? {}).forEach(([category, tags]) => {
+                    Object.entries(tags).forEach(([tag, quantity]) => {
+                        this.$store.commit('addTag', {
+                            photoId: taggedPhotos[index].id,
+                            category: category,
+                            tag: tag,
+                            quantity: quantity
+                        });
+                    });
+                });
+
+                // Add custom tags
+                const customTags = taggedPhotos[index].custom_tags ?? [];
+                for (const customTag in customTags) {
+                    this.$store.commit('addCustomTag', {
+                        photoId: taggedPhotos[index].id,
+                        customTag: customTags[customTag]
+                    });
+                }
+            }
+
+            setTimeout(() => {
+                this.processing = false;
+                this.$router.push('/tag');
+            }, 300);
         },
 
         /**

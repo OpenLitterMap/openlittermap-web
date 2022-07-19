@@ -15,7 +15,7 @@
             class="button is-medium is-primary"
             @click="store"
             :disabled="!hasAddedTags"
-        >Store tags</button>
+        >{{ $t('common.add-tags') }}</button>
     </div>
 </template>
 
