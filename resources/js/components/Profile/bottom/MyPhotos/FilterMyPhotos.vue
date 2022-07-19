@@ -60,9 +60,6 @@
         <!--            <option disabled :value="null">Verification</option>-->
         <!--            <option v-for="i in verifiedIndices" :value="i">{{ getVerifiedText(i) }}</option>-->
         <!--        </select>-->
-
-        <p v-show="selectedCount" class="selected-count">{{ getSelectedCount }}</p>
-
     </div>
 </template>
 
@@ -215,22 +212,6 @@ export default {
                 });
             }
         },
-
-        /**
-         * Number of photos that have been selected
-         */
-        selectedCount ()
-        {
-            return this.$store.state.photos.selectedCount;
-        },
-
-        /**
-         * Show x / total
-         */
-        getSelectedCount ()
-        {
-            return `${this.selectedCount} / ${this.$store.state.photos.total}`;
-        },
     },
     methods: {
 
@@ -304,11 +285,6 @@ export default {
     .select-all-photos {
         min-width: 9em;
         margin-right: 1em;
-    }
-
-    .selected-count {
-        align-self: center;
-        margin-left: auto;
     }
 
 </style>
