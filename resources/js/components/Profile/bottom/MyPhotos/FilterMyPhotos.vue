@@ -1,12 +1,12 @@
 <template>
     <!-- Filters -->
-    <div class="flex mb1">
+    <div class="flex mb1 filter-my-photos">
 
         <router-link to="/tag">
-            <button class="button is-primary mr1">Tag individually</button>
+            <button class="button is-primary">Tag individually</button>
         </router-link>
 
-        <div class="field mb0 pt0 mr1">
+        <div class="field mb0 pt0">
             <div class="control has-icons-left">
                 <input
                     class="input w10"
@@ -51,7 +51,7 @@
         </div>
 
         <div>
-            <select class="input mr1" v-model="period" @change="getPhotos">
+            <select class="input" v-model="period" @change="getPhotos">
                 <option v-for="time in periods" :value="time">{{ getPeriod(time) }}</option>
             </select>
         </div>
@@ -92,8 +92,8 @@ export default {
         calendar ()
         {
             return this.showCalendar
-                ? 'dropdown is-active mr1'
-                : 'dropdown mr1';
+                ? 'dropdown is-active'
+                : 'dropdown';
         },
 
         /**
@@ -284,7 +284,20 @@ export default {
 
     .select-all-photos {
         min-width: 9em;
-        margin-right: 1em;
+    }
+
+    .filter-my-photos {
+        flex-direction: column;
+        gap: 8px
+    }
+
+    /* Laptop and above */
+    @media (min-width: 1027px)
+    {
+        .filter-my-photos {
+            flex-direction: row;
+            gap: 16px;
+        }
     }
 
 </style>

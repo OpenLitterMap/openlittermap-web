@@ -49,7 +49,7 @@
 
         </div>
 
-        <div class="flex bottom-actions">
+        <div class="bottom-actions">
             <div class="bottom-navigation">
                 <button
                     class="button is-medium mr1"
@@ -84,7 +84,7 @@
                 >{{$t('common.add-tags') }}</button>
             </div>
 
-            <div>
+            <div class="bottom-right-actions">
                 <button
                     class="button is-medium is-primary"
                     @click="applyTags"
@@ -439,12 +439,23 @@ export default {
 }
 
 .bottom-actions {
-    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
     justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+    gap: 8px;
 
     .bottom-navigation {
         display: flex;
         flex-direction: row;
+    }
+
+    .bottom-right-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
     }
 }
 
@@ -456,6 +467,15 @@ export default {
         grid-template-columns: repeat(10, 1fr);
         grid-row-gap: 1em;
         grid-column-gap: 1em;
+    }
+
+    .bottom-actions {
+        flex-direction: row;
+        gap: 0;
+
+        .bottom-right-actions {
+            flex-direction: row;
+        }
     }
 }
 
