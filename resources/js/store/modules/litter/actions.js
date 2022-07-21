@@ -11,7 +11,7 @@ export const actions = {
         const title = 'Success!';
         const body = 'Your tags were applied to the images';
 
-        let photos = context.rootState.photos.paginate.data
+        let photos = context.rootState.photos.bulkPaginate.data
             .filter(photo => {
                 const hasTags = photo.tags && Object.keys(photo.tags).length;
                 const hasCustomTags = photo.custom_tags?.length;

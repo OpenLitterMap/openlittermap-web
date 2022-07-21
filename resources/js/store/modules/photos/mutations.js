@@ -36,11 +36,11 @@ export const mutations = {
             });
         }
 
-        state.paginate = payload;
+        state.bulkPaginate = payload;
     },
 
     /**
-     * Number of photos available (MyPhotos)
+     * Number of photos available (BulkTag)
      */
     photosCount (state, payload)
     {
@@ -63,7 +63,7 @@ export const mutations = {
      */
     myProfilePhotos (state, payload)
     {
-        state.paginate = payload;
+        state.bulkPaginate = payload;
     },
 
     /**
@@ -83,7 +83,7 @@ export const mutations = {
     },
 
     /**
-     * Called when MyPhotos is loaded
+     * Called when BulkTag is loaded
      */
     resetPhotoState (state)
     {
@@ -99,13 +99,13 @@ export const mutations = {
     {
         state.selectAll = ! state.selectAll;
 
-        let photos = [...state.paginate.data];
+        let photos = [...state.bulkPaginate.data];
 
         photos.forEach(photo => {
             photo.selected = state.selectAll;
         });
 
-        state.paginate.data = photos;
+        state.bulkPaginate.data = photos;
 
         state.selectedCount = state.selectAll ? state.total : 0;
     },
@@ -115,12 +115,12 @@ export const mutations = {
      */
     setPhotoPickedUp (state, payload)
     {
-        const photoIndex = state.paginate.data.findIndex(photo => photo.id === payload.photoId)
-        let photo = state.paginate.data[photoIndex];
+        const photoIndex = state.bulkPaginate.data.findIndex(photo => photo.id === payload.photoId)
+        let photo = state.bulkPaginate.data[photoIndex];
 
         photo.picked_up = payload.picked_up;
 
-        state.paginate.data.splice(photoIndex, 1, photo);
+        state.bulkPaginate.data.splice(photoIndex, 1, photo);
     },
 
     /**
@@ -128,8 +128,8 @@ export const mutations = {
      */
     addTagToPhoto (state, payload)
     {
-        const photoIndex = state.paginate.data.findIndex(photo => photo.id === payload.photoId)
-        let photo = state.paginate.data[photoIndex];
+        const photoIndex = state.bulkPaginate.data.findIndex(photo => photo.id === payload.photoId)
+        let photo = state.bulkPaginate.data[photoIndex];
         let tags = Object.assign({}, photo.tags ?? {});
 
         photo.tags = {
@@ -140,7 +140,7 @@ export const mutations = {
             }
         };
 
-        state.paginate.data.splice(photoIndex, 1, photo);
+        state.bulkPaginate.data.splice(photoIndex, 1, photo);
     },
 
     /**
@@ -148,8 +148,8 @@ export const mutations = {
      */
     addCustomTagToPhoto (state, payload)
     {
-        const photoIndex = state.paginate.data.findIndex(photo => photo.id === payload.photoId)
-        let photo = state.paginate.data[photoIndex];
+        const photoIndex = state.bulkPaginate.data.findIndex(photo => photo.id === payload.photoId)
+        let photo = state.bulkPaginate.data[photoIndex];
         let tags = photo.custom_tags ?? [];
 
         // Case-insensitive check for existing tags
@@ -167,7 +167,7 @@ export const mutations = {
 
         photo.custom_tags = tags;
 
-        state.paginate.data.splice(photoIndex, 1, photo);
+        state.bulkPaginate.data.splice(photoIndex, 1, photo);
     },
 
     /**
@@ -176,8 +176,8 @@ export const mutations = {
      */
     removeTagFromPhoto (state, payload)
     {
-        const photoIndex = state.paginate.data.findIndex(photo => photo.id === payload.photoId);
-        let photo = state.paginate.data[photoIndex];
+        const photoIndex = state.bulkPaginate.data.findIndex(photo => photo.id === payload.photoId);
+        let photo = state.bulkPaginate.data[photoIndex];
         let tags = Object.assign({}, photo.tags ?? {});
 
         delete tags[payload.category][payload.tag];
@@ -189,7 +189,7 @@ export const mutations = {
 
         photo.tags = tags;
 
-        state.paginate.data.splice(photoIndex, 1, photo);
+        state.bulkPaginate.data.splice(photoIndex, 1, photo);
     },
 
     /**
@@ -197,15 +197,15 @@ export const mutations = {
      */
     removeCustomTagFromPhoto (state, payload)
     {
-        const photoIndex = state.paginate.data.findIndex(photo => photo.id === payload.photoId)
-        let photo = state.paginate.data[photoIndex];
+        const photoIndex = state.bulkPaginate.data.findIndex(photo => photo.id === payload.photoId)
+        let photo = state.bulkPaginate.data[photoIndex];
         let tags = photo.custom_tags ?? [];
 
         tags = tags.filter(tag => tag !== payload.customTag);
 
         photo.custom_tags = tags;
 
-        state.paginate.data.splice(photoIndex, 1, photo);
+        state.bulkPaginate.data.splice(photoIndex, 1, photo);
     },
 
     /**
@@ -219,11 +219,11 @@ export const mutations = {
     /**
      * Change the selected value of a photo
      *
-     * MyPhotos.vue
+     * BulkTag.vue
      */
     togglePhotoSelected (state, payload)
     {
-        let photos = [...state.paginate.data];
+        let photos = [...state.bulkPaginate.data];
         let inclIds = [...state.inclIds];
         let exclIds = [...state.exclIds];
 
@@ -264,6 +264,6 @@ export const mutations = {
 
         state.inclIds = inclIds;
         state.exclIds = exclIds;
-        state.paginate.data = photos;
+        state.bulkPaginate.data = photos;
     }
 }

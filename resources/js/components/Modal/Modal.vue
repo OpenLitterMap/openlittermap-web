@@ -5,8 +5,6 @@
 
                 <!-- Header -->
                 <header :class="header">
-                    <p v-show="hasSelected" class="top-left">{{ getSelectedCount }}</p>
-
                     <p class="modal-card-title">{{ title }}</p>
 
                     <i v-show="showIcon" class="fa fa-times close-login" @click="close" />
@@ -31,7 +29,6 @@ import Login from './Auth/Login'
 import CreditCard from './Payments/CreditCard'
 
 /* Profile */
-import MyPhotos from './Profile/MyPhotos';
 import AddManyTagsToManyPhotos from './Photos/AddManyTagsToManyPhotos';
 import ConfirmDeleteManyPhotos from './Photos/ConfirmDeleteManyPhotos';
 
@@ -40,7 +37,6 @@ export default {
     components: {
         Login,
         CreditCard,
-        MyPhotos,
         AddManyTagsToManyPhotos,
         ConfirmDeleteManyPhotos
     },
@@ -78,36 +74,7 @@ export default {
         {
             if (this.type === 'CreditCard') return 'transparent-container';
 
-            else if (this.type === 'MyPhotos') return 'wide-modal-container';
-
             return 'modal-container';
-        },
-
-        /**
-         * When selecting photos from the MyPhotos table,
-         *
-         * Show x / total
-         */
-        getSelectedCount ()
-        {
-            if (this.type === 'MyPhotos')
-            {
-                return `${this.$store.state.photos.selectedCount} / ${this.$store.state.photos.total}`;
-            }
-
-            return '';
-        },
-
-        /**
-         * The user can select data.
-         *
-         * Show selected / total
-         *
-         * Used by MyPhotos.vue
-         */
-        hasSelected ()
-        {
-            return this.type === 'MyPhotos' && this.$store.state.photos.selectedCount > 0;
         },
 
         /**
@@ -135,9 +102,7 @@ export default {
          */
         showIcon ()
         {
-            if (this.type === 'CreditCard') return false;
-
-            return true;
+            return this.type !== 'CreditCard';
         },
 
         /**
@@ -298,22 +263,6 @@ export default {
         color: #459ef5;
         cursor: pointer;
         margin-top: 1.75em;
-    }
-
-    .wide-modal-container {
-        background-color: #fff;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, .33);
-        display: inline-block;
-        font-family: Helvetica, Arial, sans-serif;
-        position: relative;
-        margin: 30px auto;
-        transition: all .3s ease;
-        width: 90%;
-
-        @media (max-width: 700px) {
-            width: 80%;
-        }
     }
 
     @media only screen and (max-width: 600px)
