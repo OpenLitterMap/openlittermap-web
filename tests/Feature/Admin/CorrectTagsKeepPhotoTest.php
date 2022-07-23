@@ -79,7 +79,7 @@ class CorrectTagsKeepPhotoTest extends TestCase
         // Admin marks the tagging as correct -------------------
         $this->actingAs($this->admin);
 
-        $this->post('/admin/verifykeepimage', ['photoId' => $this->photo->id])
+        $this->post('/admin/verify-correct', ['photoId' => $this->photo->id])
             ->assertOk();
 
         $this->user->refresh();
@@ -99,7 +99,7 @@ class CorrectTagsKeepPhotoTest extends TestCase
     public function test_unauthorized_users_cannot_mark_tagging_as_correct()
     {
         // Unauthenticated users ---------------------
-        $response = $this->post('/admin/verifykeepimage', ['photoId' => 1]);
+        $response = $this->post('/admin/verify-correct', ['photoId' => 1]);
 
         $response->assertRedirect('/');
 
@@ -108,7 +108,7 @@ class CorrectTagsKeepPhotoTest extends TestCase
 
         $this->actingAs($anotherUser);
 
-        $response = $this->post('/admin/verifykeepimage', ['photoId' => $this->photo->id]);
+        $response = $this->post('/admin/verify-correct', ['photoId' => $this->photo->id]);
 
         $response->assertRedirect('/');
 
@@ -120,7 +120,7 @@ class CorrectTagsKeepPhotoTest extends TestCase
     {
         $this->actingAs($this->admin);
 
-        $response = $this->post('/admin/verifykeepimage', ['photoId' => 0]);
+        $response = $this->post('/admin/verify-correct', ['photoId' => 0]);
 
         $response->assertNotFound();
     }
@@ -132,7 +132,7 @@ class CorrectTagsKeepPhotoTest extends TestCase
         // Admin marks the tagging as correct -------------------
         $this->actingAs($this->admin);
 
-        $this->post('/admin/verifykeepimage', ['photoId' => $this->photo->id]);
+        $this->post('/admin/verify-correct', ['photoId' => $this->photo->id]);
 
         Event::assertDispatched(
             TagsVerifiedByAdmin::class,
