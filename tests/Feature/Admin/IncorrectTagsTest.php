@@ -77,7 +77,7 @@ class IncorrectTagsTest extends TestCase
         // Admin marks the tagging as incorrect -------------------
         $this->actingAs($this->admin);
 
-        $this->post('/admin/incorrect', ['photoId' => $this->photo->id])
+        $this->post('/admin/reset-tags', ['photoId' => $this->photo->id])
             ->assertOk();
 
         $this->user->refresh();
@@ -117,7 +117,7 @@ class IncorrectTagsTest extends TestCase
         $this->assertEquals(4, Redis::zscore("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}.city.{$this->photo->city_id}", $this->user->id));
 
         // Admin marks the tagging as incorrect -------------------
-        $this->actingAs($this->admin)->post('/admin/incorrect', ['photoId' => $this->photo->id]);
+        $this->actingAs($this->admin)->post('/admin/reset-tags', ['photoId' => $this->photo->id]);
 
         // Assert leaderboards are updated ------------
         $this->assertEquals(1, $this->admin->xp_redis);
@@ -130,7 +130,7 @@ class IncorrectTagsTest extends TestCase
     public function test_unauthorized_users_cannot_mark_tagging_as_incorrect()
     {
         // Unauthenticated users ---------------------
-        $response = $this->post('/admin/incorrect', ['photoId' => 1]);
+        $response = $this->post('/admin/reset-tags', ['photoId' => 1]);
 
         $response->assertRedirect('/');
 
@@ -152,7 +152,7 @@ class IncorrectTagsTest extends TestCase
 
         $this->actingAs($anotherUser);
 
-        $response = $this->post('/admin/incorrect', ['photoId' => $this->photo->id]);
+        $response = $this->post('/admin/reset-tags', ['photoId' => $this->photo->id]);
 
         $response->assertRedirect('/');
 
@@ -163,7 +163,7 @@ class IncorrectTagsTest extends TestCase
     {
         $this->actingAs($this->admin);
 
-        $response = $this->post('/admin/incorrect', ['photoId' => 0]);
+        $response = $this->post('/admin/reset-tags', ['photoId' => 0]);
 
         $response->assertNotFound();
     }
@@ -174,7 +174,7 @@ class IncorrectTagsTest extends TestCase
         $spy = $this->spy(LogAdminVerificationAction::class);
 
         $this->actingAs($this->admin)
-            ->post('/admin/incorrect', ['photoId' => $this->photo->id]);
+            ->post('/admin/reset-tags', ['photoId' => $this->photo->id]);
 
         $spy->shouldHaveReceived('run');
     }

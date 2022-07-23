@@ -128,51 +128,6 @@ class AdminController extends Controller
     }
 
     /**
-     * Incorrect image - reset verification to 0
-     *
-     *  - Reset user_verification_count to 0
-     */
-    public function incorrect (Request $request)
-    {
-        $photo = Photo::findOrFail($request->photoId);
-
-        $photo->verification = 0;
-        $photo->verified = 0;
-        $photo->total_litter = 0;
-        $photo->result_string = null;
-        $photo->save();
-
-        $user = User::find($photo->user_id);
-
-        if ($photo->tags())
-        {
-            $tagUpdates = $this->calculateTagsDiffAction->run(
-                $photo->tags(),
-                [],
-                $photo->customTags->pluck('tag')->toArray(),
-                []
-            );
-            $this->deleteTagsAction->run($photo);
-
-            $user->xp = max(0, $user->xp - $tagUpdates['removedUserXp']);
-
-            $this->updateLeaderboardsAction->run($photo, $user->id, - $tagUpdates['removedUserXp']);
-
-            logAdminAction($photo, Route::getCurrentRoute()->getActionMethod(), $tagUpdates);
-        }
-
-        // Reset verification count. 100 in a row needed to unlock 1 Littercoin and become verified
-        $user->count_correctly_verified = 0;
-        $user->save();
-
-        rewardXpToAdmin();
-
-        return [
-            'success' => true
-        ];
-    }
-
-    /**
      * Delete an image and its records
      */
     public function destroy (Request $request)

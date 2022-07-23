@@ -305,8 +305,6 @@ export default {
          * The image has failed verification. We have decided to not help with its tagging.
          *
 		 * Send the image back to the user
-         *
-         *
 		 */
   		async incorrect ()
   		{

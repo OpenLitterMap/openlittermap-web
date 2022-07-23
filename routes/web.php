@@ -304,8 +304,9 @@ Route::group(['prefix' => '/admin'], function () {
     // Verify an image - keep
     Route::post('/verify-correct', 'Admin\VerifyImageWithTagsController');
 
-    // Send the image back to the user
-    Route::post('/incorrect', 'AdminController@incorrect');
+    // Remove all tags and reset verification
+    Route::post('/reset-tags', 'Admin\AdminResetTagsController');
+
     // Contents of an image updated, Delete the image
     Route::post('/contentsupdatedelete', 'AdminController@updateDelete');
 

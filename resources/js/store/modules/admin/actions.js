@@ -29,7 +29,7 @@ export const actions = {
         const title = i18n.t('notifications.success');
         const body = 'Image has been reset';
 
-        await axios.post('/admin/incorrect', {
+        await axios.post('/admin/reset-tags', {
             photoId: context.state.photo.id
         })
         .then(response => {
