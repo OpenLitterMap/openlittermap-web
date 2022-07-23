@@ -145,7 +145,7 @@ class CorrectTagsKeepPhotoTest extends TestCase
 
     public function test_it_logs_the_admin_action()
     {
-        $spy = $this->spy(LogAdminVerificationAction::class);
+//        $spy = $this->spy(LogAdminVerificationAction::class);
 
         $this->actingAs($this->admin)
             ->post('/admin/verify-correct', ['photoId' => $this->photo->id]);
