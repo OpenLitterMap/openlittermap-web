@@ -22,7 +22,7 @@
              v-if="photo.custom_tags && photo.custom_tags.length || Object.keys(photo.tags).length"
         >
             <div v-if="photo.custom_tags && photo.custom_tags.length">
-                <p>{{ $t('tags.custom-tags') }}</p>
+                <p class="has-text-centered">{{ $t('tags.custom-tags') }}</p>
 
                 <transition-group name="list" class="tags-list" tag="div">
                     <div
@@ -40,7 +40,7 @@
 
             <transition-group name="categories" tag="div">
                 <div v-for="category in Object.keys(photo.tags || {})" :key="category">
-                    <p>{{ getCategoryName(category) }}</p>
+                    <p class="has-text-centered">{{ getCategoryName(category) }}</p>
 
                     <transition-group name="list" class="tags-list" tag="div">
                         <div
@@ -73,7 +73,7 @@ export default {
         photo ()
         {
             const photoId = this.$store.state.photos.showDetailsPhotoId;
-            return this.$store.state.photos.paginate.data.find(p => p.id === photoId);
+            return this.$store.state.photos.bulkPaginate.data.find(p => p.id === photoId);
         },
     },
     methods: {

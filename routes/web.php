@@ -102,6 +102,9 @@ Route::post('submit', 'PhotosController@store');
 // Tag litter to an image
 Route::get('tag', 'HomeController@index');
 
+// Bulk tag images
+Route::get('bulk-tag', 'HomeController@index');
+
 // The users profile
 Route::get('profile', 'HomeController@index');
 

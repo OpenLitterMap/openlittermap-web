@@ -15,7 +15,7 @@
             class="button is-medium is-primary"
             @click="store"
             :disabled="!hasAddedTags"
-        >Store tags</button>
+        >{{ $t('common.add-tags') }}</button>
     </div>
 </template>
 
@@ -50,7 +50,7 @@ export default {
          */
         selectedPhotos ()
         {
-            return this.$store.state.photos.paginate.data
+            return this.$store.state.photos.bulkPaginate.data
                 .filter(photo => photo.selected)
                 .map(photo => photo.id);
         }
@@ -61,14 +61,11 @@ export default {
     },
     methods: {
         /**
-         * Hides the current modal and goes back to the photos modal
+         * Hides the current modal
          */
         back ()
         {
-            this.$store.commit('showModal', {
-                type: 'MyPhotos',
-                title: this.$t('profile.dashboard.my-photos')
-            });
+            this.$store.commit('hideModal');
         },
 
         /**

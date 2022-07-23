@@ -1,7 +1,7 @@
 export const actions = {
 
     /**
-     * MyPhotos.vue the user has confirmed they want to delete the selected photos
+     * BulkTag.vue the user has confirmed they want to delete the selected photos
      */
     async DELETE_SELECTED_PHOTOS (context)
     {
@@ -145,7 +145,7 @@ export const actions = {
      */
     async PREVIOUS_PHOTOS_PAGE (context)
     {
-        await axios.get(context.state.paginate.prev_page_url)
+        await axios.get(context.state.bulkPaginate.prev_page_url)
             .then(response => {
                 console.log('previous_photos_url', response);
 
@@ -162,7 +162,7 @@ export const actions = {
      */
     async NEXT_PHOTOS_PAGE (context)
     {
-        await axios.get(context.state.paginate.next_page_url)
+        await axios.get(context.state.bulkPaginate.next_page_url)
             .then(response => {
                 console.log('next_photos_page', response);
 
