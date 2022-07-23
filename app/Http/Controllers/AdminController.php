@@ -237,7 +237,7 @@ class AdminController extends Controller
         // TODO categories and custom_tags are not provided in the front-end
         $tagUpdates = $this->addTags($request->categories ?? [], $request->custom_tags ?? [], $photo->id);
 
-        $this->rewardXpToAdmin(1 + $tagUpdates['rewardedAdminXp']);
+        rewardXpToAdmin(1 + $tagUpdates['rewardedAdminXp']);
 
         logAdminAction($photo, Route::getCurrentRoute()->getActionMethod(), $tagUpdates);
 
@@ -265,7 +265,7 @@ class AdminController extends Controller
 
         $tagUpdates = $this->addTags($request->tags ?? [], $request->custom_tags ?? [], $request->photoId);
 
-        $this->rewardXpToAdmin(1 + $tagUpdates['rewardedAdminXp']);
+        rewardXpToAdmin(1 + $tagUpdates['rewardedAdminXp']);
 
         logAdminAction($photo, Route::getCurrentRoute()->getActionMethod(), $tagUpdates);
 
