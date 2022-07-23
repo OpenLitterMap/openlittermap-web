@@ -120,7 +120,7 @@
                 {{ $t('common.submit') }}
             </button>
 
-            <!-- Only show these on mobile <= 768px, and when not using MyPhotos => AddManyTagsToPhotos (id = 0) -->
+            <!-- Only show these on mobile <= 768px, and when not using AddManyTagsToPhotos (id = 0) -->
             <div class="show-mobile" v-show="this.id !== 0">
                 <br>
                 <tags :photo-id="id"/>
@@ -144,7 +144,7 @@ import { categories } from '../../extra/categories';
 import { litterkeys } from '../../extra/litterkeys';
 import ClickOutside from 'vue-click-outside';
 
-// When this.id === 0, we are using MyPhotos && AddManyTagsToManyPhotos
+// When this.id === 0, we are using AddManyTagsToManyPhotos
 export default {
     name: 'AddTags',
     components: {

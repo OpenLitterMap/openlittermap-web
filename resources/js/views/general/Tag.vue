@@ -26,16 +26,22 @@
                         <!-- Todo - Put this into a component -->
                         <!-- the Info box, Left -->
                         <div id="image-metadata" class="column">
-                            <div class="box">
-                                <li class="list-group-item">
-                                    {{ $t('tags.to-tag') }}: {{ remaining }}
-                                </li>
-                                <li class="list-group-item">
-                                    {{ $t('tags.total-uploaded') }}: {{ user.total_images }}
-                                </li>
-                                <li v-if="photo.team" class="list-group-item">
-                                    {{ $t('common.team') }}: <strong>{{ photo.team.name}}</strong>
-                                </li>
+                            <div class="box image-metadata-box">
+                               <ul>
+                                   <li class="list-group-item">
+                                       {{ $t('tags.to-tag') }}: {{ remaining }}
+                                   </li>
+                                   <li class="list-group-item">
+                                       {{ $t('tags.total-uploaded') }}: {{ user.total_images }}
+                                   </li>
+                                   <li v-if="photo.team" class="list-group-item">
+                                       {{ $t('common.team') }}: <strong>{{ photo.team.name}}</strong>
+                                   </li>
+                               </ul>
+
+                                <router-link to="/bulk-tag">
+                                    <button class="button is-primary bulk-tag-btn">Tag in bulk</button>
+                                </router-link>
                             </div>
 
                             <div v-if="hasRecentTags" class="box control has-text-centered">
@@ -287,6 +293,12 @@ export default {
         }
     }
 
+    .image-metadata-box {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+    }
+
     @media screen and (max-width: 768px)
     {
         .img {
@@ -295,6 +307,17 @@ export default {
 
         .tag-container {
             padding: 0 1em;
+        }
+    }
+
+    @media screen and (max-width: 1536px)
+    {
+        .image-metadata-box {
+            flex-direction: column;
+
+            .bulk-tag-btn {
+                margin-top: 1rem;
+            }
         }
     }
 
