@@ -311,13 +311,10 @@ Route::group(['prefix' => '/admin'], function () {
     Route::post('/contentsupdatedelete', 'AdminController@updateDelete');
 
     // Contents of an image updated, Keep the image
-    Route::post('/update-tags', 'AdminController@updateTags');
+    Route::post('/update-tags', 'Admin\UpdateTagsController');
 
     // Delete an image and its record
     Route::post('/destroy', 'AdminController@destroy');
-    // LTRX
-    // Reduce ltrx allowance - succesfull LTRX generation
-    Route::post('/ltrxgenerated', 'LTRXController@success');
 });
 
 Route::group(['prefix' => '/bbox', 'middleware' => ['can_bbox']], function () {

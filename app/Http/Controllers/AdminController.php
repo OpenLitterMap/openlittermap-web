@@ -200,34 +200,6 @@ class AdminController extends Controller
     }
 
     /**
-     * Verify the image
-     * Keep the image
-     * Image was not correctly inputted! LitterCorrectlyCount = 0.
-     */
-    public function updateTags (Request $request)
-    {
-        /** @var Photo $photo */
-        $photo = Photo::find($request->photoId);
-        $photo->verification = 1;
-        $photo->verified = 2;
-        $photo->total_litter = 0;
-        $photo->save();
-        $oldTags = $photo->tags();
-
-        $user = User::find($photo->user_id);
-        $user->count_correctly_verified = 0; // At 100, the user earns a Littercoin
-        $user->save();
-
-        $tagUpdates = $this->addTags($request->tags ?? [], $request->custom_tags ?? [], $request->photoId);
-
-        rewardXpToAdmin(1 + $tagUpdates['rewardedAdminXp']);
-
-        logAdminAction($photo, Route::getCurrentRoute()->getActionMethod(), $tagUpdates);
-
-        event (new TagsVerifiedByAdmin($photo->id));
-    }
-
-    /**
      * Get the next image to verify
      *
      * @param GetImageForVerificationRequest $request

@@ -74,8 +74,6 @@ if (!function_exists('rewardXpToAdmin'))
     {
         auth()->user()->increment('xp', $xp);
 
-        \Log::info(['hit', $xp]);
-
         $action = app(UpdateLeaderboardsXpAction::class);
         $action->run(auth()->id(), $xp);
     }

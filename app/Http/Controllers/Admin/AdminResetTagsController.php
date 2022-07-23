@@ -46,9 +46,12 @@ class AdminResetTagsController extends Controller
     {
         $photo = Photo::findOrFail($request->photoId);
 
+        // Verification to decrease the user by
+        $negativeNumber = -1;
+
         // This function should only be run when the image is not verified already
         // Only superadmins should be able to reset tags on a verified photo
-        if ($photo->verification < 2)
+        if ($photo->verified < 2)
         {
             $photo->verification = 0;
             $photo->verified = 0;
@@ -76,15 +79,13 @@ class AdminResetTagsController extends Controller
                 if (Redis::hexists("user_verification_count", $user->id))
                 {
                     $negativeNumber = ($tagUpdates['removedUserXp'] * -1);
-
-                    Redis::hincrby("user_verification_count", $user->id, $negativeNumber);
                 }
 
-                logAdminAction($photo, Route::getCurrentRoute()->getActionMethod(), $tagUpdates);
+                logAdminAction($photo, 'reset-tags', $tagUpdates);
             }
 
-            // Reset verification count. 100 in a row needed to unlock 1 Littercoin and become verified
-            $user->count_correctly_verified = 0;
+            Redis::hincrby("user_verification_count", $user->id, $negativeNumber);
+
             $user->save();
 
             rewardXpToAdmin();

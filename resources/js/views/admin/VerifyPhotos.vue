@@ -99,7 +99,7 @@
                                 <button
                                     class="button is-large is-danger"
                                     :disabled="processing"
-                                    @click="incorrect"
+                                    @click="resetTags"
                                 >FALSE</button>
                             </div>
 
@@ -306,7 +306,7 @@ export default {
          *
 		 * Send the image back to the user
 		 */
-  		async incorrect ()
+  		async resetTags ()
   		{
 			this.processing = true;
 
