@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Events\Littercoin\LittercoinMined;
+use App\Mail\Admin\AccountUpgraded;
+use App\Models\Littercoin;
 use App\Models\Photo;
 use App\Events\TagsVerifiedByAdmin;
 use App\Http\Controllers\Controller;
 
 use App\Models\User\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Route;
 
@@ -42,10 +45,10 @@ class VerifyImageWithTagsController extends Controller
         $photo->save();
 
         // Reward xp to the Admin
-        $this->rewardXpToAdmin();
+        rewardXpToAdmin();
 
         // Log the action
-        $this->logAdminAction($photo, Route::getCurrentRoute()->getActionMethod());
+        logAdminAction($photo, Route::getCurrentRoute()->getActionMethod());
 
         // Get a count of the user_verification_count and number of photos verified
         $counts = $this->increaseUsersVerificationCount($photo->user_id);
@@ -63,9 +66,12 @@ class VerifyImageWithTagsController extends Controller
     /**
      * Increase the users verification count
      *
-     * If it reaches 10+, we update the user as verified
+     * When the user reaches a score of 100+
+     *   - they earn their first littercoin
+     *   - we upgrade their account as verification_required = false
+     *   - we send an email congratulating them
      *
-     * @param int $userId => uploaded the image that is being verified
+     * @param int $userId => The user who uploaded the image that is being verified
      * @return array => verificationCount, photosVerified
      */
     private function increaseUsersVerificationCount (int $userId): array
@@ -74,39 +80,52 @@ class VerifyImageWithTagsController extends Controller
 
         $verificationCount = Redis::hincrby("user_verification_count", $user->id, 1);
 
-        if ($verificationCount > 100)
+        if ($verificationCount >= 100)
         {
             if ($user->verification_required)
             {
                 $user->verification_required = false;
+                $user->save();
+
+                // First Littercoin notification
+                Mail::to($user->email)->send(new AccountUpgraded($user));
             }
 
-            // Get any photos that can be verified
+            // Verify any remaining photos
             $photos = Photo::where([
                 'user_id' => $user->id,
                 'verification' => 0.1
             ])->get();
 
-            foreach ($photos as $photo)
+            if ($photos)
             {
-                $photo->verification = 1;
-                $photo->verified = 2;
-                $photo->save();
-
-                $verificationCount++;
-
-                if ($verificationCount === 100)
+                foreach ($photos as $photo)
                 {
-                    // Move this to a new littercoin table
-                    // add the photo_id
-                    $user->littercoin_allowance += 1;
-                    event (new LittercoinMined($user->id, '100-images-verified'));
+                    $photo->verification = 1;
+                    $photo->verified = 2;
+                    $photo->save();
+
+                    $verificationCount++;
+
+                    if ($verificationCount === 100)
+                    {
+                        // We are in the process of moving this count to a new table
+                        $user->littercoin_allowance += 1;
+
+                        Littercoin::create([
+                            'user_id' => $userId,
+                            'photo_id' => $photo->id
+                        ]);
+
+                        // Broadcast an event to anyone viewing the global map
+                        event (new LittercoinMined($user->id, '100-images-verified'));
+                    }
+
+                    event(new TagsVerifiedByAdmin($photo->id));
                 }
 
-                event(new TagsVerifiedByAdmin($photo->id));
+                $user->save();
             }
-
-            $user->save();
 
             // Since the user is now verified, we can delete their ID from redis.
             Redis::hdel("user_verification_count", $user->id);

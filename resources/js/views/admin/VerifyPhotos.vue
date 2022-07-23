@@ -76,7 +76,7 @@
                                 From: <span>@{{ this.photo.user.username }} #{{ this.photo.user.id }}</span>
                             </p>
                             <p>
-                                Verification count: {{ parseInt(this.photo.user.user_verification_count) * 10 }}%
+                                Verification count: {{ this.photo.user.user_verification_count }}%
                             </p>
 
                             <p class="subtitle is-5 has-text-centered mb-8">

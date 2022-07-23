@@ -54,10 +54,13 @@ export const actions = {
     /**
      * Verify the image as correct (stage 2)
      *
-     * Updates user_verification_count to earn Littercoin
-     * If a Littercoin is mined, the user becomes Trusted.
-     * All remaining images are verified.
-     * Email should be sent to the user encouraging them to continue.
+     * Increments user_verification_count on Redis
+     *
+     * If user_verification_count reaches >= 100:
+     * - A Littercoin is mined. Boss level 1 is completed.
+     * - The user becomes Trusted.
+     * - All remaining images are verified.
+     * - Email sent to the user encouraging them to continue.
      *
      * Updates photo as verified
      * Updates locations, charts, time-series, teams, etc.
@@ -73,7 +76,7 @@ export const actions = {
             photoId: context.state.photo.id
         })
         .then(response => {
-            console.log('admin_verifiy_correct', response);
+            console.log('admin_verify_correct', response);
 
             if (response.data.success)
             {
@@ -81,12 +84,22 @@ export const actions = {
                     title,
                     body,
                 });
+
+                if (response.data.userVerificationCount >= 100)
+                {
+                    setTimeout(() => {
+                        Vue.$vToastify.success({
+                            title: "User has been verified",
+                            body: "Email sent and remaining photos verified",
+                        });
+                    }, 1000);
+                }
             }
 
             context.dispatch('GET_NEXT_ADMIN_PHOTO');
         })
-        .catch(err => {
-            console.error(err);
+        .catch(error => {
+            console.error('admin_verify_correct', error);
         });
     },
 

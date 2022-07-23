@@ -6,12 +6,9 @@ use App\Actions\Photos\DeletePhotoAction;
 use App\Actions\LogAdminVerificationAction;
 use App\Actions\CalculateTagsDifferenceAction;
 use App\Actions\Photos\DeleteTagsFromPhotoAction;
-use App\Actions\Locations\UpdateLeaderboardsXpAction;
 use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
-use App\Actions\Admin\AutoVerifyUsersRemainingImagesAction;
 
 use App\Events\ImageDeleted;
-use App\Events\Littercoin\LittercoinMined;
 use App\Http\Requests\GetImageForVerificationRequest;
 use App\Models\Photo;
 use App\Models\User\User;
@@ -25,10 +22,8 @@ use Illuminate\Http\Request;
 
 use App\Events\TagsVerifiedByAdmin;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Redis;
 
 class AdminController extends Controller
 {
@@ -125,9 +120,9 @@ class AdminController extends Controller
         $photo->filename = '/assets/verified.jpg';
         $photo->save();
 
-        $this->rewardXpToAdmin();
+        rewardXpToAdmin();
 
-        $this->logAdminAction($photo, Route::getCurrentRoute()->getActionMethod());
+        logAdminAction($photo, Route::getCurrentRoute()->getActionMethod());
 
         event (new TagsVerifiedByAdmin($photo->id));
     }
@@ -163,14 +158,14 @@ class AdminController extends Controller
 
             $this->updateLeaderboardsAction->run($photo, $user->id, - $tagUpdates['removedUserXp']);
 
-            $this->logAdminAction($photo, Route::getCurrentRoute()->getActionMethod(), $tagUpdates);
+            logAdminAction($photo, Route::getCurrentRoute()->getActionMethod(), $tagUpdates);
         }
 
         // Reset verification count. 100 in a row needed to unlock 1 Littercoin and become verified
         $user->count_correctly_verified = 0;
         $user->save();
 
-        $this->rewardXpToAdmin();
+        rewardXpToAdmin();
 
         return [
             'success' => true
@@ -195,7 +190,7 @@ class AdminController extends Controller
             []
         );
 
-        $this->logAdminAction($photo, Route::getCurrentRoute()->getActionMethod(), $tagUpdates);
+        logAdminAction($photo, Route::getCurrentRoute()->getActionMethod(), $tagUpdates);
 
         $this->deleteTagsAction->run($photo);
 
@@ -209,7 +204,7 @@ class AdminController extends Controller
 
         $this->updateLeaderboardsAction->run($photo, $user->id, -$totalXp);
 
-        $this->rewardXpToAdmin();
+        rewardXpToAdmin();
 
         event(new ImageDeleted(
             $user,
@@ -244,7 +239,7 @@ class AdminController extends Controller
 
         $this->rewardXpToAdmin(1 + $tagUpdates['rewardedAdminXp']);
 
-        $this->logAdminAction($photo, Route::getCurrentRoute()->getActionMethod(), $tagUpdates);
+        logAdminAction($photo, Route::getCurrentRoute()->getActionMethod(), $tagUpdates);
 
         event(new TagsVerifiedByAdmin($photo->id));
     }
@@ -272,7 +267,7 @@ class AdminController extends Controller
 
         $this->rewardXpToAdmin(1 + $tagUpdates['rewardedAdminXp']);
 
-        $this->logAdminAction($photo, Route::getCurrentRoute()->getActionMethod(), $tagUpdates);
+        logAdminAction($photo, Route::getCurrentRoute()->getActionMethod(), $tagUpdates);
 
         event (new TagsVerifiedByAdmin($photo->id));
     }
@@ -365,43 +360,5 @@ class AdminController extends Controller
             ->when(request('country_id'), function (Builder $q) {
                 return $q->whereCountryId(request('country_id'));
             });
-    }
-
-    /**
-     * Rewards the admin performing the verification with xp
-     * @param int $xp
-     * @return void
-     */
-    private function rewardXpToAdmin(int $xp = 1): void
-    {
-        auth()->user()->increment('xp', $xp);
-
-        /** @var UpdateLeaderboardsXpAction $updateLeaderboardsAction */
-        $updateLeaderboardsAction = app(UpdateLeaderboardsXpAction::class);
-        $updateLeaderboardsAction->run(auth()->id(), $xp);
-    }
-
-    /**
-     * Logs the admin action into the database
-     * for storing xp updates on the photo's user
-     * @param Photo $photo
-     * @param string $action
-     * @param array|null $tagsDiff
-     * @return void
-     */
-    private function logAdminAction(Photo $photo, string $action, array $tagsDiff = null): void
-    {
-        /** @var LogAdminVerificationAction $action */
-        $logger = app(LogAdminVerificationAction::class);
-
-        $logger->run(
-            auth()->user(),
-            $photo,
-            $action,
-            $tagsDiff['added'] ?? [],
-            $tagsDiff['removed'] ?? [],
-            $tagsDiff['rewardedAdminXp'] ?? 0,
-            $tagsDiff['removedUserXp'] ?? 0
-        );
     }
 }
