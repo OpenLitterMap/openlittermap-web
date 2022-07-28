@@ -104,7 +104,7 @@ class UserPhotoController extends Controller
             ]);
 
         return [
-            'paginate' => $query->simplePaginate($this->paginate),
+            'paginate' => $query->simplePaginate(300),
             'count' => $query->count()
         ];
     }
