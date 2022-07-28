@@ -12,7 +12,7 @@ use App\Http\Controllers\Controller;
 
 class UserPhotoController extends Controller
 {
-    protected $paginate = 30;
+    protected $paginate = 300;
 
     use FilterPhotos;
 
@@ -104,7 +104,7 @@ class UserPhotoController extends Controller
             ]);
 
         return [
-            'paginate' => $query->simplePaginate(300),
+            'paginate' => $query->simplePaginate($this->paginate),
             'count' => $query->count()
         ];
     }
