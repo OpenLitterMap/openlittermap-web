@@ -256,6 +256,18 @@ export default {
                     title: 'Determinants of Household Waste Disposal Practices and Implications for Practical Community Interventions: Lessons from Lilongwe',
                     link: 'https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4151604',
                     author: 'Kalonde et al'
+                },
+                {
+                    date: '2022/07/29',
+                    title: 'Plastic waste mapping and monitoring using geospatial approaches',
+                    link: 'https://iopscience.iop.org/article/10.1088/1755-1315/1064/1/012008',
+                    author: 'Zulkifli et al'
+                },
+                {
+                    date: '2022/07/29',
+                    title: 'Smart waste segmentation deep learning based approach',
+                    link: 'http://dspace.univ-tebessa.dz:8080/jspui/bitstream/123456789/4951/1/Achi%20Belgacem%20Aimen%20pfe_finale.pdf',
+                    author: 'Belgacem, A'
                 }
             ]
         };
