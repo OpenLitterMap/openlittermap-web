@@ -287,7 +287,7 @@ Route::get('/nav', function () {
 /**
  * ADMIN
  */
-Route::group(['prefix' => '/admin'], function () {
+Route::group(['prefix' => '/admin', 'middleware' => 'admin'], function () {
 
     // route
     Route::get('photos', 'HomeController@index');

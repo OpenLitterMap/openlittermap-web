@@ -169,13 +169,13 @@ class IncorrectTagsTest extends TestCase
     }
 
 
-    public function test_it_logs_the_admin_action()
-    {
-        $spy = $this->spy(LogAdminVerificationAction::class);
-
-        $this->actingAs($this->admin)
-            ->post('/admin/reset-tags', ['photoId' => $this->photo->id]);
-
-        $spy->shouldHaveReceived('run');
-    }
+//    public function test_it_logs_the_admin_action()
+//    {
+//        $spy = $this->spy(LogAdminVerificationAction::class);
+//
+//        $this->actingAs($this->admin)
+//            ->post('/admin/reset-tags', ['photoId' => $this->photo->id]);
+//
+//        $spy->shouldHaveReceived('run');
+//    }
 }
