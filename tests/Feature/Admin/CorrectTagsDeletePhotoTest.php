@@ -48,7 +48,7 @@ class CorrectTagsDeletePhotoTest extends TestCase
 
         $this->imageAndAttributes = $this->getImageAndAttributes();
 
-        $resp = $this->post('/submit', ['file' => $this->imageAndAttributes['file']]);
+        $this->post('/submit', ['file' => $this->imageAndAttributes['file']]);
 
         $this->photo = $this->user->fresh()->photos->last();
 
