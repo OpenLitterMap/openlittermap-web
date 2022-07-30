@@ -287,13 +287,13 @@ Route::get('/nav', function () {
 /**
  * ADMIN
  */
-Route::group(['prefix' => '/admin'], function () {
+Route::group(['prefix' => '/admin', 'middleware' => 'admin'], function () {
 
     // route
     Route::get('photos', 'HomeController@index');
 
     // get the data
-    Route::get('get-image', 'AdminController@getImage');
+    Route::get('get-next-image-to-verify', 'Admin\GetNextImageToVerifyController');
     Route::get('get-countries-with-photos', 'AdminController@getCountriesWithPhotos');
 
     // Get a list of recently registered users
@@ -303,21 +303,21 @@ Route::group(['prefix' => '/admin'], function () {
 
     // Verify an image - delete
     Route::post('/verify', 'AdminController@verify');
+
     // Verify an image - keep
-    Route::post('/verifykeepimage', 'AdminController@verifykeepimage');
-    // Send the image back to the user
-    Route::post('/incorrect', 'AdminController@incorrect');
+    Route::post('/verify-tags-as-correct', 'Admin\VerifyImageWithTagsController');
+
+    // Remove all tags and reset verification
+    Route::post('/reset-tags', 'Admin\AdminResetTagsController');
+
     // Contents of an image updated, Delete the image
     Route::post('/contentsupdatedelete', 'AdminController@updateDelete');
 
     // Contents of an image updated, Keep the image
-    Route::post('/update-tags', 'AdminController@updateTags');
+    Route::post('/update-tags', 'Admin\UpdateTagsController');
 
     // Delete an image and its record
     Route::post('/destroy', 'AdminController@destroy');
-    // LTRX
-    // Reduce ltrx allowance - succesfull LTRX generation
-    Route::post('/ltrxgenerated', 'LTRXController@success');
 });
 
 Route::group(['prefix' => '/bbox', 'middleware' => ['can_bbox']], function () {
