@@ -29,7 +29,7 @@ export const actions = {
         const title = i18n.t('notifications.success');
         const body = 'Image has been reset';
 
-        await axios.post('/admin/incorrect', {
+        await axios.post('/admin/reset-tags', {
             photoId: context.state.photo.id
         })
         .then(response => {
@@ -53,19 +53,53 @@ export const actions = {
 
     /**
      * Verify the image as correct (stage 2)
+     *
+     * Increments user_verification_count on Redis
+     *
+     * If user_verification_count reaches >= 100:
+     * - A Littercoin is mined. Boss level 1 is completed.
+     * - The user becomes Trusted.
+     * - All remaining images are verified.
+     * - Email sent to the user encouraging them to continue.
+     *
+     * Updates photo as verified
+     * Updates locations, charts, time-series, teams, etc.
+     *
+     * Returns user_verification_count and number of images verified.
      */
     async ADMIN_VERIFY_CORRECT (context)
     {
-        await axios.post('/admin/verifykeepimage', {
+        const title = i18n.t('notifications.success');
+        const body = "Verified";
+
+        await axios.post('/admin/verify-tags-as-correct', {
             photoId: context.state.photo.id
         })
-        .then(resp => {
-            console.log('admin_verifiy_correct', resp);
+        .then(response => {
+            console.log('admin_verify_correct', response);
+
+            if (response.data.success)
+            {
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                });
+
+                if (response.data.userVerificationCount >= 100)
+                {
+                    setTimeout(() => {
+                        Vue.$vToastify.success({
+                            title: "User has been verified",
+                            body: "Email sent and remaining photos verified",
+                        });
+                    }, 1000);
+                }
+            }
 
             context.dispatch('GET_NEXT_ADMIN_PHOTO');
         })
-        .catch(err => {
-            console.error(err);
+        .catch(error => {
+            console.error('admin_verify_correct', error);
         });
     },
 
@@ -77,12 +111,14 @@ export const actions = {
         await axios.post('/admin/contentsupdatedelete', {
             photoId: context.state.photo.id,
             // categories: categories todo
-        }).then(response => {
+        })
+        .then(response => {
             console.log('admin_verify_delete', response);
 
             context.dispatch('GET_NEXT_ADMIN_PHOTO');
-        }).catch(error => {
-            console.log(error);
+        })
+        .catch(error => {
+            console.log('admin_verify_delete', error);
         });
     },
 
@@ -91,7 +127,7 @@ export const actions = {
      */
     async ADMIN_UPDATE_WITH_NEW_TAGS (context)
     {
-        let photoId = context.state.photo.id;
+        const photoId = context.state.photo.id;
 
         await axios.post('/admin/update-tags', {
             photoId: photoId,
@@ -99,12 +135,20 @@ export const actions = {
             custom_tags: context.rootState.litter.customTags[photoId]
         })
         .then(response => {
-            console.log('admin_verify_keep', response);
+            console.log('admin_update_with_new_tags', response);
+
+            if (response.data.success)
+            {
+                Vue.$vToastify.success({
+                    title: "Tags updated",
+                    body: "Thank you for helping to verify OpenLitterMap data!",
+                });
+            }
 
             context.dispatch('GET_NEXT_ADMIN_PHOTO');
         })
         .catch(error => {
-            console.log(error);
+            console.log('admin_update_with_new_tags', error);
         });
     },
 
@@ -117,41 +161,41 @@ export const actions = {
         context.commit('resetLitter');
         context.commit('clearTags');
 
-        await axios.get('/admin/get-image', {
+        await axios.get('/admin/get-next-image-to-verify', {
             params: {
                 country_id: context.state.filterByCountry,
                 skip: context.state.skippedPhotos
             }
         })
-            .then(resp => {
-                window.scroll({
-                    top: 0,
-                    left: 0,
-                    behavior: 'smooth'
-                });
+        .then(response => {
+            console.log('get_next_admin_photo', response);
 
-                console.log('get_next_admin_photo', resp);
-
-                // init photo data (admin.js)
-                context.commit('initAdminPhoto', resp.data.photo);
-
-                // init litter data for verification (litter.js)
-                if (resp.data.photo?.verification > 0)
-                {
-                    context.commit('initAdminItems', resp.data.photo);
-                    context.commit('initAdminCustomTags', resp.data.photo);
-                }
-
-                context.commit('initAdminMetadata', {
-                    not_processed: resp.data.photosNotProcessed,
-                    awaiting_verification: resp.data.photosAwaitingVerification
-                });
-
-                context.dispatch('ADMIN_GET_COUNTRIES_WITH_PHOTOS');
-            })
-            .catch(err => {
-                console.error(err);
+            window.scroll({
+                top: 0,
+                left: 0,
+                behavior: 'smooth'
             });
+
+            // init photo data (admin.js)
+            context.commit('initAdminPhoto', response.data.photo);
+
+            // init litter data for verification (litter.js)
+            if (response.data.photo?.verification > 0)
+            {
+                context.commit('initAdminItems', response.data.photo);
+                context.commit('initAdminCustomTags', response.data.photo);
+            }
+
+            context.commit('initAdminMetadata', {
+                not_processed: response.data.photosNotProcessed,
+                awaiting_verification: response.data.photosAwaitingVerification
+            });
+
+            context.dispatch('ADMIN_GET_COUNTRIES_WITH_PHOTOS');
+        })
+        .catch(err => {
+            console.error(err);
+        });
     },
 
     /**
@@ -160,10 +204,10 @@ export const actions = {
     async ADMIN_GET_COUNTRIES_WITH_PHOTOS (context)
     {
         await axios.get('/admin/get-countries-with-photos')
-            .then(resp => {
-                console.log('admin_get_countries_with_photos', resp);
+            .then(response => {
+                console.log('admin_get_countries_with_photos', response);
 
-                context.commit('setCountriesWithPhotos', resp.data);
+                context.commit('setCountriesWithPhotos', response.data);
             })
             .catch(err => {
                 console.error(err);

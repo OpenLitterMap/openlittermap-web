@@ -67,16 +67,34 @@
                         <div id="image-counts" class="column is-3">
                             <div class="box">
                                 <!-- Photo taken on -->
-                                <p><strong>{{ $t('common.photo') }} #{{ photo.id }}: </strong>{{ $t('tags.taken') }} {{ getDate(photo.datetime) }}</p>
+                                <p class="list-group-item">
+                                    <strong>
+                                        {{ $t('common.photo') }} #{{ photo.id }}:
+                                    </strong>
+
+                                    {{ $t('tags.taken') }} {{ getDate(photo.datetime) }}
+                                </p>
 
                                 <!-- Coordinates. was profile6 -->
-                                <p><strong>{{ $t('tags.coordinates') }}: </strong>{{ photo.lat }}, {{ photo.lon }}</p>
+                                <p class="list-group-item">
+                                    <strong>{{ $t('tags.coordinates') }}: </strong>
+
+                                    {{ photo.lat }}, {{ photo.lon }}
+                                </p>
 
                                 <!-- Full address. was profile7 -->
-                                <p><strong>{{ $t('tags.address') }}: </strong>{{ photo.display_name }}</p>
+                                <p class="list-group-item">
+                                    <strong>{{ $t('tags.address') }}: </strong>
+
+                                    {{ photo.display_name }}
+                                </p>
 
                                 <!-- Model of the device -->
-                                <p><strong>{{ $t('tags.device') }}: </strong>{{ photo.model }}</p>
+                                <p class="list-group-item">
+                                    <strong>{{ $t('tags.device') }}: </strong>
+
+                                    {{ photo.model }}
+                                </p>
 
                                 <!-- Presence button. was profile8 -->
                                 <presence :key="photo.id"/>
@@ -268,6 +286,10 @@ export default {
 </script>
 
 <style scoped lang="scss">
+
+    .list-group-item {
+        margin: 5px 0;
+    }
 
     .img {
         max-height: 30em;

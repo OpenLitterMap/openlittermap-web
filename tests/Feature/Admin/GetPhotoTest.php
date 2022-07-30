@@ -45,6 +45,7 @@ class GetPhotoTest extends TestCase
         // User uploads a photo in the US
         $this->actingAs($this->user)->post('/submit', ['file' => $this->imageAndAttributes['file']]);
         $photoInUS = $this->user->fresh()->photos->last();
+
         // User uploads a photo in Canada
         $canada = Country::factory(['shortcode' => 'ca', 'country' => 'Canada'])->create();
         $canadaAttributes = $this->getImageAndAttributes('jpg', [
@@ -55,7 +56,7 @@ class GetPhotoTest extends TestCase
 
         // Admin gets the next photo by country -------------------
         $response = $this->actingAs($this->admin)
-            ->getJson('/admin/get-image?country_id=' . $canada->id)
+            ->getJson('/admin/get-next-image-to-verify?country_id=' . $canada->id)
             ->assertOk();
 
         // And it's the correct photo
@@ -68,7 +69,7 @@ class GetPhotoTest extends TestCase
 
         // Admin gets the next photo by country -------------------
         $this->actingAs($this->admin)
-            ->getJson('/admin/get-image?country_id=' . 50000)
+            ->getJson('/admin/get-next-image-to-verify?country_id=' . 50000)
             ->assertStatus(422)
             ->assertJsonValidationErrors('country_id');
     }
@@ -79,7 +80,7 @@ class GetPhotoTest extends TestCase
         $this->user->update(['prevent_others_tagging_my_photos' => true]);
         $this->actingAs($this->user)->post('/submit', ['file' => $this->imageAndAttributes['file']]);
 
-        $response = $this->actingAs($this->admin)->getJson('/admin/get-image')->assertOk();
+        $response = $this->actingAs($this->admin)->getJson('/admin/get-next-image-to-verify')->assertOk();
 
         $this->assertNull($response->json('photo'));
     }

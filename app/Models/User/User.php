@@ -134,6 +134,7 @@ class User extends Authenticatable
         'total_tags',
         'total_brands_redis',
         'picked_up',
+        'user_verification_count'
     ];
 
     /**
@@ -188,6 +189,14 @@ class User extends Authenticatable
         $totalCustomTags = $this->customTags()->count();
 
         return $totalLitter + $totalBrands + $totalCustomTags;
+    }
+
+    /**
+     *
+     */
+    public function getUserVerificationCountAttribute ()
+    {
+        return Redis::hget("user_verification_count", $this->id) ?? 0;
     }
 
     /**
