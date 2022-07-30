@@ -89,7 +89,10 @@
                                 :src="this.photo.filename"
                             />
 
-                            <div class="has-text-centered mb1">
+                            <div
+                                v-if="photo.verification === 0.1"
+                                class="has-text-centered mb1"
+                            >
                                 <button
                                     :class="verify_correct_button"
                                     :disabled="processing"

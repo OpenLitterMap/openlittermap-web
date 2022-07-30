@@ -72,7 +72,7 @@ export const actions = {
         const title = i18n.t('notifications.success');
         const body = "Verified";
 
-        await axios.post('/admin/verify-correct', {
+        await axios.post('/admin/verify-tags-as-correct', {
             photoId: context.state.photo.id
         })
         .then(response => {
@@ -161,7 +161,7 @@ export const actions = {
         context.commit('resetLitter');
         context.commit('clearTags');
 
-        await axios.get('/admin/get-image', {
+        await axios.get('/admin/get-next-image-to-verify', {
             params: {
                 country_id: context.state.filterByCountry,
                 skip: context.state.skippedPhotos
@@ -169,8 +169,6 @@ export const actions = {
         })
         .then(response => {
             console.log('get_next_admin_photo', response);
-
-            console.log(response.data.photo.user.user_verification_count);
 
             window.scroll({
                 top: 0,

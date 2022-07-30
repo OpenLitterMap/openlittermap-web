@@ -47,8 +47,13 @@ class VerifyImageWithTagsController extends Controller
         // Reward xp to the Admin
         rewardXpToAdmin();
 
-        // Get a count of the user_verification_count and number of photos verified
-        $counts = $this->increaseUsersVerificationCount($photo->user_id);
+        $counts = 0;
+
+        if (Redis::hget("user_verification_count", $photo->user_id))
+        {
+            // Get a count of the user_verification_count and number of photos verified
+            $counts = $this->increaseUsersVerificationCount($photo->user_id);
+        }
 
         // Emit an event to update locations, charts, team and other non-essential data that can be queued
         event (new TagsVerifiedByAdmin($photo->id));
@@ -80,6 +85,8 @@ class VerifyImageWithTagsController extends Controller
 
         $verificationCount = Redis::hincrby("user_verification_count", $user->id, 1);
 
+        $photosCount = 0;
+
         if ($verificationCount >= 100)
         {
             if ($user->verification_required)
@@ -99,6 +106,8 @@ class VerifyImageWithTagsController extends Controller
 
             if ($photos)
             {
+                $photosCount = $photos->count();
+
                 foreach ($photos as $photo)
                 {
                     $photo->verification = 1;
@@ -133,7 +142,7 @@ class VerifyImageWithTagsController extends Controller
 
         return [
             'verificationCount' => $verificationCount,
-            'photosVerified' => $photos->count ?? 0
+            'photosVerified' => $photosCount
         ];
     }
 }

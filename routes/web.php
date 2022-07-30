@@ -293,7 +293,7 @@ Route::group(['prefix' => '/admin'], function () {
     Route::get('photos', 'HomeController@index');
 
     // get the data
-    Route::get('get-image', 'AdminController@getImage');
+    Route::get('get-next-image-to-verify', 'Admin\GetNextImageToVerifyController');
     Route::get('get-countries-with-photos', 'AdminController@getCountriesWithPhotos');
 
     // Get a list of recently registered users
@@ -305,7 +305,7 @@ Route::group(['prefix' => '/admin'], function () {
     Route::post('/verify', 'AdminController@verify');
 
     // Verify an image - keep
-    Route::post('/verify-correct', 'Admin\VerifyImageWithTagsController');
+    Route::post('/verify-tags-as-correct', 'Admin\VerifyImageWithTagsController');
 
     // Remove all tags and reset verification
     Route::post('/reset-tags', 'Admin\AdminResetTagsController');
