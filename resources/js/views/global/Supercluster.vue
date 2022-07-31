@@ -229,13 +229,21 @@ export default {
     components: {
         LiveEvents
     },
-    data() {
+    props: {
+        'activeLayer': {
+            default: 'clusters',
+            required: false
+        }
+    },
+    data () {
         return {
             visiblePoints: []
         }
     },
-    mounted ()
-    {
+    mounted () {
+        /** 0: Bind variable outside of vue scope */
+        window.olm_map = this;
+
         /** 1. Create map object */
         map = L.map('super', {
             center: [0, 0],
@@ -263,22 +271,41 @@ export default {
 
         map.attributionControl.addAttribution('Litter data &copy OpenLitterMap & Contributors ' + year + ' Clustering @ MapBox');
 
-        // Empty Layer Group that will receive the clusters data on the fly.
+        // Clusters
         clusters = L.geoJSON(null, {
             pointToLayer: createClusterIcon,
             onEachFeature: onEachFeature,
         }).addTo(map);
 
-        // TODO refactor this out
-        clusters.addData(this.$store.state.globalmap.geojson.features);
+        if (this.$store.state.globalmap.geojson?.features) {
+            clusters.addData(this.$store.state.globalmap.geojson.features);
+        }
 
+        // Art
         litterArtPoints = L.geoJSON(null, {
             pointToLayer: createArtIcon,
             onEachFeature: onEachArtFeature
         });
 
-        // TODO refactor this out too
-        litterArtPoints.addData(this.$store.state.globalmap.artData.features);
+        if (this.$store.state.globalmap?.artData?.features) {
+            litterArtPoints.addData(this.$store.state.globalmap.artData.features);
+        }
+
+        // Cleanups
+        // When we are viewing Cleanups and the map is clicked,
+        // We want to extract the coordinates
+        map.on('click', function(e) {
+            const lat = e.latlng.lat;
+            const lng = e.latlng.lng;
+
+            console.log({ lat });
+            console.log({ lng });
+
+            window.olm_map.$store.commit('setCleanupLocation', {
+                lat,
+                lng
+            });
+        });
 
         map.on('moveend', this.update);
 

@@ -14,6 +14,9 @@ Route::get('/faq', 'HomeController@index');
 
 Route::get('/tags-search', 'DisplayTagsOnMapController@show');
 
+Route::get('/cleanups', 'HomeController@index');
+Route::post('/cleanups/create', 'Cleanups\CreateCleanupController');
+
 // Registration
 Route::get('/signup', 'HomeController@index');
 
