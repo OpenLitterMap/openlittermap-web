@@ -4,120 +4,136 @@
             {{ getTitle }}
         </p>
 
-        <div class="cleanup-buttons">
-            <div v-if="!creatingCleanup">
-                <img
-                    :src="getCreateCleanupImg"
-                >
+        <form
+            method="post"
+            @submit.prevent="submit"
+        >
+<!--            @keydown="clearError($event.target.name)"-->
 
-                <button
-                    v-if="auth"
-                    class="button is-medium is-info mb1"
-                    @click="startCreatingCleanup"
-                >
-                    Create a cleanup
-                </button>
+            <div class="cleanup-buttons">
+                <div v-if="!creatingCleanup">
+                    <img
+                        :src="getCreateCleanupImg"
+                    >
 
-                <p
-                    v-else
-                    class="mb1"
-                >
-                    Log in to create a cleanup event
-                </p>
+                    <button
+                        v-if="auth"
+                        class="button is-medium is-info mb1"
+                        @click="startCreatingCleanup"
+                    >
+                        Create a cleanup
+                    </button>
 
-                <p class="mb1">
-                   Cleanups are a great way to bring people together.
-                </p>
-
-                <p>
-                    Clean up, have fun and share data!
-                </p>
-            </div>
-
-            <div
-                v-if="creatingCleanup"
-                class="cleanup-container"
-            >
-                <p>Name</p>
-
-                <input
-                    class="input mb1"
-                    v-model="name"
-                    placeholder="My Awesome Cleanup"
-                />
-
-                <p>Date</p>
-
-                <input
-                    class="input mb1"
-                    v-model="date"
-                    type="date"
-                />
-
-                <p>Location:</p>
-
-                <div class="mb1">
-
-                    <p v-if="!cleanup.lat">
-                        Click anywhere on the map to set the location
+                    <p
+                        v-else
+                        class="mb1"
+                    >
+                        Log in to create a cleanup event
                     </p>
 
-                    <div v-else>
-                        <p>
-                            Lat: {{ cleanup.lat }}
-                        </p>
+                    <p class="mb1">
+                       Cleanups are a great way to bring people together.
+                    </p>
 
-                        <p>
-                            Lon: {{ cleanup.lon }}
-                        </p>
-                    </div>
+                    <p>
+                        Clean up, have fun and share data!
+                    </p>
                 </div>
 
-                <p>Time</p>
+                <div
+                    v-if="creatingCleanup"
+                    class="cleanup-container"
+                >
+                    <p>Name</p>
 
-                <input
-                    class="input mb1"
-                    v-model="time"
-                    placeholder="Enter time"
-                />
+                    <input
+                        class="input mb1"
+                        v-model="name"
+                        placeholder="My Awesome Cleanup"
+                        required
+                    />
 
-                <p>Description</p>
+                    <p>Date</p>
 
-                <textarea
-                    class="input mb1"
-                    v-model="description"
-                    placeholder="Enter information about your event"
-                    style="height: 3em;"
-                />
+                    <input
+                        class="input mb1"
+                        v-model="date"
+                        type="date"
+                    />
 
-                <p>Create an invite link</p>
+                    <p>Location:</p>
 
-                <input
-                    class="input mb2"
-                    v-model="inviteLink"
-                    placeholder="openlittermap.com/my-cleanup-event"
-                />
+                    <div class="mb1">
 
-                <div class="flex">
-                    <div class="flex-1">
-                        <p>Attending</p>
+                        <p v-if="!cleanup.lat">
+                            Click anywhere on the map to set the location
+                        </p>
 
-                        <div class="mb1">
-                            <p>Just you for now.</p>
+                        <div v-else>
+                            <p>
+                                Lat: {{ cleanup.lat }}
+                            </p>
+
+                            <p>
+                                Lon: {{ cleanup.lon }}
+                            </p>
                         </div>
                     </div>
 
-                    <button
-                        class="button is-info is-medium"
-                        :class="processing ? 'is-loading' : ''"
-                        :disabled="processing"
-                        @click="createCleanup"
-                    >
-                        Cleanup!
-                    </button>
+                    <p>Time</p>
+
+                    <input
+                        class="input mb1"
+                        v-model="time"
+                        placeholder="Enter time"
+                        required
+                    />
+
+                    <p>Description</p>
+
+                    <textarea
+                        class="input mb1"
+                        v-model="description"
+                        placeholder="Enter information about your event"
+                        style="height: 3em;"
+                        required
+                    />
+
+                    <p>
+                        Create an invite link
+                    </p>
+
+                    <input
+                        class="input mb-05"
+                        v-model="inviteLink"
+                        placeholder="openlittermap.com/cleanups/my-cleanup-event"
+                    />
+
+                    <p class="is-grey mb2">
+                        {{ getInviteLink }}
+                    </p>
+
+                    <div class="flex">
+                        <div class="flex-1">
+                            <p>Attending</p>
+
+                            <div class="mb1">
+                                <p>Just you for now.</p>
+                            </div>
+                        </div>
+
+                        <button
+                            class="button is-info is-medium"
+                            :class="processing ? 'is-loading' : ''"
+                            :disabled="processing"
+                            type="submit"
+                        >
+                            Cleanup!
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
+        </form>
     </div>
 </template>
 
@@ -166,6 +182,14 @@ export default {
         },
 
         /**
+         * Return the invite link that the user created
+         */
+        getInviteLink ()
+        {
+            return "https://openlittermap.com/cleanups/" + this.inviteLink;
+        },
+
+        /**
          * Get the title depending on state
          */
         getTitle ()
@@ -177,9 +201,19 @@ export default {
     },
     methods: {
         /**
+         * Start creating a cleanup
+         *
+         * Step 1: Mark your location
+         */
+        startCreatingCleanup ()
+        {
+            this.$store.commit('creatingCleanup', true);
+        },
+
+        /**
          * Create a new cleanup in the database
          */
-        async createCleanup ()
+        async submit ()
         {
             this.processing = true;
 
@@ -194,16 +228,6 @@ export default {
             });
 
             this.processing = false;
-        },
-
-        /**
-         * Start creating a cleanup
-         *
-         * Step 1: Mark your location
-         */
-        startCreatingCleanup ()
-        {
-            this.$store.commit('creatingCleanup', true);
         }
     }
 }

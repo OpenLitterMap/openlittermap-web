@@ -4,7 +4,8 @@ import { mutations } from "./mutations";
 const state = {
     creating: false,
     lat: null,
-    lon: null
+    lon: null,
+    geojson: null
 };
 
 export const cleanups = {

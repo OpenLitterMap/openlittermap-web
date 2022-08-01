@@ -10,4 +10,12 @@ class Cleanup extends Model
     use HasFactory;
 
     protected $guarded = [];
+
+    /**
+     * Relationship
+     */
+    public function cleanups ()
+    {
+        return $this->belongsToMany(Cleanup::class);
+    }
 }

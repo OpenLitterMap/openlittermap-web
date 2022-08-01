@@ -6,7 +6,6 @@
         >
             <Supercluster
                 activeLayer="cleanups"
-                :liveEvents="false"
             />
         </div>
 
@@ -27,6 +26,9 @@ export default {
     components: {
         Supercluster,
         CleanupSidebar
+    },
+    async created () {
+        await this.$store.dispatch('GET_CLEANUPS');
     },
     computed: {
         /**

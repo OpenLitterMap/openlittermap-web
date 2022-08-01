@@ -388,8 +388,7 @@ class User extends Authenticatable
      */
     public function cleanups (): BelongsToMany
     {
-        return $this->belongsToMany(Cleanup::class)
-            ->withTimestamps();
+        return $this->belongsToMany(Cleanup::class)->withTimestamps();
     }
 
     /**

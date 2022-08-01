@@ -294,18 +294,18 @@ export default {
         // Cleanups
         // When we are viewing Cleanups and the map is clicked,
         // We want to extract the coordinates
-        map.on('click', function(e) {
-            const lat = e.latlng.lat;
-            const lng = e.latlng.lng;
+        if (this.activeLayer === "cleanups")
+        {
+            map.on('click', function(e) {
+                const lat = e.latlng.lat;
+                const lng = e.latlng.lng;
 
-            console.log({ lat });
-            console.log({ lng });
-
-            window.olm_map.$store.commit('setCleanupLocation', {
-                lat,
-                lng
+                window.olm_map.$store.commit('setCleanupLocation', {
+                    lat,
+                    lng
+                });
             });
-        });
+        }
 
         map.on('moveend', this.update);
 

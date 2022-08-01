@@ -17,4 +17,12 @@ export const mutations = {
         state.lat = payload.lat;
         state.lon = payload.lng;
     },
+
+    /**
+     * Geojson object of cleanups has been received from the database
+     */
+    setCleanupsGeojson (state, payload)
+    {
+        state.geojson = payload;
+    }
 }

@@ -22,7 +22,7 @@ class CreateCleanupsTable extends Migration
             $table->double('lat');
             $table->double('lon');
             $table->text('description');
-            $table->string('invite_link');
+            $table->string('invite_link')->unique();
             $table->timestamps();
         });
     }

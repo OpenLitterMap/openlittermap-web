@@ -17,7 +17,8 @@ class CreateCleanupController extends Controller
             'name' => 'required',
             'date' => 'required',
             'lat' => 'required',
-            'lon' => 'required'
+            'lon' => 'required',
+            'inviteLink' => 'required'
         ]);
 
         $user = auth()->user();
@@ -32,7 +33,10 @@ class CreateCleanupController extends Controller
             'invite_link' => $request->inviteLink
         ]);
 
+        // Event: A new cleanup has been created
+
         // User joins the cleanup event
+        $user->cleanups()->attach($cleanup);
 
         return [
             'success' => true,
