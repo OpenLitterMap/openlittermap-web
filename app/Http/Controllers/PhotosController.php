@@ -178,6 +178,8 @@ class PhotosController extends Controller
         $long_ref  = $exif["GPSLongitudeRef"];
         $long      = $exif["GPSLongitude"];
 
+        \Log::info([$user->id, $exif, $lat_ref, $lat, $long_ref, $long]);
+
         $latlong = self::dmsToDec($lat, $long, $lat_ref, $long_ref);
         $latitude = $latlong[0];
         $longitude = $latlong[1];
