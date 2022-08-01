@@ -34,7 +34,7 @@ export default {
          */
         creatingCleanup ()
         {
-            return this.$store.state.globalmap.cleanups.creating;
+            return this.$store.state.cleanups.creating;
         }
     }
 }

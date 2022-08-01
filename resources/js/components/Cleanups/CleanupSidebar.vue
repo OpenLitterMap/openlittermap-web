@@ -11,11 +11,19 @@
                 >
 
                 <button
+                    v-if="auth"
                     class="button is-medium is-info mb1"
                     @click="startCreatingCleanup"
                 >
                     Create a cleanup
                 </button>
+
+                <p
+                    v-else
+                    class="mb1"
+                >
+                    Log in to create a cleanup event
+                </p>
 
                 <p class="mb1">
                    Cleanups are a great way to bring people together.
@@ -134,11 +142,19 @@ export default {
     },
     computed: {
         /**
+         * Return True if a user is authenticated
+         */
+        auth ()
+        {
+            return this.$store.state.user.auth;
+        },
+
+        /**
          * Shortcut to cleanup/s state
          */
         cleanup ()
         {
-            return this.$store.state.globalmap.cleanups;
+            return this.$store.state.cleanups;
         },
 
         /**
@@ -154,7 +170,7 @@ export default {
          */
         getTitle ()
         {
-            return (this.$store.state.globalmap.cleanups.creating)
+            return (this.$store.state.globalmap.creating)
                 ? "Create a new cleanup event!"
                 : "Help us clean up the planet!";
         }
