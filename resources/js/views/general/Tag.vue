@@ -66,10 +66,10 @@
                         <!-- Info, Tags, Right -->
                         <div id="image-counts" class="column is-3">
                             <div class="box">
-                                <!-- Photo taken on -->
+                                <!-- Photo.id, Taken on: -->
                                 <p class="list-group-item">
                                     <strong>
-                                        {{ $t('common.photo') }} #{{ photo.id }}:
+                                        #{{ photo.id }}:
                                     </strong>
 
                                     {{ $t('tags.taken') }} {{ getDate(photo.datetime) }}
