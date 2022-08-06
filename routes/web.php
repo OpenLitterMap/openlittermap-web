@@ -17,6 +17,8 @@ Route::get('/tags-search', 'DisplayTagsOnMapController@show');
 Route::get('/cleanups', 'HomeController@index');
 Route::post('/cleanups/create', 'Cleanups\CreateCleanupController');
 Route::get('/cleanups/get-cleanups', 'Cleanups\GetCleanupsGeoJsonController');
+Route::post('/cleanups/{inviteLink}/join', 'Cleanups\JoinCleanupController');
+Route::post('/cleanups/{inviteLink}/leave', 'Cleanups\LeaveCleanupController');
 
 // Registration
 Route::get('/signup', 'HomeController@index');

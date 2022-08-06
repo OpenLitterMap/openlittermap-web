@@ -4,7 +4,10 @@
             class="cleanup-map"
             :class="creatingCleanup ? 'find-location' : ''"
         >
+            <div v-if="loading" />
+
             <Supercluster
+                v-else
                 activeLayer="cleanups"
             />
         </div>
@@ -27,8 +30,17 @@ export default {
         Supercluster,
         CleanupSidebar
     },
+    data () {
+        return {
+            loading: false
+        };
+    },
     async created () {
+        this.loading = true;
+
         await this.$store.dispatch('GET_CLEANUPS');
+
+        this.loading = false;
     },
     computed: {
         /**

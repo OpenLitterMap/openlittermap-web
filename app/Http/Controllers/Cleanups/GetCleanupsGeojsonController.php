@@ -13,7 +13,12 @@ class GetCleanupsGeojsonController extends Controller
      */
     public function __invoke ()
     {
-        $cleanups = Cleanup::all();
+        // Only load cleanups where the date is in the future
+        // Load name, username, team of user when its set to public
+        $cleanups = Cleanup::with(['users' => function ($q) {
+            $q->select('user_id');
+        }])
+        ->get();
 
         $geojson = $this->createGeoJsonArray($cleanups);
 

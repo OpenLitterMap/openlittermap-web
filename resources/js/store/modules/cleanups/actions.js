@@ -52,6 +52,74 @@ export const actions = {
             .catch(error => {
                 console.error('get_cleanups', error);
             });
+    },
 
+    /**
+     *  Join a cleanup
+     */
+    async JOIN_CLEANUP (context, payload)
+    {
+        const title = i18n.t('notifications.success');
+        const body = "You have joined the cleanup!";
+
+        await axios.post(`/cleanups/${payload.link}/join`)
+            .then(response => {
+                console.log('join_cleanup', response);
+
+                if (response.data.success)
+                {
+                    Vue.$vToastify.success({
+                        title,
+                        body,
+                    });
+                }
+                else
+                {
+                    if (response.data.msg === 'already joined')
+                    {
+                        Vue.$vToastify.error({
+                            title: "Not possible",
+                            body: "You have already joined this cleanup. Please refresh the page to see!",
+                        });
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('join_cleanup', error);
+            });
+    },
+
+    /**
+     * Leave a cleanup
+     */
+    async LEAVE_CLEANUP (context, payload)
+    {
+        const title = i18n.t('notifications.success');
+        const body = "You have left the cleanup";
+
+        await axios.post(`/cleanups/${payload.link}/leave`)
+            .then(response => {
+                console.log('leave_cleanup', response);
+
+                if (response.data.success)
+                {
+                    Vue.$vToastify.success({
+                        title,
+                        body,
+                    });
+                }
+                else {
+                    if (response.data.msg === 'already left')
+                    {
+                        Vue.$vToastify.error({
+                            title: "Not possible",
+                            body: "You have already left this cleanup. Please refresh the page to see!",
+                        });
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('leave_cleanup', error);
+            });
     }
 }

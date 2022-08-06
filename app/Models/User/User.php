@@ -4,6 +4,7 @@ namespace App\Models\User;
 
 use App\Models\AI\Annotation;
 use App\Models\Cleanups\Cleanup;
+use App\Models\Cleanups\CleanupUser;
 use App\Models\CustomTag;
 use App\Models\Photo;
 use App\Models\Teams\Team;
@@ -382,13 +383,17 @@ class User extends Authenticatable
     }
 
     /**
+     * The user can be a part of many Cleanups
+     *
      * Cleanups pivot table Relationships
      *
      * Load extra columns on the pivot table
+     * ->withTimestamps();
      */
     public function cleanups (): BelongsToMany
     {
-        return $this->belongsToMany(Cleanup::class)->withTimestamps();
+        return $this->belongsToMany(Cleanup::class)
+            ->using(CleanupUser::class);
     }
 
     /**
