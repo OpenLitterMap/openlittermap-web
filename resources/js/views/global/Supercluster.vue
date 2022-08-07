@@ -45,12 +45,12 @@ var pointsControllerShowing = false;
 var globalControllerShowing = false;
 
 const green_dot = L.icon({
-    iconUrl: './images/vendor/leaflet/dist/dot.png',
+    iconUrl: '/images/vendor/leaflet/dist/dot.png',
     iconSize: [10, 10]
 });
 
 const grey_dot = L.icon({
-    iconUrl: './images/vendor/leaflet/dist/grey-dot.jpg',
+    iconUrl: '/images/vendor/leaflet/dist/grey-dot.jpg',
     iconSize: [13, 10]
 });
 
