@@ -28,6 +28,18 @@ class JoinCleanupController extends Controller
             ];
         }
 
+        // If the user is not logged in
+        // - zoom to location
+        // - ask them to create an account
+        if (!auth()->check())
+        {
+            return [
+                'success' => false,
+                'msg' => 'unauthenticated',
+                'cleanup' => $cleanup
+            ];
+        }
+
         // Check if the user is already a part of the cleanup
         $user = auth()->user();
 

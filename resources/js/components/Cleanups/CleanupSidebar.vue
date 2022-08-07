@@ -42,7 +42,7 @@
                     v-else
                     class="mb1"
                 >
-                    Log in to create a cleanup event
+                    Log In to Create or Join a Cleanup
                 </p>
 
                 <p class="mb1">
