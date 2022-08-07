@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Cleanups\Cleanup;
 use Illuminate\Http\Request;
 
-class GetCleanupsGeojsonController extends Controller
+class GetCleanupsGeoJsonController extends Controller
 {
     /**
      * Return geojson array of cleanups
