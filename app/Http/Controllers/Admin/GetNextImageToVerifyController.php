@@ -29,12 +29,6 @@ class GetNextImageToVerifyController extends Controller
             ->where('verification', 0.1)
             ->first();
 
-        // Load the tags for this photo if it exists
-        if ($photo)
-        {
-            $photo->tags();
-        }
-
         if (!$photo)
         {
             // Photos that have been uploaded, but not tagged or submitted for verification
@@ -54,6 +48,9 @@ class GetNextImageToVerifyController extends Controller
                 'msg' => 'photo not found'
             ];
         }
+
+        // Load the tags for the photo
+        $photo->tags();
 
         // Count photos that are uploaded but not tagged
         $photosNotProcessed = $this->filterPhotos()
@@ -90,8 +87,11 @@ class GetNextImageToVerifyController extends Controller
     private function filterPhotos(): Builder
     {
         return Photo::onlyFromUsersThatAllowTagging()
+            ->whereHas('user', function ($q) {
+                return $q->where('verification_required', true);
+            })
             ->with(['user' => function ($q) {
-                $q->select('id', 'username');
+                $q->select('id', 'username', 'verification_required');
             }])
             ->with('customTags')
             ->when(request('country_id'), function (Builder $q) {

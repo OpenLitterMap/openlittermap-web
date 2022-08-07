@@ -1,7 +1,10 @@
 <template>
     <div class="h100">
         <!-- The map & data -->
-        <div id="super" ref="super" />
+        <div
+            id="openlittermap"
+            ref="openlittermap"
+        />
 
         <!-- Websockets -->
         <LiveEvents @fly-to-location="updateUrlPhotoIdAndFlyToLocation" />
@@ -33,6 +36,8 @@ var clusters;
 var litterArtPoints;
 var points;
 var prevZoom = MIN_ZOOM;
+var cleanups;
+var userId = null;
 
 var pointsLayerController;
 var globalLayerController;
@@ -40,12 +45,12 @@ var pointsControllerShowing = false;
 var globalControllerShowing = false;
 
 const green_dot = L.icon({
-    iconUrl: './images/vendor/leaflet/dist/dot.png',
+    iconUrl: '/images/vendor/leaflet/dist/dot.png',
     iconSize: [10, 10]
 });
 
 const grey_dot = L.icon({
-    iconUrl: './images/vendor/leaflet/dist/grey-dot.jpg',
+    iconUrl: '/images/vendor/leaflet/dist/grey-dot.jpg',
     iconSize: [13, 10]
 });
 
@@ -59,6 +64,14 @@ function createArtIcon (feature, latlng)
     return (feature.properties.verified === 2)
         ? L.marker(x, { icon: green_dot })
         : L.marker(x, { icon: grey_dot });
+}
+
+/**
+ * Icon to use for displaying Cleanups
+ */
+function createCleanupIcon (feature, latlng)
+{
+    return L.marker(latlng, { icon: green_dot });
 }
 
 /**
@@ -107,10 +120,9 @@ function createGlobalGroups ()
 
         globalLayerController.addOverlay(clusters, 'Global');
         globalLayerController.addOverlay(litterArtPoints, 'Litter Art');
+        globalLayerController.addOverlay(cleanups, 'Cleanups');
 
         globalControllerShowing = true;
-
-        console.log({ globalLayerController });
     }
 }
 
@@ -198,6 +210,29 @@ function onEachArtFeature (feature, layer)
 }
 
 /**
+ * On each cleanup in this.$store.state.cleanups.geojson.features
+ */
+function onEachCleanup (feature, layer)
+{
+    layer.on('click', function (e)
+    {
+        const latLng = [feature.geometry.coordinates[1], feature.geometry.coordinates[0]];
+
+        map.flyTo(latLng, 14, {
+            animate: true,
+            duration: 10
+        });
+
+        const content = mapHelper.getCleanupContent(feature.properties, userId);
+
+        L.popup(mapHelper.popupOptions)
+            .setLatLng(latLng)
+            .setContent(content)
+            .openOn(map);
+    });
+}
+
+/**
  * Get any active layers
  *
  * @return layers|null
@@ -229,15 +264,23 @@ export default {
     components: {
         LiveEvents
     },
-    data() {
+    props: {
+        'activeLayer': {
+            default: 'clusters',
+            required: false
+        }
+    },
+    data () {
         return {
             visiblePoints: []
         }
     },
-    mounted ()
-    {
+    mounted () {
+        /** 0: Hack! Bind variable outside of vue scope */
+        window.olm_map = this;
+
         /** 1. Create map object */
-        map = L.map('super', {
+        map = L.map('openlittermap', {
             center: [0, 0],
             zoom: MIN_ZOOM,
             scrollWheelZoom: false,
@@ -263,22 +306,61 @@ export default {
 
         map.attributionControl.addAttribution('Litter data &copy OpenLitterMap & Contributors ' + year + ' Clustering @ MapBox');
 
-        // Empty Layer Group that will receive the clusters data on the fly.
+        // Clusters
         clusters = L.geoJSON(null, {
             pointToLayer: createClusterIcon,
             onEachFeature: onEachFeature,
-        }).addTo(map);
+        })
 
-        // TODO refactor this out
-        clusters.addData(this.$store.state.globalmap.geojson.features);
+        if (this.$store.state.globalmap.geojson?.features) {
+            clusters.addData(this.$store.state.globalmap.geojson.features);
+        }
 
+        if (this.activeLayer === "global") {
+            clusters.addTo(map);
+        }
+
+        // Art
         litterArtPoints = L.geoJSON(null, {
             pointToLayer: createArtIcon,
             onEachFeature: onEachArtFeature
         });
 
-        // TODO refactor this out too
-        litterArtPoints.addData(this.$store.state.globalmap.artData.features);
+        if (this.$store.state.globalmap?.artData?.features) {
+            litterArtPoints.addData(this.$store.state.globalmap.artData.features);
+        }
+
+        // Cleanups
+        if (this.$store.state.cleanups.geojson)
+        {
+            console.log('cleanups.geojson found');
+            cleanups = L.geoJSON(this.$store.state.cleanups.geojson, {
+                onEachFeature: onEachCleanup,
+                pointToLayer: createCleanupIcon
+            });
+        }
+
+        // When we are viewing Cleanups and the map is clicked,
+        // We want to extract the coordinates
+        if (this.activeLayer === "cleanups")
+        {
+            cleanups.addTo(map);
+
+            map.on('click', function(e) {
+                const lat = e.latlng.lat;
+                const lng = e.latlng.lng;
+
+                window.olm_map.$store.commit('setCleanupLocation', {
+                    lat,
+                    lng
+                });
+            });
+        }
+
+        // For Cleanups, we need to know if the current userId has joined a cleanup
+        if (this.$store.state.user.auth) {
+            userId = this.$store.state.user.user.id;
+        }
 
         map.on('moveend', this.update);
 
@@ -597,7 +679,7 @@ export default {
 
 <style>
 
-    #super {
+    #openlittermap {
         height: 100%;
         margin: 0;
         position: relative;
@@ -617,6 +699,14 @@ export default {
 
     .leaflet-control {
         pointer-events: visiblePainted !important;
+    }
+
+    .leaflet-cleanup-container {
+        padding: 1em 2em;
+    }
+
+    .leaflet-cleanup-container p {
+        margin: 10px 0 !important;
     }
 
 </style>

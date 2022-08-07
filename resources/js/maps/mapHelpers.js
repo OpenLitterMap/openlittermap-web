@@ -20,6 +20,7 @@ const helper = {
      */
     scrollPopupToBottom: (event) => {
         let popup = event.popup?.getElement()?.querySelector('.leaflet-popup-content');
+
         if (popup) popup.scrollTop = popup.scrollHeight;
     },
 
@@ -146,6 +147,56 @@ const helper = {
                 ${hasSocialLinks ? '</div>' : ''}
                 ${url ? '<a class="link" target="_blank" href="' + url + '"><i class="fa fa-share-alt"></i></a>' : ''}
             </div>`;
+    },
+
+    /**
+     * Returns the HTML that displays on each Cleanup popup
+     *
+     * @param properties
+     * @param userId
+     * @returns {string}
+     */
+    getCleanupContent: (properties, userId = null) => {
+
+        let userCleanupInfo = ``;
+
+        if (userId === null) {
+            userCleanupInfo = `Log in to join the cleanup`;
+        }
+        else {
+            if (properties.users.find(user => user.user_id === userId)) {
+                userCleanupInfo = '<p>You have joined the cleanup</p>'
+
+                    if (userId === properties.user_id) {
+                        userCleanupInfo += '<p>You cannot leave the cleanup you created</p>'
+                    }
+                    else {
+                        userCleanupInfo += `<a
+                            onclick="window.olm_map.$store.dispatch('LEAVE_CLEANUP', {
+                                link: '${properties.invite_link}'
+                            })"
+                        >Click here to leave</a>`
+                    }
+            }
+            else {
+                userCleanupInfo = `<a
+                    onclick="window.olm_map.$store.dispatch('JOIN_CLEANUP', {
+                        link: '${properties.invite_link}'
+                    })"
+                >Click here to join</a>`;
+            }
+        }
+
+        return `
+            <div class="leaflet-cleanup-container">
+                <p>${properties.name}</p>
+                <p>Attending: ${properties.users.length} ${properties.users.length === 1 ? 'person' : 'people'}</p>
+                <p>${properties.description}</p>
+                <p>When? ${properties.startsAt}</p>
+                <p>${properties.timeDiff}</p>
+                ${userCleanupInfo}
+            </div>
+        `;
     }
 };
 
