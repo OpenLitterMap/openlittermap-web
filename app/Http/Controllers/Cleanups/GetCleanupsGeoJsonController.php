@@ -14,7 +14,7 @@ class GetCleanupsGeoJsonController extends Controller
     public function __invoke ()
     {
         // Only load cleanups where the date is in the future
-        // Load name, username, team of user when its set to public
+        // Todo: Load name, username, team of user when its set to public
         $cleanups = Cleanup::with(['users' => function ($q) {
             $q->select('user_id');
         }])
