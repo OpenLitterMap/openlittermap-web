@@ -316,7 +316,7 @@ export default {
             clusters.addData(this.$store.state.globalmap.geojson.features);
         }
 
-        if (this.activeLayer === "global") {
+        if (this.activeLayer === "clusters") {
             clusters.addTo(map);
         }
 
