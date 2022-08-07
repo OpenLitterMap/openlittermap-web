@@ -355,6 +355,26 @@ export default {
                     lng
                 });
             });
+
+            if (this.$route.params.hasOwnProperty('invite_link'))
+            {
+                const cleanup = this.$store.state.cleanups.cleanup;
+                const latLng = [cleanup.lat, cleanup.lon];
+
+                map.flyTo(latLng, 16, {
+                    animate: true,
+                    duration: 5
+                });
+
+                const userId = (this.$store.state.user.auth)
+                    ? this.$store.state.user.user.id
+                    : null;
+
+                L.popup(mapHelper.popupOptions)
+                    .setLatLng(latLng)
+                    .setContent(mapHelper.getCleanupContent(cleanup, userId))
+                    .openOn(map);
+            }
         }
 
         // For Cleanups, we need to know if the current userId has joined a cleanup

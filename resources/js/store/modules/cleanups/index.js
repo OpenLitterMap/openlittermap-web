@@ -6,7 +6,8 @@ const state = {
     joining: false,
     lat: null,
     lon: null,
-    geojson: null
+    geojson: null,
+    cleanup: null // selected cleanup
 };
 
 export const cleanups = {

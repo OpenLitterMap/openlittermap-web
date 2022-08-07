@@ -14,7 +14,11 @@ class JoinCleanupController extends Controller
      */
     public function __invoke ($link)
     {
-        $cleanup = Cleanup::where('invite_link', $link)->first();
+        $cleanup = Cleanup::with(['users' => function ($q) {
+            $q->select('user_id');
+        }])
+        ->where('invite_link', $link)
+        ->first();
 
         if (!$cleanup)
         {
@@ -32,10 +36,12 @@ class JoinCleanupController extends Controller
             'user_id' => $user->id
         ])->first();
 
-        if ($exists) {
+        if ($exists)
+        {
             return [
                 'success' => false,
-                'msg' => 'already joined'
+                'msg' => 'already joined',
+                'cleanup' => $cleanup
             ];
         }
 
@@ -52,7 +58,8 @@ class JoinCleanupController extends Controller
         }
 
         return [
-            'success' => true
+            'success' => true,
+            'cleanup' => $cleanup
         ];
     }
 }

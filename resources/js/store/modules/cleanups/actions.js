@@ -28,6 +28,13 @@ export const actions = {
                     title,
                     body,
                 });
+
+                setTimeout(() => {
+                    Vue.$vToastify.success({
+                        title,
+                        body: "You have joined a cleanup!",
+                    });
+                }, 1500)
             }
         })
         .catch(error => {
@@ -62,11 +69,16 @@ export const actions = {
     async JOIN_CLEANUP (context, payload)
     {
         const title = i18n.t('notifications.success');
-        const body = "You have joined the cleanup!";
+        const body = "You have joined a cleanup!";
 
         await axios.post(`/cleanups/${payload.link}/join`)
             .then(response => {
                 console.log('join_cleanup', response);
+
+                if (response.data.cleanup)
+                {
+                    context.commit('setActiveCleanup', response.data.cleanup);
+                }
 
                 if (response.data.success)
                 {

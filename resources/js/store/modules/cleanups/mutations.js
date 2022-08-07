@@ -18,6 +18,16 @@ export const mutations = {
     },
 
     /**
+     * Choose one of the cleanups
+     *
+     * Used when joining cleanup by navigation link
+     */
+    setActiveCleanup (state, payload)
+    {
+        state.cleanup = payload;
+    },
+
+    /**
      * The user has clicked on the map at Supercluster.vue
      */
     setCleanupLocation (state, payload)
