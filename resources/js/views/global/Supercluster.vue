@@ -331,7 +331,9 @@ export default {
         }
 
         // Cleanups
-        if (this.$store.state.cleanups.geojson) {
+        if (this.$store.state.cleanups.geojson)
+        {
+            console.log('cleanups.geojson found');
             cleanups = L.geoJSON(this.$store.state.cleanups.geojson, {
                 onEachFeature: onEachCleanup,
                 pointToLayer: createCleanupIcon
