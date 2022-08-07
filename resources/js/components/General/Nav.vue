@@ -24,6 +24,11 @@
                             {{ $t('nav.about') }}
                         </router-link>
 
+                        <!-- Cleanups -->
+                        <router-link to="/cleanups" class="navbar-item" @click.native="close">
+                            Cleanups
+                        </router-link>
+
                         <!-- Global Map -->
                         <router-link to="/global" class="navbar-item" @click.native="close">
                              {{ $t('nav.global-map') }}

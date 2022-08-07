@@ -24,6 +24,7 @@ import NewCityAdded from './Notifications/NewCityAdded';
 import UserSignedUp from './Notifications/UserSignedUp';
 import TeamCreated from './Notifications/TeamCreated';
 import LittercoinMined from './Notifications/LittercoinMined';
+import CleanupCreated from "./Notifications/CleanupCreated";
 
 export default {
 	name: 'live-events',
@@ -34,7 +35,8 @@ export default {
         NewStateAdded,
         NewCountryAdded,
         TeamCreated,
-        LittercoinMined
+        LittercoinMined,
+        CleanupCreated
     },
     channel: 'main',
     echo: {
@@ -96,6 +98,15 @@ export default {
             vm.events.unshift({
                 id: new Date().getTime(),
                 type: 'LittercoinMined',
+                payload: payload
+            });
+
+            vm.updateDocumentTitle();
+        },
+        '.App\\Events\\Cleanups\\CleanupCreated': (payload, vm) => {
+            vm.events.unshift({
+                id: new Date().getTime(),
+                type: 'CleanupCreated',
                 payload: payload
             });
 

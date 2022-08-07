@@ -1,13 +1,27 @@
 <template>
     <transition name="modal">
-        <div @click="close" class="modal-mask modal-flex">
-            <div @click.stop :class="container">
+        <div
+            @click="close"
+            class="modal-mask modal-flex"
+        >
+            <div
+                @click.stop
+                :class="container"
+            >
 
                 <!-- Header -->
-                <header :class="header">
-                    <p class="modal-card-title">{{ title }}</p>
+                <header
+                    :class="header"
+                >
+                    <p
+                        class="modal-card-title"
+                    >{{ title }}</p>
 
-                    <i v-show="showIcon" class="fa fa-times close-login" @click="close" />
+                    <i
+                        v-show="showIcon"
+                        class="fa fa-times close-login"
+                        @click="close"
+                    />
                 </header>
 
                 <!-- Main content -->
@@ -15,7 +29,6 @@
                     :class="inner_container"
                     :is="type"
                 />
-
             </div>
         </div>
     </transition>
@@ -35,13 +48,17 @@ import ConfirmDeleteManyPhotos from './Photos/ConfirmDeleteManyPhotos';
 export default {
     name: 'Modal',
     components: {
+        // Auth
         Login,
+
+        // Payments
         CreditCard,
+
+        // Profile
         AddManyTagsToManyPhotos,
         ConfirmDeleteManyPhotos
     },
-    mounted ()
-    {
+    mounted () {
         // Close modal with 'esc' key
         document.addEventListener('keydown', (e) => {
             if (e.keyCode === 27)
@@ -50,15 +67,13 @@ export default {
             }
         });
     },
-    data ()
-    {
+    data () {
         return {
             btn: 'button is-medium is-primary',
             processing: false
         };
     },
     computed: {
-
         /**
          * Show spinner when processing
          */
@@ -122,7 +137,6 @@ export default {
         }
     },
     methods: {
-
         /**
          * Action to dispatch when primary button is pressed
          */
