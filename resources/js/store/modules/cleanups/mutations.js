@@ -10,6 +10,14 @@ export const mutations = {
     },
 
     /**
+     * The user wants to join a cleanup
+     */
+    joiningCleanup (state, payload)
+    {
+        state.joining = payload;
+    },
+
+    /**
      * The user has clicked on the map at Supercluster.vue
      */
     setCleanupLocation (state, payload)

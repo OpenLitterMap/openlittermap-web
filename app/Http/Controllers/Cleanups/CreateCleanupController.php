@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Cleanups;
 
+use App\Events\Cleanups\CleanupCreated;
 use App\Http\Controllers\Controller;
 use App\Models\Cleanups\Cleanup;
 use Illuminate\Http\Request;
@@ -14,11 +15,13 @@ class CreateCleanupController extends Controller
     public function __invoke (Request $request)
     {
         $request->validate([
-            'name' => 'required',
+            'name' => 'required|min:5',
             'date' => 'required',
             'lat' => 'required',
             'lon' => 'required',
-            'inviteLink' => 'required'
+            'time' => 'required|min:3',
+            'description' => 'required|min:5',
+            'invite_link' => 'required|unique:cleanups|min:1'
         ]);
 
         $user = auth()->user();
@@ -30,13 +33,18 @@ class CreateCleanupController extends Controller
             'lat' => $request->lat,
             'lon' => $request->lon,
             'description' => $request->description,
-            'invite_link' => $request->inviteLink
+            'invite_link' => $request->invite_link
         ]);
 
         // Event: A new cleanup has been created
+        event (new CleanupCreated(
+            $cleanup->name,
+            $cleanup->lat,
+            $cleanup->lon
+        ));
 
         // User joins the cleanup event
-        $user->cleanups()->attach($cleanup);
+        $cleanup->users()->attach($user);
 
         return [
             'success' => true,

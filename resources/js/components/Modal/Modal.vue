@@ -38,9 +38,6 @@
 /* Auth */
 import Login from './Auth/Login'
 
-/* Cleanups */
-import CreateCleanup from "./Cleanups/CreateCleanup";
-
 /* Payments */
 import CreditCard from './Payments/CreditCard'
 
@@ -53,9 +50,6 @@ export default {
     components: {
         // Auth
         Login,
-
-        // Cleanups
-        CreateCleanup,
 
         // Payments
         CreditCard,

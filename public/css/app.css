@@ -314,6 +314,10 @@ html {
   padding-bottom: 2em !important;
 }
 
+.pb3 {
+  padding-bottom: 3em !important;
+}
+
 .pointer {
   cursor: pointer;
 }

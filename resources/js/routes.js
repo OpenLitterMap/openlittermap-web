@@ -43,7 +43,13 @@ const router = new VueRouter({
         },
         {
             path: '/cleanups',
-            component: require('./views/home/Cleanups').default
+            component: require('./views/home/Cleanups').default,
+            children: [
+                {
+                    path: ':invite_link/join',
+                    component: require('./views/home/Cleanups').default
+                }
+            ]
         },
         {
             path: '/donate',

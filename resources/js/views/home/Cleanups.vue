@@ -1,5 +1,15 @@
 <template>
     <div class="cleanups-container">
+
+        <!-- Left: Sidebar -->
+        <CleanupSidebar
+            class="cleanup-sidebar"
+            :class="creatingCleanup ? 'find-location' : ''"
+            :creatingCleanup="creatingCleanup"
+            :joiningCleanup="joiningCleanup"
+        />
+
+        <!-- Right: Global Map -->
         <div
             class="cleanup-map"
             :class="creatingCleanup ? 'find-location' : ''"
@@ -11,12 +21,6 @@
                 activeLayer="cleanups"
             />
         </div>
-
-        <CleanupSidebar
-            class="cleanup-sidebar"
-            :class="creatingCleanup ? 'find-location' : ''"
-            :creatingCleanup="creatingCleanup"
-        />
     </div>
 </template>
 
@@ -40,21 +44,52 @@ export default {
 
         await this.$store.dispatch('GET_CLEANUPS');
 
+        const r = this.$route;
+
+        if (r.params.hasOwnProperty('invite_link'))
+        {
+            await this.$store.dispatch('JOIN_CLEANUP', {
+                link: r.params.invite_link
+            });
+        }
+
         this.loading = false;
     },
     computed: {
         /**
+         * Return True if the user is trying to join a new cleanup
+         *
          * Todo - change icon on the map when we are finding a location
          */
         creatingCleanup ()
         {
             return this.$store.state.cleanups.creating;
+        },
+
+        /**
+         * Return True if the user is trying to join a new cleanup
+         */
+        joiningCleanup ()
+        {
+            return this.$store.state.cleanups.joining;
         }
     }
 }
 </script>
 
 <style scoped>
+
+    /* Hide the map on mobile */
+    @media screen and (max-width: 768px) {
+        .cleanup-map {
+            flex: 0 !important;
+        }
+
+        .cleanup-sidebar {
+            flex: 1 !important;
+        }
+    }
+
 
     .cleanups-container {
         height: calc(100% - 72px);
@@ -63,6 +98,7 @@ export default {
 
     .cleanup-map {
         flex: 0.7;
+        z-index: 1;
     }
 
     /*.find-location {*/

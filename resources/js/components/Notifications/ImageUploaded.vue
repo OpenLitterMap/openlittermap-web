@@ -54,13 +54,11 @@ export default {
         /**
          * Return location of country_flag.png
          */
-        countryFlag (countryCode) {
-            if (!countryCode) {
-                return '';
-            }
+        countryFlag (countryCode)
+        {
+            if (!countryCode) return '';
 
             return this.dir + countryCode.toLowerCase() + '.png';
-
         },
     },
     computed: {
@@ -78,8 +76,15 @@ export default {
             if (result && this.country) result += ', '
             return result;
         },
-        photoSource() {
-            return this.payload.photoSource === 'web' ? 'fa-desktop' : 'fa-mobile large-icon';
+
+        /**
+         * Icon to display that shows where the image was uploaded from
+         */
+        photoSource()
+        {
+            return (this.payload.photoSource === 'web')
+                ? 'fa-desktop'
+                : 'fa-mobile large-icon';
         }
     }
 };

@@ -17,7 +17,7 @@ export const actions = {
             lon: payload.lon,
             time: payload.time,
             description: payload.description,
-            inviteLink: payload.inviteLink
+            invite_link: payload.invite_link
         })
         .then(response => {
             console.log('create_cleanup_event', response);
@@ -31,7 +31,9 @@ export const actions = {
             }
         })
         .catch(error => {
-            console.error('create_cleanup_event', error);
+            console.log('create_cleanup_event', error);
+
+            context.commit('setErrors', error?.response?.data?.errors);
         });
     },
 
@@ -80,6 +82,13 @@ export const actions = {
                         Vue.$vToastify.error({
                             title: "Not possible",
                             body: "You have already joined this cleanup. Please refresh the page to see!",
+                        });
+                    }
+                    else if (response.data.msg === 'cleanup not found')
+                    {
+                        Vue.$vToastify.error({
+                            title: "Not found",
+                            body: "We cannot find a cleanup with this invitation",
                         });
                     }
                 }

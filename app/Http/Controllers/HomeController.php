@@ -15,9 +15,9 @@ class HomeController extends Controller
      */
     public function index ()
     {
+        $user = null;
         $auth = Auth::check();
 
-        $user = null;
         if ($auth)
         {
             $user = Auth::user();
@@ -29,6 +29,11 @@ class HomeController extends Controller
         // or when a user unsubscribes from emails
         $unsub = false;
 
-        return view('root', compact('auth', 'user', 'verified', 'unsub'));
+        return view('root', compact(
+            'auth',
+            'user',
+            'verified',
+            'unsub'
+        ));
     }
 }

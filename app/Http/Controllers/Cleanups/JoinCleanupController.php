@@ -20,7 +20,7 @@ class JoinCleanupController extends Controller
         {
             return [
                 'success' => false,
-                'msg' => 'not found'
+                'msg' => 'cleanup not found'
             ];
         }
 
