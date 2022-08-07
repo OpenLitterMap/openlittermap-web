@@ -106,14 +106,6 @@ export default {
         },
 
         /**
-         * Return the invite link that the user created
-         */
-        getInviteLink ()
-        {
-            return "https://openlittermap.com/cleanups/" + this.invite_link;
-        },
-
-        /**
          * Get the title depending on state
          */
         getTitle ()

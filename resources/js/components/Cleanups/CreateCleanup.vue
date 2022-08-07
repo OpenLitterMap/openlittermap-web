@@ -178,7 +178,14 @@ export default {
          */
         getInviteLink ()
         {
-            return "https://openlittermap.com/cleanups/" + this.invite_link;
+            let url = "https://openlittermap.com/cleanups/";
+
+            if (this.invite_link === '')
+            {
+                return url;
+            }
+
+            return url + this.invite_link + "/join";
         },
     },
     methods: {
