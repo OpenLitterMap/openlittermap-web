@@ -6257,7 +6257,7 @@ a.navbar-item:focus, a.navbar-item:focus-within, a.navbar-item:hover, a.navbar-i
         box-shadow: 0 8px 8px rgba(10, 10, 10, 0.1);
         display: none;
         font-size: 0.875rem;
-        left: 0;
+        left: -5em;
         min-width: 100%;
         position: absolute;
         top: 100%;
