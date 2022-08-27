@@ -7,13 +7,13 @@ use App\Events\ImageDeleted;
 use App\Events\NewCityAdded;
 use App\Events\NewCountryAdded;
 use App\Events\NewStateAdded;
-
 use App\Events\TagsVerifiedByAdmin;
+
 use App\Listeners\AddTags\IncrementLocation;
 use App\Listeners\AddTags\CompileResultsString;
 use App\Listeners\User\UpdateUserCategories;
 use App\Listeners\User\UpdateUserTimeSeries;
-use App\Listeners\Littercoin\IncreaseLittercoinScore;
+use App\Listeners\Littercoin\RewardLittercoin;
 use App\Listeners\Locations\AddLocationContributor;
 use App\Listeners\Locations\DecreaseLocationTotalPhotos;
 use App\Listeners\Locations\NotifySlackOfNewCity;
@@ -68,8 +68,9 @@ class EventServiceProvider extends ServiceProvider
             // this needs to be migrated to Redis
             IncreaseTeamTotalLitter::class,
 
-            //
-            IncreaseLittercoinScore::class,
+            // Increase the users Littercoin score
+            // Reward with Littercoin if criteria met
+            RewardLittercoin::class,
 
             // Update the users total_litter, total_brands, total_photos and total_category on Redis
             UpdateUserCategories::class,

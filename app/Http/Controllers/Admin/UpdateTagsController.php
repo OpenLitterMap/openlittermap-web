@@ -47,7 +47,6 @@ class UpdateTagsController extends Controller
         $oldTags = $photo->tags();
 
         $user = User::find($photo->user_id);
-        $user->save();
 
         $updatedTags = $this->addTags($request->tags ?? [], $request->custom_tags ?? [], $request->photoId);
 
