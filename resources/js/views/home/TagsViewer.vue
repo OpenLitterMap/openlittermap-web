@@ -8,12 +8,12 @@
 import L from 'leaflet';
 import 'leaflet-timedimension';
 import 'leaflet-timedimension/dist/leaflet.timedimension.control.css';
-import {mapHelper} from '../../maps/mapHelpers';
-import {MIN_ZOOM} from '../../constants';
+import { mapHelper } from '../../maps/mapHelpers';
+import { MIN_ZOOM } from '../../constants';
 
 export default {
     name: 'TagsViewer',
-    data() {
+    data () {
         return {
             geojson: null,
             map: null,
@@ -22,8 +22,7 @@ export default {
             player: null
         }
     },
-    async mounted ()
-    {
+    async mounted () {
         await this.load();
 
         /** 1. Create map object */
@@ -99,20 +98,22 @@ export default {
         async load () {
             const searchParams = new URLSearchParams(window.location.search);
             const customTag = searchParams.get('custom_tag');
+            const brand = searchParams.get('brand');
 
             await axios.get('/tags-search', {
                 params: {
                     custom_tag: customTag,
+                    brand
                 }
             })
-                .then(response =>
-                {
-                    this.geojson = response.data;
-                })
-                .catch(error =>
-                {
-                    console.error('get_tags', error);
-                });
+            .then(response =>
+            {
+                this.geojson = response.data;
+            })
+            .catch(error =>
+            {
+                console.error('get_tags', error);
+            });
         },
 
         /**

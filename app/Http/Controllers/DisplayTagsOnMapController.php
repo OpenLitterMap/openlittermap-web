@@ -8,11 +8,20 @@ use Illuminate\Http\Request;
 
 class DisplayTagsOnMapController extends Controller
 {
+    /**
+     * Create a geojson from custom_tag or brand
+     *
+     * @param Request $request
+     * @return array
+     */
     public function show(Request $request)
     {
         $photos = Photo::query()
             ->whereHas('customTags', function (Builder $query) use ($request) {
                 return $query->whereTag($request->custom_tag);
+            })
+            ->orWhereHas('brands', function (Builder  $query) use ($request) {
+                return $query->whereNotNull($request->brand);
             })
             ->with([
                 'user:id,name,username,show_username_maps,show_name_maps,settings',
