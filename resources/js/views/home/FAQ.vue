@@ -9,38 +9,103 @@
             <div class="faq">
                 <ul>
                     <li>
-                        <input type="checkbox">
+                        <input type="checkbox" checked />
                         <i></i>
-                        <h2>Where can I download the pictures?</h2>
-                        <p>This is probably one of the most frequently asked and logical questions.
-                            We are ‘Open Litter Map’ for a reason. All of our source-code is open, and so is our data.
-                            However, we are still all volunteers spending a lot of time working on OpenLitterMap, taking
-                            hundreds of pictures and tagging them and we need those for our Machine Learning project.
-                            So at this moment everything is open, and you can download all data from all countries to
-                            use this information in research; the pictures, however, are not.
-                            <br>That is, not yet!
-                            <br>We do plan to open up those pictures as well, as soon as we are ready for that.
-                            <br>Like mentioned, we are mainly working as volunteers, with some financial support and we
-                            go as fast as we can. The speed however depends on the support that we get.
-                            <br>That doesn’t mean that you have to support us, but if you could, that would be very
-                            welcome and also if you know others that could, please let them know. The faster we go, the
-                            faster we can also free up all pictures.</p>
+                        <h2>What is OpenLitterMap?</h2>
+                        <p>OpenLitterMap is an open source, interactive, and accessible databsase of the world's litter & plastic pollution.
+                            We are turning cleaning the planet into a game, to make it fun and easy to collect data.
+                            This data is important to give visibility to litter, and help find solutions like where to put bins, ashtrays & more.
+                        </p>
+                    </li>
+
+                    <li>
+                        <input type="checkbox" checked />
+                        <i></i>
+                        <h2>Why is it called OpenLitterMap?</h2>
+                        <p>
+                            "Open" - because all of our code & data is open source. This means that anyone can access the code, learn from it,
+                            improvee it, or use it in another project! You don't have to be a developer to appreciate how powerful this is.
+                            Open source code can be passed on from generation to generation,
+                            who can build on it, learn from it and use it to continue to help improve society for the betterment of humanity.
+                            <br> <br>
+                            Not only is all of our code open source, which you can find at <a href="https://github.com/openlittermap">https://github.com/openlittermap</a>
+                            but all of our data is also openly available for anyone to download and start using. This is in contrast to many other apps,
+                            who do not open up access to their code and data as they are trying to keep it for themselves (booo!!!)
+                            <br>
+                            "LitterMap" - because we visualise our entire global repository on the global map, which loads all data in
+                            30kb and 33ms (August 2022).
+                            <br>
+                            The OpenLitterMap name was inspired by <a href="https://openstreetmap.org">OpenStreetMap</a> which is the most
+                            detailed & comprehensive map of the world ever created by over 2-million volunteers that contiunes to be updated
+                            constantly. Unlike other services like Google Maps, which is not open and owned by Google, OpenStreetMap code
+                            and data is open to everyone, allowing anyone to be a part of adding, editing or using the code and/or data.
+                            Inspired by the open source values of OpenStreetMap, we decided to apply the same open values to litter and plastic pollution.
+                        </p>
                     </li>
                     <li>
                         <input type="checkbox" checked>
                         <i></i>
+                        <h2>How do I take pictures?</h2>
+                        <p>
+                            Firstly, make sure that your phone has the right settings:
+                            <br>&emsp; &bull; iPhone. Open Settings -> Privacy -> Location. Turn "Camera On While Using".
+
+                            <br>&emsp; &bull; Android. Open the Camera.
+                            <br>Go to camera settings => Activate Geotagging.
+                            <br>Pull down top-menu and Activate GPS
+
+                            <br><br>There are different ways to take pictures:
+                            <br>&emsp; &bull; Open your normal camera and use that to take the photos (our preferred way)
+                            <br>&emsp; &bull; Open the app and take pictures from within the app (This is currently disabled.)
+
+                            <br><br>There are 2 ways to upload and tag your data. You can use the mobile app, or you
+                            can use openlittermap.com and log in there. If you visit the website, you have to upload
+                            your images first, then tag them. Some people prefer this way, as you get a full screen,
+                            a keyboard, and you can tag many items at once. Other people prefer using the mobile app,
+                            where you have to select your images first, tag them, and upload the tagged ones.
+
+                            <br>Check your setting: do you normally pick up the litter or not?
+
+                            <br>If you want to take pictures without draining your battery, it is
+                            okay to put it in flight-mode! To determine your location, you need
+                            the GPS sensor in your device to connect to a location-tracking satellite,
+                            not your cellular or wifi network. You can collect geospatial data anywhere, without
+                            needing a connection to anything else. This means that it works in the most remote
+                            parts of the world, but you need to connect to the internet if you want to upload your data.
+
+                        </p>
+                    </li>
+
+                    <li>
+                        <input type="checkbox" checked>
+                        <i></i>
                         <h2>What is Littercoin?</h2>
-                        <p>Littercoin is the award that people get for picking litter and/or creating data that can be
-                            used by themselves or by others. You can not buy Littercoin anywhere, you can only earn by
-                            joining the community in taking pictures of litter and uploading and tagging them.
-                            <br>A Littercoin represents a value (not decided yet what's the value) and Littercoin can be
-                            spent (eventually) at zero-waste stores that partner up.
+                        <p>Littercoin is the reward that our users get for producing geographic information.
+                            You can not buy Littercoin. You can only earn it by joining the community and helping us collect data.
+                            <br>Littercoin does not yet have a value, but we are working on it by locking ADA in a smart contract
+                            which will give each Littercoin value. Our vision is that your Littercoin can only be spent at
+                            participating pre-approved zero-waste stores that partner up. Unlike traditional government
+                            money that is printed out of thin-air, Littercoin is a new type of environmental currency that is
+                            created by people helping to clean the planet and can be spent in climate-approved stores only.
+                            <br>Unlike other cryptocurrencies, we are not going to list Littercoin on any exchange, making it non-tradable.
+                            The smart contract will be able to verify the integrity of each token, proving it has not been traded or
+                            listed on an exchange.
                             <br>Cheating the system (‘oh, let me just drop a bunch of litter here and take a lot of
-                            photos of it’) might be possible, but we have a system in place that involves approving
-                            pictures. After all, why would you make an effort in trying to earn Littercoin that can be
-                            spent in zero-waste stores? The whole idea is to do good for the world and get rewarded for
-                            it. If you really want to cheat the system, you might as well rob a zero-waste store.
+                            photos of it’) is possible, but in reality, nobody does this and the benefits will far outweigh any
+                            cheating. There is also so much litter out there that finding it is much easier than carrying it around.
+                            We have a system in place that involves reviewing all tags on each image. This is generating high quality
+                            data that is being used to train the OpenLitterAI, which will make verification easier.
+                            If you really want to cheat the system, you might as well rob a zero-waste store.
                             (Please don’t).
+                        </p>
+                    </li>
+                    <li>
+                        <input type="checkbox" checked />
+                        <i></i>
+                        <h2>How can I download the images?</h2>
+                        <p>This feature is not working properly yet as openlittermap is still in development.
+                            Do you think the development of this technology is important?
+                            https://gofundme.com/openlittermap
                         </p>
                     </li>
                     <li>
@@ -48,11 +113,11 @@
                         <i></i>
                         <h2>What’s the use of having an option ‘I did not pick it up’?</h2>
                         <p>Isn’t it all about cleaning the earth and picking litter? Good question! Yes, the idea is to
-                            make the world a better place, but there are many ways to do that. Most of us pick litter,
+                            make the world a better place, and there are many ways to do that. Most of us pick litter,
                             so right at that moment, a difference is being made, the world is a bit cleaner than before.
                             And we don’t just pick the litter, but we also take a picture to create data about that
                             litter that can be used long after the litter is gone.
-                            <br>However, there are reasons why you should/could take a picture without picking the
+                            <br>However, there are situatuibs when someone would take a picture without picking the
                             litter:
                             <br>&emsp; &bull; The litter is too big. You are walking with your dog and picking some
                             litter while doing so, but suddenly you see something that shouldn’t be there but it is too
@@ -66,51 +131,39 @@
                             the place is clean, it will stay clean for a longer period of time. We ourselves don’t
                             believe in either of them. Anyway, if you want to make an impact by not touching the litter,
                             you can still register it.
-                            <br>Even pictures of litter that has not been picked up can be valuable. It still is
-                            information about litter that can be used by others. We can use those pictures to train our
-                            Machine Learning model. The more pictures we have from different kinds of litter, the better
-                            we can train the computer to recognise the litter; eventually it can help us in predicting
-                            what the litter in the picture is and lessen the trouble of having to tag it ourselves.
+                            <br> &emsp; &bull; Someone else can pick it up. Suppose you are in a wheelchair, or late for a meeting.
+                            By collecting data, you can create data that other people can respond to. This feature is still
+                            in development.
+                            <br> &emsp; &bull; We can also use those pictures to train our Machine Learning model. The more pictures we
+                            have from different kinds of litter, the better we can train the computer to recognise the litter;
+                            eventually it can help us in predicting what the litter in the picture is and
+                            lessen the trouble of you or us having to tag it manually
+                            <br> &emsp; &bull; The data tells an important story. Some people don't want to pick up litter, but
+                            they are happy to try and help educate society. We have been picking up litter for decades
+                            and its getting worse, so clearly picking up litter alone is not working. If picking up
+                            litter is all we do, that is all we will ever do. Collecting data can be a more effective
+                            educational tool long-term to fix the problem.
                         </p>
                     </li>
-                    <li>
-                        <input type="checkbox" checked>
-                        <i></i>
-                        <h2>What is an XP and what can I do with it?</h2>
-                        <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. A architecto consequatur
-                            consequuntur dolor dolores eos eum excepturi harum hic itaque laborum placeat possimus, quis
-                            rem repellendus repudiandae totam veritatis voluptatum?</p>
-                    </li>
+                    <!--                    <li>-->
+                    <!--                        <input type="checkbox" checked>-->
+                    <!--                        <i></i>-->
+                    <!--                        <h2>What is an XP and what can I do with it?</h2>-->
+                    <!--                        <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. A architecto consequatur-->
+                    <!--                            consequuntur dolor dolores eos eum excepturi harum hic itaque laborum placeat possimus, quis-->
+                    <!--                            rem repellendus repudiandae totam veritatis voluptatum?</p>-->
+                    <!--                    </li>-->
                     <li>
                         <input type="checkbox" checked>
                         <i></i>
                         <h2>Taking pictures and tagging them is taking a lot of time, what to do?</h2>
-                        <p>You could try our ‘bulk-tag’option. It is a little hidden at the moment:
-                            More > Profile > View my Photos. Here you can see the photos that you uploaded via web and
-                            that you need to tag. If you have similar photos (for instance all pictures with a
-                            redbull-can), you can select all of them and then chose ‘start tagging’, now you only have
-                            to give the right tags once and these will be applied to all selected pictures. The pictures
-                            that were not selected remain so you could repeat the process if you want to.
-                        </p>
-                    </li>
-                    <li>
-                        <input type="checkbox" checked>
-                        <i></i>
-                        <h2>How do I take pictures?</h2>
-                        <p>
-                            Firstly, make sure that your phone has the right settings:
-                            <br>&emsp; &bull; Sharing your location should be on, because that is the way to get GPS
-                            location on your photos (if you want to take pictures without draining your battery, it is
-                            okay to put it in flight-setting).
-
-                            <br><br>Next, there are different ways to take pictures:
-                            <br>&emsp; &bull; Open the camera on the phone and use that to take the photos (preferred way)
-                            <br>&emsp; &bull; Open the app and take pictures from within the app (optional way)
-
-                            <br><br>If you have taken pictures with your native camera, in order to be able to upload them,
-                            you have to set your phone to allow OLM to use your gallery, apart from approving OLM to use
-                            ‘selected photos’ you should say approve to use ‘all’ photos.‘ That should make it work
-                            <br>Check your setting: do you normally pick up the litter or not?
+                        <p>You could try our ‘bulk-tag’option. You can find this on the add-tags page, or your profile.
+                            Here you can see the photos that you uploaded from web that you need to tag.
+                            If you have similar photos (for instance all pictures with a redbull-can),
+                            you can select all of them and then choose ‘start tagging’, now you only have
+                            to give the right tags once and these will be applied to all selected pictures.
+                            The pictures that were not selected remain so you could repeat the process if you want to.
+                            This tool actually works really good, go check it out!
                         </p>
                     </li>
                     <li>
@@ -118,27 +171,27 @@
                         <i></i>
                         <h2>What kind of pictures should I take?</h2>
                         <p>
-                            The rule of thumb is:
-                            <br>&emsp; &bull; Take one picture per item.
-                            <br>&emsp; &bull; Try to hold your camera close to the item so the item is ‘full-screen’.
+                            <br>&emsp; &bull; This is entirely up to you and depends on what kind of story you want to take.
+                            <br>&emsp; &bull; If you want, you can add 1 tag to each photo.
+                            <br>&emsp; &bull; Or, you can include many objects in a single photo.
+                            <br>&emsp; &bull; If its not possible to count the litter, you can use the Dumping category
+                            (small, medium, large) and pick a number between 0-100 depending on how bad you think the problem is.
+
+                            <br>&emsp; &bull; When possible, hold your camera as close to the item as possible.
                             <br>&emsp; &bull; If there is a brand on the item, make sure that is also visible in the
                             picture.
-                            <br>&emsp; &bull; Try to avoid taking a picture with people visible in it.
-                            With the ‘rules’ above, you create the best pictures which make for the best data and you
-                            make life easier for those who need to check the pictures.
+                            <br>&emsp; &bull; Don't include people, faces, shadows, feet, or clothes. Please take photos of litter ONLY.
+                            With these guidelines, you can help us create an excellent quality datasetset and you will
+                            make life easier for those who need to help verify the data.
                             However, there are situations where this is not possible. For instance, you see something
                             floating in the water and are not able to pick it, or turn it to see if there is a brand on
-                            it, or to zoom in. That’s okay, it is still valuable data.
+                            it, or to zoom in. That’s okay, it is still valuable data and we welcome your contribution.
 
                             <br>Do I have to take 1 photo per item?
-                            <br>&emsp; &bull; No, you don’t, you might also take 1 photo of several similar items, for
-                            instance if you find a spot with 50 cigarette butts, you don’t have to take 50 pictures, you
-                            can also take 1 picture. See ‘tagging’ to understand how you would tag those.
+                            <br>&emsp; &bull; No, you don’t. You can take 1 photo, apply a tag of cigarette butts tag with a quantity of 50.
                             <br>And if I find different objects close together, do i have to sort those first?
-                            <br>&emsp; &bull; No, you don’t, you can even take 1 photo with different items on it. See
-                            ‘tagging’ to understand how you would tag those.
-                            <br>So do whatever you prefer, but keep in mind that all photos have to be verified so the
-                            clearer the photo is, the better.
+                            <br>&emsp; &bull; Some people do this, but its not necessary. It all depends what kind of story you want to tell.
+                            <br>So do whatever you prefer, but do try and help us build a high quality database!
                         </p>
                     </li>
                     <li>
