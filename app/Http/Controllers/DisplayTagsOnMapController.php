@@ -14,7 +14,7 @@ class DisplayTagsOnMapController extends Controller
      * @param Request $request
      * @return array
      */
-    public function show(Request $request)
+    public function show (Request $request)
     {
         $photos = Photo::query()
             ->whereHas('customTags', function (Builder $query) use ($request) {
@@ -34,7 +34,9 @@ class DisplayTagsOnMapController extends Controller
 
         // Populate geojson object
         $features = [];
-        foreach ($photos as $photo) {
+
+        foreach ($photos as $photo)
+        {
             $name = $photo->user->show_name_maps ? $photo->user->name : null;
             $username = $photo->user->show_username_maps ? $photo->user->username : null;
             $team = $photo->team ? $photo->team->name : null;
