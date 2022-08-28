@@ -2,6 +2,7 @@
 
 namespace App\Helpers\Get;
 
+use App\Models\Littercoin;
 use App\Models\Location\City;
 use App\Models\Location\Country;
 use App\Models\Location\State;
@@ -27,7 +28,12 @@ class LoadDataHelper
     public static function getCountries ()
     {
         // first - global metadata
+
+        // old way
         $littercoin = \DB::table('users')->sum(\DB::raw('littercoin_owed + littercoin_allowance'));
+
+        // new way
+        $littercoin += Littercoin::count();
 
         /**
          * Get the countries

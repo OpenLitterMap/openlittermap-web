@@ -37,6 +37,12 @@
                                    <li v-if="photo.team" class="list-group-item">
                                        {{ $t('common.team') }}: <strong>{{ photo.team.name}}</strong>
                                    </li>
+                                   <li class="list-group-item">
+                                       Next Littercoin: {{ user.littercoin_progress }}%
+                                   </li>
+                                   <li class="list-group-item">
+                                       Total Littercoin: {{ user.total_littercoin }}
+                                   </li>
                                </ul>
 
                                 <router-link to="/bulk-tag">
@@ -59,7 +65,9 @@
 
                             <!-- Add & Submit Tags -->
                             <div class="column is-10 is-offset-1 mt-4">
-                                <add-tags :id="photo.id" />
+                                <add-tags
+                                    :id="photo.id"
+                                />
                             </div>
                         </div>
 
@@ -97,10 +105,15 @@
                                 </p>
 
                                 <!-- Presence button. was profile8 -->
-                                <presence :key="photo.id"/>
+                                <presence
+                                    :key="photo.id"
+                                />
 
                                 <!-- Delete photo button -->
-                                <profile-delete :photoid="photo.id" class="mt-4"/>
+                                <profile-delete
+                                    :photoid="photo.id"
+                                    class="mt-4"
+                                />
                             </div>
 
                             <!-- These are the tags the user has added -->
