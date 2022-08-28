@@ -37,6 +37,12 @@
                                    <li v-if="photo.team" class="list-group-item">
                                        {{ $t('common.team') }}: <strong>{{ photo.team.name}}</strong>
                                    </li>
+                                   <li class="list-group-item">
+                                       Next Littercoin: {{ user.littercoin_progress }}%
+                                   </li>
+                                   <li class="list-group-item">
+                                       Total Littercoin: {{ user.total_littercoin }}
+                                   </li>
                                </ul>
 
                                 <router-link to="/bulk-tag">

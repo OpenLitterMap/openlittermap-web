@@ -71,7 +71,7 @@ export default {
 
     .profile-container {
         min-height: calc(100vh - 82px);
-        background-color: #341f97;
+        background-color: #272e4aed;
         display: grid;
         grid-template-columns: 1fr 2fr 1fr;
         grid-template-rows: 0.5fr 1fr 1fr;
