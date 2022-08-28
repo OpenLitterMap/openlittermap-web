@@ -161,11 +161,7 @@ class Photo extends Model
      *
      * Format: category.item quantity, category.item quantity,
      *
-     * eg. smoking.butts 3, alcohol.beerBottles 4,
-     *
-     * We use the result_string on the global map for 2 reasons.
-     * 1. We don't have to eager load any data.
-     * 2. This format can be translated into any language.
+     * eg: "smoking.butts 3, alcohol.beerBottles 4,"
      */
     public function translate ()
     {

@@ -109,22 +109,6 @@ class VerifyImageWithTagsController extends Controller
                     $photo->verified = 2;
                     $photo->save();
 
-                    $verificationCount++;
-
-                    if ($verificationCount === 100)
-                    {
-                        // We are in the process of moving this count to a new table
-                        $user->littercoin_allowance += 1;
-
-                        Littercoin::create([
-                            'user_id' => $userId,
-                            'photo_id' => $photo->id
-                        ]);
-
-                        // Broadcast an event to anyone viewing the global map
-                        event (new LittercoinMined($user->id, '100-images-verified'));
-                    }
-
                     event(new TagsVerifiedByAdmin($photo->id));
                 }
 

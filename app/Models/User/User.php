@@ -6,6 +6,7 @@ use App\Models\AI\Annotation;
 use App\Models\Cleanups\Cleanup;
 use App\Models\Cleanups\CleanupUser;
 use App\Models\CustomTag;
+use App\Models\Littercoin;
 use App\Models\Photo;
 use App\Models\Teams\Team;
 use App\Payment;
@@ -136,7 +137,9 @@ class User extends Authenticatable
         'total_tags',
         'total_brands_redis',
         'picked_up',
-        'user_verification_count'
+        'user_verification_count',
+        'littercoin_progress',
+        'total_littercoin'
     ];
 
     /**
@@ -194,7 +197,9 @@ class User extends Authenticatable
     }
 
     /**
+     * Return the users progress to becoming a verified user
      *
+     * 0-100
      */
     public function getUserVerificationCountAttribute ()
     {
@@ -224,6 +229,26 @@ class User extends Authenticatable
     public function getPositionAttribute()
     {
         return User::where('xp', '>', $this->xp ?? 0)->count() + 1;
+    }
+
+    /**
+     * Return the users progress to earning their next Littercoin
+     */
+    public function getLittercoinProgressAttribute ()
+    {
+        return (int) Redis::hget("user:{$this->id}", 'littercoin_progress') ?? 0;
+    }
+
+    /**
+     * Get the total number of Littercoin the user has earned
+     */
+    public function getTotalLittercoinAttribute ()
+    {
+        $count = $this->littercoin_allowance + $this->littercoin_owed;
+
+        $count2 = Littercoin::where('user_id', $this->id)->count();
+
+        return $count + $count2;
     }
 
     /**

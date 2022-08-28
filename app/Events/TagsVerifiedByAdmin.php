@@ -32,16 +32,18 @@ class TagsVerifiedByAdmin implements ShouldBroadcast, ShouldQueue
      * The tags on a single photo have been verified by an Admin
      *
      * photo.verified => 2
+     *
+     * Initialise this event class, which all Listeners can use.
      */
     public function __construct ($photo_id)
     {
         $photo = Photo::find($photo_id);
-        $this->photo_id = $photo_id;
 
+        $this->photo_id = $photo_id;
+        $this->user_id = $photo->user_id;
         $this->city_id = $photo->city_id;
         $this->state_id = $photo->state_id;
         $this->country_id = $photo->country_id;
-        $this->user_id = $photo->user_id;
         $this->created_at = $photo->created_at;
 
         $total_litter_all_categories = 0;

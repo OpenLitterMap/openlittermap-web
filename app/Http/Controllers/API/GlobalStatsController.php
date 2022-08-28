@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\Littercoin;
 use App\Models\Location\Country;
 use App\Models\User\User;
 use Illuminate\Http\Request;
@@ -19,7 +20,11 @@ class GlobalStatsController extends Controller
      */
     public function index () : array
     {
+        // old way
         $littercoin = \DB::table('users')->sum(\DB::raw('littercoin_owed + littercoin_allowance'));
+
+        // new way
+        $littercoin += Littercoin::count();
 
         $totalUsers = User::count();
 
