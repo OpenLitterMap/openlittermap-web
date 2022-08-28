@@ -126,8 +126,12 @@
                 <tags :photo-id="id"/>
 
                 <div class="box custom-buttons">
-                    <profile-delete :photoid="id" />
-                    <presence :itemsr="true" />
+                    <profile-delete
+                        :photoid="id"
+                    />
+                    <presence
+                        :itemsr="true"
+                    />
                 </div>
             </div>
         </div>
@@ -291,11 +295,15 @@ export default {
         },
 
         /**
-         * Disable increment if true
+         * Get / Set the current custom tag
          */
-        checkIncr ()
-        {
-            return this.quantity === 100;
+        customTag: {
+            get () {
+                return this.$store.state.litter.customTag;
+            },
+            set (i) {
+                if (i) this.$store.commit('changeCustomTag', i.trim());
+            }
         },
 
         // /**
@@ -317,6 +325,22 @@ export default {
         // },
 
         /**
+         * Disable increment if true
+         */
+        checkIncr ()
+        {
+            return this.quantity === 100;
+        },
+
+        /**
+         * The latest error related to custom tags
+         */
+        customTagsError ()
+        {
+            return this.$store.state.litter.customTagsError;
+        },
+
+        /**
          * Disable button if false
          */
         hasAddedTags ()
@@ -329,6 +353,14 @@ export default {
             let hasCustomTags = customTags && customTags[this.id] && customTags[this.id].length;
 
             return hasTags || hasCustomTags;
+        },
+
+        /**
+         * All the custom tags that this user has submitted
+         */
+        previousCustomTags ()
+        {
+            return this.$store.state.photos.previousCustomTags;
         },
 
         /**
@@ -345,22 +377,6 @@ export default {
         recentCustomTags ()
         {
             return this.$store.state.litter.recentCustomTags;
-        },
-
-        /**
-         * All the custom tags that this user has submitted
-         */
-        previousCustomTags ()
-        {
-            return this.$store.state.photos.previousCustomTags;
-        },
-
-        /**
-         * The latest error related to custom tags
-         */
-        customTagsError ()
-        {
-            return this.$store.state.litter.customTagsError;
         },
 
         /**
@@ -381,18 +397,6 @@ export default {
         },
 
         /**
-         * Get / Set the current custom tag
-         */
-        customTag: {
-            get () {
-                return this.$store.state.litter.customTag;
-            },
-            set (i) {
-                if (i) this.$store.commit('changeCustomTag', i.trim());
-            }
-        },
-
-        /**
          * Litter tags for the selected category
          */
         tags ()
@@ -406,7 +410,6 @@ export default {
         },
     },
     methods: {
-
         /**
          * Add or increment a tag
          *

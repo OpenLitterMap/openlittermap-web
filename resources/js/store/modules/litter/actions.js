@@ -48,9 +48,9 @@ export const actions = {
      */
     async ADD_TAGS_TO_IMAGE (context, payload)
     {
-        let title = i18n.t('notifications.success');
-        let body  = i18n.t('notifications.tags-added');
-        let photoId = context.rootState.photos.paginate.data[0].id;
+        const title = i18n.t('notifications.success');
+        const body  = i18n.t('notifications.tags-added');
+        const photoId = context.rootState.photos.paginate.data[0].id;
 
         await axios.post('add-tags', {
             photo_id: photoId,
@@ -59,16 +59,23 @@ export const actions = {
             picked_up: context.state.pickedUp,
         })
         .then(response => {
-            /* improve this */
-            Vue.$vToastify.success({
-                title,
-                body,
-                position: 'top-right'
-            });
 
-            // todo - update XP bar
+            if (response.data.success)
+            {
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                    position: 'top-right'
+                });
 
-            context.commit('clearTags', photoId);
+                context.commit('clearTags', photoId);
+
+                if (!context.rootState.user.user.verification_required)
+                {
+                    context.commit('incrementUsersNextLittercoinScore');
+                }
+            }
+
             context.dispatch('LOAD_NEXT_IMAGE');
         })
         .catch(error => console.log(error));

@@ -9,7 +9,7 @@
             {{ $t('profile.dashboard.out-of', {total: totalUsers} ) }}
         </p>
 
-        <p class="mb1">
+        <p class="mb1 is-secondary">
             {{ $t('profile.dashboard.rank', { rank: usersPosition } ) }}
         </p>
 

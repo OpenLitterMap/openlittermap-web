@@ -346,7 +346,10 @@ class PhotosController extends Controller
 
         $photo->save();
 
-        return ['msg' => 'success'];
+        return [
+            'success' => true,
+            'msg' => 'success'
+        ];
     }
 
     /**
