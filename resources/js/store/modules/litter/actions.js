@@ -73,6 +73,17 @@ export const actions = {
                 if (!context.rootState.user.user.verification_required)
                 {
                     context.commit('incrementUsersNextLittercoinScore');
+
+                    if (context.rootState.user.user.littercoin_progress === 100)
+                    {
+                        context.commit('incrementLittercoinScore');
+
+                        Vue.$vToastify.success({
+                            title,
+                            body: "You just earned a Littercoin!",
+                            position: 'top-right'
+                        });
+                    }
                 }
             }
 

@@ -116,13 +116,30 @@ export const mutations = {
      *
      * For now, just increment their score to match a successful submission.
      */
-    incrementUsersNextLittercoinScore (state, payload)
+    incrementUsersNextLittercoinScore (state)
     {
         let user = Object.assign({}, state.user);
 
         user.littercoin_progress++;
 
-        console.log('user.littercoin_progress', user.littercoin_progress);
+        state.user = user;
+    },
+
+    /**
+     * This is normally done on a queue,
+     *
+     * But we have to mimick the backend.
+     *
+     * Once littercoin_progress reaches 100,
+     * - reward littecoin +1
+     * - reset littercoin_progress
+     */
+    incrementLittercoinScore (state)
+    {
+        let user = Object.assign({}, state.user);
+
+        user.total_littercoin++;
+        user.littercoin_progress = 0;
 
         state.user = user;
     },
