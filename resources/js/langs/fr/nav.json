@@ -1,0 +1,20 @@
+{
+    "admin": "Admin",
+    "admin-verify-photos": "ADMIN - Verify Photos",
+    "admin-horizon": "ADMIN - Horizon",
+    "admin-verify-boxes": "ADMIN - Verify Boxes",
+    "about": "About",
+    "global-map": "Global Map",
+    "world-cup": "World Cup",
+    "community": "Community",
+    "upload": "Upload",
+    "more": "More",
+    "tag-litter": "Tag Litter",
+    "profile": "Profile",
+    "settings": "Settings",
+    "bounding-boxes": "Bounding Boxes",
+    "logout": "Logout",
+    "login": "Login",
+    "signup": "Signup",
+    "teams": "Teams"
+}

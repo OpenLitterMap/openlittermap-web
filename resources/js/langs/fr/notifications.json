@@ -1,0 +1,15 @@
+{
+    "success": "Success",
+    "error": "Error!",
+    "settings-updated": "Settings updated successfully!",
+    "tags-added": "Success! Your tags have been added",
+    "subscription-cancelled": "Your subscription has been cancelled",
+    "privacy-updated": "Your Privacy Settings have been saved",
+    "litter-toggled": "Picked up value updated",
+    "settings": {
+        "subscribed": "You have been subscribed to the updates and good news!",
+        "unsubscribed": "You have unsubscribed. You will no longer receive the good news!",
+        "flag-updated": "Your flag has been updated"
+    },
+    "something-went-wrong": "Something went wrong. Please, try again or contact us!"
+}

@@ -1,5 +1,6 @@
 import { en } from './en';
 import { es } from './es';
+import { fr } from './fr';
 import { hu } from './hu';
 import { nl } from './nl';
 import { pl } from './pl';
@@ -9,6 +10,7 @@ import { sw } from './sw';
 export const langs = {
     'en': en,
     'es': es,
+    'fr': fr,
     'hu': hu,
     'nl': nl,
     'pl': pl,

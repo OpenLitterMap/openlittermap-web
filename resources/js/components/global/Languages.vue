@@ -29,6 +29,7 @@ export default {
 			langs: [
 				{ url: 'en' },
 				{ url: 'es' },
+                { url: 'fr' },
                 { url: 'hu' },
 				{ url: 'nl' },
                 { url: 'pl' },
