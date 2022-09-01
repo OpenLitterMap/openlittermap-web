@@ -35,7 +35,8 @@ class GlobalMapController extends Controller
             )
             ->where([
                 ['verified', '>=', 2],
-                ['art_id', '!=', null]
+                ['art_id', '!=', null],
+                ['user_id', '!=', 5292]
             ])
             ->with([
                 'user:id,name,username,show_username_maps,show_name_maps,settings',
