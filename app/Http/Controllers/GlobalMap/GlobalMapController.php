@@ -35,8 +35,7 @@ class GlobalMapController extends Controller
             )
             ->where([
                 ['verified', '>=', 2],
-                ['art_id', '!=', null],
-                ['user_id', '!=', 5292]
+                ['art_id', '!=', null]
             ])
             ->with([
                 'user:id,name,username,show_username_maps,show_name_maps,settings',
@@ -98,7 +97,7 @@ class GlobalMapController extends Controller
             });
         }
 
-        $query->where(['user_id', '!=', 5292]);
+        //$query->where(['user_id', '!=', 5292]);
 
         $photos = $this->filterPhotosByGeoHash(
             $query,
