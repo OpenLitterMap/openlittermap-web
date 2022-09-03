@@ -27,19 +27,19 @@ class DisplayTagsOnMapController extends Controller
 
         if ($request->has('brand'))
         {
-            $photos = $photos->whereHas('brands', function (Builder  $query) use ($request) {
+            $photos = $photos->whereHas('brands', function (Builder $query) use ($request) {
                 return $query->whereNotNull($request->brand);
             });
         }
 
-        $photos->with([
-            'user:id,name,username,show_username_maps,show_name_maps,settings',
-            'user.team:is_trusted',
-            'team:id,name',
-            'customTags:photo_id,tag',
-        ])
-        ->limit(5000)
-        ->get();
+        $photos = $photos->with([
+                'user:id,name,username,show_username_maps,show_name_maps,settings',
+                'user.team:is_trusted',
+                'team:id,name',
+                'customTags:photo_id,tag',
+            ])
+            ->limit(5000)
+            ->get();
 
         // Populate geojson object
         $features = [];
@@ -75,6 +75,8 @@ class DisplayTagsOnMapController extends Controller
                 ]
             ];
         }
+
+        \Log::info(['features', $features]);
 
         return [
             'type' => 'FeatureCollection',
