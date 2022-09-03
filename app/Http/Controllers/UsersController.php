@@ -242,7 +242,7 @@ class UsersController extends Controller
 
         return [
             'message' => 'success',
-            'value'   => $user->items_remaining
+            'value' => $user->items_remaining
         ];
     }
 

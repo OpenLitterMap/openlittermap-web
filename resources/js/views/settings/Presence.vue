@@ -14,7 +14,11 @@
 		<div class="columns">
 			<div class="column is-one-third is-offset-1">
 				<div class="row">
-					<button :class="button" :disabled="processing" @click="toggle">{{ $t('settings.presence.pickup?') }}</button>
+					<button
+                        :class="button"
+                        :disabled="processing"
+                        @click="toggle"
+                    >{{ $t('settings.presence.pickup?') }}</button>
 				</div>
 			</div>
 		</div>
