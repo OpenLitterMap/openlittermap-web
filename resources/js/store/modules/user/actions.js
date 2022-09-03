@@ -355,8 +355,8 @@ export const actions = {
      */
     async TOGGLE_LITTER_PICKED_UP_SETTING (context)
     {
-        let title = i18n.t('notifications.success');
-        let body  = i18n.t('notifications.litter-toggled');
+        const title = i18n.t('notifications.success');
+        const body  = i18n.t('notifications.litter-toggled');
 
         await axios.post('/settings/toggle')
             .then(response => {
