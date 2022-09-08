@@ -1,6 +1,6 @@
 {
-    "success-title": "Thanks for helping!",
-    "success-subtitle": "Remember to verify your email to enable login.",
-    "error-title": "There was a problem.",
-    "error-subtitle": "Your card was not charged, but you can still verify your email and login."
+    "success-title": "Merci pour votre aide !",
+    "success-subtitle": "Vérifiez votre email pour pouvoir vous identifiez.",
+    "error-title": "Un problème est survenue.",
+    "error-subtitle": "Votre panier n'a pas été chargé, mais vous pouvez toujours Vérifiez votre email et votre mot de passe."
 }
