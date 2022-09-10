@@ -76,8 +76,6 @@ class DisplayTagsOnMapController extends Controller
             ];
         }
 
-        \Log::info(['features', $features]);
-
         return [
             'type' => 'FeatureCollection',
             'features' => $features
