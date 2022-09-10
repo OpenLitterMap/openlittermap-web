@@ -276,7 +276,7 @@ export default {
         }
     },
     mounted () {
-        /** 0: Hack! Bind variable []outside of vue scope */
+        /** 0: Hack! Bind variable outside of vue scope */
         window.olm_map = this;
 
         /** 1. Create map object */
