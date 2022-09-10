@@ -283,7 +283,7 @@ export default {
         map = L.map('openlittermap', {
             center: [0, 0],
             zoom: MIN_ZOOM,
-            scrollWheelZoom: fals
+            scrollWheelZoom: false,
             smoothWheelZoom: true,
             smoothSensitivity: 1,
         });
