@@ -1,0 +1,8 @@
+{
+    "title": "Classement des Équipes",
+    "position-header": "Position",
+    "name-header": "Nom",
+    "photos-header": "Total des Photos",
+    "litter-header": "Total des déchets",
+    "created-at-header" : "Créé À"
+}

@@ -1,0 +1,71 @@
+{
+    "de": {
+        "name": "Allemagne",
+        "lang": "Allemand"
+    },
+
+    "en": {
+        "name": "Angleterre",
+        "lang": "Anglais"
+    },
+
+    "es": {
+        "name": "Espagne",
+        "lang": "Espagnol"
+    },
+
+    "fr": {
+        "name": "France",
+        "lang": "Français"
+    },
+
+    "hu": {
+        "name": "Hongrie",
+        "lang": "Hongrois"
+    },
+
+    "ie": {
+        "name": "Irlande",
+        "lang": "Irlandais"
+    },
+
+    "it": {
+        "name": "Italie",
+        "lang": "Italien"
+    },
+
+    "ms": {
+        "name": "Malaisie",
+        "lang": "Malais"
+    },
+
+    "nl": {
+        "name": "Pays-Bas",
+        "lang": "Néerlandais"
+    },
+
+    "pl": {
+        "name": "Pologne",
+        "lang": "Polonais"
+    },
+
+    "pt": {
+        "name": "Brésil",
+        "lang": "Portugais brésilien"
+    },
+
+    "sw" : {
+        "name": "Tanzanie",
+        "lang": "Swahili"
+    },
+
+    "tk": {
+        "name": "Turkie",
+        "lang": "Turc"
+    },
+
+    "uk": {
+        "name": "Royaume-Uni",
+        "lang": "Anglais"
+    }
+}

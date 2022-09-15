@@ -1,0 +1,13 @@
+{
+    "card-number": "Numéro de carte",
+    "card-holder": "Nom du titulaire de la carte",
+    "exp": "Date d'expiration",
+    "cvv": "Cryptogramme visuel",
+    "placeholders": {
+        "card-number": "Votre numéro de carte",
+        "card-holder": "Nom du titulaire de la carte",
+        "exp-month": "Mois",
+        "exp-year": "Année",
+        "cvv": "***"
+    }
+}

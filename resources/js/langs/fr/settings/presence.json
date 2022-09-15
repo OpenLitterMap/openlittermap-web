@@ -1,0 +1,8 @@
+{
+    "do-you-pickup": "Vous ramassez le déchet ou vous le laisser sur place?",
+    "save-def-settings": "Vous pouvez enregistrer vos paramètres par défaut ici.",
+    "change-value-of-litter": "Vous pouvez aussi changer la valeur de chaque déchet pendant que vous les taguez.",
+    "status": "Statut Actuel",
+    "toggle-presence": "Inverser la participation",
+    "pickup?": "Ramasser?"
+}

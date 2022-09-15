@@ -1,0 +1,14 @@
+{
+    "title": "Êtes-vous prêts?",
+    "subtitle": "S'inscrire pour devenir un spécialiste en géolocalisation des déchets et nous aider à vaincre la pollution plastique.",
+    "crowdfunding-message": "Pour nous aider, pensez à soutenir notre travail à travers le financement participatif d'OpenLitterMap. Avec seulement 6 centimes par jour pour une souscription mensuelle, vous participez à la croissance et au développement de cette importante platforme.",
+    "form-create-account": "Créer votre compte",
+    "form-field-name": "Nom",
+    "form-field-unique-id": "Identifiant Unique",
+    "form-field-email": "Adresse E-mail",
+    "form-field-password": "Mot de passe. Doit contenir au moins une majuscule, une miniscule et un chiffre.", 
+    "form-field-pass-confirm": "Confirmer le mot de passe",
+    "form-account-conditions": "J'ai lu et j'accepte les Termes et Conditions d'utilisation ainsi que la politique de confidentialité",
+    "form-btn": "S'inscrire",
+    "create-account-note": "NB: Si vous ne recevez pas l'e-mail de vérification dans votre courrier, veuillez vérifier votre dossier spam."
+}
