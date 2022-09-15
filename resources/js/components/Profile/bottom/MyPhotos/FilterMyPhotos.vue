@@ -1,65 +1,98 @@
 <template>
     <!-- Filters -->
-    <div class="flex mb1 filter-my-photos">
+    <div>
+        <div class="flex mb1 filter-my-photos">
 
-        <router-link to="/tag">
-            <button class="button is-primary">Tag individually</button>
-        </router-link>
+            <router-link to="/tag">
+                <button class="button is-primary">Tag individually</button>
+            </router-link>
 
-        <div class="field mb0 pt0">
-            <div class="control has-icons-left">
-                <input
-                    class="input w10"
-                    :placeholder="$t('common.search-by-id')"
-                    v-model="filter_by_id"
-                    @input="search"
-                />
-
-                <span class="icon is-small is-left z-index-0">
-                    <i :class="spinner" />
-                </span>
-            </div>
-        </div>
-
-        <button class="button is-primary select-all-photos" @click="toggleAll">
-            {{ getSelectAllText }}
-        </button>
-
-        <!-- Calendar -->
-        <div :class="calendar">
-            <div class="dropdown-trigger">
-                <button class="button dropdownButtonLeft" @click="toggleCalendar">
-                    <span>{{ showCalendarDates }}</span>
-                </button>
-            </div>
-            <div class="dropdown-menu">
-                <div class="dropdown-content calendar-box">
-                    <FunctionalCalendar
-                        :day-names="$t('common.day-names')"
-                        :month-names="$t('common.month-names')"
-                        :short-month-names="$t('common.short-month-names')"
-                        :change-month-function="true"
-                        :change-year-function="true"
-                        :is-date-range="true"
-                        :date-format="'yyyy/mm/dd'"
-                        @selectedDaysCount="toggleCalendar"
-                        ref="calendar"
-                        v-model="filter_by_calendar"
+            <div class="field mb0 pt0">
+                <div class="control has-icons-left">
+                    <input
+                        class="input w10"
+                        :placeholder="$t('common.search-by-id')"
+                        v-model="filter_by_id"
+                        @input="search"
                     />
+
+                    <span class="icon is-small is-left z-index-0">
+                        <i :class="spinner" />
+                    </span>
                 </div>
             </div>
+
+            <!-- Calendar -->
+            <div :class="calendar">
+                <div class="dropdown-trigger">
+                    <button class="button dropdownButtonLeft" @click="toggleCalendar">
+                        <span>{{ showCalendarDates }}</span>
+                    </button>
+                </div>
+                <div class="dropdown-menu">
+                    <div class="dropdown-content calendar-box">
+                        <FunctionalCalendar
+                            :day-names="$t('common.day-names')"
+                            :month-names="$t('common.month-names')"
+                            :short-month-names="$t('common.short-month-names')"
+                            :change-month-function="true"
+                            :change-year-function="true"
+                            :is-date-range="true"
+                            :date-format="'dd/mm/yyyy'"
+                            @selectedDaysCount="toggleCalendar"
+                            ref="calendar"
+                            v-model="filter_by_calendar"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Updated at or Taken at -->
+            <div>
+                <select class="input" v-model="period" @change="getPhotos">
+                    <option
+                        v-for="time in periods"
+                        :value="time"
+                    >{{ getPeriod(time) }}</option>
+                </select>
+            </div>
+
+            <!-- Verification Status -->
+            <div>
+                <select
+                    class="input"
+                    v-model="verificationStatus"
+                    @change="getPhotos"
+                >
+                    <option :value="0">Not Submitted</option>
+                    <option :value="2">Verified</option>
+                </select>
+            </div>
+
+            <button class="button is-primary select-all-photos" @click="toggleAll">
+                {{ getSelectAllText }}
+            </button>
+
+            <!--        <select class="input" v-model="verificationStatus" @change="getPhotos">-->
+            <!--            <option disabled :value="null">Verification</option>-->
+            <!--            <option v-for="i in verifiedIndices" :value="i">{{ getVerifiedText(i) }}</option>-->
+            <!--        </select>-->
         </div>
 
-        <div>
-            <select class="input" v-model="period" @change="getPhotos">
-                <option v-for="time in periods" :value="time">{{ getPeriod(time) }}</option>
-            </select>
-        </div>
+        <div class="flex items-center">
+            <input
+                id="showIds"
+                name="showIds"
+                class="mr-1 pointer"
+                v-model="showIds"
+                type="checkbox"
+            />
 
-        <!--        <select class="input" v-model="verifiedIndex" @change="getPhotos">-->
-        <!--            <option disabled :value="null">Verification</option>-->
-        <!--            <option v-for="i in verifiedIndices" :value="i">{{ getVerifiedText(i) }}</option>-->
-        <!--        </select>-->
+            <label
+                for="showIds"
+                class="pointer"
+            >Show IDs?</label>
+        </div>
     </div>
 </template>
 
@@ -79,13 +112,13 @@ export default {
             ],
             processing: false,
             showCalendar: false,
-            // verifiedIndices: [
-            //     0,1
-            // ]
+            verificationStatuses: [
+                'Not tagged',
+                'Verified'
+            ]
         };
     },
     computed: {
-
         /**
          * Class to show when calender is open
          */
@@ -189,6 +222,21 @@ export default {
         },
 
         /**
+         * Show or Hide the photo.id above each image
+         */
+        showIds: {
+            get () {
+                return this.filters.showIds;
+            },
+            set (v) {
+                this.$store.commit('filter_photos', {
+                    key: 'showIds',
+                    v
+                });
+            }
+        },
+
+        /**
          * Animate the spinner when searching by id
          */
         spinner ()
@@ -201,13 +249,13 @@ export default {
         /**
          * Stage of verification to filter photos by
          */
-        verifiedIndex: {
+        verificationStatus: {
             get () {
-                return this.filters.verified;
+                return this.filters.status;
             },
             set (v) {
                 this.$store.commit('filter_photos', {
-                    key: 'verified',
+                    key: 'status',
                     v
                 });
             }

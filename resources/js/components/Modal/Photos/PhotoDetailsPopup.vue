@@ -19,7 +19,11 @@
             </div>
         </div>
         <div class="photo-tags-container"
-             v-if="photo.custom_tags && photo.custom_tags.length || Object.keys(photo.tags).length"
+             v-if="
+                 photo.custom_tags && photo.custom_tags.length ||
+                 photo.tags && Object.keys(photo.tags).length ||
+                 photo.submittedTags && Object.keys(photo.submittedTags).length
+            "
         >
             <div v-if="photo.custom_tags && photo.custom_tags.length">
                 <p class="has-text-centered">{{ $t('tags.custom-tags') }}</p>
@@ -38,7 +42,11 @@
                 </transition-group>
             </div>
 
-            <transition-group name="categories" tag="div">
+            <transition-group
+                name="categories"
+                tag="div"
+                v-if="photo.tags"
+            >
                 <div v-for="category in Object.keys(photo.tags || {})" :key="category">
                     <p class="has-text-centered">{{ getCategoryName(category) }}</p>
 
@@ -54,6 +62,32 @@
                             <p class="has-text-white">
                                 {{ getTagName(category, tag) }}:
                                 {{ photo.tags[category][tag] }}
+                            </p>
+                        </div>
+                    </transition-group>
+                </div>
+            </transition-group>
+
+            <transition-group
+                name="categories"
+                tag="div"
+                v-if="photo.submittedTags"
+            >
+                <div v-for="category in Object.keys(photo.submittedTags || {})" :key="category">
+                    <p class="has-text-centered">{{ getCategoryName(category) }}</p>
+
+                    <transition-group name="list" class="tags-list" tag="div">
+                        <div
+                            v-for="tag in Object.keys(photo.submittedTags[category])"
+                            class="litter-tag"
+                            :key="tag"
+                        >
+                            <span class="close" @click.prevent.stop="removeTag(category, tag)">
+                                <i class="fa fa-times"></i>
+                            </span>
+                            <p class="has-text-white">
+                                {{ getTagName(category, tag) }}:
+                                {{ photo.submittedTags[category][tag] }}
                             </p>
                         </div>
                     </transition-group>

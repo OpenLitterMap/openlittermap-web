@@ -1,16 +1,27 @@
 <template>
-    <section class="hero fullheight bulk-tag">
-        <loading v-show="processing" v-model:active="processing" :is-full-page="true" />
+    <section class="fullheight bulk-tag-container">
+        <loading
+            v-show="processing"
+            v-model:active="processing"
+            :is-full-page="true"
+        />
 
+        <!-- There is too much of a gap here between FilterMyPhotos and my-photos-grid-container -->
         <FilterMyPhotos />
 
         <div class="my-photos-grid-container">
-
             <div
                 v-for="photo in photos"
                 class="my-grid-photo"
                 :key="photo.id"
             >
+                <p
+                    class="has-text-center"
+                    :style="showIds ? '' : 'color: white;'"
+                >
+                    {{ photo.id | commas }}
+                </p>
+
                 <img
                     class="litter"
                     @click="select(photo.id)"
@@ -46,7 +57,6 @@
                     </div>
                 </transition>
             </div>
-
         </div>
 
         <div class="bottom-actions">
@@ -81,7 +91,7 @@
                     class="button is-medium is-primary"
                     @click="addTags"
                     :disabled="selectedCount === 0"
-                >{{$t('common.add-tags') }}</button>
+                >{{ $t('common.add-tags') }}</button>
             </div>
 
             <div class="bottom-right-actions">
@@ -127,7 +137,6 @@ export default {
         await this.$store.dispatch('LOAD_MY_PHOTOS');
     },
     computed: {
-
         /**
          * Class to show when calendar is open
          */
@@ -136,6 +145,14 @@ export default {
             return this.showCalendar
                 ? 'dropdown is-active mr1'
                 : 'dropdown mr1';
+        },
+
+        /**
+         * Return True when we are viewing verified photos
+         */
+        isEditingTags ()
+        {
+            return (this.$store.state.photos.filters.status === 2);
         },
 
         /**
@@ -163,6 +180,14 @@ export default {
         },
 
         /**
+         * Returns True or False to show or hide each photo.id above the image
+         */
+        showIds ()
+        {
+            return this.$store.state.photos.filters.showIds;
+        },
+
+        /**
          * Disable button if false
          */
         hasAddedTags ()
@@ -173,7 +198,6 @@ export default {
         },
     },
     methods: {
-
         /**
          * Load a modal to add 1 or more tags to the selected photos
          */
@@ -300,12 +324,16 @@ export default {
 
         /**
          * Returns true if the photo has tags or custom tags
+         *
+         * appliedTags are loaded onto photos that have been submitted
          */
         photoIsTagged (photo)
         {
             const hasTags = photo.tags && Object.keys(photo.tags).length;
             const hasCustomTags = photo.custom_tags?.length;
-            return hasTags || hasCustomTags;
+            const hasSubmittedTags = photo.submittedTags && Object.keys(photo.submittedTags).length
+
+            return hasTags || hasCustomTags || hasSubmittedTags;
         },
 
         /**
@@ -320,170 +348,175 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.bulk-tag {
-    padding: 3rem;
-}
 
-.my-photos-grid-container {
-    display: grid;
-    grid-template-rows: repeat(5, 1fr);
-    grid-template-columns: repeat(6, 1fr);
-    grid-row-gap: 0.5em;
-    grid-column-gap: 0.5em;
-}
-
-.my-grid-photo {
-    max-height: 10em;
-    max-width: 10em;
-    position: relative;
-
-    .litter {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        border-radius: 5px;
-    }
-}
-
-.grid-checkmark {
-    position: absolute;
-    height: 32px;
-    bottom: 8px;
-    right: 0;
-    color: #0ca3e0;
-    font-size: 1rem;
-    padding: 5px;
-
-    .tag-icon {
-        position: relative;
-        height: 30px;
-        width: 30px;
-        border-radius: 50%;
-        background-color: black;
-
-        i {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-    }
-}
-
-.grid-tagged {
-    position: absolute;
-    height: 32px;
-    top: 0;
-    right: 0;
-    color: #00d1b2;
-    font-size: 1rem;
-    padding: 5px;
-    cursor: pointer;
-
-    .tag-icon {
-        position: relative;
-        height: 30px;
-        width: 30px;
-        border-radius: 50%;
-        background-color: black;
-
-        i {
-            position: absolute;
-            top: 52%;
-            left: 52%;
-            transform: translate(-50%, -50%);
-        }
-    }
-
-    .tooltip-text {
-        min-width: max-content;
-        transform: translate(-50%, -5px);
-    }
-
-    &:hover {
-        transform: scale(1.05);
-    }
-}
-
-.photo-tags {
-    position: absolute;
-    top: 105%;
-    right: 50%;
-    width: 250px;
-    padding: 10px;
-    background: ghostwhite;
-    box-shadow: 2px 2px 2px 1px rgba(0, 0, 0, 0.2);
-    border-radius: 5px;
-    transform: translateX(50%);
-    z-index: 10;
-}
-
-.photos-info {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-
-    .info-icon {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        color: white;
-        background-color: #00d1b2;
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        i {
-            margin-top: 2px;
-        }
-    }
-}
-
-.bottom-actions {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 16px;
-    gap: 8px;
-
-    .bottom-navigation {
-        display: flex;
-        flex-direction: row;
-    }
-
-    .bottom-right-actions {
+    .bulk-tag-container {
+        padding: 3rem;
+        align-items: stretch;
         display: flex;
         flex-direction: column;
-        align-items: center;
-        gap: 8px;
     }
-}
 
-/* Laptop and above */
-@media (min-width: 1027px)
-{
     .my-photos-grid-container {
-        grid-template-rows: repeat(3, 1fr);
-        grid-template-columns: repeat(10, 1fr);
-        grid-row-gap: 1em;
-        grid-column-gap: 1em;
+        display: grid;
+        grid-template-rows: repeat(5, 1fr);
+        grid-template-columns: repeat(6, 1fr);
+        grid-row-gap: 0.5em;
+        grid-column-gap: 0.5em;
+        margin-bottom: auto;
+    }
+
+    .my-grid-photo {
+        max-height: 10em;
+        max-width: 10em;
+        position: relative;
+
+        .litter {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 5px;
+        }
+    }
+
+    .grid-checkmark {
+        position: absolute;
+        height: 32px;
+        bottom: -32px;
+        right: 0;
+        color: #0ca3e0;
+        font-size: 1rem;
+        padding: 5px;
+
+        .tag-icon {
+            position: relative;
+            height: 30px;
+            width: 30px;
+            border-radius: 50%;
+            background-color: black;
+
+            i {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }
+        }
+    }
+
+    .grid-tagged {
+        position: absolute;
+        height: 32px;
+        top: 0;
+        right: 0;
+        color: #00d1b2;
+        font-size: 1rem;
+        padding: 5px;
+        cursor: pointer;
+
+        .tag-icon {
+            position: relative;
+            height: 30px;
+            width: 30px;
+            border-radius: 50%;
+            background-color: black;
+
+            i {
+                position: absolute;
+                top: 52%;
+                left: 52%;
+                transform: translate(-50%, -50%);
+            }
+        }
+
+        .tooltip-text {
+            min-width: max-content;
+            transform: translate(-50%, -5px);
+        }
+
+        &:hover {
+            transform: scale(1.05);
+        }
+    }
+
+    .photo-tags {
+        position: absolute;
+        top: 105%;
+        right: 50%;
+        width: 250px;
+        padding: 10px;
+        background: ghostwhite;
+        box-shadow: 2px 2px 2px 1px rgba(0, 0, 0, 0.2);
+        border-radius: 5px;
+        transform: translateX(50%);
+        z-index: 10;
+    }
+
+    .photos-info {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+
+        .info-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            background-color: #00d1b2;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            i {
+                margin-top: 2px;
+            }
+        }
     }
 
     .bottom-actions {
-        flex-direction: row;
-        gap: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 16px;
+        gap: 8px;
 
-        .bottom-right-actions {
+        .bottom-navigation {
+            display: flex;
             flex-direction: row;
         }
-    }
-}
 
-.fade-enter-active, .fade-leave-active {
-    transition: opacity .3s;
-}
-.fade-enter, .fade-leave-to {
-    opacity: 0;
-}
+        .bottom-right-actions {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+    }
+
+    /* Laptop and above */
+    @media (min-width: 1027px)
+    {
+        .my-photos-grid-container {
+            grid-template-rows: repeat(3, 1fr);
+            grid-template-columns: repeat(10, 1fr);
+            grid-row-gap: 1em;
+            grid-column-gap: 1em;
+        }
+
+        .bottom-actions {
+            flex-direction: row;
+            gap: 0;
+
+            .bottom-right-actions {
+                flex-direction: row;
+            }
+        }
+    }
+
+    .fade-enter-active, .fade-leave-active {
+        transition: opacity .3s;
+    }
+    .fade-enter, .fade-leave-to {
+        opacity: 0;
+    }
 
 </style>

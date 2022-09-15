@@ -23,7 +23,11 @@ class Photo extends Model
 
     protected $guarded = [];
 
-    protected $appends = ['selected', 'picked_up'];
+    protected $appends = [
+        'selected',
+        'picked_up',
+        'submittedTags'
+    ];
 
     protected $casts = ['datetime'];
 
@@ -104,13 +108,14 @@ class Photo extends Model
     }
 
     /**
-     * Return the tags for an image
+     * Return the tags + brands for an image
      *
      * Remove any keys with null values
      */
     public function tags (): array
     {
         $tags = [];
+
         foreach ($this->categories() as $category)
         {
             if ($this->$category)
@@ -130,6 +135,18 @@ class Photo extends Model
         }
 
         return $tags;
+    }
+
+    /**
+     * Load the tags on each photo
+     */
+    public function getSubmittedTagsAttribute ()
+    {
+        if ($this->verified >= 2) {
+            return $this->tags();
+        }
+
+        return null;
     }
 
     /**
