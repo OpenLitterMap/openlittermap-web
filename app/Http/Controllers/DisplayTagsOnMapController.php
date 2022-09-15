@@ -16,14 +16,23 @@ class DisplayTagsOnMapController extends Controller
      */
     public function show (Request $request)
     {
-        $photos = Photo::query()
-            ->whereHas('customTags', function (Builder $query) use ($request) {
+        $photos = Photo::query();
+
+        if ($request->has('custom_tag'))
+        {
+            $photos = $photos->whereHas('customTags', function (Builder $query) use ($request) {
                 return $query->whereTag($request->custom_tag);
-            })
-            ->orWhereHas('brands', function (Builder  $query) use ($request) {
+            });
+        }
+
+        if ($request->has('brand'))
+        {
+            $photos = $photos->whereHas('brands', function (Builder $query) use ($request) {
                 return $query->whereNotNull($request->brand);
-            })
-            ->with([
+            });
+        }
+
+        $photos = $photos->with([
                 'user:id,name,username,show_username_maps,show_name_maps,settings',
                 'user.team:is_trusted',
                 'team:id,name',
