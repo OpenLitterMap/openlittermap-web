@@ -218,7 +218,9 @@ export default {
 
             this.processing = true;
 
-            await this.$store.dispatch('BULK_TAG_PHOTOS');
+            const updateExistingTags = (this.$store.state.photos.filters.status === 2);
+
+            await this.$store.dispatch('BULK_TAG_PHOTOS', updateExistingTags);
 
             this.processing = false;
 
@@ -238,7 +240,8 @@ export default {
 
             const taggedPhotos = this.photos.filter(this.photoIsTagged);
 
-            for (let index in taggedPhotos) {
+            for (let index in taggedPhotos)
+            {
                 // Add tags
                 Object.entries(taggedPhotos[index].tags ?? {}).forEach(([category, tags]) => {
                     Object.entries(tags).forEach(([tag, quantity]) => {
@@ -324,16 +327,13 @@ export default {
 
         /**
          * Returns true if the photo has tags or custom tags
-         *
-         * appliedTags are loaded onto photos that have been submitted
          */
         photoIsTagged (photo)
         {
             const hasTags = photo.tags && Object.keys(photo.tags).length;
             const hasCustomTags = photo.custom_tags?.length;
-            const hasSubmittedTags = photo.submittedTags && Object.keys(photo.submittedTags).length
 
-            return hasTags || hasCustomTags || hasSubmittedTags;
+            return hasTags || hasCustomTags;
         },
 
         /**

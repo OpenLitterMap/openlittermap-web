@@ -25,7 +25,7 @@ trait AddTagsTrait
         $user = User::find($photo->user_id);
 
         $tagUpdates = $this->calculateTagsDiffAction->run(
-            $photo->tags(),
+            $photo->createTags(),
             $tags,
             $photo->customTags->pluck('tag')->toArray(),
             $customTags

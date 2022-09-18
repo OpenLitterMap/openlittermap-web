@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\User;
 
-use App\Actions\Photos\GetPreviousCustomTagsAction;
-use App\Jobs\Photos\AddTagsToPhoto;
+
 use App\Models\Photo;
 use App\Traits\Photos\FilterPhotos;
+use App\Jobs\Photos\AddTagsToPhoto;
+use App\Jobs\Photos\UpdateTagsOnPhoto;
+use App\Actions\Photos\GetPreviousCustomTagsAction;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -23,13 +25,27 @@ class UserPhotoController extends Controller
      */
     public function bulkTag (Request $request)
     {
-        foreach ($request->photos as $photoId => $data) {
-             dispatch (new AddTagsToPhoto(
-                 $photoId,
-                 $data['picked_up'] ?? false,
-                 $data['tags'] ?? [],
-                 $data['custom_tags'] ?? []
-             ));
+        if ($request->updateExistingTags)
+        {
+            foreach ($request->photos as $photoId => $data) {
+                dispatch (new UpdateTagsOnPhoto(
+                    $photoId,
+                    $data['picked_up'] ?? false,
+                    $data['tags'] ?? [],
+                    $data['custom_tags'] ?? []
+                ));
+            }
+        }
+        else
+        {
+            foreach ($request->photos as $photoId => $data) {
+                dispatch (new AddTagsToPhoto(
+                    $photoId,
+                    $data['picked_up'] ?? false,
+                    $data['tags'] ?? [],
+                    $data['custom_tags'] ?? []
+                ));
+            }
         }
 
         return ['success' => true];

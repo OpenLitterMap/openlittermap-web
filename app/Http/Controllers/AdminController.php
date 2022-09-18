@@ -137,7 +137,7 @@ class AdminController extends Controller
         $this->deletePhotoAction->run($photo);
 
         $tagUpdates = $this->calculateTagsDiffAction->run(
-            $photo->tags(),
+            $photo->createTags(),
             [],
             $photo->customTags->pluck('tag')->toArray(),
             []

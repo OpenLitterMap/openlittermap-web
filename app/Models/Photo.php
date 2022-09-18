@@ -26,7 +26,7 @@ class Photo extends Model
     protected $appends = [
         'selected',
         'picked_up',
-        'submittedTags'
+        'tags'
     ];
 
     protected $casts = ['datetime'];
@@ -45,6 +45,13 @@ class Photo extends Model
     public function getPickedUpAttribute ()
     {
         return !$this->remaining;
+    }
+    /**
+     * Return the tags for the Photo
+     */
+    public function getTagsAttribute ()
+    {
+        return $this->createTags();
     }
 
     /**
@@ -112,7 +119,7 @@ class Photo extends Model
      *
      * Remove any keys with null values
      */
-    public function tags (): array
+    public function createTags (): ?array
     {
         $tags = [];
 
@@ -135,18 +142,6 @@ class Photo extends Model
         }
 
         return $tags;
-    }
-
-    /**
-     * Load the tags on each photo
-     */
-    public function getSubmittedTagsAttribute ()
-    {
-        if ($this->verified >= 2) {
-            return $this->tags();
-        }
-
-        return null;
     }
 
     /**

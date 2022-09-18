@@ -49,9 +49,6 @@ class GetNextImageToVerifyController extends Controller
             ];
         }
 
-        // Load the tags for the photo
-        $photo->tags();
-
         // Count photos that are uploaded but not tagged
         $photosNotProcessed = $this->filterPhotos()
             ->where('verification', 0)

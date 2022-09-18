@@ -125,6 +125,12 @@ export const mutations = {
 
     /**
      * Adds a tag to a single photo
+     *
+     * payload
+     * - photoId
+     * - category
+     * - tag
+     * - quantity
      */
     addTagToPhoto (state, payload)
     {

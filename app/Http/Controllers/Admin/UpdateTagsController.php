@@ -44,7 +44,7 @@ class UpdateTagsController extends Controller
         $photo->save();
 
         // not used?
-        $oldTags = $photo->tags();
+        // $oldTags = $photo->createTags();
 
         $user = User::find($photo->user_id);
 
