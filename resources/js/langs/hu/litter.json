@@ -12,7 +12,8 @@
         "softdrinks": "Üditők",
         "smoking": "Dohány",
         "other": "Egyéb",
-        "dogshit": "Háziállatok"
+        "dogshit": "Háziállatok",
+        "material": "Material"
     },
     "smoking": {
         "butts": "Cigaretta/Csikkek",
@@ -294,5 +295,31 @@
     "dogshit": {
         "poo": "Meglepetés!",
         "poo_in_bag": "Meglepetés felszéve!"
+    },
+    "material": {
+        "aluminium": "Aluminium",
+        "bronze": "Bronze",
+        "carbon_fiber": "Carbon Fiber",
+        "ceramic": "Ceramic",
+        "composite": "Composite",
+        "concrete": "Concrete",
+        "copper": "Copper",
+        "fiberglass": "Fiberglass",
+        "glass": "Glass",
+        "iron_or_steel": "Iron/Steel",
+        "latex": "Latex",
+        "metal": "Metal",
+        "nickel": "Nickel",
+        "nylon": "Nylon",
+        "paper": "Paper",
+        "plastic": "Plastic",
+        "polyethylene": "Polyethylene",
+        "polymer": "Polymer",
+        "polypropylene": "Polypropylene",
+        "polystyrene": "Polystyrene",
+        "pvc": "PVC",
+        "rubber": "Rubber",
+        "titanium": "Titanium",
+        "wood": "Wood"
     }
 }

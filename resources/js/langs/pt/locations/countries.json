@@ -3,64 +3,56 @@
         "name": "Alemanha",
         "lang": "Alemão"
     },
-
     "en": {
         "name": "Reino Unido",
         "lang": "English"
     },
-
     "es": {
         "name": "Espanha",
         "lang": "Español"
     },
-
     "fr": {
         "name": "França",
         "lang": "Francês"
     },
-
     "hu": {
         "name": "Magyar",
         "lang": "Hungarian"
     },
-
     "ie": {
         "name": "Irlanda",
         "lang": "Irlandês"
     },
-
     "it": {
         "name": "Italia",
         "lang": "Italiano"
     },
-
     "ms": {
         "name": "Malásia",
         "lang": "Malaia"
     },
-
     "nl": {
         "name": "Holanda",
         "lang": "Nederlands"
     },
-
-    "sw" : {
+    "sw": {
         "name": "Tanzania",
         "lang": "Swahili"
     },
-
     "tk": {
         "name": "Turquia",
         "lang": "Turco"
     },
-
     "uk": {
         "name": "Reino Unido",
         "lang": "Inglês"
     },
-
     "pl": {
         "name": "Polônia",
         "lang": "Polski"
+    },
+    "pt": {
+        "name": "Brasil",
+        "lang": "Portuguese"
     }
 }
