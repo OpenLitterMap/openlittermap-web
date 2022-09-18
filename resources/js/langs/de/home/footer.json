@@ -12,10 +12,11 @@
     "join-slack": "Join Slack",
     "create-account": "Create Account",
     "fb-group": "Facebook Group",
-    "single-donation":"Single Donation",
+    "single-donation": "Single Donation",
     "crowdfunding": "Crowdfunding",
     "olm-is-flagship": "OpenLitterMap is a flagship product of GeoTech Innovations Ltd., a startup in Ireland pioneering essential citizen science services #650323",
     "enter-email": "Enter your email address",
     "references": "References",
-    "credits": "Credits"
+    "credits": "Credits",
+    "contact-us": "Contact Us"
 }

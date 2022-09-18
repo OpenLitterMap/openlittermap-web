@@ -69,6 +69,7 @@ class GlobalMapController extends Controller
                 'remaining',
                 'datetime'
             )
+            ->where('user_id', '!=', 5292) // temp
             ->with([
                 'user:id,name,username,show_username_maps,show_name_maps,settings',
                 'user.team:is_trusted',

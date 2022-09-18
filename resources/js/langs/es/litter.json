@@ -12,7 +12,8 @@
         "softdrinks": "Refrescos",
         "smoking": "Fumar",
         "other": "Otros",
-        "dogshit": "Mascotas"
+        "dogshit": "Mascotas",
+        "material": "Material"
     },
     "smoking": {
         "butts": "Cigarrillos/Colillas",
@@ -294,5 +295,31 @@
     "dogshit": {
         "poo": "¡Sorpresa!",
         "poo_in_bag": "¡Sorpresa dentro de la bolsa!"
+    },
+    "material": {
+        "aluminium": "Aluminium",
+        "bronze": "Bronze",
+        "carbon_fiber": "Carbon Fiber",
+        "ceramic": "Ceramic",
+        "composite": "Composite",
+        "concrete": "Concrete",
+        "copper": "Copper",
+        "fiberglass": "Fiberglass",
+        "glass": "Glass",
+        "iron_or_steel": "Iron/Steel",
+        "latex": "Latex",
+        "metal": "Metal",
+        "nickel": "Nickel",
+        "nylon": "Nylon",
+        "paper": "Paper",
+        "plastic": "Plastic",
+        "polyethylene": "Polyethylene",
+        "polymer": "Polymer",
+        "polypropylene": "Polypropylene",
+        "polystyrene": "Polystyrene",
+        "pvc": "PVC",
+        "rubber": "Rubber",
+        "titanium": "Titanium",
+        "wood": "Wood"
     }
 }

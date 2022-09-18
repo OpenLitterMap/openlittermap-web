@@ -10,5 +10,6 @@
         "unsubscribed": "You have unsubscribed. You will no longer receive the good news!",
         "flag-updated": "Your flag has been updated"
     },
-    "something-went-wrong": "Etwas ist schief gelaufen. Bitte versuchen Sie es erneut oder kontaktieren Sie uns!"
+    "something-went-wrong": "Etwas ist schief gelaufen. Bitte versuchen Sie es erneut oder kontaktieren Sie uns!",
+    "settings-updated": "Settings updated successfully!"
 }

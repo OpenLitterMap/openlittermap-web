@@ -20,5 +20,6 @@
     "manage-my-photos": "Tekintse meg fotóit, válasszon ki többet, törölje őket vagy adjon hozzá címkéket!",
     "view-my-photos": "Fényképeim megtekintése",
     "my-photos": "Fotóim",
-    "add-tags": "Címkék hozzáadása"
+    "add-tags": "Címkék hozzáadása",
+    "bulk-tag-dblclick-info": "Double click to zoom photos!"
 }

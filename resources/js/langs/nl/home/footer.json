@@ -12,10 +12,11 @@
     "join-slack": "Sluit je aan bij Slack",
     "create-account": "Maak een Account",
     "fb-group": "Facebook Groep",
-    "single-donation":"Eenmalige donatie",
+    "single-donation": "Eenmalige donatie",
     "crowdfunding": "Fondsenwerving",
     "olm-is-flagship": "OpenLitterMap is het vlaggenschip product van GeoTech Innovations Ltd., een startup in Ierland, baanbrekend op het gebied van burgerwetenschap #650323",
     "enter-email": "Voer je email adres in",
     "references": "Referenties",
-    "credits": "Credits"
+    "credits": "Credits",
+    "contact-us": "Contact Us"
 }
