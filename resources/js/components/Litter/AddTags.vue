@@ -500,7 +500,7 @@ export default {
         {
             if (event.keyCode === 37)
             {
-                if ( this.$store.state.photos.paginate?.prev_page_url)
+                if (this.$store.state.photos.paginate?.prev_page_url)
                 {
                     this.$store.dispatch('PREVIOUS_IMAGE');
                 }
@@ -508,7 +508,7 @@ export default {
 
             if (event.keyCode === 39)
             {
-                if ( this.$store.state.photos.paginate?.next_page_url)
+                if (this.$store.state.photos.paginate?.next_page_url)
                 {
                     this.$store.dispatch('NEXT_IMAGE');
                 }
