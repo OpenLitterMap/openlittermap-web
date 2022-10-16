@@ -185,14 +185,6 @@ export default {
         window.addEventListener('keydown', this.listenForSubmitEvent);
         window.addEventListener('keydown', this.listenForArrowKeys);
 
-        // Close modal with 'esc' key
-        document.addEventListener('keydown', (e) => {
-            if (e.keyCode === 27)
-            {
-                this.close();
-            }
-        });
-
         this.$nextTick(function () {
             this.$refs.search.input.focus();
         });
