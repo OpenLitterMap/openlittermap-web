@@ -10,9 +10,43 @@
     "created": "Létrehozva",
     "created-by": "Készítette",
     "datetime": "Felvéve",
-    "day-names": ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
-    "month-names": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
-    "short-month-names": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    "day-names": [
+        "Mo",
+        "Tu",
+        "We",
+        "Th",
+        "Fr",
+        "Sa",
+        "Su"
+    ],
+    "month-names": [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December"
+    ],
+    "short-month-names": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec"
+    ],
     "next": "Következő",
     "previous": "Előző",
     "next-page": "Következő oldal",
@@ -31,5 +65,7 @@
     "team": "Csapat",
     "actions": "Akciók",
     "anonymous": "Névtelen",
-    "photo": "Fénykép"
+    "photo": "Fénykép",
+    "reason": "Reason",
+    "faq": "Frequently Asked Questions"
 }
