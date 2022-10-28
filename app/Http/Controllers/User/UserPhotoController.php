@@ -27,12 +27,15 @@ class UserPhotoController extends Controller
     {
         if ($request->updateExistingTags)
         {
+            $userId = auth()->user()->id;
+
             foreach ($request->photos as $photoId => $data) {
                 dispatch (new UpdateTagsOnPhoto(
                     $photoId,
                     $data['picked_up'] ?? false,
                     $data['tags'] ?? [],
-                    $data['custom_tags'] ?? []
+                    $data['custom_tags'] ?? [],
+                    $userId
                 ));
             }
         }

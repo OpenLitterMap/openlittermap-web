@@ -2,12 +2,14 @@
 
 namespace App\Jobs\Photos;
 
-use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
-use App\Actions\Photos\AddCustomTagsToPhotoAction;
-use App\Actions\Photos\AddTagsToPhotoAction;
-use App\Events\TagsVerifiedByAdmin;
 use App\Models\Photo;
 use App\Models\User\User;
+use App\Events\TagsVerifiedByAdmin;
+use App\Actions\Photos\AddTagsToPhotoAction;
+use App\Actions\Photos\DeleteTagsFromPhotoAction;
+use App\Actions\Photos\AddCustomTagsToPhotoAction;
+use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
+
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -31,18 +33,28 @@ class UpdateTagsOnPhoto  implements ShouldQueue
      * @var bool
      */
     private $pickedUp;
+    /**
+     * $var int
+     */
+    private $userId;
 
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct (int $photoId, bool $pickedUp, array $tags = [], array $customTags = [])
+    public function __construct (
+        int $photoId, bool $pickedUp,
+        array $tags = [],
+        array $customTags = [],
+        $userId = null
+    )
     {
         $this->photoId = $photoId;
         $this->tags = $tags;
         $this->customTags = $customTags;
         $this->pickedUp = $pickedUp;
+        $this->userId = $userId;
     }
 
     /**
@@ -57,7 +69,16 @@ class UpdateTagsOnPhoto  implements ShouldQueue
         /** @var User $user */
         $user = User::find($photo->user_id);
 
-        if (! $photo || $photo->verified > 0) return;
+        // Extra security step
+        if ($user->id !== $this->userId) return;
+
+        if (!$photo) return;
+
+        // Delete Tags, Brands + CustomTags if they exist
+        $deleteTagsFromPhotoAction = app(DeleteTagsFromPhotoAction::class);
+
+        // we will use deletedCount to calculate the newXp we should give to each Location
+        $deletedCount = $deleteTagsFromPhotoAction->run($photo);
 
         /** @var AddCustomTagsToPhotoAction $addCustomTagsAction */
         $addCustomTagsAction = app(AddCustomTagsToPhotoAction::class);
