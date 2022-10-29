@@ -19,7 +19,7 @@ class IncreaseTeamTotalLitter implements ShouldQueue
      *
      * Increment the total litter for the photo's team.
      */
-    public function handle(TagsVerifiedByAdmin $event)
+    public function handle (TagsVerifiedByAdmin $event)
     {
         $photo = Photo::find($event->photo_id);
 
@@ -28,6 +28,7 @@ class IncreaseTeamTotalLitter implements ShouldQueue
         }
 
         // Update the Team
+        // We should move these incrementing counts to Redis
         $photo->team->total_litter += $event->total_litter_all_categories;
         $photo->team->save();
 

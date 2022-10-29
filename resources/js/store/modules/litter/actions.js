@@ -13,11 +13,11 @@ export const actions = {
         const title = 'Success!';
         const body = 'Your tags were applied to the images';
 
-        let photos = context.rootState.photos.bulkPaginate.data
+        const photos = context.rootState.photos.bulkPaginate.data
             .filter(photo => {
                 const hasTags = photo.tags && Object.keys(photo.tags).length;
                 const hasCustomTags = photo.custom_tags?.length;
-                return hasTags || hasCustomTags;
+                return (hasTags || hasCustomTags);
             })
             .reduce((map, photo) => {
                 map[photo.id] = {

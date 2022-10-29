@@ -2,12 +2,15 @@
 
 namespace App\Jobs\Photos;
 
-use App\Actions\Photos\AddCustomTagsToPhotoAction;
-use App\Actions\Photos\AddTagsToPhotoAction;
-use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
-use App\Events\TagsVerifiedByAdmin;
 use App\Models\Photo;
 use App\Models\User\User;
+
+use App\Actions\Photos\AddTagsToPhotoAction;
+use App\Actions\Photos\AddCustomTagsToPhotoAction;
+use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
+
+use App\Events\TagsVerifiedByAdmin;
+
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -18,16 +21,30 @@ class AddTagsToPhoto implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $photoId;
     /**
+     * Photo.id
+     *
+     * @var int
+     */
+    public $photoId;
+
+    /**
+     * Array of pre-defined tags + their categories
+     *
      * @var array
      */
     public $tags;
+
     /**
+     * Array of custom string tags
+     *
      * @var array
      */
     public $customTags;
+
     /**
+     * Is the litter picked up or not?
+     *
      * @var bool
      */
     private $pickedUp;
@@ -50,7 +67,7 @@ class AddTagsToPhoto implements ShouldQueue
      *
      * @return void
      */
-    public function handle()
+    public function handle ()
     {
         /** @var Photo $photo */
         $photo = Photo::find($this->photoId);
@@ -59,14 +76,15 @@ class AddTagsToPhoto implements ShouldQueue
 
         if (! $photo || $photo->verified > 0) return;
 
-        /** @var AddCustomTagsToPhotoAction $addCustomTagsAction */
-        $addCustomTagsAction = app(AddCustomTagsToPhotoAction::class);
-        $customTagsTotals = $addCustomTagsAction->run($photo, $this->customTags);
-
         /** @var AddTagsToPhotoAction $addTagsAction */
         $addTagsAction = app(AddTagsToPhotoAction::class);
         $litterTotals = $addTagsAction->run($photo, $this->tags);
 
+        /** @var AddCustomTagsToPhotoAction $addCustomTagsAction */
+        $addCustomTagsAction = app(AddCustomTagsToPhotoAction::class);
+        $customTagsTotals = $addCustomTagsAction->run($photo, $this->customTags);
+
+        // XP should be migrated to Redis
         $user->xp += $litterTotals['all'] + $customTagsTotals;
         $user->save();
 
@@ -83,8 +101,9 @@ class AddTagsToPhoto implements ShouldQueue
             /* 0 for testing, 0.1 for production */
             $photo->verification = 0.1;
         }
-        else // the user is trusted. Dispatch event to update OLM.
+        else
         {
+            // the user is trusted. Dispatch event to update OLM.
             $photo->verification = 1;
             $photo->verified = 2;
             event(new TagsVerifiedByAdmin($photo->id));

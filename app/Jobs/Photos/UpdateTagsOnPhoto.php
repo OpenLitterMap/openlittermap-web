@@ -2,6 +2,7 @@
 
 namespace App\Jobs\Photos;
 
+use App\Actions\Photos\Update\UpdatePhotoDecreaseScores;
 use App\Models\Photo;
 use App\Models\User\User;
 use App\Events\TagsVerifiedByAdmin;
@@ -20,20 +21,37 @@ class UpdateTagsOnPhoto  implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $photoId;
     /**
+     * Photo.id
+     *
+     * @var int
+     */
+    public $photoId;
+
+    /**
+     * Array of pre-defined tags
+     *
      * @var array
      */
     public $tags;
+
     /**
+     * Array of custom string tags
+     *
      * @var array
      */
     public $customTags;
+
     /**
+     * Is the litter picked up or not?
+     *
      * @var bool
      */
     private $pickedUp;
+
     /**
+     * The authenticated User.id who is trying to update a Photo
+     *
      * $var int
      */
     private $userId;
@@ -43,12 +61,7 @@ class UpdateTagsOnPhoto  implements ShouldQueue
      *
      * @return void
      */
-    public function __construct (
-        int $photoId, bool $pickedUp,
-        array $tags = [],
-        array $customTags = [],
-        $userId = null
-    )
+    public function __construct (int $photoId, bool $pickedUp, array $tags = [], array $customTags = [], $userId = null)
     {
         $this->photoId = $photoId;
         $this->tags = $tags;
@@ -70,33 +83,47 @@ class UpdateTagsOnPhoto  implements ShouldQueue
         $user = User::find($photo->user_id);
 
         // Extra security step
-        if ($user->id !== $this->userId) return;
+        if ($user->id !== $this->userId || !$photo) return;
 
-        if (!$photo) return;
+        // Before we update the tags + scores,
+        // we need to use the current photo.tags,
+        // and remove the scores that were rewarded by this photo
 
-        // Delete Tags, Brands + CustomTags if they exist
+        // This will reverse most of the actions taken by TagsVerifiedByAdmin
+        $updatePhotoDecreaseScores = app(UpdatePhotoDecreaseScores::class);
+        $updatePhotoDecreaseScores->run($photo, $user->id);
+
+        // Next, delete the existing tags.
+        // This will delete the pre-defined Tags, Brands + CustomTags if they exist.
+        // This will return the deletedCounts, which we can use to incr/decr the leaderboard scores.
         $deleteTagsFromPhotoAction = app(DeleteTagsFromPhotoAction::class);
+        $deletedCounts = $deleteTagsFromPhotoAction->run($photo);
 
-        // we will use deletedCount to calculate the newXp we should give to each Location
-        $deletedCount = $deleteTagsFromPhotoAction->run($photo);
-
-        /** @var AddCustomTagsToPhotoAction $addCustomTagsAction */
-        $addCustomTagsAction = app(AddCustomTagsToPhotoAction::class);
-        $customTagsTotals = $addCustomTagsAction->run($photo, $this->customTags);
-
+        // Add any pre-defined Tags & Brands to the Photo
         /** @var AddTagsToPhotoAction $addTagsAction */
         $addTagsAction = app(AddTagsToPhotoAction::class);
         $litterTotals = $addTagsAction->run($photo, $this->tags);
 
-        $user->xp += $litterTotals['all'] + $customTagsTotals;
+        // Add any CustomTags to the Photo
+        /** @var AddCustomTagsToPhotoAction $addCustomTagsAction */
+        $addCustomTagsAction = app(AddCustomTagsToPhotoAction::class);
+        $customTagsTotals = $addCustomTagsAction->run($photo, $this->customTags);
+
+        // Calculate the difference between the original and new sums.
+        $newTotal = $litterTotals['all'] + $customTagsTotals;
+        $diff = $newTotal - $deletedCounts['all'];
+
+        // This mau increase or decrease the Users xp.
+        // Note: We should remove this and use Redis only.
+        $user->xp += $diff;
         $user->save();
 
         /** @var UpdateLeaderboardsForLocationAction $updateLeaderboardsAction */
         $updateLeaderboardsAction = app(UpdateLeaderboardsForLocationAction::class);
-        $updateLeaderboardsAction->run($photo, $user->id, $litterTotals['all'] + $customTagsTotals);
+        $updateLeaderboardsAction->run($photo, $user->id, $diff);
 
         $photo->remaining = !$this->pickedUp;
-        $photo->total_litter = $litterTotals['litter'];
+        $photo->total_litter += $diff;
 
         if (!$user->is_trusted)
         {

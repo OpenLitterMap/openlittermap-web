@@ -29,7 +29,8 @@ class UserPhotoController extends Controller
         {
             $userId = auth()->user()->id;
 
-            foreach ($request->photos as $photoId => $data) {
+            foreach ($request->photos as $photoId => $data)
+            {
                 dispatch (new UpdateTagsOnPhoto(
                     $photoId,
                     $data['picked_up'] ?? false,
@@ -41,7 +42,8 @@ class UserPhotoController extends Controller
         }
         else
         {
-            foreach ($request->photos as $photoId => $data) {
+            foreach ($request->photos as $photoId => $data)
+            {
                 dispatch (new AddTagsToPhoto(
                     $photoId,
                     $data['picked_up'] ?? false,
