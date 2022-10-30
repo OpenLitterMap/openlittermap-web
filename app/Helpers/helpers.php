@@ -94,7 +94,7 @@ if (!function_exists('sort_ppm'))
             return Carbon::createFromFormat(
                 "d-m-y",
                 "01-" . $key
-            );
+            )->unix();
         });
     }
 }
