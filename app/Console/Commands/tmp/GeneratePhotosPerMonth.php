@@ -46,7 +46,7 @@ class GeneratePhotosPerMonth extends Command
     {
         $photos = Photo::query()->select(
             'id',
-            'created_at',
+            'datetime',
             'user_id',
             'country_id',
             'state_id',
@@ -58,7 +58,7 @@ class GeneratePhotosPerMonth extends Command
 
         foreach ($photos->cursor() as $photo)
         {
-            $date = Carbon::parse($photo->created_at)->format('m-y');
+            $date = Carbon::parse($photo->datetime)->format('m-y');
 
             $user = User::find($photo->user_id);
 
