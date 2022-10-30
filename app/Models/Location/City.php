@@ -130,9 +130,7 @@ class City extends Location
     {
         $ppm = Redis::hgetall("ppm:city:$this->id");
 
-        ksort($ppm);
-
-        return $ppm;
+        return sort_ppm($ppm);
     }
 
     public function creator()

@@ -120,9 +120,7 @@ class Country extends Location
     {
         $ppm = Redis::hgetall("ppm:country:$this->id");
 
-        ksort($ppm);
-
-        return $ppm;
+        return sort_ppm($ppm);
     }
 
     /**
