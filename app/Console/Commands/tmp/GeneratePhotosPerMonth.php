@@ -25,7 +25,7 @@ class GeneratePhotosPerMonth extends Command
      *
      * @var string
      */
-    protected $description = 'Generate the photos per month for each Location';
+    protected $description = 'Generate the photos per month for each User and Location';
 
     /**
      * Create a new command instance.
