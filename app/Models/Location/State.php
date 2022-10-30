@@ -29,7 +29,8 @@ class State extends Location
         'total_photos_redis',
         'total_contributors_redis',
         'litter_data',
-        'brands_data'
+        'brands_data',
+        'ppm',
     ];
 
     /**
@@ -97,6 +98,22 @@ class State extends Location
         }
 
         return $totals;
+    }
+
+    /**
+     * Get the Photos Per Month attribute,
+     *
+     * Return sorted keys
+     *
+     * or empty array
+     */
+    public function getPpmAttribute ()
+    {
+        $ppm = Redis::hgetall("ppm:country:$this->id");
+
+        ksort($ppm);
+
+        return $ppm;
     }
 
     /**
