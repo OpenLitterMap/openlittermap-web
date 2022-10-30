@@ -47,7 +47,7 @@
 							:litter_data="location.litter_data"
 							:brands_data="location.brands_data"
 							:total_brands="location.total_brands"
-							:ppm="location.photos_per_month"
+							:ppm="location.ppm"
 							:leaderboard="location.leaderboard"
 							:time="location.time"
 							@dateschanged="updateUrl"
