@@ -68,29 +68,21 @@ class GeneratePhotosPerMonth extends Command
 
             if ($user)
             {
-                Redis::del("ppm:user:$user->id");
-
                 Redis::hincrby("ppm:user:$user->id", $date, 1);
             }
 
             if ($country)
             {
-                Redis::del("ppm:country:$country->id");
-
                 Redis::hincrby("ppm:country:$country->id", $date, 1);
             }
 
             if ($state)
             {
-                Redis::del("ppm:state:$state->id");
-
                 Redis::hincrby("ppm:state:$state->id", $date, 1);
             }
 
             if ($city)
             {
-                Redis::del("ppm:city:$city->id");
-
                 Redis::hincrby("ppm:city:$city->id", $date, 1);
             }
 
