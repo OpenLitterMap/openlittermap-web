@@ -109,7 +109,7 @@ class State extends Location
      */
     public function getPpmAttribute ()
     {
-        $ppm = Redis::hgetall("ppm:country:$this->id");
+        $ppm = Redis::hgetall("ppm:state:$this->id");
 
         ksort($ppm);
 
