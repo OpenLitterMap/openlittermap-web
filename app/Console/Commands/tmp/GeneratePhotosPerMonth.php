@@ -18,7 +18,7 @@ class GeneratePhotosPerMonth extends Command
      *
      * @var string
      */
-    protected $signature = 'locations:generate-photos-per-month';
+    protected $signature = 'time-series:generate-photos-per-month';
 
     /**
      * The console command description.
