@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands\Locations;
+namespace App\Console\Commands\tmp;
 
 use App\Models\Location\City;
 use App\Models\Location\Country;
@@ -11,14 +11,14 @@ use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Redis;
 
-class ResetPhotosPerMonth extends Command
+class GeneratePhotosPerMonth extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'locations:reset-photos-per-month';
+    protected $signature = 'locations:generate-photos-per-month';
 
     /**
      * The console command description.
