@@ -128,7 +128,7 @@ class City extends Location
      */
     public function getPpmAttribute ()
     {
-        $ppm = Redis::hgetall("ppm:country:$this->id");
+        $ppm = Redis::hgetall("ppm:city:$this->id");
 
         ksort($ppm);
 
