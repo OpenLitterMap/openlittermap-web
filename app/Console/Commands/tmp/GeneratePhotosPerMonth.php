@@ -52,7 +52,7 @@ class GeneratePhotosPerMonth extends Command
             'state_id',
             'city_id'
         )
-        ->where(['verified', '>=', 2]);
+        ->where('verified', '>=', 2);
 
         $total = $photos->count();
 
