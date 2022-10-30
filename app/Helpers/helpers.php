@@ -87,7 +87,7 @@ if (!function_exists('sort_ppm'))
      */
     function sort_ppm ($array)
     {
-        return collect($array)->sortByDesc(function ($value, $key) {
+        return collect($array)->sortBy(function ($value, $key) {
             // Key is in the format mm-yy: 07-22
             // Add 1st date of the month to the YY-MM element
             // 01-mm-yy
