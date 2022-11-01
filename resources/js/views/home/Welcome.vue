@@ -202,6 +202,10 @@ export default {
                     title: this.$t('home.welcome.fires-out-of-control'),
                     img: '/assets/forest_fire.jpg'
                 },
+                {
+                    title: this.$t('home.welcome.glass-hurts-pets'),
+                    img: '/assets/dog.jpeg'
+                }
             ],
             activeHeadingIndex: 0
         };
