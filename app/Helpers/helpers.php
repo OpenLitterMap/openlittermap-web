@@ -3,6 +3,7 @@
 use App\Actions\Locations\UpdateLeaderboardsXpAction;
 use App\Actions\LogAdminVerificationAction;
 use App\Models\Photo;
+use Carbon\Carbon;
 
 if (!function_exists('array_diff_assoc_recursive'))
 {
@@ -76,5 +77,24 @@ if (!function_exists('rewardXpToAdmin'))
 
         $action = app(UpdateLeaderboardsXpAction::class);
         $action->run(auth()->id(), $xp);
+    }
+}
+
+if (!function_exists('sort_ppm'))
+{
+    /**
+     * Sort an array of photos_per_month dates
+     */
+    function sort_ppm ($array)
+    {
+        return collect($array)->sortBy(function ($value, $key) {
+            // Key is in the format mm-yy: 07-22
+            // Add 1st date of the month to the YY-MM element
+            // 01-mm-yy
+            return Carbon::createFromFormat(
+                "d-m-y",
+                "01-" . $key
+            )->unix();
+        });
     }
 }

@@ -23,7 +23,6 @@ class Country extends Location
         'countrynameb',
         'littercoin_paid',
         'created_by',
-        'photos_per_month'
     ];
 
     public function getRouteKeyName()
@@ -39,7 +38,8 @@ class Country extends Location
         'total_photos_redis',
         'total_contributors_redis',
         'litter_data',
-        'brands_data'
+        'brands_data',
+        'ppm',
     ];
 
     /**
@@ -107,6 +107,20 @@ class Country extends Location
         }
 
         return $totals;
+    }
+
+    /**
+     * Get the Photos Per Month attribute,
+     *
+     * Return sorted keys
+     *
+     * or empty array
+     */
+    public function getPpmAttribute ()
+    {
+        $ppm = Redis::hgetall("ppm:country:$this->id");
+
+        return sort_ppm($ppm);
     }
 
     /**
