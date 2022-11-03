@@ -47,6 +47,10 @@
                         class="footer-icon"
                     />
                     <br>
+
+                    <p class="footer-text mt1">
+                        v2.19.10
+                    </p>
                 </div>
 
                 <div class="column is-2">
@@ -97,8 +101,7 @@
 <script>
 export default {
     name: 'Footer',
-    data ()
-    {
+    data () {
         return {
             email: '',
             socials: [
@@ -111,7 +114,6 @@ export default {
         };
     },
     computed: {
-
         /**
          * Errors object
          */
@@ -137,7 +139,6 @@ export default {
         }
     },
     methods: {
-
         /**
          * Clear all subscriber errors
          */
