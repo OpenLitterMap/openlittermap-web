@@ -1,11 +1,11 @@
 <template>
     <div class="content p2">
         <p class="ref-title">
-            OpenLitterMap has been referenced {{ items.length }} times and counting
+            OpenLitterMap has been referenced {{ references.length }} times and counting
         </p>
 
         <ul>
-            <li v-for="item in items.slice().reverse()">
+            <li v-for="item in references.slice().reverse()">
                 <div class="mb1">
                     <p>{{ getDate(item.date) }}</p>
 
@@ -28,7 +28,7 @@ export default {
     },
     data () {
         return {
-            items: [
+            references: [
                 {
                     date: '2018/06/25',
                     title: 'OpenLitterMap.com – Open Data on Plastic Pollution with Blockchain Rewards (Littercoin)',
@@ -268,6 +268,12 @@ export default {
                     title: 'Smart waste segmentation deep learning based approach',
                     link: 'http://dspace.univ-tebessa.dz:8080/jspui/bitstream/123456789/4951/1/Achi%20Belgacem%20Aimen%20pfe_finale.pdf',
                     author: 'Belgacem, A'
+                },
+                {
+                    date: '2022/10/15',
+                    title: 'Role of Citizen Scientists in Environmental Plastic Litter Research—A Systematic Review',
+                    link: 'https://www.proquest.com/openview/aa8927ea09166e0b8af056edc05e6b19/1?pq-origsite=gscholar&cbl=2032327',
+                    author: 'Cristina et al.'
                 }
             ]
         };
