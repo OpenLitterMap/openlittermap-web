@@ -35,7 +35,7 @@ class DownloadsController extends Controller
     	{
     		// State only
     		// need to pass the variable down the chain
-	    	Excel::create('Open Litter Map', function($excel) use ($state) {I
+	    	Excel::create('Open Litter Map', function($excel) use ($state) {
 
 	    		$excel->sheet('OLM', function($sheet) use ($state) {
 
