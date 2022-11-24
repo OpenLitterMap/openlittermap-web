@@ -37,7 +37,8 @@ class City extends Location
         'manual_verify',
         'littercoin_paid',
         'created_by',
-        'total_dogshit'
+        'total_dogshit',
+        'user_id_last_uploaded'
     ];
 
     /**
@@ -136,6 +137,10 @@ class City extends Location
     public function creator()
     {
         return $this->belongsTo('App\Models\User\User', 'created_by');
+    }
+
+    public function lastUploader () {
+        return $this->belongsTo('App\Models\User\User', 'user_id_last_uploaded');
     }
 
     public function country() {

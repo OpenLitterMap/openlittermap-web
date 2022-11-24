@@ -65,10 +65,18 @@
             <div class="panel-block">{{ $t('location.avg-litter-per-person') }}: <strong class="green">&nbsp; {{ location['avg_litter_per_user'].toLocaleString() }}</strong></div>
 
             <!-- Created By -->
+            <!-- Todo: change this to First Uploader -->
             <div class="panel-block">{{ $t('common.created-by') }}: <strong class="green">&nbsp; {{ location['created_by_name'] }} {{ location['created_by_username'] }}</strong></div>
 
             <!-- Last Updated -->
-            <div class="panel-block">Last Updated: <strong class="green">&nbsp; {{ location.updatedAtDiffForHumans }}</strong></div>
+            <div class="panel-block-without-flex">
+                Last Updated: <strong class="green">&nbsp; {{ location.updatedAtDiffForHumans }}</strong>
+                <p>by
+                    <strong class="is-green">
+                        {{ location['created_by_name'] }} {{ location['created_by_username'] }}
+                    </strong>
+                </p>
+            </div>
 
         </div>
     </div>
@@ -214,13 +222,18 @@ export default {
 <style scoped>
 
     .green {
-            color: green !important;
-        }
+        color: green !important;
+    }
 
     .panel-block {
-            color: black;
-            background-color: white;
-        }
+        color: black;
+        background-color: white;
+    }
+
+    .panel-block-without-flex {
+        color: black;
+        background-color: white;
+    }
     /* .location-container {
             padding-top: 3em;
             padding-bottom: 5em;
