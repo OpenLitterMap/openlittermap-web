@@ -44,11 +44,18 @@ class LoadDataHelper
             4. Automate 'manual_verify => 1'
             5. Eager load leaders with the country model
          */
-        $countries = Country::with(['creator' => function ($q) {
-            $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby', 'created_at', 'updated_at')
-              ->where('show_name_createdby', true)
-              ->orWhere('show_username_createdby', true);
-        }])
+        $countries = Country::with([
+            'creator' => function ($q) {
+                $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby', 'created_at', 'updated_at')
+                  ->where('show_name_createdby', true)
+                  ->orWhere('show_username_createdby', true);
+            },
+            'lastUploader' => function ($q) {
+                $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby', 'created_at', 'updated_at')
+                    ->where('show_name_createdby', true)
+                    ->orWhere('show_username_createdby', true);
+            }
+        ])
         ->where('manual_verify', true)
         ->orderBy('country', 'asc')
         ->get();
@@ -162,11 +169,18 @@ class LoadDataHelper
         if (!$country) return ['success' => false, 'msg' => 'country not found'];
 
         $states = State::select('id', 'state', 'country_id', 'created_by', 'created_at', 'manual_verify', 'total_contributors', 'updated_at')
-            ->with(['creator' => function ($q) {
-                $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby')
-                    ->where('show_name_createdby', true)
-                    ->orWhere('show_username_createdby', true);
-            }])
+            ->with([
+                'creator' => function ($q) {
+                    $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby')
+                        ->where('show_name_createdby', true)
+                        ->orWhere('show_username_createdby', true);
+                },
+                'lastUploader' => function ($q) {
+                    $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby', 'created_at', 'updated_at')
+                        ->where('show_name_createdby', true)
+                        ->orWhere('show_username_createdby', true);
+                }
+            ])
             ->where([
                 'country_id' => $country->id,
                 'manual_verify' => 1,
@@ -249,11 +263,18 @@ class LoadDataHelper
          * save photos_per_day string on the city model
          */
         $cities = City::select('id', 'city', 'country_id', 'state_id', 'created_by', 'created_at', 'manual_verify', 'total_contributors')
-            ->with(['creator' => function ($q) {
-                $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby')
-                    ->where('show_name_createdby', true)
-                    ->orWhere('show_username_createdby', true);
-            }])
+            ->with([
+                'creator' => function ($q) {
+                    $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby')
+                        ->where('show_name_createdby', true)
+                        ->orWhere('show_username_createdby', true);
+                },
+                'lastUploader' => function ($q) {
+                    $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby', 'created_at', 'updated_at')
+                        ->where('show_name_createdby', true)
+                        ->orWhere('show_username_createdby', true);
+                }
+            ])
             ->where([
                 ['state_id', $state->id],
                 ['total_images', '>', 0],

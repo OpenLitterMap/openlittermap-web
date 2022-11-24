@@ -19,6 +19,7 @@ class State extends Location
         'manual_verify',
         'littercoin_paid',
         'created_by',
+        'user_id_last_uploaded'
     ];
 
     /**
@@ -119,6 +120,10 @@ class State extends Location
      */
     public function creator () {
         return $this->belongsTo('App\Models\User\User', 'created_by');
+    }
+
+    public function lastUploader () {
+        return $this->belongsTo('App\Models\User\User', 'user_id_last_uploaded');
     }
 
     public function country () {
