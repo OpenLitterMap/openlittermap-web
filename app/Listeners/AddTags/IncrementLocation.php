@@ -15,7 +15,7 @@ class IncrementLocation implements ShouldQueue
      * @param TagsVerifiedByAdmin $event
      * @return void
      */
-    public function handle(TagsVerifiedByAdmin $event)
+    public function handle (TagsVerifiedByAdmin $event)
     {
         $this->increaseTotalsForLitter($event);
 
@@ -29,7 +29,7 @@ class IncrementLocation implements ShouldQueue
      *
      * @param TagsVerifiedByAdmin $event
      */
-    protected function increaseTotalsForLitter(TagsVerifiedByAdmin $event): void
+    protected function increaseTotalsForLitter (TagsVerifiedByAdmin $event): void
     {
         if ($event->total_litter_all_categories > 0)
         {
