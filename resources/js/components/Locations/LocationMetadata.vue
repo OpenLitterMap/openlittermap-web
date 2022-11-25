@@ -73,7 +73,7 @@
                 Last Updated: <strong class="green">&nbsp; {{ location.updatedAtDiffForHumans }}</strong>
                 <p>by
                     <strong class="is-green">
-                        {{ location['created_by_name'] }} {{ location['created_by_username'] }}
+                        {{ location['last_uploader_name'] }} {{ location['last_uploader_username'] }}
                     </strong>
                 </p>
             </div>
