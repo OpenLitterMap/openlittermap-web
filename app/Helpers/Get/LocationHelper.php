@@ -44,7 +44,7 @@ trait LocationHelper
             }
             if ($location->lastUploader->show_username_createdby)
             {
-                $location["last_uploader_username"] = $location->lastUploader->username;
+                $location["last_uploader_username"] = '@'.$location->lastUploader->username;
             }
         }
 
