@@ -65,7 +65,7 @@ class LoadDataHelper
 
         foreach ($countries as $country)
         {
-            // Get Creator info
+            // Get firstUploader (creator) and lastUploader
             $country = LocationHelper::getCreatorInfo($country);
 
             // Get Leaderboard per country. Should load more and stop when there are 10-max as some users settings may be off.
