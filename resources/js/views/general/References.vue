@@ -273,7 +273,19 @@ export default {
                     date: '2022/10/15',
                     title: 'Role of Citizen Scientists in Environmental Plastic Litter Research—A Systematic Review',
                     link: 'https://www.proquest.com/openview/aa8927ea09166e0b8af056edc05e6b19/1?pq-origsite=gscholar&cbl=2032327',
-                    author: 'Cristina et al.'
+                    author: 'Cristina et al'
+                },
+                {
+                    date: '2022/11/22',
+                    title: 'The Sharing Green Economy: Sharing What’s Possible with New Labor Economics ',
+                    link: 'https://www.amazon.com/dp/B0BN6W4W15',
+                    author: 'Mike Duwe'
+                },
+                {
+                    date: '2022/11/25',
+                    title: 'Waste management: A comprehensive state of the art about the rise of blockchain technology',
+                    link: 'https://www.sciencedirect.com/science/article/abs/pii/S0166361522002081',
+                    author: 'Baralla et al'
                 }
             ]
         };
