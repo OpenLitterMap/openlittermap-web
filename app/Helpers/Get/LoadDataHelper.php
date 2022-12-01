@@ -272,27 +272,37 @@ class LoadDataHelper
          * Instead of loading the photos here on the city model,
          * save photos_per_day string on the city model
          */
-        $cities = City::select('id', 'city', 'country_id', 'state_id', 'created_by', 'created_at', 'manual_verify', 'total_contributors')
-            ->with([
-                'creator' => function ($q) {
-                    $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby')
-                        ->where('show_name_createdby', true)
-                        ->orWhere('show_username_createdby', true);
-                },
-                'lastUploader' => function ($q) {
-                    $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby', 'created_at', 'updated_at')
-                        ->where('show_name_createdby', true)
-                        ->orWhere('show_username_createdby', true);
-                }
-            ])
-            ->where([
-                ['state_id', $state->id],
-                ['total_images', '>', 0],
-                ['total_litter', '>', 0],
-                ['total_contributors', '>', 0]
-            ])
-            ->orderBy('city', 'asc')
-            ->get();
+        $cities = City::select(
+            'id',
+            'city',
+            'country_id',
+            'state_id',
+            'created_by',
+            'created_at',
+            'manual_verify',
+            'total_contributors',
+            'user_id_last_uploaded'
+        )
+        ->with([
+            'creator' => function ($q) {
+                $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby')
+                    ->where('show_name_createdby', true)
+                    ->orWhere('show_username_createdby', true);
+            },
+            'lastUploader' => function ($q) {
+                $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby', 'created_at', 'updated_at')
+                    ->where('show_name_createdby', true)
+                    ->orWhere('show_username_createdby', true);
+            }
+        ])
+        ->where([
+            ['state_id', $state->id],
+            ['total_images', '>', 0],
+            ['total_litter', '>', 0],
+            ['total_contributors', '>', 0]
+        ])
+        ->orderBy('city', 'asc')
+        ->get();
 
         $countryName = $country->country;
         $stateName = $state->state;
