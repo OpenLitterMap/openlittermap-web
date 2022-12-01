@@ -168,27 +168,37 @@ class LoadDataHelper
 
         if (!$country) return ['success' => false, 'msg' => 'country not found'];
 
-        $states = State::select('id', 'state', 'country_id', 'created_by', 'created_at', 'manual_verify', 'total_contributors', 'updated_at')
-            ->with([
-                'creator' => function ($q) {
-                    $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby')
-                        ->where('show_name_createdby', true)
-                        ->orWhere('show_username_createdby', true);
-                },
-                'lastUploader' => function ($q) {
-                    $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby', 'created_at', 'updated_at')
-                        ->where('show_name_createdby', true)
-                        ->orWhere('show_username_createdby', true);
-                }
-            ])
-            ->where([
-                'country_id' => $country->id,
-                'manual_verify' => 1,
-                ['total_litter', '>', 0],
-                ['total_contributors', '>', 0]
-            ])
-            ->orderBy('state', 'asc')
-            ->get();
+        $states = State::select(
+            'id',
+            'state',
+            'country_id',
+            'created_by',
+            'created_at',
+            'manual_verify',
+            'total_contributors',
+            'updated_at',
+            'user_id_last_uploaded'
+        )
+        ->with([
+            'creator' => function ($q) {
+                $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby')
+                    ->where('show_name_createdby', true)
+                    ->orWhere('show_username_createdby', true);
+            },
+            'lastUploader' => function ($q) {
+                $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby', 'created_at', 'updated_at')
+                    ->where('show_name_createdby', true)
+                    ->orWhere('show_username_createdby', true);
+            }
+        ])
+        ->where([
+            'country_id' => $country->id,
+            'manual_verify' => 1,
+            ['total_litter', '>', 0],
+            ['total_contributors', '>', 0]
+        ])
+        ->orderBy('state', 'asc')
+        ->get();
 
         $total_litter = 0;
         $total_photos = 0;
