@@ -59,7 +59,7 @@ class EventServiceProvider extends ServiceProvider
         ],
         // Several Listeners could be merged. Add ProofOfWork
         TagsVerifiedByAdmin::class => [
-            // Use the given tags to create a key-value string pair that can display the tags in any language
+            // Use the given tags to create a keNewCityAddedy-value string pair that can display the tags in any language
             CompileResultsString::class,
 
             // Increase total_litter, total_brands, and total_category for each location, on Redis
