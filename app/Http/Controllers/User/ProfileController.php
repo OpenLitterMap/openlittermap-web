@@ -110,7 +110,7 @@ class ProfileController extends Controller
                     'result_string' => $resultString,
                     'filename' => $filename,
                     'datetime' => $photo->datetime,
-                    'time' => $photo->created_at,
+                    'time' => $photo->datetime,
                     'cluster' => false,
                     'verified' => $photo->verified,
                     'name' => $name,
