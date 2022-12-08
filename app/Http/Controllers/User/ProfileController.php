@@ -87,6 +87,7 @@ class ProfileController extends Controller
             ])
             ->whereDate(request()->period, '>=', request()->start)
             ->whereDate(request()->period, '<=', request()->end)
+            ->orderBy(request()->period, 'asc')
             ->get();
 
         // Populate geojson object
