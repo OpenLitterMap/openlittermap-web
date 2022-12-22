@@ -18,14 +18,14 @@ class DisplayTagsOnMapController extends Controller
     {
         $photos = Photo::query();
 
-        if ($request->has('custom_tag'))
+        if ($request->filled('custom_tag'))
         {
             $photos = $photos->whereHas('customTags', function (Builder $query) use ($request) {
                 return $query->whereTag($request->custom_tag);
             });
         }
 
-        if ($request->has('custom_tags'))
+        if ($request->filled('custom_tags'))
         {
             $tags = explode(',', $request->custom_tags);
 
@@ -34,7 +34,7 @@ class DisplayTagsOnMapController extends Controller
             }, '=', count($tags));
         }
 
-        if ($request->has('brand'))
+        if ($request->filled('brand'))
         {
             $photos = $photos->whereHas('brands', function (Builder $query) use ($request) {
                 return $query->whereNotNull($request->brand);

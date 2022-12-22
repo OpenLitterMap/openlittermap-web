@@ -98,11 +98,13 @@ export default {
         async load () {
             const searchParams = new URLSearchParams(window.location.search);
             const customTag = searchParams.get('custom_tag');
+            const customTags = searchParams.get('custom_tags');
             const brand = searchParams.get('brand');
 
             await axios.get('/tags-search', {
                 params: {
                     custom_tag: customTag,
+                    custom_tags: customTags,
                     brand
                 }
             })

@@ -27,6 +27,8 @@ class NotifySlackOfNewCity
             {
                 $link = "https://openlittermap.com/global?lat={$photo->lat}&lon={$photo->lon}&zoom=16'";
             }
+
+            \Log::info(['slack city link', $link]);
         }
 
         Slack::send(
