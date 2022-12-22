@@ -100,9 +100,16 @@ class UploadHelper
                 ['created_by' => auth()->id()]
             );
 
-        if ($city->wasRecentlyCreated) {
+        if ($city->wasRecentlyCreated)
+        {
             // Broadcast an event to anyone viewing the Global Map
-            event(new NewCityAdded($cityName, $state->state, $country->country, now()));
+            event(new NewCityAdded(
+                $cityName,
+                $state->state,
+                $country->country,
+                now(),
+                $city->id
+            ));
         }
 
         return $city;

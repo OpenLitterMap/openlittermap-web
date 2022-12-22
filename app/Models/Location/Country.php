@@ -23,6 +23,7 @@ class Country extends Location
         'countrynameb',
         'littercoin_paid',
         'created_by',
+        'user_id_last_uploaded'
     ];
 
     public function getRouteKeyName()
@@ -130,8 +131,14 @@ class Country extends Location
         return $this->hasMany('App\Models\Photo');
     }
 
+    // change this to firstUploader
     public function creator () {
         return $this->belongsTo('App\Models\User\User', 'created_by');
+    }
+
+    // The last user_id who uploaded
+    public function lastUploader () {
+        return $this->belongsTo('App\Models\User\User', 'user_id_last_uploaded');
     }
 
     public function states () {
