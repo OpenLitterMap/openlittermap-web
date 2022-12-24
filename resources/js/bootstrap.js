@@ -25,8 +25,9 @@ if (token) {
  */
 
 import Echo from 'laravel-echo';
+import Pusher from 'pusher-js';
 
-window.Pusher = require('pusher-js');
+window.Pusher = Pusher;
 
 // let useTLSOverride = process.env.MIX_WEBSOCKET_USE_TLS == "true" ? true : false
 // if( !useTLSOverride){

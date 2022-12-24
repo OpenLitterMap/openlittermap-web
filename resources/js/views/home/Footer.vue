@@ -47,6 +47,10 @@
                         class="footer-icon"
                     />
                     <br>
+
+                    <p class="footer-text mt1">
+                        v2.19.19
+                    </p>
                 </div>
 
                 <div class="column is-2">
@@ -66,8 +70,9 @@
                     <p class="footer-link" @click="open('https://www.youtube.com/watch?v=E_qhEhHwUGM')">State of the Map 2019</p>
                     <p class="footer-link" @click="open('https://www.youtube.com/watch?v=T8rGf1ScR1I')">Datapub 2020</p>
                     <p class="footer-link" @click="open('https://www.youtube.com/watch?v=5HuaQNeHuZ8')">ESA PhiWeek 2020</p>
-                    <p class="footer-link" @click="open('https://www.youtube.com/watch?v=QhLsA0WIfTA')">Geneva Form, UN 2020</p>
+                    <p class="footer-link" @click="open('https://www.youtube.com/watch?v=QhLsA0WIfTA')">Geneva Forum, UN 2020</p>
                     <p class="footer-link" @click="open('https://www.youtube.com/watch?v=Pe4nHdoAlu4')">Cardano4Climate Meetup 2021</p>
+                    <p class="footer-link" @click="open('https://www.youtube.com/watch?v=f2UGAxRwrQk')">CardanoSummit 2022</p>
                 </div>
 
                 <div class="column is-2">
@@ -97,8 +102,7 @@
 <script>
 export default {
     name: 'Footer',
-    data ()
-    {
+    data () {
         return {
             email: '',
             socials: [
@@ -111,7 +115,6 @@ export default {
         };
     },
     computed: {
-
         /**
          * Errors object
          */
@@ -137,7 +140,6 @@ export default {
         }
     },
     methods: {
-
         /**
          * Clear all subscriber errors
          */
