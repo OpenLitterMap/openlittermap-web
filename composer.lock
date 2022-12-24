@@ -219,16 +219,16 @@
         },
         {
             "name": "aws/aws-sdk-php",
-            "version": "3.255.2",
+            "version": "3.255.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/aws/aws-sdk-php.git",
-                "reference": "b6b995c70b7ed4359b4310243899cbfe11a73caa"
+                "reference": "0530f0679d7b4809c9500c2332a4d7e9f770f47a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/b6b995c70b7ed4359b4310243899cbfe11a73caa",
-                "reference": "b6b995c70b7ed4359b4310243899cbfe11a73caa",
+                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/0530f0679d7b4809c9500c2332a4d7e9f770f47a",
+                "reference": "0530f0679d7b4809c9500c2332a4d7e9f770f47a",
                 "shasum": ""
             },
             "require": {
@@ -307,9 +307,9 @@
             "support": {
                 "forum": "https://forums.aws.amazon.com/forum.jspa?forumID=80",
                 "issues": "https://github.com/aws/aws-sdk-php/issues",
-                "source": "https://github.com/aws/aws-sdk-php/tree/3.255.2"
+                "source": "https://github.com/aws/aws-sdk-php/tree/3.255.3"
             },
-            "time": "2022-12-22T19:23:30+00:00"
+            "time": "2022-12-23T19:26:27+00:00"
         },
         {
             "name": "benjamincrozat/laravel-dropbox-driver",
@@ -6330,16 +6330,16 @@
         },
         {
             "name": "psy/psysh",
-            "version": "v0.11.9",
+            "version": "v0.11.10",
             "source": {
                 "type": "git",
                 "url": "https://github.com/bobthecow/psysh.git",
-                "reference": "1acec99d6684a54ff92f8b548a4e41b566963778"
+                "reference": "e9eadffbed9c9deb5426fd107faae0452bf20a36"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/bobthecow/psysh/zipball/1acec99d6684a54ff92f8b548a4e41b566963778",
-                "reference": "1acec99d6684a54ff92f8b548a4e41b566963778",
+                "url": "https://api.github.com/repos/bobthecow/psysh/zipball/e9eadffbed9c9deb5426fd107faae0452bf20a36",
+                "reference": "e9eadffbed9c9deb5426fd107faae0452bf20a36",
                 "shasum": ""
             },
             "require": {
@@ -6400,9 +6400,9 @@
             ],
             "support": {
                 "issues": "https://github.com/bobthecow/psysh/issues",
-                "source": "https://github.com/bobthecow/psysh/tree/v0.11.9"
+                "source": "https://github.com/bobthecow/psysh/tree/v0.11.10"
             },
-            "time": "2022-11-06T15:29:46+00:00"
+            "time": "2022-12-23T17:47:18+00:00"
         },
         {
             "name": "pusher/pusher-php-server",
