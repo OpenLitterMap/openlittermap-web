@@ -9,7 +9,7 @@ import L from 'leaflet';
 import 'leaflet-timedimension';
 import 'leaflet-timedimension/dist/leaflet.timedimension.control.css';
 import { mapHelper } from '../../maps/mapHelpers';
-import { MIN_ZOOM } from '../../constants';
+import { MIN_ZOOM, MAX_ZOOM } from '../../constants';
 
 export default {
     name: 'TagsViewer',
@@ -124,7 +124,7 @@ export default {
          */
         flyToLocationFromURL ()
         {
-            let urlParams = new URLSearchParams(window.location.search);
+            const urlParams = new URLSearchParams(window.location.search);
             let latitude = parseFloat(urlParams.get('lat') || 0);
             let longitude = parseFloat(urlParams.get('lon') || 0);
             let zoom = parseFloat(urlParams.get('zoom') || MIN_ZOOM);
@@ -132,7 +132,7 @@ export default {
             // Validate lat, lon, and zoom level
             latitude = (latitude < -85 || latitude > 85) ? 0 : latitude;
             longitude = (longitude < -180 || longitude > 180) ? 0 : longitude;
-            zoom = (zoom < MIN_ZOOM || zoom > 18) ? MIN_ZOOM : zoom;
+            zoom = (zoom < MIN_ZOOM || zoom > MAX_ZOOM) ? MIN_ZOOM : zoom;
 
             if (latitude === 0 && longitude === 0 && zoom === MIN_ZOOM) return;
 
