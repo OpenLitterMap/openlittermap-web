@@ -1,4 +1,4 @@
-export const MAX_ZOOM = 18;
+export const MAX_ZOOM = 19;
 export const MIN_ZOOM = 2;
 export const CLUSTER_ZOOM_THRESHOLD = 17;
 export const ZOOM_STEP = 3;

@@ -124,7 +124,7 @@ export default {
          */
         flyToLocationFromURL ()
         {
-            let urlParams = new URLSearchParams(window.location.search);
+            const urlParams = new URLSearchParams(window.location.search);
             let latitude = parseFloat(urlParams.get('lat') || 0);
             let longitude = parseFloat(urlParams.get('lon') || 0);
             let zoom = parseFloat(urlParams.get('zoom') || MIN_ZOOM);
