@@ -42,8 +42,8 @@ export default {
         let mapLink = '<a href="https://openstreetmap.org">OpenStreetMap</a>';
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: 'Map data &copy; ' + mapLink + ' & Contributors',
-            maxZoom: 20,
-            minZoom: 2,
+            maxZoom: MAX_ZOOM,
+            minZoom: MIN_ZOOM,
         }).addTo(this.map);
 
         this.map.attributionControl.addAttribution('Litter data &copy; OpenLitterMap & Contributors ' + year);
