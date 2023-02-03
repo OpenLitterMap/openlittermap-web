@@ -50,7 +50,7 @@ Route::post('/password/email', 'Auth\ForgotPasswordController@sendResetLinkEmail
 Route::post('/photos/submit', 'ApiPhotosController@store');
 
 // Upload Photos with tags - old route
-Route::post('/photos/submit-with-tags', 'ApiPhotosController@uploadWithTags')
+Route::post('/photos/submit-with-tags', 'ApiPhotosController@uploadWithOrWithoutTags')
     ->middleware('auth:api');
 
 // Upload Photos with tags - old route

@@ -298,15 +298,21 @@ class ApiPhotosController extends Controller
             return ['success' => false, 'msg' => $e->getMessage()];
         }
 
-        dispatch (new AddTags(
-            auth()->id(),
-            $photo->id,
-            $request->tags,
-            $request->custom_tags,
-            $request->picked_up
-        ));
+        if ($photo->tags || $photo->custom_tags)
+        {
+            dispatch (new AddTags(
+                auth()->id(),
+                $photo->id,
+                $request->tags,
+                $request->custom_tags,
+                $request->picked_up
+            ));
+        }
 
-        return ['success' => true, 'photo_id' => $photo->id];
+        return [
+            'success' => true,
+            'photo_id' => $photo->id
+        ];
     }
 
     /**
