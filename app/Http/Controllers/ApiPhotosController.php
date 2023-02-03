@@ -298,7 +298,7 @@ class ApiPhotosController extends Controller
             return ['success' => false, 'msg' => $e->getMessage()];
         }
 
-        if ($photo->tags || $photo->custom_tags)
+        if ($request->tags || $request->custom_tags)
         {
             dispatch (new AddTags(
                 auth()->id(),

@@ -25,15 +25,24 @@ class NotifySlackOfNewCity
 
             if ($photo)
             {
-                $link = "https://openlittermap.com/global?lat={$photo->lat}&lon={$photo->lon}&zoom=16'";
+                \Log::info(['photo found', $photo->id]);
+
+                $link = "https://openlittermap.com/global?lat=" . $photo->lat . "&lon=" . $photo->lon . "&zoom=16'";
+            }
+            else
+            {
+                \Log::info(['photo not found', $event->cityId]);
             }
 
             \Log::info(['slack city link', $link]);
         }
 
-        Slack::send(
-            "New city added :grin: Say hello to $event->city, $event->state, $event->country! "
-            . $link ?: ''
-        );
+        if (app()->environment() === 'production')
+        {
+            Slack::send(
+                "New city added :grin: Say hello to $event->city, $event->state, $event->country! "
+                . $link ?: ''
+            );
+        }
     }
 }
