@@ -53,8 +53,12 @@ Route::post('/photos/submit', 'ApiPhotosController@store');
 Route::post('/photos/submit-with-tags', 'ApiPhotosController@uploadWithTags')
     ->middleware('auth:api');
 
-// Upload Photos with tags - new route
-Route::post('/photos/upload-with-tags', 'ApiPhotosController@uploadWithTags')
+// Upload Photos with tags - old route
+Route::post('/photos/upload-with-tags', 'ApiPhotosController@uploadWithOrWithoutTags')
+    ->middleware('auth:api');
+
+// Upload Photos with or without tags -  new route
+Route::post('/photos/upload', 'ApiPhotosController@uploadWithOrWithoutTags')
     ->middleware('auth:api');
 
 // Delete Photos

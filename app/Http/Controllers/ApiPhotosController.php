@@ -10,7 +10,7 @@ use App\Actions\Photos\UploadPhotoAction;
 use App\Events\ImageDeleted;
 use App\Exceptions\PhotoAlreadyUploaded;
 use App\Http\Requests\Api\AddTagsRequest;
-use App\Http\Requests\Api\UploadPhotoWithTagsRequest;
+use App\Http\Requests\Api\UploadPhotoWithOrWithoutTagsRequest;
 use App\Models\Photo;
 use App\Models\User\User;
 use GeoHash;
@@ -276,12 +276,14 @@ class ApiPhotosController extends Controller
     }
 
     /**
-     * Upload Photo together with its tags
+     * Upload Photo
      *
-     * @param UploadPhotoWithTagsRequest $request
+     * May or may not have tags.
+     *
+     * @param UploadPhotoWithOrWithoutTagsRequest $request
      * @return array
      */
-    public function uploadWithTags (UploadPhotoWithTagsRequest $request) :array
+    public function uploadWithOrWithoutTags (UploadPhotoWithOrWithoutTagsRequest $request) :array
     {
         $file = $request->file('photo');
 
