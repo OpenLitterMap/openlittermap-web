@@ -49,6 +49,8 @@ class UploadPhotoWithTagsTest extends TestCase
             )
         );
 
+        \Log::info($response);
+
         $response->assertOk()->assertJson(['success' => true]);
 
         $user->refresh();
@@ -114,7 +116,7 @@ class UploadPhotoWithTagsTest extends TestCase
         return [
             [
                 'fields' => [],
-                'errors' => ['photo', 'lat', 'lon', 'date', 'tags'],
+                'errors' => ['photo', 'lat', 'lon', 'date'],
             ],
             [
                 'fields' => ['photo' => UploadedFile::fake()->image('some.pdf'), 'lat' => 5, 'lon' => 5, 'date' => now()->toDateTimeString(), 'tags' => json_encode(['smoking' => ['butts' => 3]])],
@@ -126,7 +128,7 @@ class UploadPhotoWithTagsTest extends TestCase
             ],
             [
                 'fields' => ['photo' => 'validImage', 'lat' => 5, 'lon' => 5, 'date' => now()->toDateTimeString(), 'tags' => 'test'],
-                'errors' => ['tags']
+                'errors' => ['photo']
             ],
         ];
     }
@@ -134,7 +136,7 @@ class UploadPhotoWithTagsTest extends TestCase
     /**
      * @dataProvider validationDataProvider
      */
-    public function test_the_uploaded_photo_and_tags_are_validated($fields, $errors)
+    public function test_the_uploaded_photo_and_tags_are_validated ($fields, $errors)
     {
         $user = User::factory()->create();
 

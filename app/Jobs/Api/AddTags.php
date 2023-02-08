@@ -52,19 +52,23 @@ class AddTags implements ShouldQueue
      */
     public function handle ()
     {
+        $litterTotals['all'] = 0;
+        $litterTotals['litter'] = 0;
+
         $user = User::find($this->userId);
-
-        \Log::info(['AddTags.photoId', $this->photoId]);
-
         $photo = Photo::find($this->photoId);
 
         /** @var AddCustomTagsToPhotoAction $addCustomTagsAction */
         $addCustomTagsAction = app(AddCustomTagsToPhotoAction::class);
         $customTagsTotals = $addCustomTagsAction->run($photo, $this->customTags);
 
-        /** @var AddTagsToPhotoAction $addTagsAction */
-        $addTagsAction = app(AddTagsToPhotoAction::class);
-        $litterTotals = $addTagsAction->run($photo, $this->tags);
+        // This was added to pass UploadPhotoWithCustomTagsTest
+        if ($this->tags)
+        {
+            /** @var AddTagsToPhotoAction $addTagsAction */
+            $addTagsAction = app(AddTagsToPhotoAction::class);
+            $litterTotals = $addTagsAction->run($photo, $this->tags);
+        }
 
         $user->xp += $litterTotals['all'] + $customTagsTotals;
         $user->save();

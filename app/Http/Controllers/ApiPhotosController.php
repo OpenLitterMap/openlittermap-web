@@ -120,9 +120,10 @@ class ApiPhotosController extends Controller
      * @return Photo
      * @throws PhotoAlreadyUploaded
      */
-    protected function storePhoto(Request $request): Photo
+    protected function storePhoto (Request $request): Photo
     {
         $file = $request->file('photo');
+
         /** @var User $user */
         $user = auth()->user();
 
@@ -180,7 +181,7 @@ class ApiPhotosController extends Controller
 
         $country = $this->uploadHelper->getCountryFromAddressArray($addressArray);
         $state = $this->uploadHelper->getStateFromAddressArray($country, $addressArray);
-        $city = $this->uploadHelper->getCityFromAddressArray($country, $state, $addressArray);
+        $city = $this->uploadHelper->getCityFromAddressArray($country, $state, $addressArray, $lat, $lon);
 
         /** @var Photo $photo */
         $photo = $user->photos()->create([
@@ -292,9 +293,14 @@ class ApiPhotosController extends Controller
             return ['success' => false, 'msg' => 'error-3'];
         }
 
-        try {
+        try
+        {
             $photo = $this->storePhoto($request);
-        } catch (PhotoAlreadyUploaded $e) {
+        }
+        catch (PhotoAlreadyUploaded $e)
+        {
+            \Log::info(['ApiPhotosController@uploadWithOrWithoutTags', $e->getMessage()]);
+
             return ['success' => false, 'msg' => $e->getMessage()];
         }
 
