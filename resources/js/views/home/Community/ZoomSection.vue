@@ -62,12 +62,12 @@ export default {
         setInterval(() =>
         {
             let now = new Date();
-            let nextThursday = new Date();
-            nextThursday.setUTCDate(now.getUTCDate() + (10 - now.getUTCDay()) % 7 + 1);
+            let nextMeetingDay = new Date();
+            nextMeetingDay.setUTCDate(now.getUTCDate() + (11 - now.getUTCDay()) % 7 + 1);
             let meetingStart = new Date(
-                nextThursday.getUTCFullYear(),
-                nextThursday.getUTCMonth(),
-                nextThursday.getUTCDate(),
+                nextMeetingDay.getUTCFullYear(),
+                nextMeetingDay.getUTCMonth(),
+                nextMeetingDay.getUTCDate(),
                 18,
                 0,
                 0,
@@ -75,9 +75,9 @@ export default {
             );
             meetingStart.setUTCHours(18);
 
-            // If it's thursday we want to check if the meeting is live
+            // If it's Friday we want to check if the meeting is live
             // usually ends at 19:30 UTC
-            if (now.getDay() === 4)
+            if (now.getDay() === 5)
             {
                 let todayMeetingStart = new Date(now.getTime());
                 todayMeetingStart.setUTCHours(18);
