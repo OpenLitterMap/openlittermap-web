@@ -19,14 +19,10 @@ class NotifySlackOfNewCity
     {
         $link = null;
 
-        \Log::info(['NewCityAdded', $event]);
-
         // Get the first photo that created this City
         if ($event->cityId)
         {
             $link = "https://openlittermap.com/global?lat=" . $event->lat . "&lon=" . $event->lon . "&zoom=16'";
-
-            \Log::info(['NewCityAdded: slack city link', $link]);
         }
 
         if (app()->environment() === 'production')

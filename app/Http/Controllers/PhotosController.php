@@ -90,8 +90,6 @@ class PhotosController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        \Log::info(['UploadPhotoRequest', $request->all()]);
-
         \Log::channel('photos')->info([
             'web_upload' => $request->all(),
             'user_id' => $user->id

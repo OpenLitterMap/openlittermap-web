@@ -40,7 +40,6 @@ class AddTags implements ShouldQueue
         $this->photoId = $photoId;
         $this->tags = $tags;
         $this->customTags = $customTags;
-
     }
 
     /**
@@ -77,7 +76,6 @@ class AddTags implements ShouldQueue
         $updateLeaderboardsAction->run($photo, $user->id, $litterTotals['all'] + $customTagsTotals);
 
         $photo->total_litter = $litterTotals['litter'];
-        // $photo->remaining = $this->isLitterPickedUp($user);
 
         if (!$user->is_trusted)
         {

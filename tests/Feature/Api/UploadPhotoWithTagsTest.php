@@ -92,27 +92,27 @@ class UploadPhotoWithTagsTest extends TestCase
         // We should use the users default value to init value on each photo, then apply it
         // Users default should not write to the database
         // User marks the litter as not picked up -------------------
-//        $this->post('/api/photos/submit-with-tags',
-//            array_merge($this->getApiImageAttributes($imageAttributes), [
-//                'tags' => json_encode(['smoking' => ['butts' => 3]]),
-//                'picked_up' => false
-//            ])
-//        );
-//
-//        $this->assertFalse($user->fresh()->photos->last()->picked_up);
+        $this->post('/api/photos/submit-with-tags',
+            array_merge($this->getApiImageAttributes($imageAttributes), [
+                'tags' => json_encode(['smoking' => ['butts' => 3]]),
+                'picked_up' => false
+            ])
+        );
+
+        $this->assertFalse($user->fresh()->photos->last()->picked_up);
 
         // User doesn't indicate whether litter is picked up -------------------
         // So it should default to user's predefined settings
-//        $user->items_remaining = false;
-//        $user->save();
-//
-//        $this->post('/api/photos/submit-with-tags',
-//            array_merge($this->getApiImageAttributes($imageAttributes), [
-//                'tags' => json_encode(['smoking' => ['butts' => 3]]),
-//            ])
-//        );
-//
-//        $this->assertTrue($user->fresh()->photos->last()->picked_up);
+        $user->items_remaining = false;
+        $user->save();
+
+        $this->post('/api/photos/submit-with-tags',
+            array_merge($this->getApiImageAttributes($imageAttributes), [
+                'tags' => json_encode(['smoking' => ['butts' => 3]]),
+            ])
+        );
+
+        $this->assertTrue($user->fresh()->photos->last()->picked_up);
     }
 
     public function validationDataProvider(): array
