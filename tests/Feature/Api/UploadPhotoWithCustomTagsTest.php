@@ -62,7 +62,7 @@ class UploadPhotoWithCustomTagsTest extends TestCase
 
         $response = $this->postJson('/api/photos/submit-with-tags', array_merge(
             $this->getApiImageAttributes($this->getImageAndAttributes()),
-            ['custom_tags' => json_encode($tags)]
+            ['custom_tags' => $tags]
         ));
 
         $response->assertStatus(422);

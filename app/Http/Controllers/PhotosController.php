@@ -308,9 +308,7 @@ class PhotosController extends Controller
      */
     public function addTags (AddTagsRequest $request, AddCustomTagsToPhotoAction $customTagsAction)
     {
-        /** @var User $user */
         $user = Auth::user();
-        /** @var Photo $photo */
         $photo = Photo::findOrFail($request->photo_id);
 
         if ($photo->user_id !== $user->id || $photo->verified > 0)

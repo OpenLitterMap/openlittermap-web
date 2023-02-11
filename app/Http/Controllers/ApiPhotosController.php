@@ -2,26 +2,29 @@
 
 namespace App\Http\Controllers;
 
-use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
-use App\Actions\Photos\DeletePhotoAction;
-use App\Actions\Photos\MakeImageAction;
-use App\Actions\Locations\ReverseGeocodeLocationAction;
-use App\Actions\Photos\UploadPhotoAction;
-use App\Events\ImageDeleted;
-use App\Exceptions\PhotoAlreadyUploaded;
-use App\Http\Requests\Api\AddTagsRequest;
-use App\Http\Requests\Api\UploadPhotoWithOrWithoutTagsRequest;
-use App\Models\Photo;
-use App\Models\User\User;
 use GeoHash;
 use Carbon\Carbon;
+use App\Models\Photo;
+use App\Models\User\User;
 
 use App\Jobs\Api\AddTags;
 
+use App\Events\ImageDeleted;
 use App\Events\ImageUploaded;
 use App\Events\Photo\IncrementPhotoMonth;
 
 use App\Helpers\Post\UploadHelper;
+
+use App\Actions\Photos\MakeImageAction;
+use App\Actions\Photos\DeletePhotoAction;
+use App\Actions\Photos\UploadPhotoAction;
+use App\Actions\Locations\ReverseGeocodeLocationAction;
+use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
+
+use App\Exceptions\PhotoAlreadyUploaded;
+
+use App\Http\Requests\Api\AddTagsRequest;
+use App\Http\Requests\Api\UploadPhotoWithOrWithoutTagsRequest;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -87,7 +90,7 @@ class ApiPhotosController extends Controller
      *
      * @return array
      */
-    public function store (Request $request) :array
+    public function store (Request $request): array
     {
         $request->validate([
             'photo' => 'required|mimes:jpg,png,jpeg,heic,heif',
@@ -100,16 +103,28 @@ class ApiPhotosController extends Controller
 
         if ($file->getError() === 3)
         {
-            return ['success' => false, 'msg' => 'error-3'];
+            return [
+                'success' => false,
+                'msg' => 'error-3'
+            ];
         }
 
-        try {
+        try
+        {
             $photo = $this->storePhoto($request);
-        } catch (PhotoAlreadyUploaded $e) {
-            return ['success' => false, 'msg' => $e->getMessage()];
+        }
+        catch (PhotoAlreadyUploaded $e)
+        {
+            return [
+                'success' => false,
+                'msg' => $e->getMessage()
+            ];
         }
 
-        return ['success' => true, 'photo_id' => $photo->id];
+        return [
+            'success' => true,
+            'photo_id' => $photo->id
+        ];
     }
 
     /**
@@ -183,6 +198,10 @@ class ApiPhotosController extends Controller
         $state = $this->uploadHelper->getStateFromAddressArray($country, $addressArray);
         $city = $this->uploadHelper->getCityFromAddressArray($country, $state, $addressArray, $lat, $lon);
 
+        $pickedUp = (isset($request->picked_up) && !is_null($request->picked_up))
+            ? $request->picked_up
+            : !$user->items_remaining;
+
         /** @var Photo $photo */
         $photo = $user->photos()->create([
             'filename' => $imageName,
@@ -200,7 +219,7 @@ class ApiPhotosController extends Controller
             'country' => $country->country,
             'country_code' => $country->shortcode,
             'model' => $model,
-            'remaining' => !$user->picked_up,
+            'remaining' => !$pickedUp,
             'platform' => 'mobile',
             'geohash' => GeoHash::encode($lat, $lon),
             'team_id' => $user->active_team,
@@ -244,14 +263,14 @@ class ApiPhotosController extends Controller
 
     /**
      * Save litter data to a recently uploaded photo
+     * Note: when photo was uploaded, picked_up was set
      *
-     * version 2
+     * version 2.1
      *
      * This is used by gallery photos
      */
     public function addTags (AddTagsRequest $request)
     {
-        /** @var User $user */
         $user = auth()->user();
         $photo = Photo::find($request->photo_id);
 
@@ -269,11 +288,20 @@ class ApiPhotosController extends Controller
             $user->id,
             $photo->id,
             ($request->litter ?? $request->tags) ?? [],
-            $request->custom_tags ?? [],
-            $request->picked_up
+            $request->custom_tags ?? []
         ));
 
-        return ['success' => true, 'msg' => 'dispatched'];
+        $pickedUp = (isset($request->picked_up) && !is_null($request->picked_up))
+            ? $request->picked_up
+            : !$user->items_remaining;
+
+        $photo->remaining = !$pickedUp;
+        $photo->save();
+
+        return [
+            'success' => true,
+            'msg' => 'dispatched'
+        ];
     }
 
     /**
@@ -290,7 +318,10 @@ class ApiPhotosController extends Controller
 
         if ($file->getError() === 3)
         {
-            return ['success' => false, 'msg' => 'error-3'];
+            return [
+                'success' => false,
+                'msg' => 'error-3'
+            ];
         }
 
         try
@@ -301,7 +332,10 @@ class ApiPhotosController extends Controller
         {
             \Log::info(['ApiPhotosController@uploadWithOrWithoutTags', $e->getMessage()]);
 
-            return ['success' => false, 'msg' => $e->getMessage()];
+            return [
+                'success' => false,
+                'msg' => $e->getMessage()
+            ];
         }
 
         if ($request->tags || $request->custom_tags)
@@ -310,14 +344,14 @@ class ApiPhotosController extends Controller
                 auth()->id(),
                 $photo->id,
                 $request->tags,
-                $request->custom_tags,
-                $request->picked_up
+                $request->custom_tags
             ));
         }
 
         return [
             'success' => true,
-            'photo_id' => $photo->id
+            'photo_id' => $photo->id,
+            'photo' => $photo
         ];
     }
 
