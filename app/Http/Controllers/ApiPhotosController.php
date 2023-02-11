@@ -350,8 +350,7 @@ class ApiPhotosController extends Controller
 
         return [
             'success' => true,
-            'photo_id' => $photo->id,
-            'photo' => $photo
+            'photo_id' => $photo->id
         ];
     }
 
