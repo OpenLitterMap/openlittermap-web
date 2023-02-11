@@ -1,10 +1,11 @@
 <template>
     <section class="is-link hero is-bold">
         <section class="wrapper is-link is-bold">
-
-            <!-- Global Leaderboard -->
             <div class="container">
 
+                <TotalGlobalCounts />
+
+                <!-- Leaderboard -->
                 <div class="leaderboard-heading"
                      @click="openLeaderboard"
                 >
@@ -15,20 +16,22 @@
                     <i class="fa fa-arrow-right"/>
                 </div>
 
-                <GlobalLeaders :leaders="leaders"/>
+                <GlobalLeaders
+                    :leaders="leaders"
+                />
             </div>
 
             <Progress
                 :loading="loading"
             />
-
         </section>
     </section>
 </template>
 
 <script>
-import GlobalLeaders from '../global/GlobalLeaders'
+import TotalGlobalCounts from "../global/TotalGlobalCounts";
 import Progress from "../General/Progress";
+import GlobalLeaders from '../global/GlobalLeaders'
 
 export default {
     name: "GlobalMetaData",
@@ -37,7 +40,8 @@ export default {
     ],
     components: {
         GlobalLeaders,
-        Progress
+        Progress,
+        TotalGlobalCounts
     },
     channel: 'main',
     echo: {
