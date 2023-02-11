@@ -86,11 +86,6 @@ class UploadPhotoWithTagsTest extends TestCase
 
         $this->assertTrue($user->fresh()->photos->last()->picked_up);
 
-        // Todo: fix bug here
-        // When uploading a photo, we should apply picked up value during create
-        // Currently value is applied during AddTags job
-        // We should use the users default value to init value on each photo, then apply it
-        // Users default should not write to the database
         // User marks the litter as not picked up -------------------
         $this->post('/api/photos/submit-with-tags',
             array_merge($this->getApiImageAttributes($imageAttributes), [
@@ -101,7 +96,7 @@ class UploadPhotoWithTagsTest extends TestCase
 
         $this->assertFalse($user->fresh()->photos->last()->picked_up);
 
-        // User doesn't indicate whether litter is picked up -------------------
+        // User changes default to picked up -------------------
         // So it should default to user's predefined settings
         $user->items_remaining = false;
         $user->save();
