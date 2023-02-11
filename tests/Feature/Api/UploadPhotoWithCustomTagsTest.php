@@ -39,10 +39,11 @@ class UploadPhotoWithCustomTagsTest extends TestCase
 
         $response = $this->post('/api/photos/submit-with-tags', array_merge(
             $this->getApiImageAttributes($this->getImageAndAttributes()),
-            ['custom_tags' => json_encode(['tag1', 'tag2', 'tag3'])]
+            ['custom_tags' => ['tag1', 'tag2', 'tag3']]
         ));
 
         $response->assertOk()->assertJson(['success' => true]);
+
         $this->assertEquals(
             ['tag1', 'tag2', 'tag3'],
             $user->fresh()->photos->last()->customTags->pluck('tag')->toArray()
@@ -61,7 +62,7 @@ class UploadPhotoWithCustomTagsTest extends TestCase
 
         $response = $this->postJson('/api/photos/submit-with-tags', array_merge(
             $this->getApiImageAttributes($this->getImageAndAttributes()),
-            ['custom_tags' => json_encode($tags)]
+            ['custom_tags' => $tags]
         ));
 
         $response->assertStatus(422);

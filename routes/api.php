@@ -5,16 +5,6 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| is assigned the "api" middleware group. Enjoy building your API!
-|
-*/
 Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function(){
 
     // Route::get('/user/setup-intent', 'API\UserController@getSetupIntent');
@@ -50,11 +40,15 @@ Route::post('/password/email', 'Auth\ForgotPasswordController@sendResetLinkEmail
 Route::post('/photos/submit', 'ApiPhotosController@store');
 
 // Upload Photos with tags - old route
-Route::post('/photos/submit-with-tags', 'ApiPhotosController@uploadWithTags')
+Route::post('/photos/submit-with-tags', 'ApiPhotosController@uploadWithOrWithoutTags')
     ->middleware('auth:api');
 
-// Upload Photos with tags - new route
-Route::post('/photos/upload-with-tags', 'ApiPhotosController@uploadWithTags')
+// Upload Photos with tags - old route
+Route::post('/photos/upload-with-tags', 'ApiPhotosController@uploadWithOrWithoutTags')
+    ->middleware('auth:api');
+
+// Upload Photos with or without tags -  new route
+Route::post('/photos/upload/with-or-without-tags', 'ApiPhotosController@uploadWithOrWithoutTags')
     ->middleware('auth:api');
 
 // Delete Photos

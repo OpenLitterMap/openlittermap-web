@@ -30,7 +30,7 @@ import Password from './settings/Password'
 import Payments from './settings/Payments'
 import Privacy from './settings/Privacy'
 import Littercoin from './settings/Littercoin'
-import Presence from './settings/Presence'
+import PickedUp from './settings/PickedUp'
 import Emails from './settings/Emails'
 import GlobalFlag from './settings/GlobalFlag'
 
@@ -44,19 +44,17 @@ export default {
         Payments,
         Privacy,
         Littercoin,
-        Presence,
+        PickedUp,
         Emails,
         GlobalFlag,
     },
-    async created ()
-    {
+    async created () {
         if (window.location.href.split('/')[4])
         {
             this.link = window.location.href.split('/')[4];
         }
     },
-    data ()
-    {
+    data () {
         return {
             links: [
                 'details',
@@ -66,7 +64,7 @@ export default {
                 'payments',
                 'privacy',
                 'littercoin',
-                'presence',
+                'picked-up',
                 'emails',
                 'show-flag',
             ],
@@ -79,14 +77,13 @@ export default {
                 'payments': 'Payments',
                 'privacy': 'Privacy',
                 'littercoin': 'Littercoin',
-                'presence': 'Presence',
+                'picked-up': 'PickedUp',
                 'emails': 'Emails',
                 'show-flag': 'GlobalFlag',
             }
         }
     },
     methods: {
-
         /**
          * Change link = view different component
          */
