@@ -32,7 +32,7 @@ class WebPhotosController extends Controller
 
         if ($count > 0)
         {
-            $photos = $query->select('id', 'filename', 'remaining', 'picked_up')
+            $photos = $query->select('id', 'filename', 'remaining')
                 ->orderBy('id')
                 ->take(100)
                 ->get();
