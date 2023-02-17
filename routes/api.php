@@ -9,7 +9,9 @@ Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function(){
 
     // Route::get('/user/setup-intent', 'API\UserController@getSetupIntent');
 
-    Route::get('/photos/web/index', 'API\WebPhotosController@index');
+    // old version
+    Route::get('/photos/web/index', 'API\GetUntaggedUploadController');
+    // new version
     Route::get('/photos/get-untagged-uploads', 'API\GetUntaggedUploadController');
 
     Route::get('/photos/web/load-more', 'API\WebPhotosController@loadMore');
@@ -85,6 +87,7 @@ Route::post('/settings/update', 'ApiSettingsController@update')
 
 Route::post('/settings/privacy/toggle-previous-tags', 'ApiSettingsController@togglePreviousTags')
     ->middleware('auth:api');
+
 Route::patch('/settings', 'SettingsController@update')->middleware('auth:api');
 
 // Teams
