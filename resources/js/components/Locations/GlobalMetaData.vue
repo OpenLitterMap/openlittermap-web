@@ -5,6 +5,20 @@
             <!-- Global Leaderboard -->
             <div class="container">
 
+                <div class="flex jc">
+                    <vue-typed-js
+                        :strings="['Community', 'Impact', 'Progress']"
+                        :loop="true"
+                        :typespeed="5"
+                        :startDelay="3000"
+                        :backSpeed="1"
+                        :fadeOut="true"
+                        :fadeOutDelay="1500"
+                    >
+                        <h1 class="worldcup-title">Our Global <span class="typing"></span></h1>
+                    </vue-typed-js>
+                </div>
+
                 <div class="leaderboard-heading"
                      @click="openLeaderboard"
                 >
@@ -15,7 +29,9 @@
                     <i class="fa fa-arrow-right"/>
                 </div>
 
-                <GlobalLeaders :leaders="leaders"/>
+                <GlobalLeaders
+                    :leaders="leaders"
+                />
             </div>
 
             <Progress
@@ -86,6 +102,13 @@ export default {
         padding: 1rem 0.5rem;
     }
 
+    .worldcup-title {
+        font-size: 75px;
+        margin-bottom: 15px;
+        text-align: center;
+        font-weight: 800;
+    }
+
     .leaderboard-heading {
         display: flex;
         justify-content: center;
@@ -120,4 +143,16 @@ export default {
             padding: 3rem 1.5rem;
         }
     }
+
+    // Mobile view
+    @media screen and (max-width: 768px) {
+        .worldcup-title {
+            font-size: 40px !important;
+        }
+
+        .leaderboard-heading h3 {
+            font-size: 30px;
+        }
+    }
+
 </style>
