@@ -7,12 +7,11 @@
 
                 <div class="flex jc">
                     <vue-typed-js
-                        :strings="['Community', 'Impact', 'Progress']"
+                        :strings="['Community ^2000', 'Impact ^3000', 'Progress ^4000']"
                         :loop="true"
                         :typespeed="5"
                         :startDelay="3000"
-                        :backSpeed="1"
-                        :fadeOut="true"
+                        :backSpeed="10"
                         :showCursor="false"
                     >
                         <h1 class="worldcup-title">Our Global <span class="typing"></span></h1>
