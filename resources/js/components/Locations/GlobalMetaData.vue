@@ -13,7 +13,7 @@
                         :startDelay="3000"
                         :backSpeed="1"
                         :fadeOut="true"
-                        :fadeOutDelay="1500"
+                        :showCursor="false"
                     >
                         <h1 class="worldcup-title">Our Global <span class="typing"></span></h1>
                     </vue-typed-js>
