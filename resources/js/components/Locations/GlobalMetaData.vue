@@ -10,7 +10,7 @@
                         :strings="['Community ^2000', 'Impact ^3000', 'Progress ^4000']"
                         :loop="true"
                         :typespeed="5"
-                        :startDelay="3000"
+                        :startDelay="1000"
                         :backSpeed="10"
                         :showCursor="false"
                     >
