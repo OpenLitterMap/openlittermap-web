@@ -10,6 +10,7 @@ Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function(){
     // Route::get('/user/setup-intent', 'API\UserController@getSetupIntent');
 
     Route::get('/photos/web/index', 'API\WebPhotosController@index');
+    Route::get('/photos/get-untagged-uploads', 'API\GetUntaggedUploadController');
 
     Route::get('/photos/web/load-more', 'API\WebPhotosController@loadMore');
 });

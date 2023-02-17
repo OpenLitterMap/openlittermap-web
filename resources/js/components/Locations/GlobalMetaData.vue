@@ -5,7 +5,7 @@
             <!-- Global Leaderboard -->
             <div class="container">
 
-                <div class="flex jc">
+                <div class="typed-container">
                     <vue-typed-js
                         :strings="['Community ^2000', 'Impact ^3000', 'Progress ^4000']"
                         :loop="true"
@@ -101,6 +101,11 @@ export default {
         padding: 1rem 0.5rem;
     }
 
+    .typed-container {
+        display: flex;
+        justify-content: center;
+    }
+
     .worldcup-title {
         font-size: 75px;
         margin-bottom: 15px;
@@ -137,16 +142,27 @@ export default {
         }
     }
 
-    @media screen and (min-width: 768px) {
+    @media screen and (min-width: 768px)
+    {
         .wrapper {
             padding: 3rem 1.5rem;
         }
     }
 
     // Mobile view
-    @media screen and (max-width: 768px) {
+    @media screen and (max-width: 768px)
+    {
+        .typed-container {
+            min-height: 130px;
+        }
+
         .worldcup-title {
             font-size: 40px !important;
+            min-height: 120px;
+        }
+
+        .typed-element {
+            min-height: 120px;
         }
 
         .leaderboard-heading h3 {
