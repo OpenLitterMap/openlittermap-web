@@ -110,7 +110,7 @@ class User extends Authenticatable
         'remaining_teams',
         'photos_per_month',
         'bbox_verification_count',
-        'tag_my_uploaded_images'
+        'enable_admin_tagging'
     ];
 
     /**

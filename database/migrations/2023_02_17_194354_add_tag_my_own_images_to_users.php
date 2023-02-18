@@ -14,7 +14,7 @@ class AddTagMyOwnImagesToUsers extends Migration
     public function up()
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->boolean('tag_my_uploaded_images')->default(true);
+            $table->boolean('enable_admin_tagging')->default(false);
         });
     }
 
@@ -26,7 +26,7 @@ class AddTagMyOwnImagesToUsers extends Migration
     public function down()
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('tag_my_uploaded_images');
+            $table->dropColumn('enable_admin_tagging');
         });
     }
 }
