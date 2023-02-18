@@ -31,7 +31,7 @@ class GetUntaggedUploadController extends Controller
 
         if ($count > 0)
         {
-            $photos = $query->select('id', 'filename', 'remaining', 'platform')
+            $photos = $query->select('id', 'filename', 'remaining', 'platform', 'uploaded')
                 ->orderBy('id')
                 ->take(100)
                 ->get();
