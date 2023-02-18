@@ -90,8 +90,6 @@ class ApiSettingsController extends Controller
             $value = !$value;
         }
 
-        \Log::info($request->all());
-
         try
         {
             $user->$key = $value;
