@@ -85,7 +85,6 @@ class LoadDataHelper
             $total_litter += $country->total_litter_redis;
 
             $country['diffForHumans'] = $country->created_at->diffForHumans();
-            $country['updatedAtDiffForHumans'] = $country->updated_at->diffForHumans();
         }
 
         /**
@@ -166,7 +165,12 @@ class LoadDataHelper
             ->orWhere('shortcode', $urlText)
             ->first();
 
-        if (!$country) return ['success' => false, 'msg' => 'country not found'];
+        if (!$country) {
+            return [
+                'success' => false,
+                'msg' => 'country not found'
+            ];
+        }
 
         $states = State::select(
             'id',
@@ -279,6 +283,7 @@ class LoadDataHelper
             'state_id',
             'created_by',
             'created_at',
+            'updated_at',
             'manual_verify',
             'total_contributors',
             'user_id_last_uploaded'

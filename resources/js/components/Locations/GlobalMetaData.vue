@@ -1,10 +1,9 @@
 <template>
     <section class="is-link hero is-bold">
         <section class="wrapper is-link is-bold">
-
-            <!-- Global Leaderboard -->
             <div class="container">
 
+<<<<<<< HEAD
                 <div class="typed-container">
                     <vue-typed-js
                         :strings="['Community ^2000', 'Impact ^3000', 'Progress ^4000']"
@@ -18,6 +17,11 @@
                     </vue-typed-js>
                 </div>
 
+=======
+                <TotalGlobalCounts />
+
+                <!-- Leaderboard -->
+>>>>>>> master
                 <div class="leaderboard-heading"
                      @click="openLeaderboard"
                 >
@@ -36,14 +40,14 @@
             <Progress
                 :loading="loading"
             />
-
         </section>
     </section>
 </template>
 
 <script>
-import GlobalLeaders from '../global/GlobalLeaders'
+import TotalGlobalCounts from "../global/TotalGlobalCounts";
 import Progress from "../General/Progress";
+import GlobalLeaders from '../global/GlobalLeaders'
 
 export default {
     name: "GlobalMetaData",
@@ -52,7 +56,8 @@ export default {
     ],
     components: {
         GlobalLeaders,
-        Progress
+        Progress,
+        TotalGlobalCounts
     },
     channel: 'main',
     echo: {

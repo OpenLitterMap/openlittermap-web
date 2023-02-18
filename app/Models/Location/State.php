@@ -32,6 +32,7 @@ class State extends Location
         'litter_data',
         'brands_data',
         'ppm',
+        'updatedAtDiffForHumans'
     ];
 
     /**
@@ -113,6 +114,13 @@ class State extends Location
         $ppm = Redis::hgetall("ppm:state:$this->id");
 
         return sort_ppm($ppm);
+    }
+
+    /**
+     * Get updatedAtDiffForHumans
+     */
+    public function getUpdatedAtDiffForHumansAttribute () {
+        return $this->updated_at->diffForHumans();
     }
 
     /**

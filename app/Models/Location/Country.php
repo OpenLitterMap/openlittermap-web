@@ -41,6 +41,7 @@ class Country extends Location
         'litter_data',
         'brands_data',
         'ppm',
+        'updatedAtDiffForHumans'
     ];
 
     /**
@@ -122,6 +123,13 @@ class Country extends Location
         $ppm = Redis::hgetall("ppm:country:$this->id");
 
         return sort_ppm($ppm);
+    }
+
+    /**
+     * Get updatedAtDiffForHumans
+     */
+    public function getUpdatedAtDiffForHumansAttribute () {
+        return $this->updated_at->diffForHumans();
     }
 
     /**
