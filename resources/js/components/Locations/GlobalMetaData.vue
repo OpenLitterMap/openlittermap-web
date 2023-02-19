@@ -3,7 +3,6 @@
         <section class="wrapper is-link is-bold">
             <div class="container">
 
-<<<<<<< HEAD
                 <div class="typed-container">
                     <vue-typed-js
                         :strings="['Community ^2000', 'Impact ^3000', 'Progress ^4000']"
@@ -17,11 +16,9 @@
                     </vue-typed-js>
                 </div>
 
-=======
                 <TotalGlobalCounts />
 
                 <!-- Leaderboard -->
->>>>>>> master
                 <div class="leaderboard-heading"
                      @click="openLeaderboard"
                 >
