@@ -52,7 +52,7 @@ jobs:
         php-version: '7.3'
         extensions: mbstring, dom, fileinfo, mysql
         # coverage: xdebug #optional
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Start mysql service
       run: sudo service mysql start
     - name: Setup minio
