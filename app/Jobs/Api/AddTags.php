@@ -58,8 +58,16 @@ class AddTags implements ShouldQueue
 
         if ($this->tags)
         {
+            \Log::info(['type', gettype($this->tags)]);
+
+            $tags = (gettype($this->tags) === 'string')
+                ? json_decode($this->tags)
+                : $this->tags;
+
+            \Log::info(['tags', $tags]);
+
             $addTagsAction = app(AddTagsToPhotoAction::class);
-            $litterTotals = $addTagsAction->run($photo, $this->tags);
+            $litterTotals = $addTagsAction->run($photo, $tags);
         }
 
         if ($this->customTags)
