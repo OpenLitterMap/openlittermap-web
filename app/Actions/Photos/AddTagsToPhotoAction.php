@@ -14,7 +14,7 @@ class AddTagsToPhotoAction
      *
      * @return array number of added tags, total litter and brands
      */
-    public function run (Photo $photo, $tags) :array
+    public function run (Photo $photo, $tags): array
     {
         $photo->refresh();
 
@@ -45,7 +45,7 @@ class AddTagsToPhotoAction
      * @param Photo $photo
      * @param string $category
      */
-    protected function createCategory (Photo $photo, string $category) :void
+    protected function createCategory (Photo $photo, string $category): void
     {
         $createdCategory = $photo->$category()->create();
 
