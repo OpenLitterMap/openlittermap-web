@@ -49,7 +49,7 @@
                     <br>
 
                     <p class="footer-text mt1">
-                        v2.20.1
+                        v2.20.2
                     </p>
                 </div>
 
