@@ -210,8 +210,8 @@ const router = new VueRouter({
                     component: require('./views/settings/Littercoin').default,
                 },
                 {
-                    path: 'presence',
-                    component: require('./views/settings/Presence').default,
+                    path: 'picked-up',
+                    component: require('./views/settings/PickedUp').default,
                 },
                 {
                     path: 'emails',

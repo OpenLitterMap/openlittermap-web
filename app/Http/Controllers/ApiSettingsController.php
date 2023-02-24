@@ -99,10 +99,15 @@ class ApiSettingsController extends Controller
         {
             \Log::info(['ApiSettingsController@update', $e->getMessage()]);
 
-            return ['success' => false, 'msg' => $e->getMessage()];
+            return [
+                'success' => false,
+                'msg' => $e->getMessage()
+            ];
         }
 
-        return ['success' => true];
+        return [
+            'success' => true
+        ];
     }
 
     /**

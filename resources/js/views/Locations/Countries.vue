@@ -26,16 +26,14 @@ export default {
         GlobalMetaData,
         SortLocations
     },
-    async created ()
-    {
+    async created () {
         this.loading = true;
 
         await this.$store.dispatch('GET_COUNTRIES');
 
         this.loading = false;
     },
-    data ()
-    {
+    data () {
         return {
             loading: true
         };

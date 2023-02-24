@@ -3,13 +3,14 @@
 namespace App\Listeners\Locations;
 
 use App\Events\NewCityAdded;
-use App\Models\Photo;
 use Pressutto\LaravelSlack\Facades\Slack;
 
 class NotifySlackOfNewCity
 {
     /**
      * Handle the event.
+     *
+     * Note: Photo is not created yet
      *
      * @param  NewCityAdded  $event
      * @return void
@@ -21,19 +22,15 @@ class NotifySlackOfNewCity
         // Get the first photo that created this City
         if ($event->cityId)
         {
-            $photo = Photo::where('city_id', $event->cityId)->first();
-
-            if ($photo)
-            {
-                $link = "https://openlittermap.com/global?lat={$photo->lat}&lon={$photo->lon}&zoom=16'";
-            }
-
-            \Log::info(['slack city link', $link]);
+            $link = "https://openlittermap.com/global?lat=" . $event->lat . "&lon=" . $event->lon . "&zoom=16'";
         }
 
-        Slack::send(
-            "New city added :grin: Say hello to $event->city, $event->state, $event->country! "
-            . $link ?: ''
-        );
+        if (app()->environment() === 'production')
+        {
+            Slack::send(
+                "New city added :grin: Say hello to $event->city, $event->state, $event->country! "
+                . $link ?: ''
+            );
+        }
     }
 }

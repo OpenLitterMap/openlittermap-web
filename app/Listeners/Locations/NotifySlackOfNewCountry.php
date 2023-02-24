@@ -13,8 +13,11 @@ class NotifySlackOfNewCountry
      * @param  NewCountryAdded  $event
      * @return void
      */
-    public function handle(NewCountryAdded $event)
+    public function handle (NewCountryAdded $event)
     {
-        Slack::send("New country added :grin:. Say hello to $event->country, with code '$event->countryCode'!");
+        if (app()->environment() === 'production')
+        {
+            Slack::send("New country added :grin:. Say hello to $event->country, with code '$event->countryCode'!");
+        }
     }
 }

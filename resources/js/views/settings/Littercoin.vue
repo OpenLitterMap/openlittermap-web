@@ -102,9 +102,6 @@
 </template>
 
 <script>
-	// <!-- <p>My personal wallet - remove</p> -->
-	// <!-- <p>0x770ea08D3C609e0E37FFdf443fD3842E426e7Eb0</p> -->
-
 	// if (typeof web3 !== 'undefined') {
 	// 	this.web3exists = true;
 	// 	// console.log('does web3 exist');
@@ -142,7 +139,7 @@ export default {
         //     if (contract_instance !== undefined)
         //     {
         //         contract_instance.balanceOf(this.user.eth_wallet, function(err, res) {
-        //             if(err) {
+        //             if (err) {
         //                 // console.error(err);
         //             } else {
         //                 // console.log('success');

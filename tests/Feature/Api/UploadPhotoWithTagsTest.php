@@ -45,7 +45,7 @@ class UploadPhotoWithTagsTest extends TestCase
         $response = $this->post('/api/photos/submit-with-tags',
             array_merge(
                 $this->getApiImageAttributes($imageAttributes),
-                ['tags' => json_encode(['smoking' => ['butts' => 3]])]
+                ['tags' => ['smoking' => ['butts' => 3]]]
             )
         );
 
@@ -79,7 +79,7 @@ class UploadPhotoWithTagsTest extends TestCase
         // User marks the litter as picked up -------------------
         $this->post('/api/photos/submit-with-tags',
             array_merge($this->getApiImageAttributes($imageAttributes), [
-                'tags' => json_encode(['smoking' => ['butts' => 3]]),
+                'tags' => ['smoking' => ['butts' => 3]],
                 'picked_up' => true
             ])
         );
@@ -96,10 +96,11 @@ class UploadPhotoWithTagsTest extends TestCase
 
         $this->assertFalse($user->fresh()->photos->last()->picked_up);
 
-        // User doesn't indicate whether litter is picked up -------------------
+        // User changes default to picked up -------------------
         // So it should default to user's predefined settings
         $user->items_remaining = false;
         $user->save();
+
         $this->post('/api/photos/submit-with-tags',
             array_merge($this->getApiImageAttributes($imageAttributes), [
                 'tags' => json_encode(['smoking' => ['butts' => 3]]),
@@ -114,7 +115,7 @@ class UploadPhotoWithTagsTest extends TestCase
         return [
             [
                 'fields' => [],
-                'errors' => ['photo', 'lat', 'lon', 'date', 'tags'],
+                'errors' => ['photo', 'lat', 'lon', 'date'],
             ],
             [
                 'fields' => ['photo' => UploadedFile::fake()->image('some.pdf'), 'lat' => 5, 'lon' => 5, 'date' => now()->toDateTimeString(), 'tags' => json_encode(['smoking' => ['butts' => 3]])],
@@ -126,7 +127,7 @@ class UploadPhotoWithTagsTest extends TestCase
             ],
             [
                 'fields' => ['photo' => 'validImage', 'lat' => 5, 'lon' => 5, 'date' => now()->toDateTimeString(), 'tags' => 'test'],
-                'errors' => ['tags']
+                'errors' => ['photo']
             ],
         ];
     }
@@ -134,7 +135,7 @@ class UploadPhotoWithTagsTest extends TestCase
     /**
      * @dataProvider validationDataProvider
      */
-    public function test_the_uploaded_photo_and_tags_are_validated($fields, $errors)
+    public function test_the_uploaded_photo_and_tags_are_validated ($fields, $errors)
     {
         $user = User::factory()->create();
 

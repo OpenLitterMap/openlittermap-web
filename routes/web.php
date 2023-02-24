@@ -156,7 +156,7 @@ Route::get('/settings/payments', 'HomeController@index');
 Route::get('/settings/privacy', 'HomeController@index');
 Route::get('/settings/littercoin', 'HomeController@index');
 Route::get('/settings/phone', 'HomeController@index');
-Route::get('/settings/presence', 'HomeController@index');
+Route::get('/settings/picked-up', 'HomeController@index');
 Route::get('/settings/email', 'HomeController@index');
 Route::get('/settings/show-flag', 'HomeController@index');
 Route::get('/settings/teams', 'HomeController@index');

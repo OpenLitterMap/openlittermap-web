@@ -67,7 +67,7 @@ trait HasPhotoUploads
         );
     }
 
-    protected function getApiImageAttributes(array $imageAttributes): array
+    protected function getApiImageAttributes (array $imageAttributes): array
     {
         return [
             'photo' => $imageAttributes['file'],
@@ -75,7 +75,7 @@ trait HasPhotoUploads
             'lon' => $imageAttributes['longitude'],
             'date' => $imageAttributes['dateTime'],
             'model' => 'test model',
-            'presence' => true
+            'picked_up' => true
         ];
     }
 
