@@ -54,6 +54,9 @@ class GetNextImageToVerifyController extends Controller
 
         // Count photos that are uploaded but not tagged
         $photosNotProcessed = $this->filterPhotos()
+            ->whereHas('user', function ($q) {
+                return $q->where('enable_admin_tagging', true);
+            })
             ->where('verification', 0)
             ->count();
 
