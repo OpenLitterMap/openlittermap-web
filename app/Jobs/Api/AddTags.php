@@ -66,7 +66,7 @@ class AddTags implements ShouldQueue
             $litterTotals = $addTagsAction->run($photo, $tags);
         }
 
-        if ($this->customTags)
+        if ($this->customTags && $this->customTags !== "undefined")
         {
             $addCustomTagsAction = app(AddCustomTagsToPhotoAction::class);
 
