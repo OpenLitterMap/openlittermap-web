@@ -56,6 +56,12 @@ class AddTags implements ShouldQueue
         $user = User::find($this->userId);
         $photo = Photo::find($this->photoId);
 
+        \Log::info(['tags', $this->tags]);
+        \Log::info(['customTags', $this->customTags]);
+
+        \Log::info(['type tags', gettype($this->tags)]);
+        \Log::info(['type custom_tags', gettype($this->customTags)]);
+
         if ($this->tags)
         {
             \Log::info(['type', gettype($this->tags)]);
@@ -73,6 +79,9 @@ class AddTags implements ShouldQueue
         if ($this->customTags)
         {
             $addCustomTagsAction = app(AddCustomTagsToPhotoAction::class);
+
+
+
             $customTagsTotals = $addCustomTagsAction->run($photo, $this->customTags);
         }
 
