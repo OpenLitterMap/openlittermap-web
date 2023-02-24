@@ -56,18 +56,11 @@ class AddTags implements ShouldQueue
         $user = User::find($this->userId);
         $photo = Photo::find($this->photoId);
 
-        \Log::info(['tags', $this->tags]);
-        \Log::info(['customTags', $this->customTags]);
-
         if ($this->tags)
         {
-            \Log::info(['type', gettype($this->tags)]);
-
             $tags = (gettype($this->tags) === 'string')
                 ? json_decode($this->tags, true)
                 : $this->tags;
-
-            \Log::info(['tags', $tags]);
 
             $addTagsAction = app(AddTagsToPhotoAction::class);
             $litterTotals = $addTagsAction->run($photo, $tags);
@@ -80,8 +73,6 @@ class AddTags implements ShouldQueue
             $customTags = (gettype($this->customTags) === 'string')
                 ? json_decode($this->customTags, true)
                 : $this->customTags;
-
-            \Log::info(['customTags', $customTags]);
 
             $customTagsTotals = $addCustomTagsAction->run($photo, $customTags);
         }
