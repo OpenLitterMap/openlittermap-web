@@ -16,7 +16,9 @@
                     </vue-typed-js>
                 </div>
 
-                <TotalGlobalCounts />
+                <TotalGlobalCounts
+                    :loading="loading"
+                />
 
                 <!-- Leaderboard -->
                 <div class="leaderboard-heading"
