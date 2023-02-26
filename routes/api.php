@@ -11,16 +11,19 @@ Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function(){
 
     // old version
     Route::get('/photos/web/index', 'API\GetUntaggedUploadController');
+
     // new version
     Route::get('/photos/get-untagged-uploads', 'API\GetUntaggedUploadController');
 
     Route::get('/photos/web/load-more', 'API\WebPhotosController@loadMore');
+
+    Route::post('/add-tags-to-uploaded-image', 'API\AddTagsToUploadedImageController');
 });
 
 Route::get('/global/stats-data', 'API\GlobalStatsController@index');
 Route::get('/mobile-app-version', 'API\MobileAppVersionController');
 
-Route::post('add-tags', 'ApiPhotosController@addTags')
+Route::post('add-tags', 'API\AddTagsToUploadedImageController')
     ->middleware('auth:api');
 
 // Check if current token is valid
