@@ -161,6 +161,9 @@ Route::get('/settings/email', 'HomeController@index');
 Route::get('/settings/show-flag', 'HomeController@index');
 Route::get('/settings/teams', 'HomeController@index');
 
+Route::get('/littercoin', 'Littercoin\LittercoinController@getUsersLittercoin');
+Route::post('/littercoin', 'Littercoin\LittercoinController@signSubmit');
+
 // Game settings @ SettingsController
 // Toggle Presense of a piece of litter
 // Route::post('/settings/settings', 'SettingsController@presense');
