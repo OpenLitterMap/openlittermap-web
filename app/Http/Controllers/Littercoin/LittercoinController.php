@@ -32,8 +32,18 @@ class LittercoinController extends Controller
      */
     public function signSubmit (Request $request)
     {
+        // TODO santize inputs
+        $destAddr = $request->input('destAddr');
+        $changeAddr = $request->input('changeAddr');
+        $utxos = $request->input('utxos');
+        $strUtxos=implode(",",$utxos);
+        
+        $cmd = '(cd ../littercoin/; node mint.mjs '.$destAddr.' '.$changeAddr.' '.$strUtxos.')'; 
+        $response = exec($cmd);
+
         return [
-            'test' => $request->all()
+            //'test' => $request->all()
+            $response
         ];
     }
 }

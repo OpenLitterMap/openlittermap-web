@@ -11,17 +11,33 @@
                 <p>Littercoin received: {{ littercoinPaid }}</p>
                 <p>From database: {{ this.littercoins.length }}</p>
                 <p class="mb-4">Littercoin due: {{ this.littercoinOwed - this.littercoinPaid }} </p>
-
-                <input
-                    class="input"
-                    v-model="wallet_address"
-                />
-
-                <button
-                    class="button is-medium is-primary"
-                    @click="submit"
-                >Submit</button>
-
+                
+                <div>
+                    <form @submit.prevent="submitForm" v-if="!formSubmitted">
+                        <span>Select Your Wallet</span><br>
+                        <label>Nami</label>
+                        <input 
+                            type="radio" 
+                            v-model="walletChoice" 
+                            value="nami" 
+                        /><br>
+                        <span>Destination Wallet Address</span>
+                        <input
+                            class="input"
+                            v-model="walletAddress"
+                            placeholder="Enter wallet address" 
+                        />
+                        <input 
+                            class="submit" 
+                            type="submit" 
+                            value="Submit Tx"
+                        >
+                    </form>
+                    <div v-if="formSubmitted">
+                        <h3>Tx Submitted</h3>
+                        <p>Tx Id: </p>
+                    </div>
+                </div>
             </div>
         </div>
 	</div>
@@ -46,7 +62,9 @@ export default {
         return {
             loading :true,
             littercoins: [],
-            wallet_address: ""
+            walletAddress: "",
+            walletChoice: "",
+            formSubmitted: false
         };
     },
     computed: {
@@ -75,22 +93,37 @@ export default {
         /**
          *
          */
-        async submit () {
-            // Part 1:
+        submitForm: function () {
+            this.formSubmitted = true;
+            this.submit();
+        },
+        async submit() {
 
-            // construct the transaction
+            // Part 1: 
+            // Connect to the user's wallet
+            var walletAPI;
+            if (this.walletChoice === "nami") {
+                walletAPI = await window.cardano.nami.enable();
+            } else if (this.walletChoice === "eternl") {
+                walletAPI = await window.cardano.eternl.enable(); 
+            } else {
+                throw console.error("No wallet selected");
+            } 
+            
+            // get the UTXOs from wallet,
+            const cborUtxos = await walletAPI.getUtxos();
 
-            // open browser wallet
+            // Get the change address from the wallet
+            const hexChangeAddr = await walletAPI.getChangeAddress();
 
-            // user has to sign it
 
             // Part 2:
-
-            // Send the transaction to the backend,
-            // to sign again with a private key
-
+            // Construct and signed the transaction in the
+            // backend with private key. 
             await axios.post('/littercoin', {
-                transaction: 'hex'
+                destAddr: this.walletAddress,
+                changeAddr: hexChangeAddr,
+                utxos: cborUtxos
             })
             .then(response => {
                 console.log('littercoin', response);
@@ -98,6 +131,11 @@ export default {
             .catch(error => {
                 console.error('littercoin', error);
             });
+
+            // Part 3:
+            // Have the user sign and submit the finalized transaction.
+
+
         }
     }
 }
