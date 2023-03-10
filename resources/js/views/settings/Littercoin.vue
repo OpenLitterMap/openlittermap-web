@@ -7,6 +7,14 @@
             <div class="column is-two-thirds is-offset-1">
                 <p>Littercoin 2.0</p>
 
+                <p>Littercoin Smart Contract:</p>
+                <p>Total Ada: {{ this.adaAmount }}</p>
+                <p>Total Littercoin: {{ this.lcAmount }}</p>
+                <p>Ratio: {{ this.ratio }}</p>
+                <p>Contract Address: {{ this.lcAddr }}</p>
+                <p></p>
+                <p></p>
+
                 <p>Total Littercoin earned: {{ littercoinOwed }}</p>
                 <p>Littercoin received: {{ littercoinPaid }}</p>
                 <p>From database: {{ this.littercoins.length }}</p>
@@ -45,6 +53,8 @@
 
 <script>
 
+
+
 export default {
     name: 'Littercoin',
     async created () {
@@ -57,10 +67,30 @@ export default {
             .catch(error => {
                 console.error('littercoin', error);
             });
+        await axios.get('/littercoin-info')
+            .then(async response => {
+                console.log('littercoin-info', response);
+                //this.littercoinInfo = response.data.littercoinInfo;
+                const lcInfo = await JSON.parse(response.data.littercoinInfo); 
+                console.log("lcInfo", lcInfo);
+                this.adaAmount = lcInfo.list[0].int;
+                this.lcAmount = lcInfo.list[1].int;
+                this.ratio = Math.floor(this.adaAmount / this.lcAmount);
+                this.lcAddr = lcInfo.addr;
+            })
+            .catch(error => {
+                console.error('littercoin-info', error);
+            });
     },
+ 
     data () {
         return {
             loading :true,
+            lcInfo: {},
+            adaAmount: 0,
+            lcAmount: 0,
+            ratio: 0,
+            lcAddr: "",
             littercoins: [],
             walletAddress: "",
             walletChoice: "",
@@ -68,6 +98,7 @@ export default {
         };
     },
     computed: {
+ 
         /**
          * Total number of Littercoin the User is owed
          */
@@ -90,6 +121,7 @@ export default {
         }
     },
     methods: {
+  
         /**
          *
          */

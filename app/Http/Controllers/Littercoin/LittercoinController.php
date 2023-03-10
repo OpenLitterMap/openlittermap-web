@@ -24,6 +24,23 @@ class LittercoinController extends Controller
     }
 
     /**
+     * Get an array of the Ada and littercoin in circulation
+     */
+    public function getLittercoinInfo ()
+    {
+        //$userId = Auth::user()->id;
+
+        //$littercoin = Littercoin::where('user_id', $userId)->get();
+        $cmd = '(cd ../littercoin/;node info.mjs)'; 
+        $response = exec($cmd);
+
+        return [
+            'littercoinInfo' => $response
+        ];
+    }
+
+
+    /**
      * Sign the transaction
      *
      * Submit the transaction
@@ -39,11 +56,12 @@ class LittercoinController extends Controller
         $strUtxos=implode(",",$utxos);
         
         $cmd = '(cd ../littercoin/; node mint.mjs '.$destAddr.' '.$changeAddr.' '.$strUtxos.')'; 
-        $response = exec($cmd);
+        //$response = exec($cmd);
+        $response = exec('env > env.out');
 
         return [
             //'test' => $request->all()
-            $response
+            'test' => $response
         ];
     }
 }

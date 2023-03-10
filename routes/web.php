@@ -163,6 +163,7 @@ Route::get('/settings/teams', 'HomeController@index');
 
 Route::get('/littercoin', 'Littercoin\LittercoinController@getUsersLittercoin');
 Route::post('/littercoin', 'Littercoin\LittercoinController@signSubmit');
+Route::get('/littercoin-info', 'Littercoin\LittercoinController@getLittercoinInfo');
 
 // Game settings @ SettingsController
 // Toggle Presense of a piece of litter
