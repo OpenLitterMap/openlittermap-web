@@ -297,7 +297,7 @@ class ApiPhotosController extends Controller
             ];
         }
 
-        if ($request->tags || $request->custom_tags)
+        if (($request->tags && $request->tags !== '{}') || $request->custom_tags)
         {
             dispatch (new AddTags(
                 auth()->id(),
