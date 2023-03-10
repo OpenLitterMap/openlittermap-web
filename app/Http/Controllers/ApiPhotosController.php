@@ -273,6 +273,8 @@ class ApiPhotosController extends Controller
     {
         $file = $request->file('photo');
 
+        \Log::info($request->all());
+
         if ($file->getError() === 3)
         {
             return [
