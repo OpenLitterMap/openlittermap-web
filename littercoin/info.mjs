@@ -25,6 +25,8 @@ import {
     UTxO,
     WalletHelper } from "@hyperionbt/helios";
 
+export { fetchLittercoinInfo, getLittercoinContractDetails };
+
 
 // set in env variables
 const optimize = false;
@@ -72,15 +74,16 @@ const compiledValScript = Program.new(lcValScript).compile(optimize);
 const lcValHash = compiledValScript.validatorHash; 
 const lcValAddr = Address.fromValidatorHash(lcValHash);
 
+
 // Get the utxo with the thread token at the LC validator address
 const getTTUtxo = async () => {
 
     const blockfrostUrl = blockfrostAPI + "/addresses/" + lcValAddr.toBech32() + "/utxos/" + threadTokenMPH.hex + threadTokenName;
-    console.log("blockfrostUrl", blockfrostUrl);
+    //console.log("blockfrostUrl", blockfrostUrl);
 
     let utxos = await getUtxos(blockfrostUrl);
     if (utxos.length == 0) {
-    throw console.error("thread token not found")
+        throw console.error("thread token not found")
     }
     const lovelaceAmount = utxos[0].amount[0].quantity;
     const token = hexToBytes(threadTokenName);
@@ -121,15 +124,104 @@ const fetchLittercoinInfo = async () => {
         //return [lcValAddr.toBech32(), adaAmount, lcAmount];
         const returnObj = {
             ...datObj,
-            addr: lcValAddr.toBech32()
+            addr: lcValAddr.toBech32(),
+            ttUtxo: bytesToHex(utxo.toCbor())
         }
+        //return JSON.stringify(returnObj);
         return returnObj;
     } else {
-        console.log("fetchLittercoin: thread token not found");
+        throw console.erorr("fetchLittercoin: thread token not found");
     }
 }
 
-const output = await fetchLittercoinInfo();
-process.stdout.write(JSON.stringify(output));
+
+// Main calling function
+
+try {
+    const output = await fetchLittercoinInfo();
+    const returnObj = {
+        status: 200,
+        payload: output
+    }
+    process.stdout.write(JSON.stringify(returnObj));
+
+} catch (err) {
+    const returnObj = {
+        status: 500
+    }
+    process.stdout.write(JSON.stringify(returnObj));
+    throw console.error("info error: ", err);
+}
+
+
+
+const getLittercoinContractDetails = async () => {
+
+    // Network Parameters
+    const networkParamsFile = await fs.readFile(contractDirectory + '/' + process.env.NETWORK_PARAMS_FILE, 'utf8');
+    const networkParams = networkParamsFile.toString();
+    
+    // Littercoin minting script
+    const lcMintScript = await fs.readFile(contractDirectory + '/lcMint.hl', 'utf8');
+    const compiledLCMintScript = Program.new(lcMintScript).compile(optimize);
+    const lcMPH = compiledLCMintScript.mintingPolicyHash;
+
+    // Littercoin rewards token minting script
+    const rewardsTokenScript = await fs.readFile(contractDirectory + '/rewardsToken.hl', 'utf8');
+    const compiledRewardsScript = Program.new(rewardsTokenScript).compile(optimize);
+    const rewardsMPH = compiledRewardsScript.mintingPolicyHash;
+
+    // Littercoin rewards token minting script
+    const merchTokenScript = await fs.readFile(contractDirectory + '/merchToken.hl', 'utf8');
+    const compiledMerchTokenScript = Program.new(merchTokenScript).compile(optimize);
+    const merchMPH = compiledMerchTokenScript.mintingPolicyHash;
+
+
+    // Define blockfrost URL
+    const blockfrostUrl = blockfrostAPI + "/addresses/" + lcValAddr.toBech32() + "/utxos/?order=asc";
+    console.log("blockfrostUrl: ", blockfrostUrl);
+
+    let utxos = await getUtxos(blockfrostUrl);
+
+    // Find the reference utxo with the correct validator hash
+    if (utxos.length > 0) {
+      for (var utxo of utxos) {
+        if (utxo.reference_script_hash === lcValHash.hex) {
+
+            const valRefUTXO = new TxRefInput(
+                TxId.fromHex(utxo.tx_hash),
+                BigInt(utxo.output_index),
+                new TxOutput(
+                lcValAddr,
+                new Value(BigInt(utxo.amount[0].quantity)),
+                null,
+                compiledValScript
+                )
+            );
+
+          const lcVal = {
+            lcValScript: lcValScript,
+            lcValRefUtxo: valRefUTXO, 
+            lcMintScript: lcMintScript,
+            lcMPH: lcMPH,
+            ttMintScript: threadTokenScript,
+            ttMPH: threadTokenMPH,
+            mtMintScript: merchTokenScript,
+            mtMPH: merchMPH,
+            rewardsMintScript: rewardsTokenScript,
+            rewardsMPH: rewardsMPH,
+            netParams: networkParams
+          }
+          return lcVal;
+        }
+      }
+    } else {
+      throw console.error("littercoin validator reference utxo not found")
+    }
+}
+
+
+
+
 
 

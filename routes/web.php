@@ -162,7 +162,9 @@ Route::get('/settings/show-flag', 'HomeController@index');
 Route::get('/settings/teams', 'HomeController@index');
 
 Route::get('/littercoin', 'Littercoin\LittercoinController@getUsersLittercoin');
-Route::post('/littercoin', 'Littercoin\LittercoinController@signSubmit');
+Route::post('/littercoin-mint-tx', 'Littercoin\LittercoinController@mintTx');
+Route::post('/littercoin-submit-tx', 'Littercoin\LittercoinController@submitTx');
+
 Route::get('/littercoin-info', 'Littercoin\LittercoinController@getLittercoinInfo');
 
 // Game settings @ SettingsController

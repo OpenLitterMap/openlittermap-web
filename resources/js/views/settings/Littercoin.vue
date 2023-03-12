@@ -5,21 +5,18 @@
         <br>
         <div class="columns">
             <div class="column is-two-thirds is-offset-1">
-                <p>Littercoin 2.0</p>
-
-                <p>Littercoin Smart Contract:</p>
+                <p><b>Littercoin Smart Contract </b></p>
                 <p>Total Ada: {{ this.adaAmount }}</p>
                 <p>Total Littercoin: {{ this.lcAmount }}</p>
                 <p>Ratio: {{ this.ratio }}</p>
-                <p>Contract Address: {{ this.lcAddr }}</p>
-                <p></p>
-                <p></p>
+                <p>Script Address: <a :href="this.lcAddrURL" target="_blank" rel="noopener noreferrer" >{{ this.lcAddr }}</a></p>
+                <hr>
 
-                <p>Total Littercoin earned: {{ littercoinOwed }}</p>
+                <p><b>Total Littercoin earned: {{ littercoinOwed }}</b></p>
                 <p>Littercoin received: {{ littercoinPaid }}</p>
                 <p>From database: {{ this.littercoins.length }}</p>
                 <p class="mb-4">Littercoin due: {{ this.littercoinOwed - this.littercoinPaid }} </p>
-                
+                <hr>
                 <div>
                     <form @submit.prevent="submitForm" v-if="!formSubmitted">
                         <span>Select Your Wallet</span><br>
@@ -32,8 +29,8 @@
                         <span>Destination Wallet Address</span>
                         <input
                             class="input"
-                            v-model="walletAddress"
-                            placeholder="Enter wallet address" 
+                            v-model="destAddr"
+                            placeholder="Enter destination wallet address" 
                         />
                         <input 
                             class="submit" 
@@ -43,7 +40,7 @@
                     </form>
                     <div v-if="formSubmitted">
                         <h3>Tx Submitted</h3>
-                        <p>Tx Id: </p>
+                        <p><a :href="this.txIdURL" target="_blank" rel="noopener noreferrer" >{{ this.txId }}</a></p>
                     </div>
                 </div>
             </div>
@@ -69,14 +66,19 @@ export default {
             });
         await axios.get('/littercoin-info')
             .then(async response => {
+                //console.log("env", process.env.NETWORK);
                 console.log('littercoin-info', response);
-                //this.littercoinInfo = response.data.littercoinInfo;
-                const lcInfo = await JSON.parse(response.data.littercoinInfo); 
-                console.log("lcInfo", lcInfo);
-                this.adaAmount = lcInfo.list[0].int;
-                this.lcAmount = lcInfo.list[1].int;
-                this.ratio = Math.floor(this.adaAmount / this.lcAmount);
-                this.lcAddr = lcInfo.addr;
+                const lcInfo = await JSON.parse(response.data); 
+                if (lcInfo.status == 200) {
+                    //console.log("lcInfo", lcInfo);
+                    this.adaAmount = lcInfo.payload.list[0].int / 1000000;
+                    this.lcAmount = lcInfo.payload.list[1].int;
+                    this.ratio = this.adaAmount / this.lcAmount;
+                    this.lcAddr = lcInfo.payload.addr;
+                    this.lcAddrURL = "https://preprod.cexplorer.io/address/" + lcInfo.payload.addr;
+                } else {
+                    throw console.error("Could not fetch littercoin contract info");
+                }
             })
             .catch(error => {
                 console.error('littercoin-info', error);
@@ -86,15 +88,18 @@ export default {
     data () {
         return {
             loading :true,
-            lcInfo: {},
             adaAmount: 0,
             lcAmount: 0,
             ratio: 0,
             lcAddr: "",
+            lcAddrURL: "",
             littercoins: [],
-            walletAddress: "",
+            lcQty: 0,
+            destAddr: "",
             walletChoice: "",
-            formSubmitted: false
+            formSubmitted: false,
+            txId: "",
+            txIdURL: ""
         };
     },
     computed: {
@@ -118,7 +123,7 @@ export default {
          */
         user () {
             return this.$store.state.user.user;
-        }
+        },
     },
     methods: {
   
@@ -152,18 +157,60 @@ export default {
             // Part 2:
             // Construct and signed the transaction in the
             // backend with private key. 
-            await axios.post('/littercoin', {
-                destAddr: this.walletAddress,
+
+            const littercoinOwed = this.littercoins.length;
+            const littercoinPaied = this.user.littercoin_paid;
+            const littercoinDue = littercoinOwed - littercoinPaied;
+            await axios.post('/littercoin-mint-tx', {
+                lcQty: littercoinDue,
+                destAddr: this.destAddr,
                 changeAddr: hexChangeAddr,
                 utxos: cborUtxos
             })
-            .then(response => {
-                console.log('littercoin', response);
+            .then(async response => {
+                console.log('mintTx', response);
+                console.log("Waiting for wallet signature...");
+                const mintTx = await JSON.parse(response.data);
+                if (mintTx.status == 200) {
+
+                    // Get user to sign the transaction
+                    const walletSig = await walletAPI.signTx(mintTx.cborTx, true);
+
+                    await axios.post('/littercoin-submit-tx', {
+                        lcQty: littercoinDue,
+                        cborSig: walletSig,
+                        cborTx: mintTx.cborTx
+                    })
+                    .then(async response => {
+                        console.log('littercoin-submit-tx', response);
+                        const submitTx = await JSON.parse(response.data);
+                        if (submitTx.status == 200) {
+                            this.txId = submitTx.txId;
+                            this.txIdURL = "https://preprod.cexplorer.io/tx/" + submitTx.txId;
+                        } else {
+                            throw console.error("Could not submit transaction");
+                        }
+                    })
+                    .catch(error => {
+                        console.error('littercoin-submit-tx', error);
+                    });
+            
+                    
+                    //console.log("Verifying signature...");
+                    //const signatures = TxWitnesses.fromCbor(hexToBytes(walletSig)).signatures;
+                    //tx.addSignatures(signatures);
+                    
+                    //console.log("Submitting transaction...");
+                    //const txHash = await walletAPI.submitTx(bytesToHex((response.cborTx).toCbor()));
+                    //console.log("txHash", txHash);
+                } else {
+                    throw console.error("Mint transaction was not successful");
+                }
             })
             .catch(error => {
-                console.error('littercoin', error);
+                console.error('littercoin-mint-tx', error);
             });
-
+            
             // Part 3:
             // Have the user sign and submit the finalized transaction.
 

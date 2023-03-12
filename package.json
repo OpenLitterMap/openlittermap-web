@@ -25,10 +25,12 @@
     },
     "dependencies": {
         "@hyperionbt/helios": "^0.12.12",
+        "@stricahq/bip32ed25519": "^1.0.4",
         "@turf/hex-grid": "^6.0.2",
         "@turf/turf": "^5.1.6",
         "animate.css": "^4.1.0",
         "animated-number-vue": "^1.0.0",
+        "bip39": "^3.1.0",
         "buefy": "^0.9.1",
         "bulma": "^0.9.0",
         "chart.js": "^2.9.3",

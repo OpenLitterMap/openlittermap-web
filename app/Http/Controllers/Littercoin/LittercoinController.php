@@ -28,40 +28,76 @@ class LittercoinController extends Controller
      */
     public function getLittercoinInfo ()
     {
-        //$userId = Auth::user()->id;
-
-        //$littercoin = Littercoin::where('user_id', $userId)->get();
         $cmd = '(cd ../littercoin/;node info.mjs)'; 
         $response = exec($cmd);
 
         return [
-            'littercoinInfo' => $response
+            $response
         ];
+
+        //$response = exec('env > env.out');
+        /*
+        if ($response.status == 200) {
+            return [
+                'littercoinInfo' => $response.data
+            ];
+        } else {
+            return [
+                'littercoinInfo' => $response.status
+            ];
+        }
+        */
     }
 
 
     /**
+     * Check the amount of Littercoin being minted
+     * 
      * Sign the transaction
-     *
-     * Submit the transaction
-     *
-     * Update the Littercoin as sent
      */
-    public function signSubmit (Request $request)
+    public function mintTx (Request $request)
     {
         // TODO santize inputs
+        $lcQty = $request->input('lcQty');
         $destAddr = $request->input('destAddr');
         $changeAddr = $request->input('changeAddr');
         $utxos = $request->input('utxos');
+
+        // TODO - check backend to confirm backend db for littercoin amount
         $strUtxos=implode(",",$utxos);
         
-        $cmd = '(cd ../littercoin/; node mint.mjs '.$destAddr.' '.$changeAddr.' '.$strUtxos.')'; 
-        //$response = exec($cmd);
-        $response = exec('env > env.out');
+        $cmd = '(cd ../littercoin/; node mint.mjs '.$lcQty.' '.$destAddr.' '.$changeAddr.' '.$strUtxos.')'; 
+        $response = exec($cmd);
+        //$response = exec('env > env.out');
 
         return [
             //'test' => $request->all()
-            'test' => $response
+            $response
+        ];
+    }
+
+
+
+    /**
+     * Submit the transaction
+     *
+     * Update the Littercoin amount in DB
+     */
+    public function submitTx (Request $request)
+    {
+        // TODO santize inputs
+        $lcQty = $request->input('lcQty');
+        $cborSig = $request->input('cborSig');
+        $cborTx = $request->input('cborTx');
+
+        // TODO Check littercoin amount for this user
+
+        $cmd = '(cd ../littercoin/; node submit-tx.mjs '.$cborSig.' '.$cborTx.')'; 
+        $response = exec($cmd);
+
+        return [
+            //'test' => $request->all()
+            $response
         ];
     }
 }
