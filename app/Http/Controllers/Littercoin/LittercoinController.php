@@ -10,7 +10,6 @@ use App\Models\User\User;
 
 class LittercoinController extends Controller
 {
-
     /**
      * Apply middleware to all of these routes
      */
@@ -65,16 +64,19 @@ class LittercoinController extends Controller
         $littercoinEarned = Littercoin::where('user_id', $userId)->count();
         $littercoinDue = $littercoinEarned - $littercoinPaid;
 
-        $cmd = '(cd ../littercoin/; node mint.mjs '.$littercoinDue.' '.$destAddr.' '.$changeAddr.' '.$strUtxos.') 2>> ../storage/logs/littercoin.errors'; 
-        $response = exec($cmd);
-
-        return [
-            $response
-        ];
-        
+        if ($littercoinDue > 0) {
+            $cmd = '(cd ../littercoin/;node mint.mjs '.$littercoinDue.' '.$destAddr.' '.$changeAddr.' '.$strUtxos.') 2>> ../storage/logs/littercoin.errors'; 
+            $response = exec($cmd);
+    
+            return [
+                $response
+            ];   
+        } else {
+            return [
+                '{"status": "400", "msg": "Littercoin due must be greater than zero"}'
+            ];
+        }
     }
-
-
 
     /**
      * Submit the transaction
@@ -88,17 +90,29 @@ class LittercoinController extends Controller
         $cborTx = $request->input('cborTx');
 
         // Check littercoin amount for this transaction
+        $user = Auth::user();
         $userId = Auth::user()->id;
         $littercoinPaid = Auth::user()->littercoin_paid;
         $littercoinEarned = Littercoin::where('user_id', $userId)->count();
         $littercoinDue = $littercoinEarned - $littercoinPaid;
 
-        $cmd = '(cd ../littercoin/; node submit-tx.mjs '.$littercoinDue.' '.$cborSig.' '.$cborTx.') 2>> ../storage/logs/littercoin.errors'; 
+        $cmd = '(cd ../littercoin/;node submit-tx.mjs '.$littercoinDue.' '.$cborSig.' '.$cborTx.') 2>> ../storage/logs/littercoin.errors'; 
         $response = exec($cmd);
+        $responseJSON = json_decode($response, false);
 
-        return [
-            //'test' => $request->all()
-            $response
-        ];
+        if ($responseJSON->status == 200) {
+
+            // Update the amount of littercoin paid to user
+            $user->littercoin_paid = $littercoinPaid + $littercoinDue;
+            $user->save();
+      
+            return [
+                $response
+            ];
+        } else {
+            return [
+                $response
+            ];
+        }
     }
 }
