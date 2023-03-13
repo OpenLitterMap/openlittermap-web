@@ -6,9 +6,19 @@ use App\Http\Controllers\Controller;
 use App\Models\Littercoin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\User\User;
 
 class LittercoinController extends Controller
 {
+
+    /**
+     * Apply middleware to all of these routes
+     */
+    public function __construct ()
+    {
+        $this->middleware('auth');
+    }
+
     /**
      * Get an array of all of the Littercoin the User is owed
      */
@@ -28,25 +38,12 @@ class LittercoinController extends Controller
      */
     public function getLittercoinInfo ()
     {
-        $cmd = '(cd ../littercoin/;node info.mjs)'; 
+        $cmd = '(cd ../littercoin/;node info.mjs) 2>> ../storage/logs/littercoin.errors'; 
         $response = exec($cmd);
 
         return [
             $response
         ];
-
-        //$response = exec('env > env.out');
-        /*
-        if ($response.status == 200) {
-            return [
-                'littercoinInfo' => $response.data
-            ];
-        } else {
-            return [
-                'littercoinInfo' => $response.status
-            ];
-        }
-        */
     }
 
 
@@ -58,22 +55,23 @@ class LittercoinController extends Controller
     public function mintTx (Request $request)
     {
         // TODO santize inputs
-        $lcQty = $request->input('lcQty');
         $destAddr = $request->input('destAddr');
         $changeAddr = $request->input('changeAddr');
         $utxos = $request->input('utxos');
-
-        // TODO - check backend to confirm backend db for littercoin amount
         $strUtxos=implode(",",$utxos);
-        
-        $cmd = '(cd ../littercoin/; node mint.mjs '.$lcQty.' '.$destAddr.' '.$changeAddr.' '.$strUtxos.')'; 
+
+        $userId = Auth::user()->id;
+        $littercoinPaid = Auth::user()->littercoin_paid;
+        $littercoinEarned = Littercoin::where('user_id', $userId)->count();
+        $littercoinDue = $littercoinEarned - $littercoinPaid;
+
+        $cmd = '(cd ../littercoin/; node mint.mjs '.$littercoinDue.' '.$destAddr.' '.$changeAddr.' '.$strUtxos.') 2>> ../storage/logs/littercoin.errors'; 
         $response = exec($cmd);
-        //$response = exec('env > env.out');
 
         return [
-            //'test' => $request->all()
             $response
         ];
+        
     }
 
 
@@ -86,13 +84,16 @@ class LittercoinController extends Controller
     public function submitTx (Request $request)
     {
         // TODO santize inputs
-        $lcQty = $request->input('lcQty');
         $cborSig = $request->input('cborSig');
         $cborTx = $request->input('cborTx');
 
-        // TODO Check littercoin amount for this user
+        // Check littercoin amount for this transaction
+        $userId = Auth::user()->id;
+        $littercoinPaid = Auth::user()->littercoin_paid;
+        $littercoinEarned = Littercoin::where('user_id', $userId)->count();
+        $littercoinDue = $littercoinEarned - $littercoinPaid;
 
-        $cmd = '(cd ../littercoin/; node submit-tx.mjs '.$cborSig.' '.$cborTx.')'; 
+        $cmd = '(cd ../littercoin/; node submit-tx.mjs '.$littercoinDue.' '.$cborSig.' '.$cborTx.') 2>> ../storage/logs/littercoin.errors'; 
         $response = exec($cmd);
 
         return [

@@ -58,7 +58,7 @@ async function getUtxos(blockfrostUrl) {
 }
 
 
-const contractDirectory = path.join(process.cwd(), 'contracts');
+const contractDirectory = path.join(process.cwd(), '../public/contracts');
 
 // Thread token minting script
 const threadTokenFile = await fs.readFile(contractDirectory + '/threadToken.hl', 'utf8');
@@ -68,7 +68,8 @@ const threadTokenMPH = compiledTTMintScript.mintingPolicyHash;
 const threadTokenName = process.env.THREAD_TOKEN_NAME;
 
 // Validator script
-const lcValFile = await fs.readFile(contractDirectory + '/lcValidator.hl', 'utf8');
+const lcValScriptName = "lcValidator.hl";
+const lcValFile = await fs.readFile(contractDirectory + '/' + lcValScriptName, 'utf8');
 const lcValScript = lcValFile.toString();
 const compiledValScript = Program.new(lcValScript).compile(optimize);
 const lcValHash = compiledValScript.validatorHash; 
@@ -125,6 +126,7 @@ const fetchLittercoinInfo = async () => {
         const returnObj = {
             ...datObj,
             addr: lcValAddr.toBech32(),
+            scriptName: lcValScriptName,
             ttUtxo: bytesToHex(utxo.toCbor())
         }
         //return JSON.stringify(returnObj);

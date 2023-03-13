@@ -25,11 +25,11 @@ import {
 
 import { fetchLittercoinInfo,
             getLittercoinContractDetails } from "./info.mjs";
-import { signTx } from "./sign.mjs";
+
 import { tokenCount } from "./utils.mjs";
 
 try {
-      // Set the Helios compiler optimizer flag
+    // Set the Helios compiler optimizer flag
     const optimize = false;
     const minAda = BigInt(2000000); // minimum lovelace needed to send an NFT
     const maxTxFee = BigInt(500000); // maximum estimated transaction fee
@@ -37,7 +37,7 @@ try {
     const minUTXOVal = new Value(minAda + maxTxFee + minChangeAmt);
 
     /*
-     * usage: mint.js "lcQty" "destAddr" "changeAddr" "[cborUtxo1,cborUtxo2,...]"
+     * usage: mint.js lcQty destAddr cBorChangeAddr [cborUtxo1,cborUtxo2,...]
     */
 
     const args = process.argv;
@@ -148,12 +148,10 @@ try {
     // Send any change back to the buyer
     await tx.finalize(networkParams, changeAddr, utxos[1]);
 
-    const txSigned = await signTx(tx);
-
-    console.log("txSigned: ",txSigned.dump());
+    console.log("txMinted: ",tx.dump());
     const returnObj = {
         status: 200,
-        cborTx: bytesToHex(txSigned.toCbor())
+        cborTx: bytesToHex(tx.toCbor())
     }
     process.stdout.write(JSON.stringify(returnObj));
 

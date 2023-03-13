@@ -10,6 +10,7 @@
                 <p>Total Littercoin: {{ this.lcAmount }}</p>
                 <p>Ratio: {{ this.ratio }}</p>
                 <p>Script Address: <a :href="this.lcAddrURL" target="_blank" rel="noopener noreferrer" >{{ this.lcAddr }}</a></p>
+                <p>Source Code: <a :href="this.lcScriptURL" target="_blank" rel="noopener noreferrer" >{{ this.lcScriptName }}</a></p>
                 <hr>
 
                 <p><b>Total Littercoin earned: {{ littercoinOwed }}</b></p>
@@ -76,6 +77,8 @@ export default {
                     this.ratio = this.adaAmount / this.lcAmount;
                     this.lcAddr = lcInfo.payload.addr;
                     this.lcAddrURL = "https://preprod.cexplorer.io/address/" + lcInfo.payload.addr;
+                    this.lcScriptName = lcInfo.payload.scriptName;
+                    this.lcScriptURL = "/contracts/" + lcInfo.payload.scriptName;
                 } else {
                     throw console.error("Could not fetch littercoin contract info");
                 }
@@ -93,6 +96,8 @@ export default {
             ratio: 0,
             lcAddr: "",
             lcAddrURL: "",
+            lcScriptName: "",
+            lcScriptURL: "",
             littercoins: [],
             lcQty: 0,
             destAddr: "",
@@ -156,33 +161,34 @@ export default {
 
             // Part 2:
             // Construct and signed the transaction in the
-            // backend with private key. 
-
-            const littercoinOwed = this.littercoins.length;
-            const littercoinPaied = this.user.littercoin_paid;
-            const littercoinDue = littercoinOwed - littercoinPaied;
+            // backend with private key.
+            
+            console.log("hexChangeAddr: ", hexChangeAddr);
+            console.log("cborUtxos: ", cborUtxos);
+            
             await axios.post('/littercoin-mint-tx', {
-                lcQty: littercoinDue,
                 destAddr: this.destAddr,
                 changeAddr: hexChangeAddr,
                 utxos: cborUtxos
             })
             .then(async response => {
-                console.log('mintTx', response);
-                console.log("Waiting for wallet signature...");
+                console.log("mintTx: ", response);
                 const mintTx = await JSON.parse(response.data);
+
                 if (mintTx.status == 200) {
 
+                    console.log("Get wallet signature");
                     // Get user to sign the transaction
                     const walletSig = await walletAPI.signTx(mintTx.cborTx, true);
+                    console.log("walletSig: ", walletSig);
 
+                    console.log("Submit transaction...");
                     await axios.post('/littercoin-submit-tx', {
-                        lcQty: littercoinDue,
                         cborSig: walletSig,
                         cborTx: mintTx.cborTx
                     })
                     .then(async response => {
-                        console.log('littercoin-submit-tx', response);
+                        console.log('littercoin-submit-tx: ', response);
                         const submitTx = await JSON.parse(response.data);
                         if (submitTx.status == 200) {
                             this.txId = submitTx.txId;
@@ -192,17 +198,9 @@ export default {
                         }
                     })
                     .catch(error => {
-                        console.error('littercoin-submit-tx', error);
+                        console.error('littercoin-submit-tx: ', error);
                     });
             
-                    
-                    //console.log("Verifying signature...");
-                    //const signatures = TxWitnesses.fromCbor(hexToBytes(walletSig)).signatures;
-                    //tx.addSignatures(signatures);
-                    
-                    //console.log("Submitting transaction...");
-                    //const txHash = await walletAPI.submitTx(bytesToHex((response.cborTx).toCbor()));
-                    //console.log("txHash", txHash);
                 } else {
                     throw console.error("Mint transaction was not successful");
                 }
@@ -210,11 +208,6 @@ export default {
             .catch(error => {
                 console.error('littercoin-mint-tx', error);
             });
-            
-            // Part 3:
-            // Have the user sign and submit the finalized transaction.
-
-
         }
     }
 }
