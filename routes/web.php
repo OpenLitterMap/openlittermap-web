@@ -163,8 +163,7 @@ Route::get('/settings/teams', 'HomeController@index');
 
 Route::get('/littercoin', 'Littercoin\LittercoinController@getUsersLittercoin');
 Route::post('/littercoin-mint-tx', 'Littercoin\LittercoinController@mintTx');
-Route::post('/littercoin-submit-tx', 'Littercoin\LittercoinController@submitTx');
-
+Route::post('/littercoin-submit-mint-tx', 'Littercoin\LittercoinController@submitMintTx');
 Route::get('/littercoin-info', 'Littercoin\LittercoinController@getLittercoinInfo');
 
 // Game settings @ SettingsController

@@ -180,16 +180,16 @@ export default {
                     console.log("Get wallet signature");
                     // Get user to sign the transaction
                     const walletSig = await walletAPI.signTx(mintTx.cborTx, true);
-                    console.log("walletSig: ", walletSig);
-                    console.log("mintTx.cborTx: ", mintTx.cborTx);
+                    //console.log("walletSig: ", walletSig);
+                    //console.log("mintTx.cborTx: ", mintTx.cborTx);
 
                     console.log("Submit transaction...");
-                    await axios.post('/littercoin-submit-tx', {
+                    await axios.post('/littercoin-submit-mint-tx', {
                         cborSig: walletSig,
                         cborTx: mintTx.cborTx
                     })
                     .then(async response => {
-                        console.log('littercoin-submit-tx: ', response);
+                        console.log('littercoin-submit-mint-tx: ', response);
                         const submitTx = await JSON.parse(response.data);
                         if (submitTx.status == 200) {
                             this.txId = submitTx.txId;
@@ -199,7 +199,7 @@ export default {
                         }
                     })
                     .catch(error => {
-                        console.error('littercoin-submit-tx: ', error);
+                        console.error('littercoin-submit-mint-tx: ', error);
                     });
             
                 } else {

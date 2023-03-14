@@ -1,15 +1,19 @@
 import { Buffer } from "buffer";
 import { blake2b } from "blakejs";
 import {
-    bytesToHex, 
-    hexToBytes, 
-    Signature,
-    Tx } from "@hyperionbt/helios";
+        bytesToHex, 
+        Signature,
+        Tx } from "@hyperionbt/helios";
 import pkg from '@stricahq/bip32ed25519';
 const { Bip32PrivateKey } = pkg;
 
 export { signTx };
 
+/**
+ * Sign the tx with a private key
+ * @param {Tx} tx
+ * @returns {Tx} tx
+ */
 const signTx = async (tx) => {
 
     const hash32 = (data) => {
@@ -41,9 +45,6 @@ const signTx = async (tx) => {
         .derive(0)
         .toBip32PublicKey();
         
-        //const txCbor = req.body;
-        //const tx = Tx.fromCbor(hexToBytes(txCbor));
-
         const txBodyCbor = bytesToHex((tx.body).toCbor());
         const txBody = Buffer.from(txBodyCbor, 'hex');
         const txHash = hash32(txBody);
@@ -56,11 +57,8 @@ const signTx = async (tx) => {
 
         tx.addSignature(signature);
         return tx;
-        //const txId = await submitTx(tx);
-        //console.log("txId", txId);
-        //res.status(200).send(txId);
     }
     catch (err) {
-        throw console.error("sign error: " + err);
+        throw console.error("sign-mint-tx: ", err);
     }
 }

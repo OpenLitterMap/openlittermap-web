@@ -33,11 +33,13 @@ class LittercoinController extends Controller
     }
 
     /**
-     * Get an array of the Ada and littercoin in circulation
+     * Get the amount Ada and littercoin in circulation and
+     * the littercoin script address and UTXO with the thread
+     * token in it.
      */
     public function getLittercoinInfo ()
     {
-        $cmd = '(cd ../littercoin/;node get-info.mjs) 2>> ../storage/logs/littercoin.log'; 
+        $cmd = '(cd ../littercoin/;node get-lc-info.mjs) 2>> ../storage/logs/littercoin.log'; 
         $response = exec($cmd);
 
         return [
@@ -47,9 +49,7 @@ class LittercoinController extends Controller
 
 
     /**
-     * Check the amount of Littercoin being minted
-     * 
-     * Sign the transaction
+     * Create the littercoin mint transaction.
      */
     public function mintTx (Request $request)
     {
@@ -65,7 +65,7 @@ class LittercoinController extends Controller
         $littercoinDue = $littercoinEarned - $littercoinPaid;
 
         if ($littercoinDue > 0) {
-            $cmd = '(cd ../littercoin/;node mint.mjs '.$littercoinDue.' '.$destAddr.' '.$changeAddr.' '.$strUtxos.') 2>> ../storage/logs/littercoin.log'; 
+            $cmd = '(cd ../littercoin/;node create-mint-tx.mjs '.$littercoinDue.' '.$destAddr.' '.$changeAddr.' '.$strUtxos.') 2>> ../storage/logs/littercoin.log'; 
             $response = exec($cmd);
     
             return [
@@ -79,11 +79,10 @@ class LittercoinController extends Controller
     }
 
     /**
-     * Submit the transaction
-     *
-     * Update the Littercoin amount in DB
+     * Submit the littercoin mint transaction which includes signing
+     * the tx with a private key.
      */
-    public function submitTx (Request $request)
+    public function submitMintTx (Request $request)
     {
         // TODO santize inputs
         $cborSig = $request->input('cborSig');
@@ -96,13 +95,15 @@ class LittercoinController extends Controller
         $littercoinEarned = Littercoin::where('user_id', $userId)->count();
         $littercoinDue = $littercoinEarned - $littercoinPaid;
 
-        $cmd = '(cd ../littercoin/;node submit-tx.mjs '.$littercoinDue.' '.$cborSig.' '.$cborTx.') 2>> ../storage/logs/littercoin.log'; 
+        $cmd = '(cd ../littercoin/;node submit-mint-tx.mjs '.$littercoinDue.' '.$cborSig.' '.$cborTx.') 2>> ../storage/logs/littercoin.log'; 
         $response = exec($cmd);
         $responseJSON = json_decode($response, false);
 
         if ($responseJSON->status == 200) {
 
             // Update the amount of littercoin paid to user in the DB
+
+            // Commented out for testing purposes
             //$user->littercoin_paid = $littercoinPaid + $littercoinDue;
             //$user->save();
       

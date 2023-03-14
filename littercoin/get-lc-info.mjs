@@ -1,8 +1,10 @@
-import { fetchLittercoinInfo } from "./info.mjs";
+import { fetchLittercoinInfo } from "./lc-info.mjs";
 
 /**
  * Main calling function via the command line
  * Usage: node info.mjs 
+ * @params {}
+ * @output {string} lcInfo
  */
 const main = async () => {
 
@@ -18,8 +20,8 @@ const main = async () => {
         const returnObj = {
             status: 500
         }
+        console.error("get-lc-info: ", err);
         process.stdout.write(JSON.stringify(returnObj));
-        console.error("info error: ", err);
     }
 }
 

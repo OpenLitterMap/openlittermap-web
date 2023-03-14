@@ -1,37 +1,23 @@
 import axios from 'axios';
 import {
-    Address, 
     Assets, 
-    bytesToHex, 
-    ByteArrayData,
-    Cip30Wallet,
-    CoinSelection,
-    ConstrData, 
-    Datum, 
     hexToBytes, 
-    IntData, 
-    ListData, 
-    MintingPolicyHash,
-    NetworkParams,
     Program, 
-    PubKeyHash,
     Value, 
-    TxOutput,
-    TxRefInput,
     Tx, 
-    TxId,
     TxWitnesses,
-    UTxO,
-    WalletHelper, 
     } from "@hyperionbt/helios";
 
-import { getLittercoinContractDetails } from "./info.mjs";
-import { signTx } from "./sign.mjs";
+import { getLittercoinContractDetails } from "./lc-info.mjs";
+import { signTx } from "./sign-mint-tx.mjs";
 
 
-/*
- * Usage: node submit-tx lcQty walletSignature cborTx
-*/
+/**
+ * Submit a Helios Tx to blockfrost and return the
+ * txId if successful.
+ * @param {Tx} tx
+ * @returns {string} txId
+ */
 
 const submitTx = async (tx) => {
 
@@ -61,11 +47,17 @@ const submitTx = async (tx) => {
         throw err;
     }
 }
-
+/**
+ * Main calling function via the command line. 
+ * Usage: node submit-tx.mjs lcQty walletSignature cborTx
+ * @params {int, string, string}
+ * @output {string} txId
+ */
 const main = async () => {
     try {
         // Set the Helios compiler optimizer flag
-        const optimize = false;
+        //const optimize = false;
+        let optimize = (process.env.OPTIMIZE == 'true');
 
         const args = process.argv;
         const lcQty = args[2];
@@ -102,7 +94,7 @@ const main = async () => {
             status: 200,
             txId: txId
         }
-        // Temp logging success verification
+        // Log tx submission success
         var timestamp = new Date().toISOString();
         console.error(timestamp);
         console.error("submit-tx success - txId: ", txId);
@@ -112,12 +104,14 @@ const main = async () => {
         const returnObj = {
             status: 500
         }
+        // Log tx submission failure
         var timestamp = new Date().toISOString();
         console.error(timestamp);
-        console.error("submit-tx error: ", err);
+        console.error("submit-mint-tx error: ", err);
         process.stdout.write(JSON.stringify(returnObj));
     }
 }
+
 
 main();
 

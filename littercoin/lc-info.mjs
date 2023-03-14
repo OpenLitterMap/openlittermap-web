@@ -18,8 +18,9 @@ import {
 export { fetchLittercoinInfo, getLittercoinContractDetails };
 
 
-// set in env variables
-const optimize = false;
+// Set in env variables
+//const optimize = false;
+let optimize = (process.env.OPTIMIZE == 'true');
 const blockfrostAPI = process.env.BLOCKFROST_API;
 const contractDirectory = path.join(process.cwd(), '../public/contracts');
 
@@ -41,7 +42,7 @@ const lcValAddr = Address.fromValidatorHash(lcValHash);
 /**
  * Gets the UTXOS locked at a script address
  * @param {string} blockfrostUrl
- * @returns {string} 
+ * @returns {string} JSON payload
  */
 const getUtxos = async (blockfrostUrl) => {
 
@@ -71,7 +72,8 @@ const getUtxos = async (blockfrostUrl) => {
 /**
  * Get the utxo with the thread token at the littercoin
  * validator sript address
- * @returns {UTxO} 
+ * @params {}
+ * @returns {UTxO} ttUtxo
  */
 const getTTUtxo = async () => {
 
@@ -105,7 +107,8 @@ const getTTUtxo = async () => {
  * The littercoin smart contract info that is part of 
  * the datum values (adaAmount, lcAdmoun), script name, 
  * script address and the thread token utxo in cbor format.
- * @returns {lcInfo}
+ * @parms {}
+ * @returns {lcInfo} lcInfo
  */
 const fetchLittercoinInfo = async () => {
 
@@ -135,7 +138,8 @@ const fetchLittercoinInfo = async () => {
 /**
  * Get all of the littercoin valdiator and related scripts
  * details in one custom object
- * @returns {lcValDetails}
+ * @parms {}
+ * @returns {lcValDetails} lcDetails
  */
 const getLittercoinContractDetails = async () => {
 

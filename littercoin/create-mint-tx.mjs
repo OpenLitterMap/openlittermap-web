@@ -15,10 +15,11 @@ import {
     Value, 
     TxOutput,
     Tx, 
-    UTxO } from "@hyperionbt/helios";
+    UTxO 
+} from "@hyperionbt/helios";
 
 import { fetchLittercoinInfo,
-         getLittercoinContractDetails } from "./info.mjs";
+         getLittercoinContractDetails } from "./lc-info.mjs";
 
 import { tokenCount } from "./utils.mjs";
 
@@ -26,14 +27,20 @@ import { tokenCount } from "./utils.mjs";
 /**
  * Main calling function via the command line 
  * Usage: mint.js lcQty destAddr cBorChangeAddr [cborUtxo1,cborUtxo2,...]
+ * @params {int, string, string, string[]}
+ * @output {string} cborSignature, cborTx
  */
 const main = async () => {
 
     // Set the Helios compiler optimizer flag
-    const optimize = false;
-    const minAda = BigInt(2000000); // minimum lovelace needed to send an NFT
-    const maxTxFee = BigInt(500000); // maximum estimated transaction fee
-    const minChangeAmt = BigInt(1000000); // minimum lovelace needed to be sent back as change
+    //const optimize = false;
+    let optimize = (process.env.OPTIMIZE === 'true');
+    //const minAda = BigInt(2000000); // minimum lovelace needed to send an NFT
+    const minAda = BigInt(process.env.MIN_ADA);
+    //const maxTxFee = BigInt(500000); // maximum estimated transaction fee
+    const maxTxFee = BigInt(process.env.MAX_TX_FEE);
+    //const minChangeAmt = BigInt(1000000); // minimum lovelace needed to be sent back as change
+    const minChangeAmt = BigInt(process.env.MIN_CHANGE_AMT);
     const minUTXOVal = new Value(minAda + maxTxFee + minChangeAmt);
 
     try {
@@ -141,10 +148,11 @@ const main = async () => {
         }
         process.stdout.write(JSON.stringify(returnObj));
 
-    } catch {
+    } catch (err) {
         const returnObj = {
             status: 500
         }
+        console.error("create-mint-tx: ", err);
         process.stdout.write(JSON.stringify(returnObj));
     }
 }

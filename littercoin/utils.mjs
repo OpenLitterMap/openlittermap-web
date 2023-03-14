@@ -1,31 +1,12 @@
-import {
-    Address, 
-    Assets, 
-    bytesToHex, 
-    ByteArrayData,
-    Cip30Wallet,
-    CoinSelection,
-    ConstrData, 
-    Datum, 
-    hexToBytes, 
-    IntData, 
-    ListData, 
-    MintingPolicyHash,
-    NetworkParams,
-    Program, 
-    PubKeyHash,
-    Value, 
-    TxOutput,
-    TxRefInput,
-    Tx, 
-    TxId,
-    UTxO,
-    WalletHelper, 
-    } from "@hyperionbt/helios";
+import { UTxO } from "@hyperionbt/helios";
 
 export { tokenCount };
 
-// Get the number of tokens in a set of utxo for a given mph
+/**
+ * Get the number of tokens in a set of utxo for a given mph
+ * @param {string, UTxO[]} tokenMph, utxos
+ * @returns {int} 
+ */
 const tokenCount = async (tokenMph, utxos) => {
     let tokenCount = BigInt(0);
     for (const utxo of utxos) {
