@@ -37,7 +37,7 @@ class LittercoinController extends Controller
      */
     public function getLittercoinInfo ()
     {
-        $cmd = '(cd ../littercoin/;node info.mjs) 2>> ../storage/logs/littercoin.errors'; 
+        $cmd = '(cd ../littercoin/;node get-info.mjs) 2>> ../storage/logs/littercoin.log'; 
         $response = exec($cmd);
 
         return [
@@ -65,7 +65,7 @@ class LittercoinController extends Controller
         $littercoinDue = $littercoinEarned - $littercoinPaid;
 
         if ($littercoinDue > 0) {
-            $cmd = '(cd ../littercoin/;node mint.mjs '.$littercoinDue.' '.$destAddr.' '.$changeAddr.' '.$strUtxos.') 2>> ../storage/logs/littercoin.errors'; 
+            $cmd = '(cd ../littercoin/;node mint.mjs '.$littercoinDue.' '.$destAddr.' '.$changeAddr.' '.$strUtxos.') 2>> ../storage/logs/littercoin.log'; 
             $response = exec($cmd);
     
             return [
@@ -96,15 +96,15 @@ class LittercoinController extends Controller
         $littercoinEarned = Littercoin::where('user_id', $userId)->count();
         $littercoinDue = $littercoinEarned - $littercoinPaid;
 
-        $cmd = '(cd ../littercoin/;node submit-tx.mjs '.$littercoinDue.' '.$cborSig.' '.$cborTx.') 2>> ../storage/logs/littercoin.errors'; 
+        $cmd = '(cd ../littercoin/;node submit-tx.mjs '.$littercoinDue.' '.$cborSig.' '.$cborTx.') 2>> ../storage/logs/littercoin.log'; 
         $response = exec($cmd);
         $responseJSON = json_decode($response, false);
 
         if ($responseJSON->status == 200) {
 
-            // Update the amount of littercoin paid to user
-            $user->littercoin_paid = $littercoinPaid + $littercoinDue;
-            $user->save();
+            // Update the amount of littercoin paid to user in the DB
+            //$user->littercoin_paid = $littercoinPaid + $littercoinDue;
+            //$user->save();
       
             return [
                 $response

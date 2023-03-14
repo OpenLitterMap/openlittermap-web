@@ -27,6 +27,12 @@
                             v-model="walletChoice" 
                             value="nami" 
                         /><br>
+                        <label>Eternl</label>
+                        <input 
+                            type="radio" 
+                            v-model="walletChoice" 
+                            value="eternl" 
+                        /><br>
                         <span>Destination Wallet Address</span>
                         <input
                             class="input"
@@ -141,7 +147,6 @@ export default {
         },
         async submit() {
 
-            // Part 1: 
             // Connect to the user's wallet
             var walletAPI;
             if (this.walletChoice === "nami") {
@@ -158,13 +163,8 @@ export default {
             // Get the change address from the wallet
             const hexChangeAddr = await walletAPI.getChangeAddress();
 
-
-            // Part 2:
-            // Construct and signed the transaction in the
-            // backend with private key.
-            
-            console.log("hexChangeAddr: ", hexChangeAddr);
-            console.log("cborUtxos: ", cborUtxos);
+            //console.log("hexChangeAddr: ", hexChangeAddr);
+            //console.log("cborUtxos: ", cborUtxos);
             
             await axios.post('/littercoin-mint-tx', {
                 destAddr: this.destAddr,
@@ -181,6 +181,7 @@ export default {
                     // Get user to sign the transaction
                     const walletSig = await walletAPI.signTx(mintTx.cborTx, true);
                     console.log("walletSig: ", walletSig);
+                    console.log("mintTx.cborTx: ", mintTx.cborTx);
 
                     console.log("Submit transaction...");
                     await axios.post('/littercoin-submit-tx', {
@@ -194,7 +195,7 @@ export default {
                             this.txId = submitTx.txId;
                             this.txIdURL = "https://preprod.cexplorer.io/tx/" + submitTx.txId;
                         } else {
-                            throw console.error("Could not submit transaction");
+                            console.error("Could not submit transaction");
                         }
                     })
                     .catch(error => {
@@ -202,7 +203,7 @@ export default {
                     });
             
                 } else {
-                    throw console.error("Mint transaction was not successful");
+                    console.error("Mint transaction was not successful");
                 }
             })
             .catch(error => {

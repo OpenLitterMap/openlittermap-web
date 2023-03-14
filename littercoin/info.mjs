@@ -5,25 +5,15 @@ import {
     Address, 
     Assets, 
     bytesToHex, 
-    ByteArrayData,
-    Cip30Wallet,
-    CoinSelection,
-    ConstrData, 
     Datum, 
     hexToBytes, 
-    IntData, 
     ListData, 
-    MintingPolicyHash,
-    NetworkParams,
     Program, 
-    PubKeyHash,
     Value, 
     TxOutput,
     TxRefInput,
-    Tx, 
     TxId,
-    UTxO,
-    WalletHelper } from "@hyperionbt/helios";
+    UTxO } from "@hyperionbt/helios";
 
 export { fetchLittercoinInfo, getLittercoinContractDetails };
 
@@ -31,8 +21,29 @@ export { fetchLittercoinInfo, getLittercoinContractDetails };
 // set in env variables
 const optimize = false;
 const blockfrostAPI = process.env.BLOCKFROST_API;
+const contractDirectory = path.join(process.cwd(), '../public/contracts');
 
-async function getUtxos(blockfrostUrl) {
+// Thread token minting script
+const threadTokenFile = await fs.readFile(contractDirectory + '/threadToken.hl', 'utf8');
+const threadTokenScript = threadTokenFile.toString();
+const compiledTTMintScript = Program.new(threadTokenScript).compile(optimize);
+const threadTokenMPH = compiledTTMintScript.mintingPolicyHash;
+const threadTokenName = process.env.THREAD_TOKEN_NAME;
+
+// Validator script
+const lcValScriptName = "lcValidator.hl";
+const lcValFile = await fs.readFile(contractDirectory + '/' + lcValScriptName, 'utf8');
+const lcValScript = lcValFile.toString();
+const compiledValScript = Program.new(lcValScript).compile(optimize);
+const lcValHash = compiledValScript.validatorHash; 
+const lcValAddr = Address.fromValidatorHash(lcValHash);
+
+/**
+ * Gets the UTXOS locked at a script address
+ * @param {string} blockfrostUrl
+ * @returns {string} 
+ */
+const getUtxos = async (blockfrostUrl) => {
 
     const apiKey = process.env.BLOCKFROST_API_KEY;
 
@@ -57,30 +68,14 @@ async function getUtxos(blockfrostUrl) {
     }
 }
 
-
-const contractDirectory = path.join(process.cwd(), '../public/contracts');
-
-// Thread token minting script
-const threadTokenFile = await fs.readFile(contractDirectory + '/threadToken.hl', 'utf8');
-const threadTokenScript = threadTokenFile.toString();
-const compiledTTMintScript = Program.new(threadTokenScript).compile(optimize);
-const threadTokenMPH = compiledTTMintScript.mintingPolicyHash;
-const threadTokenName = process.env.THREAD_TOKEN_NAME;
-
-// Validator script
-const lcValScriptName = "lcValidator.hl";
-const lcValFile = await fs.readFile(contractDirectory + '/' + lcValScriptName, 'utf8');
-const lcValScript = lcValFile.toString();
-const compiledValScript = Program.new(lcValScript).compile(optimize);
-const lcValHash = compiledValScript.validatorHash; 
-const lcValAddr = Address.fromValidatorHash(lcValHash);
-
-
-// Get the utxo with the thread token at the LC validator address
+/**
+ * Get the utxo with the thread token at the littercoin
+ * validator sript address
+ * @returns {UTxO} 
+ */
 const getTTUtxo = async () => {
 
     const blockfrostUrl = blockfrostAPI + "/addresses/" + lcValAddr.toBech32() + "/utxos/" + threadTokenMPH.hex + threadTokenName;
-    //console.log("blockfrostUrl", blockfrostUrl);
 
     let utxos = await getUtxos(blockfrostUrl);
     if (utxos.length == 0) {
@@ -106,7 +101,12 @@ const getTTUtxo = async () => {
     return ttUtxo;
 }
 
-
+/**
+ * The littercoin smart contract info that is part of 
+ * the datum values (adaAmount, lcAdmoun), script name, 
+ * script address and the thread token utxo in cbor format.
+ * @returns {lcInfo}
+ */
 const fetchLittercoinInfo = async () => {
 
     const utxo = await getTTUtxo();
@@ -119,44 +119,24 @@ const fetchLittercoinInfo = async () => {
         const datData = utxo.origOutput.datum.data;
         const datJson = datData.toSchemaJson();
         const datObj = JSON.parse(datJson);
-        //const adaAmount = datObj.list[0].int;
-        //const lcAmount = datObj.list[1].int;
-        
-        //return [lcValAddr.toBech32(), adaAmount, lcAmount];
-        const returnObj = {
+
+        const lcInfo = {
             ...datObj,
             addr: lcValAddr.toBech32(),
             scriptName: lcValScriptName,
             ttUtxo: bytesToHex(utxo.toCbor())
         }
-        //return JSON.stringify(returnObj);
-        return returnObj;
+        return lcInfo;
     } else {
         throw console.erorr("fetchLittercoin: thread token not found");
     }
 }
 
-
-// Main calling function
-
-try {
-    const output = await fetchLittercoinInfo();
-    const returnObj = {
-        status: 200,
-        payload: output
-    }
-    process.stdout.write(JSON.stringify(returnObj));
-
-} catch (err) {
-    const returnObj = {
-        status: 500
-    }
-    process.stdout.write(JSON.stringify(returnObj));
-    throw console.error("info error: ", err);
-}
-
-
-
+/**
+ * Get all of the littercoin valdiator and related scripts
+ * details in one custom object
+ * @returns {lcValDetails}
+ */
 const getLittercoinContractDetails = async () => {
 
     // Network Parameters
@@ -178,10 +158,8 @@ const getLittercoinContractDetails = async () => {
     const compiledMerchTokenScript = Program.new(merchTokenScript).compile(optimize);
     const merchMPH = compiledMerchTokenScript.mintingPolicyHash;
 
-
     // Define blockfrost URL
     const blockfrostUrl = blockfrostAPI + "/addresses/" + lcValAddr.toBech32() + "/utxos/?order=asc";
-    console.log("blockfrostUrl: ", blockfrostUrl);
 
     let utxos = await getUtxos(blockfrostUrl);
 
@@ -201,7 +179,7 @@ const getLittercoinContractDetails = async () => {
                 )
             );
 
-          const lcVal = {
+          const lcValDetails = {
             lcValScript: lcValScript,
             lcValRefUtxo: valRefUTXO, 
             lcMintScript: lcMintScript,
@@ -214,16 +192,10 @@ const getLittercoinContractDetails = async () => {
             rewardsMPH: rewardsMPH,
             netParams: networkParams
           }
-          return lcVal;
+          return lcValDetails;
         }
       }
     } else {
       throw console.error("littercoin validator reference utxo not found")
     }
 }
-
-
-
-
-
-
