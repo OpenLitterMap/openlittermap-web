@@ -19,7 +19,6 @@ export { fetchLittercoinInfo, getLittercoinContractDetails };
 
 
 // Set in env variables
-//const optimize = false;
 let optimize = (process.env.OPTIMIZE == 'true');
 const blockfrostAPI = process.env.BLOCKFROST_API;
 const contractDirectory = path.join(process.cwd(), '../public/contracts');

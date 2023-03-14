@@ -33,13 +33,9 @@ import { tokenCount } from "./utils.mjs";
 const main = async () => {
 
     // Set the Helios compiler optimizer flag
-    //const optimize = false;
     let optimize = (process.env.OPTIMIZE === 'true');
-    //const minAda = BigInt(2000000); // minimum lovelace needed to send an NFT
-    const minAda = BigInt(process.env.MIN_ADA);
-    //const maxTxFee = BigInt(500000); // maximum estimated transaction fee
+    const minAda = BigInt(process.env.MIN_ADA);  // minimum lovelace needed to send an NFT
     const maxTxFee = BigInt(process.env.MAX_TX_FEE);
-    //const minChangeAmt = BigInt(1000000); // minimum lovelace needed to be sent back as change
     const minChangeAmt = BigInt(process.env.MIN_CHANGE_AMT);
     const minUTXOVal = new Value(minAda + maxTxFee + minChangeAmt);
 
