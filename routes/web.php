@@ -162,9 +162,12 @@ Route::get('/settings/show-flag', 'HomeController@index');
 Route::get('/settings/teams', 'HomeController@index');
 
 Route::get('/littercoin', 'Littercoin\LittercoinController@getUsersLittercoin');
+Route::get('/littercoin-info', 'Littercoin\LittercoinController@getLittercoinInfo');
 Route::post('/littercoin-mint-tx', 'Littercoin\LittercoinController@mintTx');
 Route::post('/littercoin-submit-mint-tx', 'Littercoin\LittercoinController@submitMintTx');
-Route::get('/littercoin-info', 'Littercoin\LittercoinController@getLittercoinInfo');
+Route::post('/merchant-mint-tx', 'Littercoin\LittercoinController@merchTx');
+Route::post('/merchant-submit-mint-tx', 'Littercoin\LittercoinController@submitMerchTx');
+
 
 // Game settings @ SettingsController
 // Toggle Presense of a piece of litter

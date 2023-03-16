@@ -39,6 +39,10 @@ class LittercoinController extends Controller
      */
     public function getLittercoinInfo ()
     {
+        //set user as admin for testing
+        //$user = Auth::user();
+        //$user->assignRole('admin');
+
         $cmd = '(cd ../littercoin/;node get-lc-info.mjs) 2>> ../storage/logs/littercoin.log'; 
         $response = exec($cmd);
 
@@ -65,7 +69,7 @@ class LittercoinController extends Controller
         $littercoinDue = $littercoinEarned - $littercoinPaid;
 
         if ($littercoinDue > 0) {
-            $cmd = '(cd ../littercoin/;node create-mint-tx.mjs '.$littercoinDue.' '.$destAddr.' '.$changeAddr.' '.$strUtxos.') 2>> ../storage/logs/littercoin.log'; 
+            $cmd = '(cd ../littercoin/;node create-lc-mint-tx.mjs '.$littercoinDue.' '.$destAddr.' '.$changeAddr.' '.$strUtxos.') 2>> ../storage/logs/littercoin.log'; 
             $response = exec($cmd);
     
             return [
@@ -95,7 +99,7 @@ class LittercoinController extends Controller
         $littercoinEarned = Littercoin::where('user_id', $userId)->count();
         $littercoinDue = $littercoinEarned - $littercoinPaid;
 
-        $cmd = '(cd ../littercoin/;node submit-mint-tx.mjs '.$littercoinDue.' '.$cborSig.' '.$cborTx.') 2>> ../storage/logs/littercoin.log'; 
+        $cmd = '(cd ../littercoin/;node submit-lc-mint-tx.mjs '.$littercoinDue.' '.$cborSig.' '.$cborTx.') 2>> ../storage/logs/littercoin.log'; 
         $response = exec($cmd);
         $responseJSON = json_decode($response, false);
 
@@ -113,6 +117,62 @@ class LittercoinController extends Controller
         } else {
             return [
                 $response
+            ];
+        }
+    }
+    /**
+     * Create the merchant token mint transaction.
+     */
+    public function merchTx (Request $request)
+    {
+        // TODO santize inputs
+        $destAddr = $request->input('destAddr');
+        $changeAddr = $request->input('changeAddr');
+        $utxos = $request->input('utxos');
+        $strUtxos=implode(",",$utxos);
+
+        if ((Auth::user() && ((Auth::user()->hasRole('admin') 
+                       || Auth::user()->hasRole('superadmin'))))) {
+
+            $cmd = '(cd ../littercoin/;node create-merch-mint-tx.mjs '.$destAddr.' '.$changeAddr.' '.$strUtxos.') 2>> ../storage/logs/littercoin.log'; 
+            $response = exec($cmd);
+    
+            return [
+                $response
+            ]; 
+              
+        } else {
+            return [
+                '{"status": "400", "msg": "User must be an admin"}'
+            ];
+        }
+    }
+
+    /**
+     * Submit the littercoin mint transaction which includes signing
+     * the tx with a private key.
+     */
+    public function submitMerchTx (Request $request)
+    {
+        // TODO santize inputs
+        $cborSig = $request->input('cborSig');
+        $cborTx = $request->input('cborTx');
+
+        // Check that the user is an admin
+        if ((Auth::user() && ((Auth::user()->hasRole('admin') 
+                       || Auth::user()->hasRole('superadmin'))))) {
+
+            $cmd = '(cd ../littercoin/;node submit-merch-mint-tx.mjs '.$cborSig.' '.$cborTx.') 2>> ../storage/logs/littercoin.log'; 
+            $response = exec($cmd);
+            $responseJSON = json_decode($response, false);
+
+            return [
+                $response
+            ];
+
+        } else {
+            return [
+                '{"status": "400", "msg": "User must be an admin"}'
             ];
         }
     }

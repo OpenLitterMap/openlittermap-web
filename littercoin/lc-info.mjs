@@ -156,7 +156,7 @@ const getLittercoinContractDetails = async () => {
     const compiledRewardsScript = Program.new(rewardsTokenScript).compile(optimize);
     const rewardsMPH = compiledRewardsScript.mintingPolicyHash;
 
-    // Littercoin rewards token minting script
+    // Merchant token minting script
     const merchTokenScript = await fs.readFile(contractDirectory + '/merchToken.hl', 'utf8');
     const compiledMerchTokenScript = Program.new(merchTokenScript).compile(optimize);
     const merchMPH = compiledMerchTokenScript.mintingPolicyHash;
