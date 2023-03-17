@@ -92,14 +92,7 @@ class LittercoinController extends Controller
         $cborSig = $request->input('cborSig');
         $cborTx = $request->input('cborTx');
 
-        // Check littercoin amount for this transaction
-        $user = Auth::user();
-        $userId = Auth::user()->id;
-        $littercoinPaid = Auth::user()->littercoin_paid;
-        $littercoinEarned = Littercoin::where('user_id', $userId)->count();
-        $littercoinDue = $littercoinEarned - $littercoinPaid;
-
-        $cmd = '(cd ../littercoin/;node submit-lc-mint-tx.mjs '.$littercoinDue.' '.$cborSig.' '.$cborTx.') 2>> ../storage/logs/littercoin.log'; 
+        $cmd = '(cd ../littercoin/;node submit-lc-mint-tx.mjs '.$cborSig.' '.$cborTx.') 2>> ../storage/logs/littercoin.log'; 
         $response = exec($cmd);
         $responseJSON = json_decode($response, false);
 
