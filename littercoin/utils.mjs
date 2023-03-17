@@ -1,6 +1,44 @@
+import axios from 'axios';
 import { UTxO } from "@hyperionbt/helios";
 
-export { tokenCount };
+export { submitTx,
+         tokenCount };
+
+/**
+ * Submit a Helios Tx to blockfrost and return the
+ * txId if successful.
+ * @param {Tx} tx
+ * @returns {string} txId
+ */
+
+const submitTx = async (tx) => {
+
+    const payload = new Uint8Array(tx.toCbor());
+    const blockfrostAPI = process.env.BLOCKFROST_API;
+    const blockfrostUrl = blockfrostAPI + "/tx/submit";
+    const apiKey = process.env.BLOCKFROST_API_KEY;
+
+    try {
+        let res = await axios({
+            url: blockfrostUrl,
+            data: payload,
+            method: 'post',
+            timeout: 8000,
+            headers: {
+                'Content-Type': 'application/cbor',
+                'project_id': apiKey
+            }
+        })
+        if(res.status == 200){
+            return res.data;
+        } else {
+            throw res.data;
+        }   
+    }
+    catch (err) {
+        throw err;
+    }
+}
 
 /**
  * Get the number of tokens in a set of utxo for a given mph

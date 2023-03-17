@@ -167,6 +167,8 @@ Route::post('/littercoin-mint-tx', 'Littercoin\LittercoinController@mintTx');
 Route::post('/littercoin-submit-mint-tx', 'Littercoin\LittercoinController@submitMintTx');
 Route::post('/merchant-mint-tx', 'Littercoin\LittercoinController@merchTx');
 Route::post('/merchant-submit-mint-tx', 'Littercoin\LittercoinController@submitMerchTx');
+Route::post('/add-ada-tx', 'Littercoin\LittercoinController@addAdaTx');
+Route::post('/add-ada-submit-tx', 'Littercoin\LittercoinController@submitAddAdaTx');
 
 
 // Game settings @ SettingsController

@@ -176,4 +176,50 @@ class LittercoinController extends Controller
             ];
         }
     }
+
+    /**
+     * Create the add Ada transaction.
+     */
+    public function addAdaTx (Request $request)
+    {
+        // TODO santize inputs
+        $adaQty = $request->input('adaQty');
+        $changeAddr = $request->input('changeAddr');
+        $utxos = $request->input('utxos');
+        $strUtxos=implode(",",$utxos);
+        
+        if ($adaQty >= 2) 
+        {
+            $cmd = '(cd ../littercoin/;node create-add-ada-tx.mjs '.$adaQty.' '.$changeAddr.' '.$strUtxos.') 2>> ../storage/logs/littercoin.log'; 
+            $response = exec($cmd);
+
+            return [
+                $response
+            ];   
+
+        } else 
+        {
+            return [
+                '{"status": "400", "msg": "Minimum 2 Ada donation is required"}'
+            ];
+        }
+    }
+
+    /**
+     * Submit the Add Ada transaction
+     */
+    public function submitAddAdaTx (Request $request)
+    {
+        // TODO santize inputs
+        $cborSig = $request->input('cborSig');
+        $cborTx = $request->input('cborTx');
+
+        $cmd = '(cd ../littercoin/;node submit-add-ada-tx.mjs '.$cborSig.' '.$cborTx.') 2>> ../storage/logs/littercoin.log'; 
+        $response = exec($cmd);
+        $responseJSON = json_decode($response, false);
+
+        return [
+            $response
+        ];
+    }
 }

@@ -1,48 +1,13 @@
-import axios from 'axios';
 import {
     hexToBytes, 
     Tx, 
     TxWitnesses,
     } from "@hyperionbt/helios";
 
-import { signTx } from "./sign-mint-tx.mjs";
+import { signTx } from "./sign-tx.mjs";
+import { submitTx } from './utils.mjs';
 
 
-/**
- * Submit a Helios Tx to blockfrost and return the
- * txId if successful.
- * @param {Tx} tx
- * @returns {string} txId
- */
-
-const submitTx = async (tx) => {
-
-    const payload = new Uint8Array(tx.toCbor());
-    const blockfrostAPI = process.env.BLOCKFROST_API;
-    const blockfrostUrl = blockfrostAPI + "/tx/submit";
-    const apiKey = process.env.BLOCKFROST_API_KEY;
-
-    try {
-        let res = await axios({
-            url: blockfrostUrl,
-            data: payload,
-            method: 'post',
-            timeout: 8000,
-            headers: {
-                'Content-Type': 'application/cbor',
-                'project_id': apiKey
-            }
-        })
-        if(res.status == 200){
-            return res.data;
-        } else {
-            throw res.data;
-        }   
-    }
-    catch (err) {
-        throw err;
-    }
-}
 /**
  * Main calling function via the command line. 
  * Usage: node submit-tx.mjs lcQty walletSignature cborTx
@@ -77,7 +42,7 @@ const main = async () => {
         // Log tx submission success
         var timestamp = new Date().toISOString();
         console.error(timestamp);
-        console.error("submit-tx success - txId: ", txId);
+        console.error("submit-merch-mint-tx success - txId: ", txId);
         process.stdout.write(JSON.stringify(returnObj));
 
     } catch (err) {
@@ -87,7 +52,7 @@ const main = async () => {
         // Log tx submission failure
         var timestamp = new Date().toISOString();
         console.error(timestamp);
-        console.error("submit-mint-tx error: ", err);
+        console.error("submit-merch-mint-tx error: ", err);
         process.stdout.write(JSON.stringify(returnObj));
     }
 }

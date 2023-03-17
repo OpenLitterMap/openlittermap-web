@@ -19,11 +19,7 @@
                 <p>Littercoin Due: {{ this.littercoinOwed - this.littercoinPaid }}</p>
                 <hr>
                 <div>
-                    <form 
-                        method="post"
-                        @submit.prevent="submitForm('mint')" 
-                        v-if="!mintSuccess" 
-                    >
+                    <form>
                         <p><h1 class="title is-4">Select Your Wallet</h1></p>
                         <p>
                             <input 
@@ -44,7 +40,13 @@
                             <img src = "/assets/icons/littercoin/eternl.png" alt="Eternl Wallet" style="width:20px;height:20px;"/>
                             <label>&nbsp; Eternl</label>
                         </p>
-                        <hr>
+                    </form>
+                <hr>
+                    <form 
+                        method="post"
+                        @submit.prevent="submitForm('mint')" 
+                        v-if="!mintSuccess" 
+                        >
                         <p><h1 class="title is-4">Mint Littercoin</h1></p>
                         Destination Wallet Address
                         <input
@@ -66,9 +68,7 @@
                         <p>To track this transaction on the blockchain, select the TxId link below.</p>
                         <p>TxId: <a style="font-size: small;" :href="this.mintTxIdURL" target="_blank" rel="noopener noreferrer" >{{ this.mintTxId }}</a></p>
                     </div>
-                </div>
                 <hr>
-                <div>
                     <form 
                         method="post"
                         @submit.prevent="submitForm('merchant')" 
@@ -95,6 +95,34 @@
                         <p>To track this transaction on the blockchain, select the TxId link below.</p>
                         <p>TxId: <a style="font-size: small;" :href="this.merchTxIdURL" target="_blank" rel="noopener noreferrer" >{{ this.merchTxId }}</a></p>
                     </div>
+                <hr>
+                    <form 
+                        method="post"
+                        @submit.prevent="submitForm('addAda')" 
+                        v-if="!addAdaSuccess" 
+                    >
+                        <p><h1 class="title is-4">Add Ada To Littercoin Smart Contract</h1></p>
+                        <input
+                            class="input"
+                            type="number"
+                            v-model="addAdaQty"
+                            placeholder="Enter amount of Ada to send" 
+                        >
+                        <div style="text-align: center; padding-bottom: 1em;">
+                            <button
+                                class="button is-medium is-primary mb1 mt1"
+                                :class="addAdaFormSubmitted ? 'is-loading' : ''"
+                                :disabled="checkAddAdaDisabled"
+                            >Submit Tx</button>
+                        </div>                    
+                    </form>
+                    <div v-if="addAdaSuccess">
+                        <p><h1 class="title is-4">Add Ada Success!!!</h1></p>
+                        <p>Please wait approximately 20-60 seconds and refresh this page for the Ada to show up in the Littercoin Smart Contract.</p>
+                        <p>To track this transaction on the blockchain, select the TxId link below.</p>
+                        <p>TxId: <a style="font-size: small;" :href="this.addAdaTxIdURL" target="_blank" rel="noopener noreferrer" >{{ this.addAdaTxId }}</a></p>
+                    </div>
+                <hr>
                 </div>
             </div>
         </div>
@@ -123,7 +151,6 @@ export default {
                 console.log('littercoin-info', response);
                 const lcInfo = await JSON.parse(response.data); 
                 if (lcInfo.status == 200) {
-                    //console.log("lcInfo", lcInfo);
                     this.adaAmount = lcInfo.payload.list[0].int / 1000000;
                     this.lcAmount = lcInfo.payload.list[1].int;
                     this.ratio = this.adaAmount / this.lcAmount;
@@ -154,14 +181,20 @@ export default {
             walletChoice: "",
             mintDestAddr: "",
             merchDestAddr: "",
+            addAdaQty: 0,
             mintFormSubmitted: false,
             merchFormSubmitted: false,
+            addAdaFormSubmitted: false,
             mintSuccess: false,
             merchSuccess: false,
+            addAdaSuccess: false,
             mintTxId: "",
             merchTxId: "",
+            addAdaTxId: "",
             mintTxIdURL: "",
-            merchTxIdURL: ""
+            merchTxIdURL: "",
+            addAdaTxIdURL: ""
+
         };
     },
     computed: {
@@ -201,12 +234,21 @@ export default {
 
             return false;
         },
-                /**
+        /**
          * Return true to disable the button
          */
 	    checkMerchDisabled ()
         {
             if (this.merchFormSubmitted) return true
+
+            return false;
+        },
+                /**
+         * Return true to disable the button
+         */
+	    checkAddAdaDisabled ()
+        {
+            if (this.addAdaFormSubmitted) return true
 
             return false;
         },
@@ -243,6 +285,16 @@ export default {
                 this.merchFormSubmitted = true;
                 this.merchMint();
             }
+            if (type === 'addAda') 
+            {
+                if ( !this.addAdaQty > 2)
+                {
+                    alert ('Minimum 2 Ada donation amount required');
+                    return
+                }
+                this.addAdaFormSubmitted = true;
+                this.addAda();
+            }
         },
         async submitMint() {
 
@@ -264,9 +316,6 @@ export default {
             // Get the change address from the wallet
             const hexChangeAddr = await walletAPI.getChangeAddress();
 
-            //console.log("hexChangeAddr: ", hexChangeAddr);
-            //console.log("cborUtxos: ", cborUtxos);
-            
             await axios.post('/littercoin-mint-tx', {
                 destAddr: this.mintDestAddr,
                 changeAddr: hexChangeAddr,
@@ -340,9 +389,6 @@ export default {
             // Get the change address from the wallet
             const hexChangeAddr = await walletAPI.getChangeAddress();
 
-            //console.log("hexChangeAddr: ", hexChangeAddr);
-            //console.log("cborUtxos: ", cborUtxos);
-
             await axios.post('/merchant-mint-tx', {
                 destAddr: this.merchDestAddr,
                 changeAddr: hexChangeAddr,
@@ -395,6 +441,76 @@ export default {
                 this.merchFormSubmitted = false;
                 console.error("merchant-submit-mint-tx: ", error);
             });
+        },
+        async addAda() {
+
+        // Connect to the user's wallet
+        var walletAPI;
+        if (this.walletChoice === "nami") {
+            walletAPI = await window.cardano.nami.enable();
+        } else if (this.walletChoice === "eternl") {
+            walletAPI = await window.cardano.eternl.enable(); 
+        } else {
+            alert('No wallet selected');
+            this.addAdaFormSubmitted = false;
+            throw console.error("No wallet selected");
+        } 
+
+        // get the UTXOs from wallet,
+        const cborUtxos = await walletAPI.getUtxos();
+
+        // Get the change address from the wallet
+        const hexChangeAddr = await walletAPI.getChangeAddress();
+
+        await axios.post('/add-ada-tx', {
+            adaQty: this.addAdaQty,
+            changeAddr: hexChangeAddr,
+            utxos: cborUtxos
+        })
+        .then(async response => {
+            console.log("add-ada-tx: ", response);
+            const addAdaTx = await JSON.parse(response.data);
+
+            if (addAdaTx.status == 200) {
+
+                console.log("Get wallet signature");
+                // Get user to sign the transaction
+                const walletSig = await walletAPI.signTx(addAdaTx.cborTx, true);
+      
+                await axios.post('/add-ada-submit-tx', {
+                    cborSig: walletSig,
+                    cborTx: addAdaTx.cborTx
+                })
+                .then(async response => {
+                    console.log('add-ada-submit-tx: ', response);
+                    const submitTx = await JSON.parse(response.data);
+                    if (submitTx.status == 200) {
+                        this.addAdaTxId = submitTx.txId;
+                        this.addAdaTxIdURL = "https://preprod.cexplorer.io/tx/" + submitTx.txId;
+                        this.addAdaSuccess = true;
+                    } else {
+                        alert ('Add Ada transaction could not be submitted, please try again');
+                        this.addAdaFormSubmitted = false;
+                        console.error("Could not submit transaction");
+                    }
+                })
+                .catch(error => {
+                    alert ('Add Ada transaction could not be submitted, please try again');
+                    this.addAdaFormSubmitted = false;
+                    console.error("add-ada-submit-tx: ", error);
+                });
+
+            } else {
+                alert ('Add Ada transaction could not be submitted, please try again');
+                this.addAdaFormSubmitted = false;
+                console.error("Add Ada transaction was not successful");
+            }
+        })
+        .catch(error => {
+            alert ('Add Ada transaction could not be submitted, please try again');
+            this.addAdaFormSubmitted = false;
+            console.error("add-ada-tx", error);
+        });
         }
     }
 }
