@@ -129,7 +129,7 @@ const main = async () => {
             new Value(minAda, new Assets([[rewardsMPH, rewardsTokens]]))
             ));
 
-        // Add owner pkh as a signer which is required to mint littercoin
+        // Add owner pkh as a signer to lock the transaction once it is built
         tx.addSigner(PubKeyHash.fromHex(process.env.OWNER_PKH));
 
         // Network Params

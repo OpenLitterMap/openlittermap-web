@@ -120,6 +120,75 @@ class LittercoinController extends Controller
             ];
         }
     }
+
+    /**
+     * Create the littercoin burn transaction.
+     */
+    public function burnTx (Request $request)
+    {
+        // TODO santize inputs
+        $lcQty = $request->input('lcQty');
+        $changeAddr = $request->input('changeAddr');
+        $utxos = $request->input('utxos');
+        $strUtxos=implode(",",$utxos);
+
+        if ($lcQty > 0) {
+            $cmd = '(cd ../littercoin/;node create-lc-burn-tx.mjs '.$lcQty.' '.$changeAddr.' '.$strUtxos.') 2>> ../storage/logs/littercoin.log'; 
+            $response = exec($cmd);
+            $responseJSON = json_decode($response, false);
+
+            if ($responseJSON->status == 200) 
+            {
+                return [
+                    $response
+                ];
+            } else if ($responseJSON->status == 501) 
+            {
+                return [
+                    '{"status": "401", "msg": "Insufficient Littercoin In Wallet For Burn"}'
+                ];
+            } else if ($responseJSON->status == 502) 
+            {
+                return [
+                    '{"status": "402", "msg": "Merchant Token Not Found"}'
+                ];
+            } else if ($responseJSON->status == 503) 
+            {
+                return [
+                    '{"status": "403", "msg": "Insufficient funds in Littercoin contract"}'
+                ];
+            } else 
+            {
+                return [
+                    $response
+                ];   
+            } 
+        } else 
+        {
+            return [
+                '{"status": "400", "msg": "Littercoin amount must be greater than zero"}'
+            ];
+        }
+    }
+
+    /**
+     * Submit the littercoin mint transaction which includes signing
+     * the tx with a private key.
+     */
+    public function submitBurnTx (Request $request)
+    {
+        // TODO santize inputs
+        $cborSig = $request->input('cborSig');
+        $cborTx = $request->input('cborTx');
+
+        $cmd = '(cd ../littercoin/;node submit-lc-burn-tx.mjs '.$cborSig.' '.$cborTx.') 2>> ../storage/logs/littercoin.log'; 
+        $response = exec($cmd);
+ 
+        return [
+            $response
+        ];  
+    }
+
     /**
      * Create the merchant token mint transaction.
      */

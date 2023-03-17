@@ -19,28 +19,26 @@
                 <p>Littercoin Due: {{ this.littercoinOwed - this.littercoinPaid }}</p>
                 <hr>
                 <div>
-                    <form>
-                        <p><h1 class="title is-4">Select Your Wallet</h1></p>
-                        <p>
-                            <input 
-                                type="radio" 
-                                v-model="walletChoice" 
-                                value="nami" 
-                            /> &nbsp;
-                            <img src = "/assets/icons/littercoin/nami.png" alt="Nami Wallet" style="width:20px;height:20px;"/>
-                            <label>&nbsp; Nami</label>
-                        </p>
-                        <br>
-                        <p>
-                            <input 
-                                type="radio" 
-                                v-model="walletChoice" 
-                                value="eternl" 
-                            />&nbsp;
-                            <img src = "/assets/icons/littercoin/eternl.png" alt="Eternl Wallet" style="width:20px;height:20px;"/>
-                            <label>&nbsp; Eternl</label>
-                        </p>
-                    </form>
+                    <p><h1 class="title is-4">Select Your Wallet</h1></p>
+                    <p>
+                        <input 
+                            type="radio" 
+                            v-model="walletChoice" 
+                            value="nami" 
+                        /> &nbsp;
+                        <img src = "/assets/icons/littercoin/nami.png" alt="Nami Wallet" style="width:20px;height:20px;"/>
+                        <label>&nbsp; Nami</label>
+                    </p>
+                    <br>
+                    <p>
+                        <input 
+                            type="radio" 
+                            v-model="walletChoice" 
+                            value="eternl" 
+                        />&nbsp;
+                        <img src = "/assets/icons/littercoin/eternl.png" alt="Eternl Wallet" style="width:20px;height:20px;"/>
+                        <label>&nbsp; Eternl</label>
+                    </p>
                 <hr>
                     <form 
                         method="post"
@@ -67,6 +65,34 @@
                         <p>Please wait approximately 20-60 seconds for the littercoin to show up in your wallet.</p>
                         <p>To track this transaction on the blockchain, select the TxId link below.</p>
                         <p>TxId: <a style="font-size: small;" :href="this.mintTxIdURL" target="_blank" rel="noopener noreferrer" >{{ this.mintTxId }}</a></p>
+                    </div>
+                <hr>
+                    <form 
+                        method="post"
+                        @submit.prevent="submitForm('burn')" 
+                        v-if="!burnSuccess" 
+                        >
+                        <p><h1 class="title is-4">Burn Littercoin</h1></p>
+                        Number Of Littercoins To Burn
+                        <input
+                            class="input"
+                            type="number"
+                            v-model="lcQty"
+                            placeholder="Enter number of littercoins to burn" 
+                        />
+                        <div style="text-align: center; padding-bottom: 1em;">
+                            <button
+                                class="button is-medium is-primary mb1 mt1"
+                                :class="burnFormSubmitted ? 'is-loading' : ''"
+                                :disabled="checkBurnDisabled"
+                            >Submit Tx</button>
+                        </div>
+                    </form>
+                    <div v-if="burnSuccess">
+                        <p><h1 class="title is-4">Burn Littercoin Success!!!</h1></p>
+                        <p>Please wait approximately 20-60 seconds for the Ada to show up in your wallet.</p>
+                        <p>To track this transaction on the blockchain, select the TxId link below.</p>
+                        <p>TxId: <a style="font-size: small;" :href="this.burnTxIdURL" target="_blank" rel="noopener noreferrer" >{{ this.burnTxId }}</a></p>
                     </div>
                 <hr>
                     <form 
@@ -182,16 +208,21 @@ export default {
             mintDestAddr: "",
             merchDestAddr: "",
             addAdaQty: 0,
+            lcQty: 0,
             mintFormSubmitted: false,
+            burnFormSubmitted: false,
             merchFormSubmitted: false,
             addAdaFormSubmitted: false,
             mintSuccess: false,
+            burnSuccess: false,
             merchSuccess: false,
             addAdaSuccess: false,
             mintTxId: "",
+            burnTxId: "",
             merchTxId: "",
             addAdaTxId: "",
             mintTxIdURL: "",
+            burnTxIdURL: "",
             merchTxIdURL: "",
             addAdaTxIdURL: ""
 
@@ -223,7 +254,6 @@ export default {
         isAdmin ()
         {
             return (this.$store.state.user.admin);
-            //return true;
         },
          /**
          * Return true to disable the button
@@ -237,13 +267,22 @@ export default {
         /**
          * Return true to disable the button
          */
+	    checkBurnDisabled ()
+        {
+            if (this.burnFormSubmitted) return true
+
+            return false;
+        },
+        /**
+         * Return true to disable the button
+         */
 	    checkMerchDisabled ()
         {
             if (this.merchFormSubmitted) return true
 
             return false;
         },
-                /**
+        /**
          * Return true to disable the button
          */
 	    checkAddAdaDisabled ()
@@ -252,6 +291,7 @@ export default {
 
             return false;
         },
+
     },
     methods: {
   
@@ -274,6 +314,16 @@ export default {
                 }
                 this.mintFormSubmitted = true;
                 this.submitMint();
+            }
+            if (type === 'burn') 
+            {
+                if ( !this.lcQty > 1)
+                {
+                    alert ('Minimum 1 littercoin required for burn');
+                    return
+                }
+                this.burnFormSubmitted = true;
+                this.submitBurn();
             }
             if (type === 'merchant') 
             {
@@ -368,6 +418,91 @@ export default {
                 this.mintFormSubmitted = false;
                 console.error("littercoin-mint-tx", error);
             });
+        },
+        async submitBurn() {
+
+        // Connect to the user's wallet
+        var walletAPI;
+        if (this.walletChoice === "nami") {
+            walletAPI = await window.cardano.nami.enable();
+        } else if (this.walletChoice === "eternl") {
+            walletAPI = await window.cardano.eternl.enable(); 
+        } else {
+            alert('No wallet selected');
+            this.burnFormSubmitted = false;
+            throw console.error("No wallet selected");
+        } 
+
+        // get the UTXOs from wallet,
+        const cborUtxos = await walletAPI.getUtxos();
+
+        // Get the change address from the wallet
+        const hexChangeAddr = await walletAPI.getChangeAddress();
+
+        await axios.post('/littercoin-burn-tx', {
+            lcQty: this.lcQty,
+            changeAddr: hexChangeAddr,
+            utxos: cborUtxos
+        })
+        .then(async response => {
+            console.log("littercoin-burn-tx: ", response);
+            const burnTx = await JSON.parse(response.data);
+
+            if (burnTx.status == 200) {
+
+                console.log("Get wallet signature");
+                // Get user to sign the transaction
+                const walletSig = await walletAPI.signTx(burnTx.cborTx, true);
+
+                console.log("Submit transaction...");
+                await axios.post('/littercoin-submit-burn-tx', {
+                    cborSig: walletSig,
+                    cborTx: burnTx.cborTx
+                })
+                .then(async response => {
+                    console.log('littercoin-submit-burn-tx: ', response);
+                    
+                    // TODO try/catch JSON parse
+                    const submitTx = await JSON.parse(response.data);
+                    if (submitTx.status == 200) {
+                        this.burnTxId = submitTx.txId;
+                        this.burnTxIdURL = "https://preprod.cexplorer.io/tx/" + submitTx.txId;
+                        this.burnSuccess = true;
+                    } else if (submitTx.status == 401) {
+                        console.error("Insufficient Littercoin In Wallet For Burn");
+                        alert ('Insufficient Littercoin In Wallet For Burn');
+                        this.burnFormSubmitted = false;
+                    } else if (submitTx.status == 402) {
+                        console.error("Merchant Token Not Found");
+                        alert ('Merchant Token Not Found');
+                        this.burnFormSubmitted = false;
+                    } else if (submitTx.status == 403) {
+                        console.error("Insufficient funds in Littercoin contract");
+                        alert ('Insufficient funds in Littercoin contract');
+                        this.burnFormSubmitted = false;
+                    } else {
+                        console.error("Littercoin Burn transaction was not successful");
+                        alert ('Littercoin Burn transaction could not be submitted, please try again');
+                        this.burnFormSubmitted = false;
+                    }
+                })
+                .catch(error => {
+                    console.error("littercoin-submit-burn-tx: ", error);
+                    alert ('Littercoin Burn transaction could not be submitted, please try again');
+                    this.burnFormSubmitted = false;
+                });
+
+            } else {
+                console.error("Littercoin Burn transaction was not successful");
+                alert ('Littercoin Burn transaction could not be submitted, please try again');
+                this.burnFormSubmitted = false;
+            }
+        })
+        .catch(error => {
+            console.error("littercoin-burn-tx", error);
+            alert ('Littercoin Burn transaction could not be submitted, please try again');
+            this.burnFormSubmitted = false;
+        });
         },
         async merchMint() {
 

@@ -14,7 +14,7 @@ import { submitTx } from './utils.mjs';
 
 /**
  * Main calling function via the command line. 
- * Usage: node submit-tx.mjs lcQty walletSignature cborTx
+ * Usage: node submit-lc-mint-tx.mjs lcQty walletSignature cborTx
  * @params {int, string, string}
  * @output {string} txId
  */

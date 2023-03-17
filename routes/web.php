@@ -165,6 +165,8 @@ Route::get('/littercoin', 'Littercoin\LittercoinController@getUsersLittercoin');
 Route::get('/littercoin-info', 'Littercoin\LittercoinController@getLittercoinInfo');
 Route::post('/littercoin-mint-tx', 'Littercoin\LittercoinController@mintTx');
 Route::post('/littercoin-submit-mint-tx', 'Littercoin\LittercoinController@submitMintTx');
+Route::post('/littercoin-burn-tx', 'Littercoin\LittercoinController@burnTx');
+Route::post('/littercoin-submit-burn-tx', 'Littercoin\LittercoinController@submitBurnTx');
 Route::post('/merchant-mint-tx', 'Littercoin\LittercoinController@merchTx');
 Route::post('/merchant-submit-mint-tx', 'Littercoin\LittercoinController@submitMerchTx');
 Route::post('/add-ada-tx', 'Littercoin\LittercoinController@addAdaTx');

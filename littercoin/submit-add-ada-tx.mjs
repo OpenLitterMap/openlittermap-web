@@ -8,7 +8,7 @@ import {
 
 /**
  * Main calling function via the command line. 
- * Usage: node submit-tx.mjs walletSignature cborTx
+ * Usage: node submit-add-ada-tx.mjs walletSignature cborTx
  * @params {string, string}
  * @output {string} txId
  */
