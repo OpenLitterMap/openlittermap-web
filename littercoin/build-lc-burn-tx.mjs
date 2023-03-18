@@ -38,7 +38,6 @@ const main = async () => {
     const minAda = BigInt(process.env.MIN_ADA);  // minimum lovelace needed to send an NFT
     const maxTxFee = BigInt(process.env.MAX_TX_FEE);
     const minChangeAmt = BigInt(process.env.MIN_CHANGE_AMT);
-    const minUTXOVal = new Value(minAda + maxTxFee + minChangeAmt);
 
     try {
         const args = process.argv;
@@ -46,6 +45,58 @@ const main = async () => {
         const lcQty = args[2];
         const hexChangeAddr = args[3];
         const cborUtxos = args[4].split(',');
+
+        // Get littercoin smart contract info
+        const lcInfo = await fetchLittercoinInfo();
+
+        const lcQtyAbs = Math.abs(Number(lcQty));
+        const datAdaAmt = Number(lcInfo.list[0].int);
+        const datLcAmt = Number(lcInfo.list[1].int);
+        const newLCAmount = BigInt(datLcAmt) - BigInt(lcQtyAbs);
+        const ratio = Math.floor(datAdaAmt / datLcAmt);
+        const withdrawAda = ratio * lcQtyAbs;
+        const adaDiff = datAdaAmt - withdrawAda;
+        const adaAmount = BigInt(datAdaAmt);
+
+        // If the ada value of the withdraw is less than min Ada, then raise an error now.
+        if (withdrawAda < minAda) {
+  
+            console.error("create-lc-burn-tx: Withdraw amount is less than 2 minAda");
+            const returnObj = {
+                status: 503
+            }
+            process.stdout.write(JSON.stringify(returnObj));
+            return;
+        }
+
+
+        var newAdaAmount;
+        if (adaDiff >= minAda) {
+            newAdaAmount = adaAmount - BigInt(withdrawAda);
+        } else {
+            console.error("create-lc-burn-tx: Insufficient funds in Littercoin contract");
+            const returnObj = {
+                status: 504
+            }
+            process.stdout.write(JSON.stringify(returnObj));
+            return;
+        }
+
+        const newDatAda = new IntData(newAdaAmount.valueOf());
+        const newDatLC = new IntData(newLCAmount.valueOf());
+        const newDatum = new ListData([newDatAda, newDatLC]);
+
+        // Calcuate the service fee for a burn tx
+        const serviceFeeEstimate = Math.floor(withdrawAda * Number(process.env.SERVICE_FEE_PERCENT));
+        var serviceFee;
+        if (serviceFeeEstimate > minAda) {
+            serviceFee = BigInt(serviceFeeEstimate);
+        } else {
+            serviceFee = minChangeAmt;
+        }
+
+        // Get the UTXO to cover the Ada amount required for this tx
+        const minUTXOVal = new Value(minAda + maxTxFee + minChangeAmt + serviceFee);
 
         // Get littercoin smart contract and related script details
         const lcDetails = await getLittercoinContractDetails();
@@ -94,45 +145,7 @@ const main = async () => {
             return;
         }
 
-        // Get littercoin smart contract info
-        const lcInfo = await fetchLittercoinInfo();
-
-        const lcQtyAbs = Math.abs(Number(lcQty));
-        const datAdaAmt = Number(lcInfo.list[0].int);
-        const datLcAmt = Number(lcInfo.list[1].int);
-        const newLCAmount = BigInt(datLcAmt) - BigInt(lcQtyAbs);
-        const ratio = Math.floor(datAdaAmt / datLcAmt);
-        const withdrawAda = ratio * lcQtyAbs;
-        const adaDiff = datAdaAmt - withdrawAda;
-        const adaAmount = BigInt(datAdaAmt);
-
-        // If the ada value of the withdraw is less than min Ada, then raise an error now.
-        if (withdrawAda < minAda) {
-  
-            console.error("create-lc-burn-tx: Withdraw amount is less than 2 minAda");
-            const returnObj = {
-                status: 503
-            }
-            process.stdout.write(JSON.stringify(returnObj));
-            return;
-        }
-
-
-        var newAdaAmount;
-        if (adaDiff >= minAda) {
-            newAdaAmount = adaAmount - BigInt(withdrawAda);
-        } else {
-            console.error("create-lc-burn-tx: Insufficient funds in Littercoin contract");
-            const returnObj = {
-                status: 504
-            }
-            process.stdout.write(JSON.stringify(returnObj));
-            return;
-        }
-
-        const newDatAda = new IntData(newAdaAmount.valueOf());
-        const newDatLC = new IntData(newLCAmount.valueOf());
-        const newDatum = new ListData([newDatAda, newDatLC]);
+        
 
         // Get the change address from the wallet
         const changeAddr = Address.fromHex(hexChangeAddr);
@@ -191,12 +204,19 @@ const main = async () => {
             merchVal
         ));
 
-        // Construct the ada withdraw amount
+        // Construct the ada withdraw output
         const withdrawAdaVal = new Value(BigInt(withdrawAda));
-
         tx.addOutput(new TxOutput(
-        changeAddr,
-        withdrawAdaVal
+            changeAddr,
+            withdrawAdaVal
+        ));
+
+        // Construct the service fee output
+        const serviceFeeAdaVal = new Value(serviceFee);
+        const serviceFeeAddr = Address.fromBech32(process.env.SERVICE_FEE_ADDR);
+        tx.addOutput(new TxOutput(
+            serviceFeeAddr,
+            serviceFeeAdaVal
         ));
 
         // Construct the littercoin tokens to be returned if any
@@ -217,8 +237,6 @@ const main = async () => {
 
         // Network Params
         const networkParams = new NetworkParams(JSON.parse(lcDetails.netParams));
-
-        console.error("tx before final", tx.dump());
 
         // Send any change back to the buyer
         await tx.finalize(networkParams, changeAddr, utxos[1]);
