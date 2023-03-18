@@ -8,6 +8,8 @@ import { fetchLittercoinInfo } from "./lc-info.mjs";
  */
 const main = async () => {
 
+    console.error("fetchLittercoinInfo: network", process.env.NETWORK);
+
     try {
         const output = await fetchLittercoinInfo();
         const returnObj = {

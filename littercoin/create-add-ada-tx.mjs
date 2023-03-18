@@ -33,27 +33,39 @@ import { signTx } from "./sign-tx.mjs";
  */
 const main = async () => {
 
-    // Set the Helios compiler optimizer flag
-    let optimize = (process.env.OPTIMIZE === 'true');
-    const minAda = BigInt(process.env.MIN_ADA);  // minimum lovelace needed to send an NFT
-    const maxTxFee = BigInt(process.env.MAX_TX_FEE);
-    const minChangeAmt = BigInt(process.env.MIN_CHANGE_AMT);
-    const minUTXOVal = new Value(minAda + maxTxFee + minChangeAmt);
-
     try {
         const args = process.argv;
+        console.error("args: ", args);
         const adaQty = args[2];
         const lovelaceQty =  Number(adaQty) * 1000000;
         const hexChangeAddr = args[3];
         const cborUtxos = args[4].split(',');
+
+        // Set the Helios compiler optimizer flag
+        let optimize = (process.env.OPTIMIZE === 'true');
+        const minAda = BigInt(process.env.MIN_ADA);  // minimum lovelace needed to send an NFT
+        const maxTxFee = BigInt(process.env.MAX_TX_FEE);
+        const minChangeAmt = BigInt(process.env.MIN_CHANGE_AMT);
+        const minUTXOVal = new Value(minAda + maxTxFee + minChangeAmt + BigInt(lovelaceQty));
 
         // Get the change address from the wallet
         const changeAddr = Address.fromHex(hexChangeAddr);
 
         // Get UTXOs from wallet
         const walletUtxos = cborUtxos.map(u => UTxO.fromCbor(hexToBytes(u)));
-        const utxos = CoinSelection.selectSmallestFirst(walletUtxos, minUTXOVal);
-
+        var utxos;
+        try {
+            utxos = CoinSelection.selectSmallestFirst(walletUtxos, minUTXOVal);
+            console.error("utxos.length(): ", utxos.length);
+        } catch (err) {
+            console.error("create-add-ada-tx: ", err);
+            const returnObj = {
+                status: 501
+            }
+            process.stdout.write(JSON.stringify(returnObj));
+            return;
+        }
+        
         // Get littercoin smart contract info
         const lcInfo = await fetchLittercoinInfo();
 

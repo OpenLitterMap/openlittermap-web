@@ -477,6 +477,10 @@ export default {
                         alert ('Merchant Token Not Found');
                         this.burnFormSubmitted = false;
                     } else if (submitTx.status == 403) {
+                        console.error("Ada Withdraw amount is less than the minimum 2 Ada");
+                        alert ('Ada Withdraw amount is less than the minimum 2 Ada');
+                        this.burnFormSubmitted = false;
+                    } else if (submitTx.status == 404) {
                         console.error("Insufficient funds in Littercoin contract");
                         alert ('Insufficient funds in Littercoin contract');
                         this.burnFormSubmitted = false;
@@ -624,27 +628,30 @@ export default {
                         this.addAdaTxIdURL = "https://preprod.cexplorer.io/tx/" + submitTx.txId;
                         this.addAdaSuccess = true;
                     } else {
+                        console.error("Could not submit transaction");
                         alert ('Add Ada transaction could not be submitted, please try again');
                         this.addAdaFormSubmitted = false;
-                        console.error("Could not submit transaction");
                     }
                 })
                 .catch(error => {
+                    console.error("add-ada-submit-tx: ", error);
                     alert ('Add Ada transaction could not be submitted, please try again');
                     this.addAdaFormSubmitted = false;
-                    console.error("add-ada-submit-tx: ", error);
                 });
-
+            } else if (addAdaTx.status == 401) {
+                console.error("More Ada in the wallet required for this transaction");
+                alert ('More Ada in the wallet required for this transaction"');
+                this.addAdaFormSubmitted = false;
             } else {
+                console.error("Add Ada transaction was not successful");
                 alert ('Add Ada transaction could not be submitted, please try again');
                 this.addAdaFormSubmitted = false;
-                console.error("Add Ada transaction was not successful");
             }
         })
         .catch(error => {
+            console.error("add-ada-tx", error);
             alert ('Add Ada transaction could not be submitted, please try again');
             this.addAdaFormSubmitted = false;
-            console.error("add-ada-tx", error);
         });
         }
     }

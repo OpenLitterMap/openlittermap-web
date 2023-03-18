@@ -148,7 +148,12 @@ class LittercoinController extends Controller
             } else if ($responseJSON->status == 503) 
             {
                 return [
-                    '{"status": "403", "msg": "Insufficient funds in Littercoin contract"}'
+                    '{"status": "403", "msg": "Ada Withdraw amount is less than the minimum 2 Ada"}'
+                ];
+            } else if ($responseJSON->status == 504) 
+            {
+                return [
+                    '{"status": "404", "msg": "Insufficient funds in Littercoin contract"}'
                 ];
             } else 
             {
@@ -254,11 +259,23 @@ class LittercoinController extends Controller
         {
             $cmd = '(cd ../littercoin/;node create-add-ada-tx.mjs '.$adaQty.' '.$changeAddr.' '.$strUtxos.') 2>> ../storage/logs/littercoin.log'; 
             $response = exec($cmd);
+            $responseJSON = json_decode($response, false);
 
-            return [
-                $response
-            ];   
-
+            if ($responseJSON->status == 200) 
+            {
+                return [
+                    $response
+                ];
+            } else if ($responseJSON->status == 501) 
+            {
+                return [
+                    '{"status": "401", "msg": "Not enough Ada in Wallet"}'
+                ];
+            } else {
+                return [
+                    $response
+                ];
+            }
         } else 
         {
             return [
@@ -278,7 +295,6 @@ class LittercoinController extends Controller
 
         $cmd = '(cd ../littercoin/;node submit-add-ada-tx.mjs '.$cborSig.' '.$cborTx.') 2>> ../storage/logs/littercoin.log'; 
         $response = exec($cmd);
-        $responseJSON = json_decode($response, false);
 
         return [
             $response

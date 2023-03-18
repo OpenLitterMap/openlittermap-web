@@ -106,13 +106,25 @@ const main = async () => {
         const adaDiff = datAdaAmt - withdrawAda;
         const adaAmount = BigInt(datAdaAmt);
 
+        // If the ada value of the withdraw is less than min Ada, then raise an error now.
+        if (withdrawAda < minAda) {
+  
+            console.error("create-lc-burn-tx: Withdraw amount is less than 2 minAda");
+            const returnObj = {
+                status: 503
+            }
+            process.stdout.write(JSON.stringify(returnObj));
+            return;
+        }
+
+
         var newAdaAmount;
         if (adaDiff >= minAda) {
             newAdaAmount = adaAmount - BigInt(withdrawAda);
         } else {
             console.error("create-lc-burn-tx: Insufficient funds in Littercoin contract");
             const returnObj = {
-                status: 503
+                status: 504
             }
             process.stdout.write(JSON.stringify(returnObj));
             return;
