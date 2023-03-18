@@ -15,6 +15,7 @@ import {
 } from "@hyperionbt/helios";
 
 import { getLittercoinContractDetails } from "./lc-info.mjs";
+import { signTx } from "./sign-tx.mjs";
 
 
 /**
@@ -85,6 +86,11 @@ const main = async () => {
 
         // Send any change back to the buyer
         await tx.finalize(networkParams, changeAddr, utxos[1]);
+
+        // Add the signature from the server side private key
+        // This way, we lock the transaction now and then need
+        // the end user to sign the tx.
+        const txSigned = await signTx(tx);
 
         console.log("txMinted: ",tx.dump());
         const returnObj = {
