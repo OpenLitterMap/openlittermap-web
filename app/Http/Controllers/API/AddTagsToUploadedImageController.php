@@ -18,6 +18,8 @@ class AddTagsToUploadedImageController extends Controller
      */
     public function __invoke (AddTagsRequest $request)
     {
+        \Log::info($request->all());
+
         $user = auth()->user();
         $photo = Photo::find($request->photo_id);
 
