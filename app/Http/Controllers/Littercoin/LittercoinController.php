@@ -39,10 +39,6 @@ class LittercoinController extends Controller
      */
     public function getLittercoinInfo ()
     {
-        //set user as admin for testing
-        //$user = Auth::user();
-        //$user->assignRole('admin');
-
         $cmd = '(cd ../littercoin/;node get-lc-info.mjs) 2>> ../storage/logs/littercoin.log'; 
         $response = exec($cmd);
 
@@ -53,7 +49,7 @@ class LittercoinController extends Controller
 
 
     /**
-     * Create the littercoin mint transaction.
+     * Build the littercoin mint transaction.
      */
     public function mintTx (Request $request)
     {
@@ -69,7 +65,7 @@ class LittercoinController extends Controller
         $littercoinDue = $littercoinEarned - $littercoinPaid;
 
         if ($littercoinDue > 0) {
-            $cmd = '(cd ../littercoin/;node create-lc-mint-tx.mjs '.$littercoinDue.' '.$destAddr.' '.$changeAddr.' '.$strUtxos.') 2>> ../storage/logs/littercoin.log'; 
+            $cmd = '(cd ../littercoin/;node build-lc-mint-tx.mjs '.$littercoinDue.' '.$destAddr.' '.$changeAddr.' '.$strUtxos.') 2>> ../storage/logs/littercoin.log'; 
             $response = exec($cmd);
     
             return [
@@ -83,8 +79,7 @@ class LittercoinController extends Controller
     }
 
     /**
-     * Submit the littercoin mint transaction which includes signing
-     * the tx with a private key.
+     * Submit the littercoin mint transaction 
      */
     public function submitMintTx (Request $request)
     {
@@ -92,7 +87,7 @@ class LittercoinController extends Controller
         $cborSig = $request->input('cborSig');
         $cborTx = $request->input('cborTx');
 
-        $cmd = '(cd ../littercoin/;node submit-lc-mint-tx.mjs '.$cborSig.' '.$cborTx.') 2>> ../storage/logs/littercoin.log'; 
+        $cmd = '(cd ../littercoin/;node submit-tx.mjs '.$cborSig.' '.$cborTx.') 2>> ../storage/logs/littercoin.log'; 
         $response = exec($cmd);
         $responseJSON = json_decode($response, false);
 
@@ -115,7 +110,7 @@ class LittercoinController extends Controller
     }
 
     /**
-     * Create the littercoin burn transaction.
+     * Build the littercoin burn transaction.
      */
     public function burnTx (Request $request)
     {
@@ -126,7 +121,7 @@ class LittercoinController extends Controller
         $strUtxos=implode(",",$utxos);
 
         if ($lcQty > 0) {
-            $cmd = '(cd ../littercoin/;node create-lc-burn-tx.mjs '.$lcQty.' '.$changeAddr.' '.$strUtxos.') 2>> ../storage/logs/littercoin.log'; 
+            $cmd = '(cd ../littercoin/;node build-lc-burn-tx.mjs '.$lcQty.' '.$changeAddr.' '.$strUtxos.') 2>> ../storage/logs/littercoin.log'; 
             $response = exec($cmd);
             $responseJSON = json_decode($response, false);
 
@@ -170,8 +165,7 @@ class LittercoinController extends Controller
     }
 
     /**
-     * Submit the littercoin mint transaction which includes signing
-     * the tx with a private key.
+     * Submit the littercoin burn transaction 
      */
     public function submitBurnTx (Request $request)
     {
@@ -179,7 +173,7 @@ class LittercoinController extends Controller
         $cborSig = $request->input('cborSig');
         $cborTx = $request->input('cborTx');
 
-        $cmd = '(cd ../littercoin/;node submit-lc-burn-tx.mjs '.$cborSig.' '.$cborTx.') 2>> ../storage/logs/littercoin.log'; 
+        $cmd = '(cd ../littercoin/;node submit-tx.mjs '.$cborSig.' '.$cborTx.') 2>> ../storage/logs/littercoin.log'; 
         $response = exec($cmd);
  
         return [
@@ -188,7 +182,7 @@ class LittercoinController extends Controller
     }
 
     /**
-     * Create the merchant token mint transaction.
+     * Build the merchant token mint transaction.
      */
     public function merchTx (Request $request)
     {
@@ -201,7 +195,7 @@ class LittercoinController extends Controller
         if ((Auth::user() && ((Auth::user()->hasRole('admin') 
                        || Auth::user()->hasRole('superadmin'))))) {
 
-            $cmd = '(cd ../littercoin/;node create-merch-mint-tx.mjs '.$destAddr.' '.$changeAddr.' '.$strUtxos.') 2>> ../storage/logs/littercoin.log'; 
+            $cmd = '(cd ../littercoin/;node build-merch-mint-tx.mjs '.$destAddr.' '.$changeAddr.' '.$strUtxos.') 2>> ../storage/logs/littercoin.log'; 
             $response = exec($cmd);
     
             return [
@@ -216,8 +210,7 @@ class LittercoinController extends Controller
     }
 
     /**
-     * Submit the littercoin mint transaction which includes signing
-     * the tx with a private key.
+     * Submit the merchant mint transaction.
      */
     public function submitMerchTx (Request $request)
     {
@@ -229,7 +222,7 @@ class LittercoinController extends Controller
         if ((Auth::user() && ((Auth::user()->hasRole('admin') 
                        || Auth::user()->hasRole('superadmin'))))) {
 
-            $cmd = '(cd ../littercoin/;node submit-merch-mint-tx.mjs '.$cborSig.' '.$cborTx.') 2>> ../storage/logs/littercoin.log'; 
+            $cmd = '(cd ../littercoin/;node submit-tx.mjs '.$cborSig.' '.$cborTx.') 2>> ../storage/logs/littercoin.log'; 
             $response = exec($cmd);
             $responseJSON = json_decode($response, false);
 
@@ -245,7 +238,7 @@ class LittercoinController extends Controller
     }
 
     /**
-     * Create the add Ada transaction.
+     * Build the add Ada transaction.
      */
     public function addAdaTx (Request $request)
     {
@@ -257,7 +250,7 @@ class LittercoinController extends Controller
         
         if ($adaQty >= 2) 
         {
-            $cmd = '(cd ../littercoin/;node create-add-ada-tx.mjs '.$adaQty.' '.$changeAddr.' '.$strUtxos.') 2>> ../storage/logs/littercoin.log'; 
+            $cmd = '(cd ../littercoin/;node build-add-ada-tx.mjs '.$adaQty.' '.$changeAddr.' '.$strUtxos.') 2>> ../storage/logs/littercoin.log'; 
             $response = exec($cmd);
             $responseJSON = json_decode($response, false);
 
@@ -293,7 +286,7 @@ class LittercoinController extends Controller
         $cborSig = $request->input('cborSig');
         $cborTx = $request->input('cborTx');
 
-        $cmd = '(cd ../littercoin/;node submit-add-ada-tx.mjs '.$cborSig.' '.$cborTx.') 2>> ../storage/logs/littercoin.log'; 
+        $cmd = '(cd ../littercoin/;node submit-tx.mjs '.$cborSig.' '.$cborTx.') 2>> ../storage/logs/littercoin.log'; 
         $response = exec($cmd);
 
         return [

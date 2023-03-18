@@ -357,7 +357,6 @@ export default {
             } else {
                 alert('No wallet selected');
                 this.mintFormSubmitted = false;
-                throw console.error("No wallet selected");
             } 
             
             // get the UTXOs from wallet,
@@ -380,9 +379,7 @@ export default {
                     console.log("Get wallet signature");
                     // Get user to sign the transaction
                     const walletSig = await walletAPI.signTx(mintTx.cborTx, true);
-                    //console.log("walletSig: ", walletSig);
-                    //console.log("mintTx.cborTx: ", mintTx.cborTx);
-
+  
                     console.log("Submit transaction...");
                     await axios.post('/littercoin-submit-mint-tx', {
                         cborSig: walletSig,
@@ -396,27 +393,27 @@ export default {
                             this.mintTxIdURL = "https://preprod.cexplorer.io/tx/" + submitTx.txId;
                             this.mintSuccess = true;
                         } else {
+                            console.error("Littercoin Mint transaction could not be submitted");
                             alert ('Littercoin Mint transaction could not be submitted, please try again');
                             this.mintFormSubmitted = false;
-                            console.error("Could not submit transaction");
                         }
                     })
                     .catch(error => {
+                        console.error("littercoin-submit-mint-tx: ", error);
                         alert ('Littercoin Mint transaction could not be submitted, please try again');
                         this.mintFormSubmitted = false;
-                        console.error("littercoin-submit-mint-tx: ", error);
                     });
             
                 } else {
+                    console.error("Littercoin Mint transaction could not be submitted");
                     alert ('Littercoin Mint transaction could not be submitted, please try again');
                     this.mintFormSubmitted = false;
-                    console.error("Littercoin Mint transaction was not successful");
                 }
             })
             .catch(error => {
+                console.error("littercoin-mint-tx", error);
                 alert ('Littercoin Mint transaction could not be submitted, please try again');
                 this.mintFormSubmitted = false;
-                console.error("littercoin-mint-tx", error);
             });
         },
         async submitBurn() {
@@ -430,7 +427,6 @@ export default {
         } else {
             alert('No wallet selected');
             this.burnFormSubmitted = false;
-            throw console.error("No wallet selected");
         } 
 
         // get the UTXOs from wallet,
@@ -462,28 +458,11 @@ export default {
                 .then(async response => {
                     console.log('littercoin-submit-burn-tx: ', response);
                     
-                    // TODO try/catch JSON parse
                     const submitTx = await JSON.parse(response.data);
                     if (submitTx.status == 200) {
                         this.burnTxId = submitTx.txId;
                         this.burnTxIdURL = "https://preprod.cexplorer.io/tx/" + submitTx.txId;
                         this.burnSuccess = true;
-                    } else if (submitTx.status == 401) {
-                        console.error("Insufficient Littercoin In Wallet For Burn");
-                        alert ('Insufficient Littercoin In Wallet For Burn');
-                        this.burnFormSubmitted = false;
-                    } else if (submitTx.status == 402) {
-                        console.error("Merchant Token Not Found");
-                        alert ('Merchant Token Not Found');
-                        this.burnFormSubmitted = false;
-                    } else if (submitTx.status == 403) {
-                        console.error("Ada Withdraw amount is less than the minimum 2 Ada");
-                        alert ('Ada Withdraw amount is less than the minimum 2 Ada');
-                        this.burnFormSubmitted = false;
-                    } else if (submitTx.status == 404) {
-                        console.error("Insufficient funds in Littercoin contract");
-                        alert ('Insufficient funds in Littercoin contract');
-                        this.burnFormSubmitted = false;
                     } else {
                         console.error("Littercoin Burn transaction was not successful");
                         alert ('Littercoin Burn transaction could not be submitted, please try again');
@@ -496,6 +475,22 @@ export default {
                     this.burnFormSubmitted = false;
                 });
 
+            } else if (burnTx.status == 401) {
+                console.error("Insufficient Littercoin In Wallet For Burn");
+                alert ('Insufficient Littercoin In Wallet For Burn');
+                this.burnFormSubmitted = false;
+            } else if (burnTx.status == 402) {
+                console.error("Merchant Token Not Found");
+                alert ('Merchant Token Not Found');
+                this.burnFormSubmitted = false;
+            } else if (burnTx.status == 403) {
+                console.error("Ada Withdraw amount is less than the minimum 2 Ada");
+                alert ('Ada Withdraw amount is less than the minimum 2 Ada');
+                this.burnFormSubmitted = false;
+            } else if (burnTx.status == 404) {
+                console.error("Insufficient funds in Littercoin contract");
+                alert ('Insufficient funds in Littercoin contract');
+                this.burnFormSubmitted = false;
             } else {
                 console.error("Littercoin Burn transaction was not successful");
                 alert ('Littercoin Burn transaction could not be submitted, please try again');
@@ -519,7 +514,6 @@ export default {
             } else {
                 alert('No wallet selected');
                 this.merchFormSubmitted = false;
-                throw console.error("No wallet selected");
             } 
 
             // get the UTXOs from wallet,
@@ -542,8 +536,6 @@ export default {
                     console.log("Get wallet signature");
                     // Get user to sign the transaction
                     const walletSig = await walletAPI.signTx(mintTx.cborTx, true);
-                    //console.log("walletSig: ", walletSig);
-                    //console.log("mintTx.cborTx: ", mintTx.cborTx);
 
                     console.log("Submit transaction...");
                     await axios.post('/merchant-submit-mint-tx', {
@@ -558,27 +550,31 @@ export default {
                             this.merchTxIdURL = "https://preprod.cexplorer.io/tx/" + submitTx.txId;
                             this.merchSuccess = true;
                         } else {
+                            console.error("Merchant Token Mint transaction could not be submitted");
                             alert ('Merchant Token Mint transaction could not be submitted, please try again');
                             this.merchFormSubmitted = false;
-                            console.error("Merchant Token Mint transaction could not be submitted");
                         }
                     })
                     .catch(error => {
+                        console.error("merchant-submit-mint-tx: ", error);
                         alert ('Merchant Token Mint transaction could not be submitted, please try again');
                         this.merchFormSubmitted = false;
-                        console.error("merchant-submit-mint-tx: ", error);
                     });
 
-                } else {
+                } else if (mintTx.status == 400) {
+                    console.error("Must be an admin user to mint a merchant token");
+                    alert ('Must be an admin user to mint a merchant token');
+                    this.merchFormSubmitted = false;
+                }else {
+                    console.error("Merchant Token Mint transaction could not be submitted");
                     alert ('Merchant Token Mint transaction could not be submitted, please try again');
                     this.merchFormSubmitted = false;
-                    console.error("Merchant Token Mint transaction could not be submitted");
                 }
             })
             .catch(error => {
+                console.error("merchant-submit-mint-tx: ", error);
                 alert ('Merchant Token Mint transaction could not be submitted, please try again');
                 this.merchFormSubmitted = false;
-                console.error("merchant-submit-mint-tx: ", error);
             });
         },
         async addAda() {
@@ -592,7 +588,6 @@ export default {
         } else {
             alert('No wallet selected');
             this.addAdaFormSubmitted = false;
-            throw console.error("No wallet selected");
         } 
 
         // get the UTXOs from wallet,
