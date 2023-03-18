@@ -53,7 +53,6 @@ class LittercoinController extends Controller
      */
     public function mintTx (Request $request)
     {
-        // TODO santize inputs
         $destAddr = $request->input('destAddr');
         $changeAddr = $request->input('changeAddr');
         $utxos = $request->input('utxos');
@@ -65,7 +64,7 @@ class LittercoinController extends Controller
         $littercoinDue = $littercoinEarned - $littercoinPaid;
 
         if ($littercoinDue > 0) {
-            $cmd = '(cd ../littercoin/;node build-lc-mint-tx.mjs '.$littercoinDue.' '.$destAddr.' '.$changeAddr.' '.$strUtxos.') 2>> ../storage/logs/littercoin.log'; 
+            $cmd = '(cd ../littercoin/;node build-lc-mint-tx.mjs '.$littercoinDue.' '.escapeshellarg($destAddr).' '.escapeshellarg($changeAddr).' '.escapeshellarg($strUtxos).') 2>> ../storage/logs/littercoin.log'; 
             $response = exec($cmd);
     
             return [
@@ -83,11 +82,10 @@ class LittercoinController extends Controller
      */
     public function submitMintTx (Request $request)
     {
-        // TODO santize inputs
         $cborSig = $request->input('cborSig');
         $cborTx = $request->input('cborTx');
 
-        $cmd = '(cd ../littercoin/;node submit-tx.mjs '.$cborSig.' '.$cborTx.') 2>> ../storage/logs/littercoin.log'; 
+        $cmd = '(cd ../littercoin/;node submit-tx.mjs '.escapeshellarg($cborSig).' '.escapeshellarg($cborTx).') 2>> ../storage/logs/littercoin.log'; 
         $response = exec($cmd);
         $responseJSON = json_decode($response, false);
 
@@ -114,14 +112,13 @@ class LittercoinController extends Controller
      */
     public function burnTx (Request $request)
     {
-        // TODO santize inputs
         $lcQty = $request->input('lcQty');
         $changeAddr = $request->input('changeAddr');
         $utxos = $request->input('utxos');
         $strUtxos=implode(",",$utxos);
 
         if ($lcQty > 0) {
-            $cmd = '(cd ../littercoin/;node build-lc-burn-tx.mjs '.$lcQty.' '.$changeAddr.' '.$strUtxos.') 2>> ../storage/logs/littercoin.log'; 
+            $cmd = '(cd ../littercoin/;node build-lc-burn-tx.mjs '.escapeshellarg($lcQty).' '.escapeshellarg($changeAddr).' '.escapeshellarg($strUtxos).') 2>> ../storage/logs/littercoin.log'; 
             $response = exec($cmd);
             $responseJSON = json_decode($response, false);
 
@@ -169,11 +166,10 @@ class LittercoinController extends Controller
      */
     public function submitBurnTx (Request $request)
     {
-        // TODO santize inputs
         $cborSig = $request->input('cborSig');
         $cborTx = $request->input('cborTx');
 
-        $cmd = '(cd ../littercoin/;node submit-tx.mjs '.$cborSig.' '.$cborTx.') 2>> ../storage/logs/littercoin.log'; 
+        $cmd = '(cd ../littercoin/;node submit-tx.mjs '.escapeshellarg($cborSig).' '.escapeshellarg($cborTx).') 2>> ../storage/logs/littercoin.log'; 
         $response = exec($cmd);
  
         return [
@@ -186,7 +182,6 @@ class LittercoinController extends Controller
      */
     public function merchTx (Request $request)
     {
-        // TODO santize inputs
         $destAddr = $request->input('destAddr');
         $changeAddr = $request->input('changeAddr');
         $utxos = $request->input('utxos');
@@ -195,7 +190,7 @@ class LittercoinController extends Controller
         if ((Auth::user() && ((Auth::user()->hasRole('admin') 
                        || Auth::user()->hasRole('superadmin'))))) {
 
-            $cmd = '(cd ../littercoin/;node build-merch-mint-tx.mjs '.$destAddr.' '.$changeAddr.' '.$strUtxos.') 2>> ../storage/logs/littercoin.log'; 
+            $cmd = '(cd ../littercoin/;node build-merch-mint-tx.mjs '.escapeshellarg($destAddr).' '.escapeshellarg($changeAddr).' '.escapeshellarg($strUtxos).') 2>> ../storage/logs/littercoin.log'; 
             $response = exec($cmd);
     
             return [
@@ -214,7 +209,6 @@ class LittercoinController extends Controller
      */
     public function submitMerchTx (Request $request)
     {
-        // TODO santize inputs
         $cborSig = $request->input('cborSig');
         $cborTx = $request->input('cborTx');
 
@@ -222,7 +216,7 @@ class LittercoinController extends Controller
         if ((Auth::user() && ((Auth::user()->hasRole('admin') 
                        || Auth::user()->hasRole('superadmin'))))) {
 
-            $cmd = '(cd ../littercoin/;node submit-tx.mjs '.$cborSig.' '.$cborTx.') 2>> ../storage/logs/littercoin.log'; 
+            $cmd = '(cd ../littercoin/;node submit-tx.mjs '.escapeshellarg($cborSig).' '.escapeshellarg($cborTx).') 2>> ../storage/logs/littercoin.log'; 
             $response = exec($cmd);
             $responseJSON = json_decode($response, false);
 
@@ -242,7 +236,6 @@ class LittercoinController extends Controller
      */
     public function addAdaTx (Request $request)
     {
-        // TODO santize inputs
         $adaQty = $request->input('adaQty');
         $changeAddr = $request->input('changeAddr');
         $utxos = $request->input('utxos');
@@ -250,7 +243,7 @@ class LittercoinController extends Controller
         
         if ($adaQty >= 2) 
         {
-            $cmd = '(cd ../littercoin/;node build-add-ada-tx.mjs '.$adaQty.' '.$changeAddr.' '.$strUtxos.') 2>> ../storage/logs/littercoin.log'; 
+            $cmd = '(cd ../littercoin/;node build-add-ada-tx.mjs '.escapeshellarg($adaQty).' '.escapeshellarg($changeAddr).' '.escapeshellarg($strUtxos).') 2>> ../storage/logs/littercoin.log'; 
             $response = exec($cmd);
             $responseJSON = json_decode($response, false);
 
@@ -282,11 +275,10 @@ class LittercoinController extends Controller
      */
     public function submitAddAdaTx (Request $request)
     {
-        // TODO santize inputs
         $cborSig = $request->input('cborSig');
         $cborTx = $request->input('cborTx');
 
-        $cmd = '(cd ../littercoin/;node submit-tx.mjs '.$cborSig.' '.$cborTx.') 2>> ../storage/logs/littercoin.log'; 
+        $cmd = '(cd ../littercoin/;node submit-tx.mjs '.escapeshellarg($cborSig).' '.escapeshellarg($cborTx).') 2>> ../storage/logs/littercoin.log'; 
         $response = exec($cmd);
 
         return [

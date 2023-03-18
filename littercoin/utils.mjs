@@ -23,7 +23,7 @@ const submitTx = async (tx) => {
             url: blockfrostUrl,
             data: payload,
             method: 'post',
-            timeout: 8000,
+            timeout: 30000,
             headers: {
                 'Content-Type': 'application/cbor',
                 'project_id': apiKey
