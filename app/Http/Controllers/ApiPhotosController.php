@@ -298,7 +298,7 @@ class ApiPhotosController extends Controller
         }
 
         // customTags was added 10th March 2023
-        if ($request->tags || $request->custom_tags || $request->customTags)
+        if ($request->tags || $request->custom_tags)
         {
             dispatch (new AddTags(
                 auth()->id(),

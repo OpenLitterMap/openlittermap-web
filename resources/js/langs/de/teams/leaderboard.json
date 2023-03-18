@@ -1,8 +1,8 @@
 {
-    "title": "Team Leaderboard",
+    "title": "Team-Rangliste",
     "position-header": "Position",
     "name-header": "Name",
-    "photos-header": "Total Photos",
-    "litter-header": "Total Litter",
-    "created-at-header" : "Created At"
+    "photos-header": "Insgesamt hochgeladene Fotos",
+    "litter-header": "Insgesamt markierter Müll",
+    "created-at-header" : "Erstellt am"
 }

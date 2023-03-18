@@ -1,22 +1,20 @@
 {
-    "privacy-title": "Control your Privacy",
-    "privacy-text": "Control your privacy for every team you have joined.",
-
-    "team-update-title": "Aktualisieren Sie Ihre Teams",
-    "team-update-text": "Sie können nur die Teams aktualisieren, die Sie führen.",
-
+    "privacy-title": "Kontrolliere deine Privatsphäre",
+    "privacy-text": "Kontrolliere deine Privatsphäre für jedes Team, dem du beigetreten bist.",
+    "team-update-title": "Aktualisiere deine Teams",
+    "team-update-text": "Du kannst nur die Teams aktualisieren, die du leitest.",
     "maps": {
-        "team-map": "Team Map",
-        "name-will-appear": "Your name will appear on the maps",
-        "username-will-appear": "Your username will appear on the maps",
-        "will-not-appear": "Your name and username will not appear on the maps"
+        "team-map": "Team-Karte",
+        "name-will-appear": "Dein Name wird auf den Karten angezeigt",
+        "username-will-appear": "Dein Benutzername wird auf den Karten angezeigt",
+        "will-not-appear": "Dein Name und Benutzername werden nicht auf den Karten angezeigt"
     },
     "leaderboards": {
-        "team-leaderboard": "Team Leaderboard",
-        "name-will-appear": "Your name will appear on the leaderboards",
-        "username-will-appear": "Your username will appear on the leaderboards",
-        "will-not-appear": "Your name and username will not appear on the leaderboards"
+        "team-leaderboard": "Team-Rangliste",
+        "name-will-appear": "Dein Name wird in den Ranglisten angezeigt",
+        "username-will-appear": "Dein Benutzername wird in den Ranglisten angezeigt",
+        "will-not-appear": "Dein Name und Benutzername werden nicht in den Ranglisten angezeigt"
     },
-    "submit-one-team": "Save for this Team",
-    "apply-all-teams": "Apply for all Teams"
+    "submit-one-team": "Für dieses Team speichern",
+    "apply-all-teams": "Für alle Teams anwenden"
 }

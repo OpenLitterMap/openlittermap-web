@@ -1,10 +1,9 @@
 {
-    "taken-on": "Taken on",
-    "with-a": "With a",
-    "by": "By",
-    "meter-hex-grids":"meter hex grids",
-    "hover-to-count": "Hover over to count",
-    "pieces-of-litter": "pieces of litter",
-    "hover-polygons-to-count":"Hover over polygons to count"
-
+    "taken-on": "Aufgenommen am",
+    "with-a": "Mit einem",
+    "by": "Von",
+    "meter-hex-grids": "Meter-Sechseckgitter",
+    "hover-to-count": "Überfahren zum Zählen",
+    "pieces-of-litter": "Müllstücke",
+    "hover-polygons-to-count": "Polygone überfahren zum Zählen"
 }
