@@ -1,9 +1,8 @@
 import { Buffer } from "buffer";
 import { blake2b } from "blakejs";
-import {
-        bytesToHex, 
-        Signature,
-        Tx } from "@hyperionbt/helios";
+import { bytesToHex, 
+         Signature,
+         Tx } from "@hyperionbt/helios";
 import pkg from '@stricahq/bip32ed25519';
 const { Bip32PrivateKey } = pkg;
 

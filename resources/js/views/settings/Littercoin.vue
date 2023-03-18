@@ -404,90 +404,90 @@ export default {
         },
         async submitBurn() {
 
-        // Connect to the user's wallet
-        var walletAPI;
-        if (this.walletChoice === "nami") {
-            walletAPI = await window.cardano.nami.enable();
-        } else if (this.walletChoice === "eternl") {
-            walletAPI = await window.cardano.eternl.enable(); 
-        } else {
-            alert('No wallet selected');
-            this.burnFormSubmitted = false;
-        } 
+            // Connect to the user's wallet
+            var walletAPI;
+            if (this.walletChoice === "nami") {
+                walletAPI = await window.cardano.nami.enable();
+            } else if (this.walletChoice === "eternl") {
+                walletAPI = await window.cardano.eternl.enable(); 
+            } else {
+                alert('No wallet selected');
+                this.burnFormSubmitted = false;
+            } 
 
-        // get the UTXOs from wallet,
-        const cborUtxos = await walletAPI.getUtxos();
+            // get the UTXOs from wallet,
+            const cborUtxos = await walletAPI.getUtxos();
 
-        // Get the change address from the wallet
-        const hexChangeAddr = await walletAPI.getChangeAddress();
+            // Get the change address from the wallet
+            const hexChangeAddr = await walletAPI.getChangeAddress();
 
-        await axios.post('/littercoin-burn-tx', {
-            lcQty: this.lcQty,
-            changeAddr: hexChangeAddr,
-            utxos: cborUtxos
-        })
-        .then(async response => {
-            console.log("littercoin-burn-tx: ", response);
-            const burnTx = await JSON.parse(response.data);
+            await axios.post('/littercoin-burn-tx', {
+                lcQty: this.lcQty,
+                changeAddr: hexChangeAddr,
+                utxos: cborUtxos
+            })
+            .then(async response => {
+                console.log("littercoin-burn-tx: ", response);
+                const burnTx = await JSON.parse(response.data);
 
-            if (burnTx.status == 200) {
+                if (burnTx.status == 200) {
 
-                console.log("Get wallet signature");
-                // Get user to sign the transaction
-                const walletSig = await walletAPI.signTx(burnTx.cborTx, true);
+                    console.log("Get wallet signature");
+                    // Get user to sign the transaction
+                    const walletSig = await walletAPI.signTx(burnTx.cborTx, true);
 
-                console.log("Submit transaction...");
-                await axios.post('/littercoin-submit-burn-tx', {
-                    cborSig: walletSig,
-                    cborTx: burnTx.cborTx
-                })
-                .then(async response => {
-                    console.log('littercoin-submit-burn-tx: ', response);
-                    
-                    const submitTx = await JSON.parse(response.data);
-                    if (submitTx.status == 200) {
-                        this.burnTxId = submitTx.txId;
-                        this.burnTxIdURL = "https://preprod.cexplorer.io/tx/" + submitTx.txId;
-                        this.burnSuccess = true;
-                    } else {
-                        console.error("Littercoin Burn transaction was not successful");
+                    console.log("Submit transaction...");
+                    await axios.post('/littercoin-submit-burn-tx', {
+                        cborSig: walletSig,
+                        cborTx: burnTx.cborTx
+                    })
+                    .then(async response => {
+                        console.log('littercoin-submit-burn-tx: ', response);
+                        
+                        const submitTx = await JSON.parse(response.data);
+                        if (submitTx.status == 200) {
+                            this.burnTxId = submitTx.txId;
+                            this.burnTxIdURL = "https://preprod.cexplorer.io/tx/" + submitTx.txId;
+                            this.burnSuccess = true;
+                        } else {
+                            console.error("Littercoin Burn transaction was not successful");
+                            alert ('Littercoin Burn transaction could not be submitted, please try again');
+                            this.burnFormSubmitted = false;
+                        }
+                    })
+                    .catch(error => {
+                        console.error("littercoin-submit-burn-tx: ", error);
                         alert ('Littercoin Burn transaction could not be submitted, please try again');
                         this.burnFormSubmitted = false;
-                    }
-                })
-                .catch(error => {
-                    console.error("littercoin-submit-burn-tx: ", error);
+                    });
+
+                } else if (burnTx.status == 401) {
+                    console.error("Insufficient Littercoin In Wallet For Burn");
+                    alert ('Insufficient Littercoin In Wallet For Burn');
+                    this.burnFormSubmitted = false;
+                } else if (burnTx.status == 402) {
+                    console.error("Merchant Token Not Found");
+                    alert ('Merchant Token Not Found');
+                    this.burnFormSubmitted = false;
+                } else if (burnTx.status == 403) {
+                    console.error("Ada Withdraw amount is less than the minimum 2 Ada");
+                    alert ('Ada Withdraw amount is less than the minimum 2 Ada');
+                    this.burnFormSubmitted = false;
+                } else if (burnTx.status == 404) {
+                    console.error("Insufficient funds in Littercoin contract");
+                    alert ('Insufficient funds in Littercoin contract');
+                    this.burnFormSubmitted = false;
+                } else {
+                    console.error("Littercoin Burn transaction was not successful");
                     alert ('Littercoin Burn transaction could not be submitted, please try again');
                     this.burnFormSubmitted = false;
-                });
-
-            } else if (burnTx.status == 401) {
-                console.error("Insufficient Littercoin In Wallet For Burn");
-                alert ('Insufficient Littercoin In Wallet For Burn');
-                this.burnFormSubmitted = false;
-            } else if (burnTx.status == 402) {
-                console.error("Merchant Token Not Found");
-                alert ('Merchant Token Not Found');
-                this.burnFormSubmitted = false;
-            } else if (burnTx.status == 403) {
-                console.error("Ada Withdraw amount is less than the minimum 2 Ada");
-                alert ('Ada Withdraw amount is less than the minimum 2 Ada');
-                this.burnFormSubmitted = false;
-            } else if (burnTx.status == 404) {
-                console.error("Insufficient funds in Littercoin contract");
-                alert ('Insufficient funds in Littercoin contract');
-                this.burnFormSubmitted = false;
-            } else {
-                console.error("Littercoin Burn transaction was not successful");
+                }
+            })
+            .catch(error => {
+                console.error("littercoin-burn-tx", error);
                 alert ('Littercoin Burn transaction could not be submitted, please try again');
                 this.burnFormSubmitted = false;
-            }
-        })
-        .catch(error => {
-            console.error("littercoin-burn-tx", error);
-            alert ('Littercoin Burn transaction could not be submitted, please try again');
-            this.burnFormSubmitted = false;
-        });
+            });
         },
         async merchMint() {
 
@@ -547,7 +547,7 @@ export default {
                         this.merchFormSubmitted = false;
                     });
 
-                } else if (mintTx.status == 400) {
+                } else if (mintTx.status == 407) {
                     console.error("Must be an admin user to mint a merchant token");
                     alert ('Must be an admin user to mint a merchant token');
                     this.merchFormSubmitted = false;
@@ -619,7 +619,7 @@ export default {
                     alert ('Add Ada transaction could not be submitted, please try again');
                     this.addAdaFormSubmitted = false;
                 });
-            } else if (addAdaTx.status == 401) {
+            } else if (addAdaTx.status == 408) {
                 console.error("More Ada in the wallet required for this transaction");
                 alert ('More Ada in the wallet required for this transaction"');
                 this.addAdaFormSubmitted = false;

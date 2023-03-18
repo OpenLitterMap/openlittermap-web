@@ -71,7 +71,7 @@ class LittercoinController extends Controller {
             ];   
         } else {
             return [
-                '{"status": "400", "msg": "Littercoin due must be greater than zero"}'
+                '{"status": "406", "msg": "Littercoin due must be greater than zero"}'
             ];
         }
     }
@@ -160,7 +160,7 @@ class LittercoinController extends Controller {
             }
         } else {
             return [
-                '{"status": "400", "msg": "Littercoin amount must be greater than zero"}'
+                '{"status": "405", "msg": "Littercoin amount must be greater than zero"}'
             ];
         }
     }
@@ -203,7 +203,7 @@ class LittercoinController extends Controller {
               
         } else {
             return [
-                '{"status": "400", "msg": "User must be an admin"}'
+                '{"status": "407", "msg": "User must be an admin"}'
             ];
         }
     }
@@ -236,7 +236,7 @@ class LittercoinController extends Controller {
             }
         } else {
             return [
-                '{"status": "400", "msg": "User must be an admin"}'
+                '{"status": "407", "msg": "User must be an admin"}'
             ];
         }
     }
@@ -264,7 +264,7 @@ class LittercoinController extends Controller {
                     ];
                 } else if ($responseJSON->status == 501) {
                     return [
-                        '{"status": "401", "msg": "Not enough Ada in Wallet"}'
+                        '{"status": "408", "msg": "Not enough Ada in Wallet"}'
                     ];
                 } else {
                     return [
@@ -278,7 +278,7 @@ class LittercoinController extends Controller {
             }
         } else {
             return [
-                '{"status": "400", "msg": "Minimum 2 Ada donation is required"}'
+                '{"status": "409", "msg": "Minimum 2 Ada donation is required"}'
             ];
         }
     }
