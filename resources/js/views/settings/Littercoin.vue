@@ -251,15 +251,13 @@ export default {
         /**
          * Is the user an admin
          */
-        isAdmin ()
-        {
+        isAdmin () {
             return (this.$store.state.user.admin);
         },
          /**
          * Return true to disable the button
          */
-	    checkMintDisabled ()
-        {
+	    checkMintDisabled () {
             if (this.mintFormSubmitted) return true
 
             return false;
@@ -267,8 +265,7 @@ export default {
         /**
          * Return true to disable the button
          */
-	    checkBurnDisabled ()
-        {
+	    checkBurnDisabled () {
             if (this.burnFormSubmitted) return true
 
             return false;
@@ -276,8 +273,7 @@ export default {
         /**
          * Return true to disable the button
          */
-	    checkMerchDisabled ()
-        {
+	    checkMerchDisabled () {
             if (this.merchFormSubmitted) return true
 
             return false;
@@ -285,8 +281,7 @@ export default {
         /**
          * Return true to disable the button
          */
-	    checkAddAdaDisabled ()
-        {
+	    checkAddAdaDisabled () {
             if (this.addAdaFormSubmitted) return true
 
             return false;
@@ -300,45 +295,36 @@ export default {
          */
          submitForm: function (type) {
             
-            if ( !this.walletChoice )
-            {
+            if ( !this.walletChoice ) {
                 alert ('Please select a wallet');
                 return;
             }
-            if (type === 'mint') 
-            {
-                if ( !this.mintDestAddr.match(/^addr/))
-                {
+            if (type === 'mint') {
+                if ( !this.mintDestAddr.match(/^addr/)) {
                     alert ('Please enter a valid mint littercoin destination address');
                     return
                 }
                 this.mintFormSubmitted = true;
                 this.submitMint();
             }
-            if (type === 'burn') 
-            {
-                if ( !this.lcQty > 1)
-                {
+            if (type === 'burn') {
+                if ( !this.lcQty > 1) {
                     alert ('Minimum 1 littercoin required for burn');
                     return
                 }
                 this.burnFormSubmitted = true;
                 this.submitBurn();
             }
-            if (type === 'merchant') 
-            {
-                if ( !this.merchDestAddr.match(/^addr/))
-                {
+            if (type === 'merchant') {
+                if ( !this.merchDestAddr.match(/^addr/)) {
                     alert ('Please enter a valid mint merchant token destination address');
                     return
                 }
                 this.merchFormSubmitted = true;
                 this.merchMint();
             }
-            if (type === 'addAda') 
-            {
-                if ( !this.addAdaQty > 2)
-                {
+            if (type === 'addAda') {
+                if ( !this.addAdaQty > 2) {
                     alert ('Minimum 2 Ada donation amount required');
                     return
                 }
@@ -565,7 +551,7 @@ export default {
                     console.error("Must be an admin user to mint a merchant token");
                     alert ('Must be an admin user to mint a merchant token');
                     this.merchFormSubmitted = false;
-                }else {
+                } else {
                     console.error("Merchant Token Mint transaction could not be submitted");
                     alert ('Merchant Token Mint transaction could not be submitted, please try again');
                     this.merchFormSubmitted = false;
