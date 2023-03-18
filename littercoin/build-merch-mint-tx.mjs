@@ -84,6 +84,11 @@ const main = async () => {
         // Network Params
         const networkParams = new NetworkParams(JSON.parse(lcDetails.netParams));
 
+        // Add 1 year expiry date for merchant token name
+        var today = new Date();
+        const expiry_date = today.setHours(today.getHours()+24*364);
+        // TODO - create token name
+   
         // Send any change back to the buyer
         await tx.finalize(networkParams, changeAddr, utxos[1]);
 
@@ -92,10 +97,9 @@ const main = async () => {
         // the end user to sign the tx.
         const txSigned = await signTx(tx);
 
-        console.log("txMinted: ",tx.dump());
         const returnObj = {
             status: 200,
-            cborTx: bytesToHex(tx.toCbor())
+            cborTx: bytesToHex(txSigned.toCbor())
         }
         process.stdout.write(JSON.stringify(returnObj));
 
@@ -103,6 +107,8 @@ const main = async () => {
         const returnObj = {
             status: 500
         }
+        var timestamp = new Date().toISOString();
+        console.error(timestamp);
         console.error("create-merchant-tx: ", err);
         process.stdout.write(JSON.stringify(returnObj));
     }

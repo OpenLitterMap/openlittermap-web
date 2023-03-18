@@ -153,6 +153,8 @@ const main = async () => {
         const returnObj = {
             status: 500
         }
+        var timestamp = new Date().toISOString();
+        console.error(timestamp);
         console.error("create-mint-tx: ", err);
         process.stdout.write(JSON.stringify(returnObj));
     }

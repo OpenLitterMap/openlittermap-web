@@ -35,7 +35,6 @@ const main = async () => {
 
     try {
         const args = process.argv;
-        console.error("args: ", args);
         const adaQty = args[2];
         const lovelaceQty =  Number(adaQty) * 1000000;
         const hexChangeAddr = args[3];
@@ -56,8 +55,9 @@ const main = async () => {
         var utxos;
         try {
             utxos = CoinSelection.selectSmallestFirst(walletUtxos, minUTXOVal);
-            console.error("utxos.length(): ", utxos.length);
         } catch (err) {
+            var timestamp = new Date().toISOString();
+            console.error(timestamp);
             console.error("create-add-ada-tx: ", err);
             const returnObj = {
                 status: 501
@@ -167,6 +167,8 @@ const main = async () => {
         const returnObj = {
             status: 500
         }
+        var timestamp = new Date().toISOString();
+        console.error(timestamp);
         console.error("create-add-ada-tx: ", err);
         process.stdout.write(JSON.stringify(returnObj));
     }

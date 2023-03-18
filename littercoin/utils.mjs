@@ -60,3 +60,25 @@ const tokenCount = async (tokenMph, utxos) => {
     }
     return tokenCount;
 }
+
+
+/**
+ * Check if the merchant token is valid
+ * @param {string, UTxO[]} tokenMph, utxos
+ * @returns {int} 
+ */
+const validMerchToken = async (tokenMph, utxos) => {
+    let tokenCount = BigInt(0);
+    for (const utxo of utxos) {
+        const mphs = utxo.value.assets.mintingPolicies;
+        for (const mph of mphs) {
+        if (mph.hex == tokenMph) {
+            const tokenNames = utxo.value.assets.getTokenNames(mph);
+            for (const tokenName of tokenNames) {
+            tokenCount += utxo.value.assets.get(mph, tokenName);
+            }
+        }
+        }
+    }
+    return tokenCount;
+}

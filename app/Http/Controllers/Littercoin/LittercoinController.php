@@ -138,7 +138,7 @@ class LittercoinController extends Controller {
                     ];
                 } else if ($responseJSON->status == 502) {
                     return [
-                        '{"status": "402", "msg": "Merchant Token Not Found"}'
+                        '{"status": "402", "msg": "There must be at least and only one Merchant Token in the Wallet"}'
                     ];
                 } else if ($responseJSON->status == 503) {
                     return [

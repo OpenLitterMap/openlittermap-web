@@ -41,7 +41,6 @@ const main = async () => {
 
     try {
         const args = process.argv;
-        console.error("args", args);
         const lcQty = args[2];
         const hexChangeAddr = args[3];
         const cborUtxos = args[4].split(',');
@@ -61,6 +60,8 @@ const main = async () => {
         // If the ada value of the withdraw is less than min Ada, then raise an error now.
         if (withdrawAda < minAda) {
   
+            var timestamp = new Date().toISOString();
+            console.error(timestamp);
             console.error("create-lc-burn-tx: Withdraw amount is less than 2 minAda");
             const returnObj = {
                 status: 503
@@ -74,6 +75,8 @@ const main = async () => {
         if (adaDiff >= minAda) {
             newAdaAmount = adaAmount - BigInt(withdrawAda);
         } else {
+            var timestamp = new Date().toISOString();
+            console.error(timestamp);
             console.error("create-lc-burn-tx: Insufficient funds in Littercoin contract");
             const returnObj = {
                 status: 504
@@ -122,6 +125,8 @@ const main = async () => {
         // to burn, then raise an error now.
         if (Number(lcTokenCount) >= Number(lcQty)) {
   
+            var timestamp = new Date().toISOString();
+            console.error(timestamp);
             console.error("create-lc-burn-tx: Insufficient littercoin in user wallet");
             const returnObj = {
                 status: 501
@@ -134,10 +139,12 @@ const main = async () => {
         // wallet.
         const mtTokenCount = await tokenCount(lcDetails.mtMPH, utxos[0]);
 
-        // If the user does not have the merchant token, then raise an error now.
-        if (Number(mtTokenCount) >= 1) {
+        // The wallet must only contain one merchant token.
+        if (Number(mtTokenCount) == 1) {
   
-            console.error("create-lc-burn-tx: Merchant token not found in user wallet");
+            var timestamp = new Date().toISOString();
+            console.error(timestamp);
+            console.error("create-lc-burn-tx: There must be at least and only one merchant token in the wallet");
             const returnObj = {
                 status: 502
             }
@@ -145,7 +152,9 @@ const main = async () => {
             return;
         }
 
-        
+        // Check that the merchant token is valid
+        //const merchantTokenValid = await validMerchToken(lcDetails.mtMPH, utxos[0]);
+
 
         // Get the change address from the wallet
         const changeAddr = Address.fromHex(hexChangeAddr);
@@ -257,6 +266,8 @@ const main = async () => {
         const returnObj = {
             status: 500
         }
+        var timestamp = new Date().toISOString();
+        console.error(timestamp);
         console.error("create-lc-burn-tx: ", err);
         process.stdout.write(JSON.stringify(returnObj));
     }
