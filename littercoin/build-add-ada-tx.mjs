@@ -58,7 +58,7 @@ const main = async () => {
         } catch (err) {
             var timestamp = new Date().toISOString();
             console.error(timestamp);
-            console.error("create-add-ada-tx: ", err);
+            console.error("build-add-ada-tx: ", err);
             const returnObj = {
                 status: 501
             }
@@ -147,8 +147,6 @@ const main = async () => {
         // Network Params
         const networkParams = new NetworkParams(JSON.parse(lcDetails.netParams));
 
-        console.log("add-ada-tx: ",tx.dump());
-
         // Send any change back to the buyer
         await tx.finalize(networkParams, changeAddr, utxos[1]);
 
@@ -169,7 +167,7 @@ const main = async () => {
         }
         var timestamp = new Date().toISOString();
         console.error(timestamp);
-        console.error("create-add-ada-tx: ", err);
+        console.error("build-add-ada-tx: ", err);
         process.stdout.write(JSON.stringify(returnObj));
     }
 }

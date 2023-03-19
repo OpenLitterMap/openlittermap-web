@@ -148,7 +148,11 @@ class LittercoinController extends Controller {
                     return [
                         '{"status": "404", "msg": "Insufficient funds in Littercoin contract"}'
                     ];
-                } else {
+                } else if ($responseJSON->status == 505) {
+                    return [
+                        '{"status": "405", "msg": "No valid merchant token found in the wallet"}'
+                    ];
+                }else {
                     return [
                         $response
                     ];   

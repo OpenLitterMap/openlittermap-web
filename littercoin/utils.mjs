@@ -1,7 +1,9 @@
 import axios from 'axios';
-import { UTxO } from "@hyperionbt/helios";
+import { bytesToText, 
+         UTxO } from "@hyperionbt/helios";
 
-export { submitTx,
+export { getTokens,
+         submitTx,
          tokenCount };
 
 /**
@@ -42,7 +44,7 @@ const submitTx = async (tx) => {
 
 /**
  * Get the number of tokens in a set of utxo for a given mph
- * @param {string, UTxO[]} tokenMph, utxos
+ * @param {MintingPolicyHash, UTxO[]} tokenMph, utxos
  * @returns {int} 
  */
 const tokenCount = async (tokenMph, utxos) => {
@@ -50,12 +52,12 @@ const tokenCount = async (tokenMph, utxos) => {
     for (const utxo of utxos) {
         const mphs = utxo.value.assets.mintingPolicies;
         for (const mph of mphs) {
-        if (mph.hex == tokenMph) {
-            const tokenNames = utxo.value.assets.getTokenNames(mph);
-            for (const tokenName of tokenNames) {
-            tokenCount += utxo.value.assets.get(mph, tokenName);
+            if (mph.hex == tokenMph.hex) {
+                const tokenNames = utxo.value.assets.getTokenNames(mph);
+                for (const tokenName of tokenNames) {
+                    tokenCount += utxo.value.assets.get(mph, tokenName);
+                }
             }
-        }
         }
     }
     return tokenCount;
@@ -63,22 +65,23 @@ const tokenCount = async (tokenMph, utxos) => {
 
 
 /**
- * Check if the merchant token is valid
- * @param {string, UTxO[]} tokenMph, utxos
- * @returns {int} 
+ * Get the list of tokens names that match the minting policy
+ * hash provided
+ * @param {MintingPolicyHash, UTxO[]} tokenMph, utxos
+ * @returns {string[]} 
  */
-const validMerchToken = async (tokenMph, utxos) => {
-    let tokenCount = BigInt(0);
+const getTokens = async (tokenMph, utxos) => {
+    let tn = [];
     for (const utxo of utxos) {
         const mphs = utxo.value.assets.mintingPolicies;
         for (const mph of mphs) {
-        if (mph.hex == tokenMph) {
-            const tokenNames = utxo.value.assets.getTokenNames(mph);
-            for (const tokenName of tokenNames) {
-            tokenCount += utxo.value.assets.get(mph, tokenName);
+            if (mph.hex == tokenMph.hex) {
+                const tokenNames = utxo.value.assets.getTokenNames(mph);
+                for (const tokenName of tokenNames) {
+                    tn.push(bytesToText(tokenName));
+                }
             }
         }
-        }
     }
-    return tokenCount;
+    return tn;
 }

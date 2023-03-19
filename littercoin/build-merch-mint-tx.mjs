@@ -1,6 +1,7 @@
 import {
     Address, 
     Assets, 
+    ByteArrayData,
     bytesToHex, 
     CoinSelection,
     ConstrData, 
@@ -39,6 +40,11 @@ const main = async () => {
         const hexChangeAddr = args[3];
         const cborUtxos = args[4].split(',');
 
+        // Add 1 year expiry date for merchant token name
+        const today = Date.now().toString();
+        const merchTokenName = "Merchant Token | " + today.toString();
+        const merchTokenNameBA = ByteArrayData.fromString(merchTokenName);
+
         // Get the change address from the wallet
         const changeAddr = Address.fromHex(hexChangeAddr);
 
@@ -63,7 +69,8 @@ const main = async () => {
         // Create an empty Redeemer because we must always send a Redeemer with
         // a plutus script transaction even if we don't actually use it.
         const merchRedeemer = new ConstrData(0, []);
-        const merchToken = [[hexToBytes(process.env.MERCH_TOKEN_NAME), BigInt(1)]];
+        //const merchToken = [[hexToBytes(merchantTokenName), BigInt(1)]];
+        const merchToken = [[merchTokenNameBA.bytes, BigInt(1)]];
         
         // Add the mint to the tx
         tx.mintTokens(
@@ -83,11 +90,6 @@ const main = async () => {
 
         // Network Params
         const networkParams = new NetworkParams(JSON.parse(lcDetails.netParams));
-
-        // Add 1 year expiry date for merchant token name
-        var today = new Date();
-        const expiry_date = today.setHours(today.getHours()+24*364);
-        // TODO - create token name
    
         // Send any change back to the buyer
         await tx.finalize(networkParams, changeAddr, utxos[1]);
@@ -109,7 +111,7 @@ const main = async () => {
         }
         var timestamp = new Date().toISOString();
         console.error(timestamp);
-        console.error("create-merchant-tx: ", err);
+        console.error("build-merchant-tx: ", err);
         process.stdout.write(JSON.stringify(returnObj));
     }
 }

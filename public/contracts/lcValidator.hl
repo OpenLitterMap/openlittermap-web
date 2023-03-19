@@ -13,7 +13,8 @@ enum Redeemer {
     AddAda
     Mint
     Burn { 
-        pkhBA: ByteArray 
+        pkhBA: ByteArray
+        tnBA: ByteArray  
     }
 }
 
@@ -21,7 +22,7 @@ const minAda : Int = 2000000
 const minAdaVal: Value = Value::lovelace(minAda)
 
 // Define thread token value
-const TT_MPH: ByteArray = #45ea74702004dd2a4bef8f1d8a9355fafb5d8abc8460ca5b382dcf0d
+const TT_MPH: ByteArray = #3f2b739cd614488c4f1e0fe636f844c835825216d120304493b42f33
 const ttMph: MintingPolicyHash = MintingPolicyHash::new(TT_MPH)
 const ttAssetclass: AssetClass = AssetClass::new(
         ttMph, 
@@ -30,7 +31,7 @@ const ttAssetclass: AssetClass = AssetClass::new(
 const ttVal : Value = Value::new(ttAssetclass, 1)
 
 // Define the mph of the littercoin minting policy
-const LC_MPH: ByteArray = #bc1c25255c20ab5b6fbd6981ebf6a33211b1d5806c4659af4d2d5d77
+const LC_MPH: ByteArray = #b330b29d2233f8fca3e03353242e197f6fcfd236a33599fbe8770acb
 const lcMph: MintingPolicyHash = MintingPolicyHash::new(LC_MPH)
 const lcAssetClass: AssetClass = AssetClass::new(
         lcMph, 
@@ -38,7 +39,7 @@ const lcAssetClass: AssetClass = AssetClass::new(
     )
 
 // Define the mph of the donation rewards token minting policy
-const REWARDS_MPH: ByteArray = #7ca3ebf836a9ca6ebbc67ecdeb1a2d2758e8b97b2d30fbfc7fab195d
+const REWARDS_MPH: ByteArray = #8a8ca2effc89fd07e6711935d04f1732661c469b3412a9ac897ee142
 const rewardsMph: MintingPolicyHash = MintingPolicyHash::new(REWARDS_MPH)
 const rewardsAssetClass: AssetClass = AssetClass::new(
         rewardsMph, 
@@ -48,11 +49,13 @@ const rewardsAssetClass: AssetClass = AssetClass::new(
 // Define the merchant token
 const MERCHANT_MPH: ByteArray = #dd1ed52d3e36da0a8222daf83d47035bdff8a5f696dd5d82daa25104
 const merchMph: MintingPolicyHash = MintingPolicyHash::new(MERCHANT_MPH)
+/*
 const merchAssetclass: AssetClass = AssetClass::new(
         merchMph, 
         "Merchant Token Littercoin".encode_utf8()
     )
 const merchVal: Value = Value::new(merchAssetclass, 1)
+*/
 
 // Define the pkh of the owner
 const OWNER_PKH: ByteArray = #b9abcf6867519e28042048aa11207214a52e6d5d3288b752d1c27682 
@@ -147,6 +150,11 @@ func main(datum: Datum, redeemer: Redeemer, ctx: ScriptContext) -> Bool {
                         adaWithdrawVal: Value = Value::lovelace(adaWithdraw);
                         merchPkh: PubKeyHash = PubKeyHash::new(red.pkhBA);
                         merchOutTxs : []TxOutput = tx.outputs_sent_to(merchPkh);
+                        merchAssetclass: AssetClass = AssetClass::new(
+                            merchMph, 
+                            red.tnBA
+                        );
+                        merchVal: Value = Value::new(merchAssetclass, 1);
                         
                         // Verify that the amount of littercoin burned is the actual amount
                         // reduced by in the datum.  Also check that the Ada withdraw
@@ -163,12 +171,13 @@ func main(datum: Datum, redeemer: Redeemer, ctx: ScriptContext) -> Bool {
                         (merchOutTxs.length >= 2 ).trace("LCV17: ") && 
                         (merchOutTxs.get(0).value == (minAdaVal + merchVal)).trace("LCV18: ") &&
                         (merchOutTxs.get(1).value == (adaWithdrawVal)).trace("LCV19: ") &&
-                        (tx.value_locked_by(vHash) == (ttVal + adaVal)).trace("LCV20: ")
+                        (tx.value_locked_by(vHash) == (ttVal + adaVal)).trace("LCV20: ") &&
+                        tx.is_signed_by(ownerPkh).trace("LCV21: ") 
                     },
-                    else => false.trace("LCV21: ") // No inline datum found
+                    else => false.trace("LCV22: ") // No inline datum found
                 }
             } else {
-                false.trace("LCV22: ") // No datum found in outputs
+                false.trace("LCV23: ") // No datum found in outputs
             }
         }
     }
@@ -184,5 +193,5 @@ const LC_DATUM = Datum {
 
 const VAL_ADD_ADA_REDEEMER = Redeemer::AddAda
 const VAL_MINT_REDEEMER = Redeemer::Mint
-const VAL_BURN_REDEEMER = Redeemer::Burn{#1a2b3c}
+const VAL_BURN_REDEEMER = Redeemer::Burn{#1a2b3c, #1a2b3c}
 

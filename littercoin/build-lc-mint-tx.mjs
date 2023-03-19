@@ -155,7 +155,7 @@ const main = async () => {
         }
         var timestamp = new Date().toISOString();
         console.error(timestamp);
-        console.error("create-mint-tx: ", err);
+        console.error("build-mint-tx: ", err);
         process.stdout.write(JSON.stringify(returnObj));
     }
 }

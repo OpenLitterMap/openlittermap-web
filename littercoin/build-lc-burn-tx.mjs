@@ -12,6 +12,7 @@ import {
     NetworkParams,
     Program, 
     PubKeyHash,
+    textToBytes,
     Value, 
     TxOutput,
     Tx, 
@@ -21,7 +22,8 @@ import {
 import { fetchLittercoinInfo,
          getLittercoinContractDetails } from "./lc-info.mjs";
 
-import { tokenCount } from "./utils.mjs";
+import { tokenCount,
+         getTokens } from "./utils.mjs";
 import { signTx } from "./sign-tx.mjs";
 
 
@@ -41,6 +43,7 @@ const main = async () => {
 
     try {
         const args = process.argv;
+        console.error("args", args);
         const lcQty = args[2];
         const hexChangeAddr = args[3];
         const cborUtxos = args[4].split(',');
@@ -62,7 +65,7 @@ const main = async () => {
   
             var timestamp = new Date().toISOString();
             console.error(timestamp);
-            console.error("create-lc-burn-tx: Withdraw amount is less than 2 minAda");
+            console.error("build-lc-burn-tx: Withdraw amount is less than 2 minAda");
             const returnObj = {
                 status: 503
             }
@@ -70,14 +73,13 @@ const main = async () => {
             return;
         }
 
-
         var newAdaAmount;
         if (adaDiff >= minAda) {
             newAdaAmount = adaAmount - BigInt(withdrawAda);
         } else {
             var timestamp = new Date().toISOString();
             console.error(timestamp);
-            console.error("create-lc-burn-tx: Insufficient funds in Littercoin contract");
+            console.error("build-lc-burn-tx: Insufficient funds in Littercoin contract");
             const returnObj = {
                 status: 504
             }
@@ -108,43 +110,18 @@ const main = async () => {
         const lcTokens = [[hexToBytes(process.env.LC_TOKEN_NAME), BigInt(lcQty)]];
         const lcVal = new Value(BigInt(minAda), new Assets([[lcDetails.lcMPH, lcTokens]]));
 
-        // Construct the merchant token to be spent from the wallet
-        const merchTokens = [[hexToBytes(process.env.MERCH_TOKEN_NAME), BigInt(1)]];
-        const merchVal = new Value(BigInt(minAda), new Assets([[lcDetails.mtMPH, merchTokens]]));
-
-        // Get UTXOs from wallet
+        // Convert cbor utxos into Helios UTXOs
         const walletUtxos = cborUtxos.map(u => UTxO.fromCbor(hexToBytes(u)));
-        const utxos = CoinSelection.selectSmallestFirst(walletUtxos, minUTXOVal.add(lcVal).add(merchVal));
 
-        // Check the total number of littercoin in the utxos.
-        // We will then decrement the number of tokens being burned
-        // and put the rest (if any) in an output.
-        const lcTokenCount = await tokenCount(lcDetails.lcMPH, utxos[0]);
+        // Pull out merchant token(s) that match the merchant token minting policy
+        const merchTokenNames = await getTokens(lcDetails.mtMPH, walletUtxos);
 
-        // If the user does not have enought littercoins to cover the amount requested
-        // to burn, then raise an error now.
-        if (Number(lcTokenCount) >= Number(lcQty)) {
+        // The wallet must contain at least one merchant token.
+        if (merchTokenNames.length == 0) {
   
             var timestamp = new Date().toISOString();
             console.error(timestamp);
-            console.error("create-lc-burn-tx: Insufficient littercoin in user wallet");
-            const returnObj = {
-                status: 501
-            }
-            process.stdout.write(JSON.stringify(returnObj));
-            return;
-        }
-
-        // Check to confirm that there exists a merchant token in the user
-        // wallet.
-        const mtTokenCount = await tokenCount(lcDetails.mtMPH, utxos[0]);
-
-        // The wallet must only contain one merchant token.
-        if (Number(mtTokenCount) == 1) {
-  
-            var timestamp = new Date().toISOString();
-            console.error(timestamp);
-            console.error("create-lc-burn-tx: There must be at least and only one merchant token in the wallet");
+            console.error("build-lc-burn-tx: There must be at least one merchant token in the wallet");
             const returnObj = {
                 status: 502
             }
@@ -152,9 +129,42 @@ const main = async () => {
             return;
         }
 
-        // Check that the merchant token is valid
-        //const merchantTokenValid = await validMerchToken(lcDetails.mtMPH, utxos[0]);
+        // Check if there is a merchant token that is still valid
+        let validMerch = false;
+        var merchantTN;
+        for (const merchTokenName of merchTokenNames) {
+            const timestamp = (merchTokenName.split('|'))[1];
+            const today = Date.now();
 
+            if (today - Number(timestamp) < Number(process.env.EXPIRY_DURATION)) {
+                validMerch = true;
+                merchantTN = merchTokenName;
+                break;
+            }
+        }
+      
+        if (!validMerch) {
+            var timestamp = new Date().toISOString();
+            console.error(timestamp);
+            console.error("build-lc-burn-tx: No valid merchant token found in the wallet");
+            const returnObj = {
+                status: 505
+            }
+            process.stdout.write(JSON.stringify(returnObj));
+            return;
+        }
+
+        // Construct the merchant token to be spent from the wallet
+        const merchTokens = [[textToBytes(merchantTN), BigInt(1)]];
+        const merchVal = new Value(BigInt(minAda), new Assets([[lcDetails.mtMPH, merchTokens]]));
+
+        // Get UTXOs from wallet
+        const utxos = CoinSelection.selectSmallestFirst(walletUtxos, minUTXOVal.add(lcVal).add(merchVal));
+
+        // Check the total number of littercoin in the utxos.
+        // We will then decrement the number of tokens being burned
+        // and put the rest (if any) in an output.
+        const lcTokenCount = await tokenCount(lcDetails.lcMPH, utxos[0]);
 
         // Get the change address from the wallet
         const changeAddr = Address.fromHex(hexChangeAddr);
@@ -166,7 +176,8 @@ const main = async () => {
         tx.addInputs(utxos[0]);
 
         // Construct the burn littercoin validator redeemer
-        const valRedeemer = new ConstrData(2, [new ByteArrayData(changeAddr.pubKeyHash.bytes)])
+        const valRedeemer = new ConstrData(2, [new ByteArrayData(changeAddr.pubKeyHash.bytes),
+                                              new ByteArrayData(textToBytes(merchantTN))])
         const valUtxo = UTxO.fromCbor(hexToBytes(lcInfo.ttUtxo));
         tx.addInput(valUtxo, valRedeemer);
 
@@ -207,7 +218,8 @@ const main = async () => {
             mintRedeemer
         )
 
-        // Make sure there is an output that matches the merchant (change addr) pkh provided in the validator redeemer
+        // Make sure there is an output that matches the merchant change address 
+        // pkh provided in the validator redeemer
         tx.addOutput(new TxOutput(
             changeAddr,
             merchVal
@@ -229,7 +241,7 @@ const main = async () => {
         ));
 
         // Construct the littercoin tokens to be returned if any
-        const lcDelta = lcTokenCount.valueOf() - BigInt(lcQty);
+        const lcDelta = lcTokenCount - BigInt(lcQty);
         if (lcDelta > 0) {
 
             const lcTokens = [[hexToBytes(process.env.LC_TOKEN_NAME), lcDelta]];
@@ -268,7 +280,7 @@ const main = async () => {
         }
         var timestamp = new Date().toISOString();
         console.error(timestamp);
-        console.error("create-lc-burn-tx: ", err);
+        console.error("build-lc-burn-tx: ", err);
         process.stdout.write(JSON.stringify(returnObj));
     }
 }

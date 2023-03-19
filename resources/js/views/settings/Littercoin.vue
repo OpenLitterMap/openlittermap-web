@@ -477,6 +477,10 @@ export default {
                     console.error("Insufficient funds in Littercoin contract");
                     alert ('Insufficient funds in Littercoin contract');
                     this.burnFormSubmitted = false;
+                } else if (burnTx.status == 405) {
+                    console.error("No valid merchant token found in the wallet");
+                    alert ('No valid merchant token found in the wallet');
+                    this.burnFormSubmitted = false;
                 } else {
                     console.error("Littercoin Burn transaction was not successful");
                     alert ('Littercoin Burn transaction could not be submitted, please try again');
