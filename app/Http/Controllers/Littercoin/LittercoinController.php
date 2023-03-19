@@ -24,10 +24,11 @@ class LittercoinController extends Controller {
 
         $userId = Auth::user()->id;
 
-        $littercoin = Littercoin::where('user_id', $userId)->get();
-
+        $littercoinEarned = Littercoin::where('user_id', $userId)->count();
+        $littercoinDue = Littercoin::where('user_id', $userId)->whereNull('transaction_id')->count();
         return [
-            'littercoin' => $littercoin
+            'littercoinEarned' => $littercoinEarned,
+            'littercoinDue' => $littercoinDue
         ];
     }
 
@@ -46,7 +47,6 @@ class LittercoinController extends Controller {
         ];
     }
 
-
     /**
      * Build the littercoin mint transaction.
      */
@@ -58,9 +58,8 @@ class LittercoinController extends Controller {
         $strUtxos=implode(",",$utxos);
 
         $userId = Auth::user()->id;
-        $littercoinPaid = Auth::user()->littercoin_paid;
         $littercoinEarned = Littercoin::where('user_id', $userId)->count();
-        $littercoinDue = $littercoinEarned - $littercoinPaid;
+        $littercoinDue = Littercoin::where('user_id', $userId)->whereNull('transaction_id')->count();
 
         if ($littercoinDue > 0) {
             $cmd = '(cd ../littercoin/;node build-lc-mint-tx.mjs '.$littercoinDue.' '.escapeshellarg($destAddr).' '.escapeshellarg($changeAddr).' '.escapeshellarg($strUtxos).') 2>> ../storage/logs/littercoin.log'; 
@@ -93,10 +92,15 @@ class LittercoinController extends Controller {
 
                 // Update the amount of littercoin paid to user in the DB
 
-                // Commented out for testing purposes
                 //$user->littercoin_paid = $littercoinPaid + $littercoinDue;
                 //$user->save();
-        
+
+                $userId = Auth::user()->id;
+                $littercoin = Littercoin::where('user_id', $userId)
+                                        ->whereNull('transaction_id')
+                                        ->update(['transaction_id' => $responseJSON->txId,
+                                                  'timestamp' => $responseJSON->date]);
+
                 return [
                     $response
                 ];

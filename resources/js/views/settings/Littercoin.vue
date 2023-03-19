@@ -14,9 +14,9 @@
                 <hr>
 
                 <p><h1 class="title is-4">My Littercoin</h1></p>
-                <p>Total Littercoin Earned: {{ littercoinOwed }}</p>
-                <p>Total Littercoin Received: {{ littercoinPaid }}</p>
-                <p>Littercoin Due: {{ this.littercoinOwed - this.littercoinPaid }}</p>
+                <p>Total Littercoin Earned: {{ this.littercoinEarned }}</p>
+                <p>Total Littercoin Received: {{ this.littercoinEarned - this.littercoinDue }}</p>
+                <p>Littercoin Due: {{ this.littercoinDue }}</p>
                 <hr>
                 <div>
                     <p><h1 class="title is-4">Select Your Wallet</h1></p>
@@ -166,7 +166,9 @@ export default {
             .then(response => {
                 console.log('littercoin', response);
 
-                this.littercoins = response.data.littercoin;
+                //this.littercoins = response.data.littercoin;
+                this.littercoinEarned = response.data.littercoinEarned;
+                this.littercoinDue = response.data.littercoinDue;
             })
             .catch(error => {
                 console.error('littercoin', error);
@@ -203,7 +205,9 @@ export default {
             lcAddrURL: "",
             lcScriptName: "",
             lcScriptURL: "",
-            littercoins: [],
+            //littercoins: [],
+            littercoinEarned: 0,
+            littercoinDue: 0,
             walletChoice: "",
             mintDestAddr: "",
             merchDestAddr: "",
@@ -233,15 +237,23 @@ export default {
         /**
          * Total number of Littercoin the User is owed
          */
-        littercoinOwed () {
-            return this.user.littercoin_owed + this.user.littercoin_allowance + this.littercoins.length;
+        //littercoinOwed () {
+        /*
+        littercoinDue () {
+            //return this.user.littercoin_owed + this.user.littercoin_allowance + this.littercoins.length;
+            return this.littercoinDue;
         },
+        */
         /**
          * Total number of Littercoin the user has received
          */
-        littercoinPaid () {
-            return this.user.littercoin_paid;
+        //littercoinPaid () {
+        /*
+        littercoinEarned () {
+            //return this.user.littercoin_paid;
+            return this.littercoinEarned;
         },
+        */
         /**
          * Shortcut to User object
          */
