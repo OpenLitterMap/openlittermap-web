@@ -37,7 +37,7 @@ The following diagram depicts the typical user journey for littercoin.
 
 The high level design was used to create a model of the sequence of transactions, the datum state data and the inputs and outputs.
 
-![Littercoin High Level Design](https://user-images.githubusercontent.com/7105016/226448058-d9197888-2e6e-4e53-bfd6-a1cae5285a8f.png)
+![Littercoin High Level Design](https://user-images.githubusercontent.com/7105016/226448800-ef407f21-c51a-41a7-bf79-9226b4774d4e.png)
 
 
 ##### Adding Ada
