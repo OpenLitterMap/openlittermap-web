@@ -24,7 +24,6 @@
         "vue-template-compiler": "^2.6.11"
     },
     "dependencies": {
-        "@hyperionbt/helios": "^0.12.12",
         "@stricahq/bip32ed25519": "^1.0.4",
         "@turf/hex-grid": "^6.0.2",
         "@turf/turf": "^5.1.6",

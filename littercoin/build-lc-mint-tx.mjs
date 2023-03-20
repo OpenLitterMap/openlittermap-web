@@ -17,7 +17,7 @@ import {
     TxOutput,
     Tx, 
     UTxO 
-} from "@hyperionbt/helios";
+} from "./lib/helios.mjs";
 
 import { fetchLittercoinInfo,
          getLittercoinContractDetails } from "./lc-info.mjs";

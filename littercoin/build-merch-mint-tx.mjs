@@ -13,7 +13,7 @@ import {
     TxOutput,
     Tx, 
     UTxO 
-} from "@hyperionbt/helios";
+} from "./lib/helios.mjs";
 
 import { getLittercoinContractDetails } from "./lc-info.mjs";
 import { signTx } from "./sign-tx.mjs";

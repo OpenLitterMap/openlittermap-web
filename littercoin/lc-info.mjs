@@ -14,7 +14,7 @@ import {
     TxRefInput,
     TxId,
     UTxO, 
-    textToBytes} from "@hyperionbt/helios";
+    textToBytes} from "./lib/helios.mjs";
 
 export { fetchLittercoinInfo, getLittercoinContractDetails };
 

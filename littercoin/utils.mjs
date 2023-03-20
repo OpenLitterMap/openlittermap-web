@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { bytesToText, 
-         UTxO } from "@hyperionbt/helios";
+         UTxO } from "./lib/helios.mjs";
 
 export { getTokens,
          submitTx,

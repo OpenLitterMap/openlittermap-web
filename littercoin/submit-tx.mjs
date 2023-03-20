@@ -2,7 +2,7 @@ import {
     hexToBytes, 
     Tx, 
     TxWitnesses,
-    } from "@hyperionbt/helios";
+    } from "./lib/helios.mjs";
 
 import { submitTx } from './utils.mjs';
 
