@@ -29,15 +29,20 @@ Litter and plastic pollution are global problems. Crowdsourcing data can help fi
 ## The Solution
 Littercoin is the first token rewarded for doing citizen science by simply walking around with a smart phone and start collecting information about your local environmental surroundings.
 ## The Application
-#### Application Design
+#### User Journey
 The following diagram depicts the typical user journey for littercoin.
 
 ![Littercoin User Journey](https://user-images.githubusercontent.com/7105016/226444708-c0768bfb-3fe4-4663-a02b-7f33e3579d05.png)
 
-
-The high level design was used to create a model of the sequence of transactions, the datum state data and the inputs and outputs.
+#### High Level Design
+The following high level design was used to create a model of the sequence of transactions, the datum state data and the inputs and outputs.
 
 ![Littercoin High Level Design](https://user-images.githubusercontent.com/7105016/226448800-ef407f21-c51a-41a7-bf79-9226b4774d4e.png)
+
+#### Application Architecture
+The application architecture below shows the steps involved to mint a littercoin. These steps are simliar for the other types of tranasction (eg. Burn, Add Ada & Mint Merchant Token).
+![Application Architecture](https://user-images.githubusercontent.com/7105016/226455145-0014e952-2c26-4936-90bc-5e1c758f1b12.png)
+
 
 
 ##### Adding Ada
