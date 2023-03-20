@@ -43,11 +43,11 @@ The high level design was used to create a model of the sequence of transactions
 ##### Adding Ada
 Any user with a Nami or Eternl wallet can go the web application and add Ada to the smart contract. They will received Littercoin Donation Rewards for every Ada they add to the smart contract.
 ##### Minting Littercoin
-Only the user (after they have logged into the application) will be able to mint the amount of littercoins that they are due. The user will enter the address where to send the littercoin and mint them.   The littercoin application will check and confirm that the user is actually eligible, and will sign the transaction acordingly.
+Only the user (after they have logged into the application) will be able to mint the amount of littercoins that they are due. The user will enter the address where to send the littercoin and mint them.   The littercoin application will check and confirm that the user is actually eligible, and will sign the transaction accordingly.
 ##### Minting Merchant Token
 Only an admin who is logged into the littercoin application can mint merchant tokens.
 ##### Burning Littercoin
-Only a wallet with a merchant token is able to burn littercoin and receive Ada.  The Merchant enters the total amount of littercoin they have in their wallet that they will burn.  The Smart Contract will then "burn" the littercoin and send them the amount of Ada corresponding to the current Ada:Littercoin price ratio.
+Only a wallet with a merchant token is able to burn littercoin and receive Ada.  The Merchant enters the amount of littercoin they have in their wallet that they will burn.  The Smart Contract will then burn the littercoin and send them the amount of Ada corresponding to the current Ada:Littercoin price ratio in the smart contract.
 
 ## Why Helios
 Helios is a fantastic alternative language for writing plutus smart contracts.   No nix, no cabal and no haskell yet a strongly typed, functional programming language!   The excellent documentation and well designed language and syntax is very intuitive and easy to learn.  Find out more info here: [https://github.com/Hyperion-BT/Helios](https://github.com/Hyperion-BT/Helios)
