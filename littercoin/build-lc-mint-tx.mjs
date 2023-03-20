@@ -13,6 +13,7 @@ import {
     Program, 
     PubKeyHash,
     Value, 
+    textToBytes,
     TxOutput,
     Tx, 
     UTxO 
@@ -89,7 +90,7 @@ const main = async () => {
         const newInlineDatum = Datum.inline(newDatum);
         const outputValue = new Value(BigInt(adaAmount), new Assets([
         [lcDetails.ttMPH, [
-            [hexToBytes(process.env.THREAD_TOKEN_NAME), BigInt(1)]
+            [textToBytes(process.env.THREAD_TOKEN_NAME), BigInt(1)]
         ]]
         ]));
 
@@ -105,7 +106,7 @@ const main = async () => {
         const mintRedeemer = new ConstrData(0, [new ByteArrayData(lcValHash.bytes)])
 
         // Construct the amount of littercoin tokens to mint
-        const mintTokens = [[hexToBytes(process.env.LC_TOKEN_NAME), BigInt(lcQty)]];
+        const mintTokens = [[textToBytes(process.env.LC_TOKEN_NAME), BigInt(lcQty)]];
 
         // Add the mint to the tx
         tx.mintTokens(
@@ -120,7 +121,7 @@ const main = async () => {
         const lcTokenCount = await tokenCount(lcTokenMPH, utxos[0]);
 
         // Construct the total amount of littercoin tokens
-        const lcTokens = [[hexToBytes(process.env.LC_TOKEN_NAME), 
+        const lcTokens = [[textToBytes(process.env.LC_TOKEN_NAME), 
             (BigInt(lcQty) + lcTokenCount.valueOf())]];
 
         // Attached the output with the minted littercoins to the destination address

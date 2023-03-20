@@ -1,7 +1,6 @@
 import {
     Address, 
     Assets, 
-    ByteArrayData,
     bytesToHex, 
     CoinSelection,
     ConstrData, 
@@ -10,6 +9,7 @@ import {
     Program, 
     PubKeyHash,
     Value, 
+    textToBytes,
     TxOutput,
     Tx, 
     UTxO 
@@ -42,9 +42,8 @@ const main = async () => {
 
         // Add 1 year expiry date for merchant token name
         const today = Date.now().toString();
-        const merchTokenName = "Merchant Token | " + today.toString();
-        const merchTokenNameBA = ByteArrayData.fromString(merchTokenName);
-
+        const merchTokenName = process.env.MERCH_TOKEN_NAME + " | " + today.toString();
+  
         // Get the change address from the wallet
         const changeAddr = Address.fromHex(hexChangeAddr);
 
@@ -69,8 +68,7 @@ const main = async () => {
         // Create an empty Redeemer because we must always send a Redeemer with
         // a plutus script transaction even if we don't actually use it.
         const merchRedeemer = new ConstrData(0, []);
-        //const merchToken = [[hexToBytes(merchantTokenName), BigInt(1)]];
-        const merchToken = [[merchTokenNameBA.bytes, BigInt(1)]];
+        const merchToken = [[textToBytes(merchTokenName), BigInt(1)]];
         
         // Add the mint to the tx
         tx.mintTokens(

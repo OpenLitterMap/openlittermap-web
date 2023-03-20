@@ -190,8 +190,3 @@ const LC_DATUM = Datum {
     adaAmount : 2000000,
     lcAmount : 2 
 }
-
-const VAL_ADD_ADA_REDEEMER = Redeemer::AddAda
-const VAL_MINT_REDEEMER = Redeemer::Mint
-const VAL_BURN_REDEEMER = Redeemer::Burn{#1a2b3c, #1a2b3c}
-

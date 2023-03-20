@@ -13,7 +13,8 @@ import {
     TxOutput,
     TxRefInput,
     TxId,
-    UTxO } from "@hyperionbt/helios";
+    UTxO, 
+    textToBytes} from "@hyperionbt/helios";
 
 export { fetchLittercoinInfo, getLittercoinContractDetails };
 
@@ -28,7 +29,7 @@ const threadTokenFile = await fs.readFile(contractDirectory + '/threadToken.hl',
 const threadTokenScript = threadTokenFile.toString();
 const compiledTTMintScript = Program.new(threadTokenScript).compile(optimize);
 const threadTokenMPH = compiledTTMintScript.mintingPolicyHash;
-const threadTokenName = process.env.THREAD_TOKEN_NAME;
+const threadTokenName = textToBytes(process.env.THREAD_TOKEN_NAME);
 
 // Validator script
 const lcValScriptName = "lcValidator.hl";
@@ -76,17 +77,16 @@ const getUtxos = async (blockfrostUrl) => {
  */
 const getTTUtxo = async () => {
 
-    const blockfrostUrl = blockfrostAPI + "/addresses/" + lcValAddr.toBech32() + "/utxos/" + threadTokenMPH.hex + threadTokenName;
+    const blockfrostUrl = blockfrostAPI + "/addresses/" + lcValAddr.toBech32() + "/utxos/" + threadTokenMPH.hex + bytesToHex(threadTokenName);
 
     let utxos = await getUtxos(blockfrostUrl);
     if (utxos.length == 0) {
         throw console.error("thread token not found")
     }
     const lovelaceAmount = utxos[0].amount[0].quantity;
-    const token = hexToBytes(threadTokenName);
     const value = new Value(BigInt(lovelaceAmount), new Assets([
         [threadTokenMPH, [
-            [token, BigInt(1)]
+            [threadTokenName, BigInt(1)]
         ]]
     ]));
 

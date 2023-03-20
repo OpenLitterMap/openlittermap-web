@@ -91,10 +91,6 @@ class LittercoinController extends Controller {
             if ($responseJSON->status == 200) {
 
                 // Update the amount of littercoin paid to user in the DB
-
-                //$user->littercoin_paid = $littercoinPaid + $littercoinDue;
-                //$user->save();
-
                 $userId = Auth::user()->id;
                 $littercoin = Littercoin::where('user_id', $userId)
                                         ->whereNull('transaction_id')

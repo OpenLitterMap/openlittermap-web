@@ -13,6 +13,7 @@ import {
     Program, 
     PubKeyHash,
     Value, 
+    textToBytes,
     TxOutput,
     Tx, 
     UTxO 
@@ -101,7 +102,7 @@ const main = async () => {
         const newInlineDatum = Datum.inline(newDatum);
         const outputValue = new Value(BigInt(newAdaAmount), new Assets([
         [lcDetails.ttMPH, [
-            [hexToBytes(process.env.THREAD_TOKEN_NAME), BigInt(1)]
+            [textToBytes(process.env.THREAD_TOKEN_NAME), BigInt(1)]
         ]]
         ]));
 
@@ -117,7 +118,7 @@ const main = async () => {
         const mintRedeemer = new ConstrData(0, [new ByteArrayData(lcValHash.bytes)])
 
         // Construct the amount of reward tokens to mint
-        const mintTokens = [[hexToBytes(process.env.REWARDS_TOKEN_NAME), BigInt(adaQty)]];
+        const mintTokens = [[textToBytes(process.env.REWARDS_TOKEN_NAME), BigInt(adaQty)]];
 
         // Add the mint to the tx
         tx.mintTokens(
@@ -132,7 +133,7 @@ const main = async () => {
         const rewardsCount = await tokenCount(rewardsMPH, utxos[0]);
 
         // Construct the total amount of rewards tokens
-        const rewardsTokens = [[hexToBytes(process.env.REWARDS_TOKEN_NAME), 
+        const rewardsTokens = [[textToBytes(process.env.REWARDS_TOKEN_NAME), 
             (BigInt(adaQty) + rewardsCount.valueOf())]];
 
         // Attached the output with the minted rewards to the change address

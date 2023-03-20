@@ -164,9 +164,6 @@ export default {
     async created () {
         await axios.get('/littercoin')
             .then(response => {
-                console.log('littercoin', response);
-
-                //this.littercoins = response.data.littercoin;
                 this.littercoinEarned = response.data.littercoinEarned;
                 this.littercoinDue = response.data.littercoinDue;
             })
@@ -175,8 +172,7 @@ export default {
             });
         await axios.get('/littercoin-info')
             .then(async response => {
-                //console.log("env", process.env.NETWORK);
-                console.log('littercoin-info', response);
+
                 const lcInfo = await JSON.parse(response.data); 
                 if (lcInfo.status == 200) {
                     this.adaAmount = lcInfo.payload.list[0].int / 1000000;
@@ -205,7 +201,6 @@ export default {
             lcAddrURL: "",
             lcScriptName: "",
             lcScriptURL: "",
-            //littercoins: [],
             littercoinEarned: 0,
             littercoinDue: 0,
             walletChoice: "",
@@ -234,26 +229,6 @@ export default {
     },
     computed: {
        
-        /**
-         * Total number of Littercoin the User is owed
-         */
-        //littercoinOwed () {
-        /*
-        littercoinDue () {
-            //return this.user.littercoin_owed + this.user.littercoin_allowance + this.littercoins.length;
-            return this.littercoinDue;
-        },
-        */
-        /**
-         * Total number of Littercoin the user has received
-         */
-        //littercoinPaid () {
-        /*
-        littercoinEarned () {
-            //return this.user.littercoin_paid;
-            return this.littercoinEarned;
-        },
-        */
         /**
          * Shortcut to User object
          */
@@ -369,13 +344,12 @@ export default {
                 utxos: cborUtxos
             })
             .then(async response => {
-                console.log("littercoin-mint-tx: ", response);
+               
                 const mintTx = await JSON.parse(response.data);
-
                 if (mintTx.status == 200) {
 
-                    console.log("Get wallet signature");
                     // Get user to sign the transaction
+                    console.log("Get wallet signature");
                     const walletSig = await walletAPI.signTx(mintTx.cborTx, true);
   
                     console.log("Submit transaction...");
@@ -384,7 +358,7 @@ export default {
                         cborTx: mintTx.cborTx
                     })
                     .then(async response => {
-                        console.log('littercoin-submit-mint-tx: ', response);
+                        
                         const submitTx = await JSON.parse(response.data);
                         if (submitTx.status == 200) {
                             this.mintTxId = submitTx.txId;
@@ -439,13 +413,12 @@ export default {
                 utxos: cborUtxos
             })
             .then(async response => {
-                console.log("littercoin-burn-tx: ", response);
+                
                 const burnTx = await JSON.parse(response.data);
-
                 if (burnTx.status == 200) {
 
-                    console.log("Get wallet signature");
                     // Get user to sign the transaction
+                    console.log("Get wallet signature");
                     const walletSig = await walletAPI.signTx(burnTx.cborTx, true);
 
                     console.log("Submit transaction...");
@@ -454,8 +427,7 @@ export default {
                         cborTx: burnTx.cborTx
                     })
                     .then(async response => {
-                        console.log('littercoin-submit-burn-tx: ', response);
-                        
+                 
                         const submitTx = await JSON.parse(response.data);
                         if (submitTx.status == 200) {
                             this.burnTxId = submitTx.txId;
@@ -530,13 +502,12 @@ export default {
                 utxos: cborUtxos
             })
             .then(async response => {
-                console.log("merchant-mint-tx': ", response);
                 const mintTx = await JSON.parse(response.data);
 
                 if (mintTx.status == 200) {
 
-                    console.log("Get wallet signature");
                     // Get user to sign the transaction
+                    console.log("Get wallet signature");
                     const walletSig = await walletAPI.signTx(mintTx.cborTx, true);
 
                     console.log("Submit transaction...");
@@ -545,7 +516,7 @@ export default {
                         cborTx: mintTx.cborTx
                     })
                     .then(async response => {
-                        console.log('merchant-submit-mint-tx: ', response);
+                
                         const submitTx = await JSON.parse(response.data);
                         if (submitTx.status == 200) {
                             this.merchTxId = submitTx.txId;
@@ -604,13 +575,13 @@ export default {
             utxos: cborUtxos
         })
         .then(async response => {
-            console.log("add-ada-tx: ", response);
+            
             const addAdaTx = await JSON.parse(response.data);
 
             if (addAdaTx.status == 200) {
 
-                console.log("Get wallet signature");
                 // Get user to sign the transaction
+                console.log("Get wallet signature");
                 const walletSig = await walletAPI.signTx(addAdaTx.cborTx, true);
       
                 await axios.post('/add-ada-submit-tx', {
@@ -618,7 +589,7 @@ export default {
                     cborTx: addAdaTx.cborTx
                 })
                 .then(async response => {
-                    console.log('add-ada-submit-tx: ', response);
+
                     const submitTx = await JSON.parse(response.data);
                     if (submitTx.status == 200) {
                         this.addAdaTxId = submitTx.txId;

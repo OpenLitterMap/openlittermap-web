@@ -43,7 +43,6 @@ const main = async () => {
 
     try {
         const args = process.argv;
-        console.error("args", args);
         const lcQty = args[2];
         const hexChangeAddr = args[3];
         const cborUtxos = args[4].split(',');
@@ -73,6 +72,8 @@ const main = async () => {
             return;
         }
 
+        // If the amount remaining in the datum of the
+        // smart contract is less than min Ada, then raise an error.
         var newAdaAmount;
         if (adaDiff >= minAda) {
             newAdaAmount = adaAmount - BigInt(withdrawAda);
@@ -107,7 +108,7 @@ const main = async () => {
         const lcDetails = await getLittercoinContractDetails();
 
         // Construct the littercoin token value to be spent from the wallet
-        const lcTokens = [[hexToBytes(process.env.LC_TOKEN_NAME), BigInt(lcQty)]];
+        const lcTokens = [[textToBytes(process.env.LC_TOKEN_NAME), BigInt(lcQty)]];
         const lcVal = new Value(BigInt(minAda), new Assets([[lcDetails.lcMPH, lcTokens]]));
 
         // Convert cbor utxos into Helios UTXOs
@@ -193,7 +194,7 @@ const main = async () => {
         const newInlineDatum = Datum.inline(newDatum);
         const outputValue = new Value(BigInt(newAdaAmount), new Assets([
             [lcDetails.ttMPH, [
-                [hexToBytes(process.env.THREAD_TOKEN_NAME), BigInt(1)]
+                [textToBytes(process.env.THREAD_TOKEN_NAME), BigInt(1)]
             ]]
         ]));
 
@@ -209,7 +210,7 @@ const main = async () => {
         const mintRedeemer = new ConstrData(1, [new ByteArrayData(lcValHash.bytes)])
 
         // Construct the amount of littercoin tokens to mint
-        const lcBurnTokens = [[hexToBytes(process.env.LC_TOKEN_NAME), (BigInt(lcQty) * BigInt(-1))]];
+        const lcBurnTokens = [[textToBytes(process.env.LC_TOKEN_NAME), (BigInt(lcQty) * BigInt(-1))]];
 
         // Add the mint to the tx
         tx.mintTokens(
@@ -244,7 +245,7 @@ const main = async () => {
         const lcDelta = lcTokenCount - BigInt(lcQty);
         if (lcDelta > 0) {
 
-            const lcTokens = [[hexToBytes(process.env.LC_TOKEN_NAME), lcDelta]];
+            const lcTokens = [[textToBytes(process.env.LC_TOKEN_NAME), lcDelta]];
             const lcVal = new Value(BigInt(minAda), new Assets([[lcDetails.lcMPH, lcTokens]]));
             
             tx.addOutput(new TxOutput(
