@@ -22,7 +22,7 @@ const minAda : Int = 2000000
 const minAdaVal: Value = Value::lovelace(minAda)
 
 // Define thread token value
-const TT_MPH: ByteArray = #3f2b739cd614488c4f1e0fe636f844c835825216d120304493b42f33
+const TT_MPH: ByteArray = #d21d0071d4bfc20583c142e755c191d61583d40e8f61a9ebe1d1ea62
 const ttMph: MintingPolicyHash = MintingPolicyHash::new(TT_MPH)
 const ttAssetclass: AssetClass = AssetClass::new(
         ttMph, 
@@ -31,7 +31,7 @@ const ttAssetclass: AssetClass = AssetClass::new(
 const ttVal : Value = Value::new(ttAssetclass, 1)
 
 // Define the mph of the littercoin minting policy
-const LC_MPH: ByteArray = #b330b29d2233f8fca3e03353242e197f6fcfd236a33599fbe8770acb
+const LC_MPH: ByteArray = #50963a51dc23b0c588812877bf2c6b1c53c4bac492df73a6e64993c9
 const lcMph: MintingPolicyHash = MintingPolicyHash::new(LC_MPH)
 const lcAssetClass: AssetClass = AssetClass::new(
         lcMph, 
@@ -39,7 +39,7 @@ const lcAssetClass: AssetClass = AssetClass::new(
     )
 
 // Define the mph of the donation rewards token minting policy
-const REWARDS_MPH: ByteArray = #8a8ca2effc89fd07e6711935d04f1732661c469b3412a9ac897ee142
+const REWARDS_MPH: ByteArray = #0e30451846a76a70678796e7ff62516dc5196865e724b8a41b6c06c7
 const rewardsMph: MintingPolicyHash = MintingPolicyHash::new(REWARDS_MPH)
 const rewardsAssetClass: AssetClass = AssetClass::new(
         rewardsMph, 
@@ -47,15 +47,8 @@ const rewardsAssetClass: AssetClass = AssetClass::new(
     )
 
 // Define the merchant token
-const MERCHANT_MPH: ByteArray = #dd1ed52d3e36da0a8222daf83d47035bdff8a5f696dd5d82daa25104
+const MERCHANT_MPH: ByteArray = #10009086d699dfdd386ab1ddbfb6d6492228e039172f78af780f4686
 const merchMph: MintingPolicyHash = MintingPolicyHash::new(MERCHANT_MPH)
-/*
-const merchAssetclass: AssetClass = AssetClass::new(
-        merchMph, 
-        "Merchant Token Littercoin".encode_utf8()
-    )
-const merchVal: Value = Value::new(merchAssetclass, 1)
-*/
 
 // Define the pkh of the owner
 const OWNER_PKH: ByteArray = #b9abcf6867519e28042048aa11207214a52e6d5d3288b752d1c27682 
@@ -145,7 +138,6 @@ func main(datum: Datum, redeemer: Redeemer, ctx: ScriptContext) -> Bool {
                         lcDatumAmt: Int = datum.lcAmount - outDat.lcAmount;
                         lcBurnVal: Value = Value::new(lcAssetClass, lcDatumAmt) * (-1);
                         ratio: Int = datum.get_ratio();
-                        print("ratio: " + ratio.show());
                         adaWithdraw : Int = lcDatumAmt * ratio;
                         adaWithdrawVal: Value = Value::lovelace(adaWithdraw);
                         merchPkh: PubKeyHash = PubKeyHash::new(red.pkhBA);
@@ -190,3 +182,8 @@ const LC_DATUM = Datum {
     adaAmount : 2000000,
     lcAmount : 2 
 }
+
+const VAL_ADD_ADA_REDEEMER = Redeemer::AddAda
+const VAL_MINT_REDEEMER = Redeemer::Mint
+const VAL_BURN_REDEEMER = Redeemer::Burn{#1a2b3c, #1a2b3c}
+
