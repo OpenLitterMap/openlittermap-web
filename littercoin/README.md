@@ -29,24 +29,30 @@ Litter and plastic pollution are global problems. Crowdsourcing data can help fi
 ## The Solution
 Littercoin is the first token rewarded for doing citizen science by simply walking around with a smart phone and start collecting information about your local environmental surroundings.
 ## The Application
-#### Application Design
+#### User Journey
 The following diagram depicts the typical user journey for littercoin.
 
 ![Littercoin User Journey](https://user-images.githubusercontent.com/7105016/226444708-c0768bfb-3fe4-4663-a02b-7f33e3579d05.png)
 
+#### High Level Design
+The following high level design was used to create a model of the sequence of transactions, the datum state data and the inputs and outputs.
 
-The high level design was used to create a model of the sequence of transactions, the datum state data and the inputs and outputs.
+![Littercoin High Level Design](https://user-images.githubusercontent.com/7105016/226448800-ef407f21-c51a-41a7-bf79-9226b4774d4e.png)
 
-![Littercoin High Level Design](/images/littercoin_design.png)
+#### Application Architecture
+The application architecture below shows the steps involved to mint a littercoin. These steps are simliar for the other types of tranasction (eg. Burn, Add Ada & Mint Merchant Token).
+![Application Architecture](https://user-images.githubusercontent.com/7105016/226455145-0014e952-2c26-4936-90bc-5e1c758f1b12.png)
+
+
 
 ##### Adding Ada
 Any user with a Nami or Eternl wallet can go the web application and add Ada to the smart contract. They will received Littercoin Donation Rewards for every Ada they add to the smart contract.
 ##### Minting Littercoin
-Only the user (after they have logged into the application) will be able to mint the amount of littercoins that they are due. The user will enter the address where to send the littercoin and mint them.   The littercoin application will check and confirm that the user is actually eligible, and will sign the transaction acordingly.
+Only the user (after they have logged into the application) will be able to mint the amount of littercoins that they are due. The user will enter the address where to send the littercoin and mint them.   The littercoin application will check and confirm that the user is actually eligible, and will sign the transaction accordingly.
 ##### Minting Merchant Token
 Only an admin who is logged into the littercoin application can mint merchant tokens.
 ##### Burning Littercoin
-Only a wallet with a merchant token is able to burn littercoin and receive Ada.  The Merchant enters the total amount of littercoin they have in their wallet that they will burn.  The Smart Contract will then "burn" the littercoin and send them the amount of Ada corresponding to the current Ada:Littercoin price ratio.
+Only a wallet with a merchant token is able to burn littercoin and receive Ada.  The Merchant enters the amount of littercoin they have in their wallet that they will burn.  The Smart Contract will then burn the littercoin and send them the amount of Ada corresponding to the current Ada:Littercoin price ratio in the smart contract.
 
 ## Why Helios
 Helios is a fantastic alternative language for writing plutus smart contracts.   No nix, no cabal and no haskell yet a strongly typed, functional programming language!   The excellent documentation and well designed language and syntax is very intuitive and easy to learn.  Find out more info here: [https://github.com/Hyperion-BT/Helios](https://github.com/Hyperion-BT/Helios)
