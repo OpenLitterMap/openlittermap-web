@@ -1,14 +1,18 @@
 import { Buffer } from "buffer";
 import { blake2b } from "blakejs";
 import { mnemonicToEntropy } from 'bip39';
-import { bytesToHex} from './lib/helios.mjs';
+import { Address, 
+         bytesToHex, 
+         PubKeyHash} from '../lib/helios.mjs';
 import pkg from '@stricahq/bip32ed25519';
 const { Bip32PrivateKey } = pkg;
 
 /***************************************************
-* Usage: node ./generate-private-key.mjs witness,pipe,egg,awake,hood,false,fury,announce,one,wool,diagram,weird,phone,treat,bacon
-* @params {string} seed phrase
-* @output {string} ROOT_KEY OWNER_PKH
+* Usage:
+* export ENTROPY="witness pipe egg awake hood false fury announce one wool diagram weird phone treat bacon"
+* node ./generate-private-key.mjs
+* exit
+* @output {string} ROOT_KEY OWNER_PKH ADDRESS
 ****************************************************/
 
 const hash28 = (data) => {
@@ -22,9 +26,11 @@ function harden(num) {
 
 const main = async () => {
 
-    const args = process.argv;
-    const entropyArray = args[2].split(',');
-    const entropy = mnemonicToEntropy(entropyArray.join(' '));
+    if (!process.env.ENTROPY) {
+        console.error("ENTROPY must be set as an environment variable");
+        return;
+    }
+    const entropy = mnemonicToEntropy(process.env.ENTROPY);
     const buffer = Buffer.from(entropy, 'hex');
     const rootKey = await Bip32PrivateKey.fromEntropy(buffer);
 
@@ -42,8 +48,13 @@ const main = async () => {
     const keyStore = bytesToHex(key);
     console.log("ROOT_KEY=" + keyStore);
 
-    const publicKey = addrPubKey.toPublicKey().toBytes();
-    console.log("OWNER_PKH=" + bytesToHex(hash28(publicKey)));
+    const pubKey = addrPubKey.toPublicKey().toBytes();
+    const pubKeyHash = bytesToHex(hash28(pubKey));
+    console.log("OWNER_PKH=" + pubKeyHash);
+
+    const pkh = PubKeyHash.fromHex(pubKeyHash);
+    const addr = Address.fromPubKeyHash(pkh);
+    console.log("ADDRESS=" + addr.toBech32());
 }
 
 main();
