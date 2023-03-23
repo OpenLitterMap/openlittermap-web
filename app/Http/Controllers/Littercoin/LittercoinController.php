@@ -52,6 +52,13 @@ class LittercoinController extends Controller {
      */
     public function mintTx (Request $request) {
 
+        $request->validate([
+            'destAddr' => 'required|alpha_dash|max:110',
+            'changeAddr' => 'required|alpha_num|max:256',
+            'utxos' => 'required|array|max:256',
+            'utxos.*' => 'required|alpha_num|max:8192'
+        ]);
+
         $destAddr = $request->input('destAddr');
         $changeAddr = $request->input('changeAddr');
         $utxos = $request->input('utxos');
@@ -79,6 +86,11 @@ class LittercoinController extends Controller {
      * Submit the littercoin mint transaction 
      */
     public function submitMintTx (Request $request) {
+
+        $request->validate([
+            'cborSig' => 'required|alpha_num|max:16384',
+            'cborTx' => 'required|alpha_num|max:16384'
+        ]);
 
         $cborSig = $request->input('cborSig');
         $cborTx = $request->input('cborTx');
@@ -116,6 +128,13 @@ class LittercoinController extends Controller {
      * Build the littercoin burn transaction.
      */
     public function burnTx (Request $request) {
+
+        $request->validate([
+            'lcQty' => 'required|int|max:1000',
+            'changeAddr' => 'required|alpha_num|max:256',
+            'utxos' => 'required|array|max:256',
+            'utxos.*' => 'required|alpha_num|max:8192'
+        ]);
 
         $lcQty = $request->input('lcQty');
         $changeAddr = $request->input('changeAddr');
@@ -174,6 +193,11 @@ class LittercoinController extends Controller {
      */
     public function submitBurnTx (Request $request) {
 
+        $request->validate([
+            'cborSig' => 'required|alpha_num|max:16384',
+            'cborTx' => 'required|alpha_num|max:16384'
+        ]);
+
         $cborSig = $request->input('cborSig');
         $cborTx = $request->input('cborTx');
 
@@ -189,6 +213,13 @@ class LittercoinController extends Controller {
      * Build the merchant token mint transaction.
      */
     public function merchTx (Request $request) {
+
+        $request->validate([
+            'destAddr' => 'required|alpha_dash|max:110',
+            'changeAddr' => 'required|alpha_num|max:256',
+            'utxos' => 'required|array|max:256',
+            'utxos.*' => 'required|alpha_num|max:8192'
+        ]);
 
         $destAddr = $request->input('destAddr');
         $changeAddr = $request->input('changeAddr');
@@ -216,6 +247,11 @@ class LittercoinController extends Controller {
      * Submit the merchant mint transaction.
      */
     public function submitMerchTx (Request $request) {
+
+        $request->validate([
+            'cborSig' => 'required|alpha_num|max:16384',
+            'cborTx' => 'required|alpha_num|max:16384'
+        ]);
 
         $cborSig = $request->input('cborSig');
         $cborTx = $request->input('cborTx');
@@ -249,6 +285,13 @@ class LittercoinController extends Controller {
      * Build the add Ada transaction.
      */
     public function addAdaTx (Request $request) {
+
+        $request->validate([
+            'adaQty' => 'required|int|max:1000000',
+            'changeAddr' => 'required|alpha_num|max:256',
+            'utxos' => 'required|array|max:256',
+            'utxos.*' => 'required|alpha_num|max:8192'
+        ]);
         
         $adaQty = $request->input('adaQty');
         $changeAddr = $request->input('changeAddr');
@@ -291,6 +334,11 @@ class LittercoinController extends Controller {
      * Submit the Add Ada transaction
      */
     public function submitAddAdaTx (Request $request) {
+
+        $request->validate([
+            'cborSig' => 'required|alpha_num|max:16384',
+            'cborTx' => 'required|alpha_num|max:16384'
+        ]);
         
         $cborSig = $request->input('cborSig');
         $cborTx = $request->input('cborTx');

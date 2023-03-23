@@ -40,6 +40,8 @@
                         <label>&nbsp; Eternl</label>
                     </p>
                 <hr>
+
+
                     <form 
                         method="post"
                         @submit.prevent="submitForm('mint')" 
@@ -324,307 +326,370 @@ export default {
             }
         },
         async submitMint() {
+            try {
 
-            // Connect to the user's wallet
-            var walletAPI;
-            if (this.walletChoice === "nami") {
-                walletAPI = await window.cardano.nami.enable();
-            } else if (this.walletChoice === "eternl") {
-                walletAPI = await window.cardano.eternl.enable(); 
-            } else {
-                alert('No wallet selected');
-                this.mintFormSubmitted = false;
-            } 
-            
-            // get the UTXOs from wallet,
-            const cborUtxos = await walletAPI.getUtxos();
+                // Connect to the user's wallet
+                var walletAPI;
+                if (this.walletChoice === "nami") {
+                    walletAPI = await window.cardano.nami.enable();
+                } else if (this.walletChoice === "eternl") {
+                    walletAPI = await window.cardano.eternl.enable(); 
+                } else {
+                    alert('No wallet selected');
+                    this.mintFormSubmitted = false;
+                } 
+                
+                // get the UTXOs from wallet,
+                const cborUtxos = await walletAPI.getUtxos();
 
-            // Get the change address from the wallet
-            const hexChangeAddr = await walletAPI.getChangeAddress();
+                // Get the change address from the wallet
+                const hexChangeAddr = await walletAPI.getChangeAddress();
 
-            await axios.post('/littercoin-mint-tx', {
-                destAddr: this.mintDestAddr,
-                changeAddr: hexChangeAddr,
-                utxos: cborUtxos
-            })
-            .then(async response => {
-               
-                const mintTx = await JSON.parse(response.data);
-                if (mintTx.status == 200) {
+                await axios.post('/littercoin-mint-tx', {
+                    destAddr: this.mintDestAddr,
+                    changeAddr: hexChangeAddr,
+                    utxos: cborUtxos
+                })
+                .then(async response => {
+                
+                    const mintTx = await JSON.parse(response.data);
+                    if (mintTx.status == 200) {
 
-                    // Get user to sign the transaction
-                    console.log("Get wallet signature");
-                    const walletSig = await walletAPI.signTx(mintTx.cborTx, true);
-  
-                    console.log("Submit transaction...");
-                    await axios.post('/littercoin-submit-mint-tx', {
-                        cborSig: walletSig,
-                        cborTx: mintTx.cborTx
-                    })
-                    .then(async response => {
-                        
-                        const submitTx = await JSON.parse(response.data);
-                        if (submitTx.status == 200) {
-                            this.mintTxId = submitTx.txId;
-                            this.mintTxIdURL = "https://preprod.cexplorer.io/tx/" + submitTx.txId;
-                            this.mintSuccess = true;
-                        } else {
-                            console.error("Littercoin Mint transaction could not be submitted");
+                        // Get user to sign the transaction
+                        console.log("Get wallet signature");
+
+                        // TODO try/catch signing
+                        const walletSig = await walletAPI.signTx(mintTx.cborTx, true);
+    
+                        console.log("Submit transaction...");
+                        await axios.post('/littercoin-submit-mint-tx', {
+                            cborSig: walletSig,
+                            cborTx: mintTx.cborTx
+                        })
+                        .then(async response => {
+                            
+                            const submitTx = await JSON.parse(response.data);
+                            if (submitTx.status == 200) {
+                                this.mintTxId = submitTx.txId;
+                                this.mintTxIdURL = "https://preprod.cexplorer.io/tx/" + submitTx.txId;
+                                this.mintSuccess = true;
+                            } else {
+                                console.error("Littercoin Mint transaction could not be submitted");
+                                alert ('Littercoin Mint transaction could not be submitted, please try again');
+                                this.mintFormSubmitted = false;
+                            }
+                        })
+                        .catch(error => {
+
+                            if (error.response.status == 422){
+                                console.error("Invalid Wallet Input", error.response.data.errors);
+                            } else {
+                                console.error("littercoin-submit-mint-tx: ", error);
+                            }
                             alert ('Littercoin Mint transaction could not be submitted, please try again');
                             this.mintFormSubmitted = false;
-                        }
-                    })
-                    .catch(error => {
-                        console.error("littercoin-submit-mint-tx: ", error);
+                        });
+                
+                    } else {
+                        console.error("Littercoin Mint transaction could not be submitted");
                         alert ('Littercoin Mint transaction could not be submitted, please try again');
                         this.mintFormSubmitted = false;
-                    });
-            
-                } else {
-                    console.error("Littercoin Mint transaction could not be submitted");
-                    alert ('Littercoin Mint transaction could not be submitted, please try again');
+                    }
+                })
+                .catch(error => {
+                    
+                    if (error.response.status == 422){
+                        console.error("Invalid User Input", error.response.data.errors);
+                        alert ('Please check that you have entered a valid destination address');
+                    } else {
+                        console.error("littercoin-mint-tx", error);
+                        alert ('Littercoin Mint transaction could not be submitted, please try again');
+                    }
                     this.mintFormSubmitted = false;
-                }
-            })
-            .catch(error => {
-                console.error("littercoin-mint-tx", error);
-                alert ('Littercoin Mint transaction could not be submitted, please try again');
+                });
+            } catch (err) {
+                console.error(err);
                 this.mintFormSubmitted = false;
-            });
+            }
         },
         async submitBurn() {
 
-            // Connect to the user's wallet
-            var walletAPI;
-            if (this.walletChoice === "nami") {
-                walletAPI = await window.cardano.nami.enable();
-            } else if (this.walletChoice === "eternl") {
-                walletAPI = await window.cardano.eternl.enable(); 
-            } else {
-                alert('No wallet selected');
-                this.burnFormSubmitted = false;
-            } 
+            try {
 
-            // get the UTXOs from wallet,
-            const cborUtxos = await walletAPI.getUtxos();
+                // Connect to the user's wallet
+                var walletAPI;
+                if (this.walletChoice === "nami") {
+                    walletAPI = await window.cardano.nami.enable();
+                } else if (this.walletChoice === "eternl") {
+                    walletAPI = await window.cardano.eternl.enable(); 
+                } else {
+                    alert('No wallet selected');
+                    this.burnFormSubmitted = false;
+                } 
 
-            // Get the change address from the wallet
-            const hexChangeAddr = await walletAPI.getChangeAddress();
+                // get the UTXOs from wallet,
+                const cborUtxos = await walletAPI.getUtxos();
 
-            await axios.post('/littercoin-burn-tx', {
-                lcQty: this.lcQty,
-                changeAddr: hexChangeAddr,
-                utxos: cborUtxos
-            })
-            .then(async response => {
-                
-                const burnTx = await JSON.parse(response.data);
-                if (burnTx.status == 200) {
+                // Get the change address from the wallet
+                const hexChangeAddr = await walletAPI.getChangeAddress();
 
-                    // Get user to sign the transaction
-                    console.log("Get wallet signature");
-                    const walletSig = await walletAPI.signTx(burnTx.cborTx, true);
+                await axios.post('/littercoin-burn-tx', {
+                    lcQty: this.lcQty,
+                    changeAddr: hexChangeAddr,
+                    utxos: cborUtxos
+                })
+                .then(async response => {
+                    
+                    const burnTx = await JSON.parse(response.data);
+                    if (burnTx.status == 200) {
 
-                    console.log("Submit transaction...");
-                    await axios.post('/littercoin-submit-burn-tx', {
-                        cborSig: walletSig,
-                        cborTx: burnTx.cborTx
-                    })
-                    .then(async response => {
-                 
-                        const submitTx = await JSON.parse(response.data);
-                        if (submitTx.status == 200) {
-                            this.burnTxId = submitTx.txId;
-                            this.burnTxIdURL = "https://preprod.cexplorer.io/tx/" + submitTx.txId;
-                            this.burnSuccess = true;
-                        } else {
-                            console.error("Littercoin Burn transaction was not successful");
+                        // Get user to sign the transaction
+                        console.log("Get wallet signature");
+                        const walletSig = await walletAPI.signTx(burnTx.cborTx, true);
+
+                        console.log("Submit transaction...");
+                        await axios.post('/littercoin-submit-burn-tx', {
+                            cborSig: walletSig,
+                            cborTx: burnTx.cborTx
+                        })
+                        .then(async response => {
+                    
+                            const submitTx = await JSON.parse(response.data);
+                            if (submitTx.status == 200) {
+                                this.burnTxId = submitTx.txId;
+                                this.burnTxIdURL = "https://preprod.cexplorer.io/tx/" + submitTx.txId;
+                                this.burnSuccess = true;
+                            } else {
+                                console.error("Littercoin Burn transaction was not successful");
+                                alert ('Littercoin Burn transaction could not be submitted, please try again');
+                                this.burnFormSubmitted = false;
+                            }
+                        })
+                        .catch(error => {
+                            if (error.response.status == 422){
+                                console.error("Invalid Wallet Input", error.response.data.errors);
+                            } else {
+                                console.error("littercoin-submit-burn-tx: ", error);
+                            }
                             alert ('Littercoin Burn transaction could not be submitted, please try again');
                             this.burnFormSubmitted = false;
-                        }
-                    })
-                    .catch(error => {
-                        console.error("littercoin-submit-burn-tx: ", error);
+                        });
+
+                    } else if (burnTx.status == 401) {
+                        console.error("Insufficient Littercoin In Wallet For Burn");
+                        alert ('Insufficient Littercoin In Wallet For Burn');
+                        this.burnFormSubmitted = false;
+                    } else if (burnTx.status == 402) {
+                        console.error("Merchant Token Not Found");
+                        alert ('Merchant Token Not Found');
+                        this.burnFormSubmitted = false;
+                    } else if (burnTx.status == 403) {
+                        console.error("Ada Withdraw amount is less than the minimum 2 Ada");
+                        alert ('Ada Withdraw amount is less than the minimum 2 Ada');
+                        this.burnFormSubmitted = false;
+                    } else if (burnTx.status == 404) {
+                        console.error("Insufficient funds in Littercoin contract");
+                        alert ('Insufficient funds in Littercoin contract');
+                        this.burnFormSubmitted = false;
+                    } else if (burnTx.status == 405) {
+                        console.error("No valid merchant token found in the wallet");
+                        alert ('No valid merchant token found in the wallet');
+                        this.burnFormSubmitted = false;
+                    } else {
+                        console.error("Littercoin Burn transaction was not successful");
                         alert ('Littercoin Burn transaction could not be submitted, please try again');
                         this.burnFormSubmitted = false;
-                    });
-
-                } else if (burnTx.status == 401) {
-                    console.error("Insufficient Littercoin In Wallet For Burn");
-                    alert ('Insufficient Littercoin In Wallet For Burn');
+                    }
+                })
+                .catch(error => {
+                    if (error.response.status == 422){
+                        console.error("Invalid User Input", error.response.data.errors);
+                        alert ('Please check that you have entered a valid destination address');
+                    } else {
+                        console.error("littercoin-burn-tx", error);
+                        alert ('Littercoin Burn transaction could not be submitted, please try again');
+                    }
                     this.burnFormSubmitted = false;
-                } else if (burnTx.status == 402) {
-                    console.error("Merchant Token Not Found");
-                    alert ('Merchant Token Not Found');
-                    this.burnFormSubmitted = false;
-                } else if (burnTx.status == 403) {
-                    console.error("Ada Withdraw amount is less than the minimum 2 Ada");
-                    alert ('Ada Withdraw amount is less than the minimum 2 Ada');
-                    this.burnFormSubmitted = false;
-                } else if (burnTx.status == 404) {
-                    console.error("Insufficient funds in Littercoin contract");
-                    alert ('Insufficient funds in Littercoin contract');
-                    this.burnFormSubmitted = false;
-                } else if (burnTx.status == 405) {
-                    console.error("No valid merchant token found in the wallet");
-                    alert ('No valid merchant token found in the wallet');
-                    this.burnFormSubmitted = false;
-                } else {
-                    console.error("Littercoin Burn transaction was not successful");
-                    alert ('Littercoin Burn transaction could not be submitted, please try again');
-                    this.burnFormSubmitted = false;
-                }
-            })
-            .catch(error => {
-                console.error("littercoin-burn-tx", error);
-                alert ('Littercoin Burn transaction could not be submitted, please try again');
+                });
+            } catch (err) {
+                console.error(err);
                 this.burnFormSubmitted = false;
-            });
+            }
         },
         async merchMint() {
 
-            // Connect to the user's wallet
-            var walletAPI;
-            if (this.walletChoice === "nami") {
-                walletAPI = await window.cardano.nami.enable();
-            } else if (this.walletChoice === "eternl") {
-                walletAPI = await window.cardano.eternl.enable(); 
-            } else {
-                alert('No wallet selected');
-                this.merchFormSubmitted = false;
-            } 
+            try {
 
-            // get the UTXOs from wallet,
-            const cborUtxos = await walletAPI.getUtxos();
+                // Connect to the user's wallet
+                var walletAPI;
+                if (this.walletChoice === "nami") {
+                    walletAPI = await window.cardano.nami.enable();
+                } else if (this.walletChoice === "eternl") {
+                    walletAPI = await window.cardano.eternl.enable(); 
+                } else {
+                    alert('No wallet selected');
+                    this.merchFormSubmitted = false;
+                } 
 
-            // Get the change address from the wallet
-            const hexChangeAddr = await walletAPI.getChangeAddress();
+                // get the UTXOs from wallet,
+                const cborUtxos = await walletAPI.getUtxos();
 
-            await axios.post('/merchant-mint-tx', {
-                destAddr: this.merchDestAddr,
-                changeAddr: hexChangeAddr,
-                utxos: cborUtxos
-            })
-            .then(async response => {
-                const mintTx = await JSON.parse(response.data);
+                // Get the change address from the wallet
+                const hexChangeAddr = await walletAPI.getChangeAddress();
 
-                if (mintTx.status == 200) {
+                await axios.post('/merchant-mint-tx', {
+                    destAddr: this.merchDestAddr,
+                    changeAddr: hexChangeAddr,
+                    utxos: cborUtxos
+                })
+                .then(async response => {
+                    const mintTx = await JSON.parse(response.data);
 
-                    // Get user to sign the transaction
-                    console.log("Get wallet signature");
-                    const walletSig = await walletAPI.signTx(mintTx.cborTx, true);
+                    if (mintTx.status == 200) {
 
-                    console.log("Submit transaction...");
-                    await axios.post('/merchant-submit-mint-tx', {
-                        cborSig: walletSig,
-                        cborTx: mintTx.cborTx
-                    })
-                    .then(async response => {
-                
-                        const submitTx = await JSON.parse(response.data);
-                        if (submitTx.status == 200) {
-                            this.merchTxId = submitTx.txId;
-                            this.merchTxIdURL = "https://preprod.cexplorer.io/tx/" + submitTx.txId;
-                            this.merchSuccess = true;
-                        } else {
-                            console.error("Merchant Token Mint transaction could not be submitted");
+                        // Get user to sign the transaction
+                        console.log("Get wallet signature");
+                        const walletSig = await walletAPI.signTx(mintTx.cborTx, true);
+
+                        console.log("Submit transaction...");
+                        await axios.post('/merchant-submit-mint-tx', {
+                            cborSig: walletSig,
+                            cborTx: mintTx.cborTx
+                        })
+                        .then(async response => {
+                    
+                            const submitTx = await JSON.parse(response.data);
+                            if (submitTx.status == 200) {
+                                this.merchTxId = submitTx.txId;
+                                this.merchTxIdURL = "https://preprod.cexplorer.io/tx/" + submitTx.txId;
+                                this.merchSuccess = true;
+                            } else {
+                                console.error("Merchant Token Mint transaction could not be submitted");
+                                alert ('Merchant Token Mint transaction could not be submitted, please try again');
+                                this.merchFormSubmitted = false;
+                            }
+                        })
+                        .catch(error => {
+                            if (error.response.status == 422){
+                                console.error("Invalid Wallet Input", error.response.data.errors);
+                            } else {
+                                console.error("merchant-submit-mint-tx: ", error);
+                            }
                             alert ('Merchant Token Mint transaction could not be submitted, please try again');
                             this.merchFormSubmitted = false;
-                        }
-                    })
-                    .catch(error => {
-                        console.error("merchant-submit-mint-tx: ", error);
+                        });
+
+                    } else if (mintTx.status == 407) {
+                        console.error("Must be an admin user to mint a merchant token");
+                        alert ('Must be an admin user to mint a merchant token');
+                        this.merchFormSubmitted = false;
+                    } else {
+                        console.error("Merchant Token Mint transaction could not be submitted");
                         alert ('Merchant Token Mint transaction could not be submitted, please try again');
                         this.merchFormSubmitted = false;
-                    });
-
-                } else if (mintTx.status == 407) {
-                    console.error("Must be an admin user to mint a merchant token");
-                    alert ('Must be an admin user to mint a merchant token');
+                    }
+                })
+                .catch(error => {
+                    if (error.response.status == 422){
+                        console.error("Invalid User Input", error.response.data.errors);
+                        alert ('Please check that you have entered a valid destination address');
+                    } else {
+                        console.error("merchant-submit-mint-tx: ", error);
+                        alert ('Merchant Token Mint transaction could not be submitted, please try again');
+                    }
                     this.merchFormSubmitted = false;
-                } else {
-                    console.error("Merchant Token Mint transaction could not be submitted");
-                    alert ('Merchant Token Mint transaction could not be submitted, please try again');
-                    this.merchFormSubmitted = false;
-                }
-            })
-            .catch(error => {
-                console.error("merchant-submit-mint-tx: ", error);
-                alert ('Merchant Token Mint transaction could not be submitted, please try again');
+                });
+            } catch (err) {
+                console.error(err);
                 this.merchFormSubmitted = false;
-            });
+            }
         },
         async addAda() {
 
-        // Connect to the user's wallet
-        var walletAPI;
-        if (this.walletChoice === "nami") {
-            walletAPI = await window.cardano.nami.enable();
-        } else if (this.walletChoice === "eternl") {
-            walletAPI = await window.cardano.eternl.enable(); 
-        } else {
-            alert('No wallet selected');
-            this.addAdaFormSubmitted = false;
-        } 
+            try {
 
-        // get the UTXOs from wallet,
-        const cborUtxos = await walletAPI.getUtxos();
+                // Connect to the user's wallet
+                var walletAPI;
+                if (this.walletChoice === "nami") {
+                    walletAPI = await window.cardano.nami.enable();
+                } else if (this.walletChoice === "eternl") {
+                    walletAPI = await window.cardano.eternl.enable(); 
+                } else {
+                    alert('No wallet selected');
+                    this.addAdaFormSubmitted = false;
+                } 
 
-        // Get the change address from the wallet
-        const hexChangeAddr = await walletAPI.getChangeAddress();
+                // get the UTXOs from wallet,
+                const cborUtxos = await walletAPI.getUtxos();
 
-        await axios.post('/add-ada-tx', {
-            adaQty: this.addAdaQty,
-            changeAddr: hexChangeAddr,
-            utxos: cborUtxos
-        })
-        .then(async response => {
-            
-            const addAdaTx = await JSON.parse(response.data);
+                // Get the change address from the wallet
+                const hexChangeAddr = await walletAPI.getChangeAddress();
 
-            if (addAdaTx.status == 200) {
-
-                // Get user to sign the transaction
-                console.log("Get wallet signature");
-                const walletSig = await walletAPI.signTx(addAdaTx.cborTx, true);
-      
-                await axios.post('/add-ada-submit-tx', {
-                    cborSig: walletSig,
-                    cborTx: addAdaTx.cborTx
+                await axios.post('/add-ada-tx', {
+                    adaQty: this.addAdaQty,
+                    changeAddr: hexChangeAddr,
+                    utxos: cborUtxos
                 })
                 .then(async response => {
+                    
+                    const addAdaTx = await JSON.parse(response.data);
 
-                    const submitTx = await JSON.parse(response.data);
-                    if (submitTx.status == 200) {
-                        this.addAdaTxId = submitTx.txId;
-                        this.addAdaTxIdURL = "https://preprod.cexplorer.io/tx/" + submitTx.txId;
-                        this.addAdaSuccess = true;
+                    if (addAdaTx.status == 200) {
+
+                        // Get user to sign the transaction
+                        console.log("Get wallet signature");
+                        const walletSig = await walletAPI.signTx(addAdaTx.cborTx, true);
+            
+                        await axios.post('/add-ada-submit-tx', {
+                            cborSig: walletSig,
+                            cborTx: addAdaTx.cborTx
+                        })
+                        .then(async response => {
+
+                            const submitTx = await JSON.parse(response.data);
+                            if (submitTx.status == 200) {
+                                this.addAdaTxId = submitTx.txId;
+                                this.addAdaTxIdURL = "https://preprod.cexplorer.io/tx/" + submitTx.txId;
+                                this.addAdaSuccess = true;
+                            } else {
+                                console.error("Could not submit transaction");
+                                alert ('Add Ada transaction could not be submitted, please try again');
+                                this.addAdaFormSubmitted = false;
+                            }
+                        })
+                        .catch(error => {
+                            if (error.response.status == 422){
+                                console.error("Invalid Wallet Input", error.response.data.errors);
+                            } else {
+                                console.error("add-ada-submit-tx: ", error);
+                            }
+                            alert ('Add Ada transaction could not be submitted, please try again');
+                            this.addAdaFormSubmitted = false;
+                        });
+                    } else if (addAdaTx.status == 408) {
+                        console.error("More Ada in the wallet required for this transaction");
+                        alert ('More Ada in the wallet required for this transaction"');
+                        this.addAdaFormSubmitted = false;
                     } else {
-                        console.error("Could not submit transaction");
+                        console.error("Add Ada transaction was not successful");
                         alert ('Add Ada transaction could not be submitted, please try again');
                         this.addAdaFormSubmitted = false;
                     }
                 })
                 .catch(error => {
-                    console.error("add-ada-submit-tx: ", error);
-                    alert ('Add Ada transaction could not be submitted, please try again');
+                    if (error.response.status == 422){
+                        console.error("Invalid User Input", error.response.data.errors);
+                        alert ('Please check that you have entered a valid destination address');
+                    } else {
+                        console.error("add-ada-tx", error);
+                        alert ('Add Ada transaction could not be submitted, please try again');
+                    }
                     this.addAdaFormSubmitted = false;
                 });
-            } else if (addAdaTx.status == 408) {
-                console.error("More Ada in the wallet required for this transaction");
-                alert ('More Ada in the wallet required for this transaction"');
-                this.addAdaFormSubmitted = false;
-            } else {
-                console.error("Add Ada transaction was not successful");
-                alert ('Add Ada transaction could not be submitted, please try again');
+            } catch (err) {
+                console.error(err);
                 this.addAdaFormSubmitted = false;
             }
-        })
-        .catch(error => {
-            console.error("add-ada-tx", error);
-            alert ('Add Ada transaction could not be submitted, please try again');
-            this.addAdaFormSubmitted = false;
-        });
         }
     }
 }
