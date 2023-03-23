@@ -1,0 +1,37 @@
+minting littercoin
+
+enum Redeemer { 
+    Mint {
+        lcValHashBA: ByteArray
+    }
+    Burn {
+        lcValHashBA: ByteArray
+    }
+ }
+
+// Define thread token value
+const TT_MPH: ByteArray = #a7add6eea42ec499442e590f1990203a0c66d9b759dc00fb10080200
+const ttMph: MintingPolicyHash = MintingPolicyHash::new(TT_MPH)
+const ttAssetclass: AssetClass = AssetClass::new(
+        ttMph, 
+        "Thread Token Littercoin".encode_utf8()
+    )
+const ttVal : Value = Value::new(ttAssetclass, 1)
+
+func main(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
+    
+    tx: Tx = ctx.tx;
+
+    redeemer.switch {
+        red: Mint => {
+                // Check that thread token is part of this transaction
+                vHash: ValidatorHash = ValidatorHash::new(red.lcValHashBA); 
+                tx.value_locked_by(vHash).contains(ttVal).trace("LCM1: ")
+        },
+        red: Burn => {
+                // Check that thread token is part of this transaction
+                vHash: ValidatorHash = ValidatorHash::new(red.lcValHashBA); 
+                tx.value_locked_by(vHash).contains(ttVal).trace("LCM2: ")
+        }
+    }
+}
