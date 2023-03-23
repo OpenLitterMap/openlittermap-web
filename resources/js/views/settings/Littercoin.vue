@@ -291,6 +291,10 @@ export default {
                     alert ('Please enter a valid mint littercoin destination address');
                     return
                 }
+                if ( this.littercoinDue == 0) {
+                    alert ('You have 0 littercoin due, so you cannot mint any at this time');
+                    return
+                }
                 this.mintFormSubmitted = true;
                 this.submitMint();
             }

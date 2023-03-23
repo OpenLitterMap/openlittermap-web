@@ -4,7 +4,7 @@ enum Redeemer {
     Init 
 }
 
-const TX_ID: ByteArray = #48e9c806674cbd62336881347b93141cae2e8b73dc99afbba135e3d98e8a6ff6
+const TX_ID: ByteArray = #9e27c544200815e4277dad55f198ab2d2d67c746ff19a57cd4554e7b339a39a5
 const txId: TxId = TxId::new(TX_ID)
 const outputId: TxOutputId = TxOutputId::new(txId, 0)
 
@@ -24,5 +24,3 @@ func main(ctx: ScriptContext) -> Bool {
                         }
     )
 }
-
-const INIT_REDEEMER = Redeemer::Init
