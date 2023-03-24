@@ -2,6 +2,7 @@
 #### Table Of Contents
 - [Problem Statement](#problem-statement)
 - [The Solution](#the-solution)
+- [Funding](#funding)
 - [The Application](#the-application)
   - [Application Design](#application-design)
   - [Adding Ada](#adding-ada)
@@ -26,8 +27,24 @@
 
 ## Problem Statement
 Litter and plastic pollution are global problems. Crowdsourcing data can help fix this, but data collection tools, visualizations and incentives remain significantly underdeveloped
+
 ## The Solution
-Littercoin is the first token rewarded for doing citizen science by simply walking around with a smart phone and start collecting information about your local environmental surroundings.
+Littercoin is the first token rewarded for the production of geographic information. This means that real people, collecting collecting real data, about real companies, who are polluting a real environment get rewarded with a new type of currency for their data collection work.
+The type of data that you want to collect is entirely up to you. Most litter pickers photograph every object individually, as this tells a powerful story that is visualised and communicated through our interactive tools.
+Our tools enable anyone to identify, visualise, and communicate local observations that are important to them. This data tells an important story about the individuals positive environmental impact and the data we produce is 
+open source, available for anyone to download and use. Sometimes, objects may be too big or heavy to remove by a single person, or a person might not be equipped enough or  have the time to deal with something dangerous like broken glass.
+With OpenLitterMap, you are empowered to use your device to collect data on whatever it is that you want. This includes if the litter has been removed, if its still there, if the bins are overflowing, if there is dumping, what brands are responsible... and a lot more.
+No matter if you are a dedicated litter picker or someone who just wants to contribute a single photo, there is something here for everyone. 
+By using your technology to produce real, objective, non-human information about the world, you are passively mining Littercoin in the background which can be spent with pre-approved
+"green listed" merchants only. Most people spend their entire lives trying to accumulate an unlimited type of money, that has no open source code, which can be printed and devalued in an instant.
+We are reinventing the production of value creation and transfer geospatially, by giving real people a climate-only reward for making real-world geospatial observations.
+To give every Littercoin value, anyone can send `ada` to the Smart Contract, however only pre-approved climate merchants that hold a special Merchant Token can send Littercoin to the Smart Contract and get the ada out.
+
+## Funding
+The development of OpenLitterMap and Littercoin was supported by Project Catalyst, the world's first decentralised innovation fund run on the Cardano blockchain network.
+Over 285 million ada holders, representing about $500 million USD in value, voted for our proposal `Littercoin: Mass Adoption` in Fund 4 with $50,000 worth of ada tokens.
+[Read more](https://projectcatalyst.io/funds/4/f4-dapps-and-integrations/littercoin-mass-adoption-fb39e)
+
 ## The Application
 #### User Journey
 The following diagram depicts the typical user journey for littercoin.
