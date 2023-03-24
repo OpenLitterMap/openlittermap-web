@@ -64,7 +64,7 @@ The application architecture below shows the steps involved to mint a littercoin
 
 
 ##### Adding Ada
-Any user with a Nami or Eternl wallet can go the web application and add Ada to the smart contract. They will received Littercoin Donation Rewards for every Ada they add to the smart contract.
+Any user with a Nami or Eternl wallet can go the web application and add Ada to the smart contract. They will receive Littercoin Donation Rewards for every Ada sent to the smart contract.
 ##### Minting Littercoin
 Only the user (after they have logged into the application) will be able to mint the amount of littercoins that they are due. The user will enter the address where to send the littercoin and mint them.   The littercoin application will check and confirm that the user is actually eligible, and will sign the transaction accordingly.
 ##### Minting Merchant Token
