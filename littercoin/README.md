@@ -29,7 +29,8 @@
 Litter and plastic pollution are global problems. Crowdsourcing data can help fix this, but data collection tools, visualizations and incentives remain significantly underdeveloped
 
 ## The Solution
-Littercoin is the first token rewarded for the production of geographic information. This means that real people, collecting collecting real data, about real companies, who are polluting a real environment get rewarded with a new type of currency for their data collection work.
+Littercoin is the first token rewarded for the production of geographic information. This means that real people, collecting real data, about real companies, who are polluting a real environment get rewarded with a new type of currency for their data collection work.
+However, this currency can only be spent with pre-approved "green listed" merchants in the climate economy.
 The type of data that you want to collect is entirely up to you. Most litter pickers photograph every object individually, as this tells a powerful story that is visualised and communicated through our interactive tools.
 Our tools enable anyone to identify, visualise, and communicate local observations that are important to them. This data tells an important story about the individuals positive environmental impact and the data we produce is 
 open source, available for anyone to download and use. Sometimes, objects may be too big or heavy to remove by a single person, or a person might not be equipped enough or  have the time to deal with something dangerous like broken glass.
