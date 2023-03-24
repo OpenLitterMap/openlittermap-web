@@ -9,7 +9,7 @@
                     <i18n path="home.community.zoom-text" tag="p">
                         <template #link>
                             <a target="_blank"
-                               href="https://us02web.zoom.us/meeting/register/tZ0ud-GurTktGdQal_ChgggPl41EHmf7I2NB"
+                               href="https://us02web.zoom.us/j/86284514720?pwd=OWpqaE1DSG1aWktYQTNDYmR0ZnBKUT09"
                             >{{ $t('home.community.zoom-weekly-calls') }}</a>
                         </template>
                     </i18n>
@@ -20,7 +20,7 @@
                     <div class="timeframe live">
                         <p>
                             <a target="_blank"
-                               href="https://us02web.zoom.us/meeting/register/tZ0ud-GurTktGdQal_ChgggPl41EHmf7I2NB"
+                               href="https://us02web.zoom.us/j/86284514720?pwd=OWpqaE1DSG1aWktYQTNDYmR0ZnBKUT09"
                             >{{ $t('home.community.zoom-live') }}</a>
                         </p>
                     </div>
