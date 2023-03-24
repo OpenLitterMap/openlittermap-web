@@ -22,7 +22,7 @@ const minAda : Int = 2000000
 const minAdaVal: Value = Value::lovelace(minAda)
 
 // Define thread token value
-const TT_MPH: ByteArray = #a7add6eea42ec499442e590f1990203a0c66d9b759dc00fb10080200
+const TT_MPH: ByteArray = #9f2df08bb55801f0eb5415de4c3b1226d5a77f52e36c8f1ba9e178e7
 const ttMph: MintingPolicyHash = MintingPolicyHash::new(TT_MPH)
 const ttAssetclass: AssetClass = AssetClass::new(
         ttMph, 
@@ -31,7 +31,7 @@ const ttAssetclass: AssetClass = AssetClass::new(
 const ttVal : Value = Value::new(ttAssetclass, 1)
 
 // Define the mph of the littercoin minting policy
-const LC_MPH: ByteArray = #108985b19877e4bd4300d0e18a90239471ac475f54ded96a7f014efd
+const LC_MPH: ByteArray = #90961feaa921ace5a0360179f7b88526d6f713e5fcabd6732c8d7ca9
 const lcMph: MintingPolicyHash = MintingPolicyHash::new(LC_MPH)
 const lcAssetClass: AssetClass = AssetClass::new(
         lcMph, 
@@ -39,7 +39,7 @@ const lcAssetClass: AssetClass = AssetClass::new(
     )
 
 // Define the mph of the donation rewards token minting policy
-const REWARDS_MPH: ByteArray = #5ae137d386575082c5649c8e057b1fae349f34246bd0ded4d5fe6eaf
+const REWARDS_MPH: ByteArray = #21b3fdc9da10189c19680788c1110d6e684c315614d7e725528827c1
 const rewardsMph: MintingPolicyHash = MintingPolicyHash::new(REWARDS_MPH)
 const rewardsAssetClass: AssetClass = AssetClass::new(
         rewardsMph, 
@@ -47,11 +47,11 @@ const rewardsAssetClass: AssetClass = AssetClass::new(
     )
 
 // Define the merchant token
-const MERCHANT_MPH: ByteArray = #10009086d699dfdd386ab1ddbfb6d6492228e039172f78af780f4686
+const MERCHANT_MPH: ByteArray = #7ab090ed4243b667709c9cf04e2bd23604be81ac81154eab44a7d4e6
 const merchMph: MintingPolicyHash = MintingPolicyHash::new(MERCHANT_MPH)
 
 // Define the pkh of the owner
-const OWNER_PKH: ByteArray = #b9abcf6867519e28042048aa11207214a52e6d5d3288b752d1c27682 
+const OWNER_PKH: ByteArray = #8c5537f96f7ca627241cfb4d6afe1d2f4ab6656d9a859e75072a1f3d
 const ownerPkh: PubKeyHash = PubKeyHash::new(OWNER_PKH)
 
 
@@ -174,3 +174,16 @@ func main(datum: Datum, redeemer: Redeemer, ctx: ScriptContext) -> Bool {
         }
     }
 }
+
+// Datum field order is important. Initialize
+// with 2 littercoin because the users can't drain
+// the littercoin smart contract lower than 2 Ada
+const LC_DATUM = Datum {
+    adaAmount : 2000000,
+    lcAmount : 2 
+}
+
+const VAL_ADD_ADA_REDEEMER = Redeemer::AddAda
+const VAL_MINT_REDEEMER = Redeemer::Mint
+const VAL_BURN_REDEEMER = Redeemer::Burn{#1a2b3c, #1a2b3c}
+

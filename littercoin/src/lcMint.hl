@@ -10,7 +10,7 @@ enum Redeemer {
  }
 
 // Define thread token value
-const TT_MPH: ByteArray = #a7add6eea42ec499442e590f1990203a0c66d9b759dc00fb10080200
+const TT_MPH: ByteArray = #9f2df08bb55801f0eb5415de4c3b1226d5a77f52e36c8f1ba9e178e7
 const ttMph: MintingPolicyHash = MintingPolicyHash::new(TT_MPH)
 const ttAssetclass: AssetClass = AssetClass::new(
         ttMph, 
@@ -35,3 +35,6 @@ func main(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
         }
     }
 }
+
+const MINT_REDEEMER = Redeemer::Mint{#1a2b3c}
+const BURN_REDEEMER = Redeemer::Burn{#1a2b3c}

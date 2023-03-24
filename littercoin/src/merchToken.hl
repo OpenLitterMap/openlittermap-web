@@ -1,7 +1,8 @@
 minting signed
 
 // Define the owner public key hash (PKH)
-const OWNER_PKH: ByteArray = #b9abcf6867519e28042048aa11207214a52e6d5d3288b752d1c27682
+const OWNER_PKH: ByteArray = #8c5537f96f7ca627241cfb4d6afe1d2f4ab6656d9a859e75072a1f3d
+ 
 const ownerPkh: PubKeyHash = PubKeyHash::new(OWNER_PKH)
 
 func main(ctx: ScriptContext) -> Bool {
