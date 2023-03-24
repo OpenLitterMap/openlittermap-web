@@ -27,7 +27,7 @@ class ResetLittercoin extends Command
 
             foreach ($photos as $index => $photo)
             {
-                if ($index & 100 === 0)
+                if ($index % 100 === 0)
                 {
                     Littercoin::create([
                         'user_id' => $user->id,
