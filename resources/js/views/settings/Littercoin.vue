@@ -12,7 +12,7 @@
                 <div v-else>
                     <p>Total Ada: {{ this.adaAmount.toLocaleString() }}</p>
                     <p>Total Littercoin: {{ this.lcAmount.toLocaleString() }}</p>
-                    <p>Ratio: {{ this.ratio.toLocaleString() }}</p>
+                    <p>Ratio: {{ this.ratio.toLocaleString() }} ada per Littercoin</p>
                     <p>Price: {{ this.getLittercoinPrice }}</p>
                     <p>Source Code: <a :href="this.lcScriptURL" target="_blank" rel="noopener noreferrer" >{{ this.lcScriptName }}</a></p>
                     <p>Address: <a style="font-size: small;" :href="this.lcAddrURL" target="_blank" rel="noopener noreferrer" >{{ this.lcAddr }}</a></p>
@@ -306,7 +306,7 @@ export default {
 
             return (this.lcAmount === 0)
                 ? 0
-                : symbol.toString()+ (price / this.lcAmount).toString();
+                : symbol.toString()+ (this.ratio * price).toString();
         }
     },
     methods: {
