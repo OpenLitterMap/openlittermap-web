@@ -301,7 +301,6 @@ export default {
          * Get the Littercoin price for a given numbercoin
          */
         getLittercoinPrice () {
-
             const symbol = this.currencySymbols[this.selectedCurrency];
             const price = this.adaValues[this.selectedCurrency];
 
