@@ -26,7 +26,7 @@
                 <p>Littercoin Due: {{ this.littercoinDue }}</p>
                 <hr>
                 <div>
-                    <p><h1 class="title is-4">Select Your Wallet</h1></p>
+                    <h1 class="title is-4">Select Your Wallet</h1>
                     <p>
                         <input 
                             type="radio" 
@@ -54,8 +54,8 @@
                         @submit.prevent="submitForm('mint')" 
                         v-if="!mintSuccess" 
                         >
-                        <p><h1 class="title is-4">Mint Littercoin</h1></p>
-                        Destination Wallet Address
+                        <h1 class="title is-4">Mint Littercoin</h1>
+                        Enter the wallet where you want your Littercoin to be sent
                         <input
                             class="input"
                             v-model="mintDestAddr"
@@ -82,7 +82,7 @@
                         v-if="!burnSuccess" 
                         >
                         <p><h1 class="title is-4">Burn Littercoin</h1></p>
-                        Number Of Littercoins To Burn
+                        Merchant token holders only!
                         <input
                             class="input"
                             type="number"
@@ -110,7 +110,7 @@
                         v-if="!merchSuccess && isAdmin" 
                     >
                         <p><h1 class="title is-4">Mint Merchant Token</h1></p>
-                        Destination Wallet Address
+                        Enter the wallet where you want a Merchant Token to be sent
                         <input
                             class="input"
                             v-model="merchDestAddr"
