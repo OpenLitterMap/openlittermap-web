@@ -5,12 +5,19 @@
         <br>
         <div class="columns">
             <div class="column is-two-thirds is-offset-1">
-                <p><h1 class="title is-4">Littercoin Smart Contract </h1></p>
-                <p>Total Ada: {{ this.adaAmount.toLocaleString() }}</p>
-                <p>Total Littercoin: {{ this.lcAmount.toLocaleString() }}</p>
-                <p>Ratio: {{ this.ratio.toLocaleString() }}</p>
-                <p>Source Code: <a :href="this.lcScriptURL" target="_blank" rel="noopener noreferrer" >{{ this.lcScriptName }}</a></p>
-                <p>Address: <a style="font-size: small;" :href="this.lcAddrURL" target="_blank" rel="noopener noreferrer" >{{ this.lcAddr }}</a></p>
+                <h1 class="title is-4">Littercoin Smart Contract </h1>
+
+                <p v-if="loading">Loading...</p>
+
+                <div v-else>
+                    <p>Total Ada: {{ this.adaAmount.toLocaleString() }}</p>
+                    <p>Total Littercoin: {{ this.lcAmount.toLocaleString() }}</p>
+                    <p>Ratio: {{ this.ratio.toLocaleString() }}</p>
+                    <p>Price: {{ this.getLittercoinPrice }}</p>
+                    <p>Source Code: <a :href="this.lcScriptURL" target="_blank" rel="noopener noreferrer" >{{ this.lcScriptName }}</a></p>
+                    <p>Address: <a style="font-size: small;" :href="this.lcAddrURL" target="_blank" rel="noopener noreferrer" >{{ this.lcAddr }}</a></p>
+                </div>
+
                 <hr>
 
                 <p><h1 class="title is-4">My Littercoin</h1></p>
@@ -159,11 +166,11 @@
 
 <script>
 
-
-
 export default {
     name: 'Littercoin',
     async created () {
+        this.loading = true;
+
         await axios.get('/littercoin')
             .then(response => {
                 this.littercoinEarned = response.data.littercoinEarned;
@@ -190,15 +197,32 @@ export default {
             })
             .catch(error => {
                 console.error('littercoin-info', error);
-            }); 
+            });
+        await axios.get('https://api.coingecko.com/api/v3/simple/price?ids=cardano&vs_currencies=usd')
+            .then(response => {
+                console.log('ada-price', response);
+
+                this.adaValues = response.data.cardano;
+            })
+            .catch(error => {
+                console.error('ada-price', error);
+            });
+
+        this.loading = false;
     },
- 
     data () {
         return {
             loading :true,
             adaAmount: 0,
             lcAmount: 0,
             ratio: 0,
+            adaValues: {},
+            selectedCurrency: 'usd',
+            currencySymbols: {
+                usd: "$",
+                eur: "€",
+                btc: "₿",
+            },
             lcAddr: "",
             lcAddrURL: "",
             lcScriptName: "",
@@ -226,11 +250,9 @@ export default {
             burnTxIdURL: "",
             merchTxIdURL: "",
             addAdaTxIdURL: ""
-
         };
     },
     computed: {
-       
         /**
          * Shortcut to User object
          */
@@ -275,10 +297,20 @@ export default {
 
             return false;
         },
+        /**
+         * Get the Littercoin price for a given numbercoin
+         */
+        getLittercoinPrice () {
 
+            const symbol = this.currencySymbols[this.selectedCurrency];
+            const price = this.adaValues[this.selectedCurrency];
+
+            return (this.lcAmount === 0)
+                ? 0
+                : symbol.toString()+ (price / this.lcAmount).toString();
+        }
     },
     methods: {
-  
         /**
          * Submit a minting transaction to the cardano blockchain network
          */
