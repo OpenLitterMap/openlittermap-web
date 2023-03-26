@@ -24,5 +24,3 @@ func main(ctx: ScriptContext) -> Bool {
                         }
     )
 }
-
-const INIT_REDEEMER = Redeemer::Init
