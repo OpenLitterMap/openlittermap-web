@@ -81,8 +81,8 @@
                         @submit.prevent="submitForm('burn')" 
                         v-if="!burnSuccess" 
                         >
-                        <p><h1 class="title is-4">Burn Littercoin</h1></p>
-                        Merchant token holders only!
+                        <h1 class="title is-4">Burn Littercoin</h1>
+                        Only those holding a Merchant Token can send Littercoin to the Smart Contract to get the ada out.
                         <input
                             class="input"
                             type="number"
@@ -306,7 +306,7 @@ export default {
 
             return (this.lcAmount === 0)
                 ? 0
-                : symbol.toString()+ (this.ratio * price).toString();
+                : symbol.toString()+ (this.ratio * price).toFixed(2).toString();
         }
     },
     methods: {
