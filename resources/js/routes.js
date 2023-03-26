@@ -233,14 +233,23 @@ const router = new VueRouter({
                 {
                     path: 'picked-up',
                     component: require('./views/settings/PickedUp').default,
+                    meta: {
+                        middleware: [ auth ]
+                    },
                 },
                 {
                     path: 'emails',
                     component: require('./views/settings/Emails').default,
+                    meta: {
+                        middleware: [ auth ]
+                    },
                 },
                 {
                     path: 'show-flag',
                     component: require('./views/settings/GlobalFlag').default,
+                    meta: {
+                        middleware: [ auth ]
+                    },
                 },
                 // {
                 // 	path: 'phone',
