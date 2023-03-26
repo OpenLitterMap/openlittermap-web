@@ -10,10 +10,22 @@
                 <p v-if="loading">Loading...</p>
 
                 <div v-else>
-                    <p>{{ this.adaAmount.toLocaleString() }} ada</p>
-                    <p>{{ this.lcAmount.toLocaleString() }} Littercoin</p>
-                    <p>Ratio: {{ this.ratio.toLocaleString() }} ada per Littercoin</p>
-                    <p>or {{ this.getLittercoinPrice }} per Littercoin</p>
+                    <div class="mb-2">
+                        <strong>Ada Locked at the Smart Contract</strong>
+                        <p>{{ this.adaAmount.toLocaleString() }} ada</p>
+                    </div>
+
+                    <div class="mb-2">
+                        <strong>Total Littercoin In Circulation</strong>
+                        <p>{{ this.lcAmount.toLocaleString() }} Littercoin</p>
+                    </div>
+
+                    <div class="mb-2">
+                        <strong>Ratio:</strong>
+                        <p>{{ this.ratio.toLocaleString() }} ada per Littercoin</p>
+                        <p>or {{ this.getLittercoinPrice }} per Littercoin</p>
+                    </div>
+
                     <p>Source Code: <a :href="this.lcScriptURL" target="_blank" rel="noopener noreferrer" >{{ this.lcScriptName }}</a></p>
                     <p>Address: <a style="font-size: small;" :href="this.lcAddrURL" target="_blank" rel="noopener noreferrer" >{{ this.lcAddr }}</a></p>
                 </div>
