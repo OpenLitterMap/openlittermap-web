@@ -10,10 +10,10 @@
                 <p v-if="loading">Loading...</p>
 
                 <div v-else>
-                    <p>Total Ada: {{ this.adaAmount.toLocaleString() }}</p>
-                    <p>Total Littercoin: {{ this.lcAmount.toLocaleString() }}</p>
+                    <p>{{ this.adaAmount.toLocaleString() }} ada</p>
+                    <p>{{ this.lcAmount.toLocaleString() }} Littercoin</p>
                     <p>Ratio: {{ this.ratio.toLocaleString() }} ada per Littercoin</p>
-                    <p>Price: {{ this.getLittercoinPrice }} per Littercoin</p>
+                    <p>or {{ this.getLittercoinPrice }} per Littercoin</p>
                     <p>Source Code: <a :href="this.lcScriptURL" target="_blank" rel="noopener noreferrer" >{{ this.lcScriptName }}</a></p>
                     <p>Address: <a style="font-size: small;" :href="this.lcAddrURL" target="_blank" rel="noopener noreferrer" >{{ this.lcAddr }}</a></p>
                 </div>
