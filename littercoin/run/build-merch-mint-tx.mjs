@@ -23,7 +23,7 @@ import { signTx } from "./sign-tx.mjs";
  * Main calling function via the command line 
  * Usage: node build-merch-mint-tx.js destAddr cBorChangeAddr [cborUtxo1,cborUtxo2,...]
  * @params {string, string, string[]}
- * @output {string} cborSignature, cborTx
+ * @output {string} cborTx
  */
 const main = async () => {
 
