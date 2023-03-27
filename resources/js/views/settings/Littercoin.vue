@@ -183,7 +183,7 @@ export default {
     async created () {
         this.loading = true;
 
-        await axios.get('/littercoin')
+        await axios.get('/get-users-littercoin')
             .then(response => {
                 this.littercoinEarned = response.data.littercoinEarned;
                 this.littercoinDue = response.data.littercoinDue;

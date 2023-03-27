@@ -52,6 +52,10 @@ const router = new VueRouter({
             ]
         },
         {
+            path: '/littercoin',
+            component: require('./views/home/Littercoin').default
+        },
+        {
             path: '/donate',
             component: require('./views/home/Donate').default
         },

@@ -161,7 +161,12 @@ Route::get('/settings/email', 'HomeController@index');
 Route::get('/settings/show-flag', 'HomeController@index');
 Route::get('/settings/teams', 'HomeController@index');
 
-Route::get('/littercoin', 'Littercoin\LittercoinController@getUsersLittercoin');
+// Publicly available Littercoin Page
+Route::get('/littercoin', 'HomeController@index');
+
+// Actions used by Littercoin Page & Settings
+
+Route::get('/get-users-littercoin', 'Littercoin\LittercoinController@getUsersLittercoin');
 Route::get('/littercoin-info', 'Littercoin\LittercoinController@getLittercoinInfo');
 Route::post('/littercoin-mint-tx', 'Littercoin\LittercoinController@mintTx');
 Route::post('/littercoin-submit-mint-tx', 'Littercoin\LittercoinController@submitMintTx');
