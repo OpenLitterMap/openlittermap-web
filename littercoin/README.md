@@ -64,8 +64,9 @@ The application architecture below shows the steps involved to mint a littercoin
 
 
 ### Littercoin Security Model
-The security model for littercoin involves both the application layer security policies and the smart contract security policies.  By design, the security policies that may change over time have been defined within the application security layer whereas the security policies that are fixed are defined within the smart contract.   Here is a diagram depecting the high level security policies.
-![Littercoin Security Model](https://user-images.githubusercontent.com/7105016/227804812-80182ba0-d160-445e-bd25-0ac3614c8829.png)
+The security model for littercoin involves both the application layer security policies and the smart contract security policies.  By design, the security policies that may change over time have been defined within the application security layer whereas the security policies that are fixed are defined within the smart contract.   Here is a diagram depicting the high level security policies.
+![Littercoin Security Model](https://user-images.githubusercontent.com/7105016/227960221-5a723417-9645-44a0-8ca1-7876d92c3154.png)
+
 
 
 
