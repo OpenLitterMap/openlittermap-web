@@ -112,6 +112,10 @@ Generate the owner pkh and root key in the openLitterMap repo
 9. exit
 ```
 
+## Initialize The Smart Contract
+To initialize the littercoin smart contract, we will need to identify a UTXO that the cardano-cli tx builder will consume.  This is used only once by running the init-tx.sh bash shell script.   We also need to setup a public & private key that will be used to pay for the initialization transaction executed by cardano-cli.  
+
+
 #### Demeter Run Setup
 Demeter Run is a fully hosted provider that creates workspaces where you can interact with the cardano node and build and launch web3 applications.  You will need to create a workspace (for free) for the steps below.
 1. Go to https://demeter.run/ 
@@ -131,8 +135,6 @@ Demeter Run is a fully hosted provider that creates workspaces where you can int
 15. Scroll to the bottom of the page and select "Create Workspace"
 16. Wait for the workspace to be created
 
-## Initialize The Smart Contract
-To initialize the littercoin smart contract, we will need the admin UTXOs and the owner PKH.   This is used only once to run the init-tx.sh bash shell script.  
 
 ##### Create The Admin Keys And Address
 
