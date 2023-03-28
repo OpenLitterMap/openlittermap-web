@@ -266,6 +266,13 @@ a5508a1bf3b5e33a0cd9363b5642e63a61f813d32ba87eba2d80766ce09f91c4     0        20
 a5508a1bf3b5e33a0cd9363b5642e63a61f813d32ba87eba2d80766ce09f91c4     1        30000000 lovelace + TxOutDatumNone
 ```
 
+#### Update the Helios files in the openLitterMap repo
+Copy the helios files over to the openLitterMap repo so it has the latest version with the updated threadtoken.
+
+```
+littercoin$ cp ./src/*.hl ~/Code/openlittermap-web/public/contracts
+```
+
 The littercoin smart contract should now be loaded onto the Cardano blockchain and can be accessed via the openLitterMap web application.
 
 
