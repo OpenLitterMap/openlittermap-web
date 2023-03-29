@@ -107,7 +107,7 @@
                             v-if="!burnSuccess" 
                             >
                             <h1 class="title is-4">Burn Littercoin</h1>
-                            Only those holding a Merchant Token can send Littercoin to the Smart Contract to get the ada out.
+                            Only those holding a Merchant Token can burn Littercoin to received Ada from the Littercoin Smart Contract
                             <input
                                 class="input"
                                 type="number"
@@ -121,6 +121,7 @@
                                     :disabled="checkBurnDisabled"
                                 >Submit Tx</button>
                             </div>
+                            Note: There is a 4.2% (or 1 Ada minimum) service fee included in the burn transaction
                         </form>
                         <div v-if="burnSuccess">
                             <p><h1 class="title is-4">Burn Littercoin Success!!!</h1></p>
