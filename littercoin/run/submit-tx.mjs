@@ -20,7 +20,7 @@ const main = async () => {
         const cborSig = args[2];
         const cborTx = args[3];
 
-        // Confirm that the amount of minted littercoins matches what is in the tx
+        // Reconstruct the helios tx object
         const tx = Tx.fromCbor(hexToBytes(cborTx));
 
         // Add signature from the users wallet

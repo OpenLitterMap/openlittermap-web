@@ -35,3 +35,6 @@ func main(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
         }
     }
 }
+
+const MINT_REDEEMER = Redeemer::Mint{#1a2b3c}
+const BURN_REDEEMER = Redeemer::Burn{#1a2b3c}
