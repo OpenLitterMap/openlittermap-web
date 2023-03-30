@@ -64,9 +64,9 @@
                     <div v-if="walletChoice">
                         <p v-if="walletLoading">Loading...</p>
                         <div v-else>
-                            Amount of Ada in the wallet: {{ this.adaBalance.toLocaleString() }} <br>
-                            Amount of Littercoins in the wallet: {{ this.littercoinBalance.toLocaleString() }} <br>
-                            Amount of Merchant Tokens in the wallet: {{ this.merchTokenBalance.toLocaleString() }} <br>
+                            Ada amount: {{ this.adaBalance.toLocaleString() }} <br>
+                            Littercoin amount: {{ this.littercoinBalance.toLocaleString() }} <br>
+                            Merchant Token amount: {{ this.merchTokenBalance.toLocaleString() }} <br>
                         </div>
                     </div>
                     <hr>
