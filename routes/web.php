@@ -168,6 +168,7 @@ Route::get('/littercoin', 'HomeController@index');
 
 Route::get('/get-users-littercoin', 'Littercoin\LittercoinController@getUsersLittercoin');
 Route::get('/littercoin-info', 'Littercoin\LittercoinController@getLittercoinInfo');
+Route::post('/wallet-info', 'Littercoin\LittercoinController@getWalletInfo');
 Route::post('/littercoin-mint-tx', 'Littercoin\LittercoinController@mintTx');
 Route::post('/littercoin-submit-mint-tx', 'Littercoin\LittercoinController@submitMintTx');
 Route::post('/littercoin-burn-tx', 'Littercoin\LittercoinController@burnTx');

@@ -48,6 +48,30 @@ class LittercoinController extends Controller {
     }
 
     /**
+     * Get the amount Ada, littercoins and merchant tokens in the connected
+     * wallet.
+     */
+    public function getWalletInfo (Request $request) {
+
+        $request->validate([
+            'balanceCborHex' => 'required|alpha_num|max:1024',
+            'utxos' => 'required|array|max:256',
+            'utxos.*' => 'required|alpha_num|max:8192'
+        ]);
+
+        $balanceCborHex = $request->input('balanceCborHex');
+        $utxos = $request->input('utxos');
+        $strUtxos=implode(",",$utxos);
+
+        $cmd = '(cd ../littercoin/;node ./run/get-wallet-info.mjs '.escapeshellarg($balanceCborHex).' '.escapeshellarg($strUtxos).') 2>> ../storage/logs/littercoin.log'; 
+        $response = exec($cmd);
+
+        return [
+            $response
+        ];
+    }
+
+    /**
      * Build the littercoin mint transaction.
      */
     public function mintTx (Request $request) {

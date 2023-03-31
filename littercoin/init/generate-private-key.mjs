@@ -11,7 +11,6 @@ const { Bip32PrivateKey } = pkg;
 * Usage:
 * export ENTROPY="witness pipe egg awake hood false fury announce one wool diagram weird phone treat bacon"
 * node ./generate-private-key.mjs
-* exit
 * @output {string} ROOT_KEY OWNER_PKH ADDRESS
 ****************************************************/
 

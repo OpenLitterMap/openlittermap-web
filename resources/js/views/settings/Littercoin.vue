@@ -43,6 +43,7 @@
                         <input 
                             type="radio" 
                             v-model="walletChoice" 
+                            v-on:change="getWalletInfo"
                             value="nami" 
                         /> &nbsp;
                         <img src = "/assets/icons/littercoin/nami.png" alt="Nami Wallet" style="width:20px;height:20px;"/>
@@ -53,123 +54,141 @@
                         <input 
                             type="radio" 
                             v-model="walletChoice" 
+                            v-on:change="getWalletInfo"
                             value="eternl" 
                         />&nbsp;
                         <img src = "/assets/icons/littercoin/eternl.png" alt="Eternl Wallet" style="width:20px;height:20px;"/>
                         <label>&nbsp; Eternl</label>
                     </p>
-                <hr>
-
-
-                    <form 
-                        method="post"
-                        @submit.prevent="submitForm('mint')" 
-                        v-if="!mintSuccess" 
-                        >
-                        <h1 class="title is-4">Mint Littercoin</h1>
-                        Enter the wallet where you want your Littercoin to be sent
-                        <input
-                            class="input"
-                            v-model="mintDestAddr"
-                            placeholder="Enter destination wallet address" 
-                        />
-                        <div style="text-align: center; padding-bottom: 1em;">
-                            <button
-                                class="button is-medium is-primary mb1 mt1"
-                                :class="mintFormSubmitted ? 'is-loading' : ''"
-                                :disabled="checkMintDisabled"
-                            >Submit Tx</button>
+                    <br>
+                    <div v-if="walletChoice">
+                        <p v-if="walletLoading">Loading...</p>
+                        <div v-else>
+                            Ada amount: {{ this.adaBalance.toLocaleString() }} <br>
+                            Littercoin amount: {{ this.littercoinBalance.toLocaleString() }} <br>
+                            Merchant Token amount: {{ this.merchTokenBalance.toLocaleString() }} <br>
                         </div>
-                    </form>
-                    <div v-if="mintSuccess">
-                        <p><h1 class="title is-4">Mint Littercoin Success!!!</h1></p>
-                        <p>Please wait approximately 20-60 seconds for the littercoin to show up in your wallet.</p>
-                        <p>To track this transaction on the blockchain, select the TxId link below.</p>
-                        <p>TxId: <a style="font-size: small;" :href="this.mintTxIdURL" target="_blank" rel="noopener noreferrer" >{{ this.mintTxId }}</a></p>
                     </div>
-                <hr>
-                    <form 
-                        method="post"
-                        @submit.prevent="submitForm('burn')" 
-                        v-if="!burnSuccess" 
-                        >
-                        <h1 class="title is-4">Burn Littercoin</h1>
-                        Only those holding a Merchant Token can send Littercoin to the Smart Contract to get the ada out.
-                        <input
-                            class="input"
-                            type="number"
-                            v-model="lcQty"
-                            placeholder="Enter number of littercoins to burn" 
-                        />
-                        <div style="text-align: center; padding-bottom: 1em;">
-                            <button
-                                class="button is-medium is-primary mb1 mt1"
-                                :class="burnFormSubmitted ? 'is-loading' : ''"
-                                :disabled="checkBurnDisabled"
-                            >Submit Tx</button>
+                    <hr>
+
+                    <div v-if="walletChoice">
+                        <form 
+                            method="post"
+                            @submit.prevent="submitForm('mint')" 
+                            v-if="!mintSuccess" 
+                            >
+                            <h1 class="title is-4">Mint Littercoin</h1>
+                            Enter the wallet where you want your Littercoin to be sent
+                            <input
+                                class="input"
+                                v-model="mintDestAddr"
+                                placeholder="Enter destination wallet address" 
+                            />
+                            <div style="text-align: center; padding-bottom: 1em;">
+                                <button
+                                    class="button is-medium is-primary mb1 mt1"
+                                    :class="mintFormSubmitted ? 'is-loading' : ''"
+                                    :disabled="checkMintDisabled"
+                                >Submit Tx</button>
+                            </div>
+                        </form>
+                        <div v-if="mintSuccess">
+                            <p><h1 class="title is-4">Mint Littercoin Success!!!</h1></p>
+                            <p>Please wait approximately 20-60 seconds for the littercoin to show up in your wallet.</p>
+                            <p>To track this transaction on the blockchain, select the TxId link below.</p>
+                            <p>TxId: <a style="font-size: small;" :href="this.mintTxIdURL" target="_blank" rel="noopener noreferrer" >{{ this.mintTxId }}</a></p>
                         </div>
-                    </form>
-                    <div v-if="burnSuccess">
-                        <p><h1 class="title is-4">Burn Littercoin Success!!!</h1></p>
-                        <p>Please wait approximately 20-60 seconds for the Ada to show up in your wallet.</p>
-                        <p>To track this transaction on the blockchain, select the TxId link below.</p>
-                        <p>TxId: <a style="font-size: small;" :href="this.burnTxIdURL" target="_blank" rel="noopener noreferrer" >{{ this.burnTxId }}</a></p>
+                    <hr>
                     </div>
-                <hr>
-                    <form 
-                        method="post"
-                        @submit.prevent="submitForm('merchant')" 
-                        v-if="!merchSuccess && isAdmin" 
-                    >
-                        <p><h1 class="title is-4">Mint Merchant Token</h1></p>
-                        Enter the wallet where you want a Merchant Token to be sent
-                        <input
-                            class="input"
-                            v-model="merchDestAddr"
-                            placeholder="Enter destination wallet address" 
+                    <div v-if="walletChoice">
+                        <form 
+                            method="post"
+                            @submit.prevent="submitForm('burn')" 
+                            v-if="!burnSuccess" 
+                            >
+                            <h1 class="title is-4">Burn Littercoin</h1>
+                            Only those holding a Merchant Token can burn Littercoin to received Ada from the Littercoin Smart Contract
+                            <input
+                                class="input"
+                                type="number"
+                                v-model="lcQty"
+                                placeholder="Enter number of littercoins to burn" 
+                            />
+                            <div style="text-align: center; padding-bottom: 1em;">
+                                <button
+                                    class="button is-medium is-primary mb1 mt1"
+                                    :class="burnFormSubmitted ? 'is-loading' : ''"
+                                    :disabled="checkBurnDisabled"
+                                >Submit Tx</button>
+                            </div>
+                            Note: There is a 4.2% (or 1 Ada minimum) service fee included in the burn transaction
+                        </form>
+                        <div v-if="burnSuccess">
+                            <p><h1 class="title is-4">Burn Littercoin Success!!!</h1></p>
+                            <p>Please wait approximately 20-60 seconds for the Ada to show up in your wallet.</p>
+                            <p>To track this transaction on the blockchain, select the TxId link below.</p>
+                            <p>TxId: <a style="font-size: small;" :href="this.burnTxIdURL" target="_blank" rel="noopener noreferrer" >{{ this.burnTxId }}</a></p>
+                        </div>
+                    <hr>
+                    </div>
+                    <div v-if="walletChoice">
+                        <form 
+                            method="post"
+                            @submit.prevent="submitForm('merchant')" 
+                            v-if="!merchSuccess && isAdmin" 
                         >
-                        <div style="text-align: center; padding-bottom: 1em;">
-                            <button
-                                class="button is-medium is-primary mb1 mt1"
-                                :class="merchFormSubmitted ? 'is-loading' : ''"
-                                :disabled="checkMerchDisabled"
-                            >Submit Tx</button>
-                        </div>                    
-                    </form>
-                    <div v-if="merchSuccess && isAdmin">
-                        <p><h1 class="title is-4">Mint Merchant Token Success!!!</h1></p>
-                        <p>Please wait approximately 20-60 seconds for the merchant token to show up in the wallet.</p>
-                        <p>To track this transaction on the blockchain, select the TxId link below.</p>
-                        <p>TxId: <a style="font-size: small;" :href="this.merchTxIdURL" target="_blank" rel="noopener noreferrer" >{{ this.merchTxId }}</a></p>
+                            <p><h1 class="title is-4">Mint Merchant Token</h1></p>
+                            Enter the wallet where you want a Merchant Token to be sent
+                            <input
+                                class="input"
+                                v-model="merchDestAddr"
+                                placeholder="Enter destination wallet address" 
+                            >
+                            <div style="text-align: center; padding-bottom: 1em;">
+                                <button
+                                    class="button is-medium is-primary mb1 mt1"
+                                    :class="merchFormSubmitted ? 'is-loading' : ''"
+                                    :disabled="checkMerchDisabled"
+                                >Submit Tx</button>
+                            </div>                    
+                        </form>
+                        <div v-if="merchSuccess && isAdmin">
+                            <p><h1 class="title is-4">Mint Merchant Token Success!!!</h1></p>
+                            <p>Please wait approximately 20-60 seconds for the merchant token to show up in the wallet.</p>
+                            <p>To track this transaction on the blockchain, select the TxId link below.</p>
+                            <p>TxId: <a style="font-size: small;" :href="this.merchTxIdURL" target="_blank" rel="noopener noreferrer" >{{ this.merchTxId }}</a></p>
+                        </div>
+                    <hr>
                     </div>
-                <hr>
-                    <form 
-                        method="post"
-                        @submit.prevent="submitForm('addAda')" 
-                        v-if="!addAdaSuccess" 
-                    >
-                        <p><h1 class="title is-4">Add Ada To Littercoin Smart Contract</h1></p>
-                        <input
-                            class="input"
-                            type="number"
-                            v-model="addAdaQty"
-                            placeholder="Enter amount of Ada to send" 
+                    <div v-if="walletChoice">
+                        <form 
+                            method="post"
+                            @submit.prevent="submitForm('addAda')" 
+                            v-if="!addAdaSuccess" 
                         >
-                        <div style="text-align: center; padding-bottom: 1em;">
-                            <button
-                                class="button is-medium is-primary mb1 mt1"
-                                :class="addAdaFormSubmitted ? 'is-loading' : ''"
-                                :disabled="checkAddAdaDisabled"
-                            >Submit Tx</button>
-                        </div>                    
-                    </form>
-                    <div v-if="addAdaSuccess">
-                        <p><h1 class="title is-4">Add Ada Success!!!</h1></p>
-                        <p>Please wait approximately 20-60 seconds and refresh this page for the Ada to show up in the Littercoin Smart Contract.</p>
-                        <p>To track this transaction on the blockchain, select the TxId link below.</p>
-                        <p>TxId: <a style="font-size: small;" :href="this.addAdaTxIdURL" target="_blank" rel="noopener noreferrer" >{{ this.addAdaTxId }}</a></p>
+                            <p><h1 class="title is-4">Add Ada To Littercoin Smart Contract</h1></p>
+                            <input
+                                class="input"
+                                type="number"
+                                v-model="addAdaQty"
+                                placeholder="Enter amount of Ada to send" 
+                            >
+                            <div style="text-align: center; padding-bottom: 1em;">
+                                <button
+                                    class="button is-medium is-primary mb1 mt1"
+                                    :class="addAdaFormSubmitted ? 'is-loading' : ''"
+                                    :disabled="checkAddAdaDisabled"
+                                >Submit Tx</button>
+                            </div>                    
+                        </form>
+                        <div v-if="addAdaSuccess">
+                            <p><h1 class="title is-4">Add Ada Success!!!</h1></p>
+                            <p>Please wait approximately 20-60 seconds and refresh this page for the Ada to show up in the Littercoin Smart Contract.</p>
+                            <p>To track this transaction on the blockchain, select the TxId link below.</p>
+                            <p>TxId: <a style="font-size: small;" :href="this.addAdaTxIdURL" target="_blank" rel="noopener noreferrer" >{{ this.addAdaTxId }}</a></p>
+                        </div>
+                    <hr>
                     </div>
-                <hr>
                 </div>
             </div>
         </div>
@@ -242,6 +261,10 @@ export default {
             littercoinEarned: 0,
             littercoinDue: 0,
             walletChoice: "",
+            walletLoading: false, 
+            adaBalance: 0,
+            littercoinBalance: 0,
+            merchTokenBalance: 0,
             mintDestAddr: "",
             merchDestAddr: "",
             addAdaQty: 0,
@@ -322,37 +345,91 @@ export default {
         }
     },
     methods: {
+
+        async getWalletInfo () {
+
+            this.walletLoading = true;
+            try {
+                // Connect to the user's wallet
+                var walletAPI;
+                if (this.walletChoice === "nami") {
+                    walletAPI = await window.cardano.nami.enable();
+                } else if (this.walletChoice === "eternl") {
+                    walletAPI = await window.cardano.eternl.enable(); 
+                } else {
+                    alert('No wallet selected');
+                    this.mintFormSubmitted = false;
+                } 
+
+                // Get balance from wallet
+                const balanceCbor = await walletAPI.getBalance();
+                
+                // Get the UTXOs from wallet,
+                const cborUtxos = await walletAPI.getUtxos();
+
+                await axios.post('/wallet-info', {
+                    balanceCborHex: balanceCbor,
+                    utxos: cborUtxos
+                })
+                .then(async response => {
+                    const walletInfo = await JSON.parse(response.data);
+                    this.adaBalance = walletInfo.payload.adaAmt;
+                    this.littercoinBalance = walletInfo.payload.lcAmt;
+                    this.merchTokenBalance = walletInfo.payload.mtAmt;
+                    this.walletLoading = false;
+                })
+                .catch(error => {
+                    console.error("Error accessing user wallet", error.response.data.errors);
+                    alert ('Error accessing user wallet');
+                });
+
+            } catch (err) {
+                console.error(err);
+            }
+        },
         /**
-         * Submit a minting transaction to the cardano blockchain network
+         * Submit a transaction to the cardano blockchain network
          */
          submitForm: function (type) {
             
-            if ( !this.walletChoice ) {
+            if (!this.walletChoice) {
                 alert ('Please select a wallet');
                 return;
             }
+            if (this.adaBalance < 5) {
+                alert ('Not enough Ada in the wallet for a transaction, please make sure there is 5 or more Ada in your wallet');
+                return;
+            }
             if (type === 'mint') {
-                if ( !this.mintDestAddr.match(/^addr/)) {
+                if (!this.mintDestAddr.match(/^addr/)) {
                     alert ('Please enter a valid mint littercoin destination address');
                     return
                 }
-                if ( this.littercoinDue == 0) {
-                    alert ('You have 0 littercoin due, so you cannot mint any at this time');
+                if (!this.littercoinDue > 0) {
+                    alert ('There are no littercoin due for minting');
                     return
                 }
                 this.mintFormSubmitted = true;
                 this.submitMint();
             }
             if (type === 'burn') {
-                if ( !this.lcQty > 1) {
+                if (this.lcQty < 1) {
                     alert ('Minimum 1 littercoin required for burn');
                     return
+                }
+                if (this.lcQty > this.littercoinBalance) {
+                    alert ('The amount of littercoin to burn exceeds the amount of littercoin in the wallet');
+                    return
+                }
+                if (this.merchTokenBalance < 1) {
+                    alert ('No Merchant Tokens founds in the wallet');
+                    return;
                 }
                 this.burnFormSubmitted = true;
                 this.submitBurn();
             }
             if (type === 'merchant') {
-                if ( !this.merchDestAddr.match(/^addr/)) {
+                if (!this.merchDestAddr.match(/^addr/)) {
                     alert ('Please enter a valid mint merchant token destination address');
                     return
                 }
@@ -360,7 +437,7 @@ export default {
                 this.merchMint();
             }
             if (type === 'addAda') {
-                if ( !this.addAdaQty > 2) {
+                if (!this.addAdaQty > 2) {
                     alert ('Minimum 2 Ada donation amount required');
                     return
                 }
@@ -389,6 +466,7 @@ export default {
                 const hexChangeAddr = await walletAPI.getChangeAddress();
 
                 await axios.post('/littercoin-mint-tx', {
+
                     destAddr: this.mintDestAddr,
                     changeAddr: hexChangeAddr,
                     utxos: cborUtxos
@@ -401,9 +479,15 @@ export default {
                         // Get user to sign the transaction
                         console.log("Get wallet signature");
 
-                        // TODO try/catch signing
-                        const walletSig = await walletAPI.signTx(mintTx.cborTx, true);
-    
+                        var walletSig;
+                        try {
+                            walletSig = await walletAPI.signTx(mintTx.cborTx, true);
+                        } catch (err) {
+                            console.error(err);
+                            this.mintFormSubmitted = false;
+                            return
+                        }
+
                         console.log("Submit transaction...");
                         await axios.post('/littercoin-submit-mint-tx', {
                             cborSig: walletSig,
@@ -488,8 +572,15 @@ export default {
 
                         // Get user to sign the transaction
                         console.log("Get wallet signature");
-                        const walletSig = await walletAPI.signTx(burnTx.cborTx, true);
-
+                        var walletSig;
+                        try {
+                            walletSig = await walletAPI.signTx(burnTx.cborTx, true);
+                        } catch (err) {
+                            console.error(err);
+                            this.burnFormSubmitted = false;
+                            return
+                        }
+                        
                         console.log("Submit transaction...");
                         await axios.post('/littercoin-submit-burn-tx', {
                             cborSig: walletSig,
@@ -592,7 +683,14 @@ export default {
 
                         // Get user to sign the transaction
                         console.log("Get wallet signature");
-                        const walletSig = await walletAPI.signTx(mintTx.cborTx, true);
+                        var walletSig;
+                        try {
+                            walletSig = await walletAPI.signTx(mintTx.cborTx, true);
+                        } catch (err) {
+                            console.error(err);
+                            this.merchFormSubmitted = false;
+                            return
+                        }
 
                         console.log("Submit transaction...");
                         await axios.post('/merchant-submit-mint-tx', {
@@ -681,7 +779,14 @@ export default {
 
                         // Get user to sign the transaction
                         console.log("Get wallet signature");
-                        const walletSig = await walletAPI.signTx(addAdaTx.cborTx, true);
+                        var walletSig;
+                        try {
+                            walletSig = await walletAPI.signTx(addAdaTx.cborTx, true);
+                        } catch (err) {
+                            console.error(err);
+                            this.addAdaFormSubmitted = false;
+                            return
+                        }
             
                         await axios.post('/add-ada-submit-tx', {
                             cborSig: walletSig,
