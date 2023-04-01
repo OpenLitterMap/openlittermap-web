@@ -8,24 +8,28 @@
 
             <h1 class="main-points">
                 <p>Created by <span class="is-real">real</span> people 🥷<br></p>
-                <p>who are collecting <span class="is-real">real</span> data 📲<br></p>
-                <p>about <span class="is-real">real</span> companies 🎯<br></p>
+                <p>who are collecting <span class="is-real">real</span> data 📲🎯🗺<br></p>
+                <p>about <span class="is-real">real</span> products 🚬🚯🔪🍦<br></p>
                 <p>that are polluting a <span class="is-real">real</span> environment. 🌍<br></p>
             </h1>
 
-            <h1 class="title is-4">Littercoin Smart Contract </h1>
-
             <p v-if="loading">Loading...</p>
 
-            <div v-else>
-                <div class="mb-2">
-                    <strong>Ada Locked at the Smart Contract</strong>
-                    <p>{{ this.adaAmount.toLocaleString() }} ada</p>
-                </div>
+            <div
+                v-else
+                class="smart-contract"
+                style="font-size: 20px;"
+            >
+                <div class="flex">
+                    <div class="mb-2" style="padding-right: 3em;">
+                        <strong>Total ada</strong>
+                        <p class="sc-number">{{ this.adaAmount.toLocaleString() }}</p>
+                    </div>
 
-                <div class="mb-2">
-                    <strong>Total Littercoin In Circulation</strong>
-                    <p>{{ this.lcAmount.toLocaleString() }} Littercoin</p>
+                    <div class="mb-2">
+                        <strong>Total Littercoin</strong>
+                        <p class="sc-number">{{ this.lcAmount.toLocaleString() }}</p>
+                    </div>
                 </div>
 
                 <div class="mb-2">
@@ -216,7 +220,7 @@ export default {
         font-weight: 500;
         width: fit-content;
         margin: auto;
-        text-align: left;
+        text-align: center;
         padding: 1.5em 0;
     }
 
@@ -248,6 +252,17 @@ export default {
 
     .littercoin-step {
         margin: 3em;
+    }
+
+    .smart-contract {
+        font-size: 20px;
+        width: fit-content;
+        margin: auto;
+    }
+
+    .sc-number {
+        font-size: 50px;
+        font-weight: 600;
     }
 
     @media screen and (max-width: 768px) {
