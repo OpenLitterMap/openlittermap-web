@@ -164,7 +164,7 @@ class ApiPhotosController extends Controller
 
         $date = Carbon::parse($date);
 
-        // The user with id=1 needs to upload duplicate images for testing
+        // The user with id = 1 needs to upload duplicate images for testing
         if (app()->environment() === "production" && $user->id != 1) {
             if (Photo::where(['user_id' => $user->id, 'datetime' => $date])->exists()) {
                 throw new PhotoAlreadyUploaded();
@@ -259,49 +259,6 @@ class ApiPhotosController extends Controller
         ));
 
         return $photo;
-    }
-
-    /**
-     * Save litter data to a recently uploaded photo
-     * Note: when photo was uploaded, picked_up was set
-     *
-     * version 2.1
-     *
-     * This is used by gallery photos
-     */
-    public function addTags (AddTagsRequest $request)
-    {
-        $user = auth()->user();
-        $photo = Photo::find($request->photo_id);
-
-        if ($photo->user_id !== $user->id || $photo->verified > 0)
-        {
-            abort(403, 'Forbidden');
-        }
-
-        Log::channel('tags')->info([
-            'add_tags' => 'mobile',
-            'request' => $request->all()
-        ]);
-
-        dispatch (new AddTags(
-            $user->id,
-            $photo->id,
-            ($request->litter ?? $request->tags) ?? [],
-            $request->custom_tags ?? []
-        ));
-
-        $pickedUp = (isset($request->picked_up) && !is_null($request->picked_up))
-            ? $request->picked_up
-            : !$user->items_remaining;
-
-        $photo->remaining = !$pickedUp;
-        $photo->save();
-
-        return [
-            'success' => true,
-            'msg' => 'dispatched'
-        ];
     }
 
     /**

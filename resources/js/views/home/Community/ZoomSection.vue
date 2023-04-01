@@ -48,8 +48,7 @@
 <script>
 export default {
     name: 'ZoomSection',
-    data ()
-    {
+    data () {
         return {
             days: null,
             hours: null,
@@ -57,10 +56,11 @@ export default {
             isLive: false
         };
     },
-    mounted ()
-    {
-        setInterval(() =>
-        {
+    mounted () {
+        // Toggle this to change daylight savings time
+        const daylightSavings = true;
+
+        setInterval(() => {
             let now = new Date();
             let nextMeetingDay = new Date();
             nextMeetingDay.setUTCDate(now.getUTCDate() + (11 - now.getUTCDay()) % 7 + 1);
@@ -73,19 +73,32 @@ export default {
                 0,
                 0
             );
-            meetingStart.setUTCHours(18);
+
+            // Turn this on to remove daylight savings time
+            if (!daylightSavings) {
+                meetingStart.setUTCHours(18);
+            }
 
             // If it's Friday we want to check if the meeting is live
             // usually ends at 19:30 UTC
             if (now.getDay() === 5)
             {
                 let todayMeetingStart = new Date(now.getTime());
-                todayMeetingStart.setUTCHours(18);
+
+                const startHour = (daylightSavings)
+                    ? 19
+                    : 18;
+
+                const endHour = (daylightSavings)
+                    ? 20
+                    : 19;
+
+                todayMeetingStart.setUTCHours(startHour);
                 todayMeetingStart.setUTCMinutes(0);
                 todayMeetingStart.setUTCSeconds(0);
                 todayMeetingStart.setUTCMilliseconds(0);
                 let meetingEnd = new Date(todayMeetingStart.getTime());
-                meetingEnd.setUTCHours(19);
+                meetingEnd.setUTCHours(endHour);
                 meetingEnd.setUTCMinutes(30);
 
                 this.isLive = now >= todayMeetingStart && now < meetingEnd;
