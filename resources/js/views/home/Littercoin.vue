@@ -37,7 +37,7 @@
                 <p>Source Code: <a :href="this.lcScriptURL" target="_blank" rel="noopener noreferrer" >{{ this.lcScriptName }}</a></p>
                 <p>Address: <a style="font-size: small;" :href="this.lcAddrURL" target="_blank" rel="noopener noreferrer" >{{ this.lcAddr }}</a></p>
             </div>
-            toLocaleString        </div>
+        </div>
 
         <!-- Zero waste image -->
         <!-- Credit: Polina Tankilevitch -->
@@ -188,6 +188,19 @@ export default {
             });
 
         this.loading = false;
+    },
+    computed: {
+        /**
+         * Get the Littercoin price for a given numbercoin
+         */
+        getLittercoinPrice () {
+            const symbol = this.currencySymbols[this.selectedCurrency];
+            const price = this.adaValues[this.selectedCurrency];
+
+            return (this.lcAmount === 0)
+                ? 0
+                : symbol.toString()+ (this.ratio * price).toFixed(2).toString();
+        }
     }
 }
 </script>
