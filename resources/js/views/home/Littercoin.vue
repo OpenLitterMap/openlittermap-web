@@ -20,8 +20,8 @@
                 class="smart-contract"
                 style="font-size: 20px;"
             >
-                <div class="flex jc">
-                    <div class="mb-2" style="padding-right: 3em;">
+                <div class="flex space-around" style="min-width: 20em;">
+                    <div class="mb-2"">
                         <strong>Total ada</strong>
                         <p class="sc-number">{{ this.adaAmount.toLocaleString() }}</p>
                     </div>
@@ -300,6 +300,10 @@ export default {
         margin: auto;
         width: fit-content;
         padding-bottom: 10em;
+    }
+
+    .space-around {
+        justify-content: space-around;
     }
 
     @media screen and (max-width: 768px) {
