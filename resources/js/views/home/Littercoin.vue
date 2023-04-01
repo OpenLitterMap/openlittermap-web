@@ -20,7 +20,7 @@
                 class="smart-contract"
                 style="font-size: 20px;"
             >
-                <div class="flex">
+                <div class="flex jc">
                     <div class="mb-2" style="padding-right: 3em;">
                         <strong>Total ada</strong>
                         <p class="sc-number">{{ this.adaAmount.toLocaleString() }}</p>
