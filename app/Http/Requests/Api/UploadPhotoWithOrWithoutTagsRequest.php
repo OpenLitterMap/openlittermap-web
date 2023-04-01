@@ -29,7 +29,7 @@ class UploadPhotoWithOrWithoutTagsRequest extends FormRequest
             'lon' => 'required|numeric',
             'date' => 'required',
             'picked_up' => 'nullable|boolean',
-            'custom_tags' => 'sometimes|array|max:3',
+            'custom_tags' => 'sometimes|array|max:10',
             'custom_tags.*' => 'sometimes|distinct:ignore_case|min:3|max:100'
         ];
     }
