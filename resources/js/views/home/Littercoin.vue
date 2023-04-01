@@ -303,6 +303,10 @@ export default {
     }
 
     @media screen and (max-width: 768px) {
+        .main-points {
+            font-size: 20px;
+        }
+
         .text-container {
             padding: 1em;
             margin-top: 2em;
