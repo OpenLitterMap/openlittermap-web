@@ -33,7 +33,6 @@
                 </div>
 
                 <div class="mb-2">
-                    <strong>Ratio:</strong>
                     <p>{{ this.ratio.toLocaleString() }} ada per Littercoin</p>
                     <p>or {{ this.getLittercoinPrice }} per Littercoin</p>
                 </div>
@@ -56,7 +55,6 @@
             </h1>
 
             <div class="flex">
-
                 <div class="littercoin-step">
                     <h1 class="title is-3">
                         1. Pick up some litter
@@ -66,7 +64,6 @@
                         src="/assets/littercoin/pick-up-litter.jpeg"
                     />
                 </div>
-
 
                 <div class="littercoin-step">
                     <h1 class="title is-3">
@@ -86,8 +83,42 @@
                     <img
                         src="/assets/logo_small.png"
                     />
-                </div>
 
+                    <img
+                        src="/assets/icons/twitter2.png"
+                        style="width: 5em;"
+                    />
+
+                    <img
+                        src="/assets/icons/facebook2.png"
+                        style="width: 5em;"
+                    />
+
+                    <img
+                        src="/assets/icons/ig2.png"
+                        style="width: 5em;"
+                    />
+                </div>
+            </div>
+
+            <div>
+                <p>More info:</p>
+
+                <p>Get 100 images past verification in a row to earn 1 Littercoin!</p>
+                <p>This is likely to change soon, depending on what you and the community want.</p>
+                <p>The supply of Littercoin is a social construct determined by the total amount of litter.</p>
+                <p>This is a new type of token that is produced purely geospatially.</p>
+                <p>Anyone can put the cryptocurrency `ada` into the Smart Contract, giving every Littercoin value.</p>
+                <p>By doing so, Littercoin gains more value giving merchants a reason to accept it.</p>
+                <p>Climate merchants (eg. zero waste stores) can apply to become Partners.</p>
+                <p>Approved Partners receive a special Merchant NFT.</p>
+                <p>The people holding the Merchant Token can put Littercoin into the Smart Contract and get the crypto out.</p>
+                <p>Merchant Tokens expire after 12 months.</p>
+                <p>Check out the open source code and documentation</p>
+                <p>By putting `ada` into the Smart Contract, doners are rewarded with Donation Incentive Reward Tokens.</p>
+                <p>These will be used for governance in the future, as for merit and commitment.</p>
+                <p>Mining Littercoin is supposed to be fun, easy and enjoyable.</p>
+                <p></p>
             </div>
 
             <!-- Dank Memes -->
