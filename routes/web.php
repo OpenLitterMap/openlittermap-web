@@ -167,7 +167,7 @@ Route::get('/littercoin', 'HomeController@index');
 // Actions used by Littercoin Page & Settings
 
 Route::get('/get-users-littercoin', 'Littercoin\LittercoinController@getUsersLittercoin');
-Route::get('/littercoin-info', 'Littercoin\LittercoinController@getLittercoinInfo');
+Route::get('/littercoin-info', 'Littercoin\PublicLittercoinController@getLittercoinInfo');
 Route::post('/wallet-info', 'Littercoin\LittercoinController@getWalletInfo');
 Route::post('/littercoin-mint-tx', 'Littercoin\LittercoinController@mintTx');
 Route::post('/littercoin-submit-mint-tx', 'Littercoin\LittercoinController@submitMintTx');

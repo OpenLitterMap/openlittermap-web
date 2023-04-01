@@ -7,7 +7,6 @@ import { fetchLittercoinInfo } from "./lc-info.mjs";
  * @output {string} lcInfo
  */
 const main = async () => {
-
     try {
         const output = await fetchLittercoinInfo();
         const returnObj = {

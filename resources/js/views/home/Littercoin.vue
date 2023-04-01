@@ -6,15 +6,13 @@
                 A Zero Waste Currency For Humanity
             </h1>
 
-            <h1 class="title is-2 p-6">
-                Created by real people, who are collecting real data, about real companies, who are polluting a real environment.
+            <h1 class="main-points">
+                <span>Created by <span class="is-real">real</span> people 🥷<br></span>
+                <span>who are collecting <span class="is-real">real</span> data 📲<br></span>
+                <span>about <span class="is-real">real</span> companies 🎯<br></span>
+                <span>that are polluting a <span class="is-real">real</span> environment. 🌍<br></span>
             </h1>
 
-            <button
-                class="button is-large is-primary"
-            >
-                Join the community
-            </button>
         </div>
 
         <!-- Zero waste image -->
@@ -65,6 +63,7 @@
 
             </div>
 
+            <!-- Dank Memes -->
             <h1 class="title is-1" style="margin-bottom: 2em;">
                 Dank memes 🔥
             </h1>
@@ -78,6 +77,7 @@
                 />
             </div>
 
+            <!-- Open Source -->
             <h1 class="title is-1" style="margin-bottom: 2em;">
                 Open source 🕊
             </h1>
@@ -123,7 +123,7 @@ export default {
                 'IMG_8194.jpg',
                 'IMG_8195.jpg',
                 'IMG_8196.jpg',
-            ]
+            ],
         };
     },
     async created () {
@@ -131,6 +131,8 @@ export default {
 
         await axios.get('/littercoin-info')
             .then(async response => {
+
+                console.log('littercoin info', response);
 
                 const lcInfo = await JSON.parse(response.data);
                 if (lcInfo.status == 200) {
@@ -171,6 +173,19 @@ export default {
         text-align: center;
     }
 
+    .main-points {
+        font-size: 25px;
+        font-weight: 500;
+        width: fit-content;
+        margin: auto;
+        text-align: left;
+        margin-top: 2em;
+    }
+
+    .is-real {
+        font-weight: 900;
+    }
+
     .p-6 {
         padding: 0.5em 1em;
     }
@@ -191,6 +206,13 @@ export default {
 
     .littercoin-step {
         margin: 3em;
+    }
+
+    @media screen and (max-width: 768px) {
+        .text-container {
+            padding: 1em;
+            margin-top: 2em;
+        }
     }
 
 
