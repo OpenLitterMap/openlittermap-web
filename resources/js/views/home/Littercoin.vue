@@ -135,7 +135,9 @@ export default {
                 console.log('littercoin info', response);
 
                 const lcInfo = await JSON.parse(response.data);
-                if (lcInfo.status == 200) {
+                console.log({ lcInfo });
+
+                if (lcInfo.status === 200) {
                     this.totalAdaAmount = lcInfo.payload.list[0].int / 1000000;
                     this.totalLittercoinSupply = lcInfo.payload.list[1].int;
                     this.ratio = this.totalAdaAmount / this.totalLittercoinSupply;
