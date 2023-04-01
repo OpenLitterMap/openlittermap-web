@@ -33,7 +33,7 @@
                 </div>
 
                 <div class="mb-2">
-                    <p>{{ this.ratio.toLocaleString() }} ada or {{ this.getLittercoinPrice }} per Littercoin</p>
+                    <p>{{ this.ratio.toLocaleString() }} ada or {{ this.getLittercoinPrice }} each</p>
                 </div>
 
                 <p>Source Code: <a :href="this.lcScriptURL" target="_blank" rel="noopener noreferrer" >{{ this.lcScriptName }}</a></p>
