@@ -2,15 +2,15 @@
     <div class="outer-container">
 
         <div class="text-container">
-            <h1 class="title is-1">
+            <h1 class="title is-1 mb-0">
                 A Zero Waste Currency For Humanity
             </h1>
 
             <h1 class="main-points">
-                <span>Created by <span class="is-real">real</span> people 🥷<br></span>
-                <span>who are collecting <span class="is-real">real</span> data 📲<br></span>
-                <span>about <span class="is-real">real</span> companies 🎯<br></span>
-                <span>that are polluting a <span class="is-real">real</span> environment. 🌍<br></span>
+                <p>Created by <span class="is-real">real</span> people 🥷<br></p>
+                <p>who are collecting <span class="is-real">real</span> data 📲<br></p>
+                <p>about <span class="is-real">real</span> companies 🎯<br></p>
+                <p>that are polluting a <span class="is-real">real</span> environment. 🌍<br></p>
             </h1>
 
             <h1 class="title is-4">Littercoin Smart Contract </h1>
@@ -48,8 +48,7 @@
 
         <div class="text-container">
             <h1 class="title is-1">
-                <!-- Needs tooptip -->
-                Stimulating <strong class="is-green">climatokeveganomics</strong> 🌱
+                <strong class="is-green">How it works</strong> 🌱
             </h1>
 
             <div class="flex">
@@ -213,12 +212,16 @@ export default {
     }
 
     .main-points {
-        font-size: 25px;
+        font-size: 30px;
         font-weight: 500;
         width: fit-content;
         margin: auto;
         text-align: left;
-        margin-top: 2em;
+        padding: 1.5em 0;
+    }
+
+    .main-points p {
+        margin-bottom: 8px;
     }
 
     .is-real {
