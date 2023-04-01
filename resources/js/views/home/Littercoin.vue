@@ -37,7 +37,7 @@
                 <p>Source Code: <a :href="this.lcScriptURL" target="_blank" rel="noopener noreferrer" >{{ this.lcScriptName }}</a></p>
                 <p>Address: <a style="font-size: small;" :href="this.lcAddrURL" target="_blank" rel="noopener noreferrer" >{{ this.lcAddr }}</a></p>
             </div>
-        </div>
+            toLocaleString        </div>
 
         <!-- Zero waste image -->
         <!-- Credit: Polina Tankilevitch -->
@@ -122,8 +122,8 @@ export default {
     data () {
         return {
             loading: true,
-            totalAdaAmount: 0,
-            totalLittercoinSupply: 0,
+            adaAmount: 0,
+            lcAmount: 0,
             ratio: 0,
             adaValues: {},
             selectedCurrency: 'usd',
@@ -162,9 +162,9 @@ export default {
                 console.log({ lcInfo });
 
                 if (lcInfo.status === 200) {
-                    this.totalAdaAmount = lcInfo.payload.list[0].int / 1000000;
-                    this.totalLittercoinSupply = lcInfo.payload.list[1].int;
-                    this.ratio = this.totalAdaAmount / this.totalLittercoinSupply;
+                    this.adaAmount = lcInfo.payload.list[0].int / 1000000;
+                    this.lcAmount = lcInfo.payload.list[1].int;
+                    this.ratio = this.adaAmount / this.lcAmount;
                     this.lcAddr = lcInfo.payload.addr;
                     this.lcAddrURL = "https://preprod.cexplorer.io/address/" + lcInfo.payload.addr;
                     this.lcScriptName = lcInfo.payload.scriptName;
