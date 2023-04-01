@@ -21,7 +21,7 @@
                 style="font-size: 20px;"
             >
                 <div class="flex space-around" style="min-width: 20em;">
-                    <div class="mb-2"">
+                    <div class="mb-2">
                         <strong>Total ada</strong>
                         <p class="sc-number">{{ this.adaAmount.toLocaleString() }}</p>
                     </div>
@@ -33,8 +33,7 @@
                 </div>
 
                 <div class="mb-2">
-                    <p>{{ this.ratio.toLocaleString() }} ada per Littercoin</p>
-                    <p>or {{ this.getLittercoinPrice }} per Littercoin</p>
+                    <p>{{ this.ratio.toLocaleString() }} ada or {{ this.getLittercoinPrice }} per Littercoin</p>
                 </div>
 
                 <p>Source Code: <a :href="this.lcScriptURL" target="_blank" rel="noopener noreferrer" >{{ this.lcScriptName }}</a></p>
@@ -232,7 +231,7 @@ export default {
             const price = this.adaValues[this.selectedCurrency];
 
             return (this.lcAmount === 0)
-                ? 0
+                ? "$0"
                 : symbol.toString()+ (this.ratio * price).toFixed(2).toString();
         }
     }
