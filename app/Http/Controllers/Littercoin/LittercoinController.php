@@ -39,7 +39,7 @@ class LittercoinController extends Controller {
     public function getWalletInfo (Request $request) {
 
         $request->validate([
-            'balanceCborHex' => 'required|alpha_num|max:1024',
+            'balanceCborHex' => 'required|alpha_num|max:16384',
             'utxos' => 'required|array|max:256',
             'utxos.*' => 'required|alpha_num|max:8192'
         ]);

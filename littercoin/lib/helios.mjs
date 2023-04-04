@@ -7,7 +7,7 @@
 // Email:         cschmitz398@gmail.com
 // Website:       https://www.hyperion-bt.org
 // Repository:    https://github.com/hyperion-bt/helios
-// Version:       0.12.12-31f23c84754d3d4504d291c65d67d7c62aacc36d-fd1f24e23cf67fa008892e894b9157a018c432ed
+// Version:       0.12.12-31f23c84754d3d4504d291c65d67d7c62aacc36d-fd1f24e23cf67fa008892e894b9157a018c432ed-sorting bug
 // Last update:   March 2023
 // License:       Unlicense
 //
@@ -33315,7 +33315,7 @@ class TxBody extends CborData {
 			if (i > 0) {
 				const prev = this.#inputs[i-1];
 
-				assert(TxInput.comp(prev, input) == -1, "inputs not sorted");
+				assert(TxInput.comp(prev, input) <= -1, "inputs not sorted");
 			}
 		});
 	 
