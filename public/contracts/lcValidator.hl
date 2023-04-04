@@ -22,7 +22,7 @@ const minAda : Int = 2000000
 const minAdaVal: Value = Value::lovelace(minAda)
 
 // Define thread token value
-const TT_MPH: ByteArray = #7cde2c528ab729454520b42c6116f67e312f15c004452cca40a493fd
+const TT_MPH: ByteArray = #f2a47b85e5aac9cf75b22f5d3dc15215cf3726d0bbd1f504e632cdfc
 const ttMph: MintingPolicyHash = MintingPolicyHash::new(TT_MPH)
 const ttAssetclass: AssetClass = AssetClass::new(
         ttMph, 
@@ -31,7 +31,7 @@ const ttAssetclass: AssetClass = AssetClass::new(
 const ttVal : Value = Value::new(ttAssetclass, 1)
 
 // Define the mph of the littercoin minting policy
-const LC_MPH: ByteArray = #1a1df02adf31cb98acbc7183429948be151715dcd853f529c6035d04
+const LC_MPH: ByteArray = #27cde7cba2dc4a621b448233ee34cd5f6dd31ae040c277e548eefc54
 const lcMph: MintingPolicyHash = MintingPolicyHash::new(LC_MPH)
 const lcAssetClass: AssetClass = AssetClass::new(
         lcMph, 
@@ -39,7 +39,7 @@ const lcAssetClass: AssetClass = AssetClass::new(
     )
 
 // Define the mph of the donation rewards token minting policy
-const REWARDS_MPH: ByteArray = #8c74386d45ae55d78f2494e2496af7dac397d65850da6206a547be33
+const REWARDS_MPH: ByteArray = #18ae49ddeeb8d3018e72f8109af96f21a3feea72261f3d6acfe2400c
 const rewardsMph: MintingPolicyHash = MintingPolicyHash::new(REWARDS_MPH)
 const rewardsAssetClass: AssetClass = AssetClass::new(
         rewardsMph, 
@@ -47,12 +47,25 @@ const rewardsAssetClass: AssetClass = AssetClass::new(
     )
 
 // Define the merchant token
-const MERCHANT_MPH: ByteArray = #10009086d699dfdd386ab1ddbfb6d6492228e039172f78af780f4686
+const MERCHANT_MPH: ByteArray = #7ab090ed4243b667709c9cf04e2bd23604be81ac81154eab44a7d4e6
 const merchMph: MintingPolicyHash = MintingPolicyHash::new(MERCHANT_MPH)
 
 // Define the pkh of the owner
-const OWNER_PKH: ByteArray = #b9abcf6867519e28042048aa11207214a52e6d5d3288b752d1c27682
+const OWNER_PKH: ByteArray = #8c5537f96f7ca627241cfb4d6afe1d2f4ab6656d9a859e75072a1f3d
 const ownerPkh: PubKeyHash = PubKeyHash::new(OWNER_PKH)
+
+
+func getDatum (txOuts : []TxOutput) -> []TxOutput {
+
+    if (txOuts.is_empty()) {
+        txOuts
+    } else {
+            txOuts.head.datum.switch {
+            Inline => { []TxOutput::new_const(1, txOuts.head) },
+            else => getDatum (txOuts.tail)
+            }
+    }
+}
 
 func main(datum: Datum, redeemer: Redeemer, ctx: ScriptContext) -> Bool {
     
@@ -60,11 +73,12 @@ func main(datum: Datum, redeemer: Redeemer, ctx: ScriptContext) -> Bool {
     vHash : ValidatorHash = ctx.get_current_validator_hash();
     tx : Tx = ctx.tx;
     txOutputs : []TxOutput = tx.outputs_locked_by(vHash);
+    txOutputsWithDat : []TxOutput = getDatum(txOutputs);
 
     redeemer.switch {
         AddAda => {
-            if (txOutputs.length == 1) {
-                txOutputs.head.datum.switch {
+            if (!txOutputsWithDat.is_empty()) {
+                txOutputsWithDat.head.datum.switch {
                     dat: Inline => { 
                         outDat: Datum = Datum::from_data(dat.data);
                         addAdaDatumAmt: Int = outDat.adaAmount - datum.adaAmount;
@@ -87,8 +101,8 @@ func main(datum: Datum, redeemer: Redeemer, ctx: ScriptContext) -> Bool {
             }
         },
         Mint => {
-             if (txOutputs.length == 1) {
-                txOutputs.head.datum.switch {
+             if (!txOutputsWithDat.is_empty()) {
+                txOutputsWithDat.head.datum.switch {
                     dat: Inline => { 
                         outDat: Datum = Datum::from_data(dat.data);
                         adaDatumAmt: Int = outDat.adaAmount - datum.adaAmount;
@@ -115,8 +129,8 @@ func main(datum: Datum, redeemer: Redeemer, ctx: ScriptContext) -> Bool {
              }
         },
         red: Burn => {
-             if (txOutputs.length == 1) {    
-                txOutputs.head.datum.switch {
+             if (!txOutputsWithDat.is_empty()) {    
+                txOutputsWithDat.head.datum.switch {
                     dat: Inline => { 
                         outDat: Datum = Datum::from_data(dat.data);
                         adaDatumAmt: Int = datum.adaAmount - outDat.adaAmount;
