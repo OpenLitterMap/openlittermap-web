@@ -22,7 +22,7 @@ const minAda : Int = 2000000
 const minAdaVal: Value = Value::lovelace(minAda)
 
 // Define thread token value
-const TT_MPH: ByteArray = #e43d643fe8b6e72ebe9284bae285fd6e6cd8da229a6f6af150ec9b68
+const TT_MPH: ByteArray = #7cde2c528ab729454520b42c6116f67e312f15c004452cca40a493fd
 const ttMph: MintingPolicyHash = MintingPolicyHash::new(TT_MPH)
 const ttAssetclass: AssetClass = AssetClass::new(
         ttMph, 
@@ -31,7 +31,7 @@ const ttAssetclass: AssetClass = AssetClass::new(
 const ttVal : Value = Value::new(ttAssetclass, 1)
 
 // Define the mph of the littercoin minting policy
-const LC_MPH: ByteArray = #9aea33439121c94259ad4a1866afe1ca6481612c79b67d5070880c2d
+const LC_MPH: ByteArray = #1a1df02adf31cb98acbc7183429948be151715dcd853f529c6035d04
 const lcMph: MintingPolicyHash = MintingPolicyHash::new(LC_MPH)
 const lcAssetClass: AssetClass = AssetClass::new(
         lcMph, 
@@ -39,7 +39,7 @@ const lcAssetClass: AssetClass = AssetClass::new(
     )
 
 // Define the mph of the donation rewards token minting policy
-const REWARDS_MPH: ByteArray = #40a2d6081add530c5f81d68eba2e59f75b7950e4cc5d743688c8f66b
+const REWARDS_MPH: ByteArray = #8c74386d45ae55d78f2494e2496af7dac397d65850da6206a547be33
 const rewardsMph: MintingPolicyHash = MintingPolicyHash::new(REWARDS_MPH)
 const rewardsAssetClass: AssetClass = AssetClass::new(
         rewardsMph, 
@@ -54,31 +54,17 @@ const merchMph: MintingPolicyHash = MintingPolicyHash::new(MERCHANT_MPH)
 const OWNER_PKH: ByteArray = #b9abcf6867519e28042048aa11207214a52e6d5d3288b752d1c27682
 const ownerPkh: PubKeyHash = PubKeyHash::new(OWNER_PKH)
 
-
-func getDatum (txOuts : []TxOutput) -> []TxOutput {
-
-    if (txOuts.is_empty()) {
-        txOuts
-    } else {
-            txOuts.head.datum.switch {
-            Inline => { []TxOutput::new_const(1, txOuts.head) },
-            else => getDatum (txOuts.tail)
-            }
-    }
-}
-
 func main(datum: Datum, redeemer: Redeemer, ctx: ScriptContext) -> Bool {
     
     // Get hash of this validator
     vHash : ValidatorHash = ctx.get_current_validator_hash();
     tx : Tx = ctx.tx;
     txOutputs : []TxOutput = tx.outputs_locked_by(vHash);
-    txOutputsWithDat : []TxOutput = getDatum(txOutputs);
 
     redeemer.switch {
         AddAda => {
-            if (!txOutputsWithDat.is_empty()) {
-                txOutputsWithDat.head.datum.switch {
+            if (txOutputs.length == 1) {
+                txOutputs.head.datum.switch {
                     dat: Inline => { 
                         outDat: Datum = Datum::from_data(dat.data);
                         addAdaDatumAmt: Int = outDat.adaAmount - datum.adaAmount;
@@ -101,8 +87,8 @@ func main(datum: Datum, redeemer: Redeemer, ctx: ScriptContext) -> Bool {
             }
         },
         Mint => {
-             if (!txOutputsWithDat.is_empty()) {
-                txOutputsWithDat.head.datum.switch {
+             if (txOutputs.length == 1) {
+                txOutputs.head.datum.switch {
                     dat: Inline => { 
                         outDat: Datum = Datum::from_data(dat.data);
                         adaDatumAmt: Int = outDat.adaAmount - datum.adaAmount;
@@ -129,8 +115,8 @@ func main(datum: Datum, redeemer: Redeemer, ctx: ScriptContext) -> Bool {
              }
         },
         red: Burn => {
-             if (!txOutputsWithDat.is_empty()) {    
-                txOutputsWithDat.head.datum.switch {
+             if (txOutputs.length == 1) {    
+                txOutputs.head.datum.switch {
                     dat: Inline => { 
                         outDat: Datum = Datum::from_data(dat.data);
                         adaDatumAmt: Int = datum.adaAmount - outDat.adaAmount;
