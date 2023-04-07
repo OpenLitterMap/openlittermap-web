@@ -20,28 +20,16 @@ class UploadPhotoWithCustomTagsTest extends TestCase
         $this->setImagePath();
     }
 
-<<<<<<< HEAD
 //    public function validationDataProvider(): array
 //    {
 //        return [
 //            ['tags' => ['tag1', 'Tag1'], 'errors' => ['custom_tags.0', 'custom_tags.1']],// uniqueness
 //            ['tags' => ['ta'], 'errors' => ['custom_tags.0']], // min length 3
 //            ['tags' => [str_repeat('a', 101)], 'errors' => ['custom_tags.0']], // max length 100
-//            ['tags' => ['tag1', 'tag2', 'tag3', 'tag4'], 'errors' => ['custom_tags']], // max 3 tags
+//            // max 10 tags
+//            ['tags' => ['tag1', 'tag2', 'tag3', 'tag4', 'tag5', 'tag6', 'tag7', 'tag8', 'tag9', 'tag10', 'tag11'], 'errors' => ['custom_tags']],
 //        ];
 //    }
-=======
-    public function validationDataProvider(): array
-    {
-        return [
-            ['tags' => ['tag1', 'Tag1'], 'errors' => ['custom_tags.0', 'custom_tags.1']],// uniqueness
-            ['tags' => ['ta'], 'errors' => ['custom_tags.0']], // min length 3
-            ['tags' => [str_repeat('a', 101)], 'errors' => ['custom_tags.0']], // max length 100
-            // max 10 tags
-            ['tags' => ['tag1', 'tag2', 'tag3', 'tag4', 'tag5', 'tag6', 'tag7', 'tag8', 'tag9', 'tag10', 'tag11'], 'errors' => ['custom_tags']],
-        ];
-    }
->>>>>>> master
 
     public function test_an_api_user_can_upload_a_photo_with_custom_tags()
     {
