@@ -141,7 +141,7 @@
                                     <p class="title">{{ $t('home.about.about17a') }}</p>
                                     <p class="subtitle">{{ $t('home.about.about17b') }}</p>
                                     <!-- <figure class="image is-4by3"> -->
-                                    <a href="https://openlittermap.com/maps/The%20Netherlands/Zuid-Holland/Wassenaar/map">https://openlittermap.com/maps/The%20Netherlands/Zuid-Holland/Wassenaar/map</a>
+                                    <a href="https://openlittermap.com/world/The%20Netherlands/Zuid-Holland/Wassenaar/map">https://openlittermap.com/world/The%20Netherlands/Zuid-Holland/Wassenaar/map</a>
                                     <br>
                                     <br>
                                     <img src="/assets/nlbrands.png">
@@ -149,7 +149,7 @@
                                     <br>
                                     <br>
                                     <p class="subtitle">{{ $t('home.about.about17c') }}</p>
-                                    <a href="https://openlittermap.com/maps/The%20Netherlands/Zuid-Holland/Wassenaar/download">https://openlittermap.com/maps/The%20Netherlands/Zuid-Holland/Wassenaar/download</a>
+                                    <a href="https://openlittermap.com/world/The%20Netherlands/Zuid-Holland">https://openlittermap.com/world/The%20Netherlands/Zuid-Holland</a>
                                     <br>
                                 </article>
                             </div>
