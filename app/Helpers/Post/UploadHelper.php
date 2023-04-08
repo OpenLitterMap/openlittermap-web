@@ -78,7 +78,7 @@ class UploadHelper
      *
      * @return City
      */
-    public function getCityFromAddressArray (Country $country, State $state, $addressArray)
+    public function getCityFromAddressArray (Country $country, State $state, $addressArray, $lat, $lon)
     {
         $cityName = $this->lookupPlace(
             $addressArray,
@@ -108,7 +108,9 @@ class UploadHelper
                 $state->state,
                 $country->country,
                 now(),
-                $city->id
+                $city->id,
+                $lat,
+                $lon
             ));
         }
 

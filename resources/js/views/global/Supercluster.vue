@@ -586,7 +586,7 @@ export default {
             // Validate lat, lon, and zoom level
             latitude = (latitude < -85 || latitude > 85) ? 0 : latitude;
             longitude = (longitude < -180 || longitude > 180) ? 0 : longitude;
-            zoom = (zoom < 2 || zoom > 18) ? MIN_ZOOM : zoom;
+            zoom = (zoom < 2 || zoom > MAX_ZOOM) ? MIN_ZOOM : zoom;
 
             if (latitude === 0 && longitude === 0 && zoom === 2) return;
 

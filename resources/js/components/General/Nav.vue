@@ -29,6 +29,11 @@
                             Cleanups
                         </router-link>
 
+                        <!-- Littercoin -->
+                        <router-link to="/littercoin" class="navbar-item" @click.native="close">
+                            Littercoin
+                        </router-link>
+
                         <!-- Global Map -->
                         <router-link to="/global" class="navbar-item" @click.native="close">
                              {{ $t('nav.global-map') }}

@@ -1,262 +1,842 @@
 <template>
 	<div style="padding-left: 1em; padding-right: 1em;">
-			<h1 class="title is-4"> {{ $t('settings.littercoin.littercoin-header') }}</h1>
-			<hr>
-			<br>
-			<div class="columns">
+        <h1 class="title is-4"> {{ $t('settings.littercoin.littercoin-header') }}</h1>
+        <hr>
+        <br>
+        <div class="columns">
+            <div class="column is-two-thirds is-offset-1">
+                <h1 class="title is-4">Littercoin Smart Contract </h1>
 
-				<div class="column is-two-thirds is-offset-1">
+                <p v-if="loading">Loading...</p>
 
-                    <p v-if="true">{{ $t('settings.littercoin.back-later') }}</p>
+                <div v-else>
+                    <div class="mb-2">
+                        <strong>Ada Locked at the Smart Contract</strong>
+                        <p>{{ this.adaAmount.toLocaleString() }} ada</p>
+                    </div>
 
-                    <div v-else>
+                    <div class="mb-2">
+                        <strong>Total Littercoin In Circulation</strong>
+                        <p>{{ this.lcAmount.toLocaleString() }} Littercoin</p>
+                    </div>
 
-                        <div v-if="!this.web3exists">
-                            <p>{{ $t('settings.littercoin.claim-tokens') }}</p>
-                            <div class="columns">
-                                <div class="column is-half">
-                                    <br>
-                                    <div v-if="this.user.eth_wallet">
-                                        <p>Your Wallet ID:</p>
-                                        <p>{{ this.user.eth_wallet }}</p>
-                                        <br>
-                                        <button class="button is-medium is-danger" @click="deleteWallet">Delete wallet ID</button>
-                                    </div>
-                                    <div v-else>
-                                        <form method="POST" action="/settings/littercoin/" role="form" @submit.prevent="addWallet">
-                                            <input id="user-wallet-id" name="user-wallet-id" type="text" class="input" placeholder="Your Wallet ID" v-model="userwallet" />
-                                            <br>
-                                            <br>
-                                            <button class="button is-medium is-primary">Submit ID</button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                            <p>To see your Littercoin balance and send Littercoin from this page you will need to download Chrome and install <a href="https://metamask.io/">MetaMask</a>. Unfortuantely there is no mobile client available yet. When you install MetaMask these instructions will disappear.</p>
-                            <br>
-                            <ol>
-                                <li>To create a new wallet visit <a href="https://myetherwallet.com">MyEtherWallet</a> and <a href="https://myetherwallet.github.io/knowledge-base/private-keys-passwords/difference-beween-private-key-and-keystore-file.html">export your Keystore UTC File</a>, which is an encrypted version of your password. If you are using Mist or some other wallet, export the same file (Accounts -> Backup -> Accounts). This file should be available on Unix systems at ~/User/Library/Ethereum/keystore/ as a 'UTC....' file.</li>
-                                <li>Open Metamask and import this file as a json file.</li>
-                                <li>Upload 7-days in a row, be the first to upload from a Country, State or City and earn Littercoin! More options coming soon!</li>
-                            </ol>
-                            <br>
+                    <div class="mb-2">
+                        <strong>Ratio:</strong>
+                        <p>{{ this.ratio.toLocaleString() }} ada per Littercoin</p>
+                        <p>or {{ this.getLittercoinPrice }} per Littercoin</p>
+                    </div>
 
-                        </div>
+                    <p>Source Code: <a :href="this.lcScriptURL" target="_blank" rel="noopener noreferrer" >{{ this.lcScriptName }}</a></p>
+                    <p>Address: <a style="font-size: small;" :href="this.lcAddrURL" target="_blank" rel="noopener noreferrer" >{{ this.lcAddr }}</a></p>
+                </div>
+
+                <hr>
+
+                <p><h1 class="title is-4">My Littercoin</h1></p>
+                <p>Total Littercoin Earned: {{ this.littercoinEarned }}</p>
+                <p>Total Littercoin Received: {{ this.littercoinEarned - this.littercoinDue }}</p>
+                <p>Littercoin Due: {{ this.littercoinDue }}</p>
+                <hr>
+                <div>
+                    <h1 class="title is-4">Select Your Wallet</h1>
+                    <p>
+                        <input 
+                            type="radio" 
+                            v-model="walletChoice" 
+                            v-on:change="getWalletInfo"
+                            value="nami" 
+                        /> &nbsp;
+                        <img src = "/assets/icons/littercoin/nami.png" alt="Nami Wallet" style="width:20px;height:20px;"/>
+                        <label>&nbsp; Nami</label>
+                    </p>
+                    <br>
+                    <p>
+                        <input 
+                            type="radio" 
+                            v-model="walletChoice" 
+                            v-on:change="getWalletInfo"
+                            value="eternl" 
+                        />&nbsp;
+                        <img src = "/assets/icons/littercoin/eternl.png" alt="Eternl Wallet" style="width:20px;height:20px;"/>
+                        <label>&nbsp; Eternl</label>
+                    </p>
+                    <br>
+                    <div v-if="walletChoice">
+                        <p v-if="walletLoading">Loading...</p>
                         <div v-else>
-                            <div v-if="this.user.eth_wallet">
-                                <p>My Wallet {{ this.user.eth_wallet }}</p>
-                                <br>
-                                <h1 class="title is-3">My Ethereum: <span id="mybal"></span></h1>
-                                <h1 class="title is-3">My Littercoin: <span id="myLtrx"></span></h1>
-                                <br>
-                                <p>Do you want to send LTRX to another address? Note: This will cost gas (Eth).</p>
-                                <p>Please ensure you enter the correct wallet ID. We cannot be held responsible if you enter an incorrect ID!</p>
-                                <br>
-                                <div class="input-group">
-                                    <span class="input-group-addon" id="sizing-addon2">
-                                        <span><strong>SEND</strong></span>
-                                    </span>
-                                    <input type="text" class="input" placeholder="Insert wallet ID here to send LTRX" size="50" v-model="inputltrx">
-                                </div>
-                                <div class="input-group">
-                                    <span class="input-group-addon" id="sizing-addon2">
-                                        <span><strong>LTRX</strong></span>
-                                    </span>
-                                    <input type="text" class="input" placeholder="Insert amount of LTRX to send eg 1.0000" size="50" v-model="amountltrx">
-                                </div>
-                                <br>
-                                <button id="sendcoinbutton" class="button is-medium is-success" @click="sendltrx">Send LTRX</button>
-                                <button class="button is-medium is-danger" @click="deleteWallet">Delete wallet ID</button>
-                            </div>
-                            <div v-else>
-                                <div class="column one-third is-offset-1" style="padding-left: 2em; padding-right: 2em;">
-                                    <p><b>Step 1: </b>Add the public Littercoin ID to the "Watch Token" section of your Ethereum Wallet:</p>
-                                    <p style="color: grey;">0xDA99A3329362220d7305e4C7071F7165abC34181</p>
-                                    <br>
-                                        <form method="POST" action="/settings/littercoin/" role="form" @submit.prevent="addWallet">
-                                            <p><b>Step 2: </b>Enter your Ethereum Wallet ID here so we know where to send and read your available Littercoin:</p>
-                                            <br>
-                                                <div class="columns">
-                                                    <div class="column is-half">
-                                                        <input id="user-wallet-id" name="user-wallet-id" type="text" class="input" placeholder="Your Wallet ID" v-model="userwallet" />
-                                                    </div>
-                                                </div>
-                                            <button class="button is-medium is-primary">Submit ID</button>
-                                        </form>
-
-                                        <div v-show="this.userwallet.length > 40">
-                                            <p>Your wallet ID is {{ this.userwallet }}</p>
-                                        </div>
-                                    <!-- <h1 class="title is-2">My Littercoins: </h1> -->
-                                    <!-- <span id="myBalance"></span> -->
-                                    <!-- <button class="button is-medium is-primary">Recieve</button> -->
-                                    <!-- <button class="button is-medium is-danger">Send</button> -->
-                                    <!-- <button class="button is-medium is-danger">Get My Balance</button> -->
-                                </div>
-                            </div>
+                            Ada amount: {{ this.adaBalance.toLocaleString() }} <br>
+                            Littercoin amount: {{ this.littercoinBalance.toLocaleString() }} <br>
+                            Merchant Token amount: {{ this.merchTokenBalance.toLocaleString() }} <br>
                         </div>
-				</div>
-			</div>
+                    </div>
+                    <hr>
+
+                    <div v-if="walletChoice">
+                        <form 
+                            method="post"
+                            @submit.prevent="submitForm('mint')" 
+                            v-if="!mintSuccess" 
+                            >
+                            <h1 class="title is-4">Mint Littercoin</h1>
+                            Enter the wallet where you want your Littercoin to be sent
+                            <input
+                                class="input"
+                                v-model="mintDestAddr"
+                                placeholder="Enter destination wallet address" 
+                            />
+                            <div style="text-align: center; padding-bottom: 1em;">
+                                <button
+                                    class="button is-medium is-primary mb1 mt1"
+                                    :class="mintFormSubmitted ? 'is-loading' : ''"
+                                    :disabled="checkMintDisabled"
+                                >Submit Tx</button>
+                            </div>
+                        </form>
+                        <div v-if="mintSuccess">
+                            <p><h1 class="title is-4">Mint Littercoin Success!!!</h1></p>
+                            <p>Please wait approximately 20-60 seconds for the littercoin to show up in your wallet.</p>
+                            <p>To track this transaction on the blockchain, select the TxId link below.</p>
+                            <p>TxId: <a style="font-size: small;" :href="this.mintTxIdURL" target="_blank" rel="noopener noreferrer" >{{ this.mintTxId }}</a></p>
+                        </div>
+                    <hr>
+                    </div>
+                    <div v-if="walletChoice">
+                        <form 
+                            method="post"
+                            @submit.prevent="submitForm('burn')" 
+                            v-if="!burnSuccess" 
+                            >
+                            <h1 class="title is-4">Burn Littercoin</h1>
+                            Only those holding a Merchant Token can burn Littercoin to received Ada from the Littercoin Smart Contract
+                            <input
+                                class="input"
+                                type="number"
+                                v-model="lcQty"
+                                placeholder="Enter number of littercoins to burn" 
+                            />
+                            <div style="text-align: center; padding-bottom: 1em;">
+                                <button
+                                    class="button is-medium is-primary mb1 mt1"
+                                    :class="burnFormSubmitted ? 'is-loading' : ''"
+                                    :disabled="checkBurnDisabled"
+                                >Submit Tx</button>
+                            </div>
+                            Note: There is a 4.2% (or 1 Ada minimum) service fee included in the burn transaction
+                        </form>
+                        <div v-if="burnSuccess">
+                            <p><h1 class="title is-4">Burn Littercoin Success!!!</h1></p>
+                            <p>Please wait approximately 20-60 seconds for the Ada to show up in your wallet.</p>
+                            <p>To track this transaction on the blockchain, select the TxId link below.</p>
+                            <p>TxId: <a style="font-size: small;" :href="this.burnTxIdURL" target="_blank" rel="noopener noreferrer" >{{ this.burnTxId }}</a></p>
+                        </div>
+                    <hr>
+                    </div>
+                    <div v-if="walletChoice">
+                        <form 
+                            method="post"
+                            @submit.prevent="submitForm('merchant')" 
+                            v-if="!merchSuccess && isAdmin" 
+                        >
+                            <p><h1 class="title is-4">Mint Merchant Token</h1></p>
+                            Enter the wallet where you want a Merchant Token to be sent
+                            <input
+                                class="input"
+                                v-model="merchDestAddr"
+                                placeholder="Enter destination wallet address" 
+                            >
+                            <div style="text-align: center; padding-bottom: 1em;">
+                                <button
+                                    class="button is-medium is-primary mb1 mt1"
+                                    :class="merchFormSubmitted ? 'is-loading' : ''"
+                                    :disabled="checkMerchDisabled"
+                                >Submit Tx</button>
+                            </div>                    
+                        </form>
+                        <div v-if="merchSuccess && isAdmin">
+                            <p><h1 class="title is-4">Mint Merchant Token Success!!!</h1></p>
+                            <p>Please wait approximately 20-60 seconds for the merchant token to show up in the wallet.</p>
+                            <p>To track this transaction on the blockchain, select the TxId link below.</p>
+                            <p>TxId: <a style="font-size: small;" :href="this.merchTxIdURL" target="_blank" rel="noopener noreferrer" >{{ this.merchTxId }}</a></p>
+                        </div>
+                    <hr>
+                    </div>
+                    <div v-if="walletChoice">
+                        <form 
+                            method="post"
+                            @submit.prevent="submitForm('addAda')" 
+                            v-if="!addAdaSuccess" 
+                        >
+                            <p><h1 class="title is-4">Add Ada To Littercoin Smart Contract</h1></p>
+                            <input
+                                class="input"
+                                type="number"
+                                v-model="addAdaQty"
+                                placeholder="Enter amount of Ada to send" 
+                            >
+                            <div style="text-align: center; padding-bottom: 1em;">
+                                <button
+                                    class="button is-medium is-primary mb1 mt1"
+                                    :class="addAdaFormSubmitted ? 'is-loading' : ''"
+                                    :disabled="checkAddAdaDisabled"
+                                >Submit Tx</button>
+                            </div>                    
+                        </form>
+                        <div v-if="addAdaSuccess">
+                            <p><h1 class="title is-4">Add Ada Success!!!</h1></p>
+                            <p>Please wait approximately 20-60 seconds and refresh this page for the Ada to show up in the Littercoin Smart Contract.</p>
+                            <p>To track this transaction on the blockchain, select the TxId link below.</p>
+                            <p>TxId: <a style="font-size: small;" :href="this.addAdaTxIdURL" target="_blank" rel="noopener noreferrer" >{{ this.addAdaTxId }}</a></p>
+                        </div>
+                    <hr>
+                    </div>
+                </div>
+            </div>
         </div>
 	</div>
 </template>
 
 <script>
-	// <!-- <p>My personal wallet - remove</p> -->
-	// <!-- <p>0x770ea08D3C609e0E37FFdf443fD3842E426e7Eb0</p> -->
-
-	// if (typeof web3 !== 'undefined') {
-	// 	this.web3exists = true;
-	// 	// console.log('does web3 exist');
-	// 	// console.log(this.web3exists);
-  	// 	web3 = new Web3(web3.currentProvider);
-  	// 	// console.log(web3);
-    //
-	// 	var contract_address = "0xDA99A3329362220d7305e4C7071F7165abC34181";
-	// 	var contract_abi = [ { "constant": false, "inputs": [ { "name": "newSellPrice", "type": "uint256" }, { "name": "newBuyPrice", "type": "uint256" } ], "name": "setPrices", "outputs": [], "payable": false, "type": "function" }, { "constant": true, "inputs": [], "name": "name", "outputs": [ { "name": "", "type": "string", "value": "Littercoin" } ], "payable": false, "type": "function" }, { "constant": false, "inputs": [ { "name": "_spender", "type": "address" }, { "name": "_value", "type": "uint256" } ], "name": "approve", "outputs": [ { "name": "success", "type": "bool" } ], "payable": false, "type": "function" }, { "constant": true, "inputs": [], "name": "totalSupply", "outputs": [ { "name": "", "type": "uint256", "value": "100000020000" } ], "payable": false, "type": "function" }, { "constant": false, "inputs": [ { "name": "_from", "type": "address" }, { "name": "_to", "type": "address" }, { "name": "_value", "type": "uint256" } ], "name": "transferFrom", "outputs": [ { "name": "success", "type": "bool" } ], "payable": false, "type": "function" }, { "constant": true, "inputs": [], "name": "decimals", "outputs": [ { "name": "", "type": "uint8", "value": "4" } ], "payable": false, "type": "function" }, { "constant": true, "inputs": [], "name": "sellPrice", "outputs": [ { "name": "", "type": "uint256", "value": "0" } ], "payable": false, "type": "function" }, { "constant": true, "inputs": [], "name": "standard", "outputs": [ { "name": "", "type": "string", "value": "Littercoin" } ], "payable": false, "type": "function" }, { "constant": true, "inputs": [ { "name": "", "type": "address" } ], "name": "balanceOf", "outputs": [ { "name": "", "type": "uint256", "value": "0" } ], "payable": false, "type": "function" }, { "constant": false, "inputs": [ { "name": "target", "type": "address" }, { "name": "mintedAmount", "type": "uint256" } ], "name": "mintToken", "outputs": [], "payable": false, "type": "function" }, { "constant": true, "inputs": [], "name": "buyPrice", "outputs": [ { "name": "", "type": "uint256", "value": "0" } ], "payable": false, "type": "function" }, { "constant": true, "inputs": [], "name": "owner", "outputs": [ { "name": "", "type": "address", "value": "0x770ea08d3c609e0e37ffdf443fd3842e426e7eb0" } ], "payable": false, "type": "function" }, { "constant": true, "inputs": [], "name": "symbol", "outputs": [ { "name": "", "type": "string", "value": "LTRX" } ], "payable": false, "type": "function" }, { "constant": false, "inputs": [], "name": "buy", "outputs": [], "payable": true, "type": "function" }, { "constant": false, "inputs": [ { "name": "_to", "type": "address" }, { "name": "_value", "type": "uint256" } ], "name": "transfer", "outputs": [], "payable": false, "type": "function" }, { "constant": true, "inputs": [ { "name": "", "type": "address" } ], "name": "frozenAccount", "outputs": [ { "name": "", "type": "bool", "value": false } ], "payable": false, "type": "function" }, { "constant": false, "inputs": [ { "name": "_spender", "type": "address" }, { "name": "_value", "type": "uint256" }, { "name": "_extraData", "type": "bytes" } ], "name": "approveAndCall", "outputs": [ { "name": "success", "type": "bool" } ], "payable": false, "type": "function" }, { "constant": true, "inputs": [ { "name": "", "type": "address" }, { "name": "", "type": "address" } ], "name": "allowance", "outputs": [ { "name": "", "type": "uint256", "value": "0" } ], "payable": false, "type": "function" }, { "constant": false, "inputs": [ { "name": "amount", "type": "uint256" } ], "name": "sell", "outputs": [], "payable": false, "type": "function" }, { "constant": false, "inputs": [ { "name": "target", "type": "address" }, { "name": "freeze", "type": "bool" } ], "name": "freezeAccount", "outputs": [], "payable": false, "type": "function" }, { "constant": false, "inputs": [ { "name": "newOwner", "type": "address" } ], "name": "transferOwnership", "outputs": [], "payable": false, "type": "function" }, { "inputs": [ { "name": "initialSupply", "type": "uint256", "index": 0, "typeShort": "uint", "bits": "256", "displayName": "initial Supply", "template": "elements_input_uint", "value": "100000000000" }, { "name": "tokenName", "type": "string", "index": 1, "typeShort": "string", "bits": "", "displayName": "token Name", "template": "elements_input_string", "value": "Littercoin" }, { "name": "decimalUnits", "type": "uint8", "index": 2, "typeShort": "uint", "bits": "8", "displayName": "decimal Units", "template": "elements_input_uint", "value": "4" }, { "name": "tokenSymbol", "type": "string", "index": 3, "typeShort": "string", "bits": "", "displayName": "token Symbol", "template": "elements_input_string", "value": "LTRX" } ], "payable": false, "type": "constructor" }, { "payable": false, "type": "fallback" }, { "anonymous": false, "inputs": [ { "indexed": false, "name": "target", "type": "address" }, { "indexed": false, "name": "frozen", "type": "bool" } ], "name": "FrozenFunds", "type": "event" }, { "anonymous": false, "inputs": [ { "indexed": true, "name": "from", "type": "address" }, { "indexed": true, "name": "to", "type": "address" }, { "indexed": false, "name": "value", "type": "uint256" } ], "name": "Transfer", "type": "event" } ];
-    //
-	// 	var contract_instance = web3.eth.contract(contract_abi).at(contract_address);
-    //
-	// 	// console.log(contract_instance);
-    //
-	// 	// var version = web3.version.network;
-	// 	// console.log(version); // 54
-    //
-	// 	var accounts = web3.eth.accounts;
-	// 	// console.log(accounts);
-    //
-	// } else {
-	//   		// set the provider you want from Web3.providers
-	//   		// alert("Sorry, the web3js object is not available right now. Please configure MetaMask and try again.");
-	//   		// web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
-	// }
 
 export default {
     name: 'Littercoin',
-    created ()
-    {
-        // if (typeof web3 !== 'undefined') this.web3exists = true;
-        //
-        // if (this.user.eth_wallet.length > 40)
-        // {
-        //     if (contract_instance !== undefined)
-        //     {
-        //         contract_instance.balanceOf(this.user.eth_wallet, function(err, res) {
-        //             if(err) {
-        //                 // console.error(err);
-        //             } else {
-        //                 // console.log('success');
-        //                 // console.log(res['c'][0]);
-        //                 var littercoin = res['c'][0] / 10000;
-        //                 var ltrxCoin = littercoin.toLocaleString(undefined, { maximumFractionDigits: 4 });
-        //                 document.getElementById('myLtrx').innerText = ltrxCoin;
-        //             }
-        //         });
-        //         // console.log(web3);
-        //         web3.eth.getBalance(this.user.eth_wallet, web3.eth.defaultBlock, function(error, result) {
-        //             if(error) {
-        //                 console.error(error);
-        //             } else {
-        //                 var balance = web3.fromWei(result.toNumber());
-        //                 // console.log(balance);
-        //                 // console.log(typeof(balance));
-        //                 document.getElementById('mybal').innerText = balance;
-        //                 // this.$data.myBal = balance;
-        //             }
-        //         })
-        //     }
-        // }
+    async created () {
+        this.loading = true;
+
+        await axios.get('/get-users-littercoin')
+            .then(response => {
+                this.littercoinEarned = response.data.littercoinEarned;
+                this.littercoinDue = response.data.littercoinDue;
+            })
+            .catch(error => {
+                console.error('littercoin', error);
+            });
+        await axios.get('/littercoin-info')
+            .then(async response => {
+
+                const lcInfo = await JSON.parse(response.data); 
+                if (lcInfo.status == 200) {
+                    this.adaAmount = lcInfo.payload.list[0].int / 1000000;
+                    this.lcAmount = lcInfo.payload.list[1].int;
+                    this.ratio = this.adaAmount / this.lcAmount;
+                    this.lcAddr = lcInfo.payload.addr;
+                    this.lcAddrURL = "https://preprod.cexplorer.io/address/" + lcInfo.payload.addr;
+                    this.lcScriptName = lcInfo.payload.scriptName;
+                    this.lcScriptURL = "/contracts/" + lcInfo.payload.scriptName;
+                } else {
+                    throw console.error("Could not fetch littercoin contract info");
+                }
+            })
+            .catch(error => {
+                console.error('littercoin-info', error);
+            });
+        await axios.get('https://api.coingecko.com/api/v3/simple/price?ids=cardano&vs_currencies=usd')
+            .then(response => {
+                console.log('ada-price', response);
+
+                this.adaValues = response.data.cardano;
+            })
+            .catch(error => {
+                console.error('ada-price', error);
+            });
+
+        this.loading = false;
     },
-    data ()
-    {
+    data () {
         return {
-            userwallet: '',
-            myBal: '',
-            inputltrx: '',
-            web3exists: false,
-            amountltrx: '0.0000'
+            loading :true,
+            adaAmount: 0,
+            lcAmount: 0,
+            ratio: 0,
+            adaValues: {},
+            selectedCurrency: 'usd',
+            currencySymbols: {
+                usd: "$",
+                eur: "€",
+                btc: "₿",
+            },
+            lcAddr: "",
+            lcAddrURL: "",
+            lcScriptName: "",
+            lcScriptURL: "",
+            littercoinEarned: 0,
+            littercoinDue: 0,
+            walletChoice: "",
+            walletLoading: false, 
+            adaBalance: 0,
+            littercoinBalance: 0,
+            merchTokenBalance: 0,
+            mintDestAddr: "",
+            merchDestAddr: "",
+            addAdaQty: 0,
+            lcQty: 0,
+            mintFormSubmitted: false,
+            burnFormSubmitted: false,
+            merchFormSubmitted: false,
+            addAdaFormSubmitted: false,
+            mintSuccess: false,
+            burnSuccess: false,
+            merchSuccess: false,
+            addAdaSuccess: false,
+            mintTxId: "",
+            burnTxId: "",
+            merchTxId: "",
+            addAdaTxId: "",
+            mintTxIdURL: "",
+            burnTxIdURL: "",
+            merchTxIdURL: "",
+            addAdaTxIdURL: ""
         };
+    },
+    computed: {
+        /**
+         * Shortcut to User object
+         */
+        user () {
+            return this.$store.state.user.user;
+        },
+        /**
+         * Is the user an admin
+         */
+        isAdmin () {
+            return (this.$store.state.user.admin);
+        },
+         /**
+         * Return true to disable the button
+         */
+	    checkMintDisabled () {
+            if (this.mintFormSubmitted) return true
+
+            return false;
+        },
+        /**
+         * Return true to disable the button
+         */
+	    checkBurnDisabled () {
+            if (this.burnFormSubmitted) return true
+
+            return false;
+        },
+        /**
+         * Return true to disable the button
+         */
+	    checkMerchDisabled () {
+            if (this.merchFormSubmitted) return true
+
+            return false;
+        },
+        /**
+         * Return true to disable the button
+         */
+	    checkAddAdaDisabled () {
+            if (this.addAdaFormSubmitted) return true
+
+            return false;
+        },
+        /**
+         * Get the Littercoin price for a given numbercoin
+         */
+        getLittercoinPrice () {
+            const symbol = this.currencySymbols[this.selectedCurrency];
+            const price = this.adaValues[this.selectedCurrency];
+
+            return (this.lcAmount === 0)
+                ? 0
+                : symbol.toString()+ (this.ratio * price).toFixed(2).toString();
+        }
     },
     methods: {
 
-        /**
-         *
-         */
-        addWallet ()
-        {
-            // Validate input
-            if (this.userwallet.length < 40) {
-                return alert('Sorry, that doesnt look like a valid wallet ID. Please try again');
-            }
+        async getWalletInfo () {
 
-            axios({
-                method: 'post',
-                url: '/en/settings/littercoin/update',
-                data: { wallet: this.userwallet }
-            })
-            .then(response => {
-                alert('You have submitted a wallet id');
-                window.location.href = window.location.href
-             })
-             .catch(error => {
-                // console.log(error);
-                alert('Error! Please try again');
-             });
-        },
+            this.walletLoading = true;
+            try {
+                // Connect to the user's wallet
+                var walletAPI;
+                if (this.walletChoice === "nami") {
+                    walletAPI = await window.cardano.nami.enable();
+                } else if (this.walletChoice === "eternl") {
+                    walletAPI = await window.cardano.eternl.enable(); 
+                } else {
+                    alert('No wallet selected');
+                    this.mintFormSubmitted = false;
+                } 
 
-        /**
-         *
-         */
-        sendltrx ()
-        {
-            if (this.inputltrx.length < 10) {
-                alert('Please enter a valid wallet id. If you are unable to please contact @ info@openlittermap.com');
-            }
+                // Get balance from wallet
+                const balanceCbor = await walletAPI.getBalance();
+                
+                // Get the UTXOs from wallet,
+                const cborUtxos = await walletAPI.getUtxos();
 
-            else
-            {
-                contract_instance.transfer(this.inputltrx, this.amountltrx, function(error, result) {
-                    if(error) {
-                        alert(error);
-                    } else {
-                        // console.log(result);
-                        alert('Success! Your transaction # is :' + result);
-                    }
+                await axios.post('/wallet-info', {
+                    balanceCborHex: balanceCbor,
+                    utxos: cborUtxos
+                })
+                .then(async response => {
+                    const walletInfo = await JSON.parse(response.data);
+                    this.adaBalance = walletInfo.payload.adaAmt;
+                    this.littercoinBalance = walletInfo.payload.lcAmt;
+                    this.merchTokenBalance = walletInfo.payload.mtAmt;
+                    this.walletLoading = false;
+                })
+                .catch(error => {
+                    console.error("Error accessing user wallet", error.response.data.errors);
+                    alert ('Error accessing user wallet');
                 });
+
+            } catch (err) {
+                console.error(err);
             }
         },
-
         /**
-         *
+         * Submit a transaction to the cardano blockchain network
          */
-        deleteWallet ()
-        {
-            axios({
-                method: 'post',
-                url: '/en/settings/littercoin/removewallet',
-                data: { wallet: this.userwallet }
-            })
-            .then(response => {
-                alert('Your wallet ID has been deleted.');
-                window.location.href = window.location.href
-             })
-             .catch(error => {
-                // console.log(error);
-                alert('Error! Please try again');
-             });
-        }
-
-    },
-
-    watch: {
-        inputltrx() {
-            if(this.inputltrx.length > 10) {
-                // console.log('over 10');
-                document.getElementById('sendcoinbutton').disabled = false;
+         submitForm: function (type) {
+            
+            if (!this.walletChoice) {
+                alert ('Please select a wallet');
+                return;
             }
-            if(this.inputltrx.length < 10) {
-                // console.log('less than 10');
-                document.getElementById('sendcoinbutton').disabled = true;
+            if (this.adaBalance < 5) {
+                alert ('Not enough Ada in the wallet for a transaction, please make sure there is 5 or more Ada in your wallet');
+                return;
+            }
+            if (type === 'mint') {
+                if (!this.mintDestAddr.match(/^addr/)) {
+                    alert ('Please enter a valid mint littercoin destination address');
+                    return
+                }
+                if (!this.littercoinDue > 0) {
+                    alert ('There are no littercoin due for minting');
+                    return
+                }
+                this.mintFormSubmitted = true;
+                this.submitMint();
+            }
+            if (type === 'burn') {
+                if (this.lcQty < 1) {
+                    alert ('Minimum 1 littercoin required for burn');
+                    return
+                }
+                if (this.lcQty > this.littercoinBalance) {
+                    alert ('The amount of littercoin to burn exceeds the amount of littercoin in the wallet');
+                    return
+                }
+                if (this.merchTokenBalance < 1) {
+                    alert ('No Merchant Tokens founds in the wallet');
+                    return;
+                }
+                this.burnFormSubmitted = true;
+                this.submitBurn();
+            }
+            if (type === 'merchant') {
+                if (!this.merchDestAddr.match(/^addr/)) {
+                    alert ('Please enter a valid mint merchant token destination address');
+                    return
+                }
+                this.merchFormSubmitted = true;
+                this.merchMint();
+            }
+            if (type === 'addAda') {
+                if (!this.addAdaQty > 2) {
+                    alert ('Minimum 2 Ada donation amount required');
+                    return
+                }
+                this.addAdaFormSubmitted = true;
+                this.addAda();
+            }
+        },
+        async submitMint() {
+            try {
+
+                // Connect to the user's wallet
+                var walletAPI;
+                if (this.walletChoice === "nami") {
+                    walletAPI = await window.cardano.nami.enable();
+                } else if (this.walletChoice === "eternl") {
+                    walletAPI = await window.cardano.eternl.enable(); 
+                } else {
+                    alert('No wallet selected');
+                    this.mintFormSubmitted = false;
+                } 
+                
+                // get the UTXOs from wallet,
+                const cborUtxos = await walletAPI.getUtxos();
+
+                // Get the change address from the wallet
+                const hexChangeAddr = await walletAPI.getChangeAddress();
+
+                await axios.post('/littercoin-mint-tx', {
+
+                    destAddr: this.mintDestAddr,
+                    changeAddr: hexChangeAddr,
+                    utxos: cborUtxos
+                })
+                .then(async response => {
+                
+                    const mintTx = await JSON.parse(response.data);
+                    if (mintTx.status == 200) {
+
+                        // Get user to sign the transaction
+                        console.log("Get wallet signature");
+
+                        var walletSig;
+                        try {
+                            walletSig = await walletAPI.signTx(mintTx.cborTx, true);
+                        } catch (err) {
+                            console.error(err);
+                            this.mintFormSubmitted = false;
+                            return
+                        }
+
+                        console.log("Submit transaction...");
+                        await axios.post('/littercoin-submit-mint-tx', {
+                            cborSig: walletSig,
+                            cborTx: mintTx.cborTx
+                        })
+                        .then(async response => {
+                            
+                            const submitTx = await JSON.parse(response.data);
+                            if (submitTx.status == 200) {
+                                this.mintTxId = submitTx.txId;
+                                this.mintTxIdURL = "https://preprod.cexplorer.io/tx/" + submitTx.txId;
+                                this.mintSuccess = true;
+                            } else {
+                                console.error("Littercoin Mint transaction could not be submitted");
+                                alert ('Littercoin Mint transaction could not be submitted, please try again');
+                                this.mintFormSubmitted = false;
+                            }
+                        })
+                        .catch(error => {
+
+                            if (error.response.status == 422){
+                                console.error("Invalid Wallet Input", error.response.data.errors);
+                            } else {
+                                console.error("littercoin-submit-mint-tx: ", error);
+                            }
+                            alert ('Littercoin Mint transaction could not be submitted, please try again');
+                            this.mintFormSubmitted = false;
+                        });
+                
+                    } else {
+                        console.error("Littercoin Mint transaction could not be submitted");
+                        alert ('Littercoin Mint transaction could not be submitted, please try again');
+                        this.mintFormSubmitted = false;
+                    }
+                })
+                .catch(error => {
+                    
+                    if (error.response.status == 422){
+                        console.error("Invalid User Input", error.response.data.errors);
+                        alert ('Please check that you have entered a valid destination address');
+                    } else {
+                        console.error("littercoin-mint-tx", error);
+                        alert ('Littercoin Mint transaction could not be submitted, please try again');
+                    }
+                    this.mintFormSubmitted = false;
+                });
+            } catch (err) {
+                console.error(err);
+                this.mintFormSubmitted = false;
+            }
+        },
+        async submitBurn() {
+
+            try {
+
+                // Connect to the user's wallet
+                var walletAPI;
+                if (this.walletChoice === "nami") {
+                    walletAPI = await window.cardano.nami.enable();
+                } else if (this.walletChoice === "eternl") {
+                    walletAPI = await window.cardano.eternl.enable(); 
+                } else {
+                    alert('No wallet selected');
+                    this.burnFormSubmitted = false;
+                } 
+
+                // get the UTXOs from wallet,
+                const cborUtxos = await walletAPI.getUtxos();
+
+                // Get the change address from the wallet
+                const hexChangeAddr = await walletAPI.getChangeAddress();
+
+                await axios.post('/littercoin-burn-tx', {
+                    lcQty: this.lcQty,
+                    changeAddr: hexChangeAddr,
+                    utxos: cborUtxos
+                })
+                .then(async response => {
+                    
+                    const burnTx = await JSON.parse(response.data);
+                    if (burnTx.status == 200) {
+
+                        // Get user to sign the transaction
+                        console.log("Get wallet signature");
+                        var walletSig;
+                        try {
+                            walletSig = await walletAPI.signTx(burnTx.cborTx, true);
+                        } catch (err) {
+                            console.error(err);
+                            this.burnFormSubmitted = false;
+                            return
+                        }
+                        
+                        console.log("Submit transaction...");
+                        await axios.post('/littercoin-submit-burn-tx', {
+                            cborSig: walletSig,
+                            cborTx: burnTx.cborTx
+                        })
+                        .then(async response => {
+                    
+                            const submitTx = await JSON.parse(response.data);
+                            if (submitTx.status == 200) {
+                                this.burnTxId = submitTx.txId;
+                                this.burnTxIdURL = "https://preprod.cexplorer.io/tx/" + submitTx.txId;
+                                this.burnSuccess = true;
+                            } else {
+                                console.error("Littercoin Burn transaction was not successful");
+                                alert ('Littercoin Burn transaction could not be submitted, please try again');
+                                this.burnFormSubmitted = false;
+                            }
+                        })
+                        .catch(error => {
+                            if (error.response.status == 422){
+                                console.error("Invalid Wallet Input", error.response.data.errors);
+                            } else {
+                                console.error("littercoin-submit-burn-tx: ", error);
+                            }
+                            alert ('Littercoin Burn transaction could not be submitted, please try again');
+                            this.burnFormSubmitted = false;
+                        });
+
+                    } else if (burnTx.status == 401) {
+                        console.error("Insufficient Littercoin In Wallet For Burn");
+                        alert ('Insufficient Littercoin In Wallet For Burn');
+                        this.burnFormSubmitted = false;
+                    } else if (burnTx.status == 402) {
+                        console.error("Merchant Token Not Found");
+                        alert ('Merchant Token Not Found');
+                        this.burnFormSubmitted = false;
+                    } else if (burnTx.status == 403) {
+                        console.error("Ada Withdraw amount is less than the minimum 2 Ada");
+                        alert ('Ada Withdraw amount is less than the minimum 2 Ada');
+                        this.burnFormSubmitted = false;
+                    } else if (burnTx.status == 404) {
+                        console.error("Insufficient funds in Littercoin contract");
+                        alert ('Insufficient funds in Littercoin contract');
+                        this.burnFormSubmitted = false;
+                    } else if (burnTx.status == 405) {
+                        console.error("No valid merchant token found in the wallet");
+                        alert ('No valid merchant token found in the wallet');
+                        this.burnFormSubmitted = false;
+                    } else {
+                        console.error("Littercoin Burn transaction was not successful");
+                        alert ('Littercoin Burn transaction could not be submitted, please try again');
+                        this.burnFormSubmitted = false;
+                    }
+                })
+                .catch(error => {
+                    if (error.response.status == 422){
+                        console.error("Invalid User Input", error.response.data.errors);
+                        alert ('Please check that you have entered a valid destination address');
+                    } else {
+                        console.error("littercoin-burn-tx", error);
+                        alert ('Littercoin Burn transaction could not be submitted, please try again');
+                    }
+                    this.burnFormSubmitted = false;
+                });
+            } catch (err) {
+                console.error(err);
+                this.burnFormSubmitted = false;
+            }
+        },
+        async merchMint() {
+
+            try {
+
+                // Connect to the user's wallet
+                var walletAPI;
+                if (this.walletChoice === "nami") {
+                    walletAPI = await window.cardano.nami.enable();
+                } else if (this.walletChoice === "eternl") {
+                    walletAPI = await window.cardano.eternl.enable(); 
+                } else {
+                    alert('No wallet selected');
+                    this.merchFormSubmitted = false;
+                } 
+
+                // get the UTXOs from wallet,
+                const cborUtxos = await walletAPI.getUtxos();
+
+                // Get the change address from the wallet
+                const hexChangeAddr = await walletAPI.getChangeAddress();
+
+                await axios.post('/merchant-mint-tx', {
+                    destAddr: this.merchDestAddr,
+                    changeAddr: hexChangeAddr,
+                    utxos: cborUtxos
+                })
+                .then(async response => {
+                    const mintTx = await JSON.parse(response.data);
+
+                    if (mintTx.status == 200) {
+
+                        // Get user to sign the transaction
+                        console.log("Get wallet signature");
+                        var walletSig;
+                        try {
+                            walletSig = await walletAPI.signTx(mintTx.cborTx, true);
+                        } catch (err) {
+                            console.error(err);
+                            this.merchFormSubmitted = false;
+                            return
+                        }
+
+                        console.log("Submit transaction...");
+                        await axios.post('/merchant-submit-mint-tx', {
+                            cborSig: walletSig,
+                            cborTx: mintTx.cborTx
+                        })
+                        .then(async response => {
+                    
+                            const submitTx = await JSON.parse(response.data);
+                            if (submitTx.status == 200) {
+                                this.merchTxId = submitTx.txId;
+                                this.merchTxIdURL = "https://preprod.cexplorer.io/tx/" + submitTx.txId;
+                                this.merchSuccess = true;
+                            } else {
+                                console.error("Merchant Token Mint transaction could not be submitted");
+                                alert ('Merchant Token Mint transaction could not be submitted, please try again');
+                                this.merchFormSubmitted = false;
+                            }
+                        })
+                        .catch(error => {
+                            if (error.response.status == 422){
+                                console.error("Invalid Wallet Input", error.response.data.errors);
+                            } else {
+                                console.error("merchant-submit-mint-tx: ", error);
+                            }
+                            alert ('Merchant Token Mint transaction could not be submitted, please try again');
+                            this.merchFormSubmitted = false;
+                        });
+
+                    } else if (mintTx.status == 407) {
+                        console.error("Must be an admin user to mint a merchant token");
+                        alert ('Must be an admin user to mint a merchant token');
+                        this.merchFormSubmitted = false;
+                    } else {
+                        console.error("Merchant Token Mint transaction could not be submitted");
+                        alert ('Merchant Token Mint transaction could not be submitted, please try again');
+                        this.merchFormSubmitted = false;
+                    }
+                })
+                .catch(error => {
+                    if (error.response.status == 422){
+                        console.error("Invalid User Input", error.response.data.errors);
+                        alert ('Please check that you have entered a valid destination address');
+                    } else {
+                        console.error("merchant-submit-mint-tx: ", error);
+                        alert ('Merchant Token Mint transaction could not be submitted, please try again');
+                    }
+                    this.merchFormSubmitted = false;
+                });
+            } catch (err) {
+                console.error(err);
+                this.merchFormSubmitted = false;
+            }
+        },
+        async addAda() {
+
+            try {
+
+                // Connect to the user's wallet
+                var walletAPI;
+                if (this.walletChoice === "nami") {
+                    walletAPI = await window.cardano.nami.enable();
+                } else if (this.walletChoice === "eternl") {
+                    walletAPI = await window.cardano.eternl.enable(); 
+                } else {
+                    alert('No wallet selected');
+                    this.addAdaFormSubmitted = false;
+                } 
+
+                // get the UTXOs from wallet,
+                const cborUtxos = await walletAPI.getUtxos();
+
+                // Get the change address from the wallet
+                const hexChangeAddr = await walletAPI.getChangeAddress();
+
+                await axios.post('/add-ada-tx', {
+                    adaQty: this.addAdaQty,
+                    changeAddr: hexChangeAddr,
+                    utxos: cborUtxos
+                })
+                .then(async response => {
+                    
+                    const addAdaTx = await JSON.parse(response.data);
+
+                    if (addAdaTx.status == 200) {
+
+                        // Get user to sign the transaction
+                        console.log("Get wallet signature");
+                        var walletSig;
+                        try {
+                            walletSig = await walletAPI.signTx(addAdaTx.cborTx, true);
+                        } catch (err) {
+                            console.error(err);
+                            this.addAdaFormSubmitted = false;
+                            return
+                        }
+            
+                        await axios.post('/add-ada-submit-tx', {
+                            cborSig: walletSig,
+                            cborTx: addAdaTx.cborTx
+                        })
+                        .then(async response => {
+
+                            const submitTx = await JSON.parse(response.data);
+                            if (submitTx.status == 200) {
+                                this.addAdaTxId = submitTx.txId;
+                                this.addAdaTxIdURL = "https://preprod.cexplorer.io/tx/" + submitTx.txId;
+                                this.addAdaSuccess = true;
+                            } else {
+                                console.error("Could not submit transaction");
+                                alert ('Add Ada transaction could not be submitted, please try again');
+                                this.addAdaFormSubmitted = false;
+                            }
+                        })
+                        .catch(error => {
+                            if (error.response.status == 422){
+                                console.error("Invalid Wallet Input", error.response.data.errors);
+                            } else {
+                                console.error("add-ada-submit-tx: ", error);
+                            }
+                            alert ('Add Ada transaction could not be submitted, please try again');
+                            this.addAdaFormSubmitted = false;
+                        });
+                    } else if (addAdaTx.status == 408) {
+                        console.error("More Ada in the wallet required for this transaction");
+                        alert ('More Ada in the wallet required for this transaction"');
+                        this.addAdaFormSubmitted = false;
+                    } else {
+                        console.error("Add Ada transaction was not successful");
+                        alert ('Add Ada transaction could not be submitted, please try again');
+                        this.addAdaFormSubmitted = false;
+                    }
+                })
+                .catch(error => {
+                    if (error.response.status == 422){
+                        console.error("Invalid User Input", error.response.data.errors);
+                        alert ('Please check that you have entered a valid destination address');
+                    } else {
+                        console.error("add-ada-tx", error);
+                        alert ('Add Ada transaction could not be submitted, please try again');
+                    }
+                    this.addAdaFormSubmitted = false;
+                });
+            } catch (err) {
+                console.error(err);
+                this.addAdaFormSubmitted = false;
             }
         }
     }

@@ -25,6 +25,11 @@
                 <img loading="lazy" src="/assets/partners/dpga.png" alt="Partner">
             </a>
         </div>
+        <div class="partner has-text-centered">
+            <a href="https://www.cardano4climate.com/" target="_blank">
+                <img loading="lazy" src="/assets/partners/c4clogo.jpeg" alt="Partner">
+            </a>
+        </div>
     </div>
 </template>
 

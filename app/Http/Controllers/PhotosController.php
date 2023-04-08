@@ -103,6 +103,9 @@ class PhotosController extends Controller
         $image = $imageAndExifData['image'];
         $exif = $imageAndExifData['exif'];
 
+        // Temp keeping exif logs on production for debugging
+        \Log::info($exif);
+
         if (is_null($exif))
         {
             abort(500, "Sorry, no GPS on this one.");
@@ -176,9 +179,9 @@ class PhotosController extends Controller
         $lat_ref   = $exif["GPSLatitudeRef"];
         $lat       = $exif["GPSLatitude"];
         $long_ref  = $exif["GPSLongitudeRef"];
-        $long      = $exif["GPSLongitude"];
+        $lon       = $exif["GPSLongitude"];
 
-        $latlong = self::dmsToDec($lat, $long, $lat_ref, $long_ref);
+        $latlong = self::dmsToDec($lat, $lon, $lat_ref, $long_ref);
         $latitude = $latlong[0];
         $longitude = $latlong[1];
 
@@ -195,7 +198,7 @@ class PhotosController extends Controller
         // todo- check all locations for "/" and replace with "-"
         $country = $this->uploadHelper->getCountryFromAddressArray($addressArray);
         $state = $this->uploadHelper->getStateFromAddressArray($country, $addressArray);
-        $city = $this->uploadHelper->getCityFromAddressArray($country, $state, $addressArray);
+        $city = $this->uploadHelper->getCityFromAddressArray($country, $state, $addressArray, $latitude, $longitude);
 
         $geohash = GeoHash::encode($latlong[0], $latlong[1]);
 
@@ -306,9 +309,7 @@ class PhotosController extends Controller
      */
     public function addTags (AddTagsRequest $request, AddCustomTagsToPhotoAction $customTagsAction)
     {
-        /** @var User $user */
         $user = Auth::user();
-        /** @var Photo $photo */
         $photo = Photo::findOrFail($request->photo_id);
 
         if ($photo->user_id !== $user->id || $photo->verified > 0)
@@ -362,32 +363,32 @@ class PhotosController extends Controller
             2 => "888061/1000000"
         ]
      */
-    private function dmsToDec ($lat, $long, $lat_ref, $long_ref)
+    private function dmsToDec ($lat, $lon, $lat_ref, $long_ref)
     {
         $lat[0] = explode("/", $lat[0]);
         $lat[1] = explode("/", $lat[1]);
         $lat[2] = explode("/", $lat[2]);
 
-        $long[0] = explode("/", $long[0]);
-        $long[1] = explode("/", $long[1]);
-        $long[2] = explode("/", $long[2]);
+        $lon[0] = explode("/", $lon[0]);
+        $lon[1] = explode("/", $lon[1]);
+        $lon[2] = explode("/", $lon[2]);
 
         $lat[0] = (int)$lat[0][0] / (int)$lat[0][1];
-        $long[0] = (int)$long[0][0] / (int)$long[0][1];
+        $lon[0] = (int)$lon[0][0] / (int)$lon[0][1];
 
         $lat[1] = (int)$lat[1][0] / (int)$lat[1][1];
-        $long[1] = (int)$long[1][0] / (int)$long[1][1];
+        $lon[1] = (int)$lon[1][0] / (int)$lon[1][1];
 
         $lat[2] = (int)$lat[2][0] / (int)$lat[2][1];
-        $long[2] = (int)$long[2][0] / (int)$long[2][1];
+        $lon[2] = (int)$lon[2][0] / (int)$lon[2][1];
 
         $lat = $lat[0]+((($lat[1]*60)+($lat[2]))/3600);
-        $long = $long[0]+((($long[1]*60)+($long[2]))/3600);
+        $lon = $lon[0]+((($lon[1]*60)+($lon[2]))/3600);
 
         if ($lat_ref === "S") $lat = $lat * -1;
-        if ($long_ref === "W") $long = $long * -1;
+        if ($long_ref === "W") $lon = $lon * -1;
 
-        return [$lat, $long];
+        return [$lat, $lon];
     }
 
     /**

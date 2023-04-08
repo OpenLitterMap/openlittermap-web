@@ -1,10 +1,26 @@
 <template>
     <section class="is-link hero is-bold">
         <section class="wrapper is-link is-bold">
-
-            <!-- Global Leaderboard -->
             <div class="container">
 
+                <div class="typed-container">
+                    <vue-typed-js
+                        :strings="['Community ^2000', 'Impact ^3000', 'Progress ^4000']"
+                        :loop="true"
+                        :typespeed="5"
+                        :startDelay="1000"
+                        :backSpeed="10"
+                        :showCursor="false"
+                    >
+                        <h1 class="worldcup-title">Our Global <span class="typing"></span></h1>
+                    </vue-typed-js>
+                </div>
+
+                <TotalGlobalCounts
+                    :loading="loading"
+                />
+
+                <!-- Leaderboard -->
                 <div class="leaderboard-heading"
                      @click="openLeaderboard"
                 >
@@ -15,20 +31,22 @@
                     <i class="fa fa-arrow-right"/>
                 </div>
 
-                <GlobalLeaders :leaders="leaders"/>
+                <GlobalLeaders
+                    :leaders="leaders"
+                />
             </div>
 
             <Progress
                 :loading="loading"
             />
-
         </section>
     </section>
 </template>
 
 <script>
-import GlobalLeaders from '../global/GlobalLeaders'
+import TotalGlobalCounts from "../global/TotalGlobalCounts";
 import Progress from "../General/Progress";
+import GlobalLeaders from '../global/GlobalLeaders'
 
 export default {
     name: "GlobalMetaData",
@@ -37,7 +55,8 @@ export default {
     ],
     components: {
         GlobalLeaders,
-        Progress
+        Progress,
+        TotalGlobalCounts
     },
     channel: 'main',
     echo: {
@@ -86,6 +105,18 @@ export default {
         padding: 1rem 0.5rem;
     }
 
+    .typed-container {
+        display: flex;
+        justify-content: center;
+    }
+
+    .worldcup-title {
+        font-size: 75px;
+        margin-bottom: 15px;
+        text-align: center;
+        font-weight: 800;
+    }
+
     .leaderboard-heading {
         display: flex;
         justify-content: center;
@@ -115,9 +146,32 @@ export default {
         }
     }
 
-    @media screen and (min-width: 768px) {
+    @media screen and (min-width: 768px)
+    {
         .wrapper {
             padding: 3rem 1.5rem;
         }
     }
+
+    // Mobile view
+    @media screen and (max-width: 768px)
+    {
+        .typed-container {
+            min-height: 130px;
+        }
+
+        .worldcup-title {
+            font-size: 40px !important;
+            min-height: 120px;
+        }
+
+        .typed-element {
+            min-height: 120px;
+        }
+
+        .leaderboard-heading h3 {
+            font-size: 30px;
+        }
+    }
+
 </style>
