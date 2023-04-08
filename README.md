@@ -32,7 +32,7 @@ You should now have a "Homestead" folder on your machine at `~/Users/You/Homeste
 <p>Open the Homestead.yaml file, add a new site and create a database.</p>
 
 ```
-ip: "192.168.10.10"
+ip: "192.168.56.56"
 memory: 2048
 cpus: 1
 provider: virtualbox
@@ -65,7 +65,7 @@ buckets:
       policy: public
 ```
 
-Next, update your hosts file on your host machine (`sudo nano /etc/hosts` on windows it's `C:\Windows\System32\Drivers\etc\hosts`) and include `192.168.10.10 olm.test`
+Next, update your hosts file on your host machine (`sudo nano /etc/hosts` on windows it's `C:\Windows\System32\Drivers\etc\hosts`) and include `192.168.56.56 olm.test`
 
 When you want to boot up the VM, cd into the Homestead folder on your host machine and run `vagrant up`
 
@@ -92,9 +92,9 @@ If you would like to contribute something, make a new branch locally `git checko
 <p>You might notice there are some websocket errors in the browser. Some operations like adding photos broadcast live events to the client. It's easy to get websockets set up to resolve this.</p>
 
 ```
-In your .env file, add "WEBSOCKET_BROADCAST_HOST=192.168.10.10"
+In your .env file, add "WEBSOCKET_BROADCAST_HOST=192.168.56.56"
 In broadcasting.php, change 'host' => env('WEBSOCKET_BROADCAST_HOST')
-In one window, run `php artisan websockets:serve --host=192.168.10.10`
+In one window, run `php artisan websockets:serve --host=192.168.56.56`
 Then, in another window, run `php artisan horizon`
 To test it's working, open another window. Open tinker and run event new(\App\Events\UserSignedUp(1));
 ```
@@ -107,7 +107,7 @@ tab and in http://olm.test/world/Ireland/County%20Cork/Cork/map
 
 The project uses AWS S3 to store photos on production. On development, however, it uses [Minio](https://laravel.com/docs/8.x/homestead#configuring-minio),
 an open source object storage server with an Amazon S3 compatible API. If you copied the .env.example file into .env
-you should be able to access the Minio control panel at http://192.168.10.10:9600 (homestead:secretkey).
+you should be able to access the Minio control panel at http://192.168.56.56:9600 (homestead:secretkey).
 Remember to update the Access Policy to public for your buckets, on the admin panel.
 <p>You are now ready to get started!</p>
 <p>Have fun and thanks for taking an interest in OpenLitterMap</p>
