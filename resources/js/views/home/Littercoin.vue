@@ -194,23 +194,39 @@
         </div>
 
         <div class="more-info-container">
-            <h1 class="title is-1" style="margin-bottom: 1.5em;2">More info:</h1>
+            <h1
+                class="title is-1"
+                style="margin-bottom: 1.5em;"
+            >
+                More info:
+            </h1>
 
             <p class="subtitle is-3">Get 100 images past verification in a row to earn 1 Littercoin!</p>
             <p class="subtitle is-3">This is likely to change soon, depending on what you and the community want.</p>
             <p class="subtitle is-3">The supply of Littercoin is a social construct determined by the total amount of litter.</p>
-            <p class="subtitle is-3">Unlike goverment money which is just printed digitally out of thin air, Littercoin is produced geospatially.</p>
-            <p class="subtitle is-3">Anyone can put the cryptocurrency `ada` into the Smart Contract, giving every Littercoin value.</p>
+            <p class="subtitle is-3">Unlike government money which is just printed digitally out of thin air, Littercoin is produced geospatially.</p>
+            <p class="subtitle is-3">Anyone can put the cryptocurrency <a href="https://coinmarketcap.com/currencies/cardano/" target="_blank">ada</a> into the Smart Contract, giving every Littercoin value.</p>
             <p class="subtitle is-3">By doing so, Littercoin gains more value giving merchants a reason to accept it.</p>
             <p class="subtitle is-3">Climate merchants (eg. zero waste stores) can apply to become Partners.</p>
             <p class="subtitle is-3">Approved Partners receive a special Merchant NFT.</p>
-            <p class="subtitle is-3">The people holding the Merchant Token can put Littercoin into the Smart Contract and get the crypto out.</p>
+            <p class="subtitle is-3">Only those who possess a Merchant Token can put Littercoin into the Smart Contract and get the crypto out.</p>
             <p class="subtitle is-3">Merchant Tokens expire after 12 months.</p>
-            <p class="subtitle is-3">Check out the open source code and documentation</p>
-            <p class="subtitle is-3">By putting `ada` into the Smart Contract, doners are rewarded with Donation Incentive Reward Tokens.</p>
-            <p class="subtitle is-3">These will be used for governance in the future, as for merit and commitment.</p>
-            <p class="subtitle is-3">Mining Littercoin is supposed to be fun, easy and enjoyable.</p>
-            <p></p>
+            <p class="subtitle is-3">By putting ada into the Smart Contract, doners are rewarded with Littercoin Reward Tokens.</p>
+            <p class="subtitle is-3">These reward tokens will be used for governance and for partners to showcase their commitment.</p>
+            <p class="subtitle is-3">Mining Littercoin is supposed to be fun, easy and enjoyable. Please do not take life too seriously!</p>
+            <p class="subtitle is-3">Check out the
+                <a
+                    href="https://github.com/OpenLitterMap/openlittermap-web/pull/582"
+                    target="_blank"
+                >open source code</a>
+
+                and
+                
+                <a
+                    href="https://github.com/OpenLitterMap/openlittermap-web/blob/61d7bd23041c8061c20b812fea1843eb6917164a/littercoin/README.md"
+                    target="_blank"
+                >documentation</a>
+            </p>
         </div>
 
     </div>
