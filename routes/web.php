@@ -164,10 +164,13 @@ Route::get('/settings/teams', 'HomeController@index');
 // Publicly available Littercoin Page
 Route::get('/littercoin', 'HomeController@index');
 
-// Actions used by Littercoin Page & Settings
-
-Route::get('/get-users-littercoin', 'Littercoin\LittercoinController@getUsersLittercoin');
+// Public Routes
 Route::get('/littercoin-info', 'Littercoin\PublicLittercoinController@getLittercoinInfo');
+Route::post('/add-ada-tx', 'Littercoin\PublicLittercoinController@addAdaTx');
+Route::post('/add-ada-submit-tx', 'Littercoin\PublicLittercoinController@submitAddAdaTx');
+
+// Actions used by Authenticated Littercoin Settings Page
+Route::get('/get-users-littercoin', 'Littercoin\LittercoinController@getUsersLittercoin');
 Route::post('/wallet-info', 'Littercoin\LittercoinController@getWalletInfo');
 Route::post('/littercoin-mint-tx', 'Littercoin\LittercoinController@mintTx');
 Route::post('/littercoin-submit-mint-tx', 'Littercoin\LittercoinController@submitMintTx');
@@ -175,13 +178,6 @@ Route::post('/littercoin-burn-tx', 'Littercoin\LittercoinController@burnTx');
 Route::post('/littercoin-submit-burn-tx', 'Littercoin\LittercoinController@submitBurnTx');
 Route::post('/merchant-mint-tx', 'Littercoin\LittercoinController@merchTx');
 Route::post('/merchant-submit-mint-tx', 'Littercoin\LittercoinController@submitMerchTx');
-Route::post('/add-ada-tx', 'Littercoin\LittercoinController@addAdaTx');
-Route::post('/add-ada-submit-tx', 'Littercoin\LittercoinController@submitAddAdaTx');
-
-
-// Game settings @ SettingsController
-// Toggle Presense of a piece of litter
-// Route::post('/settings/settings', 'SettingsController@presense');
 
 // Subscription settings @ SubscriptionsController
 // Control Current Subscription
