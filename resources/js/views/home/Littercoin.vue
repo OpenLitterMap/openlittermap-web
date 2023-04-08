@@ -243,6 +243,7 @@ export default {
     .text-container {
         padding: 5em;
         text-align: center;
+        position: relative;
     }
 
     .main-points {
