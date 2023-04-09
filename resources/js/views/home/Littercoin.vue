@@ -95,13 +95,11 @@
                         />
 
                         <button
+                            :class="addAdaFormSubmitted ? 'is-loading' : ''"
                             class="button is-large is-primary mb1"
                             @click="beginAddAdaTx"
-                        >
-                            Add ada
-                        </button>
-
-                        <p>addAdaFormSubmitted {{ this.addAdaFormSubmitted }}</p>
+                            :disabled="addAdaFormSubmitted"
+                        >Add ada</button>
 
                         <p>
                             Thank you for supporting the Littercoin economy!
