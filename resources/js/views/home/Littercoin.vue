@@ -362,6 +362,8 @@ export default {
 
                     const addAdaTx = await JSON.parse(response.data);
 
+                    console.log({ addAdaTx });
+
                     if (addAdaTx.status == 200)
                     {
                         // Get user to sign the transaction
@@ -374,6 +376,8 @@ export default {
                             this.addAdaFormSubmitted = false;
                             return
                         }
+
+                        console.log('add-ada-submit-tx');
 
                         await axios.post('/add-ada-submit-tx', {
                             cborSig: walletSig,
