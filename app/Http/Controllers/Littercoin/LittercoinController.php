@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Littercoin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\User\User;
 
 class LittercoinController extends Controller {
 
@@ -20,12 +19,13 @@ class LittercoinController extends Controller {
     /**
      * Get an array of all of the Littercoin the User is owed
      */
-    public function getUsersLittercoin () {
-
+    public function getUsersLittercoin ()
+    {
         $userId = Auth::user()->id;
 
         $littercoinEarned = Littercoin::where('user_id', $userId)->count();
         $littercoinDue = Littercoin::where('user_id', $userId)->whereNull('transaction_id')->count();
+
         return [
             'littercoinEarned' => $littercoinEarned,
             'littercoinDue' => $littercoinDue
@@ -36,8 +36,8 @@ class LittercoinController extends Controller {
      * Get the amount Ada, littercoins and merchant tokens in the connected
      * wallet.
      */
-    public function getWalletInfo (Request $request) {
-
+    public function getWalletInfo (Request $request)
+    {
         $request->validate([
             'balanceCborHex' => 'required|alpha_num|max:16384',
             'utxos' => 'required|array|max:256',
@@ -59,8 +59,8 @@ class LittercoinController extends Controller {
     /**
      * Build the littercoin mint transaction.
      */
-    public function mintTx (Request $request) {
-
+    public function mintTx (Request $request)
+    {
         $request->validate([
             'destAddr' => 'required|alpha_dash|max:110',
             'changeAddr' => 'required|alpha_num|max:256',
@@ -77,14 +77,16 @@ class LittercoinController extends Controller {
         $littercoinEarned = Littercoin::where('user_id', $userId)->count();
         $littercoinDue = Littercoin::where('user_id', $userId)->whereNull('transaction_id')->count();
 
-        if ($littercoinDue > 0) {
+        if ($littercoinDue > 0)
+        {
             $cmd = '(cd ../littercoin/;node ./run/build-lc-mint-tx.mjs '.$littercoinDue.' '.escapeshellarg($destAddr).' '.escapeshellarg($changeAddr).' '.escapeshellarg($strUtxos).') 2>> ../storage/logs/littercoin.log'; 
             $response = exec($cmd);
     
             return [
                 $response
             ];   
-        } else {
+        }
+        else {
             return [
                 '{"status": "406", "msg": "Littercoin due must be greater than zero"}'
             ];
@@ -94,8 +96,8 @@ class LittercoinController extends Controller {
     /**
      * Submit the littercoin mint transaction 
      */
-    public function submitMintTx (Request $request) {
-
+    public function submitMintTx (Request $request)
+    {
         $request->validate([
             'cborSig' => 'required|alpha_num|max:16384',
             'cborTx' => 'required|alpha_num|max:16384'
@@ -106,7 +108,9 @@ class LittercoinController extends Controller {
 
         $cmd = '(cd ../littercoin/;node ./run/submit-tx.mjs '.escapeshellarg($cborSig).' '.escapeshellarg($cborTx).') 2>> ../storage/logs/littercoin.log'; 
         $response = exec($cmd);
-        try {
+
+        try
+        {
             $responseJSON = json_decode($response, false);
 
             if ($responseJSON->status == 200) {
@@ -136,8 +140,8 @@ class LittercoinController extends Controller {
     /**
      * Build the littercoin burn transaction.
      */
-    public function burnTx (Request $request) {
-
+    public function burnTx (Request $request)
+    {
         $request->validate([
             'lcQty' => 'required|int|max:1000',
             'changeAddr' => 'required|alpha_num|max:256',
@@ -150,10 +154,13 @@ class LittercoinController extends Controller {
         $utxos = $request->input('utxos');
         $strUtxos=implode(",",$utxos);
 
-        if ($lcQty > 0) {
+        if ($lcQty > 0)
+        {
             $cmd = '(cd ../littercoin/;node ./run/build-lc-burn-tx.mjs '.escapeshellarg($lcQty).' '.escapeshellarg($changeAddr).' '.escapeshellarg($strUtxos).') 2>> ../storage/logs/littercoin.log'; 
             $response = exec($cmd);
-            try {  
+
+            try
+            {
                 $responseJSON = json_decode($response, false);
 
                 if ($responseJSON->status == 200) {
@@ -190,7 +197,8 @@ class LittercoinController extends Controller {
                     '{"status": "400", "msg": "Transaction could not be submitted"}'
                 ];
             }
-        } else {
+        }
+        else {
             return [
                 '{"status": "405", "msg": "Littercoin amount must be greater than zero"}'
             ];
@@ -200,8 +208,8 @@ class LittercoinController extends Controller {
     /**
      * Submit the littercoin burn transaction 
      */
-    public function submitBurnTx (Request $request) {
-
+    public function submitBurnTx (Request $request)
+    {
         $request->validate([
             'cborSig' => 'required|alpha_num|max:16384',
             'cborTx' => 'required|alpha_num|max:16384'
@@ -221,8 +229,8 @@ class LittercoinController extends Controller {
     /**
      * Build the merchant token mint transaction.
      */
-    public function merchTx (Request $request) {
-
+    public function merchTx (Request $request)
+    {
         $request->validate([
             'destAddr' => 'required|alpha_dash|max:110',
             'changeAddr' => 'required|alpha_num|max:256',
@@ -235,17 +243,18 @@ class LittercoinController extends Controller {
         $utxos = $request->input('utxos');
         $strUtxos=implode(",",$utxos);
 
-        if ((Auth::user() && ((Auth::user()->hasRole('admin') 
-                       || Auth::user()->hasRole('superadmin'))))) {
-
-            $cmd = '(cd ../littercoin/;node ./run/build-merch-mint-tx.mjs '.escapeshellarg($destAddr).' '.escapeshellarg($changeAddr).' '.escapeshellarg($strUtxos).') 2>> ../storage/logs/littercoin.log'; 
+        if ((Auth::user() && ((Auth::user()->hasRole('admin') || Auth::user()->hasRole('superadmin')))))
+        {
+            $cmd = '(cd ../littercoin/;node ./run/build-merch-mint-tx.mjs '.escapeshellarg($destAddr).' '.escapeshellarg($changeAddr).' '.escapeshellarg($strUtxos).') 2>> ../storage/logs/littercoin.log';
             $response = exec($cmd);
     
             return [
                 $response
             ]; 
               
-        } else {
+        }
+        else
+        {
             return [
                 '{"status": "407", "msg": "User must be an admin"}'
             ];
@@ -255,8 +264,8 @@ class LittercoinController extends Controller {
     /**
      * Submit the merchant mint transaction.
      */
-    public function submitMerchTx (Request $request) {
-
+    public function submitMerchTx (Request $request)
+    {
         $request->validate([
             'cborSig' => 'required|alpha_num|max:16384',
             'cborTx' => 'required|alpha_num|max:16384'
@@ -266,10 +275,9 @@ class LittercoinController extends Controller {
         $cborTx = $request->input('cborTx');
 
         // Check that the user is an admin
-        if ((Auth::user() && ((Auth::user()->hasRole('admin') 
-                       || Auth::user()->hasRole('superadmin'))))) {
-
-            $cmd = '(cd ../littercoin/;node ./run/submit-tx.mjs '.escapeshellarg($cborSig).' '.escapeshellarg($cborTx).') 2>> ../storage/logs/littercoin.log'; 
+        if ((Auth::user() && ((Auth::user()->hasRole('admin') || Auth::user()->hasRole('superadmin')))))
+        {
+            $cmd = '(cd ../littercoin/;node ./run/submit-tx.mjs '.escapeshellarg($cborSig).' '.escapeshellarg($cborTx).') 2>> ../storage/logs/littercoin.log';
             $response = exec($cmd);
 
             try {

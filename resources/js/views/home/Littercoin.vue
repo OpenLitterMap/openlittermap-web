@@ -100,6 +100,8 @@
                             Add ada
                         </button>
 
+                        <p>addAdaFormSubmitted {{ this.addAdaFormSubmitted }}</p>
+
                         <p>
                             Thank you for supporting the Littercoin economy!
                         </p>
@@ -221,7 +223,7 @@
                 >open source code</a>
 
                 and
-                
+
                 <a
                     href="https://github.com/OpenLitterMap/openlittermap-web/blob/61d7bd23041c8061c20b812fea1843eb6917164a/littercoin/README.md"
                     target="_blank"
@@ -267,7 +269,6 @@ export default {
             componentIndex: 0,
             addAdaQty: 0,
             walletChoice: "",
-            walletLoading: false,
         };
     },
     async created () {
@@ -328,6 +329,8 @@ export default {
          */
         async addAda()
         {
+            console.log('add started');
+
             try
             {
                 // Connect to the user's wallet
@@ -357,8 +360,8 @@ export default {
 
                     const addAdaTx = await JSON.parse(response.data);
 
-                    if (addAdaTx.status == 200) {
-
+                    if (addAdaTx.status == 200)
+                    {
                         // Get user to sign the transaction
                         console.log("Get wallet signature");
                         var walletSig;
@@ -377,6 +380,8 @@ export default {
                             .then(async response => {
 
                                 const submitTx = await JSON.parse(response.data);
+                                console.log({ submitTx });
+
                                 if (submitTx.status == 200) {
                                     this.addAdaTxId = submitTx.txId;
                                     this.addAdaTxIdURL = "https://preprod.cexplorer.io/tx/" + submitTx.txId;
