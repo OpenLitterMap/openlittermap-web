@@ -45,7 +45,8 @@
                 <p>Address: <a style="font-size: small;" :href="this.lcAddrURL" target="_blank" rel="noopener noreferrer" >{{ this.lcAddr }}</a></p>
 
                 <div style="margin-top: 3em;">
-                    <p>Anyone can add ada to the smart contract, which gives every Littercoin value.</p>
+                    <p>Anyone can add ada to the smart contract, which gives Littercoin value.</p>
+                    <p>However, only pre-approved green-listed Climate Merchants can send Littercoin to the Smart Contract.</p>
                     <p style="margin-bottom: 2em;">For every ada added, doners receive 1 Littercoin Reward Token.</p>
 
                     <div v-if="componentIndex === 0">
@@ -269,6 +270,7 @@ export default {
             componentIndex: 0,
             addAdaQty: 0,
             walletChoice: "",
+            addAdaFormSubmitted: false
         };
     },
     async created () {
