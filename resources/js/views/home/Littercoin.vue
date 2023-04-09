@@ -104,6 +104,13 @@
                         <p>
                             Thank you for supporting the Littercoin economy!
                         </p>
+
+                        <div v-if="addAdaSuccess">
+                            <p><h1 class="title is-4">Add Ada Success!!!</h1></p>
+                            <p>Please wait approximately 20-60 seconds and refresh this page for the Ada to show up in the Littercoin Smart Contract.</p>
+                            <p>To track this transaction on the blockchain, select the TxId link below.</p>
+                            <p>TxId: <a style="font-size: small;" :href="this.addAdaTxIdURL" target="_blank" rel="noopener noreferrer" >{{ this.addAdaTxId }}</a></p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -268,7 +275,10 @@ export default {
             componentIndex: 0,
             addAdaQty: 0,
             walletChoice: "",
-            addAdaFormSubmitted: false
+            addAdaFormSubmitted: false,
+            addAdaSuccess: false,
+            addAdaTxId: "",
+            addAdaTxIdURL: ""
         };
     },
     async created () {
@@ -327,10 +337,8 @@ export default {
         /**
          * Create Transaction to submit ada to the Smart Contract
          */
-        async addAda()
+        async addAda ()
         {
-            console.log('add started');
-
             try
             {
                 // Connect to the user's wallet
@@ -362,11 +370,13 @@ export default {
 
                     console.log({ addAdaTx });
 
-                    if (addAdaTx.status == 200)
+                    if (addAdaTx.status === 200)
                     {
                         // Get user to sign the transaction
                         console.log("Get wallet signature");
+
                         var walletSig;
+
                         try {
                             walletSig = await walletAPI.signTx(addAdaTx.cborTx, true);
                         } catch (err) {
@@ -375,69 +385,94 @@ export default {
                             return
                         }
 
-                        console.log('add-ada-submit-tx');
+                        console.log('begin add-ada-submit-tx');
 
                         await axios.post('/add-ada-submit-tx', {
                             cborSig: walletSig,
                             cborTx: addAdaTx.cborTx
                         })
-                            .then(async response => {
+                        .then(async response => {
 
-                                const submitTx = await JSON.parse(response.data);
-                                console.log({ submitTx });
+                            const submitTx = await JSON.parse(response.data);
+                            console.log({ submitTx });
 
-                                if (submitTx.status == 200) {
-                                    this.addAdaTxId = submitTx.txId;
-                                    this.addAdaTxIdURL = "https://preprod.cexplorer.io/tx/" + submitTx.txId;
-                                    this.addAdaSuccess = true;
-                                } else {
-                                    console.error("Could not submit transaction");
-                                    alert ('Add Ada transaction could not be submitted, please try again');
-                                    this.addAdaFormSubmitted = false;
-                                }
-                            })
-                            .catch(error => {
-                                if (error.response.status == 422){
-                                    console.error("Invalid Wallet Input", error.response.data.errors);
-                                } else {
-                                    console.error("add-ada-submit-tx: ", error);
-                                }
+                            if (submitTx.status === 200)
+                            {
+                                this.addAdaTxId = submitTx.txId;
+                                this.addAdaTxIdURL = "https://preprod.cexplorer.io/tx/" + submitTx.txId;
+                                this.addAdaSuccess = true;
+
+                                // display success
+                                this.addAdaFormSubmitted = false;
+                            }
+                            else
+                            {
+                                console.error("Could not submit transaction");
                                 alert ('Add Ada transaction could not be submitted, please try again');
                                 this.addAdaFormSubmitted = false;
-                            });
-                    } else if (addAdaTx.status == 408) {
+                            }
+                        })
+                        .catch(error => {
+                            if (error.response.status === 422){
+                                console.error("Invalid Wallet Input", error.response.data.errors);
+                            } else {
+                                console.error("add-ada-submit-tx: ", error);
+                            }
+                            alert ('Add Ada transaction could not be submitted, please try again');
+
+                            this.addAdaFormSubmitted = false;
+                        });
+                    } else if (addAdaTx.status === 408)
+                    {
                         console.error("More Ada in the wallet required for this transaction");
+
                         alert ('More Ada in the wallet required for this transaction"');
+
                         this.addAdaFormSubmitted = false;
-                    } else {
+                    }
+                    else
+                    {
                         console.error("Add Ada transaction was not successful");
+
                         alert ('Add Ada transaction could not be submitted, please try again');
+
                         this.addAdaFormSubmitted = false;
                     }
                 })
                 .catch(error => {
-                    if (error.response.status == 422){
+                    if (error.response.status === 422)
+                    {
                         console.error("Invalid User Input", error.response.data.errors);
+
                         alert ('Please check that you have entered a valid destination address');
-                    } else {
+                    }
+                    else
+                    {
                         console.error("add-ada-tx", error);
+
                         alert ('Add Ada transaction could not be submitted, please try again');
                     }
+
                     this.addAdaFormSubmitted = false;
                 });
-            } catch (err) {
+            }
+            catch (err)
+            {
                 console.error(err);
+
                 this.addAdaFormSubmitted = false;
             }
         },
 
         /**
+         * Validate the user has set enough funds
          *
+         * Then begin the add ada transaction
          */
-        beginAddAdaTx () {
-            console.log('beginAddAdaTx', this.addAdaQty);
-
-            if (this.addAdaQty < 2) {
+        beginAddAdaTx ()
+        {
+            if (this.addAdaQty < 2)
+            {
                 alert ('Minimum 2 Ada donation amount required');
                 return
             }
@@ -446,8 +481,6 @@ export default {
 
             this.addAda();
         },
-
-
     }
 }
 </script>
