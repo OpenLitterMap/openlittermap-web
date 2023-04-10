@@ -46,7 +46,7 @@ class LittercoinController extends Controller {
 
         $balanceCborHex = $request->input('balanceCborHex');
         $utxos = $request->input('utxos');
-        $strUtxos=implode(",",$utxos);
+        $strUtxos = implode(",",$utxos);
 
         $cmd = '(cd ../littercoin/;node ./run/get-wallet-info.mjs '.escapeshellarg($balanceCborHex).' '.escapeshellarg($strUtxos).') 2>> ../storage/logs/littercoin.log'; 
         $response = exec($cmd);

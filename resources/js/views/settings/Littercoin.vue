@@ -32,7 +32,7 @@
 
                 <hr>
 
-                <p><h1 class="title is-4">My Littercoin</h1></p>
+                <h1 class="title is-4">My Littercoin</h1>
                 <p>Total Littercoin Earned: {{ this.littercoinEarned }}</p>
                 <p>Total Littercoin Received: {{ this.littercoinEarned - this.littercoinDue }}</p>
                 <p>Littercoin Due: {{ this.littercoinDue }}</p>
@@ -363,9 +363,13 @@ export default {
 
                 // Get balance from wallet
                 const balanceCbor = await walletAPI.getBalance();
+
+                console.log({ balanceCbor });
                 
                 // Get the UTXOs from wallet,
                 const cborUtxos = await walletAPI.getUtxos();
+
+                console.log({ cborUtxos });
 
                 await axios.post('/wallet-info', {
                     balanceCborHex: balanceCbor,

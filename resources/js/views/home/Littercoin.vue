@@ -106,10 +106,17 @@
                         </p>
 
                         <div v-if="addAdaSuccess">
-                            <p><h1 class="title is-4">Add Ada Success!!!</h1></p>
-                            <p>Please wait approximately 20-60 seconds and refresh this page for the Ada to show up in the Littercoin Smart Contract.</p>
-                            <p>To track this transaction on the blockchain, select the TxId link below.</p>
-                            <p>TxId: <a style="font-size: small;" :href="this.addAdaTxIdURL" target="_blank" rel="noopener noreferrer" >{{ this.addAdaTxId }}</a></p>
+                            <h1 class="title is-4 mt1">Success!!!</h1>
+                            <p>Please wait approximately 60 seconds before refreshing this page for the Ada to show up in the Littercoin Smart Contract.</p>
+                            <p>To track this transaction on the blockchain, click on the transaction ID link below.</p>
+                            <p>TxId:
+                                <a
+                                style="font-size: small;"
+                                :href="this.addAdaTxIdURL"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                >{{ this.addAdaTxId }}</a>
+                            </p>
                         </div>
                     </div>
                 </div>
