@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "bfa91605636993e4255ff39bc0a03ca2",
+    "content-hash": "eb288fdaebd97f6fa9a3c6c3d098d1e4",
     "packages": [
         {
             "name": "abraham/twitteroauth",
@@ -3161,6 +3161,74 @@
                 "source": "https://github.com/laravel/slack-notification-channel/tree/v2.5.0"
             },
             "time": "2023-01-12T16:21:26+00:00"
+        },
+        {
+            "name": "laravel/telescope",
+            "version": "v4.10.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/laravel/telescope.git",
+                "reference": "3b1220b71ee08ac7be6be074635df50c2b83ab51"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/laravel/telescope/zipball/3b1220b71ee08ac7be6be074635df50c2b83ab51",
+                "reference": "3b1220b71ee08ac7be6be074635df50c2b83ab51",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "laravel/framework": "^8.37|^9.0",
+                "php": "^7.3|^8.0",
+                "symfony/var-dumper": "^5.0|^6.0"
+            },
+            "require-dev": {
+                "ext-gd": "*",
+                "guzzlehttp/guzzle": "^6.0|^7.0",
+                "orchestra/testbench": "^6.0|^7.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "4.x-dev"
+                },
+                "laravel": {
+                    "providers": [
+                        "Laravel\\Telescope\\TelescopeServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Laravel\\Telescope\\": "src/",
+                    "Laravel\\Telescope\\Database\\Factories\\": "database/factories/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Taylor Otwell",
+                    "email": "taylor@laravel.com"
+                },
+                {
+                    "name": "Mohamed Said",
+                    "email": "mohamed@laravel.com"
+                }
+            ],
+            "description": "An elegant debug assistant for the Laravel framework.",
+            "keywords": [
+                "debugging",
+                "laravel",
+                "monitoring"
+            ],
+            "support": {
+                "issues": "https://github.com/laravel/telescope/issues",
+                "source": "https://github.com/laravel/telescope/tree/v4.10.2"
+            },
+            "time": "2022-12-19T11:20:10+00:00"
         },
         {
             "name": "laravel/tinker",
