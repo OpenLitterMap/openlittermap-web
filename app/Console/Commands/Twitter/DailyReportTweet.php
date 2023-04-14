@@ -64,7 +64,7 @@ class DailyReportTweet extends Command
         $connection->setApiVersion('2');
 
         $message = [
-            "text" => "Yesterday we signed up $users users and uploaded $photos photos!"
+            "text" => "Yesterday we signed up $users users and uploaded $photos photos! #openlittermap"
         ];
 
         try
