@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\Twitter;
 
+use App\Models\Location\Country;
 use App\Models\Photo;
 use App\Models\User\User;
 use Carbon\Carbon;
@@ -45,6 +46,10 @@ class DailyReportTweet extends Command
             ->whereDate('created_at', '<=', $endOfYesterday)
             ->count();
 
+        $countries = Country::whereDate('updated_at', '>=', $startOfYesterday)
+            ->whereDate('updated_at', '<=', $endOfYesterday)
+            ->count();
+
         // total tags
         // new locations
         // total littercoin
@@ -64,7 +69,7 @@ class DailyReportTweet extends Command
         $connection->setApiVersion('2');
 
         $message = [
-            "text" => "Yesterday we signed up $users users and uploaded $photos photos! #openlittermap"
+            "text" => "Yesterday we signed up $users users and uploaded $photos photos from $countries countries! #openlittermap #OLMbot"
         ];
 
         try
