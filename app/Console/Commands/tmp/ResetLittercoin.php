@@ -21,7 +21,8 @@ class ResetLittercoin extends Command
 
         foreach ($users as $user)
         {
-            $photos = Photo::where('user_id', $user->id)
+            $photos = Photo::select('id', 'verified', 'user_id')
+                ->where('user_id', $user->id)
                 ->where('verified', '>=', 2)
                 ->get();
 
