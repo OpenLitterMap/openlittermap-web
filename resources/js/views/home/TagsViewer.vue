@@ -67,6 +67,7 @@ export default {
             loopButton: true,
             autoPlay: false,
             minSpeed: 5,
+            maxSpeed: 100,
         }));
 
         this.pointsLayer = L.geoJSON(this.geojson, {
