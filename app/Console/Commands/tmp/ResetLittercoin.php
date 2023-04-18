@@ -30,6 +30,8 @@ class ResetLittercoin extends Command
             {
                 if ($index % 100 === 0)
                 {
+                    echo $index . " \n";
+
                     Littercoin::firstOrCreate([
                         'user_id' => $user->id,
                         'photo_id' => $photo->id,
