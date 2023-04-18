@@ -26,9 +26,13 @@ class ResetLittercoin extends Command
                 ->where('verified', '>=', 2)
                 ->get();
 
+            $photoCount = 0;
+
             foreach ($photos as $index => $photo)
             {
-                if ($index % 100 === 0)
+                $photoCount++;
+
+                if ($photoCount % 100 === 0)
                 {
                     echo $index . " \n";
 
