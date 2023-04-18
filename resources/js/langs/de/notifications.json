@@ -1,15 +1,15 @@
 {
-    "success": "Success",
-    "error": "Error!",
-    "tags-added": "Success! Your tags have been added",
-    "subscription-cancelled": "Your subscription has been cancelled",
-    "privacy-updated": "Your Privacy Settings have been saved",
-    "litter-toggled": "Picked up value updated",
+    "success": "Erfolg",
+    "error": "Fehler!",
+    "tags-added": "Erfolg! Ihre Tags wurden hinzugefügt",
+    "subscription-cancelled": "Ihr Abonnement wurde storniert",
+    "privacy-updated": "Ihre Datenschutzeinstellungen wurden gespeichert",
+    "litter-toggled": "Abgeholt-Wert aktualisiert",
     "settings": {
-        "subscribed": "You have been subscribed to the updates and good news!",
-        "unsubscribed": "You have unsubscribed. You will no longer receive the good news!",
-        "flag-updated": "Your flag has been updated"
+        "subscribed": "Sie haben sich für Updates und gute Nachrichten angemeldet!",
+        "unsubscribed": "Sie haben sich abgemeldet. Sie erhalten keine guten Nachrichten mehr!",
+        "flag-updated": "Ihre Flagge wurde aktualisiert"
     },
     "something-went-wrong": "Etwas ist schief gelaufen. Bitte versuchen Sie es erneut oder kontaktieren Sie uns!",
-    "settings-updated": "Settings updated successfully!"
+    "settings-updated": "Einstellungen erfolgreich aktualisiert!"
 }

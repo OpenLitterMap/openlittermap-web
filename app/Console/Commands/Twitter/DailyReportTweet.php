@@ -2,10 +2,10 @@
 
 namespace App\Console\Commands\Twitter;
 
-use App\Models\Location\Country;
+use Carbon\Carbon;
 use App\Models\Photo;
 use App\Models\User\User;
-use Carbon\Carbon;
+use App\Models\Location\Country;
 use Illuminate\Console\Command;
 use Abraham\TwitterOAuth\TwitterOAuth;
 
@@ -50,6 +50,8 @@ class DailyReportTweet extends Command
             ->whereDate('updated_at', '<=', $endOfYesterday)
             ->count();
 
+        $totalUsers = User::count();
+
         // total tags
         // new locations
         // total littercoin
@@ -69,7 +71,7 @@ class DailyReportTweet extends Command
         $connection->setApiVersion('2');
 
         $message = [
-            "text" => "Yesterday we signed up $users users and uploaded $photos photos from $countries countries! #openlittermap #OLMbot"
+            "text" => "Yesterday we signed up $users users and uploaded $photos photos from $countries countries! We now have $totalUsers users! #openlittermap #OLMbot"
         ];
 
         try
