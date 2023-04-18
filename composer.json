@@ -10,7 +10,11 @@
     "require": {
         "php": "^7.3",
         "ext-json": "*",
+<<<<<<< HEAD
         "abraham/twitteroauth": "^3.1",
+=======
+        "abraham/twitteroauth": "*",
+>>>>>>> master
         "ahmedsaoud31/laravel-permission-to-vuejs": "dev-master",
         "anhskohbo/no-captcha": "^3.3",
         "benjamincrozat/laravel-dropbox-driver": "^3.0",
