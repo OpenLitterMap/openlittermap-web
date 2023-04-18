@@ -7,9 +7,13 @@
 // Email:         cschmitz398@gmail.com
 // Website:       https://www.hyperion-bt.org
 // Repository:    https://github.com/hyperion-bt/helios
-// Version:       0.12.12-31f23c84754d3d4504d291c65d67d7c62aacc36d-fd1f24e23cf67fa008892e894b9157a018c432ed-sorting bug
+// Version:       0.12.12
+//					patches 31f23c84754d3d4504d291c65d67d7c62aacc36d
+//							fd1f24e23cf67fa008892e894b9157a018c432ed
+//							26fe35a24d3bca423b5d0b656259b27e5f4686e0
+//							3d78ffa8d11118a22ddc21dc8e618414aa58e6bb
 // Last update:   March 2023
-// License:       Unlicense
+// License:       BSD-3-Clause
 //
 //
 // About: Helios is a smart contract DSL for Cardano.
@@ -32571,6 +32575,9 @@ export class Tx extends CborData {
 
 		// balance the lovelace
 		this.balanceLovelace(networkParams, changeAddress, spareUtxos.slice());
+
+		// run updateRedeemerIndices again because new inputs may have been added and sorted
+		this.#witnesses.updateRedeemerIndices(this.#body);
 
 		// a bunch of checks
 		this.#body.checkOutputs(networkParams);
