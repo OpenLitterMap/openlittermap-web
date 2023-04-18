@@ -28,12 +28,7 @@ class LoadDataHelper
     public static function getCountries ()
     {
         // first - global metadata
-
-        // old way
-        $littercoin = \DB::table('users')->sum(\DB::raw('littercoin_owed + littercoin_allowance'));
-
-        // new way
-        $littercoin += Littercoin::count();
+        $littercoin = Littercoin::count();
 
         /**
          * Get the countries
