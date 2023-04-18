@@ -62,6 +62,7 @@ export default {
             loopButton: true,
             autoPlay: false,
             minSpeed: 5,
+            maxSpeed: 100,
         }));
     },
     data() {
