@@ -1,7 +1,7 @@
 minting signed
 
 // Define the owner public key hash (PKH)
-const OWNER_PKH: ByteArray = #8c5537f96f7ca627241cfb4d6afe1d2f4ab6656d9a859e75072a1f3d
+const OWNER_PKH: ByteArray = #e96732f3fdd42156f4c47ab4f4d407cd25caac63ff44e9a2ebe44322
  
 const ownerPkh: PubKeyHash = PubKeyHash::new(OWNER_PKH)
 
