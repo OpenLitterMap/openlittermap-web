@@ -22,7 +22,7 @@ const minAda : Int = 2000000
 const minAdaVal: Value = Value::lovelace(minAda)
 
 // Define thread token value
-const TT_MPH: ByteArray = #04ef859e975b3920092818730ccae49418d9811c5654683ddaefc65a
+const TT_MPH: ByteArray = #b0eaffb34d3923b66d09a16805f495be72851387caf1a42c21758509
 const ttMph: MintingPolicyHash = MintingPolicyHash::new(TT_MPH)
 const ttAssetclass: AssetClass = AssetClass::new(
         ttMph, 
@@ -31,7 +31,7 @@ const ttAssetclass: AssetClass = AssetClass::new(
 const ttVal : Value = Value::new(ttAssetclass, 1)
 
 // Define the mph of the littercoin minting policy
-const LC_MPH: ByteArray = #553e48920ebf597989ffbca4e5d0c68133f8d636fd55cf69c11a4902
+const LC_MPH: ByteArray = #250ee83f47951b3b3e2f5480d4753f33f2ca3e665173202eeaeee2c1
 const lcMph: MintingPolicyHash = MintingPolicyHash::new(LC_MPH)
 const lcAssetClass: AssetClass = AssetClass::new(
         lcMph, 
@@ -39,7 +39,7 @@ const lcAssetClass: AssetClass = AssetClass::new(
     )
 
 // Define the mph of the donation rewards token minting policy
-const REWARDS_MPH: ByteArray = #ad322fa158bc88ccc772a869497c7ce89f02a2f7bf01351fa4425c9d
+const REWARDS_MPH: ByteArray = #45e32dd061a54eb3c7a19bf7b4144cecac0af9bb1044f5daed99cd7a
 const rewardsMph: MintingPolicyHash = MintingPolicyHash::new(REWARDS_MPH)
 const rewardsAssetClass: AssetClass = AssetClass::new(
         rewardsMph, 
@@ -47,11 +47,11 @@ const rewardsAssetClass: AssetClass = AssetClass::new(
     )
 
 // Define the merchant token
-const MERCHANT_MPH: ByteArray = #7ab090ed4243b667709c9cf04e2bd23604be81ac81154eab44a7d4e6
+const MERCHANT_MPH: ByteArray = #f5e212286a46c2d607d4144f01839ec7e354573fad76c9ed4dd7ec5c
 const merchMph: MintingPolicyHash = MintingPolicyHash::new(MERCHANT_MPH)
 
 // Define the pkh of the owner
-const OWNER_PKH: ByteArray = #8c5537f96f7ca627241cfb4d6afe1d2f4ab6656d9a859e75072a1f3d
+const OWNER_PKH: ByteArray = #e96732f3fdd42156f4c47ab4f4d407cd25caac63ff44e9a2ebe44322
 const ownerPkh: PubKeyHash = PubKeyHash::new(OWNER_PKH)
 
 func main(datum: Datum, redeemer: Redeemer, ctx: ScriptContext) -> Bool {
