@@ -304,7 +304,7 @@ export default {
                     this.lcAmount = lcInfo.payload.list[1].int;
                     this.ratio = this.adaAmount / this.lcAmount;
                     this.lcAddr = lcInfo.payload.addr;
-                    this.lcAddrURL = "https://preprod.cexplorer.io/address/" + lcInfo.payload.addr;
+                    this.lcAddrURL = "https://cexplorer.io/address/" + lcInfo.payload.addr;
                     this.lcScriptName = lcInfo.payload.scriptName;
                     this.lcScriptURL = "/contracts/" + lcInfo.payload.scriptName;
                 } else {
@@ -406,7 +406,7 @@ export default {
                             if (submitTx.status === 200)
                             {
                                 this.addAdaTxId = submitTx.txId;
-                                this.addAdaTxIdURL = "https://preprod.cexplorer.io/tx/" + submitTx.txId;
+                                this.addAdaTxIdURL = "https://cexplorer.io/tx/" + submitTx.txId;
                                 this.addAdaSuccess = true;
 
                                 // display success
