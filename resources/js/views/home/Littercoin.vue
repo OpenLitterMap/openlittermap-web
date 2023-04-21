@@ -604,6 +604,7 @@ export default {
 
         .littercoin-number-container {
             min-width: 15em !important;
+            flex-direction: column;
         }
 
         .mb2-not-mobile {
