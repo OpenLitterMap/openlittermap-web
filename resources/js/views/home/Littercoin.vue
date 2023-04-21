@@ -41,7 +41,7 @@
                     <p>{{ this.ratio.toLocaleString() }} ada or {{ this.getLittercoinPrice }} each</p>
                 </div>
 
-                <p style="margin-bottom: 5px;">Source Code: <a :href="this.lcScriptURL" target="_blank" rel="noopener noreferrer" >{{ this.lcScriptName }}</a></p>
+                <p style="margin-bottom: 5px;">Source Code: <a :href="this.lcScriptURL" target="_blank" rel="noopener noreferrer" class="mobile-break-words">{{ this.lcScriptName }}</a></p>
                 <p>Address: <a style="font-size: small;" :href="this.lcAddrURL" target="_blank" rel="noopener noreferrer" >{{ this.lcAddr }}</a></p>
 
                 <div style="margin-top: 3em;">
@@ -614,6 +614,10 @@ export default {
         .more-info-container {
             padding-left: 1em;
             padding-right: 1em;
+        }
+
+        .mobile-break-words {
+            overflow-wrap: anywhere;
         }
     }
 
