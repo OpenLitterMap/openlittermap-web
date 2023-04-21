@@ -7,7 +7,7 @@
             </h1>
 
             <img
-                src="/assets/littercoin/launching-soon.png"
+                src="/assets/littercoin/launched.png"
                 class="launching-soon hide-mobile"
             />
 
@@ -25,7 +25,7 @@
                 class="smart-contract"
                 style="font-size: 20px;"
             >
-                <div class="flex space-around" style="min-width: 20em;">
+                <div class="flex space-around littercoin-number-container">
                     <div class="mb-2">
                         <strong>Total ada</strong>
                         <p class="sc-number">{{ this.adaAmount.toLocaleString() }}</p>
@@ -47,7 +47,7 @@
                 <div style="margin-top: 3em;">
                     <p>Anyone can add ada to the smart contract, which gives Littercoin value.</p>
                     <p>However, only pre-approved green-listed Climate Merchants can send Littercoin to the Smart Contract.</p>
-                    <p style="margin-bottom: 2em;">For every ada added, doners receive 1 Littercoin Reward Token.</p>
+                    <p class="mb1">For every ada added, doners receive 1 Littercoin Reward Token.</p>
 
                     <div v-if="componentIndex === 0">
                         <button
@@ -135,7 +135,7 @@
                 <strong class="is-green">How it works</strong> 🌱
             </h1>
 
-            <div class="flex">
+            <div class="flex mobile-flex-col">
                 <div class="littercoin-step">
                     <h1 class="title is-3">
                         1. Pick up some litter
@@ -197,7 +197,7 @@
             </div>
 
             <!-- Open Source -->
-            <h1 class="title is-1" style="margin-bottom: 2em;">
+            <h1 class="title is-1 mb2-not-mobile">
                 Open source 🕊
             </h1>
 
@@ -216,20 +216,20 @@
                 More info:
             </h1>
 
-            <p class="subtitle is-3">Get 100 images past verification in a row to earn 1 Littercoin!</p>
-            <p class="subtitle is-3">This is likely to change soon, depending on what you and the community want.</p>
-            <p class="subtitle is-3">The supply of Littercoin is a social construct determined by the total amount of litter.</p>
-            <p class="subtitle is-3">Unlike government money which is just printed digitally out of thin air, Littercoin is produced geospatially.</p>
-            <p class="subtitle is-3">Anyone can put the cryptocurrency <a href="https://coinmarketcap.com/currencies/cardano/" target="_blank">ada</a> into the Smart Contract, giving every Littercoin value.</p>
-            <p class="subtitle is-3">By doing so, Littercoin gains more value giving merchants a reason to accept it.</p>
-            <p class="subtitle is-3">Climate merchants (eg. zero waste stores) can apply to become Partners.</p>
-            <p class="subtitle is-3">Approved Partners receive a special Merchant NFT.</p>
-            <p class="subtitle is-3">Only those who possess a Merchant Token can put Littercoin into the Smart Contract and get the crypto out.</p>
-            <p class="subtitle is-3">Merchant Tokens expire after 12 months.</p>
-            <p class="subtitle is-3">By putting ada into the Smart Contract, doners are rewarded with Littercoin Reward Tokens.</p>
-            <p class="subtitle is-3">These reward tokens will be used for governance and for partners to showcase their commitment.</p>
-            <p class="subtitle is-3">Mining Littercoin is supposed to be fun, easy and enjoyable. Please do not take life too seriously!</p>
-            <p class="subtitle is-3">Check out the
+            <p class="subtitle is-3 mobile-small-text">Get 100 images past verification in a row to earn 1 Littercoin!</p>
+            <p class="subtitle is-3 mobile-small-text">This is likely to change soon, depending on what you and the community want.</p>
+            <p class="subtitle is-3 mobile-small-text">The supply of Littercoin is a social construct determined by the total amount of litter.</p>
+            <p class="subtitle is-3 mobile-small-text">Unlike government money which is just printed digitally out of thin air, Littercoin is produced geospatially.</p>
+            <p class="subtitle is-3 mobile-small-text">Anyone can put the cryptocurrency <a href="https://coinmarketcap.com/currencies/cardano/" target="_blank">ada</a> into the Smart Contract, giving every Littercoin value.</p>
+            <p class="subtitle is-3 mobile-small-text">By doing so, Littercoin gains more value giving merchants a reason to accept it.</p>
+            <p class="subtitle is-3 mobile-small-text">Climate merchants (eg. zero waste stores) can apply to become Partners.</p>
+            <p class="subtitle is-3 mobile-small-text">Approved Partners receive a special Merchant NFT.</p>
+            <p class="subtitle is-3 mobile-small-text">Only those who possess a Merchant Token can put Littercoin into the Smart Contract and get the crypto out.</p>
+            <p class="subtitle is-3 mobile-small-text">Merchant Tokens expire after 12 months.</p>
+            <p class="subtitle is-3 mobile-small-text">By putting ada into the Smart Contract, doners are rewarded with Littercoin Reward Tokens.</p>
+            <p class="subtitle is-3 mobile-small-text">These reward tokens will be used for governance and for partners to showcase their commitment.</p>
+            <p class="subtitle is-3 mobile-small-text">Mining Littercoin is supposed to be fun, easy and enjoyable. Please do not take life too seriously!</p>
+            <p class="subtitle is-3 mobile-small-text">Check out the
                 <a
                     href="https://github.com/OpenLitterMap/openlittermap-web/pull/582"
                     target="_blank"
@@ -304,7 +304,7 @@ export default {
                     this.lcAmount = lcInfo.payload.list[1].int;
                     this.ratio = this.adaAmount / this.lcAmount;
                     this.lcAddr = lcInfo.payload.addr;
-                    this.lcAddrURL = "https://preprod.cexplorer.io/address/" + lcInfo.payload.addr;
+                    this.lcAddrURL = "https://cexplorer.io/address/" + lcInfo.payload.addr;
                     this.lcScriptName = lcInfo.payload.scriptName;
                     this.lcScriptURL = "/contracts/" + lcInfo.payload.scriptName;
                 } else {
@@ -406,7 +406,7 @@ export default {
                             if (submitTx.status === 200)
                             {
                                 this.addAdaTxId = submitTx.txId;
-                                this.addAdaTxIdURL = "https://preprod.cexplorer.io/tx/" + submitTx.txId;
+                                this.addAdaTxIdURL = "https://cexplorer.io/tx/" + submitTx.txId;
                                 this.addAdaSuccess = true;
 
                                 // display success
@@ -528,6 +528,14 @@ export default {
         padding: 0.5em 1em;
     }
 
+    .mb2-not-mobile {
+        margin-bottom: 2em;
+    }
+
+    .littercoin-number-container {
+        min-width: 20em;
+    }
+
     .dank-memes-container {
         overflow-x: scroll;
         overflow-y: hidden;
@@ -575,6 +583,36 @@ export default {
         .text-container {
             padding: 1em;
             margin-top: 2em;
+            margin-bottom: 2em;
+        }
+
+        .hide-mobile {
+            display: none;
+        }
+
+        .mobile-flex-col {
+            flex-direction: column;
+        }
+
+        .mobile-small-text {
+            font-size: 22px;
+        }
+
+        .littercoin-step {
+            margin: 2em;
+        }
+
+        .littercoin-number-container {
+            min-width: 15em !important;
+        }
+
+        .mb2-not-mobile {
+            margin-bottom: 1em !important;
+        }
+
+        .more-info-container {
+            padding-left: 1em;
+            padding-right: 1em;
         }
     }
 
