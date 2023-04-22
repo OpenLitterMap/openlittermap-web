@@ -127,7 +127,7 @@ class LittercoinController extends Controller {
                                              ->where('transaction_id', $responseJSON->txId)
                                              ->count();
 
-                Twitter::sendTweet("$littercoinCount littercoin have been minted #Littercoin");
+                Twitter::sendTweet("$littercoinCount #Littercoin have been minted.");
 
                 return [
                     $response
