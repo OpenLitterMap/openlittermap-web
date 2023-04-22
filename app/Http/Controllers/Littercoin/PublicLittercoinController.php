@@ -94,7 +94,7 @@ class PublicLittercoinController extends Controller
 
         if ($responseObject['status'] === 200)
         {
-            Twitter::sendTweet("x ada was added to the smart contract #Littercoin");
+            Twitter::sendTweet("x ada was added to the #Littercoin smart contract.");
         }
 
         return [

@@ -11,6 +11,9 @@ use App\Events\TagsVerifiedByAdmin;
 
 use App\Listeners\AddTags\IncrementLocation;
 use App\Listeners\AddTags\CompileResultsString;
+use App\Listeners\Locations\Twitter\TweetNewCity;
+use App\Listeners\Locations\Twitter\TweetNewCountry;
+use App\Listeners\Locations\Twitter\TweetNewState;
 use App\Listeners\Locations\User\UpdateUserIdLastUpdatedLocation;
 use App\Listeners\User\UpdateUserCategories;
 use App\Listeners\User\UpdateUserTimeSeries;
@@ -91,13 +94,16 @@ class EventServiceProvider extends ServiceProvider
             'App\Listeners\UpdateTimes\IncrementCityMonth',
         ],
         NewCountryAdded::class => [
-            NotifySlackOfNewCountry::class
+            NotifySlackOfNewCountry::class,
+            TweetNewCountry::class
         ],
         NewStateAdded::class => [
-            NotifySlackOfNewState::class
+            NotifySlackOfNewState::class,
+            TweetNewState::class
         ],
         NewCityAdded::class => [
-            NotifySlackOfNewCity::class
+            NotifySlackOfNewCity::class,
+            TweetNewCity::class
         ],
     ];
 
