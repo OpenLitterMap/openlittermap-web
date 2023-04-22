@@ -17,7 +17,7 @@ class TweetNewCountry
     {
         if (app()->environment() === 'production')
         {
-            Twitter::sendTweet("New country added. Say hello to $event->country, with code '$event->countryCode'!");
+            Twitter::sendTweet("A new country has been added. Say hello to $event->country!");
         }
     }
 }
