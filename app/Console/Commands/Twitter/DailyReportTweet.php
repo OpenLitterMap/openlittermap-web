@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\Twitter;
 
+use App\Helpers\Twitter;
 use Carbon\Carbon;
 use App\Models\Photo;
 use App\Models\User\User;
@@ -56,38 +57,9 @@ class DailyReportTweet extends Command
         // new locations
         // total littercoin
 
-        $consumer_key = env('TWITTER_API_CONSUMER_KEY');
-        $consumer_secret = env('TWITTER_API_CONSUMER_SECRET');
-        $access_token = env('TWITTER_API_ACCESS_TOKEN');
-        $access_token_secret = env('TWITTER_API_ACCESS_SECRET');
+        $message = "Yesterday we signed up $users users and uploaded $photos photos from $countries countries!";
+        $message .= " We now have $totalUsers users! #openlittermap #OLMbot";
 
-        $connection = new TwitterOAuth(
-            $consumer_key,
-            $consumer_secret,
-            $access_token,
-            $access_token_secret
-        );
-
-        $connection->setApiVersion('2');
-
-        $message = [
-            "text" => "Yesterday we signed up $users users and uploaded $photos photos from $countries countries! We now have $totalUsers users! #openlittermap #OLMbot"
-        ];
-
-        try
-        {
-            $status = $connection->post("tweets", $message, true);
-
-//            not working yet, needs better error handling
-//            if ($connection->getLastHttpCode() == 200) {
-//                echo "Tweet posted successfully!";
-//            } else {
-//                echo "Error posting tweet!";
-//            }
-        }
-        catch (\Exception $e)
-        {
-            \Log::info($e->getMessage());
-        }
+        Twitter::sendTweet($message);
     }
 }
