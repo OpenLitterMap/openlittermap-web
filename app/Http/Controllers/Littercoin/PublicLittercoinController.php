@@ -90,11 +90,11 @@ class PublicLittercoinController extends Controller
         $cmd = '(cd ../littercoin/;node ./run/submit-tx.mjs '.escapeshellarg($cborSig).' '.escapeshellarg($cborTx).') 2>> ../storage/logs/littercoin.log';
         $response = exec($cmd);
 
-        $responseObject = json_decode($response);
+        $responseObject = json_decode($response, false);
 
-        if ($responseObject['status'] === 200)
+        if ($responseObject->status === 200)
         {
-            Twitter::sendTweet("x ada was added to the #Littercoin smart contract.");
+            Twitter::sendTweet("{todo} ada was added to the #Littercoin smart contract.");
         }
 
         return [
