@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Listeners\Locations;
+namespace App\Listeners\Locations\Twitter;
 
 use App\Events\NewStateAdded;
-use Pressutto\LaravelSlack\Facades\Slack;
+use App\Helpers\Twitter;
 
-class NotifySlackOfNewState
+class TweetNewState
 {
     /**
      * Handle the event.
@@ -17,7 +17,7 @@ class NotifySlackOfNewState
     {
         if (app()->environment() === 'production')
         {
-            Slack::send("New state added :grin:. Say hello to $event->state, $event->country!");
+            Twitter::sendTweet("A new state has been added. Say hello to $event->state, $event->country!");
         }
     }
 }

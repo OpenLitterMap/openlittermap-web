@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Littercoin;
 
+use App\Helpers\Twitter;
 use App\Http\Controllers\Controller;
 use App\Models\Littercoin;
 use Illuminate\Http\Request;
@@ -17,7 +18,7 @@ class LittercoinController extends Controller {
     }
 
     /**
-     * Get an array of all of the Littercoin the User is owed
+     * Get an array of all the Littercoin the User is owed
      */
     public function getUsersLittercoin ()
     {
@@ -48,7 +49,7 @@ class LittercoinController extends Controller {
         $utxos = $request->input('utxos');
         $strUtxos = implode(",",$utxos);
 
-        $cmd = '(cd ../littercoin/;node ./run/get-wallet-info.mjs '.escapeshellarg($balanceCborHex).' '.escapeshellarg($strUtxos).') 2>> ../storage/logs/littercoin.log'; 
+        $cmd = '(cd ../littercoin/;node ./run/get-wallet-info.mjs '.escapeshellarg($balanceCborHex).' '.escapeshellarg($strUtxos).') 2>> ../storage/logs/littercoin.log';
         $response = exec($cmd);
 
         return [
@@ -79,12 +80,12 @@ class LittercoinController extends Controller {
 
         if ($littercoinDue > 0)
         {
-            $cmd = '(cd ../littercoin/;node ./run/build-lc-mint-tx.mjs '.$littercoinDue.' '.escapeshellarg($destAddr).' '.escapeshellarg($changeAddr).' '.escapeshellarg($strUtxos).') 2>> ../storage/logs/littercoin.log'; 
+            $cmd = '(cd ../littercoin/;node ./run/build-lc-mint-tx.mjs '.$littercoinDue.' '.escapeshellarg($destAddr).' '.escapeshellarg($changeAddr).' '.escapeshellarg($strUtxos).') 2>> ../storage/logs/littercoin.log';
             $response = exec($cmd);
-    
+
             return [
                 $response
-            ];   
+            ];
         }
         else {
             return [
@@ -94,7 +95,7 @@ class LittercoinController extends Controller {
     }
 
     /**
-     * Submit the littercoin mint transaction 
+     * Submit the littercoin mint transaction
      */
     public function submitMintTx (Request $request)
     {
@@ -106,21 +107,27 @@ class LittercoinController extends Controller {
         $cborSig = $request->input('cborSig');
         $cborTx = $request->input('cborTx');
 
-        $cmd = '(cd ../littercoin/;node ./run/submit-tx.mjs '.escapeshellarg($cborSig).' '.escapeshellarg($cborTx).') 2>> ../storage/logs/littercoin.log'; 
+        $cmd = '(cd ../littercoin/;node ./run/submit-tx.mjs '.escapeshellarg($cborSig).' '.escapeshellarg($cborTx).') 2>> ../storage/logs/littercoin.log';
         $response = exec($cmd);
 
         try
         {
             $responseJSON = json_decode($response, false);
 
-            if ($responseJSON->status == 200) {
-
+            if ($responseJSON->status == 200)
+            {
                 // Update the amount of littercoin paid to user in the DB
                 $userId = Auth::user()->id;
                 $littercoin = Littercoin::where('user_id', $userId)
                                         ->whereNull('transaction_id')
                                         ->update(['transaction_id' => $responseJSON->txId,
                                                   'timestamp' => $responseJSON->date]);
+
+                $littercoinCount = Littercoin::where('user_id', $userId)
+                                             ->where('transaction_id', $responseJSON->txId)
+                                             ->count();
+
+                Twitter::sendTweet("$littercoinCount #Littercoin have been minted.");
 
                 return [
                     $response
@@ -156,7 +163,7 @@ class LittercoinController extends Controller {
 
         if ($lcQty > 0)
         {
-            $cmd = '(cd ../littercoin/;node ./run/build-lc-burn-tx.mjs '.escapeshellarg($lcQty).' '.escapeshellarg($changeAddr).' '.escapeshellarg($strUtxos).') 2>> ../storage/logs/littercoin.log'; 
+            $cmd = '(cd ../littercoin/;node ./run/build-lc-burn-tx.mjs '.escapeshellarg($lcQty).' '.escapeshellarg($changeAddr).' '.escapeshellarg($strUtxos).') 2>> ../storage/logs/littercoin.log';
             $response = exec($cmd);
 
             try
@@ -190,8 +197,8 @@ class LittercoinController extends Controller {
                 }else {
                     return [
                         $response
-                    ];   
-                } 
+                    ];
+                }
             } catch (Exception $e) {
                 return [
                     '{"status": "400", "msg": "Transaction could not be submitted"}'
@@ -206,7 +213,7 @@ class LittercoinController extends Controller {
     }
 
     /**
-     * Submit the littercoin burn transaction 
+     * Submit the littercoin burn transaction
      */
     public function submitBurnTx (Request $request)
     {
@@ -218,12 +225,12 @@ class LittercoinController extends Controller {
         $cborSig = $request->input('cborSig');
         $cborTx = $request->input('cborTx');
 
-        $cmd = '(cd ../littercoin/;node ./run/submit-tx.mjs '.escapeshellarg($cborSig).' '.escapeshellarg($cborTx).') 2>> ../storage/logs/littercoin.log'; 
+        $cmd = '(cd ../littercoin/;node ./run/submit-tx.mjs '.escapeshellarg($cborSig).' '.escapeshellarg($cborTx).') 2>> ../storage/logs/littercoin.log';
         $response = exec($cmd);
- 
+
         return [
             $response
-        ];  
+        ];
     }
 
     /**
@@ -247,11 +254,11 @@ class LittercoinController extends Controller {
         {
             $cmd = '(cd ../littercoin/;node ./run/build-merch-mint-tx.mjs '.escapeshellarg($destAddr).' '.escapeshellarg($changeAddr).' '.escapeshellarg($strUtxos).') 2>> ../storage/logs/littercoin.log';
             $response = exec($cmd);
-    
+
             return [
                 $response
-            ]; 
-              
+            ];
+
         }
         else
         {

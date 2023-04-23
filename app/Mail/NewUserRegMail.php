@@ -23,7 +23,7 @@ class NewUserRegMail extends Mailable
      *
      * @return void
      */
-    public function __construct($user)
+    public function __construct ($user)
     {
         $this->user = $user;
     }
@@ -36,7 +36,6 @@ class NewUserRegMail extends Mailable
      */
     public function build()
     {
-        // return $this->view('view.name');
         return $this->from('welcome@openlittermap.com')
             ->subject('Confirm your email on OpenLitterMap')
             ->view('auth.emails.confirm')

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Littercoin;
 
+use App\Helpers\Twitter;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
@@ -88,6 +89,13 @@ class PublicLittercoinController extends Controller
 
         $cmd = '(cd ../littercoin/;node ./run/submit-tx.mjs '.escapeshellarg($cborSig).' '.escapeshellarg($cborTx).') 2>> ../storage/logs/littercoin.log';
         $response = exec($cmd);
+
+        $responseObject = json_decode($response);
+
+        if ($responseObject['status'] === 200)
+        {
+            Twitter::sendTweet("x ada was added to the #Littercoin smart contract.");
+        }
 
         return [
             $response
