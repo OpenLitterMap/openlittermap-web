@@ -57,7 +57,7 @@ class DailyReportTweet extends Command
         // new locations
         // total littercoin
 
-        $message = "Yesterday we signed up $users users and uploaded $photos photos from $countries countries!";
+        $message = "Today we signed up $users users and uploaded $photos photos from $countries countries!";
         $message .= " We now have $totalUsers users! #openlittermap #OLMbot";
 
         Twitter::sendTweet($message);
