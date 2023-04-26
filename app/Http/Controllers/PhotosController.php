@@ -103,9 +103,6 @@ class PhotosController extends Controller
         $image = $imageAndExifData['image'];
         $exif = $imageAndExifData['exif'];
 
-        // Temp keeping exif logs on production for debugging
-        \Log::info($exif);
-
         if (is_null($exif))
         {
             abort(500, "Sorry, no GPS on this one.");
