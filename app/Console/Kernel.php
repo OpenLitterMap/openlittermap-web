@@ -27,7 +27,7 @@ class Kernel extends ConsoleKernel
 //        $schedule->command('sitemap:generate')->daily();
         $schedule->command('twitter:daily-report')->dailyAt('00:00');
         $schedule->command('clusters:generate-all')->dailyAt('00:10');
-        $schedule->command('clusters:generate-team-clusters')->dailyAt('0:20');
+        $schedule->command('clusters:generate-team-clusters')->dailyAt('00:20');
     }
 
     /**
