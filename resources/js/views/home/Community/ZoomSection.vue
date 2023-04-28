@@ -62,8 +62,10 @@ export default {
 
         setInterval(() => {
             let now = new Date();
+
             let nextMeetingDay = new Date();
             nextMeetingDay.setUTCDate(now.getUTCDate() + (11 - now.getUTCDay()) % 7 + 1);
+
             let meetingStart = new Date(
                 nextMeetingDay.getUTCFullYear(),
                 nextMeetingDay.getUTCMonth(),
@@ -86,17 +88,18 @@ export default {
                 let todayMeetingStart = new Date(now.getTime());
 
                 const startHour = (daylightSavings)
-                    ? 19
+                    ? 17
                     : 18;
 
                 const endHour = (daylightSavings)
-                    ? 20
-                    : 19;
+                    ? 19
+                    : 20;
 
                 todayMeetingStart.setUTCHours(startHour);
                 todayMeetingStart.setUTCMinutes(0);
                 todayMeetingStart.setUTCSeconds(0);
                 todayMeetingStart.setUTCMilliseconds(0);
+
                 let meetingEnd = new Date(todayMeetingStart.getTime());
                 meetingEnd.setUTCHours(endHour);
                 meetingEnd.setUTCMinutes(30);
