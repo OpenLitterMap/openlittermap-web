@@ -7,6 +7,14 @@
                         <i class="fa-4x fa-fw is-large has-text-light" :class="card.icon"></i>
                     </a>
                 </div>
+
+                <a
+                    href="https://discord.gg/z6Pg2g5y6G"
+                    target="_blank"
+                    class="discord-link"
+                >
+                   and discord
+                </a>
             </div>
         </div>
     </section>
@@ -19,14 +27,19 @@ export default {
         return {
             cards: [
                 {
-                    title: 'Facebook',
-                    link: 'https://www.facebook.com/openlittermap/',
-                    icon: 'fa fa-facebook'
+                    title: 'Slack',
+                    link: 'https://join.slack.com/t/openlittermap/shared_invite/zt-fdctasud-mu~OBQKReRdC9Ai9KgGROw',
+                    icon: 'fa fa-slack'
                 },
                 {
                     title: 'Twitter',
                     link: 'https://twitter.com/OpenLitterMap',
                     icon: 'fa fa-twitter'
+                },
+                {
+                    title: 'Facebook',
+                    link: 'https://www.facebook.com/openlittermap/',
+                    icon: 'fa fa-facebook'
                 },
                 {
                     title: 'Instagram',
@@ -43,11 +56,7 @@ export default {
                     link: 'https://www.youtube.com/channel/UCfUT45IaIoxSCdQwv7-cTRg',
                     icon: 'fa fa-youtube'
                 },
-                {
-                    title: 'Slack',
-                    link: 'https://join.slack.com/t/openlittermap/shared_invite/zt-fdctasud-mu~OBQKReRdC9Ai9KgGROw',
-                    icon: 'fa fa-slack'
-                },
+
                 {
                     title: 'LinkedIn',
                     link: 'https://www.linkedin.com/company/openlittermap/',
@@ -80,6 +89,11 @@ export default {
             transform: scale(1.05);
         }
     }
+}
+
+.discord-link {
+    color: white;
+    width: max-content;
 }
 
 @media screen and (min-width: 1280px) {

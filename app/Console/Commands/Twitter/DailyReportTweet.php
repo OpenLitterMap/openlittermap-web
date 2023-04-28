@@ -3,6 +3,7 @@
 namespace App\Console\Commands\Twitter;
 
 use App\Helpers\Twitter;
+use App\Models\Littercoin;
 use Carbon\Carbon;
 use App\Models\Photo;
 use App\Models\User\User;
@@ -53,12 +54,22 @@ class DailyReportTweet extends Command
 
         $totalUsers = User::count();
 
-        // total tags
+        $tags = Photo::whereDate('created_at', '>=', $startOfYesterday)
+            ->whereDate('created_at', '<=', $endOfYesterday)
+            ->sum('total_litter');
+
         // new locations
+
         // total littercoin
+        $littercoinCount = Littercoin::whereDate('created_at', '>=', $startOfYesterday)
+            ->whereDate('created_at', '<=', $endOfYesterday)
+            ->count();
 
         $message = "Today we signed up $users users and uploaded $photos photos from $countries countries!";
-        $message .= " We now have $totalUsers users! #openlittermap #OLMbot 🌍";
+        $message .= " We added $tags tags.";
+        $message .= " We now have $totalUsers users!";
+        $message .= " $littercoinCount littercoin were mined";
+        $message .= " #openlittermap #OLMbot 🌍";
 
         Twitter::sendTweet($message);
     }

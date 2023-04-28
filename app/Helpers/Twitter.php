@@ -22,13 +22,13 @@ class Twitter
 
         $connection->setApiVersion('2');
 
-        $message = [
+        $tweet = [
             "text" => $message
         ];
 
         try
         {
-            $status = $connection->post("tweets", $message, true);
+            $status = $connection->post("tweets", $tweet, true);
         }
         catch (\Exception $exception)
         {
