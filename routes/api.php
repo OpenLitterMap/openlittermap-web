@@ -93,6 +93,12 @@ Route::post('/settings/privacy/toggle-previous-tags', 'ApiSettingsController@tog
 
 Route::patch('/settings', 'SettingsController@update')->middleware('auth:api');
 
+/**
+ * Littercoin
+ */
+Route::post('/littercoin/merchants', 'Merchants\BecomeAMerchantController');
+   // ->middleware('auth:api');
+
 // Teams
 Route::prefix('/teams')->group(function () {
     Route::get('/members', 'API\TeamsController@members');
