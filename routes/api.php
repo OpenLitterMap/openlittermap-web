@@ -97,7 +97,6 @@ Route::patch('/settings', 'SettingsController@update')->middleware('auth:api');
  * Littercoin
  */
 Route::post('/littercoin/merchants', 'Merchants\BecomeAMerchantController');
-   // ->middleware('auth:api');
 
 // Teams
 Route::prefix('/teams')->group(function () {

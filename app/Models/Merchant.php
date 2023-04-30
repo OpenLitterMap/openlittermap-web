@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Merchant extends Model
 {
-    protected $guarded;
+    protected $guarded = [];
 
     use HasFactory;
 }
