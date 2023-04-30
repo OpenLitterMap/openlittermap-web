@@ -24,7 +24,7 @@
                 <div class="form-group">
                     <label for="store-name">Store Name:</label>
                     <input
-                        placeholder="Your amazing store's name"
+                        placeholder="Your stores name"
                         type="text"
                         id="store-name"
                         name="store-name"
@@ -35,7 +35,7 @@
                 <div class="form-group">
                     <label for="store-address">Store Address:</label>
                     <textarea
-                        placeholder="Your store's address"
+                        placeholder="Your stores address"
                         id="store-address"
                         name="store-address"
                         v-model="storeAddress"
@@ -45,7 +45,7 @@
                 <div class="form-group">
                     <label for="store-email">Email:</label>
                     <input
-                        placeholder="Your store's email"
+                        placeholder="Your stores email"
                         type="email"
                         id="store-email"
                         name="store-email"
@@ -56,7 +56,7 @@
                 <div class="form-group">
                     <label for="store-phone">Phone:</label>
                     <input
-                        placeholder="Your store's phone"
+                        placeholder="Your phone"
                         type="tel"
                         id="store-phone"
                         name="store-phone"
@@ -67,12 +67,11 @@
                 <div class="form-group">
                     <label for="store-website">Website:</label>
                     <input
-                        placeholder="Your store's website"
+                        placeholder="Your stores website"
                         type="url"
                         id="store-website"
                         name="store-website"
                         v-model="storeWebsite"
-                        required
                     >
                 </div>
                 <div class="form-group">
@@ -117,6 +116,7 @@ export default {
                 address: this.storeAddress,
                 email: this.storeEmail,
                 phone: this.storePhone,
+                website: this.storeWebsite,
                 message: this.message,
             })
             .then(response => {
