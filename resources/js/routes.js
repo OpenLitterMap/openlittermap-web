@@ -56,6 +56,10 @@ const router = new VueRouter({
             component: require('./views/home/Littercoin').default
         },
         {
+            path: '/littercoin/merchants',
+            component: require('./views/home/Merchants').default
+        },
+        {
             path: '/donate',
             component: require('./views/home/Donate').default
         },
