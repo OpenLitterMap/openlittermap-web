@@ -85,18 +85,18 @@ export default {
             const daily = this.stats.photosPerMonth / 30;
             const hourly = daily / 24;
 
-            return (hourly / 60) + " per minute";
+            return (hourly / 60).toFixed(2) + " per minute";
         },
         getNewUsersPerDay () {
             const daily = this.stats.usersPerMonth / 30;
 
-            return daily + " per day";
+            return daily.toFixed(2) + " per day";
         },
         getTagsPerMinute () {
             const daily = this.stats.litterTagsPerMonth / 30;
             const hourly = daily / 24;
 
-            return (hourly / 60) + " per minute";
+            return (hourly / 60).toFixed(2) + " per minute";
         },
         stats() {
             return this.$store.state.community;
