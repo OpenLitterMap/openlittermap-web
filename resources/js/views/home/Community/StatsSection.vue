@@ -14,6 +14,7 @@
                         />
                     </div>
                     <div class="is-size-5">{{ $t('home.community.photos-last-30-days') }}</div>
+                    <p>{{ getUploadsPerMinute }}</p>
                 </div>
                 <div class="stat has-text-light has-text-centered">
                     <div class="total has-text-weight-bold">
@@ -27,6 +28,7 @@
                         />
                     </div>
                     <div class="is-size-5">{{ $t('home.community.users-last-30-days') }}</div>
+                    <p>{{ getNewUsersPerDay }}</p>
                 </div>
                 <div class="stat has-text-light has-text-centered">
                     <div class="total has-text-weight-bold">
@@ -40,11 +42,15 @@
                         />
                     </div>
                     <div class="is-size-5">{{ $t('home.community.litter-tags-last-30-days') }}</div>
+                    <p>{{ getTagsPerMinute }}</p>
                 </div>
             </div>
             <div class="charts mt-6">
                 <div class="chart">
-                    <StatsChart :chart-data="yearlyStats" :options="options"/>
+                    <StatsChart
+                        :chart-data="yearlyStats"
+                        :options="options"
+                    />
                 </div>
             </div>
         </div>
@@ -55,9 +61,10 @@ import StatsChart from './StatsChart.js';
 
 export default {
     name: 'StatsSection',
-    components: {StatsChart},
-    data ()
-    {
+    components: {
+        StatsChart
+    },
+    data () {
         return {
             options: {
                 aspectRatio: 3,
@@ -74,6 +81,23 @@ export default {
         };
     },
     computed: {
+        getUploadsPerMinute () {
+            const daily = this.stats.photosPerMonth / 30;
+            const hourly = daily / 24;
+
+            return (hourly / 60) + " per minute";
+        },
+        getNewUsersPerDay () {
+            const daily = this.stats.usersPerMonth / 30;
+
+            return daily + " per day";
+        },
+        getTagsPerMinute () {
+            const daily = this.stats.litterTagsPerMonth / 30;
+            const hourly = daily / 24;
+
+            return (hourly / 60) + " per minute";
+        },
         stats() {
             return this.$store.state.community;
         },
