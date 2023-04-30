@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Merchants;
 use App\Http\Controllers\Controller;
 use App\Models\Merchant;
 use Illuminate\Http\Request;
+use Pressutto\LaravelSlack\Facades\Slack;
 
 class BecomeAMerchantController extends Controller
 {
@@ -29,6 +30,8 @@ class BecomeAMerchantController extends Controller
                 'website' => $request->website,
                 'message' => $request->message,
             ]);
+
+            Slack::send("Someone has applied to become a Littercoin merchant! Name: $merchant->name address: $merchant->address");
         }
         catch (\Exception $exception)
         {
