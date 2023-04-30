@@ -10,9 +10,6 @@ class BecomeAMerchantController extends Controller
 {
     public function __invoke (Request $request)
     {
-        \Log::info($request);
-
-
         $request->validate([
             'name' => 'required|string|max:255',
             'address' => 'required|string|max:255',
@@ -43,6 +40,8 @@ class BecomeAMerchantController extends Controller
             ];
         }
 
-
+        return [
+            'success' => true,
+        ];
     }
 }
