@@ -163,6 +163,7 @@ Route::get('/settings/teams', 'HomeController@index');
 
 // Publicly available Littercoin Page
 Route::get('/littercoin', 'HomeController@index');
+Route::get('/littercoin/merchants', 'HomeController@index');
 
 // Public Routes
 Route::get('/littercoin-info', 'Littercoin\PublicLittercoinController@getLittercoinInfo');

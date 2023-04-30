@@ -56,6 +56,8 @@
                         >
                             Add ada
                         </button>
+
+                        <BecomeAPartner />
                     </div>
 
                     <div v-else>
@@ -248,8 +250,10 @@
 </template>
 
 <script>
+import BecomeAPartner from "../../components/BecomeAPartner";
 export default {
     name: "Littercoin",
+    components: {BecomeAPartner},
     data () {
         return {
             loading: true,
