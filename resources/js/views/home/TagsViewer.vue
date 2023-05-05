@@ -9,7 +9,7 @@ import L from 'leaflet';
 import 'leaflet-timedimension';
 import 'leaflet-timedimension/dist/leaflet.timedimension.control.css';
 import { mapHelper } from '../../maps/mapHelpers';
-import { MIN_ZOOM } from '../../constants';
+import { MIN_ZOOM, MAX_ZOOM } from '../../constants';
 
 export default {
     name: 'TagsViewer',
@@ -42,8 +42,8 @@ export default {
         let mapLink = '<a href="https://openstreetmap.org">OpenStreetMap</a>';
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: 'Map data &copy; ' + mapLink + ' & Contributors',
-            maxZoom: 20,
-            minZoom: 2,
+            maxZoom: MAX_ZOOM,
+            minZoom: MIN_ZOOM,
         }).addTo(this.map);
 
         this.map.attributionControl.addAttribution('Litter data &copy; OpenLitterMap & Contributors ' + year);
@@ -67,6 +67,7 @@ export default {
             loopButton: true,
             autoPlay: false,
             minSpeed: 5,
+            maxSpeed: 100,
         }));
 
         this.pointsLayer = L.geoJSON(this.geojson, {
@@ -99,10 +100,12 @@ export default {
             const searchParams = new URLSearchParams(window.location.search);
             const customTag = searchParams.get('custom_tag');
             const brand = searchParams.get('brand');
+            const customTags = searchParams.get('custom_tags');
 
             await axios.get('/tags-search', {
                 params: {
                     custom_tag: customTag,
+                    custom_tags: customTags,
                     brand
                 }
             })
@@ -122,7 +125,7 @@ export default {
          */
         flyToLocationFromURL ()
         {
-            let urlParams = new URLSearchParams(window.location.search);
+            const urlParams = new URLSearchParams(window.location.search);
             let latitude = parseFloat(urlParams.get('lat') || 0);
             let longitude = parseFloat(urlParams.get('lon') || 0);
             let zoom = parseFloat(urlParams.get('zoom') || MIN_ZOOM);
@@ -130,7 +133,7 @@ export default {
             // Validate lat, lon, and zoom level
             latitude = (latitude < -85 || latitude > 85) ? 0 : latitude;
             longitude = (longitude < -180 || longitude > 180) ? 0 : longitude;
-            zoom = (zoom < MIN_ZOOM || zoom > 18) ? MIN_ZOOM : zoom;
+            zoom = (zoom < MIN_ZOOM || zoom > MAX_ZOOM) ? MIN_ZOOM : zoom;
 
             if (latitude === 0 && longitude === 0 && zoom === MIN_ZOOM) return;
 

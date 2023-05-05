@@ -1,6 +1,6 @@
 {
-    "success-title": "Thanks for helping!",
-    "success-subtitle": "Remember to verify your email to enable login.",
-    "error-title": "There was a problem.",
-    "error-subtitle": "Your card was not changed, but you can still verify your email and login."
+    "success-title": "Vielen Dank für Ihre Hilfe!",
+    "success-subtitle": "Denken Sie daran, Ihre E-Mail-Adresse zu bestätigen, um sich anzumelden.",
+    "error-title": "Es gab ein Problem.",
+    "error-subtitle": "Ihre Karte wurde nicht geändert, aber Sie können immer noch Ihre E-Mail-Adresse bestätigen und sich anmelden."
 }

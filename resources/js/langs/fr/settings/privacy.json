@@ -1,0 +1,20 @@
+{
+    "change-privacy": "Changer Ma Confidentialité",
+    "maps": "Cartes",
+    "credit-name": "Utiliser mon nom",
+    "credit-username": "Utiliser mon nom d'utilisateur",
+    "name-imgs-yes": "Votre nom va apparaître sur chacune des images que vous allez télécharger sur les cartes.",
+    "username-imgs-yes": "Votre nom d'utilisateur va apparaître sur chacune des images que vous allez télécharger sur les cartes.",
+    "name-username-map-no": "Vos nom et nom d'utilisateur n'apparaîtront pas sur les cartes.",
+    "leaderboards": "Tableau des scores",
+    "credit-my-name": "Utiliser mon nom",
+    "credit-my-username": "Utiliser mon nom d'utilisateur",
+    "name-leaderboards-yes": "Votre nom apparaîtra dans chaque classement auquel vous vous qualifierez.",
+    "username-leaderboards-yes": "Votre nom d'utilisateur apparaîtra dans chaque classement auquel vous vous qualifierez.",
+    "name-username-leaderboards-no": "Vos nom et nom d'utilisateur n'apparaîtront pas dans les classements.",
+    "created-by": "Créé Par",
+    "name-locations-yes": "Votre nom apparaîtra dans la section Créé Par de chaque position que vous créez.",
+    "username-locations-yes": "Votre nom d'utilisateur apparaîtra dans la section Créé Par de chaque position que vous créez.",
+    "name-username-locations-yes": "Vos nom et nom d'utilsateur n'apparaîtront pas dans la section Créé Par de chaque position que vous créez.",
+    "update": "Mettre à jour"
+}

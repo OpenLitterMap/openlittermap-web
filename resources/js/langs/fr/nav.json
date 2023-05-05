@@ -1,0 +1,20 @@
+{
+    "admin": "Admin",
+    "admin-verify-photos": "ADMIN - Vérification des photos",
+    "admin-horizon": "ADMIN - Horizon",
+    "admin-verify-boxes": "ADMIN - Vérification des boîtes",
+    "about": "A propos",
+    "global-map": "Carte du monde",
+    "world-cup": "Coupe du monde",
+    "community": "Communauté",
+    "upload": "Envoyer",
+    "more": "Plus",
+    "tag-litter": "Tagué un déchet",
+    "profile": "Profil",
+    "settings": "Options",
+    "bounding-boxes": "Boite à limite",
+    "logout": "Déconnexion",
+    "login": "Connexion",
+    "signup": "Inscription",
+    "teams": "Equipes"
+}

@@ -27,15 +27,13 @@
 
 <script>
 export default {
-    name: 'Presence',
-    data ()
-    {
+    name: 'PickedUp',
+    data () {
         return {
             processing: false
         };
     },
     methods: {
-
         /**
          * Dispatch action to save default setting value
          */
@@ -48,9 +46,7 @@ export default {
             this.processing = false;
         }
     },
-
     computed: {
-
         /**
          * Dynamic button class
          */

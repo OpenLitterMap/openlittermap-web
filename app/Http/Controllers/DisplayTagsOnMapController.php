@@ -21,7 +21,16 @@ class DisplayTagsOnMapController extends Controller
         if ($request->has('custom_tag'))
         {
             $photos = $photos->whereHas('customTags', function (Builder $query) use ($request) {
-                return $query->whereTag($request->custom_tag);
+                return $query->where('tag', $request->custom_tag);
+            });
+        }
+
+        if ($request->has('custom_tags'))
+        {
+            $tags = explode(',', $request->custom_tags);
+
+            $photos = $photos->whereHas('customTags', function (Builder $query) use ($tags) {
+                return $query->whereIn('tag', $tags);
             });
         }
 

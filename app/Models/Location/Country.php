@@ -23,7 +23,7 @@ class Country extends Location
         'countrynameb',
         'littercoin_paid',
         'created_by',
-        'photos_per_month'
+        'user_id_last_uploaded'
     ];
 
     public function getRouteKeyName()
@@ -39,7 +39,9 @@ class Country extends Location
         'total_photos_redis',
         'total_contributors_redis',
         'litter_data',
-        'brands_data'
+        'brands_data',
+        'ppm',
+        'updatedAtDiffForHumans'
     ];
 
     /**
@@ -110,14 +112,41 @@ class Country extends Location
     }
 
     /**
+     * Get the Photos Per Month attribute,
+     *
+     * Return sorted keys
+     *
+     * or empty array
+     */
+    public function getPpmAttribute ()
+    {
+        $ppm = Redis::hgetall("ppm:country:$this->id");
+
+        return sort_ppm($ppm);
+    }
+
+    /**
+     * Get updatedAtDiffForHumans
+     */
+    public function getUpdatedAtDiffForHumansAttribute () {
+        return $this->updated_at->diffForHumans();
+    }
+
+    /**
      * Define relationships
      */
     public function photos () {
         return $this->hasMany('App\Models\Photo');
     }
 
+    // change this to firstUploader
     public function creator () {
         return $this->belongsTo('App\Models\User\User', 'created_by');
+    }
+
+    // The last user_id who uploaded
+    public function lastUploader () {
+        return $this->belongsTo('App\Models\User\User', 'user_id_last_uploaded');
     }
 
     public function states () {

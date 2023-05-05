@@ -37,7 +37,8 @@ class City extends Location
         'manual_verify',
         'littercoin_paid',
         'created_by',
-        'total_dogshit'
+        'total_dogshit',
+        'user_id_last_uploaded'
     ];
 
     /**
@@ -48,7 +49,9 @@ class City extends Location
         'total_photos_redis',
         'total_contributors_redis',
         'litter_data',
-        'brands_data'
+        'brands_data',
+        'ppm',
+        'updatedAtDiffForHumans'
     ];
 
     /**
@@ -118,9 +121,34 @@ class City extends Location
         return $totals;
     }
 
+    /**
+     * Get the Photos Per Month attribute,
+     *
+     * Return sorted keys
+     *
+     * or empty array
+     */
+    public function getPpmAttribute ()
+    {
+        $ppm = Redis::hgetall("ppm:city:$this->id");
+
+        return sort_ppm($ppm);
+    }
+
+    /**
+     * Get updatedAtDiffForHumans
+     */
+    public function getUpdatedAtDiffForHumansAttribute () {
+        return $this->updated_at->diffForHumans();
+    }
+
     public function creator()
     {
         return $this->belongsTo('App\Models\User\User', 'created_by');
+    }
+
+    public function lastUploader () {
+        return $this->belongsTo('App\Models\User\User', 'user_id_last_uploaded');
     }
 
     public function country() {

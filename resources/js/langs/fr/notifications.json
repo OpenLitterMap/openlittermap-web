@@ -1,0 +1,15 @@
+{
+    "success": "Succès",
+    "error": "Erreur !",
+    "settings-updated": "Options mise à jour avec succès !",
+    "tags-added": "Félicititations ! Votre tag a bien été ajouté",
+    "subscription-cancelled": "Votre abonnement a été annulé",
+    "privacy-updated": "Vos options de vie privée ont été sauvegardés",
+    "litter-toggled": "Option de ramassage mise à jour",
+    "settings": {
+        "subscribed": "Vous vous êtes bien inscrit pour recevoir nos bonnes nouvelles et actualitées !",
+        "unsubscribed": "Vous vous êtes désinscrit. Vous ne recevrez plus nos bonnes nouvelles !",
+        "flag-updated": "Votre drapeau a été mis à jour"
+    },
+    "something-went-wrong": "Quelque chose s'est mal passé. Réessayez plus tard ou contactez-nous!"
+}

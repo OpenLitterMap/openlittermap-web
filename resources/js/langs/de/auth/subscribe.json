@@ -1,13 +1,14 @@
 {
-    "title": "Are you ready?",
-    "subtitle": "Sign up to become an expert litter mapper and help us defeat plastic pollution.",
-    "form-create-account": "Create your account",
+    "title": "Bist du bereit?",
+    "subtitle": "Registriere dich, um ein Experte im Kartieren von Abfall zu werden und hilf uns, die Plastikverschmutzung zu bekämpfen.",
+    "form-create-account": "Erstelle dein Konto",
     "form-field-name": "Name",
-    "form-field-unique-id": "Unique Identifier",
-    "form-field-email": "E-Mail Address",
-    "form-field-password": "Password. Must contain Uppercase, lowercase and a number.", 
-    "form-field-pass-confirm": "Confirm Password",
-    "form-account-conditions": "I have read and agree to the <a href='/terms'>Terms and Conditions of use</a> and <a href='/privacy'>Privacy Policy</a>",
-    "form-btn": "Sign up",
-    "create-account-note": "Note: If you do not recieve the verification e-mail in your inbox, please check your spam/junk folder."
+    "form-field-unique-id": "Einzigartige Kennung",
+    "form-field-email": "E-Mail-Adresse",
+    "form-field-password": "Passwort. Muss Groß- und Kleinbuchstaben sowie eine Zahl enthalten.",
+    "form-field-pass-confirm": "Passwort bestätigen",
+    "form-account-conditions": "Ich habe die <a href='/terms'>Nutzungsbedingungen</a> und die <a href='/privacy'>Datenschutzbestimmungen</a> gelesen und akzeptiere sie.",
+    "form-btn": "Registrieren",
+    "create-account-note": "Hinweis: Wenn Sie die Bestätigungs-E-Mail nicht in Ihrem Posteingang erhalten haben, überprüfen Sie bitte Ihren Spam-Ordner.",
+    "crowdfunding-message": "Bitte unterstützen Sie unsere Arbeit, indem Sie OpenLitterMap mit einem monatlichen Abonnement von nur 6 Cent pro Tag unterstützen, um diese wichtige Plattform zu entwickeln und zu erweitern."
 }

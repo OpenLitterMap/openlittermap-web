@@ -2,28 +2,29 @@
 
 namespace App\Models\User;
 
+use App\Payment;
+use App\Models\Photo;
+use App\Models\CustomTag;
+use App\Models\Teams\Team;
+use App\Models\Littercoin;
 use App\Models\AI\Annotation;
 use App\Models\Cleanups\Cleanup;
 use App\Models\Cleanups\CleanupUser;
-use App\Models\CustomTag;
-use App\Models\Littercoin;
-use App\Models\Photo;
-use App\Models\Teams\Team;
-use App\Payment;
 
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
-use Illuminate\Support\Facades\Redis;
 use Laravel\Cashier\Billable;
-use Illuminate\Notifications\Notifiable;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Spatie\Permission\Traits\HasRoles;
 use Laravel\Passport\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
 use LaravelAndVueJS\Traits\LaravelPermissionToVueJS;
+
+use Illuminate\Support\Facades\Redis;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 /**
  * @property Collection<Team> | array<Team> $teams
@@ -108,7 +109,8 @@ class User extends Authenticatable
         'previous_tags',
         'remaining_teams',
         'photos_per_month',
-        'bbox_verification_count'
+        'bbox_verification_count',
+        'enable_admin_tagging'
     ];
 
     /**

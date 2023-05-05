@@ -87,6 +87,7 @@ class ProfileController extends Controller
             ])
             ->whereDate(request()->period, '>=', request()->start)
             ->whereDate(request()->period, '<=', request()->end)
+            ->orderBy(request()->period, 'asc')
             ->get();
 
         // Populate geojson object
@@ -109,7 +110,7 @@ class ProfileController extends Controller
                     'result_string' => $resultString,
                     'filename' => $filename,
                     'datetime' => $photo->datetime,
-                    'time' => $photo->created_at,
+                    'time' => $photo->datetime,
                     'cluster' => false,
                     'verified' => $photo->verified,
                     'name' => $name,

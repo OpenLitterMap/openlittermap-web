@@ -1,7 +1,7 @@
 {
-    "toggle-email": "Toggle Email Subscription",
-    "we-send-updates": "Occasionally, we send out emails with updates and good news.",
-    "subscribe": "You can subscribe or unsubscribe to our emails here.",
-    "current-status": "Current Status",
-    "change-status": "Change Status"
+    "toggle-email": "E-Mail-Abonnement umschalten",
+    "we-send-updates": "Gelegentlich senden wir E-Mails mit Updates und guten Neuigkeiten.",
+    "subscribe": "Sie können hier unsere E-Mails abonnieren oder abbestellen.",
+    "current-status": "Aktueller Status",
+    "change-status": "Status ändern"
 }

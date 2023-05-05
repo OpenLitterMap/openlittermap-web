@@ -60,7 +60,11 @@
                         <div class="column is-6 image-wrapper">
                             <!-- The Image -->
                             <div class="image-content">
-                                <img v-img="{sourceButton: true}" :src="photo.filename" class="img">
+                                <img
+                                    v-img="{ sourceButton: true }"
+                                    :src="photo.filename"
+                                    class="img"
+                                >
                             </div>
 
                             <!-- Add & Submit Tags -->

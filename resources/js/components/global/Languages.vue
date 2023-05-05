@@ -27,10 +27,12 @@ export default {
 			button: 'dropdown navbar-item pointer',
 			dir: '/assets/icons/flags/',
 			langs: [
-				{ url: 'en' },
-				{ url: 'es' },
+                { url: 'de' },
+                { url: 'en' },
+                { url: 'es' },
+                { url: 'fr' },
                 { url: 'hu' },
-				{ url: 'nl' },
+                { url: 'nl' },
                 { url: 'pl' },
                 { url: 'pt' },
                 { url: 'sw' }

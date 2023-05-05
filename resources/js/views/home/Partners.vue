@@ -1,29 +1,38 @@
 <template>
-    <div>
-        <div class="partners-list">
-            <div class="partner has-text-centered">
-                <a href="https://cardano.org/" target="_blank">
-                    <img loading="lazy" src="/assets/partners/cardano.svg" alt="Partner">
-                </a>
-            </div>
-            <div class="partner has-text-centered">
-                <a href="https://elfc.com/" target="_blank">
-                    <img loading="lazy" src="/assets/partners/engine-lease-finance-logo.png" alt="Partner">
-                </a>
-            </div>
-            <div class="partner has-text-centered">
-                <a href="https://twitter.com/PlasticRaiders?s=20" target="_blank">
-                    <img loading="lazy" src="/assets/partners/plastic_raiders.png" alt="Partner">
-                </a>
-            </div>
-            <div class="partner has-text-centered">
-                <a href="https://www.sfi.ie/" target="_blank">
-                    <img loading="lazy" src="/assets/partners/science-foundation-ireland.png" alt="Partner">
-                </a>
-            </div>
+    <div class="partners-list">
+        <div class="partner has-text-centered">
+            <a href="https://cardano.org/" target="_blank">
+                <img loading="lazy" src="/assets/partners/cardano.svg" alt="Partner">
+            </a>
+        </div>
+        <div class="partner has-text-centered">
+            <a href="https://elfc.com/" target="_blank">
+                <img loading="lazy" src="/assets/partners/engine-lease-finance-logo.png" alt="Partner">
+            </a>
+        </div>
+        <div class="partner has-text-centered">
+            <a href="https://twitter.com/PlasticRaiders?s=20" target="_blank">
+                <img loading="lazy" src="/assets/partners/plastic_raiders.png" alt="Partner">
+            </a>
+        </div>
+        <div class="partner has-text-centered">
+            <a href="https://www.sfi.ie/" target="_blank">
+                <img loading="lazy" src="/assets/partners/science-foundation-ireland.png" alt="Partner">
+            </a>
+        </div>
+        <div class="partner has-text-centered">
+            <a href="https://www.digitalpublicgoods.net/" target="_blank">
+                <img loading="lazy" src="/assets/partners/dpga.png" alt="Partner">
+            </a>
+        </div>
+        <div class="partner has-text-centered">
+            <a href="https://www.cardano4climate.com/" target="_blank">
+                <img loading="lazy" src="/assets/partners/c4clogo.jpeg" alt="Partner">
+            </a>
         </div>
     </div>
 </template>
+
 <script>
 export default {
     name: 'Partners'
@@ -34,7 +43,7 @@ export default {
 
     .partners-list {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         grid-gap: 32px 32px;
     }
 

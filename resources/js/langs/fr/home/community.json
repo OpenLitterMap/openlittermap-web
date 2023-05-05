@@ -1,0 +1,18 @@
+{
+    "title": "Aidez-nous à changer le monde.",
+    "subtitle": "Nous nous développons chaque jour un peu plus",
+    "photos-last-30-days": "Photos téléchargées ces 30 derniers jours",
+    "users-last-30-days": "Nouveaux utilisateurs ces 30 derniers jours",
+    "litter-tags-last-30-days": "Déchet tagué ces 30 derniers jours",
+    "photos-every-month-label": "Photos téléchargées chaque mois",
+    "users-every-month-label": "De nouveaux utilisatuers tous les mois",
+    "zoom-text": "Rejoignez-nous sur le {link}, où nous pouvons écouter toutes les nouvelles idées et suggestions de notre communauté grandissante. Chaque semaine nos utilisateurs partagent leurs commentaires qui permettent toujours d'éaméliorer notre application et de la rendre plus facile à utiliser. Participez à la mise en forme de la direction que prendra notre plateforme open source de monitoring et de collecte de données environnementales. La visioconférence commence dans:",
+    "zoom-weekly-calls": "Appel hebdomadaire sur Zoom à 18h GMT (Dublin/Londres/Lisbonne) tous les vendredis",
+    "zoom-live": "Le live",
+    "zoom-days": "jour | jours",
+    "zoom-hours": "heure | heures",
+    "zoom-minutes": "minute | minutes",
+    "slack-text": "{slack} est notre principal moyen de communication et collaboration. Les utilisateurs avancés, les nouveaux-venus, les développeurs, une communauté de plus de 400 membres; nous sommes tous là. Écrivez-nous quelque chose et vous aurez une réponse instantanée, nous sommes constamment en ligne.",
+    "fundraiser-text": "OpenLitterMap dépend entièrement des dons. On a mis en place un {link} et nous sommes toujours très loin de notre objectif. Toutes les contributions sont les bienvenues. {emoji}",
+    "fundraiser-link": "Campagne de financement GoFundMe"
+}

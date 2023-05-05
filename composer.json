@@ -10,6 +10,7 @@
     "require": {
         "php": "^7.3",
         "ext-json": "*",
+        "abraham/twitteroauth": "^3.1",
         "ahmedsaoud31/laravel-permission-to-vuejs": "dev-master",
         "anhskohbo/no-captcha": "^3.3",
         "benjamincrozat/laravel-dropbox-driver": "^3.0",
@@ -26,6 +27,7 @@
         "laravel/horizon": "^5.0",
         "laravel/passport": "^10.0",
         "laravel/slack-notification-channel": "^2.3",
+        "laravel/telescope": "^4.10",
         "laravel/tinker": "^2.0",
         "laravel/ui": "^3.0",
         "league/flysystem-aws-s3-v3": "^1.0",
@@ -34,6 +36,7 @@
         "predis/predis": "^1.1",
         "pusher/pusher-php-server": "~3.0",
         "schuppo/password-strength": "^2.1",
+        "spatie/emoji": "^4.0",
         "spatie/laravel-backup": "^6.16",
         "spatie/laravel-permission": "^4.0",
         "stripe/stripe-php": "^7.49",

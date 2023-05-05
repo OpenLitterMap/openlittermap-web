@@ -12,7 +12,8 @@
         "softdrinks": "Frisdrank",
         "smoking": "Rookwaar",
         "other": "Overig",
-        "dogshit": "Huisdieren"
+        "dogshit": "Huisdieren",
+        "material": "Material"
     },
     "smoking": {
         "butts": "Sigaretten/Peuken",
@@ -294,5 +295,31 @@
     "dogshit": {
         "poo": "Hondendrol!",
         "poo_in_bag": "Hondendrol in zakje!"
+    },
+    "material": {
+        "aluminium": "Aluminium",
+        "bronze": "Bronze",
+        "carbon_fiber": "Carbon Fiber",
+        "ceramic": "Ceramic",
+        "composite": "Composite",
+        "concrete": "Concrete",
+        "copper": "Copper",
+        "fiberglass": "Fiberglass",
+        "glass": "Glass",
+        "iron_or_steel": "Iron/Steel",
+        "latex": "Latex",
+        "metal": "Metal",
+        "nickel": "Nickel",
+        "nylon": "Nylon",
+        "paper": "Paper",
+        "plastic": "Plastic",
+        "polyethylene": "Polyethylene",
+        "polymer": "Polymer",
+        "polypropylene": "Polypropylene",
+        "polystyrene": "Polystyrene",
+        "pvc": "PVC",
+        "rubber": "Rubber",
+        "titanium": "Titanium",
+        "wood": "Wood"
     }
 }

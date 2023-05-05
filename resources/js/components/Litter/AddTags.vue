@@ -183,6 +183,7 @@ export default {
 
         window.addEventListener('keydown', this.listenForSearchFocusEvent);
         window.addEventListener('keydown', this.listenForSubmitEvent);
+        window.addEventListener('keydown', this.listenForArrowKeys);
 
         this.$nextTick(function () {
             this.$refs.search.input.focus();
@@ -493,6 +494,56 @@ export default {
         },
 
         /**
+         * Change to previous/next image if they exist
+         */
+        listenForArrowKeys (event)
+        {
+            if (event.keyCode === 37)
+            {
+                if (this.$store.state.photos.paginate?.prev_page_url)
+                {
+                    this.$store.dispatch('PREVIOUS_IMAGE');
+                }
+            }
+
+            if (event.keyCode === 39)
+            {
+                if (this.$store.state.photos.paginate?.next_page_url)
+                {
+                    this.$store.dispatch('NEXT_IMAGE');
+                }
+            }
+        },
+
+        /**
+         * If the user hits Ctrl + Enter, submit the tags
+         */
+        listenForSubmitEvent (event)
+        {
+            if (
+                (event.ctrlKey || event.metaKey) &&
+                event.key.toLowerCase() === 'enter' &&
+                this.hasAddedTags &&
+                (! this.admin && this.id !== 0)
+            ) {
+                event.preventDefault();
+                event.stopPropagation();
+                this.submit();
+            }
+        },
+
+        /**
+         * If the user hits Ctrl + Space bar, search all tags
+         */
+        listenForSearchFocusEvent (event)
+        {
+            if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === ' ') {
+                this.$refs.search.input.focus();
+                event.preventDefault();
+            }
+        },
+
+        /**
          * Clear the input field to allow the user to begin typing
          */
         onFocusSearch ()
@@ -620,39 +671,12 @@ export default {
             await this.$store.dispatch(action);
 
             this.processing = false;
-        },
-
-        /**
-         * If the user hits Ctrl + Enter, submit the tags
-         */
-        listenForSubmitEvent(event)
-        {
-            if (
-                (event.ctrlKey || event.metaKey) &&
-                event.key.toLowerCase() === 'enter' &&
-                this.hasAddedTags &&
-                (! this.admin && this.id !== 0)
-            ) {
-                event.preventDefault();
-                event.stopPropagation();
-                this.submit();
-            }
-        },
-
-        /**
-         * If the user hits Ctrl + Space bar, search all tags
-         */
-        listenForSearchFocusEvent(event)
-        {
-            if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === ' ') {
-                this.$refs.search.input.focus();
-                event.preventDefault();
-            }
         }
     },
 
     destroyed ()
     {
+        window.removeEventListener('keydown', this.listenForArrowKeys);
         window.removeEventListener('keydown', this.listenForSearchFocusEvent);
         window.removeEventListener('keydown', this.listenForSubmitEvent);
     }

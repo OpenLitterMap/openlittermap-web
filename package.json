@@ -24,10 +24,13 @@
         "vue-template-compiler": "^2.6.11"
     },
     "dependencies": {
+        "@stricahq/bip32ed25519": "^1.0.4",
         "@turf/hex-grid": "^6.0.2",
         "@turf/turf": "^5.1.6",
         "animate.css": "^4.1.0",
         "animated-number-vue": "^1.0.0",
+        "bip39": "^3.1.0",
+        "blakejs": "^1.2.1",
         "buefy": "^0.9.1",
         "bulma": "^0.9.0",
         "chart.js": "^2.9.3",
@@ -71,6 +74,7 @@
         "vue-stripe-elements-plus": "^0.3.2",
         "vue-sweetalert2": "^3.0.6",
         "vue-toastify": "^1.8.0",
+        "vue-typed-js": "^0.1.2",
         "vue2-dropzone": "^3.6.0",
         "vue2-leaflet": "^2.5.2",
         "vue2-leaflet-markercluster": "^3.1.0",

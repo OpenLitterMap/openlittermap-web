@@ -4,7 +4,7 @@ namespace App\Http\Requests\Api;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UploadPhotoWithTagsRequest extends FormRequest
+class UploadPhotoWithOrWithoutTagsRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -28,18 +28,11 @@ class UploadPhotoWithTagsRequest extends FormRequest
             'lat' => 'required|numeric',
             'lon' => 'required|numeric',
             'date' => 'required',
-            'tags' => 'required_without:custom_tags|array',
             'picked_up' => 'nullable|boolean',
-            'custom_tags' => 'required_without:tags|array|max:3',
-            'custom_tags.*' => 'distinct:ignore_case|min:3|max:100'
-        ];
-    }
 
-    protected function prepareForValidation()
-    {
-        $this->merge([
-            'tags' => json_decode($this->tags, true) ?? [],
-            'custom_tags' => json_decode($this->custom_tags, true) ?? []
-        ]);
+            // Note: on API upload, custom tags are encoded as strings
+//            'custom_tags' => 'sometimes|array|max:3',
+//            'custom_tags.*' => 'sometimes|distinct:ignore_case|min:3|max:100'
+        ];
     }
 }
