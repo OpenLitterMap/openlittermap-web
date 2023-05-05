@@ -193,6 +193,8 @@ class PhotosController extends Controller
         $road = array_values($addressArray)[1];
 
         // todo- check all locations for "/" and replace with "-"
+        // this should return wasRecentlyCreated. This would enable us to create the photo,
+        // and include the photo ID when we dispatch notifications.
         $country = $this->uploadHelper->getCountryFromAddressArray($addressArray);
         $state = $this->uploadHelper->getStateFromAddressArray($country, $addressArray);
         $city = $this->uploadHelper->getCityFromAddressArray($country, $state, $addressArray, $latitude, $longitude);
