@@ -180,7 +180,7 @@ class UploadPhotoController extends Controller
         // Use OpenStreetMap to Reverse Geocode the coordinates into an Address.
         $revGeoCode = app(ReverseGeocodeLocationAction::class)->run($latitude, $longitude);
 
-        // The ePhotosController.phpntire address as a string
+        // The entire address as a string
         $display_name = $revGeoCode["display_name"];
 
         // Extract the address array
