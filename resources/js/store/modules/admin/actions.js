@@ -22,6 +22,72 @@ export const actions = {
     },
 
     /**
+     *
+     */
+    async ADMIN_FIND_PHOTO_BY_ID (context, payload)
+    {
+        context.commit('resetLitter');
+        context.commit('clearTags');
+
+        await axios.get('/admin/find-photo-by-id', {
+            params: {
+                photoId: payload
+            }
+        })
+        .then(response => {
+            console.log('ADMIN_FIND_PHOTO_BY_ID', response);
+
+            if (response.data.success)
+            {
+                // admin.js
+                context.commit('initAdminPhoto', response.data.photo);
+
+                // litter.js
+                context.commit('initAdminItems', response.data.photo);
+                context.commit('initAdminCustomTags', response.data.photo);
+            }
+        })
+        .catch(error => {
+            console.error('ADMIN_FIND_PHOTO_BY_ID', error);
+        });
+    },
+
+    /**
+     * Admin can go back and edit previously verified data
+     *
+     * @param filterMyOwnPhotos adds whereUserId to the query
+     */
+    async ADMIN_GO_BACK_ONE_PHOTO (context, payload)
+    {
+        context.commit('resetLitter');
+        context.commit('clearTags');
+
+        // We need to convert string "true"/"false" to 0/1 characters for PHP
+        await axios.get('/admin/go-back-one', {
+            params: {
+                photoId: payload.photoId,
+                filterMyOwnPhotos: payload.filterMyOwnPhotos ? "1" : "0"
+            }
+        })
+        .then(response => {
+            console.log('ADMIN_GO_BACK_ONE_PHOTO', response);
+
+            if (response.data.success)
+            {
+                // admin.js
+                context.commit('initAdminPhoto', response.data.photo);
+
+                // litter.js
+                context.commit('initAdminItems', response.data.photo);
+                context.commit('initAdminCustomTags', response.data.photo);
+            }
+        })
+        .catch(error => {
+            console.error('ADMIN_GO_BACK_ONE_PHOTO', error);
+        });
+    },
+
+    /**
      * Reset the tags + verification on an image
      */
     async ADMIN_RESET_TAGS (context)
