@@ -6,6 +6,10 @@ html {
     height: 100vh;
 }
 
+.items-center {
+    align-items: center;
+}
+
 /* Hide scrollbar for Chrome, Safari and Opera */
 .scrollbar-hidden::-webkit-scrollbar {
     display: none;
@@ -544,5 +548,12 @@ html {
 
     .show-mobile {
         display: block;
+    }
+
+
+    @media screen and (max-width: 480px) {
+        .p-10-mob {
+            padding: 10px; /* Padding for screens smaller than 480px */
+        }
     }
 }

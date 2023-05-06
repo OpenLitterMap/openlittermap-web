@@ -51,7 +51,7 @@ class IncrementLocation implements ShouldQueue
      *
      * @param TagsVerifiedByAdmin $event
      */
-    protected function increaseTotalsForBrands(TagsVerifiedByAdmin $event): void
+    protected function increaseTotalsForBrands (TagsVerifiedByAdmin $event): void
     {
         if ($event->total_brands > 0)
         {
@@ -75,7 +75,7 @@ class IncrementLocation implements ShouldQueue
      *
      * @param TagsVerifiedByAdmin $event
      */
-    protected function increaseTotalPhotos(TagsVerifiedByAdmin $event): void
+    protected function increaseTotalPhotos (TagsVerifiedByAdmin $event): void
     {
         if ($event->isUserVerified)
         {

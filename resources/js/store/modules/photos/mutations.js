@@ -125,6 +125,12 @@ export const mutations = {
 
     /**
      * Adds a tag to a single photo
+     *
+     * payload
+     * - photoId
+     * - category
+     * - tag
+     * - quantity
      */
     addTagToPhoto (state, payload)
     {
@@ -178,16 +184,41 @@ export const mutations = {
     {
         const photoIndex = state.bulkPaginate.data.findIndex(photo => photo.id === payload.photoId);
         let photo = state.bulkPaginate.data[photoIndex];
-        let tags = Object.assign({}, photo.tags ?? {});
 
-        delete tags[payload.category][payload.tag];
-
-        if (Object.keys(tags[payload.category]).length === 0)
+        if (photo.tags)
         {
-            delete tags[payload.category];
+            let tags = Object.assign({}, photo.tags ?? {});
+
+            if (tags[payload.category])
+            {
+                delete tags[payload.category][payload.tag];
+
+                if (Object.keys(tags[payload.category]).length === 0)
+                {
+                    delete tags[payload.category];
+                }
+            }
+
+
+            photo.tags = tags;
         }
 
-        photo.tags = tags;
+        if (photo.submittedTags)
+        {
+            let submittedTags = Object.assign({}, photo.submittedTags ?? {});
+
+            if (submittedTags[payload.category])
+            {
+                delete submittedTags[payload.category][payload.tag];
+
+                if (Object.keys(submittedTags[payload.category]).length === 0)
+                {
+                    delete submittedTags[payload.category];
+                }
+            }
+
+            photo.submittedTags = submittedTags;
+        }
 
         state.bulkPaginate.data.splice(photoIndex, 1, photo);
     },

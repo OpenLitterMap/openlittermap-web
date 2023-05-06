@@ -20,6 +20,8 @@ class GetNextImageToVerifyController extends Controller
      */
     public function __invoke (GetImageForVerificationRequest $request): array
     {
+        \Log::info($request->all());
+
         // Photos that are uploaded and tagged come first
         /** @var Photo $photo */
         $photo = $this->filterPhotos()
@@ -48,9 +50,6 @@ class GetNextImageToVerifyController extends Controller
                 'msg' => 'photo not found'
             ];
         }
-
-        // Load the tags for the photo
-        $photo->tags();
 
         // Count photos that are uploaded but not tagged
         $photosNotProcessed = $this->filterPhotos()

@@ -7,7 +7,7 @@ use App\Models\Photo;
 class AddTagsToPhotoAction
 {
     /**
-     * Adds tags to the photo.
+     * Add pre-defined tags to the photo.
      *
      * @param Photo $photo
      * @param $tags

@@ -10,10 +10,15 @@ trait FilterPhotos
     /**
      * Filter the users photos
      *
+     * - Used by
+     *  - bulk tagging
+     *  - view the users photos
+     *
      * @param $filters_json
      *     id,
      *     min date, max date
      *     created_at, datetime
+     *     status: 0,2. verification status
      * @param $selectAll || null
      * @param $ids || null
      *
@@ -25,17 +30,18 @@ trait FilterPhotos
         $ids = null
     )
     {
-        $query = Photo::query();
-        $query->where('user_id', auth()->user()->id);
-        $query->where('verified', 0);
-        $query->where('verification', 0);
-
         $filters = json_decode($filters_json);
 
-        if (! is_null($selectAll))
+        $query = Photo::query();
+        $query->where('user_id', auth()->user()->id);
+
+        // Verification status: 0, 2
+        $query->where('verified', $filters->status);
+
+        if (!is_null($selectAll))
         {
             // If selectAll is false, and the user is passing IDs,
-            if ($selectAll === false && ! is_null($ids) && sizeof($ids) > 0)
+            if ($selectAll === false && !is_null($ids) && sizeof($ids) > 0)
             {
                 // we only want to select these IDs
                 $query->whereIn('id', $ids);
@@ -66,14 +72,7 @@ trait FilterPhotos
             $query->where('created_at', '<=', $end . ' 23:59:59');
         }
 
-//        if ($filters->verified !== null)
-//        {
-//            ($filters->verified === 0)
-//                ? $query->where('verified', 0)
-//                : $query->where('verified', '>', 0);
-//        }
-
-        if (! is_null($selectAll) && $selectAll)
+        if (!is_null($selectAll) && $selectAll)
         {
             // Do not include these ids
             $query->whereNotIn('id', $ids);

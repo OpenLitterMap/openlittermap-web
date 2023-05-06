@@ -7,9 +7,15 @@
         </div>
 
         <!-- These are the tags the user has added -->
-        <Tags class="mb1" :photo-id="0" />
+        <Tags
+            class="mb1"
+            :photo-id="0"
+        />
 
-        <button class="button is-medium" @click="back">Back</button>
+        <button
+            class="button is-medium"
+            @click="back"
+        >Back</button>
 
         <button
             class="button is-medium is-primary"
@@ -74,9 +80,10 @@ export default {
          */
         async store ()
         {
-            if (! this.hasAddedTags) return;
+            if (!this.hasAddedTags) return;
 
-            for (let index in this.selectedPhotos) {
+            for (let index in this.selectedPhotos)
+            {
                 // Set picked_up value for every photo
                 this.$store.commit('setPhotoPickedUp', {
                     photoId: this.selectedPhotos[index],
@@ -88,12 +95,12 @@ export default {
                     Object.entries(tags).forEach(([tag, quantity]) => {
                         this.$store.commit('addTagToPhoto', {
                             photoId: this.selectedPhotos[index],
-                            category: category,
-                            tag: tag,
-                            quantity: quantity
+                            category,
+                            tag,
+                            quantity
                         });
 
-                        this.$store.commit('addRecentTag', {category, tag});
+                        this.$store.commit('addRecentTag', { category, tag });
                     });
                 });
 

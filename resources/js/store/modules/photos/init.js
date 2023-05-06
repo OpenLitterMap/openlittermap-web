@@ -6,7 +6,8 @@ export const init = {
             end: null
         },
         period: 'created_at',
-        verified: null
+        showIds: false, // frontend feature
+        status: 0
     },
     paginate: {
         prev_page_url: null,

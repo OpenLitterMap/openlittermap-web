@@ -154,9 +154,6 @@ class BoundingBoxController extends Controller
             $photo->save();
         }
 
-        // Load the tags for this image
-        $photo->tags();
-
         $totalBoxCount = Annotation::count();
         $usersBoxCount = Annotation::where('added_by', $userId)->count();
 

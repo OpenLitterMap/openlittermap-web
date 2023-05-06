@@ -51,9 +51,6 @@ class VerifyBoxController extends Controller
         $photo->bbox_verification_assigned_to = $userId;
         $photo->save();
 
-        // load the tags for the image
-        $photo->tags();
-
 //        $totalBoxCount = 0;
 //        if ($photo['boxes'])
 //        {

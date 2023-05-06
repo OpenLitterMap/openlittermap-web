@@ -61,10 +61,10 @@ class AdminResetTagsController extends Controller
 
             $user = User::find($photo->user_id);
 
-            if ($photo->tags())
+            if ($photo->createTags())
             {
                 $tagUpdates = $this->calculateTagsDiffAction->run(
-                    $photo->tags(),
+                    $photo->createTags(),
                     [],
                     $photo->customTags->pluck('tag')->toArray(),
                     []

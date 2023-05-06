@@ -16,7 +16,7 @@ class DeleteTagsFromPhotoAction
      *
      * @return array
      */
-    public function run(Photo $photo): array
+    public function run (Photo $photo): array
     {
         $photo->refresh();
 
@@ -29,11 +29,11 @@ class DeleteTagsFromPhotoAction
         return compact('litter', 'brands', 'custom', 'all');
     }
 
-    private function deleteLitter(Photo $photo): int
+    private function deleteLitter (Photo $photo): int
     {
         $categories = collect($photo->categories())
             ->filter(function ($category) use ($photo) {
-                return $category !== 'brands' && !!$photo->$category;
+                return ($category !== 'brands' && !!$photo->$category);
             });
 
         $total = $categories->sum(function ($category) use ($photo) {
@@ -47,7 +47,7 @@ class DeleteTagsFromPhotoAction
         return $total;
     }
 
-    private function deleteBrands(Photo $photo): int
+    private function deleteBrands (Photo $photo): int
     {
         if (!$photo->brands) {
             return 0;
@@ -60,7 +60,7 @@ class DeleteTagsFromPhotoAction
         return $total;
     }
 
-    private function deleteCustomTags(Photo $photo): int
+    private function deleteCustomTags (Photo $photo): int
     {
         $total = $photo->customTags->count();
 

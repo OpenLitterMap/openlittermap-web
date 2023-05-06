@@ -5,17 +5,19 @@ export const actions = {
 
     /**
      * Get filtered photos and add many tags at once
+     *
+     * payload: bool -> updateExistingTags
      */
-    async BULK_TAG_PHOTOS (context)
+    async BULK_TAG_PHOTOS (context, payload)
     {
         const title = 'Success!';
         const body = 'Your tags were applied to the images';
 
-        let photos = context.rootState.photos.bulkPaginate.data
+        const photos = context.rootState.photos.bulkPaginate.data
             .filter(photo => {
                 const hasTags = photo.tags && Object.keys(photo.tags).length;
                 const hasCustomTags = photo.custom_tags?.length;
-                return hasTags || hasCustomTags;
+                return (hasTags || hasCustomTags);
             })
             .reduce((map, photo) => {
                 map[photo.id] = {
@@ -26,21 +28,24 @@ export const actions = {
                 return map;
             }, {});
 
-        await axios.post('/user/profile/photos/tags/bulkTag', {photos})
-            .then(response => {
-                console.log('bulk_tag_photos', response);
+        await axios.post('/user/profile/photos/tags/bulkTag', {
+            photos,
+            updateExistingTags: payload
+        })
+        .then(response => {
+            console.log('bulk_tag_photos', response);
 
-                if (response.data.success) {
-                    Vue.$vToastify.success({
-                        title,
-                        body,
-                        position: 'top-right'
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('bulk_tag_photos', error);
-            });
+            if (response.data.success) {
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                    position: 'top-right'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('bulk_tag_photos', error);
+        });
     },
 
     /**

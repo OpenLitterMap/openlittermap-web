@@ -161,7 +161,7 @@ class PhotoTest extends TestCase
             'amazon', $photo->brands->getAttributes()
         );
 
-        $photo->tags();
+        $photo->createTags();
 
         $this->assertEquals(1, $photo->smoking->butts);
         $this->assertEquals(1, $photo->brands->walkers);

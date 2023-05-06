@@ -17,7 +17,7 @@ class UpdateTotalPhotosForLocationAction
      * @param string $cityId City
      * @param int $increaseBy can be negative, value will be subtracted, but not below 0
      */
-    public function run(string $countryId, string $stateId, string $cityId, int $increaseBy = 1)
+    public function run (string $countryId, string $stateId, string $cityId, int $increaseBy = 1)
     {
         $this->updateValue("country:$countryId", $increaseBy);
 
@@ -34,7 +34,7 @@ class UpdateTotalPhotosForLocationAction
      * @param $hashName
      * @param $value
      */
-    protected function updateValue($hashName, $value)
+    protected function updateValue ($hashName, $value)
     {
         // Separate if conditions to skip redis check when $value is positive
         if ($value < 0) {
