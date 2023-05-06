@@ -6,8 +6,6 @@ use App\Actions\Photos\AddCustomTagsToPhotoAction;
 use App\Actions\Photos\AddTagsToPhotoAction;
 use App\Actions\Photos\DeletePhotoAction;
 use App\Actions\Photos\GetPreviousCustomTagsAction;
-use App\Actions\Photos\MakeImageAction;
-use App\Actions\Photos\UploadPhotoAction;
 use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 use App\Events\ImageDeleted;
 use App\Http\Requests\AddTagsRequest;
@@ -45,7 +43,7 @@ class PhotosController extends Controller
         UploadHelper $uploadHelper,
         AddTagsToPhotoAction $addTagsAction,
         UpdateLeaderboardsForLocationAction $updateLeaderboardsAction,
-        DeletePhotoAction $deletePhotoAction,
+        DeletePhotoAction $deletePhotoAction
     )
     {
         $this->uploadHelper = $uploadHelper;

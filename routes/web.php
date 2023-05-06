@@ -103,8 +103,15 @@ Route::get('/current-user', 'UsersController@getAuthUser');
 Route::get('submit', 'HomeController@index'); // old route
 Route::get('upload', 'HomeController@index')->name('upload');
 
-// Upload the image from web
-Route::post('submit', 'Uploads\UploadPhotoController');
+// Move more authenticated routes into this group instead of applying middleware on controllers
+Route::group(['middleware' => 'auth'], function () {
+    // Upload the image from web
+    // old route
+    Route::post('/submit', 'Uploads\UploadPhotoController');
+
+    // new route
+    Route::post('/upload', 'Uploads\UploadPhotoController');
+});
 
 // Tag litter to an image
 Route::get('tag', 'HomeController@index');

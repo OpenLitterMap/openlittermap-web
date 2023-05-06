@@ -20,7 +20,7 @@ class NewCityAdded implements ShouldBroadcast
      *
      * @return void
      */
-    public function __construct ($city, $state, $country, $now, $cityId = null, $lat = null, $lon = null, $photoId)
+    public function __construct ($city, $state, $country, $now, $cityId = null, $lat = null, $lon = null, $photoId = null)
     {
         $this->city    = $city;
         $this->state   = $state;

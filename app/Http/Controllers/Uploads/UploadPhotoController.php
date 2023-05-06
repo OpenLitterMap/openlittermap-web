@@ -173,13 +173,14 @@ class UploadPhotoController extends Controller
         $lon       = $exif["GPSLongitude"];
 
         $latlong = self::dmsToDec($lat, $lon, $lat_ref, $long_ref);
+
         $latitude = $latlong[0];
         $longitude = $latlong[1];
 
         // Use OpenStreetMap to Reverse Geocode the coordinates into an Address.
         $revGeoCode = app(ReverseGeocodeLocationAction::class)->run($latitude, $longitude);
 
-        // The entire address as a string
+        // The ePhotosController.phpntire address as a string
         $display_name = $revGeoCode["display_name"];
 
         // Extract the address array
@@ -276,8 +277,8 @@ class UploadPhotoController extends Controller
                 $country->country,
                 now(),
                 $city->id,
-                $lat,
-                $lon,
+                $latitude,
+                $longitude,
                 $photo->id
             ));
         }
@@ -307,7 +308,7 @@ class UploadPhotoController extends Controller
     2 => "888061/1000000"
     ]
      */
-    private function dmsToDec ($lat, $lon, $lat_ref, $long_ref)
+    private static function dmsToDec ($lat, $lon, $lat_ref, $long_ref)
     {
         $lat[0] = explode("/", $lat[0]);
         $lat[1] = explode("/", $lat[1]);
