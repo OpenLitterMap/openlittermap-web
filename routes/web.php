@@ -314,9 +314,13 @@ Route::group(['prefix' => '/admin', 'middleware' => 'admin'], function () {
     // route
     Route::get('photos', 'HomeController@index');
 
+    Route::get('/find-photo-by-id', 'Admin\FindPhotoByIdController');
+
     // get the data
     Route::get('get-next-image-to-verify', 'Admin\GetNextImageToVerifyController');
     Route::get('get-countries-with-photos', 'AdminController@getCountriesWithPhotos');
+
+    Route::get('/go-back-one', 'Admin\GoBackOnePhotoController');
 
     // Get a list of recently registered users
     // Route::get('/users', 'AdminController@getUserCount');
