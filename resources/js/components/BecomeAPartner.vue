@@ -2,16 +2,16 @@
     <div>
         <h1 style="font-size: 2rem;">Become a Littercoin Merchant</h1>
 
-        <div class="benefits-container">
-            <div class="benefit mb-1">
+        <div class="benefits-container p-10-mob">
+            <div class="benefit">
                 <h2>New Loyal Customers</h2>
                 <p>By partnering with Littercoin, your store can attract customers who are passionate about reducing waste and supporting sustainable initiatives.</p>
             </div>
-            <div class="benefit mb-1">
+            <div class="benefit">
                 <h2>Zero Waste Sales</h2>
                 <p>Accepting Littercoin can lead to increased sales, as customers are more likely to spend their Littercoin at businesses that support sustainable practices.</p>
             </div>
-            <div class="benefit mb-1">
+            <div class="benefit">
                 <h2>Positive Brand Image</h2>
                 <p>Partnering with Littercoin and accepting its digital currency can enhance your brand image as an eco-friendly and socially responsible business.</p>
             </div>
