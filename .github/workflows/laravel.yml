@@ -55,9 +55,9 @@ jobs:
     - uses: actions/checkout@v3
      # TODO: Remove this line when we can safely upgrade all our packages
      # to versions that support Node 16.
-    - uses: actions/setup-node@v3
-      with:
-        node-version: 16
+    #- uses: actions/setup-node@v3
+    #  with:
+    #    node-version: 16
     - name: Start mysql service
       run: sudo service mysql start
     - name: Setup minio
