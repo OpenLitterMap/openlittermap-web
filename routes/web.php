@@ -103,8 +103,8 @@ Route::get('/current-user', 'UsersController@getAuthUser');
 Route::get('submit', 'HomeController@index'); // old route
 Route::get('upload', 'HomeController@index')->name('upload');
 
-// Upload the image, extract lat long, reverse geocode to address
-Route::post('submit', 'PhotosController@store');
+// Upload the image from web
+Route::post('submit', 'Uploads\UploadPhotoController');
 
 // Tag litter to an image
 Route::get('tag', 'HomeController@index');
