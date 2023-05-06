@@ -20,6 +20,8 @@ class GetNextImageToVerifyController extends Controller
      */
     public function __invoke (GetImageForVerificationRequest $request): array
     {
+        \Log::info($request->all());
+
         // Photos that are uploaded and tagged come first
         /** @var Photo $photo */
         $photo = $this->filterPhotos()

@@ -46,8 +46,7 @@ import { en } from './langs/en.js';
 
 export default {
 	name: 'AdminAdd',
-	created ()
-	{
+	created () {
 		this.$store.commit('setLang', {
 			categoryNames: en.cats,
 			currentCategory: 'Smoking',
@@ -74,16 +73,13 @@ export default {
 	        ],
 		};
 	},
-
 	methods: {
-
 		/**
 		 * Decrement the quantity
 		 */
 		decr () {
 			this.quantity--;
 		},
-
 
 		/**
 		 * Increment the quantity
@@ -109,9 +105,7 @@ export default {
 	    	this.quantity = 1;
 		 },
 	},
-
 	computed: {
-
 		/**
 		 * @category Smoking, Alcohol..
 		 */
