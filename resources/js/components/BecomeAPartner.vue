@@ -1,8 +1,8 @@
 <template>
     <div>
-        <h1 class="title is-2">Become a Littercoin Merchant</h1>
+        <h1 style="font-size: 2rem;">Become a Littercoin Merchant</h1>
 
-        <div class="benefits-container">
+        <div class="benefits-container p-10-mob">
             <div class="benefit">
                 <h2>New Loyal Customers</h2>
                 <p>By partnering with Littercoin, your store can attract customers who are passionate about reducing waste and supporting sustainable initiatives.</p>

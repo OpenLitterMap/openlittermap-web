@@ -1,5 +1,5 @@
 <template>
-    <div class="container">
+    <div class="container p-10-mob">
         <div>
             <p class="title is-2 has-text-centered mb1" style="margin-top: 1em;">
                  Become a Littercoin partner!
