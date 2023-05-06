@@ -83,7 +83,6 @@ class UploadPhotoController extends Controller
         $exif = $imageAndExifData['exif'];
 
         // Step 1: Verification
-
         if (is_null($exif))
         {
             abort(500, "Sorry, no GPS on this one.");
@@ -143,11 +142,9 @@ class UploadPhotoController extends Controller
                 abort(500, "You have already uploaded this file!");
             }
         }
-
         // End Step 1: Verification
 
-        // Begin Step 2: Upload The Image(s)
-
+        // Step 2: Upload The Image(s)
         // Upload images to both 's3' and 'bbox' disks, resized for 'bbox'
         $imageName = $this->uploadPhotoAction->run(
             $image,
@@ -164,7 +161,7 @@ class UploadPhotoController extends Controller
         );
         // End Step 2: Upload The Image(s)
 
-        // Begin Step 3: Get GPS & Check for Locations
+        // Step 3: Get GPS & Check for Locations
         // Get coordinates
         $lat_ref   = $exif["GPSLatitudeRef"];
         $lat       = $exif["GPSLatitude"];
@@ -192,7 +189,10 @@ class UploadPhotoController extends Controller
         $country = $this->uploadHelper->getCountryFromAddressArray($addressArray);
         $state = $this->uploadHelper->getStateFromAddressArray($country, $addressArray);
         $city = $this->uploadHelper->getCityFromAddressArray($country, $state, $addressArray, $latitude, $longitude);
+        // End Step 3: Get GPS & Check for Locations
 
+        // Step 4: Create the Photo
+        // prepare data we need to create
         $geohash = GeoHash::encode($latlong[0], $latlong[1]);
 
         // Get phone model
@@ -200,7 +200,7 @@ class UploadPhotoController extends Controller
             ? $exif["Model"]
             : 'Unknown';
 
-        /** @var Photo $photo */
+        /** Create the $var Photo $photo */
         $photo = $user->photos()->create([
             'filename' => $imageName,
             'datetime' => $dateTime,
@@ -224,9 +224,10 @@ class UploadPhotoController extends Controller
             'five_hundred_square_filepath' => $bboxImageName,
             'address_array' => json_encode($addressArray)
         ]);
-
         // $user->images_remaining -= 1;
+        // End Step 4: Create the Photo
 
+        // Step 5: Reward XP & Update Leaderboards
         // Since a user can upload multiple photos at once,
         // we might get old values for xp, so we update the values directly
         // without retrieving them
@@ -237,8 +238,11 @@ class UploadPhotoController extends Controller
 
         $user->refresh();
 
+        // Todo: We need Daily, Weekly & Monthly Leaderboards.
         $this->updateLeaderboardsAction->run($photo, $user->id, 1);
+        // End Step 5: Update Leaderboards
 
+        // Step 6: Dispatch Events & Notifications
         // Broadcast this event to anyone viewing the global map
         // This will also update country, state, and city.total_contributors_redis
         event(new ImageUploaded(
@@ -251,6 +255,7 @@ class UploadPhotoController extends Controller
 
         // Increment the { Month-Year: int } value for each location
         // Todo - this needs debugging
+        // Todo: Capture PhotosPerDay & PhotosPerWeek
         event(new IncrementPhotoMonth(
             $country->id,
             $state->id,
