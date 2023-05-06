@@ -15,8 +15,6 @@ class GoBackOnePhotoController extends Controller
      */
     public function __invoke (Request $request)
     {
-        \Log::info($request->all());
-
         $photoId = (int)$request['photoId'];
         $filterMyOwnPhotos = (boolean)$request['filterMyOwnPhotos'];
 
