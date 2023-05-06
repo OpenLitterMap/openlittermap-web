@@ -1,6 +1,5 @@
 <template>
     <div>
-
         <div class="has-background-grey-light has-text-centered py-2 admin-filters">
             <p class="has-text-weight-bold">Filter photos by:</p>
 
@@ -42,6 +41,21 @@
                 </div>
 
                 <div v-else>
+
+                    <!-- New Admin Filters -->
+                    <div class="columns">
+                        <div class="column is-3">
+                            <p>Search by ID. Press Enter to Search.</p>
+                            <input
+                                class="input"
+                                type="number"
+                                placeholder="Enter ID"
+                                v-model="searchPhotoId"
+                                @keydown.enter="findPhotoById"
+                            />
+                        </div>
+                    </div>
+
                     <div class="columns">
 
                         <!-- Left - remaining verification & other actions -->
@@ -62,7 +76,10 @@
                             </div>
 
                             <div v-if="hasRecentTags" class="recent-tags control has-text-centered has-background-light px-4 py-4">
-                                <RecentTags class="mb-5" :photo-id="photo.id" />
+                                <RecentTags
+                                    class="mb-5"
+                                    :photo-id="photo.id"
+                                />
                             </div>
                         </div>
 
@@ -117,20 +134,51 @@
                             </div>
 
                             <div style="padding-top: 1em; text-align: center;">
-                                <button :class="update_new_tags_button" @click="updateNewTags" :disabled="checkUpdateTagsDisabled">
+                                <button
+                                    class="button is-large is-warning"
+                                    @click="goBackOnePhoto"
+                                >
+                                    Go Back 1 photo
+                                </button>
+
+                                <button
+                                    :class="processing ? 'is-loading' : ''"
+                                    class="button is-large is-success mb1 tooltip"
+                                    @click="updateNewTags"
+                                    :disabled="checkUpdateTagsDisabled"
+                                >
                                     <span class="tooltip-text is-size-6">Update the image and save the new data.</span>
                                     Update with new tags
                                 </button>
 
-                                <button class="button is-large is-info tooltip mb-1" @click="skipPhoto" :disabled="processing">
+                                <button
+                                    class="button is-large is-info tooltip mb-1"
+                                    @click="skipPhoto"
+                                    :disabled="processing"
+                                >
                                     <span class="tooltip-text is-size-6">Skip this photo and verify the next one.</span>
                                     Skip
                                 </button>
                             </div>
+
+                            <div class="switch-container">
+                                <p class="mr-2"><strong>Search your photos only</strong></p>
+                                <label class="switch">
+                                    <input
+                                        type="checkbox"
+                                        :checked="filterMyOwnPhotos"
+                                        @change="filterMyOwnPhotos = !filterMyOwnPhotos"
+                                    >
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
                         </div>
 
                         <!-- Right - Tags -->
-                        <div class="column has-text-centered" style="position: relative;">
+                        <div
+                            class="column has-text-centered"
+                            style="position: relative;"
+                        >
 
                             <!-- The list of tags associated with this image-->
                             <Tags
@@ -185,9 +233,11 @@ export default {
 			// button classes
 			deleteButton: 'button is-large is-danger mb1 tooltip',
 			deleteVerify: 'button is-large is-warning mb1 tooltip',
-			verifyClass: 'button is-large is-success mb1 tooltip',
 
             selectedCountry: '',
+            searchPhotoId: 0,
+
+            filterMyOwnPhotos: false
 		};
 	},
 	computed: {
@@ -249,14 +299,6 @@ export default {
             return this.$store.state.admin.countriesWithPhotos;
         },
 
-		/**
-		 *
-		 */
-		update_new_tags_button ()
-		{
-			return this.processing ? this.verifyClass + ' is-loading' : this.verifyClass;
-		},
-
         /**
          *
          */
@@ -278,12 +320,10 @@ export default {
          */
         hasRecentTags ()
         {
-            return Object.keys(this.$store.state.litter.recentTags).length > 0 ||
-                this.$store.state.litter.recentCustomTags.length;
+            return Object.keys(this.$store.state.litter.recentTags).length > 0 || this.$store.state.litter.recentCustomTags.length;
         },
 	},
 	methods: {
-
 		/**
 		 * Delete the image and its records
 		 */
@@ -304,7 +344,47 @@ export default {
 			this.$store.commit('setAllTagsToZero', this.photo.id);
 		},
 
-		/**
+        /**
+         * Filters the photos by country
+         */
+        async filterByCountry ()
+        {
+            this.loading = true;
+
+            this.$store.commit('setFilterByCountry', this.selectedCountry);
+
+            await this.$store.dispatch('GET_NEXT_ADMIN_PHOTO');
+
+            this.loading = false;
+        },
+
+        /**
+         * Load any photo by its ID
+         */
+        async findPhotoById ()
+        {
+            this.loading = true;
+
+            await this.$store.dispatch('ADMIN_FIND_PHOTO_BY_ID', this.searchPhotoId);
+
+            this.loading = false;
+        },
+
+        /**
+         *
+         */
+        async goBackOnePhoto () {
+            this.processing = true;
+
+            await this.$store.dispatch('ADMIN_GO_BACK_ONE_PHOTO', {
+                filterMyOwnPhotos: this.filterMyOwnPhotos,
+                photoId: this.photo.id
+            });
+
+            this.processing = false;
+        },
+
+        /**
          * The image has failed verification. We have decided to not help with its tagging.
          *
 		 * Send the image back to the user
@@ -318,6 +398,7 @@ export default {
 			this.processing = false;
         },
 
+		// Verify an updated image and delete the image
 		/**
 		 * The users tags were correct !
 		 */
@@ -330,7 +411,6 @@ export default {
 			this.processing = false;
 		},
 
-		// Verify an updated image and delete the image
 		async verifyDelete ()
 		{
 			this.processing = true;
@@ -351,20 +431,6 @@ export default {
 
             this.processing = false;
   		},
-
-        /**
-         * Filters the photos by country
-         */
-        async filterByCountry ()
-        {
-            this.loading = true;
-
-            this.$store.commit('setFilterByCountry', this.selectedCountry);
-
-            await this.$store.dispatch('GET_NEXT_ADMIN_PHOTO');
-
-            this.loading = false;
-        },
 
         /**
          * Skips the current photo

@@ -103,8 +103,8 @@ Route::get('/current-user', 'UsersController@getAuthUser');
 Route::get('submit', 'HomeController@index'); // old route
 Route::get('upload', 'HomeController@index')->name('upload');
 
-// Upload the image, extract lat long, reverse geocode to address
-Route::post('submit', 'PhotosController@store');
+// Upload the image
+Route::post('submit', 'Uploads\UploadPhotoController');
 
 // Tag litter to an image
 Route::get('tag', 'HomeController@index');
@@ -314,9 +314,13 @@ Route::group(['prefix' => '/admin', 'middleware' => 'admin'], function () {
     // route
     Route::get('photos', 'HomeController@index');
 
+    Route::get('/find-photo-by-id', 'Admin\FindPhotoByIdController');
+
     // get the data
     Route::get('get-next-image-to-verify', 'Admin\GetNextImageToVerifyController');
     Route::get('get-countries-with-photos', 'AdminController@getCountriesWithPhotos');
+
+    Route::get('/go-back-one', 'Admin\GoBackOnePhotoController');
 
     // Get a list of recently registered users
     // Route::get('/users', 'AdminController@getUserCount');

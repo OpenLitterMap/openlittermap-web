@@ -30,237 +30,36 @@ use Illuminate\Support\Facades\Auth;
 
 class PhotosController extends Controller
 {
-    /** @var UploadHelper */
-    protected $uploadHelper;
     /** @var AddTagsToPhotoAction */
     private $addTagsAction;
+
     /** @var UpdateLeaderboardsForLocationAction */
     private $updateLeaderboardsAction;
-    /** @var UploadPhotoAction */
-    private $uploadPhotoAction;
+
     /** @var DeletePhotoAction */
     private $deletePhotoAction;
-    /** @var MakeImageAction */
-    private $makeImageAction;
 
     /**
      * PhotosController constructor
      * Apply middleware to all of these routes
      *
-     * @param UploadHelper $uploadHelper
      * @param AddTagsToPhotoAction $addTagsAction
      * @param UpdateLeaderboardsForLocationAction $updateLeaderboardsAction
-     * @param UploadPhotoAction $uploadPhotoAction
      * @param DeletePhotoAction $deletePhotoAction
-     * @param MakeImageAction $makeImageAction
      */
     public function __construct(
-        UploadHelper $uploadHelper,
         AddTagsToPhotoAction $addTagsAction,
         UpdateLeaderboardsForLocationAction $updateLeaderboardsAction,
-        UploadPhotoAction $uploadPhotoAction,
         DeletePhotoAction $deletePhotoAction,
-        MakeImageAction $makeImageAction
     )
     {
-        $this->uploadHelper = $uploadHelper;
         $this->addTagsAction = $addTagsAction;
         $this->updateLeaderboardsAction = $updateLeaderboardsAction;
-        $this->uploadPhotoAction = $uploadPhotoAction;
         $this->deletePhotoAction = $deletePhotoAction;
-        $this->makeImageAction = $makeImageAction;
 
         $this->middleware('auth');
     }
 
-    /**
-     * The user wants to upload a photo
-     *
-     * Check for GPS co-ordinates or abort
-     * Get/Create Country, State, and City for the lat/lon
-     *
-     * Move photo to AWS S3 in production || local in development
-     * then persist new record to photos table
-     *
-     * @param UploadPhotoRequest $request
-     * @return bool[]
-     */
-    public function store (UploadPhotoRequest $request): array
-    {
-        /** @var User $user */
-        $user = Auth::user();
-
-        \Log::channel('photos')->info([
-            'web_upload' => $request->all(),
-            'user_id' => $user->id
-        ]);
-
-        if (!$user->has_uploaded) $user->has_uploaded = 1;
-
-        $file = $request->file('file'); // /tmp/php7S8v..
-
-        $imageAndExifData = $this->makeImageAction->run($file);
-        $image = $imageAndExifData['image'];
-        $exif = $imageAndExifData['exif'];
-
-        if (is_null($exif))
-        {
-            abort(500, "Sorry, no GPS on this one.");
-        }
-
-        // Check if the EXIF has GPS data
-        // todo - make this error appear on the frontend dropzone without clicking the "X"
-        // todo - translate the error
-        if (!array_key_exists("GPSLatitudeRef", $exif))
-        {
-            abort(500, "Sorry, no GPS on this one.");
-        }
-
-        $dateTime = '';
-
-        // Some devices store the timestamp key in a different format and using a different key.
-        if (array_key_exists('DateTimeOriginal', $exif))
-        {
-            $dateTime = $exif["DateTimeOriginal"];
-        }
-        if (!$dateTime)
-        {
-            if (array_key_exists('DateTime', $exif))
-            {
-              $dateTime = $exif["DateTime"];
-            }
-        }
-        if (!$dateTime)
-        {
-            if (array_key_exists('FileDateTime', $exif))
-            {
-                $dateTime = $exif["FileDateTime"];
-                $dateTime = Carbon::createFromTimestamp($dateTime);
-            }
-        }
-
-        // convert to YYYY-MM-DD hh:mm:ss format
-        $dateTime = Carbon::parse($dateTime);
-
-        // Check if the user has already uploaded this image
-        // todo - load error automatically without clicking it
-        // todo - translate
-        if (app()->environment() === "production")
-        {
-            if (Photo::where(['user_id' => $user->id, 'datetime' => $dateTime])->first())
-            {
-                abort(500, "You have already uploaded this file!");
-            }
-        }
-
-        // Upload images to both 's3' and 'bbox' disks, resized for 'bbox'
-        $imageName = $this->uploadPhotoAction->run(
-            $image,
-            $dateTime,
-            $file->hashName()
-        );
-
-        $bboxImageName = $this->uploadPhotoAction->run(
-            $this->makeImageAction->run($file, true)['image'],
-            $dateTime,
-            $file->hashName(),
-            'bbox'
-        );
-
-        // Get phone model
-        $model = (array_key_exists('Model', $exif) && !empty($exif["Model"]))
-            ? $exif["Model"]
-            : 'Unknown';
-
-        // Get coordinates
-        $lat_ref   = $exif["GPSLatitudeRef"];
-        $lat       = $exif["GPSLatitude"];
-        $long_ref  = $exif["GPSLongitudeRef"];
-        $lon       = $exif["GPSLongitude"];
-
-        $latlong = self::dmsToDec($lat, $lon, $lat_ref, $long_ref);
-        $latitude = $latlong[0];
-        $longitude = $latlong[1];
-
-        $revGeoCode = app(ReverseGeocodeLocationAction::class)->run($latitude, $longitude);
-
-        // The entire address as a string
-        $display_name = $revGeoCode["display_name"];
-
-        // Extract the address array
-        $addressArray = $revGeoCode["address"];
-        $location = array_values($addressArray)[0];
-        $road = array_values($addressArray)[1];
-
-        // todo- check all locations for "/" and replace with "-"
-        // this should return wasRecentlyCreated. This would enable us to create the photo,
-        // and include the photo ID when we dispatch notifications.
-        $country = $this->uploadHelper->getCountryFromAddressArray($addressArray);
-        $state = $this->uploadHelper->getStateFromAddressArray($country, $addressArray);
-        $city = $this->uploadHelper->getCityFromAddressArray($country, $state, $addressArray, $latitude, $longitude);
-
-        $geohash = GeoHash::encode($latlong[0], $latlong[1]);
-
-        /** @var Photo $photo */
-        $photo = $user->photos()->create([
-            'filename' => $imageName,
-            'datetime' => $dateTime,
-            'remaining' => !$user->picked_up,
-            'lat' => $latlong[0],
-            'lon' => $latlong[1],
-            'display_name' => $display_name,
-            'location' => $location,
-            'road' => $road,
-            'city' => $city->city,
-            'county' => $state->state,
-            'country' => $country->country,
-            'country_code' => $country->shortcode,
-            'model' => $model,
-            'country_id' => $country->id,
-            'state_id' => $state->id,
-            'city_id' => $city->id,
-            'platform' => 'web',
-            'geohash' => $geohash,
-            'team_id' => $user->active_team,
-            'five_hundred_square_filepath' => $bboxImageName,
-            'address_array' => json_encode($addressArray)
-        ]);
-
-        // $user->images_remaining -= 1;
-
-        // Since a user can upload multiple photos at once,
-        // we might get old values for xp, so we update the values directly
-        // without retrieving them
-        $user->update([
-            'xp' => DB::raw('ifnull(xp, 0) + 1'),
-            'total_images' => DB::raw('ifnull(total_images, 0) + 1')
-        ]);
-
-        $user->refresh();
-
-        $this->updateLeaderboardsAction->run($photo, $user->id, 1);
-
-        // Broadcast this event to anyone viewing the global map
-        // This will also update country, state, and city.total_contributors_redis
-        event(new ImageUploaded(
-            $user,
-            $photo,
-            $country,
-            $state,
-            $city,
-        ));
-
-        // Increment the { Month-Year: int } value for each location
-        // Todo - this needs debugging
-        event(new IncrementPhotoMonth(
-            $country->id,
-            $state->id,
-            $city->id,
-            $dateTime
-        ));
-
-        return ['success' => true];
-    }
 
     /**
      * Delete an image
@@ -350,44 +149,6 @@ class PhotosController extends Controller
             'success' => true,
             'msg' => 'success'
         ];
-    }
-
-    /**
-     * Convert Degrees, Minutes and Seconds to Lat, Long
-     * Cheers to Hassan for this!
-     *
-     *  "GPSLatitude" => array:3 [ might be an array
-            0 => "51/1"
-            1 => "50/1"
-            2 => "888061/1000000"
-        ]
-     */
-    private function dmsToDec ($lat, $lon, $lat_ref, $long_ref)
-    {
-        $lat[0] = explode("/", $lat[0]);
-        $lat[1] = explode("/", $lat[1]);
-        $lat[2] = explode("/", $lat[2]);
-
-        $lon[0] = explode("/", $lon[0]);
-        $lon[1] = explode("/", $lon[1]);
-        $lon[2] = explode("/", $lon[2]);
-
-        $lat[0] = (int)$lat[0][0] / (int)$lat[0][1];
-        $lon[0] = (int)$lon[0][0] / (int)$lon[0][1];
-
-        $lat[1] = (int)$lat[1][0] / (int)$lat[1][1];
-        $lon[1] = (int)$lon[1][0] / (int)$lon[1][1];
-
-        $lat[2] = (int)$lat[2][0] / (int)$lat[2][1];
-        $lon[2] = (int)$lon[2][0] / (int)$lon[2][1];
-
-        $lat = $lat[0]+((($lat[1]*60)+($lat[2]))/3600);
-        $lon = $lon[0]+((($lon[1]*60)+($lon[2]))/3600);
-
-        if ($lat_ref === "S") $lat = $lat * -1;
-        if ($long_ref === "W") $lon = $lon * -1;
-
-        return [$lat, $lon];
     }
 
     /**
