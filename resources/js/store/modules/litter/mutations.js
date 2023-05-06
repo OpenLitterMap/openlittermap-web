@@ -309,7 +309,6 @@ export const mutations = {
      */
     resetLitter (state)
     {
-        // state.items = {};
         state.categories = {
             'Alcohol': {},
             'Art': {},
