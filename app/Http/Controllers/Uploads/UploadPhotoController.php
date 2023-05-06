@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers\Uploads;
 
+use Geohash\GeoHash;
 use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 use App\Actions\Photos\MakeImageAction;
 use App\Actions\Photos\UploadPhotoAction;
+use App\Events\NewCityAdded;
+use App\Events\NewCountryAdded;
+use App\Events\NewStateAdded;
 use App\Helpers\Post\UploadHelper;
 use Carbon\Carbon;
 use App\Models\Photo;
@@ -193,7 +197,8 @@ class UploadPhotoController extends Controller
 
         // Step 4: Create the Photo
         // prepare data we need to create
-        $geohash = GeoHash::encode($latlong[0], $latlong[1]);
+        $geohasher = new GeoHash();
+        $geohash = $geohasher->encode($latlong[0], $latlong[1]);
 
         // Get phone model
         $model = (array_key_exists('Model', $exif) && !empty($exif["Model"]))
@@ -252,6 +257,29 @@ class UploadPhotoController extends Controller
             $state,
             $city,
         ));
+
+        // Broadcast an event to anyone viewing the Global Map
+        // Sends Notification to Twitter & Slack
+        if ($country->wasRecentlyCreated) {
+            event(new NewCountryAdded($country->country, $country->shortcode, now()));
+        }
+
+        if ($state->wasRecentlyCreated) {
+            event(new NewStateAdded($state->state, $country->country, now()));
+        }
+
+        if ($city->wasRecentlyCreated) {
+            event(new NewCityAdded(
+                $city->city,
+                $state->state,
+                $country->country,
+                now(),
+                $city->id,
+                $lat,
+                $lon,
+                $photo->id
+            ));
+        }
 
         // Increment the { Month-Year: int } value for each location
         // Todo - this needs debugging

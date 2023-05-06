@@ -6,26 +6,15 @@ use App\Actions\Photos\AddCustomTagsToPhotoAction;
 use App\Actions\Photos\AddTagsToPhotoAction;
 use App\Actions\Photos\DeletePhotoAction;
 use App\Actions\Photos\GetPreviousCustomTagsAction;
-use App\Actions\Photos\MakeImageAction;
-use App\Actions\Photos\UploadPhotoAction;
-use App\Actions\Locations\ReverseGeocodeLocationAction;
 use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 use App\Events\ImageDeleted;
 use App\Http\Requests\AddTagsRequest;
-use App\Http\Requests\UploadPhotoRequest;
 use App\Models\User\User;
-use GeoHash;
-use Carbon\Carbon;
 
 use App\Models\Photo;
 use Illuminate\Http\Request;
-use App\Events\ImageUploaded;
 use App\Events\TagsVerifiedByAdmin;
-use App\Events\Photo\IncrementPhotoMonth;
 
-use App\Helpers\Post\UploadHelper;
-
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
 class PhotosController extends Controller
@@ -50,7 +39,7 @@ class PhotosController extends Controller
     public function __construct(
         AddTagsToPhotoAction $addTagsAction,
         UpdateLeaderboardsForLocationAction $updateLeaderboardsAction,
-        DeletePhotoAction $deletePhotoAction,
+        DeletePhotoAction $deletePhotoAction
     )
     {
         $this->addTagsAction = $addTagsAction;
@@ -59,7 +48,6 @@ class PhotosController extends Controller
 
         $this->middleware('auth');
     }
-
 
     /**
      * Delete an image
@@ -97,9 +85,9 @@ class PhotosController extends Controller
     }
 
     /**
-     * Dynamically add tags to an image
+     * Add tags to an image
      *
-     * Note! The $column passed through must match the column name on the table.
+     * The keys must match the column name on the table.
      * eg 'butts' must be a column on the smoking table.
      *
      * If the user is new, we submit the image for verification.

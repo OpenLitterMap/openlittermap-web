@@ -2,9 +2,6 @@
 
 namespace App\Helpers\Post;
 
-use App\Events\NewCityAdded;
-use App\Events\NewCountryAdded;
-use App\Events\NewStateAdded;
 use App\Models\Location\City;
 use App\Models\Location\Country;
 use App\Models\Location\State;
@@ -15,7 +12,6 @@ class UploadHelper
      * Get or Create Country from $addressArray
      *
      * @param array $addressArray
-     * @return Country
      */
     public function getCountryFromAddressArray (array $addressArray)
     {
@@ -25,18 +21,11 @@ class UploadHelper
             return Country::where('country', 'error_country')->first();
         }
 
-        $country = Country::select('id', 'country', 'shortcode')
+        return Country::select('id', 'country', 'shortcode')
             ->firstOrCreate(
                 ['shortcode' => $countryCode],
                 ['country' => $addressArray["country"] ?? '', 'created_by' => auth()->id()]
             );
-
-        if ($country->wasRecentlyCreated) {
-            // Broadcast an event to anyone viewing the Global Map
-            event(new NewCountryAdded($country->country, $countryCode, now()));
-        }
-
-        return $country;
     }
 
     /**
@@ -44,7 +33,6 @@ class UploadHelper
      *
      * @param Country $country
      * @param array $addressArray
-     * @return State
      */
     public function getStateFromAddressArray (Country $country, array $addressArray)
     {
@@ -58,28 +46,19 @@ class UploadHelper
             return State::where('state', 'error_state')->first();
         }
 
-        $state = State::select('id', 'country_id', 'state', 'statenameb')
+        return State::select('id', 'country_id', 'state', 'statenameb')
             ->firstOrCreate(
                 ['state' => $stateName, 'country_id' => $country->id],
                 ['created_by' => auth()->id()]
             );
-
-        if ($state->wasRecentlyCreated)
-        {
-            // Broadcast an event to anyone viewing the Global Map
-            event(new NewStateAdded($stateName, $country->country, now()));
-        }
-
-        return $state;
     }
 
     /**
      * Get or Create City from $addressArray
-     *
-     * @return City
      */
-    public function getCityFromAddressArray (Country $country, State $state, $addressArray, $lat, $lon)
+    public function getCityFromAddressArray (Country $country, State $state, $addressArray)
     {
+        // This list and part of the app could use some work.
         $cityName = $this->lookupPlace(
             $addressArray,
             ['city', 'town', 'city_district', 'village', 'hamlet', 'locality', 'county']
@@ -90,7 +69,7 @@ class UploadHelper
             return City::where('city', 'error_city')->first();
         }
 
-        $city = City::select('id', 'country_id', 'state_id', 'city')
+        return City::select('id', 'country_id', 'state_id', 'city')
             ->firstOrCreate(
                 [
                     'country_id' => $country->id,
@@ -99,22 +78,6 @@ class UploadHelper
                 ],
                 ['created_by' => auth()->id()]
             );
-
-        if ($city->wasRecentlyCreated)
-        {
-            // Broadcast an event to anyone viewing the Global Map
-            event(new NewCityAdded(
-                $cityName,
-                $state->state,
-                $country->country,
-                now(),
-                $city->id,
-                $lat,
-                $lon
-            ));
-        }
-
-        return $city;
     }
 
     /**
