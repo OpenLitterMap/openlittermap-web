@@ -1,6 +1,10 @@
 <template>
     <div>
-        <loading v-show="loading" :active.sync="loading" :is-full-page="true" />
+        <loading
+            v-show="loading"
+            :active.sync="loading"
+            :is-full-page="true"
+        />
 
         <GlobalMetaData
             :loading="loading"

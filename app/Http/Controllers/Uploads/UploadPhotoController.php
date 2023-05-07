@@ -235,6 +235,8 @@ class UploadPhotoController extends Controller
         // End Step 4: Create the Photo
 
         // Step 5: Reward XP & Update Leaderboards
+        // Reward XP
+        // To do - move this to Redis
         // Since a user can upload multiple photos at once,
         // we might get old values for xp, so we update the values directly
         // without retrieving them
@@ -245,8 +247,12 @@ class UploadPhotoController extends Controller
 
         $user->refresh();
 
-        // Todo: We need Daily, Weekly & Monthly Leaderboards.
-        $this->updateLeaderboardsAction->run($photo, $user->id, 1);
+        // Update the Leaderboards
+        $this->updateLeaderboardsAction->run(
+            $photo,
+            $user->id,
+            1
+        );
         // End Step 5: Update Leaderboards
 
         // Step 6: Dispatch Events & Notifications
