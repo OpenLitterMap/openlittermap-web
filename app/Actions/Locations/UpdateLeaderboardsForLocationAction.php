@@ -20,6 +20,9 @@ class UpdateLeaderboardsForLocationAction
     }
 
     /**
+     * Update the Leaderboards for each Location
+     *
+     * All time + time-stamped
      *
      * @param Photo $photo
      * @param int $userId
@@ -27,18 +30,25 @@ class UpdateLeaderboardsForLocationAction
      */
     public function run (Photo $photo, int $userId, int $incrXp) :void
     {
-        $this->updateXpAction->run($userId, $incrXp);
-
-        // All Time Leaderboard
-        Redis::zincrby("xp.country.$photo->country_id", $incrXp, $userId);
-        Redis::zincrby("xp.country.$photo->country_id.state.$photo->state_id", $incrXp, $userId);
-        Redis::zincrby("xp.country.$photo->country_id.state.$photo->state_id.city.$photo->city_id", $incrXp, $userId);
-
         $year = now()->year;
         $month = now()->month;
         $day = now()->day;
 
-        // Timestamped Leaderboards
+        // All Time & Timestamped Leaderboard for all users
+        $this->updateXpAction->run(
+            $userId,
+            $incrXp,
+            $year,
+            $month,
+            $day
+        );
+
+        // All Time Leaderboard For Each Location
+        Redis::zincrby("xp.country.$photo->country_id", $incrXp, $userId);
+        Redis::zincrby("xp.country.$photo->country_id.state.$photo->state_id", $incrXp, $userId);
+        Redis::zincrby("xp.country.$photo->country_id.state.$photo->state_id.city.$photo->city_id", $incrXp, $userId);
+
+        // Timestamped Leaderboards For Each Location
         Redis::zincrby("daily-leaderboard:country:$photo->country_id:$year:$month:$day", $incrXp, $userId);
         Redis::zincrby("daily-leaderboard:state:$photo->state_id:$year:$month:$day", $incrXp, $userId);
         Redis::zincrby("daily-leaderboard:city:$photo->city_id:$year:$month:$day", $incrXp, $userId);
