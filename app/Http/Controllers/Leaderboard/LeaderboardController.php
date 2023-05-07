@@ -87,6 +87,9 @@ class LeaderboardController extends Controller
             }
         }
 
+        \Log::info($total);
+        \Log::info($userIds);
+
         $users = User::query()
             ->with(['teams:id,name'])
             ->whereIn('id', $userIds)
