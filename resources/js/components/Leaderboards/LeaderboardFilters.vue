@@ -79,6 +79,7 @@ export default {
         justify-content: space-evenly;
         max-width: 800px;
         margin: auto;
+        padding-bottom: 1em;
     }
 
     .leaderboard-option {
