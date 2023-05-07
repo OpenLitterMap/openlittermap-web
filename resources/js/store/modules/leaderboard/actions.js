@@ -13,6 +13,9 @@ export const actions = {
             console.log('get_global_leaderboard', response);
 
             context.commit('setGlobalLeaderboard', response.data);
+
+            // for GlobalMetaData
+            context.commit('setGlobalLeaders', response.data);
         })
         .catch(error => {
             console.error('get_global_leaderboard', error);
