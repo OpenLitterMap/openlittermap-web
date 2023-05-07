@@ -52,7 +52,7 @@ class GenerateDailyLeaderboards extends Command
         {
             $user = User::find($photo->user_id);
             $userId = $user->id;
-            $incrXp = $photo->total_Litter;
+            $incrXp = $photo->total_Litter ?? 1;
 
             $datetime = Carbon::parse($photo->datetime);
 
@@ -63,6 +63,8 @@ class GenerateDailyLeaderboards extends Command
             $country = Country::find($photo->country_id);
             $state = State::find($photo->state_id);
             $city = City::find($photo->city_id);
+
+            \Log::info([$year, $month, $day, $userId, $incrXp]);
 
             if ($user)
             {
