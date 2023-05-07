@@ -56,7 +56,7 @@ export default {
     {
         return {
             options: {
-                url: '/submit',
+                url: '/upload',
                 thumbnailWidth: 150,
                 maxFilesize: 20,
                 headers: {
