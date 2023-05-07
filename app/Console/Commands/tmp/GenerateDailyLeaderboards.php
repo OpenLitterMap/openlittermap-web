@@ -54,9 +54,11 @@ class GenerateDailyLeaderboards extends Command
             $userId = $user->id;
             $incrXp = $photo->total_Litter;
 
-            $year = Carbon::parse($photo->datetime);
-            $month = Carbon::parse($photo->datetime);
-            $day = Carbon::parse($photo->datetime);
+            $datetime = Carbon::parse($photo->datetime);
+
+            $year = $datetime->year;
+            $month = $datetime->month;
+            $day = $datetime->day;
 
             $country = Country::find($photo->country_id);
             $state = State::find($photo->state_id);
