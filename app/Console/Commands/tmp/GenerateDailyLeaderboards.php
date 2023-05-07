@@ -52,7 +52,11 @@ class GenerateDailyLeaderboards extends Command
         {
             $user = User::find($photo->user_id);
             $userId = $user->id;
-            $incrXp = $photo->total_Litter;
+            $incrXp = $photo->total_litter;
+
+            if ($incrXp === 0) {
+                $incrXp = 1;
+            }
 
             $datetime = Carbon::parse($photo->datetime);
 
