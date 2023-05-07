@@ -9,20 +9,20 @@ class UpdateLeaderboardsXpAction
     /**
      * @param int $userId
      * @param int $incrXp
-     * @param int $year
-     * @param int $month
-     * @param int $day
      */
     public function run (
         int $userId,
-        int $incrXp,
-        int $year,
-        int $month,
-        int $day
+        int $incrXp
     ) :void
     {
+        $year = now()->year;
+        $month = now()->month;
+        $day = now()->day;
+
+        // Update the Users total score in the Global Leaderboard
         Redis::zincrby("xp.users", $incrXp, $userId);
 
+        // Update the Users total score for each time-stamped Leaderboard
         Redis::zincrby("daily-leaderboard:users:$year:$month:$day", $incrXp, $userId);
         Redis::zincrby("monthly-leaderboard:users:$year:$month", $incrXp, $userId);
         Redis::zincrby("annual-leaderboard:users:$year", $incrXp, $userId);

@@ -49,7 +49,11 @@ class UpdateRedisBoundingBoxXp extends Command
             $addedBoxes = $user->boxes()->count();
             $verifiedBoxes = $user->boxesVerified()->count();
 
-            $this->leaderboardsXpAction->run($user->id, $addedBoxes + $verifiedBoxes);
+            $year = now()->year;
+            $month = now()->month;
+            $day = now()->day;
+
+            $this->leaderboardsXpAction->run($user->id, $addedBoxes + $verifiedBoxes, $year, $month, $day);
         });
 
         return 0;

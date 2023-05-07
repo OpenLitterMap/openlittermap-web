@@ -14,7 +14,7 @@ class UpdateLeaderboardsForLocationAction
     /**
      * @param UpdateLeaderboardsXpAction $updateXpAction
      */
-    public function __construct(UpdateLeaderboardsXpAction $updateXpAction)
+    public function __construct (UpdateLeaderboardsXpAction $updateXpAction)
     {
         $this->updateXpAction = $updateXpAction;
     }
@@ -28,20 +28,18 @@ class UpdateLeaderboardsForLocationAction
      * @param int $userId
      * @param int $incrXp
      */
-    public function run (Photo $photo, int $userId, int $incrXp) :void
+    public function run (
+        Photo $photo,
+        int $userId,
+        int $incrXp
+    ) :void
     {
         $year = now()->year;
         $month = now()->month;
         $day = now()->day;
 
         // All Time & Timestamped Leaderboard for all users
-        $this->updateXpAction->run(
-            $userId,
-            $incrXp,
-            $year,
-            $month,
-            $day
-        );
+        $this->updateXpAction->run($userId, $incrXp);
 
         // All Time Leaderboard For Each Location
         Redis::zincrby("xp.country.$photo->country_id", $incrXp, $userId);
