@@ -70,30 +70,30 @@ class GenerateDailyLeaderboards extends Command
 
             if ($user)
             {
-                Redis::zincrby("daily-leaderboard:users:$year:$month:$day", $incrXp, $userId);
-                Redis::zincrby("monthly-leaderboard:users:$year:$month", $incrXp, $userId);
-                Redis::zincrby("annual-leaderboard:users:$year", $incrXp, $userId);
+                Redis::zincrby("leaderboard:users:$year:$month:$day", $incrXp, $userId);
+                Redis::zincrby("leaderboard:users:$year:$month", $incrXp, $userId);
+                Redis::zincrby("leaderboard:users:$year", $incrXp, $userId);
             }
 
             if ($country)
             {
-                Redis::zincrby("daily-leaderboard:country:$photo->country_id:$year:$month:$day", $incrXp, $userId);
-                Redis::zincrby("monthly-leaderboard:country:$photo->country_id:$year:$month", $incrXp, $userId);
-                Redis::zincrby("annual-leaderboard:country:$photo->country_id:$year", $incrXp, $userId);
+                Redis::zincrby("leaderboard:country:$photo->country_id:$year:$month:$day", $incrXp, $userId);
+                Redis::zincrby("leaderboard:country:$photo->country_id:$year:$month", $incrXp, $userId);
+                Redis::zincrby("leaderboard:country:$photo->country_id:$year", $incrXp, $userId);
             }
 
             if ($state)
             {
-                Redis::zincrby("daily-leaderboard:state:$photo->state_id:$year:$month:$day", $incrXp, $userId);
-                Redis::zincrby("monthly-leaderboard:state:$photo->state_id:$year:$month", $incrXp, $userId);
-                Redis::zincrby("annual-leaderboard:state:$photo->state_id:$year", $incrXp, $userId);
+                Redis::zincrby("leaderboard:state:$photo->state_id:$year:$month:$day", $incrXp, $userId);
+                Redis::zincrby("leaderboard:state:$photo->state_id:$year:$month", $incrXp, $userId);
+                Redis::zincrby("leaderboard:state:$photo->state_id:$year", $incrXp, $userId);
             }
 
             if ($city)
             {
-                Redis::zincrby("daily-leaderboard:city:$photo->city_id:$year:$month:$day", $incrXp, $userId);
-                Redis::zincrby("monthly-leaderboard:city:$photo->city_id:$year:$month", $incrXp, $userId);
-                Redis::zincrby("annual-leaderboard:city:$photo->city_id:$year", $incrXp, $userId);
+                Redis::zincrby("leaderboard:city:$photo->city_id:$year:$month:$day", $incrXp, $userId);
+                Redis::zincrby("leaderboard:city:$photo->city_id:$year:$month", $incrXp, $userId);
+                Redis::zincrby("leaderboard:city:$photo->city_id:$year", $incrXp, $userId);
             }
 
             $completed = ($photo->id / $total);

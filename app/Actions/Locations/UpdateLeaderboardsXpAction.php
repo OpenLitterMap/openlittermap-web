@@ -23,8 +23,8 @@ class UpdateLeaderboardsXpAction
         Redis::zincrby("xp.users", $incrXp, $userId);
 
         // Update the Users total score for each time-stamped Leaderboard
-        Redis::zincrby("daily-leaderboard:users:$year:$month:$day", $incrXp, $userId);
-        Redis::zincrby("monthly-leaderboard:users:$year:$month", $incrXp, $userId);
-        Redis::zincrby("annual-leaderboard:users:$year", $incrXp, $userId);
+        Redis::zincrby("leaderboard:users:$year:$month:$day", $incrXp, $userId);
+        Redis::zincrby("leaderboard:users:$year:$month", $incrXp, $userId);
+        Redis::zincrby("leaderboard:users:$year", $incrXp, $userId);
     }
 }

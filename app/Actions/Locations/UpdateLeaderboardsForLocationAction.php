@@ -47,16 +47,16 @@ class UpdateLeaderboardsForLocationAction
         Redis::zincrby("xp.country.$photo->country_id.state.$photo->state_id.city.$photo->city_id", $incrXp, $userId);
 
         // Timestamped Leaderboards For Each Location
-        Redis::zincrby("daily-leaderboard:country:$photo->country_id:$year:$month:$day", $incrXp, $userId);
-        Redis::zincrby("daily-leaderboard:state:$photo->state_id:$year:$month:$day", $incrXp, $userId);
-        Redis::zincrby("daily-leaderboard:city:$photo->city_id:$year:$month:$day", $incrXp, $userId);
+        Redis::zincrby("leaderboard:country:$photo->country_id:$year:$month:$day", $incrXp, $userId);
+        Redis::zincrby("leaderboard:state:$photo->state_id:$year:$month:$day", $incrXp, $userId);
+        Redis::zincrby("leaderboard:city:$photo->city_id:$year:$month:$day", $incrXp, $userId);
 
-        Redis::zincrby("monthly-leaderboard:country:$photo->country_id:$year:$month", $incrXp, $userId);
-        Redis::zincrby("monthly-leaderboard:state:$photo->state_id:$year:$month", $incrXp, $userId);
-        Redis::zincrby("monthly-leaderboard:city:$photo->city_id:$year:$month", $incrXp, $userId);
+        Redis::zincrby("leaderboard:country:$photo->country_id:$year:$month", $incrXp, $userId);
+        Redis::zincrby("leaderboard:state:$photo->state_id:$year:$month", $incrXp, $userId);
+        Redis::zincrby("leaderboard:city:$photo->city_id:$year:$month", $incrXp, $userId);
 
-        Redis::zincrby("annual-leaderboard:country:$photo->country_id:$year", $incrXp, $userId);
-        Redis::zincrby("annual-leaderboard:state:$photo->state_id:$year", $incrXp, $userId);
-        Redis::zincrby("annual-leaderboard:city:$photo->city_id:$year", $incrXp, $userId);
+        Redis::zincrby("leaderboard:country:$photo->country_id:$year", $incrXp, $userId);
+        Redis::zincrby("leaderboard:state:$photo->state_id:$year", $incrXp, $userId);
+        Redis::zincrby("leaderboard:city:$photo->city_id:$year", $incrXp, $userId);
     }
 }
