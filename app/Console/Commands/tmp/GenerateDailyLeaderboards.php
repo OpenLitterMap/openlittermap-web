@@ -50,7 +50,8 @@ class GenerateDailyLeaderboards extends Command
 
         foreach ($photos->cursor() as $photo)
         {
-            $userId = User::find($photo->user_id);
+            $user = User::find($photo->user_id);
+            $userId = $user->id;
             $incrXp = $photo->total_Litter;
 
             $year = Carbon::parse($photo->datetime);
@@ -60,6 +61,13 @@ class GenerateDailyLeaderboards extends Command
             $country = Country::find($photo->country_id);
             $state = State::find($photo->state_id);
             $city = City::find($photo->city_id);
+
+            if ($user)
+            {
+                Redis::zincrby("daily-leaderboard:users:$year:$month:$day", $incrXp, $userId);
+                Redis::zincrby("monthly-leaderboard:users:$year:$month", $incrXp, $userId);
+                Redis::zincrby("annual-leaderboard:users:$year", $incrXp, $userId);
+            }
 
             if ($country)
             {
