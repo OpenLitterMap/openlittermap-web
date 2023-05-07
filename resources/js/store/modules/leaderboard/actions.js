@@ -2,17 +2,21 @@ export const actions = {
     /**
      * Get a paginated array of global leaders x100
      */
-    async GET_GLOBAL_LEADERBOARD (context)
+    async GET_GLOBAL_LEADERBOARD (context, payload = null)
     {
-        await axios.get('/global/leaderboard')
-            .then(response => {
-                console.log('get_global_leaderboard', response);
+        await axios.get('/global/leaderboard', {
+            params: {
+                filter: payload
+            }
+        })
+        .then(response => {
+            console.log('get_global_leaderboard', response);
 
-                context.commit('setGlobalLeaderboard', response.data);
-            })
-            .catch(error => {
-                console.error('get_global_leaderboard', error);
-            });
+            context.commit('setGlobalLeaderboard', response.data);
+        })
+        .catch(error => {
+            console.error('get_global_leaderboard', error);
+        });
     },
 
     /**

@@ -64,8 +64,8 @@ class LoadDataHelper
             $country = LocationHelper::getCreatorInfo($country);
 
             // Get Leaderboard per country. Should load more and stop when there are 10-max as some users settings may be off.
+            // Todo - we should load this when we click on it.
             $leaderboardIds = Redis::zrevrange("xp.country.$country->id", 0, 9, 'withscores');
-
             $country['leaderboard'] = self::getLeadersFromLeaderboards($leaderboardIds);
 
             // Total values

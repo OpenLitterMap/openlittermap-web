@@ -56,7 +56,7 @@ export default {
     components: {
         GlobalLeaders,
         Progress,
-        TotalGlobalCounts
+        TotalGlobalCounts,
     },
     channel: 'main',
     echo: {
@@ -84,8 +84,7 @@ export default {
         /**
          * The top-10 array of leaders
          */
-        leaders ()
-        {
+        leaders () {
             return this.$store.state.locations.globalLeaders;
         }
     },

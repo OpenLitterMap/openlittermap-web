@@ -1,5 +1,9 @@
 <template>
     <div class="global-leaders">
+
+        <!-- Leaderboard Filters -->
+        <LeaderboardFilters />
+
         <div v-for="(leader, index) in leaders" class="leader wow slideInLeft">
             <div v-if="leader.rank" class="medal">
                 <img v-if="leader.rank === 1" src="/assets/icons/gold-medal-2.png" alt="Gold spot">
@@ -51,10 +55,16 @@
 
 <script>
 import moment from 'moment';
+import LeaderboardFilters from "../Leaderboards/LeaderboardFilters";
 
 export default {
 	name: 'GlobalLeaders',
-    props: ['leaders'],
+    props: [
+        'leaders'
+    ],
+    components: {
+        LeaderboardFilters
+    },
 	methods: {
 		/**
 		 * Show flag for a leader if they have country set
