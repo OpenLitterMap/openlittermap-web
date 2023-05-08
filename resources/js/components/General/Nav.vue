@@ -35,7 +35,7 @@
                         </router-link>
 
                         <!-- Leaderboards -->
-                        <router-link to="/leaderboards" class="navbar-item" @click.native="close">
+                        <router-link to="/leaderboard" class="navbar-item" @click.native="close">
                             Leaderboards
                         </router-link>
 
