@@ -44,7 +44,8 @@ class GenerateDailyLeaderboards extends Command
                 'city_id',
                 'total_litter'
             )
-            ->where('verified', '>=', 2);
+            ->where('verified', '>=', 2)
+            ->orderBy('id', 'desc');
 
         $total = $photos->count();
 

@@ -19,6 +19,7 @@ class LeaderboardController extends Controller
         $filter = null;
         $total = 1;
         $userIds = [];
+        $queryFilter = "xp_redis";
 
         if (request()->has('filter')) {
             $filter = request('filter');
@@ -45,6 +46,8 @@ class LeaderboardController extends Controller
 
                 $total = Redis::zcount("leaderboard:users:$year:$month:$day", '-inf', '+inf');
                 $userIds = Redis::zrevrange("leaderboard:users:$year:$month:$day", $start, $end);
+
+                $queryFilter = "todays_xp";
             }
             else if ($filter === 'yesterday')
             {
@@ -54,6 +57,8 @@ class LeaderboardController extends Controller
 
                 $total = Redis::zcount("leaderboard:users:$year:$month:$day", '-inf', '+inf');
                 $userIds = Redis::zrevrange("leaderboard:users:$year:$month:$day", $start, $end);
+
+                $queryFilter = "yesterdays_xp";
             }
             else if ($filter === 'this-month')
             {
@@ -62,6 +67,8 @@ class LeaderboardController extends Controller
 
                 $total = Redis::zcount("leaderboard:users:$year:$month", '-inf', '+inf');
                 $userIds = Redis::zrevrange("leaderboard:users:$year:$month", $start, $end);
+
+                $queryFilter = "this_months_xp";
             }
             else if ($filter === 'last-month')
             {
@@ -70,6 +77,8 @@ class LeaderboardController extends Controller
 
                 $total = Redis::zcount("leaderboard:users:$year:$month", '-inf', '+inf');
                 $userIds = Redis::zrevrange("leaderboard:users:$year:$month", $start, $end);
+
+                $queryFilter = "last_months_xp";
             }
             else if ($filter === 'this-year')
             {
@@ -77,6 +86,8 @@ class LeaderboardController extends Controller
 
                 $total = Redis::zcount("leaderboard:users:$year", '-inf', '+inf');
                 $userIds = Redis::zrevrange("leaderboard:users:$year", $start, $end);
+
+                $queryFilter = "this_years_xp";
             }
             else if ($filter === 'last-year')
             {
@@ -84,6 +95,8 @@ class LeaderboardController extends Controller
 
                 $total = Redis::zcount("leaderboard:users:$year", '-inf', '+inf');
                 $userIds = Redis::zrevrange("leaderboard:users:$year", $start, $end);
+
+                $queryFilter = "last_years_xp";
             }
         }
 
@@ -91,8 +104,8 @@ class LeaderboardController extends Controller
             ->with(['teams:id,name'])
             ->whereIn('id', $userIds)
             ->get()
-            ->append('xp_redis')
-            ->sortByDesc('xp_redis')
+            ->append($queryFilter)
+            ->sortByDesc($queryFilter)
             ->values()
             ->map(function (User $user, $index) use ($start) {
                 $showTeamName = $user->active_team && $user->teams
