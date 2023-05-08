@@ -211,12 +211,64 @@ class User extends Authenticatable
     /**
      * Get xp_redis attribute
      *
+     * This will get the users Total Global XP.
+     *
      * @return int user's total XP
      */
     public function getXpRedisAttribute()
     {
         return (int) Redis::zscore("xp.users", $this->id);
     }
+
+    public function getTodaysXpAttribute ()
+    {
+        $year = now()->year;
+        $month = now()->month;
+        $day = now()->day;
+
+        return (int) Redis::zscore("leaderboard:users:$year:$month:$day", $this->id);
+    }
+
+    public function getYesterdaysXpAttribute ()
+    {
+        $year = now()->subDays(1)->year;
+        $month = now()->subDays(1)->month;
+        $day = now()->subDays(1)->day;
+
+        return (int) Redis::zscore("leaderboard:users:$year:$month:$day", $this->id);
+    }
+
+    public function getThisMonthsXpAttribute ()
+    {
+        $year = now()->year;
+        $month = now()->month;
+
+        return (int) Redis::zscore("leaderboard:users:$year:$month", $this->id);
+    }
+
+    public function getLastMonthsXpAttribute ()
+    {
+        $year = now()->subMonths(1)->year;
+        $month = now()->subMonths(1)->month;
+
+        return (int) Redis::zscore("leaderboard:users:$year:$month", $this->id);
+    }
+
+    public function getThisYearsXpAttribute ()
+    {
+        $year = now()->year;
+
+        return (int) Redis::zscore("leaderboard:users:$year", $this->id);
+    }
+
+    public function getLastYearsXpAttribute ()
+    {
+        $year = now()->year;
+
+        return (int) Redis::zscore("leaderboard:users:$year", $this->id);
+    }
+
+
 
     /**
      * Get total brand tags from Redis
