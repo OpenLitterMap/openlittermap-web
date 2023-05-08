@@ -87,6 +87,7 @@ class LeaderboardController extends Controller
             }
         }
 
+        // To do - load the relevant XP for each user
         $users = User::query()
             ->with(['teams:id,name'])
             ->whereIn('id', $userIds)
