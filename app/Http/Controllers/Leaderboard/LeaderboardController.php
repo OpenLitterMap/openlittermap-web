@@ -107,7 +107,7 @@ class LeaderboardController extends Controller
             ->append($queryFilter)
             ->sortByDesc($queryFilter)
             ->values()
-            ->map(function (User $user, $index) use ($start) {
+            ->map(function (User $user, $index) use ($start, $queryFilter) {
                 $showTeamName = $user->active_team && $user->teams
                         ->where('pivot.team_id', $user->active_team)
                         ->first(function ($value, $key) {
@@ -117,7 +117,7 @@ class LeaderboardController extends Controller
                 return [
                     'name' => $user->show_name ? $user->name : '',
                     'username' => $user->show_username ? ('@' . $user->username) : '',
-                    'xp' => number_format($user->xp_redis),
+                    'xp' => number_format($user->$queryFilter),
                     'global_flag' => $user->global_flag,
                     'social' => !empty($user->social_links) ? $user->social_links : null,
                     'team' => $showTeamName ? $user->team->name : '',
