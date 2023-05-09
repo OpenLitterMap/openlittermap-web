@@ -286,7 +286,37 @@ export default {
                     title: 'Waste management: A comprehensive state of the art about the rise of blockchain technology',
                     link: 'https://www.sciencedirect.com/science/article/abs/pii/S0166361522002081',
                     author: 'Baralla et al'
-                }
+                },
+                {
+                    date: '2023/01/17',
+                    title: 'Smardy: Zero-Trust FAIR Marketplace for Research Data',
+                    link: 'https://ieeexplore.ieee.org/abstract/document/10020710',
+                    author: 'Ion-Dorinel et al'
+                },
+                {
+                    date: '2023/02/24',
+                    title: 'Monitoring contaminants of emerging concern in aquatic systems through the lens of citizen science',
+                    link: 'https://www.sciencedirect.com/science/article/pii/S0048969723011439?ref=pdf_download&fr=RR-2&rr=7c4c1b55da651c89',
+                    author: 'Raman et al'
+                },
+                {
+                    date: '2023/03/01',
+                    title: 'Applications of convolutional neural networks for intelligent waste identification and recycling: A review',
+                    link: 'https://www.sciencedirect.com/science/article/abs/pii/S0921344922006450',
+                    author: 'Wu et al'
+                },
+                {
+                    date: '2023/05/01',
+                    title: 'Waste classification using vision transformer based on multilayer hybrid convolution neural network',
+                    link: 'https://www.sciencedirect.com/science/article/abs/pii/S2212095523000779',
+                    author: 'Alrayes et al'
+                },
+                {
+                    date: '2023/07/01',
+                    title: 'Study on the real-time object detection approach for end-of-life battery-powered electronics in the waste of electrical and electronic equipment recycling process',
+                    link: 'https://www.sciencedirect.com/science/article/abs/pii/S0956053X23003355',
+                    author: 'Yang et al'
+                },
             ]
         };
     },
