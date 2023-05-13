@@ -28,11 +28,9 @@
 
 					<!-- Charts -->
 					<div class="column is-half is-offset-1">
-
 						<p class="show-mobile">Drag these across for more options</p>
 
 						<div class="tabs is-center">
-
 							<!-- Components within Tabs -->
 							<a v-for="(tab, idx) in tabs"
 								:key="idx" v-show="showTab(tab.in_location)"
@@ -48,7 +46,6 @@
 							:brands_data="location.brands_data"
 							:total_brands="location.total_brands"
 							:ppm="location.ppm"
-							:leaderboard="location.leaderboard"
 							:time="location.time"
 							@dateschanged="updateUrl"
 							:index="index"
