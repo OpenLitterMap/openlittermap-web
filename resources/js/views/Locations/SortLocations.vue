@@ -183,6 +183,11 @@ export default {
 		loadTab (tab)
 		{
 			this.tab = tab;
+
+            if (tab === "Leaderboard")
+            {
+
+            }
 		},
 
 		/**

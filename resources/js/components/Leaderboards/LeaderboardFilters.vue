@@ -14,10 +14,14 @@
 <script>
 export default {
     name: "LeaderboardFilters",
+    props: [
+        'locationType',
+        'locationId'
+    ],
     data () {
         return {
             processing: false,
-            selected: "all-time",
+            selected: "today",
             options: [
                "all-time",
                "today",
@@ -38,7 +42,14 @@ export default {
 
             this.processing = true;
 
-            await this.$store.dispatch('GET_GLOBAL_LEADERBOARD', option);
+            console.log('locationId', this.locationId);
+            console.log('locationType', this.locationType);
+
+            await this.$store.dispatch('GET_GLOBAL_LEADERBOARD', {
+                option,
+                locationId: this.locationId,
+                locationType: this.locationType
+            });
 
             this.processing = false;
         },

@@ -41,7 +41,7 @@ Route::post('/stripe/resubscribe', 'StripeController@resubscribe');
 Route::get('location', 'Location\LocationsController@index');
 
 // Route::get('countries', 'Location\LocationsController@getCountries');
-// Route::get('/countries', 'Global\GetDataForWorldCupController');
+Route::get('/get-world-cup-data', 'WorldCup\GetDataForWorldCupController');
 
 Route::get('states', 'Location\LocationsController@getStates');
 Route::get('cities', 'Location\LocationsController@getCities');
@@ -49,9 +49,10 @@ Route::get('cities', 'Location\LocationsController@getCities');
 /* Download data */
 Route::post('download', 'DownloadControllerNew@index');
 
-Route::get('/world/{country}', 'HomeController@index');
-Route::get('/world/{country}/{state}', 'HomeController@index');
-Route::get('/world/{country}/{state}/{city?}/{id?}', 'HomeController@index');
+//Route::get('/world/{country?}', 'HomeController@index');
+//Route::get('/world/{country}/{state}', 'HomeController@index');
+Route::get('/world/{country?}/{state?}/{city?}/{id?}', 'HomeController@index');
+
 // Route::get('/world/{country}/{city}/city_hex_map', 'MapController@getCity');
 // Similarly, get the city and pass the world dynamically
 Route::get('/world/{country}/{state}/{city}/map/{minfilter?}/{maxfilter?}/{hex?}', 'HomeController@index');

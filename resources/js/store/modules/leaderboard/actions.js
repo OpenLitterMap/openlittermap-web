@@ -6,7 +6,9 @@ export const actions = {
     {
         await axios.get('/global/leaderboard', {
             params: {
-                filter: payload
+                timeFilter: payload.option,
+                locationType: payload.locationType,
+                locationId: payload.locationId
             }
         })
         .then(response => {
