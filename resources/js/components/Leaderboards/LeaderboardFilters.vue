@@ -1,13 +1,30 @@
 <template>
-    <div class="leaderboard-filters-container">
-        <p
-            v-for="option in options"
-            class="leaderboard-option"
-            :class="option === selected ? 'is-selected' : ''"
-            @click="changeOption(option)"
-        >
-            {{ getNameForOption(option) }}
-        </p>
+    <div>
+        <div class="leaderboard-filters-container" >
+            <p
+                v-for="option in options"
+                class="leaderboard-option"
+                :class="option === selected ? 'is-selected' : ''"
+                @click="changeOption(option)"
+            >
+                {{ getNameForOption(option) }}
+            </p>
+        </div>
+
+        <div class="mobile-filters-container">
+            <select
+                class="input"
+                @change="changeOption"
+            >
+                <option
+                    v-for="option in options"
+                    :value="option"
+                >
+                    {{ getNameForOption(option) }}
+                </option>
+            </select>
+        </div>
+
     </div>
 </template>
 
@@ -27,6 +44,11 @@ export default {
                "this-year"
             ]
         };
+    },
+    computed: {
+        isMobile () {
+            return 'is-mobile';
+        }
     },
     methods: {
         /**
@@ -93,5 +115,19 @@ export default {
 
     .leaderboard-option.is-selected {
         background-color: #48c774;
+    }
+
+    /** DESKTOP */
+    @media screen and (min-width: 687px) {
+        .mobile-filters-container {
+            display: none;
+        }
+    }
+
+    /** MOBILE */
+    @media screen and (max-width: 687px) {
+        .leaderboard-filters-container {
+            display: none;
+        }
     }
 </style>
