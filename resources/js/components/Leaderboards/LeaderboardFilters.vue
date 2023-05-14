@@ -15,6 +15,7 @@
             <select
                 v-model="selected"
                 class="input mb1"
+                style="text-align: center;"
                 @change="optionChanged"
             >
                 <option
