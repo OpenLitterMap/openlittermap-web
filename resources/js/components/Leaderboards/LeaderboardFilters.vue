@@ -14,7 +14,7 @@
         <div class="mobile-filters-container">
             <select
                 v-model="selected"
-                class="input"
+                class="input mb1"
                 @change="optionChanged"
             >
                 <option
