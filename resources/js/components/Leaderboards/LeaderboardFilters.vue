@@ -13,8 +13,9 @@
 
         <div class="mobile-filters-container">
             <select
+                v-model="selected"
                 class="input"
-                @change="changeOption"
+                @change="optionChanged"
             >
                 <option
                     v-for="option in options"
@@ -89,6 +90,22 @@ export default {
             }
 
             return "";
+        },
+
+        /**
+         * on mobile view, the option has changed
+         */
+        async optionChanged (e)
+        {
+            const option = e.target.value
+
+            this.selected = option;
+
+            this.processing = true;
+
+            await this.$store.dispatch('GET_GLOBAL_LEADERBOARD', option);
+
+            this.processing = false;
         }
     }
 }
