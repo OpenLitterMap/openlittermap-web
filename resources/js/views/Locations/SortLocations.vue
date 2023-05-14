@@ -34,7 +34,7 @@
 							<!-- Components within Tabs -->
 							<a v-for="(tab, idx) in tabs"
 								:key="idx" v-show="showTab(tab.in_location)"
-								@click="loadTab(tab.component)"
+								@click="loadTab(tab.component, location.id)"
 								:class="tabClass(tab)">
 								{{ tab.title }}
 							</a>
@@ -51,6 +51,8 @@
 							:index="index"
 							:locationType="locationType"
 							:locationId="location.id"
+                            :leaders="getUsersForLocationLeaderboard"
+                            :style="showOnlySelectedLeaderboard(location.id) ? 'found-id' : 'display: none'"
 						/>
 					</div>
 				</div>
@@ -93,7 +95,7 @@ export default {
 				{ title: this.$t('location.leaderboard'), component: 'LeaderboardList', in_location: 'all'},
 				{ title: this.$t('location.options'), component: 'Options', in_location: 'city'},
 				{ title: this.$t('common.download'), component: 'Download', in_location: 'all'}
-			]
+			],
 		};
 	},
     computed: {
@@ -107,7 +109,17 @@ export default {
                 : '';
         },
 
-		/**
+        /**
+         * Array of users for each Leaderboard
+         */
+        getUsersForLocationLeaderboard ()
+        {
+            this.$store.state.locations.locationTabKey;
+
+            return this.$store.state.leaderboard[this.locationType][this.selectedLocationId] ?? [];
+        },
+
+        /**
 		 * Is the user authenticated?
 		 */
 		isAuth ()
@@ -163,6 +175,14 @@ export default {
 		},
 
         /**
+         * The locationId which has its tabs selected
+         */
+        selectedLocationId ()
+        {
+            return this.$store.state.locations.selectedLocationId;
+        },
+
+        /**
          * String that determines how to sort the order of locations
          *
          * Includes:
@@ -172,7 +192,8 @@ export default {
          * - total-contributors
          * - most-recent
          */
-        sortedBy () {
+        sortedBy ()
+        {
             return this.$store.state.locations.sortLocationsBy;
         }
     },
@@ -180,15 +201,32 @@ export default {
 		/**
 		 * Load a tab component: Litter, Leaderboard, Time-series
 		 */
-		loadTab (tab)
+		async loadTab (tab, locationId)
 		{
 			this.tab = tab;
 
             if (tab === "LeaderboardList")
             {
-                this.$store.dispatch('GET_GLOBAL_LEADERBOARD', 'today');
+                await this.$store.dispatch('GET_USERS_FOR_LEADERBOARD', {
+                    option: 'today',
+                    locationType: this.locationType,
+                    locationId
+                });
             }
 		},
+
+        /**
+         *
+         */
+        showOnlySelectedLeaderboard (locationId)
+        {
+            if (this.tab === "LeaderboardList")
+            {
+                return (this.selectedLocationId === locationId);
+            }
+
+            return true;
+        },
 
 		/**
 		 * Class to return for tab

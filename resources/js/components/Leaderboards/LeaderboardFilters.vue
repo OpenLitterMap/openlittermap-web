@@ -42,7 +42,7 @@ export default {
 
             this.processing = true;
 
-            await this.$store.dispatch('GET_GLOBAL_LEADERBOARD', {
+            await this.$store.dispatch('GET_USERS_FOR_LEADERBOARD', {
                 option,
                 locationId: this.locationId,
                 locationType: this.locationType

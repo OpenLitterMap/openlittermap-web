@@ -2,13 +2,13 @@ export const actions = {
     /**
      * Get a paginated array of global leaders x100
      */
-    async GET_GLOBAL_LEADERBOARD (context, payload = null)
+    async GET_USERS_FOR_LEADERBOARD (context, payload = null)
     {
         await axios.get('/global/leaderboard', {
             params: {
-                timeFilter: payload.option,
-                locationType: payload.locationType,
-                locationId: payload.locationId
+                timeFilter: payload?.option ?? null,
+                locationType: payload?.locationType ?? null,
+                locationId: payload?.locationId ?? null
             }
         })
         .then(response => {
@@ -16,8 +16,23 @@ export const actions = {
 
             context.commit('setGlobalLeaderboard', response.data);
 
-            // for GlobalMetaData
-            context.commit('setGlobalLeaders', response.data.users);
+            if (payload.locationType && payload.locationId) {
+                
+                // Filter users by location
+                context.commit('setLocationLeaderboard', {
+                    locationType: payload.locationType,
+                    locationId: payload.locationId,
+                    users: response.data.users
+                });
+
+                context.commit('setSelectedLocationId', payload.locationId);
+                context.commit('updateLocationTabKey');
+
+            } else {
+                // All time global users
+                // for GlobalMetaData
+                context.commit('setGlobalLeaders', response.data.users);
+            }
         })
         .catch(error => {
             console.error('get_global_leaderboard', error);

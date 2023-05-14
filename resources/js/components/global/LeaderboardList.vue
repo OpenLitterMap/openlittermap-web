@@ -2,7 +2,10 @@
     <div class="global-leaders">
 
         <!-- Leaderboard Filters -->
-        <LeaderboardFilters />
+        <LeaderboardFilters
+            :locationId="locationId"
+            :locationType="locationType"
+        />
 
         <div v-for="(leader, index) in leaders" class="leader wow slideInLeft">
             <div v-if="leader.rank" class="medal">
@@ -60,7 +63,9 @@ import LeaderboardFilters from "../Leaderboards/LeaderboardFilters";
 export default {
 	name: 'LeaderboardList',
     props: [
-        'leaders'
+        'leaders',
+        'locationId',
+        'locationType'
     ],
     components: {
         LeaderboardFilters

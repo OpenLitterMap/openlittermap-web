@@ -220,6 +220,9 @@ class User extends Authenticatable
         return (int) Redis::zscore("xp.users", $this->id);
     }
 
+    /**
+     * Get this Users XP from the Global Leaderboard of All Users
+     */
     public function getTodaysXpAttribute ()
     {
         $year = now()->year;
@@ -268,7 +271,64 @@ class User extends Authenticatable
         return (int) Redis::zscore("leaderboard:users:$year", $this->id);
     }
 
+    /**
+     * Get the Users XP for a Location, by Time
+     *
+     * Here, we have to pass the locationType and locationId dynamically.
+     */
+    public function getXpWithParams ($param)
+    {
+        $queryFilter = $param['queryFilter'];
+        $leaderboardType = $param['leaderboardType'];
+        $modelId = $param['locationId'];
 
+        if ($queryFilter === "todays_xp")
+        {
+            $year = now()->year;
+            $month = now()->month;
+            $day = now()->day;
+
+            // country, state, city. not users
+            return (int) Redis::zscore("leaderboard:$leaderboardType:$modelId:$year:$month:$day", $this->id);
+        }
+        else if ($queryFilter === "yesterdays_xp")
+        {
+            $year = now()->subDays(1)->year;
+            $month = now()->subDays(1)->month;
+            $day = now()->subDays(1)->day;
+
+            return (int) Redis::zscore("leaderboard:$leaderboardType:$modelId:$year:$month:$day", $this->id);
+        }
+        else if ($queryFilter === "this_months_xp")
+        {
+            $year = now()->year;
+            $month = now()->month;
+
+            return (int) Redis::zscore("leaderboard:$leaderboardType:$modelId:$year:$month", $this->id);
+        }
+        else if ($queryFilter === "last_months_xp")
+        {
+            $year = now()->subMonths(1)->year;
+            $month = now()->subMonths(1)->month;
+
+            return (int) Redis::zscore("leaderboard:$leaderboardType:$modelId:$year:$month", $this->id);
+        }
+        else if ($queryFilter === "this_years_xp")
+        {
+            $year = now()->year;
+
+            return (int) Redis::zscore("leaderboard:$leaderboardType:$modelId:$year", $this->id);
+        }
+        else if ($queryFilter === "last_years_xp")
+        {
+            $year = now()->year;
+
+            return (int) Redis::zscore("leaderboard:$leaderboardType:$modelId:$year", $this->id);
+        }
+        // all time
+
+        return [];
+    }
 
     /**
      * Get total brand tags from Redis

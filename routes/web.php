@@ -96,7 +96,7 @@ Route::get('/global/points', 'GlobalMap\GlobalMapController@index');
 Route::get('/global/art-data', 'GlobalMap\GlobalMapController@artData');
 
 // Get data for the Global Leaderboard
-Route::get('/global/leaderboard', 'Leaderboard\LeaderboardController');
+Route::get('/global/leaderboard', 'Leaderboard\GetUsersForLeaderboardController');
 
 /** Auth Routes */
 
