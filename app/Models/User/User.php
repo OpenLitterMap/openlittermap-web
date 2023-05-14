@@ -278,52 +278,52 @@ class User extends Authenticatable
      */
     public function getXpWithParams ($param)
     {
-        $queryFilter = $param['queryFilter'];
-        $leaderboardType = $param['leaderboardType'];
-        $modelId = $param['locationId'];
+        $timeFilter = $param['timeFilter'];
+        $locationType = $param['locationType'];
+        $locationId = $param['locationId'];
 
-        if ($queryFilter === "todays_xp")
+        if ($timeFilter === "today")
         {
             $year = now()->year;
             $month = now()->month;
             $day = now()->day;
 
             // country, state, city. not users
-            return (int) Redis::zscore("leaderboard:$leaderboardType:$modelId:$year:$month:$day", $this->id);
+            return (int) Redis::zscore("leaderboard:$locationType:$locationId:$year:$month:$day", $this->id);
         }
-        else if ($queryFilter === "yesterdays_xp")
+        else if ($timeFilter === "yesterday")
         {
             $year = now()->subDays(1)->year;
             $month = now()->subDays(1)->month;
             $day = now()->subDays(1)->day;
 
-            return (int) Redis::zscore("leaderboard:$leaderboardType:$modelId:$year:$month:$day", $this->id);
+            return (int) Redis::zscore("leaderboard:$locationType:$locationId:$year:$month:$day", $this->id);
         }
-        else if ($queryFilter === "this_months_xp")
+        else if ($timeFilter === "this-month")
         {
             $year = now()->year;
             $month = now()->month;
 
-            return (int) Redis::zscore("leaderboard:$leaderboardType:$modelId:$year:$month", $this->id);
+            return (int) Redis::zscore("leaderboard:$locationType:$locationId:$year:$month", $this->id);
         }
-        else if ($queryFilter === "last_months_xp")
+        else if ($timeFilter === "last-month")
         {
             $year = now()->subMonths(1)->year;
             $month = now()->subMonths(1)->month;
 
-            return (int) Redis::zscore("leaderboard:$leaderboardType:$modelId:$year:$month", $this->id);
+            return (int) Redis::zscore("leaderboard:$locationType:$locationId:$year:$month", $this->id);
         }
-        else if ($queryFilter === "this_years_xp")
+        else if ($timeFilter === "this-year")
         {
             $year = now()->year;
 
-            return (int) Redis::zscore("leaderboard:$leaderboardType:$modelId:$year", $this->id);
+            return (int) Redis::zscore("leaderboard:$locationType:$locationId:$year", $this->id);
         }
-        else if ($queryFilter === "last_years_xp")
+        else if ($timeFilter === "last-year")
         {
             $year = now()->year;
 
-            return (int) Redis::zscore("leaderboard:$leaderboardType:$modelId:$year", $this->id);
+            return (int) Redis::zscore("leaderboard:$locationType:$locationId:$year", $this->id);
         }
         // all time
 

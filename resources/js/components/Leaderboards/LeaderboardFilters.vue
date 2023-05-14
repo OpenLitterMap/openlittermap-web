@@ -42,11 +42,18 @@ export default {
 
             this.processing = true;
 
-            await this.$store.dispatch('GET_USERS_FOR_LEADERBOARD', {
-                option,
-                locationId: this.locationId,
-                locationType: this.locationType
-            });
+            if (this.locationId && this.locationType)
+            {
+                await this.$store.dispatch('GET_USERS_FOR_LOCATION_LEADERBOARD', {
+                    option,
+                    locationId: this.locationId,
+                    locationType: this.locationType
+                });
+            }
+            else
+            {
+                await this.$store.dispatch('GET_USERS_FOR_GLOBAL_LEADERBOARD', option);
+            }
 
             this.processing = false;
         },

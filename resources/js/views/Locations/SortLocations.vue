@@ -52,7 +52,7 @@
 							:locationType="locationType"
 							:locationId="location.id"
                             :leaders="getUsersForLocationLeaderboard"
-                            :style="showOnlySelectedLeaderboard(location.id) ? 'found-id' : 'display: none'"
+                            :style="showOnlySelectedLeaderboard(location.id) ? '' : 'display: none'"
 						/>
 					</div>
 				</div>
@@ -207,7 +207,7 @@ export default {
 
             if (tab === "LeaderboardList")
             {
-                await this.$store.dispatch('GET_USERS_FOR_LEADERBOARD', {
+                await this.$store.dispatch('GET_USERS_FOR_LOCATION_LEADERBOARD', {
                     option: 'today',
                     locationType: this.locationType,
                     locationId
