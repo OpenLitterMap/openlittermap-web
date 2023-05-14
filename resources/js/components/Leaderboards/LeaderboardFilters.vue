@@ -1,6 +1,6 @@
 <template>
     <div>
-        <div class="leaderboard-filters-container" >
+        <div class="leaderboard-filters-container">
             <p
                 v-for="option in options"
                 class="leaderboard-option"
@@ -25,7 +25,6 @@
                 </option>
             </select>
         </div>
-
     </div>
 </template>
 
@@ -45,11 +44,6 @@ export default {
                "this-year"
             ]
         };
-    },
-    computed: {
-        isMobile () {
-            return 'is-mobile';
-        }
     },
     methods: {
         /**
