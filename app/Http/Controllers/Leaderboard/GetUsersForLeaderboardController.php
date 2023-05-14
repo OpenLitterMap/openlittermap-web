@@ -88,6 +88,7 @@ class GetUsersForLeaderboardController extends Controller
         // users, country, state, or city
         $leaderboardType = $leaderboardData['leaderboardType'];
 
+        // Todo - move Global + Location filters to different controllers
         $users = User::query()
             ->with(['teams:id,name'])
             ->whereIn('id', $userIds)
