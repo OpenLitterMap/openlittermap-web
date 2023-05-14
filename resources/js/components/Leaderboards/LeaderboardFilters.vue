@@ -1,13 +1,30 @@
 <template>
-    <div class="leaderboard-filters-container">
-        <p
-            v-for="option in options"
-            class="leaderboard-option"
-            :class="option === selected ? 'is-selected' : ''"
-            @click="changeOption(option)"
-        >
-            {{ getNameForOption(option) }}
-        </p>
+    <div>
+        <div class="leaderboard-filters-container">
+            <p
+                v-for="option in options"
+                class="leaderboard-option"
+                :class="option === selected ? 'is-selected' : ''"
+                @click="changeOption(option)"
+            >
+                {{ getNameForOption(option) }}
+            </p>
+        </div>
+
+        <div class="mobile-filters-container">
+            <select
+                v-model="selected"
+                class="input"
+                @change="optionChanged"
+            >
+                <option
+                    v-for="option in options"
+                    :value="option"
+                >
+                    {{ getNameForOption(option) }}
+                </option>
+            </select>
+        </div>
     </div>
 </template>
 
@@ -67,6 +84,22 @@ export default {
             }
 
             return "";
+        },
+
+        /**
+         * on mobile view, the option has changed
+         */
+        async optionChanged (e)
+        {
+            const option = e.target.value
+
+            this.selected = option;
+
+            this.processing = true;
+
+            await this.$store.dispatch('GET_GLOBAL_LEADERBOARD', option);
+
+            this.processing = false;
         }
     }
 }
@@ -93,5 +126,19 @@ export default {
 
     .leaderboard-option.is-selected {
         background-color: #48c774;
+    }
+
+    /** DESKTOP */
+    @media screen and (min-width: 687px) {
+        .mobile-filters-container {
+            display: none;
+        }
+    }
+
+    /** MOBILE */
+    @media screen and (max-width: 687px) {
+        .leaderboard-filters-container {
+            display: none;
+        }
     }
 </style>
