@@ -34,7 +34,7 @@ export default {
     data () {
         return {
             processing: false,
-            selected: "all-time",
+            selected: "today",
             options: [
                "all-time",
                "today",
