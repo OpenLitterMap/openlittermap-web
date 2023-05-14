@@ -42,9 +42,6 @@ export default {
 
             this.processing = true;
 
-            console.log('locationId', this.locationId);
-            console.log('locationType', this.locationType);
-
             await this.$store.dispatch('GET_GLOBAL_LEADERBOARD', {
                 option,
                 locationId: this.locationId,

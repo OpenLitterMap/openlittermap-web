@@ -46,7 +46,7 @@
 <script>
 import TotalGlobalCounts from "../global/TotalGlobalCounts";
 import Progress from "../General/Progress";
-import GlobalLeaders from '../global/GlobalLeaders'
+import GlobalLeaders from '../global/LeaderboardList'
 
 export default {
     name: "GlobalMetaData",

@@ -20,7 +20,7 @@
             />
 
             <div v-if="!loading">
-                <GlobalLeaders
+                <LeaderboardList
                     :leaders="leaderboard.users"
                 />
 
@@ -51,14 +51,14 @@
 </template>
 
 <script>
-import GlobalLeaders from "../../components/global/GlobalLeaders";
 import Loading from "vue-loading-overlay";
+import LeaderboardList from "../../components/global/LeaderboardList";
 
 export default {
     name: "Leaderboard",
     components: {
         Loading,
-        GlobalLeaders
+        LeaderboardList
     },
     data () {
         return {
@@ -67,7 +67,9 @@ export default {
     },
     async created () {
         this.loading = true;
+
         await this.$store.dispatch('GET_GLOBAL_LEADERBOARD');
+
         this.loading = false;
     },
     computed: {
@@ -80,24 +82,33 @@ export default {
     },
 
     methods: {
-        async loadPreviousPage () {
+        async loadPreviousPage ()
+        {
             this.loading = true;
+
             window.scrollTo({top: 0, behavior: 'smooth'});
+
             await this.$store.dispatch('GET_PREVIOUS_LEADERBOARD_PAGE');
+
             this.loading = false;
         },
 
-        async loadNextPage () {
+        async loadNextPage ()
+        {
             this.loading = true;
+
             window.scrollTo({top: 0, behavior: 'smooth'});
+
             await this.$store.dispatch('GET_NEXT_LEADERBOARD_PAGE');
+
             this.loading = false;
         },
 
         /**
          * Navigate to the World Cup page
          */
-        openWorldCup () {
+        openWorldCup ()
+        {
             this.$router.push({ path: '/world' });
         }
     }
@@ -105,6 +116,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+
     .wrapper {
         padding: 1rem 0.5rem;
     }
@@ -141,4 +153,5 @@ export default {
             padding: 3rem 1.5rem;
         }
     }
+
 </style>

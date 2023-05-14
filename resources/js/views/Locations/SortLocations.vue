@@ -66,7 +66,7 @@ import LocationNavbar from '../../components/Locations/LocationNavBar'
 import LocationMetadata from '../../components/Locations/LocationMetadata'
 import ChartsContainer from '../../components/Locations/Charts/PieCharts/ChartsContainer'
 import TimeSeriesContainer from '../../components/Locations/Charts/TimeSeries/TimeSeriesContainer'
-import Leaderboard from '../../components/Locations/Charts/Leaderboard/Leaderboard'
+import LeaderboardList from '../../components/global/LeaderboardList';
 import Options from '../../components/Locations/Charts/Options/Options'
 import Download from '../../components/Locations/Charts/Download/Download'
 
@@ -80,7 +80,7 @@ export default {
 		LocationMetadata,
 		ChartsContainer,
 		TimeSeriesContainer,
-		Leaderboard,
+        LeaderboardList,
         Options,
         Download
 	},
@@ -90,7 +90,7 @@ export default {
 			tabs: [
 				{ title: this.$t('location.litter'), component: 'ChartsContainer', in_location: 'all' },
 				{ title: this.$t('location.time-series'), component: 'TimeSeriesContainer', in_location: 'all'},
-				{ title: this.$t('location.leaderboard'), component: 'Leaderboard', in_location: 'all'},
+				{ title: this.$t('location.leaderboard'), component: 'LeaderboardList', in_location: 'all'},
 				{ title: this.$t('location.options'), component: 'Options', in_location: 'city'},
 				{ title: this.$t('common.download'), component: 'Download', in_location: 'all'}
 			]
@@ -184,9 +184,9 @@ export default {
 		{
 			this.tab = tab;
 
-            if (tab === "Leaderboard")
+            if (tab === "LeaderboardList")
             {
-
+                this.$store.dispatch('GET_GLOBAL_LEADERBOARD', 'today');
             }
 		},
 

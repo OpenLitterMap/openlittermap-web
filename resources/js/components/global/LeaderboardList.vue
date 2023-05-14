@@ -58,7 +58,7 @@ import moment from 'moment';
 import LeaderboardFilters from "../Leaderboards/LeaderboardFilters";
 
 export default {
-	name: 'GlobalLeaders',
+	name: 'LeaderboardList',
     props: [
         'leaders'
     ],
