@@ -17,4 +17,8 @@ export const init = {
     totalLitterInt: 0,
     total_litter: 0,
     total_photos: 0,
+
+    // For WorldCup, SortLocations, components
+    selectedLocationId: 0,
+    locationTabKey: 0
 };

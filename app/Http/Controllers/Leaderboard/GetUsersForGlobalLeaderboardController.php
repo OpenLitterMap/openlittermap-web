@@ -4,10 +4,9 @@ namespace App\Http\Controllers\Leaderboard;
 
 use App\Http\Controllers\Controller;
 use App\Models\User\User;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
 
-class LeaderboardController extends Controller
+class GetUsersForGlobalLeaderboardController extends Controller
 {
     private const PER_PAGE = 100;
 
@@ -109,10 +108,10 @@ class LeaderboardController extends Controller
             ->values()
             ->map(function (User $user, $index) use ($start, $queryFilter) {
                 $showTeamName = $user->active_team && $user->teams
-                        ->where('pivot.team_id', $user->active_team)
-                        ->first(function ($value, $key) {
-                            return $value->pivot->show_name_leaderboards || $value->pivot->show_username_leaderboards;
-                        });
+                    ->where('pivot.team_id', $user->active_team)
+                    ->first(function ($value, $key) {
+                        return $value->pivot->show_name_leaderboards || $value->pivot->show_username_leaderboards;
+                    });
 
                 return [
                     'name' => $user->show_name ? $user->name : '',
