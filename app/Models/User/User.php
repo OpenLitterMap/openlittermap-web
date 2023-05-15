@@ -325,7 +325,10 @@ class User extends Authenticatable
 
             return (int) Redis::zscore("leaderboard:$locationType:$locationId:$year", $this->id);
         }
-        // all time
+        else if ($timeFilter === 'all-time')
+        {
+            return (int) Redis::zscore("leaderboard:$locationType:$locationId:total", $this->id);
+        }
 
         return 0;
     }

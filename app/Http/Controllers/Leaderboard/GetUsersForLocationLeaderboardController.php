@@ -117,12 +117,10 @@ class GetUsersForLocationLeaderboardController
     }
 
     /**
-     * Get data for the Global Leaderboard
+     * Get 10 userIds and total userIds count for the Global Leaderboard
      *
      * - Global leaderboard (All users, all locations, all time)
      * - Per location (UserIds for a Country, State, or City)
-     *
-     * Returns leaderboardType
      *
      * @param $timeFilter
      * @param $start
@@ -189,6 +187,11 @@ class GetUsersForLocationLeaderboardController
 
             $total = Redis::zcount("leaderboard:$locationType:$locationId:$year", '-inf', '+inf');
             $userIds = Redis::zrevrange("leaderboard:$locationType:$locationId:$year", $start, $end);
+        }
+        else if ($timeFilter === 'all-time')
+        {
+            $total = Redis::zcount("leaderboard:$locationType:$locationId:total", '-inf', '+inf');
+            $userIds = Redis::zrevrange("leaderboard:$locationType:$locationId:total", $start, $end);
         }
 
         return [
