@@ -45,7 +45,7 @@ export default {
             if (this.locationId && this.locationType)
             {
                 await this.$store.dispatch('GET_USERS_FOR_LOCATION_LEADERBOARD', {
-                    option,
+                    timeFilter: option,
                     locationId: this.locationId,
                     locationType: this.locationType
                 });

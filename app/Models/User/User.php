@@ -276,7 +276,7 @@ class User extends Authenticatable
      *
      * Here, we have to pass the locationType and locationId dynamically.
      */
-    public function getXpWithParams ($param)
+    public function getXpWithParams ($param): int
     {
         $timeFilter = $param['timeFilter'];
         $locationType = $param['locationType'];
@@ -327,7 +327,7 @@ class User extends Authenticatable
         }
         // all time
 
-        return [];
+        return 0;
     }
 
     /**

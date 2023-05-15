@@ -208,7 +208,7 @@ export default {
             if (tab === "LeaderboardList")
             {
                 await this.$store.dispatch('GET_USERS_FOR_LOCATION_LEADERBOARD', {
-                    option: 'today',
+                    timeFilter: 'today',
                     locationType: this.locationType,
                     locationId
                 });

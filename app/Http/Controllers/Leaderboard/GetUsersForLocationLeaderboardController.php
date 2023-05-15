@@ -25,12 +25,6 @@ class GetUsersForLocationLeaderboardController
     {
         // Step 1 - Initialise values
         $timeFilter = null;
-
-        // Default Leaderboard Type
-        // Also: model names (country, state, city)
-        // $leaderboardType = "country";
-
-        // Filter all data by Location Type (eg Countries) and Id
         $locationType = null;
         $locationId = null;
 
@@ -38,10 +32,6 @@ class GetUsersForLocationLeaderboardController
         $page = (int)request('page', 1);
         $start = ($page - 1) * self::PER_PAGE;
         $end = $start + self::PER_PAGE - 1;
-
-        // Data to return
-        $total = 1;
-        $userIds = [];
 
         // Step 2 - Update initialised values by optional request params
         if (request()->has('timeFilter')) {
@@ -53,6 +43,7 @@ class GetUsersForLocationLeaderboardController
             $locationType = request('locationType');
         }
 
+        // Step 3 - Validation
         if ($timeFilter === null || $locationId === null || $locationType === null)
         {
             return [
@@ -61,7 +52,7 @@ class GetUsersForLocationLeaderboardController
             ];
         }
 
-        // Step 3 - Use variables to get the userIds from Redis
+        // Step 4 - Use variables to get the userIds from Redis
         // Returns
         // - total
         // - userIds
@@ -71,35 +62,31 @@ class GetUsersForLocationLeaderboardController
             $timeFilter,
             $start,
             $end,
-            $total,
-            $userIds,
             $locationType,
             $locationId
         );
 
+        // We need the total count of all queries to check if we need a next page
         $total = $leaderboardData['total'];
 
         // Array of userIds from Redis
         $userIds = $leaderboardData['userIds'];
 
-        $users = User::query()
-            ->with(['teams:id,name'])
+        $users = User::with(['teams:id,name'])
             ->whereIn('id', $userIds)
             ->get()
-            ->sortBy('xp')
-            ->values()
             ->map(function (User $user, $index) use ($start, $timeFilter, $locationType, $locationId) {
 
                 // Get the XP value for the Leaderboard type
                 // Global / all users all time
                 // Filtered by location / time
-                $param = [
+                $params = [
                     'locationType' => $locationType,
                     'locationId' => $locationId,
                     'timeFilter' => $timeFilter
                 ];
 
-                $xp = $user->getXpWithParams($param);
+                $xp = $user->getXpWithParams($params);
 
                 // Team Name
                 $showTeamName = $user->active_team && $user->teams
@@ -109,17 +96,18 @@ class GetUsersForLocationLeaderboardController
                     });
 
                 return [
-                    'user' => $user,
                     'name' => $user->show_name ? $user->name : '',
                     'username' => $user->show_username ? ('@' . $user->username) : '',
-                    'xp' => number_format($xp),
+                    'xp' => $xp, // number_format($xp),
                     'global_flag' => $user->global_flag,
                     'social' => !empty($user->social_links) ? $user->social_links : null,
                     'team' => $showTeamName ? $user->team->name : '',
-                    'rank' => $start + $index + 1
+                    // 'rank' => $start + $index + 1
                 ];
-            })
-            ->toArray();
+            });
+
+        $sortedUsers = collect($users)->sortByDesc('xp');
+        $users = $sortedUsers->values()->all();
 
         return [
             'success' => true,
@@ -139,8 +127,6 @@ class GetUsersForLocationLeaderboardController
      * @param $timeFilter
      * @param $start
      * @param $end
-     * @param $total
-     * @param $userIds
      * @param $locationType "country", "state", "city"
      * @param $locationId
      * @return array
@@ -149,12 +135,13 @@ class GetUsersForLocationLeaderboardController
         $timeFilter,
         $start,
         $end,
-        $total,
-        $userIds,
         $locationType,
         $locationId
     ): array
     {
+        $userIds = [];
+        $total = 0;
+
         if ($timeFilter === 'today')
         {
             $year = now()->year;

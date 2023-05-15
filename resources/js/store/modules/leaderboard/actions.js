@@ -30,7 +30,7 @@ export const actions = {
     {
         await axios.get('/global/leaderboard/location', {
             params: {
-                timeFilter: payload?.option,
+                timeFilter: payload?.timeFilter,
                 locationType: payload?.locationType,
                 locationId: payload?.locationId
             }
