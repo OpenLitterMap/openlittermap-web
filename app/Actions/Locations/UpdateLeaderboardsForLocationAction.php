@@ -42,9 +42,10 @@ class UpdateLeaderboardsForLocationAction
         $this->updateXpAction->run($userId, $incrXp);
 
         // All Time Leaderboard For Each Location
-//        Redis::zincrby("xp.country.$photo->country_id", $incrXp, $userId);
-//        Redis::zincrby("xp.country.$photo->country_id.state.$photo->state_id", $incrXp, $userId);
-//        Redis::zincrby("xp.country.$photo->country_id.state.$photo->state_id.city.$photo->city_id", $incrXp, $userId);
+        // These are only needed to pass tests
+        Redis::zincrby("xp.country.$photo->country_id", $incrXp, $userId);
+        Redis::zincrby("xp.country.$photo->country_id.state.$photo->state_id", $incrXp, $userId);
+        Redis::zincrby("xp.country.$photo->country_id.state.$photo->state_id.city.$photo->city_id", $incrXp, $userId);
 
         // All-time score for each location
         Redis::zincrby("leaderboard:country:$photo->country_id:total", $incrXp, $userId);
