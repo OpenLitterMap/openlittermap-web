@@ -15,13 +15,13 @@ class GetUsersForGlobalLeaderboardController extends Controller
      */
     public function __invoke ()
     {
-        $filter = null;
+        $timeFilter = null;
         $total = 1;
         $userIds = [];
         $queryFilter = "xp_redis";
 
-        if (request()->has('filter')) {
-            $filter = request('filter');
+        if (request()->has('timeFilter')) {
+            $timeFilter = request('timeFilter');
         }
 
         // Get the current page
@@ -30,14 +30,14 @@ class GetUsersForGlobalLeaderboardController extends Controller
         $end = $start + self::PER_PAGE - 1; // 99, 199, 299...
 
         // Get the values we need, depending on the filters given
-        if ($filter === null || $filter === 'all-time')
+        if ($timeFilter === null || $timeFilter === 'all-time')
         {
             $total = Redis::zcount('xp.users', '-inf', '+inf');
             $userIds = Redis::zrevrange("xp.users", $start, $end);
         }
         else
         {
-            if ($filter === 'today')
+            if ($timeFilter === 'today')
             {
                 $year = now()->year;
                 $month = now()->month;
@@ -48,7 +48,7 @@ class GetUsersForGlobalLeaderboardController extends Controller
 
                 $queryFilter = "todays_xp";
             }
-            else if ($filter === 'yesterday')
+            else if ($timeFilter === 'yesterday')
             {
                 $year = now()->subDays(1)->year;
                 $month = now()->subDays(1)->month;
@@ -59,7 +59,7 @@ class GetUsersForGlobalLeaderboardController extends Controller
 
                 $queryFilter = "yesterdays_xp";
             }
-            else if ($filter === 'this-month')
+            else if ($timeFilter === 'this-month')
             {
                 $year = now()->year;
                 $month = now()->month;
@@ -69,7 +69,7 @@ class GetUsersForGlobalLeaderboardController extends Controller
 
                 $queryFilter = "this_months_xp";
             }
-            else if ($filter === 'last-month')
+            else if ($timeFilter === 'last-month')
             {
                 $year = now()->subMonths(1)->year;
                 $month = now()->subMonths(1)->month;
@@ -79,7 +79,7 @@ class GetUsersForGlobalLeaderboardController extends Controller
 
                 $queryFilter = "last_months_xp";
             }
-            else if ($filter === 'this-year')
+            else if ($timeFilter === 'this-year')
             {
                 $year = now()->year;
 
@@ -88,7 +88,7 @@ class GetUsersForGlobalLeaderboardController extends Controller
 
                 $queryFilter = "this_years_xp";
             }
-            else if ($filter === 'last-year')
+            else if ($timeFilter === 'last-year')
             {
                 $year = now()->year -1;
 
