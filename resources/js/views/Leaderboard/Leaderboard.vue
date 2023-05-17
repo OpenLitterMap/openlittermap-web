@@ -68,7 +68,7 @@ export default {
     async created () {
         this.loading = true;
 
-        await this.$store.dispatch('GET_USERS_FOR_LEADERBOARD');
+        await this.$store.dispatch('GET_USERS_FOR_GLOBAL_LEADERBOARD');
 
         this.loading = false;
     },
