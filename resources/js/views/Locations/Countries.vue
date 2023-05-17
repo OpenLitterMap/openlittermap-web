@@ -33,7 +33,7 @@ export default {
     async created () {
         this.loading = true;
 
-        await this.$store.dispatch('GET_COUNTRIES');
+        await this.$store.dispatch('GET_WORLD_CUP_DATA');
 
         this.loading = false;
     },
