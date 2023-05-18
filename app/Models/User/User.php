@@ -281,53 +281,61 @@ class User extends Authenticatable
         $timeFilter = $param['timeFilter'];
         $locationType = $param['locationType'];
         $locationId = $param['locationId'];
+        $customYear = $param['customYear'];
 
-        if ($timeFilter === "today")
+        if ($timeFilter && $locationType && $locationId)
         {
-            $year = now()->year;
-            $month = now()->month;
-            $day = now()->day;
+            if ($timeFilter === "today")
+            {
+                $year = now()->year;
+                $month = now()->month;
+                $day = now()->day;
 
-            // country, state, city. not users
-            return (int) Redis::zscore("leaderboard:$locationType:$locationId:$year:$month:$day", $this->id);
+                // country, state, city. not users
+                return (int) Redis::zscore("leaderboard:$locationType:$locationId:$year:$month:$day", $this->id);
+            }
+            else if ($timeFilter === "yesterday")
+            {
+                $year = now()->subDays(1)->year;
+                $month = now()->subDays(1)->month;
+                $day = now()->subDays(1)->day;
+
+                return (int) Redis::zscore("leaderboard:$locationType:$locationId:$year:$month:$day", $this->id);
+            }
+            else if ($timeFilter === "this-month")
+            {
+                $year = now()->year;
+                $month = now()->month;
+
+                return (int) Redis::zscore("leaderboard:$locationType:$locationId:$year:$month", $this->id);
+            }
+            else if ($timeFilter === "last-month")
+            {
+                $year = now()->subMonths(1)->year;
+                $month = now()->subMonths(1)->month;
+
+                return (int) Redis::zscore("leaderboard:$locationType:$locationId:$year:$month", $this->id);
+            }
+            else if ($timeFilter === "this-year")
+            {
+                $year = now()->year;
+
+                return (int) Redis::zscore("leaderboard:$locationType:$locationId:$year", $this->id);
+            }
+            else if ($timeFilter === "last-year")
+            {
+                $year = now()->year;
+
+                return (int) Redis::zscore("leaderboard:$locationType:$locationId:$year", $this->id);
+            }
+            else if ($timeFilter === 'all-time')
+            {
+                return (int) Redis::zscore("leaderboard:$locationType:$locationId:total", $this->id);
+            }
         }
-        else if ($timeFilter === "yesterday")
+        else if ($customYear)
         {
-            $year = now()->subDays(1)->year;
-            $month = now()->subDays(1)->month;
-            $day = now()->subDays(1)->day;
-
-            return (int) Redis::zscore("leaderboard:$locationType:$locationId:$year:$month:$day", $this->id);
-        }
-        else if ($timeFilter === "this-month")
-        {
-            $year = now()->year;
-            $month = now()->month;
-
-            return (int) Redis::zscore("leaderboard:$locationType:$locationId:$year:$month", $this->id);
-        }
-        else if ($timeFilter === "last-month")
-        {
-            $year = now()->subMonths(1)->year;
-            $month = now()->subMonths(1)->month;
-
-            return (int) Redis::zscore("leaderboard:$locationType:$locationId:$year:$month", $this->id);
-        }
-        else if ($timeFilter === "this-year")
-        {
-            $year = now()->year;
-
-            return (int) Redis::zscore("leaderboard:$locationType:$locationId:$year", $this->id);
-        }
-        else if ($timeFilter === "last-year")
-        {
-            $year = now()->year;
-
-            return (int) Redis::zscore("leaderboard:$locationType:$locationId:$year", $this->id);
-        }
-        else if ($timeFilter === 'all-time')
-        {
-            return (int) Redis::zscore("leaderboard:$locationType:$locationId:total", $this->id);
+            return (int) Redis::zscore("leaderboard:users:$customYear", $this->id);
         }
 
         return 0;

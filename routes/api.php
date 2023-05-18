@@ -98,10 +98,6 @@ Route::patch('/settings', 'SettingsController@update')->middleware('auth:api');
  */
 Route::post('/littercoin/merchants', 'Merchants\BecomeAMerchantController');
 
-/**
- * Leaderboard
- */
-Route::get('/leaderboard/get-years-leaderboard', 'Leaderboard\GetYearsLeaderboardController');
 // Teams
 Route::prefix('/teams')->group(function () {
     Route::get('/members', 'API\TeamsController@members');

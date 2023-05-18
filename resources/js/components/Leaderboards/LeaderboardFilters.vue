@@ -1,15 +1,15 @@
 <template>
-    <div>
-        <div class="leaderboard-filters-container">
-            <p
-                v-for="option in options"
-                class="leaderboard-option"
-                :class="option === selected ? 'is-selected' : ''"
-                @click="changeOption(option)"
-            >
-                {{ getNameForOption(option) }}
-            </p>
-        </div>
+    <div class="mb1">
+<!--        <div class="leaderboard-filters-container">-->
+<!--            <p-->
+<!--                v-for="option in options"-->
+<!--                class="leaderboard-option"-->
+<!--                :class="option === selected ? 'is-selected' : ''"-->
+<!--                @click="changeOption(option)"-->
+<!--            >-->
+<!--                {{ getNameForOption(option) }}-->
+<!--            </p>-->
+<!--        </div>-->
 
         <div class="mobile-filters-container">
             <select
@@ -28,8 +28,16 @@
 
         <nav>
             <menu>
+                <menuitem
+                    v-for="option in options"
+                    @click="changeOption(option)"
+                >
+                    <a>
+                        {{ getNameForOption(option) }}
+                    </a>
+                </menuitem>
                 <menuitem  id="demo1">
-                    <a>Years</a>
+                    <a>{{ this.year }}</a>
                     <menu>
                         <menuitem
                             v-for="year in previousYearsOptions"
@@ -39,39 +47,7 @@
                         >
                             <a>{{ year }}</a>
                         </menuitem>
-                        <menuitem>
-                            <a>settings</a>
-                            <menu>
-                                <menuitem><a>Test 1</a></menuitem>
-                                <menuitem><a>Test 2</a></menuitem>
-                                <menuitem><a>Test 3</a></menuitem>
-                                <menuitem><a>Test 4</a></menuitem>
-                            </menu>
-                        </menuitem>
-                        <menuitem><a>help</a></menuitem>
-                        <menuitem id="demo2">
-                            <a>more</a>
-                            <menu>
-                                <menuitem id="demo3">
-                                    <a>deeper</a>
-                                    <menu>
-                                        <menuitem><a>deep 1</a></menuitem>
-                                        <menuitem><a>deep 2</a></menuitem>
-                                        <menuitem><a>deep 3</a></menuitem>
-                                    </menu>
-                                </menuitem>
-                                <menuitem><a>test</a></menuitem>
-                            </menu>
-                        </menuitem>
                     </menu>
-                </menuitem>
-                <menuitem
-                    v-for="option in options"
-                    @click="changeOption(option)"
-                >
-                    <a>
-                        {{ getNameForOption(option) }}
-                    </a>
                 </menuitem>
             </menu>
         </nav>
@@ -89,15 +65,13 @@ export default {
         return {
             processing: false,
             selected: "today",
-            selectedYear: '',
-            year: null,
+            year: new Date().getFullYear(),
             options: [
                "all-time",
                "today",
                "yesterday",
                "this-month",
                "last-month",
-               "this-year"
             ]
         };
     },
@@ -157,9 +131,6 @@ export default {
             else if (option === "last-month") {
                 return "Last Month";
             }
-            else if (option === "this-year") {
-                return "This Year";
-            }
             else if (option === "all-time") {
                 return "All Time";
             }
@@ -174,22 +145,26 @@ export default {
             this.year = year;
             this.$emit('year-selected', year);
 
-            this.getDataToBackend(year);
-        },
+            //this.getDataToBackend(year);
 
-        /**
-         * Get the data of the year selected by the user
-         */
-        getDataToBackend(year) {
-            axios.get(`/api/leaderboard/get-years-leaderboard?year=${year}`, {
-            })
-            .then(response => {
-                console.log('getDataToBackend', response);
-             })
-            .catch(error => {
-                console.log('getDataToBackend', error);
+            this.$store.dispatch('GET_USERS_FOR_LOCATION_LEADERBOARD', {
+                year
             });
         },
+
+        // /**
+        //  * Get the data of the year selected by the user
+        //  */
+        // getDataToBackend(year) {
+        //     axios.get(`/api/leaderboard/get-years-leaderboard?year=${year}`, {
+        //     })
+        //     .then(response => {
+        //         console.log('getDataToBackend', response);
+        //      })
+        //     .catch(error => {
+        //         console.log('getDataToBackend', error);
+        //     });
+        // },
 
         /**
          * on mobile view, the option has changed
@@ -271,6 +246,7 @@ export default {
         display:block;
         opacity:0;
         cursor:pointer;
+        z-index: 9;
     }
 
     nav menuitem > menu {
@@ -305,11 +281,11 @@ export default {
     }
 
     nav a {
-        background:#75F;
-        color:#FFF;
+        background: #ffffff;
+        color: #3273dc !important;
         transition: background 0.5s, color 0.5s, transform 0.5s;
         margin:0px 6px 6px 0px;
-        padding:20px 40px;
+        padding: 10px 35px;
         box-sizing:border-box;
         border-radius:3px;
         box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.5);
@@ -325,14 +301,14 @@ export default {
         height:100%;
     }
 
-    nav > menu > menuitem > a + menu:after{
-        content: '';
-        position:absolute;
-        border:10px solid transparent;
-        border-top: 10px solid white;
-        left:12px;
-        top: -40px;
-    }
+    /*nav > menu > menuitem > a + menu:after{*/
+    /*    content: '';*/
+    /*    position:absolute;*/
+    /*    border:10px solid transparent;*/
+    /*    border-top: 10px solid #3273dc;*/
+    /*    left:12px;*/
+    /*    top: -32px;*/
+    /*}*/
     nav menuitem > menu > menuitem > a + menu:after{
         content: '';
         position:absolute;
@@ -347,6 +323,7 @@ export default {
         transition: transform 0.6s, opacity 0.6s;
         transform:translateY(150%);
         opacity:0;
+        z-index: 999;
     }
     nav > menu > menuitem:hover > menu > menuitem,
     nav > menu > menuitem.hover > menu > menuitem{
