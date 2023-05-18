@@ -145,26 +145,10 @@ export default {
             this.year = year;
             this.$emit('year-selected', year);
 
-            //this.getDataToBackend(year);
-
             this.$store.dispatch('GET_USERS_FOR_LOCATION_LEADERBOARD', {
                 year
             });
         },
-
-        // /**
-        //  * Get the data of the year selected by the user
-        //  */
-        // getDataToBackend(year) {
-        //     axios.get(`/api/leaderboard/get-years-leaderboard?year=${year}`, {
-        //     })
-        //     .then(response => {
-        //         console.log('getDataToBackend', response);
-        //      })
-        //     .catch(error => {
-        //         console.log('getDataToBackend', error);
-        //     });
-        // },
 
         /**
          * on mobile view, the option has changed
@@ -217,14 +201,10 @@ export default {
 
     /** MOBILE */
     @media screen and (max-width: 687px) {
-        .leaderboard-filters-container {
+        nav {
             display: none;
         }
     }
-
-
-
-
 
     html, body{
         padding:0px;
