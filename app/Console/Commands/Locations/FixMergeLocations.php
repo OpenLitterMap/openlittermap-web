@@ -16,7 +16,7 @@ class FixMergeLocations extends Command
      *
      * @var string
      */
-    protected $signature = 'locations:fix-and-merge-duplicates';
+    protected $signature = 'locations:fix-duplicates';
 
     /**
      * The console command description.
@@ -54,56 +54,71 @@ class FixMergeLocations extends Command
         {
             echo "Shortcode: " . $duplicatedCountry->shortcode . " found " . $duplicatedCountry->count . " times \n";
 
+            // Get All Countries, First + Duplicates.
             $countries = Country::where('shortcode', $duplicatedCountry->shortcode)
                 ->select('id', 'country', 'shortcode')
                 ->orderBy('id')
                 ->get();
 
+            $firstCountryId = $countries[0]->id;
+
             foreach ($countries as $index => $country)
             {
-                echo "Country " . $index . " created at " . \Carbon\Carbon::parse($country->created_at) . " \n";
-
-                $realCountryId = 0;
+                echo "Processing country #: " . $index . " \n";
 
                 if ($index === 0)
                 {
-                    $realCountryId = $country->id;
-
-                    echo "realCountryId $realCountryId \n";
+                    echo "Skipping first country id = $firstCountryId \n";
                 }
                 else
                 {
-                    echo "Processing country index: " . $index . " \n";
+                    // Get the states for the duplicated countries
+                    $states = State::where('country_id', $country->id)->get();
 
-                    $photos = Photo::where('country_id', $country->id)
-                        ->select('id', 'country_id', 'state_id', 'city_id', 'user_id')
-                        ->orderBy('id')
-                        ->get();
+                    echo sizeof($states) . " states found \n";
 
-                    echo "Found " . sizeof($photos) . " wrong photos \n";
-
-                    foreach ($photos as $photo)
+                    foreach ($states as $state)
                     {
-                        $realStateId = $this->getRealStateId($photo, $realCountryId);
-                        $realCityId = $this->getRealCityId($photo, $realStateId);
+                        // Check for duplicate states to see which one is earliest
+                        $firstState = State::where('state', $state->state)
+                            ->whereIn('country_id', $countries->pluck('id')->toArray())
+                            ->orderBy('id')
+                            ->first();
 
-                        if ($photo->country_id != $realCountryId)
+                        $firstStateId = $firstState->id;
+                        $firstState->country_id = $firstCountryId;
+                        $firstState->save();
+
+                        // Get cities for each state
+                        $cities = City::where('state_id', $state->id)->get();
+
+                        foreach ($cities as $city)
                         {
-                            $photo->country_id = $realCountryId;
-                            $photo->save();
+                            // Check if there is a duplicate of the city
+                            $firstCity = City::where('city', $city->city)
+                                ->whereIn('state_id', $states->pluck('id')->toArray())
+                                ->orderBy('id')
+                                ->first();
+
+                            $firstCityId = $firstCity->id;
+                            $firstCity->state_id = $firstStateId;
+                            $firstCity->country_id = $firstCountryId;
+                            $firstCity->save();
+
+                            $photos = Photo::where('city_id', $city->id)->get();
+
+                            foreach ($photos as $photo)
+                            {
+                                $photo->country_id = $firstCountryId;
+                                $photo->state_id = $firstStateId;
+                                $photo->city_id = $firstCityId;
+                                $photo->save();
+                            }
+
+                            // delete duplicate for city
                         }
 
-                        if ($photo->state_id != $realStateId)
-                        {
-                            $photo->state_id = $realStateId;
-                            $photo->save();
-                        }
-
-                        if ($photo->city_id != $realCityId)
-                        {
-                            $photo->city_id = $realCityId;
-                            $photo->save();
-                        }
+                        // delete duplicates for States.
                     }
                 }
             }
@@ -113,17 +128,17 @@ class FixMergeLocations extends Command
     /**
      * Get the state associated with a photo
      */
-    protected function getRealStateId (Photo $photo, $realCountryId)
+    protected function getRealStateId (Photo $photo, $firstCountryId)
     {
         $stateFromPhoto = State::find($photo->state_id);
 
         $stateExistsInRealCountry = State::where('state', $stateFromPhoto->state)
-            ->where('country_id', $realCountryId)
+            ->where('country_id', $firstCountryId)
             ->first();
 
         if ($stateExistsInRealCountry)
         {
-            echo "State $stateFromPhoto->state already exists in realCountryId: $realCountryId \n";
+            echo "State $stateFromPhoto->state already exists in firstCountryId: $firstCountryId \n";
             echo "Replacing state_id: $stateFromPhoto->id with $stateExistsInRealCountry->id \n";
 
             $realStateId = $stateExistsInRealCountry->id;
@@ -135,11 +150,11 @@ class FixMergeLocations extends Command
         }
         else
         {
-            echo "Creating new state: $stateFromPhoto->state for realCountryId: $realCountryId \n";
+            echo "Creating new state: $stateFromPhoto->state for firstCountryId: $firstCountryId \n";
 
             $newState = State::create([
                 'state' => $stateFromPhoto->state,
-                'country_id' => $realCountryId,
+                'country_id' => $firstCountryId,
                 'created_by' => $photo->user_id
             ]);
 
