@@ -26,16 +26,6 @@ class FixMergeLocations extends Command
     protected $description = 'Merge locations together and delete the old ones';
 
     /**
-     * Create a new command instance.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        parent::__construct();
-    }
-
-    /**
      * Execute the console command.
      *
      * @return int
@@ -64,7 +54,7 @@ class FixMergeLocations extends Command
 
             foreach ($countries as $index => $country)
             {
-                echo "Processing country #: " . $index . " \n";
+                echo "Country id: " . $index . " \n";
 
                 if ($index === 0)
                 {
@@ -101,116 +91,41 @@ class FixMergeLocations extends Command
                                 ->first();
 
                             $firstCityId = $firstCity->id;
-                            $firstCity->state_id = $firstStateId;
                             $firstCity->country_id = $firstCountryId;
+                            $firstCity->state_id = $firstStateId;
                             $firstCity->save();
 
                             $photos = Photo::where('city_id', $city->id)->get();
 
                             foreach ($photos as $photo)
                             {
+                                echo "Photo id $photo->id \n";
                                 $photo->country_id = $firstCountryId;
                                 $photo->state_id = $firstStateId;
                                 $photo->city_id = $firstCityId;
                                 $photo->save();
                             }
 
-                            // delete duplicate for city
+                            echo sizeof($photos) . " photos updated \n";
+
+                            // Delete duplicate cities
+                            if ($city->id > $firstCityId)
+                            {
+                                $city->delete();
+                            }
                         }
 
-                        // delete duplicates for States.
+                        // Delete duplicate states
+                        if ($state->id > $firstStateId)
+                        {
+                            $state->delete();
+                        }
                     }
+
+                    // Delete duplicate countries
+                    $country->delete();
                 }
             }
         }
-    }
-
-    /**
-     * Get the state associated with a photo
-     */
-    protected function getRealStateId (Photo $photo, $firstCountryId)
-    {
-        $stateFromPhoto = State::find($photo->state_id);
-
-        $stateExistsInRealCountry = State::where('state', $stateFromPhoto->state)
-            ->where('country_id', $firstCountryId)
-            ->first();
-
-        if ($stateExistsInRealCountry)
-        {
-            echo "State $stateFromPhoto->state already exists in firstCountryId: $firstCountryId \n";
-            echo "Replacing state_id: $stateFromPhoto->id with $stateExistsInRealCountry->id \n";
-
-            $realStateId = $stateExistsInRealCountry->id;
-
-            if (is_null($stateExistsInRealCountry->created_by)) {
-                $stateExistsInRealCountry->created_by = $photo->user_id;
-                $stateExistsInRealCountry->save();
-            }
-        }
-        else
-        {
-            echo "Creating new state: $stateFromPhoto->state for firstCountryId: $firstCountryId \n";
-
-            $newState = State::create([
-                'state' => $stateFromPhoto->state,
-                'country_id' => $firstCountryId,
-                'created_by' => $photo->user_id
-            ]);
-
-            echo "New state_id is: $newState->id \n";
-
-            $realStateId = $newState->id;
-        }
-
-        return $realStateId;
-    }
-
-    /**
-     * Get the city associated with the photo
-     *
-     * @param Photo $photo
-     * @param $realStateId
-     * @return int
-     */
-    protected function getRealCityId (Photo $photo, $realStateId)
-    {
-        $cityFromPhoto = City::find($photo->city_id);
-
-        if ($cityFromPhoto->state_id != $realStateId)
-        {
-            $cityFromPhoto->state_id = $realStateId;
-            $cityFromPhoto->save();
-        }
-
-        $cityExistsWithinState = City::where('city', $cityFromPhoto->city)
-            ->where('state_id', $realStateId)
-            ->first();
-
-        if ($cityExistsWithinState) {
-            echo "City $cityFromPhoto->city already exists in realStateId: $realStateId \n";
-            echo "Replacing state_id: $cityFromPhoto->id with $cityExistsWithinState->id \n";
-
-            $realCityId = $cityExistsWithinState->id;
-
-            if (is_null($cityExistsWithinState->created_by)) {
-                $cityExistsWithinState->created_by = $photo->user_id;
-                $cityExistsWithinState->save();
-            }
-        } else {
-            echo "Creating new city: $cityFromPhoto->city for realStateId: $realStateId \n";
-
-            $newCity = City::create([
-                'city' => $cityFromPhoto->city,
-                'state_id' => $realStateId,
-                'created_by' => $photo->user_id
-            ]);
-
-            echo "New city_id is: $newCity->id \n";
-
-            $realCityId = $newCity->id;
-        }
-
-        return $realCityId;
     }
 }
