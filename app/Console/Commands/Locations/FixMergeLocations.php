@@ -95,35 +95,80 @@ class FixMergeLocations extends Command
                             $firstCity->state_id = $firstStateId;
                             $firstCity->save();
 
-                            $photos = Photo::where('city_id', $city->id)->get();
-
-                            foreach ($photos as $photo)
-                            {
-                                echo "Photo id $photo->id \n";
-                                $photo->country_id = $firstCountryId;
-                                $photo->state_id = $firstStateId;
-                                $photo->city_id = $firstCityId;
-                                $photo->save();
-                            }
-
-                            echo sizeof($photos) . " photos updated \n";
-
-                            // Delete duplicate cities
+                            // Update PhotoIds for duplicate cities
+                            // Then delete duplicate city
                             if ($city->id > $firstCityId)
                             {
-                                $city->delete();
+                                // Update Photos For city
+                                $cityPhotos = Photo::where('city_id', $city->id)
+                                    ->select('id', 'country_id', 'state_id', 'city_id')
+                                    ->get();
+
+                                foreach ($cityPhotos as $photo)
+                                {
+                                    echo "Updating photoId :$photo->id \n";
+                                    $photo->country_id = $firstCountryId;
+                                    $photo->state_id = $firstStateId;
+                                    $photo->city_id = $firstCityId;
+                                    $photo->save();
+                                }
+
+                                echo sizeof($cityPhotos) . " photos updated \n";
+
+                                $cityPhotosCount = Photo::where('city_id', $city->id)
+                                    ->select('id', 'country_id', 'state_id', 'city_id')
+                                    ->count();
+
+                                if ($cityPhotosCount === 0)
+                                {
+                                    $city->delete();
+                                }
                             }
                         }
 
                         // Delete duplicate states
                         if ($state->id > $firstStateId)
                         {
-                            $state->delete();
+                            $statePhotos = Photo::where('state_id', $state->id)
+                                ->select('id', 'country_id', 'state_id', 'city_id')
+                                ->get();
+
+                            foreach ($statePhotos as $statePhoto)
+                            {
+                                $statePhoto->country_id = $firstCountryId;
+                                $statePhoto->state_id = $firstStateId;
+                                $statePhoto->save();
+                            }
+
+                            $statePhotosCount = Photo::where('state_id', $state->id)->count();
+
+                            if ($statePhotosCount === 0)
+                            {
+                                $state->delete();
+                            }
                         }
                     }
 
                     // Delete duplicate countries
-                    $country->delete();
+                    if ($country->id > $firstCountryId)
+                    {
+                        $countryPhotos = Photo::where('country_id', $country->id)
+                            ->select('id', 'country_id')
+                            ->get();
+
+                        foreach ($countryPhotos as $countryPhoto)
+                        {
+                            $countryPhoto->country_id = $firstCountryId;
+                            $countryPhoto->save();
+                        }
+
+                        $countryPhotosCount = Photo::where('country_id', $country->id)->count();
+
+                        if ($countryPhotosCount === 0)
+                        {
+                            $country->delete();
+                        }
+                    }
                 }
             }
         }
