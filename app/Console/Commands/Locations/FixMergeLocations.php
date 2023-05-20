@@ -65,7 +65,7 @@ class FixMergeLocations extends Command
                 {
                     echo "Duplicated countryId: " . $index . " \n";
 
-                    // Get the states for the duplicated countries
+                    // Get the states for the duplicated country
                     $states = State::where('country_id', $country->id)->get();
 
                     echo sizeof($states) . " states found \n";
