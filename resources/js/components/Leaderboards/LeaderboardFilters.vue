@@ -1,16 +1,5 @@
 <template>
     <div class="mb1">
-<!--        <div class="leaderboard-filters-container">-->
-<!--            <p-->
-<!--                v-for="option in options"-->
-<!--                class="leaderboard-option"-->
-<!--                :class="option === selected ? 'is-selected' : ''"-->
-<!--                @click="changeOption(option)"-->
-<!--            >-->
-<!--                {{ getNameForOption(option) }}-->
-<!--            </p>-->
-<!--        </div>-->
-
         <div class="mobile-filters-container">
             <select
                 v-model="selected"
@@ -28,16 +17,45 @@
 
         <nav>
             <menu>
+
+                <!-- OPTIONS -->
                 <menuitem
                     v-for="option in options"
                     @click="changeOption(option)"
                 >
-                    <a>
+                    <a
+                        :class="option === selected ? 'is-selected' : ''"
+                    >
                         {{ getNameForOption(option) }}
                     </a>
                 </menuitem>
-                <menuitem  id="demo1">
-                    <a>{{ this.year }}</a>
+
+                <!-- MONTHS -->
+                <menuitem>
+                    <a
+                        :class="selected === null ? 'is-selected' : ''"
+                    >
+                        {{ getNameForSelectedMonth }}
+                    </a>
+                    <menu>
+                        <menuitem
+                            v-for="month in previousMonthsOptions"
+                            :value="month"
+                            :key="month"
+                            @click="getMonth(month)"
+                        >
+                            <a>{{ month }}</a>
+                        </menuitem>
+                    </menu>
+                </menuitem>
+
+                <!-- YEARS -->
+                <menuitem>
+                    <a
+                        :class="selected === null ? 'is-selected' : ''"
+                    >
+                        {{ this.selectedYear }}
+                    </a>
                     <menu>
                         <menuitem
                             v-for="year in previousYearsOptions"
@@ -65,17 +83,46 @@ export default {
         return {
             processing: false,
             selected: "today",
-            year: new Date().getFullYear(),
+            selectedYear: new Date().getFullYear(),
+            selectedMonth: new Date().getMonth() + 1,
             options: [
                "all-time",
                "today",
                "yesterday",
                "this-month",
                "last-month",
-            ]
+            ],
+            monthNames: [
+                "January",
+                "February",
+                "March",
+                "April",
+                "May",
+                "June",
+                "July",
+                "August",
+                "September",
+                "October",
+                "November",
+                "December"
+            ],
+
         };
     },
     computed: {
+        /**
+         * Get name for selected month
+         */
+        getNameForSelectedMonth ()
+        {
+            const currentMonth = new Date().getMonth();
+
+            return this.monthNames[currentMonth];
+        },
+
+        /**
+         * Get previous years options
+         */
         previousYearsOptions() {
             const currentYear = new Date().getFullYear();
             const startYear = 2017; // Start year for the options
@@ -87,6 +134,18 @@ export default {
             }
 
             return availableYears;
+        },
+
+        /**
+         * Get previous months options
+         */
+        previousMonthsOptions ()
+        {
+            const currentMonth = new Date().getMonth();
+
+            return this.monthNames.filter((month, index) => {
+                return index <= currentMonth;
+            });
         },
     },
     methods: {
@@ -139,11 +198,23 @@ export default {
         },
 
         /**
-         * Get the selected year
+         *
          */
-        getYear(year) {
-            this.year = year;
-            this.$emit('year-selected', year);
+        getMonth (month)
+        {
+            this.selectedYear = null
+
+            console.log({month});
+        },
+
+        /**
+         * Get the leaderboard data for the selected year
+         */
+        getYear (year)
+        {
+            this.selected = null;
+
+            this.selectedYear = year;
 
             this.$store.dispatch('GET_USERS_FOR_LOCATION_LEADERBOARD', {
                 year
@@ -158,6 +229,8 @@ export default {
             const option = e.target.value
 
             this.selected = option;
+
+            this.selectedYear = null;
 
             this.processing = true;
 
@@ -262,7 +335,7 @@ export default {
 
     nav a {
         background: #ffffff;
-        color: #3273dc !important;
+        color: black !important;
         transition: background 0.5s, color 0.5s, transform 0.5s;
         margin:0px 6px 6px 0px;
         padding: 10px 35px;
@@ -272,13 +345,12 @@ export default {
         position:relative;
     }
 
-    nav a:hover:before {
-        content: '';
-        top:0;left:0;
-        position:absolute;
-        background:rgba(0, 0, 0, 0.2);
-        width:100%;
-        height:100%;
+    nav a.is-selected {
+        background-color: #48c774 !important;
+    }
+
+    nav a:hover {
+        background: #48c774;
     }
 
     /*nav > menu > menuitem > a + menu:after{*/
