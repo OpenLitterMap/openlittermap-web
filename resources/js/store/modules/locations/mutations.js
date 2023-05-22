@@ -24,6 +24,11 @@ export const mutations = {
         state.littercoin = payload.littercoin;
     },
 
+    setGlobalLeaders (state, payload)
+    {
+        state.globalLeaders = payload;
+    },
+
     /**
      * Set the country name (when clicking into it)
      */

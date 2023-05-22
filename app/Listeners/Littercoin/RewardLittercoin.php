@@ -26,15 +26,9 @@ class RewardLittercoin implements ShouldQueue
 
         if ($count === 100)
         {
-            $littercoin = Littercoin::create([
+            $littercoin = Littercoin::firstOrCreate([
                 'user_id' => $event->user_id,
                 'photo_id' => $event->photo_id
-            ]);
-
-            Photo::where([
-                'id' => $event->photo_id
-            ])->update([
-                'littercoin_id' => $littercoin->id
             ]);
 
             // Broadcast an event to anyone viewing the global map

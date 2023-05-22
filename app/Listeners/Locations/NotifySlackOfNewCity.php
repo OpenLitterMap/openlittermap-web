@@ -22,7 +22,12 @@ class NotifySlackOfNewCity
         // Get the first photo that created this City
         if ($event->cityId)
         {
-            $link = "https://openlittermap.com/global?lat=" . $event->lat . "&lon=" . $event->lon . "&zoom=16'";
+            $link = "https://openlittermap.com/global?lat=" . $event->lat . "&lon=" . $event->lon . "&zoom=16";
+
+            if ($event->photoId !== null)
+            {
+                $link .= "&photoId=" . $event->photoId;
+            }
         }
 
         if (app()->environment() === 'production')

@@ -545,4 +545,11 @@ html {
     .show-mobile {
         display: block;
     }
+
+
+    @media screen and (max-width: 480px) {
+        .p-10-mob {
+            padding: 10px; /* Padding for screens smaller than 480px */
+        }
+    }
 }

@@ -21,15 +21,22 @@ class ResetLittercoin extends Command
 
         foreach ($users as $user)
         {
-            $photos = Photo::where('user_id', $user->id)
+            $photos = Photo::select('id', 'verified', 'user_id', 'created_at')
+                ->where('user_id', $user->id)
                 ->where('verified', '>=', 2)
-                ->query();
+                ->get();
+
+            $photoCount = 0;
 
             foreach ($photos as $index => $photo)
             {
-                if ($index % 100 === 0)
+                $photoCount++;
+
+                if ($photoCount % 100 === 0)
                 {
-                    Littercoin::create([
+                    echo $index . " \n";
+
+                    Littercoin::firstOrCreate([
                         'user_id' => $user->id,
                         'photo_id' => $photo->id,
                         'created_at' => $photo->created_at

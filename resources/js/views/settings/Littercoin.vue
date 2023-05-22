@@ -32,7 +32,7 @@
 
                 <hr>
 
-                <p><h1 class="title is-4">My Littercoin</h1></p>
+                <h1 class="title is-4">My Littercoin</h1>
                 <p>Total Littercoin Earned: {{ this.littercoinEarned }}</p>
                 <p>Total Littercoin Received: {{ this.littercoinEarned - this.littercoinDue }}</p>
                 <p>Littercoin Due: {{ this.littercoinDue }}</p>
@@ -219,7 +219,7 @@ export default {
                     this.lcAmount = lcInfo.payload.list[1].int;
                     this.ratio = this.adaAmount / this.lcAmount;
                     this.lcAddr = lcInfo.payload.addr;
-                    this.lcAddrURL = "https://preprod.cexplorer.io/address/" + lcInfo.payload.addr;
+                    this.lcAddrURL = "https://cexplorer.io/address/" + lcInfo.payload.addr;
                     this.lcScriptName = lcInfo.payload.scriptName;
                     this.lcScriptURL = "/contracts/" + lcInfo.payload.scriptName;
                 } else {
@@ -363,9 +363,13 @@ export default {
 
                 // Get balance from wallet
                 const balanceCbor = await walletAPI.getBalance();
+
+                console.log({ balanceCbor });
                 
                 // Get the UTXOs from wallet,
                 const cborUtxos = await walletAPI.getUtxos();
+
+                console.log({ cborUtxos });
 
                 await axios.post('/wallet-info', {
                     balanceCborHex: balanceCbor,
@@ -498,7 +502,7 @@ export default {
                             const submitTx = await JSON.parse(response.data);
                             if (submitTx.status == 200) {
                                 this.mintTxId = submitTx.txId;
-                                this.mintTxIdURL = "https://preprod.cexplorer.io/tx/" + submitTx.txId;
+                                this.mintTxIdURL = "https://cexplorer.io/tx/" + submitTx.txId;
                                 this.mintSuccess = true;
                             } else {
                                 console.error("Littercoin Mint transaction could not be submitted");
@@ -591,7 +595,7 @@ export default {
                             const submitTx = await JSON.parse(response.data);
                             if (submitTx.status == 200) {
                                 this.burnTxId = submitTx.txId;
-                                this.burnTxIdURL = "https://preprod.cexplorer.io/tx/" + submitTx.txId;
+                                this.burnTxIdURL = "https://cexplorer.io/tx/" + submitTx.txId;
                                 this.burnSuccess = true;
                             } else {
                                 console.error("Littercoin Burn transaction was not successful");
@@ -702,7 +706,7 @@ export default {
                             const submitTx = await JSON.parse(response.data);
                             if (submitTx.status == 200) {
                                 this.merchTxId = submitTx.txId;
-                                this.merchTxIdURL = "https://preprod.cexplorer.io/tx/" + submitTx.txId;
+                                this.merchTxIdURL = "https://cexplorer.io/tx/" + submitTx.txId;
                                 this.merchSuccess = true;
                             } else {
                                 console.error("Merchant Token Mint transaction could not be submitted");
@@ -797,7 +801,7 @@ export default {
                             const submitTx = await JSON.parse(response.data);
                             if (submitTx.status == 200) {
                                 this.addAdaTxId = submitTx.txId;
-                                this.addAdaTxIdURL = "https://preprod.cexplorer.io/tx/" + submitTx.txId;
+                                this.addAdaTxIdURL = "https://cexplorer.io/tx/" + submitTx.txId;
                                 this.addAdaSuccess = true;
                             } else {
                                 console.error("Could not submit transaction");

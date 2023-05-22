@@ -92,7 +92,7 @@ Route::get('/global/points', 'GlobalMap\GlobalMapController@index');
 Route::get('/global/art-data', 'GlobalMap\GlobalMapController@artData');
 
 // Get data for the Global Leaderboard
-Route::get('/global/leaderboard', 'Leaderboard\LeaderboardController@index');
+Route::get('/global/leaderboard', 'Leaderboard\LeaderboardController');
 
 /** Auth Routes */
 
@@ -103,8 +103,15 @@ Route::get('/current-user', 'UsersController@getAuthUser');
 Route::get('submit', 'HomeController@index'); // old route
 Route::get('upload', 'HomeController@index')->name('upload');
 
-// Upload the image, extract lat long, reverse geocode to address
-Route::post('submit', 'PhotosController@store');
+// Move more authenticated routes into this group instead of applying middleware on controllers
+Route::group(['middleware' => 'auth'], function () {
+    // Upload the image from web
+    // old route
+    Route::post('/submit', 'Uploads\UploadPhotoController');
+
+    // new route
+    Route::post('/upload', 'Uploads\UploadPhotoController');
+});
 
 // Tag litter to an image
 Route::get('tag', 'HomeController@index');
@@ -163,11 +170,15 @@ Route::get('/settings/teams', 'HomeController@index');
 
 // Publicly available Littercoin Page
 Route::get('/littercoin', 'HomeController@index');
+Route::get('/littercoin/merchants', 'HomeController@index');
 
-// Actions used by Littercoin Page & Settings
-
-Route::get('/get-users-littercoin', 'Littercoin\LittercoinController@getUsersLittercoin');
+// Public Routes
 Route::get('/littercoin-info', 'Littercoin\PublicLittercoinController@getLittercoinInfo');
+Route::post('/add-ada-tx', 'Littercoin\PublicLittercoinController@addAdaTx');
+Route::post('/add-ada-submit-tx', 'Littercoin\PublicLittercoinController@submitAddAdaTx');
+
+// Actions used by Authenticated Littercoin Settings Page
+Route::get('/get-users-littercoin', 'Littercoin\LittercoinController@getUsersLittercoin');
 Route::post('/wallet-info', 'Littercoin\LittercoinController@getWalletInfo');
 Route::post('/littercoin-mint-tx', 'Littercoin\LittercoinController@mintTx');
 Route::post('/littercoin-submit-mint-tx', 'Littercoin\LittercoinController@submitMintTx');
@@ -175,13 +186,6 @@ Route::post('/littercoin-burn-tx', 'Littercoin\LittercoinController@burnTx');
 Route::post('/littercoin-submit-burn-tx', 'Littercoin\LittercoinController@submitBurnTx');
 Route::post('/merchant-mint-tx', 'Littercoin\LittercoinController@merchTx');
 Route::post('/merchant-submit-mint-tx', 'Littercoin\LittercoinController@submitMerchTx');
-Route::post('/add-ada-tx', 'Littercoin\LittercoinController@addAdaTx');
-Route::post('/add-ada-submit-tx', 'Littercoin\LittercoinController@submitAddAdaTx');
-
-
-// Game settings @ SettingsController
-// Toggle Presense of a piece of litter
-// Route::post('/settings/settings', 'SettingsController@presense');
 
 // Subscription settings @ SubscriptionsController
 // Control Current Subscription
@@ -317,9 +321,13 @@ Route::group(['prefix' => '/admin', 'middleware' => 'admin'], function () {
     // route
     Route::get('photos', 'HomeController@index');
 
+    Route::get('/find-photo-by-id', 'Admin\FindPhotoByIdController');
+
     // get the data
     Route::get('get-next-image-to-verify', 'Admin\GetNextImageToVerifyController');
     Route::get('get-countries-with-photos', 'AdminController@getCountriesWithPhotos');
+
+    Route::get('/go-back-one', 'Admin\GoBackOnePhotoController');
 
     // Get a list of recently registered users
     // Route::get('/users', 'AdminController@getUserCount');

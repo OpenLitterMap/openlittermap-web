@@ -1,8 +1,6 @@
 <?php
 
-
 namespace Tests\Feature;
-
 
 use App\Actions\Locations\ReverseGeocodeLocationAction;
 use App\Models\Location\City;

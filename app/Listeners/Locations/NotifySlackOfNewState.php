@@ -13,7 +13,7 @@ class NotifySlackOfNewState
      * @param  NewStateAdded  $event
      * @return void
      */
-    public function handle(NewStateAdded $event)
+    public function handle (NewStateAdded $event)
     {
         if (app()->environment() === 'production')
         {
