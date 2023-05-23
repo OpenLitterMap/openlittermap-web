@@ -27,6 +27,7 @@ class GetUsersForLocationLeaderboardController
         $timeFilter = null;
         $locationType = null;
         $locationId = null;
+        $year = null;
 
         // Get the current page
         $page = (int)request('page', 1);
@@ -43,14 +44,18 @@ class GetUsersForLocationLeaderboardController
             $locationType = request('locationType');
         }
 
-        // Step 3 - Validation
-        if ($timeFilter === null || $locationId === null || $locationType === null)
-        {
-            return [
-                'success' => false,
-                'msg' => 'missing params'
-            ];
+        if (request()->has('year')) {
+            $year = request('year');
         }
+
+        // Step 3 - Validation
+//        if ($timeFilter === null || $locationId === null || $locationType === null)
+//        {
+//            return [
+//                'success' => false,
+//                'msg' => 'missing params'
+//            ];
+//        }
 
         // Step 4 - Use variables to get the userIds from Redis
         // Returns
@@ -63,7 +68,8 @@ class GetUsersForLocationLeaderboardController
             $start,
             $end,
             $locationType,
-            $locationId
+            $locationId,
+            $year
         );
 
         // We need the total count of all queries to check if we need a next page
@@ -75,7 +81,7 @@ class GetUsersForLocationLeaderboardController
         $users = User::with(['teams:id,name'])
             ->whereIn('id', $userIds)
             ->get()
-            ->map(function (User $user, $index) use ($start, $timeFilter, $locationType, $locationId) {
+            ->map(function (User $user, $index) use ($start, $timeFilter, $locationType, $locationId, $year) {
 
                 // Get the XP value for the Leaderboard type
                 // Global / all users all time
@@ -83,7 +89,8 @@ class GetUsersForLocationLeaderboardController
                 $params = [
                     'locationType' => $locationType,
                     'locationId' => $locationId,
-                    'timeFilter' => $timeFilter
+                    'timeFilter' => $timeFilter,
+                    'customYear' => $year
                 ];
 
                 $xp = $user->getXpWithParams($params);
@@ -134,64 +141,73 @@ class GetUsersForLocationLeaderboardController
         $start,
         $end,
         $locationType,
-        $locationId
+        $locationId,
+        $customYear
     ): array
     {
         $userIds = [];
         $total = 0;
 
-        if ($timeFilter === 'today')
+        if ($timeFilter && $locationType && $locationId)
         {
-            $year = now()->year;
-            $month = now()->month;
-            $day = now()->day;
+            if ($timeFilter === 'today')
+            {
+                $year = now()->year;
+                $month = now()->month;
+                $day = now()->day;
 
-            $total = Redis::zcount("leaderboard:$locationType:$locationId:$year:$month:$day", '-inf', '+inf');
-            $userIds = Redis::zrevrange("leaderboard:$locationType:$locationId:$year:$month:$day", $start, $end);
-        }
-        else if ($timeFilter === 'yesterday')
-        {
-            $year = now()->subDays(1)->year;
-            $month = now()->subDays(1)->month;
-            $day = now()->subDays(1)->day;
+                $total = Redis::zcount("leaderboard:$locationType:$locationId:$year:$month:$day", '-inf', '+inf');
+                $userIds = Redis::zrevrange("leaderboard:$locationType:$locationId:$year:$month:$day", $start, $end);
+            }
+            else if ($timeFilter === 'yesterday')
+            {
+                $year = now()->subDays(1)->year;
+                $month = now()->subDays(1)->month;
+                $day = now()->subDays(1)->day;
 
-            $total = Redis::zcount("leaderboard:$locationType:$locationId:$year:$month:$day", '-inf', '+inf');
-            $userIds = Redis::zrevrange("leaderboard:$locationType:$locationId:$year:$month:$day", $start, $end);
-        }
-        else if ($timeFilter === 'this-month')
-        {
-            $year = now()->year;
-            $month = now()->month;
+                $total = Redis::zcount("leaderboard:$locationType:$locationId:$year:$month:$day", '-inf', '+inf');
+                $userIds = Redis::zrevrange("leaderboard:$locationType:$locationId:$year:$month:$day", $start, $end);
+            }
+            else if ($timeFilter === 'this-month')
+            {
+                $year = now()->year;
+                $month = now()->month;
 
-            $total = Redis::zcount("leaderboard:$locationType:$locationId:$year:$month", '-inf', '+inf');
-            $userIds = Redis::zrevrange("leaderboard:$locationType:$locationId:$year:$month", $start, $end);
-        }
-        else if ($timeFilter === 'last-month')
-        {
-            $year = now()->subMonths(1)->year;
-            $month = now()->subMonths(1)->month;
+                $total = Redis::zcount("leaderboard:$locationType:$locationId:$year:$month", '-inf', '+inf');
+                $userIds = Redis::zrevrange("leaderboard:$locationType:$locationId:$year:$month", $start, $end);
+            }
+            else if ($timeFilter === 'last-month')
+            {
+                $year = now()->subMonths(1)->year;
+                $month = now()->subMonths(1)->month;
 
-            $total = Redis::zcount("leaderboard:$locationType:$locationId:$year:$month", '-inf', '+inf');
-            $userIds = Redis::zrevrange("leaderboard:$locationType:$locationId:$year:$month", $start, $end);
-        }
-        else if ($timeFilter === 'this-year')
-        {
-            $year = now()->year;
+                $total = Redis::zcount("leaderboard:$locationType:$locationId:$year:$month", '-inf', '+inf');
+                $userIds = Redis::zrevrange("leaderboard:$locationType:$locationId:$year:$month", $start, $end);
+            }
+            else if ($timeFilter === 'this-year')
+            {
+                $year = now()->year;
 
-            $total = Redis::zcount("leaderboard:$locationType:$locationId:$year", '-inf', '+inf');
-            $userIds = Redis::zrevrange("leaderboard:$locationType:$locationId:$year", $start, $end);
-        }
-        else if ($timeFilter === 'last-year')
-        {
-            $year = now()->year -1;
+                $total = Redis::zcount("leaderboard:$locationType:$locationId:$year", '-inf', '+inf');
+                $userIds = Redis::zrevrange("leaderboard:$locationType:$locationId:$year", $start, $end);
+            }
+            else if ($timeFilter === 'last-year')
+            {
+                $year = now()->year -1;
 
-            $total = Redis::zcount("leaderboard:$locationType:$locationId:$year", '-inf', '+inf');
-            $userIds = Redis::zrevrange("leaderboard:$locationType:$locationId:$year", $start, $end);
+                $total = Redis::zcount("leaderboard:$locationType:$locationId:$year", '-inf', '+inf');
+                $userIds = Redis::zrevrange("leaderboard:$locationType:$locationId:$year", $start, $end);
+            }
+            else if ($timeFilter === 'all-time')
+            {
+                $total = Redis::zcount("leaderboard:$locationType:$locationId:total", '-inf', '+inf');
+                $userIds = Redis::zrevrange("leaderboard:$locationType:$locationId:total", $start, $end);
+            }
         }
-        else if ($timeFilter === 'all-time')
+        else if ($customYear)
         {
-            $total = Redis::zcount("leaderboard:$locationType:$locationId:total", '-inf', '+inf');
-            $userIds = Redis::zrevrange("leaderboard:$locationType:$locationId:total", $start, $end);
+            $total = Redis::zcount("leaderboard:users:$customYear", '-inf', '+inf');
+            $userIds = Redis::zrevrange("leaderboard:users:$customYear", $start, $end);
         }
 
         return [

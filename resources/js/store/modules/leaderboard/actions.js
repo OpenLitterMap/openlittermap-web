@@ -32,7 +32,8 @@ export const actions = {
             params: {
                 timeFilter: payload?.timeFilter,
                 locationType: payload?.locationType,
-                locationId: payload?.locationId
+                locationId: payload?.locationId,
+                year: payload?.year
             }
         })
         .then(response => {
@@ -42,9 +43,10 @@ export const actions = {
 
             // Filter users by location
             context.commit('setLocationLeaderboard', {
-                locationType: payload.locationType,
-                locationId: payload.locationId,
-                users: response.data.users
+                locationType: payload?.locationType,
+                locationId: payload?.locationId,
+                customYear: payload?.year,
+                users: response?.data?.users
             });
 
             context.commit('setSelectedLocationId', payload.locationId);

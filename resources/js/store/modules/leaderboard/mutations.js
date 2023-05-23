@@ -23,6 +23,9 @@ export const mutations = {
      */
     setLocationLeaderboard (state, payload)
     {
-        state[payload.locationType][payload.locationId] = payload.users;
+        if (payload.locationType && payload.locationId)
+        {
+            state[payload.locationType][payload.locationId] = payload.users;
+        }
     }
 }
