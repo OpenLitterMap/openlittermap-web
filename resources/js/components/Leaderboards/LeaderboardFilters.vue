@@ -33,16 +33,16 @@
                 <!-- MONTHS -->
                 <menuitem>
                     <a
-                        :class="selected === null ? 'is-selected' : ''"
+                        :class="selectedMonth === selected ? 'is-selected' : ''"
                     >
                         {{ getNameForSelectedMonth }}
                     </a>
                     <menu>
                         <menuitem
-                            v-for="month in previousMonthsOptions"
+                            v-for="month in availableMonths"
                             :value="month"
                             :key="month"
-                            @click="getMonth(month)"
+                            @click="selectMonth(month)"
                         >
                             <a>{{ month }}</a>
                         </menuitem>
@@ -52,7 +52,7 @@
                 <!-- YEARS -->
                 <menuitem>
                     <a
-                        :class="selected === null ? 'is-selected' : ''"
+                        :class="selectedYear === selected ? 'is-selected' : ''"
                     >
                         {{ this.selectedYear }}
                     </a>
@@ -84,7 +84,7 @@ export default {
             processing: false,
             selected: "today",
             selectedYear: new Date().getFullYear(),
-            selectedMonth: new Date().getMonth() + 1,
+            selectedMonth: null,
             options: [
                "all-time",
                "today",
@@ -111,10 +111,43 @@ export default {
     },
     computed: {
         /**
+         * Available months
+         */
+        availableMonths ()
+        {
+            const currentYear = new Date().getFullYear();
+            const currentMonth = new Date().getMonth() + 1;
+            const selectedYear = this.selectedYear;
+            const months = [];
+
+            if (selectedYear === currentYear)
+            {
+                for (let i = 0; i < currentMonth; i++)
+                {
+                    months.push(this.monthNames[i]);
+                }
+            }
+            else if (selectedYear < currentYear)
+            {
+                months.push(...this.monthNames);
+            }
+
+            console.log({months});
+
+            return months;
+        },
+
+        /**
          * Get name for selected month
          */
         getNameForSelectedMonth ()
         {
+            if (this.selectedMonth)
+            {
+                const selectedMonthIndex = this.monthNames.indexOf(this.selectedMonth);
+                return this.monthNames[selectedMonthIndex];
+            }
+
             const currentMonth = new Date().getMonth();
 
             return this.monthNames[currentMonth];
@@ -134,18 +167,6 @@ export default {
             }
 
             return availableYears;
-        },
-
-        /**
-         * Get previous months options
-         */
-        previousMonthsOptions ()
-        {
-            const currentMonth = new Date().getMonth();
-
-            return this.monthNames.filter((month, index) => {
-                return index <= currentMonth;
-            });
         },
     },
     methods: {
@@ -198,21 +219,11 @@ export default {
         },
 
         /**
-         *
-         */
-        getMonth (month)
-        {
-            this.selectedYear = null
-
-            console.log({month});
-        },
-
-        /**
          * Get the leaderboard data for the selected year
          */
         getYear (year)
         {
-            this.selected = null;
+            this.selected = year;
 
             this.selectedYear = year;
 
@@ -237,7 +248,18 @@ export default {
             await this.$store.dispatch('GET_USERS_FOR_GLOBAL_LEADERBOARD', option);
 
             this.processing = false;
-        }
+        },
+
+        /**
+         *
+         */
+        selectMonth(month)
+        {
+            this.selected = month;
+
+            this.selectedMonth = month;
+            console.log({month});
+        },
     }
 }
 </script>
