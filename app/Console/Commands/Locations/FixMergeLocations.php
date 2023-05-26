@@ -102,7 +102,7 @@ class FixMergeLocations extends Command
 
 //                            $firstCity->country_id = $firstCountryId;
 //                            $firstCity->state_id = $firstStateId;
-                            $firstCity->save();
+//                            $firstCity->save();
 
                             // Update PhotoIds for duplicate cities
                             // Then delete duplicate city
@@ -124,7 +124,7 @@ class FixMergeLocations extends Command
 //                                    $photo->save();
                                 }
 
-                                echo sizeof($cityPhotos) . " photos updated \n";
+                                // echo sizeof($cityPhotos) . " photos updated \n";
 
                                 $cityPhotosCount = Photo::where('city_id', $city->id)
                                     ->select('id', 'country_id', 'state_id', 'city_id')
