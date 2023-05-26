@@ -31,17 +31,21 @@
 						<p class="show-mobile">Drag these across for more options</p>
 
 						<div class="tabs is-center">
-							<!-- Components within Tabs -->
-							<a v-for="(tab, idx) in tabs"
-								:key="idx" v-show="showTab(tab.in_location)"
+							<!-- Tabs -->
+                            <p
+                                v-for="(tab, idx) in tabs"
+								:key="idx"
+                                v-show="showTab(tab.in_location)"
 								@click="loadTab(tab.component, location.id)"
-								:class="tabClass(tab)">
+                                class="location-tab"
+                                :class="(tab.component === selectedTab) ? 'location-tab-is-active' : ''"
+                            >
 								{{ tab.title }}
-							</a>
+							</p>
 						</div>
 
 						<component
-							:is="tab"
+							:is="selectedTab"
 							:litter_data="location.litter_data"
 							:brands_data="location.brands_data"
 							:total_brands="location.total_brands"
@@ -88,7 +92,7 @@ export default {
 	},
 	data () {
 		return {
-			tab: '',
+			selectedTab: 'LeaderboardList',
 			tabs: [
 				{ title: this.$t('location.litter'), component: 'ChartsContainer', in_location: 'all' },
 				{ title: this.$t('location.time-series'), component: 'TimeSeriesContainer', in_location: 'all'},
@@ -203,7 +207,7 @@ export default {
 		 */
 		async loadTab (tab, locationId)
 		{
-			this.tab = tab;
+			this.selectedTab = tab;
 
             if (tab === "LeaderboardList")
             {
@@ -220,23 +224,13 @@ export default {
          */
         showOnlySelectedLeaderboard (locationId)
         {
-            if (this.tab === "LeaderboardList")
+            if (this.selectedTab === "LeaderboardList")
             {
                 return (this.selectedLocationId === locationId);
             }
 
             return true;
         },
-
-		/**
-		 * Class to return for tab
-		 */
-		tabClass (tab)
-		{
-			return (tab === this.tab)
-                ? 'l-tab is-active'
-                : 'l-tab';
-		},
 
 		/**
 		 * Show tab depending on location locationType
@@ -270,6 +264,18 @@ export default {
 	.l-tab.is-active {
 		border-bottom: 2px solid white !important;
 	}
+
+    .location-tab {
+        background-color: white;
+        border-radius: 6px;
+        padding: 0.5em 1.5em;
+        cursor: pointer;
+    }
+
+    .location-tab.location-tab-is-active {
+        background-color: #3273dc;
+        color: white;
+    }
 
 	.h65pc {
         height: 65%;
