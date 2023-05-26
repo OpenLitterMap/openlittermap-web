@@ -47,6 +47,10 @@
                         class="footer-icon"
                     />
                     <br>
+
+                    <p class="footer-text mt1">
+                        v3.0.0
+                    </p>
                 </div>
 
                 <div class="column is-2">
@@ -56,6 +60,7 @@
                     <p class="footer-link" @click="open('https://opengeospatialdata.springeropen.com/articles/10.1186/s40965-018-0050-y')">{{ $t('home.footer.research-paper') }}</p>
                     <router-link tag="p" to="/references" class="footer-link">{{ $t('home.footer.references') }}</router-link>
                     <router-link tag="p" to="/credits" class="footer-link">{{ $t('home.footer.credits') }}</router-link>
+                    <router-link tag="p" to="/faq" class="footer-link">{{ $t('common.faq') }}</router-link>
                 </div>
 
                 <div class="column is-2">
@@ -65,8 +70,9 @@
                     <p class="footer-link" @click="open('https://www.youtube.com/watch?v=E_qhEhHwUGM')">State of the Map 2019</p>
                     <p class="footer-link" @click="open('https://www.youtube.com/watch?v=T8rGf1ScR1I')">Datapub 2020</p>
                     <p class="footer-link" @click="open('https://www.youtube.com/watch?v=5HuaQNeHuZ8')">ESA PhiWeek 2020</p>
-                    <p class="footer-link" @click="open('https://www.youtube.com/watch?v=QhLsA0WIfTA')">Geneva Form, UN 2020</p>
+                    <p class="footer-link" @click="open('https://www.youtube.com/watch?v=QhLsA0WIfTA')">Geneva Forum, UN 2020</p>
                     <p class="footer-link" @click="open('https://www.youtube.com/watch?v=Pe4nHdoAlu4')">Cardano4Climate Meetup 2021</p>
+                    <p class="footer-link" @click="open('https://www.youtube.com/watch?v=f2UGAxRwrQk')">CardanoSummit 2022</p>
                 </div>
 
                 <div class="column is-2">
@@ -96,8 +102,7 @@
 <script>
 export default {
     name: 'Footer',
-    data ()
-    {
+    data () {
         return {
             email: '',
             socials: [
@@ -110,7 +115,6 @@ export default {
         };
     },
     computed: {
-
         /**
          * Errors object
          */
@@ -136,7 +140,6 @@ export default {
         }
     },
     methods: {
-
         /**
          * Clear all subscriber errors
          */

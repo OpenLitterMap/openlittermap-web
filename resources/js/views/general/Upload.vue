@@ -56,7 +56,7 @@ export default {
     {
         return {
             options: {
-                url: '/submit',
+                url: '/upload',
                 thumbnailWidth: 150,
                 maxFilesize: 20,
                 headers: {
@@ -89,14 +89,13 @@ export default {
          * Show the error when the user hovers over the X
          *
          * Todo: Show the error without having to hover over the X.
+         *
+         * @see https://github.com/rowanwins/vue-dropzone/issues/238#issuecomment-603003150
          */
         failed (file, message)
         {
-            const elements = document.querySelectorAll('.dz-error-message span');
-
-            const lastElement = elements[elements.length - 1];
-
-            lastElement.textContent = message.message;
+            let element = file.previewElement.querySelectorAll('.dz-error-message span');
+            if (element && element.length) element[0].textContent = message.message;
 
             const title = this.$t('notifications.error');
             const body = message.message;

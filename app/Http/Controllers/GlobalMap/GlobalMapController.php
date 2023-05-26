@@ -37,6 +37,12 @@ class GlobalMapController extends Controller
                 ['verified', '>=', 2],
                 ['art_id', '!=', null]
             ])
+            ->with([
+                'user:id,name,username,show_username_maps,show_name_maps,settings',
+                'user.team:is_trusted',
+                'team:id,name',
+                'customTags:photo_id,tag',
+            ])
             ->get();
 
         return $this->photosToGeojson($photos);
@@ -63,15 +69,12 @@ class GlobalMapController extends Controller
                 'remaining',
                 'datetime'
             )
+            ->where('user_id', '!=', 5292) // temp
             ->with([
-                'user' => function ($query) {
-                    $query->where('users.show_name_maps', 1)
-                        ->orWhere('users.show_username_maps', 1)
-                        ->select('users.id', 'users.name', 'users.username', 'users.show_username_maps', 'users.show_name_maps');
-                },
-                'team' => function ($query) {
-                    $query->select('teams.id', 'teams.name');
-                }
+                'user:id,name,username,show_username_maps,show_name_maps,settings',
+                'user.team:is_trusted',
+                'team:id,name',
+                'customTags:photo_id,tag',
             ]);
 
         if (request()->fromDate || request()->toDate) {

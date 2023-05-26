@@ -32,4 +32,26 @@ class UserTest extends TestCase
 
         $this->assertTrue($user->picked_up);
     }
+
+    public function test_a_user_can_get_a_setting()
+    {
+        $settings = ["settings" => ["foo" => "bar"]];
+        /** @var User $user */
+        $user = User::factory()->create($settings);
+
+        $this->assertEquals("bar", $user->setting("foo"));
+        $this->assertNull($user->setting("baz"));
+        $this->assertEquals(5, $user->setting("baz", 5));
+    }
+
+    public function test_a_user_can_change_settings()
+    {
+        $settings = ["settings" => ["foo" => "bar"]];
+        /** @var User $user */
+        $user = User::factory()->create($settings);
+
+        $this->assertEquals("world", $user->settings(["foo" => "world"])->setting("foo"));
+        $this->assertEquals("hello", $user->settings(["baz" => "hello"])->setting("baz"));
+        $this->assertEquals(["foo" => "world", "baz" => 'hello'], $user->fresh()->settings);
+    }
 }

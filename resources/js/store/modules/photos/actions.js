@@ -1,7 +1,7 @@
 export const actions = {
 
     /**
-     * MyPhotos.vue the user has confirmed they want to delete the selected photos
+     * BulkTag.vue the user has confirmed they want to delete the selected photos
      */
     async DELETE_SELECTED_PHOTOS (context)
     {
@@ -59,7 +59,22 @@ export const actions = {
     },
 
     /**
-     * Get non filtered paginated array of the users photos
+     * Get list of the user's previously added custom tags
+     */
+    async LOAD_PREVIOUS_CUSTOM_TAGS (context)
+    {
+        await axios.get('/user/profile/photos/previous-custom-tags')
+            .then(response => {
+                console.log('load_previous_custom_tags', response);
+                context.commit('setPreviousCustomTags', response.data);
+            })
+            .catch(error => {
+                console.error('load_previous_custom_tags', error);
+            });
+    },
+
+    /**
+     * Get non-filtered paginated array of the users photos
      */
     async LOAD_MY_PHOTOS (context)
     {
@@ -130,7 +145,7 @@ export const actions = {
      */
     async PREVIOUS_PHOTOS_PAGE (context)
     {
-        await axios.get(context.state.paginate.prev_page_url)
+        await axios.get(context.state.bulkPaginate.prev_page_url)
             .then(response => {
                 console.log('previous_photos_url', response);
 
@@ -147,7 +162,7 @@ export const actions = {
      */
     async NEXT_PHOTOS_PAGE (context)
     {
-        await axios.get(context.state.paginate.next_page_url)
+        await axios.get(context.state.bulkPaginate.next_page_url)
             .then(response => {
                 console.log('next_photos_page', response);
 

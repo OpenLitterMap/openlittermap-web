@@ -1,7 +1,7 @@
 {
     "de": {
-        "name": "Germany",
-        "lang": "German"
+        "name": "Deutschland",
+        "lang": "Deutsch"
     },
 
     "en": {
@@ -17,6 +17,11 @@
     "fr": {
         "name": "France",
         "lang": "French"
+    },
+
+    "hu": {
+        "name": "Magyar",
+        "lang": "Hungarian"
     },
 
     "ie": {
@@ -47,6 +52,11 @@
     "pt": {
         "name": "Brasil",
         "lang": "Portuguese"
+    },
+
+    "sw" : {
+        "name": "Tanzania",
+        "lang": "Swahili"
     },
 
     "tk": {

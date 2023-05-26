@@ -120,14 +120,18 @@
                 {{ $t('common.submit') }}
             </button>
 
-            <!-- Only show these on mobile <= 768px, and when not using MyPhotos => AddManyTagsToPhotos (id = 0) -->
+            <!-- Only show these on mobile <= 768px, and when not using AddManyTagsToPhotos (id = 0) -->
             <div class="show-mobile" v-show="this.id !== 0">
                 <br>
                 <tags :photo-id="id"/>
 
                 <div class="box custom-buttons">
-                    <profile-delete :photoid="id" />
-                    <presence :itemsr="true" />
+                    <profile-delete
+                        :photoid="id"
+                    />
+                    <presence
+                        :itemsr="true"
+                    />
                 </div>
             </div>
         </div>
@@ -144,7 +148,7 @@ import { categories } from '../../extra/categories';
 import { litterkeys } from '../../extra/litterkeys';
 import ClickOutside from 'vue-click-outside';
 
-// When this.id === 0, we are using MyPhotos && AddManyTagsToManyPhotos
+// When this.id === 0, we are using AddManyTagsToManyPhotos
 export default {
     name: 'AddTags',
     components: {
@@ -177,27 +181,9 @@ export default {
 
         this.$store.commit('setCustomTagsError', '');
 
-        // If the user hits Ctrl + Spacebar, search all tags
-        window.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === ' ') {
-                this.$refs.search.input.focus();
-                e.preventDefault();
-            }
-        });
-
-        // If the user hits Ctrl + Enter, submit the tags
-        window.addEventListener('keydown', (e) => {
-            if (
-                (e.ctrlKey || e.metaKey) &&
-                e.key.toLowerCase() === 'enter' &&
-                this.hasAddedTags &&
-                (! this.admin && this.id !== 0)
-            ) {
-                e.preventDefault();
-                e.stopPropagation();
-                this.submit();
-            }
-        });
+        window.addEventListener('keydown', this.listenForSearchFocusEvent);
+        window.addEventListener('keydown', this.listenForSubmitEvent);
+        window.addEventListener('keydown', this.listenForArrowKeys);
 
         this.$nextTick(function () {
             this.$refs.search.input.focus();
@@ -241,20 +227,22 @@ export default {
                 }
             });
 
-            return results;
-        },
+            // Merge recent custom tags with historic custom tags
+            // and filter out duplicates
+            const customTags = [...new Set([
+                ...this.recentCustomTags,
+                ...this.previousCustomTags
+            ])];
 
-        /**
-         * All recently used custom tags
-         */
-        allRecentCustomTags ()
-        {
-            return this.recentCustomTags.map(tag => {
+            results = results.concat(customTags.map(tag => {
                 return {
-                    key: tag,
-                    title: tag
+                    key: 'custom-' + tag,
+                    title: tag,
+                    custom: true
                 };
-            });
+            }))
+
+            return results;
         },
 
         /**
@@ -308,11 +296,15 @@ export default {
         },
 
         /**
-         * Disable increment if true
+         * Get / Set the current custom tag
          */
-        checkIncr ()
-        {
-            return this.quantity === 100;
+        customTag: {
+            get () {
+                return this.$store.state.litter.customTag;
+            },
+            set (i) {
+                if (i) this.$store.commit('changeCustomTag', i.trim());
+            }
         },
 
         // /**
@@ -334,6 +326,22 @@ export default {
         // },
 
         /**
+         * Disable increment if true
+         */
+        checkIncr ()
+        {
+            return this.quantity === 100;
+        },
+
+        /**
+         * The latest error related to custom tags
+         */
+        customTagsError ()
+        {
+            return this.$store.state.litter.customTagsError;
+        },
+
+        /**
          * Disable button if false
          */
         hasAddedTags ()
@@ -346,6 +354,14 @@ export default {
             let hasCustomTags = customTags && customTags[this.id] && customTags[this.id].length;
 
             return hasTags || hasCustomTags;
+        },
+
+        /**
+         * All the custom tags that this user has submitted
+         */
+        previousCustomTags ()
+        {
+            return this.$store.state.photos.previousCustomTags;
         },
 
         /**
@@ -362,14 +378,6 @@ export default {
         recentCustomTags ()
         {
             return this.$store.state.litter.recentCustomTags;
-        },
-
-        /**
-         * The latest error related to custom tags
-         */
-        customTagsError ()
-        {
-            return this.$store.state.litter.customTagsError;
         },
 
         /**
@@ -390,18 +398,6 @@ export default {
         },
 
         /**
-         * Get / Set the current custom tag
-         */
-        customTag: {
-            get () {
-                return this.$store.state.litter.customTag;
-            },
-            set (i) {
-                if (i) this.$store.commit('changeCustomTag', i.trim());
-            }
-        },
-
-        /**
          * Litter tags for the selected category
          */
         tags ()
@@ -415,7 +411,6 @@ export default {
         },
     },
     methods: {
-
         /**
          * Add or increment a tag
          *
@@ -446,8 +441,10 @@ export default {
             this.$localStorage.set('recentTags', JSON.stringify(this.recentTags));
         },
 
-        addCustomTag ()
+        addCustomTag (tag)
         {
+            this.customTag = tag;
+
             this.$store.commit('addCustomTag', {
                 photoId: this.id,
                 customTag: this.customTag
@@ -494,6 +491,56 @@ export default {
         decr ()
         {
             this.quantity--;
+        },
+
+        /**
+         * Change to previous/next image if they exist
+         */
+        listenForArrowKeys (event)
+        {
+            if (event.keyCode === 37)
+            {
+                if (this.$store.state.photos.paginate?.prev_page_url)
+                {
+                    this.$store.dispatch('PREVIOUS_IMAGE');
+                }
+            }
+
+            if (event.keyCode === 39)
+            {
+                if (this.$store.state.photos.paginate?.next_page_url)
+                {
+                    this.$store.dispatch('NEXT_IMAGE');
+                }
+            }
+        },
+
+        /**
+         * If the user hits Ctrl + Enter, submit the tags
+         */
+        listenForSubmitEvent (event)
+        {
+            if (
+                (event.ctrlKey || event.metaKey) &&
+                event.key.toLowerCase() === 'enter' &&
+                this.hasAddedTags &&
+                (! this.admin && this.id !== 0)
+            ) {
+                event.preventDefault();
+                event.stopPropagation();
+                this.submit();
+            }
+        },
+
+        /**
+         * If the user hits Ctrl + Space bar, search all tags
+         */
+        listenForSearchFocusEvent (event)
+        {
+            if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === ' ') {
+                this.$refs.search.input.focus();
+                event.preventDefault();
+            }
         },
 
         /**
@@ -555,12 +602,16 @@ export default {
          */
         search (input)
         {
-            let searchValues = input.key.split(':');
+            if (input.custom) {
+                this.addCustomTag(input.title);
+            } else {
+                let searchValues = input.key.split(':');
 
-            this.category = {key: searchValues[0]};
-            this.tag = {key: searchValues[1]};
+                this.category = {key: searchValues[0]};
+                this.tag = {key: searchValues[1]};
 
-            this.addTag();
+                this.addTag();
+            }
 
             this.$nextTick(function () {
                 this.onFocusSearch();
@@ -584,9 +635,7 @@ export default {
                 return;
             }
 
-            this.customTag = customTag;
-
-            this.addCustomTag();
+            this.addCustomTag(customTag);
 
             this.$nextTick(function () {
                 this.onFocusCustomTags();
@@ -623,6 +672,13 @@ export default {
 
             this.processing = false;
         }
+    },
+
+    destroyed ()
+    {
+        window.removeEventListener('keydown', this.listenForArrowKeys);
+        window.removeEventListener('keydown', this.listenForSearchFocusEvent);
+        window.removeEventListener('keydown', this.listenForSubmitEvent);
     }
 };
 </script>

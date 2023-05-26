@@ -20,5 +20,6 @@
     "manage-my-photos": "¡Ve tus fotos, selecciona varias, elimínalas o añade etiquetas!",
     "view-my-photos": "Ver mis fotos",
     "my-photos": "Mis fotos",
-    "add-tags": "Anadir etiquetas"
+    "add-tags": "Anadir etiquetas",
+    "bulk-tag-dblclick-info": "¡Haz doble clic para hacer zoom en las fotos!"
 }

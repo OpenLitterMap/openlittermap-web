@@ -23,66 +23,67 @@
 </template>
 
 <script>
-import Password from './settings/Password'
 import Details from './settings/Details'
+import Social from './settings/Social';
 import Account from './settings/Account'
+import Password from './settings/Password'
 import Payments from './settings/Payments'
 import Privacy from './settings/Privacy'
 import Littercoin from './settings/Littercoin'
-import Presence from './settings/Presence'
+import PickedUp from './settings/PickedUp'
 import Emails from './settings/Emails'
 import GlobalFlag from './settings/GlobalFlag'
 
 export default {
     name: 'Settings',
     components: {
-        Password,
         Details,
+        Social,
         Account,
+        Password,
         Payments,
         Privacy,
         Littercoin,
-        Presence,
+        PickedUp,
         Emails,
         GlobalFlag,
     },
-    async created ()
-    {
+    async created () {
         if (window.location.href.split('/')[4])
         {
             this.link = window.location.href.split('/')[4];
         }
     },
-    data ()
-    {
+    data () {
         return {
             links: [
-                'password',
                 'details',
+                'social',
                 'account',
+                'password',
                 'payments',
                 'privacy',
                 'littercoin',
-                'presence',
+                'picked-up',
                 'emails',
                 'show-flag',
             ],
             link: 'password',
             types: {
-                'password': 'Password',
                 'details': 'Details',
+                'social': 'Social',
                 'account': 'Account',
+                'password': 'Password',
                 'payments': 'Payments',
                 'privacy': 'Privacy',
                 'littercoin': 'Littercoin',
-                'presence': 'Presence',
+                'picked-up': 'PickedUp',
                 'emails': 'Emails',
                 'show-flag': 'GlobalFlag',
             }
         }
     },
     methods: {
-
         /**
          * Change link = view different component
          */

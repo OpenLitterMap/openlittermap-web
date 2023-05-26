@@ -3,49 +3,56 @@
         "name": "Duitland",
         "lang": "Duits"
     },
-
     "en": {
         "name": "Engeland",
         "lang": "English"
     },
-
     "es": {
         "name": "Spanje",
         "lang": "Español"
     },
-
     "fr": {
         "name": "Frankrijk",
         "lang": "Frans"
     },
-
+    "hu": {
+        "name": "Magyar",
+        "lang": "Hungarian"
+    },
     "ie": {
         "name": "Ierland",
         "lang": "Iers"
     },
-
     "it": {
         "name": "Italië",
         "lang": "Italiaans"
     },
-
     "ms": {
         "name": "Maleisië",
         "lang": "Maleis"
     },
-
-        "nl": {
+    "nl": {
         "name": "Nederland",
         "lang": "Nederlands"
     },
-
+    "sw": {
+        "name": "Tanzania",
+        "lang": "Swahili"
+    },
     "tk": {
         "name": "Turkije",
         "lang": "Turks"
     },
-
     "uk": {
         "name": "Engeland",
         "lang": "English"
+    },
+    "pl": {
+        "name": "Poland",
+        "lang": "Polski"
+    },
+    "pt": {
+        "name": "Brasil",
+        "lang": "Portuguese"
     }
 }

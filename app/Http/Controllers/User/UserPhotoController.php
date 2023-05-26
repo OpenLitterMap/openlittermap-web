@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\User;
 
+use App\Actions\Photos\GetPreviousCustomTagsAction;
 use App\Jobs\Photos\AddTagsToPhoto;
 use App\Models\Photo;
 use App\Traits\Photos\FilterPhotos;
@@ -11,7 +12,7 @@ use App\Http\Controllers\Controller;
 
 class UserPhotoController extends Controller
 {
-    protected $paginate = 15;
+    protected $paginate = 300;
 
     use FilterPhotos;
 
@@ -20,15 +21,15 @@ class UserPhotoController extends Controller
      *
      * @return array
      */
-    public function create (Request $request)
+    public function bulkTag (Request $request)
     {
-        $ids = ($request->selectAll) ? $request->exclIds : $request->inclIds;
-
-        $photos = $this->filterPhotos(json_encode($request->filters), $request->selectAll, $ids)->get();
-
-        foreach ($photos as $photo)
-        {
-             dispatch (new AddTagsToPhoto($photo->id, $request->tags ?? [], $request->custom_tags ?? []));
+        foreach ($request->photos as $photoId => $data) {
+             dispatch (new AddTagsToPhoto(
+                 $photoId,
+                 $data['picked_up'] ?? false,
+                 $data['tags'] ?? [],
+                 $data['custom_tags'] ?? []
+             ));
         }
 
         return ['success' => true];
@@ -106,5 +107,13 @@ class UserPhotoController extends Controller
             'paginate' => $query->simplePaginate($this->paginate),
             'count' => $query->count()
         ];
+    }
+
+    /**
+     * List of the user's previously added custom tags
+     */
+    public function previousCustomTags (GetPreviousCustomTagsAction $previousTagsAction)
+    {
+        return $previousTagsAction->run(request()->user());
     }
 }

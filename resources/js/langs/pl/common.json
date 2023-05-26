@@ -30,5 +30,8 @@
     "your-email": "you@email.com",
     "team": "Drużyny",
     "actions": "Działania",
-    "photo": "Zdjęcie"
+    "photo": "Zdjęcie",
+    "reason": "Powód",
+    "anonymous": "Anonimowy",
+    "faq": "Często Zadawane Pytania"
 }

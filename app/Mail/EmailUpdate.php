@@ -30,8 +30,7 @@ class EmailUpdate extends Mailable
     public function build()
     {
         return $this->from('info@openlittermap.com', 'OpenLitterMap')
-            ->subject('Update #24 - $50,000 funding from Cardano. Partnership with University College Dublin')
-            ->view('emails.update24')
-            ->attach(public_path('/attachments/UCD_SURVEY.pdf'));
+            ->subject('Update #25 - Big Improvements since $50,000 funding from cryptocurrency Cardano')
+            ->view('emails.update25');
     }
 }

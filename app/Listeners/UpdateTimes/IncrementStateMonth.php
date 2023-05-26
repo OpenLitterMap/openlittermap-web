@@ -6,6 +6,7 @@ use App\Models\Location\State;
 use Carbon\Carbon;
 use App\Events\Photo\IncrementPhotoMonth;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Support\Facades\Redis;
 
 class IncrementStateMonth implements ShouldQueue
 {
@@ -17,25 +18,8 @@ class IncrementStateMonth implements ShouldQueue
      */
     public function handle (IncrementPhotoMonth $event)
     {
-        $state = State::find($event->state_id);
+        $date = Carbon::parse($event->created_at)->format('m-y');
 
-        if ($state)
-        {
-            $ppm = json_decode($state->photos_per_month, true);
-
-            $date = Carbon::parse($event->created_at)->format('m-y');
-
-            if (! is_null($ppm) && array_key_exists($date, $ppm))
-            {
-                $ppm[$date]++;
-            }
-            else
-            {
-                $ppm[$date] = 1;
-            }
-
-            $state->photos_per_month = json_encode($ppm);
-            $state->save();
-        }
+        Redis::hincrby("ppm:state:$event->state_id", $date, 1);
     }
 }

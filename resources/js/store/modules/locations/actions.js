@@ -91,19 +91,37 @@ export const actions = {
     // },
 
     /**
+     * Replacement for GET_COUNTRIES
+     *
+     * We should move this to worldcup.js
+     */
+    async GET_WORLD_CUP_DATA (context)
+    {
+        await axios.get('/get-world-cup-data')
+            .then(response => {
+                console.log('get_world_cup_data', response);
+
+                context.commit('setCountries', response.data);
+            })
+            .catch(error => {
+                console.log('error.get_world_cup_data', error);
+            });
+    },
+
+    /**
      * Get all countries data + global metadata
      */
     async GET_COUNTRIES (context)
     {
         await axios.get('countries')
-        .then(response => {
-            console.log('get_countries', response);
+            .then(response => {
+                console.log('get_countries', response);
 
-            context.commit('setCountries', response.data);
-        })
-        .catch(error => {
-            console.log('error.get_countries', error);
-        });
+                context.commit('setCountries', response.data);
+            })
+            .catch(error => {
+                console.log('error.get_countries', error);
+            });
     },
 
     /**

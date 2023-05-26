@@ -19,16 +19,19 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
     use Exportable, Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public $location_type, $location_id, $team_id, $user_id;
+    /** @var array */
+    private $dateFilter;
 
     /**
      * Init args
      */
-    public function __construct ($location_type, $location_id, $team_id = null, $user_id = null)
+    public function __construct ($location_type, $location_id, $team_id = null, $user_id = null, array $dateFilter = [])
     {
         $this->location_type = $location_type;
         $this->location_id = $location_id;
         $this->team_id = $team_id;
         $this->user_id = $user_id;
+        $this->dateFilter = $dateFilter;
     }
 
     /**
@@ -47,7 +50,8 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             'id',
             'verification',
             'phone',
-            'datetime',
+            'date_taken',
+            'date_uploaded',
             'lat',
             'lon',
 //            'city',
@@ -82,6 +86,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             $row->verified,
             $row->model,
             $row->datetime,
+            $row->created_at,
             $row->lat,
             $row->lon,
 //            $row->city_id, // todo -> name
@@ -112,16 +117,26 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
      */
     public function query ()
     {
+        $query = Photo::with(Photo::categories());
+
+        if (!empty($this->dateFilter))
+        {
+            $query->whereBetween(
+                $this->dateFilter['column'],
+                [$this->dateFilter['fromDate'], $this->dateFilter['toDate']]
+            );
+        }
+
         if ($this->user_id)
         {
-            return Photo::with(Photo::categories())->where([
+            return $query->where([
                 'user_id' => $this->user_id
             ]);
         }
 
         else if ($this->team_id)
         {
-            return Photo::with(Photo::categories())->where([
+            return $query->where([
                 'team_id' => $this->team_id,
                 'verified' => 2
             ]);
@@ -131,7 +146,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
         {
             if ($this->location_type === 'city')
             {
-                return Photo::with(Photo::categories())->where([
+                return $query->where([
                     'city_id' => $this->location_id,
                     'verified' => 2
                 ]);
@@ -139,7 +154,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
 
             else if ($this->location_type === 'state')
             {
-                return Photo::with(Photo::categories())->where([
+                return $query->where([
                     'state_id' => $this->location_id,
                     'verified' => 2
                 ]);
@@ -147,7 +162,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
 
             else
             {
-                return Photo::with(Photo::categories())->where([
+                return $query->where([
                     'country_id' => $this->location_id,
                     'verified' => 2
                 ]);

@@ -6,6 +6,7 @@ use App\Models\AI\Annotation;
 use App\Models\Litter\Categories\Brand;
 use App\Models\Teams\Team;
 use App\Models\User\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,71 +14,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property Collection $customTags
+ * @property User $user
+ * @method Builder onlyFromUsersThatAllowTagging
  */
 class Photo extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'user_id',
-    	'filename',
-    	'model',
-    	'datetime',
-    	'lat',
-        'lon',
-        'verification',
-        'verified',
-        'result_string',
-        'total_litter',
-
-        'display_name',
-    	'location',
-    	'road',
-    	'suburb',
-    	'city',
-    	'county',
-    	'state_district',
-    	'country',
-    	'country_code',
-
-        'city_id',
-        'state_id',
-        'country_id',
-
-    	'smoking_id',
-        'alcohol_id',
-        'coffee_id',
-    	'food_id',
-    	'softdrinks_id',
-        'dumping_id',
-        'sanitary_id',
-        'industrial_id',
-        'other_id',
-        'coastal_id',
-        'art_id',
-        'brands_id',
-        'trashdog_id',
-        'dogshit_id',
-
-        'platform',
-        'bounding_box',
-        'geohash',
-        'team_id',
-
-        // annotations
-        'bbox_skipped',
-        'skipped_by',
-        'bbox_assigned_to',
-        'wrong_tags',
-        'wrong_tags_by',
-        'bbox_verification_assigned_to',
-
-        // Introduced after resizing images to 500x500
-        'five_hundred_square_filepath',
-        'bbox_500_assigned_to',
-
-        'address_array'
-    ];
+    protected $guarded = [];
 
     protected $appends = ['selected', 'picked_up'];
 
@@ -125,6 +69,7 @@ class Photo extends Model
             'brands',
             'dogshit',
             'art',
+            'material',
             'other',
         ];
     }
@@ -216,11 +161,7 @@ class Photo extends Model
      *
      * Format: category.item quantity, category.item quantity,
      *
-     * eg. smoking.butts 3, alcohol.beerBottles 4,
-     *
-     * We use the result_string on the global map for 2 reasons.
-     * 1. We don't have to eager load any data.
-     * 2. This format can be translated into any language.
+     * eg: "smoking.butts 3, alcohol.beerBottles 4,"
      */
     public function translate ()
     {
@@ -329,6 +270,11 @@ class Photo extends Model
         return $this->belongsTo('App\Models\Litter\Categories\Dogshit', 'dogshit_id', 'id');
     }
 
+    public function material ()
+    {
+        return $this->belongsTo('App\Models\Litter\Categories\Material', 'material_id', 'id');
+    }
+
     // public function politics() {
     //     return $this->belongsTo('App\Models\Litter\Categories\Politicals', 'political_id', 'id');
     // }
@@ -336,5 +282,14 @@ class Photo extends Model
     public function customTags(): HasMany
     {
         return $this->hasMany(CustomTag::class);
+    }
+
+    public function scopeOnlyFromUsersThatAllowTagging(Builder $query)
+    {
+        $query->whereNotIn('user_id', function ($q) {
+            $q->select('id')
+                ->from('users')
+                ->where('prevent_others_tagging_my_photos', true);
+        });
     }
 }

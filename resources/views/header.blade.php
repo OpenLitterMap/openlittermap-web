@@ -27,7 +27,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/4.3.0/dropzone.css" />
     <!-- CSS -->
     <link rel="stylesheet" type="text/css" href="/css/bulma.css" />
-    <link rel="stylesheet" type="text/css" href="/css/openlittermap.css" />
+    <link rel="stylesheet" type="text/css" href="{{ mix('/css/app.css') }}" />
     <!-- extra leaflet styles -->
     <link ref="stylesheet" type="text/css" href="/css/leaflet.css" />
 

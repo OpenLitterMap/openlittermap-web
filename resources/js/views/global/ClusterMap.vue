@@ -102,6 +102,12 @@ export default {
             this.map.on('moveend', this.update);
             this.map.on('overlayadd', this.update);
             this.map.on('overlayremove', this.update);
+            this.map.on('popupopen', mapHelper.scrollPopupToBottom);
+            this.map.on('zoom', () => {
+                if (this.points?.remove) {
+                    this.points.remove();
+                }
+            });
 
             this.green_dot = L.icon({
                 iconUrl: './images/vendor/leaflet/dist/dot.png',
@@ -362,27 +368,16 @@ export default {
          */
         renderLeafletPopup (feature, latLng)
         {
-            const user = mapHelper.formatUserName(feature.properties.name, feature.properties.username);
-
             L.popup(mapHelper.popupOptions)
                 .setLatLng(latLng)
-                .setContent(
-                    mapHelper.getMapImagePopupContent(
-                        feature.properties.filename,
-                        feature.properties.result_string,
-                        feature.properties.datetime,
-                        feature.properties.picked_up,
-                        user,
-                        feature.properties.team
-                    )
-                )
+                .setContent(mapHelper.getMapImagePopupContent(feature.properties))
                 .openOn(this.map);
         }
     }
 };
 </script>
 
-<style>
+<style lang="css" scoped>
 
     #map {
         height: 100%;

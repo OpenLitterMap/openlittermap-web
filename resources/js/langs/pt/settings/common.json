@@ -2,11 +2,12 @@
     "general": "Em geral",
     "password": "Senha",
     "details": "Detalhes Pessoais",
+    "social": "Contas Sociais",
     "account": "Minha Conta",
     "payments": "Meus Pagamentos",
     "privacy": "Privacidade",
     "littercoin": "Littercoin (LTRX)",
-    "presence": "Presença",
+    "picked-up": "Levantado",
     "emails": "Emails",
     "show-flag": "Mostrar Bandeira",
     "teams": "Times"

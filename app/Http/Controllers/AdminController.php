@@ -2,15 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Actions\CalculateTagsDifferenceAction;
-use App\Actions\Locations\UpdateLeaderboardsXpAction;
-use App\Actions\LogAdminVerificationAction;
-use App\Actions\Photos\DeleteTagsFromPhotoAction;
 use App\Actions\Photos\DeletePhotoAction;
+use App\Actions\CalculateTagsDifferenceAction;
+use App\Actions\Photos\DeleteTagsFromPhotoAction;
 use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 
 use App\Events\ImageDeleted;
-use App\Http\Requests\GetImageForVerificationRequest;
 use App\Models\Photo;
 use App\Models\User\User;
 
@@ -121,67 +118,11 @@ class AdminController extends Controller
         $photo->filename = '/assets/verified.jpg';
         $photo->save();
 
-        $this->rewardXpToAdmin();
+        rewardXpToAdmin();
 
-        $this->logAdminAction($photo, Route::getCurrentRoute()->getActionMethod());
-
-        event (new TagsVerifiedByAdmin($photo->id));
-    }
-
-    /**
-     * The image and the tags are correct
-     *
-     * Updates Country, State + City table
-     */
-    public function verifykeepimage (Request $request)
-    {
-        /** @var Photo $photo */
-        $photo = Photo::findOrFail($request->photoId);
-        $photo->verified = 2;
-        $photo->verification = 1;
-        $photo->save();
-
-        $this->rewardXpToAdmin();
-
-        $this->logAdminAction($photo, Route::getCurrentRoute()->getActionMethod());
+        logAdminAction($photo, Route::getCurrentRoute()->getActionMethod());
 
         event (new TagsVerifiedByAdmin($photo->id));
-    }
-
-    /**
-     * Incorrect image - reset verification to 0
-     */
-    public function incorrect (Request $request)
-    {
-        /** @var Photo $photo */
-        $photo = Photo::findOrFail($request->photoId);
-
-        $photo->verification = 0;
-        $photo->verified = 0;
-        $photo->total_litter = 0;
-        $photo->result_string = null;
-        $photo->save();
-
-        $tagUpdates = $this->calculateTagsDiffAction->run(
-            $photo->tags(),
-            [],
-            $photo->customTags->pluck('tag')->toArray(),
-            []
-        );
-        $this->deleteTagsAction->run($photo);
-
-        $user = User::find($photo->user_id);
-        $user->xp = max(0, $user->xp - $tagUpdates['removedUserXp']);
-        $user->count_correctly_verified = 0;
-        $user->save();
-
-        $this->updateLeaderboardsAction->run($photo, $user->id, - $tagUpdates['removedUserXp']);
-
-        $this->rewardXpToAdmin();
-
-        $this->logAdminAction($photo, Route::getCurrentRoute()->getActionMethod(), $tagUpdates);
-
-        return ['success' => true];
     }
 
     /**
@@ -202,7 +143,7 @@ class AdminController extends Controller
             []
         );
 
-        $this->logAdminAction($photo, Route::getCurrentRoute()->getActionMethod(), $tagUpdates);
+        logAdminAction($photo, Route::getCurrentRoute()->getActionMethod(), $tagUpdates);
 
         $this->deleteTagsAction->run($photo);
 
@@ -216,7 +157,7 @@ class AdminController extends Controller
 
         $this->updateLeaderboardsAction->run($photo, $user->id, -$totalXp);
 
-        $this->rewardXpToAdmin();
+        rewardXpToAdmin();
 
         event(new ImageDeleted(
             $user,
@@ -249,94 +190,11 @@ class AdminController extends Controller
         // TODO categories and custom_tags are not provided in the front-end
         $tagUpdates = $this->addTags($request->categories ?? [], $request->custom_tags ?? [], $photo->id);
 
-        $this->rewardXpToAdmin(1 + $tagUpdates['rewardedAdminXp']);
+        rewardXpToAdmin(1 + $tagUpdates['rewardedAdminXp']);
 
-        $this->logAdminAction($photo, Route::getCurrentRoute()->getActionMethod(), $tagUpdates);
+        logAdminAction($photo, Route::getCurrentRoute()->getActionMethod(), $tagUpdates);
 
         event(new TagsVerifiedByAdmin($photo->id));
-    }
-
-    /**
-     * Verify the image
-     * Keep the image
-     * Image was not correctly inputted! LitterCorrectlyCount = 0.
-     */
-    public function updateTags (Request $request)
-    {
-        /** @var Photo $photo */
-        $photo = Photo::find($request->photoId);
-        $photo->verification = 1;
-        $photo->verified = 2;
-        $photo->total_litter = 0;
-        $photo->save();
-        $oldTags = $photo->tags();
-
-        $user = User::find($photo->user_id);
-        $user->count_correctly_verified = 0; // At 100, the user earns a Littercoin
-        $user->save();
-
-        $tagUpdates = $this->addTags($request->tags ?? [], $request->custom_tags ?? [], $request->photoId);
-
-        $this->rewardXpToAdmin(1 + $tagUpdates['rewardedAdminXp']);
-
-        $this->logAdminAction($photo, Route::getCurrentRoute()->getActionMethod(), $tagUpdates);
-
-        event (new TagsVerifiedByAdmin($photo->id));
-    }
-
-    /**
-     * Get the next image to verify
-     *
-     * @param GetImageForVerificationRequest $request
-     * @return array
-     */
-    public function getImage (GetImageForVerificationRequest $request): array
-    {
-        // Photos that are uploaded and tagged come first
-        /** @var Photo $photo */
-        $photo = $this->filterPhotos()
-            ->when($request->skip, function ($q) use ($request) {
-                $q->skip((int) $request->skip);
-            })
-            ->where('verification', 0.1)
-            ->first();
-
-        // Load the tags for this photo if it exists
-        if ($photo)
-        {
-            $photo->tags();
-        }
-
-        if (!$photo)
-        {
-            // Photos that have been uploaded, but not tagged or submitted for verification
-            /** @var Photo $photo */
-            $photo = $this->filterPhotos()
-                ->when($request->skip, function ($q) use ($request) {
-                    $q->skip($request->skip);
-                })
-                ->where('verification', 0)
-                ->first();
-        }
-
-        // Count photos that are uploaded but not tagged
-        $photosNotProcessed = $this->filterPhotos()
-            ->where('verification', 0)
-            ->count();
-
-        // Count photos submitted for verification
-        $photosAwaitingVerification = $this->filterPhotos()
-            ->where([
-                ['verified', '<', 2], // not verified
-                ['verification', '>', 0], // submitted for verification
-            ])
-            ->count();
-
-        return [
-            'photo' => $photo,
-            'photosNotProcessed' => $photosNotProcessed,
-            'photosAwaitingVerification' => $photosAwaitingVerification
-        ];
     }
 
     /**
@@ -345,10 +203,9 @@ class AdminController extends Controller
      */
     public function getCountriesWithPhotos(): Collection
     {
-        $totalsQuery = Photo::query()
+        $totalsQuery = Photo::onlyFromUsersThatAllowTagging()
             ->selectRaw('country_id, count(*) as total')
             ->whereIn('verification', [0, 0.1])
-            ->whereNotIn('user_id', $this->usersToSkipVerification())
             ->groupBy('country_id');
 
         // Using DB to avoid extra appended properties
@@ -357,65 +214,5 @@ class AdminController extends Controller
             ->rightJoinSub($totalsQuery, 'q', 'countries.id', '=', 'q.country_id')
             ->get()
             ->keyBy('id');
-    }
-
-    /**
-     * Generates a query builder with filtered photos
-     * @return Builder|mixed
-     */
-    private function filterPhotos(): Builder
-    {
-        return Photo::query()
-            ->with('customTags')
-            ->whereNotIn('user_id', $this->usersToSkipVerification())
-            ->when(request('country_id'), function (Builder $q) {
-                return $q->whereCountryId(request('country_id'));
-            });
-    }
-
-    /**
-     * These users don't want their images verified
-     *
-     * @return int[]
-     */
-    protected function usersToSkipVerification(): array
-    {
-        return [3233, 5292];
-    }
-
-    /**
-     * Rewards the admin performing the verification with xp
-     * @param int $xp
-     * @return void
-     */
-    private function rewardXpToAdmin(int $xp = 1): void
-    {
-        auth()->user()->increment('xp', $xp);
-        /** @var UpdateLeaderboardsXpAction $updateLeaderboardsAction */
-        $updateLeaderboardsAction = app(UpdateLeaderboardsXpAction::class);
-        $updateLeaderboardsAction->run(auth()->id(), $xp);
-    }
-
-    /**
-     * Logs the admin action into the database
-     * for storing xp updates on the photo's user
-     * @param Photo $photo
-     * @param string $action
-     * @param array|null $tagsDiff
-     * @return void
-     */
-    private function logAdminAction(Photo $photo, string $action, array $tagsDiff = null): void
-    {
-        /** @var LogAdminVerificationAction $action */
-        $logger = app(LogAdminVerificationAction::class);
-        $logger->run(
-            auth()->user(),
-            $photo,
-            $action,
-            $tagsDiff['added'] ?? [],
-            $tagsDiff['removed'] ?? [],
-            $tagsDiff['rewardedAdminXp'] ?? 0,
-            $tagsDiff['removedUserXp'] ?? 0
-        );
     }
 }

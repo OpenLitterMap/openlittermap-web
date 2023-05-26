@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Auth;
+use App\Http\Requests\User\UpdateSettingsRequest;
+use App\Models\User\User;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Location\Country;
 use Illuminate\Http\Request;
 
@@ -38,5 +40,15 @@ class SettingsController extends Controller
 	    $user->global_flag = $request->country;
 	    $user->save();
 	    return ['message' => 'success'];
+    }
+
+    public function update(UpdateSettingsRequest $request): array
+    {
+        /** @var User $user */
+        $user = auth()->user();
+
+        $user->settings($request->validated());
+
+        return ['message' => 'success'];
     }
 }

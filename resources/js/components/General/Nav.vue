@@ -24,6 +24,21 @@
                             {{ $t('nav.about') }}
                         </router-link>
 
+                        <!-- Cleanups -->
+                        <router-link to="/cleanups" class="navbar-item" @click.native="close">
+                            Cleanups
+                        </router-link>
+
+                        <!-- Littercoin -->
+                        <router-link to="/littercoin" class="navbar-item" @click.native="close">
+                            Littercoin
+                        </router-link>
+
+                        <!-- Leaderboards -->
+                        <router-link to="/leaderboard" class="navbar-item" @click.native="close">
+                            Leaderboards
+                        </router-link>
+
                         <!-- Global Map -->
                         <router-link to="/global" class="navbar-item" @click.native="close">
                              {{ $t('nav.global-map') }}
@@ -83,7 +98,7 @@
                                     </router-link>
 
                                     <!-- Settings -->
-                                    <router-link to="/settings/password" class="navbar-item drop-item">
+                                    <router-link to="/settings/details" class="navbar-item drop-item">
                                          {{ $t('nav.settings') }}
                                     </router-link>
 
@@ -127,15 +142,15 @@ import Languages from '../global/Languages'
 
 export default {
     name: 'Nav',
-    components: { Languages },
-    data ()
-    {
+    components: {
+        Languages
+    },
+    data () {
         return {
             open: false
         };
     },
     computed: {
-
         /**
          * Return true if the user is logged in
          */
@@ -168,9 +183,7 @@ export default {
             return this.open ? 'navbar-menu is-active' : 'navbar-menu';
         }
     },
-
     methods: {
-
         /**
          * Mobile - Close the nav
          */

@@ -8,8 +8,9 @@ export const categories = [
     'dumping',
     'food',
     'industrial',
-    'other',
     'sanitary',
     'softdrinks',
-    'smoking'
+    'smoking',
+    'material',
+    'other',
 ];

@@ -35,6 +35,7 @@ export default {
             year: year
         });
         await this.$store.dispatch('GET_ART_DATA');
+        await this.$store.dispatch('GET_CLEANUPS');
 
         this.$store.commit('globalLoading', false);
     },

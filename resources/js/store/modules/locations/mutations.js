@@ -24,6 +24,11 @@ export const mutations = {
         state.littercoin = payload.littercoin;
     },
 
+    setGlobalLeaders (state, payload)
+    {
+        state.globalLeaders = payload;
+    },
+
     /**
      * Set the country name (when clicking into it)
      */
@@ -93,4 +98,27 @@ export const mutations = {
     {
         state.total_litter -= payload;
     },
+
+    /**
+     * Change how to sort the order of the locations on the LitterWorldCup
+     */
+    setSortLocationsBy (state, payload)
+    {
+        state.sortLocationsBy = payload;
+    },
+
+    /**
+     * One of the tabs has been selected
+     *
+     * We need to know which locationId we showing for the Leaderboard
+     */
+    setSelectedLocationId (state, payload)
+    {
+        state.selectedLocationId = payload;
+    },
+
+    updateLocationTabKey (state)
+    {
+        state.locationTabKey++;
+    }
 };

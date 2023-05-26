@@ -1,0 +1,22 @@
+{
+    "privacy-title": "Szabályozza adatvédelmi szabályzatát",
+    "privacy-text": "Szabályozd adataidat minden csapatnál, amelyhez csatlakoztál.",
+
+    "team-update-title": "Frissítse csapatait",
+    "team-update-text": "Csak az általad vezetett csapatokat frissítheti.",
+
+    "maps": {
+        "team-map": "Csapattérkép",
+        "name-will-appear": "A neved meg fog jelenni a térképeken",
+        "username-will-appear": "A felhasználóneved meg fog jelenni a térképeken",
+        "will-not-appear": "Az Ön neve és felhasználóneve nem fog megjelenni a térképeken"
+    },
+    "leaderboards": {
+        "team-leaderboard": "Csapat ranglista",
+        "name-will-appear": "A neved meg fog jelenni a ranglistákon",
+        "username-will-appear": "A felhasználóneved meg fog jelenni a ranglistákon",
+        "will-not-appear": "Az Ön neve és felhasználóneve nem fog megjelenni a ranglistákon"
+    },
+    "submit-one-team": "Mentés erre a csapatra",
+    "apply-all-teams": "Jelentkezzen minden csapatba"
+}

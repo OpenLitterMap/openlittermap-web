@@ -1,16 +1,19 @@
 <template>
     <section class="inner-locations-container" :class="container">
-		<!-- Location Navbar -->
-		<location-navbar @selectedCategory="updateCategory($event)" />
+
+        <!-- Location Navbar -->
+		<location-navbar />
 
 	    <!-- v-show is a temp bug fix until cities table has working total_litter column -->
-		<section v-for="(location, index) in orderedBy" :key="index"  v-show="location.total_litter_redis > 0">
-			<div v-show="category !== 'A-Z'">
-				<br>
-				<h1 class="title is-1 has-text-centered world-cup-title">
-					#LitterWorldCup
-				</h1>
-			</div>
+        <!-- v-show="location.total_litter_redis > 0"-->
+        <section
+            v-for="(location, index) in orderedBy"
+            :key="index"
+        >
+            <br>
+            <h1 class="title is-1 has-text-centered world-cup-title">
+                #LitterWorldCup
+            </h1>
 
 			<div class="hero-body location-container">
         		<div class="columns">
@@ -20,37 +23,40 @@
 						:index="index"
 						:location="location"
 						:locationType="locationType"
-						:category="category"
+						:category="sortedBy"
 					/>
 
 					<!-- Charts -->
 					<div class="column is-half is-offset-1">
-
 						<p class="show-mobile">Drag these across for more options</p>
 
 						<div class="tabs is-center">
-
-							<!-- Components within Tabs -->
-							<a v-for="(tab, idx) in tabs"
-								:key="idx" v-show="showTab(tab.in_location)"
-								@click="loadTab(tab.component)"
-								:class="tabClass(tab)">
+							<!-- Tabs -->
+                            <p
+                                v-for="(tab, idx) in tabs"
+								:key="idx"
+                                v-show="showTab(tab.in_location)"
+								@click="loadTab(tab.component, location.id)"
+                                class="location-tab"
+                                :class="(tab.component === selectedTab) ? 'location-tab-is-active' : ''"
+                            >
 								{{ tab.title }}
-							</a>
+							</p>
 						</div>
 
 						<component
-							:is="tab"
+							:is="selectedTab"
 							:litter_data="location.litter_data"
 							:brands_data="location.brands_data"
 							:total_brands="location.total_brands"
-							:ppm="location.photos_per_month"
-							:leaderboard="location.leaderboard"
+							:ppm="location.ppm"
 							:time="location.time"
 							@dateschanged="updateUrl"
 							:index="index"
 							:locationType="locationType"
 							:locationId="location.id"
+                            :leaders="getUsersForLocationLeaderboard"
+                            :style="showOnlySelectedLeaderboard(location.id) ? '' : 'display: none'"
 						/>
 					</div>
 				</div>
@@ -66,33 +72,34 @@ import LocationNavbar from '../../components/Locations/LocationNavBar'
 import LocationMetadata from '../../components/Locations/LocationMetadata'
 import ChartsContainer from '../../components/Locations/Charts/PieCharts/ChartsContainer'
 import TimeSeriesContainer from '../../components/Locations/Charts/TimeSeries/TimeSeriesContainer'
-import Leaderboard from '../../components/Locations/Charts/Leaderboard/Leaderboard'
+import LeaderboardList from '../../components/global/LeaderboardList';
 import Options from '../../components/Locations/Charts/Options/Options'
 import Download from '../../components/Locations/Charts/Download/Download'
 
 export default {
-	props: ['locationType'],
-	name: 'SortLocations',
+    name: 'SortLocations',
+    props: [
+        'locationType'
+    ],
 	components: {
 		LocationNavbar,
 		LocationMetadata,
 		ChartsContainer,
 		TimeSeriesContainer,
-		Leaderboard,
+        LeaderboardList,
         Options,
         Download
 	},
 	data () {
 		return {
-			'category': this.$t('location.most-data'),
-			tab: '',
+			selectedTab: 'LeaderboardList',
 			tabs: [
 				{ title: this.$t('location.litter'), component: 'ChartsContainer', in_location: 'all' },
 				{ title: this.$t('location.time-series'), component: 'TimeSeriesContainer', in_location: 'all'},
-				{ title: this.$t('location.leaderboard'), component: 'Leaderboard', in_location: 'all'},
+				{ title: this.$t('location.leaderboard'), component: 'LeaderboardList', in_location: 'all'},
 				{ title: this.$t('location.options'), component: 'Options', in_location: 'city'},
 				{ title: this.$t('common.download'), component: 'Download', in_location: 'all'}
-			]
+			],
 		};
 	},
     computed: {
@@ -106,7 +113,17 @@ export default {
                 : '';
         },
 
-		/**
+        /**
+         * Array of users for each Leaderboard
+         */
+        getUsersForLocationLeaderboard ()
+        {
+            this.$store.state.locations.locationTabKey;
+
+            return this.$store.state.leaderboard[this.locationType][this.selectedLocationId] ?? [];
+        },
+
+        /**
 		 * Is the user authenticated?
 		 */
 		isAuth ()
@@ -115,24 +132,42 @@ export default {
 		},
 
 		/**
-		 * We can sort all locations A-Z, Most Open Data, or Most Open Data Per Person
+         * Return sorted array of locations
          *
-		 * Todo: add new options: created_at, etc.
+         * Determined by this.locations.sortedByOption in LocationNavBar
 		 */
 		orderedBy ()
 		{
-			if (this.category === "A-Z")
+			if (this.sortedBy === "alphabetical")
 			{
 				return this.locations;
 			}
-			else if (this.category === this.$t('location.most-data'))
+			else if (this.sortedBy === 'most-data')
 			{
 				return sortBy(this.locations, 'total_litter_redis').reverse();
 			}
-			else if (this.category === this.$t('location.most-data-person'))
+			else if (this.sortedBy === 'most-data-per-person')
 			{
 				return sortBy(this.locations, 'avg_litter_per_user').reverse();
 			}
+            else if (this.sortedBy === 'most-recently-updated')
+            {
+                return sortBy(this.locations, 'updated_at').reverse();
+            }
+            else if (this.sortedBy === 'total-contributors')
+            {
+                return sortBy(this.locations, 'total_contributors_redis').reverse();
+            }
+            else if (this.sortedBy === 'first-created')
+            {
+                return sortBy(this.locations, 'created_at');
+            }
+            else if (this.sortedBy === 'most-recently-created')
+            {
+                return sortBy(this.locations, 'created_at').reverse();
+            }
+
+            return [];
 		},
 
 		/**
@@ -141,26 +176,61 @@ export default {
 		locations ()
 		{
 			return this.$store.state.locations.locations;
-		}
-	},
-	methods: {
+		},
+
+        /**
+         * The locationId which has its tabs selected
+         */
+        selectedLocationId ()
+        {
+            return this.$store.state.locations.selectedLocationId;
+        },
+
+        /**
+         * String that determines how to sort the order of locations
+         *
+         * Includes:
+         * - alphabetical
+         * - most-data
+         * - most-data-per-person
+         * - total-contributors
+         * - most-recent
+         */
+        sortedBy ()
+        {
+            return this.$store.state.locations.sortLocationsBy;
+        }
+    },
+    methods: {
 		/**
 		 * Load a tab component: Litter, Leaderboard, Time-series
 		 */
-		loadTab (tab)
+		async loadTab (tab, locationId)
 		{
-			this.tab = tab;
+			this.selectedTab = tab;
+
+            if (tab === "LeaderboardList")
+            {
+                await this.$store.dispatch('GET_USERS_FOR_LOCATION_LEADERBOARD', {
+                    timeFilter: 'today',
+                    locationType: this.locationType,
+                    locationId
+                });
+            }
 		},
 
-		/**
-		 * Class to return for tab
-		 */
-		tabClass (tab)
-		{
-			return (tab === this.tab)
-                ? 'l-tab is-active'
-                : 'l-tab';
-		},
+        /**
+         *
+         */
+        showOnlySelectedLeaderboard (locationId)
+        {
+            if (this.selectedTab === "LeaderboardList")
+            {
+                return (this.selectedLocationId === locationId);
+            }
+
+            return true;
+        },
 
 		/**
 		 * Show tab depending on location locationType
@@ -178,15 +248,7 @@ export default {
 		updateUrl (url)
 		{
             console.log({ url });
-		},
-
-		/**
-		 * Update selected category from LocationNavBar component
-		 */
-		updateCategory (updatedCategory)
-		{
-			this.category = updatedCategory
-		},
+		}
 	}
 }
 </script>
@@ -195,12 +257,25 @@ export default {
 
 	.inner-locations-container {
         flex: 1;
-        background-color: #23d160;
+        background-color: #48c774;
+        background-image: linear-gradient(to right bottom, rgba(126, 213, 111, 0.8), rgba(40, 180, 133, 0.8));
 	}
 
 	.l-tab.is-active {
 		border-bottom: 2px solid white !important;
 	}
+
+    .location-tab {
+        background-color: white;
+        border-radius: 6px;
+        padding: 0.5em 1.5em;
+        cursor: pointer;
+    }
+
+    .location-tab.location-tab-is-active {
+        background-color: #3273dc;
+        color: white;
+    }
 
 	.h65pc {
         height: 65%;

@@ -7,25 +7,40 @@ const helper = {
      * @see https://leafletjs.com/reference-1.7.1.html#popup-l-popup
      */
     popupOptions: {
-        minWidth: 350,
+        minWidth: window.innerWidth >= 768 ? 350 : 200, // allow smaller widths on mobile
         maxWidth: 600,
-        maxHeight: 700,
+        maxHeight: window.innerWidth >= 768 ? 800 : 500, // prevent tall popups on mobile
         closeButton: true
+    },
+
+    /**
+     * Scrolls the popup to its bottom if the image is very tall
+     * Needed to reduce the flicker when the map renders the popups
+     * @param event The event emitted by the leaflet map
+     */
+    scrollPopupToBottom: (event) => {
+        let popup = event.popup?.getElement()?.querySelector('.leaflet-popup-content');
+
+        if (popup) popup.scrollTop = popup.scrollHeight;
     },
 
     /**
      * Returns th HTML that displays tags on Photo popups
      *
      * @param tagsString
+     * @param customTags
+     * @param isTrustedUser
      * @returns {string}
      */
-    parseTags: (tagsString) => {
-        if (!tagsString) {
-            return i18n.t('litter.not-verified');
+    parseTags: (tagsString, customTags, isTrustedUser) => {
+        if (!tagsString && !customTags) {
+            return isTrustedUser
+                ? i18n.t('litter.not-tagged-yet')
+                : i18n.t('litter.not-verified');
         }
 
         let tags = '';
-        let a = tagsString.split(',');
+        let a = tagsString ? tagsString.split(',') : [];
 
         a.pop();
 
@@ -70,13 +85,12 @@ const helper = {
     /**
      * Formats the team name for usage in Photo popups
      *
-     * Todo translate 'team'
      * @param teamName
      * @returns {string}
      */
     formatTeam: (teamName) => {
         return teamName
-            ? `Team ${teamName}`
+            ? `${i18n.t('common.team')} ${teamName}`
             : '';
     },
 
@@ -93,37 +107,96 @@ const helper = {
     /**
      * Returns the HTML that displays the Photo popups
      *
-     * @param imageUrl
-     * @param tagsString
-     * @param takenOn
-     * @param pickedUp
-     * @param user
-     * @param team
+     * @param properties
      * @param url
      * @returns {string}
      */
-    getMapImagePopupContent: (imageUrl, tagsString, takenOn, pickedUp, user, team, url = null) => {
-        const tags = helper.parseTags(tagsString);
-        const takenDateString = helper.formatPhotoTakenTime(takenOn);
-        const teamFormatted = helper.formatTeam(team);
-        const pickedUpFormatted = helper.formatPickedUp(pickedUp);
-        const isLitterArt = tagsString && tagsString.includes('art.item');
+    getMapImagePopupContent: (properties, url = null) => {
+        const user = helper.formatUserName(properties.name, properties.username)
+        const isTrustedUser = properties.filename !== '/assets/images/waiting.png';
+        const customTags = properties.custom_tags?.join('<br>');
+        const tags = helper.parseTags(properties.result_string, customTags, isTrustedUser);
+        const takenDateString = helper.formatPhotoTakenTime(properties.datetime);
+        const teamFormatted = helper.formatTeam(properties.team);
+        const pickedUpFormatted = helper.formatPickedUp(properties.picked_up);
+        const isLitterArt = properties.result_string && properties.result_string.includes('art.item');
+        const hasSocialLinks = properties.social && Object.keys(properties.social).length
 
         return `
             <img
-                src="${imageUrl}"
+                src="${properties.filename}"
                 class="leaflet-litter-img"
                 onclick="document.querySelector('.leaflet-popup-close-button').click();"
                 alt="Litter photo"
+                ${(isTrustedUser ? '' : ('style="padding: 16px;"'))}
             />
             <div class="leaflet-litter-img-container">
-                <p>${tags}</p>
-                ${!isLitterArt ? ('<p>' + pickedUpFormatted + '</p>') : ''}
-                <p>${takenDateString}</p>
-                ${user ? ('<p>' + user + '</p>') : ''}
-                ${teamFormatted ? ('<p>' + teamFormatted + '</p>') : ''}
-                ${url ? '<a class="link" target="_blank" href="' + url + '"><i class="fa fa-link fa-rotate-90"></i></a>' : ''}
+                ${tags ? ('<div>' + tags + '</div>') : ''}
+                ${customTags ? ('<div>' + customTags + '</div>') : ''}
+                ${!isLitterArt ? ('<div>' + pickedUpFormatted + '</div>') : ''}
+                <div>${takenDateString}</div>
+                ${user ? ('<div>' + user + '</div>') : ''}
+                ${teamFormatted ? ('<div class="team">' + teamFormatted + '</div>') : ''}
+                ${hasSocialLinks ? '<div class="social-container">' : ''}
+                    ${properties.social?.personal ? '<a target="_blank" href="' + properties.social.personal + '"><i class="fa fa-link"></i></a>' : ''}
+                    ${properties.social?.twitter ? '<a target="_blank" href="' + properties.social.twitter + '"><i class="fa fa-twitter"></i></a>' : ''}
+                    ${properties.social?.facebook ? '<a target="_blank" href="' + properties.social.facebook + '"><i class="fa fa-facebook"></i></a>' : ''}
+                    ${properties.social?.instagram ? '<a target="_blank" href="' + properties.social.instagram + '"><i class="fa fa-instagram"></i></a>' : ''}
+                    ${properties.social?.linkedin ? '<a target="_blank" href="' + properties.social.linkedin + '"><i class="fa fa-linkedin"></i></a>' : ''}
+                    ${properties.social?.reddit ? '<a target="_blank" href="' + properties.social.reddit + '"><i class="fa fa-reddit"></i></a>' : ''}
+                ${hasSocialLinks ? '</div>' : ''}
+                ${url ? '<a class="link" target="_blank" href="' + url + '"><i class="fa fa-share-alt"></i></a>' : ''}
             </div>`;
+    },
+
+    /**
+     * Returns the HTML that displays on each Cleanup popup
+     *
+     * @param properties
+     * @param userId
+     * @returns {string}
+     */
+    getCleanupContent: (properties, userId = null) => {
+
+        let userCleanupInfo = ``;
+
+        if (userId === null) {
+            userCleanupInfo = `Log in to join the cleanup`;
+        }
+        else {
+            if (properties.users.find(user => user.user_id === userId)) {
+                userCleanupInfo = '<p>You have joined the cleanup</p>'
+
+                    if (userId === properties.user_id) {
+                        userCleanupInfo += '<p>You cannot leave the cleanup you created</p>'
+                    }
+                    else {
+                        userCleanupInfo += `<a
+                            onclick="window.olm_map.$store.dispatch('LEAVE_CLEANUP', {
+                                link: '${properties.invite_link}'
+                            })"
+                        >Click here to leave</a>`
+                    }
+            }
+            else {
+                userCleanupInfo = `<a
+                    onclick="window.olm_map.$store.dispatch('JOIN_CLEANUP', {
+                        link: '${properties.invite_link}'
+                    })"
+                >Click here to join</a>`;
+            }
+        }
+
+        return `
+            <div class="leaflet-cleanup-container">
+                <p>${properties.name}</p>
+                <p>Attending: ${properties.users.length} ${properties.users.length === 1 ? 'person' : 'people'}</p>
+                <p>${properties.description}</p>
+                <p>When? ${properties.startsAt}</p>
+                <p>${properties.timeDiff}</p>
+                ${userCleanupInfo}
+            </div>
+        `;
     }
 };
 

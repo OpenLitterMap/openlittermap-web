@@ -9,6 +9,8 @@ use App\Level;
 use App\Models\CustomTag;
 use App\Models\Photo;
 use App\Models\User\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class ProfileController extends Controller
@@ -26,9 +28,11 @@ class ProfileController extends Controller
      *
      * @return array
      */
-    public function download ()
+    public function download (Request $request)
     {
         $user = Auth::user();
+
+        $dateFilter = $this->getDownloadDateFilter($request);
 
         $x     = new \DateTime();
         $date  = $x->format('Y-m-d');
@@ -38,12 +42,16 @@ class ProfileController extends Controller
         $day   = $date[2];
         $unix  = now()->timestamp;
 
-        $path = $year.'/'.$month.'/'.$day.'/'.$unix.'/';  // 2020/10/25/unix/
+        $path = $year.'/'.$month.'/'.$day.'/'.$unix;  // 2020/10/25/unix/
+
+        if (!empty($dateFilter)) {
+            $path .= "_from_{$dateFilter['fromDate']}_to_{$dateFilter['toDate']}";
+        }
 
         $path .= '_MyData_OpenLitterMap.csv';
 
         /* Dispatch job to create CSV file for export */
-        (new CreateCSVExport(null, null, null, $user->id))
+        (new CreateCSVExport(null, null, null, $user->id, $dateFilter))
             ->queue($path, 's3', null, ['visibility' => 'public'])
             ->chain([
                 // These jobs are executed when above is finished.
@@ -66,60 +74,60 @@ class ProfileController extends Controller
      */
     public function geojson ()
     {
-        // we might need this again
-//        if (request()->period === 'today') $period = now()->startOfDay();
-//        else if (request()->period === 'week') $period = now()->startOfWeek();
-//        else if (request()->period === 'month') $period = now()->startOfMonth();
-//        else if (request()->period === 'year') $period = now()->startOfYear();
-//        else if (request()->period === 'all') $period = '2017-01-01 00:00:00'; // Year OLM began
-
-        // Todo - Pre-cluster each users photos
-        $query = Photo::select('id', 'filename', 'datetime', 'lat', 'lon', 'model', 'result_string', 'remaining', 'created_at')
+        $photos = Photo::query()
             ->where([
                 ['user_id', auth()->user()->id],
                 'verified' => 2
             ])
+            ->with([
+                'user:id,name,username,show_username_maps,show_name_maps,settings',
+                'user.team:is_trusted',
+                'team:id,name',
+                'customTags:photo_id,tag',
+            ])
             ->whereDate(request()->period, '>=', request()->start)
-            ->whereDate(request()->period, '<=', request()->end);
-
-        // Note, we need a total_tags column as this does not contain brands
-        // Note, we need to save this metadata into another table
-        // $photos_count = $query->count();
-        // $litter_count = $query->sum('total_litter');
-
-        $geojson = [
-            'type'      => 'FeatureCollection',
-            'features'  => []
-        ];
-
-        $photos = $query->get();
+            ->whereDate(request()->period, '<=', request()->end)
+            ->orderBy(request()->period, 'asc')
+            ->get();
 
         // Populate geojson object
-        foreach ($photos as $photo)
-        {
-            $feature = [
+        $features = [];
+        foreach ($photos as $photo) {
+            $name = $photo->user->show_name_maps ? $photo->user->name : null;
+            $username = $photo->user->show_username_maps ? $photo->user->username : null;
+            $team = $photo->team ? $photo->team->name : null;
+            $filename = ($photo->user->is_trusted || $photo->verified >= 2) ? $photo->filename : '/assets/images/waiting.png';
+            $resultString = $photo->verified >= 2 ? $photo->result_string : null;
+
+            $features[] = [
                 'type' => 'Feature',
                 'geometry' => [
                     'type' => 'Point',
-                    'coordinates' => [$photo->lon, $photo->lat]
+                    'coordinates' => [$photo->lat, $photo->lon]
                 ],
-
                 'properties' => [
-                    // 'photo_id' => $photo->id,
-                    'img' => $photo->filename,
-                    'model' => $photo->model,
+                    'photo_id' => $photo->id,
+                    'result_string' => $resultString,
+                    'filename' => $filename,
                     'datetime' => $photo->datetime,
-                    'latlng' => [$photo->lat, $photo->lon],
-                    'text' => $photo->result_string,
-                    'picked_up' => $photo->picked_up
+                    'time' => $photo->datetime,
+                    'cluster' => false,
+                    'verified' => $photo->verified,
+                    'name' => $name,
+                    'username' => $username,
+                    'team' => $team,
+                    'picked_up' => $photo->picked_up,
+                    'social' => $photo->user->social_links,
+                    'custom_tags' => $photo->customTags->pluck('tag')
                 ]
             ];
-
-            array_push($geojson["features"], $feature);
         }
 
         return [
-            'geojson' => $geojson
+            'geojson' => [
+                'type' => 'FeatureCollection',
+                'features' => $features
+            ]
         ];
     }
 
@@ -166,6 +174,32 @@ class ProfileController extends Controller
             'tagPercent' => $tagPercent,
             'photoPercent' => $photoPercent,
             'requiredXp' => $requiredXp
+        ];
+    }
+
+    /**
+     * Returns an array of values
+     * so that users can filter their own data
+     *
+     * @param Request $request
+     * @return array
+     */
+    private function getDownloadDateFilter(Request $request): array
+    {
+        if (!$request->dateField || !($request->fromDate || $request->toDate)) {
+            return [];
+        }
+
+        $fromDate = $request->fromDate
+            ? Carbon::parse($request->fromDate)
+            : Carbon::create(2017);
+        $toDate = $request->toDate
+            ? Carbon::parse($request->toDate)
+            : now();
+        return [
+            'column' => $request->dateField,
+            'fromDate' => $fromDate->toDateString(),
+            'toDate' => $toDate->toDateString()
         ];
     }
 }

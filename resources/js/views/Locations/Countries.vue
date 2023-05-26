@@ -1,10 +1,18 @@
 <template>
     <div>
-        <loading v-show="loading" :active.sync="loading" :is-full-page="true" />
+        <loading
+            v-show="loading"
+            :active.sync="loading"
+            :is-full-page="true"
+        />
 
-        <GlobalMetaData :loading="loading" />
+        <GlobalMetaData
+            :loading="loading"
+        />
 
-        <SortLocations locationType="country" />
+        <SortLocations
+            locationType="country"
+        />
     </div>
 </template>
 
@@ -22,16 +30,14 @@ export default {
         GlobalMetaData,
         SortLocations
     },
-    async created ()
-    {
+    async created () {
         this.loading = true;
 
-        await this.$store.dispatch('GET_COUNTRIES');
+        await this.$store.dispatch('GET_WORLD_CUP_DATA');
 
         this.loading = false;
     },
-    data ()
-    {
+    data () {
         return {
             loading: true
         };

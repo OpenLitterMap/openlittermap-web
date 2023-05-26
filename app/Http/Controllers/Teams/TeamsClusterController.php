@@ -70,14 +70,10 @@ class TeamsClusterController extends Controller
                 'datetime'
             )
             ->with([
-                'user' => function ($query) {
-                    $query->where('users.show_name_maps', 1)
-                        ->orWhere('users.show_username_maps', 1)
-                        ->select('users.id', 'users.name', 'users.username', 'users.show_username_maps', 'users.show_name_maps');
-                },
-                'team' => function ($query) {
-                    $query->select('teams.id', 'teams.name');
-                }
+                'user:id,name,username,show_username_maps,show_name_maps,settings',
+                'user.team:is_trusted',
+                'team:id,name',
+                'customTags:photo_id,tag',
             ])
             ->whereTeamId($request->team);
 

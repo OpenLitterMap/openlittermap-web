@@ -1,0 +1,13 @@
+{
+    "card-number": "Namba ya kadi",
+    "card-holder": "Jina la mmiliki wa kadi",
+    "exp": "Tarehe ya kumalizika muda wake",
+    "cvv": "CVV",
+    "placeholders": {
+        "card-number": "Nambari ya kadi yako yenye tarakimu 16",
+        "card-holder": "Jina la mmiliki wa kadi",
+        "exp-month": "Mwezi",
+        "exp-year": "Mwaka",
+        "cvv": "***"
+    }
+}

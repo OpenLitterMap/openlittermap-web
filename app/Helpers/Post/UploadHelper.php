@@ -50,7 +50,7 @@ class UploadHelper
     {
         $stateName = $this->lookupPlace(
             $addressArray,
-            ['state', 'county', 'region']
+            ['state', 'county', 'region', 'state_district']
         );
 
         if (!$stateName) {
@@ -78,7 +78,7 @@ class UploadHelper
      *
      * @return City
      */
-    public function getCityFromAddressArray (Country $country, State $state, $addressArray)
+    public function getCityFromAddressArray (Country $country, State $state, $addressArray, $lat, $lon)
     {
         $cityName = $this->lookupPlace(
             $addressArray,
@@ -100,9 +100,18 @@ class UploadHelper
                 ['created_by' => auth()->id()]
             );
 
-        if ($city->wasRecentlyCreated) {
+        if ($city->wasRecentlyCreated)
+        {
             // Broadcast an event to anyone viewing the Global Map
-            event(new NewCityAdded($cityName, $state->state, $country->country, now()));
+            event(new NewCityAdded(
+                $cityName,
+                $state->state,
+                $country->country,
+                now(),
+                $city->id,
+                $lat,
+                $lon
+            ));
         }
 
         return $city;

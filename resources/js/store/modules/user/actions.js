@@ -139,12 +139,12 @@ export const actions = {
     /**
      * Send the user an email containing a CSV with all of their data
      */
-    async DOWNLOAD_MY_DATA (context)
+    async DOWNLOAD_MY_DATA (context, payload)
     {
         const title = i18n.t('notifications.success');
         const body = 'Your download is being processed and will be emailed to you.'
 
-        await axios.get('/user/profile/download')
+        await axios.get('/user/profile/download', {params: payload})
             .then(response => {
                 console.log('download_my_data', response);
 
@@ -292,7 +292,8 @@ export const actions = {
             show_name: context.state.user.show_name,
             show_username: context.state.user.show_username,
             show_name_createdby: context.state.user.show_name_createdby,
-            show_username_createdby:  context.state.user.show_username_createdby
+            show_username_createdby:  context.state.user.show_username_createdby,
+            prevent_others_tagging_my_photos:  context.state.user.prevent_others_tagging_my_photos,
         })
         .then(response => {
             console.log('save_privacy_settings', response);
@@ -354,8 +355,8 @@ export const actions = {
      */
     async TOGGLE_LITTER_PICKED_UP_SETTING (context)
     {
-        let title = i18n.t('notifications.success');
-        let body  = i18n.t('notifications.litter-toggled');
+        const title = i18n.t('notifications.success');
+        const body  = i18n.t('notifications.litter-toggled');
 
         await axios.post('/settings/toggle')
             .then(response => {
@@ -434,5 +435,36 @@ export const actions = {
         .catch(error => {
             console.log(error);
         });
+    },
+
+    /**
+     * Single endpoint to update all settings using the same format
+     */
+    async UPDATE_SETTINGS (context, payload)
+    {
+        let title = i18n.t('notifications.success');
+        let body = i18n.t('notifications.settings-updated');
+
+        await axios.patch('/settings', payload)
+            .then(response =>
+            {
+                console.log(response);
+
+                Object.keys(payload).forEach((key) =>
+                {
+                    context.commit('deleteUserError', key);
+                });
+
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                    position: 'top-right'
+                });
+            })
+            .catch(error =>
+            {
+                context.commit('errors', error.response.data.errors);
+                console.log(error);
+            });
     }
 };

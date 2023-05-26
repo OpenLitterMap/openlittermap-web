@@ -9,7 +9,7 @@
                     <i18n path="home.community.zoom-text" tag="p">
                         <template #link>
                             <a target="_blank"
-                               href="https://us02web.zoom.us/meeting/register/tZ0ud-GurTktGdQal_ChgggPl41EHmf7I2NB"
+                               href="https://us02web.zoom.us/j/86284514720?pwd=OWpqaE1DSG1aWktYQTNDYmR0ZnBKUT09"
                             >{{ $t('home.community.zoom-weekly-calls') }}</a>
                         </template>
                     </i18n>
@@ -20,7 +20,7 @@
                     <div class="timeframe live">
                         <p>
                             <a target="_blank"
-                               href="https://us02web.zoom.us/meeting/register/tZ0ud-GurTktGdQal_ChgggPl41EHmf7I2NB"
+                               href="https://us02web.zoom.us/j/86284514720?pwd=OWpqaE1DSG1aWktYQTNDYmR0ZnBKUT09"
                             >{{ $t('home.community.zoom-live') }}</a>
                         </p>
                     </div>
@@ -48,8 +48,7 @@
 <script>
 export default {
     name: 'ZoomSection',
-    data ()
-    {
+    data () {
         return {
             days: null,
             hours: null,
@@ -57,35 +56,52 @@ export default {
             isLive: false
         };
     },
-    mounted ()
-    {
-        setInterval(() =>
-        {
+    mounted () {
+        // Toggle this to change daylight savings time
+        const daylightSavings = true;
+
+        setInterval(() => {
             let now = new Date();
-            let nextThursday = new Date();
-            nextThursday.setUTCDate(now.getUTCDate() + (10 - now.getUTCDay()) % 7 + 1);
+
+            let nextMeetingDay = new Date();
+            nextMeetingDay.setUTCDate(now.getUTCDate() + (11 - now.getUTCDay()) % 7 + 1);
+
             let meetingStart = new Date(
-                nextThursday.getUTCFullYear(),
-                nextThursday.getUTCMonth(),
-                nextThursday.getUTCDate(),
+                nextMeetingDay.getUTCFullYear(),
+                nextMeetingDay.getUTCMonth(),
+                nextMeetingDay.getUTCDate(),
                 18,
                 0,
                 0,
                 0
             );
-            meetingStart.setUTCHours(18);
 
-            // If it's thursday we want to check if the meeting is live
+            // Turn this on to remove daylight savings time
+            if (!daylightSavings) {
+                meetingStart.setUTCHours(18);
+            }
+
+            // If it's Friday we want to check if the meeting is live
             // usually ends at 19:30 UTC
-            if (now.getDay() === 4)
+            if (now.getDay() === 5)
             {
                 let todayMeetingStart = new Date(now.getTime());
-                todayMeetingStart.setUTCHours(18);
+
+                const startHour = (daylightSavings)
+                    ? 17
+                    : 18;
+
+                const endHour = (daylightSavings)
+                    ? 19
+                    : 20;
+
+                todayMeetingStart.setUTCHours(startHour);
                 todayMeetingStart.setUTCMinutes(0);
                 todayMeetingStart.setUTCSeconds(0);
                 todayMeetingStart.setUTCMilliseconds(0);
+
                 let meetingEnd = new Date(todayMeetingStart.getTime());
-                meetingEnd.setUTCHours(19);
+                meetingEnd.setUTCHours(endHour);
                 meetingEnd.setUTCMinutes(30);
 
                 this.isLive = now >= todayMeetingStart && now < meetingEnd;

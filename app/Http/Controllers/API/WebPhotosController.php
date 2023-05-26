@@ -11,40 +11,6 @@ use Illuminate\Support\Facades\Auth;
 class WebPhotosController extends Controller
 {
     /**
-     * Get the total number of photos to tag that were uploaded via web
-     *
-     * And get the first 10 photos to tag
-     *
-     * @return array
-     */
-    public function index ()
-    {
-        $user = Auth::guard('api')->user();
-
-        $query = APIPhoto::where([
-            'user_id' => $user->id,
-            'verification' => 0
-        ]);
-
-        $photos = null;
-
-        $count = $query->count();
-
-        if ($count > 0)
-        {
-            $photos = $query->select('id', 'filename')
-                ->orderBy('id')
-                ->take(100)
-                ->get();
-        }
-
-        return [
-            'count' => $count,
-            'photos' => $photos
-        ];
-    }
-
-    /**
      * Load the next 10 images that were uploaded via web
      *
      * @return \Illuminate\Database\Eloquent\Collection

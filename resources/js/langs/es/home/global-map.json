@@ -1,0 +1,15 @@
+{
+    "new-image": "Nueva Imagen",
+    "new-user": "Nuevo Usuario",
+    "new-country": "Nuevo País",
+    "new-state": "Nuevo Estado",
+    "new-city": "Ciudad Nueva",
+    "user-signed-up": "¡Un nuevo usuario se ha registrado!",
+    "say-hello-to": "Di hola a",
+    "littercoin-mined": "¡Se ha minado un Littercoin!",
+    "littercoin-100-boxes-verified": "100 cajas OpenLitterAI verificadas",
+    "littercoin-100-verified": "100 imágenes verificadas",
+    "team-created": "¡Se ha creado un nuevo Equipo!",
+    "litter-picked-up": "Basura Recogida",
+    "litter-uploaded": "Basura Subida"
+}

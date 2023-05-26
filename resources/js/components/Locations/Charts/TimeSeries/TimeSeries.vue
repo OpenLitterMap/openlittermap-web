@@ -5,26 +5,21 @@ export default {
     extends: Bar,
     name: 'TimeSeries',
     props: ['ppm'],
-    data ()
-    {
+    data () {
         return {
+            // todo - translate this.months
             months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
         }
     },
-    mounted ()
-    {
-        // Convert string into array
-        let arr = JSON.parse(this.ppm);
-
+    mounted () {
         let dates = [];
         let values = [];
 
         // convert label month to text
-        // todo - translate this.months
-        for (let k in arr)
+        for (let date in this.ppm)
         {
-            dates.push(this.months[parseInt(k.substring(0,2))-1] + k.substring(2,5));
-            values.push(arr[k]);
+            dates.push(this.months[parseInt(date.substring(0,2))-1] + date.substring(2,5));
+            values.push(this.ppm[date]);
         }
 
         this.renderChart({

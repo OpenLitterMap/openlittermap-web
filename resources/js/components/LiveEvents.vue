@@ -8,12 +8,7 @@
             >
                 <component
                     :is="event.type"
-                    :country="event.country"
-                    :country-code="event.countryCode"
-                    :state="event.state"
-                    :city="event.city"
-                    :team-name="event.teamName"
-                    :reason="event.reason"
+                    :payload="event.payload"
                     @click="click(event, index)"
                 />
 			</span>
@@ -29,6 +24,7 @@ import NewCityAdded from './Notifications/NewCityAdded';
 import UserSignedUp from './Notifications/UserSignedUp';
 import TeamCreated from './Notifications/TeamCreated';
 import LittercoinMined from './Notifications/LittercoinMined';
+import CleanupCreated from "./Notifications/CleanupCreated";
 
 export default {
 	name: 'live-events',
@@ -39,7 +35,8 @@ export default {
         NewStateAdded,
         NewCountryAdded,
         TeamCreated,
-        LittercoinMined
+        LittercoinMined,
+        CleanupCreated
     },
     channel: 'main',
     echo: {
@@ -47,15 +44,7 @@ export default {
             vm.events.unshift({
                 id: new Date().getTime(),
                 type: 'ImageUploaded',
-                photoId: payload.photoId,
-                city: payload.city,
-                state: payload.state,
-                country: payload.country,
-                imageName: payload.imageName,
-                teamName: payload.teamName,
-                countryCode: payload.countryCode,
-                latitude: payload.latitude,
-                longitude: payload.longitude
+                payload: payload
             });
 
             vm.updateDocumentTitle();
@@ -64,8 +53,7 @@ export default {
             vm.events.unshift({
                 id: new Date().getTime(),
                 type: 'NewCountryAdded',
-                country: payload.country,
-                countryId: payload.countryId
+                payload: payload
             });
 
             vm.updateDocumentTitle();
@@ -74,8 +62,7 @@ export default {
             vm.events.unshift({
                 id: new Date().getTime(),
                 type: 'NewStateAdded',
-                state: payload.state,
-                stateId: payload.stateId
+                payload: payload
             });
 
             vm.updateDocumentTitle();
@@ -84,8 +71,7 @@ export default {
             vm.events.unshift({
                 id: new Date().getTime(),
                 type: 'NewCityAdded',
-                city: payload.city,
-                cityId: payload.cityId
+                payload: payload
             });
 
             vm.updateDocumentTitle();
@@ -94,7 +80,7 @@ export default {
             vm.events.unshift({
                 id: new Date().getTime(),
                 type: 'UserSignedUp',
-                now: payload.now
+                payload: payload
             });
 
             vm.updateDocumentTitle();
@@ -103,7 +89,7 @@ export default {
             vm.events.unshift({
                 id: new Date().getTime(),
                 type: 'TeamCreated',
-                teamName: payload.teamName
+                payload: payload
             });
 
             vm.updateDocumentTitle();
@@ -112,8 +98,16 @@ export default {
             vm.events.unshift({
                 id: new Date().getTime(),
                 type: 'LittercoinMined',
-                reason: payload.reason,
-                userId: payload.userId
+                payload: payload
+            });
+
+            vm.updateDocumentTitle();
+        },
+        '.App\\Events\\Cleanups\\CleanupCreated': (payload, vm) => {
+            vm.events.unshift({
+                id: new Date().getTime(),
+                type: 'CleanupCreated',
+                payload: payload
             });
 
             vm.updateDocumentTitle();
@@ -140,12 +134,12 @@ export default {
             this.clicks++;
             if (this.clicks === 1) {
                 this.timer = setTimeout(() => {
-                    this.removeEvent(index);
+                    this.flyToLocation(event);
                     this.clicks = 0
                 }, 300);
             } else {
                 clearTimeout(this.timer);
-                this.flyToLocation(event);
+                this.removeEvent(index);
                 this.clicks = 0;
             }
         },
@@ -167,8 +161,8 @@ export default {
          */
         flyToLocation (event)
         {
-            if (event.latitude && event.longitude) {
-                this.$emit('fly-to-location', {...event, zoom: 17});
+            if (event.payload?.latitude && event.payload?.longitude) {
+                this.$emit('fly-to-location', {...event.payload, zoom: 17});
             }
         },
 
@@ -214,6 +208,10 @@ export default {
         max-height: 80vh;
         overflow-y: scroll;
         z-index: 999;
+        font-size: 0.8rem;
+        .event {
+            width: 20rem;
+        }
     }
 
     .grid-img {
@@ -227,8 +225,11 @@ export default {
 
     @media (max-width: 1024px) {
         .sidebar-menu {
-            width: 18rem;
-            font-size: 0.8rem;
+            width: 16rem;
+            font-size: 0.7rem;
+            .event {
+                width: 16rem;
+            }
         }
         .grid-img {
             padding: 12px;
@@ -241,14 +242,21 @@ export default {
 
     @media (max-width: 768px) {
         .sidebar-menu {
-            width: 16rem;
+            width: 12rem;
+            .event {
+                width: 12rem;
+            }
         }
     }
 
     @media (max-width: 640px) {
         .sidebar-menu {
-            width: 12rem;
+            width: 10rem;
             max-height: 74vh;
+            font-size: 0.6rem;
+            .event {
+                width: 10rem;
+            }
         }
     }
 

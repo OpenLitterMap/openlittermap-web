@@ -30,5 +30,8 @@
     "your-email": "tu@correoelectronico.com",
     "team": "Equipo",
     "actions": "Comportamiento",
-    "photo": "Foto"
+    "photo": "Foto",
+    "reason": "Razón",
+    "anonymous": "Anónimo",
+    "faq": "Preguntas Frecuentes"
 }

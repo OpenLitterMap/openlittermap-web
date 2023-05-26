@@ -1,0 +1,18 @@
+{
+    "title": "Tusaidie kubadilisha ulimwengu.",
+    "subtitle": "Tunakua kila siku",
+    "photos-last-30-days": "Picha zilizopakiwa siku 30 zilizopita",
+    "users-last-30-days": "Watumiaji wapya siku 30 zilizopita",
+    "litter-tags-last-30-days": "Taka zilizo wekewa nembo siku 30 zilizopita",
+    "photos-every-month-label": "Picha zinazopakiwa kila mwezi",
+    "users-every-month-label": "Watumiaji wapya kila mwezi",
+    "zoom-text": "Jiunge nasi kwenye {link}, ambapo tunapata kusikia mawazo na mapendekezo mengi mapya kutoka kwa jumuiya yetu inayokua ya kimataifa. Kila wiki watumiaji wetu hutushirikisha maoni yao ambayo husaidia kufanya programu yetu iwe rahisi na bora zaidi kutumia. Saidia kuunda mwelekeo wa siku zijazo wa ukusanyaji wetu wa taarifa wa chanzo huria na jukwaa la ufuatiliaji wa mazingira. Kikao kinaanza :",
+    "zoom-weekly-calls": "vikao vya wiki kupitia zoom 6 p.m. GMT (muda wa Dublin/London/Lisbon) kila Ijumaa",
+    "zoom-live": "Mubashara",
+    "zoom-days": "siku | siku",
+    "zoom-hours": "saa | masaa",
+    "zoom-minutes": "dakika | dakika",
+    "slack-text": "{slack} ndio njia yetu kuu ya mawasiliano na ushirikiano. Watumiaji wetu wa nguvu, wapya, wasanidi programu, jumuiya ya zaidi ya wanachama 400 - sote tupo. Sema neno na utapata jibu papo hapo, tuko mtandaoni kila wakati.",
+    "fundraiser-text": "OpenLitterMap inategemea kwaujumla michango. Tumeanzisha {link} na bado tuko mbali na lengo letu. Michango yote inakaribishwa. {emoji}",
+    "fundraiser-link": "GoFundMe Fundraiser"
+}

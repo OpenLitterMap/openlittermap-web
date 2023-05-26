@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\Littercoin;
 use App\Models\Location\Country;
 use App\Models\User\User;
 use Illuminate\Http\Request;
@@ -19,7 +20,11 @@ class GlobalStatsController extends Controller
      */
     public function index () : array
     {
+        // old way
         $littercoin = \DB::table('users')->sum(\DB::raw('littercoin_owed + littercoin_allowance'));
+
+        // new way
+        $littercoin += Littercoin::count();
 
         $totalUsers = User::count();
 
@@ -37,6 +42,13 @@ class GlobalStatsController extends Controller
             $total_litter += $country->total_litter_redis;
         }
 
+        /**
+         * Global levels
+         *
+         * todo - Make this dynamic
+         *
+         * See: GlobalLevels.php global_levels table
+         */
         // level 0
         if ($total_litter <= 1000)
         {
@@ -70,7 +82,7 @@ class GlobalStatsController extends Controller
         // level 5, 1M
         else if ($total_litter <= 1000000)
         {
-            $previousXp = 250000; // 250,000
+            $previousXp = 500000; // 250,000
             $nextXp = 1000000; // 500,000
         }
 

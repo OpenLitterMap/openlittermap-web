@@ -31,18 +31,18 @@ class PermissionSeeder extends Seeder
             'guard_name' => 'web',
             'created_at' => now(),
             'updated_at' => now()
-        ]); 
+        ]);
         DB::table('permissions')->insert([
             'name' => 'view horizon',
             'guard_name' => 'web',
             'created_at' => now(),
             'updated_at' => now()
-        ]); 
+        ]);
         DB::table('permissions')->insert([
             'name' => 'verify boxes',
             'guard_name' => 'web',
             'created_at' => now(),
             'updated_at' => now()
-        ]); 
+        ]);
     }
 }

@@ -53,6 +53,12 @@ export default {
         animation: gradient 15s ease infinite;
     }
 
+    .event-littercoin {
+        background: linear-gradient(-45deg, #2ecc71, #f1c40f, #f68739);
+        background-size: 400% 400%;
+        animation: gradient 5s ease infinite;
+    }
+
     // Make the colourful event animated
     @keyframes gradient {
         0% {

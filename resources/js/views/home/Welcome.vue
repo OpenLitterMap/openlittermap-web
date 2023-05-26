@@ -51,10 +51,11 @@
                 </h1>
 
                 <div class="columns welcome-mb">
-                    <div class="column is-one-quarter icon-center">
+                    <div class="column is-one-quarter icon-center has-text-centered">
                         <img
                             src="/assets/icons/home/world.png"
-                            class="about-icon" />
+                            class="about-icon"
+                        />
                     </div>
 
                     <div class="column ma">
@@ -68,7 +69,7 @@
                 </div>
 
                 <div class="columns welcome-mb">
-                    <div class="column is-one-quarter icon-center">
+                    <div class="column is-one-quarter icon-center has-text-centered">
                         <img
                             src="/assets/icons/home/microscope.png"
                             class="about-icon"
@@ -86,7 +87,7 @@
                 </div>
 
                 <div class="columns welcome-mb">
-                    <div class="column is-one-quarter icon-center">
+                    <div class="column is-one-quarter icon-center has-text-centered">
                         <img
                             src="/assets/icons/home/tree.png"
                             class="about-icon"
@@ -111,7 +112,7 @@
                 </h1>
 
                 <div class="columns welcome-mb">
-                    <div class="column is-one-quarter icon-center">
+                    <div class="column is-one-quarter icon-center has-text-centered">
                         <img
                             src="/assets/icons/home/camera.png"
                             class="about-icon"
@@ -129,7 +130,7 @@
                 </div>
 
                 <div class="columns welcome-mb">
-                    <div class="column is-one-quarter icon-center">
+                    <div class="column is-one-quarter icon-center has-text-centered">
                         <img
                             src="/assets/icons/home/phone.png"
                             class="about-icon"
@@ -147,7 +148,7 @@
                 </div>
 
                 <div class="columns welcome-mb">
-                    <div class="column is-one-quarter icon-center">
+                    <div class="column is-one-quarter icon-center has-text-centered">
                         <img
                             src="/assets/icons/twitter2.png"
                             class="about-icon"
@@ -201,6 +202,10 @@ export default {
                     title: this.$t('home.welcome.fires-out-of-control'),
                     img: '/assets/forest_fire.jpg'
                 },
+                {
+                    title: this.$t('home.welcome.glass-hurts-pets'),
+                    img: '/assets/dog.jpeg'
+                }
             ],
             activeHeadingIndex: 0
         };
@@ -379,9 +384,7 @@ export default {
 
     /* Extra small */
     @media (max-width: 576px) {
-        .main-title {
-            margin-bottom: 1rem;
-        }
+
         .variable-height {
             min-height: 100px;
         }

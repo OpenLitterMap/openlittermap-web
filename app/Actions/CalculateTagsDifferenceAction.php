@@ -10,7 +10,7 @@ class CalculateTagsDifferenceAction
      *
      * todo refactor into returning a Value Object
      */
-    public function run(array $oldTags, array $newTags, array $oldCustomTags, array $newCustomTags): array
+    public function run (array $oldTags, array $newTags, array $oldCustomTags, array $newCustomTags): array
     {
         $tagsDiff = $this->tagsDiff($oldTags, $newTags);
         $customTagsDiff = $this->customTagsDiff($oldCustomTags, $newCustomTags);
@@ -23,7 +23,7 @@ class CalculateTagsDifferenceAction
         ];
     }
 
-    private function tagsDiff(array $oldTags, array $newTags): array
+    private function tagsDiff (array $oldTags, array $newTags): array
     {
         $addedTags = array_diff_assoc_recursive($newTags, $oldTags);
         $removedTags = array_diff_assoc_recursive($oldTags, $newTags);
@@ -62,7 +62,7 @@ class CalculateTagsDifferenceAction
         ];
     }
 
-    private function customTagsDiff(array $oldTags, array $newTags): array
+    private function customTagsDiff (array $oldTags, array $newTags): array
     {
         $addedTags = array_diff($newTags, $oldTags);
         $removedTags = array_diff($oldTags, $newTags);

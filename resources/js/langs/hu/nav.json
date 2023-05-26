@@ -1,0 +1,20 @@
+{
+    "admin": "Admin",
+    "admin-verify-photos": "ADMIN - Ellenörzött Fényképek",
+    "admin-horizon": "ADMIN - Horizont",
+    "admin-verify-boxes": "ADMIN - Ellenörzött Dobozok",
+    "about": "Rólunk",
+    "global-map": "Globális térkép",
+    "world-cup": "Világbajnokság",
+    "community": "Közösség",
+    "upload": "Feltöltés",
+    "more": "Több",
+    "tag-litter": "Szemét megjelölése",
+    "profile": "Profil",
+    "settings": "Beállítások",
+    "bounding-boxes": "Határoló dobozok",
+    "logout": "Kijelentkezés",
+    "login": "Belépés",
+    "signup": "Regisztrálás",
+    "teams": "Csapatok"
+}

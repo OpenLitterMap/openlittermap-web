@@ -5,9 +5,21 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', 'HomeController@index');
 Route::get('/about', 'HomeController@index');
 Route::get('/world', 'HomeController@index');
+Route::get('/tags', 'HomeController@index');
 Route::get('/community', 'HomeController@index');
 Route::get('/community/stats', 'CommunityController@stats');
 Route::get('/references', 'HomeController@index');
+Route::get('/leaderboard', 'HomeController@index');
+Route::get('/faq', 'HomeController@index');
+
+Route::get('/tags-search', 'DisplayTagsOnMapController@show');
+
+Route::get('/cleanups', 'HomeController@index');
+Route::post('/cleanups/create', 'Cleanups\CreateCleanupController');
+Route::get('/cleanups/get-cleanups', 'Cleanups\GetCleanupsGeoJsonController');
+Route::get('/cleanups/{inviteLink}/join', 'HomeController@index');
+Route::post('/cleanups/{inviteLink}/join', 'Cleanups\JoinCleanupController');
+Route::post('/cleanups/{inviteLink}/leave', 'Cleanups\LeaveCleanupController');
 
 // Registration
 Route::get('/signup', 'HomeController@index');
@@ -27,16 +39,20 @@ Route::post('/stripe/resubscribe', 'StripeController@resubscribe');
 
 /* Locations */
 Route::get('location', 'Location\LocationsController@index');
-Route::get('countries', 'Location\LocationsController@getCountries');
+
+// Route::get('countries', 'Location\LocationsController@getCountries');
+Route::get('/get-world-cup-data', 'WorldCup\GetDataForWorldCupController');
+
 Route::get('states', 'Location\LocationsController@getStates');
 Route::get('cities', 'Location\LocationsController@getCities');
 
 /* Download data */
 Route::post('download', 'DownloadControllerNew@index');
 
-Route::get('/world/{country}', 'HomeController@index');
-Route::get('/world/{country}/{state}', 'HomeController@index');
-Route::get('/world/{country}/{state}/{city?}/{id?}', 'HomeController@index');
+//Route::get('/world/{country?}', 'HomeController@index');
+//Route::get('/world/{country}/{state}', 'HomeController@index');
+Route::get('/world/{country?}/{state?}/{city?}/{id?}', 'HomeController@index');
+
 // Route::get('/world/{country}/{city}/city_hex_map', 'MapController@getCity');
 // Similarly, get the city and pass the world dynamically
 Route::get('/world/{country}/{state}/{city}/map/{minfilter?}/{maxfilter?}/{hex?}', 'HomeController@index');
@@ -79,6 +95,10 @@ Route::get('/global/clusters', 'GlobalMap\ClusterController@index');
 Route::get('/global/points', 'GlobalMap\GlobalMapController@index');
 Route::get('/global/art-data', 'GlobalMap\GlobalMapController@artData');
 
+// Get data for the Global Leaderboard
+Route::get('/global/leaderboard', 'Leaderboard\GetUsersForGlobalLeaderboardController');
+Route::get('/global/leaderboard/location', 'Leaderboard\GetUsersForLocationLeaderboardController');
+
 /** Auth Routes */
 
 // Get currently auth user when logged in
@@ -88,11 +108,21 @@ Route::get('/current-user', 'UsersController@getAuthUser');
 Route::get('submit', 'HomeController@index'); // old route
 Route::get('upload', 'HomeController@index')->name('upload');
 
-// Upload the image, extract lat long, reverse geocode to address
-Route::post('submit', 'PhotosController@store');
+// Move more authenticated routes into this group instead of applying middleware on controllers
+Route::group(['middleware' => 'auth'], function () {
+    // Upload the image from web
+    // old route
+    Route::post('/submit', 'Uploads\UploadPhotoController');
+
+    // new route
+    Route::post('/upload', 'Uploads\UploadPhotoController');
+});
 
 // Tag litter to an image
 Route::get('tag', 'HomeController@index');
+
+// Bulk tag images
+Route::get('bulk-tag', 'HomeController@index');
 
 // The users profile
 Route::get('profile', 'HomeController@index');
@@ -114,11 +144,14 @@ Route::post('/profile/photos/delete', 'PhotosController@deleteImage');
 // Paginated array of the users photos (no filters)
 Route::get('/user/profile/photos/index', 'User\UserPhotoController@index');
 
+// List of the user's previously added custom tags
+Route::get('/user/profile/photos/previous-custom-tags', 'User\UserPhotoController@previousCustomTags');
+
 // Filtered paginated array of the users photos
 Route::get('/user/profile/photos/filter', 'User\UserPhotoController@filter');
 
 // Add Many Tags to Many Photos
-Route::post('/user/profile/photos/tags/create', 'User\UserPhotoController@create');
+Route::post('/user/profile/photos/tags/bulkTag', 'User\UserPhotoController@bulkTag');
 
 // Delete selected photos
 Route::post('/user/profile/photos/delete', 'User\UserPhotoController@destroy');
@@ -129,19 +162,35 @@ Route::post('/user/profile/photos/delete', 'User\UserPhotoController@destroy');
 Route::get('/settings', 'HomeController@index');
 Route::get('/settings/password', 'HomeController@index');
 Route::get('/settings/details', 'HomeController@index');
+Route::get('/settings/social', 'HomeController@index');
 Route::get('/settings/account', 'HomeController@index');
 Route::get('/settings/payments', 'HomeController@index');
 Route::get('/settings/privacy', 'HomeController@index');
 Route::get('/settings/littercoin', 'HomeController@index');
 Route::get('/settings/phone', 'HomeController@index');
-Route::get('/settings/presence', 'HomeController@index');
+Route::get('/settings/picked-up', 'HomeController@index');
 Route::get('/settings/email', 'HomeController@index');
 Route::get('/settings/show-flag', 'HomeController@index');
 Route::get('/settings/teams', 'HomeController@index');
 
-// Game settings @ SettingsController
-// Toggle Presense of a piece of litter
-// Route::post('/settings/settings', 'SettingsController@presense');
+// Publicly available Littercoin Page
+Route::get('/littercoin', 'HomeController@index');
+Route::get('/littercoin/merchants', 'HomeController@index');
+
+// Public Routes
+Route::get('/littercoin-info', 'Littercoin\PublicLittercoinController@getLittercoinInfo');
+Route::post('/add-ada-tx', 'Littercoin\PublicLittercoinController@addAdaTx');
+Route::post('/add-ada-submit-tx', 'Littercoin\PublicLittercoinController@submitAddAdaTx');
+
+// Actions used by Authenticated Littercoin Settings Page
+Route::get('/get-users-littercoin', 'Littercoin\LittercoinController@getUsersLittercoin');
+Route::post('/wallet-info', 'Littercoin\LittercoinController@getWalletInfo');
+Route::post('/littercoin-mint-tx', 'Littercoin\LittercoinController@mintTx');
+Route::post('/littercoin-submit-mint-tx', 'Littercoin\LittercoinController@submitMintTx');
+Route::post('/littercoin-burn-tx', 'Littercoin\LittercoinController@burnTx');
+Route::post('/littercoin-submit-burn-tx', 'Littercoin\LittercoinController@submitBurnTx');
+Route::post('/merchant-mint-tx', 'Littercoin\LittercoinController@merchTx');
+Route::post('/merchant-submit-mint-tx', 'Littercoin\LittercoinController@submitMerchTx');
 
 // Subscription settings @ SubscriptionsController
 // Control Current Subscription
@@ -186,6 +235,7 @@ Route::post('/settings/email/toggle', 'EmailSubController@toggleEmailSub');
 Route::get('/settings/flags/countries', 'SettingsController@getCountries');
 // Save Country Flag for top 10
 Route::post('/settings/save-flag', 'SettingsController@saveFlag');
+Route::patch('/settings', 'SettingsController@update');
 
 // Teams
 Route::get('/teams', 'HomeController@index');
@@ -271,14 +321,18 @@ Route::get('/nav', function () {
 /**
  * ADMIN
  */
-Route::group(['prefix' => '/admin'], function () {
+Route::group(['prefix' => '/admin', 'middleware' => 'admin'], function () {
 
     // route
     Route::get('photos', 'HomeController@index');
 
+    Route::get('/find-photo-by-id', 'Admin\FindPhotoByIdController');
+
     // get the data
-    Route::get('get-image', 'AdminController@getImage');
+    Route::get('get-next-image-to-verify', 'Admin\GetNextImageToVerifyController');
     Route::get('get-countries-with-photos', 'AdminController@getCountriesWithPhotos');
+
+    Route::get('/go-back-one', 'Admin\GoBackOnePhotoController');
 
     // Get a list of recently registered users
     // Route::get('/users', 'AdminController@getUserCount');
@@ -287,21 +341,21 @@ Route::group(['prefix' => '/admin'], function () {
 
     // Verify an image - delete
     Route::post('/verify', 'AdminController@verify');
+
     // Verify an image - keep
-    Route::post('/verifykeepimage', 'AdminController@verifykeepimage');
-    // Send the image back to the user
-    Route::post('/incorrect', 'AdminController@incorrect');
+    Route::post('/verify-tags-as-correct', 'Admin\VerifyImageWithTagsController');
+
+    // Remove all tags and reset verification
+    Route::post('/reset-tags', 'Admin\AdminResetTagsController');
+
     // Contents of an image updated, Delete the image
     Route::post('/contentsupdatedelete', 'AdminController@updateDelete');
 
     // Contents of an image updated, Keep the image
-    Route::post('/update-tags', 'AdminController@updateTags');
+    Route::post('/update-tags', 'Admin\UpdateTagsController');
 
     // Delete an image and its record
     Route::post('/destroy', 'AdminController@destroy');
-    // LTRX
-    // Reduce ltrx allowance - succesfull LTRX generation
-    Route::post('/ltrxgenerated', 'LTRXController@success');
 });
 
 Route::group(['prefix' => '/bbox', 'middleware' => ['can_bbox']], function () {

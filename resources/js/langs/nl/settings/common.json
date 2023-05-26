@@ -2,12 +2,13 @@
     "general": "Algemeen",
     "password": "Wachtwoord",
     "details": "Persoonlijke  Details",
+    "social": "Sociale Accounts",
     "account": "Mijn Account",
     "payments": "Mijn Betalingen",
     "privacy": "Privacy",
     "littercoin": "Littercoin (LTRX)",
-    "presence": "Aanwezigheid",
+    "picked-up": "Opgepakt",
     "emails": "Emails",
     "show-flag": "Toon vlag",
     "teams": "Teams"
-} 
+}

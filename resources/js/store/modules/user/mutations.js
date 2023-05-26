@@ -110,6 +110,41 @@ export const mutations = {
     },
 
     /**
+     * After a trusted user submits tags,
+     *
+     * The RewardLittercoin progress happens on a queue
+     *
+     * For now, just increment their score to match a successful submission.
+     */
+    incrementUsersNextLittercoinScore (state)
+    {
+        let user = Object.assign({}, state.user);
+
+        user.littercoin_progress++;
+
+        state.user = user;
+    },
+
+    /**
+     * This is normally done on a queue,
+     *
+     * But we have to mimick the backend.
+     *
+     * Once littercoin_progress reaches 100,
+     * - reward littecoin +1
+     * - reset littercoin_progress
+     */
+    incrementLittercoinScore (state)
+    {
+        let user = Object.assign({}, state.user);
+
+        user.total_littercoin++;
+        user.littercoin_progress = 0;
+
+        state.user = user;
+    },
+
+    /**
      * If the user created a team and this is their first team,
      * we want to set their active_team to the new team_id
      */

@@ -1,7 +1,7 @@
 <template>
 	<div class="container has-text-center">
 		<time-series
-			:width="this.checkWidth" 
+			:width="this.checkWidth"
 			:height="500"
 			:ppm="this.ppm"
 		/>
@@ -12,9 +12,13 @@
 import TimeSeries from './TimeSeries'
 
 export default {
-	props: ['ppm'],
-	name: 'TimeSeriesContainer',
-	components: { TimeSeries },
+    name: 'TimeSeriesContainer',
+    props: [
+        'ppm'
+    ],
+	components: {
+        TimeSeries
+    },
 	computed: {
 		/**
 		 * This component has a different width depending on screen width

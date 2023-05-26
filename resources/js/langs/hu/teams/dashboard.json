@@ -1,0 +1,24 @@
+{
+    "olm-teams": "OpenLitterMap csapatok",
+    "dashboard": "Irányítópult",
+    "join-a-team": "Csatlakozz egy csapathoz",
+    "create-a-team": "Csapat létrehozása",
+    "your-teams": "Csapataid",
+    "leaderboard": "Ranglista",
+    "settings": "Beállítások",
+    "teams-dashboard": "Csapatok irányítópult",
+    "photos-uploaded": "Fényképek feltöltve",
+    "litter-tagged": "Szemét megjelölve",
+    "members-uploaded": "A csapat tagjai feltöltöttek",
+    "all-teams": "Minden csapat",
+
+    "times": {
+        "today": "Ma",
+        "week": "Ezen a héten",
+        "month": "Ebben a hónapban",
+        "year": "Idén",
+        "all": "Összes",
+        "created_at": "Feltöltve",
+        "datetime": "Felvéve"
+    }
+}

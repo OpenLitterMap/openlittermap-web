@@ -6,37 +6,41 @@ export const actions = {
     /**
      * Get filtered photos and add many tags at once
      */
-    async ADD_MANY_TAGS_TO_MANY_PHOTOS (context)
+    async BULK_TAG_PHOTOS (context)
     {
         const title = 'Success!';
         const body = 'Your tags were applied to the images';
 
-        await axios.post('/user/profile/photos/tags/create', {
-            selectAll: context.rootState.photos.selectAll,
-            inclIds: context.rootState.photos.inclIds,
-            exclIds: context.rootState.photos.exclIds,
-            filters: context.rootState.photos.filters,
-            tags: context.state.tags[0],
-            custom_tags: context.state.customTags[0]
-        })
-        .then(response => {
-            console.log('add_many_tags_to_many_photos', response);
+        let photos = context.rootState.photos.bulkPaginate.data
+            .filter(photo => {
+                const hasTags = photo.tags && Object.keys(photo.tags).length;
+                const hasCustomTags = photo.custom_tags?.length;
+                return hasTags || hasCustomTags;
+            })
+            .reduce((map, photo) => {
+                map[photo.id] = {
+                    tags: photo.tags ?? {},
+                    custom_tags: photo.custom_tags ?? [],
+                    picked_up: !! photo.picked_up
+                };
+                return map;
+            }, {});
 
-            // success notification
-            if (response.data.success)
-            {
-                Vue.$vToastify.success({
-                    title,
-                    body,
-                    position: 'top-right'
-                });
+        await axios.post('/user/profile/photos/tags/bulkTag', {photos})
+            .then(response => {
+                console.log('bulk_tag_photos', response);
 
-                context.commit('hideModal');
-            }
-        })
-        .catch(error => {
-            console.error('add_many_tags_to_many_photos', error);
-        });
+                if (response.data.success) {
+                    Vue.$vToastify.success({
+                        title,
+                        body,
+                        position: 'top-right'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('bulk_tag_photos', error);
+            });
     },
 
     /**
@@ -44,9 +48,9 @@ export const actions = {
      */
     async ADD_TAGS_TO_IMAGE (context, payload)
     {
-        let title = i18n.t('notifications.success');
-        let body  = i18n.t('notifications.tags-added');
-        let photoId = context.rootState.photos.paginate.data[0].id;
+        const title = i18n.t('notifications.success');
+        const body  = i18n.t('notifications.tags-added');
+        const photoId = context.rootState.photos.paginate.data[0].id;
 
         await axios.post('add-tags', {
             photo_id: photoId,
@@ -55,16 +59,34 @@ export const actions = {
             picked_up: context.state.pickedUp,
         })
         .then(response => {
-            /* improve this */
-            Vue.$vToastify.success({
-                title,
-                body,
-                position: 'top-right'
-            });
 
-            // todo - update XP bar
+            if (response.data.success)
+            {
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                    position: 'top-right'
+                });
 
-            context.commit('clearTags', photoId);
+                context.commit('clearTags', photoId);
+
+                if (!context.rootState.user.user.verification_required)
+                {
+                    context.commit('incrementUsersNextLittercoinScore');
+
+                    if (context.rootState.user.user.littercoin_progress === 100)
+                    {
+                        context.commit('incrementLittercoinScore');
+
+                        Vue.$vToastify.success({
+                            title,
+                            body: "You just earned a Littercoin!",
+                            position: 'top-right'
+                        });
+                    }
+                }
+            }
+
             context.dispatch('LOAD_NEXT_IMAGE');
         })
         .catch(error => console.log(error));

@@ -1,11 +1,11 @@
 <template>
     <div class="content p2">
         <p class="ref-title">
-            OpenLitterMap has been referenced {{ items.length }} times and counting
+            OpenLitterMap has been referenced {{ references.length }} times and counting
         </p>
 
         <ul>
-            <li v-for="item in items.slice().reverse()">
+            <li v-for="item in references.slice().reverse()">
                 <div class="mb1">
                     <p>{{ getDate(item.date) }}</p>
 
@@ -28,7 +28,7 @@ export default {
     },
     data () {
         return {
-            items: [
+            references: [
                 {
                     date: '2018/06/25',
                     title: 'OpenLitterMap.com – Open Data on Plastic Pollution with Blockchain Rewards (Littercoin)',
@@ -205,9 +205,15 @@ export default {
                 },
                 {
                     date: '2022/01/20',
-                    title: 'Real-Time Litter Detection System for Moving Vehicles Using YOLO\n',
+                    title: 'Real-Time Litter Detection System for Moving Vehicles Using YOLO',
                     link: 'https://ieeexplore.ieee.org/document/9716512',
                     author: 'Amrutha et al'
+                },
+                {
+                    date: '2022/02/01',
+                    title: 'Deep learning-based waste detection in natural and urban environments',
+                    link: 'https://www.sciencedirect.com/science/article/pii/S0956053X21006474',
+                    author: 'Majchrowskaa et al'
                 },
                 {
                     date: '2022/02/24',
@@ -220,7 +226,97 @@ export default {
                     title: 'Toward smarter management and recovery of municipal solid waste: A critical review on deep learning approaches',
                     link: 'https://www.sciencedirect.com/science/article/abs/pii/S0959652622005807',
                     author: 'Kunsen et al'
-                }
+                },
+                {
+                    date: '2022/03/31',
+                    title: 'Retraining of object detectors to become suitable for trash detection in the context of autonomous driving',
+                    link: 'https://www.researchgate.net/profile/Ishan-Srivastava-8/publication/360688760_Object_detection_in_self_driving_cars_using_YOLOv5/links/6285697c50c4566fc2744ac0/Object-detection-in-self-driving-cars-using-YOLOv5.pdf',
+                    author: 'Srivastava, I'
+                },
+                {
+                    date: '2022/04/26',
+                    title: 'Beach beauty in Bengal: Perception of scenery and its implications for coastal management in Purba Medinipur district, eastern India',
+                    link: 'https://www.sciencedirect.com/science/article/abs/pii/S0308597X22000811',
+                    author: 'Chatterjee et al'
+                },
+                {
+                    date: '2022/04/26',
+                    title: 'Application of blockchain technology for geospatial data protection and management',
+                    link: 'http://zgt.com.ua/en/%D0%B7%D0%B0%D1%81%D1%82%D0%BE%D1%81%D1%83%D0%B2%D0%B0%D0%BD%D0%BD%D1%8F-%D1%82%D0%B5%D1%85%D0%BD%D0%BE%D0%BB%D0%BE%D0%B3%D1%96%D1%97-blockchain-%D0%B4%D0%BB%D1%8F-%D0%B7%D0%B0%D1%85%D0%B8%D1%81%D1%82/',
+                    author: 'Chetverikov, B & Kilaru, V'
+                },
+                {
+                    date: '2022/06/11',
+                    title: 'Towards geospatial blockchain: A review of research on blockchain technology applied to geospatial data',
+                    link: 'https://agile-giss.copernicus.org/articles/3/71/2022/agile-giss-3-71-2022.pdf',
+                    author: 'Zhao et al'
+                },
+                {
+                    date: '2022/07/01',
+                    title: 'Determinants of Household Waste Disposal Practices and Implications for Practical Community Interventions: Lessons from Lilongwe',
+                    link: 'https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4151604',
+                    author: 'Kalonde et al'
+                },
+                {
+                    date: '2022/07/29',
+                    title: 'Plastic waste mapping and monitoring using geospatial approaches',
+                    link: 'https://iopscience.iop.org/article/10.1088/1755-1315/1064/1/012008',
+                    author: 'Zulkifli et al'
+                },
+                {
+                    date: '2022/07/29',
+                    title: 'Smart waste segmentation deep learning based approach',
+                    link: 'http://dspace.univ-tebessa.dz:8080/jspui/bitstream/123456789/4951/1/Achi%20Belgacem%20Aimen%20pfe_finale.pdf',
+                    author: 'Belgacem, A'
+                },
+                {
+                    date: '2022/10/15',
+                    title: 'Role of Citizen Scientists in Environmental Plastic Litter Research—A Systematic Review',
+                    link: 'https://www.proquest.com/openview/aa8927ea09166e0b8af056edc05e6b19/1?pq-origsite=gscholar&cbl=2032327',
+                    author: 'Cristina et al'
+                },
+                {
+                    date: '2022/11/22',
+                    title: 'The Sharing Green Economy: Sharing What’s Possible with New Labor Economics ',
+                    link: 'https://www.amazon.com/dp/B0BN6W4W15',
+                    author: 'Mike Duwe'
+                },
+                {
+                    date: '2022/11/25',
+                    title: 'Waste management: A comprehensive state of the art about the rise of blockchain technology',
+                    link: 'https://www.sciencedirect.com/science/article/abs/pii/S0166361522002081',
+                    author: 'Baralla et al'
+                },
+                {
+                    date: '2023/01/17',
+                    title: 'Smardy: Zero-Trust FAIR Marketplace for Research Data',
+                    link: 'https://ieeexplore.ieee.org/abstract/document/10020710',
+                    author: 'Ion-Dorinel et al'
+                },
+                {
+                    date: '2023/02/24',
+                    title: 'Monitoring contaminants of emerging concern in aquatic systems through the lens of citizen science',
+                    link: 'https://www.sciencedirect.com/science/article/pii/S0048969723011439?ref=pdf_download&fr=RR-2&rr=7c4c1b55da651c89',
+                    author: 'Raman et al'
+                },
+                {
+                    date: '2023/03/01',
+                    title: 'Applications of convolutional neural networks for intelligent waste identification and recycling: A review',
+                    link: 'https://www.sciencedirect.com/science/article/abs/pii/S0921344922006450',
+                    author: 'Wu et al'
+                },
+                {
+                    date: '2023/05/01',
+                    title: 'Waste classification using vision transformer based on multilayer hybrid convolution neural network',
+                    link: 'https://www.sciencedirect.com/science/article/abs/pii/S2212095523000779',
+                    author: 'Alrayes et al'
+                },
+                {
+                    date: '2023/07/01',
+                    title: 'Study on the real-time object detection approach for end-of-life battery-powered electronics in the waste of electrical and electronic equipment recycling process',
+                    link: 'https://www.sciencedirect.com/science/article/abs/pii/S0956053X23003355',
+                    author: 'Yang et al'
+                },
             ]
         };
     },

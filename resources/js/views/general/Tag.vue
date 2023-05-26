@@ -26,16 +26,28 @@
                         <!-- Todo - Put this into a component -->
                         <!-- the Info box, Left -->
                         <div id="image-metadata" class="column">
-                            <div class="box">
-                                <li class="list-group-item">
-                                    {{ $t('tags.to-tag') }}: {{ remaining }}
-                                </li>
-                                <li class="list-group-item">
-                                    {{ $t('tags.total-uploaded') }}: {{ user.total_images }}
-                                </li>
-                                <li v-if="photo.team" class="list-group-item">
-                                    {{ $t('common.team') }}: <strong>{{ photo.team.name}}</strong>
-                                </li>
+                            <div class="box image-metadata-box">
+                               <ul>
+                                   <li class="list-group-item">
+                                       {{ $t('tags.to-tag') }}: {{ remaining }}
+                                   </li>
+                                   <li class="list-group-item">
+                                       {{ $t('tags.total-uploaded') }}: {{ user.total_images }}
+                                   </li>
+                                   <li v-if="photo.team" class="list-group-item">
+                                       {{ $t('common.team') }}: <strong>{{ photo.team.name}}</strong>
+                                   </li>
+                                   <li class="list-group-item">
+                                       Next Littercoin: {{ user.littercoin_progress }}%
+                                   </li>
+                                   <li class="list-group-item">
+                                       Total Littercoin: {{ user.total_littercoin }}
+                                   </li>
+                               </ul>
+
+                                <router-link to="/bulk-tag">
+                                    <button class="button is-primary bulk-tag-btn">Tag in bulk</button>
+                                </router-link>
                             </div>
 
                             <div v-if="hasRecentTags" class="box control has-text-centered">
@@ -48,35 +60,64 @@
                         <div class="column is-6 image-wrapper">
                             <!-- The Image -->
                             <div class="image-content">
-                                <img v-img="{sourceButton: true}" :src="photo.filename" class="img">
+                                <img
+                                    v-img="{ sourceButton: true }"
+                                    :src="photo.filename"
+                                    class="img"
+                                >
                             </div>
 
                             <!-- Add & Submit Tags -->
                             <div class="column is-10 is-offset-1 mt-4">
-                                <add-tags :id="photo.id" />
+                                <add-tags
+                                    :id="photo.id"
+                                />
                             </div>
                         </div>
 
                         <!-- Info, Tags, Right -->
                         <div id="image-counts" class="column is-3">
                             <div class="box">
-                                <!-- Photo taken on -->
-                                <p><strong>{{ $t('common.photo') }} #{{ photo.id }}: </strong>{{ $t('tags.taken') }} {{ getDate(photo.datetime) }}</p>
+                                <!-- Photo.id, Taken on: -->
+                                <p class="list-group-item">
+                                    <strong>
+                                        #{{ photo.id }}:
+                                    </strong>
+
+                                    {{ $t('tags.taken') }} {{ getDate(photo.datetime) }}
+                                </p>
 
                                 <!-- Coordinates. was profile6 -->
-                                <p><strong>{{ $t('tags.coordinates') }}: </strong>{{ photo.lat }}, {{ photo.lon }}</p>
+                                <p class="list-group-item">
+                                    <strong>{{ $t('tags.coordinates') }}: </strong>
+
+                                    {{ photo.lat }}, {{ photo.lon }}
+                                </p>
 
                                 <!-- Full address. was profile7 -->
-                                <p><strong>{{ $t('tags.address') }}: </strong>{{ photo.display_name }}</p>
+                                <p class="list-group-item">
+                                    <strong>{{ $t('tags.address') }}: </strong>
+
+                                    {{ photo.display_name }}
+                                </p>
 
                                 <!-- Model of the device -->
-                                <p><strong>{{ $t('tags.device') }}: </strong>{{ photo.model }}</p>
+                                <p class="list-group-item">
+                                    <strong>{{ $t('tags.device') }}: </strong>
+
+                                    {{ photo.model }}
+                                </p>
 
                                 <!-- Presence button. was profile8 -->
-                                <presence :key="photo.id"/>
+                                <presence
+                                    :key="photo.id"
+                                />
 
                                 <!-- Delete photo button -->
-                                <profile-delete :photoid="photo.id" class="mt-4"/>
+                                <profile-delete
+                                    :photoid="photo.id"
+                                    class="mt-4"
+                                />
                             </div>
 
                             <!-- These are the tags the user has added -->
@@ -263,6 +304,10 @@ export default {
 
 <style scoped lang="scss">
 
+    .list-group-item {
+        margin: 5px 0;
+    }
+
     .img {
         max-height: 30em;
         border-radius: 5px;
@@ -287,6 +332,12 @@ export default {
         }
     }
 
+    .image-metadata-box {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+    }
+
     @media screen and (max-width: 768px)
     {
         .img {
@@ -295,6 +346,17 @@ export default {
 
         .tag-container {
             padding: 0 1em;
+        }
+    }
+
+    @media screen and (max-width: 1536px)
+    {
+        .image-metadata-box {
+            flex-direction: column;
+
+            .bulk-tag-btn {
+                margin-top: 1rem;
+            }
         }
     }
 

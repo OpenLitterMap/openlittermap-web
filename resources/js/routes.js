@@ -42,6 +42,24 @@ const router = new VueRouter({
             component: require('./views/home/About').default
         },
         {
+            path: '/cleanups',
+            component: require('./views/home/Cleanups').default,
+            children: [
+                {
+                    path: ':invite_link/join',
+                    component: require('./views/home/Cleanups').default
+                }
+            ]
+        },
+        {
+            path: '/littercoin',
+            component: require('./views/home/Littercoin').default
+        },
+        {
+            path: '/littercoin/merchants',
+            component: require('./views/home/Merchants').default
+        },
+        {
             path: '/donate',
             component: require('./views/home/Donate').default
         },
@@ -54,8 +72,16 @@ const router = new VueRouter({
             component: require('./views/home/Community/Index').default
         },
         {
+            path: '/faq',
+            component: require('./views/home/FAQ').default
+        },
+        {
             path: '/global',
             component: require('./views/global/GlobalMapContainer').default
+        },
+        {
+            path: '/tags',
+            component: require('./views/home/TagsViewer').default
         },
         {
             path: '/signup',
@@ -76,6 +102,10 @@ const router = new VueRouter({
         {
             path: '/references',
             component: require('./views/general/References').default
+        },
+        {
+            path: '/leaderboard',
+            component: require('./views/Leaderboard/Leaderboard').default
         },
         {
             path: '/credits',
@@ -132,6 +162,13 @@ const router = new VueRouter({
             }
         },
         {
+            path: '/bulk-tag',
+            component: require('./views/general/BulkTag').default,
+            meta: {
+                middleware: [ auth ]
+            }
+        },
+        {
             path: '/profile',
             component: require('./views/general/Profile').default,
             meta: {
@@ -155,38 +192,72 @@ const router = new VueRouter({
                 {
                     path: 'password',
                     component: require('./views/Settings').default,
+                    meta: {
+                        middleware: [ auth ]
+                    },
                 },
                 {
                     path: 'details',
                     component: require('./views/settings/Details').default,
+                    meta: {
+                        middleware: [ auth ]
+                    },
+                },
+                {
+                    path: 'social',
+                    component: require('./views/settings/Social').default,
+                    meta: {
+                        middleware: [ auth ]
+                    },
                 },
                 {
                     path: 'account',
                     component: require('./views/settings/Account').default,
+                    meta: {
+                        middleware: [ auth ]
+                    },
                 },
                 {
                     path: 'payments',
                     component: require('./views/settings/Payments').default,
+                    meta: {
+                        middleware: [ auth ]
+                    },
                 },
                 {
                     path: 'privacy',
                     component: require('./views/settings/Privacy').default,
+                    meta: {
+                        middleware: [ auth ]
+                    },
                 },
                 {
                     path: 'littercoin',
                     component: require('./views/settings/Littercoin').default,
+                    meta: {
+                        middleware: [ auth ]
+                    },
                 },
                 {
-                    path: 'presence',
-                    component: require('./views/settings/Presence').default,
+                    path: 'picked-up',
+                    component: require('./views/settings/PickedUp').default,
+                    meta: {
+                        middleware: [ auth ]
+                    },
                 },
                 {
                     path: 'emails',
                     component: require('./views/settings/Emails').default,
+                    meta: {
+                        middleware: [ auth ]
+                    },
                 },
                 {
                     path: 'show-flag',
                     component: require('./views/settings/GlobalFlag').default,
+                    meta: {
+                        middleware: [ auth ]
+                    },
                 },
                 // {
                 // 	path: 'phone',

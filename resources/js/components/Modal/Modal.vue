@@ -1,15 +1,27 @@
 <template>
     <transition name="modal">
-        <div @click="close" class="modal-mask modal-flex">
-            <div @click.stop :class="container">
+        <div
+            @click="close"
+            class="modal-mask modal-flex"
+        >
+            <div
+                @click.stop
+                :class="container"
+            >
 
                 <!-- Header -->
-                <header :class="header">
-                    <p v-show="hasSelected" class="top-left">{{ getSelectedCount }}</p>
+                <header
+                    :class="header"
+                >
+                    <p
+                        class="modal-card-title"
+                    >{{ title }}</p>
 
-                    <p class="modal-card-title">{{ title }}</p>
-
-                    <i v-show="showIcon" class="fa fa-times close-login" @click="close" />
+                    <i
+                        v-show="showIcon"
+                        class="fa fa-times close-login"
+                        @click="close"
+                    />
                 </header>
 
                 <!-- Main content -->
@@ -17,7 +29,6 @@
                     :class="inner_container"
                     :is="type"
                 />
-
             </div>
         </div>
     </transition>
@@ -31,21 +42,23 @@ import Login from './Auth/Login'
 import CreditCard from './Payments/CreditCard'
 
 /* Profile */
-import MyPhotos from './Profile/MyPhotos';
 import AddManyTagsToManyPhotos from './Photos/AddManyTagsToManyPhotos';
 import ConfirmDeleteManyPhotos from './Photos/ConfirmDeleteManyPhotos';
 
 export default {
     name: 'Modal',
     components: {
+        // Auth
         Login,
+
+        // Payments
         CreditCard,
-        MyPhotos,
+
+        // Profile
         AddManyTagsToManyPhotos,
         ConfirmDeleteManyPhotos
     },
-    mounted ()
-    {
+    mounted () {
         // Close modal with 'esc' key
         document.addEventListener('keydown', (e) => {
             if (e.keyCode === 27)
@@ -54,15 +67,13 @@ export default {
             }
         });
     },
-    data ()
-    {
+    data () {
         return {
             btn: 'button is-medium is-primary',
             processing: false
         };
     },
     computed: {
-
         /**
          * Show spinner when processing
          */
@@ -78,36 +89,7 @@ export default {
         {
             if (this.type === 'CreditCard') return 'transparent-container';
 
-            else if (this.type === 'MyPhotos') return 'wide-modal-container';
-
             return 'modal-container';
-        },
-
-        /**
-         * When selecting photos from the MyPhotos table,
-         *
-         * Show x / total
-         */
-        getSelectedCount ()
-        {
-            if (this.type === 'MyPhotos')
-            {
-                return `${this.$store.state.photos.selectedCount} / ${this.$store.state.photos.total}`;
-            }
-
-            return '';
-        },
-
-        /**
-         * The user can select data.
-         *
-         * Show selected / total
-         *
-         * Used by MyPhotos.vue
-         */
-        hasSelected ()
-        {
-            return this.type === 'MyPhotos' && this.$store.state.photos.selectedCount > 0;
         },
 
         /**
@@ -135,9 +117,7 @@ export default {
          */
         showIcon ()
         {
-            if (this.type === 'CreditCard') return false;
-
-            return true;
+            return this.type !== 'CreditCard';
         },
 
         /**
@@ -157,7 +137,6 @@ export default {
         }
     },
     methods: {
-
         /**
          * Action to dispatch when primary button is pressed
          */
@@ -298,22 +277,6 @@ export default {
         color: #459ef5;
         cursor: pointer;
         margin-top: 1.75em;
-    }
-
-    .wide-modal-container {
-        background-color: #fff;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, .33);
-        display: inline-block;
-        font-family: Helvetica, Arial, sans-serif;
-        position: relative;
-        margin: 30px auto;
-        transition: all .3s ease;
-        width: 1585px;
-
-        @media (max-width: 700px) {
-            width: 80%;
-        }
     }
 
     @media only screen and (max-width: 600px)

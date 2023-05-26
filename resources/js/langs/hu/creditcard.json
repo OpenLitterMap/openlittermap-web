@@ -1,0 +1,13 @@
+{
+    "card-number": "Kártyaszám",
+    "card-holder": "Kártyabirtokos Neve",
+    "exp": "Lejárati dátum",
+    "cvv": "CVV",
+    "placeholders": {
+        "card-number": "16 jegyű kártyaszáma",
+        "card-holder": "Kártyabirtokos Neve",
+        "exp-month": "Hónap",
+        "exp-year": "Év",
+        "cvv": "***"
+    }
+}

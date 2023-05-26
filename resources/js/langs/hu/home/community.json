@@ -1,0 +1,18 @@
+{
+    "title": "Segíts nekünk megváltoztatni a világot.",
+    "subtitle": "Napról napra gyarapodunk",
+    "photos-last-30-days": "Az elmúlt 30 napban feltöltött fotók",
+    "users-last-30-days": "Az új felhasználók az elmúlt 30 napban",
+    "litter-tags-last-30-days": "Az elmúlt 30 napban megjelölt szemét",
+    "photos-every-month-label": "Minden hónapban feltöltött fotók",
+    "users-every-month-label": "Minden hónapban új felhasználók",
+    "zoom-text": "Csatlakozzon hozzánk a {link}, ahol rengeteg új ötletet és javaslatot hallhatunk növekvő globális közösségünktől. Felhasználóink minden héten megosztják javaslataikat, ami mindig segít alkalmazásunk könnyebb és jobb használatában. Segítsen kialakítani nyílt forráskódú adatgyűjtési és környezetfigyelő platformunk jövőbeli irányát. A hívás kezdete:",
+    "zoom-weekly-calls": "heti Zoom hívásokon 18 órakor. GMT (Dublin/London/Lisszabon idő szerint) minden pénteken",
+    "zoom-live": "Élő",
+    "zoom-days": "nap | napok",
+    "zoom-hours": "óra | órák",
+    "zoom-minutes": "perc | percek",
+    "slack-text": "A {slack} a fő kommunikációs és együttműködési médiumunk. Kiemelkedő felhasználók, újoncok, fejlesztők, több mint 370 tagú közösség – mindannyian ott vagyunk. Írjon nekünk, és azonnali választ kap, folyamatosan online vagyunk.",
+    "fundraiser-text": "Az OpenLitterMap teljes mértékben az adományoktól függ. Készítettünk egy {link}, és még mindig messze vagyunk a célunktól. Minden hozzájárulást szívesen fogadunk. {emoji}",
+    "fundraiser-link": "GoFundMe Adománygyűjtést"
+}

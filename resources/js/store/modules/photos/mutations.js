@@ -36,11 +36,11 @@ export const mutations = {
             });
         }
 
-        state.paginate = payload;
+        state.bulkPaginate = payload;
     },
 
     /**
-     * Number of photos available (MyPhotos)
+     * Number of photos available (BulkTag)
      */
     photosCount (state, payload)
     {
@@ -55,6 +55,7 @@ export const mutations = {
         state.paginate = payload.photos;
         state.remaining = payload.remaining;
         state.total = payload.total;
+        state.previousCustomTags = payload.custom_tags;
     },
 
     /**
@@ -62,7 +63,15 @@ export const mutations = {
      */
     myProfilePhotos (state, payload)
     {
-        state.paginate = payload;
+        state.bulkPaginate = payload;
+    },
+
+    /**
+     * Store the user's previously added custom tags
+     */
+    setPreviousCustomTags (state, payload)
+    {
+        state.previousCustomTags = payload;
     },
 
     /**
@@ -74,7 +83,7 @@ export const mutations = {
     },
 
     /**
-     * Called when MyPhotos is loaded
+     * Called when BulkTag is loaded
      */
     resetPhotoState (state)
     {
@@ -90,25 +99,131 @@ export const mutations = {
     {
         state.selectAll = ! state.selectAll;
 
-        let photos = [...state.paginate.data];
+        let photos = [...state.bulkPaginate.data];
 
         photos.forEach(photo => {
             photo.selected = state.selectAll;
         });
 
-        state.paginate.data = photos;
+        state.bulkPaginate.data = photos;
 
         state.selectedCount = state.selectAll ? state.total : 0;
     },
 
     /**
+     * Sets the picked up value for a single photo
+     */
+    setPhotoPickedUp (state, payload)
+    {
+        const photoIndex = state.bulkPaginate.data.findIndex(photo => photo.id === payload.photoId)
+        let photo = state.bulkPaginate.data[photoIndex];
+
+        photo.picked_up = payload.picked_up;
+
+        state.bulkPaginate.data.splice(photoIndex, 1, photo);
+    },
+
+    /**
+     * Adds a tag to a single photo
+     */
+    addTagToPhoto (state, payload)
+    {
+        const photoIndex = state.bulkPaginate.data.findIndex(photo => photo.id === payload.photoId)
+        let photo = state.bulkPaginate.data[photoIndex];
+        let tags = Object.assign({}, photo.tags ?? {});
+
+        photo.tags = {
+            ...tags,
+            [payload.category]: {
+                ...tags[payload.category],
+                [payload.tag]: payload.quantity
+            }
+        };
+
+        state.bulkPaginate.data.splice(photoIndex, 1, photo);
+    },
+
+    /**
+     * Adds a custom tag to a single photo
+     */
+    addCustomTagToPhoto (state, payload)
+    {
+        const photoIndex = state.bulkPaginate.data.findIndex(photo => photo.id === payload.photoId)
+        let photo = state.bulkPaginate.data[photoIndex];
+        let tags = photo.custom_tags ?? [];
+
+        // Case-insensitive check for existing tags
+        if (tags.find(tag => tag.toLowerCase() === payload.customTag.toLowerCase()) !== undefined)
+        {
+            return;
+        }
+
+        if (tags.length >= 3)
+        {
+            return;
+        }
+
+        tags.unshift(payload.customTag);
+
+        photo.custom_tags = tags;
+
+        state.bulkPaginate.data.splice(photoIndex, 1, photo);
+    },
+
+    /**
+     * Removes a tag from a photo
+     * If the category is empty, delete the category
+     */
+    removeTagFromPhoto (state, payload)
+    {
+        const photoIndex = state.bulkPaginate.data.findIndex(photo => photo.id === payload.photoId);
+        let photo = state.bulkPaginate.data[photoIndex];
+        let tags = Object.assign({}, photo.tags ?? {});
+
+        delete tags[payload.category][payload.tag];
+
+        if (Object.keys(tags[payload.category]).length === 0)
+        {
+            delete tags[payload.category];
+        }
+
+        photo.tags = tags;
+
+        state.bulkPaginate.data.splice(photoIndex, 1, photo);
+    },
+
+    /**
+     * Removes a custom tag from a photo
+     */
+    removeCustomTagFromPhoto (state, payload)
+    {
+        const photoIndex = state.bulkPaginate.data.findIndex(photo => photo.id === payload.photoId)
+        let photo = state.bulkPaginate.data[photoIndex];
+        let tags = photo.custom_tags ?? [];
+
+        tags = tags.filter(tag => tag !== payload.customTag);
+
+        photo.custom_tags = tags;
+
+        state.bulkPaginate.data.splice(photoIndex, 1, photo);
+    },
+
+    /**
+     * Sets the photo to show the details of
+     */
+    setPhotoToShowDetails (state, photoId)
+    {
+        state.showDetailsPhotoId = photoId;
+    },
+
+    /**
      * Change the selected value of a photo
      *
-     * MyPhotos.vue
+     * BulkTag.vue
      */
     togglePhotoSelected (state, payload)
     {
-        let photos = [...state.paginate.data];
+        let photos = [...state.bulkPaginate.data];
         let inclIds = [...state.inclIds];
         let exclIds = [...state.exclIds];
 
@@ -149,6 +264,6 @@ export const mutations = {
 
         state.inclIds = inclIds;
         state.exclIds = exclIds;
-        state.paginate.data = photos;
+        state.bulkPaginate.data = photos;
     }
 }

@@ -1,0 +1,33 @@
+{
+    "title": "Karibu kwa Timu za OpenLitterMap!",
+    "created": "Hongera! Timu yako mpya imeundwa.",
+    "times": {
+        "today": "Leo",
+        "week": "Wiki hii",
+        "month": "Mwezi huu",
+        "year": "Mwaka huu",
+        "all": "Wakati wote",
+        "created_at": "Imepakiwa",
+        "datetime": "Imechukuliwa"
+    },
+    "create": {
+        "fail": "Kulikuwa na hitilafu kuunda Timu yako",
+        "max-created": "Huruhusiwi kuunda timu zozote zaidi."
+    },
+    "settings": {
+        "maps": {
+            "team-map": "Ramani ya timu",
+            "name-will-appear": "Jina lako litaonekana kwenye ramani",
+            "username-will-appear": "Jina lako la mtumiaji litaonekana kwenye ramani",
+            "will-not-appear": "Jina lako na jina lako la mtumiaji hazitaonekana kwenye ramani"
+        },
+        "leaderboards": {
+            "team-leaderboard": "Ubao wa timu inayo ongoza",
+            "name-will-appear": "Jina lako litaonekana kwenye bao za wanaoongoza",
+            "username-will-appear": "Jina lako la mtumiaji litaonekana kwenye bao za wanaoongoza",
+            "will-not-appear": "Jina lako na jina lako la mtumiaji hayataonekana kwenye bao za wanaoongoza"
+        },
+        "submit-one-team": "Hifadhi kwa Timu hii",
+        "apply-all-teams": "Omba kwa Timu zote"
+    }
+}
