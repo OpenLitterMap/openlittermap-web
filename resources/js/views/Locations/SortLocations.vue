@@ -56,7 +56,7 @@
 							:locationType="locationType"
 							:locationId="location.id"
                             :leaders="getUsersForLocationLeaderboard"
-                            :style="showOnlySelectedLeaderboard(location.id) ? '' : 'display: none'"
+                            :style="showOnlySelectedComponent(location.id) ? '' : 'display: none'"
 						/>
 					</div>
 				</div>
@@ -222,14 +222,9 @@ export default {
         /**
          *
          */
-        showOnlySelectedLeaderboard (locationId)
+        showOnlySelectedComponent (locationId)
         {
-            if (this.selectedTab === "LeaderboardList")
-            {
-                return (this.selectedLocationId === locationId);
-            }
-
-            return true;
+            return (this.selectedLocationId === locationId);
         },
 
 		/**
