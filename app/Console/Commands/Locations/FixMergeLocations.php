@@ -38,11 +38,11 @@ class FixMergeLocations extends Command
             ->havingRaw('COUNT(*) > 1')
             ->get();
 
-        echo "Found " . sizeof($duplicatedCountries) . " duplicates \n";
+        echo "\nFound " . sizeof($duplicatedCountries) . " duplicates \n";
 
         foreach ($duplicatedCountries as $duplicatedCountry)
         {
-            echo "Shortcode: " . $duplicatedCountry->shortcode . " found " . $duplicatedCountry->count . " times \n";
+            echo "\n\n*** Shortcode: " . $duplicatedCountry->shortcode . " found " . $duplicatedCountry->count . " times \n";
 
             // Get All Countries, First + Duplicates.
             $countries = Country::where('shortcode', $duplicatedCountry->shortcode)
@@ -52,23 +52,23 @@ class FixMergeLocations extends Command
 
             $firstCountryId = $countries[0]->id;
 
-            echo "First countryId: $firstCountryId";
+            echo "First countryId: $firstCountryId \n";
 
             foreach ($countries as $index => $country)
             {
                 if ($index === 0)
                 {
-                    echo "Skipping first countryId: $country->id \n";
+                    echo "Skipping first countryId: $country->id \n\n";
                     // we will update the states + cities for each country in another command.
                 }
                 else
                 {
-                    echo "Duplicated countryId: " . $country->id . " \n";
+                    echo "\n\n---Duplicated countryId: " . $country->id . " \n";
 
                     // Get the states for the duplicated country
                     $states = State::where('country_id', $country->id)->get();
 
-                    echo sizeof($states) . " states found \n";
+                    echo sizeof($states) . " states found \n\n";
 
                     foreach ($states as $state)
                     {
@@ -79,7 +79,7 @@ class FixMergeLocations extends Command
                             ->first();
 
                         $firstStateId = $firstState->id;
-                        echo "First stateId for $state->state: $firstStateId \n";
+                        echo "\nFirst stateId for $state->state: $firstStateId \n";
 
                         // $firstState->country_id = $firstCountryId;
                         // $firstState->save();
@@ -87,7 +87,7 @@ class FixMergeLocations extends Command
                         // Get cities for each state
                         $cities = City::where('state_id', $state->id)->get();
 
-                        echo "Cities found for state: " . sizeof($cities) . " \n";
+                        echo "\nCities found for state: " . sizeof($cities) . " \n";
 
                         foreach ($cities as $city)
                         {
@@ -98,7 +98,7 @@ class FixMergeLocations extends Command
                                 ->first();
 
                             $firstCityId = $firstCity->id;
-                            echo "First cityId for $city->city: $firstCityId \n";
+                            echo "\nFirst cityId for $city->city: $firstCityId \n";
 
 //                            $firstCity->country_id = $firstCountryId;
 //                            $firstCity->state_id = $firstStateId;
@@ -113,11 +113,11 @@ class FixMergeLocations extends Command
                                     ->select('id', 'country_id', 'state_id', 'city_id')
                                     ->get();
 
-                                echo "Photos found for cityId $city->id " . sizeof($cityPhotos) . " \n";
+                                echo "\nPhotos found for cityId $city->id " . sizeof($cityPhotos) . " \n";
 
                                 foreach ($cityPhotos as $photo)
                                 {
-                                    echo "Updating photoId: $photo->id \n";
+                                    echo "\nUpdating photoId: $photo->id \n";
 //                                    $photo->country_id = $firstCountryId;
 //                                    $photo->state_id = $firstStateId;
 //                                    $photo->city_id = $firstCityId;
@@ -146,7 +146,7 @@ class FixMergeLocations extends Command
                                 ->select('id', 'country_id', 'state_id', 'city_id')
                                 ->get();
 
-                            echo "Photos found for stateId $state->id " . sizeof($statePhotos) . " \n";
+                            echo "\nPhotos found for stateId $state->id " . sizeof($statePhotos) . " \n\n";
 
                             foreach ($statePhotos as $statePhoto)
                             {
@@ -193,7 +193,7 @@ class FixMergeLocations extends Command
                         {
 //                            $country->delete();
 
-                            echo "... duplicate country deleted";
+                            echo "... duplicate country deleted \n";
                         }
                     }
                 }
