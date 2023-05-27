@@ -30,7 +30,7 @@ class FixMergeLocations extends Command
      *
      * @return int
      */
-    public function handle()
+    public function handle ()
     {
         $duplicatedCountries = DB::table('countries')
             ->select('shortcode', DB::raw('COUNT(*) as `count`'))
@@ -44,78 +44,142 @@ class FixMergeLocations extends Command
         {
             echo "\n\n*** Shortcode: " . $duplicatedCountry->shortcode . " found " . $duplicatedCountry->count . " times \n";
 
-            // Get All Countries, First + Duplicates.
+            // Get All Countries for a shortcode: Original + Duplicates.
             $countries = Country::where('shortcode', $duplicatedCountry->shortcode)
                 ->select('id', 'country', 'shortcode')
                 ->orderBy('id')
                 ->get();
 
+            // Get the ID of the first Country that was uploaded.
             $firstCountryId = $countries[0]->id;
-
             echo "First countryId: $firstCountryId \n";
 
             foreach ($countries as $index => $country)
             {
-                if ($index === 0)
+                if ($index > 0)
                 {
-                    echo "Skipping first countryId: $country->id \n\n";
-                    // we will update the states + cities for each country in another command.
-                }
-                else
-                {
-                    echo "\n\n---Duplicated countryId: " . $country->id . " \n";
+                    echo "\n---Duplicated countryId: " . $country->id . " \n";
 
                     // Get the states for the duplicated country
-                    $states = State::where('country_id', $country->id)->get();
+                    $statesForCountry = State::where('country_id', $country->id)->get();
+                    echo sizeof($statesForCountry) . " states found \n"; // 3 states found
 
-                    echo sizeof($states) . " states found \n\n";
-
-                    foreach ($states as $state)
+                    if (sizeof($statesForCountry) > 0)
                     {
-                        // Check for duplicate states to see which one is earliest
-                        $firstState = State::where('state', $state->state)
-                            ->whereIn('country_id', $countries->pluck('id')->toArray())
-                            ->orderBy('id')
-                            ->first();
-
-                        $firstStateId = $firstState->id;
-                        echo "\nFirst stateId for $state->state: $firstStateId \n";
-
-                        // $firstState->country_id = $firstCountryId;
-                        // $firstState->save();
-
-                        // Get cities for each state
-                        $cities = City::where('state_id', $state->id)->get();
-
-                        echo "\nCities found for state: " . sizeof($cities) . " \n";
-
-                        foreach ($cities as $city)
+                        foreach ($statesForCountry as $state)
                         {
-                            // Check if there is a duplicate of the city
-                            $firstCity = City::where('city', $city->city)
-                                ->whereIn('state_id', $states->pluck('id')->toArray())
+                            echo "State: $state->state \n";
+
+                            // Look for Duplicate States
+                            $duplicateStatesByName = State::where('state', $state->state)
+                                ->whereIn('country_id', $countries->pluck('id')->toArray())
                                 ->orderBy('id')
-                                ->first();
+                                ->get();
+                            echo sizeof($duplicateStatesByName)  . " states by name \n";
 
-                            $firstCityId = $firstCity->id;
-                            echo "\nFirst cityId for $city->city: $firstCityId \n";
+                            $firstStateId = $duplicateStatesByName[0]->id;
+                            echo "First stateId: $firstStateId \n";
 
-//                            $firstCity->country_id = $firstCountryId;
-//                            $firstCity->state_id = $firstStateId;
-//                            $firstCity->save();
+//                            $firstState = State::find($firstStateId);
+//                            $firstState->country_id = $firstCountryId;
+//                            $firstState->save();
 
-                            // Update PhotoIds for duplicate cities
-                            // Then delete duplicate city
-                            if ($city->id > $firstCityId)
+                            // All states incl original and duplicate
+                            foreach ($duplicateStatesByName as $duplicateState)
                             {
-                                // Update Photos For city
-                                $cityPhotos = Photo::where('city_id', $city->id)
-                                    ->select('id', 'country_id', 'state_id', 'city_id')
-                                    ->get();
+                                // Get cities for each state
+                                $citiesForState = City::where('state_id', $duplicateState->id)->get();
+                                echo sizeof($citiesForState) . " cities found for state \n";
 
-                                echo "\nPhotos found for cityId $city->id " . sizeof($cityPhotos) . " \n";
+                                if (sizeof($citiesForState) > 0)
+                                {
+                                    // Look for duplicate cities
+                                    foreach ($citiesForState as $cityForState)
+                                    {
+                                        // Find all cities by name
+                                        $citiesByName = City::where('city', $cityForState->city)
+                                            ->whereIn('country_id', $countries->pluck('id')->toArray())
+                                            ->orderBy('id')
+                                            ->get();
+                                        echo sizeof($citiesByName) . " cities found with the same name \n";
 
-//                                foreach ($cityPhotos as $photo)
+                                        if (sizeof($citiesByName) > 0)
+                                        {
+                                            $firstCityId = $citiesByName[0]->id;
+                                            echo "First cityId: $firstCityId \n";
+
+                                            foreach ($citiesByName as $cityByName)
+                                            {
+                                                $photosForCity = Photo::where('city_id', $cityByName->id)
+                                                    ->select('id', 'country_id', 'state_id', 'city_id')
+                                                    ->get();
+                                                echo sizeof($photosForCity) . " photos for city \n";
+
+//                                             foreach ($photosForCity as $photo)
+//                                             {
+//                                                 $photo->country_id = $firstCountryId;
+//                                                 $photo->state_id = $firstStateId;
+//                                                 $photo->city_id = $firstCityId;
+//                                                 $photo->save();
+//                                             }
+
+                                                if ($cityByName->id > $firstCityId)
+                                                {
+                                                    $cityPhotosCount = Photo::where('city_id', $cityByName->id)
+                                                        ->select('id', 'country_id', 'state_id', 'city_id')
+                                                        ->count();
+
+                                                    if ($cityPhotosCount === 0)
+                                                    {
+//                                                      $city->delete();
+
+                                                        echo "... duplicate city can be deleted \n\n";
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Get photos for each state
+                                $photosForState = Photo::where('state_id', $state->id)->get();
+                                echo "Photos found for state: " . sizeof($photosForState) . " \n";
+
+//                                foreach ($photosForState as $photoForState)
+//                                {
+//                                    $photoForState->country_id = $firstCountryId;
+//                                    $photoForState->state_id = $firstStateId;
+//                                    $photoForState->save();
+//                                }
+                            }
+
+
+
+                            if (sizeof($citiesForState) > 0)
+                            {
+                                foreach ($citiesForState as $cityForState)
+                                {
+                                    // Check if there is a duplicate of the city
+                                    $firstCity = City::where('city', $cityForState->city)
+                                        ->whereIn('state_id', $states->pluck('id')->toArray())
+                                        ->orderBy('id')
+                                        ->first();
+
+                                    $firstCityId = $firstCity->id;
+                                    echo "First cityId for $cityForState->city: $firstCityId \n";
+
+                                    // $firstCity->country_id = $firstCountryId;
+                                    // $firstCity->state_id = $firstStateId;
+                                    // $firstCity->save();
+
+                                    // Update Photos For city
+                                    $photosForCity = Photo::where('city_id', $cityForState->id)
+                                        ->select('id', 'country_id', 'state_id', 'city_id')
+                                        ->get();
+
+                                    echo "\nPhotos found for cityId $cityForState->id " . sizeof($photosForCity) . " \n";
+
+//                                foreach ($photosForCity as $photo)
 //                                {
 //                                    echo "\nUpdating photoId: $photo->id \n";
 ////                                    $photo->country_id = $firstCountryId;
@@ -124,29 +188,31 @@ class FixMergeLocations extends Command
 ////                                    $photo->save();
 //                                }
 
-                                // echo sizeof($cityPhotos) . " photos updated \n";
+                                    // echo sizeof($photosForCity) . " photos updated \n";
 
-                                $cityPhotosCount = Photo::where('city_id', $city->id)
-                                    ->select('id', 'country_id', 'state_id', 'city_id')
-                                    ->count();
+                                    $cityPhotosCount = Photo::where('city_id', $cityForState->id)
+                                        ->select('id', 'country_id', 'state_id', 'city_id')
+                                        ->count();
 
-                                if ($cityPhotosCount === 0)
-                                {
+                                    if ($cityPhotosCount === 0)
+                                    {
 //                                    $city->delete();
 
-                                    echo "... duplicate city deleted \n\n";
+                                        echo "... duplicate city deleted \n\n";
+                                    }
                                 }
                             }
-                        }
 
-                        // Delete duplicate states
-                        if ($state->id > $firstStateId)
-                        {
-                            $statePhotos = Photo::where('state_id', $state->id)
-                                ->select('id', 'country_id', 'state_id', 'city_id')
-                                ->get();
 
-                            echo "\nPhotos found for stateId $state->id " . sizeof($statePhotos) . " \n\n";
+
+                            // Delete duplicate states
+                            if ($state->id > $firstStateId)
+                            {
+                                $statePhotos = Photo::where('state_id', $state->id)
+                                    ->select('id', 'country_id', 'state_id', 'city_id')
+                                    ->get();
+
+                                echo "\nPhotos found for stateId $state->id " . sizeof($statePhotos) . " \n\n";
 
 //                            foreach ($statePhotos as $statePhoto)
 //                            {
@@ -157,18 +223,13 @@ class FixMergeLocations extends Command
 ////                                $statePhoto->save();
 //                            }
 
-                            echo sizeof($statePhotos) . " photos updated \n";
-
-                            $statePhotosCount = Photo::where('state_id', $state->id)->count();
-
-                            if ($statePhotosCount === 0)
-                            {
-//                                $state->delete();
-
-                                echo "... duplicate state deleted \n\n";
+                                echo sizeof($statePhotos) . " photos updated \n";
                             }
                         }
                     }
+
+                    // Check Cities for Country
+                    // Check Photos for Country
 
                     // Delete duplicate countries
                     if ($country->id > $firstCountryId)
@@ -186,15 +247,6 @@ class FixMergeLocations extends Command
 ////                            $countryPhoto->country_id = $firstCountryId;
 ////                            $countryPhoto->save();
 //                        }
-
-                        $countryPhotosCount = Photo::where('country_id', $country->id)->count();
-
-                        if ($countryPhotosCount === 0)
-                        {
-//                            $country->delete();
-
-                            echo "... duplicate country deleted \n";
-                        }
                     }
                 }
             }
