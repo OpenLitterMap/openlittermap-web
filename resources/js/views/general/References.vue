@@ -317,6 +317,12 @@ export default {
                     link: 'https://www.sciencedirect.com/science/article/abs/pii/S0956053X23003355',
                     author: 'Yang et al'
                 },
+                {
+                    date: '2023/05/29',
+                    title: 'A methodology for quantifying and characterizing litter from trash capture devices (TCDs) to measure impact and inform upstream solutions',
+                    link: 'https://www.facetsjournal.com/doi/full/10.1139/facets-2022-0034',
+                    author: 'Sherlock et al'
+                }
             ]
         };
     },
