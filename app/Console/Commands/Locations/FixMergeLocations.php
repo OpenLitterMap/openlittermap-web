@@ -44,7 +44,7 @@ class FixMergeLocations extends Command
         {
             echo "\n\n*** Shortcode: " . $duplicatedCountry->shortcode . " found " . $duplicatedCountry->count . " times \n";
 
-            // Get All Countries for a shortcode: Original + Duplicates.
+            // Get Original + Duplicates for each Country
             $countries = Country::where('shortcode', $duplicatedCountry->shortcode)
                 ->select('id', 'country', 'shortcode')
                 ->orderBy('id')
