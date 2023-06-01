@@ -312,16 +312,22 @@ export default {
                     author: 'Alrayes et al'
                 },
                 {
-                    date: '2023/07/01',
-                    title: 'Study on the real-time object detection approach for end-of-life battery-powered electronics in the waste of electrical and electronic equipment recycling process',
-                    link: 'https://www.sciencedirect.com/science/article/abs/pii/S0956053X23003355',
-                    author: 'Yang et al'
+                    date: '2023/05/25',
+                    title: 'Optimized Custom Dataset for Efficient Detection of Underwater Trash',
+                    link: 'https://arxiv.org/pdf/2305.16460.pdf',
+                    author: 'Walia et al'
                 },
                 {
                     date: '2023/05/29',
                     title: 'A methodology for quantifying and characterizing litter from trash capture devices (TCDs) to measure impact and inform upstream solutions',
                     link: 'https://www.facetsjournal.com/doi/full/10.1139/facets-2022-0034',
                     author: 'Sherlock et al'
+                },
+                {
+                    date: '2023/07/01',
+                    title: 'Study on the real-time object detection approach for end-of-life battery-powered electronics in the waste of electrical and electronic equipment recycling process',
+                    link: 'https://www.sciencedirect.com/science/article/abs/pii/S0956053X23003355',
+                    author: 'Yang et al'
                 }
             ]
         };
