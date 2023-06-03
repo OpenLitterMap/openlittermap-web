@@ -86,21 +86,20 @@ class FixMergeLocations extends Command
 
                     if ($photosForCountryCount > 0)
                     {
-                        // $this->processPhotosForCountry($country->id);
+                         $this->processPhotosForCountry($country->id);
                     }
 
                     // Delete duplicate countries
                     if ($country->id > $firstCountryId)
                     {
-                        $countryPhotos = Photo::where('country_id', $country->id)
-                            ->select('id', 'country_id')
-                            ->count();
+                        $countryPhotos = Photo::where('country_id', $country->id)->count();
+                        $countryStates = State::where('country_id', $country->id)->count();
+                        $countryCities = City::where('country_id', $country->id)->count();
 
-                        echo "Photos found for duplicate country:" . $countryPhotos . " \n";
-
-                        if ($countryPhotos === 0)
+                        if ($countryPhotos === 0 && $countryStates === 0 && $countryCities === 0)
                         {
-                            $country->delete();
+                            // $country->delete();
+                            echo "duplicate country can be deleted \n";
                         }
                     }
                 }
@@ -289,17 +288,16 @@ class FixMergeLocations extends Command
 //                          $photo->country_id = $firstCountryId;
 //                          $photo->city_id = $firstCityId;
 //                          $photo->save();
-                          echo "photo #$photo->id updated \n";
+                          echo "photo #$photo->id can be updated \n";
                       }
                 }
 
                 if ($cityByName->id > $firstCityId)
                 {
-                    $cityPhotosCount = Photo::where('city_id', $cityByName->id)
-                        ->select('id', 'country_id', 'state_id', 'city_id')
-                        ->count();
+                    $photosForCity = Photo::where('city_id', $cityByName->id)->count();
+                    $statesForCity = State::where('id', $cityByName->state_id)->count();
 
-                    if ($cityPhotosCount === 0)
+                    if ($photosForCity === 0 && $statesForCity === 0)
                     {
                         // $city->delete();
 
@@ -316,10 +314,11 @@ class FixMergeLocations extends Command
 
         if (sizeof($photosForCountry) > 0)
         {
-            foreach ($photosForCountry as $photoForCountry)
+            foreach ($photosForCountry as $photo)
             {
-                $photoForCountry->country_id = $countryId;
-                $photoForCountry->save();
+//                $photoForCountry->country_id = $countryId;
+//                $photoForCountry->save();
+                echo "photo #$photo->id can be updated \n";
             }
         }
     }
