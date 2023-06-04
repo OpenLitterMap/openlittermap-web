@@ -62,7 +62,7 @@ class FixMergeLocations extends Command
                 {
                     echo "\n---Duplicated countryId: " . $country->id . " \n";
 
-                    // Get the states for the duplicated country
+                    // Check if the duplicated country has states
                     $statesForCountryCount = State::where('country_id', $country->id)->count();
                     echo $statesForCountryCount . " states found for country \n";
 
@@ -131,7 +131,7 @@ class FixMergeLocations extends Command
                 ->whereIn('country_id', $countryIds)
                 ->orderBy('id')
                 ->get();
-            echo sizeof($duplicateStatesByName)  . " states by name \n";
+            echo sizeof($duplicateStatesByName)  . " states by name for country \n";
 
             $firstStateId = $duplicateStatesByName[0]->id;
             echo "First stateId: $firstStateId \n";
@@ -164,7 +164,7 @@ class FixMergeLocations extends Command
 //                         $photoForState->state_id = $firstStateId;
 //                         $photoForState->save();
 
-                         echo "photo for state $photosForState->id can be deleted \n";
+                         echo "photo $photosForState->id for state can be updated \n";
                      }
                 }
             }
