@@ -313,10 +313,14 @@ class FixMergeLocations extends Command
 
     public function processPhotosForCountry (int $countryId)
     {
-        $photosForCountry = Photo::where('country_id', $countryId)->get();
+        $photosForCountryCount = Photo::where('country_id', $countryId)->count();
 
-        if (sizeof($photosForCountry) > 0)
+        echo "$photosForCountryCount photos for country found \n";
+
+        if ($photosForCountryCount > 0)
         {
+            $photosForCountry = Photo::where('country_id', $countryId)->get();
+
             foreach ($photosForCountry as $photo)
             {
 //                $photoForCountry->country_id = $countryId;
