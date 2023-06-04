@@ -164,7 +164,7 @@ class FixMergeLocations extends Command
 //                         $photoForState->state_id = $firstStateId;
 //                         $photoForState->save();
 
-                         echo "photo $photosForState->id for state can be updated \n";
+                         echo "photo $photoForState->id for state can be updated \n";
                      }
                 }
             }
