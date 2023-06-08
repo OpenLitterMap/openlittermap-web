@@ -131,7 +131,7 @@ class FixMergeLocations extends Command
                 ->whereIn('country_id', $countryIds)
                 ->orderBy('id')
                 ->get();
-            echo sizeof($duplicateStatesByName)  . " states found with the same name as $state->state \n";
+            echo sizeof($duplicateStatesByName)  . " states found with the same name \n";
 
             $firstStateId = $duplicateStatesByName[0]->id;
             // echo "First stateId: $firstStateId \n";
@@ -141,11 +141,13 @@ class FixMergeLocations extends Command
             // $firstState->save();
 
             // All states incl original and duplicate
-            foreach ($duplicateStatesByName as $duplicateState)
+            foreach ($duplicateStatesByName as $duplicateStateIndex => $duplicateState)
             {
+                echo "duplicate state #$duplicateStateIndex \n";
+
                 // Get cities for each state
                 $citiesForStateCount = City::where('state_id', $duplicateState->id)->count();
-                echo $citiesForStateCount . " cities found for state \n";
+                echo $citiesForStateCount . " cities found \n";
 
                 if ($citiesForStateCount > 0)
                 {
@@ -154,7 +156,7 @@ class FixMergeLocations extends Command
 
                 // Get photos for each state
                 $photosForState = Photo::where('state_id', $state->id)->get();
-                echo sizeof($photosForState) . " found for state \n\n";
+                echo sizeof($photosForState) . " photos found for state \n";
 
                 if (sizeof($photosForState) > 0)
                 {
@@ -205,7 +207,7 @@ class FixMergeLocations extends Command
                 ->whereIn('country_id', $countryIds)
                 ->orderBy('id')
                 ->get();
-            echo sizeof($citiesByName) . " cities found with the same name \n";
+            echo sizeof($citiesByName) . " cities found with the same name as $citiesForState->city \n";
 
             if (sizeof($citiesByName) > 0)
             {
@@ -217,8 +219,10 @@ class FixMergeLocations extends Command
                 // $firstCity->state_id = $firstStateId;
                 // $firstCity->save();
 
-                foreach ($citiesByName as $cityByName)
+                foreach ($citiesByName as $cityNameIndex => $cityByName)
                 {
+                    echo "duplicate city #$cityNameIndex \n";
+
                     $photosForCity = Photo::where('city_id', $cityByName->id)
                         ->select('id', 'country_id', 'state_id', 'city_id')
                         ->get();
@@ -278,8 +282,10 @@ class FixMergeLocations extends Command
             // $firstCity->country_id = $firstCountryI;
             // $firstCity->save();
 
-            foreach ($citiesByName as $cityByName)
+            foreach ($citiesByName as $cityByNameIndex => $cityByName)
             {
+                echo "duplicate city #$cityByNameIndex \n";
+
                 $photosForCity = Photo::where('city_id', $cityByName->id)
                     ->select('id', 'country_id', 'state_id', 'city_id')
                     ->get();
