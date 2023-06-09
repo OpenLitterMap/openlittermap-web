@@ -1,23 +1,44 @@
 <template>
-    <div class="leaderboard-filters-container">
-        <p
-            v-for="option in options"
-            class="leaderboard-option"
-            :class="option === selected ? 'is-selected' : ''"
-            @click="changeOption(option)"
-        >
-            {{ getNameForOption(option) }}
-        </p>
+    <div>
+        <div class="leaderboard-filters-container">
+            <p
+                v-for="option in options"
+                class="leaderboard-option"
+                :class="option === selected ? 'is-selected' : ''"
+                @click="changeOption(option)"
+            >
+                {{ getNameForOption(option) }}
+            </p>
+        </div>
+
+        <div class="mobile-filters-container">
+            <select
+                v-model="selected"
+                class="input mb1"
+                @change="optionChanged"
+            >
+                <option
+                    v-for="option in options"
+                    :value="option"
+                >
+                    {{ getNameForOption(option) }}
+                </option>
+            </select>
+        </div>
     </div>
 </template>
 
 <script>
 export default {
     name: "LeaderboardFilters",
+    props: [
+        'locationType',
+        'locationId'
+    ],
     data () {
         return {
             processing: false,
-            selected: "all-time",
+            selected: "today",
             options: [
                "all-time",
                "today",
@@ -38,7 +59,18 @@ export default {
 
             this.processing = true;
 
-            await this.$store.dispatch('GET_GLOBAL_LEADERBOARD', option);
+            if (this.locationId && this.locationType)
+            {
+                await this.$store.dispatch('GET_USERS_FOR_LOCATION_LEADERBOARD', {
+                    timeFilter: option,
+                    locationId: this.locationId,
+                    locationType: this.locationType
+                });
+            }
+            else
+            {
+                await this.$store.dispatch('GET_USERS_FOR_GLOBAL_LEADERBOARD', option);
+            }
 
             this.processing = false;
         },
@@ -67,6 +99,22 @@ export default {
             }
 
             return "";
+        },
+
+        /**
+         * on mobile view, the option has changed
+         */
+        async optionChanged (e)
+        {
+            const option = e.target.value
+
+            this.selected = option;
+
+            this.processing = true;
+
+            await this.$store.dispatch('GET_GLOBAL_LEADERBOARD', option);
+
+            this.processing = false;
         }
     }
 }
@@ -93,5 +141,19 @@ export default {
 
     .leaderboard-option.is-selected {
         background-color: #48c774;
+    }
+
+    /** DESKTOP */
+    @media screen and (min-width: 687px) {
+        .mobile-filters-container {
+            display: none;
+        }
+    }
+
+    /** MOBILE */
+    @media screen and (max-width: 687px) {
+        .leaderboard-filters-container {
+            display: none;
+        }
     }
 </style>

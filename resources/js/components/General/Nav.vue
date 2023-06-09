@@ -34,6 +34,11 @@
                             Littercoin
                         </router-link>
 
+                        <!-- Leaderboards -->
+                        <router-link to="/leaderboard" class="navbar-item" @click.native="close">
+                            Leaderboards
+                        </router-link>
+
                         <!-- Global Map -->
                         <router-link to="/global" class="navbar-item" @click.native="close">
                              {{ $t('nav.global-map') }}

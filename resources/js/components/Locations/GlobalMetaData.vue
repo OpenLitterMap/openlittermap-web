@@ -31,7 +31,7 @@
                     <i class="fa fa-arrow-right"/>
                 </div>
 
-                <GlobalLeaders
+                <LeaderboardList
                     :leaders="leaders"
                 />
             </div>
@@ -46,7 +46,7 @@
 <script>
 import TotalGlobalCounts from "../global/TotalGlobalCounts";
 import Progress from "../General/Progress";
-import GlobalLeaders from '../global/GlobalLeaders'
+import LeaderboardList from '../global/LeaderboardList'
 
 export default {
     name: "GlobalMetaData",
@@ -54,7 +54,7 @@ export default {
         'loading'
     ],
     components: {
-        GlobalLeaders,
+        LeaderboardList,
         Progress,
         TotalGlobalCounts,
     },

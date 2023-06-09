@@ -16,5 +16,13 @@ export const mutations = {
     decrementLeaderboardPage (state)
     {
         state.currentPage--;
+    },
+
+    /**
+     * One of the Location.Leaderboard tabs was selected
+     */
+    setLocationLeaderboard (state, payload)
+    {
+        state[payload.locationType][payload.locationId] = payload.users;
     }
 }

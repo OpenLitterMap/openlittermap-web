@@ -28,32 +28,35 @@
 
 					<!-- Charts -->
 					<div class="column is-half is-offset-1">
-
 						<p class="show-mobile">Drag these across for more options</p>
 
 						<div class="tabs is-center">
-
-							<!-- Components within Tabs -->
-							<a v-for="(tab, idx) in tabs"
-								:key="idx" v-show="showTab(tab.in_location)"
-								@click="loadTab(tab.component)"
-								:class="tabClass(tab)">
+							<!-- Tabs -->
+                            <p
+                                v-for="(tab, idx) in tabs"
+								:key="idx"
+                                v-show="showTab(tab.in_location)"
+								@click="loadTab(tab.component, location.id)"
+                                class="location-tab"
+                                :class="(tab.component === selectedTab) ? 'location-tab-is-active' : ''"
+                            >
 								{{ tab.title }}
-							</a>
+							</p>
 						</div>
 
 						<component
-							:is="tab"
+							:is="selectedTab"
 							:litter_data="location.litter_data"
 							:brands_data="location.brands_data"
 							:total_brands="location.total_brands"
 							:ppm="location.ppm"
-							:leaderboard="location.leaderboard"
 							:time="location.time"
 							@dateschanged="updateUrl"
 							:index="index"
 							:locationType="locationType"
 							:locationId="location.id"
+                            :leaders="getUsersForLocationLeaderboard"
+                            :style="showOnlySelectedComponent(location.id) ? '' : 'display: none'"
 						/>
 					</div>
 				</div>
@@ -69,7 +72,7 @@ import LocationNavbar from '../../components/Locations/LocationNavBar'
 import LocationMetadata from '../../components/Locations/LocationMetadata'
 import ChartsContainer from '../../components/Locations/Charts/PieCharts/ChartsContainer'
 import TimeSeriesContainer from '../../components/Locations/Charts/TimeSeries/TimeSeriesContainer'
-import Leaderboard from '../../components/Locations/Charts/Leaderboard/Leaderboard'
+import LeaderboardList from '../../components/global/LeaderboardList';
 import Options from '../../components/Locations/Charts/Options/Options'
 import Download from '../../components/Locations/Charts/Download/Download'
 
@@ -83,20 +86,20 @@ export default {
 		LocationMetadata,
 		ChartsContainer,
 		TimeSeriesContainer,
-		Leaderboard,
+        LeaderboardList,
         Options,
         Download
 	},
 	data () {
 		return {
-			tab: '',
+			selectedTab: 'LeaderboardList',
 			tabs: [
 				{ title: this.$t('location.litter'), component: 'ChartsContainer', in_location: 'all' },
 				{ title: this.$t('location.time-series'), component: 'TimeSeriesContainer', in_location: 'all'},
-				{ title: this.$t('location.leaderboard'), component: 'Leaderboard', in_location: 'all'},
+				{ title: this.$t('location.leaderboard'), component: 'LeaderboardList', in_location: 'all'},
 				{ title: this.$t('location.options'), component: 'Options', in_location: 'city'},
 				{ title: this.$t('common.download'), component: 'Download', in_location: 'all'}
-			]
+			],
 		};
 	},
     computed: {
@@ -110,7 +113,17 @@ export default {
                 : '';
         },
 
-		/**
+        /**
+         * Array of users for each Leaderboard
+         */
+        getUsersForLocationLeaderboard ()
+        {
+            this.$store.state.locations.locationTabKey;
+
+            return this.$store.state.leaderboard[this.locationType][this.selectedLocationId] ?? [];
+        },
+
+        /**
 		 * Is the user authenticated?
 		 */
 		isAuth ()
@@ -166,6 +179,14 @@ export default {
 		},
 
         /**
+         * The locationId which has its tabs selected
+         */
+        selectedLocationId ()
+        {
+            return this.$store.state.locations.selectedLocationId;
+        },
+
+        /**
          * String that determines how to sort the order of locations
          *
          * Includes:
@@ -175,7 +196,8 @@ export default {
          * - total-contributors
          * - most-recent
          */
-        sortedBy () {
+        sortedBy ()
+        {
             return this.$store.state.locations.sortLocationsBy;
         }
     },
@@ -183,20 +205,27 @@ export default {
 		/**
 		 * Load a tab component: Litter, Leaderboard, Time-series
 		 */
-		loadTab (tab)
+		async loadTab (tab, locationId)
 		{
-			this.tab = tab;
+			this.selectedTab = tab;
+
+            if (tab === "LeaderboardList")
+            {
+                await this.$store.dispatch('GET_USERS_FOR_LOCATION_LEADERBOARD', {
+                    timeFilter: 'today',
+                    locationType: this.locationType,
+                    locationId
+                });
+            }
 		},
 
-		/**
-		 * Class to return for tab
-		 */
-		tabClass (tab)
-		{
-			return (tab === this.tab)
-                ? 'l-tab is-active'
-                : 'l-tab';
-		},
+        /**
+         *
+         */
+        showOnlySelectedComponent (locationId)
+        {
+            return (this.selectedLocationId === locationId);
+        },
 
 		/**
 		 * Show tab depending on location locationType
@@ -230,6 +259,18 @@ export default {
 	.l-tab.is-active {
 		border-bottom: 2px solid white !important;
 	}
+
+    .location-tab {
+        background-color: white;
+        border-radius: 6px;
+        padding: 0.5em 1.5em;
+        cursor: pointer;
+    }
+
+    .location-tab.location-tab-is-active {
+        background-color: #3273dc;
+        color: white;
+    }
 
 	.h65pc {
         height: 65%;

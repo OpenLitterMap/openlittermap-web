@@ -4,7 +4,12 @@ import { mutations } from "./mutations";
 const state = {
     currentPage: 1,
     hasNextPage: false,
-    users: []
+    users: [],
+
+    // locationId: array
+    country: {},
+    state: {},
+    city: {},
 };
 
 export const leaderboard = {

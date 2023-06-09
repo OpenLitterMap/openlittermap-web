@@ -105,5 +105,20 @@ export const mutations = {
     setSortLocationsBy (state, payload)
     {
         state.sortLocationsBy = payload;
+    },
+
+    /**
+     * One of the tabs has been selected
+     *
+     * We need to know which locationId we showing for the Leaderboard
+     */
+    setSelectedLocationId (state, payload)
+    {
+        state.selectedLocationId = payload;
+    },
+
+    updateLocationTabKey (state)
+    {
+        state.locationTabKey++;
     }
 };
