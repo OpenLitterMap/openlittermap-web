@@ -40,8 +40,6 @@ class FixMergeLocations extends Command
 
         echo "\nFound " . sizeof($duplicatedCountries) . " duplicates \n";
 
-        $deletedCountries = 0;
-
         foreach ($duplicatedCountries as $duplicatedCountry)
         {
             echo "\n\n*** Shortcode: " . $duplicatedCountry->shortcode . " found " . $duplicatedCountry->count . " times \n";
@@ -104,8 +102,6 @@ class FixMergeLocations extends Command
                         {
                             $country->delete();
                             echo "country has been deleted \n";
-
-                            $deletedCountries++;
                         }
                     }
 
@@ -113,8 +109,6 @@ class FixMergeLocations extends Command
                 }
             }
         }
-
-        echo $deletedCountries . " have been deleted";
     }
 
     /**
@@ -146,9 +140,9 @@ class FixMergeLocations extends Command
             $firstStateId = $duplicateStatesByName[0]->id;
             // echo "First stateId: $firstStateId \n";
 
-            // $firstState = State::find($firstStateId);
-            // $firstState->country_id = $firstCountryId;
-            // $firstState->save();
+            $firstState = State::find($firstStateId);
+            $firstState->country_id = $firstCountryId;
+            $firstState->save();
 
             // All states incl original and duplicate
             foreach ($duplicateStatesByName as $duplicateStateIndex => $duplicateState)
@@ -170,13 +164,13 @@ class FixMergeLocations extends Command
 
                 if (sizeof($photosForState) > 0)
                 {
-//                     foreach ($photosForState as $photoForState)
-//                     {
-//                         $photoForState->country_id = $firstCountryId;
-//                         $photoForState->state_id = $firstStateId;
-//                         $photoForState->save();
-//                         echo "photo $photoForState->id for state can be updated \n";
-//                     }
+                     foreach ($photosForState as $photoForState)
+                     {
+                         $photoForState->country_id = $firstCountryId;
+                         $photoForState->state_id = $firstStateId;
+                         $photoForState->save();
+                         echo "photo $photoForState->id for state has been updated \n";
+                     }
                 }
             }
 
@@ -188,7 +182,7 @@ class FixMergeLocations extends Command
 
                 if ($statePhotos === 0 && $citiesForState === 0)
                 {
-                    // $state->delete();
+                    $state->delete();
 
                     echo "duplicate state can be deleted \n\n";
                 }
@@ -226,12 +220,12 @@ class FixMergeLocations extends Command
             if (sizeof($citiesByName) > 0)
             {
                 $firstCityId = $citiesByName[0]->id;
-                // echo "First cityId for $cityForState->city: $firstCityId \n";
+                 echo "First cityId for $cityForState->city: $firstCityId \n";
 
-                // $firstCity = City::find($firstCityId);
-                // $firstCity->country_id = $firstCountryId;
-                // $firstCity->state_id = $firstStateId;
-                // $firstCity->save();
+                 $firstCity = City::find($firstCityId);
+                 $firstCity->country_id = $firstCountryId;
+                 $firstCity->state_id = $firstStateId;
+                 $firstCity->save();
 
                 foreach ($citiesByName as $cityNameIndex => $cityByName)
                 {
@@ -242,12 +236,14 @@ class FixMergeLocations extends Command
                         ->get();
                     echo sizeof($photosForCity) . " photos for city $cityByName->id \n";
 
-                    //  foreach ($photosForCity as $photo)
-                    //  {
-                    //      $photo->country_id = $firstCountryId;
-                    //      $photo->state_id = $firstStateId;
-                    //      $photo->save();
-                    //  }
+                      foreach ($photosForCity as $photo)
+                      {
+                          $photo->country_id = $firstCountryId;
+                          $photo->state_id = $firstStateId;
+                          $photo->save();
+
+                          echo "photo $photo->id has been updated \n";
+                      }
 
                     if ($cityByName->id > $firstCityId)
                     {
@@ -257,7 +253,7 @@ class FixMergeLocations extends Command
 
                         if ($cityPhotosCount === 0)
                         {
-                            // $city->delete();
+                            $cityByName->delete();
 
                             echo "... duplicate city can be deleted \n\n";
                         }
@@ -296,9 +292,9 @@ class FixMergeLocations extends Command
             $firstCityId = $citiesByName[0]->id;
             echo "First cityId for $cityForCountry->city: $firstCityId \n";
 
-            // $firstCity = City::find($firstCityId);
-            // $firstCity->country_id = $firstCountryI;
-            // $firstCity->save();
+            $firstCity = City::find($firstCityId);
+            $firstCity->country_id = $firstCountryId;
+            $firstCity->save();
 
             foreach ($citiesByName as $cityByNameIndex => $cityByName)
             {
@@ -313,10 +309,10 @@ class FixMergeLocations extends Command
                 {
                       foreach ($photosForCity as $photo)
                       {
-//                          $photo->country_id = $firstCountryId;
-//                          $photo->city_id = $firstCityId;
-//                          $photo->save();
-//                          echo "photo #$photo->id for country.city can be updated \n";
+                          $photo->country_id = $firstCountryId;
+                          $photo->city_id = $firstCityId;
+                          $photo->save();
+                          echo "photo #$photo->id for country.city has been updated \n";
                       }
                 }
 
@@ -327,9 +323,9 @@ class FixMergeLocations extends Command
 
                     if ($photosForCity === 0 && $statesForCity === 0)
                     {
-                        // $city->delete();
+                        $cityByName->delete();
 
-                        echo "... duplicate city can be deleted \n\n";
+                        echo "... duplicate city has been deleted \n\n";
                     }
                 }
             }
@@ -350,9 +346,9 @@ class FixMergeLocations extends Command
 
             foreach ($photosForCountry as $photo)
             {
-//                $photoForCountry->country_id = $countryId;
-//                $photoForCountry->save();
-//                echo "photo #$photo->id for country can be updated \n";
+                $photo->country_id = $countryId;
+                $photo->save();
+                echo "photo #$photo->id for country has been updated \n";
             }
         }
 
