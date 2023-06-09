@@ -104,6 +104,8 @@ class FixMergeLocations extends Command
                             echo "duplicate country can be deleted \n";
                         }
                     }
+
+                    echo "... finished processing duplicated country \n";
                 }
             }
         }
@@ -186,6 +188,8 @@ class FixMergeLocations extends Command
                 }
             }
         }
+
+        echo "... finished processing states for country \n\n";
     }
 
     /**
@@ -255,6 +259,8 @@ class FixMergeLocations extends Command
                 }
             }
         }
+
+        echo "... finished processing cities for state \n\n";
     }
 
     /**
@@ -322,6 +328,8 @@ class FixMergeLocations extends Command
                 }
             }
         }
+
+        echo "... finished processing cities for country \n\n";
     }
 
     public function processPhotosForCountry (int $countryId)
@@ -341,5 +349,7 @@ class FixMergeLocations extends Command
 //                echo "photo #$photo->id for country can be updated \n";
             }
         }
+
+        echo "... finished processing photos for country \n\n";
     }
 }
