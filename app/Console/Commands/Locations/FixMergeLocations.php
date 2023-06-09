@@ -40,6 +40,8 @@ class FixMergeLocations extends Command
 
         echo "\nFound " . sizeof($duplicatedCountries) . " duplicates \n";
 
+        $deletedCountries = 0;
+
         foreach ($duplicatedCountries as $duplicatedCountry)
         {
             echo "\n\n*** Shortcode: " . $duplicatedCountry->shortcode . " found " . $duplicatedCountry->count . " times \n";
@@ -100,8 +102,10 @@ class FixMergeLocations extends Command
 
                         if ($countryPhotos === 0 && $countryStates === 0 && $countryCities === 0)
                         {
-                            // $country->delete();
-                            echo "duplicate country can be deleted \n";
+                            $country->delete();
+                            echo "country has been deleted \n";
+
+                            $deletedCountries++;
                         }
                     }
 
@@ -109,6 +113,8 @@ class FixMergeLocations extends Command
                 }
             }
         }
+
+        echo $deletedCountries . " have been deleted";
     }
 
     /**
