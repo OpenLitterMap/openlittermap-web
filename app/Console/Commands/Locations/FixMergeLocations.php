@@ -120,6 +120,8 @@ class FixMergeLocations extends Command
      */
     public function processStatesForCountry (int $countryId, array $countryIds, int $firstCountryId)
     {
+        echo "\n...processing states for country \n";
+
         $statesForCountry = State::where('country_id', $countryId)->get();
 
         foreach ($statesForCountry as $state)
@@ -195,6 +197,8 @@ class FixMergeLocations extends Command
      */
     public function processCitiesForState (int $stateId, array $countryIds, int $firstCountryId, $firstStateId)
     {
+        echo "\n...processing cities for state \n";
+
         $citiesForState = City::where('state_id', $stateId)->get();
 
         // Look for duplicate cities
@@ -263,6 +267,8 @@ class FixMergeLocations extends Command
      */
     public function processCitiesForCountry (int $countryId, array $countryIds, int $firstCountryId)
     {
+        echo "\n...processing cities for country \n";
+
         $citiesForCountry = City::where('country_id', $countryId)->get();
 
         // Look for duplicate cities
@@ -320,6 +326,8 @@ class FixMergeLocations extends Command
 
     public function processPhotosForCountry (int $countryId)
     {
+        echo "\n...processing photos for country \n";
+
         $photosForCountryCount = Photo::where('country_id', $countryId)->count();
 
         if ($photosForCountryCount > 0)
