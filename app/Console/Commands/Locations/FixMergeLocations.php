@@ -200,14 +200,14 @@ class FixMergeLocations extends Command
         // Look for duplicate cities
         foreach ($citiesForState as $cityForState)
         {
-            echo "City: $cityForState->city id: $citiesForState->id \n";
+            echo "City: $cityForState->city id: $cityForState->id \n";
 
             // Find all cities by name
             $citiesByName = City::where('city', $cityForState->city)
                 ->whereIn('country_id', $countryIds)
                 ->orderBy('id')
                 ->get();
-            echo sizeof($citiesByName) . " cities found with the same name as $citiesForState->city \n";
+            echo sizeof($citiesByName) . " cities found with the same name as $cityForState->city \n";
 
             if (sizeof($citiesByName) > 0)
             {
