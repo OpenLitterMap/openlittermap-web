@@ -331,7 +331,7 @@ class FixMergeLocations extends Command
                 $firstCity->country_id = $firstCountryId;
                 $firstCity->save();
 
-                echo "country_id ($firstCountryId) updated for city ($firstCityId) in country ($firstCountryId), old cityId ($cityForCountry) \n";
+                echo "country_id ($firstCountryId) updated for city ($firstCityId) in country ($firstCountryId), old cityId ($cityForCountry->id) \n";
             }
 
             foreach ($citiesByName as $cityByNameIndex => $cityByName)
