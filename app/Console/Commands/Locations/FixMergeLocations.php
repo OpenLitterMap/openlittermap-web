@@ -245,7 +245,7 @@ class FixMergeLocations extends Command
 
                  if ($firstCity->country_id !== $firstCountryId)
                  {
-                     $oldCountryId = $firstCityId->country_id;
+                     $oldCountryId = $firstCity->country_id;
                      $firstCity->country_id = $firstCountryId;
                      $firstCity->save();
 
