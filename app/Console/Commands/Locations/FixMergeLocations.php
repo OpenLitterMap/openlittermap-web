@@ -283,7 +283,7 @@ class FixMergeLocations extends Command
 
                         if ($photo->state_id !== $firstStateId)
                         {
-                            $oldStateId = $photo->state->id;
+                            $oldStateId = $photo->state_id;
                             $photo->state_id = $firstStateId;
                             $photo->save();
 
