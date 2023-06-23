@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Littercoin;
 use Illuminate\Support\Facades\Route;
 
 use Illuminate\Http\Request;
@@ -36,7 +37,13 @@ Route::post('/register', 'ApiRegisterController@register');
 
 // Fetch User
 Route::get('/user', function (Request $request) {
-    return Auth::guard('api')->user()->append('position', 'xp_redis');
+    $user = Auth::guard('api')->user()->append('position', 'xp_redis');
+
+    $littercoin = Littercoin::where('user_id', $user->id)->count();
+
+    $user['littercoin_count'] = $littercoin;
+
+    return $user;
 });
 
 // Reset Password
