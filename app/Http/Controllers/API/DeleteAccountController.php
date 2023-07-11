@@ -2,18 +2,17 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Http\Controllers\Controller;
-use App\Models\AdminVerificationLog;
-use App\Models\AI\Annotation;
-use App\Models\Cleanups\Cleanup;
-use App\Models\Littercoin;
-use App\Models\Location\City;
-use App\Models\Location\Country;
-use App\Models\Location\State;
-use App\Models\Photo;
-use App\Models\Teams\Team;
 use App\Payment;
-use Illuminate\Http\Request;
+use App\Models\Photo;
+use App\Models\Littercoin;
+use App\Models\Teams\Team;
+use App\Models\AI\Annotation;
+use App\Models\Location\City;
+use App\Models\Location\State;
+use App\Models\Location\Country;
+use App\Models\Cleanups\Cleanup;
+use App\Models\AdminVerificationLog;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
