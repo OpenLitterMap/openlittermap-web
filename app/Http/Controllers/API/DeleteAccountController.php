@@ -45,10 +45,7 @@ class DeleteAccountController extends Controller
 
                             if (sizeof($photo->customTags) > 0)
                             {
-                                foreach ($photo->customTags as $customTag)
-                                {
-                                    $customTag->delete();
-                                }
+                                $photo->customTags->each->delete();
                             }
 
                             $adminVerificationLogs = AdminVerificationLog::where([

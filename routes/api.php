@@ -101,7 +101,7 @@ Route::post('/settings/privacy/toggle-previous-tags', 'ApiSettingsController@tog
 Route::patch('/settings', 'SettingsController@update')
     ->middleware('auth:api');
 
-Route::post('/settings/delete-account', 'API/DeleteAccountController')
+Route::post('/settings/delete-account', 'API\DeleteAccountController')
     ->middleware('auth:api');
 
 /**
