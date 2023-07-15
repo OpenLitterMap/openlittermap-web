@@ -12,7 +12,7 @@
     <script src="{{ mix('/js/vendor.js') }}"></script>
     <script src="{{ mix('/js/app.js') }}"></script>
     <script src="/js/wow.js"></script>
-    <script> 
+    <script>
         var wow = new WOW();
         wow.init();
     </script>
