@@ -122,46 +122,79 @@ class DeleteAccountController extends Controller
                 Cleanup::where('user_id', $userId)->delete();
             }
 
-            $countries = Country::select('id', 'created_by', 'user_id_last_uploaded')
+            $countriesCreatedBy = Country::select('id', 'created_by')
                 ->where('created_by', $userId)
-                ->orWhere('user_id_last_uploaded', $userId)
                 ->get();
 
-            if (sizeof($countries) > 0)
+            if (sizeof($countriesCreatedBy) > 0)
             {
-                foreach ($countries as $country)
+                foreach ($countriesCreatedBy as $country)
                 {
                     $country->created_by = null;
+                    $country->save();
+                }
+            }
+
+            $countriesLastUploaded = Country::select('id', 'user_id_last_uploaded')
+                ->where('user_id_last_uploaded', $userId)
+                ->get();
+
+            if (sizeof($countriesLastUploaded) > 0)
+            {
+                foreach ($countriesLastUploaded as $country)
+                {
                     $country->user_id_last_uploaded = null;
                     $country->save();
                 }
             }
 
-            $states = State::select('id', 'created_by', 'user_id_last_uploaded')
+            $statesCreatedBy = State::select('id', 'created_by')
                 ->where('created_by', $userId)
-                ->orWhere('user_id_last_uploaded', $userId)
                 ->get();
 
-            if (sizeof($states) > 0)
+            if (sizeof($statesCreatedBy) > 0)
             {
-                foreach ($states as $state)
+                foreach ($statesCreatedBy as $state)
                 {
                     $state->created_by = null;
+                    $state->save();
+                }
+            }
+
+            $statesLastUploaded = State::select('id', 'user_id_last_uploaded')
+                ->where('user_id_last_uploaded', $userId)
+                ->get();
+
+            if (sizeof($statesLastUploaded) > 0)
+            {
+                foreach ($statesLastUploaded as $state)
+                {
                     $state->user_id_last_uploaded = null;
                     $state->save();
                 }
             }
 
-            $cities = City::select('id', 'created_by', 'user_id_last_uploaded')
+            $citiesCreatedBy = City::select('id', 'created_by')
                 ->where('created_by', $userId)
-                ->orWhere('user_id_last_uploaded', $userId)
                 ->get();
 
-            if (sizeof($cities) > 0)
+            if (sizeof($citiesCreatedBy) > 0)
             {
-                foreach ($cities as $city)
+                foreach ($citiesCreatedBy as $city)
                 {
                     $city->created_by = null;
+                    $city->save();
+                }
+            }
+
+            $citiesLastUploaded = City::select('id', 'user_id_last_uploaded')
+                ->where('user_id_last_uploaded', $userId)
+                ->get();
+
+            if (sizeof($citiesLastUploaded) > 0)
+            {
+                foreach ($citiesLastUploaded as $city)
+                {
                     $city->user_id_last_uploaded = null;
                     $city->save();
                 }
