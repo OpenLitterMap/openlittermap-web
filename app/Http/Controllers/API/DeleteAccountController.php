@@ -111,11 +111,11 @@ class DeleteAccountController extends Controller
 
         try
         {
-            $adminVerificationLogs = AdminVerificationLog::where('user_id', $userId)->count();
+            $adminVerificationLogs = AdminVerificationLog::where('admin_id', $userId)->count();
 
             if ($adminVerificationLogs > 0)
             {
-                AdminVerificationLog::where('user_id', $userId)->delete();
+                AdminVerificationLog::where('admin_id', $userId)->delete();
             }
 
             $cleanupUser = DB::table('cleanup_user')->where('user_id', $userId)->count();
