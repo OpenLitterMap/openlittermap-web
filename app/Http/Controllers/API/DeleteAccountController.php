@@ -16,6 +16,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class DeleteAccountController extends Controller
 {
@@ -26,10 +27,19 @@ class DeleteAccountController extends Controller
     {
         $user = Auth::guard('api')->user();
 
-        $userId = $user->id;
-
         // Check the users password matches
-        \Log::info($request->all());
+        if (Hash::check($request->password, $user->password)) {
+            return [
+                'check' => true
+            ];
+        }
+        else {
+            return [
+                'check' => false
+            ];
+        }
+
+        $userId = $user->id;
 
         return [
             'test' => true
