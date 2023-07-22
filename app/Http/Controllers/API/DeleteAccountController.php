@@ -58,14 +58,14 @@ class DeleteAccountController extends Controller
                             }
 
                             $adminVerificationLogs = AdminVerificationLog::where([
-                                'user_id' => $userId,
+                                'admin_id' => $userId,
                                 'photo_id' => $photo->id
                             ])->count();
 
                             if ($adminVerificationLogs > 0)
                             {
                                 AdminVerificationLog::where([
-                                    'user_id' => $userId,
+                                    'admin_id' => $userId,
                                     'photo_id' => $photo->id
                                 ])->delete();
                             }
