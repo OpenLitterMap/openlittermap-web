@@ -31,7 +31,9 @@ class DeleteAccountController extends Controller
         // Check the users password matches
         \Log::info($request->all());
 
-
+        return [
+            'test' => true
+        ];
 
         // user.photos
         Photo::where('user_id', $userId)
