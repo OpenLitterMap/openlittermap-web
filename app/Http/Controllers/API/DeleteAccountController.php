@@ -28,14 +28,10 @@ class DeleteAccountController extends Controller
         $user = Auth::guard('api')->user();
 
         // Check the users password matches
-        if (Hash::check($request->password, $user->password)) {
+        if (!Hash::check($request->password, $user->password)) {
             return [
-                'check' => true
-            ];
-        }
-        else {
-            return [
-                'check' => false
+                'success' => false,
+                'msg' => 'password does not match'
             ];
         }
 
