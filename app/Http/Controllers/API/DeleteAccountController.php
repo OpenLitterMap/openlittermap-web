@@ -13,6 +13,7 @@ use App\Models\Location\Country;
 use App\Models\Cleanups\Cleanup;
 use App\Models\AdminVerificationLog;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -21,11 +22,16 @@ class DeleteAccountController extends Controller
     /**
      * Try to delete a User
      */
-    public function __invoke ()
+    public function __invoke (Request $request)
     {
         $user = Auth::guard('api')->user();
 
         $userId = $user->id;
+
+        // Check the users password matches
+        \Log::info($request->all());
+
+
 
         // user.photos
         Photo::where('user_id', $userId)
