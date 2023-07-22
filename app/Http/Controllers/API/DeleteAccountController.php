@@ -37,10 +37,6 @@ class DeleteAccountController extends Controller
 
         $userId = $user->id;
 
-        return [
-            'test' => true
-        ];
-
         // user.photos
         Photo::where('user_id', $userId)
             ->chunk(1000, function ($photos) use ($userId)
