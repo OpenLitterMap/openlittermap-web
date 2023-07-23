@@ -223,26 +223,25 @@ class DeleteAccountController extends Controller
             $modelHasRoles = DB::table('model_has_roles')
                 ->where('model_type', 'App\Models\User\User')
                 ->where('model_id', $userId)
-                ->get();
+                ->count();
 
-            if (sizeof($modelHasRoles) > 0)
+            if ($modelHasRoles > 0)
             {
-                foreach ($modelHasRoles as $modelHasRole)
-                {
-                    $modelHasRole->delete();
-                }
+                DB::table('model_has_roles')
+                    ->where('model_type', 'App\Models\User\User')
+                    ->where('model_id', $userId)
+                    ->delete();
             }
 
             $oauthTokens = DB::table('oauth_access_tokens')
                 ->where('user_id', $userId)
-                ->get();
+                ->count();
 
-            if (sizeof($oauthTokens) > 0)
+            if ($oauthTokens > 0)
             {
-                foreach ($oauthTokens as $oauthToken)
-                {
-                    $oauthToken->delete();
-                }
+                DB::table('oauth_access_tokens')
+                    ->where('user_id', $userId)
+                    ->delete();
             }
 
             // payments
@@ -262,24 +261,25 @@ class DeleteAccountController extends Controller
             // subscriptions
             $subscriptions = DB::table('subscriptions')
                 ->where('user_id', $userId)
-                ->get();
+                ->count();
 
-            if (sizeof($subscriptions) > 0 )
+            if ($subscriptions > 0 )
             {
-                foreach ($subscriptions as $subscription)
-                {
-                    $subscription->delete();
-                }
+                DB::table('subscriptions')
+                    ->where('user_id', $userId)
+                    ->delete();
             }
 
             // team_user
             $teamUsers = DB::table('team_user')
                 ->where('user_id', $userId)
-                ->get();
+                ->count();
 
-            foreach ($teamUsers as $teamUser)
+            if ($teamUsers > 0)
             {
-                $teamUser->delete();
+                DB::table('team_user')
+                    ->where('user_id', $userId)
+                    ->delete();
             }
 
             $teams = Team::where('leader', $userId)
