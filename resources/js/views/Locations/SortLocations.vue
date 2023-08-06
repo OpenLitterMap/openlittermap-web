@@ -53,6 +53,7 @@
 							:locationId="location.id"
                             :leaders="getUsersForLocationLeaderboard"
                             :style="showOnlySelectedLeaderboard(location.id) ? '' : 'display: none'"
+                            :total_ppm="location.total_ppm"
 						/>
 					</div>
 				</div>
@@ -75,7 +76,7 @@ import Download from '../../components/Locations/Charts/Download/Download'
 export default {
     name: 'SortLocations',
     props: [
-        'locationType'
+        'locationType',
     ],
 	components: {
 		LocationNavbar,
