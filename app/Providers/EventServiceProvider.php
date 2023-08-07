@@ -42,7 +42,7 @@ class EventServiceProvider extends ServiceProvider
      */
     protected $listen = [
         Registered::class => [
-            SendEmailVerificationNotification::class,
+            SendEmailVerificationNotification::class
         ],
         ImageUploaded::class => [
             // Add user_id to country, state, and city on Redis
