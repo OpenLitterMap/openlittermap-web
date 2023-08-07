@@ -18,8 +18,28 @@ class IncrementCityMonth implements ShouldQueue
      */
     public function handle (IncrementPhotoMonth $event)
     {
-        $date = Carbon::parse($event->created_at)->format('m-y');
+        $formattedDate = Carbon::parse($event->created_at)->format('m-y');
 
-        Redis::hincrby("ppm:city:$event->city_id", $date, 1);
+        Redis::hincrby("ppm:city:$event->city_id", $formattedDate, 1);
+
+        // Part 2 - Update the total photos from all months
+        $exists = Redis::hexists("totalppm:city:$event->city_id", $formattedDate);
+
+        if ($exists)
+        {
+            // 2.1 - Update total redis count
+            Redis::hincrby("totalppm:city:$event->city_id", $formattedDate, 1);
+        }
+        else
+        {
+            $previousMonth = Carbon::parse($event->created_at)->subMonth()->format('m-y');
+
+            $value = Redis::hget("totalppm:city:$event->city_id", $previousMonth);
+
+            if ($value)
+            {
+                Redis::hincrby("totalppm:city:$event->city_id", $formattedDate, $value + 1);
+            }
+        }
     }
 }

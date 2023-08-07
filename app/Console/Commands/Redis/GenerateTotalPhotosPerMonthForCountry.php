@@ -55,6 +55,8 @@ class GenerateTotalPhotosPerMonthForCountry extends Command
 
         foreach ($countries as $country)
         {
+            echo "Country: $country->country \n";
+
             $photo = Photo::where('country_id', $country->id)->orderBy('id')->first();
 
             if (!$photo) continue;
@@ -95,6 +97,8 @@ class GenerateTotalPhotosPerMonthForCountry extends Command
 
         foreach ($states as $state)
         {
+            echo "State: $state->state \n";
+
             $photo = Photo::where('state_id', $state->id)->orderBy('id')->first();
 
             if (!$photo) continue;
@@ -135,6 +139,8 @@ class GenerateTotalPhotosPerMonthForCountry extends Command
 
         foreach ($cities as $city)
         {
+            echo "City: $city->city \n";
+
             $photo = Photo::where('city_id', $city->id)->orderBy('id')->first();
 
             if (!$photo) continue;
