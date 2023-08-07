@@ -2,8 +2,11 @@
 
 namespace App\Console\Commands\Redis;
 
+use App\Models\Location\City;
 use App\Models\Location\Country;
 use App\Models\Location\State;
+use App\Models\Photo;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Redis;
 
@@ -48,19 +51,35 @@ class GenerateTotalPhotosPerMonthForCountry extends Command
      */
     public function processCountries ()
     {
-        $countries = Country::all();
+        $countries = Country::where('manual_verify', true)->get();
 
         foreach ($countries as $country)
         {
+            $photo = Photo::where('country_id', $country->id)->orderBy('id')->first();
+
+            $start = Carbon::parse($photo->created_at)->startOfMonth();
+
+            $end = now()->startOfMonth();
+
+            $currentMonth = $start->copy();
+
             $total = 0;
 
-            foreach ($country->ppm as $key => $value)
+            while ($currentMonth->lte($end))
             {
-                $valueNumber = json_decode($value);
+                // format month eg. 10-15
+                $formattedMonth = $currentMonth->format('m-y');
 
-                $total += $valueNumber;
+                // Check if Redis has data for the month
+                $count = (int)Redis::hget("ppm:country:$country->id", $formattedMonth);
 
-                Redis::hincrby("totalppm:country:$country->id", $key, $total);
+                // Add this to the total
+                $total += $count;
+
+                // Add the total to Redis for this month
+                Redis::hincrby("totalppm:country:$country->id", $formattedMonth, $total);
+
+                $currentMonth->addMonth();
             }
         }
     }
@@ -74,15 +93,31 @@ class GenerateTotalPhotosPerMonthForCountry extends Command
 
         foreach ($states as $state)
         {
+            $photo = Photo::where('state_id', $state->id)->orderBy('id')->first();
+
+            $start = Carbon::parse($photo->created_at)->startOfMonth();
+
+            $end = now()->startOfMonth();
+
+            $currentMonth = $start->copy();
+
             $total = 0;
 
-            foreach ($state->ppm as $key => $value)
+            while ($currentMonth->lte($end))
             {
-                $valueNumber = json_decode($value);
+                // format month eg. 10-15
+                $formattedMonth = $currentMonth->format('m-y');
 
-                $total += $valueNumber;
+                // Check if Redis has data for the month
+                $count = (int)Redis::hget("ppm:state:$state->id", $formattedMonth);
 
-                Redis::hincrby("totalppm:state:$state->id", $key, $total);
+                // Add this to the total
+                $total += $count;
+
+                // Add the total to Redis for this month
+                Redis::hincrby("totalppm:state:$state->id", $formattedMonth, $total);
+
+                $currentMonth->addMonth();
             }
         }
     }
@@ -92,22 +127,36 @@ class GenerateTotalPhotosPerMonthForCountry extends Command
      */
     public function processCities ()
     {
-        $cities = State::all();
+        $cities = City::all();
 
         foreach ($cities as $city)
         {
+            $photo = Photo::where('city_id', $city->id)->orderBy('id')->first();
+
+            $start = Carbon::parse($photo->created_at)->startOfMonth();
+
+            $end = now()->startOfMonth();
+
+            $currentMonth = $start->copy();
+
             $total = 0;
 
-            foreach ($city->ppm as $key => $value)
+            while ($currentMonth->lte($end))
             {
-                $valueNumber = json_decode($value);
+                // format month eg. 10-15
+                $formattedMonth = $currentMonth->format('m-y');
 
-                $total += $valueNumber;
+                // Check if Redis has data for the month
+                $count = (int)Redis::hget("ppm:city:$city->id", $formattedMonth);
 
-                Redis::hincrby("totalppm:city:$city->id", $key, $total);
+                // Add this to the total
+                $total += $count;
+
+                // Add the total to Redis for this month
+                Redis::hincrby("totalppm:city:$city->id", $formattedMonth, $total);
+
+                $currentMonth->addMonth();
             }
         }
     }
-
-
 }

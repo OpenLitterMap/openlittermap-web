@@ -18,8 +18,13 @@ class IncrementCountryMonth implements ShouldQueue
      */
     public function handle (IncrementPhotoMonth $event)
     {
-        $date = Carbon::parse($event->created_at)->format('m-y');
+        // 1.1 - Format the created_at into month-year
+        $formattedDate = Carbon::parse($event->created_at)->format('m-y');
 
-        Redis::hincrby("ppm:country:$event->country_id", $date, 1);
+        // 1.2 - Update Redis
+        Redis::hincrby("ppm:country:$event->country_id", $formattedDate, 1);
+
+        // 2.1 - Update total redis count
+        Redis::hincrby("total_ppm:country:$event->country_id", $formattedDate, 1);
     }
 }
