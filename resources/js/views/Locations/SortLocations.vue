@@ -56,6 +56,7 @@
 							:locationType="locationType"
 							:locationId="location.id"
                             :leaders="getUsersForLocationLeaderboard"
+                            :total_ppm="location.total_ppm"
                             :style="showOnlySelectedComponent(location.id) ? '' : 'display: none'"
 						/>
 					</div>
@@ -79,7 +80,7 @@ import Download from '../../components/Locations/Charts/Download/Download'
 export default {
     name: 'SortLocations',
     props: [
-        'locationType'
+        'locationType',
     ],
 	components: {
 		LocationNavbar,

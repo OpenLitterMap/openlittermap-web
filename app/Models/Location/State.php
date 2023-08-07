@@ -32,8 +32,19 @@ class State extends Location
         'litter_data',
         'brands_data',
         'ppm',
-        'updatedAtDiffForHumans'
+        'updatedAtDiffForHumans',
+        'total_ppm'
     ];
+
+    /**
+     * Return the total photo per month for each state
+     */
+    public function getTotalPpmAttribute ()
+    {
+        $ppm = Redis::hgetall("totalppm:state:$this->id");
+
+        return sort_ppm($ppm);
+    }
 
     /**
      * Return the total_litter value from redis
