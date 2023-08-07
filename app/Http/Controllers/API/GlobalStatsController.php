@@ -20,11 +20,7 @@ class GlobalStatsController extends Controller
      */
     public function index () : array
     {
-        // old way
-        $littercoin = \DB::table('users')->sum(\DB::raw('littercoin_owed + littercoin_allowance'));
-
-        // new way
-        $littercoin += Littercoin::count();
+        $littercoin = Littercoin::count();
 
         $totalUsers = User::count();
 
