@@ -21,5 +21,8 @@ class DatabaseSeeder extends Seeder
         $this->call(PermissionSeeder::class);
         $this->call(RoleHasPermissionsSeeder::class);
         $this->call(UserSeeder::class);
+        $this->call(PhotosSeeder::class);
+        $this->call(CountriesSeeder::class);
+        $this->call(CitiesSeeder::class);
     }
 }
