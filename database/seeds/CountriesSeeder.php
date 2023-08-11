@@ -15,9 +15,10 @@ class CountriesSeeder extends Seeder
     public function run()
     {
         $countries = [
-            ['country' => 'United States', 'shortcode' => 'US'],
-            ['country' => 'Canada', 'shortcode' => 'CA'],
-            ['country' => 'Brazil', 'shortcode' => 'BR'],
+            ['country' => 'Ireland', 'shortcode' => 'ie'],
+            ['country' => 'United States', 'shortcode' => 'is'],
+            ['country' => 'Canada', 'shortcode' => 'ca'],
+            ['country' => 'Brazil', 'shortcode' => 'br'],
         ];
 
         DB::table('countries')->insert($countries);
