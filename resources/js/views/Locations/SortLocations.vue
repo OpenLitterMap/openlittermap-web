@@ -208,8 +208,6 @@ export default {
 		 */
 		async loadTab (tab, locationId)
 		{
-			this.selectedTab = tab;
-
             if (tab === "TimeSeriesContainer" || "ChartsContainer" || "LeaderboardList" || "Download")
             {
                 await this.$store.dispatch('GET_USERS_FOR_LOCATION_LEADERBOARD', {
@@ -218,7 +216,9 @@ export default {
                     locationId
                 });
             }
-		},
+
+            this.selectedTab = tab;
+        },
 
         /**
          *
