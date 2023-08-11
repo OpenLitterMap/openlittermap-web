@@ -22,7 +22,8 @@ class DatabaseSeeder extends Seeder
         $this->call(RoleHasPermissionsSeeder::class);
         $this->call(UserSeeder::class);
         $this->call(PhotosSeeder::class);
-        $this->call(CountriesSeeder::class);
-        $this->call(CitiesSeeder::class);
+        // $this->call(CountriesSeeder::class);
+        // missing states seeder
+        // $this->call(CitiesSeeder::class);
     }
 }
