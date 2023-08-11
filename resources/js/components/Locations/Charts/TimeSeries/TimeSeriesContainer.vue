@@ -3,16 +3,16 @@
 
         <div style="text-align: center;">
             <button
-                :class="{'outline-button': true, 'selected-button': selectedButton === 'MONTH'}"
-                @click="toggleData('MONTH')"
-            >
-                MONTH
-            </button>
-            <button
                 :class="{'outline-button': true, 'selected-button': selectedButton === 'TOTAL'}"
                 @click="toggleData('TOTAL')"
             >
                 TOTAL
+            </button>
+            <button
+                :class="{'outline-button': true, 'selected-button': selectedButton === 'MONTH'}"
+                @click="toggleData('MONTH')"
+            >
+                MONTH
             </button>
         </div>
 
@@ -32,7 +32,7 @@ export default {
     data ()
     {
         return {
-            selectedButton: 'MONTH'
+            selectedButton: 'TOTAL'
         }
     },
     props: [
