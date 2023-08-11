@@ -210,7 +210,7 @@ export default {
 		{
 			this.selectedTab = tab;
 
-            if (tab === "LeaderboardList")
+            if (tab === "TimeSeriesContainer" || "ChartsContainer" || "LeaderboardList" || "Download")
             {
                 await this.$store.dispatch('GET_USERS_FOR_LOCATION_LEADERBOARD', {
                     timeFilter: 'today',

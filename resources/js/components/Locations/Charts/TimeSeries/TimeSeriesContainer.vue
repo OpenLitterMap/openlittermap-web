@@ -2,8 +2,18 @@
     <div class="container has-text-center">
 
         <div style="text-align: center;">
-            <button class="outline-button" @click="toggleData('MONTH')">MONTH</button>
-            <button class="outline-button" @click="toggleData('TOTAL')">TOTAL</button>
+            <button
+                :class="{'outline-button': true, 'selected-button': selectedButton === 'TOTAL'}"
+                @click="toggleData('TOTAL')"
+            >
+                TOTAL
+            </button>
+            <button
+                :class="{'outline-button': true, 'selected-button': selectedButton === 'MONTH'}"
+                @click="toggleData('MONTH')"
+            >
+                MONTH
+            </button>
         </div>
 
         <time-series
@@ -22,7 +32,7 @@ export default {
     data ()
     {
         return {
-            selectedDataType: 'TOTAL', // Default value for the toggle
+            selectedButton: 'TOTAL'
         }
     },
     props: [
@@ -30,8 +40,8 @@ export default {
         'total_ppm'
     ],
     methods : {
-        toggleData(dataType) {
-            this.selectedDataType = dataType;
+        toggleData(selected) {
+            this.selectedButton = selected;
         },
     },
 	components: {
@@ -50,7 +60,7 @@ export default {
          *
          */
         selectedData() {
-            return this.selectedDataType === 'TOTAL' ? this.total_ppm : this.ppm;
+            return this.selectedButton === 'MONTH' ? this.ppm : this.total_ppm;
         },
     }
 }
@@ -70,6 +80,11 @@ export default {
 .outline-button:hover {
     background-color: #4CAF50;
     color: #fff;
+}
+
+.selected-button {
+    background-color: #4CAF50;
+    color: white;
 }
 
 </style>
