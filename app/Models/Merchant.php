@@ -7,7 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Merchant extends Model
 {
-    protected $guarded = [];
-
     use HasFactory;
+
+    protected $table = 'merchants';
+
+    protected $guarded = [];
 }

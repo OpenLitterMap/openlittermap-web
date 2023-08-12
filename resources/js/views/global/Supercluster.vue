@@ -7,7 +7,9 @@
         />
 
         <!-- Websockets -->
-        <LiveEvents @fly-to-location="updateUrlPhotoIdAndFlyToLocation" />
+        <LiveEvents
+            @fly-to-location="updateUrlPhotoIdAndFlyToLocation"
+        />
     </div>
 </template>
 
@@ -33,6 +35,7 @@ import dropdown from './select-dropdown';
 
 var map;
 var clusters;
+var merchants;
 var litterArtPoints;
 var points;
 var prevZoom = MIN_ZOOM;
@@ -120,7 +123,14 @@ function createGlobalGroups ()
 
         globalLayerController.addOverlay(clusters, 'Global');
         globalLayerController.addOverlay(litterArtPoints, 'Litter Art');
-        globalLayerController.addOverlay(cleanups, 'Cleanups');
+
+        if (cleanups) {
+            globalLayerController.addOverlay(cleanups, 'Cleanups');
+        }
+
+        if (merchants) {
+            globalLayerController.addOverlay(merchants, 'Merchants');
+        }
 
         globalControllerShowing = true;
     }
@@ -333,7 +343,6 @@ export default {
         // Cleanups
         if (this.$store.state.cleanups.geojson)
         {
-            console.log('cleanups.geojson found');
             cleanups = L.geoJSON(this.$store.state.cleanups.geojson, {
                 onEachFeature: onEachCleanup,
                 pointToLayer: createCleanupIcon
@@ -375,6 +384,37 @@ export default {
                     .setContent(mapHelper.getCleanupContent(cleanup, userId))
                     .openOn(map);
             }
+        }
+
+        // For Cleanups, we need to know if the current userId has joined a cleanup
+        if (this.$store.state.user.auth) {
+            userId = this.$store.state.user.user.id;
+        }
+
+        // Merchants
+        if (Object.keys(this.$store.state.merchants.geojson).length > 0)
+        {
+            merchants = L.geoJSON(this.$store.state.merchants.geojson, {
+                onEachFeature: onEachCleanup,
+                pointToLayer: createCleanupIcon
+            });
+        }
+
+        // When we are viewing Cleanups and the map is clicked,
+        // We want to extract the coordinates
+        if (this.activeLayer === "merchants")
+        {
+            merchants.addTo(map);
+
+            map.on('click', function(e) {
+                const lat = e.latlng.lat;
+                const lng = e.latlng.lng;
+
+                window.olm_map.$store.commit('setMerchantLocation', {
+                    lat,
+                    lng
+                });
+            });
         }
 
         // For Cleanups, we need to know if the current userId has joined a cleanup

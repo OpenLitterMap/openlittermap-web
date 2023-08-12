@@ -318,6 +318,9 @@ Route::get('/nav', function () {
     return view('pages.navigation');
 });
 
+Route::post('/merchants/create', 'Littercoin\Merchants\CreateMerchantController');
+Route::get('/merchants/get-geojson', 'Littercoin\Merchants\GetMerchantsGeojsonController');
+
 /**
  * ADMIN
  */
@@ -356,6 +359,9 @@ Route::group(['prefix' => '/admin', 'middleware' => 'admin'], function () {
 
     // Delete an image and its record
     Route::post('/destroy', 'AdminController@destroy');
+
+    // Merchants
+    Route::get('/merchants', 'HomeController@index');
 });
 
 Route::group(['prefix' => '/bbox', 'middleware' => ['can_bbox']], function () {

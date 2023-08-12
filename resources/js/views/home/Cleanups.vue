@@ -18,7 +18,7 @@
 
             <Supercluster
                 v-else
-                activeLayer="cleanups"
+                activeLayer="merchants"
             />
         </div>
     </div>
