@@ -54,4 +54,36 @@ export const actions = {
                 console.error('get_merchants_geojson', error);
             });
     },
+
+    /**
+     * Admin only
+     */
+    async GET_NEXT_MERCHANT_TO_APPROVE (context)
+    {
+        await axios.get('/merchants/get-next-merchant-to-approve')
+            .then(response => {
+                console.log('get_next_merchant_to_approve', response);
+
+                if (response.data.success) {
+                    context.commit('setMerchant', response.data.merchant);
+                }
+            })
+            .catch(error => {
+                console.error('get_next_merchant_to_approve', error);
+            });
+    },
+
+    // Todo
+    // /**
+    //  *
+    //  */
+    // async APPROVE_MERCHANT (context)
+    // {
+    //
+    // },
+    //
+    // async DELETE_MERCHANT (context)
+    // {
+    //
+    // }
 }

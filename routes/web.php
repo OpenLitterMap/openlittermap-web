@@ -320,6 +320,7 @@ Route::get('/nav', function () {
 
 Route::post('/merchants/create', 'Littercoin\Merchants\CreateMerchantController');
 Route::get('/merchants/get-geojson', 'Littercoin\Merchants\GetMerchantsGeojsonController');
+Route::get('/merchants/get-next-merchant-to-approve', 'Littercoin\Merchants\GetNextMerchantToApproveController');
 
 /**
  * ADMIN

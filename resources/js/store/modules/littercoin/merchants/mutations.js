@@ -14,5 +14,13 @@ export const mutations = {
     setMerchantsGeojson (state, payload)
     {
         state.geojson = payload;
+    },
+
+    /**
+     *
+     */
+    setMerchant (state, payload)
+    {
+        state.merchant = payload;
     }
 }
