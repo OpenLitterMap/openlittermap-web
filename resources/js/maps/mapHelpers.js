@@ -197,6 +197,16 @@ const helper = {
                 ${userCleanupInfo}
             </div>
         `;
+    },
+
+    getMerchantContent: (properties) => {
+        return `
+            <div class="leaflet-cleanup-container">
+                <p>${properties.name}</p>
+                <p>${properties.about ? properties.about : ''}</p>
+                <p>${properties.website ? properties.website: ''}</p>
+            </div>
+        `;
     }
 };
 

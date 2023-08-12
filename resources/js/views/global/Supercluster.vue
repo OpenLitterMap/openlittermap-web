@@ -243,6 +243,29 @@ function onEachCleanup (feature, layer)
 }
 
 /**
+ * On each cleanup in this.$store.state.cleanups.geojson.features
+ */
+function onEachMerchant (feature, layer)
+{
+    layer.on('click', function (e)
+    {
+        const latLng = [feature.geometry.coordinates[1], feature.geometry.coordinates[0]];
+
+        map.flyTo(latLng, 14, {
+            animate: true,
+            duration: 10
+        });
+
+        const content = mapHelper.getMerchantContent(feature.properties, userId);
+
+        L.popup(mapHelper.popupOptions)
+            .setLatLng(latLng)
+            .setContent(content)
+            .openOn(map);
+    });
+}
+
+/**
  * Get any active layers
  *
  * @return layers|null
@@ -395,7 +418,7 @@ export default {
         if (Object.keys(this.$store.state.merchants.geojson).length > 0)
         {
             merchants = L.geoJSON(this.$store.state.merchants.geojson, {
-                onEachFeature: onEachCleanup,
+                onEachFeature: onEachMerchant,
                 pointToLayer: createCleanupIcon
             });
         }
