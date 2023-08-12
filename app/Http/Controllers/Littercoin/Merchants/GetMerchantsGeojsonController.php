@@ -15,7 +15,7 @@ class GetMerchantsGeojsonController extends Controller
      */
     public function __invoke ()
     {
-        $merchants = Merchant::all();
+        $merchants = Merchant::whereNotNull('approved')->get();
 
         $geojson = $this->createGeojsonPoints("Merchants", $merchants);
 
