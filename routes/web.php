@@ -320,6 +320,7 @@ Route::get('/nav', function () {
 
 Route::post('/merchants/create', 'Littercoin\Merchants\CreateMerchantController');
 Route::get('/merchants/get-geojson', 'Littercoin\Merchants\GetMerchantsGeojsonController');
+Route::get('/merchants/get-next-merchant-to-approve', 'Littercoin\Merchants\GetNextMerchantToApproveController');
 
 /**
  * ADMIN
@@ -362,6 +363,9 @@ Route::group(['prefix' => '/admin', 'middleware' => 'admin'], function () {
 
     // Merchants
     Route::get('/merchants', 'HomeController@index');
+
+    Route::post('/merchants/approve', 'Littercoin\Merchants\ApproveMerchantController');
+    Route::post('/merchants/delete', 'Littercoin\Merchants\DeleteMerchantController');
 });
 
 Route::group(['prefix' => '/bbox', 'middleware' => ['can_bbox']], function () {
