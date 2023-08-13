@@ -1,5 +1,15 @@
 export const mutations = {
     /**
+     * After none found
+     */
+    resetMerchant (state)
+    {
+        state.merchant = {};
+        state.merchant.lat = 0;
+        state.merchant.lon = 0;
+    },
+
+    /**
      * The user has clicked on the map at Supercluster.vue
      */
     setMerchantLocation (state, payload)

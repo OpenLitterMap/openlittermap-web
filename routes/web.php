@@ -363,6 +363,9 @@ Route::group(['prefix' => '/admin', 'middleware' => 'admin'], function () {
 
     // Merchants
     Route::get('/merchants', 'HomeController@index');
+
+    Route::post('/merchants/approve', 'Littercoin\Merchants\ApproveMerchantController');
+    Route::post('/merchants/delete', 'Littercoin\Merchants\DeleteMerchantController');
 });
 
 Route::group(['prefix' => '/bbox', 'middleware' => ['can_bbox']], function () {

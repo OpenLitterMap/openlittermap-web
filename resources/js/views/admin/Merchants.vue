@@ -6,7 +6,7 @@
                 <MerchantMap />
             </div>
 
-            <div class="column is-half pt5">
+            <div class="column is-half pt5 pl5">
 
                 <div
                     v-if="can('approve merchants')"

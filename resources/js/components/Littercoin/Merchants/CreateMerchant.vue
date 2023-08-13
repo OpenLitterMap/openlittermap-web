@@ -12,6 +12,7 @@
         />
 
         <div class="mb1">
+
             <p v-if="!merchant.lat">
                 Click anywhere on the map to set the location
             </p>
@@ -47,12 +48,13 @@
             class="input w50 merchant-input"
             v-model="about"
             placeholder="Information or keywords"
+            style="margin-bottom: 2em;"
         />
 
         <br>
 
         <button
-            class="button is-large is-primary"
+            class="button is-medium is-primary"
             :class="processing ? 'is-loading' : ''"
             :disabled="processing"
             @click="submit"
@@ -77,7 +79,9 @@ export default {
     },
     computed: {
         /**
-         * Shortcut to cleanup/s state
+         * Shortcut to merchant object
+         *
+         * default = {}
          */
         merchant ()
         {
@@ -86,9 +90,24 @@ export default {
     },
     methods: {
         /**
+         * The User with role helper wants to create a Merchant
          *
+         * Location must be selected
          */
-        async submit () {
+        async submit ()
+        {
+            if (this.merchant.lat === 0 && this.merchant.lon === 0)
+            {
+                alert("Please select a location");
+                return;
+            }
+
+            if (this.name === "" || this.email === "" || this.website === "" || this.about === "")
+            {
+                alert("Please enter something into all fields");
+                return;
+            }
+
             this.processing = true;
 
             await this.$store.dispatch('CREATE_MERCHANT', {
@@ -99,6 +118,11 @@ export default {
                 about: this.about,
                 website: this.website
             });
+
+            this.name = "";
+            this.email = "";
+            this.about = "";
+            this.website = "";
 
             this.processing = false;
         }

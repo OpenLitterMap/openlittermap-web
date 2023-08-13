@@ -6,7 +6,7 @@ const state = {
     merchant: {
         lat: 0,
         lon: 0
-    },
+    }
 };
 
 export const merchants = {

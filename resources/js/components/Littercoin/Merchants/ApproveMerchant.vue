@@ -2,7 +2,7 @@
     <div>
         <p v-if="loading">Loading...</p>
 
-        <p v-else-if="!merchant">Nothing to approve</p>
+        <p v-else-if="this.merchant.lat === 0 && this.merchant.lon === 0">Done - Thank you!</p>
 
         <div v-else>
             <p>Name: {{ this.merchant.name }}</p>
@@ -64,7 +64,7 @@ export default {
         async approveMerchant () {
             this.processing = true;
 
-            await this.$store.dispatch('APPROVE_MERCHANT', this.merchant.id);
+            await this.$store.dispatch('APPROVE_MERCHANT');
 
             this.processing = false;
         },
@@ -75,7 +75,7 @@ export default {
         async deleteMerchant () {
             this.processingDelete = true;
 
-            await this.$store.dispatch('DELETE_MERCHANT', this.merchant.id);
+            await this.$store.dispatch('DELETE_MERCHANT');
 
             this.processingDelete = false;
         }

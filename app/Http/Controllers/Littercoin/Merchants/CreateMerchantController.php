@@ -40,7 +40,8 @@ class CreateMerchantController extends Controller
             'email' => $request->email,
             'website' => $request->website,
             'about' => $request->about,
-            'address' => ''
+            'address' => '',
+            'created_by' => $user->id
         ]);
 
         return [
