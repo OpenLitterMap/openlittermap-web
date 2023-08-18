@@ -12,4 +12,12 @@ class Merchant extends Model
     protected $table = 'merchants';
 
     protected $guarded = [];
+
+    /**
+     * Relationships
+     */
+    public function photos()
+    {
+        return $this->hasMany(MerchantPhoto::class);
+    }
 }
