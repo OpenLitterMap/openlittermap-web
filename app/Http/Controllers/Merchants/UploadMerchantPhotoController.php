@@ -38,17 +38,21 @@ class UploadMerchantPhotoController extends Controller
             if (app()->environment('local')) {
                 // In local environment, save to the local disk
                 Storage::disk('local')->put($filename, file_get_contents($uploadedFile));
+
+                $filepath = 'todo';
             }
             else
             {
                 // In production environment, save to AWS S3
                 Storage::disk('s3')->put($filename, file_get_contents($uploadedFile));
+
+                $filepath = Storage::disk('s3')->path($filename);
             }
 
             // Create a photo record
             $merchantPhoto = MerchantPhoto::create([
                 'uploaded_by' => Auth::user()->id,
-                'filepath' => $filename,
+                'filepath' => $filepath,
                 'merchant_id' => $merchant->id
             ]);
         }

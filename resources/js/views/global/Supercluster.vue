@@ -262,6 +262,14 @@ function onEachMerchant (feature, layer)
             .setLatLng(latLng)
             .setContent(content)
             .openOn(map);
+
+            // Initialize Swiper
+            const mySwiper = new Swiper('.swiper-container', {
+                navigation: {
+                    prevEl: '#prevButton',
+                    nextEl: '#nextButton',
+                },
+            });
     });
 }
 
