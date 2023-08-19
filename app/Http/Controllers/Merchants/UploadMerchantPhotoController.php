@@ -13,8 +13,6 @@ class UploadMerchantPhotoController extends Controller
 {
     public function __invoke (Request $request)
     {
-        \Log::info($request);
-
         $request->validate([
             'file' => 'required|mimes:jpg,png,jpeg,heif,heic',
             'merchantId' => 'required'
