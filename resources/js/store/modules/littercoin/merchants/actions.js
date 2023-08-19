@@ -32,7 +32,7 @@ export const actions = {
                     position: 'top-right'
                 });
 
-                context.commit('resetMerchant');
+                context.commit('setMerchant', response.data.merchant);
             }
         })
         .catch(error => {

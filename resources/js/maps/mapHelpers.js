@@ -199,12 +199,37 @@ const helper = {
         `;
     },
 
+    /**
+     * Build the HTML to include in the popup content
+     * @param properties: Merchant object
+     * @returns string (with html)
+     */
     getMerchantContent: (properties) => {
+        let photos = '';
+
+        if (properties.photos.length > 0)
+        {
+            properties.photos.forEach(photo => {
+                photos += `<div class="swiper-slide"><img style="height: 404px;" src="${photo.filepath}" alt="photo"></div>`;
+            });
+        }
+
+        let websiteLink = properties.website
+            ? `<a href="${properties.website}" target="_blank">${properties.website}</a>`
+            : '';
+
         return `
             <div class="leaflet-cleanup-container">
-                <p>${properties.name}</p>
-                <p>${properties.about ? properties.about : ''}</p>
-                <p>${properties.website ? properties.website: ''}</p>
+                <div class="swiper-container">
+                    <div class="swiper-wrapper">
+                        ${photos}
+                    </div>
+                    <div class="swiper-button-prev" id="prevButton"></div>
+                    <div class="swiper-button-next" id="nextButton"></div>
+                </div>
+                <p>Name: ${properties.name}</p>
+                <p>About this merchant: ${properties.about ? properties.about : ''}</p>
+                <p>Website: ${websiteLink}</p>
             </div>
         `;
     }

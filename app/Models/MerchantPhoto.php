@@ -5,19 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Merchant extends Model
+class MerchantPhoto extends Model
 {
     use HasFactory;
 
-    protected $table = 'merchants';
-
     protected $guarded = [];
+
+    protected $table = 'merchant_photos';
 
     /**
      * Relationships
      */
-    public function photos()
+    public function merchant()
     {
-        return $this->hasMany(MerchantPhoto::class);
+        return $this->belongsTo(Merchant::class);
     }
 }
