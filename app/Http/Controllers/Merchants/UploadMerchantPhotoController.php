@@ -42,9 +42,17 @@ class UploadMerchantPhotoController extends Controller
             else
             {
                 // In production environment, save to AWS S3
-                Storage::disk('s3')->put($filename, file_get_contents($uploadedFile));
+                $path = now()->year . '/' . now()->month . '/' . now()->day . '/' . $filename;
 
-                $filepath = Storage::disk('s3')->path($filename);
+                \Log::info(['path', $path]);
+
+                $filesystem = Storage::disk('s3');
+
+                $filesystem->put($path, file_get_contents($uploadedFile), 'public');
+
+                $filepath = $filesystem->url($path);
+
+                \Log::info(['filepath', $filepath]);
             }
 
             // Create a photo record
