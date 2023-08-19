@@ -82,6 +82,10 @@
                                         {{ $t('nav.admin-verify-boxes') }}
                                     </a>
 
+                                    <a v-if="can('create merchants')" href="/admin/merchants" class="navbar-item drop-item">
+                                        ADMIN - Add Merchants
+                                    </a>
+
                                     <!-- Tag Litter -->
                                     <router-link to="/tag" class="navbar-item drop-item">
                                         {{ $t('nav.tag-litter') }}

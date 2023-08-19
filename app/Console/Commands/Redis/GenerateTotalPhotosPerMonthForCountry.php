@@ -24,7 +24,7 @@ class GenerateTotalPhotosPerMonthForCountry extends Command
      *
      * @var string
      */
-    protected $description = 'Command description';
+    protected $description = 'Update all of the monthly total values for each location';
 
     /**
      * Create a new command instance.
