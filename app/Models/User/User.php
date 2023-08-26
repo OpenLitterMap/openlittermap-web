@@ -271,6 +271,21 @@ class User extends Authenticatable
         return (int) Redis::zscore("leaderboard:users:$year", $this->id);
     }
 
+    public function getCustomYearXpAttribute ()
+    {
+        $year = $this->getAttribute('custom_year');
+
+        return (int) Redis::zscore("leaderboard:users:$year", $this->id);
+    }
+
+    public function getCustomMonthXpAttribute ()
+    {
+        $year = $this->getAttribute('custom_year');
+        $month = $this->getAttribute('custom_month');
+
+        return (int) Redis::zscore("leaderboard:users:$year:$month", $this->id);
+    }
+
     /**
      * Get the Users XP for a Location, by Time
      *

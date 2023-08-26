@@ -19,9 +19,22 @@ class GetUsersForGlobalLeaderboardController extends Controller
         $total = 1;
         $userIds = [];
         $queryFilter = "xp_redis";
+        $year = null;
+        $month = null;
 
-        if (request()->has('timeFilter')) {
+        if (request()->has('timeFilter'))
+        {
             $timeFilter = request('timeFilter');
+        }
+
+        if (request()->has('year'))
+        {
+            $year = request('year');
+
+            if (request()->has('month'))
+            {
+                $month = request('month');
+            }
         }
 
         // Get the current page
@@ -30,7 +43,57 @@ class GetUsersForGlobalLeaderboardController extends Controller
         $end = $start + self::PER_PAGE - 1; // 99, 199, 299...
 
         // Get the values we need, depending on the filters given
-        if ($timeFilter === null || $timeFilter === 'all-time')
+        if ($timeFilter !== null)
+        {
+            $timeFilterData = $this->getDataForTimeFilter($timeFilter, $start, $end);
+
+            $total = $timeFilterData['total'];
+            $userIds = $timeFilterData['userIds'];
+            $queryFilter = $timeFilterData['queryFilter'];
+
+            $users = $this->getUsersForTimeFilter($userIds, $queryFilter, $start);
+        }
+        else if ($year !== null && $month === null)
+        {
+            $yearData = $this->getDataForYear($year, $start, $end);
+
+            $total = $yearData['total'];
+            $userIds = $yearData['userIds'];
+            $queryFilter = $yearData['queryFilter'];
+
+            $users = $this->getUsersForCustomYear($userIds, $queryFilter, $start, $year);
+        }
+        else if ($year !== null && $month !== null)
+        {
+            $monthData = $this->getDataForMonth($year, $month, $start, $end);
+
+            $total = $monthData['total'];
+            $userIds = $monthData['userIds'];
+            $queryFilter = $monthData['queryFilter'];
+
+            $users = $this->getUsersForCustomMonth($userIds, $queryFilter, $start, $year, $month);
+        }
+
+        return [
+            'success' => true,
+            'users' => $users,
+            'hasNextPage' => $total > $end + 1
+        ];
+    }
+
+    /**
+     * @param $timeFilter
+     * @param $start
+     * @param $end
+     * @return array
+     */
+    protected function getDataForTimeFilter ($timeFilter, $start, $end): array
+    {
+        $total = 0;
+        $userIds = null;
+        $queryFilter = 'xp_redis';
+
+        if ($timeFilter === 'all-time')
         {
             $total = Redis::zcount('xp.users', '-inf', '+inf');
             $userIds = Redis::zrevrange("xp.users", $start, $end);
@@ -99,7 +162,63 @@ class GetUsersForGlobalLeaderboardController extends Controller
             }
         }
 
-        $users = User::query()
+        return [
+            'total' => $total,
+            'userIds' => $userIds,
+            'queryFilter' => $queryFilter
+        ];
+    }
+
+    /**
+     * Retrieve data based on the year filter.
+     * @param $year
+     * @param $start
+     * @param $end
+     * @return array
+     */
+    protected function getDataForYear ($year, $start, $end): array
+    {
+        $total = Redis::zcount("leaderboard:users:$year", '-inf', '+inf');
+        $userIds = Redis::zrevrange("leaderboard:users:$year", $start, $end);
+
+        $queryFilter = "custom_year_xp";
+
+        return [
+            'total' => $total,
+            'userIds' => $userIds,
+            'queryFilter' => $queryFilter
+        ];
+    }
+
+    /**
+     * @param $year
+     * @param $start
+     * @param $end
+     * @return array
+     */
+    protected function getDataForMonth ($year, $month, $start, $end): array
+    {
+        $total = Redis::zcount("leaderboard:users:$year:$month", '-inf', '+inf');
+        $userIds = Redis::zrevrange("leaderboard:users:$year:$month", $start, $end);
+
+        $queryFilter = "custom_month_xp";
+
+        return [
+            'total' => $total,
+            'userIds' => $userIds,
+            'queryFilter' => $queryFilter
+        ];
+    }
+
+    /**
+     * @param $userIds
+     * @param $queryFilter
+     * @param $start
+     * @return array
+     */
+    protected function getUsersForTimeFilter ($userIds, $queryFilter, $start)
+    {
+        return User::query()
             ->with(['teams:id,name'])
             ->whereIn('id', $userIds)
             ->get()
@@ -108,10 +227,10 @@ class GetUsersForGlobalLeaderboardController extends Controller
             ->values()
             ->map(function (User $user, $index) use ($start, $queryFilter) {
                 $showTeamName = $user->active_team && $user->teams
-                    ->where('pivot.team_id', $user->active_team)
-                    ->first(function ($value, $key) {
-                        return $value->pivot->show_name_leaderboards || $value->pivot->show_username_leaderboards;
-                    });
+                        ->where('pivot.team_id', $user->active_team)
+                        ->first(function ($value, $key) {
+                            return $value->pivot->show_name_leaderboards || $value->pivot->show_username_leaderboards;
+                        });
 
                 return [
                     'name' => $user->show_name ? $user->name : '',
@@ -124,11 +243,80 @@ class GetUsersForGlobalLeaderboardController extends Controller
                 ];
             })
             ->toArray();
+    }
 
-        return [
-            'success' => true,
-            'users' => $users,
-            'hasNextPage' => $total > $end + 1
-        ];
+    /**
+     *
+     */
+    protected function getUsersForCustomYear ($userIds, $queryFilter, $start, $year)
+    {
+        return User::query()
+            ->with(['teams:id,name'])
+            ->whereIn('id', $userIds)
+            ->get()
+            ->map(function (User $user, $index) use ($start, $queryFilter, $year) {
+
+                $user->setAttribute('custom_year', $year);
+
+                $showTeamName = $user->active_team && $user->teams
+                        ->where('pivot.team_id', $user->active_team)
+                        ->first(function ($value, $key) {
+                            return $value->pivot->show_name_leaderboards || $value->pivot->show_username_leaderboards;
+                        });
+
+            // Not able to calculate rank here, but it is generated on the frontend
+            return [
+                'name' => $user->show_name ? $user->name : '',
+                'username' => $user->show_username ? ('@' . $user->username) : '',
+                'xp' => $user->custom_year_xp,
+                'global_flag' => $user->global_flag,
+                'social' => !empty($user->social_links) ? $user->social_links : null,
+                'team' => $showTeamName ? $user->team->name : '',
+//                 'rank' => $start + $index + 1
+            ];
+        })
+        ->sortByDesc(function ($user) {
+            return intval($user['xp']);
+        })
+        ->values()
+        ->toArray();
+    }
+
+    /**
+     *
+     */
+    protected function getUsersForCustomMonth ($userIds, $queryFilter, $start, $year, $month)
+    {
+        return User::query()
+            ->with(['teams:id,name'])
+            ->whereIn('id', $userIds)
+            ->get()
+            ->map(function (User $user, $index) use ($start, $queryFilter, $year, $month) {
+
+                $user->setAttribute('custom_year', $year);
+                $user->setAttribute('custom_month', $month);
+
+                $showTeamName = $user->active_team && $user->teams
+                        ->where('pivot.team_id', $user->active_team)
+                        ->first(function ($value, $key) {
+                            return $value->pivot->show_name_leaderboards || $value->pivot->show_username_leaderboards;
+                        });
+
+                // Not able to calculate rank here, but it is generated on the frontend
+                return [
+                    'name' => $user->show_name ? $user->name : '',
+                    'username' => $user->show_username ? ('@' . $user->username) : '',
+                    'xp' => $user->custom_month_xp,
+                    'global_flag' => $user->global_flag,
+                    'social' => !empty($user->social_links) ? $user->social_links : null,
+                    'team' => $showTeamName ? $user->team->name : '',
+//                 'rank' => $start + $index + 1
+                ];
+            })
+            ->sortByDesc(function ($user) {
+                return intval($user['xp']);
+            })
+            ->values()
+            ->toArray();
     }
 }

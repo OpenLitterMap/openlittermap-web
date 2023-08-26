@@ -2,8 +2,9 @@
     <section class="is-link hero is-bold is-fullheight">
         <section class="wrapper is-link is-bold">
 
-            <div class="leaderboard-heading"
-                 @click="openWorldCup"
+            <div
+                class="leaderboard-heading"
+                @click="openWorldCup"
             >
                 <i class="fa fa-arrow-left has-text-white"/>
                 <h3 class="title is-2 has-text-centered has-text-white">
@@ -22,6 +23,7 @@
             <div v-if="!loading">
                 <LeaderboardList
                     :leaders="leaderboard.users"
+                    :global="true"
                 />
 
                 <!-- Pagination Buttons -->
@@ -68,7 +70,7 @@ export default {
     async created () {
         this.loading = true;
 
-        await this.$store.dispatch('GET_USERS_FOR_GLOBAL_LEADERBOARD');
+        await this.$store.dispatch('GET_USERS_FOR_GLOBAL_LEADERBOARD', 'today');
 
         this.loading = false;
     },

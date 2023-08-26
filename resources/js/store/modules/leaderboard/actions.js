@@ -99,5 +99,30 @@ export const actions = {
         .catch(error => {
             console.error('get_previous_leaderboard_page', error);
         });
+    },
+
+    /**
+     *
+     */
+    async GET_USERS_FOR_GLOBAL_LEADERBOARD_BY_YEAR_AND_MONTH (context, payload)
+    {
+        await axios.get('/global/leaderboard', {
+            params: {
+                year: payload.year,
+                month: payload.month
+            }
+        })
+        .then(response => {
+            console.log('get_users_for_global_leaderboard', response);
+
+            context.commit('setGlobalLeaderboard', response.data);
+
+            // All time global users
+            // for GlobalMetaData
+            context.commit('setGlobalLeaders', response.data.users);
+        })
+        .catch(error => {
+            console.error('get_users_for_global_leaderboard', error);
+        });
     }
 }

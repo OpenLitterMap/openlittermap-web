@@ -36,6 +36,7 @@ export default {
         });
         await this.$store.dispatch('GET_ART_DATA');
         await this.$store.dispatch('GET_CLEANUPS');
+        await this.$store.dispatch('GET_MERCHANTS_GEOJSON');
 
         this.$store.commit('globalLoading', false);
     },

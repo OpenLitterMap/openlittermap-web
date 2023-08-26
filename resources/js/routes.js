@@ -139,6 +139,13 @@ const router = new VueRouter({
                 middleware: [ auth, admin ]
             }
         },
+        {
+            path: '/admin/merchants',
+            component: require('./views/admin/Merchants').default,
+            meta: {
+                middleware: [ auth, admin ]
+            }
+        },
         // AUTH ROUTES
         {
             path: '/upload',

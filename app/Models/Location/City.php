@@ -51,8 +51,20 @@ class City extends Location
         'litter_data',
         'brands_data',
         'ppm',
-        'updatedAtDiffForHumans'
+        'updatedAtDiffForHumans',
+        'total_ppm'
     ];
+
+    /**
+     * Return the total photo per month for each city
+     */
+    public function getTotalPpmAttribute ()
+    {
+        $ppm = Redis::hgetall("totalppm:city:$this->id");
+
+        return sort_ppm($ppm);
+    }
+
 
     /**
      * Return the total_litter value from redis

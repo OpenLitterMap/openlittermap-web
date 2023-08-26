@@ -1,8 +1,13 @@
 <template>
     <div class="global-leaders">
 
+        <GlobalLeaderboardFilters
+            v-if="global"
+        />
+
         <!-- Leaderboard Filters -->
-        <LeaderboardFilters
+        <LocationLeaderboardFilters
+            v-else
             :locationId="locationId"
             :locationType="locationType"
         />
@@ -58,17 +63,20 @@
 
 <script>
 import moment from 'moment';
-import LeaderboardFilters from "../Leaderboards/LeaderboardFilters";
+import LocationLeaderboardFilters from "../Leaderboards/LocationLeaderboardFilters";
+import GlobalLeaderboardFilters from "../Leaderboards/GlobalLeaderboardFilters";
 
 export default {
 	name: 'LeaderboardList',
     props: [
         'leaders',
         'locationId',
-        'locationType'
+        'locationType',
+        'global'
     ],
     components: {
-        LeaderboardFilters
+        GlobalLeaderboardFilters,
+        LocationLeaderboardFilters
     },
 	methods: {
 		/**

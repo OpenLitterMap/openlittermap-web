@@ -13,6 +13,7 @@ import { globalmap } from './modules/globalmap'
 import { leaderboard } from "./modules/leaderboard"
 import { locations } from './modules/locations'
 import { litter } from './modules/litter'
+import { merchants } from './modules/littercoin/merchants'
 import { modal } from './modules/modal'
 import { payments } from './modules/payments'
 import { photos } from './modules/photos'
@@ -41,6 +42,7 @@ export default new Vuex.Store({
         leaderboard,
         locations,
         litter,
+        merchants,
         modal,
         payments,
         photos,

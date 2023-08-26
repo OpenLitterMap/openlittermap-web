@@ -17,34 +17,20 @@
 
         <nav>
             <menu>
-
-                <!-- OPTIONS -->
-                <menuitem
-                    v-for="option in options"
-                    @click="changeOption(option)"
-                >
+                <!-- Options -->
+                <menuitem >
                     <a
-                        :class="option === selected ? 'is-selected' : ''"
+                        :class="selectedOption === selected ? 'is-selected' : ''"
                     >
-                        {{ getNameForOption(option) }}
-                    </a>
-                </menuitem>
-
-                <!-- MONTHS -->
-                <menuitem>
-                    <a
-                        :class="selectedMonth === selected ? 'is-selected' : ''"
-                    >
-                        {{ getNameForSelectedMonth }}
+                        {{ this.selectedOption }}
                     </a>
                     <menu>
                         <menuitem
-                            v-for="month in availableMonths"
-                            :value="month"
-                            :key="month"
-                            @click="selectMonth(month)"
+                            v-for="option in options"
+                            :value="option"
+                            @click="changeOption(option)"
                         >
-                            <a>{{ month }}</a>
+                            <a>{{ getNameForOption(option) }}</a>
                         </menuitem>
                     </menu>
                 </menuitem>
@@ -67,6 +53,25 @@
                         </menuitem>
                     </menu>
                 </menuitem>
+
+                <!-- MONTHS -->
+                <menuitem>
+                    <a
+                        :class="selectedMonth === selected ? 'is-selected' : ''"
+                    >
+                        {{ getNameForSelectedMonth }}
+                    </a>
+                    <menu>
+                        <menuitem
+                            v-for="(month, index) in availableMonths"
+                            :value="month"
+                            :key="month"
+                            @click="selectMonth(month, index)"
+                        >
+                            <a>{{ month }}</a>
+                        </menuitem>
+                    </menu>
+                </menuitem>
             </menu>
         </nav>
     </div>
@@ -74,23 +79,20 @@
 
 <script>
 export default {
-    name: "LeaderboardFilters",
-    props: [
-        'locationType',
-        'locationId'
-    ],
+    name: "GlobalLeaderboardFilters",
     data () {
         return {
             processing: false,
             selected: "today",
+            selectedOption: 'Today',
             selectedYear: new Date().getFullYear(),
             selectedMonth: null,
             options: [
-               "all-time",
-               "today",
-               "yesterday",
-               "this-month",
-               "last-month",
+                "today",
+                "yesterday",
+                "this-month",
+                "last-month",
+                "all-time"
             ],
             monthNames: [
                 "January",
@@ -132,8 +134,6 @@ export default {
                 months.push(...this.monthNames);
             }
 
-            console.log({months});
-
             return months;
         },
 
@@ -163,7 +163,7 @@ export default {
 
             for (let year = startYear; year <= currentYear; year++)
             {
-                availableYears.push(year);
+                availableYears.unshift(year);
             }
 
             return availableYears;
@@ -179,18 +179,7 @@ export default {
 
             this.processing = true;
 
-            if (this.locationId && this.locationType)
-            {
-                await this.$store.dispatch('GET_USERS_FOR_LOCATION_LEADERBOARD', {
-                    timeFilter: option,
-                    locationId: this.locationId,
-                    locationType: this.locationType
-                });
-            }
-            else
-            {
-                await this.$store.dispatch('GET_USERS_FOR_GLOBAL_LEADERBOARD', option);
-            }
+            await this.$store.dispatch('GET_USERS_FOR_GLOBAL_LEADERBOARD', option);
 
             this.processing = false;
         },
@@ -227,8 +216,9 @@ export default {
 
             this.selectedYear = year;
 
-            this.$store.dispatch('GET_USERS_FOR_LOCATION_LEADERBOARD', {
-                year
+            this.$store.dispatch('GET_USERS_FOR_GLOBAL_LEADERBOARD_BY_YEAR_AND_MONTH', {
+                year,
+                month: null
             });
         },
 
@@ -253,19 +243,24 @@ export default {
         /**
          *
          */
-        selectMonth(month)
+        async selectMonth(month, index)
         {
             this.selected = month;
 
             this.selectedMonth = month;
-            console.log({month});
+
+            const monthInt = index + 1;
+
+            await this.$store.dispatch('GET_USERS_FOR_GLOBAL_LEADERBOARD_BY_YEAR_AND_MONTH', {
+                year: this.selectedYear,
+                month: monthInt
+            })
         },
     }
 }
 </script>
 
 <style scoped>
-
     .leaderboard-filters-container {
         display: flex;
         justify-content: space-evenly;
@@ -359,12 +354,14 @@ export default {
         background: #ffffff;
         color: black !important;
         transition: background 0.5s, color 0.5s, transform 0.5s;
-        margin:0px 6px 6px 0px;
+        margin:0px 26px 6px 0px;
         padding: 10px 35px;
         box-sizing:border-box;
         border-radius:3px;
         box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.5);
         position:relative;
+        min-width: 9.5em;
+        text-align: center;
     }
 
     nav a.is-selected {
@@ -415,9 +412,4 @@ export default {
         transform:translateX(0) translateY(0%);
         opacity: 1;
     }
-
-
-
-
-
 </style>

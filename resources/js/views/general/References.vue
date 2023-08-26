@@ -312,11 +312,41 @@ export default {
                     author: 'Alrayes et al'
                 },
                 {
+                    date: '2023/05/25',
+                    title: 'Optimized Custom Dataset for Efficient Detection of Underwater Trash',
+                    link: 'https://arxiv.org/pdf/2305.16460.pdf',
+                    author: 'Walia et al'
+                },
+                {
+                    date: '2023/05/29',
+                    title: 'A methodology for quantifying and characterizing litter from trash capture devices (TCDs) to measure impact and inform upstream solutions',
+                    link: 'https://www.facetsjournal.com/doi/full/10.1139/facets-2022-0034',
+                    author: 'Sherlock et al'
+                },
+                {
                     date: '2023/07/01',
                     title: 'Study on the real-time object detection approach for end-of-life battery-powered electronics in the waste of electrical and electronic equipment recycling process',
                     link: 'https://www.sciencedirect.com/science/article/abs/pii/S0956053X23003355',
                     author: 'Yang et al'
                 },
+                {
+                    date: '2023/08/16',
+                    title: 'Mapping Waste Piles in an Urban Environment Using Ground Surveys, Manual Digitization of Drone Imagery, and Object Based Image Classification Approach',
+                    link: 'https://assets.researchsquare.com/files/rs-3244445/v1/ae8bcfa1-65c2-4ca1-ab43-8216902c2b0b.pdf?c=1692214271',
+                    author: 'Kalonde et al'
+                },
+                {
+                    date: '2023/08/16',
+                    title: 'The Privacy-Value-App Relationship and the Value-Centered Privacy Assistant',
+                    link: 'https://arxiv.org/pdf/2308.05700.pdf',
+                    author: 'Carter et al'
+                },
+                {
+                    date: '2023/08/18',
+                    title: 'Centralized road to a decentralized circular plastics economy',
+                    link: 'https://dutchblockchaincoalition.org/assets/images/default/Msc_Thesis_NinaHuijberts.pdf',
+                    author: 'Huijberts, N.'
+                }
             ]
         };
     },

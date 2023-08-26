@@ -31,17 +31,21 @@
 						<p class="show-mobile">Drag these across for more options</p>
 
 						<div class="tabs is-center">
-							<!-- Components within Tabs -->
-							<a v-for="(tab, idx) in tabs"
-								:key="idx" v-show="showTab(tab.in_location)"
+							<!-- Tabs -->
+                            <p
+                                v-for="(tab, idx) in tabs"
+								:key="idx"
+                                v-show="showTab(tab.in_location)"
 								@click="loadTab(tab.component, location.id)"
-								:class="tabClass(tab)">
+                                class="location-tab"
+                                :class="(tab.component === selectedTab) ? 'location-tab-is-active' : ''"
+                            >
 								{{ tab.title }}
-							</a>
+							</p>
 						</div>
 
 						<component
-							:is="tab"
+							:is="selectedTab"
 							:litter_data="location.litter_data"
 							:brands_data="location.brands_data"
 							:total_brands="location.total_brands"
@@ -52,7 +56,8 @@
 							:locationType="locationType"
 							:locationId="location.id"
                             :leaders="getUsersForLocationLeaderboard"
-                            :style="showOnlySelectedLeaderboard(location.id) ? '' : 'display: none'"
+                            :total_ppm="location.total_ppm"
+                            :style="showOnlySelectedComponent(location.id) ? '' : 'display: none'"
 						/>
 					</div>
 				</div>
@@ -75,7 +80,7 @@ import Download from '../../components/Locations/Charts/Download/Download'
 export default {
     name: 'SortLocations',
     props: [
-        'locationType'
+        'locationType',
     ],
 	components: {
 		LocationNavbar,
@@ -88,7 +93,7 @@ export default {
 	},
 	data () {
 		return {
-			tab: '',
+			selectedTab: 'LeaderboardList',
 			tabs: [
 				{ title: this.$t('location.litter'), component: 'ChartsContainer', in_location: 'all' },
 				{ title: this.$t('location.time-series'), component: 'TimeSeriesContainer', in_location: 'all'},
@@ -203,9 +208,7 @@ export default {
 		 */
 		async loadTab (tab, locationId)
 		{
-			this.tab = tab;
-
-            if (tab === "LeaderboardList")
+            if (tab === "TimeSeriesContainer" || "ChartsContainer" || "LeaderboardList" || "Download")
             {
                 await this.$store.dispatch('GET_USERS_FOR_LOCATION_LEADERBOARD', {
                     timeFilter: 'today',
@@ -213,30 +216,17 @@ export default {
                     locationId
                 });
             }
-		},
+
+            this.selectedTab = tab;
+        },
 
         /**
          *
          */
-        showOnlySelectedLeaderboard (locationId)
+        showOnlySelectedComponent (locationId)
         {
-            if (this.tab === "LeaderboardList")
-            {
-                return (this.selectedLocationId === locationId);
-            }
-
-            return true;
+            return (this.selectedLocationId === locationId);
         },
-
-		/**
-		 * Class to return for tab
-		 */
-		tabClass (tab)
-		{
-			return (tab === this.tab)
-                ? 'l-tab is-active'
-                : 'l-tab';
-		},
 
 		/**
 		 * Show tab depending on location locationType
@@ -270,6 +260,18 @@ export default {
 	.l-tab.is-active {
 		border-bottom: 2px solid white !important;
 	}
+
+    .location-tab {
+        background-color: white;
+        border-radius: 6px;
+        padding: 0.5em 1.5em;
+        cursor: pointer;
+    }
+
+    .location-tab.location-tab-is-active {
+        background-color: #3273dc;
+        color: white;
+    }
 
 	.h65pc {
         height: 65%;

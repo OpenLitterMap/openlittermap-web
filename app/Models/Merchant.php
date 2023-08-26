@@ -7,7 +7,17 @@ use Illuminate\Database\Eloquent\Model;
 
 class Merchant extends Model
 {
+    use HasFactory;
+
+    protected $table = 'merchants';
+
     protected $guarded = [];
 
-    use HasFactory;
+    /**
+     * Relationships
+     */
+    public function photos()
+    {
+        return $this->hasMany(MerchantPhoto::class);
+    }
 }

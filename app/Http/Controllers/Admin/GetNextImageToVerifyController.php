@@ -56,6 +56,11 @@ class GetNextImageToVerifyController extends Controller
 
         // Count photos that are uploaded but not tagged
         $photosNotProcessed = $this->filterPhotos()
+            ->where('verification', 0)
+            ->count();
+
+        // Count photos that are uploaded but not tagged
+        $photosNotProcessedForAdminTagging = $this->filterPhotos()
             ->whereHas('user', function ($q) {
                 return $q->where('enable_admin_tagging', true);
             })
@@ -81,7 +86,8 @@ class GetNextImageToVerifyController extends Controller
             'photo' => $photo,
             'photosNotProcessed' => $photosNotProcessed,
             'photosAwaitingVerification' => $photosAwaitingVerification,
-            'userVerificationCount' => $userVerificationCount
+            'userVerificationCount' => $userVerificationCount,
+            'photosNotProcessedForAdminTagging' => $photosNotProcessedForAdminTagging
         ];
     }
 
