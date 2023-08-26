@@ -71,10 +71,6 @@ class GenerateDailyLeaderboards extends Command
 
             if ($user)
             {
-                // leaderboard:users:2022:04:28 // user_ids, xp
-                // leaderboard:users:2023:05
-                // leaderboard:users:2023:05
-                // leaderboard:users:2023:05
                 Redis::zincrby("leaderboard:users:$year:$month:$day", $incrXp, $userId);
                 Redis::zincrby("leaderboard:users:$year:$month", $incrXp, $userId);
                 Redis::zincrby("leaderboard:users:$year", $incrXp, $userId);

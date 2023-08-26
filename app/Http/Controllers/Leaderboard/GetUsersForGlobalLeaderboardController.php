@@ -264,7 +264,6 @@ class GetUsersForGlobalLeaderboardController extends Controller
                             return $value->pivot->show_name_leaderboards || $value->pivot->show_username_leaderboards;
                         });
 
-            // Not able to calculate rank here, but it is generated on the frontend
             return [
                 'name' => $user->show_name ? $user->name : '',
                 'username' => $user->show_username ? ('@' . $user->username) : '',
@@ -272,7 +271,6 @@ class GetUsersForGlobalLeaderboardController extends Controller
                 'global_flag' => $user->global_flag,
                 'social' => !empty($user->social_links) ? $user->social_links : null,
                 'team' => $showTeamName ? $user->team->name : '',
-//                 'rank' => $start + $index + 1
             ];
         })
         ->sortByDesc(function ($user) {
@@ -302,7 +300,6 @@ class GetUsersForGlobalLeaderboardController extends Controller
                             return $value->pivot->show_name_leaderboards || $value->pivot->show_username_leaderboards;
                         });
 
-                // Not able to calculate rank here, but it is generated on the frontend
                 return [
                     'name' => $user->show_name ? $user->name : '',
                     'username' => $user->show_username ? ('@' . $user->username) : '',
@@ -310,7 +307,6 @@ class GetUsersForGlobalLeaderboardController extends Controller
                     'global_flag' => $user->global_flag,
                     'social' => !empty($user->social_links) ? $user->social_links : null,
                     'team' => $showTeamName ? $user->team->name : '',
-//                 'rank' => $start + $index + 1
                 ];
             })
             ->sortByDesc(function ($user) {
