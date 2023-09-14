@@ -352,6 +352,12 @@ export default {
                     title: 'A survey on bias in machine learning research',
                     link: 'https://arxiv.org/pdf/2308.11254.pdf',
                     author: 'Mikolajczyk-Bare & Grochowski'
+                },
+                {
+                    date: '08/09/23',
+                    title: 'Outdoor Trash Detection in Natural Environment Using a Deep Learning Model',
+                    link: 'https://ieeexplore.ieee.org/abstract/document/10244010',
+                    author: 'Das et al'
                 }
             ]
         };
