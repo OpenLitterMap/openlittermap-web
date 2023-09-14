@@ -32,10 +32,11 @@ class NotifySlackOfNewCity
 
         if (app()->environment() === 'production')
         {
-            Slack::send(
-                "New city added :grin: Say hello to $event->city, $event->state, $event->country! "
-                . $link ?: ''
-            );
+            Slack::to('#new-locations')
+                ->send(
+                    "New city added :grin: Say hello to $event->city, $event->state, $event->country! "
+                    . $link ?: ''
+                );
         }
     }
 }

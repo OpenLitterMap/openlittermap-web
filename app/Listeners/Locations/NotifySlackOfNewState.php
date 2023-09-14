@@ -17,7 +17,8 @@ class NotifySlackOfNewState
     {
         if (app()->environment() === 'production')
         {
-            Slack::send("New state added :grin:. Say hello to $event->state, $event->country!");
+            Slack::to('#new-locations')
+                ->send("New state added :grin:. Say hello to $event->state, $event->country!");
         }
     }
 }
