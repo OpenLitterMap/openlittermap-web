@@ -99,6 +99,8 @@ class ApiPhotosController extends Controller
 
         $lat = $request['lat'];
         $lon = $request['lon'];
+        \Log::info($lat);
+        \Log::info($lon);
 
         if (($lat === 0 && $lon === 0) || ($lat === '1' && $lon === '1'))
         {

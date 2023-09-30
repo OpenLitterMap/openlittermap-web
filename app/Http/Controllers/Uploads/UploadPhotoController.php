@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Uploads;
 
+use App\Exceptions\InvalidCoordinates;
 use Geohash\GeoHash;
 use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 use App\Actions\Photos\MakeImageAction;
@@ -176,6 +177,15 @@ class UploadPhotoController extends Controller
 
         $latitude = $latlong[0];
         $longitude = $latlong[1];
+
+        \Log::info($latitude);
+        \Log::info($longitude);
+
+        if (($latitude === 0 && $longitude === 0) || ($latitude === '1' && $longitude === '1'))
+        {
+            \Log::info("invalid coordinates found for userId $user->id \n");
+            abort(500, "Invalid coordinates: lat=0, lon=0");
+        }
 
         // Use OpenStreetMap to Reverse Geocode the coordinates into an Address.
         $revGeoCode = app(ReverseGeocodeLocationAction::class)->run($latitude, $longitude);
