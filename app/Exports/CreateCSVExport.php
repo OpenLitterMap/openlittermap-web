@@ -22,6 +22,8 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
     /** @var array */
     private $dateFilter;
 
+    public $timeout = 240;
+
     /**
      * Init args
      */

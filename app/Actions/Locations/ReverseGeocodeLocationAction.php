@@ -21,8 +21,6 @@ class ReverseGeocodeLocationAction
     /**
      * Using the GPS coordinates from the image, return the Reverse Geocode result from OpenStreetMap
      *
-     * eg country => Ireland, city => Cork, country_code => ie
-     *
      * @param $latitude
      * @param $longitude
      *

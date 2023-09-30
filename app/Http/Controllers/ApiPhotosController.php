@@ -21,6 +21,7 @@ use App\Actions\Photos\UploadPhotoAction;
 use App\Actions\Locations\ReverseGeocodeLocationAction;
 use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 
+use App\Exceptions\InvalidCoordinates;
 use App\Exceptions\PhotoAlreadyUploaded;
 
 use App\Http\Requests\Api\AddTagsRequest;
@@ -68,71 +69,12 @@ class ApiPhotosController extends Controller
     }
 
     /**
-     * Upload Photo
-     *
-     * @param Request $request
-     *
-     * array (
-        'lat' => '55.455525',
-        'lon' => '-5.713071670000001',
-        'date' => '2021:06:04 15:50:55',
-        'presence' => 'true',
-        'model' => 'iPhone 12',
-        'photo' =>
-            Illuminate\Http\UploadedFile::__set_state(array(
-                'test' => false,
-                'originalName' => 'IMG_2624.JPG',
-                'mimeType' => 'image/jpeg',
-                'error' => 0,
-                'hashName' => NULL
-            ))
-        );
-     *
-     * @return array
-     */
-    public function store (Request $request): array
-    {
-        $request->validate([
-            'photo' => 'required|mimes:jpg,png,jpeg,heic,heif',
-            'lat' => 'required|numeric',
-            'lon' => 'required|numeric',
-            'date' => 'required'
-        ]);
-
-        $file = $request->file('photo');
-
-        if ($file->getError() === 3)
-        {
-            return [
-                'success' => false,
-                'msg' => 'error-3'
-            ];
-        }
-
-        try
-        {
-            $photo = $this->storePhoto($request);
-        }
-        catch (PhotoAlreadyUploaded $e)
-        {
-            return [
-                'success' => false,
-                'msg' => $e->getMessage()
-            ];
-        }
-
-        return [
-            'success' => true,
-            'photo_id' => $photo->id
-        ];
-    }
-
-    /**
      * Stores a photo
      * This is to handle all APIs from mobile app versions
      *
      * @param Request $request
      * @return Photo
+     * @throws InvalidCoordinates
      * @throws PhotoAlreadyUploaded
      */
     protected function storePhoto (Request $request): Photo
@@ -158,15 +100,30 @@ class ApiPhotosController extends Controller
         $lat = $request['lat'];
         $lon = $request['lon'];
 
+        \Log::info($lat);
+        \Log::info($lon);
+
+        if (($lat === 0 && $lon === 0) || ($lat === '1' && $lon === '1'))
+        {
+            \Log::info("invalid coordinates found for userId $user->id \n");
+            throw new InvalidCoordinates();
+        }
+
         $date = str_contains($request['date'], ':')
             ? $request['date']
             : (int)$request['date'];
 
         $date = Carbon::parse($date);
 
+        // These users can upload duplicate photos
+        // we assume that in 1 second only 1 photo can be taken for each user
+        $excludedUserIds = [1,3233];
+
         // The user with id = 1 needs to upload duplicate images for testing
-        if (app()->environment() === "production" && $user->id != 1) {
+        if (app()->environment() === "production" && !in_array($user->id, $excludedUserIds)) {
             if (Photo::where(['user_id' => $user->id, 'datetime' => $date])->exists()) {
+                \Log::info(['user_id', $user->id]);
+                \Log::info(['date', $date]);
                 throw new PhotoAlreadyUploaded();
             }
         }
@@ -259,6 +216,66 @@ class ApiPhotosController extends Controller
         ));
 
         return $photo;
+    }
+
+    /**
+     * Upload Photo
+     *
+     * @param Request $request
+     *
+     * array (
+        'lat' => '55.455525',
+        'lon' => '-5.713071670000001',
+        'date' => '2021:06:04 15:50:55',
+        'presence' => 'true',
+        'model' => 'iPhone 12',
+        'photo' =>
+            Illuminate\Http\UploadedFile::__set_state(array(
+                'test' => false,
+                'originalName' => 'IMG_2624.JPG',
+                'mimeType' => 'image/jpeg',
+                'error' => 0,
+                'hashName' => NULL
+            ))
+        );
+     *
+     * @return array
+     */
+    public function store (Request $request): array
+    {
+        $request->validate([
+            'photo' => 'required|mimes:jpg,png,jpeg,heic,heif',
+            'lat' => 'required|numeric',
+            'lon' => 'required|numeric',
+            'date' => 'required'
+        ]);
+
+        $file = $request->file('photo');
+
+        if ($file->getError() === 3)
+        {
+            return [
+                'success' => false,
+                'msg' => 'error-3'
+            ];
+        }
+
+        try
+        {
+            $photo = $this->storePhoto($request);
+        }
+        catch (PhotoAlreadyUploaded $e)
+        {
+            return [
+                'success' => false,
+                'msg' => $e->getMessage()
+            ];
+        }
+
+        return [
+            'success' => true,
+            'photo_id' => $photo->id
+        ];
     }
 
     /**

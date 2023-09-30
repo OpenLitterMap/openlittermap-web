@@ -306,12 +306,12 @@ Route::post('/change', 'SubscriptionsController@change');
 
 // Route::get('/profile/awards', 'AwardsController@getAwards');
 
-/**
- * Instructions / navigation
- */
-Route::get('/nav', function () {
-    return view('pages.navigation');
-});
+///** deprecated */
+// * Instructions / navigation
+// */
+//Route::get('/nav', function () {
+//    return view('pages.navigation');
+//});
 
 Route::post('/merchants/create', 'Littercoin\Merchants\CreateMerchantController');
 Route::get('/merchants/get-geojson', 'Littercoin\Merchants\GetMerchantsGeojsonController');
