@@ -62,19 +62,14 @@ Route::get('/world/{country}/{state}/{city?}/download/get', 'DownloadsController
 // Todo - make this dynamic for wildcard routes prefixed by "/{lang}/maps"
 
 Route::group(['middleware' => 'fw-block-blacklisted'], function () {
-    Route::get('/maps', 'Location\LocationsController@getCountries');
-    Route::get('/maps/{country}/litter', 'Location\LocationsController@getCountries');
-    Route::get('/maps/{country}/leaderboard', 'Location\LocationsController@getCountries');
-    Route::get('/maps/{country}/time-series', 'Location\LocationsController@getCountries');
-    // Route::get('/maps/total/download', 'Location\LocationsController@getCountries');
-
-    Route::get('/maps/{country}', 'Location\LocationsController@getStates');
-    Route::get('/maps/{country}/{state}', 'Location\LocationsController@getCities');
-    Route::get('/maps/{country}/{state}/{city?}/{id?}', 'Location\LocationsController@getCities');
+    // these old routes are deprecated. Need to check if the functions are still in use.
+    // Route::get('/maps/{country}', 'Location\LocationsController@getStates');
+    // Route::get('/maps/{country}/{state}', 'Location\LocationsController@getCities');
+    // Route::get('/maps/{country}/{state}/{city?}/{id?}', 'Location\LocationsController@getCities');
     // Route::get('/maps/{country}/{city}/city_hex_map', 'MapController@getCity');
     // Similarly, get the city and pass the maps dynamically
-    Route::get('/maps/{country}/{state}/{city}/city_hex_map/{minfilter?}/{maxfilter?}/{hex?}', 'MapController@getCity');
-    Route::get('/maps/{country}/{state}/{city?}/download/get', 'DownloadsController@getDataByCity');
+    // Route::get('/maps/{country}/{state}/{city}/city_hex_map/{minfilter?}/{maxfilter?}/{hex?}', 'MapController@getCity');
+    // Route::get('/maps/{country}/{state}/{city?}/download/get', 'DownloadsController@getDataByCity');
 
     // new
     Route::get('city', 'MapController@getCity');
