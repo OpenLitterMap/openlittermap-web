@@ -354,11 +354,17 @@ export default {
                     author: 'Mikolajczyk-Bare & Grochowski'
                 },
                 {
+                    date: '2023/08/31',
+                    title: 'Deep learning-based object detection for smart solid waste management system',
+                    link: 'https://www.peertechzpublications.org/articles/AEST-7-170.pdf',
+                    author: 'Desta et al'
+                },
+                {
                     date: '08/09/23',
                     title: 'Outdoor Trash Detection in Natural Environment Using a Deep Learning Model',
                     link: 'https://ieeexplore.ieee.org/abstract/document/10244010',
                     author: 'Das et al'
-                }
+                },
             ]
         };
     },
