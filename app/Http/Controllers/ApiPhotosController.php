@@ -102,7 +102,7 @@ class ApiPhotosController extends Controller
         \Log::info($lat);
         \Log::info($lon);
 
-        if (($lat === 0 && $lon === 0) || ($lat === '1' && $lon === '1'))
+        if (($lat === 0 && $lon === 0) || ($lat === '0' && $lon === '0'))
         {
             \Log::info("invalid coordinates found for userId $user->id \n");
             throw new InvalidCoordinates();

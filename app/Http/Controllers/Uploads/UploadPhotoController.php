@@ -181,7 +181,7 @@ class UploadPhotoController extends Controller
         \Log::info($latitude);
         \Log::info($longitude);
 
-        if (($latitude === 0 && $longitude === 0) || ($latitude === '1' && $longitude === '1'))
+        if (($latitude === 0 && $longitude === 0) || ($latitude === '0' && $longitude === '0'))
         {
             \Log::info("invalid coordinates found for userId $user->id \n");
             abort(500, "Invalid coordinates: lat=0, lon=0");
