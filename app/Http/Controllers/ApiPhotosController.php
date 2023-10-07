@@ -263,7 +263,7 @@ class ApiPhotosController extends Controller
         {
             $photo = $this->storePhoto($request);
         }
-        catch (PhotoAlreadyUploaded $e)
+        catch (PhotoAlreadyUploaded | InvalidCoordinates $e)
         {
             return [
                 'success' => false,
