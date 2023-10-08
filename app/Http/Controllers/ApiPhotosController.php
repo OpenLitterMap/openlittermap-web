@@ -118,14 +118,15 @@ class ApiPhotosController extends Controller
         // we assume that in 1 second only 1 photo can be taken for each user
         $excludedUserIds = [1,3233];
 
+        // temp disabling this
         // The user with id = 1 needs to upload duplicate images for testing
-        if (app()->environment() === "production" && !in_array($user->id, $excludedUserIds)) {
-            if (Photo::where(['user_id' => $user->id, 'datetime' => $date])->exists()) {
-                \Log::info(['user_id', $user->id]);
-                \Log::info(['date', $date]);
-                throw new PhotoAlreadyUploaded();
-            }
-        }
+//        if (app()->environment() === "production" && !in_array($user->id, $excludedUserIds)) {
+//            if (Photo::where(['user_id' => $user->id, 'datetime' => $date])->exists()) {
+//                \Log::info(['user_id', $user->id]);
+//                \Log::info(['date', $date]);
+//                throw new PhotoAlreadyUploaded();
+//            }
+//        }
 
         // Upload images to both 's3' and 'bbox' disks, resized for 'bbox'
         $imageName = $this->uploadPhotoAction->run(
@@ -307,14 +308,14 @@ class ApiPhotosController extends Controller
 
             return [
                 'success' => false,
-                'msg' => $e->getMessage()
+                'msg' => 'photo-already-uploaded'
             ];
         } catch (InvalidCoordinates $e) {
             \Log::info(['ApiPhotosoController@uploadWithOrWithoutTags.2', $e->getMessage()]);
 
             return [
                 'success' => false,
-                'msg' => $e->getMessage()
+                'msg' => 'invalid-coordinates'
             ];
         }
 

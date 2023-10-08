@@ -25,8 +25,8 @@ class UploadPhotoWithOrWithoutTagsRequest extends FormRequest
     {
         return [
             'photo' => 'required|mimes:jpg,png,jpeg,heif,heic',
-            'lat' => 'required',
-            'lon' => 'required',
+            'lat' => 'required|numeric',
+            'lon' => 'required|numeric',
             'date' => 'required',
             'picked_up' => 'nullable|boolean',
 
