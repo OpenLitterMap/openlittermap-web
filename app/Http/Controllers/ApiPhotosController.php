@@ -99,8 +99,6 @@ class ApiPhotosController extends Controller
 
         $lat = $request['lat'];
         $lon = $request['lon'];
-        \Log::info($lat);
-        \Log::info($lon);
 
         if (($lat === 0 && $lon === 0) || ($lat === '0' && $lon === '0'))
         {
@@ -288,15 +286,19 @@ class ApiPhotosController extends Controller
      */
     public function uploadWithOrWithoutTags (UploadPhotoWithOrWithoutTagsRequest $request) :array
     {
-        $file = $request->file('photo');
-
-        if ($file->getError() === 3)
-        {
-            return [
-                'success' => false,
-                'msg' => 'error-3'
-            ];
-        }
+//        not sure if we need this
+//        $file = $request->file('photo');
+//
+//
+//        // The uploaded file was only partially uploaded.
+//        // we are not handling this on the app
+//        if ($file->getError() === 3)
+//        {
+//            return [
+//                'success' => false,
+//                'msg' => 'error-3'
+//            ];
+//        }
 
         try
         {
