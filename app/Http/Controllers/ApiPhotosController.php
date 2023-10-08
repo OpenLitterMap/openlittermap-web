@@ -303,7 +303,14 @@ class ApiPhotosController extends Controller
         }
         catch (PhotoAlreadyUploaded $e)
         {
-            \Log::info(['ApiPhotosController@uploadWithOrWithoutTags', $e->getMessage()]);
+            \Log::info(['ApiPhotosController@uploadWithOrWithoutTags.1', $e->getMessage()]);
+
+            return [
+                'success' => false,
+                'msg' => $e->getMessage()
+            ];
+        } catch (InvalidCoordinates $e) {
+            \Log::info(['ApiPhotosoController@uploadWithOrWithoutTags.2', $e->getMessage()]);
 
             return [
                 'success' => false,
