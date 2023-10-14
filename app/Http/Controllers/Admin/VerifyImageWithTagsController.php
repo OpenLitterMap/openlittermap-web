@@ -36,7 +36,7 @@ class VerifyImageWithTagsController extends Controller
      *
      * Todo: After Littercoin is sent, email the user, encouraging them to continue, share information about the app
      */
-    public function __invoke (Request $request)
+    public function __invoke (Request $request): array
     {
         // Update the photo as verified
         $photo = Photo::findOrFail($request->photoId);

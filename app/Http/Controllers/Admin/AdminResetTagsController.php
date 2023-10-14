@@ -78,16 +78,16 @@ class AdminResetTagsController extends Controller
                 logAdminAction($photo, 'reset-tags', $tagUpdates);
             }
 
-            // Todo - Add test to show xp is decrementing
-            if (Redis::hexists("user_verification_count", $user->id))
-            {
-                $verificationCount = Redis::hget("user_verification_count", $user->id);
-
-                if ($verificationCount > 0)
-                {
-                    Redis::hincrby("user_verification_count", $user->id, -1);
-                }
-            }
+//            // Todo - Add test to show xp is decrementing
+//            if (Redis::hexists("user_verification_count", $user->id))
+//            {
+//                $verificationCount = Redis::hget("user_verification_count", $user->id);
+//
+//                if ($verificationCount > 0)
+//                {
+//                    Redis::hincrby("user_verification_count", $user->id, -1);
+//                }
+//            }
 
             $user->save();
 

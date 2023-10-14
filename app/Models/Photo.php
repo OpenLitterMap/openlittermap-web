@@ -197,6 +197,12 @@ class Photo extends Model
     	return $this->hasOne('App\Models\Location\City');
     }
 
+    public function adminVerificationLog()
+    {
+        // Use hasOne or hasMany depending on your needs
+        return $this->hasOne(AdminVerificationLog::class, 'photo_id');
+    }
+
     /**
      * Litter categories
      */

@@ -3,6 +3,7 @@
 namespace App\Traits;
 
 use App\Models\Photo;
+use App\Models\User\User;
 use Illuminate\Database\Eloquent\Builder;
 
 trait FilterPhotosByGeoHashTrait
@@ -20,7 +21,7 @@ trait FilterPhotosByGeoHashTrait
      *
      * @return Builder $query
      */
-    public function filterPhotosByGeoHash(Builder $query, string $bbox, $layers = null): Builder
+    public function filterPhotosByGeoHash (Builder $query, string $bbox, $layers = null): Builder
     {
         $bbox = json_decode($bbox);
 
@@ -38,15 +39,19 @@ trait FilterPhotosByGeoHashTrait
         $geos = array_values($this->neighbors($center_geohash));
 
         // Build cluster query
-        $query->where(function ($q) use ($geos) {
+        $query->where(function ($q) use ($geos)
+        {
             foreach ($geos as $geo) {
                 $q->orWhere('geohash', 'like', $geo . '%');  // starts with
             }
         });
 
-        if ($layers) {
-            $query->where(function ($q) use ($layers) {
-                foreach ($layers as $index => $layer) {
+        if ($layers)
+        {
+            $query->where(function ($q) use ($layers)
+            {
+                foreach ($layers as $index => $layer)
+                {
                     ($index === 0)
                         ? $q->where($layer . "_id", '!=', null)
                         : $q->orWhere($layer . "_id", '!=', null);
@@ -66,14 +71,18 @@ trait FilterPhotosByGeoHashTrait
      *
      * @return array
      */
-    protected function photosToGeojson($photos): array
+    protected function photosToGeojson ($photos): array
     {
-        $features = $photos->map(function (Photo $photo) {
+        $features = $photos->map(function (Photo $photo)
+        {
             $name = $photo->user->show_name_maps ? $photo->user->name : null;
             $username = $photo->user->show_username_maps ? $photo->user->username : null;
             $team = $photo->team ? $photo->team->name : null;
             $filename = ($photo->user->is_trusted || $photo->verified >= 2) ? $photo->filename : '/assets/images/waiting.png';
             $resultString = $photo->verified >= 2 ? $photo->result_string : null;
+            $admin = isset($photo->adminVerificationLog->admin)
+                ? $this->getDataForAdmin($photo->adminVerificationLog)
+                : null;
 
             return [
                 'type' => 'Feature',
@@ -93,7 +102,8 @@ trait FilterPhotosByGeoHashTrait
                     'team' => $team,
                     'picked_up' => $photo->picked_up,
                     'social' => $photo->user->social_links,
-                    'custom_tags' => $photo->customTags->pluck('tag')
+                    'custom_tags' => $photo->customTags->pluck('tag'),
+                    'admin' => $admin
                 ]
             ];
         })->toArray();
@@ -104,4 +114,12 @@ trait FilterPhotosByGeoHashTrait
         ];
     }
 
+    protected function getDataForAdmin ($adminVerificationLog) {
+        return [
+            'name' => $adminVerificationLog->admin->show_name ? $adminVerificationLog->admin->name : null,
+            'username' => $adminVerificationLog->admin->show_username ? $adminVerificationLog->admin->username : null,
+            'created_at' => $adminVerificationLog->created_at,
+            'removedTags' => $adminVerificationLog->removed_tags
+        ];
+    }
 }

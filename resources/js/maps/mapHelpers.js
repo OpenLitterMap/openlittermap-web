@@ -14,6 +14,59 @@ const helper = {
     },
 
     /**
+     * name, username = null || string
+     *
+     * @param admin
+     */
+    getAdminName: (admin) => {
+        let str = "These tags were updated by ";
+
+        if (admin.name || admin.username)
+        {
+            if (admin.name) str += admin.name;
+            if (admin.username) str += ' @' + admin.username;
+        }
+        else
+        {
+            str += "an admin";
+        }
+
+        // at date
+        str += "<br> at " + moment(admin.created_at).format('LLL');
+
+        return str;
+    },
+
+    /**
+     * Get the removed custom + pre-defined Tags for the litter popup
+     */
+    getRemovedTags: (removedTags) => {
+        let str = "Removed Tags: ";
+
+        if (removedTags.customTags)
+        {
+            removedTags.customTags.forEach(customTag => {
+                str += customTag + " ";
+            });
+
+            str += "<br>";
+        }
+
+        if (removedTags.tags)
+        {
+            Object.keys(removedTags.tags).forEach(category => {
+                Object.entries(removedTags.tags[category]).forEach((entry) => {
+                    str += i18n.t(`litter.${category}.${entry[0]}`) + `(${entry[1]})`;
+                });
+
+                str += '<br>';
+            });
+        }
+
+        return str;
+    },
+
+    /**
      * Scrolls the popup to its bottom if the image is very tall
      * Needed to reduce the flicker when the map renders the popups
      * @param event The event emitted by the leaflet map
@@ -120,7 +173,9 @@ const helper = {
         const teamFormatted = helper.formatTeam(properties.team);
         const pickedUpFormatted = helper.formatPickedUp(properties.picked_up);
         const isLitterArt = properties.result_string && properties.result_string.includes('art.item');
-        const hasSocialLinks = properties.social && Object.keys(properties.social).length
+        const hasSocialLinks = properties.social && Object.keys(properties.social).length;
+        const admin = properties.admin ? helper.getAdminName(properties.admin) : null;
+        const removedTags = properties.admin?.removedTags ? helper.getRemovedTags(properties.admin.removedTags) : '';
 
         return `
             <img
@@ -146,6 +201,8 @@ const helper = {
                     ${properties.social?.reddit ? '<a target="_blank" href="' + properties.social.reddit + '"><i class="fa fa-reddit"></i></a>' : ''}
                 ${hasSocialLinks ? '</div>' : ''}
                 ${url ? '<a class="link" target="_blank" href="' + url + '"><i class="fa fa-share-alt"></i></a>' : ''}
+                ${admin ? '<p class="updated-by-admin">' + admin + '</p>' : ''}
+                ${removedTags ? '<p class="updated-by-admin">' + removedTags + '</p>' : ''}
             </div>`;
     },
 

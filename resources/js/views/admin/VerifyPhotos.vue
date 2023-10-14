@@ -217,8 +217,7 @@ export default {
         Tags,
         RecentTags
     },
-	async created ()
-	{
+	async created () {
         this.loading = true;
 
         await this.$store.dispatch('GET_NEXT_ADMIN_PHOTO');

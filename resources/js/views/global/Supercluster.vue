@@ -800,4 +800,12 @@ export default {
         margin: 10px 0 !important;
     }
 
+    .updated-by-admin {
+        margin-top: 5px !important;
+        margin-bottom: 0 !important;
+        margin-right: 2em;
+        font-size: 13px !important;
+        font-style: italic !important;
+    }
+
 </style>
