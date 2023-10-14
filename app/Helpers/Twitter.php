@@ -13,26 +13,29 @@ class Twitter
         $access_token = env('TWITTER_API_ACCESS_TOKEN');
         $access_token_secret = env('TWITTER_API_ACCESS_SECRET');
 
-        $connection = new TwitterOAuth(
-            $consumer_key,
-            $consumer_secret,
-            $access_token,
-            $access_token_secret
-        );
-
-        $connection->setApiVersion('2');
-
-        $tweet = [
-            "text" => $message
-        ];
-
-        try
+        if (app()->environment() === 'production' && $consumer_key !== null)
         {
-            $status = $connection->post("tweets", $tweet, true);
-        }
-        catch (\Exception $exception)
-        {
-            \Log::info(['Twitter.sendMessage', $exception->getMessage()]);
+            $connection = new TwitterOAuth(
+                $consumer_key,
+                $consumer_secret,
+                $access_token,
+                $access_token_secret
+            );
+
+            $connection->setApiVersion('2');
+
+            $tweet = [
+                "text" => $message
+            ];
+
+            try
+            {
+                $status = $connection->post("tweets", $tweet, true);
+            }
+            catch (\Exception $exception)
+            {
+                \Log::info(['Twitter.sendMessage', $exception->getMessage()]);
+            }
         }
     }
 }
