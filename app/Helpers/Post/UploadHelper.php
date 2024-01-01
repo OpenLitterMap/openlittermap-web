@@ -13,8 +13,6 @@ class UploadHelper
 {
     /**
      * Get or Create Country from $addressArray
-     *
-     * @param array $addressArray
      */
     public function getCountryFromAddressArray (array $addressArray)
     {
@@ -40,9 +38,6 @@ class UploadHelper
 
     /**
      * Get or Create State from $addressArray
-     *
-     * @param Country $country
-     * @param array $addressArray
      */
     public function getStateFromAddressArray (Country $country, array $addressArray)
     {
@@ -116,7 +111,6 @@ class UploadHelper
     /**
      * @param $addressArray
      * @param $keys
-     * @return string|null
      */
     protected function lookupPlace ($addressArray, $keys): ?string
     {

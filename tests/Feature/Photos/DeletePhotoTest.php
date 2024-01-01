@@ -40,9 +40,9 @@ class DeletePhotoTest extends TestCase
         Storage::disk('s3')->assertExists($imageAttributes['filepath']);
         Storage::disk('bbox')->assertExists($imageAttributes['filepath']);
         $user->refresh();
-        $this->assertEquals(1, $user->has_uploaded);
-        $this->assertEquals(1, $user->xp);
-        $this->assertEquals(1, $user->total_images);
+        $this->assertSame(1, $user->has_uploaded);
+        $this->assertSame(1, $user->xp);
+        $this->assertSame(1, $user->total_images);
         $this->assertCount(1, $user->photos);
         $photo = $user->photos->last();
 
@@ -50,9 +50,9 @@ class DeletePhotoTest extends TestCase
         $this->post('/profile/photos/delete', ['photoid' => $photo->id]);
 
         $user->refresh();
-        $this->assertEquals(1, $user->has_uploaded); // TODO shouldn't it decrement?
-        $this->assertEquals(0, $user->xp);
-        $this->assertEquals(0, $user->total_images);
+        $this->assertSame(1, $user->has_uploaded); // TODO shouldn't it decrement?
+        $this->assertSame(0, $user->xp);
+        $this->assertSame(0, $user->total_images);
         Storage::disk('s3')->assertMissing($imageAttributes['filepath']);
         Storage::disk('bbox')->assertMissing($imageAttributes['filepath']);
         $this->assertCount(0, $user->photos);
@@ -77,10 +77,10 @@ class DeletePhotoTest extends TestCase
         $this->post('/profile/photos/delete', ['photoid' => $photo->id]);
 
         // Assert leaderboards are updated ------------
-        $this->assertEquals(0, Redis::zscore("xp.users", $user->id));
-        $this->assertEquals(0, Redis::zscore("xp.country.$photo->country_id", $user->id));
-        $this->assertEquals(0, Redis::zscore("xp.country.$photo->country_id.state.$photo->state_id", $user->id));
-        $this->assertEquals(0, Redis::zscore("xp.country.$photo->country_id.state.$photo->state_id.city.$photo->city_id", $user->id));
+        $this->assertSame('0', Redis::zscore("xp.users", $user->id));
+        $this->assertSame('0', Redis::zscore("xp.country.$photo->country_id", $user->id));
+        $this->assertSame('0', Redis::zscore("xp.country.$photo->country_id.state.$photo->state_id", $user->id));
+        $this->assertSame('0', Redis::zscore("xp.country.$photo->country_id.state.$photo->state_id.city.$photo->city_id", $user->id));
     }
 
     public function test_it_fires_image_deleted_event()

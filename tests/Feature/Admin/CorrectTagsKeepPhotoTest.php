@@ -21,8 +21,10 @@ class CorrectTagsKeepPhotoTest extends TestCase
 
     /** @var User */
     protected $admin;
+
     /** @var User */
     protected $user;
+
     /** @var Photo */
     protected $photo;
 
@@ -35,7 +37,6 @@ class CorrectTagsKeepPhotoTest extends TestCase
 
         $this->setImagePath();
 
-        /** @var User $admin */
         $this->admin = User::factory()->create(['verification_required' => false]);
 
         $this->admin->assignRole(Role::create(['name' => 'admin']));
@@ -71,9 +72,9 @@ class CorrectTagsKeepPhotoTest extends TestCase
     {
         // We make sure xp and tags are correct
         Redis::zrem('xp.users', $this->admin->id);
-        $this->assertEquals(4, $this->user->xp);
-        $this->assertEquals(0, $this->admin->xp);
-        $this->assertEquals(0, $this->admin->xp_redis);
+        $this->assertSame(4, $this->user->xp);
+        $this->assertNull($this->admin->xp);
+        $this->assertSame(0, $this->admin->xp_redis);
         $this->assertInstanceOf(Smoking::class, $this->photo->smoking);
 
         // Admin marks the tagging as correct -------------------
@@ -86,14 +87,14 @@ class CorrectTagsKeepPhotoTest extends TestCase
         $this->photo->refresh();
 
         // Assert xp and tags don't change
-        $this->assertEquals(4, $this->user->xp);
-        $this->assertEquals(1, $this->photo->verification);
-        $this->assertEquals(2, $this->photo->verified);
-        $this->assertEquals(3, $this->photo->total_litter);
+        $this->assertSame(4, $this->user->xp);
+        $this->assertSame(1.0, $this->photo->verification);
+        $this->assertSame(2, $this->photo->verified);
+        $this->assertSame(3, $this->photo->total_litter);
         $this->assertInstanceOf(Smoking::class, $this->photo->smoking);
         // Admin is rewarded with 1 XP
-        $this->assertEquals(1, $this->admin->xp);
-        $this->assertEquals(1, $this->admin->xp_redis);
+        $this->assertSame(1, $this->admin->xp);
+        $this->assertSame(1, $this->admin->xp_redis);
     }
 
     public function test_unauthorized_users_cannot_mark_tagging_as_correct()
@@ -112,8 +113,8 @@ class CorrectTagsKeepPhotoTest extends TestCase
 
         $response->assertRedirect('/');
 
-        $this->assertEquals(0.1, $this->photo->verification);
-        $this->assertEquals(0, $this->photo->verified);
+        $this->assertEqualsWithDelta(0.1, $this->photo->verification, PHP_FLOAT_EPSILON);
+        $this->assertSame(0, $this->photo->verified);
     }
 
     public function test_it_throws_not_found_exception_if_photo_doesnt_exist()
@@ -137,7 +138,7 @@ class CorrectTagsKeepPhotoTest extends TestCase
         Event::assertDispatched(
             TagsVerifiedByAdmin::class,
             function (TagsVerifiedByAdmin $e) {
-                return $e->photo_id === $this->photo->id;
+                return $e->photo_id == $this->photo->id;
             }
         );
     }

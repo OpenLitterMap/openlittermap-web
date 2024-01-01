@@ -45,27 +45,19 @@ class ResetTotalsOnRedis extends Command
     {
         $featureType = $this->argument('type');
 
-        if ($featureType === "country")
-        {
+        if ($featureType === "country") {
             $features = Country::select('id')->orderBy('id')->get();
             $feature_id = "country_id";
-        }
-        else if ($featureType === "state")
-        {
+        } elseif ($featureType === "state") {
             $features = State::select('id')->orderBy('id')->get();
             $feature_id = "state_id";
-        }
-        else if ($featureType === "city")
-        {
+        } elseif ($featureType === "city") {
             $features = City::select('id')->orderBy('id')->get();
             $feature_id = "city_id";
-        }
-        else if ($featureType === "user")
-        {
+        } elseif ($featureType === "user") {
             $features = User::select('id')->where('has_uploaded', 1)->orderBy('id')->get();
             $feature_id = "user_id";
-        }
-        else
+        } else
         {
             echo "Wrong location type provided. Must be 'country', 'state', or 'city'";
 

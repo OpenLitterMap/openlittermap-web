@@ -9,8 +9,8 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 
 class NewSubscription extends Mailable
 {
-    use Queueable, SerializesModels;
-
+    use Queueable;
+    use SerializesModels;
     /**
      * Create a new message instance.
      *

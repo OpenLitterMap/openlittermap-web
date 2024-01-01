@@ -44,8 +44,6 @@ class TeamsController extends Controller
     /**
      * The user wants to create a new team
      *
-     * @param CreateTeamRequest $request
-     * @param CreateTeamAction $action
      * @return array
      */
     public function create(CreateTeamRequest $request, CreateTeamAction $action)
@@ -65,9 +63,6 @@ class TeamsController extends Controller
     /**
      * The user wants to update a team
      *
-     * @param UpdateTeamRequest $request
-     * @param UpdateTeamAction $action
-     * @param Team $team
      * @return array
      */
     public function update(UpdateTeamRequest $request, UpdateTeamAction $action, Team $team)
@@ -84,8 +79,6 @@ class TeamsController extends Controller
     /**
      * The user wants to join a team
      *
-     * @param JoinTeamRequest $request
-     * @param JoinTeamAction $action
      * @return array
      */
     public function join(JoinTeamRequest $request, JoinTeamAction $action)
@@ -111,8 +104,6 @@ class TeamsController extends Controller
     /**
      * The user wants to leave a team
      *
-     * @param LeaveTeamRequest $request
-     * @param LeaveTeamAction $action
      * @return array
      */
     public function leave(LeaveTeamRequest $request, LeaveTeamAction $action)
@@ -235,19 +226,14 @@ class TeamsController extends Controller
 
     /**
      * Helper to output successful responses
-     * @param array $data
-     * @return array
      */
     private function success(array $data = []): array
     {
-        return array_merge(['success' => true], $data);
+        return ['success' => true, ...$data];
     }
 
     /**
      * Helper to output error responses
-     *
-     * @param string $message
-     * @return array
      */
     private function fail(string $message): array
     {

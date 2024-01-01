@@ -10,9 +10,10 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 
 class Update extends Mailable
 {
-    use Queueable, SerializesModels;
-
+    use Queueable;
+    use SerializesModels;
     public $user;
+
     /**
      * Create a new message instance.
      *

@@ -49,7 +49,5 @@ class MigrateVerificationCountToRedis extends Command
         }
 
         echo "Completed.";
-
-        return;
     }
 }

@@ -65,8 +65,8 @@ class GenerateTimeSeries extends Command
 
             foreach ($photos as $index => $monthlyPhotos)
             {
-                $month = $months[(int)$substr = substr($index,0,2)];
-                $year = substr($index,2,5);
+                $month = $months[(int)$substr = substr((string) $index,0,2)];
+                $year = substr((string) $index,2,5);
                 $photosPerMonth[$month.$year] = $monthlyPhotos->count(); // Mar-17
                 // $total_photos += $monthlyPhotos->count();
             }
@@ -96,8 +96,8 @@ class GenerateTimeSeries extends Command
 
             foreach ($photos as $index => $monthlyPhotos)
             {
-                $month = $months[(int)$substr = substr($index,0,2)];
-                $year = substr($index,2,5);
+                $month = $months[(int)$substr = substr((string) $index,0,2)];
+                $year = substr((string) $index,2,5);
                 $photosPerMonth[$month.$year] = $monthlyPhotos->count(); // Mar-17
                 // $total_photos += $monthlyPhotos->count();
             }
@@ -127,8 +127,8 @@ class GenerateTimeSeries extends Command
 
             foreach ($photos as $index => $monthlyPhotos)
             {
-                $month = $months[(int)$substr = substr($index,0,2)];
-                $year = substr($index,2,5);
+                $month = $months[(int)$substr = substr((string) $index,0,2)];
+                $year = substr((string) $index,2,5);
                 $photosPerMonth[$month.$year] = $monthlyPhotos->count(); // Mar-17
                 // $total_photos += $monthlyPhotos->count();
             }

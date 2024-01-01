@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Auth;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use App\Models\User\User;
 use App\Plan;
 use Exception;
@@ -28,11 +29,11 @@ class SubscriptionsController extends Controller
                        'plan' => 'required'
             ]);
 
-            $user = \App\Models\User\User::find($request->form['user_id']);
+            $user = User::find($request->form['user_id']);
 
-    	} catch(Exception $e) {
+    	} catch(Exception $exception) {
     		// return $e->getMessage();
-    		return response()->json(['status' => $e->getMessage()], 422);
+    		return response()->json(['status' => $exception->getMessage()], 422);
     	}
 
         $user->newSubscription($plan->name, $plan->name)->create($request->stripeToken);
@@ -58,9 +59,9 @@ class SubscriptionsController extends Controller
 
             $user = Auth::user();
 
-        } catch(Exception $e) {
+        } catch(Exception $exception) {
             // return $e->getMessage();
-            return response()->json(['status' => $e->getMessage()], 422);
+            return response()->json(['status' => $exception->getMessage()], 422);
         }
 
         $user->newSubscription($plan->name, $plan->name)->create($request->stripeToken);
@@ -80,7 +81,7 @@ class SubscriptionsController extends Controller
 
         $user = Auth::user();
 
-        if (\Hash::check($request->input('password'), $user->password)) {
+        if (Hash::check($request->input('password'), $user->password)) {
             // $user->subscriptions[0]->cancel();
 
             foreach($user->subscriptions as $sub) {

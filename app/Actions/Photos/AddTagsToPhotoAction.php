@@ -9,9 +9,7 @@ class AddTagsToPhotoAction
     /**
      * Adds tags to the photo.
      *
-     * @param Photo $photo
      * @param $tags
-     *
      * @return array number of added tags, total litter and brands
      */
     public function run (Photo $photo, $tags): array
@@ -36,14 +34,11 @@ class AddTagsToPhotoAction
 
         $all = $litter + $brands;
 
-        return compact('litter', 'brands', 'all');
+        return ['litter' => $litter, 'brands' => $brands, 'all' => $all];
     }
 
     /**
      * Creates new rows on respective category tables
-     *
-     * @param Photo $photo
-     * @param string $category
      */
     protected function createCategory (Photo $photo, string $category): void
     {

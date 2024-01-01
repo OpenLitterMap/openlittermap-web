@@ -1,5 +1,9 @@
 <?php
 
+use PragmaRX\Firewall\Vendor\Laravel\Models\Firewall;
+use PragmaRX\Firewall\Vendor\Laravel\Models\User;
+use PragmaRX\Firewall\Notifications\Channels\Slack;
+use PragmaRX\Firewall\Notifications\Channels\Mail;
 return [
 
     /*
@@ -141,7 +145,7 @@ return [
      *
      */
 
-    'firewall_model' => 'PragmaRX\Firewall\Vendor\Laravel\Models\Firewall',
+    'firewall_model' => Firewall::class,
 
     /*
      * Session object binding in the IoC Container
@@ -183,7 +187,7 @@ return [
             'ip' => [
                 'requests' => 50,
 
-                'seconds' => 1 * 60, // 1 minute
+                'seconds' => 60, // 1 minute
             ],
 
             'country' => [
@@ -276,7 +280,7 @@ return [
         ],
 
         'users' => [
-            'model' => PragmaRX\Firewall\Vendor\Laravel\Models\User::class,
+            'model' => User::class,
 
             'emails' => [
                 'admin@mydomain.com',
@@ -286,12 +290,12 @@ return [
         'channels' => [
             'slack' => [
                 'enabled' => true,
-                'sender'  => PragmaRX\Firewall\Notifications\Channels\Slack::class,
+                'sender'  => Slack::class,
             ],
 
             'mail' => [
                 'enabled' => true,
-                'sender'  => PragmaRX\Firewall\Notifications\Channels\Mail::class,
+                'sender'  => Mail::class,
             ],
         ],
     ],

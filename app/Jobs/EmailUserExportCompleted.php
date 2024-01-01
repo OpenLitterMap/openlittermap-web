@@ -13,9 +13,12 @@ use Illuminate\Support\Facades\Mail;
 
 class EmailUserExportCompleted implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-
-    public $email, $path;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
+    public $email;
+    public $path;
 
     /**
      * Create a new job instance.

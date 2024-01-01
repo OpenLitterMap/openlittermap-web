@@ -27,16 +27,16 @@ class UpdateTotalPhotosForLocationActionTest extends TestCase
         $updateTotalPhotosAction = app(UpdateTotalPhotosForLocationAction::class);
         $updateTotalPhotosAction->run($countryId, $stateId, $cityId, $increment);
 
-        $this->assertEquals($increment, Redis::hget("country:$countryId", UpdateTotalPhotosForLocationAction::KEY));
-        $this->assertEquals($increment, Redis::hget("state:$stateId", UpdateTotalPhotosForLocationAction::KEY));
-        $this->assertEquals($increment, Redis::hget("city:$cityId", UpdateTotalPhotosForLocationAction::KEY));
+        $this->assertSame("$increment", Redis::hget("country:$countryId", UpdateTotalPhotosForLocationAction::KEY));
+        $this->assertSame("$increment", Redis::hget("state:$stateId", UpdateTotalPhotosForLocationAction::KEY));
+        $this->assertSame("$increment", Redis::hget("city:$cityId", UpdateTotalPhotosForLocationAction::KEY));
 
         // Executing the action twice
         $updateTotalPhotosAction->run($countryId, $stateId, $cityId, $increment);
 
-        $this->assertEquals(2 * $increment, Redis::hget("country:$countryId", UpdateTotalPhotosForLocationAction::KEY));
-        $this->assertEquals(2 * $increment, Redis::hget("state:$stateId", UpdateTotalPhotosForLocationAction::KEY));
-        $this->assertEquals(2 * $increment, Redis::hget("city:$cityId", UpdateTotalPhotosForLocationAction::KEY));
+        $this->assertSame(2 * $increment, (int) Redis::hget("country:$countryId", UpdateTotalPhotosForLocationAction::KEY));
+        $this->assertSame(2 * $increment, (int) Redis::hget("state:$stateId", UpdateTotalPhotosForLocationAction::KEY));
+        $this->assertSame(2 * $increment, (int) Redis::hget("city:$cityId", UpdateTotalPhotosForLocationAction::KEY));
     }
 
     public function test_it_decrements_a_redis_hash_for_each_location()
@@ -58,16 +58,16 @@ class UpdateTotalPhotosForLocationActionTest extends TestCase
         $updateTotalPhotosAction = app(UpdateTotalPhotosForLocationAction::class);
         $updateTotalPhotosAction->run($countryId, $stateId, $cityId, $decrement);
 
-        $this->assertEquals(5, Redis::hget("country:$countryId", UpdateTotalPhotosForLocationAction::KEY));
-        $this->assertEquals(5, Redis::hget("state:$stateId", UpdateTotalPhotosForLocationAction::KEY));
-        $this->assertEquals(5, Redis::hget("city:$cityId", UpdateTotalPhotosForLocationAction::KEY));
+        $this->assertSame('5', Redis::hget("country:$countryId", UpdateTotalPhotosForLocationAction::KEY));
+        $this->assertSame('5', Redis::hget("state:$stateId", UpdateTotalPhotosForLocationAction::KEY));
+        $this->assertSame('5', Redis::hget("city:$cityId", UpdateTotalPhotosForLocationAction::KEY));
 
         // Executing the action twice
         $updateTotalPhotosAction->run($countryId, $stateId, $cityId, $decrement);
 
-        $this->assertEquals(0, Redis::hget("country:$countryId", UpdateTotalPhotosForLocationAction::KEY));
-        $this->assertEquals(0, Redis::hget("state:$stateId", UpdateTotalPhotosForLocationAction::KEY));
-        $this->assertEquals(0, Redis::hget("city:$cityId", UpdateTotalPhotosForLocationAction::KEY));
+        $this->assertSame('0', Redis::hget("country:$countryId", UpdateTotalPhotosForLocationAction::KEY));
+        $this->assertSame('0', Redis::hget("state:$stateId", UpdateTotalPhotosForLocationAction::KEY));
+        $this->assertSame('0', Redis::hget("city:$cityId", UpdateTotalPhotosForLocationAction::KEY));
     }
 
     public function test_it_doesnt_decrement_below_zero()
@@ -89,8 +89,8 @@ class UpdateTotalPhotosForLocationActionTest extends TestCase
         $updateTotalPhotosAction = app(UpdateTotalPhotosForLocationAction::class);
         $updateTotalPhotosAction->run($countryId, $stateId, $cityId, $decrement);
 
-        $this->assertEquals(0, Redis::hget("country:$countryId", UpdateTotalPhotosForLocationAction::KEY));
-        $this->assertEquals(0, Redis::hget("state:$stateId", UpdateTotalPhotosForLocationAction::KEY));
-        $this->assertEquals(0, Redis::hget("city:$cityId", UpdateTotalPhotosForLocationAction::KEY));
+        $this->assertNull(Redis::hget("country:$countryId", UpdateTotalPhotosForLocationAction::KEY));
+        $this->assertNull(Redis::hget("state:$stateId", UpdateTotalPhotosForLocationAction::KEY));
+        $this->assertNull(Redis::hget("city:$cityId", UpdateTotalPhotosForLocationAction::KEY));
     }
 }

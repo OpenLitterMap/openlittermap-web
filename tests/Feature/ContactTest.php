@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Iterator;
 use Anhskohbo\NoCaptcha\Facades\NoCaptcha;
 use App\Mail\ContactMail;
 use Illuminate\Support\Facades\Mail;
@@ -70,34 +71,32 @@ class ContactTest extends TestCase
         Mail::assertNothingSent();
     }
 
-    public function validationData(): array
+    public function validationData(): Iterator
     {
-        return [
-            [
-                // Missing subject
-                'fields' => ['message' => 'message', 'email' => 'guest@email.com', 'g-recaptcha-response' => '1'],
-                'errors' => ['subject']
-            ],
-            [
-                // Missing message
-                'fields' => ['subject' => 'subject', 'email' => 'guest@email.com', 'g-recaptcha-response' => '1'],
-                'errors' => ['message']
-            ],
-            [
-                // Missing email
-                'fields' => ['subject' => 'subject', 'message' => 'message', 'g-recaptcha-response' => '1'],
-                'errors' => ['email']
-            ],
-            [
-                // Malformed email
-                'fields' => ['subject' => 'subject', 'message' => 'message', 'email' => 'malformed email', 'g-recaptcha-response' => '1'],
-                'errors' => ['email']
-            ],
-            [
-                // Missing recaptcha
-                'fields' => ['subject' => 'subject', 'message' => 'message', 'email' => 'guest@email.com'],
-                'errors' => ['g-recaptcha-response']
-            ],
+        yield [
+            // Missing subject
+            'fields' => ['message' => 'message', 'email' => 'guest@email.com', 'g-recaptcha-response' => '1'],
+            'errors' => ['subject']
+        ];
+        yield [
+            // Missing message
+            'fields' => ['subject' => 'subject', 'email' => 'guest@email.com', 'g-recaptcha-response' => '1'],
+            'errors' => ['message']
+        ];
+        yield [
+            // Missing email
+            'fields' => ['subject' => 'subject', 'message' => 'message', 'g-recaptcha-response' => '1'],
+            'errors' => ['email']
+        ];
+        yield [
+            // Malformed email
+            'fields' => ['subject' => 'subject', 'message' => 'message', 'email' => 'malformed email', 'g-recaptcha-response' => '1'],
+            'errors' => ['email']
+        ];
+        yield [
+            // Missing recaptcha
+            'fields' => ['subject' => 'subject', 'message' => 'message', 'email' => 'guest@email.com'],
+            'errors' => ['g-recaptcha-response']
         ];
     }
 

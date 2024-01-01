@@ -46,7 +46,9 @@ class VerifyBoxController extends Controller
                 ])->first();
         }
 
-        if (! $photo) return ['photo' => null];
+        if (! $photo) {
+            return ['photo' => null];
+        }
 
         $photo->bbox_verification_assigned_to = $userId;
         $photo->save();
@@ -148,6 +150,7 @@ class VerifyBoxController extends Controller
 
                 event (new LittercoinMined($userAddedBoxes->id, 'verified-box'));
             }
+
             $userAddedBoxes->save();
 
             $userDoingVerification->xp++;

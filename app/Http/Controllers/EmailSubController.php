@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Auth;
 use Log;
-use Auth;
 use App\Models\User\User;
 use Illuminate\Http\Request;
 
@@ -25,7 +25,7 @@ class EmailSubController extends Controller
         $verified = false;
         $unsub = true;
 
-        return view('root', compact('auth', 'user', 'verified', 'unsub'));
+        return view('root', ['auth' => $auth, 'user' => $user, 'verified' => $verified, 'unsub' => $unsub]);
     }
 
     /**

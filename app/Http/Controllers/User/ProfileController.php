@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\User;
 
+use DateTime;
 use App\Exports\CreateCSVExport;
 use App\Http\Controllers\Controller;
 use App\Jobs\EmailUserExportCompleted;
@@ -34,9 +35,10 @@ class ProfileController extends Controller
 
         $dateFilter = $this->getDownloadDateFilter($request);
 
-        $x     = new \DateTime();
+        $x     = new DateTime();
         $date  = $x->format('Y-m-d');
         $date  = explode('-', $date);
+
         $year  = $date[0];
         $month = $date[1];
         $day   = $date[2];
@@ -44,7 +46,7 @@ class ProfileController extends Controller
 
         $path = $year.'/'.$month.'/'.$day.'/'.$unix;  // 2020/10/25/unix/
 
-        if (!empty($dateFilter)) {
+        if ($dateFilter !== []) {
             $path .= "_from_{$dateFilter['fromDate']}_to_{$dateFilter['toDate']}";
         }
 
@@ -180,13 +182,10 @@ class ProfileController extends Controller
     /**
      * Returns an array of values
      * so that users can filter their own data
-     *
-     * @param Request $request
-     * @return array
      */
     private function getDownloadDateFilter(Request $request): array
     {
-        if (!$request->dateField || !($request->fromDate || $request->toDate)) {
+        if (!$request->dateField || !$request->fromDate && !$request->toDate) {
             return [];
         }
 

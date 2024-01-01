@@ -2,6 +2,7 @@
 
 namespace App\Models\Location;
 
+use App\Models\User\User;
 use App\Models\Photo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\Redis;
@@ -138,22 +139,22 @@ class State extends Location
      * Relationships
      */
     public function creator () {
-        return $this->belongsTo('App\Models\User\User', 'created_by');
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function lastUploader () {
-        return $this->belongsTo('App\Models\User\User', 'user_id_last_uploaded');
+        return $this->belongsTo(User::class, 'user_id_last_uploaded');
     }
 
     public function country () {
-        return $this->belongsTo('App\Models\Location\Country');
+        return $this->belongsTo(Country::class);
     }
 
     public function cities () {
-        return $this->hasMany('App\Models\Location\City');
+        return $this->hasMany(City::class);
     }
 
     public function photos () {
-        return $this->hasMany('App\Models\Photo');
+        return $this->hasMany(Photo::class);
     }
 }

@@ -17,7 +17,6 @@ class RewardLittercoin implements ShouldQueue
      *
      * Reward with Littercoin if criteria met
      *
-     * @param  TagsVerifiedByAdmin  $event
      * @return void
      */
     public function handle (TagsVerifiedByAdmin $event)

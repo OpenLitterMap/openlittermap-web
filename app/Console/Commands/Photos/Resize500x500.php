@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\Photos;
 
+use Illuminate\Support\Facades\Storage;
 use App\Models\Photo;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -65,13 +66,13 @@ class Resize500x500 extends Command
                 $month = $date->month;
                 $day = $date->day;
 
-                $x = explode('/', $photo->filename);
+                $x = explode('/', (string) $photo->filename);
 
                 // Get the last element which is the filename with extension
-                $filename = $x[sizeof($x) -1];
+                $filename = $x[count($x) -1];
                 $filepath = $year.'/'.$month.'/'.$day.'/'.$filename;
 
-                $s3 = \Storage::disk('bbox');
+                $s3 = Storage::disk('bbox');
                 $s3->put($filepath, $img, 'public');
 
                 $imageName = $s3->url($filepath);

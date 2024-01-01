@@ -12,14 +12,20 @@ use Illuminate\Broadcasting\InteractsWithSockets;
 
 class ImageDeleted implements ShouldBroadcast, ShouldQueue
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
-
+    use Dispatchable;
+    use InteractsWithSockets;
+    use SerializesModels;
     /** @var User */
     public $user;
+
     public $countryId;
+
     public $stateId;
+
     public $cityId;
+
     public $isUserVerified;
+
     public $teamId;
 
     /**

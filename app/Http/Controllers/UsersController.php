@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use App\Models\User\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -78,7 +80,7 @@ class UsersController extends Controller
 
         $user = Auth::user();
 
-        if (\Hash::check($request->input('oldpassword'), $user->password))
+        if (Hash::check($request->input('oldpassword'), $user->password))
         {
             $user->password = $request->password;
             $user->save();
@@ -111,6 +113,7 @@ class UsersController extends Controller
             $user->first_name = true;
             $user->save();
         }
+
         if(!$request->has('first_name')) {
             $user->first_name = false;
             $user->save();
@@ -120,6 +123,7 @@ class UsersController extends Controller
             $user->user_name = true;
             $user->save();
         }
+
         if(!$request->has('user_name')) {
             $user->user_name = false;
             $user->save();
@@ -129,6 +133,7 @@ class UsersController extends Controller
             $user->items_remaining = true;
             $user->save();
         }
+
         if(!$request->has('items_remaining')) {
             $user->items_remaining = false;
             $user->save();
@@ -151,7 +156,7 @@ class UsersController extends Controller
 
         // Remove user.id from redis leaderboards
 
-        if (\Hash::check($request->password, $user->password))
+        if (Hash::check($request->password, $user->password))
         {
             // delete their photos, etc
             // maybe don't delete, but remove all personal information and keep user.id
@@ -159,7 +164,9 @@ class UsersController extends Controller
             return ['message' => 'success'];
         }
 
-        else return ['message' => 'password'];
+        else {
+            return ['message' => 'password'];
+        }
     }
 
     /**
@@ -266,7 +273,7 @@ class UsersController extends Controller
         $imageName = '';
 
         if (app()->environment('production')) {
-            $s3 = \Storage::disk('s3');
+            $s3 = Storage::disk('s3');
             $s3->put($filepath, file_get_contents($file), 'public');
             $imageName = $s3->url($filepath);
         }

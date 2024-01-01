@@ -21,7 +21,7 @@ class GenerateTeamClustersTest extends TestCase
         $this->artisan('clusters:generate-team-clusters');
 
         // Zoom levels from 2-16, 1 cluster per level
-        $this->assertEquals(15, TeamCluster::count());
+        $this->assertSame(15, TeamCluster::count());
         $this->assertEquals($team->id, TeamCluster::first()->team_id);
     }
 }

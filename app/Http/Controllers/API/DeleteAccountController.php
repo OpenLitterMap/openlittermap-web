@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\API;
 
+use Exception;
+use Illuminate\Support\Facades\Log;
+use App\Models\User\User;
 use App\Payment;
 use App\Models\Photo;
 use App\Models\Littercoin;
@@ -52,7 +55,7 @@ class DeleteAccountController extends Controller
                                 $photo->$category->delete();
                             }
 
-                            if (sizeof($photo->customTags) > 0)
+                            if (count($photo->customTags) > 0)
                             {
                                 $photo->customTags->each->delete();
                             }
@@ -96,9 +99,9 @@ class DeleteAccountController extends Controller
 
                             $photo->delete();
                         }
-                        catch (\Exception $e)
+                        catch (Exception $e)
                         {
-                            \Log::info(['DeleteAccountController', $e->getMessage()]);
+                            Log::info(['DeleteAccountController', $e->getMessage()]);
 
                             return [
                                 'success' => false,
@@ -136,7 +139,7 @@ class DeleteAccountController extends Controller
                 ->where('created_by', $userId)
                 ->get();
 
-            if (sizeof($countriesCreatedBy) > 0)
+            if (count($countriesCreatedBy) > 0)
             {
                 foreach ($countriesCreatedBy as $country)
                 {
@@ -149,7 +152,7 @@ class DeleteAccountController extends Controller
                 ->where('user_id_last_uploaded', $userId)
                 ->get();
 
-            if (sizeof($countriesLastUploaded) > 0)
+            if (count($countriesLastUploaded) > 0)
             {
                 foreach ($countriesLastUploaded as $country)
                 {
@@ -162,7 +165,7 @@ class DeleteAccountController extends Controller
                 ->where('created_by', $userId)
                 ->get();
 
-            if (sizeof($statesCreatedBy) > 0)
+            if (count($statesCreatedBy) > 0)
             {
                 foreach ($statesCreatedBy as $state)
                 {
@@ -175,7 +178,7 @@ class DeleteAccountController extends Controller
                 ->where('user_id_last_uploaded', $userId)
                 ->get();
 
-            if (sizeof($statesLastUploaded) > 0)
+            if (count($statesLastUploaded) > 0)
             {
                 foreach ($statesLastUploaded as $state)
                 {
@@ -188,7 +191,7 @@ class DeleteAccountController extends Controller
                 ->where('created_by', $userId)
                 ->get();
 
-            if (sizeof($citiesCreatedBy) > 0)
+            if (count($citiesCreatedBy) > 0)
             {
                 foreach ($citiesCreatedBy as $city)
                 {
@@ -201,7 +204,7 @@ class DeleteAccountController extends Controller
                 ->where('user_id_last_uploaded', $userId)
                 ->get();
 
-            if (sizeof($citiesLastUploaded) > 0)
+            if (count($citiesLastUploaded) > 0)
             {
                 foreach ($citiesLastUploaded as $city)
                 {
@@ -212,7 +215,7 @@ class DeleteAccountController extends Controller
 
             $littercoin = Littercoin::where('user_id', $userId)->get();
 
-            if (sizeof($littercoin) > 0)
+            if (count($littercoin) > 0)
             {
                 foreach ($littercoin as $ltc)
                 {
@@ -221,14 +224,14 @@ class DeleteAccountController extends Controller
             }
 
             $modelHasRoles = DB::table('model_has_roles')
-                ->where('model_type', 'App\Models\User\User')
+                ->where('model_type', User::class)
                 ->where('model_id', $userId)
                 ->count();
 
             if ($modelHasRoles > 0)
             {
                 DB::table('model_has_roles')
-                    ->where('model_type', 'App\Models\User\User')
+                    ->where('model_type', User::class)
                     ->where('model_id', $userId)
                     ->delete();
             }
@@ -247,7 +250,7 @@ class DeleteAccountController extends Controller
             // payments
             $payments = Payment::where('user_id', $userId)->get();
 
-            if (sizeof($payments) > 0)
+            if (count($payments) > 0)
             {
                 foreach ($payments as $payment)
                 {
@@ -293,9 +296,9 @@ class DeleteAccountController extends Controller
                 $team->delete();
             }
         }
-        catch (\Exception $e)
+        catch (Exception $exception)
         {
-            \Log::info(['DeleteAccountController', $e->getMessage()]);
+            Log::info(['DeleteAccountController', $exception->getMessage()]);
 
             return [
                 'success' => false,
@@ -307,9 +310,9 @@ class DeleteAccountController extends Controller
         {
             $user->delete();
         }
-        catch (\Exception $e)
+        catch (Exception $exception)
         {
-            \Log::info(['DeleteAccountController', $e->getMessage()]);
+            Log::info(['DeleteAccountController', $exception->getMessage()]);
 
             return [
                 'succcess' => false,

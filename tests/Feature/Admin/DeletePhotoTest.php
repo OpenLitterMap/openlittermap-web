@@ -20,10 +20,13 @@ class DeletePhotoTest extends TestCase
 
     /** @var User */
     protected $admin;
+
     /** @var User */
     protected $user;
+
     /** @var Photo */
     protected $photo;
+
     /** @var array */
     private $imageAndAttributes;
 
@@ -36,7 +39,6 @@ class DeletePhotoTest extends TestCase
 
         $this->setImagePath();
 
-        /** @var User $admin */
         $this->admin = User::factory()->create(['verification_required' => false]);
 
         $this->admin->assignRole(Role::create(['name' => 'admin']));
@@ -73,10 +75,10 @@ class DeletePhotoTest extends TestCase
         // We make sure the photo exists
         Storage::disk('s3')->assertExists($this->imageAndAttributes['filepath']);
         Storage::disk('bbox')->assertExists($this->imageAndAttributes['filepath']);
-        $this->assertEquals(0, $this->admin->xp);
-        $this->assertEquals(1, $this->user->has_uploaded);
-        $this->assertEquals(4, $this->user->xp);
-        $this->assertEquals(1, $this->user->total_images);
+        $this->assertNull($this->admin->xp);
+        $this->assertSame(1, $this->user->has_uploaded);
+        $this->assertSame(4, $this->user->xp);
+        $this->assertSame(1, $this->user->total_images);
         $this->assertInstanceOf(Photo::class, $this->photo);
 
         // Admin deletes the photo -------------------
@@ -87,11 +89,11 @@ class DeletePhotoTest extends TestCase
         $this->user->refresh();
 
         // Admin is rewarded with 1 XP
-        $this->assertEquals(1, $this->admin->xp);
+        $this->assertSame(1, $this->admin->xp);
         // And it's gone
-        $this->assertEquals(1, $this->user->has_uploaded); // TODO shouldn't it decrement?
-        $this->assertEquals(0, $this->user->xp);
-        $this->assertEquals(0, $this->user->total_images);
+        $this->assertSame(1, $this->user->has_uploaded); // TODO shouldn't it decrement?
+        $this->assertSame(0, $this->user->xp);
+        $this->assertSame(0, $this->user->total_images);
         Storage::disk('s3')->assertMissing($this->imageAndAttributes['filepath']);
         Storage::disk('bbox')->assertMissing($this->imageAndAttributes['filepath']);
         $this->assertCount(0, $this->user->photos);
@@ -133,21 +135,21 @@ class DeletePhotoTest extends TestCase
             'picked_up' => false,
             'tags' => ['smoking' => ['butts' => 3]]
         ]);
-        $this->assertEquals(0, $this->admin->xp_redis);
-        $this->assertEquals(4, Redis::zscore("xp.users", $this->user->id));
-        $this->assertEquals(4, Redis::zscore("xp.country.{$this->photo->country_id}", $this->user->id));
-        $this->assertEquals(4, Redis::zscore("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}", $this->user->id));
-        $this->assertEquals(4, Redis::zscore("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}.city.{$this->photo->city_id}", $this->user->id));
+        $this->assertSame(0, $this->admin->xp_redis);
+        $this->assertSame('4', Redis::zscore("xp.users", $this->user->id));
+        $this->assertSame('4', Redis::zscore("xp.country.{$this->photo->country_id}", $this->user->id));
+        $this->assertSame('4', Redis::zscore("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}", $this->user->id));
+        $this->assertSame('4', Redis::zscore("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}.city.{$this->photo->city_id}", $this->user->id));
 
         // Admin deletes the photo -------------------
         $this->actingAs($this->admin)->post('/admin/destroy', ['photoId' => $this->photo->id]);
 
         // Assert leaderboards are updated ------------
-        $this->assertEquals(1, $this->admin->xp_redis);
-        $this->assertEquals(0, Redis::zscore("xp.users", $this->user->id));
-        $this->assertEquals(0, Redis::zscore("xp.country.{$this->photo->country_id}", $this->user->id));
-        $this->assertEquals(0, Redis::zscore("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}", $this->user->id));
-        $this->assertEquals(0, Redis::zscore("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}.city.{$this->photo->city_id}", $this->user->id));
+        $this->assertSame(1, $this->admin->xp_redis);
+        $this->assertSame('0', Redis::zscore("xp.users", $this->user->id));
+        $this->assertSame('0', Redis::zscore("xp.country.{$this->photo->country_id}", $this->user->id));
+        $this->assertSame('0', Redis::zscore("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}", $this->user->id));
+        $this->assertSame('0', Redis::zscore("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}.city.{$this->photo->city_id}", $this->user->id));
     }
 
     public function test_unauthorized_users_cannot_delete_photos()

@@ -13,16 +13,30 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 
 class TagsVerifiedByAdmin implements ShouldBroadcast, ShouldQueue
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
-
+    use Dispatchable;
+    use InteractsWithSockets;
+    use SerializesModels;
     // photo relationships
-    public $photo_id, $city_id, $state_id, $country_id, $user_id, $created_at;
+    public $photo_id;
+    // photo relationships
+    public $city_id;
+    // photo relationships
+    public $state_id;
+    // photo relationships
+    public $country_id;
+    // photo relationships
+    public $user_id;
+    // photo relationships
+    public $created_at;
 
     // total litter on all categories
-    public $total_litter_all_categories, $total_brands;
+    public $total_litter_all_categories;
+    // total litter on all categories
+    public $total_brands;
 
     // total per category, or total per brand
-    public $total_litter_per_category = []; // smoking => 5, alcohol => 1
+    public $total_litter_per_category = [];
+     // smoking => 5, alcohol => 1
     public $total_litter_per_brand = []; // mcd => 1, starbucks => 2
 
     /** @var bool */
@@ -93,8 +107,6 @@ class TagsVerifiedByAdmin implements ShouldBroadcast, ShouldQueue
 
     /**
      * Get the channels the event should broadcast on.
-     *
-     * @return Channel
      */
     public function broadcastOn(): Channel
     {

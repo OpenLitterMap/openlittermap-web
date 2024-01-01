@@ -621,16 +621,21 @@ final class LitterFrench{
 
 }';
 
-    private $jsonDecoded  = null;
+    private $jsonDecoded;
+
     public static function INSTANCE(){
         static $inst = null;
-        if ($inst === null) $inst = new LitterFrench();
+        if ($inst === null) {
+            $inst = new LitterFrench();
+        }
+
         return $inst;
     }
 
     public function __construct(){
-        $this->jsonDecoded = json_decode($this->json);
+        $this->jsonDecoded = json_decode((string) $this->json);
     }
+
     public function getDecodedJSON(){ return $this->jsonDecoded; }
 }
 

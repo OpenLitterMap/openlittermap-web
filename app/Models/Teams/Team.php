@@ -2,6 +2,8 @@
 
 namespace App\Models\Teams;
 
+use App\Models\User\User;
+use App\Models\Photo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -33,18 +35,18 @@ class Team extends Model
      */
     public function users ()
     {
-    	return $this->belongsToMany('App\Models\User\User');
+    	return $this->belongsToMany(User::class);
     }
 
     public function leader ()
     {
-    	return $this->belongsTo('App\Models\User\User', 'leader');
+    	return $this->belongsTo(User::class, 'leader');
     }
 
     // double check this
     public function photos ()
     {
-        return $this->hasManyThrough('App\Models\User\User', 'App\Models\Photo');
+        return $this->hasManyThrough(User::class, Photo::class);
     }
 
 }

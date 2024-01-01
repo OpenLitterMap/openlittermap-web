@@ -17,15 +17,13 @@ class UpdateTagsController extends Controller
 
     public $calculateTagsDiffAction;
 
-    /**
-     * @param CalculateTagsDifferenceAction $calculateTagsDiffAction
-     */
     public function __construct (CalculateTagsDifferenceAction $calculateTagsDiffAction)
     {
         $this->middleware('admin');
 
         $this->calculateTagsDiffAction = $calculateTagsDiffAction;
     }
+
     /**
      * Update tags on an image
      *
@@ -43,20 +41,18 @@ class UpdateTagsController extends Controller
         $photo->total_litter = 0;
         $photo->save();
 
-        // not used?
-        $oldTags = $photo->tags();
-
-        $user = User::find($photo->user_id);
+        // $oldTags = $photo->tags();
+        // $user = User::find($photo->user_id);
 
         $updatedTags = $this->addTags($request->tags ?? [], $request->custom_tags ?? [], $request->photoId);
 
-        // Todo - Add test to show xp is decrementing
-        if (Redis::hexists("user_verification_count", $user->id))
-        {
-            // Todo - decrease by total number of tags changed
-            // Todo - minimum score should be 0
-            Redis::hincrby("user_verification_count", $user->id, ($updatedTags['rewardedAdminXp'] * -1));
-        }
+//        // Todo - Add test to show xp is decrementing
+//        if (Redis::hexists("user_verification_count", $user->id))
+//        {
+//            // Todo - decrease by total number of tags changed
+//            // Todo - minimum score should be 0
+//            Redis::hincrby("user_verification_count", $user->id, ($updatedTags['rewardedAdminXp'] * -1));
+//        }
 
         rewardXpToAdmin(1 + $updatedTags['rewardedAdminXp']);
 

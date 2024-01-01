@@ -26,11 +26,6 @@ class CreateTeamAction
         return $team;
     }
 
-    /**
-     * @param User $user
-     * @param Team $team
-     * @return void
-     */
     protected function addUserAsTeamMember(User $user, Team $team): void
     {
         $user->teams()->attach($team);

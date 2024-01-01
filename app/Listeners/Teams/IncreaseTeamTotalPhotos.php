@@ -18,7 +18,6 @@ class IncreaseTeamTotalPhotos implements ShouldQueue
      *
      * Increment the total photos for the photo's team.
      *
-     * @param ImageUploaded $event
      * @return void
      */
     public function handle(ImageUploaded $event)

@@ -47,7 +47,6 @@ class RegisterController extends Controller
     /**
      * Create a new user instance after a valid registration.
      *
-     * @param  array  $data
      * @return User
      */
     protected function create (array $data)
@@ -62,9 +61,6 @@ class RegisterController extends Controller
 
     /**
      * Handle a registration request for the application.
-     *
-     * @param  Request  $request
-     * @return array
      */
     public function register (Request $request): array
     {
@@ -106,7 +102,7 @@ class RegisterController extends Controller
         $user = null;
         $unsub = false;
 
-        return view('root', compact('auth', 'user', 'verified', 'unsub'));
+        return view('root', ['auth' => $auth, 'user' => $user, 'verified' => $verified, 'unsub' => $unsub]);
     }
 
 

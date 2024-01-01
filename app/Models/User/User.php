@@ -2,6 +2,7 @@
 
 namespace App\Models\User;
 
+use Illuminate\Support\Str;
 use App\Payment;
 use App\Models\Photo;
 use App\Models\CustomTag;
@@ -38,14 +39,18 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
  */
 class User extends Authenticatable
 {
-    use Notifiable, Billable, HasApiTokens, HasRoles, LaravelPermissionToVueJS, HasFactory;
-
+    use Notifiable;
+    use Billable;
+    use HasApiTokens;
+    use HasRoles;
+    use LaravelPermissionToVueJS;
+    use HasFactory;
     /**
      * On creation, give a new user a 30 random string for email verification
      * Model event:
      * triggered automatically
      */
-    public static function boot ()
+    protected static function boot ()
     {
         // trigger the boot method of the Model Class that Eloquent models extend
         parent::boot();
@@ -53,11 +58,11 @@ class User extends Authenticatable
         // listen for model events
         // When a user is created, add tokens
         static::creating(function($user) {
-            $user->token = str_random(30);
+            $user->token = Str::random(30);
         });
 
         static::creating(function($user) {
-            $user->sub_token = str_random(30);
+            $user->sub_token = Str::random(30);
         });
 
         static::addGlobalScope('photosCount', function($builder) {
@@ -282,51 +287,32 @@ class User extends Authenticatable
         $locationType = $param['locationType'];
         $locationId = $param['locationId'];
 
-        if ($timeFilter === "today")
-        {
+        if ($timeFilter === "today") {
             $year = now()->year;
             $month = now()->month;
             $day = now()->day;
-
             // country, state, city. not users
             return (int) Redis::zscore("leaderboard:$locationType:$locationId:$year:$month:$day", $this->id);
-        }
-        else if ($timeFilter === "yesterday")
-        {
+        } elseif ($timeFilter === "yesterday") {
             $year = now()->subDays(1)->year;
             $month = now()->subDays(1)->month;
             $day = now()->subDays(1)->day;
-
             return (int) Redis::zscore("leaderboard:$locationType:$locationId:$year:$month:$day", $this->id);
-        }
-        else if ($timeFilter === "this-month")
-        {
+        } elseif ($timeFilter === "this-month") {
             $year = now()->year;
             $month = now()->month;
-
             return (int) Redis::zscore("leaderboard:$locationType:$locationId:$year:$month", $this->id);
-        }
-        else if ($timeFilter === "last-month")
-        {
+        } elseif ($timeFilter === "last-month") {
             $year = now()->subMonths(1)->year;
             $month = now()->subMonths(1)->month;
-
             return (int) Redis::zscore("leaderboard:$locationType:$locationId:$year:$month", $this->id);
-        }
-        else if ($timeFilter === "this-year")
-        {
+        } elseif ($timeFilter === "this-year") {
             $year = now()->year;
-
             return (int) Redis::zscore("leaderboard:$locationType:$locationId:$year", $this->id);
-        }
-        else if ($timeFilter === "last-year")
-        {
+        } elseif ($timeFilter === "last-year") {
             $year = now()->year;
-
             return (int) Redis::zscore("leaderboard:$locationType:$locationId:$year", $this->id);
-        }
-        else if ($timeFilter === 'all-time')
-        {
+        } elseif ($timeFilter === 'all-time') {
             return (int) Redis::zscore("leaderboard:$locationType:$locationId:total", $this->id);
         }
 
@@ -434,57 +420,57 @@ class User extends Authenticatable
 
     public function smoking ()
     {
-        return $this->hasManyThrough('App\Smoking', 'App\Models\Photo');
+        return $this->hasManyThrough('App\Smoking', Photo::class);
     }
 
     public function alcohol ()
     {
-        return $this->hasManyThrough('App\Alcohol', 'App\Models\Photo');
+        return $this->hasManyThrough('App\Alcohol', Photo::class);
     }
 
     public function coffee ()
     {
-        return $this->hasManyThrough('App\Coffee', 'App\Models\Photo');
+        return $this->hasManyThrough('App\Coffee', Photo::class);
     }
 
     public function food ()
     {
-        return $this->hasManyThrough('App\Food', 'App\Models\Photo');
+        return $this->hasManyThrough('App\Food', Photo::class);
     }
 
     public function softdrinks ()
     {
-        return $this->hasManyThrough('App\SoftDrinks', 'App\Models\Photo');
+        return $this->hasManyThrough('App\SoftDrinks', Photo::class);
     }
 
     public function drugs ()
     {
-        return $this->hasManyThrough('App\Drugs', 'App\Models\Photo');
+        return $this->hasManyThrough('App\Drugs', Photo::class);
     }
 
     public function sanitary ()
     {
-        return $this->hasManyThrough('App\Sanitary', 'App\Models\Photo');
+        return $this->hasManyThrough('App\Sanitary', Photo::class);
     }
 
     public function other ()
     {
-        return $this->hasManyThrough('App\Other', 'App\Models\Photo');
+        return $this->hasManyThrough('App\Other', Photo::class);
     }
 
     public function coastal ()
     {
-        return $this->hasManyThrough('App\Coastal', 'App\Models\Photo');
+        return $this->hasManyThrough('App\Coastal', Photo::class);
     }
 
     public function pathway ()
     {
-        return $this->hasManyThrough('App\Pathway', 'App\Models\Photo');
+        return $this->hasManyThrough('App\Pathway', Photo::class);
     }
 
     public function art ()
     {
-        return $this->hasManyThrough('App\Art', 'App\Models\Photo');
+        return $this->hasManyThrough('App\Art', Photo::class);
     }
 
     /**

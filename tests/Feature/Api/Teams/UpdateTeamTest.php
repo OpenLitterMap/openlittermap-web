@@ -35,8 +35,8 @@ class UpdateTeamTest extends TestCase
 
         $team->refresh();
 
-        $this->assertEquals($newTeamName, $team->name);
-        $this->assertEquals($newTeamIdentifier, $team->identifier);
+        $this->assertSame($newTeamName, $team->name);
+        $this->assertSame($newTeamIdentifier, $team->identifier);
     }
 
     public function test_team_members_or_other_users_can_not_update_a_team()

@@ -266,27 +266,35 @@ class DownloadsController extends Controller
 			    			if($smoking['butts']) {
 			    				$export[$index]['cigaretteButts'] = $smoking['butts'];
 			    			}
+
 			    			if($smoking['lighters']) {
 			    				$export[$index]['lighters'] = $smoking['lighters'];
 			    			}
+
 			    			if($smoking['cigaretteBox']) {
 			    				$export[$index]['cigaretteBox'] = $smoking['cigaretteBox'];
 			    			}
+
 			    			if($smoking['tobaccoPouch']) {
 			    				$export[$index]['tobaccoPouch'] = $smoking['tobaccoPouch'];
 			    			}
+
 			    			if($smoking['skins']) {
 			    				$export[$index]['papers_filters'] = $smoking['skins'];
 			    			}
+
 			    			if($smoking['plastic']) {
 			    				$export[$index]['plastic_smoking_pk'] = $smoking['plastic'];
 			    			}
+
 			    			if($smoking['filters']) {
 			    				$export[$index]['filters'] = $smoking['filters'];
 			    			}
+
 			    			if($smoking['filterbox']) {
 			    				$export[$index]['filterbox'] = $smoking['filterbox'];
 			    			}
+
 			    			if($smoking['smokingOther']) {
 			    				$export[$index]['smokingOther'] = $smoking['smokingOther'];
 			    			}
@@ -297,36 +305,47 @@ class DownloadsController extends Controller
 			    			if($food['sweetWrappers']) {
 			    				$export[$index]['sweetWrappers'] = $food['sweetWrappers'];
 			    			}
+
 			    			if($food['paperFoodPackaging']) {
 			    				$export[$index]['paperFoodPackaging'] = $food['paperFoodPackaging'];
 			    			}
+
 			    			if($food['plasticFoodPackaging']) {
 			    				$export[$index]['plasticFoodPackaging'] = $food['plasticFoodPackaging'];
 			    			}
+
 			    			if($food['plasticCutlery']) {
 			    				$export[$index]['plasticCutlery'] = $food['plasticCutlery'];
 			    			}
+
 			    			if($food['crisp_small']) {
 			    				$export[$index]['crisp_small'] = $food['crisp_small'];
 			    			}
+
 			    			if($food['crisp_large']) {
 			    				$export[$index]['crisp_large'] = $food['crisp_large'];
 			    			}
+
 			    			if($food['styrofoam_plate']) {
 			    				$export[$index]['styrofoam_plate'] = $food['styrofoam_plate'];
 			    			}
+
 			    			if($food['napkins']) {
 			    				$export[$index]['napkins'] = $food['napkins'];
 			    			}
+
 			    			if($food['sauce_packet']) {
 			    				$export[$index]['sauce_packet'] = $food['sauce_packet'];
 			    			}
+
 			    			if($food['glass_jar']) {
 			    				$export[$index]['glass_jar'] = $food['glass_jar'];
 			    			}
+
 			    			if($food['glass_jar_lid']) {
 			    				$export[$index]['glass_jar_lid'] = $food['glass_jar_lid'];
 			    			}
+
 			    			if($food['foodOther']) {
 			    				$export[$index]['foodOther'] = $food['foodOther'];
 			    			}
@@ -337,9 +356,11 @@ class DownloadsController extends Controller
 			    			if($coffee['coffeeCups']) {
 			    				$export[$index]['coffeeCups'] = $coffee['coffeeCups'];
 			    			}
+
 			    			if($coffee['coffeeLids']) {
 			    				$export[$index]['coffeeLids'] = $coffee['coffeeLids'];
 			    			}
+
 			    			if($coffee['coffeeOther']) {
 			    				$export[$index]['coffeeOther'] = $coffee['coffeeOther'];
 			    			}
@@ -350,27 +371,35 @@ class DownloadsController extends Controller
 			    			if($alcohol['beerBottle']) {
 			    				$export[$index]['beerBottle'] = $alcohol['beerBottle'];
 			    			}
+
 			    			if($alcohol['spiritBottle']) {
 			    				$export[$index]['spiritBottle'] = $alcohol['spiritBottle'];
 			    			}
+
 			    			if($alcohol['beerCan']) {
 			    				$export[$index]['beerCan'] = $alcohol['beerCan'];
 			    			}
+
 			    			if($alcohol['brokenGlass']) {
 			    				$export[$index]['brokenGlass_alcohol'] = $alcohol['brokenGlass'];
 			    			}
+
 			    			if($alcohol['paperCardAlcoholPackaging']) {
 			    				$export[$index]['paperCardAlcoholPackaging'] = $alcohol['paperCardAlcoholPackaging'];
 			    			}
+
 			    			if($alcohol['plasticAlcoholPackaging']) {
 			    				$export[$index]['plasticAlcoholPackaging'] = $alcohol['plasticAlcoholPackaging'];
 			    			}
+
 			    			if($alcohol['bottleTops']) {
 			    				$export[$index]['bottleTops'] = $alcohol['bottleTops'];
 			    			}
+
 			    			if($alcohol['wineBottle']) {
 			    				$export[$index]['wineBottle'] = $alcohol['wineBottle'];
 			    			}
+
 			    			if($alcohol['alcoholOther']) {
 			    				$export[$index]['alcoholOther'] = $alcohol['alcoholOther'];
 			    			}
@@ -381,42 +410,55 @@ class DownloadsController extends Controller
 			    			if($softdrinks['waterBottle']) {
 			    				$export[$index]['plasticWaterBottle'] = $softdrinks["waterBottle"];
 			    			}
+
 			    			if($softdrinks['fizzyDrinkBottle']) {
 			    				$export[$index]['fizzyDrinkBottle'] = $softdrinks["fizzyDrinkBottle"];
 			    			}
+
 			    			if($softdrinks['bottleLid']) {
 			    				$export[$index]['bottleLid'] = $softdrinks["bottleLid"];
 			    			}
+
 			    			if($softdrinks['bottleLabel']) {
 			    				$export[$index]['bottleLabel'] = $softdrinks["bottleLabel"];
 			    			}
+
 			    			if($softdrinks['tinCan']) {
 			    				$export[$index]['tinCan'] = $softdrinks["tinCan"];
 			    			}
+
 			    			if($softdrinks['sportsDrink']) {
 			    				$export[$index]['sportsDrink'] = $softdrinks["sportsDrink"];
 			    			}
+
 			    			if($softdrinks['paper_cups']) {
 			    				$export[$index]['paper_cups'] = $softdrinks["paper_cups"];
 			    			}
+
 			    			if($softdrinks['juice_cartons']) {
 			    				$export[$index]['juice_cartons'] = $softdrinks["juice_cartons"];
 			    			}
+
 			    			if($softdrinks['juice_bottles']) {
 			    				$export[$index]['juice_bottles'] = $softdrinks["juice_bottles"];
 			    			}
+
 			    			if($softdrinks['juice_packet']) {
 			    				$export[$index]['juice_packet'] = $softdrinks["juice_packet"];
 			    			}
+
 			    			if($softdrinks['ice_tea_bottles']) {
 			    				$export[$index]['ice_tea_bottles'] = $softdrinks["ice_tea_bottles"];
 			    			}
+
 			    			if($softdrinks['ice_tea_can']) {
 			    				$export[$index]['ice_tea_can'] = $softdrinks["ice_tea_can"];
 			    			}
+
 			    			if($softdrinks['energy_can']) {
 			    				$export[$index]['energy_can'] = $softdrinks["energy_can"];
 			    			}
+
 			    			if($softdrinks['softDrinkOther']) {
 			    				$export[$index]['softDrinkOther'] = $softdrinks["softDrinkOther"];
 			    			}
@@ -427,21 +469,27 @@ class DownloadsController extends Controller
 			    			if ($sanitary['gloves']) {
 			    				$export[$index]['gloves'] = $sanitary['gloves'];
 			    			}
+
 			    			if ($sanitary['facemasks']) {
 			    				$export[$index]['facemasks'] = $sanitary['facemasks'];
 			    			}
+
 			    			if($sanitary["condoms"]) {
 			    				$export[$index]["condoms"] = $sanitary["condoms"];
 			    			}
+
 			    			if($sanitary["nappies"]) {
 			    				$export[$index]["nappies"] = $sanitary["nappies"];
 			    			}
+
 			    			if($sanitary["menstral"]) {
 			    				$export[$index]["menstral"] = $sanitary["menstral"];
 			    			}
+
 			    			if($sanitary["deodorant"]) {
 			    				$export[$index]["deodorant"] = $sanitary["deodorant"];
 			    			}
+
 			    			if($sanitary["sanitaryOther"]) {
 			    				$export[$index]["sanitaryOther"] = $sanitary["sanitaryOther"];
 			    			}
@@ -452,33 +500,43 @@ class DownloadsController extends Controller
 			    			if($other['dogshit']) {
 			    				$export[$index]["dogshit"] = $other['dogshit'];
 			    			}
+
 			    			if($other["dump"]) {
 			    				$export[$index]["Random_dump"] = $other["dump"];
 			    			}
+
 			    			if($other["plastic"]) {
 			    				$export[$index]["No_id_plastic"] = $other["plastic"];
 			    			}
+
 			    			if($other["metal"]) {
 			    				$export[$index]["Metal_object"] = $other["metal"];
 			    			}
+
 			    			if($other["washing_up"]) {
 			    				$export[$index]["washing_up"] = $other["washing_up"];
 			    			}
+
 			    			if($other["hair_tie"]) {
 			    				$export[$index]["hair_tie"] = $other["hair_tie"];
 			    			}
+
 			    			if($other["ear_plugs"]) {
 			    				$export[$index]["ear_plugs"] = $other["ear_plugs"];
 			    			}
+
 			    			if($other["batteries"]) {
 			    				$export[$index]["batteries"] = $other["batteries"];
 			    			}
+
 			    			if($other["elec_small"]) {
 			    				$export[$index]["elec_small"] = $other["elec_small"];
 			    			}
+
 			    			if($other["elec_large"]) {
 			    				$export[$index]["elec_large"] = $other["elec_large"];
 			    			}
+
 			    			if($other["other"]) {
 			    				$export[$index]["Unknown"] = $other["other"];
 			    			}
@@ -489,48 +547,63 @@ class DownloadsController extends Controller
 			    			if($coastal['microplastics']) {
 			    				$export[$index]["microplastics"] = $coastal['microplastics'];
 			    			}
+
 			    			if($coastal['mediumplastics']) {
 			    				$export[$index]["mediumplastics"] = $coastal['mediumplastics'];
 			    			}
+
 			    			if($coastal['macroplastics']) {
 			    				$export[$index]['macroplastics'] = $coastal['macroplastics'];
 			    			}
+
 			    			if($coastal['rope_small']) {
 			    				$export[$index]['rope_small'] = $coastal['rope_small'];
 			    			}
+
 			    			if($coastal['rope_medium']) {
 			    				$export[$index]['rope_medium'] = $coastal['rope_medium'];
 			    			}
+
 			    			if($coastal['rope_large']) {
 			    				$export[$index]['rope_large'] = $coastal['rope_large'];
 			    			}
+
 			    			if($coastal['fishing_gear_nets']) {
 			    				$export[$index]['fishing_gear_nets'] = $coastal['fishing_gear_nets'];
 			    			}
+
 			    			if($coastal['buoys']) {
 			    				$export[$index]['buoys'] = $coastal['buoys'];
 			    			}
+
 			    			if($coastal['degraded_plasticbottle']) {
 			    				$export[$index]['degraded_plasticbottle'] = $coastal['degraded_plasticbottle'];
 			    			}
+
 			    			if($coastal['degraded_plasticbag']) {
 			    				$export[$index]['degraded_plasticbag'] = $coastal['degraded_plasticbag'];
 			    			}
+
 			    			if($coastal['degraded_straws']) {
 			    				$export[$index]['degraded_straws'] = $coastal['degraded_straws'];
 			    			}
+
 			    			if($coastal['degraded_lighters']) {
 			    				$export[$index]['degraded_lighters'] = $coastal['degraded_lighters'];
 			    			}
+
 			    			if($coastal['baloons']) {
 			    				$export[$index]['baloons'] = $coastal['baloons'];
 			    			}
+
 			    			if($coastal['lego']) {
 			    				$export[$index]['lego'] = $coastal['lego'];
 			    			}
+
 			    			if($coastal['shotgun_cartridges']) {
 			    				$export[$index]['shotgun_cartridges'] = $coastal['shotgun_cartridges'];
 			    			}
+
 			    			if($coastal['coastal_other']) {
 			    				$export[$index]['coastal_other'] = $coastal['coastal_other'];
 			    			}
@@ -548,77 +621,101 @@ class DownloadsController extends Controller
 			    			if($brands["adidas"]) {
 			    				$export[$index]['adidas'] = $brands["adidas"];
 			    			}
+
 			    			if($brands["amazon"]) {
 			    				$export[$index]['amazon'] = $brands["amazon"];
 			    			}
+
 			    			if($brands["apple"]) {
 			    				$export[$index]['apple'] = $brands["apple"];
 			    			}
+
 			    			if($brands["budweiser"]) {
 			    				$export[$index]['budweiser'] = $brands["budweiser"];
 			    			}
+
 			    			if($brands["coke"]) {
 			    				$export[$index]['coke'] = $brands["coke"];
 			    			}
+
 			    			if($brands["colgate"]) {
 			    				$export[$index]['colgate'] = $brands["colgate"];
 			    			}
+
 			    			if($brands["corona"]) {
 			    				$export[$index]['corona'] = $brands["corona"];
 			    			}
+
 			    			if($brands["fritolay"]) {
 			    				$export[$index]['fritolay'] = $brands["fritolay"];
 			    			}
+
 			    			if($brands["gillette"]) {
 			    				$export[$index]['gillette'] = $brands["gillette"];
 			    			}
+
 			    			if($brands["heineken"]) {
 			    				$export[$index]['heineken'] = $brands["heineken"];
 			    			}
+
 			    			if($brands["kellogs"]) {
 			    				$export[$index]['kellogs'] = $brands["kellogs"];
 			    			}
+
 			    			if($brands["lego"]) {
 			    				$export[$index]['lego'] = $brands["lego"];
 			    			}
+
 			    			if($brands["loreal"]) {
 			    				$export[$index]['loreal'] = $brands["loreal"];
 			    			}
+
 			    			if($brands["nescafe"]) {
 			    				$export[$index]['nescafe'] = $brands["nescafe"];
 			    			}
+
 			    			if($brands["nestle"]) {
 			    				$export[$index]['nestle'] = $brands["nestle"];
 			    			}
+
 			    			if($brands["marlboro"]) {
 			    				$export[$index]['marlboro'] = $brands["marlboro"];
 			    			}
+
 			    			if($brands["mcdonalds"]) {
 			    				$export[$index]['mcdonalds'] = $brands["mcdonalds"];
 			    			}
+
 			    			if($brands["nike"]) {
 			    				$export[$index]['nike'] = $brands["nike"];
 			    			}
+
 			    			if($brands["pepsi"]) {
 			    				$export[$index]['pepsi'] = $brands["pepsi"];
 			    			}
+
 			    			if($brands["redbull"]) {
 			    				$export[$index]['redbull'] = $brands["redbull"];
 			    			}
+
 			    			if($brands["samsung"]) {
 			    				$export[$index]['samsung'] = $brands["samsung"];
 			    			}
+
 			    			if($brands["subway"]) {
 			    				$export[$index]['subway'] = $brands["subway"];
 			    			}
+
 			    			if($brands["starbucks"]) {
 			    				$export[$index]['starbucks'] = $brands["starbucks"];
 			    			}
+
 			    			if($brands["tayto"]) {
 			    				$export[$index]['tayto'] = $brands["tayto"];
 			    			}
 			    		}
 			    	}
+
 			    	// return $export;
 	    			$sheet->fromModel($export);
 		    	})->export('csv');
@@ -867,27 +964,35 @@ class DownloadsController extends Controller
 		    			if($smoking['butts']) {
 		    				$export[$index]['cigaretteButts'] = $smoking['butts'];
 		    			}
+
 		    			if($smoking['lighters']) {
 		    				$export[$index]['lighters'] = $smoking['lighters'];
 		    			}
+
 		    			if($smoking['cigaretteBox']) {
 		    				$export[$index]['cigaretteBox'] = $smoking['cigaretteBox'];
 		    			}
+
 		    			if($smoking['tobaccoPouch']) {
 		    				$export[$index]['tobaccoPouch'] = $smoking['tobaccoPouch'];
 		    			}
+
 		    			if($smoking['skins']) {
 		    				$export[$index]['papers_filters'] = $smoking['skins'];
 		    			}
+
 		    			if($smoking['plastic']) {
 		    				$export[$index]['plastic_smoking_pk'] = $smoking['plastic'];
 		    			}
+
 		    			if($smoking['filters']) {
 		    				$export[$index]['filters'] = $smoking['filters'];
 		    			}
+
 		    			if($smoking['filterbox']) {
 		    				$export[$index]['filterbox'] = $smoking['filterbox'];
 		    			}
+
 		    			if($smoking['smokingOther']) {
 		    				$export[$index]['smokingOther'] = $smoking['smokingOther'];
 		    			}
@@ -898,36 +1003,47 @@ class DownloadsController extends Controller
 		    			if($food['sweetWrappers']) {
 		    				$export[$index]['sweetWrappers'] = $food['sweetWrappers'];
 		    			}
+
 		    			if($food['paperFoodPackaging']) {
 		    				$export[$index]['paperFoodPackaging'] = $food['paperFoodPackaging'];
 		    			}
+
 		    			if($food['plasticFoodPackaging']) {
 		    				$export[$index]['plasticFoodPackaging'] = $food['plasticFoodPackaging'];
 		    			}
+
 		    			if($food['plasticCutlery']) {
 		    				$export[$index]['plasticCutlery'] = $food['plasticCutlery'];
 		    			}
+
 		    			if($food['crisp_small']) {
 		    				$export[$index]['crisp_small'] = $food['crisp_small'];
 		    			}
+
 		    			if($food['crisp_large']) {
 		    				$export[$index]['crisp_large'] = $food['crisp_large'];
 		    			}
+
 		    			if($food['styrofoam_plate']) {
 		    				$export[$index]['styrofoam_plate'] = $food['styrofoam_plate'];
 		    			}
+
 		    			if($food['napkins']) {
 		    				$export[$index]['napkins'] = $food['napkins'];
 		    			}
+
 		    			if($food['sauce_packet']) {
 		    				$export[$index]['sauce_packet'] = $food['sauce_packet'];
 		    			}
+
 		    			if($food['glass_jar']) {
 		    				$export[$index]['glass_jar'] = $food['glass_jar'];
 		    			}
+
 		    			if($food['glass_jar_lid']) {
 		    				$export[$index]['glass_jar_lid'] = $food['glass_jar_lid'];
 		    			}
+
 		    			if($food['foodOther']) {
 		    				$export[$index]['foodOther'] = $food['foodOther'];
 		    			}
@@ -938,9 +1054,11 @@ class DownloadsController extends Controller
 		    			if($coffee['coffeeCups']) {
 		    				$export[$index]['coffeeCups'] = $coffee['coffeeCups'];
 		    			}
+
 		    			if($coffee['coffeeLids']) {
 		    				$export[$index]['coffeeLids'] = $coffee['coffeeLids'];
 		    			}
+
 		    			if($coffee['coffeeOther']) {
 		    				$export[$index]['coffeeOther'] = $coffee['coffeeOther'];
 		    			}
@@ -951,27 +1069,35 @@ class DownloadsController extends Controller
 		    			if($alcohol['beerBottle']) {
 		    				$export[$index]['beerBottle'] = $alcohol['beerBottle'];
 		    			}
+
 		    			if($alcohol['spiritBottle']) {
 		    				$export[$index]['spiritBottle'] = $alcohol['spiritBottle'];
 		    			}
+
 		    			if($alcohol['beerCan']) {
 		    				$export[$index]['beerCan'] = $alcohol['beerCan'];
 		    			}
+
 		    			if($alcohol['brokenGlass']) {
 		    				$export[$index]['brokenGlass_alcohol'] = $alcohol['brokenGlass'];
 		    			}
+
 		    			if($alcohol['paperCardAlcoholPackaging']) {
 		    				$export[$index]['paperCardAlcoholPackaging'] = $alcohol['paperCardAlcoholPackaging'];
 		    			}
+
 		    			if($alcohol['plasticAlcoholPackaging']) {
 		    				$export[$index]['plasticAlcoholPackaging'] = $alcohol['plasticAlcoholPackaging'];
 		    			}
+
 		    			if($alcohol['bottleTops']) {
 		    				$export[$index]['bottleTops'] = $alcohol['bottleTops'];
 		    			}
+
 		    			if($alcohol['wineBottle']) {
 		    				$export[$index]['wineBottle'] = $alcohol['wineBottle'];
 		    			}
+
 		    			if($alcohol['alcoholOther']) {
 		    				$export[$index]['alcoholOther'] = $alcohol['alcoholOther'];
 		    			}
@@ -982,42 +1108,55 @@ class DownloadsController extends Controller
 		    			if($softdrinks['waterBottle']) {
 		    				$export[$index]['plasticWaterBottle'] = $softdrinks["waterBottle"];
 		    			}
+
 		    			if($softdrinks['fizzyDrinkBottle']) {
 		    				$export[$index]['fizzyDrinkBottle'] = $softdrinks["fizzyDrinkBottle"];
 		    			}
+
 		    			if($softdrinks['bottleLid']) {
 		    				$export[$index]['bottleLid'] = $softdrinks["bottleLid"];
 		    			}
+
 		    			if($softdrinks['bottleLabel']) {
 		    				$export[$index]['bottleLabel'] = $softdrinks["bottleLabel"];
 		    			}
+
 		    			if($softdrinks['tinCan']) {
 		    				$export[$index]['tinCan'] = $softdrinks["tinCan"];
 		    			}
+
 		    			if($softdrinks['sportsDrink']) {
 		    				$export[$index]['sportsDrink'] = $softdrinks["sportsDrink"];
 		    			}
+
 		    			if($softdrinks['paper_cups']) {
 		    				$export[$index]['paper_cups'] = $softdrinks["paper_cups"];
 		    			}
+
 		    			if($softdrinks['juice_cartons']) {
 		    				$export[$index]['juice_cartons'] = $softdrinks["juice_cartons"];
 		    			}
+
 		    			if($softdrinks['juice_bottles']) {
 		    				$export[$index]['juice_bottles'] = $softdrinks["juice_bottles"];
 		    			}
+
 		    			if($softdrinks['juice_packet']) {
 		    				$export[$index]['juice_packet'] = $softdrinks["juice_packet"];
 		    			}
+
 		    			if($softdrinks['ice_tea_bottles']) {
 		    				$export[$index]['ice_tea_bottles'] = $softdrinks["ice_tea_bottles"];
 		    			}
+
 		    			if($softdrinks['ice_tea_can']) {
 		    				$export[$index]['ice_tea_can'] = $softdrinks["ice_tea_can"];
 		    			}
+
 		    			if($softdrinks['energy_can']) {
 		    				$export[$index]['energy_can'] = $softdrinks["energy_can"];
 		    			}
+
 		    			if($softdrinks['softDrinkOther']) {
 		    				$export[$index]['softDrinkOther'] = $softdrinks["softDrinkOther"];
 		    			}
@@ -1028,21 +1167,27 @@ class DownloadsController extends Controller
 		    			if ($sanitary['gloves']) {
 		    				$export[$index]['gloves'] = $sanitary['gloves'];
 		    			}
+
 		    			if ($sanitary['facemasks']) {
 		    				$export[$index]['facemasks'] = $sanitary['facemasks'];
 		    			}
+
 		    			if($sanitary["condoms"]) {
 		    				$export[$index]["condoms"] = $sanitary["condoms"];
 		    			}
+
 		    			if($sanitary["nappies"]) {
 		    				$export[$index]["nappies"] = $sanitary["nappies"];
 		    			}
+
 		    			if($sanitary["menstral"]) {
 		    				$export[$index]["menstral"] = $sanitary["menstral"];
 		    			}
+
 		    			if($sanitary["deodorant"]) {
 		    				$export[$index]["deodorant"] = $sanitary["deodorant"];
 		    			}
+
 		    			if($sanitary["sanitaryOther"]) {
 		    				$export[$index]["sanitaryOther"] = $sanitary["sanitaryOther"];
 		    			}
@@ -1053,33 +1198,43 @@ class DownloadsController extends Controller
 		    			if($other['dogshit']) {
 		    				$export[$index]["dogshit"] = $other['dogshit'];
 		    			}
+
 		    			if($other["dump"]) {
 		    				$export[$index]["Random_dump"] = $other["dump"];
 		    			}
+
 		    			if($other["plastic"]) {
 		    				$export[$index]["No_id_plastic"] = $other["plastic"];
 		    			}
+
 		    			if($other["metal"]) {
 		    				$export[$index]["Metal_object"] = $other["metal"];
 		    			}
+
 		    			if($other["washing_up"]) {
 		    				$export[$index]["washing_up"] = $other["washing_up"];
 		    			}
+
 		    			if($other["hair_tie"]) {
 		    				$export[$index]["hair_tie"] = $other["hair_tie"];
 		    			}
+
 		    			if($other["ear_plugs"]) {
 		    				$export[$index]["ear_plugs"] = $other["ear_plugs"];
 		    			}
+
 		    			if($other["batteries"]) {
 		    				$export[$index]["batteries"] = $other["batteries"];
 		    			}
+
 		    			if($other["elec_small"]) {
 		    				$export[$index]["elec_small"] = $other["elec_small"];
 		    			}
+
 		    			if($other["elec_large"]) {
 		    				$export[$index]["elec_large"] = $other["elec_large"];
 		    			}
+
 		    			if($other["other"]) {
 		    				$export[$index]["Unknown"] = $other["other"];
 		    			}
@@ -1090,51 +1245,63 @@ class DownloadsController extends Controller
 		    			if($coastal['microplastics']) {
 		    				$export[$index]["microplastics"] = $coastal['microplastics'];
 		    			}
+
 		    			if($coastal['mediumplastics']) {
 		    				$export[$index]["mediumplastics"] = $coastal['mediumplastics'];
 		    			}
+
 		    			if($coastal['macroplastics']) {
 		    				$export[$index]['macroplastics'] = $coastal['macroplastics'];
 		    			}
+
 		    			if($coastal['rope_small']) {
 		    				$export[$index]['rope_small'] = $coastal['rope_small'];
 		    			}
+
 		    			if($coastal['rope_medium']) {
 		    				$export[$index]['rope_medium'] = $coastal['rope_medium'];
 		    			}
+
 		    			if($coastal['rope_large']) {
 		    				$export[$index]['rope_large'] = $coastal['rope_large'];
 		    			}
+
 		    			if($coastal['fishing_gear_nets']) {
 		    				$export[$index]['fishing_gear_nets'] = $coastal['fishing_gear_nets'];
 		    			}
+
 		    			if($coastal['buoys']) {
 		    				$export[$index]['buoys'] = $coastal['buoys'];
 		    			}
+
 		    			if($coastal['degraded_plasticbottle']) {
 		    				$export[$index]['degraded_plasticbottle'] = $coastal['degraded_plasticbottle'];
 		    			}
+
 		    			if($coastal['degraded_plasticbag']) {
 		    				$export[$index]['degraded_plasticbag'] = $coastal['degraded_plasticbag'];
 		    			}
+
 		    			if($coastal['degraded_straws']) {
 		    				$export[$index]['degraded_straws'] = $coastal['degraded_straws'];
 		    			}
+
 		    			if($coastal['degraded_lighters']) {
 		    				$export[$index]['degraded_lighters'] = $coastal['degraded_lighters'];
 		    			}
+
 		    			if($coastal['baloons']) {
 		    				$export[$index]['baloons'] = $coastal['baloons'];
 		    			}
+
 		    			if($coastal['lego']) {
 		    				$export[$index]['lego'] = $coastal['lego'];
 		    			}
+
 		    			if($coastal['shotgun_cartridges']) {
 		    				$export[$index]['shotgun_cartridges'] = $coastal['shotgun_cartridges'];
 		    			}
-		    			if($coastal['coastal_other']) {
-		    				$export[$index]['coastal_other'];
-		    			}
+
 		    		}
 
 		    		// if($photo["art_id"]) {
@@ -1149,42 +1316,55 @@ class DownloadsController extends Controller
 		    			if($brands["adidas"]) {
 		    				$export[$index]['adidas'] = $brands["adidas"];
 		    			}
+
 		    			if($brands["amazon"]) {
 		    				$export[$index]['amazon'] = $brands["amazon"];
 		    			}
+
 		    			if($brands["aldi"]) {
 		    				$export[$index]['aldi'] = $brands["aldi"];
 		    			}
+
 		    			if($brands["apple"]) {
 		    				$export[$index]['apple'] = $brands["apple"];
 		    			}
+
 		    			if($brands["applegreen"]) {
 		    				$export[$index]['applegreen'] = $brands["applegreen"];
 		    			}
+
 		    			if($brands["asahi"]) {
 		    				$export[$index]['asahi'] = $brands["asahi"];
 		    			}
+
 		    			if($brands["avoca"]) {
 		    				$export[$index]['avoca'] = $brands["avoca"];
 		    			}
+
 		    			if($brands["ballygowan"]) {
 		    				$export[$index]['ballygowan'] = $brands["ballygowan"];
 		    			}
+
 		    			if($brands["bewleys"]) {
 		    				$export[$index]['bewleys'] = $brands["bewleys"];
 		    			}
+
 		    			if($brands["brambles"]) {
 		    				$export[$index]['brambles'] = $brands["brambles"];
 		    			}
+
 		    			if($brands["budweiser"]) {
 		    				$export[$index]['budweiser'] = $brands["budweiser"];
 		    			}
+
 		    			if($brands["bulmers"]) {
 		    				$export[$index]['bulmers'] = $brands["bulmers"];
 		    			}
+
 		    			if($brands["burgerking"]) {
 		    				$export[$index]['burgerking'] = $brands["burgerking"];
 		    			}
+
 		    			if($brands["butlers"]) {
 		    				$export[$index]['butlers'] = $brands["butlers"];
 		    			}
@@ -1192,33 +1372,43 @@ class DownloadsController extends Controller
 		    			if($brands["cadburys"]) {
 		    				$export[$index]['cadburys'] = $brands["cadburys"];
 		    			}
+
 		    			if($brands["cafe_nero"]) {
 		    				$export[$index]['cafe_nero'] = $brands["cafe_nero"];
 		    			}
+
 		    			if($brands["camel"]) {
 		    				$export[$index]['camel'] = $brands["camel"];
 		    			}
+
 		    			if($brands["carlsberg"]) {
 		    				$export[$index]['carlsberg'] = $brands["carlsberg"];
 		    			}
+
 		    			if($brands["centra"]) {
 		    				$export[$index]['centra'] = $brands["centra"];
 		    			}
+
 		    			if($brands["coke"]) {
 		    				$export[$index]['coke'] = $brands["coke"];
 		    			}
+
 		    			if($brands["circlek"]) {
 		    				$export[$index]['circlek'] = $brands["circlek"];
 		    			}
+
 		    			if($brands["coles"]) {
 		    				$export[$index]['coles'] = $brands["coles"];
 		    			}
+
 		    			if($brands["colgate"]) {
 		    				$export[$index]['colgate'] = $brands["colgate"];
 		    			}
+
 		    			if($brands["corona"]) {
 		    				$export[$index]['corona'] = $brands["corona"];
 		    			}
+
 		    			if($brands["costa"]) {
 		    				$export[$index]['costa'] = $brands["costa"];
 		    			}
@@ -1226,15 +1416,19 @@ class DownloadsController extends Controller
 		    			if($brands["doritos"]) {
 		    				$export[$index]['doritos'] = $brands["doritos"];
 		    			}
+
 		    			if($brands["drpepper"]) {
 		    				$export[$index]['drpepper'] = $brands["drpepper"];
 		    			}
+
 		    			if($brands["dunnes"]) {
 		    				$export[$index]['dunnes'] = $brands["dunnes"];
 		    			}
+
 		    			if($brands["duracell"]) {
 		    				$export[$index]['duracell'] = $brands["duracell"];
 		    			}
+
 		    			if($brands["durex"]) {
 		    				$export[$index]['durex'] = $brands["durex"];
 		    			}
@@ -1246,6 +1440,7 @@ class DownloadsController extends Controller
 						if($brands["frank_and_honest"]) {
 		    			   $export[$index]['frank_and_honest'] = $brands["frank_and_honest"];
 		    			}
+
 		    			if($brands["fritolay"]) {
 		    				$export[$index]['fritolay'] = $brands["fritolay"];
 		    			}
@@ -1253,9 +1448,11 @@ class DownloadsController extends Controller
 		    			if($brands["gatorade"]) {
 		    				$export[$index]['gatorade'] = $brands["gatorade"];
 		    			}
+
 		    			if($brands["gillette"]) {
 		    				$export[$index]['gillette'] = $brands["gillette"];
 		    			}
+
 		    			if($brands["guinness"]) {
 		    				$export[$index]['guinness'] = $brands["gillette"];
 		    			}
@@ -1263,6 +1460,7 @@ class DownloadsController extends Controller
 		    			if($brands["haribo"]) {
 		    				$export[$index]['haribo'] = $brands["haribo"];
 		    			}
+
 		    			if($brands["heineken"]) {
 		    				$export[$index]['heineken'] = $brands["heineken"];
 		    			}
@@ -1274,6 +1472,7 @@ class DownloadsController extends Controller
 		    			if($brands["kellogs"]) {
 		    				$export[$index]['kellogs'] = $brands["kellogs"];
 		    			}
+
 		    			if($brands["kfc"]) {
 		    				$export[$index]['kfc'] = $brands["kfc"];
 		    			}
@@ -1281,18 +1480,23 @@ class DownloadsController extends Controller
 		    			if($brands["lego"]) {
 		    				$export[$index]['lego'] = $brands["lego"];
 		    			}
+
 		    			if($brands["lidl"]) {
 		    				$export[$index]['lidl'] = $brands["lidl"];
 		    			}
+
 		    			if($brands["lindenvillage"]) {
 		    				$export[$index]['lindenvillage'] = $brands["lindenvillage"];
 		    			}
+
 		    			if($brands["lolly_and_cookes"]) {
 		    			   $export[$index]['lolly_and_cookes'] = $brands["lolly_and_cookes"];
 		    			}
+
 		    			if($brands["loreal"]) {
 		    				$export[$index]['loreal'] = $brands["loreal"];
 		    			}
+
 		    			if($brands["lucozade"]) {
 		    				$export[$index]['lucozade'] = $brands["lucozade"];
 		    			}
@@ -1300,9 +1504,11 @@ class DownloadsController extends Controller
 		    			if($brands["marlboro"]) {
 		    				$export[$index]['marlboro'] = $brands["marlboro"];
 		    			}
+
 		    			if($brands["mars"]) {
 		    				$export[$index]['mars'] = $brands["mars"];
 		    			}
+
 		    			if($brands["mcdonalds"]) {
 		    				$export[$index]['mcdonalds'] = $brands["mcdonalds"];
 		    			}
@@ -1310,12 +1516,15 @@ class DownloadsController extends Controller
 		    			if($brands["nero"]) {
 		    				$export[$index]['nero'] = $brands["nero"];
 		    			}
+
 		    			if($brands["nescafe"]) {
 		    				$export[$index]['nescafe'] = $brands["nescafe"];
 		    			}
+
 		    			if($brands["nestle"]) {
 		    				$export[$index]['nestle'] = $brands["nestle"];
 		    			}
+
 		    			if($brands["nike"]) {
 		    				$export[$index]['nike'] = $brands["nike"];
 		    			}
@@ -1327,6 +1536,7 @@ class DownloadsController extends Controller
 		    			if($brands["pepsi"]) {
 		    				$export[$index]['pepsi'] = $brands["pepsi"];
 		    			}
+
 		    			if($brands["powerade"]) {
 		    				$export[$index]['powerade'] = $brands["powerade"];
 		    			}
@@ -1334,6 +1544,7 @@ class DownloadsController extends Controller
 		    			if($brands["redbull"]) {
 		    				$export[$index]['redbull'] = $brands["redbull"];
 		    			}
+
 		    			if($brands["ribena"]) {
 		    				$export[$index]['ribena'] = $brands["ribena"];
 		    			}
@@ -1341,24 +1552,31 @@ class DownloadsController extends Controller
 		    			if($brands["samsung"]) {
 		    				$export[$index]['samsung'] = $brands["samsung"];
 		    			}
+
 		    			if($brands["sainsburys"]) {
 		    				$export[$index]['sainsburys'] = $brands["sainsburys"];
 		    			}
+
 		    			if($brands["spar"]) {
 		    				$export[$index]['spar'] = $brands["spar"];
 		    			}
+
 		    			if($brands["stella"]) {
 		    				$export[$index]['stella'] = $brands["stella"];
 		    			}
+
 		    			if($brands["subway"]) {
 		    				$export[$index]['subway'] = $brands["subway"];
 		    			}
+
 		    			if($brands["supermacs"]) {
 		    				$export[$index]['supermacs'] = $brands["supermacs"];
 		    			}
+
 		    			if($brands["supervale"]) {
 		    				$export[$index]['supervale'] = $brands["supervale"];
 		    			}
+
 		    			if($brands["starbucks"]) {
 		    				$export[$index]['starbucks'] = $brands["starbucks"];
 		    			}
@@ -1366,9 +1584,11 @@ class DownloadsController extends Controller
 		    			if($brands["tayto"]) {
 		    				$export[$index]['tayto'] = $brands["tayto"];
 		    			}
+
 		    			if($brands["tesco"]) {
 		    				$export[$index]['tesco'] = $brands["tesco"];
 		    			}
+
 		    			if($brands["thins"]) {
 		    				$export[$index]['thins'] = $brands["thins"];
 		    			}
@@ -1380,20 +1600,25 @@ class DownloadsController extends Controller
 		    			if($brands["waitrose"]) {
 		    				$export[$index]['waitrose'] = $brands["waitrose"];
 		    			}
+
 		    			if($brands["walkers"]) {
 		    				$export[$index]['walkers'] = $brands["walkers"];
 		    			}
+
 		    			if($brands["woolworths"]) {
 		    				$export[$index]['woolworths'] = $brands["woolworths"];
 		    			}
+
 		    			if($brands["wilde_and_greene"]) {
 		    			   $export[$index]['wilde_and_greene'] = $brands["wilde_and_greene"];
 		    			}
+
 		    			if($brands["wrigleys"]) {
 		    				$export[$index]['wrigleys'] = $brands["wrigleys"];
 		    			}
 		    		}
 		    	}
+
 		    	// return $export;
     			$sheet->fromModel($export);
 	    	})->export('csv');
@@ -1637,27 +1862,35 @@ class DownloadsController extends Controller
 			    			if($smoking['butts']) {
 			    				$export[$index]['cigaretteButts'] = $smoking['butts'];
 			    			}
+
 			    			if($smoking['lighters']) {
 			    				$export[$index]['lighters'] = $smoking['lighters'];
 			    			}
+
 			    			if($smoking['cigaretteBox']) {
 			    				$export[$index]['cigaretteBox'] = $smoking['cigaretteBox'];
 			    			}
+
 			    			if($smoking['tobaccoPouch']) {
 			    				$export[$index]['tobaccoPouch'] = $smoking['tobaccoPouch'];
 			    			}
+
 			    			if($smoking['skins']) {
 			    				$export[$index]['papers_filters'] = $smoking['skins'];
 			    			}
+
 			    			if($smoking['plastic']) {
 		    					$export[$index]['plastic_smoking_pk'] = $smoking['plastic'];
 		    				}
+
 		    				if($smoking['filters']) {
 		    					$export[$index]['filters'] = $smoking['filters'];
 		    				}
+
 		    				if($smoking['filterbox']) {
 		    					$export[$index]['filterbox'] = $smoking['filterbox'];
 		    				}
+
 			    			if($smoking['smokingOther']) {
 			    				$export[$index]['smokingOther'] = $smoking['smokingOther'];
 			    			}
@@ -1668,36 +1901,47 @@ class DownloadsController extends Controller
 			    			if($food['sweetWrappers']) {
 			    				$export[$index]['sweetWrappers'] = $food['sweetWrappers'];
 			    			}
+
 			    			if($food['paperFoodPackaging']) {
 			    				$export[$index]['paperFoodPackaging'] = $food['paperFoodPackaging'];
 			    			}
+
 			    			if($food['plasticFoodPackaging']) {
 			    				$export[$index]['plasticFoodPackaging'] = $food['plasticFoodPackaging'];
 			    			}
+
 			    			if($food['plasticCutlery']) {
 			    				$export[$index]['plasticCutlery'] = $food['plasticCutlery'];
 			    			}
+
 			    			if($food['crisp_small']) {
 			    				$export[$index]['crisp_small'] = $food['crisp_small'];
 			    			}
+
 			    			if($food['crisp_large']) {
 			    				$export[$index]['crisp_large'] = $food['crisp_large'];
 			    			}
+
 			    			if($food['styrofoam_plate']) {
 			    				$export[$index]['styrofoam_plate'] = $food['styrofoam_plate'];
 			    			}
+
 			    			if($food['napkins']) {
 			    				$export[$index]['napkins'] = $food['napkins'];
 			    			}
+
 			    			if($food['sauce_packet']) {
 			    				$export[$index]['sauce_packet'] = $food['sauce_packet'];
 			    			}
+
 			    			if($food['glass_jar']) {
 			    				$export[$index]['glass_jar'] = $food['glass_jar'];
 			    			}
+
 			    			if($food['glass_jar_lid']) {
 			    				$export[$index]['glass_jar_lid'] = $food['glass_jar_lid'];
 			    			}
+
 			    			if($food['foodOther']) {
 			    				$export[$index]['foodOther'] = $food['foodOther'];
 			    			}
@@ -1708,9 +1952,11 @@ class DownloadsController extends Controller
 			    			if($coffee['coffeeCups']) {
 			    				$export[$index]['coffeeCups'] = $coffee['coffeeCups'];
 			    			}
+
 			    			if($coffee['coffeeLids']) {
 			    				$export[$index]['coffeeLids'] = $coffee['coffeeLids'];
 			    			}
+
 			    			if($coffee['coffeeOther']) {
 			    				$export[$index]['coffeeOther'] = $coffee['coffeeOther'];
 			    			}
@@ -1721,27 +1967,35 @@ class DownloadsController extends Controller
 			    			if($alcohol['beerBottle']) {
 			    				$export[$index]['beerBottle'] = $alcohol['beerBottle'];
 			    			}
+
 			    			if($alcohol['spiritBottle']) {
 			    				$export[$index]['spiritBottle'] = $alcohol['spiritBottle'];
 			    			}
+
 			    			if($alcohol['beerCan']) {
 			    				$export[$index]['beerCan'] = $alcohol['beerCan'];
 			    			}
+
 			    			if($alcohol['brokenGlass']) {
 			    				$export[$index]['brokenGlass_alcohol'] = $alcohol['brokenGlass'];
 			    			}
+
 			    			if($alcohol['paperCardAlcoholPackaging']) {
 			    				$export[$index]['paperCardAlcoholPackaging'] = $alcohol['paperCardAlcoholPackaging'];
 			    			}
+
 			    			if($alcohol['plasticAlcoholPackaging']) {
 			    				$export[$index]['plasticAlcoholPackaging'] = $alcohol['plasticAlcoholPackaging'];
 			    			}
+
 			    			if($alcohol['bottleTops']) {
 			    				$export[$index]['bottleTops'] = $alcohol['bottleTops'];
 			    			}
+
 			    			if($alcohol['wineBottle']) {
 			    				$export[$index]['wineBottle'] = $alcohol['wineBottle'];
 			    			}
+
 			    			if($alcohol['alcoholOther']) {
 			    				$export[$index]['alcoholOther'] = $alcohol['alcoholOther'];
 			    			}
@@ -1752,42 +2006,55 @@ class DownloadsController extends Controller
 			    			if($softdrinks['waterBottle']) {
 			    				$export[$index]['plasticWaterBottle'] = $softdrinks["waterBottle"];
 			    			}
+
 			    			if($softdrinks['fizzyDrinkBottle']) {
 			    				$export[$index]['fizzyDrinkBottle'] = $softdrinks["fizzyDrinkBottle"];
 			    			}
+
 			    			if($softdrinks['bottleLid']) {
 			    				$export[$index]['bottleLid'] = $softdrinks["bottleLid"];
 			    			}
+
 			    			if($softdrinks['bottleLabel']) {
 			    				$export[$index]['bottleLabel'] = $softdrinks["bottleLabel"];
 			    			}
+
 			    			if($softdrinks['tinCan']) {
 			    				$export[$index]['tinCan'] = $softdrinks["tinCan"];
 			    			}
+
 			    			if($softdrinks['sportsDrink']) {
 			    				$export[$index]['sportsDrink'] = $softdrinks["sportsDrink"];
 			    			}
+
 			    			if($softdrinks['paper_cups']) {
 			    				$export[$index]['paper_cups'] = $softdrinks["paper_cups"];
 			    			}
+
 			    			if($softdrinks['juice_cartons']) {
 			    				$export[$index]['juice_cartons'] = $softdrinks["juice_cartons"];
 			    			}
+
 			    			if($softdrinks['juice_bottles']) {
 			    				$export[$index]['juice_bottles'] = $softdrinks["juice_bottles"];
 			    			}
+
 			    			if($softdrinks['juice_packet']) {
 			    				$export[$index]['juice_packet'] = $softdrinks["juice_packet"];
 			    			}
+
 			    			if($softdrinks['ice_tea_bottles']) {
 			    				$export[$index]['ice_tea_bottles'] = $softdrinks["ice_tea_bottles"];
 			    			}
+
 			    			if($softdrinks['ice_tea_can']) {
 			    				$export[$index]['ice_tea_can'] = $softdrinks["ice_tea_can"];
 			    			}
+
 			    			if($softdrinks['energy_can']) {
 			    				$export[$index]['energy_can'] = $softdrinks["energy_can"];
 			    			}
+
 			    			if($softdrinks['softDrinkOther']) {
 			    				$export[$index]['softDrinkOther'] = $softdrinks["softDrinkOther"];
 			    			}
@@ -1798,21 +2065,27 @@ class DownloadsController extends Controller
 			    			if ($sanitary['gloves']) {
 			    				$export[$index]['gloves'] = $sanitary['gloves'];
 			    			}
+
 			    			if ($sanitary['facemasks']) {
 			    				$export[$index]['facemasks'] = $sanitary['facemasks'];
 			    			}
+
 			    			if($sanitary["condoms"]) {
 			    				$export[$index]["condoms"] = $sanitary["condoms"];
 			    			}
+
 			    			if($sanitary["nappies"]) {
 			    				$export[$index]["nappies"] = $sanitary["nappies"];
 			    			}
+
 			    			if($sanitary["menstral"]) {
 			    				$export[$index]["menstral"] = $sanitary["menstral"];
 			    			}
+
 			    			if($sanitary["deodorant"]) {
 			    				$export[$index]["deodorant"] = $sanitary["deodorant"];
 			    			}
+
 			    			if($sanitary["sanitaryOther"]) {
 			    				$export[$index]["sanitaryOther"] = $sanitary["sanitaryOther"];
 			    			}
@@ -1823,24 +2096,31 @@ class DownloadsController extends Controller
 			    			if($other['dogshit']) {
 			    				$export[$index]["dogshit"] = $other['dogshit'];
 			    			}
+
 			    			if($other["dump"]) {
 			    				$export[$index]["Random_dump"] = $other["dump"];
 			    			}
+
 			    			if($other["plastic"]) {
 			    				$export[$index]["No_id_plastic"] = $other["plastic"];
 			    			}
+
 			    			if($other["metal"]) {
 			    				$export[$index]["Metal_object"] = $other["metal"];
 			    			}
+
 			    			if($other["washing_up"]) {
 			    				$export[$index]["washing_up"] = $other["washing_up"];
 			    			}
+
 			    			if($other["hair_tie"]) {
 			    				$export[$index]["hair_tie"] = $other["hair_tie"];
 			    			}
+
 			    			if($other["ear_plugs"]) {
 			    				$export[$index]["ear_plugs"] = $other["ear_plugs"];
 			    			}
+
 			    			if($other["other"]) {
 			    				$export[$index]["Unknown"] = $other["other"];
 			    			}
@@ -1851,51 +2131,63 @@ class DownloadsController extends Controller
 			    			if($coastal['microplastics']) {
 			    				$export[$index]["microplastics"] = $coastal['microplastics'];
 			    			}
+
 			    			if($coastal['mediumplastics']) {
 			    				$export[$index]["mediumplastics"] = $coastal['mediumplastics'];
 			    			}
+
 			    			if($coastal['macroplastics']) {
 			    				$export[$index]['macroplastics'] = $coastal['macroplastics'];
 			    			}
+
 			    			if($coastal['rope_small']) {
 			    				$export[$index]['rope_small'] = $coastal['rope_small'];
 			    			}
+
 			    			if($coastal['rope_medium']) {
 			    				$export[$index]['rope_medium'] = $coastal['rope_medium'];
 			    			}
+
 			    			if($coastal['rope_large']) {
 			    				$export[$index]['rope_large'] = $coastal['rope_large'];
 			    			}
+
 			    			if($coastal['fishing_gear_nets']) {
 			    				$export[$index]['fishing_gear_nets'] = $coastal['fishing_gear_nets'];
 			    			}
+
 			    			if($coastal['buoys']) {
 			    				$export[$index]['buoys'] = $coastal['buoys'];
 			    			}
+
 			    			if($coastal['degraded_plasticbottle']) {
 			    				$export[$index]['degraded_plasticbottle'] = $coastal['degraded_plasticbottle'];
 			    			}
+
 			    			if($coastal['degraded_plasticbag']) {
 			    				$export[$index]['degraded_plasticbag'] = $coastal['degraded_plasticbag'];
 			    			}
+
 			    			if($coastal['degraded_straws']) {
 			    				$export[$index]['degraded_straws'] = $coastal['degraded_straws'];
 			    			}
+
 			    			if($coastal['degraded_lighters']) {
 			    				$export[$index]['degraded_lighters'] = $coastal['degraded_lighters'];
 			    			}
+
 			    			if($coastal['baloons']) {
 			    				$export[$index]['baloons'] = $coastal['baloons'];
 			    			}
+
 			    			if($coastal['lego']) {
 			    				$export[$index]['lego'] = $coastal['lego'];
 			    			}
+
 			    			if($coastal['shotgun_cartridges']) {
 			    				$export[$index]['shotgun_cartridges'] = $coastal['shotgun_cartridges'];
 			    			}
-			    			if($coastal['coastal_other']) {
-			    				$export[$index]['coastal_other'];
-			    			}
+
 			    		}
 
 			    		if($photo["pathway_id"]) {
@@ -1903,15 +2195,19 @@ class DownloadsController extends Controller
 			    			if($pathway["gutter"]) {
 			    				$export[$index]['gutter'] = $pathway["gutter"];
 			    			}
+
 			    			if($pathway["gutter_long"]) {
 			    				$export[$index]['gutter_long'] = $pathway["gutter_long"];
 			    			}
+
 			    			if($pathway["kerb_hole_small"]) {
 			    				$export[$index]['kerb_hole_small'] = $pathway["kerb_hole_small"];
 			    			}
+
 			    			if($pathway["kerb_hole_large"]) {
 			    				$export[$index]['kerb_hole_large'] = $pathway["kerb_hole_large"];
 			    			}
+
 			    			if($pathway["pathwayOther"]) {
 			    				$export[$index]['pathwayOther'] = $pathway["pathwayOther"];
 			    			}
@@ -1929,42 +2225,55 @@ class DownloadsController extends Controller
 			    			if($brands["adidas"]) {
 			    				$export[$index]['adidas'] = $brands["adidas"];
 			    			}
+
 			    			if($brands["amazon"]) {
 			    				$export[$index]['amazon'] = $brands["amazon"];
 			    			}
+
 			    			if($brands["aldi"]) {
 			    				$export[$index]['aldi'] = $brands["aldi"];
 			    			}
+
 			    			if($brands["apple"]) {
 			    				$export[$index]['apple'] = $brands["apple"];
 			    			}
+
 			    			if($brands["applegreen"]) {
 			    				$export[$index]['applegreen'] = $brands["applegreen"];
 			    			}
+
 			    			if($brands["asahi"]) {
 			    				$export[$index]['asahi'] = $brands["asahi"];
 			    			}
+
 			    			if($brands["avoca"]) {
 			    				$export[$index]['avoca'] = $brands["avoca"];
 			    			}
+
 			    			if($brands["ballygowan"]) {
 			    				$export[$index]['ballygowan'] = $brands["ballygowan"];
 			    			}
+
 			    			if($brands["bewleys"]) {
 			    				$export[$index]['bewleys'] = $brands["bewleys"];
 			    			}
+
 			    			if($brands["brambles"]) {
 			    				$export[$index]['brambles'] = $brands["brambles"];
 			    			}
+
 			    			if($brands["budweiser"]) {
 			    				$export[$index]['budweiser'] = $brands["budweiser"];
 			    			}
+
 			    			if($brands["bulmers"]) {
 			    				$export[$index]['bulmers'] = $brands["bulmers"];
 			    			}
+
 			    			if($brands["burgerking"]) {
 			    				$export[$index]['burgerking'] = $brands["burgerking"];
 			    			}
+
 			    			if($brands["butlers"]) {
 			    				$export[$index]['butlers'] = $brands["butlers"];
 			    			}
@@ -1972,33 +2281,43 @@ class DownloadsController extends Controller
 			    			if($brands["cadburys"]) {
 			    				$export[$index]['cadburys'] = $brands["cadburys"];
 			    			}
+
 			    			if($brands["cafe_nero"]) {
 			    				$export[$index]['cafe_nero'] = $brands["cafe_nero"];
 			    			}
+
 			    			if($brands["camel"]) {
 			    				$export[$index]['camel'] = $brands["camel"];
 			    			}
+
 			    			if($brands["carlsberg"]) {
 			    				$export[$index]['carlsberg'] = $brands["carlsberg"];
 			    			}
+
 			    			if($brands["centra"]) {
 			    				$export[$index]['centra'] = $brands["centra"];
 			    			}
+
 			    			if($brands["coke"]) {
 			    				$export[$index]['coke'] = $brands["coke"];
 			    			}
+
 			    			if($brands["circlek"]) {
 			    				$export[$index]['circlek'] = $brands["circlek"];
 			    			}
+
 			    			if($brands["coles"]) {
 			    				$export[$index]['coles'] = $brands["coles"];
 			    			}
+
 			    			if($brands["colgate"]) {
 			    				$export[$index]['colgate'] = $brands["colgate"];
 			    			}
+
 			    			if($brands["corona"]) {
 			    				$export[$index]['corona'] = $brands["corona"];
 			    			}
+
 			    			if($brands["costa"]) {
 			    				$export[$index]['costa'] = $brands["costa"];
 			    			}
@@ -2006,15 +2325,19 @@ class DownloadsController extends Controller
 			    			if($brands["doritos"]) {
 			    				$export[$index]['doritos'] = $brands["doritos"];
 			    			}
+
 			    			if($brands["drpepper"]) {
 			    				$export[$index]['drpepper'] = $brands["drpepper"];
 			    			}
+
 			    			if($brands["dunnes"]) {
 			    				$export[$index]['dunnes'] = $brands["dunnes"];
 			    			}
+
 			    			if($brands["duracell"]) {
 			    				$export[$index]['duracell'] = $brands["duracell"];
 			    			}
+
 			    			if($brands["durex"]) {
 			    				$export[$index]['durex'] = $brands["durex"];
 			    			}
@@ -2026,6 +2349,7 @@ class DownloadsController extends Controller
 							if($brands["frank_and_honest"]) {
 			    			   $export[$index]['frank_and_honest'] = $brands["frank_and_honest"];
 			    			}
+
 			    			if($brands["fritolay"]) {
 			    				$export[$index]['fritolay'] = $brands["fritolay"];
 			    			}
@@ -2033,9 +2357,11 @@ class DownloadsController extends Controller
 			    			if($brands["gatorade"]) {
 			    				$export[$index]['gatorade'] = $brands["gatorade"];
 			    			}
+
 			    			if($brands["gillette"]) {
 			    				$export[$index]['gillette'] = $brands["gillette"];
 			    			}
+
 			    			if($brands["guinness"]) {
 			    				$export[$index]['guinness'] = $brands["gillette"];
 			    			}
@@ -2043,6 +2369,7 @@ class DownloadsController extends Controller
 			    			if($brands["haribo"]) {
 			    				$export[$index]['haribo'] = $brands["haribo"];
 			    			}
+
 			    			if($brands["heineken"]) {
 			    				$export[$index]['heineken'] = $brands["heineken"];
 			    			}
@@ -2054,6 +2381,7 @@ class DownloadsController extends Controller
 			    			if($brands["kellogs"]) {
 			    				$export[$index]['kellogs'] = $brands["kellogs"];
 			    			}
+
 			    			if($brands["kfc"]) {
 			    				$export[$index]['kfc'] = $brands["kfc"];
 			    			}
@@ -2061,18 +2389,23 @@ class DownloadsController extends Controller
 			    			if($brands["lego"]) {
 			    				$export[$index]['lego'] = $brands["lego"];
 			    			}
+
 			    			if($brands["lidl"]) {
 			    				$export[$index]['lidl'] = $brands["lidl"];
 			    			}
+
 			    			if($brands["lindenvillage"]) {
 			    				$export[$index]['lindenvillage'] = $brands["lindenvillage"];
 			    			}
+
 			    			if($brands["lolly_and_cookes"]) {
 			    			   $export[$index]['lolly_and_cookes'] = $brands["lolly_and_cookes"];
 			    			}
+
 			    			if($brands["loreal"]) {
 			    				$export[$index]['loreal'] = $brands["loreal"];
 			    			}
+
 			    			if($brands["lucozade"]) {
 			    				$export[$index]['lucozade'] = $brands["lucozade"];
 			    			}
@@ -2080,9 +2413,11 @@ class DownloadsController extends Controller
 			    			if($brands["marlboro"]) {
 			    				$export[$index]['marlboro'] = $brands["marlboro"];
 			    			}
+
 			    			if($brands["mars"]) {
 			    				$export[$index]['mars'] = $brands["mars"];
 			    			}
+
 			    			if($brands["mcdonalds"]) {
 			    				$export[$index]['mcdonalds'] = $brands["mcdonalds"];
 			    			}
@@ -2090,12 +2425,15 @@ class DownloadsController extends Controller
 			    			if($brands["nero"]) {
 			    				$export[$index]['nero'] = $brands["nero"];
 			    			}
+
 			    			if($brands["nescafe"]) {
 			    				$export[$index]['nescafe'] = $brands["nescafe"];
 			    			}
+
 			    			if($brands["nestle"]) {
 			    				$export[$index]['nestle'] = $brands["nestle"];
 			    			}
+
 			    			if($brands["nike"]) {
 			    				$export[$index]['nike'] = $brands["nike"];
 			    			}
@@ -2107,6 +2445,7 @@ class DownloadsController extends Controller
 			    			if($brands["pepsi"]) {
 			    				$export[$index]['pepsi'] = $brands["pepsi"];
 			    			}
+
 			    			if($brands["powerade"]) {
 			    				$export[$index]['powerade'] = $brands["powerade"];
 			    			}
@@ -2114,6 +2453,7 @@ class DownloadsController extends Controller
 			    			if($brands["redbull"]) {
 			    				$export[$index]['redbull'] = $brands["redbull"];
 			    			}
+
 			    			if($brands["ribena"]) {
 			    				$export[$index]['ribena'] = $brands["ribena"];
 			    			}
@@ -2121,24 +2461,31 @@ class DownloadsController extends Controller
 			    			if($brands["samsung"]) {
 			    				$export[$index]['samsung'] = $brands["samsung"];
 			    			}
+
 			    			if($brands["sainsburys"]) {
 			    				$export[$index]['sainsburys'] = $brands["sainsburys"];
 			    			}
+
 			    			if($brands["spar"]) {
 			    				$export[$index]['spar'] = $brands["spar"];
 			    			}
+
 			    			if($brands["stella"]) {
 			    				$export[$index]['stella'] = $brands["stella"];
 			    			}
+
 			    			if($brands["subway"]) {
 			    				$export[$index]['subway'] = $brands["subway"];
 			    			}
+
 			    			if($brands["supermacs"]) {
 			    				$export[$index]['supermacs'] = $brands["supermacs"];
 			    			}
+
 			    			if($brands["supervale"]) {
 			    				$export[$index]['supervale'] = $brands["supervale"];
 			    			}
+
 			    			if($brands["starbucks"]) {
 			    				$export[$index]['starbucks'] = $brands["starbucks"];
 			    			}
@@ -2146,9 +2493,11 @@ class DownloadsController extends Controller
 			    			if($brands["tayto"]) {
 			    				$export[$index]['tayto'] = $brands["tayto"];
 			    			}
+
 			    			if($brands["tesco"]) {
 			    				$export[$index]['tesco'] = $brands["tesco"];
 			    			}
+
 			    			if($brands["thins"]) {
 			    				$export[$index]['thins'] = $brands["thins"];
 			    			}
@@ -2160,20 +2509,25 @@ class DownloadsController extends Controller
 			    			if($brands["waitrose"]) {
 			    				$export[$index]['waitrose'] = $brands["waitrose"];
 			    			}
+
 			    			if($brands["walkers"]) {
 			    				$export[$index]['walkers'] = $brands["walkers"];
 			    			}
+
 			    			if($brands["woolworths"]) {
 			    				$export[$index]['woolworths'] = $brands["woolworths"];
 			    			}
+
 			    			if($brands["wilde_and_greene"]) {
 			    			   $export[$index]['wilde_and_greene'] = $brands["wilde_and_greene"];
 			    			}
+
 			    			if($brands["wrigleys"]) {
 			    				$export[$index]['wrigleys'] = $brands["wrigleys"];
 			    			}
 			    		}
 			    	}
+
 			    	// return $export;
 	    			$sheet->fromModel($export);
 		    	})->export('csv');

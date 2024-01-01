@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\User;
 
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use App\Actions\Photos\GetPreviousCustomTagsAction;
 use App\Jobs\Photos\AddTagsToPhoto;
 use App\Models\Photo;
@@ -43,7 +45,7 @@ class UserPhotoController extends Controller
     public function destroy (Request $request)
     {
         $user = Auth::user();
-        $s3 = \Storage::disk('s3');
+        $s3 = Storage::disk('s3');
 
         $ids = ($request->selectAll) ? $request->exclIds : $request->inclIds;
 
@@ -57,14 +59,15 @@ class UserPhotoController extends Controller
                 {
                     if (app()->environment('production'))
                     {
-                        $path = substr($photo->filename, 42);
+                        $path = substr((string) $photo->filename, 42);
                         $s3->delete($path);
                     }
+
                     $photo->delete();
                 }
             } catch (Exception $e) {
                 // could not be deleted
-                \Log::info(["Photo could not be deleted", $e->getMessage()]);
+                Log::info(["Photo could not be deleted", $e->getMessage()]);
             }
         }
 

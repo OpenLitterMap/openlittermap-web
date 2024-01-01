@@ -8,16 +8,18 @@ use Illuminate\Queue\SerializesModels;
 
 class ContactMail extends Mailable
 {
-    use Queueable, SerializesModels;
-
+    use Queueable;
+    use SerializesModels;
     /**
      * @var string
      */
     public $name;
+
     /**
      * @var string
      */
     public $email;
+
     /**
      * @var string
      */

@@ -15,9 +15,7 @@ class LoadDataHelper
      *
      * /world/{country}
      *
-     * @param string $url
      *
-     * @return array
      */
     public static function getStates (string $url) : array
     {
@@ -107,9 +105,7 @@ class LoadDataHelper
      * Get the cities for the /country/state
      *
      * @param null $country (string)
-     * @param string $state
      *
-     * @return array
      */
     public static function getCities ($country, string $state) : array
     {
@@ -122,7 +118,9 @@ class LoadDataHelper
                 ->orWhere('shortcode', $countryText)
                 ->first();
 
-            if (!$country) return ['success' => false, 'msg' => 'country not found'];
+            if (!$country) {
+                return ['success' => false, 'msg' => 'country not found'];
+            }
         }
 
         $stateText = urldecode($state);
@@ -133,7 +131,9 @@ class LoadDataHelper
             ->orWhere('statenameb', $stateText)
             ->first();
 
-        if (!$state) return ['success' => false, 'msg' => 'state not found'];
+        if (!$state) {
+            return ['success' => false, 'msg' => 'state not found'];
+        }
 
         /**
          * Instead of loading the photos here on the city model,

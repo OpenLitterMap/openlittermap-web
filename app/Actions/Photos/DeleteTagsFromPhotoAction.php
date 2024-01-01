@@ -12,9 +12,7 @@ class DeleteTagsFromPhotoAction
      *
      * Returns the total number of tags that were deleted, separated from brands
      *
-     * @param Photo $photo
      *
-     * @return array
      */
     public function run(Photo $photo): array
     {
@@ -26,14 +24,14 @@ class DeleteTagsFromPhotoAction
 
         $all = $litter + $brands + $custom;
 
-        return compact('litter', 'brands', 'custom', 'all');
+        return ['litter' => $litter, 'brands' => $brands, 'custom' => $custom, 'all' => $all];
     }
 
     private function deleteLitter(Photo $photo): int
     {
         $categories = collect($photo->categories())
             ->filter(function ($category) use ($photo) {
-                return $category !== 'brands' && !!$photo->$category;
+                return $category !== 'brands' && (bool) $photo->$category;
             });
 
         $total = $categories->sum(function ($category) use ($photo) {

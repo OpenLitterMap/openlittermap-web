@@ -1,5 +1,15 @@
 <?php
 
+use Spatie\Backup\Notifications\Notifications\BackupHasFailed;
+use Spatie\Backup\Notifications\Notifications\UnhealthyBackupWasFound;
+use Spatie\Backup\Notifications\Notifications\CleanupHasFailed;
+use Spatie\Backup\Notifications\Notifications\BackupWasSuccessful;
+use Spatie\Backup\Notifications\Notifications\HealthyBackupWasFound;
+use Spatie\Backup\Notifications\Notifications\CleanupWasSuccessful;
+use Spatie\Backup\Notifications\Notifiable;
+use Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumAgeInDays;
+use Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumStorageInMegabytes;
+use Spatie\Backup\Tasks\Cleanup\Strategies\DefaultStrategy;
 return [
 
     'backup' => [
@@ -151,19 +161,19 @@ return [
     'notifications' => [
 
         'notifications' => [
-            \Spatie\Backup\Notifications\Notifications\BackupHasFailed::class => ['mail'],
-            \Spatie\Backup\Notifications\Notifications\UnhealthyBackupWasFound::class => ['mail'],
-            \Spatie\Backup\Notifications\Notifications\CleanupHasFailed::class => ['mail'],
-            \Spatie\Backup\Notifications\Notifications\BackupWasSuccessful::class => ['mail'],
-            \Spatie\Backup\Notifications\Notifications\HealthyBackupWasFound::class => ['mail'],
-            \Spatie\Backup\Notifications\Notifications\CleanupWasSuccessful::class => ['mail'],
+            BackupHasFailed::class => ['mail'],
+            UnhealthyBackupWasFound::class => ['mail'],
+            CleanupHasFailed::class => ['mail'],
+            BackupWasSuccessful::class => ['mail'],
+            HealthyBackupWasFound::class => ['mail'],
+            CleanupWasSuccessful::class => ['mail'],
         ],
 
         /*
          * Here you can specify the notifiable to which the notifications should be sent. The default
          * notifiable will use the variables specified in this config file.
          */
-        'notifiable' => \Spatie\Backup\Notifications\Notifiable::class,
+        'notifiable' => Notifiable::class,
 
         'mail' => [
             'to' => 'info@openlittermap.com',
@@ -199,8 +209,8 @@ return [
             'name' => env('BACKUP_NAME'),
             'disks' => ['dropbox'],
             'health_checks' => [
-                \Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumAgeInDays::class => 1,
-                \Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumStorageInMegabytes::class => 5000,
+                MaximumAgeInDays::class => 1,
+                MaximumStorageInMegabytes::class => 5000,
             ],
         ],
 
@@ -226,7 +236,7 @@ return [
          * No matter how you configure it the default strategy will never
          * delete the newest backup.
          */
-        'strategy' => \Spatie\Backup\Tasks\Cleanup\Strategies\DefaultStrategy::class,
+        'strategy' => DefaultStrategy::class,
 
         'default_strategy' => [
 

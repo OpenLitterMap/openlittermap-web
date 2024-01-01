@@ -15,6 +15,7 @@ class GetClustersTest extends TestCase
         $response = $this->get('/global/clusters?zoom=2');
 
         $response->assertStatus(200);
+
         $features = $response->json('features');
         $this->assertCount(1, $features);
         $this->assertEquals($globalCluster->lon, $features[0]['geometry']['coordinates'][0]);

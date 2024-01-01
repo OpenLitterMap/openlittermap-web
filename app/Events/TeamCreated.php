@@ -11,8 +11,9 @@ use Illuminate\Queue\SerializesModels;
 // When events are namespaced inside another folder, they are not being registered on Echo.
 class TeamCreated implements ShouldBroadcast
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
-
+    use Dispatchable;
+    use InteractsWithSockets;
+    use SerializesModels;
     public $teamName;
 
     /**
@@ -28,7 +29,7 @@ class TeamCreated implements ShouldBroadcast
     /**
      * Get the channels the event should broadcast on.
      *
-     * @return \Illuminate\Broadcasting\Channel|array
+     * @return Channel|array
      */
     public function broadcastOn()
     {

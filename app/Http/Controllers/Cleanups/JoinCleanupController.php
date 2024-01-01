@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Cleanups;
 
+use Exception;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Models\Cleanups\Cleanup;
 use App\Models\Cleanups\CleanupUser;
@@ -60,8 +62,8 @@ class JoinCleanupController extends Controller
         try {
             $cleanup->users()->attach($user);
         }
-        catch (\Exception $e) {
-            \Log::info(['JoinCleanupController', $e->getMessage()]);
+        catch (Exception $exception) {
+            Log::info(['JoinCleanupController', $exception->getMessage()]);
 
             return [
                 'success' => false,

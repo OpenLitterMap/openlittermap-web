@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Redis;
 
 class UpdateTotalPhotosForLocationAction
 {
-    public const KEY = 'total_photos';
+    final public const KEY = 'total_photos';
 
     /**
      * Increments or decrements total_photos
@@ -37,10 +37,8 @@ class UpdateTotalPhotosForLocationAction
     protected function updateValue($hashName, $value)
     {
         // Separate if conditions to skip redis check when $value is positive
-        if ($value < 0) {
-            if (Redis::hget($hashName, self::KEY) + $value < 0) {
-                return;
-            }
+        if ($value < 0 && Redis::hget($hashName, self::KEY) + $value < 0) {
+            return;
         }
 
         Redis::hincrby($hashName, self::KEY, $value);

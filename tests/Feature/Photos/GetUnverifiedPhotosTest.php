@@ -44,8 +44,8 @@ class GetUnverifiedPhotosTest extends TestCase
             ->assertOk()
             ->json();
 
-        $this->assertEquals(1, $response['remaining']);
-        $this->assertEquals(1, $response['total']);
+        $this->assertSame(1, $response['remaining']);
+        $this->assertSame(1, $response['total']);
         $this->assertCount(1, $response['photos']['data']);
         $this->assertEquals($unverifiedPhoto->id, $response['photos']['data'][0]['id']);
 
@@ -61,8 +61,8 @@ class GetUnverifiedPhotosTest extends TestCase
             ->assertOk()
             ->json();
 
-        $this->assertEquals(1, $response['remaining']);
-        $this->assertEquals(2, $response['total']);
+        $this->assertSame(1, $response['remaining']);
+        $this->assertSame(2, $response['total']);
         $this->assertCount(1, $response['photos']['data']);
         $this->assertEquals($unverifiedPhoto->id, $response['photos']['data'][0]['id']);
     }

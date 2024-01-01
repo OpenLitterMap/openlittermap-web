@@ -29,20 +29,18 @@ class AdminController extends Controller
 
     /** @var DeleteTagsFromPhotoAction */
     protected $deleteTagsAction;
+
     /** @var UpdateLeaderboardsForLocationAction */
     protected $updateLeaderboardsAction;
+
     /** @var DeletePhotoAction */
     protected $deletePhotoAction;
+
     /** @var CalculateTagsDifferenceAction */
     protected $calculateTagsDiffAction;
 
     /**
      * Apply IsAdmin middleware to all of these routes
-     *
-     * @param DeleteTagsFromPhotoAction $deleteTagsAction
-     * @param UpdateLeaderboardsForLocationAction $updateLeaderboardsAction
-     * @param DeletePhotoAction $deletePhotoAction
-     * @param CalculateTagsDifferenceAction $calculateTagsDiffAction
      */
     public function __construct (
         DeleteTagsFromPhotoAction $deleteTagsAction,
@@ -79,10 +77,11 @@ class AdminController extends Controller
         $months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         foreach($users as $index => $monthlyUser)
         {
-            $month = $months[(int) substr($index, 0, 2)];
-            $year = substr($index, 2, 5);
+            $month = $months[(int) substr((string) $index, 0, 2)];
+            $year = substr((string) $index, 2, 5);
             $upm[$month.$year] = $monthlyUser->count(); // Mar-17
         }
+
         $upm = json_encode($upm);
 
         $usersUploaded = User::where('has_uploaded', 1)->get();
@@ -94,13 +93,14 @@ class AdminController extends Controller
         $uupm = [];
         foreach($usersUploaded as $index => $userUploaded)
         {
-            $month = $months[(int)$substr = substr($index, 0, 2)];
-            $year = substr($index, 2, 5);
+            $month = $months[(int)$substr = substr((string) $index, 0, 2)];
+            $year = substr((string) $index, 2, 5);
             $uupm[$month.$year] = $userUploaded->count(); // Mar-17
         }
+
         $uupm = json_encode($uupm);
 
-        return view('admin.usercount', compact('users', 'totalUsers', 'upm', 'uupm'));
+        return view('admin.usercount', ['users' => $users, 'totalUsers' => $totalUsers, 'upm' => $upm, 'uupm' => $uupm]);
     }
 
     /**

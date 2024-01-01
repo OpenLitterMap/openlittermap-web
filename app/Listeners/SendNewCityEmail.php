@@ -21,7 +21,6 @@ class SendNewCityEmail
     /**
      * Handle the event.
      *
-     * @param  NewCityAdded  $event
      * @return void
      */
     public function handle(NewCityAdded $event)

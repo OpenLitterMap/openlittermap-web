@@ -19,11 +19,16 @@ use Illuminate\Queue\SerializesModels;
 
 class AddTags implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
     public $userId;
+
     public $photoId;
+
     public $tags;
+
     public $customTags;
 
     /**

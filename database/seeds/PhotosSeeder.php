@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Photo;
+use Faker\Factory;
 use Illuminate\Database\Seeder;
 
 class PhotosSeeder extends Seeder
@@ -14,7 +15,7 @@ class PhotosSeeder extends Seeder
      */
     public function run()
     {
-        $faker = \Faker\Factory::create();
+        $faker = Factory::create();
 
         for ($i = 0; $i < 10; $i++) {
             Photo::create([

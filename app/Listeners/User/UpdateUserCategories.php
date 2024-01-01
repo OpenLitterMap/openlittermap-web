@@ -12,7 +12,6 @@ class UpdateUserCategories implements ShouldQueue
     /**
      * Handle the event.
      *
-     * @param  TagsVerifiedByAdmin  $event
      * @return void
      */
     public function handle (TagsVerifiedByAdmin $event)

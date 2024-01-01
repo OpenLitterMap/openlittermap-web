@@ -24,9 +24,6 @@ class LeaveTeamAction
     /**
      * If the user is the leader of the team they're leaving
      * assign a new team member as leader
-     *
-     * @param User $user
-     * @param Team $team
      */
     protected function assignTeamLeader(User $user, Team $team): void
     {
@@ -49,9 +46,6 @@ class LeaveTeamAction
      * If the user is leaving their active team
      * assign a new active team to them
      * if they are part of another team
-     *
-     * @param User $user
-     * @param Team $team
      */
     protected function assignActiveTeam(User $user, Team $team): void
     {

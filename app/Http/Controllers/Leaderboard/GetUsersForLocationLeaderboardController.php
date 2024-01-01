@@ -18,8 +18,6 @@ class GetUsersForLocationLeaderboardController
      * - timeFilter = "today", "yesterday", "this-month", "last-year"
      * - locationType = "country", "state", "city"
      * - locationId = countryId, stateId, cityId
-     *
-     * @return array
      */
     public function __invoke (): array
     {
@@ -100,7 +98,7 @@ class GetUsersForLocationLeaderboardController
                     'username' => $user->show_username ? ('@' . $user->username) : '',
                     'xp' => $xp, // number_format($xp),
                     'global_flag' => $user->global_flag,
-                    'social' => !empty($user->social_links) ? $user->social_links : null,
+                    'social' => empty($user->social_links) ? null : $user->social_links,
                     'team' => $showTeamName ? $user->team->name : '',
                     // 'rank' => $start + $index + 1
                 ];
@@ -127,7 +125,6 @@ class GetUsersForLocationLeaderboardController
      * @param $end
      * @param $locationType "country", "state", "city"
      * @param $locationId
-     * @return array
      */
     private function getDataForLocationLeaderboard (
         $timeFilter,
@@ -140,56 +137,37 @@ class GetUsersForLocationLeaderboardController
         $userIds = [];
         $total = 0;
 
-        if ($timeFilter === 'today')
-        {
+        if ($timeFilter === 'today') {
             $year = now()->year;
             $month = now()->month;
             $day = now()->day;
-
             $total = Redis::zcount("leaderboard:$locationType:$locationId:$year:$month:$day", '-inf', '+inf');
             $userIds = Redis::zrevrange("leaderboard:$locationType:$locationId:$year:$month:$day", $start, $end);
-        }
-        else if ($timeFilter === 'yesterday')
-        {
+        } elseif ($timeFilter === 'yesterday') {
             $year = now()->subDays(1)->year;
             $month = now()->subDays(1)->month;
             $day = now()->subDays(1)->day;
-
             $total = Redis::zcount("leaderboard:$locationType:$locationId:$year:$month:$day", '-inf', '+inf');
             $userIds = Redis::zrevrange("leaderboard:$locationType:$locationId:$year:$month:$day", $start, $end);
-        }
-        else if ($timeFilter === 'this-month')
-        {
+        } elseif ($timeFilter === 'this-month') {
             $year = now()->year;
             $month = now()->month;
-
             $total = Redis::zcount("leaderboard:$locationType:$locationId:$year:$month", '-inf', '+inf');
             $userIds = Redis::zrevrange("leaderboard:$locationType:$locationId:$year:$month", $start, $end);
-        }
-        else if ($timeFilter === 'last-month')
-        {
+        } elseif ($timeFilter === 'last-month') {
             $year = now()->subMonths(1)->year;
             $month = now()->subMonths(1)->month;
-
             $total = Redis::zcount("leaderboard:$locationType:$locationId:$year:$month", '-inf', '+inf');
             $userIds = Redis::zrevrange("leaderboard:$locationType:$locationId:$year:$month", $start, $end);
-        }
-        else if ($timeFilter === 'this-year')
-        {
+        } elseif ($timeFilter === 'this-year') {
             $year = now()->year;
-
             $total = Redis::zcount("leaderboard:$locationType:$locationId:$year", '-inf', '+inf');
             $userIds = Redis::zrevrange("leaderboard:$locationType:$locationId:$year", $start, $end);
-        }
-        else if ($timeFilter === 'last-year')
-        {
+        } elseif ($timeFilter === 'last-year') {
             $year = now()->year -1;
-
             $total = Redis::zcount("leaderboard:$locationType:$locationId:$year", '-inf', '+inf');
             $userIds = Redis::zrevrange("leaderboard:$locationType:$locationId:$year", $start, $end);
-        }
-        else if ($timeFilter === 'all-time')
-        {
+        } elseif ($timeFilter === 'all-time') {
             $total = Redis::zcount("leaderboard:$locationType:$locationId:total", '-inf', '+inf');
             $userIds = Redis::zrevrange("leaderboard:$locationType:$locationId:total", $start, $end);
         }

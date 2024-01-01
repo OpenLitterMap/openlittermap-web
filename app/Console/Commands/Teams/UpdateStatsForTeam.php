@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands\Teams;
 
-use DB;
+use Illuminate\Support\Facades\DB;
 use App\Models\Photo;
 use App\Models\Teams\Team;
 

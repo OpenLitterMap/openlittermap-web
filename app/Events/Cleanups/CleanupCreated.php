@@ -11,9 +11,12 @@ use Illuminate\Queue\SerializesModels;
 
 class CleanupCreated implements ShouldBroadcast, ShouldQueue
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
-
-    public $name, $latitude, $longitude;
+    use Dispatchable;
+    use InteractsWithSockets;
+    use SerializesModels;
+    public $name;
+    public $latitude;
+    public $longitude;
 
     /**
      * Create a new event instance.
@@ -30,7 +33,7 @@ class CleanupCreated implements ShouldBroadcast, ShouldQueue
     /**
      * Get the channels the event should broadcast on.
      *
-     * @return \Illuminate\Broadcasting\Channel|array
+     * @return Channel|array
      */
     public function broadcastOn()
     {

@@ -60,10 +60,6 @@ class UpdateRedisLocationsXp extends Command
         return 0;
     }
 
-    /**
-     * @param Photo $photo
-     * @return int
-     */
     private function calculateXp(Photo $photo): int
     {
         $xpFromPhoto = 1;

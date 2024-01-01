@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Merchants;
 
+use Exception;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Models\Merchant;
 use Illuminate\Http\Request;
@@ -33,9 +35,9 @@ class BecomeAMerchantController extends Controller
 
             Slack::send("Someone has applied to become a Littercoin merchant! Name: $merchant->name address: $merchant->address");
         }
-        catch (\Exception $exception)
+        catch (Exception $exception)
         {
-            \Log::info(['BecomeAMerchantController', $exception->getMessage()]);
+            Log::info(['BecomeAMerchantController', $exception->getMessage()]);
 
             return [
                 'success' => false,

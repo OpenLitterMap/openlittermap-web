@@ -29,7 +29,7 @@ class GoBackOnePhotoController extends Controller
         }
         else
         {
-            $photoId = $photoId -1;
+            $photoId -= 1;
 
             $query->where('id', $photoId);
         }

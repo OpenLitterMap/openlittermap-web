@@ -15,8 +15,8 @@ class FakeReverseGeocodingAction
         "country_code" => "us",
         "suburb" => "unknown"
     ];
-    private $imageDisplayName = '10735, Carlisle Pike, Latimore Township,' .
-    ' Adams County, Pennsylvania, 17324, USA';
+
+    private $imageDisplayName = '10735, Carlisle Pike, Latimore Township, Adams County, Pennsylvania, 17324, USA';
 
     public function run ($latitude, $longitude): array
     {

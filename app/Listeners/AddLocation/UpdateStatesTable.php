@@ -14,7 +14,6 @@ class UpdateStatesTable
     /**
      * Handle the event.
      *
-     * @param  NewStateAdded  $event
      * @return void
      */
     public function handle (NewStateAdded $event)

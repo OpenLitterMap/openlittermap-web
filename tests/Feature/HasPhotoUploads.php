@@ -13,8 +13,9 @@ use Tests\Doubles\Actions\Locations\FakeReverseGeocodingAction;
 trait HasPhotoUploads
 {
     protected $imagePath;
-    private $imageDisplayName = '10735, Carlisle Pike, Latimore Township,' .
-    ' Adams County, Pennsylvania, 17324, USA';
+
+    private $imageDisplayName = '10735, Carlisle Pike, Latimore Township, Adams County, Pennsylvania, 17324, USA';
+
     private $address = [
         "house_number" => "10735",
         "road" => "Carlisle Pike",
@@ -26,8 +27,9 @@ trait HasPhotoUploads
         "country_code" => "us",
         "suburb" => "unknown"
     ];
+
     /** @var FakeReverseGeocodingAction */
-    protected $geocodingAction = null;
+    protected $geocodingAction;
 
     protected function setImagePath()
     {
@@ -59,10 +61,7 @@ trait HasPhotoUploads
         $imageName = Storage::disk('s3')->url($filepath);
         $bboxImageName = Storage::disk('bbox')->url($filepath);
 
-        return compact(
-            'latitude', 'longitude', 'geoHash', 'displayName', 'address',
-            'dateTime', 'filepath', 'file', 'imageName', 'bboxImageName'
-        );
+        return ['latitude' => $latitude, 'longitude' => $longitude, 'geoHash' => $geoHash, 'displayName' => $displayName, 'address' => $address, 'dateTime' => $dateTime, 'filepath' => $filepath, 'file' => $file, 'imageName' => $imageName, 'bboxImageName' => $bboxImageName];
     }
 
     protected function getApiImageAttributes (array $imageAttributes): array

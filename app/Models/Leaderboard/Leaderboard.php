@@ -19,9 +19,6 @@ class Leaderboard extends Model
      * Gets the users from the given ids
      * Attaches to each their global or location-based XP
      * Formats them for display on the leaderboards
-     *
-     * @param array $userIds
-     * @return array
      */
     public static function getLeadersByUserIds (array $userIds): array
     {
@@ -49,7 +46,7 @@ class Leaderboard extends Model
                     'username' => $user->show_username ? ('@' . $user->username) : '',
                     'xp' => number_format($xp),
                     'global_flag' => $user->global_flag,
-                    'social' => !empty($user->social_links) ? $user->social_links : null,
+                    'social' => empty($user->social_links) ? null : $user->social_links,
                     'team' => $showTeamName ? $user->team->name : ''
                 ];
             })

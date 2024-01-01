@@ -63,7 +63,7 @@ class AddTagsToPhotoTest extends TestCase
         $this->assertTrue($photo->picked_up);
         $this->assertNotNull($photo->smoking_id);
         $this->assertInstanceOf(Smoking::class, $photo->smoking);
-        $this->assertEquals(3, $photo->smoking->butts);
+        $this->assertSame(3, $photo->smoking->butts);
     }
 
     public function test_user_and_photo_info_are_updated_when_a_user_adds_tags_to_a_photo()
@@ -99,10 +99,10 @@ class AddTagsToPhotoTest extends TestCase
         $user->refresh();
         $photo->refresh();
 
-        $this->assertEquals(9, $user->xp); // 1 xp from uploading, + 8xp from total litter tagged
-        $this->assertEquals(8, $photo->total_litter);
+        $this->assertSame(9, $user->xp); // 1 xp from uploading, + 8xp from total litter tagged
+        $this->assertSame(8, $photo->total_litter);
         $this->assertTrue($photo->picked_up);
-        $this->assertEquals(0.1, $photo->verification);
+        $this->assertEqualsWithDelta(0.1, $photo->verification, PHP_FLOAT_EPSILON);
     }
 
     public function test_it_forbids_adding_tags_to_a_verified_photo()
@@ -264,8 +264,8 @@ class AddTagsToPhotoTest extends TestCase
         // Assert event is fired ------------
         $photo->refresh();
 
-        $this->assertEquals(1, $photo->verification);
-        $this->assertEquals(2, $photo->verified);
+        $this->assertSame(1.0, $photo->verification);
+        $this->assertSame(2, $photo->verified);
 
         Event::assertDispatched(
             TagsVerifiedByAdmin::class,
@@ -287,10 +287,10 @@ class AddTagsToPhotoTest extends TestCase
         Redis::del("xp.country.$photo->country_id");
         Redis::del("xp.country.$photo->country_id.state.$photo->state_id");
         Redis::del("xp.country.$photo->country_id.state.$photo->state_id.city.$photo->city_id");
-        $this->assertEquals(0, Redis::zscore("xp.users", $user->id));
-        $this->assertEquals(0, Redis::zscore("xp.country.$photo->country_id", $user->id));
-        $this->assertEquals(0, Redis::zscore("xp.country.$photo->country_id.state.$photo->state_id", $user->id));
-        $this->assertEquals(0, Redis::zscore("xp.country.$photo->country_id.state.$photo->state_id.city.$photo->city_id", $user->id));
+        $this->assertNull(Redis::zscore("xp.users", $user->id));
+        $this->assertNull(Redis::zscore("xp.country.$photo->country_id", $user->id));
+        $this->assertNull(Redis::zscore("xp.country.$photo->country_id.state.$photo->state_id", $user->id));
+        $this->assertNull(Redis::zscore("xp.country.$photo->country_id.state.$photo->state_id.city.$photo->city_id", $user->id));
 
         // User adds tags to an image -------------------
         $this->post('/add-tags', [
@@ -301,9 +301,9 @@ class AddTagsToPhotoTest extends TestCase
 
         // Assert leaderboards are updated ------------
         // 3xp from tags
-        $this->assertEquals(3, Redis::zscore("xp.users", $user->id));
-        $this->assertEquals(3, Redis::zscore("xp.country.$photo->country_id", $user->id));
-        $this->assertEquals(3, Redis::zscore("xp.country.$photo->country_id.state.$photo->state_id", $user->id));
-        $this->assertEquals(3, Redis::zscore("xp.country.$photo->country_id.state.$photo->state_id.city.$photo->city_id", $user->id));
+        $this->assertSame('3', Redis::zscore("xp.users", $user->id));
+        $this->assertSame('3', Redis::zscore("xp.country.$photo->country_id", $user->id));
+        $this->assertSame('3', Redis::zscore("xp.country.$photo->country_id.state.$photo->state_id", $user->id));
+        $this->assertSame('3', Redis::zscore("xp.country.$photo->country_id.state.$photo->state_id.city.$photo->city_id", $user->id));
     }
 }

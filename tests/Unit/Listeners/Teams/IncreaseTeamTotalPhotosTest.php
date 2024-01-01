@@ -15,10 +15,6 @@ use Tests\TestCase;
 
 class IncreaseTeamTotalPhotosTest extends TestCase
 {
-    /**
-     * @param User $user
-     * @return ImageUploaded
-     */
     protected function getEvent(User $user): ImageUploaded
     {
         /** @var Photo $photo */
@@ -42,7 +38,7 @@ class IncreaseTeamTotalPhotosTest extends TestCase
         $user->active_team = $team->id;
         $user->save();
 
-        $this->assertEquals(0, $user->fresh()->team->total_images);
+        $this->assertSame(0, $user->fresh()->team->total_images);
         $oldUpdatedAt = $user->fresh()->team->updated_at;
         Carbon::setTestNow(now()->addMinute());
 
@@ -51,7 +47,7 @@ class IncreaseTeamTotalPhotosTest extends TestCase
         $listener->handle($this->getEvent($user));
 
         $user->refresh();
-        $this->assertEquals(1, $user->team->total_images);
+        $this->assertSame(1, $user->team->total_images);
         $this->assertTrue($user->team->updated_at->greaterThan($oldUpdatedAt));
     }
 
@@ -65,7 +61,7 @@ class IncreaseTeamTotalPhotosTest extends TestCase
         $user->active_team = $team->id;
         $user->save();
 
-        $this->assertEquals(0, $user->fresh()->teams->first()->pivot->total_photos);
+        $this->assertSame(0, $user->fresh()->teams->first()->pivot->total_photos);
         $oldUpdatedAt = $user->fresh()->teams->first()->pivot->updated_at;
 
         Carbon::setTestNow(now()->addMinute());
@@ -75,7 +71,7 @@ class IncreaseTeamTotalPhotosTest extends TestCase
         $listener->handle($this->getEvent($user));
 
         $user->refresh();
-        $this->assertEquals(1, $user->teams->first()->pivot->total_photos);
+        $this->assertSame(1, $user->teams->first()->pivot->total_photos);
         $this->assertTrue(
             $user->teams->first()->pivot->updated_at->greaterThan($oldUpdatedAt)
         );

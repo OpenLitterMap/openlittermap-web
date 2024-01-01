@@ -11,7 +11,6 @@ class DisplayTagsOnMapController extends Controller
     /**
      * Create a geojson from custom_tag or brand
      *
-     * @param Request $request
      * @return array
      */
     public function show (Request $request)
@@ -27,7 +26,7 @@ class DisplayTagsOnMapController extends Controller
 
         if ($request->has('custom_tags'))
         {
-            $tags = explode(',', $request->custom_tags);
+            $tags = explode(',', (string) $request->custom_tags);
 
             $photos = $photos->whereHas('customTags', function (Builder $query) use ($tags) {
                 return $query->whereIn('tag', $tags);

@@ -42,7 +42,7 @@ class PublicLittercoinController extends Controller
 
         if ($adaQty >= 2)
         {
-            $cmd = '(cd ../littercoin/;node ./run/build-add-ada-tx.mjs '.escapeshellarg($adaQty).' '.escapeshellarg($changeAddr).' '.escapeshellarg($strUtxos).') 2>> ../storage/logs/littercoin.log';
+            $cmd = '(cd ../littercoin/;node ./run/build-add-ada-tx.mjs '.escapeshellarg((string) $adaQty).' '.escapeshellarg((string) $changeAddr).' '.escapeshellarg($strUtxos).') 2>> ../storage/logs/littercoin.log';
             $response = exec($cmd);
 
             try
@@ -53,7 +53,7 @@ class PublicLittercoinController extends Controller
                     return [
                         $response
                     ];
-                } else if ($responseJSON->status == 501) {
+                } elseif ($responseJSON->status == 501) {
                     return [
                         '{"status": "408", "msg": "Not enough Ada in Wallet"}'
                     ];
@@ -87,7 +87,7 @@ class PublicLittercoinController extends Controller
         $cborSig = $request->input('cborSig');
         $cborTx = $request->input('cborTx');
 
-        $cmd = '(cd ../littercoin/;node ./run/submit-tx.mjs '.escapeshellarg($cborSig).' '.escapeshellarg($cborTx).') 2>> ../storage/logs/littercoin.log';
+        $cmd = '(cd ../littercoin/;node ./run/submit-tx.mjs '.escapeshellarg((string) $cborSig).' '.escapeshellarg((string) $cborTx).') 2>> ../storage/logs/littercoin.log';
         $response = exec($cmd);
 
         $responseObject = json_decode($response, false);

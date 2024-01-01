@@ -12,7 +12,6 @@ class IncrementLocation implements ShouldQueue
     /**
      * Handle the event.
      *
-     * @param TagsVerifiedByAdmin $event
      * @return void
      */
     public function handle (TagsVerifiedByAdmin $event)
@@ -26,8 +25,6 @@ class IncrementLocation implements ShouldQueue
 
     /**
      * Increases litter and total_litter for every location
-     *
-     * @param TagsVerifiedByAdmin $event
      */
     protected function increaseTotalsForLitter (TagsVerifiedByAdmin $event): void
     {
@@ -48,8 +45,6 @@ class IncrementLocation implements ShouldQueue
 
     /**
      * Increases brand and total_brands for every location
-     *
-     * @param TagsVerifiedByAdmin $event
      */
     protected function increaseTotalsForBrands(TagsVerifiedByAdmin $event): void
     {
@@ -72,8 +67,6 @@ class IncrementLocation implements ShouldQueue
      * Increases the total_photos value for every location
      * If a user is already verified, we don't need to increase this value
      * because it is already incremented during photo upload
-     *
-     * @param TagsVerifiedByAdmin $event
      */
     protected function increaseTotalPhotos(TagsVerifiedByAdmin $event): void
     {

@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\Storage;
 
 class ExportWithLink extends Mailable
 {
-    use Queueable, SerializesModels;
-
+    use Queueable;
+    use SerializesModels;
     public $path;
 
     /**

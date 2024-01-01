@@ -24,9 +24,6 @@ class TeamsClusterController extends Controller
 
     /**
      * Get clusters for the teams map
-     *
-     * @param Request $request
-     * @return array
      */
     public function clusters(Request $request): array
     {
@@ -49,9 +46,6 @@ class TeamsClusterController extends Controller
 
     /**
      * Get photos point data at zoom levels 16 or above
-     *
-     * @param Request $request
-     * @return array
      */
     public function points(Request $request): array
     {

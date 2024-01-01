@@ -68,15 +68,11 @@ class LitterCategoryTest extends TestCase
             $expected .= $className . '.' . $type . ' ' . $model->$type . ',';
         }
 
-        $this->assertEquals($expected, $model->translate());
+        $this->assertSame($expected, $model->translate());
     }
 
     /**
      * Simply removes a subset of values from an array
-     *
-     * @param array $arr
-     * @param array $remove
-     * @return array
      */
     private function deleteArrValues(array $arr, array $remove): array
     {

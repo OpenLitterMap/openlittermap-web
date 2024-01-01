@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use Illuminate\Support\Facades\Mail;
 use App\Models\User\User;
 use App\Mail\NotUploaded;
 use Illuminate\Console\Command;
@@ -41,7 +42,7 @@ class SendEmailToNonuploaders extends Command
     {
         $users = User::where('has_uploaded', 0)->get();
         foreach($users as $user) {
-            \Mail::to($user->email)->send(new NotUploaded($user));
+            Mail::to($user->email)->send(new NotUploaded($user));
         }
     }
 }

@@ -14,10 +14,7 @@ class MakeImageAction
     /**
      * Create an instance of Intervention Image using an UploadedFile
      *
-     * @param UploadedFile $file
-     * @param bool $resize
      *
-     * @return array
      */
     public function run(UploadedFile $file, bool $resize = false): array
     {
@@ -35,8 +32,6 @@ class MakeImageAction
     }
 
     /**
-     * @param UploadedFile $file
-     * @return array
      * @throws Exception
      */
     protected function getImageAndExifData(UploadedFile $file): array
@@ -50,7 +45,7 @@ class MakeImageAction
             $image = Image::make($file)->orientate();
             $exif = $image->exif();
 
-            return compact('image', 'exif');
+            return ['image' => $image, 'exif' => $exif];
         }
 
         // Generating a random filename, and not using the image's
@@ -84,6 +79,6 @@ class MakeImageAction
         unlink($tmpFilepath);
         unlink($convertedFilepath);
 
-        return compact('image', 'exif');
+        return ['image' => $image, 'exif' => $exif];
     }
 }

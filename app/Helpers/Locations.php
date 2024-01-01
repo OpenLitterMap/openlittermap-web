@@ -15,15 +15,11 @@ class Locations
      */
     public static function getLocation ($locationId, $locationType)
     {
-        if ($locationType === "country")
-        {
+        if ($locationType === "country") {
             return LoadDataHelper::getStates($locationId);
-        }
-        else if ($locationType === "state")
-        {
+        } elseif ($locationType === "state") {
             return LoadDataHelper::getCities($country = null, $locationId);
-        }
-        else {
+        } else {
             return 'no location type';
         }
     }

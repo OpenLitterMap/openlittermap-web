@@ -11,10 +11,6 @@ use Tests\TestCase;
 
 class DecreaseTeamTotalPhotosTest extends TestCase
 {
-    /**
-     * @param User $user
-     * @return ImageDeleted
-     */
     protected function getEvent(User $user): ImageDeleted
     {
         return new ImageDeleted(
@@ -37,7 +33,7 @@ class DecreaseTeamTotalPhotosTest extends TestCase
         $user->active_team = $team->id;
         $user->save();
 
-        $this->assertEquals(1, $team->total_images);
+        $this->assertSame(1, $team->total_images);
 
         $oldUpdatedAt = $team->updated_at;
 
@@ -49,7 +45,7 @@ class DecreaseTeamTotalPhotosTest extends TestCase
         $listener->handle($this->getEvent($user));
 
         $team->refresh();
-        $this->assertEquals(0, $team->total_images);
+        $this->assertSame(0, $team->total_images);
         $this->assertTrue($team->updated_at->greaterThan($oldUpdatedAt));
     }
 
@@ -64,7 +60,7 @@ class DecreaseTeamTotalPhotosTest extends TestCase
         $user->active_team = $team->id;
         $user->save();
 
-        $this->assertEquals(1, $user->fresh()->teams->first()->pivot->total_photos);
+        $this->assertSame(1, $user->fresh()->teams->first()->pivot->total_photos);
 
         $oldUpdatedAt = $user->fresh()->teams->first()->pivot->updated_at;
 
@@ -76,7 +72,7 @@ class DecreaseTeamTotalPhotosTest extends TestCase
         $listener->handle($this->getEvent($user));
 
         $user->refresh();
-        $this->assertEquals(0, $user->teams->first()->pivot->total_photos);
+        $this->assertSame(0, $user->teams->first()->pivot->total_photos);
         $this->assertTrue(
             $user->teams->first()->pivot->updated_at->greaterThan($oldUpdatedAt)
         );

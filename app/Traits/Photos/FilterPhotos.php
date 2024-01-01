@@ -30,22 +30,17 @@ trait FilterPhotos
         $query->where('verified', 0);
         $query->where('verification', 0);
 
-        $filters = json_decode($filters_json);
+        $filters = json_decode((string) $filters_json);
 
-        if (! is_null($selectAll))
-        {
-            // If selectAll is false, and the user is passing IDs,
-            if ($selectAll === false && ! is_null($ids) && sizeof($ids) > 0)
-            {
-                // we only want to select these IDs
-                $query->whereIn('id', $ids);
-
-                return $query;
-            }
+        // If selectAll is false, and the user is passing IDs,
+        if (!is_null($selectAll) && ($selectAll === false && ! is_null($ids) && count($ids) > 0)) {
+            // we only want to select these IDs
+            $query->whereIn('id', $ids);
+            return $query;
         }
 
         // Filter by photo.id
-        if (strlen($filters->id) > 0)
+        if (strlen((string) $filters->id) > 0)
         {
             $id = $filters->id;
 

@@ -65,13 +65,13 @@ class UploadPhotoTest extends TestCase
 
         // Bounding Box image has the right dimensions
         $image = Image::make(Storage::disk('bbox')->get($imageAttributes['filepath']));
-        $this->assertEquals(500, $image->width());
-        $this->assertEquals(500, $image->height());
+        $this->assertSame(500, $image->width());
+        $this->assertSame(500, $image->height());
 
         // Original image has the right dimensions
         $image = Image::make(Storage::disk('s3')->get($imageAttributes['filepath']));
-        $this->assertEquals(1, $image->width());
-        $this->assertEquals(1, $image->height());
+        $this->assertSame(1, $image->width());
+        $this->assertSame(1, $image->height());
 
         $user->refresh();
 
@@ -91,11 +91,11 @@ class UploadPhotoTest extends TestCase
         $this->assertEquals($imageAttributes['address']['state'], $photo->county);
         $this->assertEquals($imageAttributes['address']['country'], $photo->country);
         $this->assertEquals($imageAttributes['address']['country_code'], $photo->country_code);
-        $this->assertEquals('Unknown', $photo->model);
-        $this->assertEquals($this->getCountryId(), $photo->country_id);
-        $this->assertEquals($this->getStateId(), $photo->state_id);
-        $this->assertEquals($this->getCityId(), $photo->city_id);
-        $this->assertEquals('web', $photo->platform);
+        $this->assertSame('Unknown', $photo->model);
+        $this->assertSame($this->getCountryId(), $photo->country_id);
+        $this->assertSame($this->getStateId(), $photo->state_id);
+        $this->assertSame($this->getCityId(), $photo->city_id);
+        $this->assertSame('web', $photo->platform);
         $this->assertEquals($imageAttributes['geoHash'], $photo->geohash);
         $this->assertEquals($user->active_team, $photo->team_id);
         $this->assertEquals($imageAttributes['bboxImageName'], $photo->five_hundred_square_filepath);
@@ -147,13 +147,13 @@ class UploadPhotoTest extends TestCase
 
         // Bounding Box image has the right dimensions
         $image = Image::make(Storage::disk('bbox')->get($imageAttributes['filepath']));
-        $this->assertEquals(500, $image->width());
-        $this->assertEquals(500, $image->height());
+        $this->assertSame(500, $image->width());
+        $this->assertSame(500, $image->height());
 
         // Original image has the right dimensions
         $image = Image::make(Storage::disk('s3')->get($imageAttributes['filepath']));
-        $this->assertEquals(1, $image->width());
-        $this->assertEquals(1, $image->height());
+        $this->assertSame(1, $image->width());
+        $this->assertSame(1, $image->height());
 
         $user->refresh();
 
@@ -186,9 +186,9 @@ class UploadPhotoTest extends TestCase
 
         $imageAttributes = $this->getImageAndAttributes();
 
-        $this->assertEquals(0, $user->has_uploaded);
-        $this->assertEquals(0, $user->xp);
-        $this->assertEquals(0, $user->total_images);
+        $this->assertNull($user->has_uploaded);
+        $this->assertNull($user->xp);
+        $this->assertNull($user->total_images);
 
         $this->post('/submit', [
             'file' => $imageAttributes['file'],
@@ -196,9 +196,9 @@ class UploadPhotoTest extends TestCase
 
         // User info gets updated
         $user->refresh();
-        $this->assertEquals(1, $user->has_uploaded);
-        $this->assertEquals(1, $user->xp);
-        $this->assertEquals(1, $user->total_images);
+        $this->assertSame(1, $user->has_uploaded);
+        $this->assertSame(1, $user->xp);
+        $this->assertSame(1, $user->total_images);
     }
 
     public function test_a_users_xp_by_location_is_updated_when_they_upload_a_photo()
@@ -219,17 +219,17 @@ class UploadPhotoTest extends TestCase
         Redis::del("xp.country.$countryId");
         Redis::del("xp.country.$countryId.state.$stateId");
         Redis::del("xp.country.$countryId.state.$stateId.city.$cityId");
-        $this->assertEquals(0, Redis::zscore("xp.users", $user->id));
-        $this->assertEquals(0, Redis::zscore("xp.country.$countryId", $user->id));
-        $this->assertEquals(0, Redis::zscore("xp.country.$countryId.state.$stateId", $user->id));
-        $this->assertEquals(0, Redis::zscore("xp.country.$countryId.state.$stateId.city.$cityId", $user->id));
+        $this->assertNull(Redis::zscore("xp.users", $user->id));
+        $this->assertNull(Redis::zscore("xp.country.$countryId", $user->id));
+        $this->assertNull(Redis::zscore("xp.country.$countryId.state.$stateId", $user->id));
+        $this->assertNull(Redis::zscore("xp.country.$countryId.state.$stateId.city.$cityId", $user->id));
 
         $this->actingAs($user)->post('/submit', ['file' => $imageAttributes['file']]);
 
-        $this->assertEquals(1, Redis::zscore("xp.users", $user->id));
-        $this->assertEquals(1, Redis::zscore("xp.country.$countryId", $user->id));
-        $this->assertEquals(1, Redis::zscore("xp.country.$countryId.state.$stateId", $user->id));
-        $this->assertEquals(1, Redis::zscore("xp.country.$countryId.state.$stateId.city.$cityId", $user->id));
+        $this->assertSame('1', Redis::zscore("xp.users", $user->id));
+        $this->assertSame('1', Redis::zscore("xp.country.$countryId", $user->id));
+        $this->assertSame('1', Redis::zscore("xp.country.$countryId.state.$stateId", $user->id));
+        $this->assertSame('1', Redis::zscore("xp.country.$countryId.state.$stateId.city.$cityId", $user->id));
     }
 
     public function test_unauthenticated_users_cannot_upload_photos()

@@ -11,9 +11,6 @@ class DecreaseLocationTotalPhotos implements ShouldQueue
     /** @var UpdateTotalPhotosForLocationAction */
     protected $updateTotalPhotosAction;
 
-    /**
-     * @param UpdateTotalPhotosForLocationAction $updateTotalPhotosAction
-     */
     public function __construct(UpdateTotalPhotosForLocationAction $updateTotalPhotosAction)
     {
         $this->updateTotalPhotosAction = $updateTotalPhotosAction;

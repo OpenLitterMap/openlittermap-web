@@ -2,18 +2,17 @@
 
 namespace Tests\Feature\Teams;
 
+use Iterator;
 use App\Models\Teams\Team;
 use App\Models\User\User;
 use Tests\TestCase;
 
 class InactivateTeamTest extends TestCase
 {
-    public function routeDataProvider(): array
+    public function routeDataProvider(): Iterator
     {
-        return [
-            ['guard' => 'web', 'route' => 'teams/inactivate'],
-            ['guard' => 'api', 'route' => 'api/teams/inactivate'],
-        ];
+        yield ['guard' => 'web', 'route' => 'teams/inactivate'];
+        yield ['guard' => 'api', 'route' => 'api/teams/inactivate'];
     }
 
     /**

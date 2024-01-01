@@ -2,6 +2,11 @@
 
 namespace App\Http\Controllers\Auth;
 
+use Illuminate\Http\Response;
+use Illuminate\Http\RedirectResponse;
+use App\Models\User\User;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Contracts\Auth\StatefulGuard;
 use JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
 
@@ -47,7 +52,7 @@ class LoginController extends Controller
     /**
      * Show the application's login form.
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function showLoginForm ()
     {
@@ -57,8 +62,7 @@ class LoginController extends Controller
     /**
      * Handle a login request to the application.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\Response
+     * @return RedirectResponse|Response
      */
     public function login (Request $request)
     {
@@ -88,7 +92,6 @@ class LoginController extends Controller
     /**
      * Validate the user login request.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return void
      */
     protected function validateLogin (Request $request)
@@ -102,7 +105,6 @@ class LoginController extends Controller
     /**
      * Attempt to log the user into the application.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return bool
      */
     protected function attemptLogin (Request $request)
@@ -115,10 +117,8 @@ class LoginController extends Controller
     /**
      * Get the needed authorization credentials from the request.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return array
      */
-
     protected function credentials (Request $request) {
         return [
             'email' => $request->input('email'),
@@ -130,8 +130,7 @@ class LoginController extends Controller
     /**
      * Send the response after the user was authenticated.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     protected function sendLoginResponse (Request $request)
     {
@@ -154,13 +153,13 @@ class LoginController extends Controller
         {
             return $this->redirectTo();
         }
+
         return property_exists($this, 'redirectTo') ? $this->redirectTo : '/upload';
     }
 
     /**
      * The user has been authenticated.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @param  mixed  $user
      * @return mixed
      */
@@ -172,19 +171,18 @@ class LoginController extends Controller
     /**
      * Get the failed login response instance.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     protected function sendFailedLoginResponse (Request $request)
     {
         $errors = [$this->username() => trans('auth.failed')];
 
         // Load user
-        $user = \App\Models\User\User::where($this->username(), $request->{$this->username()})->first();
+        $user = User::where($this->username(), $request->{$this->username()})->first();
 
         // Check if user was successfully loaded, that the password matches
         // and active is not 1. If so, override the default error message.
-        if ($user && \Hash::check($request->password, $user->password) && $user->verified != 1) {
+        if ($user && Hash::check($request->password, $user->password) && $user->verified != 1) {
             $errors = [$this->username() => 'Please verify your email to enable Log in.'];
         }
 
@@ -216,18 +214,14 @@ class LoginController extends Controller
     // public function logout(Request $request)
     // {
     //     $this->guard()->logout();
-
     //     $request->session()->flush();
-
     //     $request->session()->regenerate();
-
     //     return redirect('/');
     // }
-
     /**
      * Get the guard to be used during authentication.
      *
-     * @return \Illuminate\Contracts\Auth\StatefulGuard
+     * @return StatefulGuard
      */
     protected function guard ()
     {
@@ -236,23 +230,21 @@ class LoginController extends Controller
 
 
      // THROTTLE
-        /**
+    /**
      * Determine if the user has too many failed login attempts.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return bool
      */
     protected function hasTooManyLoginAttempts (Request $request)
     {
         return $this->limiter()->tooManyAttempts(
-            $this->throttleKey($request), 5, 1
+            $this->throttleKey($request), 5
         );
     }
 
     /**
      * Increment the login attempts for the user.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return void
      */
     protected function incrementLoginAttempts (Request $request)
@@ -263,8 +255,7 @@ class LoginController extends Controller
     /**
      * Redirect the user after determining they are locked out.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     protected function sendLockoutResponse (Request $request)
     {
@@ -288,7 +279,6 @@ class LoginController extends Controller
     /**
      * Clear the login locks for the given user credentials.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return void
      */
     protected function clearLoginAttempts (Request $request)
@@ -299,7 +289,6 @@ class LoginController extends Controller
     /**
      * Fire an event when a lockout occurs.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return void
      */
     protected function fireLockoutEvent (Request $request)
@@ -310,7 +299,6 @@ class LoginController extends Controller
     /**
      * Get the throttle key for the given request.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return string
      */
     protected function throttleKey (Request $request)
@@ -321,7 +309,7 @@ class LoginController extends Controller
     /**
      * Get the rate limiter instance.
      *
-     * @return \Illuminate\Cache\RateLimiter
+     * @return RateLimiter
      */
     protected function limiter ()
     {

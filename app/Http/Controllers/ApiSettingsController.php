@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -95,13 +97,13 @@ class ApiSettingsController extends Controller
             $user->$key = $value;
             $user->save();
         }
-        catch (\Exception $e)
+        catch (Exception $exception)
         {
-            \Log::info(['ApiSettingsController@update', $e->getMessage()]);
+            Log::info(['ApiSettingsController@update', $exception->getMessage()]);
 
             return [
                 'success' => false,
-                'msg' => $e->getMessage()
+                'msg' => $exception->getMessage()
             ];
         }
 

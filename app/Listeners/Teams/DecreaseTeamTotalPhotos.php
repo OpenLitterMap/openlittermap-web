@@ -17,7 +17,6 @@ class DecreaseTeamTotalPhotos implements ShouldQueue
      *
      * Decrement the total photos for the photo's team.
      *
-     * @param ImageDeleted $event
      * @return void
      */
     public function handle(ImageDeleted $event)

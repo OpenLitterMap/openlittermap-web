@@ -2,6 +2,7 @@
 
 namespace App\Events\Photo;
 
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Broadcasting\PrivateChannel;
@@ -10,9 +11,13 @@ use Illuminate\Broadcasting\InteractsWithSockets;
 
 class IncrementPhotoMonth implements ShouldQueue
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
-
-    public $country_id, $state_id, $city_id, $created_at;
+    use Dispatchable;
+    use InteractsWithSockets;
+    use SerializesModels;
+    public $country_id;
+    public $state_id;
+    public $city_id;
+    public $created_at;
 
     /**
      * Create a new event instance.
@@ -30,7 +35,7 @@ class IncrementPhotoMonth implements ShouldQueue
     /**
      * Get the channels the event should broadcast on.
      *
-     * @return \Illuminate\Broadcasting\Channel|array
+     * @return Channel|array
      */
     public function broadcastOn ()
     {

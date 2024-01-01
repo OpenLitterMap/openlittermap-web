@@ -16,17 +16,22 @@ use Illuminate\Queue\SerializesModels;
 
 class AddTagsToPhoto implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
     public $photoId;
+
     /**
      * @var array
      */
     public $tags;
+
     /**
      * @var array
      */
     public $customTags;
+
     /**
      * @var bool
      */
@@ -57,7 +62,9 @@ class AddTagsToPhoto implements ShouldQueue
         /** @var User $user */
         $user = User::find($photo->user_id);
 
-        if (! $photo || $photo->verified > 0) return;
+        if (! $photo || $photo->verified > 0) {
+            return;
+        }
 
         /** @var AddCustomTagsToPhotoAction $addCustomTagsAction */
         $addCustomTagsAction = app(AddCustomTagsToPhotoAction::class);

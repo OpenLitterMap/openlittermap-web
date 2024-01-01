@@ -16,6 +16,7 @@ class GetPhotoTest extends TestCase
 
     /** @var User */
     protected $admin;
+
     /** @var User */
     protected $user;
 
@@ -31,7 +32,6 @@ class GetPhotoTest extends TestCase
 
         $this->setImagePath();
 
-        /** @var User $admin */
         $this->admin = User::factory()->create(['verification_required' => false]);
         $this->admin->assignRole(Role::create(['name' => 'admin']));
 

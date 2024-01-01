@@ -42,7 +42,7 @@ class LeaveTeamTest extends TestCase
 
         $this->assertEmpty($user->teams);
         $this->assertCount(1, $team->users);
-        $this->assertEquals(1, $team->members);
+        $this->assertSame(1, $team->members);
     }
 
     public function test_a_user_can_only_leave_a_team_they_are_part_of()

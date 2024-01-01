@@ -15,7 +15,6 @@ class TeamsLeaderboardController extends Controller
     /**
      * Load Teams ranked by total litter
      *
-     * @param ListTeamLeaderboardsAction $action
      * @return Collection;
      */
     public function index(ListTeamLeaderboardsAction $action)
