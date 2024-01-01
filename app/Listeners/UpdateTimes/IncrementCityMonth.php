@@ -13,7 +13,6 @@ class IncrementCityMonth implements ShouldQueue
     /**
      * Handle the event.
      *
-     * @param  IncrementPhotoMonth  $event
      * @return void
      */
     public function handle (IncrementPhotoMonth $event)

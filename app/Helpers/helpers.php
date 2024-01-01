@@ -24,14 +24,15 @@ if (!function_exists('array_diff_assoc_recursive'))
                     $difference[$key] = $value;
                 } else {
                     $new_diff = array_diff_assoc_recursive($value, $array2[$key]);
-                    if (!empty($new_diff)) {
+                    if ($new_diff !== []) {
                         $difference[$key] = $new_diff;
                     }
                 }
-            } else if (!array_key_exists($key, $array2) || $array2[$key] !== $value) {
+            } elseif (!array_key_exists($key, $array2) || $array2[$key] !== $value) {
                 $difference[$key] = $value;
             }
         }
+
         return $difference;
     }
 }
@@ -48,7 +49,6 @@ if (!function_exists('logAdminAction'))
      */
     function logAdminAction (Photo $photo, string $action, array $tagsDiff = null): void
     {
-        /** @var LogAdminVerificationAction $action */
         $logger = app(LogAdminVerificationAction::class);
 
         $logger->run(

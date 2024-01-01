@@ -13,7 +13,6 @@ trait LocationHelper
      *
      * We need to check if their settings are set to public.
      *
-     * @param Location $location
      *
      * @return Location with name || username || anonymous
      */
@@ -25,6 +24,7 @@ trait LocationHelper
             {
                 $location["created_by_name"] = $location->creator->name;
             }
+
             if ($location->creator->show_username_createdby)
             {
                 $location["created_by_username"] = ' @'.$location->creator->username;
@@ -42,6 +42,7 @@ trait LocationHelper
             {
                 $location["last_uploader_name"] = $location->lastUploader->name;
             }
+
             if ($location->lastUploader->show_username_createdby)
             {
                 $location["last_uploader_username"] = '@'.$location->lastUploader->username;

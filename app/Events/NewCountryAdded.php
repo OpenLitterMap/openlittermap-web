@@ -12,9 +12,11 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 
 class NewCountryAdded implements ShouldBroadcast
 {
-    use InteractsWithSockets, SerializesModels;
-
-    public $country, $countryCode, $now;
+    use InteractsWithSockets;
+    use SerializesModels;
+    public $country;
+    public $countryCode;
+    public $now;
 
     /**
      * Create a new event instance.

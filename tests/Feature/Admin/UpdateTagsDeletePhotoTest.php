@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use Iterator;
 use App\Actions\LogAdminVerificationAction;
 use App\Events\TagsVerifiedByAdmin;
 use App\Models\Litter\Categories\Alcohol;
@@ -23,10 +24,13 @@ class UpdateTagsDeletePhotoTest extends TestCase
 
     /** @var User */
     protected $admin;
+
     /** @var User */
     protected $user;
+
     /** @var Photo */
     protected $photo;
+
     /** @var array */
     private $imageAndAttributes;
 
@@ -39,7 +43,6 @@ class UpdateTagsDeletePhotoTest extends TestCase
 
         $this->setImagePath();
 
-        /** @var User $admin */
         $this->admin = User::factory()
             ->create(['verification_required' => false])
             ->assignRole(Role::create(['name' => 'admin']));
@@ -67,12 +70,10 @@ class UpdateTagsDeletePhotoTest extends TestCase
         ]);
     }
 
-    public function provider(): array
+    public function provider(): Iterator
     {
-        return [
-            ['route' => '/admin/contentsupdatedelete', 'deletesPhoto' => true, 'tagsKey' => 'categories'],
-            ['route' => '/admin/update-tags', 'deletesPhoto' => false, 'tagsKey' => 'tags']
-        ];
+        yield ['route' => '/admin/contentsupdatedelete', 'deletesPhoto' => true, 'tagsKey' => 'categories'];
+        yield ['route' => '/admin/update-tags', 'deletesPhoto' => false, 'tagsKey' => 'tags'];
     }
 
     /**
@@ -108,15 +109,15 @@ class UpdateTagsDeletePhotoTest extends TestCase
 
         $this->assertNotNull($this->photo->alcohol_id);
         $this->assertInstanceOf(Alcohol::class, $this->photo->alcohol);
-        $this->assertEquals(10, $this->photo->alcohol->beerBottle);
-        $this->assertEquals('new-test', $this->photo->customTags->first()->tag);
+        $this->assertSame(10, $this->photo->alcohol->beerBottle);
+        $this->assertSame('new-test', $this->photo->customTags->first()->tag);
 
         if ($deletesPhoto) {
             // Assert photo is deleted
             Storage::disk('s3')->assertMissing($this->imageAndAttributes['filepath']);
             Storage::disk('bbox')->assertMissing($this->imageAndAttributes['filepath']);
 
-            $this->assertEquals('/assets/verified.jpg', $this->photo->filename);
+            $this->assertSame('/assets/verified.jpg', $this->photo->filename);
         }
     }
 
@@ -130,7 +131,7 @@ class UpdateTagsDeletePhotoTest extends TestCase
         // Admin updates the tags -------------------
         $this->actingAs($this->admin);
 
-        $this->assertEquals(0, $this->admin->xp);
+        $this->assertNull($this->admin->xp);
 
         $this->post($route, [
             'photoId' => $this->photo->id,
@@ -149,13 +150,13 @@ class UpdateTagsDeletePhotoTest extends TestCase
         // Admin is rewarded with 1 XP for the effort
         // + 2xp for deleting tag and custom tag
         // + 2xp for adding new tag + custom tag
-        $this->assertEquals(5, $this->admin->xp);
+        $this->assertSame(5, $this->admin->xp);
         // 1 xp from uploading, xp from other tags is removed
-        $this->assertEquals(1, $this->user->xp);
-        $this->assertEquals(10, $this->photo->total_litter);
+        $this->assertSame(1, $this->user->xp);
+        $this->assertSame(10, $this->photo->total_litter);
         $this->assertFalse($this->photo->picked_up);
-        $this->assertEquals(1, $this->photo->verification);
-        $this->assertEquals(2, $this->photo->verified);
+        $this->assertSame(1.0, $this->photo->verification);
+        $this->assertSame(2, $this->photo->verified);
     }
 
     /**
@@ -220,7 +221,7 @@ class UpdateTagsDeletePhotoTest extends TestCase
         Redis::zadd("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}", 5, $this->user->id);
         Redis::zadd("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}.city.{$this->photo->city_id}", 5, $this->user->id);
 
-        $this->assertEquals(0, $this->admin->xp_redis);
+        $this->assertSame(0, $this->admin->xp_redis);
 
         // Admin updates the tags -------------------
         $this->actingAs($this->admin);
@@ -232,10 +233,10 @@ class UpdateTagsDeletePhotoTest extends TestCase
         ]);
 
         // Assert leaderboards are updated ------------
-        $this->assertEquals(5, $this->admin->xp_redis);
-        $this->assertEquals(1, Redis::zscore("xp.users", $this->user->id));
-        $this->assertEquals(1, Redis::zscore("xp.country.{$this->photo->country_id}", $this->user->id));
-        $this->assertEquals(1, Redis::zscore("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}", $this->user->id));
-        $this->assertEquals(1, Redis::zscore("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}.city.{$this->photo->city_id}", $this->user->id));
+        $this->assertSame(5, $this->admin->xp_redis);
+        $this->assertSame('1', Redis::zscore("xp.users", $this->user->id));
+        $this->assertSame('1', Redis::zscore("xp.country.{$this->photo->country_id}", $this->user->id));
+        $this->assertSame('1', Redis::zscore("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}", $this->user->id));
+        $this->assertSame('1', Redis::zscore("xp.country.{$this->photo->country_id}.state.{$this->photo->state_id}.city.{$this->photo->city_id}", $this->user->id));
     }
 }

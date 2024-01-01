@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Teams;
 
+use Iterator;
 use App\Mail\ExportWithLink;
 use App\Models\Teams\Team;
 use App\Models\User\User;
@@ -12,12 +13,10 @@ use Tests\TestCase;
 
 class DownloadTeamDataTest extends TestCase
 {
-    public function routeDataProvider(): array
+    public function routeDataProvider(): Iterator
     {
-        return [
-            ['guard' => 'web', 'route' => 'teams/download'],
-            ['guard' => 'api', 'route' => 'api/teams/download'],
-        ];
+        yield ['guard' => 'web', 'route' => 'teams/download'];
+        yield ['guard' => 'api', 'route' => 'api/teams/download'];
     }
 
     /**
@@ -41,7 +40,7 @@ class DownloadTeamDataTest extends TestCase
         Mail::assertSent(function (ExportWithLink $mail) use ($member) {
             $expectedPath = now()->year . "/" . now()->format('m') . "/" . now()->format('d') . "/" . now()->getTimestamp() . "/_Team_OpenLitterMap.csv";
             $this->assertTrue($mail->hasTo($member->email));
-            $this->assertEquals($expectedPath, $mail->path);
+            $this->assertSame($expectedPath, $mail->path);
             return true;
         });
     }

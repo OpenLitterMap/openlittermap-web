@@ -23,11 +23,6 @@ class JoinTeamAction
         $team->save();
     }
 
-    /**
-     * @param User $user
-     * @param Team $team
-     * @return void
-     */
     protected function setAsActiveTeamIfNull(User $user, Team $team): void
     {
         if (is_null($user->active_team)) {

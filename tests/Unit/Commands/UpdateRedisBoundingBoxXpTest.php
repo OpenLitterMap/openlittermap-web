@@ -17,10 +17,10 @@ class UpdateRedisBoundingBoxXpTest extends TestCase
             'verified_by' => $user->id
         ]);
         Redis::del("xp.users");
-        $this->assertEquals(0, Redis::zscore("xp.users", $user->id));
+        $this->assertNull(Redis::zscore("xp.users", $user->id));
 
         $this->artisan('users:update-redis-bounding-box-xp');
 
-        $this->assertEquals(2, Redis::zscore("xp.users", $user->id));
+        $this->assertSame('2', Redis::zscore("xp.users", $user->id));
     }
 }

@@ -5,8 +5,11 @@ namespace App;
 trait DynamicLoading
 {
 	protected $total_photos = 0;
+
 	protected $months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
 	protected $latlong = [];
+
 	protected $photoCount = 0;
 
 	/**

@@ -20,8 +20,6 @@ class APIPhoto extends Photo
 
     /**
      * Append type => web to an image when loaded from web
-     *
-     * @return string
      */
     public function getTypeAttribute () : string
     {

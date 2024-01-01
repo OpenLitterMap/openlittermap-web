@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Teams;
 
+use Iterator;
 use App\Models\Teams\Team;
 use App\Models\User\User;
 use Tests\TestCase;
@@ -9,12 +10,10 @@ use Tests\TestCase;
 class ToggleLeaderboardVisibilityTest extends TestCase
 {
 
-    public function routeDataProvider(): array
+    public function routeDataProvider(): Iterator
     {
-        return [
-            ['/teams/leaderboard/visibility', 'web'],
-            ['/api/teams/leaderboard/visibility', 'api'],
-        ];
+        yield ['/teams/leaderboard/visibility', 'web'];
+        yield ['/api/teams/leaderboard/visibility', 'api'];
     }
 
     /**
@@ -31,13 +30,13 @@ class ToggleLeaderboardVisibilityTest extends TestCase
 
         $response->assertOk();
         $response->assertJson(['success' => true, 'visible' => true]);
-        $this->assertEquals(1, $team->fresh()->leaderboards);
+        $this->assertSame(1, $team->fresh()->leaderboards);
 
         $response = $this->actingAs($user, $guard)->postJson($route, ['team_id' => $team->id]);
 
         $response->assertOk();
         $response->assertJson(['success' => true, 'visible' => false]);
-        $this->assertEquals(0, $team->fresh()->leaderboards);
+        $this->assertSame(0, $team->fresh()->leaderboards);
     }
 
     /**
@@ -57,6 +56,6 @@ class ToggleLeaderboardVisibilityTest extends TestCase
 
         $response->assertOk();
         $response->assertJson(['success' => false, 'message' => 'member-not-allowed']);
-        $this->assertEquals(0, $team->fresh()->leaderboards);
+        $this->assertSame(0, $team->fresh()->leaderboards);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Models\Location;
 
+use App\Models\User\User;
 use App\Events\NewCityAdded;
 use App\Models\Photo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -156,26 +157,26 @@ class City extends Location
 
     public function creator()
     {
-        return $this->belongsTo('App\Models\User\User', 'created_by');
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function lastUploader () {
-        return $this->belongsTo('App\Models\User\User', 'user_id_last_uploaded');
+        return $this->belongsTo(User::class, 'user_id_last_uploaded');
     }
 
     public function country() {
-        return $this->belongsTo('App\Models\Location\Country');
+        return $this->belongsTo(Country::class);
     }
 
     public function state() {
-        return $this->belongsTo('App\Models\Location\State');
+        return $this->belongsTo(State::class);
     }
 
     public function photos() {
-        return $this->hasMany('App\Models\Photo');
+        return $this->hasMany(Photo::class);
     }
 
     public function users() {
-        return $this->hasMany('App\Models\User\User');
+        return $this->hasMany(User::class);
     }
 }

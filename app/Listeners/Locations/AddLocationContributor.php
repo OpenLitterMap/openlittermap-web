@@ -11,9 +11,6 @@ class AddLocationContributor implements ShouldQueue
     /** @var AddContributorForLocationAction */
     protected $addContributorAction;
 
-    /**
-     * @param AddContributorForLocationAction $addContributorAction
-     */
     public function __construct(AddContributorForLocationAction $addContributorAction)
     {
         $this->addContributorAction = $addContributorAction;

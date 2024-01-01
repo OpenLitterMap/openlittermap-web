@@ -2,29 +2,26 @@
 
 namespace Tests\Feature\User;
 
+use Iterator;
 use App\Models\User\User;
 use Tests\TestCase;
 
 class SettingsTest extends TestCase
 {
-    public function settingsDataProvider(): array
+    public function settingsDataProvider(): Iterator
     {
-        return [
-            'twitter not link' => [['social_twitter' => 'not url'], ['social_twitter']],
-            'facebook not link' => [['social_facebook' => 'not url'], ['social_facebook']],
-            'instagram not link' => [['social_instagram' => 'not url'], ['social_instagram']],
-            'linkedin not link' => [['social_linkedin' => 'not url'], ['social_linkedin']],
-            'reddit not link' => [['social_reddit' => 'not url'], ['social_reddit']],
-            'personal not link' => [['social_personal' => 'not url'], ['social_personal']],
-        ];
+        yield 'twitter not link' => [['social_twitter' => 'not url'], ['social_twitter']];
+        yield 'facebook not link' => [['social_facebook' => 'not url'], ['social_facebook']];
+        yield 'instagram not link' => [['social_instagram' => 'not url'], ['social_instagram']];
+        yield 'linkedin not link' => [['social_linkedin' => 'not url'], ['social_linkedin']];
+        yield 'reddit not link' => [['social_reddit' => 'not url'], ['social_reddit']];
+        yield 'personal not link' => [['social_personal' => 'not url'], ['social_personal']];
     }
 
-    public function routeDataProvider(): array
+    public function routeDataProvider(): Iterator
     {
-        return [
-            'web' => ['guard' => 'web', 'route' => '/settings'],
-            'api' => ['guard' => 'api', 'route' => '/api/settings'],
-        ];
+        yield 'web' => ['guard' => 'web', 'route' => '/settings'];
+        yield 'api' => ['guard' => 'api', 'route' => '/api/settings'];
     }
 
     /**
@@ -41,7 +38,7 @@ class SettingsTest extends TestCase
         ]);
 
         $response->assertOk();
-        $this->assertEquals('https://twitter.com/user', $user->fresh()->setting('social_twitter'));
+        $this->assertSame('https://twitter.com/user', $user->fresh()->setting('social_twitter'));
         $this->assertNull($user->fresh()->setting('test setting'));
     }
 

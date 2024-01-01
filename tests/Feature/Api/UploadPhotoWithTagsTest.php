@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api;
 
+use Iterator;
 use App\Events\ImageUploaded;
 use App\Events\Photo\IncrementPhotoMonth;
 use App\Models\Litter\Categories\Smoking;
@@ -43,10 +44,7 @@ class UploadPhotoWithTagsTest extends TestCase
         $imageAttributes = $this->getImageAndAttributes();
 
         $response = $this->post('/api/photos/submit-with-tags',
-            array_merge(
-                $this->getApiImageAttributes($imageAttributes),
-                ['tags' => ['smoking' => ['butts' => 3]]]
-            )
+            [...$this->getApiImageAttributes($imageAttributes), 'tags' => ['smoking' => ['butts' => 3]]]
         );
 
         $response->assertOk()->assertJson(['success' => true]);
@@ -62,7 +60,7 @@ class UploadPhotoWithTagsTest extends TestCase
         $this->assertEquals($imageAttributes['dateTime'], $photo->datetime);
         $this->assertNotNull($photo->smoking_id);
         $this->assertInstanceOf(Smoking::class, $photo->smoking);
-        $this->assertEquals(3, $photo->smoking->butts);
+        $this->assertSame(3, $photo->smoking->butts);
 
         Event::assertDispatched(ImageUploaded::class);
         Event::assertDispatched(IncrementPhotoMonth::class);
@@ -78,20 +76,14 @@ class UploadPhotoWithTagsTest extends TestCase
 
         // User marks the litter as picked up -------------------
         $this->post('/api/photos/submit-with-tags',
-            array_merge($this->getApiImageAttributes($imageAttributes), [
-                'tags' => ['smoking' => ['butts' => 3]],
-                'picked_up' => true
-            ])
+            [...$this->getApiImageAttributes($imageAttributes), 'tags' => ['smoking' => ['butts' => 3]], 'picked_up' => true]
         );
 
         $this->assertTrue($user->fresh()->photos->last()->picked_up);
 
         // User marks the litter as not picked up -------------------
         $this->post('/api/photos/submit-with-tags',
-            array_merge($this->getApiImageAttributes($imageAttributes), [
-                'tags' => json_encode(['smoking' => ['butts' => 3]]),
-                'picked_up' => false
-            ])
+            [...$this->getApiImageAttributes($imageAttributes), 'tags' => json_encode(['smoking' => ['butts' => 3]]), 'picked_up' => false]
         );
 
         $this->assertFalse($user->fresh()->photos->last()->picked_up);
@@ -102,33 +94,29 @@ class UploadPhotoWithTagsTest extends TestCase
         $user->save();
 
         $this->post('/api/photos/submit-with-tags',
-            array_merge($this->getApiImageAttributes($imageAttributes), [
-                'tags' => json_encode(['smoking' => ['butts' => 3]]),
-            ])
+            [...$this->getApiImageAttributes($imageAttributes), 'tags' => json_encode(['smoking' => ['butts' => 3]])]
         );
 
         $this->assertTrue($user->fresh()->photos->last()->picked_up);
     }
 
-    public function validationDataProvider(): array
+    public function validationDataProvider(): Iterator
     {
-        return [
-            [
-                'fields' => [],
-                'errors' => ['photo', 'lat', 'lon', 'date'],
-            ],
-            [
-                'fields' => ['photo' => UploadedFile::fake()->image('some.pdf'), 'lat' => 5, 'lon' => 5, 'date' => now()->toDateTimeString(), 'tags' => json_encode(['smoking' => ['butts' => 3]])],
-                'errors' => ['photo']
-            ],
-            [
-                'fields' => ['photo' => 'validImage', 'lat' => 'asdf', 'lon' => 'asdf', 'date' => now()->toDateTimeString(), 'tags' => json_encode(['smoking' => ['butts' => 3]])],
-                'errors' => ['lat', 'lon']
-            ],
-            [
-                'fields' => ['photo' => 'validImage', 'lat' => 5, 'lon' => 5, 'date' => now()->toDateTimeString(), 'tags' => 'test'],
-                'errors' => ['photo']
-            ],
+        yield [
+            'fields' => [],
+            'errors' => ['photo', 'lat', 'lon', 'date'],
+        ];
+        yield [
+            'fields' => ['photo' => UploadedFile::fake()->image('some.pdf'), 'lat' => 5, 'lon' => 5, 'date' => now()->toDateTimeString(), 'tags' => json_encode(['smoking' => ['butts' => 3]])],
+            'errors' => ['photo']
+        ];
+        yield [
+            'fields' => ['photo' => 'validImage', 'lat' => 'asdf', 'lon' => 'asdf', 'date' => now()->toDateTimeString(), 'tags' => json_encode(['smoking' => ['butts' => 3]])],
+            'errors' => ['lat', 'lon']
+        ];
+        yield [
+            'fields' => ['photo' => 'validImage', 'lat' => 5, 'lon' => 5, 'date' => now()->toDateTimeString(), 'tags' => 'test'],
+            'errors' => ['photo']
         ];
     }
 

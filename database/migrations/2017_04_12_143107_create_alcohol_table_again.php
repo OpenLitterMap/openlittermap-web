@@ -18,7 +18,7 @@ class CreateAlcoholTableAgain extends Migration
 
         //     $table->integer('photo_id')->unsigned();
         //     $table->foreign('photo_id')->references('id')->on('photos')->onDelete('cascade');
-            
+
         //     $table->integer('glassAlcoholBottle')->unsigned()->nullable();
         //     $table->integer('glassAlcoholSpirits')->unsigned()->nullable();
         //     $table->integer('alcoholCan')->unsigned()->nullable();

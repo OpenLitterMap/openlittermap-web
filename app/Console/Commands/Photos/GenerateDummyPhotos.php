@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\Photos;
 
+use GeoHash;
 use App\Models\Location\City;
 use App\Models\Location\Country;
 use App\Models\Location\State;
@@ -67,7 +68,6 @@ class GenerateDummyPhotos extends Command
      * @param $userId
      * @param $ireland
      * @param $cork
-     * @return array
      */
     protected function generatePhotos($photosToGen, $userId, $ireland, $cork): array
     {
@@ -95,7 +95,7 @@ class GenerateDummyPhotos extends Command
                 'verified' => 2,
                 'verification' => 1,
                 'remaining' => 1,
-                'geohash' => \GeoHash::encode($lat, $lon),
+                'geohash' => GeoHash::encode($lat, $lon),
                 'created_at' => now()->addDays(random_int(0, 200)),
                 'updated_at' => now()->addDays(random_int(0, 200)),
             ];
@@ -110,7 +110,6 @@ class GenerateDummyPhotos extends Command
 
     /**
      * @param $photosToGen
-     * @param array $photos
      */
     protected function insertPhotos($photosToGen, array $photos): void
     {

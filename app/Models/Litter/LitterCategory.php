@@ -20,7 +20,9 @@ abstract class LitterCategory extends Model
 
         foreach ($this->types() as $type)
         {
-            if ($this->$type) $total += $this->$type;
+            if ($this->$type) {
+                $total += $this->$type;
+            }
         }
 
         return $total;

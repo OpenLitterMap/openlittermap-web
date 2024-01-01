@@ -2,6 +2,7 @@
 
 namespace App\Traits;
 
+use GeoHash;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -14,10 +15,8 @@ trait FilterClustersByGeohashTrait
      *
      * For a specific zoom level, we want to return the bounding box of the clusters + neighbours
      *
-     * @param Builder $query
      * @param $zoom int   -> zoom level of the browser
      * @param $bbox array -> [west|left, south|bottom, east|right, north|top]
-     * @return Builder
      */
     public function filterClustersByGeoHash (Builder $query, int $zoom, string $bbox): Builder
     {
@@ -31,7 +30,7 @@ trait FilterClustersByGeohashTrait
         $precision = $this->getGeohashPrecision($zoom);
 
         // Get the center of the bounding box, as a geohash
-        $center_geohash = \GeoHash::encode($center_lat, $center_lon, $precision); // precision 0 will return the full geohash
+        $center_geohash = GeoHash::encode($center_lat, $center_lon, $precision); // precision 0 will return the full geohash
 
         // get the neighbour geohashes from our center geohash
         $geos = array_values($this->neighbors($center_geohash));
@@ -47,9 +46,6 @@ trait FilterClustersByGeohashTrait
 
     /**
      * Converts the clusters into the format required by the map
-     *
-     * @param Collection $clusters
-     * @return array
      */
     protected function getFeatures(Collection $clusters): array
     {

@@ -11,7 +11,7 @@ class AddCustomTagsToPhotoAction
      */
     public function run (Photo $photo, array $tags): int
     {
-        if (empty($tags)) {
+        if ($tags === []) {
             return 0;
         }
 

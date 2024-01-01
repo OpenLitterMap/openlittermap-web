@@ -15,9 +15,10 @@ class CreateCSVExportTest extends TestCase
         foreach (Photo::categories() as $category) {
             $photo = Photo::factory()->make();
             $types = $photo->$category()->make()->types();
-            $expected[] = strtoupper($category);
+            $expected[] = strtoupper((string) $category);
             $expected = array_merge($expected, $types);
         }
+
         $expected = array_merge($expected, ['custom_tag_1', 'custom_tag_2', 'custom_tag_3']);
         // We make this assertion to be sure that
         // the exporter does not persist extra models
@@ -65,6 +66,7 @@ class CreateCSVExportTest extends TestCase
                 $expected[] = $model->$type;
             }
         }
+
         $expected = array_merge($expected, ['tag 1', 'tag 2', 'tag 3']);
         // We make this assertion to be sure that
         // the exporter does not persist extra models
@@ -124,8 +126,6 @@ class CreateCSVExportTest extends TestCase
      * sets all it's tags to a unique number from 1 to n
      * updates the photo's category_id
      *
-     * @param Photo $photo
-     * @param string $category
      * @return mixed
      */
     protected function createCategoryWithTags(Photo $photo, string $category)

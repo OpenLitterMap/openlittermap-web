@@ -23,11 +23,17 @@ class TeamsDataController extends Controller
         $teamIds = $this->getTeamIds();
 
         // period
-        if (request()->period === 'today') $period = now()->startOfDay();
-        else if (request()->period === 'week') $period = now()->startOfWeek();
-        else if (request()->period === 'month') $period = now()->startOfMonth();
-        else if (request()->period === 'year') $period = now()->startOfYear();
-        else if (request()->period === 'all') $period = '2020-11-22 00:00:00'; // date of writing
+        if (request()->period === 'today') {
+            $period = now()->startOfDay();
+        } elseif (request()->period === 'week') {
+            $period = now()->startOfWeek();
+        } elseif (request()->period === 'month') {
+            $period = now()->startOfMonth();
+        } elseif (request()->period === 'year') {
+            $period = now()->startOfYear();
+        } elseif (request()->period === 'all') {
+            $period = '2020-11-22 00:00:00';
+        } // date of writing
 
         $query = Photo::query()
             ->whereIn('team_id', $teamIds)

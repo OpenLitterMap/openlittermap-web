@@ -115,7 +115,7 @@ class PhotoTest extends TestCase
 
         $photo->translate();
 
-        $this->assertEquals(
+        $this->assertSame(
             $smoking->translate() . $food->translate(),
             $photo->result_string
         );
@@ -151,8 +151,8 @@ class PhotoTest extends TestCase
 
         // As a sanity check, we first test that
         // the current state is as we expect it to be
-        $this->assertEquals(1, $photo->smoking->butts);
-        $this->assertEquals(1, $photo->brands->walkers);
+        $this->assertSame(1, $photo->smoking->butts);
+        $this->assertSame(1, $photo->brands->walkers);
 
         $this->assertArrayHasKey(
             'lighters', $photo->smoking->getAttributes()
@@ -163,8 +163,8 @@ class PhotoTest extends TestCase
 
         $photo->tags();
 
-        $this->assertEquals(1, $photo->smoking->butts);
-        $this->assertEquals(1, $photo->brands->walkers);
+        $this->assertSame(1, $photo->smoking->butts);
+        $this->assertSame(1, $photo->brands->walkers);
 
         $this->assertArrayNotHasKey(
             'lighters', $photo->smoking->getAttributes()

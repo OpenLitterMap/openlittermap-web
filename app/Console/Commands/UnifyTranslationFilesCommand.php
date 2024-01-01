@@ -10,8 +10,7 @@ class UnifyTranslationFilesCommand extends Command
 {
     protected $signature = 'olm:unify-translation-files {path}';
 
-    protected $description = 'Copies translation keys from the En version' .
-    ' and adds them to the other languages when missing.' .
+    protected $description = 'Copies translation keys from the En version and adds them to the other languages when missing.' .
     'Use like this `art olm:unify-translation-files settings/account.json`' .
     'You can unify all the language files by using `art olm:unify-translation-files all`';
 
@@ -51,10 +50,8 @@ class UnifyTranslationFilesCommand extends Command
                             $translatedJson[$key][$tag] = $translation;
                         }
                     }
-                } else {
-                    if (!isset($translatedJson[$key])) {
-                        $translatedJson[$key] = $values;
-                    }
+                } elseif (!isset($translatedJson[$key])) {
+                    $translatedJson[$key] = $values;
                 }
             }
 

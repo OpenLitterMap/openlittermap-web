@@ -11,9 +11,16 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 
 class NewCityAdded implements ShouldBroadcast
 {
-    use InteractsWithSockets, SerializesModels;
-
-    public $city, $state, $country, $now, $cityId, $lat, $lon, $photoId;
+    use InteractsWithSockets;
+    use SerializesModels;
+    public $city;
+    public $state;
+    public $country;
+    public $now;
+    public $cityId;
+    public $lat;
+    public $lon;
+    public $photoId;
 
     /**
      * Create a new event instance.

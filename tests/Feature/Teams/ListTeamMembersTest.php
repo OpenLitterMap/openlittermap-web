@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Teams;
 
+use Iterator;
 use App\Models\Teams\Team;
 use App\Models\User\User;
 use Tests\TestCase;
@@ -9,12 +10,10 @@ use Tests\TestCase;
 class ListTeamMembersTest extends TestCase
 {
 
-    public function routeDataProvider(): array
+    public function routeDataProvider(): Iterator
     {
-        return [
-            ['guard' => 'web', 'route' => 'teams/members'],
-            ['guard' => 'api', 'route' => 'api/teams/members'],
-        ];
+        yield ['guard' => 'web', 'route' => 'teams/members'];
+        yield ['guard' => 'api', 'route' => 'api/teams/members'];
     }
 
     /**
@@ -36,6 +35,7 @@ class ListTeamMembersTest extends TestCase
 
         $response->assertOk();
         $response->assertJsonFragment(['success' => true]);
+
         $members = $response->json('result.data');
         $this->assertCount(3, $members);
         $this->assertEqualsCanonicalizing(
@@ -64,7 +64,7 @@ class ListTeamMembersTest extends TestCase
         $this->assertEquals($user->id, $member['id']);
         $this->assertEquals($user->name, $member['name']);
         $this->assertEquals($user->username, $member['username']);
-        $this->assertEquals($user->active_team, $member['active_team']);
+        $this->assertSame($user->active_team, $member['active_team']);
         $this->assertEquals($user->updated_at->toIsoString(), $member['updated_at']);
         $this->assertEquals($user->total_photos, $member['pivot']['total_photos']);
     }

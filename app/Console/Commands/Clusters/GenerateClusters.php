@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands\Clusters;
 
+use Illuminate\Support\Facades\Log;
+use GeoHash;
 use App\Models\Photo;
 use App\Models\Cluster;
 
@@ -30,7 +32,7 @@ class GenerateClusters extends Command
      */
     public function handle()
     {
-        \Log::info('--- Clustering began ---');
+        Log::info('--- Clustering began ---');
 
         $start = microtime(true);
 
@@ -44,7 +46,7 @@ class GenerateClusters extends Command
         $this->newLine();
         $this->info("Total Time: " . ($finish - $start) . "\n");
 
-        \Log::info('--- Clustering finished ---');
+        Log::info('--- Clustering finished ---');
     }
 
     /**
@@ -138,7 +140,7 @@ class GenerateClusters extends Command
                         'lon' => $cluster->geometry->coordinates[0],
                         'point_count' => $cluster->properties->point_count,
                         'point_count_abbreviated' => $cluster->properties->point_count_abbreviated,
-                        'geohash' => \GeoHash::encode($cluster->geometry->coordinates[1], $cluster->geometry->coordinates[0]),
+                        'geohash' => GeoHash::encode($cluster->geometry->coordinates[1], $cluster->geometry->coordinates[0]),
                         'zoom' => $zoomLevel,
                         'year' => $year
                     ];
@@ -179,7 +181,7 @@ class GenerateClusters extends Command
             }
         }
 
-        return empty($yearsWithData)
+        return $yearsWithData === []
             ? []
             : array_merge([null], $yearsWithData);
     }

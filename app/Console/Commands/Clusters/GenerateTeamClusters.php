@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\Clusters;
 
+use GeoHash;
 use App\Models\Photo;
 use App\Models\TeamCluster;
 use App\Models\Teams\Team;
@@ -25,6 +26,7 @@ class GenerateTeamClusters extends Command
     protected $description = 'Generate all clusters for teams photos';
 
     private $clustersDir = 'team-clusters.json';
+
     private $featuresDir = 'team-features.json';
 
     /**
@@ -126,7 +128,7 @@ class GenerateTeamClusters extends Command
                         'lon' => $cluster->geometry->coordinates[0],
                         'point_count' => $cluster->properties->point_count,
                         'point_count_abbreviated' => $cluster->properties->point_count_abbreviated,
-                        'geohash' => \GeoHash::encode($cluster->geometry->coordinates[1], $cluster->geometry->coordinates[0]),
+                        'geohash' => GeoHash::encode($cluster->geometry->coordinates[1], $cluster->geometry->coordinates[0]),
                         'created_at' => $time,
                         'updated_at' => $time,
                     ];
@@ -144,9 +146,6 @@ class GenerateTeamClusters extends Command
         $this->info("\nClusters finished...");
     }
 
-    /**
-     * @param Team $team
-     */
     protected function deleteClusters(Team $team)
     {
         $this->info("Deleting clusters...");

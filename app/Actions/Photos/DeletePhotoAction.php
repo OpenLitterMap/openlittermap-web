@@ -14,8 +14,6 @@ class DeletePhotoAction
      * we'll just assume the photo has already been deleted
      * or has been partially uploaded, in which case there's nothing to delete.
      * That's why we're not throwing an exception here
-     *
-     * @param Photo $photo
      */
     public function run (Photo $photo)
     {
@@ -30,14 +28,11 @@ class DeletePhotoAction
 
     /**
      * Delete a photo from a specified disk
-     *
-     * @param string $filename
-     * @param string $disk
      */
     protected function deletePhoto (string $filename, string $disk) :void
     {
         $path = str_replace(
-            rtrim(Storage::disk($disk)->url('/'), '/'),
+            rtrim((string) Storage::disk($disk)->url('/'), '/'),
             '',
             $filename
         );

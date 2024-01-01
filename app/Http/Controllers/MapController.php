@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use DateTime;
 use App\Models\User\User;
 use App\Models\Photo;
 use App\Models\Location\City;
@@ -26,9 +27,9 @@ class MapController extends Controller
 	 */
 	public function getCity ()
     {
-        $country = urldecode(request()->country);
-        $state = urldecode(request()->state);
-        $city = urldecode(request()->city);
+        urldecode((string) request()->country);
+        urldecode((string) request()->state);
+        $city = urldecode((string) request()->city);
 
         $minFilt = null;
         $maxFilt = null;
@@ -36,8 +37,8 @@ class MapController extends Controller
 
 		if (request()->min)
 		{
-			$minFilt = str_replace('-', ':', request()->min);
-			$maxFilt = str_replace('-', ':', request()->max);
+			$minFilt = str_replace('-', ':', (string) request()->min);
+			$maxFilt = str_replace('-', ':', (string) request()->max);
 			$hex = request()->hex;
 		}
 
@@ -60,8 +61,8 @@ class MapController extends Controller
 
 		if ($minfilter)
 		{
-			$minTime = \DateTime::createFromFormat('d:m:Y', $minfilter)->format('Y-m-d 00:00:00'); // 0018-mm-dd 00:00:00
-			$maxTime = \DateTime::createFromFormat('d:m:Y', $maxfilter)->format('Y-m-d 23:59:59');
+			$minTime = DateTime::createFromFormat('d:m:Y', $minfilter)->format('Y-m-d 00:00:00'); // 0018-mm-dd 00:00:00
+			$maxTime = DateTime::createFromFormat('d:m:Y', $maxfilter)->format('Y-m-d 23:59:59');
 
 			$minTime = substr_replace($minTime,'2',0,1); //  2018-mm-dd hh:mm:ss
 		    $maxTime = substr_replace($maxTime,'2',0,1);
@@ -180,7 +181,7 @@ class MapController extends Controller
             }
 
 			// Add features to feature collection array
-			array_push($geojson["features"], $feature);
+			$geojson["features"][] = $feature;
 		}
 
 		json_encode($geojson, JSON_NUMERIC_CHECK);

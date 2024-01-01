@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\User\User;
 return [
 
     /*
@@ -35,7 +36,7 @@ return [
     ],
 
     'stripe' => [
-        'model' => App\Models\User\User::class,
+        'model' => User::class,
         'key' => env('STRIPE_KEY'),
         'secret' => env('STRIPE_SECRET'),
     ],

@@ -41,7 +41,7 @@ class UpdateSettingsRequest extends FormRequest
             'social_instagram.url' => 'The Instagram URL is invalid.',
             'social_linkedin.url' => 'The LinkedIn URL is invalid.',
             'social_reddit.url' => 'The Reddit URL is invalid.',
-            'social_personal.url' => 'The personal website\'s URL is invalid.',
+            'social_personal.url' => "The personal website's URL is invalid.",
         ];
     }
 }

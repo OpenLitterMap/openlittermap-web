@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Teams;
 
+use Iterator;
 use App\Models\Teams\Team;
 use App\Models\User\User;
 use Illuminate\Testing\Fluent\AssertableJson;
@@ -10,12 +11,10 @@ use Tests\TestCase;
 class ListLeaderboardsTest extends TestCase
 {
 
-    public function routeDataProvider(): array
+    public function routeDataProvider(): Iterator
     {
-        return [
-            ['/teams/leaderboard', 'web'],
-            ['/api/teams/leaderboard', 'api'],
-        ];
+        yield ['/teams/leaderboard', 'web'];
+        yield ['/api/teams/leaderboard', 'api'];
     }
 
     /**
@@ -48,7 +47,7 @@ class ListLeaderboardsTest extends TestCase
             })
             ->json();
 
-        $this->assertEquals([3, 2, 1], array_column($result, 'total_litter'));
+        $this->assertSame([3, 2, 1], array_column($result, 'total_litter'));
     }
 
     /**
@@ -75,6 +74,6 @@ class ListLeaderboardsTest extends TestCase
             ->assertJsonCount(2)
             ->json();
 
-        $this->assertEquals([3, 1], array_column($result, 'total_litter'));
+        $this->assertSame([3, 1], array_column($result, 'total_litter'));
     }
 }

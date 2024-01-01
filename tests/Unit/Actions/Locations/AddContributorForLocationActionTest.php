@@ -19,9 +19,9 @@ class AddContributorForLocationActionTest extends TestCase
         Redis::del("state:$stateId:user_ids");
         Redis::del("city:$cityId:user_ids");
 
-        $this->assertEquals([], Redis::smembers("country:$countryId:user_ids"));
-        $this->assertEquals([], Redis::smembers("state:$stateId:user_ids"));
-        $this->assertEquals([], Redis::smembers("city:$cityId:user_ids"));
+        $this->assertSame([], Redis::smembers("country:$countryId:user_ids"));
+        $this->assertSame([], Redis::smembers("state:$stateId:user_ids"));
+        $this->assertSame([], Redis::smembers("city:$cityId:user_ids"));
 
         /** @var AddContributorForLocationAction $addContributorAction */
         $addContributorAction = app(AddContributorForLocationAction::class);
@@ -31,8 +31,8 @@ class AddContributorForLocationActionTest extends TestCase
         // should not store their id twice
         $addContributorAction->run($countryId, $stateId, $cityId, $userId);
 
-        $this->assertEquals([$userId], Redis::smembers("country:$countryId:user_ids"));
-        $this->assertEquals([$userId], Redis::smembers("state:$stateId:user_ids"));
-        $this->assertEquals([$userId], Redis::smembers("city:$cityId:user_ids"));
+        $this->assertSame(["$userId"], Redis::smembers("country:$countryId:user_ids"));
+        $this->assertSame(["$userId"], Redis::smembers("state:$stateId:user_ids"));
+        $this->assertSame(["$userId"], Redis::smembers("city:$cityId:user_ids"));
     }
 }

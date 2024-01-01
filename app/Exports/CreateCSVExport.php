@@ -16,11 +16,20 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 
 class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
 {
-    use Exportable, Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Exportable;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
+    public $location_type;
+    public $location_id;
+    public $team_id;
+    public $user_id;
 
-    public $location_type, $location_id, $team_id, $user_id;
     /** @var array */
     private $dateFilter;
+
+    public $timeout = 240;
 
     /**
      * Init args
@@ -63,7 +72,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
         ];
 
         foreach (Photo::categories() as $category) {
-            $result[] = strtoupper($category);
+            $result[] = strtoupper((string) $category);
 
             // We make a temporary model to get the types, without persisting it
             $photo = new Photo;
@@ -119,7 +128,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
     {
         $query = Photo::with(Photo::categories());
 
-        if (!empty($this->dateFilter))
+        if ($this->dateFilter !== [])
         {
             $query->whereBetween(
                 $this->dateFilter['column'],
@@ -127,46 +136,31 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             );
         }
 
-        if ($this->user_id)
-        {
+        if ($this->user_id) {
             return $query->where([
                 'user_id' => $this->user_id
             ]);
-        }
-
-        else if ($this->team_id)
-        {
+        } elseif ($this->team_id) {
             return $query->where([
                 'team_id' => $this->team_id,
                 'verified' => 2
             ]);
-        }
-
-        else
+        } elseif ($this->location_type === 'city') {
+            return $query->where([
+                'city_id' => $this->location_id,
+                'verified' => 2
+            ]);
+        } elseif ($this->location_type === 'state') {
+            return $query->where([
+                'state_id' => $this->location_id,
+                'verified' => 2
+            ]);
+        } else
         {
-            if ($this->location_type === 'city')
-            {
-                return $query->where([
-                    'city_id' => $this->location_id,
-                    'verified' => 2
-                ]);
-            }
-
-            else if ($this->location_type === 'state')
-            {
-                return $query->where([
-                    'state_id' => $this->location_id,
-                    'verified' => 2
-                ]);
-            }
-
-            else
-            {
-                return $query->where([
-                    'country_id' => $this->location_id,
-                    'verified' => 2
-                ]);
-            }
+            return $query->where([
+                'country_id' => $this->location_id,
+                'verified' => 2
+            ]);
         }
     }
 }

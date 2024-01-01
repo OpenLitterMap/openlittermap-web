@@ -44,7 +44,7 @@ class AddTagsForAUsersNewPhotos extends Command
 
         $photos = Photo::where(['user_id' => $user->id, 'verified' => 0])->get();
 
-        echo "Photos: " . sizeof($photos) . "\n";
+        echo "Photos: " . count($photos) . "\n";
 
         $schema = LitterTags::INSTANCE()->getDecodedJSON();
 
@@ -66,7 +66,9 @@ class AddTagsForAUsersNewPhotos extends Command
                 $photo->save();
             }
             // If it does exist, get it
-            else $row = $class::find($photo->$id_table);
+            else {
+                $row = $class::find($photo->$id_table);
+            }
 
             // Get the column name on the category class
             $column = $this->argument('tag');

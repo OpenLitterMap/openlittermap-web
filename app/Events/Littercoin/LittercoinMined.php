@@ -12,9 +12,12 @@ use Illuminate\Queue\SerializesModels;
 
 class LittercoinMined implements ShouldBroadcast
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
-
-    public $userId, $reason, $now;
+    use Dispatchable;
+    use InteractsWithSockets;
+    use SerializesModels;
+    public $userId;
+    public $reason;
+    public $now;
 
     /**
      * Create a new event instance.
@@ -31,7 +34,7 @@ class LittercoinMined implements ShouldBroadcast
     /**
      * Get the channels the event should broadcast on.
      *
-     * @return \Illuminate\Broadcasting\Channel|array
+     * @return Channel|array
      */
     public function broadcastOn()
     {

@@ -10,12 +10,13 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 
 class NewUserRegMail extends Mailable
 {
-    use Queueable, SerializesModels;
-
+    use Queueable;
+    use SerializesModels;
     // protected $_token;
     // protected $email;
 
     public $user;
+
     // pass in User to construct
 
     /**

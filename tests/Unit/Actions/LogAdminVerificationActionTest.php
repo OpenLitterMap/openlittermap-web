@@ -41,9 +41,9 @@ class LogAdminVerificationActionTest extends TestCase
 
         $log = AdminVerificationLog::first();
         $this->assertInstanceOf(AdminVerificationLog::class, $log);
-        $this->assertEquals($addedTags, $log->added_tags);
-        $this->assertEquals($removedTags, $log->removed_tags);
-        $this->assertEquals($removedUserXp, $log->removed_user_xp);
-        $this->assertEquals($rewardedAdminXp, $log->rewarded_admin_xp);
+        $this->assertSame($addedTags, $log->added_tags);
+        $this->assertSame($removedTags, $log->removed_tags);
+        $this->assertSame($removedUserXp, $log->removed_user_xp);
+        $this->assertSame($rewardedAdminXp, $log->rewarded_admin_xp);
     }
 }

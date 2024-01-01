@@ -11,9 +11,10 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 
 class NewTeamCreated extends Mailable
 {
-    use Queueable, SerializesModels;
-
+    use Queueable;
+    use SerializesModels;
     public $team;
+
     public $user;
 
     /**

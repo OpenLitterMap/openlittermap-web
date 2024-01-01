@@ -13,6 +13,7 @@ class CreateTeamTest extends TestCase
 {
     /** @var User */
     private $user;
+
     /** @var int */
     private $teamTypeId;
 
@@ -39,10 +40,10 @@ class CreateTeamTest extends TestCase
 
         $team = Team::whereIdentifier('test-id')->first();
         $this->assertInstanceOf(Team::class, $team);
-        $this->assertEquals(1, $team->members);
-        $this->assertEquals('team name', $team->name);
-        $this->assertEquals('test-id', $team->identifier);
-        $this->assertEquals($this->teamTypeId, $team->type_id);
+        $this->assertSame(1, $team->members);
+        $this->assertSame('team name', $team->name);
+        $this->assertSame('test-id', $team->identifier);
+        $this->assertSame($this->teamTypeId, $team->type_id);
         $this->assertEquals($this->user->id, $team->leader);
         $this->assertEquals($this->user->id, $team->created_by);
     }
@@ -80,7 +81,7 @@ class CreateTeamTest extends TestCase
         Event::assertDispatched(
             TeamCreated::class,
             function (TeamCreated $event) {
-                $this->assertEquals('team name', $event->teamName);
+                $this->assertSame('team name', $event->teamName);
 
                 return true;
             }
@@ -97,11 +98,11 @@ class CreateTeamTest extends TestCase
 
         $team = Team::whereIdentifier('test-id')->first();
         $this->assertEquals($team->id, $this->user->active_team);
-        $this->assertEquals(0, $this->user->remaining_teams);
+        $this->assertSame(0, $this->user->remaining_teams);
 
         $teamPivot = $this->user->teams()->first();
         $this->assertNotNull($teamPivot);
-        $this->assertEquals(0, $teamPivot->total_photos);
-        $this->assertEquals(0, $teamPivot->total_litter);
+        $this->assertNull($teamPivot->total_photos);
+        $this->assertSame(0, $teamPivot->total_litter);
     }
 }

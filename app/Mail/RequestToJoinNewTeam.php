@@ -9,9 +9,10 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 
 class RequestToJoinNewTeam extends Mailable
 {
-    use Queueable, SerializesModels;
-
+    use Queueable;
+    use SerializesModels;
     public $leader;
+
     public $member;
 
     /**

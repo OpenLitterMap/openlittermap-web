@@ -2,6 +2,12 @@
 
 namespace App\Providers;
 
+use App\Events\UserSignedUp;
+use App\Listeners\SendNewUserEmail;
+use App\Events\Photo\IncrementPhotoMonth;
+use App\Listeners\UpdateTimes\IncrementCountryMonth;
+use App\Listeners\UpdateTimes\IncrementStateMonth;
+use App\Listeners\UpdateTimes\IncrementCityMonth;
 use App\Events\ImageUploaded;
 use App\Events\ImageDeleted;
 use App\Events\NewCityAdded;
@@ -85,13 +91,13 @@ class EventServiceProvider extends ServiceProvider
             // Update the last_user_id_uploaded for each Location
             UpdateUserIdLastUpdatedLocation::class,
         ],
-        'App\Events\UserSignedUp' => [
-            'App\Listeners\SendNewUserEmail'
+        UserSignedUp::class => [
+            SendNewUserEmail::class
         ],
-        'App\Events\Photo\IncrementPhotoMonth' => [
-            'App\Listeners\UpdateTimes\IncrementCountryMonth',
-            'App\Listeners\UpdateTimes\IncrementStateMonth',
-            'App\Listeners\UpdateTimes\IncrementCityMonth',
+        IncrementPhotoMonth::class => [
+            IncrementCountryMonth::class,
+            IncrementStateMonth::class,
+            IncrementCityMonth::class,
         ],
         NewCountryAdded::class => [
             NotifySlackOfNewCountry::class,

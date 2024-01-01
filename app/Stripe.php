@@ -2,6 +2,7 @@
 
 namespace App;
 
+use App\Models\User\User;
 use Illuminate\Database\Eloquent\Model;
 
 class Stripe extends Model
@@ -17,7 +18,7 @@ class Stripe extends Model
     ];
 
     public function user(){
-    	return $this->belongsTo('App\Models\User\User');
+    	return $this->belongsTo(User::class);
     }
 
 }

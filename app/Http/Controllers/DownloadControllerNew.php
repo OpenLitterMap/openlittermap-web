@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use DateTime;
 use App\Exports\CreateCSVExport;
 use App\Jobs\EmailUserExportCompleted;
 
@@ -29,9 +30,10 @@ class DownloadControllerNew extends Controller
             ? $request->email
             : auth()->user()->email;
 
-        $x     = new \DateTime();
+        $x     = new DateTime();
         $date  = $x->format('Y-m-d');
         $date  = explode('-', $date);
+
         $year  = $date[0];
         $month = $date[1];
         $day   = $date[2];
@@ -42,24 +44,19 @@ class DownloadControllerNew extends Controller
 
         try
         {
-            if ($request->locationType === 'city')
-            {
+            if ($request->locationType === 'city') {
                 if ($city = City::find($request->locationId))
                 {
                     $path .= $city->city . '_OpenLitterMap.csv';
                     $location_id = $city->id;
                 }
-            }
-            else if ($request->locationType === 'state')
-            {
+            } elseif ($request->locationType === 'state') {
                 if ($state = State::find($request->locationId))
                 {
                     $path .= $state->state . '_OpenLitterMap.csv';
                     $location_id = $state->id;
                 }
-            }
-            else if ($request->locationType === 'country')
-            {
+            } elseif ($request->locationType === 'country') {
                 if ($country = Country::find($request->locationId))
                 {
                     $path .= $country->country . '_OpenLitterMap.csv';
@@ -79,9 +76,9 @@ class DownloadControllerNew extends Controller
             return ['success' => true];
         }
 
-        catch (Exception $e)
+        catch (Exception $exception)
         {
-            Log::info(['download failed', $e->getMessage()]);
+            Log::info(['download failed', $exception->getMessage()]);
 
             return ['success' => false];
         }

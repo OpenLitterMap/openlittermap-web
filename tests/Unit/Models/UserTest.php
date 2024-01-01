@@ -39,9 +39,9 @@ class UserTest extends TestCase
         /** @var User $user */
         $user = User::factory()->create($settings);
 
-        $this->assertEquals("bar", $user->setting("foo"));
+        $this->assertSame("bar", $user->setting("foo"));
         $this->assertNull($user->setting("baz"));
-        $this->assertEquals(5, $user->setting("baz", 5));
+        $this->assertSame(5, $user->setting("baz", 5));
     }
 
     public function test_a_user_can_change_settings()
@@ -50,8 +50,8 @@ class UserTest extends TestCase
         /** @var User $user */
         $user = User::factory()->create($settings);
 
-        $this->assertEquals("world", $user->settings(["foo" => "world"])->setting("foo"));
-        $this->assertEquals("hello", $user->settings(["baz" => "hello"])->setting("baz"));
-        $this->assertEquals(["foo" => "world", "baz" => 'hello'], $user->fresh()->settings);
+        $this->assertSame("world", $user->settings(["foo" => "world"])->setting("foo"));
+        $this->assertSame("hello", $user->settings(["baz" => "hello"])->setting("baz"));
+        $this->assertSame(["foo" => "world", "baz" => 'hello'], $user->fresh()->settings);
     }
 }

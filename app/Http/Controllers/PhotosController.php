@@ -23,21 +23,19 @@ class PhotosController extends Controller
 {
     /** @var UploadHelper */
     protected $uploadHelper;
+
     /** @var AddTagsToPhotoAction */
     private $addTagsAction;
+
     /** @var UpdateLeaderboardsForLocationAction */
     private $updateLeaderboardsAction;
+
     /** @var DeletePhotoAction */
     private $deletePhotoAction;
 
     /**
      * PhotosController constructor
      * Apply middleware to all of these routes
-     *
-     * @param UploadHelper $uploadHelper
-     * @param AddTagsToPhotoAction $addTagsAction
-     * @param UpdateLeaderboardsForLocationAction $updateLeaderboardsAction
-     * @param DeletePhotoAction $deletePhotoAction
      */
     public function __construct(
         UploadHelper $uploadHelper,

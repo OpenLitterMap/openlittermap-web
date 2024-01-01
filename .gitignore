@@ -4,6 +4,8 @@
 /public/local-uploads/*
 /public/sitemap.xml
 /storage/*.key
+/storage/pint.cache
+/storage/rector/cache
 /vendor
 .env
 .env.backup
@@ -15,3 +17,4 @@ yarn-error.log
 .vscode
 .idea
 .eslintignore
+.DS_Store

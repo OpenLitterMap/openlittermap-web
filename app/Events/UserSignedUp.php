@@ -12,8 +12,9 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 
 class UserSignedUp implements ShouldBroadcast
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
-
+    use Dispatchable;
+    use InteractsWithSockets;
+    use SerializesModels;
     // PROTECTED PRIVATE properties will not be serialized or sent through.
     public $now;
 

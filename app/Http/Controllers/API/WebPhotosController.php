@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use Illuminate\Database\Eloquent\Collection;
 use App\Http\Controllers\Controller;
 
 use App\Models\API\APIPhoto;
@@ -13,7 +14,7 @@ class WebPhotosController extends Controller
     /**
      * Load the next 10 images that were uploaded via web
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return Collection
      */
     public function loadMore ()
     {

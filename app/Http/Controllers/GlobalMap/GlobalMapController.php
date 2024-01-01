@@ -7,6 +7,7 @@ use App\Traits\FilterPhotosByGeoHashTrait;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class GlobalMapController extends Controller
 {
@@ -50,8 +51,6 @@ class GlobalMapController extends Controller
 
     /**
      * Get photos point data at zoom levels 16 or above
-     *
-     * @return array
      */
     public function index(): array
     {
@@ -75,6 +74,11 @@ class GlobalMapController extends Controller
                 'user.team:is_trusted',
                 'team:id,name',
                 'customTags:photo_id,tag',
+                'adminVerificationLog.admin' => function ($q) {
+                    $q->addSelect('id', 'show_name', 'show_username')
+                        ->addSelect(DB::raw('CASE WHEN show_name = 1 THEN name ELSE NULL END as name'))
+                        ->addSelect(DB::raw('CASE WHEN show_username = 1 THEN username ELSE NULL END as username'));
+                }
             ]);
 
         if (request()->fromDate || request()->toDate) {
@@ -85,11 +89,12 @@ class GlobalMapController extends Controller
                 ? Carbon::createFromFormat('Y-m-d', request()->toDate)->endOfDay()
                 : now()->addDay();
             $query->whereBetween('datetime', [$startDate, $endDate]);
-        } else if (request()->year) {
+        } elseif (request()->year) {
             $query->whereYear('datetime', request()->year);
         }
 
-        if (request()->username) {
+        if (request()->username)
+        {
             $query->whereHas('user', function ($q) {
                 $q->where([
                     'users.show_username_maps' => 1,

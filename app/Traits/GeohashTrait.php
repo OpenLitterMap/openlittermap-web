@@ -5,10 +5,13 @@ namespace App\Traits;
 trait GeohashTrait
 {
     private $bitss = [16, 8, 4, 2, 1];
+
     private $neighbors = [];
+
     private $borders = [];
 
     private $coding = "0123456789bcdefghjkmnpqrstuvwxyz";
+
     private $codingMap = [];
 
     public function __construct()
@@ -69,16 +72,16 @@ trait GeohashTrait
 
     private function calculateAdjacent($srcHash, $dir)
     {
-        $srcHash = strtolower($srcHash);
+        $srcHash = strtolower((string) $srcHash);
         $lastChr = $srcHash[strlen($srcHash) - 1];
-        $type = (strlen($srcHash) % 2) ? 'odd' : 'even';
+        $type = (strlen($srcHash) % 2 !== 0) ? 'odd' : 'even';
         $base = substr($srcHash, 0, strlen($srcHash) - 1);
 
-        if (strpos($this->borders[$dir][$type], $lastChr) !== false) {
+        if (strpos((string) $this->borders[$dir][$type], $lastChr) !== false) {
             $base = $this->calculateAdjacent($base, $dir);
         }
 
-        return $base . $this->coding[strpos($this->neighbors[$dir][$type], $lastChr)];
+        return $base . $this->coding[strpos((string) $this->neighbors[$dir][$type], $lastChr)];
     }
 
     /**
@@ -105,7 +108,6 @@ trait GeohashTrait
      * is more than the max allowed level of 18
      *
      * @param int $precision
-     * @return int
      */
     protected function getGeohashPrecision($precision): int
     {

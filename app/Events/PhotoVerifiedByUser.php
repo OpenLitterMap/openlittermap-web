@@ -12,8 +12,9 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 
 class PhotoVerifiedByUser implements ShouldBroadcast
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
-
+    use Dispatchable;
+    use InteractsWithSockets;
+    use SerializesModels;
     // only public properties will be broadcasted
     public $photoId;
 

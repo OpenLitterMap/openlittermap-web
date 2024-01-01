@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 
 class BlockchainController extends Controller
@@ -10,7 +10,6 @@ class BlockchainController extends Controller
 
 	public function __construct() {
 	  	return $this->middleware('auth');
-	  	parent::__construct();
 	}
 
     public function updateWallet(Request $request) {
@@ -21,7 +20,6 @@ class BlockchainController extends Controller
     }
 
     public function removeWallet(Request $request) {
-        $wallet = $request->wallet;
         $user = Auth::user();
         $user->eth_wallet = null;
         $user->save();

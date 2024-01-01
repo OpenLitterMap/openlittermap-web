@@ -59,7 +59,9 @@ class GenerateTotalPhotosPerMonthForCountry extends Command
 
             $photo = Photo::where('country_id', $country->id)->orderBy('id')->first();
 
-            if (!$photo) continue;
+            if (!$photo) {
+                continue;
+            }
 
             $start = Carbon::parse($photo->created_at)->startOfMonth();
 
@@ -101,7 +103,9 @@ class GenerateTotalPhotosPerMonthForCountry extends Command
 
             $photo = Photo::where('state_id', $state->id)->orderBy('id')->first();
 
-            if (!$photo) continue;
+            if (!$photo) {
+                continue;
+            }
 
             $start = Carbon::parse($photo->created_at)->startOfMonth();
 
@@ -143,7 +147,9 @@ class GenerateTotalPhotosPerMonthForCountry extends Command
 
             $photo = Photo::where('city_id', $city->id)->orderBy('id')->first();
 
-            if (!$photo) continue;
+            if (!$photo) {
+                continue;
+            }
 
             $start = Carbon::parse($photo->created_at)->startOfMonth();
 

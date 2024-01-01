@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
 use App\Donate;
 use Stripe\Charge;
 use Stripe\Customer;
@@ -23,9 +24,10 @@ class DonateController extends Controller
     {
         try {
             $this->doPayment($request->stripeToken, $request->stripeEmail, $request->amount);
-        } catch (\Exception $e) {
-            return $e->getMessage();
+        } catch (Exception $exception) {
+            return $exception->getMessage();
         }
+
         return ['message' => 'Success!'];
     }
 
@@ -36,7 +38,7 @@ class DonateController extends Controller
             'email' => $email,
             'card'  => $token
         ));
-        $charge = Charge::create(array(
+        Charge::create(array(
             'customer' => $customer->id,
             'amount'   => $amount,
             'currency' => 'eur'

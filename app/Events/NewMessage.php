@@ -12,8 +12,9 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 
 class NewMessage implements ShouldBroadcast
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
-
+    use Dispatchable;
+    use InteractsWithSockets;
+    use SerializesModels;
     public $message;
 
     /**
@@ -29,7 +30,7 @@ class NewMessage implements ShouldBroadcast
     /**
      * Get the channels the event should broadcast on.
      *
-     * @return \Illuminate\Broadcasting\Channel|array
+     * @return Channel|array
      */
     public function broadcastOn()
     {

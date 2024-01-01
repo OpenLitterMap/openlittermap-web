@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers\Auth;
 
+use Illuminate\Http\JsonResponse;
+use Illuminate\Contracts\Auth\CanResetPassword;
+use Illuminate\Contracts\Auth\PasswordBroker;
+use Illuminate\Contracts\Auth\StatefulGuard;
 use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Auth\ResetsPasswords;
 
@@ -46,8 +50,7 @@ class ResetPasswordController extends Controller
     /**
      * Reset the given user's password.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
     public function reset(Request $request)
     {
@@ -97,7 +100,6 @@ class ResetPasswordController extends Controller
     /**
      * Get the password reset credentials from the request.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return array
      */
     protected function credentials(Request $request)
@@ -110,7 +112,7 @@ class ResetPasswordController extends Controller
     /**
      * Reset the given user's password.
      *
-     * @param  \Illuminate\Contracts\Auth\CanResetPassword  $user
+     * @param CanResetPassword $user
      * @param  string  $password
      * @return void
      */
@@ -129,7 +131,7 @@ class ResetPasswordController extends Controller
      * Get the response for a successful password reset.
      *
      * @param string $response
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
     protected function sendResetResponse($response)
     {
@@ -144,7 +146,7 @@ class ResetPasswordController extends Controller
      *
      * @param  \Illuminate\Http\Request
      * @param  string  $response
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
     protected function sendResetFailedResponse(Request $request, $response)
     {
@@ -157,7 +159,7 @@ class ResetPasswordController extends Controller
     /**
      * Get the broker to be used during password reset.
      *
-     * @return \Illuminate\Contracts\Auth\PasswordBroker
+     * @return PasswordBroker
      */
     public function broker()
     {
@@ -167,7 +169,7 @@ class ResetPasswordController extends Controller
     /**
      * Get the guard to be used during password reset.
      *
-     * @return \Illuminate\Contracts\Auth\StatefulGuard
+     * @return StatefulGuard
      */
     protected function guard()
     {

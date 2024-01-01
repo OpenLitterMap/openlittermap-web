@@ -11,9 +11,6 @@ class RemoveLocationContributor implements ShouldQueue
     /** @var RemoveContributorForLocationAction */
     protected $removeContributorAction;
 
-    /**
-     * @param RemoveContributorForLocationAction $removeContributorAction
-     */
     public function __construct(RemoveContributorForLocationAction $removeContributorAction)
     {
         $this->removeContributorAction = $removeContributorAction;

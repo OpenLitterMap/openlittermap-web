@@ -11,12 +11,7 @@ class UploadPhotoAction
     /**
      * Upload photo to a specific disk
      *
-     * @param Image $photo
-     * @param Carbon $datetime
-     * @param string $filename
-     * @param string $disk
      *
-     * @return string
      */
     public function run (Image $photo, Carbon $datetime, string $filename, string $disk = 's3'): string
     {
@@ -34,10 +29,7 @@ class UploadPhotoAction
      *
      * eg: /yyyy/mm/dd/filepath.png
      *
-     * @param Carbon $datetime
-     * @param string $filename
      *
-     * @return string
      */
     protected function extractPath (Carbon $datetime, string $filename): string
     {

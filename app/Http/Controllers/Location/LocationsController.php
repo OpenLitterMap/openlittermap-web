@@ -26,16 +26,6 @@ class LocationsController extends Controller
     }
 
     /**
-     * Return the main page for the LitterWorldCup
-     *
-     * @return array
-     */
-    public static function getCountries ()
-    {
-        return LoadDataHelper::getCountries();
-    }
-
-    /**
      * The States page of the LitterWorldCup has been refreshed
      *
      * @param $country. Should be the name or shortcode of a country.

@@ -1,5 +1,9 @@
 <?php
 
+use BeyondCode\LaravelWebSockets\Apps\ConfigAppProvider;
+use BeyondCode\LaravelWebSockets\Statistics\Models\WebSocketsStatisticsEntry;
+use BeyondCode\LaravelWebSockets\Statistics\Logger\HttpStatisticsLogger;
+use BeyondCode\LaravelWebSockets\WebSockets\Channels\ChannelManagers\ArrayChannelManager;
 use BeyondCode\LaravelWebSockets\Dashboard\Http\Middleware\Authorize;
 
 return [
@@ -41,7 +45,7 @@ return [
      * You can create a custom provider by implementing the
      * `AppProvider` interface.
      */
-    'app_provider' => BeyondCode\LaravelWebSockets\Apps\ConfigAppProvider::class,
+    'app_provider' => ConfigAppProvider::class,
 
     /*
      * This array contains the hosts of which you want to allow incoming requests.
@@ -79,13 +83,13 @@ return [
          * The only requirement is that the model should extend
          * `WebSocketsStatisticsEntry` provided by this package.
          */
-        'model' => \BeyondCode\LaravelWebSockets\Statistics\Models\WebSocketsStatisticsEntry::class,
+        'model' => WebSocketsStatisticsEntry::class,
 
         /**
          * The Statistics Logger will, by default, handle the incoming statistics, store them
          * and then release them into the database on each interval defined below.
          */
-        'logger' => BeyondCode\LaravelWebSockets\Statistics\Logger\HttpStatisticsLogger::class,
+        'logger' => HttpStatisticsLogger::class,
 
         /*
          * Here you can specify the interval in seconds at which statistics should be logged.
@@ -137,5 +141,5 @@ return [
      * The only requirement is that the class should implement
      * `ChannelManager` interface provided by this package.
      */
-    'channel_manager' => \BeyondCode\LaravelWebSockets\WebSockets\Channels\ChannelManagers\ArrayChannelManager::class,
+    'channel_manager' => ArrayChannelManager::class,
 ];

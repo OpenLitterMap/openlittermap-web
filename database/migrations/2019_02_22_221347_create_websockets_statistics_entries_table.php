@@ -20,6 +20,7 @@ class CreateWebSocketsStatisticsEntriesTable extends Migration
             $table->nullableTimestamps();
         });
     }
+
     /**
      * Reverse the migrations.
      */

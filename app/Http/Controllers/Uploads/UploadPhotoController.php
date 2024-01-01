@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Uploads;
 
+use Illuminate\Support\Facades\Log;
+use App\Exceptions\InvalidCoordinates;
 use Geohash\GeoHash;
 use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 use App\Actions\Photos\MakeImageAction;
@@ -38,10 +40,6 @@ class UploadPhotoController extends Controller
 
     /**
      * Initialise Helper Actions
-     *
-     * @param MakeImageAction $makeImageAction
-     * @param UploadPhotoAction $uploadPhotoAction
-     * @param UploadHelper $uploadHelper
      */
     public function __construct (
         MakeImageAction $makeImageAction,
@@ -64,21 +62,20 @@ class UploadPhotoController extends Controller
      *
      * Move photo to AWS S3 in production || local in development
      * then persist new record to photos table
-     *
-     * @param UploadPhotoRequest $request
-     * @return array
      */
     public function __invoke (UploadPhotoRequest $request): array
     {
         /** @var User $user */
         $user = Auth::user();
 
-        \Log::channel('photos')->info([
+        Log::channel('photos')->info([
             'web_upload' => $request->all(),
             'user_id' => $user->id
         ]);
 
-        if (!$user->has_uploaded) $user->has_uploaded = 1;
+        if (!$user->has_uploaded) {
+            $user->has_uploaded = 1;
+        }
 
         $file = $request->file('file'); // /tmp/php7S8v..
 
@@ -117,20 +114,15 @@ class UploadPhotoController extends Controller
         {
             $dateTime = $exif["DateTimeOriginal"];
         }
-        if (!$dateTime)
+
+        if (!$dateTime && array_key_exists('DateTime', $exif))
         {
-            if (array_key_exists('DateTime', $exif))
-            {
-                $dateTime = $exif["DateTime"];
-            }
+            $dateTime = $exif["DateTime"];
         }
-        if (!$dateTime)
-        {
-            if (array_key_exists('FileDateTime', $exif))
-            {
-                $dateTime = $exif["FileDateTime"];
-                $dateTime = Carbon::createFromTimestamp($dateTime);
-            }
+
+        if (!$dateTime && array_key_exists('FileDateTime', $exif)) {
+            $dateTime = $exif["FileDateTime"];
+            $dateTime = Carbon::createFromTimestamp($dateTime);
         }
 
         // convert to YYYY-MM-DD hh:mm:ss format
@@ -139,13 +131,11 @@ class UploadPhotoController extends Controller
         // Check if the user has already uploaded this image
         // todo - load error automatically without clicking it
         // todo - translate
-        if (app()->environment() === "production")
+        if (app()->environment() === "production" && Photo::where(['user_id' => $user->id, 'datetime' => $dateTime])->first())
         {
-            if (Photo::where(['user_id' => $user->id, 'datetime' => $dateTime])->first())
-            {
-                abort(500, "You have already uploaded this file!");
-            }
+            abort(500, "You have already uploaded this file!");
         }
+
         // End Step 1: Verification
 
         // Step 2: Upload The Image(s)
@@ -172,10 +162,16 @@ class UploadPhotoController extends Controller
         $long_ref  = $exif["GPSLongitudeRef"];
         $lon       = $exif["GPSLongitude"];
 
-        $latlong = self::dmsToDec($lat, $lon, $lat_ref, $long_ref);
+        $latlong = $this->dmsToDec($lat, $lon, $lat_ref, $long_ref);
 
         $latitude = $latlong[0];
         $longitude = $latlong[1];
+
+        if (($latitude === 0 && $longitude === 0) || ($latitude === '0' && $longitude === '0'))
+        {
+            Log::info("invalid coordinates found for userId $user->id \n");
+            abort(500, "Invalid coordinates: lat=0, lon=0");
+        }
 
         // Use OpenStreetMap to Reverse Geocode the coordinates into an Address.
         $revGeoCode = app(ReverseGeocodeLocationAction::class)->run($latitude, $longitude);
@@ -314,15 +310,15 @@ class UploadPhotoController extends Controller
     2 => "888061/1000000"
     ]
      */
-    private static function dmsToDec ($lat, $lon, $lat_ref, $long_ref)
+    private function dmsToDec ($lat, $lon, $lat_ref, $long_ref)
     {
-        $lat[0] = explode("/", $lat[0]);
-        $lat[1] = explode("/", $lat[1]);
-        $lat[2] = explode("/", $lat[2]);
+        $lat[0] = explode("/", (string) $lat[0]);
+        $lat[1] = explode("/", (string) $lat[1]);
+        $lat[2] = explode("/", (string) $lat[2]);
 
-        $lon[0] = explode("/", $lon[0]);
-        $lon[1] = explode("/", $lon[1]);
-        $lon[2] = explode("/", $lon[2]);
+        $lon[0] = explode("/", (string) $lon[0]);
+        $lon[1] = explode("/", (string) $lon[1]);
+        $lon[2] = explode("/", (string) $lon[2]);
 
         $lat[0] = (int)$lat[0][0] / (int)$lat[0][1];
         $lon[0] = (int)$lon[0][0] / (int)$lon[0][1];
@@ -335,9 +331,13 @@ class UploadPhotoController extends Controller
 
         $lat = $lat[0]+((($lat[1]*60)+($lat[2]))/3600);
         $lon = $lon[0]+((($lon[1]*60)+($lon[2]))/3600);
+        if ($lat_ref === "S") {
+            $lat *= -1;
+        }
 
-        if ($lat_ref === "S") $lat = $lat * -1;
-        if ($long_ref === "W") $lon = $lon * -1;
+        if ($long_ref === "W") {
+            $lon *= -1;
+        }
 
         return [$lat, $lon];
     }

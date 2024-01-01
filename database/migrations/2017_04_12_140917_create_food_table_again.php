@@ -18,7 +18,7 @@ class CreateFoodTableAgain extends Migration
 
         //     $table->integer('photo_id')->unsigned();
         //     $table->foreign('photo_id')->references('id')->on('photos')->onDelete('cascade');
-            
+
         //     $table->integer('sweetWrappers')->unsigned()->nullable();
         //     $table->integer('cardboardFoodPackaging')->unsigned()->nullable();
         //     $table->integer('paperFoodPackaging')->unsigned()->nullable();

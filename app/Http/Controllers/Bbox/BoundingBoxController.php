@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Bbox;
 
+use Exception;
+use Illuminate\Support\Facades\Log;
 use App\Actions\CalculateTagsDifferenceAction;
 use App\Events\TagsVerifiedByAdmin;
 use App\Litterrata;
@@ -19,9 +21,6 @@ class BoundingBoxController extends Controller
     /** @var CalculateTagsDifferenceAction */
     protected $calculateTagsDiffAction;
 
-    /**
-     * @param CalculateTagsDifferenceAction $calculateTagsDiffAction
-     */
     public function __construct(CalculateTagsDifferenceAction $calculateTagsDiffAction)
     {
         $this->calculateTagsDiffAction = $calculateTagsDiffAction;
@@ -80,9 +79,9 @@ class BoundingBoxController extends Controller
                     'added_by' => auth()->user()->id,
                 ]);
             }
-            catch (\Exception $e)
+            catch (Exception $e)
             {
-                \Log::info(['BoundingBoxController@create', $e->getMessage()]);
+                Log::info(['BoundingBoxController@create', $e->getMessage()]);
             }
         }
 

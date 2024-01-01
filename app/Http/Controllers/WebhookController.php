@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Str;
+use Laravel\Cashier\Billable;
 use App\Models\User\User;
 use App\Plan;
 use Exception;
@@ -19,11 +21,13 @@ class WebhookController extends Controller
      */
     public function handleWebhook (Request $request)
     {
-        $method = 'handle'.studly_case(str_replace('.', '_', $request->type));
+        $method = 'handle'.Str::studly(str_replace('.', '_', (string) $request->type));
 
-        if (method_exists($this, $method)) return $this->{$method}($request->all());
-
-        else return $this->missingMethod();
+        if (method_exists($this, $method)) {
+            return $this->{$method}($request->all());
+        } else {
+            return $this->missingMethod();
+        }
     }
 
     /**
@@ -76,7 +80,9 @@ class WebhookController extends Controller
             $sub_id = $payload['data']['object']['id']; // sub_id
             $plan_id =  $payload['data']['object']['items']['data'][0]['plan']['id'];
 
-            if (is_null($name)) $name = $payload['data']['object']['items']['data'][0]['plan']['id'];
+            if (is_null($name)) {
+                $name = $payload['data']['object']['items']['data'][0]['plan']['id'];
+            }
 
             $user->subscriptions()->create([
                 'name' => $name ?: '', // Startup, Advanced, Pro.
@@ -95,12 +101,10 @@ class WebhookController extends Controller
     }
 
     // END CUSTOM EVENTS
-
     /**
      * Handle a cancelled customer from a Stripe subscription.
      *
-     * @param  array  $payload
-     * @return \Symfony\Component\HttpFoundation\Response
+     * @return Response
      */
     protected function handleCustomerSubscriptionDeleted (array $payload)
     {
@@ -121,7 +125,7 @@ class WebhookController extends Controller
      * Get the billable entity instance by Stripe ID.
      *
      * @param  string  $stripeId
-     * @return \Laravel\Cashier\Billable
+     * @return Billable
      */
     protected function getUserByStripeId ($stripeId)
     {
@@ -139,7 +143,7 @@ class WebhookController extends Controller
     {
         try {
             return ! is_null(StripeEvent::retrieve($id, config('services.stripe.secret')));
-        } catch (Exception $e) {
+        } catch (Exception $exception) {
             return false;
         }
     }

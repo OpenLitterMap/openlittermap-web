@@ -12,9 +12,12 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 
 class NewStateAdded implements ShouldBroadcast
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
-
-    public $state, $country, $now;
+    use Dispatchable;
+    use InteractsWithSockets;
+    use SerializesModels;
+    public $state;
+    public $country;
+    public $now;
 
     /**
      * Create a new event instance.

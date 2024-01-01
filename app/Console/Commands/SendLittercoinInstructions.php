@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use Illuminate\Support\Facades\Mail;
 use App\Models\User\User;
 use App\Mail\LittercoinInstructions;
 use Illuminate\Console\Command;
@@ -44,7 +45,7 @@ class SendLittercoinInstructions extends Command
             ['littercoin_instructions_received', null]
         ])->get();
         foreach ($users as $user) {
-            \Mail::to($user->email)->send(new LittercoinInstructions($user));
+            Mail::to($user->email)->send(new LittercoinInstructions($user));
             $user->littercoin_instructions_received = 1;
             $user->save();
         }

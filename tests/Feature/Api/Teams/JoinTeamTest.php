@@ -31,7 +31,7 @@ class JoinTeamTest extends TestCase
 
         $this->actingAs($user, 'api');
 
-        $this->assertEquals(0, $team->fresh()->members);
+        $this->assertSame(0, $team->fresh()->members);
 
         $response = $this->postJson('/api/teams/join', [
             'identifier' => $team->identifier,
@@ -42,9 +42,9 @@ class JoinTeamTest extends TestCase
 
         $teamPivot = $user->teams()->first();
         $this->assertNotNull($teamPivot);
-        $this->assertEquals(0, $teamPivot->total_photos);
-        $this->assertEquals(0, $teamPivot->total_litter);
-        $this->assertEquals(1, $team->fresh()->members);
+        $this->assertNull($teamPivot->total_photos);
+        $this->assertSame(0, $teamPivot->total_litter);
+        $this->assertSame(1, $team->fresh()->members);
     }
 
     public function test_a_user_can_only_join_a_team_they_are_not_part_of()
@@ -66,7 +66,7 @@ class JoinTeamTest extends TestCase
 
         $response->assertJsonFragment(['success' => false, 'message' => 'already-a-member']);
 
-        $this->assertEquals(1, $team->fresh()->members);
+        $this->assertSame(1, $team->fresh()->members);
     }
 
     public function test_the_team_becomes_the_active_team_if_the_user_has_no_active_team()
@@ -163,8 +163,8 @@ class JoinTeamTest extends TestCase
 
         $teamContributions = $user->teams()->first();
 
-        $this->assertEquals(1, $teamContributions->pivot->total_photos);
-        $this->assertEquals(3, $teamContributions->pivot->total_litter);
+        $this->assertSame(1, $teamContributions->pivot->total_photos);
+        $this->assertSame(3, $teamContributions->pivot->total_litter);
 
         // User leaves the team ------------------------
         $this->actingAs($user);
@@ -185,7 +185,7 @@ class JoinTeamTest extends TestCase
         $teamContributions = $user->teams()->first();
 
         $this->assertNotNull($teamContributions);
-        $this->assertEquals(1, $teamContributions->pivot->total_photos);
-        $this->assertEquals(3, $teamContributions->pivot->total_litter);
+        $this->assertSame(1, $teamContributions->pivot->total_photos);
+        $this->assertSame(3, $teamContributions->pivot->total_litter);
     }
 }

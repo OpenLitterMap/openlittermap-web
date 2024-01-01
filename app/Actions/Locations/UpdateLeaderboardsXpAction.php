@@ -6,10 +6,6 @@ use Illuminate\Support\Facades\Redis;
 
 class UpdateLeaderboardsXpAction
 {
-    /**
-     * @param int $userId
-     * @param int $incrXp
-     */
     public function run (
         int $userId,
         int $incrXp

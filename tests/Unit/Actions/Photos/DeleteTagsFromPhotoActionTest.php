@@ -53,8 +53,8 @@ class DeleteTagsFromPhotoActionTest extends TestCase
         $deleteTagsAction = app(DeleteTagsFromPhotoAction::class);
         $deletedTags = $deleteTagsAction->run($photo->fresh());
 
-        $this->assertEquals(
-            ['all' => 10, 'litter' => 2, 'brands' => 5, 'custom' => 3],
+        $this->assertSame(
+            ['litter' => 2, 'brands' => 5, 'custom' => 3, 'all' => 10],
             $deletedTags
         );
     }

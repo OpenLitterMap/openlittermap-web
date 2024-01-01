@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Cleanups;
 
+use Exception;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Models\Cleanups\Cleanup;
 use App\Models\Cleanups\CleanupUser;
@@ -51,8 +53,8 @@ class LeaveCleanupController extends Controller
         try {
             $cleanup->users()->detach($user);
         }
-        catch (\Exception $e) {
-            \Log::info(['LeaveCleanupController', $e->getMessage()]);
+        catch (Exception $exception) {
+            Log::info(['LeaveCleanupController', $exception->getMessage()]);
 
             return [
                 'success' => false,

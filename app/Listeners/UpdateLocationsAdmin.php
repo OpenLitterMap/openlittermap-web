@@ -53,8 +53,8 @@ class UpdateLocationsAdmin
         // get the Photo and associated Country
         $photo = Photo::find($event->photoId);
         $country = Country::find($photo->country_id);
-        $state = State::find($photo->state_id);
-        $city = City::find($photo->city_id);
+        State::find($photo->state_id);
+        City::find($photo->city_id);
 
         // Get all photos for that country that have been verified
         $countryPhotos = Photo::where([
@@ -73,7 +73,8 @@ class UpdateLocationsAdmin
         {
             $users[$countryPhoto->user_id] = $countryPhoto->user_id;
         }
-        $sizeOfUsers = sizeof($users);
+
+        $sizeOfUsers = count($users);
 
         $country->total_contributors = $sizeOfUsers;
         $country->save();
@@ -110,6 +111,7 @@ class UpdateLocationsAdmin
                   $smokingTotal += $smoking['filterbox'];
                   $smokingTotal += $smoking['smokingOther'];
             }
+
             $country->total_cigaretteButts = $cigaretteTotal;
             $country->total_smoking = $smokingTotal;
             $country->save();
@@ -141,6 +143,7 @@ class UpdateLocationsAdmin
                 $foodTotal += $food['glass_jar_lid'];
                 $foodTotal += $food['foodOther'];
             }
+
             $country->total_food = $foodTotal;
             $country->save();
         }
@@ -183,6 +186,7 @@ class UpdateLocationsAdmin
                    $softDrinksTotal += $softdrink['styro_cup'];
                    $softDrinksTotal += $softdrink['softDrinkOther'];
             }
+
             $country->total_softdrinks = $softDrinksTotal;
             $country->total_plasticBottles = $plasticBottleTotal;
             $country->save();
@@ -236,6 +240,7 @@ class UpdateLocationsAdmin
                 $coffeeTotal += $coffee['coffeeLids'];
                 $coffeeTotal += $coffee['coffeeOther'];
             }
+
             $country->total_coffee = $coffeeTotal;
             $country->save();
         }
@@ -257,6 +262,7 @@ class UpdateLocationsAdmin
                 $dumpingTotal += $dumping['medium'];
                 $dumpingTotal += $dumping['large'];
             }
+
             $country->total_dumping = $dumpingTotal;
             $country->save();
         }
@@ -281,6 +287,7 @@ class UpdateLocationsAdmin
                 $industrialTotal += $industrial['tape'];
                 $industrialTotal += $industrial['industrial_other'];
             }
+
             $country->total_industrial = $industrialTotal;
             $country->save();
         }
@@ -329,7 +336,7 @@ class UpdateLocationsAdmin
             $sanitaryTotal = 0;
             foreach ($sanitaryPhotos as $sanitaryPhoto)
             {
-                $sanitary = \App\Models\Litter\Categories\Sanitary::find($sanitaryPhoto['sanitary_id']);
+                $sanitary = Sanitary::find($sanitaryPhoto['sanitary_id']);
 
                 $sanitaryTotal += $sanitary['gloves'];
                 $sanitaryTotal += $sanitary['facemask'];
@@ -342,6 +349,7 @@ class UpdateLocationsAdmin
                 $sanitaryTotal += $sanitary['tooth_brush'];
                 $sanitaryTotal += $sanitary['sanitaryOther'];
             }
+
             $country->total_sanitary = $sanitaryTotal;
             $country->save();
         }
@@ -357,7 +365,7 @@ class UpdateLocationsAdmin
             $otherTotal = 0;
             foreach ($otherPhotos as $otherPhoto)
             {
-                $other = \App\Models\Litter\Categories\Other::find($otherPhoto['other_id']);
+                $other = Other::find($otherPhoto['other_id']);
 
                 $otherTotal += $other['dogshit'];
                 $otherTotal += $other['plastic'];
@@ -378,6 +386,7 @@ class UpdateLocationsAdmin
                 $otherTotal += $other['elec_large'];
                 $otherTotal += $other['other'];
             }
+
             $country->total_other = $otherTotal;
             $country->save();
         }
@@ -414,9 +423,10 @@ class UpdateLocationsAdmin
             $artTotal = 0;
             foreach ($artPhotos as $artPhoto)
             {
-                $pathway = \App\Models\Litter\Categories\Art::find($artPhoto['art_id']);
+                $pathway = Art::find($artPhoto['art_id']);
                 $artTotal += $pathway['item'];
             }
+
             $country->total_art = $artTotal;
             $country->save();
         }
@@ -431,7 +441,7 @@ class UpdateLocationsAdmin
 
             $coastalTotal = 0;
             foreach($coastalPhotos as $coastalPhoto) {
-                $coastal = \App\Models\Litter\Categories\Coastal::find($coastalPhoto['coastal_id']);
+                $coastal = Coastal::find($coastalPhoto['coastal_id']);
                 $coastalTotal += $coastal['microplastics'];
                 $coastalTotal += $coastal['mediumplastics'];
                 $coastalTotal += $coastal['macroplastics'];
@@ -452,6 +462,7 @@ class UpdateLocationsAdmin
                 $coastalTotal += $coastal['styro_large'];
                 $coastalTotal += $coastal['coastal_other'];
             }
+
             $country->total_coastal = $coastalTotal;
             $country->save();
         }
@@ -507,168 +518,208 @@ class UpdateLocationsAdmin
             $wilde_and_greene = 0;
 
             foreach($brandsPhotos as $brandPhoto) {
-                $brand = \App\Models\Litter\Categories\Brand::find($brandPhoto['brands_id']);
+                $brand = Brand::find($brandPhoto['brands_id']);
                 if($brand->adidas) {
                     $adidas += $brand->adidas;
                     $brandsTotal += $brand->adidas;
                 }
+
                 if($brand->amazon) {
                     $amazon += $brand->amazon;
                     $brandsTotal += $brand->amazon;
                 }
+
                 if($brand->apple) {
                     $apple += $brand->apple;
                     $brandsTotal += $brand->apple;
                 }
+
                 if($brand->applegreen) {
                     $applegreen += $brand->applegreen;
                     $brandsTotal += $brand->applegreen;
                 }
+
                 if($brand->avoca) {
                     $avoca += $brand->avoca;
                     $brandsTotal += $brand->avoca;
                 }
+
                 if($brand->bewleys) {
                     $bewleys += $brand->bewleys;
                     $brandsTotal += $brand->bewleys;
                 }
+
                 if($brand->brambles) {
                     $brambles += $brand->brambles;
                     $brandsTotal += $brand->brambles;
                 }
+
                 if($brand->budweiser) {
                     $budweiser += $brand->budweiser;
                     $brandsTotal += $brand->budweiser;
                 }
+
                 if($brand->butlers) {
                     $butlers += $brand->butlers;
                     $brandsTotal += $brand->butlers;
                 }
+
                 if($brand->cafe_nero) {
                     $cafe_nero += $brand->cafe_nero;
                     $brandsTotal += $brand->cafe_nero;
                 }
+
                 if($brand->camel) {
                     $camel += $brand->camel;
                     $brandsTotal += $brand->camel;
                 }
+
                 if($brand->centra) {
                     $centra += $brand->centra;
                     $brandsTotal += $brand->centra;
                 }
+
                 if($brand->coke) {
                     $coke += $brand->coke;
                     $brandsTotal += $brand->coke;
                 }
+
                 if($brand->colgate) {
                     $colgate += $brand->colgate;
                     $brandsTotal += $brand->colgate;
                 }
+
                 if($brand->corona) {
                     $corona += $brand->corona;
                     $brandsTotal += $brand->corona;
                 }
+
                 if($brand->costa) {
                     $costa += $brand->costa;
                     $brandsTotal += $brand->costa;
                 }
+
                 if($brand->esquires) {
                     $esquires += $brand->esquires;
                     $brandsTotal += $brand->esquires;
                 }
+
                 if($brand->frank_and_honest) {
                     $frank_and_honest += $brand->frank_and_honest;
                     $brandsTotal += $brand->frank_and_honest;
                 }
+
                 if($brand->fritolay) {
                     $fritolay += $brand->fritolay;
                     $brandsTotal += $brand->fritolay;
                 }
+
                 if($brand->gillette) {
                     $gillette += $brand->gillette;
                     $brandsTotal += $brand->gillette;
                 }
+
                 if($brand->heineken) {
                     $heineken += $brand->heineken;
                     $brandsTotal += $brand->heineken;
                 }
+
                 if($brand->insomnia) {
                     $insomnia += $brand->insomnia;
                     $brandsTotal += $brand->insomnia;
                 }
+
                 if($brand->kellogs){
                     $kellogs += $brand->kellogs;
                     $brandsTotal += $brand->kellogs;
                 }
+
                 if($brand->lego) {
                     $lego += $brand->lego;
                     $brandsTotal += $brand->lego;
                 }
+
                 if($brand->lolly_and_cookes) {
                     $lolly_and_cookes += $brand->lolly_and_cookes;
                     $brandsTotal += $brand->lolly_and_cookes;
                 }
+
                 if($brand->loreal) {
                     $loreal += $brand->loreal;
                     $brandsTotal += $brand->loreal;
                 }
+
                 if($brand->nescafe) {
                     $nescafe += $brand->nescafe;
                     $brandsTotal += $brand->nescafe;
                 }
+
                 if($brand->nestle) {
                     $nestle += $brand->nestle;
                     $brandsTotal += $brand->nestle;
                 }
+
                 if($brand->marlboro) {
                     $marlboro += $brand->marlboro;
                     $brandsTotal += $brand->marlboro;
                 }
+
                 if($brand->mcdonalds) {
                     $mcdonalds += $brand->mcdonalds;
                     $brandsTotal += $brand->mcdonalds;
                 }
+
                 if($brand->nike) {
                     $nike+= $brand->nike;
                     $brandsTotal += $brand->nike;
                 }
+
                 if($brand->obriens) {
                     $obriens+= $brand->obriens;
                     $brandsTotal += $brand->obriens;
                 }
+
                 if($brand->pepsi) {
                     $pepsi+= $brand->pepsi;
                     $brandsTotal += $brand->pepsi;
                 }
+
                 if($brand->redbull) {
                     $redbull += $brand->redbull;
                     $brandsTotal += $brand->redbull;
                 }
+
                 if($brand->samsung) {
                     $samsung += $brand->samsung;
                     $brandsTotal += $brand->samsung;
                 }
+
                 if($brand->subway) {
                     $subway += $brand->subway;
                     $brandsTotal += $brand->subway;
                 }
+
                 if($brand->starbucks) {
                     $starbucks += $brand->starbucks;
                     $brandsTotal += $brand->starbucks;
                 }
+
                 if($brand->supermacs) {
                     $supermacs += $brand->supermacs;
                     $brandsTotal += $brand->supermacs;
                 }
+
                 if($brand->tayto) {
                     $tayto += $brand->tayto;
                     $brandsTotal += $brand->tayto;
                 }
+
                 if($brand->wilde_and_greene) {
                     $wilde_and_greene += $brand->wilde_and_greene;
                     $brandsTotal += $brand->wilde_and_greene;
                 }
             }
+
             $country->total_brands = $brandsTotal;
             $country->manual_verify = 1;
 

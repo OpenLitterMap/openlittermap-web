@@ -38,13 +38,13 @@ class UpdateRedisLocationsXpTest extends TestCase
         Redis::del("xp.users");
         $this->clearRedisLocation($country1, $state1, $city1);
         $this->clearRedisLocation($country2, $state2, $city2);
-        $this->assertEquals(0, Redis::zscore("xp.users", $user->id));
+        $this->assertNull(Redis::zscore("xp.users", $user->id));
         $this->assertRedisLocationEquals(0, $user, $country1, $state1, $city1);
         $this->assertRedisLocationEquals(0, $user, $country2, $state2, $city2);
 
         $this->artisan('users:update-redis-locations-xp');
 
-        $this->assertEquals(11, Redis::zscore("xp.users", $user->id));
+        $this->assertSame('11', Redis::zscore("xp.users", $user->id));
         $this->assertRedisLocationEquals(4, $user, $country1, $state1, $city1);
         $this->assertRedisLocationEquals(7, $user, $country2, $state2, $city2);
     }

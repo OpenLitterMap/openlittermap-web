@@ -21,7 +21,7 @@ class AddManyTagsToManyPhotosTest extends TestCase
             'verified' => 0,
             'verification' => 0
         ]);
-        $this->assertEquals(2, $user->fresh()->xp);
+        $this->assertSame(2, $user->fresh()->xp);
 
         $response = $this->actingAs($user)->postJson('/user/profile/photos/tags/bulkTag', [
             'photos' => [
@@ -40,18 +40,19 @@ class AddManyTagsToManyPhotosTest extends TestCase
 
         $response->assertOk();
         $response->assertJson(['success' => true]);
+
         $photos->each->refresh();
         $this->assertTrue($photos[0]->picked_up);
         $this->assertInstanceOf(Smoking::class, $photos[0]->smoking);
-        $this->assertEquals(3, $photos[0]->smoking->butts);
-        $this->assertEquals(['tag1', 'tag2', 'tag3'], $photos[0]->customTags->pluck('tag')->toArray());
+        $this->assertSame(3, $photos[0]->smoking->butts);
+        $this->assertSame(['tag1', 'tag2', 'tag3'], $photos[0]->customTags->pluck('tag')->toArray());
 
         $this->assertFalse($photos[1]->picked_up);
         $this->assertInstanceOf(Alcohol::class, $photos[1]->alcohol);
-        $this->assertEquals(1, $photos[1]->alcohol->pint);
-        $this->assertEquals(['tag4', 'tag5'], $photos[1]->customTags->pluck('tag')->toArray());
+        $this->assertSame(1, $photos[1]->alcohol->pint);
+        $this->assertSame(['tag4', 'tag5'], $photos[1]->customTags->pluck('tag')->toArray());
 
-        $this->assertEquals(11, $user->fresh()->xp); // 2 + (4 tags + 5 custom tags)
+        $this->assertSame(11, $user->fresh()->xp); // 2 + (4 tags + 5 custom tags)
     }
 
     public function test_it_returns_the_current_users_previously_added_custom_tags()

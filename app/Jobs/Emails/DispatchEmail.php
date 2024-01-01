@@ -2,6 +2,7 @@
 
 namespace App\Jobs\Emails;
 
+use Illuminate\Support\Facades\Mail;
 use App\Mail\EmailUpdate;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -12,8 +13,10 @@ use Illuminate\Queue\SerializesModels;
 
 class DispatchEmail implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
     public $user;
 
     /**
@@ -33,6 +36,6 @@ class DispatchEmail implements ShouldQueue
      */
     public function handle ()
     {
-        \Mail::to($this->user->email)->send(new EmailUpdate($this->user));
+        Mail::to($this->user->email)->send(new EmailUpdate($this->user));
     }
 }

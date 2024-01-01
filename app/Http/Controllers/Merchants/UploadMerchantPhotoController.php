@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Merchants;
 
+use Exception;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Models\Merchant;
 use App\Models\MerchantPhoto;
@@ -42,9 +44,13 @@ class UploadMerchantPhotoController extends Controller
             else
             {
                 // In production environment, save to AWS S3
-                Storage::disk('s3')->put($filename, file_get_contents($uploadedFile));
+                $path = now()->year . '/' . now()->month . '/' . now()->day . '/' . $filename;
 
-                $filepath = Storage::disk('s3')->path($filename);
+                $filesystem = Storage::disk('s3');
+
+                $filesystem->put($path, file_get_contents($uploadedFile), 'public');
+
+                $filepath = $filesystem->url($path);
             }
 
             // Create a photo record
@@ -54,9 +60,9 @@ class UploadMerchantPhotoController extends Controller
                 'merchant_id' => $merchant->id
             ]);
         }
-        catch (\Exception $exception)
+        catch (Exception $exception)
         {
-            \Log::info(['UploadMerchantPhotoController', $exception->getMessage()]);
+            Log::info(['UploadMerchantPhotoController', $exception->getMessage()]);
 
             return [
                 'success' => false,

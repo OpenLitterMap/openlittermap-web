@@ -39,7 +39,7 @@ class MoveDataToRedis extends Command
             )
             ->orderBy('id', 'desc');
 
-        $total = $photos->count();
+        $photos->count();
 
         // we have:
         // user:id category total

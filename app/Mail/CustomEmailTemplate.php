@@ -9,9 +9,10 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 
 class CustomEmailTemplate extends Mailable
 {
-    use Queueable, SerializesModels;
-
+    use Queueable;
+    use SerializesModels;
     public $user;
+
     /**
      * Create a new message instance.
      *

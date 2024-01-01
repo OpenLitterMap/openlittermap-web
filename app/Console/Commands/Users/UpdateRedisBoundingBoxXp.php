@@ -20,7 +20,7 @@ class UpdateRedisBoundingBoxXp extends Command
      *
      * @var string
      */
-    protected $description = 'Recalculates users xp based on the bounding boxes they\'ve added and verified';
+    protected $description = "Recalculates users xp based on the bounding boxes they've added and verified";
 
     /** @var UpdateLeaderboardsXpAction */
     private $leaderboardsXpAction;

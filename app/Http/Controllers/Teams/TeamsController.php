@@ -77,7 +77,9 @@ class TeamsController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        if ($user->remaining_teams === 0) return ['success' => false, 'msg' => 'max-created'];
+        if ($user->remaining_teams === 0) {
+            return ['success' => false, 'msg' => 'max-created'];
+        }
 
         $team = $action->run($user, $request->all());
 
@@ -87,9 +89,6 @@ class TeamsController extends Controller
     /**
      * The user wants to update a team
      *
-     * @param UpdateTeamRequest $request
-     * @param UpdateTeamAction $action
-     * @param Team $team
      * @return array
      */
     public function update (UpdateTeamRequest $request, UpdateTeamAction $action, Team $team)

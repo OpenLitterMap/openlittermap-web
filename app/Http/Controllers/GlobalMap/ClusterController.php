@@ -16,9 +16,6 @@ class ClusterController extends Controller
 
     /**
      * Get clusters for the global map
-     *
-     * @param Request $request
-     * @return array
      */
     public function index(Request $request): array
     {
@@ -33,7 +30,6 @@ class ClusterController extends Controller
     }
 
     /**
-     * @param Request $request
      * @return Builder[]|Collection
      */
     protected function getClusters(Request $request)

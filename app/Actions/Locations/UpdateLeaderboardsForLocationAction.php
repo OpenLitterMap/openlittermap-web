@@ -11,9 +11,6 @@ class UpdateLeaderboardsForLocationAction
     /** @var UpdateLeaderboardsXpAction */
     protected $updateXpAction;
 
-    /**
-     * @param UpdateLeaderboardsXpAction $updateXpAction
-     */
     public function __construct (UpdateLeaderboardsXpAction $updateXpAction)
     {
         $this->updateXpAction = $updateXpAction;
@@ -23,10 +20,6 @@ class UpdateLeaderboardsForLocationAction
      * Update the Leaderboards for each Location
      *
      * All time + time-stamped
-     *
-     * @param Photo $photo
-     * @param int $userId
-     * @param int $incrXp
      */
     public function run (
         Photo $photo,
