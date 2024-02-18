@@ -346,6 +346,12 @@ export default {
                     title: 'Centralized road to a decentralized circular plastics economy',
                     link: 'https://dutchblockchaincoalition.org/assets/images/default/Msc_Thesis_NinaHuijberts.pdf',
                     author: 'Huijberts, N.'
+                },
+                {
+                    date: '2023/08/23',
+                    title: 'A survey on bias in machine learning research',
+                    link: 'https://arxiv.org/pdf/2308.11254.pdf',
+                    author: 'Mikolajczyk-Bare & Grochowski'
                 }
             ]
         };

@@ -24,6 +24,35 @@ export const actions = {
     },
 
     /**
+     *
+     */
+    async GET_MY_PHOTOS (context)
+    {
+        await axios.get('/photos/get-my-photos')
+        .then(response => {
+            console.log('GET_MY_PHOTOS', response);
+
+            if (response.data.success)
+            {
+                context.commit('setUsersUploads', response.data.photos.data)
+            }
+         })
+        .catch(error => {
+            console.log('GET_MY_PHOTOS', error.response.data);
+
+            if (error.response && error.response.status === 422) {
+                // Set the errors object in your component's data
+                this.errors = error.response.data.errors;
+            }
+            else
+            {
+                // Handle other types of errors
+                console.error('An unexpected error occurred.', error);
+            }
+        });
+    },
+
+    /**
      * Get unverified photos for tagging
      */
     async GET_PHOTOS_FOR_TAGGING (context)

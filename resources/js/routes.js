@@ -183,6 +183,13 @@ const router = new VueRouter({
             }
         },
         {
+            path: '/my-uploads',
+            component: require('./views/general/MyUploads').default,
+            meta: {
+                middleware: [ auth ]
+            }
+        },
+        {
             path: '/teams',
             component: require('./views/Teams/Teams').default,
             meta: {
