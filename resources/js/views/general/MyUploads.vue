@@ -2,65 +2,169 @@
     <div class="uploads-container">
         <h3 class="uploads-title">My Uploads</h3>
 
-        <transition name="show-notification">
-            <div v-if="showCopyNotification" class="notification">
-                test
+        <div class="filters">
+            <div class="filter-item">
+                <label for="filterTag">
+                    Tag
+                </label>
+
+                <input
+                    id="filterTag"
+                    name="filterTag"
+                    class="input"
+                    v-model="filterTag"
+                    placeholder="Enter a tag"
+                />
             </div>
-        </transition>
 
-        <table class="uploads-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Tags</th>
-                    <th>Taken at</th>
-                    <th>Address</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr
-                    v-for="upload in uploads"
-                    :key="upload.id"
+            <div class="filter-item">
+                <label for="filterCustomTag">
+                    Custom Tag
+                </label>
+
+                <input
+                    id="filterCustomTag"
+                    name="filterCustomTag"
+                    class="input"
+                    v-model="filterCustomTag"
+                    placeholder="Enter a custom tag"
+                />
+            </div>
+
+            <div class="filter-item">
+                <label for="uploadedFrom">
+                    Uploaded From
+                </label>
+                <input
+                    id="uploadedFrom"
+                    name="uploadedFrom"
+                    class="input"
+                    type="date"
+                    v-model="filterDateFrom"
+                    placeholder="From"
+                />
+            </div>
+
+            <div class="filter-item">
+                <label for="uploadedTo">
+                    Uploaded To
+                </label>
+                <input
+                    id="uploadedTo"
+                    name="uploadedTo"
+                    class="input"
+                    type="date"
+                    v-model="filterDateTo"
+                    placeholder="To"
+                />
+            </div>
+
+            <div class="filter-item">
+                <label for="uploadedTo">
+                    Amount
+                </label>
+                <select
+                    class="input"
+                    v-model="paginationAmount"
                 >
-                    <td>
-                        {{ upload.id }}
-                    </td>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
 
-                    <td>
-                        {{ upload.result_string ? upload.result_string : "No tags" }}
-                    </td>
+            <button
+                class="button is-small is-primary"
+                @click="getData"
+                style="margin-top: 25px;"
+            >Apply Filters</button>
+        </div>
 
-<!--                    <td>-->
-<!--                        <a :href="`>-->
-<!--                            View Photo (Lat: {{ upload.lat }}, Lon: {{ upload.lon }})-->
-<!--                        </a>-->
-<!--                    </td>-->
+        <div class="table-wrapper">
+            <table class="uploads-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Tags</th>
+                        <th>Custom Tags</th>
+                        <th>Taken at</th>
+                        <th>Address</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr
+                        v-for="photo in photos"
+                        :key="photo.id"
+                    >
+                        <td>
+                            {{ photo.id }}
+                        </td>
 
-                    <td>
-                        {{ upload.datetime }}
-                    </td>
+                        <td>
+                            {{ photo.result_string ? photo.result_string : "No tags" }}
+                        </td>
 
-                    <td>
-                        {{ upload.display_name }}
-                    </td>
+                        <td>
+                            {{ photo.custom_tags.length ? getCustomTags(photo.custom_tags) : "No tags" }}
+                        </td>
 
-                    <td>
-                        <!-- Copy Link Button -->
-                        <button @click="copyLinkToClipboard(upload)">
-                            Copy Link
-                        </button>
+                        <td>
+                            {{ photo.datetime }}
+                        </td>
 
-                        <button @click="openLinkNewTab(upload)">
-                            Open
-                        </button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+                        <td>
+                            {{ photo.display_name }}
+                        </td>
+
+                        <td>
+                            <!-- Copy Link Button -->
+                            <button @click="copyLinkToClipboard(photo)">
+                                Copy Link
+                            </button>
+
+                            <button @click="openLinkNewTab(photo)">
+                                Open
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination">
+<!--            <button @click="changePage(1)" :disabled="currentPage <= 1">-->
+<!--                First-->
+<!--            </button>-->
+            <button
+                @click="changePage(currentPage - 1)"
+                :disabled="currentPage <= 1"
+            >
+                Previous
+            </button>
+
+            <!-- Page Numbers -->
+            <button
+                v-for="page in pages"
+                :key="page"
+                :class="{'active': page === currentPage}"
+                @click="changePage(page)"
+            >
+                {{ page }}
+            </button>
+
+            <button
+                @click="changePage(currentPage + 1)"
+                :disabled="currentPage >= lastPage"
+            >
+                Next
+            </button>
+<!--            <button @click="changePage(lastPage)" :disabled="currentPage >= lastPage">-->
+<!--                Last-->
+<!--            </button>-->
+        </div>
     </div>
 </template>
-
 
 <script>
 export default {
@@ -68,15 +172,36 @@ export default {
     data() {
         return {
             showCopyNotification: false,
-            notificationMessage: '', // Added for dynamic messages
+            currentPage: 1,
+            lastPage: 1,
+            filterDateFrom: '',
+            filterDateTo: '',
+            filterResultString: '',
+            filterTag: '',
+            filterCustomTag: '',
+            paginationAmount: 25
         };
     },
     async created ()
     {
-        await this.$store.dispatch('GET_MY_PHOTOS');
+        await this.getData();
+
+        // await this.fetchDataForPagination(this.currentPage);
     },
     computed: {
-        uploads ()
+
+        pages ()
+        {
+            let pages = [];
+
+            for (let i = 1; i <= this.lastPage; i++) {
+                pages.push(i);
+            }
+
+            return pages;
+        },
+
+        photos ()
         {
             return this.$store.state.photos.myUploadsPaginate;
         },
@@ -95,8 +220,6 @@ export default {
                 {
                     await navigator.clipboard.writeText(url);
 
-                    this.triggerCopyNotification(); // Use the custom notification
-
                     return;
                 }
                 catch (err)
@@ -110,10 +233,11 @@ export default {
         },
 
         /**
-         *
+         * Copy image's link to clipboard
          * @param text
          */
-        copyToFallbackClipboard(text) {
+        copyToFallbackClipboard (text)
+        {
             const textArea = document.createElement("textarea");
             textArea.value = text;
             document.body.appendChild(textArea);
@@ -130,6 +254,26 @@ export default {
             }
         },
 
+        getCustomTags (customTags)
+        {
+            return customTags.map(tag => tag.tag).join(', ');
+        },
+
+        /**
+         * Get the data with the filters applied
+         */
+        async getData ()
+        {
+            await this.$store.dispatch('GET_MY_PHOTOS', {
+                filterTag: this.filterTag,
+                filterCustomTag: this.filterCustomTag,
+                filterDateFrom: this.filterDateFrom,
+                filterDateTo: this.filterDateTo,
+                currentPage: this.currentPage,
+                paginationAmount: this.paginationAmount
+            });
+        },
+
         /**
          * Create a link to the photo
          * and upload it in a new tab
@@ -141,30 +285,60 @@ export default {
             window.open(url, '_blank');
         },
 
+        // /**
+        //  *
+        //  */
+        // async fetchDataForPagination(page) {
+        //     let query = `/photos/get-my-photos?page=${page}`;
+        //     if (this.filterTags) query += `&tags=${encodeURIComponent(this.filterTags)}`;
+        //     if (this.filterResultString) query += `&resultString=${encodeURIComponent(this.filterResultString)}`;
+        //     if (this.filterDateFrom) query += `&dateFrom=${this.filterDateFrom}`;
+        //     if (this.filterDateTo) query += `&dateTo=${this.filterDateTo}`;
+        //
+        //     const response = await axios.get(query);
+        //     this.$store.commit('setUsersUploads', response.data.photos.data);
+        //     this.currentPage = response.data.photos.current_page;
+        //     this.lastPage = response.data.photos.last_page;
+        // },
+
         /**
-         *
-         * @param message
+         * Change page
          */
-        triggerCopyNotification(message = 'Link copied to clipboard!') {
-            console.log("Notification triggered"); // Debugging line
-            this.notificationMessage = message;
-            this.showCopyNotification = true;
-            setTimeout(() => {
-                this.showCopyNotification = false;
-            }, 3000); // Hide the notification after 3 seconds
-        }
+        changePage(page) {
+            const targetPage = Number(page); // Ensure the page is a number
+            if (targetPage < 1 || targetPage > this.lastPage || targetPage === this.currentPage) return;
+            this.currentPage = targetPage;
+            // this.fetchDataForPagination(targetPage);
+        },
+
     }
 }
 </script>
 
 <style scoped>
+    .filters {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 1em;
+        align-items: center;
+    }
+
+    .filter-item {
+        display: flex;
+        flex-direction: column; /* Stacks the label over the input */
+    }
+
     .uploads-container {
-        padding: 1em 5em;
+        display: flex;
+        flex-direction: column;
+        justify-content: center; /* Vertically center the content */
+        align-items: center; /* Horizontally center the content */
+        padding: 1em;
         background: #ffffff;
         border-radius: 12px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        border: 1px solid #eaeaea;
-        height: 100%;
+        max-height: 100vh; /* Adjust to max-height to prevent overflow */
+        overflow: hidden; /* Hide overflow */
+        margin: 0 auto; /* Center the container itself */
     }
 
     .uploads-title {
@@ -173,6 +347,12 @@ export default {
         font-size: 24px;
         margin-top: 30px;
         margin-bottom: 30px;
+    }
+
+    .table-wrapper {
+        overflow-y: auto; /* Enable vertical scrolling */
+        width: 100%; /* Ensure it takes up the full width */
+        max-height: 75vh; /* Limit the height to ensure it fits in the viewport */
     }
 
     .uploads-table {
@@ -197,51 +377,41 @@ export default {
         color: white;
     }
 
-    .link, .button {
-        display: block;
-        text-decoration: none;
-        color: #007bff;
-        font-weight: 500;
-        transition: color 0.3s ease;
+    .pagination {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px; /* Adds space between buttons */
+        margin-top: 20px;
     }
 
-    .link:hover, .button:hover {
-        color: #0056b3;
+    .pagination button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
     }
 
-    .button {
-        margin-left: 10px;
-        padding: 6px 12px;
+    .pagination button.active {
+        background-color: #0056b3; /* Active page button background */
+        font-weight: bold;
+    }
+
+    .pagination button {
+        padding: 5px 10px;
+        border: 1px solid #007bff;
         background-color: #007bff;
         color: white;
-        border: none;
-        border-radius: 4px;
+        border-radius: 5px;
         cursor: pointer;
-        transition: background-color 0.2s ease;
+        transition: background-color 0.3s, transform 0.2s;
     }
 
-    .notification {
-        position: fixed;
-        left: 50%;
-        bottom: 20px;
-        transform: translateX(-50%);
-        background-color: #4CAF50;
-        color: white;
-        padding: 12px 24px;
-        border-radius: 20px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        z-index: 1050;
-        transition: opacity 0.5s ease, bottom 0.5s ease;
-        opacity: 0.9;
+    .pagination button:hover:not(:disabled) {
+        background-color: #0056b3;
+        transform: scale(1.05);
     }
 
-    .show-notification-enter-active, .show-notification-leave-active {
-        transition: opacity 0.5s, bottom 0.5s;
-    }
-
-    .show-notification-enter, .show-notification-leave-to {
-        opacity: 0;
-        bottom: 10px;
+    .pagination span {
+        color: #333;
     }
 
     /* Responsive adjustments */

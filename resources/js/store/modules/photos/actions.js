@@ -24,11 +24,20 @@ export const actions = {
     },
 
     /**
-     *
+     * Get user's photos uploaded
      */
-    async GET_MY_PHOTOS (context)
+    async GET_MY_PHOTOS (context, payload)
     {
-        await axios.get('/photos/get-my-photos')
+        await axios.get('/photos/get-my-photos', {
+            params: {
+                filterTag: payload.filterTag,
+                filterCustomTag: payload.filterCustomTag,
+                filterDateFrom: payload.filterDateFrom,
+                filterDateTo: payload.filterDateTo,
+                currentPage: payload.currentPage,
+                paginationAmount: payload.payload
+            }
+        })
         .then(response => {
             console.log('GET_MY_PHOTOS', response);
 

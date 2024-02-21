@@ -209,13 +209,10 @@ export const mutations = {
     },
 
     /**
-     *
+     * Set user's uploaded images
      */
     setUsersUploads (state, payload)
     {
-        console.log({ state })
-        console.log({ payload })
-
         state.myUploadsPaginate = payload;
     },
 
