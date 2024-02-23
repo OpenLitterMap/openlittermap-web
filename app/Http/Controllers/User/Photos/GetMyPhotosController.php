@@ -12,7 +12,7 @@ class GetMyPhotosController extends Controller
     public function __invoke (Request $request)
     {
         // Todo - validate the request
-        \Log::info($request->all());
+        // \Log::info($request->all());
 
         $user = Auth::user();
 
