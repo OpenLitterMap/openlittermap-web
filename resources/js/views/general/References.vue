@@ -306,6 +306,32 @@ export default {
                     author: 'Wu et al'
                 },
                 {
+                    date: '2023/03/07',
+                    title: 'Determinants of household waste disposal practices and implications for practical community interventions: lessons from Lilongwe',
+                    link: 'https://iopscience.iop.org/article/10.1088/2634-4505/acbcec/meta',
+                    author: 'Kalonde et al'
+                },
+                {
+                    date: '2023/04/12',
+                    title: 'Understanding GIS through Sustainable Development Goals',
+                    link: 'https://www.taylorfrancis.com/books/mono/10.1201/9781003220510/understanding-gis-sustainable-development-goals-paul-holloway',
+                    author: 'Holloway, P.'
+                },
+                {
+                    date: '2023/04/27',
+                    title: 'INTERACT Pocket guide on how to reduce plastic consumption and pollution',
+                    link: 'https://eu-interact.org/app/uploads/2023/05/D2.11.pdf',
+                    author: 'Arndal et al'
+                },
+                {
+                    date: '2023/04/27',
+                    title: 'Evaluation of a smartphone-based methodology that integrates\n' +
+                        'long-term tracking of mobility, place experiences, heart rate\n' +
+                        'variability, and subjective well-being',
+                    link: 'https://www.cell.com/heliyon/pdf/S2405-8440(23)02958-4.pdf',
+                    author: 'Giusti et al'
+                },
+                {
                     date: '2023/05/01',
                     title: 'Waste classification using vision transformer based on multilayer hybrid convolution neural network',
                     link: 'https://www.sciencedirect.com/science/article/abs/pii/S2212095523000779',
@@ -352,7 +378,6 @@ export default {
                     title: 'A survey on bias in machine learning research',
                     link: 'https://arxiv.org/pdf/2308.11254.pdf',
                     author: 'Mikolajczyk-Bare & Grochowski'
-<<<<<<< HEAD
                 },
                 {
                     date: '2023/08/31',
@@ -361,14 +386,59 @@ export default {
                     author: 'Desta et al'
                 },
                 {
-                    date: '08/09/23',
+                    date: '2023/09/01',
+                    title: 'Machine Learning-Based Garbage Detection and 3D Spatial Localization for Intelligent Robotic Grasp',
+                    link: 'https://www.mdpi.com/2076-3417/13/18/10018',
+                    author: 'Zhenwei et al'
+                },
+                {
+                    date: '2023/09/12',
+                    title: 'Do We Consume a Lot? Citizen Science Activity for a Circular Economy of Single-Use Plastics in the European Union and North America',
+                    link: 'https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4569668',
+                    author: 'Salas et al'
+                },
+                {
+                    date: '2023/09/23',
                     title: 'Outdoor Trash Detection in Natural Environment Using a Deep Learning Model',
                     link: 'https://ieeexplore.ieee.org/abstract/document/10244010',
                     author: 'Das et al'
                 },
-=======
+                {
+                    date: '2023/09/29',
+                    title: 'Trash AI: A Web GUI for Serverless Computer Vision Analysis of Images of Trash',
+                    link: 'https://joss.theoj.org/papers/10.21105/joss.05136.pdf',
+                    author: 'Cowger et al'
+                },
+                {
+                    date: '2023/11/16',
+                    title: 'Public geography and citizen science: participatory practices for action research',
+                    link: 'https://rosa.uniroma1.it/rosa02/annali_memotef/article/view/1538',
+                    author: 'Capinera, C.'
+                },
+                {
+                    date: '2024/02/01',
+                    title: 'Hierarchical waste detection with weakly supervised segmentation in images from recycling plants',
+                    link: 'https://www.sciencedirect.com/science/article/abs/pii/S0952197623017268',
+                    author: 'Yudin et al'
+                },
+                {
+                    date: '2024/01/26',
+                    title: 'pLitterStreet: Street Level Plastic Litter Detection and Mapping',
+                    link: 'https://arxiv.org/abs/2401.14719',
+                    author: 'Reddy et al'
+                },
+                {
+                    date: '2024/02/28',
+                    title: 'Optical Detection of Plastic Waste Through Computer Vision',
+                    link: 'https://www.sciencedirect.com/science/article/pii/S2667305324000176',
+                    author: 'Shukratov et al'
+                },
+                {
+                    date: '2024/03/01',
+                    title: 'GENII: A graph neural network-based model for citywide litter prediction leveraging crowdsensing data',
+                    link: 'https://www.sciencedirect.com/science/article/abs/pii/S0957417423020675',
+                    author: 'Wang et al'
                 }
->>>>>>> 40b7c496a292a9afbd97cb5c012d59f9ad7be04c
             ]
         };
     },
