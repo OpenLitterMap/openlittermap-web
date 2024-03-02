@@ -26,16 +26,15 @@ export const actions = {
     /**
      * Get user's photos uploaded
      */
-    async GET_MY_PHOTOS (context, payload)
+    async GET_MY_PHOTOS (context)
     {
         await axios.get('/photos/get-my-photos', {
             params: {
-                filterTag: payload.filterTag,
-                filterCustomTag: payload.filterCustomTag,
-                filterDateFrom: payload.filterDateFrom,
-                filterDateTo: payload.filterDateTo,
-                currentPage: payload.currentPage,
-                paginationAmount: payload.payload
+                filterTag: context.rootState.user.filterPhotos.filterTag,
+                filterCustomTag: context.rootState.user.filterPhotos.filterCustomTag,
+                filterDateFrom: context.rootState.user.filterPhotos.filterDateFrom,
+                filterDateTo: context.rootState.user.filterPhotos.filterDateTo,
+                paginationAmount: context.rootState.user.filterPhotos.paginationAmount,
             }
         })
         .then(response => {
@@ -43,7 +42,7 @@ export const actions = {
 
             if (response.data.success)
             {
-                context.commit('setUsersUploads', response.data.photos.data)
+                context.commit('setUsersPaginatedUploads', response.data.photos)
             }
          })
         .catch(error => {
@@ -51,7 +50,8 @@ export const actions = {
 
             if (error.response && error.response.status === 422) {
                 // Set the errors object in your component's data
-                this.errors = error.response.data.errors;
+                // this.errors = error.response.data.errors;
+                // set errors on vuex
             }
             else
             {

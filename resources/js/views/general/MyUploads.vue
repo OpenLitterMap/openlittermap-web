@@ -2,83 +2,7 @@
     <div class="uploads-container">
         <h3 class="uploads-title">My Uploads</h3>
 
-        <div class="filters">
-            <div class="filter-item">
-                <label for="filterTag">
-                    Tag
-                </label>
-
-                <input
-                    id="filterTag"
-                    name="filterTag"
-                    class="input"
-                    v-model="filterTag"
-                    placeholder="Enter a tag"
-                />
-            </div>
-
-            <div class="filter-item">
-                <label for="filterCustomTag">
-                    Custom Tag
-                </label>
-
-                <input
-                    id="filterCustomTag"
-                    name="filterCustomTag"
-                    class="input"
-                    v-model="filterCustomTag"
-                    placeholder="Enter a custom tag"
-                />
-            </div>
-
-            <div class="filter-item">
-                <label for="uploadedFrom">
-                    Uploaded From
-                </label>
-                <input
-                    id="uploadedFrom"
-                    name="uploadedFrom"
-                    class="input"
-                    type="date"
-                    v-model="filterDateFrom"
-                    placeholder="From"
-                />
-            </div>
-
-            <div class="filter-item">
-                <label for="uploadedTo">
-                    Uploaded To
-                </label>
-                <input
-                    id="uploadedTo"
-                    name="uploadedTo"
-                    class="input"
-                    type="date"
-                    v-model="filterDateTo"
-                    placeholder="To"
-                />
-            </div>
-
-            <div class="filter-item">
-                <label for="uploadedTo">
-                    Amount
-                </label>
-                <select
-                    class="input"
-                    v-model="paginationAmount"
-                >
-                    <option value="25">25</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                </select>
-            </div>
-
-            <button
-                class="button is-small is-primary"
-                @click="getData"
-                style="margin-top: 25px;"
-            >Apply Filters</button>
-        </div>
+        <FilterMyPhotos />
 
         <div class="table-wrapper">
             <table class="uploads-table">
@@ -94,7 +18,7 @@
                 </thead>
                 <tbody>
                     <tr
-                        v-for="photo in photos"
+                        v-for="photo in paginatedPhotos.data"
                         :key="photo.id"
                     >
                         <td>
@@ -133,75 +57,49 @@
         </div>
 
         <div class="pagination">
-<!--            <button @click="changePage(1)" :disabled="currentPage <= 1">-->
-<!--                First-->
-<!--            </button>-->
             <button
-                @click="changePage(currentPage - 1)"
-                :disabled="currentPage <= 1"
+                @click="loadPreviousPage"
+                :disabled="this.paginatedPhotos.current_page === 1"
             >
                 Previous
             </button>
 
             <!-- Page Numbers -->
-            <button
-                v-for="page in pages"
-                :key="page"
-                :class="{'active': page === currentPage}"
-                @click="changePage(page)"
-            >
-                {{ page }}
-            </button>
+            <p>{{ this.paginatedPhotos.current_page }}</p>
 
             <button
-                @click="changePage(currentPage + 1)"
-                :disabled="currentPage >= lastPage"
+                @click="loadNextPage"
             >
                 Next
             </button>
-<!--            <button @click="changePage(lastPage)" :disabled="currentPage >= lastPage">-->
-<!--                Last-->
-<!--            </button>-->
         </div>
     </div>
 </template>
 
 <script>
+import FilterMyPhotos from "../../components/User/Photos/FilterMyPhotos";
+
 export default {
     name: "MyUploads",
-    data() {
+    components: {
+        FilterMyPhotos
+    },
+    data () {
         return {
             showCopyNotification: false,
             currentPage: 1,
-            lastPage: 1,
-            filterDateFrom: '',
-            filterDateTo: '',
-            filterResultString: '',
-            filterTag: '',
-            filterCustomTag: '',
-            paginationAmount: 25
+            lastPage: 1
         };
     },
     async created ()
     {
-        await this.getData();
-
-        // await this.fetchDataForPagination(this.currentPage);
+        await this.$store.dispatch('GET_MY_PHOTOS');
     },
     computed: {
-
-        pages ()
-        {
-            let pages = [];
-
-            for (let i = 1; i <= this.lastPage; i++) {
-                pages.push(i);
-            }
-
-            return pages;
-        },
-
-        photos ()
+        /**
+         * The users paginated photos
+         */
+        paginatedPhotos ()
         {
             return this.$store.state.photos.myUploadsPaginate;
         },
@@ -260,55 +158,22 @@ export default {
         },
 
         /**
-         * Get the data with the filters applied
-         */
-        async getData ()
-        {
-            await this.$store.dispatch('GET_MY_PHOTOS', {
-                filterTag: this.filterTag,
-                filterCustomTag: this.filterCustomTag,
-                filterDateFrom: this.filterDateFrom,
-                filterDateTo: this.filterDateTo,
-                currentPage: this.currentPage,
-                paginationAmount: this.paginationAmount
-            });
-        },
-
-        /**
          * Create a link to the photo
          * and upload it in a new tab
          */
         openLinkNewTab (photo)
         {
-            const url = `https://openlittermap.com/global?lat=${photo.lat}&lon=${photo.lon}&zoom=17&photo=${photo.id}`;
+            const url = `${window.location.origin}/global?lat=${photo.lat}&lon=${photo.lon}&zoom=17&photo=${photo.id}`;
 
             window.open(url, '_blank');
         },
 
-        // /**
-        //  *
-        //  */
-        // async fetchDataForPagination(page) {
-        //     let query = `/photos/get-my-photos?page=${page}`;
-        //     if (this.filterTags) query += `&tags=${encodeURIComponent(this.filterTags)}`;
-        //     if (this.filterResultString) query += `&resultString=${encodeURIComponent(this.filterResultString)}`;
-        //     if (this.filterDateFrom) query += `&dateFrom=${this.filterDateFrom}`;
-        //     if (this.filterDateTo) query += `&dateTo=${this.filterDateTo}`;
-        //
-        //     const response = await axios.get(query);
-        //     this.$store.commit('setUsersUploads', response.data.photos.data);
-        //     this.currentPage = response.data.photos.current_page;
-        //     this.lastPage = response.data.photos.last_page;
-        // },
+        async loadPreviousPage () {
+            await this.$store.dispatch('GET_PREVIOUS_USERS_UPLOADS_PAGE');
+        },
 
-        /**
-         * Change page
-         */
-        changePage(page) {
-            const targetPage = Number(page); // Ensure the page is a number
-            if (targetPage < 1 || targetPage > this.lastPage || targetPage === this.currentPage) return;
-            this.currentPage = targetPage;
-            // this.fetchDataForPagination(targetPage);
+        async loadNextPage () {
+            await this.$store.dispatch('GET_NEXT_USERS_UPLOADS_PAGE');
         },
 
     }

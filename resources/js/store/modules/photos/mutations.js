@@ -211,7 +211,7 @@ export const mutations = {
     /**
      * Set user's uploaded images
      */
-    setUsersUploads (state, payload)
+    setUsersPaginatedUploads (state, payload)
     {
         state.myUploadsPaginate = payload;
     },
