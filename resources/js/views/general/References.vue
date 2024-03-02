@@ -416,16 +416,16 @@ export default {
                     author: 'Capinera, C.'
                 },
                 {
-                    date: '2024/02/01',
-                    title: 'Hierarchical waste detection with weakly supervised segmentation in images from recycling plants',
-                    link: 'https://www.sciencedirect.com/science/article/abs/pii/S0952197623017268',
-                    author: 'Yudin et al'
-                },
-                {
                     date: '2024/01/26',
                     title: 'pLitterStreet: Street Level Plastic Litter Detection and Mapping',
                     link: 'https://arxiv.org/abs/2401.14719',
                     author: 'Reddy et al'
+                },
+                {
+                    date: '2024/02/01',
+                    title: 'Hierarchical waste detection with weakly supervised segmentation in images from recycling plants',
+                    link: 'https://www.sciencedirect.com/science/article/abs/pii/S0952197623017268',
+                    author: 'Yudin et al'
                 },
                 {
                     date: '2024/02/28',

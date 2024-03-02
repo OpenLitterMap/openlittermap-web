@@ -25,8 +25,10 @@ export const actions = {
 
     /**
      * Get user's photos uploaded
+     *
+     * @payload = optional next page to load
      */
-    async GET_MY_PHOTOS (context)
+    async GET_MY_PHOTOS (context, payload)
     {
         await axios.get('/photos/get-my-photos', {
             params: {
@@ -35,6 +37,7 @@ export const actions = {
                 filterDateFrom: context.rootState.user.filterPhotos.filterDateFrom,
                 filterDateTo: context.rootState.user.filterPhotos.filterDateTo,
                 paginationAmount: context.rootState.user.filterPhotos.paginationAmount,
+                loadPage: payload
             }
         })
         .then(response => {

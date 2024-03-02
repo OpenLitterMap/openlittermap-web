@@ -6,6 +6,7 @@ use App\Models\Photo;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Auth;
 
 class GetMyPhotosController extends Controller
@@ -21,8 +22,13 @@ class GetMyPhotosController extends Controller
     {
         // Todo - validate the request
 
-        $user = Auth::user();
+        $currentPage = $request->input('loadPage', 1); // Default to page 1 if not provided
 
+        Paginator::currentPageResolver(function () use ($currentPage) {
+            return $currentPage;
+        });
+
+        $user = Auth::user();
         $query = Photo::where('user_id', $user->id);
 
         // Filter by date range

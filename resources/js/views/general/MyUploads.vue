@@ -69,6 +69,7 @@
 
             <button
                 @click="loadNextPage"
+                :disabled="this.paginatedPhotos.next_page_url === null"
             >
                 Next
             </button>
@@ -168,12 +169,18 @@ export default {
             window.open(url, '_blank');
         },
 
-        async loadPreviousPage () {
-            await this.$store.dispatch('GET_PREVIOUS_USERS_UPLOADS_PAGE');
+        async loadPreviousPage ()
+        {
+            const previousPage = this.paginatedPhotos.current_page - 1;
+
+            await this.$store.dispatch('GET_MY_PHOTOS', previousPage);
         },
 
-        async loadNextPage () {
-            await this.$store.dispatch('GET_NEXT_USERS_UPLOADS_PAGE');
+        async loadNextPage ()
+        {
+            const nextPage = this.paginatedPhotos.current_page +1;
+
+            await this.$store.dispatch('GET_MY_PHOTOS', nextPage);
         },
 
     }
