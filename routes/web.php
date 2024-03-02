@@ -122,8 +122,14 @@ Route::get('bulk-tag', 'HomeController@index');
 // The users profile
 Route::get('profile', 'HomeController@index');
 
+// The users upload
+Route::get('my-uploads', 'HomeController@index');
+
 // Get unverified paginated photos for tagging
 Route::get('photos', 'PhotosController@unverified');
+
+// Get the users photos to display links
+Route::get('photos/get-my-photos', 'User\Photos\GetMyPhotosController');
 
 Route::post('/profile/upload-profile-photo', 'UsersController@uploadProfilePhoto');
 

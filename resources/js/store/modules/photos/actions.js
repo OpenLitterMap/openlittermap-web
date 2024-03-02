@@ -24,6 +24,44 @@ export const actions = {
     },
 
     /**
+     * Get user's photos uploaded
+     */
+    async GET_MY_PHOTOS (context)
+    {
+        await axios.get('/photos/get-my-photos', {
+            params: {
+                filterTag: context.rootState.user.filterPhotos.filterTag,
+                filterCustomTag: context.rootState.user.filterPhotos.filterCustomTag,
+                filterDateFrom: context.rootState.user.filterPhotos.filterDateFrom,
+                filterDateTo: context.rootState.user.filterPhotos.filterDateTo,
+                paginationAmount: context.rootState.user.filterPhotos.paginationAmount,
+            }
+        })
+        .then(response => {
+            console.log('GET_MY_PHOTOS', response);
+
+            if (response.data.success)
+            {
+                context.commit('setUsersPaginatedUploads', response.data.photos)
+            }
+         })
+        .catch(error => {
+            console.log('GET_MY_PHOTOS', error.response.data);
+
+            if (error.response && error.response.status === 422) {
+                // Set the errors object in your component's data
+                // this.errors = error.response.data.errors;
+                // set errors on vuex
+            }
+            else
+            {
+                // Handle other types of errors
+                console.error('An unexpected error occurred.', error);
+            }
+        });
+    },
+
+    /**
      * Get unverified photos for tagging
      */
     async GET_PHOTOS_FOR_TAGGING (context)

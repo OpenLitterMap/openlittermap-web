@@ -96,6 +96,11 @@
                                         {{ $t('nav.profile') }}
                                     </router-link>
 
+                                    <!-- My Uploads -->
+                                    <router-link to="/my-uploads" class="navbar-item drop-item">
+                                        My Uploads
+                                    </router-link>
+
                                     <!-- Teams -->
                                     <router-link to="/teams" class="navbar-item drop-item">
                                         {{ $t('nav.teams') }}
