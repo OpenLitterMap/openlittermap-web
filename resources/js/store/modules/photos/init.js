@@ -18,6 +18,7 @@ export const init = {
         next_page_url: null,
         data: []
     },
+    myUploadsPaginate: null,
     remaining: 0,
     selectedCount: 0,
     selectAll: false,

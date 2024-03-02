@@ -352,6 +352,7 @@ export default {
                     title: 'A survey on bias in machine learning research',
                     link: 'https://arxiv.org/pdf/2308.11254.pdf',
                     author: 'Mikolajczyk-Bare & Grochowski'
+<<<<<<< HEAD
                 },
                 {
                     date: '2023/08/31',
@@ -365,6 +366,9 @@ export default {
                     link: 'https://ieeexplore.ieee.org/abstract/document/10244010',
                     author: 'Das et al'
                 },
+=======
+                }
+>>>>>>> 40b7c496a292a9afbd97cb5c012d59f9ad7be04c
             ]
         };
     },
