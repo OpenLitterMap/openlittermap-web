@@ -44,6 +44,14 @@ export const mutations = {
     /**
      *
      */
+    setCustomTagsFound (state, payload)
+    {
+        state.customTagsFound = payload;
+    },
+
+    /**
+     *
+     */
 	toggleLangsButton (state)
     {
 		state.langsOpen = ! state.langsOpen;

@@ -90,6 +90,8 @@ Route::get('/global/clusters', 'GlobalMap\ClusterController@index');
 Route::get('/global/points', 'GlobalMap\GlobalMapController@index');
 Route::get('/global/art-data', 'GlobalMap\GlobalMapController@artData');
 
+Route::get('/global/search/custom-tags', 'GlobalMap\Search\FindCustomTagsController');
+
 // Get data for the Global Leaderboard
 Route::get('/global/leaderboard', 'Leaderboard\GetUsersForGlobalLeaderboardController');
 Route::get('/global/leaderboard/location', 'Leaderboard\GetUsersForLocationLeaderboardController');

@@ -6,6 +6,8 @@
             ref="openlittermap"
         />
 
+        <SearchCustomTags />
+
         <!-- Websockets -->
         <LiveEvents
             @fly-to-location="updateUrlPhotoIdAndFlyToLocation"
@@ -32,6 +34,7 @@ import './SmoothWheelZoom.js';
 import glify from 'leaflet.glify';
 import { mapHelper } from '../../maps/mapHelpers';
 import dropdown from './select-dropdown';
+import SearchCustomTags from "../../components/global/SearchCustomTags";
 
 var map;
 var clusters;
@@ -303,6 +306,7 @@ function getActiveLayers ()
 export default {
     name: 'Supercluster',
     components: {
+        SearchCustomTags,
         LiveEvents
     },
     props: {

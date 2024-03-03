@@ -35,5 +35,28 @@ export const actions = {
         .catch(error => {
             console.error('get_clusters', error);
         });
+    },
+
+    /**
+     *
+     */
+    async SEARCH_CUSTOM_TAGS (context, payload)
+    {
+        await axios.get('/global/search/custom-tags', {
+            params: {
+                search: payload
+            }
+        })
+        .then(response => {
+            console.log('search_custom_tags', response);
+
+            if (response.data.success)
+            {
+                context.commit('setCustomTagsFound', response.data.tags);
+            }
+        })
+        .catch(error => {
+            console.error('search_custom_tags', error);
+        });
     }
 }
