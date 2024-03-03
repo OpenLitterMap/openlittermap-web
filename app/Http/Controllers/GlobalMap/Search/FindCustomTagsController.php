@@ -19,6 +19,7 @@ class FindCustomTagsController extends Controller
         $tags = CustomTag::where('tag', 'like', $search . '%')
         ->select('tag', DB::raw('count(*) as total'))
         ->groupBy('tag')
+        ->orderBy('total', 'desc')
         ->limit(20)
         ->get();
 
