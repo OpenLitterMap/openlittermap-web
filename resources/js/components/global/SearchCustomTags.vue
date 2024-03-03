@@ -27,7 +27,7 @@
                     class="tag-selection"
                     @click="loadCustomTag(tag.tag)"
                 >
-                    <p>{{ tag.tag }}</p>
+                    <p>{{ tag.tag }} ({{ tag.total }})</p>
                 </div>
             </div>
         </div>
