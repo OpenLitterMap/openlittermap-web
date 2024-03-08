@@ -126,4 +126,17 @@ export default {
         background-color: #e7e7e7;
     }
 
+    @media screen and (max-width: 687px)
+    {
+        #search-custom-tags {
+            width: max-content !important;
+        }
+
+        .tags-container {
+            width: 12.5em !important;
+        }
+
+
+    }
+
 </style>
