@@ -80,10 +80,13 @@
 
 <script>
 export default {
-    name: "FilterMyPhotos",
+    name: "FilterPhotos",
+    props: [
+        'action'
+    ],
     methods: {
         async getData () {
-            await this.$store.dispatch('GET_MY_PHOTOS');
+            await this.$store.dispatch(this.action);
         }
     },
     computed: {

@@ -21,6 +21,9 @@ Route::get('/cleanups/{inviteLink}/join', 'HomeController@index');
 Route::post('/cleanups/{inviteLink}/join', 'Cleanups\JoinCleanupController');
 Route::post('/cleanups/{inviteLink}/leave', 'Cleanups\LeaveCleanupController');
 
+Route::get('/history', 'HomeController@index');
+Route::get('/history/paginated', 'History\GetPaginatedHistoryController');
+
 // Registration
 Route::get('/signup', 'HomeController@index');
 

@@ -16,13 +16,7 @@ class FindCustomTagsController extends Controller
     {
         $search = request('search');
 
-        $notInclude = [
-            'As of September 1, 2023 I am no longer an ambassador for OLM and no longer supporting it',
-            'ListenToYourUsers',
-            'Willingness to pay people real money but not paying respect to volunteers yields poor results.',
-            'A negative leader casts a shadow, not a path worth following',
-            'As of September 1, 2023 I am no longer an ambassador for OLM',
-        ];
+        $notInclude = CustomTag::notIncludeTags();
 
         $tags = CustomTag::where('tag', 'like', $search . '%')
             ->whereNotIn('tag', $notInclude)

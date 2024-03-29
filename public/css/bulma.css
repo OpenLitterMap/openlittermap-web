@@ -6238,7 +6238,7 @@ a.navbar-item:focus, a.navbar-item:focus-within, a.navbar-item:hover, a.navbar-i
         transform: translateY(0);
     }
     .navbar-menu {
-        flex-grow: 1;
+        /*flex-grow: 1;*/
         flex-shrink: 0;
     }
     .navbar-start {

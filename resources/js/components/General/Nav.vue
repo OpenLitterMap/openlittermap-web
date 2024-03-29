@@ -1,7 +1,7 @@
 <template>
     <div>
         <nav class="navbar main-nav">
-            <div class="container">
+            <div class="nav-container">
                 <div class="navbar-brand">
 
                     <router-link to="/" class="navbar-item">
@@ -16,7 +16,7 @@
                     </div>
                 </div>
 
-                <div :class="nav">
+                <div :class="open ? 'navbar-menu is-active' : 'navbar-menu'">
                     <div class="navbar-end">
 
                         <!-- About -->
@@ -27,6 +27,10 @@
                         <!-- Cleanups -->
                         <router-link to="/cleanups" class="navbar-item" @click.native="close">
                             Cleanups
+                        </router-link>
+
+                        <router-link to="/history" class="navbar-item" @click.native="close">
+                            History
                         </router-link>
 
                         <!-- Littercoin -->
@@ -183,14 +187,6 @@ export default {
         {
             return this.$store.state.user.user.can_bbox;
         },
-
-        /**
-         *
-         */
-        nav ()
-        {
-            return this.open ? 'navbar-menu is-active' : 'navbar-menu';
-        }
     },
     methods: {
         /**
@@ -233,6 +229,12 @@ export default {
 </script>
 
 <style scoped>
+
+    .nav-container {
+        display: flex;
+        width: 100%;
+        justify-content: space-evenly;
+    }
 
     .burger {
         align-self: center;

@@ -3,6 +3,7 @@ import Vuex from 'vuex'
 import createPersistedState from 'vuex-persistedstate'
 
 import { admin } from './modules/admin'
+import { alldata } from "./modules/alldata";
 import { bbox } from './modules/bbox'
 import { citymap } from './modules/citymap'
 import { cleanups } from './modules/cleanups'
@@ -32,6 +33,7 @@ export default new Vuex.Store({
     ],
     modules: {
         admin,
+        alldata,
         bbox,
         donate,
         citymap,
