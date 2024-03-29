@@ -1,9 +1,14 @@
 <template>
     <div>
         <nav class="navbar main-nav">
-            <div class="nav-container">
-                <div class="navbar-brand">
-
+            <div
+                class="nav-container"
+                :style="open ? 'flex-direction: column; padding: 0 1em;' : ''"
+            >
+                <div
+                    class="navbar-brand"
+                    :class="open ? 'flex-1 jc': ''"
+                >
                     <router-link to="/" class="navbar-item">
                         <h1 class="nav-title">#OpenLitterMap</h1>
                     </router-link>
@@ -160,7 +165,7 @@ export default {
     },
     data () {
         return {
-            open: false
+            open: false,
         };
     },
     computed: {

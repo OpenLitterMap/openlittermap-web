@@ -5969,7 +5969,7 @@ body.has-navbar-fixed-bottom {
     height: 3.25rem;
     position: relative;
     width: 3.25rem;
-    margin-left: auto;
+    /*margin-left: auto;*/
 }
 
 .navbar-burger span {

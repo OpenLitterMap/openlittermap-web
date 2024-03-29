@@ -49,7 +49,7 @@
                     <br>
 
                     <p class="footer-text mt1">
-                        v3.1.1
+                        {{ this.version }}
                     </p>
                 </div>
 
@@ -111,7 +111,8 @@ export default {
                 { icon: 'twitter2.png', url: 'https://twitter.com/openlittermap' }, // 2
                 { icon: 'reddit.png', url: 'https://reddit.com/r/openlittermap' }, // 3
                 { icon: 'tumblr.png', url: 'https://tumblr.com/openlittermap' }, // 4
-            ]
+            ],
+            version: 'v3.3.1'
         };
     },
     computed: {
