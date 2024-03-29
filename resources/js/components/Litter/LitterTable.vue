@@ -14,7 +14,7 @@
                         <th>Tags</th>
                         <th>Custom Tags</th>
                         <th>Taken at</th>
-                        <th>Address</th>
+                        <th style="max-width: 15em;">Address</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -39,11 +39,11 @@
                             {{ photo.datetime }}
                         </td>
 
-                        <td>
+                        <td style="max-width: 15em;">
                             {{ photo.display_name }}
                         </td>
 
-                        <td>
+                        <td class="centre-table-buttons">
                             <!-- Copy Link Button -->
                             <button @click="copyLinkToClipboard(photo)">
                                 Copy Link
@@ -277,6 +277,11 @@ export default {
 
     .pagination span {
         color: #333;
+    }
+
+    .centre-table-buttons {
+        text-align: center;
+        vertical-align: middle;
     }
 
     /* Responsive adjustments */
