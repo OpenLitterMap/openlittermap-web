@@ -438,6 +438,18 @@ export default {
                     title: 'GENII: A graph neural network-based model for citywide litter prediction leveraging crowdsensing data',
                     link: 'https://www.sciencedirect.com/science/article/abs/pii/S0957417423020675',
                     author: 'Wang et al'
+                },
+                {
+                    date: '2024/03/02',
+                    title: 'Application Research of Waterborne Plastic Waste Recycling Device Based on Green Design Principles ',
+                    link: 'https://ebooks.iospress.nl/doi/10.3233/FAIA231470',
+                    author: 'Zheng & Biao'
+                },
+                {
+                    date: '2024/03/19',
+                    title: 'AI-enhanced Collective Intelligence: The State of the Art and Prospects',
+                    link: 'https://arxiv.org/pdf/2403.10433.pdf',
+                    author: 'Cui & Yasseri'
                 }
             ]
         };
