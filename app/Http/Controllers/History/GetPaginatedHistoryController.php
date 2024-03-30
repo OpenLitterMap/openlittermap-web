@@ -27,15 +27,12 @@ class GetPaginatedHistoryController extends Controller
             return $currentPage;
         });
 
-        $countryId = ($request->filterCountry === 'all')
-            ? null
-            : $request->filterCountry;
-
         $query = Photo::query()
             ->where('verified', 2);
 
-        if ($countryId) {
-            $query->where('country_id', $countryId);
+        // "all" or "countryId"
+        if ($request->filterCountry !== 'all') {
+            $query->where('country_id', $request->filterCountry);
         }
 
         // Filter by date range
@@ -70,12 +67,9 @@ class GetPaginatedHistoryController extends Controller
             ->orderBy('id', 'desc')
             ->paginate($request->paginationAmount);
 
-        $count = $query->count();
-
         return response()->json([
             'success' => true,
-            'photos' => $photos,
-            'count' => $count
+            'photos' => $photos
         ]);
     }
 }

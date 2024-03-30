@@ -1,6 +1,9 @@
 <template>
     <div class="uploads-container">
-        <h3 class="uploads-title">{{ this.title }}</h3>
+        <h3 class="uploads-title">
+            {{ this.title }}
+            <span> ({{ this.paginatedPhotos.total }})</span>
+        </h3>
 
         <FilterPhotos
             :action="this.action"
