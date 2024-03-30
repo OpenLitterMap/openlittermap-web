@@ -63,7 +63,8 @@ class GetPaginatedHistoryController extends Controller
             $q->whereNotIn('tag', $notInclude);
         });
 
-        $photos = $query->with('customTags')
+        $photos = $query->whereHas('customTags')
+            ->with('customTags')
             ->orderBy('id', 'desc')
             ->paginate($request->paginationAmount);
 
