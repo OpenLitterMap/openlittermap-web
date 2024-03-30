@@ -70,9 +70,12 @@ class GetPaginatedHistoryController extends Controller
             ->orderBy('id', 'desc')
             ->paginate($request->paginationAmount);
 
+        $count = $query->count();
+
         return response()->json([
             'success' => true,
-            'photos' => $photos
+            'photos' => $photos,
+            'count' => $count
         ]);
     }
 }
