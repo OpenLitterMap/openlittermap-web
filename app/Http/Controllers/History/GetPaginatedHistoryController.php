@@ -14,63 +14,61 @@ class GetPaginatedHistoryController extends Controller
     /**
      * Get a paginated response of all available verified data
      *
+     * Todo - validate the request
+     *
      * @param Request $request
      * @return JsonResponse
      */
     public function __invoke (Request $request): JsonResponse
     {
-        // Todo - validate the request
-
-        $currentPage = $request->input('loadPage', 1); // Default to page 1 if not provided
+        // Default to page 1 if not provided
+        $currentPage = $request->input('loadPage', 1);
 
         Paginator::currentPageResolver(function () use ($currentPage) {
             return $currentPage;
         });
 
         $query = Photo::query()
-            ->where('verified', '>=', 2);
 
-        // "all" or "countryId"
-        if ($request->filterCountry !== 'all') {
-            $query->where('country_id', $request->filterCountry);
-        }
+            ->where('verified', '>=', 2)
 
-        // Filter by date range
-        if ($request->filterDateFrom) {
-            $query->whereDate('created_at', '>=', $request->filterDateFrom);
-        }
+            ->when($request->filterCountry !== 'all', function ($q) use ($request) {
+                $q->where('country_id', $request->filterCountry);
+            })
 
-        if ($request->filterDateTo) {
-            $query->whereDate('created_at', '<=', $request->filterDateTo);
-        }
+            ->when($request->filterDateFrom, function ($q) use ($request) {
+                $q->whereDate('created_at', '>=', $request->filterDateFrom);
+            })
 
-        // Filter by tags: needs improvement to search by category, item, quantity
-        // instead of looking at the result_string, we should be looking at the photos relationships
-        if ($request->filterTag) {
-            $query->where('result_string', 'like', '%' . $request->filterTag . '%');
-        }
+            ->when($request->filterDateTo, function ($q) use ($request) {
+                $q->whereDate('created_at', '<=', $request->filterDateTo);
+            })
 
-        if ($request->filterCustomTag) {
-            $customTag = $request->filterCustomTag;
+            // Filter by tags: needs improvement to search by category, item, quantity
+            // instead of looking at the result_string, we should be looking at the photos relationships
+            ->when($request->filterTag, function ($q) use ($request) {
+                $q->where('result_string', 'like', '%' . $request->filterTag . '%');
+            })
 
-            $query->whereHas('customTags', function ($q) use ($customTag) {
-                $q->where('tag', 'like', '%' . $customTag . '%');
+            ->when($request->filterCustomTag, function ($q) use ($request) {
+                $q->whereHas('customTags', function ($q) use ($request) {
+                    $q->where('tag', 'like', '%' . $request->filterCustomTag . '%');
+                });
             });
-        }
+
 
         $notInclude = CustomTag::notIncludeTags();
-        $query->whereHas('customTags', function ($q) use ($notInclude) {
-            $q->whereNotIn('tag', $notInclude);
+        $query->whereDoesntHave('customTags', function ($q) use ($notInclude) {
+            $q->whereIn('tag', $notInclude);
         });
 
         $count = $query->count();
 
-        $photos = $query->whereHas('customTags')
-            ->with('customTags')
-            ->orderBy('id', 'desc')
-            ->paginate($request->paginationAmount);
-
-        \Log::info($query->toSql());
+        $photos = $query->with(['customTags' => function ($query) use ($notInclude) {
+            $query->whereNotIn('tag', $notInclude);
+        }])
+        ->orderBy('id', 'desc')
+        ->paginate($request->paginationAmount);
 
         return response()->json([
             'success' => true,
