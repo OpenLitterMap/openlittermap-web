@@ -12,6 +12,7 @@ class GetListOfCountriesController extends Controller
     {
         $countries = Country::select('id', 'manual_verify', 'country', 'shortcode', 'updated_at')
             ->where('manual_verify', true)
+            ->orderBy('country', 'asc')
             ->get();
 
         // don't load these fields
