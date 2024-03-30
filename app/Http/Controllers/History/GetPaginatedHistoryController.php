@@ -70,7 +70,7 @@ class GetPaginatedHistoryController extends Controller
             ->orderBy('id', 'desc')
             ->paginate($request->paginationAmount);
 
-        \Log::info($query->toSql())
+        \Log::info($query->toSql());
 
         return response()->json([
             'success' => true,
