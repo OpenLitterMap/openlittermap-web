@@ -28,7 +28,7 @@ class GetPaginatedHistoryController extends Controller
         });
 
         $query = Photo::query()
-            ->where('verified', 2);
+            ->where('verified', '>=', 2);
 
         // "all" or "countryId"
         if ($request->filterCountry !== 'all') {
@@ -69,6 +69,8 @@ class GetPaginatedHistoryController extends Controller
             ->with('customTags')
             ->orderBy('id', 'desc')
             ->paginate($request->paginationAmount);
+
+        \Log::info($query->toSql())
 
         return response()->json([
             'success' => true,
