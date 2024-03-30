@@ -24,6 +24,14 @@ export const mutations = {
         state.littercoin = payload.littercoin;
     },
 
+    /**
+     * Get a list of all countries for the History page
+     */
+    setCountryNames (state, payload)
+    {
+        state.countryNames = payload;
+    },
+
     setGlobalLeaders (state, payload)
     {
         state.globalLeaders = payload;

@@ -34,6 +34,8 @@ export default {
     async created () {
         await this.$store.dispatch('GET_ALL_PHOTOS_PAGINATED');
 
+        await this.$store.dispatch('GET_LIST_OF_COUNTRY_NAMES');
+
         this.loading = false;
     },
     computed: {

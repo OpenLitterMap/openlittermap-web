@@ -20,5 +20,8 @@ export const init = {
 
     // For WorldCup, SortLocations, components
     selectedLocationId: 0,
-    locationTabKey: 0
+    locationTabKey: 0,
+
+    // For History page
+    countryNames: []
 };

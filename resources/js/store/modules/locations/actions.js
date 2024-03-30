@@ -108,8 +108,23 @@ export const actions = {
             });
     },
 
+    async GET_LIST_OF_COUNTRY_NAMES (context)
+    {
+        await axios.get('/countries/names')
+            .then(response => {
+                console.log('get_list_of_country_names', response);
+
+                if (response.data.success) {
+                    context.commit('setCountryNames', response.data.countries);
+                }
+            })
+            .catch(error => {
+                console.log('error.get_list_of_country_names', error);
+            });
+    },
+
     /**
-     * Get all countries data + global metadata
+     * Get all countries data + global metadata for the world cup page
      */
     async GET_COUNTRIES (context)
     {

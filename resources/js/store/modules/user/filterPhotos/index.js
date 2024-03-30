@@ -7,6 +7,7 @@ const state = {
     filterResultString: '',
     filterTag: '',
     filterCustomTag: '',
+    filterCountry: 'all',
     paginationAmount: 25
 };
 

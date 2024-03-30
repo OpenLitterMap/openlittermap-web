@@ -4,6 +4,7 @@
 
         <FilterPhotos
             :action="this.action"
+            parent="global"
         />
 
         <div class="table-wrapper">

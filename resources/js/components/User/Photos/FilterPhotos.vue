@@ -56,6 +56,27 @@
             />
         </div>
 
+        <div
+            v-if="parent === 'global'"
+            class="filter-item"
+        >
+            <label for="filterCountry">
+                Country
+            </label>
+            <select
+                class="input"
+                v-model="filterCountry"
+            >
+                <option value="all" selected>All</option>
+
+                <option
+                    v-for="country in countries"
+                    :key="country.id"
+                    :value="country.id"
+                >{{ country.country }}</option>
+            </select>
+        </div>
+
         <div class="filter-item">
             <label for="uploadedTo">
                 Amount
@@ -82,14 +103,24 @@
 export default {
     name: "FilterPhotos",
     props: [
-        'action'
+        'action',
+        'parent'
     ],
     methods: {
+        /**
+         * Actions include
+         * - GET_MY_PHOTOS
+         * - GET_ALL_PHOTOS_PAGINATED
+         */
         async getData () {
             await this.$store.dispatch(this.action);
         }
     },
     computed: {
+        countries () {
+            return this.$store.state.locations.countryNames;
+        },
+
         filterTag: {
             get () {
                 return this.$store.state.user.filterPhotos.filterTag;
@@ -123,6 +154,15 @@ export default {
             },
             set (v) {
                 this.$store.commit('setFilterDateTo', v);
+            }
+        },
+
+        filterCountry: {
+            get () {
+                return this.$store.state.user.filterPhotos.filterCountry;
+            },
+            set (v) {
+                this.$store.commit('setFilterCountry', v);
             }
         },
 

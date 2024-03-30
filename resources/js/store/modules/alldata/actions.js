@@ -11,6 +11,7 @@ export const actions = {
                 filterCustomTag: context.rootState.user.filterPhotos.filterCustomTag,
                 filterDateFrom: context.rootState.user.filterPhotos.filterDateFrom,
                 filterDateTo: context.rootState.user.filterPhotos.filterDateTo,
+                filterCountry: context.rootState.user.filterPhotos.filterCountry,
                 paginationAmount: context.rootState.user.filterPhotos.paginationAmount,
                 loadPage: payload
             }

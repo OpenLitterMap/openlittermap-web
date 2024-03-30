@@ -16,6 +16,10 @@ export const mutations = {
         state.filterDateTo = payload;
     },
 
+    setFilterCountry (state, payload) {
+        state.filterCountry = payload;
+    },
+
     setFilterPhotosPaginationAmount (state, payload) {
         state.paginationAmount = payload;
     }

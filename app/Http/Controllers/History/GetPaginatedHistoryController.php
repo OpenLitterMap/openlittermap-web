@@ -27,8 +27,16 @@ class GetPaginatedHistoryController extends Controller
             return $currentPage;
         });
 
+        $countryId = ($request->filterCountry === 'all')
+            ? null
+            : $request->filterCountry;
+
         $query = Photo::query()
             ->where('verified', 2);
+
+        if ($countryId) {
+            $query->where('country_id', $countryId);
+        }
 
         // Filter by date range
         if ($request->filterDateFrom) {
