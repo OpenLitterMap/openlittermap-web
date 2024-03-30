@@ -59,7 +59,7 @@ class GetPaginatedHistoryController extends Controller
         });
 
         $photos = $query->with('customTags')
-            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
             ->paginate($request->paginationAmount);
 
         return response()->json([
