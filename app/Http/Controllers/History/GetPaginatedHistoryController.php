@@ -63,6 +63,8 @@ class GetPaginatedHistoryController extends Controller
             $q->whereNotIn('tag', $notInclude);
         });
 
+        $count = $query->count();
+
         $photos = $query->whereHas('customTags')
             ->with('customTags')
             ->orderBy('id', 'desc')
@@ -70,7 +72,8 @@ class GetPaginatedHistoryController extends Controller
 
         return response()->json([
             'success' => true,
-            'photos' => $photos
+            'photos' => $photos,
+            'count' => $count
         ]);
     }
 }
