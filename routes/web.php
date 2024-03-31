@@ -44,7 +44,6 @@ Route::post('/stripe/resubscribe', 'StripeController@resubscribe');
 Route::get('location', 'Location\LocationsController@index');
 
 // Route::get('countries', 'Location\LocationsController@getCountries');
-
 Route::get('/countries/names', 'Location\GetListOfCountriesController');
 Route::get('/get-world-cup-data', 'WorldCup\GetDataForWorldCupController');
 

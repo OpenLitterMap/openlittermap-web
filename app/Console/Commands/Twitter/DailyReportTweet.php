@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\Twitter;
 
+use App\Models\CustomTag;
 use Carbon\Carbon;
 use App\Models\Photo;
 use Spatie\Emoji\Emoji;
@@ -42,6 +43,10 @@ class DailyReportTweet extends Command
             ->whereDate('created_at', '<=', $endOfYesterday)
             ->sum('total_litter');
 
+        $tags += CustomTag::whereDate('created_at', '>=', $startOfYesterday)
+            ->whereDate('created_at', '<=', $endOfYesterday)
+            ->count();
+
         // new locations
 
         // total littercoin
@@ -53,6 +58,10 @@ class DailyReportTweet extends Command
         $photos = Photo::select('id', 'created_at', 'country_id', 'total_litter')
             ->whereDate('created_at', '>=', $startOfYesterday)
             ->whereDate('created_at', '<=', $endOfYesterday)
+            ->orWhereHas('customTags', function ($query) use ($startOfYesterday, $endOfYesterday) {
+                $query->whereDate('created_at', '>=', $startOfYesterday)
+                    ->whereDate('created_at', '<=', $endOfYesterday);
+            })
             ->get();
 
         $countryIds = [];
