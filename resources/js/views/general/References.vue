@@ -450,6 +450,18 @@ export default {
                     title: 'AI-enhanced Collective Intelligence: The State of the Art and Prospects',
                     link: 'https://arxiv.org/pdf/2403.10433.pdf',
                     author: 'Cui & Yasseri'
+                },
+                {
+                    date: '2024/04/25',
+                    title: 'A Review on Open Data Storage and Retrieval Techniques in Blockchain-based Applications',
+                    link: 'https://ieeexplore.ieee.org/abstract/document/10533356',
+                    author: 'Fateminasab et al'
+                },
+                {
+                    date: '2024/04/30',
+                    title: 'Identifying E-Governance Approaches And Their Potential To Support Progress Toward The EU Green Deal',
+                    link: 'https://edepot.wur.nl/659247',
+                    author: 'Kogut et al'
                 }
             ]
         };
