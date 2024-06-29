@@ -15,6 +15,7 @@
         "anhskohbo/no-captcha": "^3.3",
         "benjamincrozat/laravel-dropbox-driver": "^3.0",
         "doctrine/dbal": "^3.0",
+        "fakerphp/faker": "^1.23",
         "guzzlehttp/guzzle": "^7.2.1",
         "intervention/image": "^2.7",
         "laravel/cashier": "^15.0",

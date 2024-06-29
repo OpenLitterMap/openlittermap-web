@@ -7,7 +7,7 @@ use Tests\TestCase;
 
 class CalculateTagsDifferenceActionTest extends TestCase
 {
-    public function tagsDataProvider(): array
+    public static function tagsDataProvider(): array
     {
         return [
             'add new tag' => [
@@ -53,7 +53,7 @@ class CalculateTagsDifferenceActionTest extends TestCase
         ];
     }
 
-    public function customTagsDataProvider(): array
+    public static function customTagsDataProvider(): array
     {
         return [
             'add new tag' => [

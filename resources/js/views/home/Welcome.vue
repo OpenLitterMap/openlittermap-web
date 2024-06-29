@@ -179,8 +179,8 @@
 </template>
 
 <script>
-import Footer from './Footer';
-import Partners from './Partners';
+import Footer from './Footer.vue';
+import Partners from './Partners.vue';
 
 export default {
     name: 'Welcome',

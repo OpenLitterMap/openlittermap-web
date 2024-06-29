@@ -9,7 +9,7 @@ use Tests\TestCase;
 
 class LitterCategoryTest extends TestCase
 {
-    public function getCategories(): array
+    public static function getCategories(): array
     {
         return array_map(function ($category) {
             return [$category];

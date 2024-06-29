@@ -8,8 +8,7 @@ use Tests\TestCase;
 
 class ToggleLeaderboardVisibilityTest extends TestCase
 {
-
-    public function routeDataProvider(): array
+    public static function routeDataProvider(): array
     {
         return [
             ['/teams/leaderboard/visibility', 'web'],

@@ -25,7 +25,7 @@ class AddCustomTagsToPhotoTest extends TestCase
         $this->imageAndAttributes = $this->getImageAndAttributes();
     }
 
-    public function validationDataProvider(): array
+    public static function validationDataProvider(): array
     {
         return [
             ['tags' => ['tag1', 'Tag1'], 'errors' => ['custom_tags.0', 'custom_tags.1']],// uniqueness

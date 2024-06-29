@@ -1,4 +1,5 @@
-require('./bootstrap');
+import './bootstrap';
+import '../css/app.scss';
 
 import Vue from 'vue';
 import axios from 'axios';
@@ -12,14 +13,14 @@ import 'sweetalert2/dist/sweetalert2.min.css';
 import VueToastify from 'vue-toastify';
 // import VueMask from 'v-mask' // needed to cancel some error on CreditCard.vue which we are not yet using
 import VueNumber from 'vue-number-animation';
-import VueEcho from 'vue-echo-laravel';
+// import VueEcho from 'vue-echo-laravel';
 import Buefy from 'buefy';
 import fullscreen from 'vue-fullscreen';
 import LaravelPermissionToVueJS from 'laravel-permission-to-vuejs';
 import VueImg from 'v-img';
 import VueTypedJs from 'vue-typed-js'
 
-import RootContainer from './views/RootContainer';
+import RootContainer from './views/RootContainer.vue';
 
 // assign global variables
 window.axios = axios;
@@ -34,11 +35,11 @@ Vue.use(VueToastify, {
 });
 // Vue.use(VueMask)
 Vue.use(VueNumber);
-Vue.use(VueEcho, window.Echo);
+// Vue.use(VueEcho, window.Echo);
 Vue.use(fullscreen);
-Vue.use(LaravelPermissionToVueJS);
 Vue.use(VueImg);
 Vue.use(VueTypedJs);
+Vue.use(LaravelPermissionToVueJS);
 
 // Format a number with commas: "10,000"
 Vue.filter('commas', value => {

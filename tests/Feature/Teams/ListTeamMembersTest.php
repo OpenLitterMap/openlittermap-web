@@ -8,8 +8,7 @@ use Tests\TestCase;
 
 class ListTeamMembersTest extends TestCase
 {
-
-    public function routeDataProvider(): array
+    public static function routeDataProvider(): array
     {
         return [
             ['guard' => 'web', 'route' => 'teams/members'],

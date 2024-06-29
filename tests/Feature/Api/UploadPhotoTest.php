@@ -239,7 +239,7 @@ class UploadPhotoTest extends TestCase
     }
 
 
-    public function validationDataProvider(): array
+    public static function validationDataProvider(): array
     {
         return [
             [

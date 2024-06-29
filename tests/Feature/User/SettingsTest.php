@@ -7,7 +7,7 @@ use Tests\TestCase;
 
 class SettingsTest extends TestCase
 {
-    public function settingsDataProvider(): array
+    public static function settingsDataProvider(): array
     {
         return [
             'twitter not link' => [['social_twitter' => 'not url'], ['social_twitter']],
@@ -19,7 +19,7 @@ class SettingsTest extends TestCase
         ];
     }
 
-    public function routeDataProvider(): array
+    public static function routeDataProvider(): array
     {
         return [
             'web' => ['guard' => 'web', 'route' => '/settings'],
