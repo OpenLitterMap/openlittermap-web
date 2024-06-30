@@ -774,6 +774,9 @@ export default {
 
 <style>
 
+    @import 'leaflet/dist/leaflet.css';
+
+
     #openlittermap {
         height: 100%;
         margin: 0;

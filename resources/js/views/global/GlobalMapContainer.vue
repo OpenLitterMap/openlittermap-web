@@ -84,8 +84,6 @@ export default {
 </script>
 
 <style scoped>
-    @import '~leaflet/dist/leaflet.css';
-
     .global-map-container {
         height: calc(100% - 72px);
         margin: 0;
