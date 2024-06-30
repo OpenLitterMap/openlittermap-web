@@ -69,13 +69,13 @@
 <script>
 let sortBy = require('lodash.sortby')
 
-import LocationNavbar from '../../components/Locations/LocationNavBar'
-import LocationMetadata from '../../components/Locations/LocationMetadata'
-import ChartsContainer from '../../components/Locations/Charts/PieCharts/ChartsContainer'
-import TimeSeriesContainer from '../../components/Locations/Charts/TimeSeries/TimeSeriesContainer'
-import LeaderboardList from '../../components/global/LeaderboardList';
-import Options from '../../components/Locations/Charts/Options/Options'
-import Download from '../../components/Locations/Charts/Download/Download'
+import LocationNavbar from '../../components/Locations/LocationNavBar.vue'
+import LocationMetadata from '../../components/Locations/LocationMetadata.vue'
+import ChartsContainer from '../../components/Locations/Charts/PieCharts/ChartsContainer.vue'
+import TimeSeriesContainer from '../../components/Locations/Charts/TimeSeries/TimeSeriesContainer.vue'
+import LeaderboardList from '../../components/global/LeaderboardList.vue'
+import Options from '../../components/Locations/Charts/Options/Options.vue'
+import Download from '../../components/Locations/Charts/Download/Download.vue'
 
 export default {
     name: 'SortLocations',

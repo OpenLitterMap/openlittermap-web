@@ -25,7 +25,7 @@
 </template>
 
 <script>
-import TimeSeries from './TimeSeries'
+import TimeSeries from './TimeSeries.vue'
 
 export default {
     name: 'TimeSeriesContainer',
