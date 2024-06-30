@@ -330,7 +330,7 @@ export default {
             zoom: MIN_ZOOM,
             scrollWheelZoom: false,
             smoothWheelZoom: true,
-            smoothSensitivity: 1,
+            smoothSensitivity: 2
         });
 
         map.scrollWheelZoom = true;

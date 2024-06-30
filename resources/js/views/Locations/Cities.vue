@@ -23,14 +23,13 @@
 </template>
 
 <script>
-import SortLocations from './SortLocations'
+import SortLocations from './SortLocations.vue'
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
 
 export default {
     name: 'Cities',
-    async created ()
-    {
+    async created () {
         this.loading = true;
 
         await this.$store.dispatch('GET_CITIES', {

@@ -9,7 +9,7 @@
                         <h1 class="main-title variable-height"
                             :key="activeHeading.title"
                             v-html="activeHeading.title"
-                        ></h1>.
+                        ></h1>
                     </transition>
                     <h2 class="subtitle is-3 home-img-padding">
                         {{ $t('home.welcome.help-us') }}.
@@ -18,13 +18,13 @@
                     <!-- Download app icons -->
                     <div class="flex">
                         <img
-                            src="/assets/icons/ios.png"
+                            src="../../assets/icons/ios.png"
                             class="app-icon"
                             style="margin-right: 1em;"
                             @click="ios"
                         />
                         <img
-                            src="/assets/icons/android.png"
+                            src="../../assets/icons/android.png"
                             class="app-icon"
                             @click="android"
                         />
@@ -53,7 +53,7 @@
                 <div class="columns welcome-mb">
                     <div class="column is-one-quarter icon-center has-text-centered">
                         <img
-                            src="/assets/icons/home/world.png"
+                            src="../../assets/icons/home/world.png"
                             class="about-icon"
                         />
                     </div>
@@ -71,7 +71,7 @@
                 <div class="columns welcome-mb">
                     <div class="column is-one-quarter icon-center has-text-centered">
                         <img
-                            src="/assets/icons/home/microscope.png"
+                            src="../../assets/icons/home/microscope.png"
                             class="about-icon"
                         />
                     </div>
@@ -89,7 +89,7 @@
                 <div class="columns welcome-mb">
                     <div class="column is-one-quarter icon-center has-text-centered">
                         <img
-                            src="/assets/icons/home/tree.png"
+                            src="../../assets/icons/home/tree.png"
                             class="about-icon"
                         />
                     </div>
@@ -114,7 +114,7 @@
                 <div class="columns welcome-mb">
                     <div class="column is-one-quarter icon-center has-text-centered">
                         <img
-                            src="/assets/icons/home/camera.png"
+                            src="../../assets/icons/home/camera.png"
                             class="about-icon"
                         />
                     </div>
@@ -132,7 +132,7 @@
                 <div class="columns welcome-mb">
                     <div class="column is-one-quarter icon-center has-text-centered">
                         <img
-                            src="/assets/icons/home/phone.png"
+                            src="../../assets/icons/home/phone.png"
                             class="about-icon"
                         />
                     </div>
@@ -150,7 +150,7 @@
                 <div class="columns welcome-mb">
                     <div class="column is-one-quarter icon-center has-text-centered">
                         <img
-                            src="/assets/icons/twitter2.png"
+                            src="../../assets/icons/twitter2.png"
                             class="about-icon"
                         />
                     </div>

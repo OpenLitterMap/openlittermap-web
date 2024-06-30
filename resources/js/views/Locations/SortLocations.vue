@@ -67,7 +67,7 @@
 </template>
 
 <script>
-let sortBy = require('lodash.sortby')
+import sortBy from 'lodash.sortby'
 
 import LocationNavbar from '../../components/Locations/LocationNavBar.vue'
 import LocationMetadata from '../../components/Locations/LocationMetadata.vue'

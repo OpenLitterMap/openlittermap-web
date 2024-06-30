@@ -4,7 +4,7 @@
         <section class="section">
             <div class="columns">
                 <div class="column is-one-third is-offset-1" style="text-align: center;">
-                    <img src="/assets/butts.jpg" />
+                    <img src="../../assets/butts.jpg" />
                 </div>
 
                 <div class="column cig-2">
@@ -27,7 +27,7 @@
                 </div>
 
                 <div class="column is-offset-1 butts-img">
-                    <img src="/assets/cigbutts_jar.jpg" style="height: 600px;">
+                    <img src="../../assets/cigbutts_jar.jpg" style="height: 600px;">
                 </div>
             </div>
         </section>
@@ -55,33 +55,33 @@
         <div class="has-text-centered pt3">
             <h1 class="title is-1">1. {{ $t('home.about.about9a') }}</h1>
 
-            <img src="/assets/about/iphone.PNG" />
+            <img src="../../assets/about/iphone.PNG" />
         </div>
 
         <!-- 2. Tag it with our app -->
         <div class="has-text-centered pt3">
             <h1 class="title is-1">2. {{ $t('home.about.about9b') }}</h1>
 
-            <img src="/assets/about/facemask-tag.PNG" />
+            <img src="../../assets/about/facemask-tag.png" />
         </div>
 
         <!-- 3. Upload it -->
         <div class="has-text-centered pt3">
             <h1 class="title is-1">3. {{ $t('home.about.about9c') }}</h1>
 
-            <img src="/assets/about/facemask-map.PNG" />
+            <img src="../../assets/about/facemask-map.png" />
         </div>
 
         <!-- Download app icons -->
         <div class="flex jc pt3">
             <img
-                src="/assets/icons/ios.png"
+                src="../../assets/icons/ios.png"
                 class="app-icon"
                 style="margin-right: 1em;"
                 @click="ios"
             />
             <img
-                src="/assets/icons/android.png"
+                src="../../assets/icons/android.png"
                 class="app-icon"
                 @click="android"
             />
@@ -97,7 +97,7 @@
                 </div>
 
                 <div class="column is-one-third is-offset-1" style="padding-top: 4em; padding-bottom: 4em; margin:auto;">
-                    <img src="/assets/plastic_bottles.jpg" style="">
+                    <img src="../../assets/plastic_bottles.jpg" style="">
                 </div>
             </div>
         </section>
@@ -110,7 +110,7 @@
                         {{ $t('home.about.about12') }}
                     </h1>
 
-                    <img src="/assets/cigbutts.jpg">
+                    <img src="../../assets/cigbutts.jpg">
 
                     <h1 class="title is-1 has-text-right">
                         {{ $t('home.about.about13') }}
@@ -144,7 +144,7 @@
                                     <a href="https://openlittermap.com/world/The%20Netherlands/Zuid-Holland/Wassenaar/map">https://openlittermap.com/world/The%20Netherlands/Zuid-Holland/Wassenaar/map</a>
                                     <br>
                                     <br>
-                                    <img src="/assets/nlbrands.png">
+                                    <img src="../../assets/nlbrands.png">
                                     <!-- </figure> -->
                                     <br>
                                     <br>
@@ -193,12 +193,12 @@
         </div>
 
         <div class="container" style="padding-bottom:5em; text-align: center;">
-            <img src="/assets/marinelitter.jpg" />
+            <img src="../../assets/marinelitter.jpg" />
             <p style="padding-bottom: 3em;">Dublin, Ireland.</p>
             <h1 class="title is-1" style="color: black; text-align: center;">
                 <strong style="color: red;">{{ $t('home.about.about302') }}</strong>
             </h1>
-            <img src="/assets/microplastics_oranmore.JPG" />
+            <img src="../../assets/microplastics_oranmore.jpg" />
             <p>Microplastics in Oranmore, Co. Galway.</p>
         </div>
 
@@ -210,13 +210,13 @@
             <br>
         </div>
 
-        <img src="/assets/urban.JPG" style="padding-bottom: 1em;">
+        <img src="../../assets/urban.jpg" style="padding-bottom: 1em;">
         <p style="padding-bottom: 5em; text-align: center;">Penrose Wharf, Cork City, Ireland (above)</p>
 
         <div style="text-align: center;">
-            <img src="/assets/IMG_0554.JPG" style="padding-bottom: 2em;">
+            <img src="../../assets/IMG_0554.jpg" style="padding-bottom: 2em;">
             <p style="padding-bottom: 5em; text-align: center;">Accra, Capital of Ghana, North-Western Coast of Africa <a href="https://www.facebook.com/nshorena/posts/1652239435009949">more photos on facebook</a></p>
-            <img src="/assets/IMG_0556.JPG" style="padding-bottom: 2em;">
+            <img src="../../assets/IMG_0556.jpg" style="padding-bottom: 2em;">
             <p style="padding-bottom: 5em;">{{ $t('home.about.about32') }}</p>
         </div>
 

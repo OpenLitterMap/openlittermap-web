@@ -20,8 +20,8 @@
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
 
-import GlobalMetaData from '../../components/Locations/GlobalMetaData';
-import SortLocations from './SortLocations'
+import GlobalMetaData from '../../components/Locations/GlobalMetaData.vue'
+import SortLocations from './SortLocations.vue'
 
 export default {
     name: 'Countries',

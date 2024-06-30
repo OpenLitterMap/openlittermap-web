@@ -10,7 +10,7 @@
 </template>
 
 <script>
-import Supercluster from "../../../views/global/Supercluster";
+import Supercluster from "../../../views/global/Supercluster.vue"
 
 export default {
     name: "MerchantMap",

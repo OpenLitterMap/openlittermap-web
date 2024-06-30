@@ -9,14 +9,14 @@
 
         <div v-for="(leader, index) in leaders" class="leader wow slideInLeft">
             <div v-if="leader.rank" class="medal">
-                <img v-if="leader.rank === 1" src="/assets/icons/gold-medal-2.png" alt="Gold spot">
-                <img v-if="leader.rank === 2" src="/assets/icons/silver-medal-2.png" alt="Silver spot">
-                <img v-if="leader.rank === 3" src="/assets/icons/bronze-medal-2.png" alt="Bronze spot">
+                <img v-if="leader.rank === 1" src="../../assets/icons/gold-medal-2.png" alt="Gold spot">
+                <img v-if="leader.rank === 2" src="../../assets/icons/silver-medal-2.png" alt="Silver spot">
+                <img v-if="leader.rank === 3" src="../../assets/icons/bronze-medal-2.png" alt="Bronze spot">
             </div>
             <div v-else class="medal">
-                <img v-if="index === 0" src="/assets/icons/gold-medal-2.png" alt="Gold spot">
-                <img v-if="index === 1" src="/assets/icons/silver-medal-2.png" alt="Silver spot">
-                <img v-if="index === 2" src="/assets/icons/bronze-medal-2.png" alt="Bronze spot">
+                <img v-if="index === 0" src="../../assets/icons/gold-medal-2.png" alt="Gold spot">
+                <img v-if="index === 1" src="../../assets/icons/silver-medal-2.png" alt="Silver spot">
+                <img v-if="index === 2" src="../../assets/icons/bronze-medal-2.png" alt="Bronze spot">
             </div>
             <div class="rank">
                 <span v-if="leader.rank">{{ getPosition(leader.rank) }}</span>

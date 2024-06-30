@@ -4,7 +4,7 @@
             <h3 class="title is-3">{{ $t('home.donate.olm-dependent-on-donations') }}</h3>
             <br>
             <img
-                src="/assets/IMG_0556.JPG"
+                src="../../assets/IMG_0556.JPG"
                 style="height: 450px; display: block; margin: auto; object-fit: cover;"
                 alt="It's important"
                 title="It's important"
@@ -27,7 +27,7 @@
 </template>
 
 <script>
-import DonateButtons from '../../components/DonateButtons'
+import DonateButtons from '../../components/DonateButtons.vue'
 
 export default {
     name: 'Donate',

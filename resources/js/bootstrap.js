@@ -22,6 +22,8 @@ if (token) {
 // import Echo from 'laravel-echo';
 const Echo = import('laravel-echo');
 
+// console.log({ Echo });
+
 window.Pusher = import('pusher-js');
 
 // let useTLSOverride = process.env.MIX_WEBSOCKET_USE_TLS == "true" ? true : false
@@ -41,3 +43,11 @@ window.Pusher = import('pusher-js');
 //     encrypted: false,
 //     enabledTransports: ['ws', 'wss']
 // });
+
+/**
+ * Echo exposes an expressive API for subscribing to channels and listening
+ * for events that are broadcast by Laravel. Echo and event broadcasting
+ * allow your team to quickly build robust real-time web applications.
+ */
+
+import './echo';

@@ -5,7 +5,7 @@
     >
         <template v-slot:image>
             <div class="flex items-center h-full">
-                <img src="/assets/icons/mining.png" class="ltr-icon" alt="Mining"/>
+                <img src="../../assets/icons/mining.png" class="ltr-icon" alt="Mining"/>
             </div>
         </template>
         <template v-slot:content>

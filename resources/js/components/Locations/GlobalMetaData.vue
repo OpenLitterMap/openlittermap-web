@@ -44,9 +44,9 @@
 </template>
 
 <script>
-import TotalGlobalCounts from "../global/TotalGlobalCounts";
-import Progress from "../General/Progress";
-import LeaderboardList from '../global/LeaderboardList'
+import TotalGlobalCounts from "../global/TotalGlobalCounts.vue"
+import Progress from "../General/Progress.vue"
+import LeaderboardList from '../global/LeaderboardList.vue'
 
 export default {
     name: "GlobalMetaData",

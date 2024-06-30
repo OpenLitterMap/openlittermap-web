@@ -9,7 +9,7 @@
 <script>
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
-import CityMap from './CityMap'
+import CityMap from './CityMap.vue'
 
 export default {
     name: 'CityMapContainer',

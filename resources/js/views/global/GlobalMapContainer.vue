@@ -4,7 +4,6 @@
         <loading v-if="loading" :active.sync="loading" :is-full-page="true" />
 
         <supercluster v-else />
-
     </div>
 </template>
 

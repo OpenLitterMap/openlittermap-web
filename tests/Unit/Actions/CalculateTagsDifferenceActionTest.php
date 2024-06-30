@@ -1,6 +1,6 @@
 <?php
 
-namespace Actions;
+namespace Tests\Unit\Actions;
 
 use App\Actions\CalculateTagsDifferenceAction;
 use Tests\TestCase;
