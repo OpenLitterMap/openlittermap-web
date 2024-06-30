@@ -84,7 +84,7 @@
 </template>
 
 <script>
-import FilterPhotos from "../User/Photos/FilterPhotos";
+import FilterPhotos from "../User/Photos/FilterPhotos.vue";
 
 export default {
     name: "LitterTable",

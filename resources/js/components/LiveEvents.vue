@@ -17,14 +17,14 @@
 </template>
 
 <script>
-import ImageUploaded from './Notifications/ImageUploaded';
-import NewCountryAdded from './Notifications/NewCountryAdded';
-import NewStateAdded from './Notifications/NewStateAdded';
-import NewCityAdded from './Notifications/NewCityAdded';
-import UserSignedUp from './Notifications/UserSignedUp';
-import TeamCreated from './Notifications/TeamCreated';
-import LittercoinMined from './Notifications/LittercoinMined';
-import CleanupCreated from "./Notifications/CleanupCreated";
+import ImageUploaded from './Notifications/ImageUploaded.vue';
+import NewCountryAdded from './Notifications/NewCountryAdded.vue';
+import NewStateAdded from './Notifications/NewStateAdded.vue';
+import NewCityAdded from './Notifications/NewCityAdded.vue';
+import UserSignedUp from './Notifications/UserSignedUp.vue';
+import TeamCreated from './Notifications/TeamCreated.vue';
+import LittercoinMined from './Notifications/LittercoinMined.vue';
+import CleanupCreated from "./Notifications/CleanupCreated.vue";
 
 export default {
 	name: 'live-events',

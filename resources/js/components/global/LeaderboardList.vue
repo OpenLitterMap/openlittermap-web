@@ -58,7 +58,7 @@
 
 <script>
 import moment from 'moment';
-import LeaderboardFilters from "../Leaderboards/LeaderboardFilters";
+import LeaderboardFilters from "../Leaderboards/LeaderboardFilters.vue";
 
 export default {
 	name: 'LeaderboardList',

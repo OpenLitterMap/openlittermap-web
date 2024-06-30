@@ -250,10 +250,13 @@
 </template>
 
 <script>
-import BecomeAPartner from "../../components/BecomeAPartner";
+import BecomeAPartner from "../../components/BecomeAPartner.vue";
+
 export default {
     name: "Littercoin",
-    components: {BecomeAPartner},
+    components: {
+        BecomeAPartner
+    },
     data () {
         return {
             loading: true,

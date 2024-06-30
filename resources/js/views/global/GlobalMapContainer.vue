@@ -11,7 +11,7 @@
 <script>
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
-import Supercluster from './Supercluster'
+import Supercluster from './Supercluster.vue'
 
 export default {
     name: 'GlobalMapContainer',

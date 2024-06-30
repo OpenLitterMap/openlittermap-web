@@ -20,7 +20,7 @@
 </template>
 
 <script>
-import GlobalMapNotification from './GlobalMapNotification';
+import GlobalMapNotification from './GlobalMapNotification.vue';
 
 export default {
     name: 'LittercoinMined',
