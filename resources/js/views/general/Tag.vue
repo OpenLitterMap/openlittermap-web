@@ -166,11 +166,11 @@
 import moment from 'moment';
 import Loading from 'vue-loading-overlay';
 import 'vue-loading-overlay/dist/vue-loading.css';
-import AddTags from '../../components/Litter/AddTags';
-import Presence from '../../components/Litter/Presence';
-import Tags from '../../components/Litter/Tags';
-import ProfileDelete from '../../components/Litter/ProfileDelete';
-import RecentTags from '../../components/Litter/RecentTags';
+import AddTags from '../../components/Litter/AddTags.vue';
+import Presence from '../../components/Litter/Presence.vue';
+import Tags from '../../components/Litter/Tags.vue';
+import ProfileDelete from '../../components/Litter/ProfileDelete.vue';
+import RecentTags from '../../components/Litter/RecentTags.vue';
 
 export default {
     name: 'Tag',

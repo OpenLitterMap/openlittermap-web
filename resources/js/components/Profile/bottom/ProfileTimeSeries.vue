@@ -5,7 +5,7 @@
 </template>
 
 <script>
-import TimeSeriesLine from '../../Charts/TimeSeriesLine';
+import TimeSeriesLine from '../../Charts/TimeSeriesLine.vue';
 
 export default {
     name: 'ProfileTimeSeries',

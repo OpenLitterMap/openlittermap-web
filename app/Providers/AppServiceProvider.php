@@ -24,8 +24,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        Validator::replacer('case_diff', function ($message, $attribute, $rule, $parameters) {
-            return str_replace(':attribute', $attribute, 'The :attribute must contain both uppercase and lowercase letters.');
-        });
+        //
     }
 }

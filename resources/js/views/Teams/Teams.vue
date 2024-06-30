@@ -21,12 +21,12 @@
 </template>
 
 <script>
-import TeamsDashboard from './TeamsDashboard'
-import CreateTeam from './CreateTeam'
-import JoinTeam from './JoinTeam'
-import MyTeams from './MyTeams'
-import TeamSettings from './TeamSettings'
-import TeamsLeaderboard from './TeamsLeaderboard'
+import TeamsDashboard from './TeamsDashboard.vue'
+import CreateTeam from './CreateTeam.vue'
+import JoinTeam from './JoinTeam.vue'
+import MyTeams from './MyTeams.vue'
+import TeamSettings from './TeamSettings.vue'
+import TeamsLeaderboard from './TeamsLeaderboard.vue'
 
 export default {
     name: 'Teams',

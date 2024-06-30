@@ -7,7 +7,7 @@
 </template>
 
 <script>
-import LitterTable from "../../components/Litter/LitterTable";
+import LitterTable from "../../components/Litter/LitterTable.vue";
 
 export default {
     name: "MyUploads",
