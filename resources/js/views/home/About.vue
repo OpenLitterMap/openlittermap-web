@@ -55,7 +55,7 @@
         <div class="has-text-centered pt3">
             <h1 class="title is-1">1. {{ $t('home.about.about9a') }}</h1>
 
-            <img src="../../assets/about/iphone.PNG" />
+            <img src="../../assets/about/iphone.png" />
         </div>
 
         <!-- 2. Tag it with our app -->

@@ -35,10 +35,10 @@ export default {
     },
     created ()
     {
-        if (this.$localStorage.get('lang'))
-        {
-            this.$i18n.locale = this.$localStorage.get('lang');
-        }
+        // if (this.$localStorage.get('lang'))
+        // {
+        //     this.$i18n.locale = this.$localStorage.get('lang');
+        // }
 
         if (this.auth)
         {

@@ -1,5 +1,5 @@
 <template>
-	<div class="sidebar-menu scrollbar-hidden">
+	<div class="sidebar-menu scrollbar-hidden" style="background-color: #ccc;">
 		<transition-group name="list" mode="out-in">
 			<span
                 v-for="(event, index) in events"

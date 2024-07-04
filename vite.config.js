@@ -3,6 +3,11 @@ import laravel from 'laravel-vite-plugin';
 import vue from '@vitejs/plugin-vue2'
 
 export default defineConfig({
+    resolve: {
+        alias: {
+            vue: 'vue/dist/vue.esm.js'
+        }
+    },
     plugins: [
         laravel([
             'resources/css/app.scss',
@@ -27,11 +32,6 @@ export default defineConfig({
             },
         }),
     ],
-    // resolve: {
-    //     alias: {
-    //         'vue': 'vue/dist/vue.esm.js',
-    //     },
-    // },
     // server: {
     //     fs: {
     //         // Allow serving files from one level up to the project root
