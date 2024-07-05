@@ -31,7 +31,7 @@
         "chart.js": "^2.9.4",
         "fs": "0.0.1-security",
         "laravel-echo": "^1.16.1",
-        "laravel-permission-to-vuejs": "^3.0.2",
+        "laravel-permission-to-vuejs": "2.0.5",
         "leaflet": "^1.9.4",
         "leaflet-timedimension": "^1.1.1",
         "leaflet-webgl-heatmap": "github:xlcrr/leaflet-webgl-heatmap",
