@@ -49,7 +49,7 @@ jobs:
     steps:
     - uses: shivammathur/setup-php@v2
       with:
-        php-version: '7.3'
+        php-version: '8.2'
         extensions: mbstring, dom, fileinfo, mysql
         # coverage: xdebug #optional
     - uses: actions/checkout@v3
