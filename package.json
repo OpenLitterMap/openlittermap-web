@@ -48,7 +48,7 @@
         "vue-click-outside": "^1.1.0",
         "vue-drag-resize": "^1.4.2",
         "vue-draggable-resizable": "^2.3.0",
-        "vue-echo-laravel": "0.0.6",
+        "vue-echo-laravel": "^1.0.0",
         "vue-fullscreen": "^2.6.1",
         "vue-functional-calendar": "^2.9.99",
         "vue-i18n": "^8.21.0",

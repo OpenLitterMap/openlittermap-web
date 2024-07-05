@@ -1,5 +1,5 @@
 <template>
-	<div class="sidebar-menu scrollbar-hidden" style="background-color: #ccc;">
+	<div class="sidebar-menu scrollbar-hidden">
 		<transition-group name="list" mode="out-in">
 			<span
                 v-for="(event, index) in events"
@@ -38,90 +38,108 @@ export default {
         LittercoinMined,
         CleanupCreated
     },
-    channel: 'main',
-    echo: {
-        'ImageUploaded': (payload, vm) => {
-            vm.events.unshift({
-                id: new Date().getTime(),
-                type: 'ImageUploaded',
-                payload: payload
-            });
-
-            vm.updateDocumentTitle();
-        },
-        'NewCountryAdded': (payload, vm) => {
-            vm.events.unshift({
-                id: new Date().getTime(),
-                type: 'NewCountryAdded',
-                payload: payload
-            });
-
-            vm.updateDocumentTitle();
-        },
-        'NewStateAdded': (payload, vm) => {
-            vm.events.unshift({
-                id: new Date().getTime(),
-                type: 'NewStateAdded',
-                payload: payload
-            });
-
-            vm.updateDocumentTitle();
-        },
-        'NewCityAdded': (payload, vm) => {
-            vm.events.unshift({
-                id: new Date().getTime(),
-                type: 'NewCityAdded',
-                payload: payload
-            });
-
-            vm.updateDocumentTitle();
-        },
-        'UserSignedUp': (payload, vm) => {
-            vm.events.unshift({
-                id: new Date().getTime(),
-                type: 'UserSignedUp',
-                payload: payload
-            });
-
-            vm.updateDocumentTitle();
-        },
-        'TeamCreated': (payload, vm) => {
-            vm.events.unshift({
-                id: new Date().getTime(),
-                type: 'TeamCreated',
-                payload: payload
-            });
-
-            vm.updateDocumentTitle();
-        },
-        '.App\\Events\\Littercoin\\LittercoinMined': (payload, vm) => {
-            vm.events.unshift({
-                id: new Date().getTime(),
-                type: 'LittercoinMined',
-                payload: payload
-            });
-
-            vm.updateDocumentTitle();
-        },
-        '.App\\Events\\Cleanups\\CleanupCreated': (payload, vm) => {
-            vm.events.unshift({
-                id: new Date().getTime(),
-                type: 'CleanupCreated',
-                payload: payload
-            });
-
-            vm.updateDocumentTitle();
-        }
-    },
-	data ()
-    {
-		return {
-			events: [],
+    data () {
+        return {
+            events: [],
             clicks: 0,
             timer: null
-		};
-	},
+        };
+    },
+    channel: 'main',
+    created () {
+        this.listenForEvents();
+    },
+    // echo: {
+    //     'ImageUploaded': (payload, vm) => {
+    //         vm.events.unshift({
+    //             id: new Date().getTime(),
+    //             type: 'ImageUploaded',
+    //             payload: payload
+    //         });
+    //
+    //         vm.updateDocumentTitle();
+    //     },
+    //     'NewCountryAdded': (payload, vm) => {
+    //         vm.events.unshift({
+    //             id: new Date().getTime(),
+    //             type: 'NewCountryAdded',
+    //             payload: payload
+    //         });
+    //
+    //         vm.updateDocumentTitle();
+    //     },
+    //     'NewStateAdded': (payload, vm) => {
+    //         vm.events.unshift({
+    //             id: new Date().getTime(),
+    //             type: 'NewStateAdded',
+    //             payload: payload
+    //         });
+    //
+    //         vm.updateDocumentTitle();
+    //     },
+    //     'NewCityAdded': (payload, vm) => {
+    //         vm.events.unshift({
+    //             id: new Date().getTime(),
+    //             type: 'NewCityAdded',
+    //             payload: payload
+    //         });
+    //
+    //         vm.updateDocumentTitle();
+    //     },
+    //     'UserSignedUp': (payload, vm) => {
+    //         this.addEvent('UserSignedUp', payload);
+    //     },
+    //     'TeamCreated': (payload, vm) => {
+    //         vm.events.unshift({
+    //             id: new Date().getTime(),
+    //             type: 'TeamCreated',
+    //             payload: payload
+    //         });
+    //
+    //         vm.updateDocumentTitle();
+    //     },
+    //     '.App\\Events\\Littercoin\\LittercoinMined': (payload, vm) => {
+    //         vm.events.unshift({
+    //             id: new Date().getTime(),
+    //             type: 'LittercoinMined',
+    //             payload: payload
+    //         });
+    //
+    //         vm.updateDocumentTitle();
+    //     },
+    //     '.App\\Events\\Cleanups\\CleanupCreated': (payload, vm) => {
+    //         vm.events.unshift({
+    //             id: new Date().getTime(),
+    //             type: 'CleanupCreated',
+    //             payload: payload
+    //         });
+    //
+    //         vm.updateDocumentTitle();
+    //     }
+    // },
 	methods: {
+
+        listenForEvents () {
+
+            Echo.channel('main')
+
+                .listen('UserSignedUp', (payload) => {
+                    this.addEvent('UserSignedUp', payload);
+                });
+
+        },
+
+        addEvent (event, payload)
+        {
+            this.events.unshift({
+                id: new Date().getTime(),
+                type: 'UserSignedUp',
+                payload: payload.now
+            });
+
+            this.updateDocumentTitle();
+        },
+
         /**
          * This is usually how double-clicks are handled
          * without overlapping with the click events
@@ -132,6 +150,7 @@ export default {
         click(event, index)
         {
             this.clicks++;
+
             if (this.clicks === 1) {
                 this.timer = setTimeout(() => {
                     this.flyToLocation(event);
