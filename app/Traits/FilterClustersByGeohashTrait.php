@@ -19,13 +19,13 @@ trait FilterClustersByGeohashTrait
      * @param $bbox array -> [west|left, south|bottom, east|right, north|top]
      * @return Builder
      */
-    public function filterClustersByGeoHash (Builder $query, int $zoom, string $bbox): Builder
+    public function filterClustersByGeoHash (Builder $query, int $zoom, array $bbox): Builder
     {
-        $bbox = json_decode($bbox);
+        //$bbox = json_decode($bbox);
 
         // get center of the bbox
-        $center_lat = ($bbox->top + $bbox->bottom) / 2;
-        $center_lon = ($bbox->left + $bbox->right) / 2;
+        $center_lat = ($bbox['top'] + $bbox['bottom']) / 2;
+        $center_lon = ($bbox['left'] + $bbox['right']) / 2;
 
         // zoom level will determine what level of geohash precision to use
         $precision = $this->getGeohashPrecision($zoom);

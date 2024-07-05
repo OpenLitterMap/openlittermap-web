@@ -14,6 +14,5 @@ window.Echo = new Echo({
 });
 
 // window.Echo.channel("main").listen("UserSignedUp", (event) => {
-//     console.log('main channel event found');
 //     console.log(event);
 // });

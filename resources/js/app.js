@@ -2,7 +2,6 @@ import './bootstrap';
 import '../css/app.scss';
 
 import Vue from 'vue';
-import axios from 'axios';
 import store from './store';
 import VueRouter from 'vue-router';
 import router from './routes';
@@ -11,7 +10,6 @@ import VueLocalStorage from 'vue-localstorage';
 import VueSweetalert2 from 'vue-sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
 import VueToastify from 'vue-toastify';
-// import VueMask from 'v-mask' // needed to cancel some error on CreditCard.vue which we are not yet using
 import VueNumber from 'vue-number-animation';
 import VueEcho from 'vue-echo-laravel';
 import Buefy from 'buefy';
@@ -21,9 +19,6 @@ import VueImg from 'v-img';
 import VueTypedJs from 'vue-typed-js'
 
 import RootContainer from './views/RootContainer.vue';
-
-// assign global variables
-window.axios = axios;
 
 Vue.use(Buefy);
 Vue.use(VueRouter);

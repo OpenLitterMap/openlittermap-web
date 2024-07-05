@@ -4,7 +4,7 @@
 
             <!-- Title, Subtitle, App Icons -->
             <div class="columns c-1">
-                <div class="column is-half">
+                <div class="column is-half" style="padding-right: 1em !important;">
                     <transition name="slide-fade-left" mode="out-in">
                         <h1 class="main-title variable-height"
                             :key="activeHeading.title"

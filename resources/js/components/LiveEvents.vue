@@ -17,26 +17,26 @@
 </template>
 
 <script>
+import CleanupCreated from "./Notifications/CleanupCreated.vue";
 import ImageUploaded from './Notifications/ImageUploaded.vue';
+import LittercoinMined from './Notifications/LittercoinMined.vue';
 import NewCountryAdded from './Notifications/NewCountryAdded.vue';
 import NewStateAdded from './Notifications/NewStateAdded.vue';
 import NewCityAdded from './Notifications/NewCityAdded.vue';
-import UserSignedUp from './Notifications/UserSignedUp.vue';
 import TeamCreated from './Notifications/TeamCreated.vue';
-import LittercoinMined from './Notifications/LittercoinMined.vue';
-import CleanupCreated from "./Notifications/CleanupCreated.vue";
+import UserSignedUp from './Notifications/UserSignedUp.vue';
 
 export default {
 	name: 'live-events',
     components: {
-        UserSignedUp,
+        CleanupCreated,
         ImageUploaded,
+        LittercoinMined,
         NewCityAdded,
         NewStateAdded,
         NewCountryAdded,
         TeamCreated,
-        LittercoinMined,
-        CleanupCreated
+        UserSignedUp,
     },
     data () {
         return {
@@ -45,96 +45,17 @@ export default {
             timer: null
         };
     },
-    channel: 'main',
     created () {
         this.listenForEvents();
     },
-    // echo: {
-    //     'ImageUploaded': (payload, vm) => {
-    //         vm.events.unshift({
-    //             id: new Date().getTime(),
-    //             type: 'ImageUploaded',
-    //             payload: payload
-    //         });
-    //
-    //         vm.updateDocumentTitle();
-    //     },
-    //     'NewCountryAdded': (payload, vm) => {
-    //         vm.events.unshift({
-    //             id: new Date().getTime(),
-    //             type: 'NewCountryAdded',
-    //             payload: payload
-    //         });
-    //
-    //         vm.updateDocumentTitle();
-    //     },
-    //     'NewStateAdded': (payload, vm) => {
-    //         vm.events.unshift({
-    //             id: new Date().getTime(),
-    //             type: 'NewStateAdded',
-    //             payload: payload
-    //         });
-    //
-    //         vm.updateDocumentTitle();
-    //     },
-    //     'NewCityAdded': (payload, vm) => {
-    //         vm.events.unshift({
-    //             id: new Date().getTime(),
-    //             type: 'NewCityAdded',
-    //             payload: payload
-    //         });
-    //
-    //         vm.updateDocumentTitle();
-    //     },
-    //     'UserSignedUp': (payload, vm) => {
-    //         this.addEvent('UserSignedUp', payload);
-    //     },
-    //     'TeamCreated': (payload, vm) => {
-    //         vm.events.unshift({
-    //             id: new Date().getTime(),
-    //             type: 'TeamCreated',
-    //             payload: payload
-    //         });
-    //
-    //         vm.updateDocumentTitle();
-    //     },
-    //     '.App\\Events\\Littercoin\\LittercoinMined': (payload, vm) => {
-    //         vm.events.unshift({
-    //             id: new Date().getTime(),
-    //             type: 'LittercoinMined',
-    //             payload: payload
-    //         });
-    //
-    //         vm.updateDocumentTitle();
-    //     },
-    //     '.App\\Events\\Cleanups\\CleanupCreated': (payload, vm) => {
-    //         vm.events.unshift({
-    //             id: new Date().getTime(),
-    //             type: 'CleanupCreated',
-    //             payload: payload
-    //         });
-    //
-    //         vm.updateDocumentTitle();
-    //     }
-    // },
 	methods: {
-
-        listenForEvents () {
-
-            Echo.channel('main')
-
-                .listen('UserSignedUp', (payload) => {
-                    this.addEvent('UserSignedUp', payload);
-                });
-
-        },
 
         addEvent (event, payload)
         {
             this.events.unshift({
                 id: new Date().getTime(),
-                type: 'UserSignedUp',
-                payload: payload.now
+                type: event,
+                payload: payload
             });
 
             this.updateDocumentTitle();
@@ -143,11 +64,9 @@ export default {
         /**
          * This is usually how double-clicks are handled
          * without overlapping with the click events
-         * @see https://stackoverflow.com/a/41309853/5828796
-         * @param event
-         * @param index
+         * https://stackoverflow.com/a/41309853/5828796
          */
-        click(event, index)
+        click (event, index)
         {
             this.clicks++;
 
@@ -163,15 +82,33 @@ export default {
             }
         },
 
-        /**
-         * Removes the event at the specified index
-         * @param index
-         */
-        removeEvent (index)
-        {
-            this.events.splice(index, 1);
+        listenForEvents () {
 
-            this.updateDocumentTitle();
+            Echo.channel('main')
+                .listen('.App\\Events\\Cleanups\\CleanupCreated', (payload) => {
+                    this.addEvent('CleanupCreated', payload);
+                })
+                .listen('ImageUploaded', (payload) => {
+                    this.addEvent('ImageUploaded', payload);
+                })
+                .listen('NewCountryAdded', (payload) => {
+                    this.addEvent('NewCountryAdded', payload);
+                })
+                .listen('NewStateAdded', (payload) => {
+                    this.addEvent('NewStateAdded', payload);
+                })
+                .listen('NewCityAdded', (payload) => {
+                    this.addEvent('NewCityAdded', payload);
+                })
+                .listen('.App\\Events\\Littercoin\\LittercoinMined', (payload) => {
+                    this.addEvent('LittercoinMined', payload);
+                })
+                .listen('TeamCreated', (payload) => {
+                    this.addEvent('TeamCreated', payload);
+                })
+                .listen('UserSignedUp', (payload) => {
+                    this.addEvent('UserSignedUp', payload.now);
+                })
         },
 
         /**
@@ -183,6 +120,17 @@ export default {
             if (event.payload?.latitude && event.payload?.longitude) {
                 this.$emit('fly-to-location', {...event.payload, zoom: 17});
             }
+        },
+
+        /**
+         * Removes the event at the specified index
+         * @param index
+         */
+        removeEvent (index)
+        {
+            this.events.splice(index, 1);
+
+            this.updateDocumentTitle();
         },
 
         /**
