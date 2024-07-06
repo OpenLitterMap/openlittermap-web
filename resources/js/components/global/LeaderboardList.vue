@@ -7,6 +7,12 @@
             :locationType="locationType"
         />
 
+        <div v-if="leaders.length === 0">
+
+            <p class="empty-leaderboard-title">Nobody has uploaded yet!</p>
+
+        </div>
+
         <div v-for="(leader, index) in leaders" class="leader wow slideInLeft">
             <div v-if="leader.rank" class="medal">
                 <img v-if="leader.rank === 1" src="../../assets/icons/gold-medal-2.png" alt="Gold spot">
@@ -98,6 +104,14 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+
+    .empty-leaderboard-title {
+        color: white;
+        font-weight: 600;
+        font-size: 2rem;
+        text-align: center;
+        margin-top: 1em;
+    }
 
     .global-leaders {
         max-width: 800px;

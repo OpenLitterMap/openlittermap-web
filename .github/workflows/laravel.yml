@@ -57,7 +57,7 @@ jobs:
      # to versions that support Node 16.
     - uses: actions/setup-node@v3
       with:
-        node-version: 16
+        node-version: 18.20.3
     - name: Start mysql service
       run: sudo service mysql start
     - name: Setup minio
