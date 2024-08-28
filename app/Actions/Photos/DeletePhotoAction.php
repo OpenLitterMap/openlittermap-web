@@ -36,12 +36,6 @@ class DeletePhotoAction
      */
     protected function deletePhoto (string $filename, string $disk) :void
     {
-        $path = str_replace(
-            rtrim(Storage::disk($disk)->url('/'), '/'),
-            '',
-            $filename
-        );
-
-        Storage::disk($disk)->delete($path);
+        Storage::disk($disk)->delete($filename);
     }
 }

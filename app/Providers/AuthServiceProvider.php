@@ -2,9 +2,9 @@
 
 namespace App\Providers;
 
-use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
-use Illuminate\Support\Facades\Gate;
 use Laravel\Passport\Passport;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -24,7 +24,11 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        // Passport::routes();
+        //$this->registerPolicies();
+
+        //Passport::routes();
+
+        Passport::enablePasswordGrant();
         Passport::tokensExpireIn(now()->addDays(365));
         Passport::refreshTokensExpireIn(now()->addDays(365));
 
@@ -33,8 +37,6 @@ class AuthServiceProvider extends ServiceProvider
             return in_array($user->email, [
                 'seanlynch@umail.ucc.ie',
                 'info@openlittermap.com',
-                'nair.anoop1995@gmail.com',
-                'jahogeni@gmail.com'
             ]);
         });
     }

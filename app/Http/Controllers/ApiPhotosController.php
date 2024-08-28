@@ -33,25 +33,16 @@ use Illuminate\Support\Facades\Log;
 
 class ApiPhotosController extends Controller
 {
-    protected $userId;
+    protected int $userId;
 
-    /** @var UploadHelper */
-    protected $uploadHelper;
-    /** @var UploadPhotoAction */
-    private $uploadPhotoAction;
-    /** @var DeletePhotoAction */
-    private $deletePhotoAction;
-    /** @var MakeImageAction */
-    private $makeImageAction;
+    protected UploadHelper $uploadHelper;
+    private UploadPhotoAction $uploadPhotoAction;
+    private DeletePhotoAction $deletePhotoAction;
+    private MakeImageAction $makeImageAction;
 
     /**
      * ApiPhotosController constructor
      * Apply middleware to all of these routes
-     *
-     * @param UploadHelper $uploadHelper
-     * @param UploadPhotoAction $uploadPhotoAction
-     * @param DeletePhotoAction $deletePhotoAction
-     * @param MakeImageAction $makeImageAction
      */
     public function __construct (
         UploadHelper $uploadHelper,
@@ -306,14 +297,16 @@ class ApiPhotosController extends Controller
         }
         catch (PhotoAlreadyUploaded $e)
         {
-            \Log::info(['ApiPhotosController@uploadWithOrWithoutTags.1', $e->getMessage()]);
+            Log::info('ApiPhotosController@uploadWithOrWithoutTags.1', [$e->getMessage()]);
 
             return [
                 'success' => false,
                 'msg' => 'photo-already-uploaded'
             ];
-        } catch (InvalidCoordinates $e) {
-            \Log::info(['ApiPhotosoController@uploadWithOrWithoutTags.2', $e->getMessage()]);
+        }
+        catch (InvalidCoordinates $e)
+        {
+            Log::info('ApiPhotosoController@uploadWithOrWithoutTags.2', [$e->getMessage()]);
 
             return [
                 'success' => false,
@@ -358,15 +351,21 @@ class ApiPhotosController extends Controller
     /**
      * Delete an image
      */
-    public function deleteImage(Request $request)
+    public function deleteImage (Request $request)
     {
-        /** @var User $user */
         $user = auth()->user();
-        /** @var Photo $photo */
-        $photo = Photo::findOrFail($request->photoId);
 
-        if ($user->id !== $photo->user_id) {
-            abort(403);
+        // $photo = Photo::findOrFail($request->photoId);
+        $photo = Photo::where([
+            'id' => $request->photoId,
+            'user_id' => $user->id
+        ])->first();
+
+        if (!$photo) {
+            return response()->json([
+                'success' => false,
+                'msg' => 'Photo not found'
+            ], 403);
         }
 
         $this->deletePhotoAction->run($photo);
@@ -389,6 +388,8 @@ class ApiPhotosController extends Controller
             $photo->team_id
         ));
 
-        return ['success' => true];
+        return response()->json([
+            'success' => true
+        ]);
     }
 }
