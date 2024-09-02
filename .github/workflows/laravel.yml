@@ -95,7 +95,7 @@ jobs:
     - name: Install NPM assets
       run: npm install --silent --force
     - name: Compile NPM assets
-      run: npm run dev --silent
+      run: npm run build --silent
     - name: Execute tests (Unit and Feature tests) via PHPUnit
       run: vendor/bin/phpunit
       env:
