@@ -33,8 +33,8 @@ Littercoin is the first token rewarded for the production of geographic informat
 However, this currency can only be spent with pre-approved "green listed" merchants in the climate economy.
 The type of data that you want to collect is entirely up to you. Most litter pickers photograph every object individually, as this tells a powerful story that is visualised and communicated through our interactive tools.
 Our tools enable anyone to identify, visualise, and communicate local observations that are important to them. This data tells an important story about the individuals positive environmental impact and the data we produce is 
-open source, available for anyone to download and use. Sometimes, objects may be too big or heavy to remove by a single person, or a person might not be equipped enough or  have the time to deal with something dangerous like broken glass.
-With OpenLitterMap, you are empowered to use your device to collect data on whatever it is that you want. This includes if the litter has been removed, if its still there, if the bins are overflowing, if there is dumping, what brands are responsible... and a lot more.
+open source, available for anyone to download and use. Sometimes, objects may be too big or heavy to remove by a single person, or a person might not be equipped enough or have the time to deal with something dangerous like broken glass.
+With OpenLitterMap, you are empowered to use your device to collect data on whatever it is that you want. This includes if the litter has been removed, if it's still there, if the bins are overflowing, if there is dumping, what brands are responsible... and a lot more.
 No matter if you are a dedicated litter picker or someone who just wants to contribute a single photo, there is something here for everyone. 
 By using your technology to produce real, objective, non-human information about the world, you are passively mining Littercoin in the background which can be spent with pre-approved
 "green listed" merchants only. Most people spend their entire lives trying to accumulate an unlimited type of money, that has no open source code, which can be printed and devalued in an instant.
@@ -59,7 +59,7 @@ The following high level design was used to create a model of the sequence of tr
 ![Littercoin High Level Design](https://user-images.githubusercontent.com/7105016/226448800-ef407f21-c51a-41a7-bf79-9226b4774d4e.png)
 
 #### Application Architecture
-The application architecture below shows the steps involved to mint a littercoin. These steps are simliar for the other types of tranasction (eg. Burn, Add Ada & Mint Merchant Token).
+The application architecture below shows the steps involved to mint a littercoin. These steps are simliar for the other types of transactions (eg. Burn, Add Ada & Mint Merchant Token).
 ![Application Architecture](https://user-images.githubusercontent.com/7105016/227805634-32403c51-2206-40bf-9459-dd946fb36f4a.png)
 
 
@@ -217,7 +217,7 @@ merchant token mph:  10009086d699dfdd386ab1ddbfb6d6492228e039172f78af780f4686
 merchant token name:  #4d65726368616e7420546f6b656e204c6974746572636f696e
 ```
 8. Using the Web VS Code explorer, open lcMint.hl and rewardsToken.hl and update with the new thread token mph
-9.Then execute the following command to compile the littercoin and rewards minting policies.
+9. Then execute the following command to compile the littercoin and rewards minting policies.
 ```
 npx deno-bin run --allow-read --allow-write ./src/deploy-mint.js 
 littercoin mph:  1f6b4c1fbe934b6e778e7086147b8c0a37b1cae31c2d118276c757cd
