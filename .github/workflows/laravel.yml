@@ -53,8 +53,8 @@ jobs:
         extensions: mbstring, dom, fileinfo, mysql
         # coverage: xdebug #optional
     - uses: actions/checkout@v3
-     # TODO: Remove this line when we can safely upgrade all our packages
-     # to versions that support Node 16.
+      with:
+        node-version: 18.20.3
     - uses: actions/setup-node@v3
       with:
         node-version: 18.20.3
