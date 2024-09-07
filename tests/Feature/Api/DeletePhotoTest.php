@@ -167,6 +167,6 @@ class DeletePhotoTest extends TestCase
             'photoId' => 0
         ]);
 
-        $response->assertNotFound();
+        $response->assertStatus(403);
     }
 }

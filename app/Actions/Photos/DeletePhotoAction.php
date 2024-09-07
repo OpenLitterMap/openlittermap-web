@@ -36,6 +36,11 @@ class DeletePhotoAction
      */
     protected function deletePhoto (string $filename, string $disk) :void
     {
-        Storage::disk($disk)->delete($filename);
+        // Remove storage prefix if found. Only needed for local testing.
+        $filename = ltrim($filename, '/storage/');
+
+        if (Storage::disk($disk)->exists($filename)) {
+            Storage::disk($disk)->delete($filename);
+        }
     }
 }

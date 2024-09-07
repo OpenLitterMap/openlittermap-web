@@ -2,20 +2,19 @@
 
 namespace Tests\Feature;
 
-use App\Actions\Locations\ReverseGeocodeLocationAction;
 use App\Models\Location\City;
 use App\Models\Location\Country;
 use App\Models\Location\State;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use App\Actions\Locations\ReverseGeocodeLocationAction;
 use Tests\Doubles\Actions\Locations\FakeReverseGeocodingAction;
 
 trait HasPhotoUploads
 {
     protected $imagePath;
-    private $imageDisplayName = '10735, Carlisle Pike, Latimore Township,' .
-    ' Adams County, Pennsylvania, 17324, USA';
-    private $address = [
+    private string $imageDisplayName = '10735, Carlisle Pike, Latimore Township, Adams County, Pennsylvania, 17324, USA';
+    private array $address = [
         "house_number" => "10735",
         "road" => "Carlisle Pike",
         "city" => "Latimore Township",
@@ -26,23 +25,20 @@ trait HasPhotoUploads
         "country_code" => "us",
         "suburb" => "unknown"
     ];
-    /** @var FakeReverseGeocodingAction */
-    protected $geocodingAction = null;
 
-    protected function setImagePath()
+    protected FakeReverseGeocodingAction |null $geocodingAction = null;
+
+    protected function setImagePath (): void
     {
         $this->imagePath = storage_path('framework/testing/1x1.jpg');
 
         $this->setMockForGeocodingAction();
     }
 
-    protected function getImageAndAttributes($mimeType = 'jpg', $withAddress = []): array
+    protected function getImageAndAttributes ($mimeType = 'jpg', $withAddress = []): array
     {
         $exifImage = file_get_contents($this->imagePath);
-        $file = UploadedFile::fake()->createWithContent(
-            'image.' . $mimeType,
-            $exifImage
-        );
+        $file = UploadedFile::fake()->createWithContent('image.' . $mimeType, $exifImage);
         $latitude = 40.053030045789;
         $longitude = -77.15449870066;
         $geoHash = 'dr15u73vccgyzbs9w4uj';
@@ -77,22 +73,22 @@ trait HasPhotoUploads
         ];
     }
 
-    protected function getCountryId(): int
+    protected function getCountryId (): int
     {
         return Country::where('shortcode', $this->address['country_code'])->first()->id;
     }
 
-    protected function getStateId(): int
+    protected function getStateId (): int
     {
         return State::where('state', $this->address['state'])->first()->id;
     }
 
-    protected function getCityId(): int
+    protected function getCityId (): int
     {
         return City::where(['city' => $this->address['city']])->first()->id;
     }
 
-    protected function setMockForGeocodingAction()
+    protected function setMockForGeocodingAction (): void
     {
         $this->geocodingAction = new FakeReverseGeocodingAction();
         $this->swap(ReverseGeocodeLocationAction::class, $this->geocodingAction);

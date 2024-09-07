@@ -26,7 +26,7 @@
         "laravel/pulse": "^1.2",
         "laravel/reverb": "@beta",
         "laravel/sanctum": "^4.0",
-        "laravel/slack-notification-channel": "^3.0",
+        "laravel/slack-notification-channel": "^3.3",
         "laravel/tinker": "^2.0",
         "laravel/ui": "^4.0",
         "league/flysystem-aws-s3-v3": "^3.0",

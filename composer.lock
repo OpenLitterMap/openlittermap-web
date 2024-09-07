@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4d3449d3f9807bed0fcad85a11066546",
+    "content-hash": "39b365307eec3b7a524e1b58cdc0e0fe",
     "packages": [
         {
             "name": "abraham/twitteroauth",
@@ -3404,16 +3404,16 @@
         },
         {
             "name": "laravel/slack-notification-channel",
-            "version": "v3.2.0",
+            "version": "v3.3.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laravel/slack-notification-channel.git",
-                "reference": "fc8d1873e3db63a480bc57aebb4bf5ec05332d91"
+                "reference": "5e04e4a0834b84650a207a76b7a67de8156d0b04"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laravel/slack-notification-channel/zipball/fc8d1873e3db63a480bc57aebb4bf5ec05332d91",
-                "reference": "fc8d1873e3db63a480bc57aebb4bf5ec05332d91",
+                "url": "https://api.github.com/repos/laravel/slack-notification-channel/zipball/5e04e4a0834b84650a207a76b7a67de8156d0b04",
+                "reference": "5e04e4a0834b84650a207a76b7a67de8156d0b04",
                 "shasum": ""
             },
             "require": {
@@ -3463,9 +3463,9 @@
             ],
             "support": {
                 "issues": "https://github.com/laravel/slack-notification-channel/issues",
-                "source": "https://github.com/laravel/slack-notification-channel/tree/v3.2.0"
+                "source": "https://github.com/laravel/slack-notification-channel/tree/v3.3.2"
             },
-            "time": "2024-01-15T20:07:45+00:00"
+            "time": "2024-09-04T06:56:09+00:00"
         },
         {
             "name": "laravel/tinker",

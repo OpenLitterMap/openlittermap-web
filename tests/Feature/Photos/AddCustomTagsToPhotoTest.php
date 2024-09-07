@@ -11,7 +11,7 @@ class AddCustomTagsToPhotoTest extends TestCase
 {
     use HasPhotoUploads;
 
-    protected $imageAndAttributes;
+    protected array $imageAndAttributes;
 
     protected function setUp(): void
     {

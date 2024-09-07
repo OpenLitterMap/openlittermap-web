@@ -2,30 +2,25 @@
 
 namespace Tests\Feature\Admin;
 
-
-use App\Actions\LogAdminVerificationAction;
-use App\Events\ImageDeleted;
+use Tests\TestCase;
 use App\Models\Photo;
 use App\Models\User\User;
-use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Redis;
-use Illuminate\Support\Facades\Storage;
+use App\Events\ImageDeleted;
 use Spatie\Permission\Models\Role;
 use Tests\Feature\HasPhotoUploads;
-use Tests\TestCase;
+use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Storage;
+use App\Actions\LogAdminVerificationAction;
 
 class DeletePhotoTest extends TestCase
 {
     use HasPhotoUploads;
 
-    /** @var User */
-    protected $admin;
-    /** @var User */
-    protected $user;
-    /** @var Photo */
-    protected $photo;
-    /** @var array */
-    private $imageAndAttributes;
+    protected User $admin;
+    protected User $user;
+    protected Photo $photo;
+    private array $imageAndAttributes;
 
     protected function setUp(): void
     {
@@ -175,7 +170,7 @@ class DeletePhotoTest extends TestCase
 
         $response = $this->post('/admin/destroy', ['photoId' => 0]);
 
-        $response->assertNotFound();
+        $response->assertStatus(404);
     }
 
     public function test_it_logs_the_admin_action()
