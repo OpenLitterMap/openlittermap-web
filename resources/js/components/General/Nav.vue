@@ -273,7 +273,6 @@ export default {
 
     @media (max-width: 768px)
     {
-
         .flex-not-mobile {
             display: block;
         }
@@ -282,7 +281,6 @@ export default {
             font-size: 2rem;
             padding-left: 0.25em;
         }
-
     }
 
 </style>
