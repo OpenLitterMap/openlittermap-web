@@ -67,8 +67,8 @@
 </template>
 
 <script>
-import CreateCleanup from "./CreateCleanup";
-import JoinCleanup from "./JoinCleanup";
+import CreateCleanup from "./CreateCleanup.vue";
+import JoinCleanup from "./JoinCleanup.vue";
 
 const pickLitterImg = "https://img.freepik.com/free-photo/hand-person-blue-latex-glove-picks-up-plastic-bottle-from-ground_176532-10351.jpg?w=1380&t=st=1659282375~exp=1659282975~hmac=cbd7540fbf81fef9ffe4a00e7dce755f3a25a49a1cc77376c226c86a89efb73b";
 const groupLitterImg = "https://img.freepik.com/free-vector/volunteers-cleaning-up-garbage-city-park_74855-17942.jpg?w=1380&t=st=1659282438~exp=1659283038~hmac=b3c1ecc87fa677a97391b1f182f0e8674f32684d632f8d5df366bfe8204ee62e";

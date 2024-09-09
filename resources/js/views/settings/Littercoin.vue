@@ -40,24 +40,24 @@
                 <div>
                     <h1 class="title is-4">Select Your Wallet</h1>
                     <p>
-                        <input 
-                            type="radio" 
-                            v-model="walletChoice" 
+                        <input
+                            type="radio"
+                            v-model="walletChoice"
                             v-on:change="getWalletInfo"
-                            value="nami" 
+                            value="nami"
                         /> &nbsp;
-                        <img src = "/assets/icons/littercoin/nami.png" alt="Nami Wallet" style="width:20px;height:20px;"/>
+                        <img src="../../assets/icons/littercoin/nami.png" alt="Nami Wallet" style="width:20px;height:20px;"/>
                         <label>&nbsp; Nami</label>
                     </p>
                     <br>
                     <p>
-                        <input 
-                            type="radio" 
-                            v-model="walletChoice" 
+                        <input
+                            type="radio"
+                            v-model="walletChoice"
                             v-on:change="getWalletInfo"
-                            value="eternl" 
+                            value="eternl"
                         />&nbsp;
-                        <img src = "/assets/icons/littercoin/eternl.png" alt="Eternl Wallet" style="width:20px;height:20px;"/>
+                        <img src="../../assets/icons/littercoin/eternl.png" alt="Eternl Wallet" style="width:20px;height:20px;"/>
                         <label>&nbsp; Eternl</label>
                     </p>
                     <br>
@@ -72,17 +72,17 @@
                     <hr>
 
                     <div v-if="walletChoice">
-                        <form 
+                        <form
                             method="post"
-                            @submit.prevent="submitForm('mint')" 
-                            v-if="!mintSuccess" 
+                            @submit.prevent="submitForm('mint')"
+                            v-if="!mintSuccess"
                             >
                             <h1 class="title is-4">Mint Littercoin</h1>
                             Enter the wallet where you want your Littercoin to be sent
                             <input
                                 class="input"
                                 v-model="mintDestAddr"
-                                placeholder="Enter destination wallet address" 
+                                placeholder="Enter destination wallet address"
                             />
                             <div style="text-align: center; padding-bottom: 1em;">
                                 <button
@@ -101,10 +101,10 @@
                     <hr>
                     </div>
                     <div v-if="walletChoice">
-                        <form 
+                        <form
                             method="post"
-                            @submit.prevent="submitForm('burn')" 
-                            v-if="!burnSuccess" 
+                            @submit.prevent="submitForm('burn')"
+                            v-if="!burnSuccess"
                             >
                             <h1 class="title is-4">Burn Littercoin</h1>
                             Only those holding a Merchant Token can burn Littercoin to received Ada from the Littercoin Smart Contract
@@ -112,7 +112,7 @@
                                 class="input"
                                 type="number"
                                 v-model="lcQty"
-                                placeholder="Enter number of littercoins to burn" 
+                                placeholder="Enter number of littercoins to burn"
                             />
                             <div style="text-align: center; padding-bottom: 1em;">
                                 <button
@@ -132,17 +132,17 @@
                     <hr>
                     </div>
                     <div v-if="walletChoice">
-                        <form 
+                        <form
                             method="post"
-                            @submit.prevent="submitForm('merchant')" 
-                            v-if="!merchSuccess && isAdmin" 
+                            @submit.prevent="submitForm('merchant')"
+                            v-if="!merchSuccess && isAdmin"
                         >
                             <p><h1 class="title is-4">Mint Merchant Token</h1></p>
                             Enter the wallet where you want a Merchant Token to be sent
                             <input
                                 class="input"
                                 v-model="merchDestAddr"
-                                placeholder="Enter destination wallet address" 
+                                placeholder="Enter destination wallet address"
                             >
                             <div style="text-align: center; padding-bottom: 1em;">
                                 <button
@@ -150,7 +150,7 @@
                                     :class="merchFormSubmitted ? 'is-loading' : ''"
                                     :disabled="checkMerchDisabled"
                                 >Submit Tx</button>
-                            </div>                    
+                            </div>
                         </form>
                         <div v-if="merchSuccess && isAdmin">
                             <p><h1 class="title is-4">Mint Merchant Token Success!!!</h1></p>
@@ -161,17 +161,17 @@
                     <hr>
                     </div>
                     <div v-if="walletChoice">
-                        <form 
+                        <form
                             method="post"
-                            @submit.prevent="submitForm('addAda')" 
-                            v-if="!addAdaSuccess" 
+                            @submit.prevent="submitForm('addAda')"
+                            v-if="!addAdaSuccess"
                         >
                             <p><h1 class="title is-4">Add Ada To Littercoin Smart Contract</h1></p>
                             <input
                                 class="input"
                                 type="number"
                                 v-model="addAdaQty"
-                                placeholder="Enter amount of Ada to send" 
+                                placeholder="Enter amount of Ada to send"
                             >
                             <div style="text-align: center; padding-bottom: 1em;">
                                 <button
@@ -179,7 +179,7 @@
                                     :class="addAdaFormSubmitted ? 'is-loading' : ''"
                                     :disabled="checkAddAdaDisabled"
                                 >Submit Tx</button>
-                            </div>                    
+                            </div>
                         </form>
                         <div v-if="addAdaSuccess">
                             <p><h1 class="title is-4">Add Ada Success!!!</h1></p>
@@ -213,7 +213,7 @@ export default {
         await axios.get('/littercoin-info')
             .then(async response => {
 
-                const lcInfo = await JSON.parse(response.data); 
+                const lcInfo = await JSON.parse(response.data);
                 if (lcInfo.status == 200) {
                     this.adaAmount = lcInfo.payload.list[0].int / 1000000;
                     this.lcAmount = lcInfo.payload.list[1].int;
@@ -261,7 +261,7 @@ export default {
             littercoinEarned: 0,
             littercoinDue: 0,
             walletChoice: "",
-            walletLoading: false, 
+            walletLoading: false,
             adaBalance: 0,
             littercoinBalance: 0,
             merchTokenBalance: 0,
@@ -355,17 +355,17 @@ export default {
                 if (this.walletChoice === "nami") {
                     walletAPI = await window.cardano.nami.enable();
                 } else if (this.walletChoice === "eternl") {
-                    walletAPI = await window.cardano.eternl.enable(); 
+                    walletAPI = await window.cardano.eternl.enable();
                 } else {
                     alert('No wallet selected');
                     this.mintFormSubmitted = false;
-                } 
+                }
 
                 // Get balance from wallet
                 const balanceCbor = await walletAPI.getBalance();
 
                 console.log({ balanceCbor });
-                
+
                 // Get the UTXOs from wallet,
                 const cborUtxos = await walletAPI.getUtxos();
 
@@ -395,7 +395,7 @@ export default {
          * Submit a transaction to the cardano blockchain network
          */
          submitForm: function (type) {
-            
+
             if (!this.walletChoice) {
                 alert ('Please select a wallet');
                 return;
@@ -457,12 +457,12 @@ export default {
                 if (this.walletChoice === "nami") {
                     walletAPI = await window.cardano.nami.enable();
                 } else if (this.walletChoice === "eternl") {
-                    walletAPI = await window.cardano.eternl.enable(); 
+                    walletAPI = await window.cardano.eternl.enable();
                 } else {
                     alert('No wallet selected');
                     this.mintFormSubmitted = false;
-                } 
-                
+                }
+
                 // get the UTXOs from wallet,
                 const cborUtxos = await walletAPI.getUtxos();
 
@@ -476,7 +476,7 @@ export default {
                     utxos: cborUtxos
                 })
                 .then(async response => {
-                
+
                     const mintTx = await JSON.parse(response.data);
                     if (mintTx.status == 200) {
 
@@ -498,7 +498,7 @@ export default {
                             cborTx: mintTx.cborTx
                         })
                         .then(async response => {
-                            
+
                             const submitTx = await JSON.parse(response.data);
                             if (submitTx.status == 200) {
                                 this.mintTxId = submitTx.txId;
@@ -520,7 +520,7 @@ export default {
                             alert ('Littercoin Mint transaction could not be submitted, please try again');
                             this.mintFormSubmitted = false;
                         });
-                
+
                     } else {
                         console.error("Littercoin Mint transaction could not be submitted");
                         alert ('Littercoin Mint transaction could not be submitted, please try again');
@@ -528,7 +528,7 @@ export default {
                     }
                 })
                 .catch(error => {
-                    
+
                     if (error.response.status == 422){
                         console.error("Invalid User Input", error.response.data.errors);
                         alert ('Please check that you have entered a valid destination address');
@@ -552,11 +552,11 @@ export default {
                 if (this.walletChoice === "nami") {
                     walletAPI = await window.cardano.nami.enable();
                 } else if (this.walletChoice === "eternl") {
-                    walletAPI = await window.cardano.eternl.enable(); 
+                    walletAPI = await window.cardano.eternl.enable();
                 } else {
                     alert('No wallet selected');
                     this.burnFormSubmitted = false;
-                } 
+                }
 
                 // get the UTXOs from wallet,
                 const cborUtxos = await walletAPI.getUtxos();
@@ -570,7 +570,7 @@ export default {
                     utxos: cborUtxos
                 })
                 .then(async response => {
-                    
+
                     const burnTx = await JSON.parse(response.data);
                     if (burnTx.status == 200) {
 
@@ -584,14 +584,14 @@ export default {
                             this.burnFormSubmitted = false;
                             return
                         }
-                        
+
                         console.log("Submit transaction...");
                         await axios.post('/littercoin-submit-burn-tx', {
                             cborSig: walletSig,
                             cborTx: burnTx.cborTx
                         })
                         .then(async response => {
-                    
+
                             const submitTx = await JSON.parse(response.data);
                             if (submitTx.status == 200) {
                                 this.burnTxId = submitTx.txId;
@@ -663,11 +663,11 @@ export default {
                 if (this.walletChoice === "nami") {
                     walletAPI = await window.cardano.nami.enable();
                 } else if (this.walletChoice === "eternl") {
-                    walletAPI = await window.cardano.eternl.enable(); 
+                    walletAPI = await window.cardano.eternl.enable();
                 } else {
                     alert('No wallet selected');
                     this.merchFormSubmitted = false;
-                } 
+                }
 
                 // get the UTXOs from wallet,
                 const cborUtxos = await walletAPI.getUtxos();
@@ -702,7 +702,7 @@ export default {
                             cborTx: mintTx.cborTx
                         })
                         .then(async response => {
-                    
+
                             const submitTx = await JSON.parse(response.data);
                             if (submitTx.status == 200) {
                                 this.merchTxId = submitTx.txId;
@@ -758,11 +758,11 @@ export default {
                 if (this.walletChoice === "nami") {
                     walletAPI = await window.cardano.nami.enable();
                 } else if (this.walletChoice === "eternl") {
-                    walletAPI = await window.cardano.eternl.enable(); 
+                    walletAPI = await window.cardano.eternl.enable();
                 } else {
                     alert('No wallet selected');
                     this.addAdaFormSubmitted = false;
-                } 
+                }
 
                 // get the UTXOs from wallet,
                 const cborUtxos = await walletAPI.getUtxos();
@@ -776,7 +776,7 @@ export default {
                     utxos: cborUtxos
                 })
                 .then(async response => {
-                    
+
                     const addAdaTx = await JSON.parse(response.data);
 
                     if (addAdaTx.status == 200) {
@@ -791,7 +791,7 @@ export default {
                             this.addAdaFormSubmitted = false;
                             return
                         }
-            
+
                         await axios.post('/add-ada-submit-tx', {
                             cborSig: walletSig,
                             cborTx: addAdaTx.cborTx

@@ -3,7 +3,7 @@
         <div class="hero-body">
             <div class="py-2 slack">
                 <div class="image-wrapper has-text-centered">
-                    <img width="64" height="64" src="/assets/slack-brand-logo.png" alt="Slack">
+                    <img width="64" height="64" src="../../../assets/slack-brand-logo.png" alt="Slack">
                 </div>
                 <div class="subtitle has-text-light has-text-justified">
                     <i18n path="home.community.slack-text" tag="p">
@@ -22,11 +22,12 @@
                 >
                     <i class="fa fa-external-link fa-fw fa-4x"></i>
                 </a>
-                <img loading="lazy" src="/assets/slack-screenshot.png" alt="Slack Screenshot">
+                <img loading="lazy" src="../../../assets/slack-screenshot.png" alt="Slack Screenshot">
             </div>
         </div>
     </section>
 </template>
+
 <script>
 export default {
     name: 'SlackSection',

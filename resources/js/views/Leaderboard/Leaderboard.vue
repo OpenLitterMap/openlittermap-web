@@ -53,7 +53,7 @@
 
 <script>
 import Loading from "vue-loading-overlay";
-import LeaderboardList from "../../components/global/LeaderboardList";
+import LeaderboardList from "../../components/global/LeaderboardList.vue";
 
 export default {
     name: "Leaderboard",

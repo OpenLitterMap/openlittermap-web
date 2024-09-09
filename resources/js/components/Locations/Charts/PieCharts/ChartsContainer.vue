@@ -18,8 +18,8 @@
 </template>
 
 <script>
-import LitterChart from './LitterChart'
-import BrandsChart from './BrandsChart'
+import LitterChart from './LitterChart.vue'
+import BrandsChart from './BrandsChart.vue'
 
 export default {
     name: 'ChartsContainer',

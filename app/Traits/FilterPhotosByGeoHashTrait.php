@@ -16,18 +16,16 @@ trait FilterPhotosByGeoHashTrait
      * For a specific zoom level, we want to return the bounding box of the clusters + neighbours
      *
      * @param Builder $query
-     * @param string $bbox array -> [west|left, south|bottom, east|right, north|top]
+     * @param array $bbox array -> [west|left, south|bottom, east|right, north|top]
      * @param null layers
      *
      * @return Builder $query
      */
-    public function filterPhotosByGeoHash (Builder $query, string $bbox, $layers = null): Builder
+    public function filterPhotosByGeoHash (Builder $query, array $bbox, $layers = null): Builder
     {
-        $bbox = json_decode($bbox);
-
         // get center of the bbox
-        $center_lat = ($bbox->top + $bbox->bottom) / 2;
-        $center_lon = ($bbox->left + $bbox->right) / 2;
+        $center_lat = ($bbox['top'] + $bbox['bottom']) / 2;
+        $center_lon = ($bbox['left'] + $bbox['right']) / 2;
 
         // zoom level will determine what level of geohash precision to use
         $precision = $this->getGeohashPrecision(request()->zoom);

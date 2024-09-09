@@ -15,7 +15,7 @@ use App\Traits\AddTagsTrait;
 
 use Carbon\Carbon;
 
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 use App\Events\TagsVerifiedByAdmin;
@@ -27,14 +27,10 @@ class AdminController extends Controller
 {
     use AddTagsTrait;
 
-    /** @var DeleteTagsFromPhotoAction */
-    protected $deleteTagsAction;
-    /** @var UpdateLeaderboardsForLocationAction */
-    protected $updateLeaderboardsAction;
-    /** @var DeletePhotoAction */
-    protected $deletePhotoAction;
-    /** @var CalculateTagsDifferenceAction */
-    protected $calculateTagsDiffAction;
+    protected DeleteTagsFromPhotoAction $deleteTagsAction;
+    protected UpdateLeaderboardsForLocationAction $updateLeaderboardsAction;
+    protected DeletePhotoAction $deletePhotoAction;
+    protected CalculateTagsDifferenceAction $calculateTagsDiffAction;
 
     /**
      * Apply IsAdmin middleware to all of these routes
@@ -128,9 +124,8 @@ class AdminController extends Controller
     /**
      * Delete an image and its records
      */
-    public function destroy (Request $request)
+    public function destroy (Request $request): JsonResponse
     {
-        /** @var Photo $photo */
         $photo = Photo::findOrFail($request->photoId);
         $user = User::find($photo->user_id);
 
@@ -167,7 +162,9 @@ class AdminController extends Controller
             $photo->team_id
         ));
 
-        return ['success' => true];
+        return response()->json([
+            'success' => true
+        ]);
     }
 
     /**

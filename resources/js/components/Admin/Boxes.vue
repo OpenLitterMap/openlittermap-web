@@ -67,7 +67,7 @@
 </template>
 
 <script>
-import BrandsBox from './Bbox/BrandsBox';
+import BrandsBox from './Bbox/BrandsBox.vue';
 
 export default {
     name: 'Boxes',
@@ -75,7 +75,6 @@ export default {
         BrandsBox
     },
     computed: {
-
         /**
          * Array of bounding boxes
          */

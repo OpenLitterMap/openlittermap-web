@@ -16,7 +16,8 @@
 </template>
 
 <script>
-import LiveEvents from '../../components/LiveEvents';
+import LiveEvents from '../../components/LiveEvents.vue';
+import SearchCustomTags from "../../components/global/SearchCustomTags.vue";
 
 import {
     CLUSTER_ZOOM_THRESHOLD,
@@ -34,7 +35,6 @@ import './SmoothWheelZoom.js';
 import glify from 'leaflet.glify';
 import { mapHelper } from '../../maps/mapHelpers';
 import dropdown from './select-dropdown';
-import SearchCustomTags from "../../components/global/SearchCustomTags";
 
 var map;
 var clusters;
@@ -330,7 +330,7 @@ export default {
             zoom: MIN_ZOOM,
             scrollWheelZoom: false,
             smoothWheelZoom: true,
-            smoothSensitivity: 1,
+            smoothSensitivity: 2
         });
 
         map.scrollWheelZoom = true;
@@ -773,6 +773,9 @@ export default {
 <style lang="scss" src="./select-dropdown.scss"></style>
 
 <style>
+
+    @import 'leaflet/dist/leaflet.css';
+
 
     #openlittermap {
         height: 100%;

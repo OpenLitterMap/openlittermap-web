@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use Faker\Factory;
 use App\Models\Photo;
 use Illuminate\Database\Seeder;
 
@@ -14,11 +15,11 @@ class PhotosSeeder extends Seeder
      */
     public function run()
     {
-        $faker = \Faker\Factory::create();
+        $faker = Factory::create();
 
         for ($i = 0; $i < 10; $i++) {
             Photo::create([
-                'user_id' => $faker->numberBetween(1, 4),
+                'user_id' => $faker->numberBetween(1, 3),
                 //'filename' => $faker->image(public_path('assets/bird-plastic.jpg'), 400, 300, null, false),
                 'filename' => $faker->word . '-' . $faker->randomNumber() . '.jpg',
                 'model' => $faker->word,

@@ -7,16 +7,22 @@
             :locationType="locationType"
         />
 
+        <div v-if="leaders.length === 0">
+
+            <p class="empty-leaderboard-title">Nobody has uploaded yet!</p>
+
+        </div>
+
         <div v-for="(leader, index) in leaders" class="leader wow slideInLeft">
             <div v-if="leader.rank" class="medal">
-                <img v-if="leader.rank === 1" src="/assets/icons/gold-medal-2.png" alt="Gold spot">
-                <img v-if="leader.rank === 2" src="/assets/icons/silver-medal-2.png" alt="Silver spot">
-                <img v-if="leader.rank === 3" src="/assets/icons/bronze-medal-2.png" alt="Bronze spot">
+                <img v-if="leader.rank === 1" src="../../assets/icons/gold-medal-2.png" alt="Gold spot">
+                <img v-if="leader.rank === 2" src="../../assets/icons/silver-medal-2.png" alt="Silver spot">
+                <img v-if="leader.rank === 3" src="../../assets/icons/bronze-medal-2.png" alt="Bronze spot">
             </div>
             <div v-else class="medal">
-                <img v-if="index === 0" src="/assets/icons/gold-medal-2.png" alt="Gold spot">
-                <img v-if="index === 1" src="/assets/icons/silver-medal-2.png" alt="Silver spot">
-                <img v-if="index === 2" src="/assets/icons/bronze-medal-2.png" alt="Bronze spot">
+                <img v-if="index === 0" src="../../assets/icons/gold-medal-2.png" alt="Gold spot">
+                <img v-if="index === 1" src="../../assets/icons/silver-medal-2.png" alt="Silver spot">
+                <img v-if="index === 2" src="../../assets/icons/bronze-medal-2.png" alt="Bronze spot">
             </div>
             <div class="rank">
                 <span v-if="leader.rank">{{ getPosition(leader.rank) }}</span>
@@ -58,7 +64,7 @@
 
 <script>
 import moment from 'moment';
-import LeaderboardFilters from "../Leaderboards/LeaderboardFilters";
+import LeaderboardFilters from "../Leaderboards/LeaderboardFilters.vue";
 
 export default {
 	name: 'LeaderboardList',
@@ -98,6 +104,14 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+
+    .empty-leaderboard-title {
+        color: white;
+        font-weight: 600;
+        font-size: 2rem;
+        text-align: center;
+        margin-top: 1em;
+    }
 
     .global-leaders {
         max-width: 800px;

@@ -3,17 +3,12 @@
 namespace App\Listeners\Locations;
 
 use App\Events\NewCityAdded;
-use Pressutto\LaravelSlack\Facades\Slack;
+use Illuminate\Notifications\Slack\SlackMessage;
 
 class NotifySlackOfNewCity
 {
     /**
-     * Handle the event.
-     *
      * Note: Photo is not created yet
-     *
-     * @param  NewCityAdded  $event
-     * @return void
      */
     public function handle (NewCityAdded $event)
     {
@@ -32,11 +27,10 @@ class NotifySlackOfNewCity
 
         if (app()->environment() === 'production')
         {
-            Slack::to('#new-locations')
-                ->send(
-                    "New city added :grin: Say hello to $event->city, $event->state, $event->country! "
-                    . $link ?: ''
-                );
+            return (new SlackMessage)
+                ->to('#new-locations')
+                ->headerBlock("New city added :grin:")
+                ->text("Say hello to $event->city, $event->state, $event->country! " . $link ?: '');
         }
     }
 }

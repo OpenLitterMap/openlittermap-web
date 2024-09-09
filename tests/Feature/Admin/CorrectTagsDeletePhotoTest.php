@@ -17,14 +17,10 @@ class CorrectTagsDeletePhotoTest extends TestCase
 {
     use HasPhotoUploads;
 
-    /** @var User */
-    protected $admin;
-    /** @var User */
-    protected $user;
-    /** @var Photo */
-    protected $photo;
-    /** @var array */
-    private $imageAndAttributes;
+    protected User $user;
+    protected User $admin;
+    protected Photo $photo;
+    private array $imageAndAttributes;
 
     protected function setUp(): void
     {
@@ -71,6 +67,7 @@ class CorrectTagsDeletePhotoTest extends TestCase
     {
         // We make sure the photo exists
         Redis::zrem('xp.users', $this->admin->id);
+
         Storage::disk('s3')->assertExists($this->imageAndAttributes['filepath']);
         Storage::disk('bbox')->assertExists($this->imageAndAttributes['filepath']);
         $this->assertEquals(4, $this->user->xp);

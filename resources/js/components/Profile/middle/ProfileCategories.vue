@@ -6,13 +6,12 @@
 </template>
 
 <script>
-import Radar from '../../Charts/Radar';
+import Radar from '../../Charts/Radar.vue';
 
 export default {
     name: 'ProfileCategories',
     components: { Radar },
     computed: {
-
         /**
          * The users photos per month, as a string. Saved as metadata because CPU.
          */

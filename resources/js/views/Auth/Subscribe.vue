@@ -22,7 +22,7 @@
 <script>
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
-import CreateAccount from '../../components/CreateAccount'
+import CreateAccount from '../../components/CreateAccount.vue'
 
 export default {
     name: 'Subscribe',

@@ -141,8 +141,7 @@
 <script>
 export default {
     name: 'TeamSettings',
-    data ()
-    {
+    data () {
         return {
             loading: true,
             privacySectionSelectedTeamId: 0,

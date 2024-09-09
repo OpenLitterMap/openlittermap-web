@@ -52,8 +52,7 @@ export default {
     components: {
         vueDropzone: vue2Dropzone
     },
-    data ()
-    {
+    data () {
         return {
             options: {
                 url: '/upload',

@@ -43,7 +43,7 @@
 </template>
 
 <script>
-import TeamMap from '../../components/Teams/TeamMap';
+import TeamMap from '../../components/Teams/TeamMap.vue';
 
 export default {
     name: 'TeamsDashboard',

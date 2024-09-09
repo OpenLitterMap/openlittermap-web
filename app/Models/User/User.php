@@ -553,7 +553,7 @@ class User extends Authenticatable
     /**
      * Update one or more settings and save the model.
      */
-    public function settings(array $revisions): self
+    public function settings (array $revisions): self
     {
         $this->settings = array_merge($this->settings ?? [], $revisions);
         $this->save();

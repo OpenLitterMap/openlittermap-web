@@ -1,29 +1,44 @@
-let Supercluster = require('supercluster');
+import Supercluster from 'supercluster';
+import fs from 'fs/promises';
+import process from 'process';
 
-const fs = require('fs');
-const prefix = process.argv.slice(2)[0]; // '/home/forge/openlittermap.com'; or '/home/vagrant/Code/olm';
-const zoom = process.argv.slice(3)[0];
-const featuresFilename = process.argv.slice(4)[0] || 'features.json';
-const clustersFilename = process.argv.slice(5)[0] || 'clusters.json';
+// Correct the slicing of process.argv to correctly assign values
+const prefix = process.argv[2]; // '/home/forge/openlittermap.com' or '/home/vagrant/Code/olm';
+const zoom = parseInt(process.argv[3]); // Ensure zoom is a number
+const featuresFilename = process.argv[4] || 'features.json';
+const clustersFilename = process.argv[5] || 'clusters.json';
 const storagePath = '/storage/app/data/';
 
-const file = prefix + storagePath + featuresFilename;
+async function generateClusters() {
+    try {
+        const file = `${prefix}${storagePath}${featuresFilename}`;
 
-let rawData = fs.readFileSync(file);
-let features = JSON.parse(rawData);
+        // Read and parse the feature data file
+        const rawData = await fs.readFile(file);
+        const features = JSON.parse(rawData);
 
-let index = new Supercluster({
-    log: true,
-    radius: 80,
-    maxZoom: 16,
-    minPoints: 1
-});
+        // Set up the Supercluster with configuration
+        const index = new Supercluster({
+            log: true,
+            radius: 80,
+            maxZoom: 16,
+            minPoints: 1
+        });
 
-index.load(features);
+        // Load features into the Supercluster
+        index.load(features);
 
-const bbox = [-180, -85, 180, 85];
-let clusters = index.getClusters(bbox, zoom);
+        // Define the bounding box for the clusters
+        const bbox = [-180, -85, 180, 85];
+        const clusters = index.getClusters(bbox, zoom);
 
-fs.writeFile(prefix + storagePath + clustersFilename, JSON.stringify(clusters), function (err, data) {
-    if (err) return console.log(err);
-});
+        // Write the clusters data to a file
+        const clustersFilePath = `${prefix}${storagePath}${clustersFilename}`;
+        await fs.writeFile(clustersFilePath, JSON.stringify(clusters));
+        console.log('Clusters written successfully.');
+    } catch (err) {
+        console.error('Error:', err);
+    }
+}
+
+generateClusters();

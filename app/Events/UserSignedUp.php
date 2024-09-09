@@ -15,7 +15,7 @@ class UserSignedUp implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     // PROTECTED PRIVATE properties will not be serialized or sent through.
-    public $now;
+    public string $now;
 
     /**
      * Create a new event instance.
@@ -35,5 +35,15 @@ class UserSignedUp implements ShouldBroadcast
     public function broadcastOn()
     {
         return new Channel('main');
+    }
+
+    /**
+     * The data to broadcast.
+     *
+     * @return array
+     */
+    public function broadcastWith()
+    {
+        return ['now' => $this->now];
     }
 }

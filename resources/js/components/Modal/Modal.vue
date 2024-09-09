@@ -36,14 +36,14 @@
 
 <script>
 /* Auth */
-import Login from './Auth/Login'
+import Login from './Auth/Login.vue'
 
 /* Payments */
-import CreditCard from './Payments/CreditCard'
+import CreditCard from './Payments/CreditCard.vue'
 
 /* Profile */
-import AddManyTagsToManyPhotos from './Photos/AddManyTagsToManyPhotos';
-import ConfirmDeleteManyPhotos from './Photos/ConfirmDeleteManyPhotos';
+import AddManyTagsToManyPhotos from './Photos/AddManyTagsToManyPhotos.vue';
+import ConfirmDeleteManyPhotos from './Photos/ConfirmDeleteManyPhotos.vue';
 
 export default {
     name: 'Modal',

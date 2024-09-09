@@ -25,8 +25,8 @@
 </template>
 
 <script>
-import Supercluster from "../global/Supercluster";
-import CleanupSidebar from "../../components/Cleanups/CleanupSidebar";
+import Supercluster from "../global/Supercluster.vue";
+import CleanupSidebar from "../../components/Cleanups/CleanupSidebar.vue";
 
 export default {
     name: "Cleanups",

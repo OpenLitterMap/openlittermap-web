@@ -14,7 +14,6 @@ class ImageDeleted implements ShouldBroadcast, ShouldQueue
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    /** @var User */
     public $user;
     public $countryId;
     public $stateId;

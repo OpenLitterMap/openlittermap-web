@@ -205,9 +205,9 @@ import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
 import moment from 'moment'
 
-import AddTags from '../../components/Litter/AddTags'
-import Tags from '../../components/Litter/Tags'
-import RecentTags from '../../components/Litter/RecentTags';
+import AddTags from '../../components/Litter/AddTags.vue'
+import Tags from '../../components/Litter/Tags.vue'
+import RecentTags from '../../components/Litter/RecentTags.vue'
 
 export default {
 	name: 'VerifyPhotos',

@@ -110,7 +110,7 @@ class UploadPhotoWithTagsTest extends TestCase
         $this->assertTrue($user->fresh()->photos->last()->picked_up);
     }
 
-    public function validationDataProvider(): array
+    public static function validationDataProvider(): array
     {
         return [
             [

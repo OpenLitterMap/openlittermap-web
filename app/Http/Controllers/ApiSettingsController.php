@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -78,7 +79,7 @@ class ApiSettingsController extends Controller
      *
      * Todo - Needs validation
      */
-    public function update (Request $request)
+    public function update (Request $request): JsonResponse
     {
         $user = Auth::guard('api')->user();
 
@@ -99,15 +100,15 @@ class ApiSettingsController extends Controller
         {
             \Log::info(['ApiSettingsController@update', $e->getMessage()]);
 
-            return [
+            return response()->json([
                 'success' => false,
                 'msg' => $e->getMessage()
-            ];
+            ]);
         }
 
-        return [
+        return response()->json([
             'success' => true
-        ];
+        ]);
     }
 
     /**

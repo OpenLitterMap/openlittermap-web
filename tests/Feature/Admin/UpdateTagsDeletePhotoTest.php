@@ -67,7 +67,7 @@ class UpdateTagsDeletePhotoTest extends TestCase
         ]);
     }
 
-    public function provider(): array
+    public static function provider(): array
     {
         return [
             ['route' => '/admin/contentsupdatedelete', 'deletesPhoto' => true, 'tagsKey' => 'categories'],

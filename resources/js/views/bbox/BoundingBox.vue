@@ -89,10 +89,10 @@
 <script>
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
-import Boxes from '../../components/Admin/Boxes'
-import Tags from '../../components/Litter/Tags'
-import AddTags from '../../components/Litter/AddTags'
-import BrandsBox from '../../components/Admin/Bbox/BrandsBox'
+import Boxes from '../../components/Admin/Boxes.vue'
+import Tags from '../../components/Litter/Tags.vue'
+import AddTags from '../../components/Litter/AddTags.vue'
+import BrandsBox from '../../components/Admin/Bbox/BrandsBox.vue'
 
 import VueDragResize from 'vue-drag-resize'
 import ClickOutside from 'vue-click-outside'

@@ -5,7 +5,7 @@
         <div class="flex">
 
             <div class="profile-stat-card">
-                <img src="/assets/icons/home/camera.png" />
+                <img src="../../../assets/icons/home/camera.png" />
 
                 <div>
                     <p class="profile-stat">{{ userPhotoCount }}</p>
@@ -14,7 +14,7 @@
             </div>
 
             <div class="profile-stat-card">
-                <img src="/assets/icons/home/phone.png" />
+                <img src="../../../assets/icons/home/phone.png" />
 
                 <div>
                     <p class="profile-stat">{{ userTagsCount }}</p>

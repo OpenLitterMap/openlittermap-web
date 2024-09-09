@@ -9,8 +9,7 @@ use Tests\TestCase;
 
 class ListLeaderboardsTest extends TestCase
 {
-
-    public function routeDataProvider(): array
+    public static function routeDataProvider(): array
     {
         return [
             ['/teams/leaderboard', 'web'],

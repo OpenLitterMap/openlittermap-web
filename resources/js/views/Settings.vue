@@ -23,16 +23,16 @@
 </template>
 
 <script>
-import Details from './settings/Details'
-import Social from './settings/Social';
-import Account from './settings/Account'
-import Password from './settings/Password'
-import Payments from './settings/Payments'
-import Privacy from './settings/Privacy'
-import Littercoin from './settings/Littercoin'
-import PickedUp from './settings/PickedUp'
-import Emails from './settings/Emails'
-import GlobalFlag from './settings/GlobalFlag'
+import Details from './settings/Details.vue'
+import Social from './settings/Social.vue'
+import Account from './settings/Account.vue'
+import Password from './settings/Password.vue'
+import Payments from './settings/Payments.vue'
+import Privacy from './settings/Privacy.vue'
+import Littercoin from './settings/Littercoin.vue'
+import PickedUp from './settings/PickedUp.vue'
+import Emails from './settings/Emails.vue'
+import GlobalFlag from './settings/GlobalFlag.vue'
 
 export default {
     name: 'Settings',
