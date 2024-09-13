@@ -39,6 +39,7 @@ return [
                 'host' => env('REVERB_HOST', '127.0.0.1'),
                 'port' => env('REVERB_PORT', 6002),
                 'scheme' => env('REVERB_SCHEME', 'http'),
+                'path' => env('REVERB_PATH', '/reverb'),
                 'verify' => false,
             ],
         ],
