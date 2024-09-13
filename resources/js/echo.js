@@ -10,8 +10,7 @@ window.Echo = new Echo({
     wsPort: import.meta.env.VITE_REVERB_PORT ?? 80,
     wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,
     forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
-    enabledTransports: ['ws', 'wss'],
-    path: process.env.VITE_REVERB_PATH,
+    enabledTransports: ['ws', 'wss']
 });
 
 // window.Echo.channel("main").listen("UserSignedUp", (event) => {
