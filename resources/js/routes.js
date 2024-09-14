@@ -55,10 +55,10 @@ const router = new VueRouter({
             path: '/history',
             component: () => import('./views/general/History.vue')
         },
-        {
-            path: '/littercoin',
-            component: () => import('./views/home/Littercoin.vue')
-        },
+        // {
+        //     path: '/littercoin',
+        //     component: () => import('./views/home/Littercoin.vue')
+        // },
         {
             path: '/littercoin/merchants',
             component: () => import('./views/home/Merchants.vue')
