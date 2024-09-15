@@ -697,14 +697,21 @@ export default {
          */
         flyToLocation (location)
         {
-            const latLng = [location.latitude, location.longitude];
+            const latLng = L.latLng(location.latitude, location.longitude);
             const zoom = location.photoId && Math.round(location.zoom) < CLUSTER_ZOOM_THRESHOLD
                 ? CLUSTER_ZOOM_THRESHOLD
                 : location.zoom;
 
-            map.flyTo(latLng, zoom, {
+            // Calculate the offset in pixels to position the point 10% from the bottom
+            const mapSize = map.getSize();
+            const point = map.project(latLng, zoom);
+            const offsetY = mapSize.y * 0.4; // 0.4 times the map height
+            const targetPoint = point.subtract([0, offsetY]);
+            const targetLatLng = map.unproject(targetPoint, zoom);
+
+            map.flyTo(targetLatLng, zoom, {
                 animate: true,
-                duration: location.duration ?? 5
+                duration: location.duration ?? 5,
             });
         },
 

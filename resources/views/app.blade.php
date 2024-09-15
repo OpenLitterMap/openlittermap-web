@@ -9,9 +9,14 @@
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css"/>
     <script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
-
     <script src="https://js.stripe.com/v3"></script>
 
 {{--    'resources/css/app.css',--}}
     @vite(['resources/js/app.js'])
+
+    <script src="/js/wow.js"></script>
+    <script>
+        var wow = new WOW();
+        wow.init();
+    </script>
 </html>

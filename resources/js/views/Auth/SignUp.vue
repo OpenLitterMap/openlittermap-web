@@ -1,4 +1,4 @@
-<template name="sign-up">
+<template>
     <section class="section hero fullheight is-primary is-bold">
         <div class="container">
             <h1 class="title">
@@ -125,6 +125,14 @@
         </div>
     </section>
 </template>
+
+<script>
+
+export default {
+    name: "SignUp"
+}
+
+</script>
 
 <style scoped>
 

@@ -187,13 +187,13 @@ Route::get('/settings/show-flag', 'HomeController@index');
 Route::get('/settings/teams', 'HomeController@index');
 
 // Publicly available Littercoin Page
-Route::get('/littercoin', 'HomeController@index');
-Route::get('/littercoin/merchants', 'HomeController@index');
+//Route::get('/littercoin', 'HomeController@index');
+//Route::get('/littercoin/merchants', 'HomeController@index');
 
 // Public Routes
-Route::get('/littercoin-info', 'Littercoin\PublicLittercoinController@getLittercoinInfo');
-Route::post('/add-ada-tx', 'Littercoin\PublicLittercoinController@addAdaTx');
-Route::post('/add-ada-submit-tx', 'Littercoin\PublicLittercoinController@submitAddAdaTx');
+//Route::get('/littercoin-info', 'Littercoin\PublicLittercoinController@getLittercoinInfo');
+//Route::post('/add-ada-tx', 'Littercoin\PublicLittercoinController@addAdaTx');
+//Route::post('/add-ada-submit-tx', 'Littercoin\PublicLittercoinController@submitAddAdaTx');
 
 // Actions used by Authenticated Littercoin Settings Page
 Route::get('/get-users-littercoin', 'Littercoin\LittercoinController@getUsersLittercoin');

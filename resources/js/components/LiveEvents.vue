@@ -113,7 +113,6 @@ export default {
 
         /**
          * Emits an event to fly to the event's location, if any
-         * @param event
          */
         flyToLocation (event)
         {

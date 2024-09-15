@@ -160,10 +160,9 @@
                         name="ConfirmToS"
                         id="ConfirmToS"
                         v-model="checkbox"
+                        style="margin-right: 10px;"
                     />
-                    <label for="ConfirmToS" v-html="$t('auth.subscribe.form-account-conditions')">
-
-                    </label>
+                    <label for="ConfirmToS" v-html="$t('auth.subscribe.form-account-conditions')" />
                 </p>
 
                 <div class="captcha">
