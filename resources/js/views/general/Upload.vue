@@ -44,8 +44,8 @@
 </template>
 
 <script>
-import vue2Dropzone from 'vue2-dropzone';
 import Vue from 'vue';
+import vue2Dropzone from 'vue2-dropzone';
 
 export default {
     name: 'Upload',

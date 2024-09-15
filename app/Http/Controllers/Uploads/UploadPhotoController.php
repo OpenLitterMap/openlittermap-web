@@ -2,48 +2,37 @@
 
 namespace App\Http\Controllers\Uploads;
 
-use App\Exceptions\InvalidCoordinates;
+use Carbon\Carbon;
 use Geohash\GeoHash;
-use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
-use App\Actions\Photos\MakeImageAction;
-use App\Actions\Photos\UploadPhotoAction;
+
 use App\Events\NewCityAdded;
 use App\Events\NewCountryAdded;
 use App\Events\NewStateAdded;
 use App\Helpers\Post\UploadHelper;
-use Carbon\Carbon;
 use App\Models\Photo;
 use App\Models\User\User;
 use App\Events\ImageUploaded;
 use App\Events\Photo\IncrementPhotoMonth;
 use App\Http\Requests\UploadPhotoRequest;
+use App\Exceptions\InvalidCoordinates;
+
+use App\Actions\Photos\MakeImageAction;
+use App\Actions\Photos\UploadPhotoAction;
 use App\Actions\Locations\ReverseGeocodeLocationAction;
+use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class UploadPhotoController extends Controller
 {
-    /** @var MakeImageAction */
-    private $makeImageAction;
+    protected UploadHelper $uploadHelper;
+    private MakeImageAction $makeImageAction;
+    private UploadPhotoAction $uploadPhotoAction;
+    private UpdateLeaderboardsForLocationAction $updateLeaderboardsAction;
 
-    /** @var UploadPhotoAction */
-    private $uploadPhotoAction;
-
-    /** @var UploadHelper */
-    protected $uploadHelper;
-
-    /** @var UpdateLeaderboardsForLocationAction */
-    private $updateLeaderboardsAction;
-
-    /**
-     * Initialise Helper Actions
-     *
-     * @param MakeImageAction $makeImageAction
-     * @param UploadPhotoAction $uploadPhotoAction
-     * @param UploadHelper $uploadHelper
-     */
     public function __construct (
         MakeImageAction $makeImageAction,
         UploadPhotoAction $uploadPhotoAction,
@@ -67,11 +56,10 @@ class UploadPhotoController extends Controller
      * then persist new record to photos table
      *
      * @param UploadPhotoRequest $request
-     * @return array
+     * @return JsonResponse
      */
-    public function __invoke (UploadPhotoRequest $request): array
+    public function __invoke (UploadPhotoRequest $request): JsonResponse
     {
-        /** @var User $user */
         $user = Auth::user();
 
         \Log::channel('photos')->info([
@@ -105,8 +93,7 @@ class UploadPhotoController extends Controller
         if ($exif["GPSLatitude"][0] === "0/0" && $exif["GPSLongitude"][0] === "0/0")
         {
             abort(500,
-                "Sorry, Your Images have GeoTags, 
-                but they have values of Zero. 
+                "Sorry, Your Images have GeoTags, but they have values of Zero. 
                 You may have lost the geotags when transferring images across devices."
             );
         }
@@ -306,9 +293,9 @@ class UploadPhotoController extends Controller
             $dateTime
         ));
 
-        return [
+        return response()->json([
             'success' => true
-        ];
+        ]);
     }
 
     /**

@@ -30,11 +30,6 @@ class UploadHelper
                 ['country' => $addressArray["country"] ?? '', 'created_by' => auth()->id()]
             );
 
-        if ($country->wasRecentlyCreated) {
-            // Broadcast an event to anyone viewing the Global Map
-            event(new NewCountryAdded($country->country, $countryCode, now()));
-        }
-
         return $country;
     }
 
@@ -61,12 +56,6 @@ class UploadHelper
                 ['state' => $stateName, 'country_id' => $country->id],
                 ['created_by' => auth()->id()]
             );
-
-        if ($state->wasRecentlyCreated)
-        {
-            // Broadcast an event to anyone viewing the Global Map
-            event(new NewStateAdded($stateName, $country->country, now()));
-        }
 
         return $state;
     }
@@ -95,20 +84,6 @@ class UploadHelper
                 ],
                 ['created_by' => auth()->id()]
             );
-
-        if ($city->wasRecentlyCreated)
-        {
-            // Broadcast an event to anyone viewing the Global Map
-            event(new NewCityAdded(
-                $cityName,
-                $state->state,
-                $country->country,
-                now(),
-                $city->id,
-                $lat,
-                $lon
-            ));
-        }
 
         return $city;
     }

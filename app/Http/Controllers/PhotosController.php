@@ -2,42 +2,35 @@
 
 namespace App\Http\Controllers;
 
-use App\Actions\Photos\AddCustomTagsToPhotoAction;
-use App\Actions\Photos\AddTagsToPhotoAction;
-use App\Actions\Photos\DeletePhotoAction;
-use App\Actions\Photos\GetPreviousCustomTagsAction;
-use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
-use App\Events\ImageDeleted;
-use App\Http\Requests\AddTagsRequest;
+use App\Models\Photo;
 use App\Models\User\User;
 
-use App\Models\Photo;
-use Illuminate\Http\Request;
+use App\Events\ImageDeleted;
 use App\Events\TagsVerifiedByAdmin;
 
 use App\Helpers\Post\UploadHelper;
+use App\Http\Requests\AddTagsRequest;
 
+use App\Actions\Photos\DeletePhotoAction;
+use App\Actions\Photos\AddTagsToPhotoAction;
+use App\Actions\Photos\AddCustomTagsToPhotoAction;
+use App\Actions\Photos\GetPreviousCustomTagsAction;
+use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
+
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class PhotosController extends Controller
 {
-    /** @var UploadHelper */
-    protected $uploadHelper;
-    /** @var AddTagsToPhotoAction */
-    private $addTagsAction;
-    /** @var UpdateLeaderboardsForLocationAction */
-    private $updateLeaderboardsAction;
-    /** @var DeletePhotoAction */
-    private $deletePhotoAction;
+    protected UploadHelper $uploadHelper;
+    private AddTagsToPhotoAction $addTagsAction;
+    private DeletePhotoAction $deletePhotoAction;
+    private UpdateLeaderboardsForLocationAction $updateLeaderboardsAction;
 
     /**
      * PhotosController constructor
      * Apply middleware to all of these routes
-     *
-     * @param UploadHelper $uploadHelper
-     * @param AddTagsToPhotoAction $addTagsAction
-     * @param UpdateLeaderboardsForLocationAction $updateLeaderboardsAction
-     * @param DeletePhotoAction $deletePhotoAction
      */
     public function __construct(
         UploadHelper $uploadHelper,
@@ -57,11 +50,9 @@ class PhotosController extends Controller
     /**
      * Delete an image
      */
-    public function deleteImage(Request $request)
+    public function deleteImage (Request $request)
     {
-        /** @var User $user */
         $user = Auth::user();
-        /** @var Photo $photo */
         $photo = Photo::findOrFail($request->photoid);
 
         if ($user->id !== $photo->user_id) {
@@ -86,7 +77,7 @@ class PhotosController extends Controller
             $photo->team_id
         ));
 
-        return ['message' => 'Photo deleted successfully!'];
+        return response()->json(['message' => 'Photo deleted successfully!']);
     }
 
     /**
@@ -138,18 +129,17 @@ class PhotosController extends Controller
 
         $photo->save();
 
-        return [
+        return response()->json([
             'success' => true,
             'msg' => 'success'
-        ];
+        ]);
     }
 
     /**
      * Get unverified photos for tagging
      */
-    public function unverified (GetPreviousCustomTagsAction $previousTagsAction)
+    public function unverified (GetPreviousCustomTagsAction $previousTagsAction): JsonResponse
     {
-        /** @var User $user */
         $user = Auth::user();
 
         $query = Photo::where([
@@ -168,11 +158,11 @@ class PhotosController extends Controller
 
         $total = Photo::where('user_id', $user->id)->count();
 
-        return [
+        return response()->json([
             'photos' => $photos,
             'remaining' => $remaining,
             'total' => $total,
             'custom_tags' => $previousTagsAction->run($user)
-        ];
+        ]);
     }
 }

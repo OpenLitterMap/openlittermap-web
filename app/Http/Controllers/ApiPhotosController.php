@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\NewCityAdded;
+use App\Events\NewCountryAdded;
+use App\Events\NewStateAdded;
 use GeoHash;
 use Carbon\Carbon;
 use App\Models\Photo;
@@ -196,7 +199,29 @@ class ApiPhotosController extends Controller
             $city
         ));
 
-        // Move this to redis
+        // Broadcast an event to anyone viewing the Global Map
+        // Sends Notification to Twitter & Slack
+        if ($country->wasRecentlyCreated) {
+            event(new NewCountryAdded($country->country, $country->shortcode, now()));
+        }
+
+        if ($state->wasRecentlyCreated) {
+            event(new NewStateAdded($state->state, $country->country, now()));
+        }
+
+        if ($city->wasRecentlyCreated) {
+            event(new NewCityAdded(
+                $city->city,
+                $state->state,
+                $country->country,
+                now(),
+                $city->id,
+                $lat,
+                $lon,
+                $photo->id
+            ));
+        }
+
         event(new IncrementPhotoMonth(
             $country->id,
             $state->id,
