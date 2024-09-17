@@ -35,6 +35,7 @@ class UploadPhotoWithCustomTagsTest extends TestCase
     {
         /** @var User $user */
         $user = User::factory()->create();
+
         $this->actingAs($user, 'api');
         $this->assertEquals(0, $user->fresh()->xp);
 
@@ -49,7 +50,7 @@ class UploadPhotoWithCustomTagsTest extends TestCase
             ['tag1', 'tag2', 'tag3'],
             $user->fresh()->photos->last()->customTags->pluck('tag')->toArray()
         );
-        $this->assertEquals(4, $user->fresh()->xp); // 1 + 3
+        $this->assertEquals(4, $user->fresh()->xp_redis); // 1 + 3
     }
 
 //    public function test_an_api_user_can_upload_a_photo_with_custom_tags()
