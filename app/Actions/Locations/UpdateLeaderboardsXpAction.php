@@ -19,6 +19,8 @@ class UpdateLeaderboardsXpAction
         $month = now()->month;
         $day = now()->day;
 
+        \Log::info(['incrXp', $incrXp]);
+
         // Update the Users total score in the Global Leaderboard
         Redis::zincrby("xp.users", $incrXp, $userId);
 

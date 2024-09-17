@@ -21,6 +21,7 @@ use Illuminate\Http\Request;
 use App\Events\TagsVerifiedByAdmin;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Route;
 
 class AdminController extends Controller
@@ -150,10 +151,10 @@ class AdminController extends Controller
 
         $totalXp = $tagUpdates['removedUserXp'] + 1; // 1xp from uploading
 
-        $user->xp = max(0, $user->xp - $totalXp);
         $user->total_images = $user->total_images > 0 ? $user->total_images - 1 : 0;
         $user->save();
 
+        // This will also update the users XP
         $this->updateLeaderboardsAction->run($photo, $user->id, -$totalXp);
 
         rewardXpToAdmin();
