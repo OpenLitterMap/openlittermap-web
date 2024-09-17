@@ -177,7 +177,7 @@ class ApiPhotosController extends Controller
             'address_array' => json_encode($addressArray)
         ]);
 
-        Redis::incr('xp.users', $user->id);
+        Redis::zadd('xp.users', $user->id, 1);
 
         // Since a user can upload multiple photos at once,
         // we might get old values for xp, so we update the values directly
