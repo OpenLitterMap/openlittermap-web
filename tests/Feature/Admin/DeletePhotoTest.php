@@ -91,8 +91,7 @@ class DeletePhotoTest extends TestCase
         // And it's gone
         $this->assertEquals(1, $this->user->has_uploaded);
 
-        // this should be 0
-        $this->assertEquals(-1, $this->user->xp_redis);
+        $this->assertEquals(0, $this->user->xp_redis);
         $this->assertEquals(0, $this->user->total_images);
         Storage::disk('s3')->assertMissing($this->imageAndAttributes['filepath']);
         Storage::disk('bbox')->assertMissing($this->imageAndAttributes['filepath']);

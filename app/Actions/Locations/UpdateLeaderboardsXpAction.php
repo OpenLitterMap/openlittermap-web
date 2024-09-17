@@ -19,14 +19,18 @@ class UpdateLeaderboardsXpAction
         $month = now()->month;
         $day = now()->day;
 
-        \Log::info(['incrXp', $incrXp]);
-
         // Update the Users total score in the Global Leaderboard
-        Redis::zincrby("xp.users", $incrXp, $userId);
+        $this->addXp("xp.users", $incrXp, $userId);
 
         // Update the Users total score for each time-stamped Leaderboard
-        Redis::zincrby("leaderboard:users:$year:$month:$day", $incrXp, $userId);
-        Redis::zincrby("leaderboard:users:$year:$month", $incrXp, $userId);
-        Redis::zincrby("leaderboard:users:$year", $incrXp, $userId);
+        $this->addXp("leaderboard:users:$year:$month:$day", $incrXp, $userId);
+        $this->addXp("leaderboard:users:$year:$month", $incrXp, $userId);
+        $this->addXp("leaderboard:users:$year", $incrXp, $userId);
+    }
+
+    protected function addXp ($key, $xp, $userId) {
+        $currentScore = Redis::zscore($key, $userId) ?? 0;
+        $newScore = max(0, $currentScore + $xp);
+        Redis::zadd($key, $newScore, $userId);
     }
 }
