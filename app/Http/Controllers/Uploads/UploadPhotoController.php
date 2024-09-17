@@ -230,7 +230,6 @@ class UploadPhotoController extends Controller
 
         // Step 5: Reward XP, update resources & Update Leaderboards
         // $user->images_remaining -= 1;
-        Redis::zadd('xp.users', $user->id, 1);
 
         // move this to redis
         // Since a user can upload multiple photos at once,

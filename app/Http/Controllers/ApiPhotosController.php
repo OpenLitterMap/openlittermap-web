@@ -76,7 +76,6 @@ class ApiPhotosController extends Controller
     {
         $file = $request->file('photo');
 
-        /** @var User $user */
         $user = auth()->user();
 
         if (!$user->has_uploaded) $user->has_uploaded = 1;
@@ -177,8 +176,6 @@ class ApiPhotosController extends Controller
             'address_array' => json_encode($addressArray)
         ]);
 
-        Redis::zadd('xp.users', $user->id, 1);
-
         // Since a user can upload multiple photos at once,
         // we might get old values for xp, so we update the values directly
         // without retrieving them
@@ -186,7 +183,7 @@ class ApiPhotosController extends Controller
 
         $user->refresh();
 
-        /** @var UpdateLeaderboardsForLocationAction $action */
+        // XP is awarded for each photo uploaded
         $action = app(UpdateLeaderboardsForLocationAction::class);
         $action->run($photo, $user->id, 1);
 

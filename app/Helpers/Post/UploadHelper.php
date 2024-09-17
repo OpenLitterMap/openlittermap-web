@@ -24,13 +24,11 @@ class UploadHelper
             return Country::where('country', 'error_country')->first();
         }
 
-        $country = Country::select('id', 'country', 'shortcode')
+        return Country::select('id', 'country', 'shortcode')
             ->firstOrCreate(
                 ['shortcode' => $countryCode],
                 ['country' => $addressArray["country"] ?? '', 'created_by' => auth()->id()]
             );
-
-        return $country;
     }
 
     /**
