@@ -2,33 +2,26 @@
 
 namespace Tests\Feature\Admin;
 
+use Tests\TestCase;
+use Tests\Feature\HasPhotoUploads;
+use App\Models\Photo;
+use App\Models\User\User;
 use App\Actions\LogAdminVerificationAction;
 use App\Events\TagsVerifiedByAdmin;
 use App\Models\Litter\Categories\Alcohol;
-use App\Models\Location\City;
-use App\Models\Location\Country;
-use App\Models\Location\State;
-use App\Models\Photo;
-use App\Models\User\User;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
-use Tests\Feature\HasPhotoUploads;
-use Tests\TestCase;
 
 class UpdateTagsDeletePhotoTest extends TestCase
 {
     use HasPhotoUploads;
 
-    /** @var User */
-    protected $admin;
-    /** @var User */
-    protected $user;
-    /** @var Photo */
-    protected $photo;
-    /** @var array */
-    private $imageAndAttributes;
+    protected User $user;
+    protected User $admin;
+    protected Photo $photo;
+    private array $imageAndAttributes;
 
     protected function setUp(): void
     {
@@ -124,13 +117,15 @@ class UpdateTagsDeletePhotoTest extends TestCase
      * @dataProvider provider
      */
     public function test_user_and_photo_info_are_updated_when_an_admin_updates_tags_of_a_photo(
-        $route, $deletesPhoto, $tagsKey
+        $route,
+        $deletesPhoto,
+        $tagsKey
     )
     {
         // Admin updates the tags -------------------
         $this->actingAs($this->admin);
 
-        $this->assertEquals(0, $this->admin->xp);
+        $this->assertEquals(0, $this->admin->xp_redis);
 
         $this->post($route, [
             'photoId' => $this->photo->id,
@@ -149,9 +144,9 @@ class UpdateTagsDeletePhotoTest extends TestCase
         // Admin is rewarded with 1 XP for the effort
         // + 2xp for deleting tag and custom tag
         // + 2xp for adding new tag + custom tag
-        $this->assertEquals(5, $this->admin->xp);
+        $this->assertEquals(5, $this->admin->xp_redis);
         // 1 xp from uploading, xp from other tags is removed
-        $this->assertEquals(1, $this->user->xp);
+        $this->assertEquals(1, $this->user->xp_redis);
         $this->assertEquals(10, $this->photo->total_litter);
         $this->assertFalse($this->photo->picked_up);
         $this->assertEquals(1, $this->photo->verification);

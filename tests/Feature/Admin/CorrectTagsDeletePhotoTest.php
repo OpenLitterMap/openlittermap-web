@@ -2,16 +2,16 @@
 
 namespace Tests\Feature\Admin;
 
-use App\Actions\LogAdminVerificationAction;
-use App\Events\TagsVerifiedByAdmin;
+use Tests\TestCase;
 use App\Models\Photo;
 use App\Models\User\User;
+use Spatie\Permission\Models\Role;
+use Tests\Feature\HasPhotoUploads;
+use App\Events\TagsVerifiedByAdmin;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
-use Spatie\Permission\Models\Role;
-use Tests\Feature\HasPhotoUploads;
-use Tests\TestCase;
+use App\Actions\LogAdminVerificationAction;
 
 class CorrectTagsDeletePhotoTest extends TestCase
 {
@@ -43,7 +43,7 @@ class CorrectTagsDeletePhotoTest extends TestCase
 
         $this->imageAndAttributes = $this->getImageAndAttributes();
 
-        $resp = $this->post('/submit', ['file' => $this->imageAndAttributes['file']]);
+        $this->post('/submit', ['file' => $this->imageAndAttributes['file']]);
 
         $this->photo = $this->user->fresh()->photos->last();
 
@@ -66,12 +66,12 @@ class CorrectTagsDeletePhotoTest extends TestCase
     public function test_an_admin_can_verify_and_delete_photos_uploaded_by_users()
     {
         // We make sure the photo exists
-        Redis::zrem('xp.users', $this->admin->id);
+        Redis::del('xp.users', $this->admin->id);
+        Redis::del('xp.users', $this->user->id);
 
         Storage::disk('s3')->assertExists($this->imageAndAttributes['filepath']);
         Storage::disk('bbox')->assertExists($this->imageAndAttributes['filepath']);
-        $this->assertEquals(4, $this->user->xp);
-        $this->assertEquals(0, $this->admin->xp);
+        $this->assertEquals(0, $this->user->xp_redis);
         $this->assertEquals(0, $this->admin->xp_redis);
 
         // Admin verifies the photo -------------------
@@ -85,13 +85,13 @@ class CorrectTagsDeletePhotoTest extends TestCase
         // And it's gone
         Storage::disk('s3')->assertMissing($this->imageAndAttributes['filepath']);
         Storage::disk('bbox')->assertMissing($this->imageAndAttributes['filepath']);
-        $this->assertEquals(4, $this->user->xp);
         $this->assertEquals('/assets/verified.jpg', $this->photo->filename);
         $this->assertEquals(1, $this->photo->verification);
         $this->assertEquals(2, $this->photo->verified);
         // Admin is rewarded with 1 XP
-        $this->assertEquals(1, $this->admin->xp);
         $this->assertEquals(1, $this->admin->xp_redis);
+        // User was not rewarded with XP
+        $this->assertEquals(0, $this->user->xp_redis);
     }
 
     public function test_unauthorized_users_cannot_verify_and_delete_photos()

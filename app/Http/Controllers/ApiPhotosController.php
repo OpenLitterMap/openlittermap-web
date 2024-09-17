@@ -33,6 +33,7 @@ use App\Http\Requests\Api\UploadPhotoWithOrWithoutTagsRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redis;
 
 class ApiPhotosController extends Controller
 {
@@ -176,13 +177,12 @@ class ApiPhotosController extends Controller
             'address_array' => json_encode($addressArray)
         ]);
 
+        Redis::incr('xp.users', $user->id);
+
         // Since a user can upload multiple photos at once,
         // we might get old values for xp, so we update the values directly
         // without retrieving them
-        $user->update([
-            'xp' => DB::raw('ifnull(xp, 0) + 1'),
-            'total_images' => DB::raw('ifnull(total_images, 0) + 1')
-        ]);
+        $user->update(['total_images' => DB::raw('ifnull(total_images, 0) + 1')]);
 
         $user->refresh();
 

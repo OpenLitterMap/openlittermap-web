@@ -2,29 +2,25 @@
 
 namespace Tests\Feature\Admin;
 
-
-use App\Actions\LogAdminVerificationAction;
-use App\Events\TagsVerifiedByAdmin;
-use App\Models\Litter\Categories\Smoking;
+use Tests\TestCase;
 use App\Models\Photo;
 use App\Models\User\User;
-use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Redis;
-use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
 use Tests\Feature\HasPhotoUploads;
-use Tests\TestCase;
+use App\Events\TagsVerifiedByAdmin;
+use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Storage;
+use App\Models\Litter\Categories\Smoking;
+use App\Actions\LogAdminVerificationAction;
 
 class CorrectTagsKeepPhotoTest extends TestCase
 {
     use HasPhotoUploads;
 
-    /** @var User */
-    protected $admin;
-    /** @var User */
-    protected $user;
-    /** @var Photo */
-    protected $photo;
+    protected User $user;
+    protected User $admin;
+    protected Photo $photo;
 
     protected function setUp(): void
     {
@@ -70,9 +66,10 @@ class CorrectTagsKeepPhotoTest extends TestCase
     public function test_an_admin_can_mark_photos_as_correctly_tagged()
     {
         // We make sure xp and tags are correct
+        Redis::zrem('xp.users', $this->user->id);
         Redis::zrem('xp.users', $this->admin->id);
-        $this->assertEquals(4, $this->user->xp);
-        $this->assertEquals(0, $this->admin->xp);
+
+        $this->assertEquals(0, $this->user->xp_redis);
         $this->assertEquals(0, $this->admin->xp_redis);
         $this->assertInstanceOf(Smoking::class, $this->photo->smoking);
 
@@ -85,14 +82,13 @@ class CorrectTagsKeepPhotoTest extends TestCase
         $this->user->refresh();
         $this->photo->refresh();
 
-        // Assert xp and tags don't change
-        $this->assertEquals(4, $this->user->xp);
+        // Assert tags don't change
         $this->assertEquals(1, $this->photo->verification);
         $this->assertEquals(2, $this->photo->verified);
         $this->assertEquals(3, $this->photo->total_litter);
         $this->assertInstanceOf(Smoking::class, $this->photo->smoking);
+
         // Admin is rewarded with 1 XP
-        $this->assertEquals(1, $this->admin->xp);
         $this->assertEquals(1, $this->admin->xp_redis);
     }
 

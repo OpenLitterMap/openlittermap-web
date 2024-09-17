@@ -2,27 +2,22 @@
 
 namespace Tests\Feature\Admin;
 
-
-use App\Actions\LogAdminVerificationAction;
-use App\Models\Litter\Categories\Smoking;
+use Tests\TestCase;
+use Tests\Feature\HasPhotoUploads;
 use App\Models\Photo;
 use App\Models\User\User;
+use App\Models\Litter\Categories\Smoking;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
-use Tests\Feature\HasPhotoUploads;
-use Tests\TestCase;
 
 class IncorrectTagsTest extends TestCase
 {
     use HasPhotoUploads;
 
-    /** @var User */
-    protected $admin;
-    /** @var User */
-    protected $user;
-    /** @var Photo */
-    protected $photo;
+    protected User $user;
+    protected User $admin;
+    protected Photo $photo;
 
     protected function setUp(): void
     {
@@ -55,6 +50,9 @@ class IncorrectTagsTest extends TestCase
         // User tags the image
         $this->actingAs($this->user);
 
+        Redis::zrem('xp.users', $this->user->id);
+        Redis::zrem('xp.users', $this->admin->id);
+
         $this->post('/add-tags', [
             'photo_id' => $this->photo->id,
             'picked_up' => false,
@@ -70,8 +68,8 @@ class IncorrectTagsTest extends TestCase
         $smokingId = $this->photo->smoking_id;
 
         // We make sure xp and tags are correct
-        $this->assertEquals(4, $this->user->xp);
-        $this->assertEquals(0, $this->admin->xp);
+        $this->assertEquals(3, $this->user->xp_redis); // was 4
+        $this->assertEquals(0, $this->admin->xp_redis);
         $this->assertInstanceOf(Smoking::class, $this->photo->smoking);
 
         // Admin marks the tagging as incorrect -------------------
@@ -84,7 +82,7 @@ class IncorrectTagsTest extends TestCase
         $this->photo->refresh();
 
         // Assert xp is decreased, and tags are cleared
-        $this->assertEquals(1, $this->user->xp);
+        $this->assertEquals(0, $this->user->xp_redis); // was 1
         $this->assertEquals(0, $this->user->count_correctly_verified);
         $this->assertEquals(0, $this->photo->verification);
         $this->assertEquals(0, $this->photo->verified);
@@ -93,7 +91,7 @@ class IncorrectTagsTest extends TestCase
         $this->assertNull($this->photo->smoking_id);
         $this->assertDatabaseMissing('smoking', ['id' => $smokingId]);
         // Admin is rewarded with 1 XP
-        $this->assertEquals(1, $this->admin->xp);
+        $this->assertEquals(1, $this->admin->xp_redis);
     }
 
     public function test_leaderboards_are_updated_when_an_admin_marks_tagging_incorrect()

@@ -105,23 +105,23 @@ class AddTagsToPhotoTest extends TestCase
         $this->postJson('/api/add-tags', [
             'tags' => ['smoking' => ['butts' => 3]]
         ])
-            ->assertStatus(422)
-            ->assertJsonValidationErrors(['photo_id']);
+        ->assertStatus(422)
+        ->assertJsonValidationErrors(['photo_id']);
 
         // Non-existing photo_id -------------------
         $this->postJson('/api/add-tags', [
             'photo_id' => 0,
             'tags' => ['smoking' => ['butts' => 3]]
         ])
-            ->assertStatus(422)
-            ->assertJsonValidationErrors(['photo_id']);
+        ->assertStatus(422)
+        ->assertJsonValidationErrors(['photo_id']);
 
         // photo_id not belonging to the user -------------------
         $this->postJson('/api/add-tags', [
             'photo_id' => Photo::factory()->create()->id,
             'tags' => ['smoking' => ['butts' => 3]]
         ])
-            ->assertForbidden();
+        ->assertForbidden();
     }
 
     public function test_request_tags_are_validated()
@@ -163,6 +163,8 @@ class AddTagsToPhotoTest extends TestCase
 
         $this->actingAs($user, 'api');
 
+        Redis::del("xp.users", $user->id);
+
         $this->post('/api/photos/submit',
             $this->getApiImageAttributes($this->imageAndAttributes)
         );
@@ -189,7 +191,7 @@ class AddTagsToPhotoTest extends TestCase
         $user->refresh();
         $photo->refresh();
 
-        $this->assertEquals(10, $user->xp); // 1 xp from uploading, + 8xp from total litter + 1xp from brand
+        $this->assertEquals(10, $user->xp_redis); // 1 xp from uploading, + 8xp from total litter + 1xp from brand
         $this->assertEquals(8, $photo->total_litter);
         $this->assertEquals(0.1, $photo->verification);
     }

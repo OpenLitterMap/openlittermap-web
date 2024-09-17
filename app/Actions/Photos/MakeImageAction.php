@@ -18,8 +18,9 @@ class MakeImageAction
      * @param bool $resize
      *
      * @return array
+     * @throws Exception
      */
-    public function run(UploadedFile $file, bool $resize = false): array
+    public function run (UploadedFile $file, bool $resize = false): array
     {
         $imageAndExifData = $this->getImageAndExifData($file);
 
@@ -39,7 +40,7 @@ class MakeImageAction
      * @return array
      * @throws Exception
      */
-    protected function getImageAndExifData(UploadedFile $file): array
+    protected function getImageAndExifData (UploadedFile $file): array
     {
         $extension = $file->getClientOriginalExtension();
 

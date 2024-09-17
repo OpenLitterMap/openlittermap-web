@@ -102,7 +102,7 @@ class AdminController extends Controller
     /**
      * Verify an image, delete the image
      */
-    public function verify (Request $request)
+    public function verify (Request $request): JsonResponse
     {
         /** @var Photo $photo */
         $photo = Photo::findOrFail($request->photoId);
@@ -119,6 +119,10 @@ class AdminController extends Controller
         logAdminAction($photo, Route::getCurrentRoute()->getActionMethod());
 
         event (new TagsVerifiedByAdmin($photo->id));
+
+        return response()->json([
+            'success' => true
+        ]);
     }
 
     /**

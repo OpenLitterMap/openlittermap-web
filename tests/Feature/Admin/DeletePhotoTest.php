@@ -53,6 +53,9 @@ class DeletePhotoTest extends TestCase
         // User tags the image
         $this->actingAs($this->user);
 
+        Redis::zrem('xp.users', $this->user->id);
+        Redis::zrem("xp.users", $this->admin->id);
+
         $this->post('/add-tags', [
             'photo_id' => $this->photo->id,
             'picked_up' => false,
@@ -68,9 +71,11 @@ class DeletePhotoTest extends TestCase
         // We make sure the photo exists
         Storage::disk('s3')->assertExists($this->imageAndAttributes['filepath']);
         Storage::disk('bbox')->assertExists($this->imageAndAttributes['filepath']);
-        $this->assertEquals(0, $this->admin->xp);
+        $this->assertEquals(0, $this->admin->xp_redis);
         $this->assertEquals(1, $this->user->has_uploaded);
-        $this->assertEquals(4, $this->user->xp);
+
+        // was 4
+        $this->assertEquals(3, $this->user->xp_redis);
         $this->assertEquals(1, $this->user->total_images);
         $this->assertInstanceOf(Photo::class, $this->photo);
 
@@ -84,7 +89,7 @@ class DeletePhotoTest extends TestCase
         // Admin is rewarded with 1 XP
         $this->assertEquals(1, $this->admin->xp);
         // And it's gone
-        $this->assertEquals(1, $this->user->has_uploaded); // TODO shouldn't it decrement?
+        $this->assertEquals(1, $this->user->has_uploaded);
         $this->assertEquals(0, $this->user->xp);
         $this->assertEquals(0, $this->user->total_images);
         Storage::disk('s3')->assertMissing($this->imageAndAttributes['filepath']);

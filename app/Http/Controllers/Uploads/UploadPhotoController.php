@@ -25,6 +25,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 
 class UploadPhotoController extends Controller
 {
@@ -225,19 +226,17 @@ class UploadPhotoController extends Controller
             'five_hundred_square_filepath' => $bboxImageName,
             'address_array' => json_encode($addressArray)
         ]);
-        // $user->images_remaining -= 1;
         // End Step 4: Create the Photo
 
-        // Step 5: Reward XP & Update Leaderboards
-        // Reward XP
-        // To do - move this to Redis
+        // Step 5: Reward XP, update resources & Update Leaderboards
+        // $user->images_remaining -= 1;
+        Redis::incr('xp.users', $user->id);
+
+        // move this to redis
         // Since a user can upload multiple photos at once,
         // we might get old values for xp, so we update the values directly
         // without retrieving them
-        $user->update([
-            'xp' => DB::raw('ifnull(xp, 0) + 1'),
-            'total_images' => DB::raw('ifnull(total_images, 0) + 1')
-        ]);
+        $user->update(['total_images' => DB::raw('ifnull(total_images, 0) + 1')]);
 
         $user->refresh();
 
@@ -292,6 +291,7 @@ class UploadPhotoController extends Controller
             $city->id,
             $dateTime
         ));
+        // End step 6: Dispatch Events & Notifications
 
         return response()->json([
             'success' => true

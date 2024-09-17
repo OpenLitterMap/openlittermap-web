@@ -2,24 +2,21 @@
 
 namespace Tests\Feature\Photos;
 
-use App\Events\TagsVerifiedByAdmin;
-use App\Models\Litter\Categories\Smoking;
-use App\Models\Location\City;
-use App\Models\Location\Country;
-use App\Models\Location\State;
+use Tests\TestCase;
 use App\Models\Photo;
 use App\Models\User\User;
+use Tests\Feature\HasPhotoUploads;
+use App\Events\TagsVerifiedByAdmin;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
-use Tests\Feature\HasPhotoUploads;
-use Tests\TestCase;
+use App\Models\Litter\Categories\Smoking;
 
 class AddTagsToPhotoTest extends TestCase
 {
     use HasPhotoUploads;
 
-    protected $imageAndAttributes;
+    protected array $imageAndAttributes;
 
     protected function setUp(): void
     {
@@ -75,6 +72,8 @@ class AddTagsToPhotoTest extends TestCase
 
         $this->actingAs($user);
 
+        Redis::del("xp.users", $user->id);
+
         $this->post('/submit', [
             'file' => $this->imageAndAttributes['file'],
         ]);
@@ -99,7 +98,7 @@ class AddTagsToPhotoTest extends TestCase
         $user->refresh();
         $photo->refresh();
 
-        $this->assertEquals(9, $user->xp); // 1 xp from uploading, + 8xp from total litter tagged
+        $this->assertEquals(9, $user->xp_redis); // 1 xp from uploading, + 8xp from total litter tagged
         $this->assertEquals(8, $photo->total_litter);
         $this->assertTrue($photo->picked_up);
         $this->assertEquals(0.1, $photo->verification);
