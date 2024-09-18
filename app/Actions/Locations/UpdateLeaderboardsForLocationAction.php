@@ -3,7 +3,6 @@
 namespace App\Actions\Locations;
 
 use App\Models\Photo;
-
 use Illuminate\Support\Facades\Redis;
 
 class UpdateLeaderboardsForLocationAction
