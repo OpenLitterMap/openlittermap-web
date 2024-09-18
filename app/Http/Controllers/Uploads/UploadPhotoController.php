@@ -68,7 +68,9 @@ class UploadPhotoController extends Controller
             'user_id' => $user->id
         ]);
 
-        if (!$user->has_uploaded) $user->has_uploaded = 1;
+        if (!$user->has_uploaded) {
+            $user->has_uploaded = 1;
+        }
 
         $file = $request->file('file'); // /tmp/php7S8v..
 
@@ -94,8 +96,9 @@ class UploadPhotoController extends Controller
         if ($exif["GPSLatitude"][0] === "0/0" && $exif["GPSLongitude"][0] === "0/0")
         {
             abort(500,
-                "Sorry, Your Images have GeoTags, but they have values of Zero. 
-                You may have lost the geotags when transferring images across devices."
+                "Error: Your Images have GeoTags, but they have values of zero. 
+                You may have lost the geotags when transferring images across devices
+                or you might need to enable another setting to make them available."
             );
         }
 
@@ -169,7 +172,11 @@ class UploadPhotoController extends Controller
         if (($latitude === 0 && $longitude === 0) || ($latitude === '0' && $longitude === '0'))
         {
             \Log::info("invalid coordinates found for userId $user->id \n");
-            abort(500, "Invalid coordinates: lat=0, lon=0");
+            abort(500,
+                "Error: Your Images have GeoTags, but they have values of zero. 
+                You may have lost the geotags when transferring images across devices
+                or you might need to enable another setting to make them available."
+            );
         }
 
         // Use OpenStreetMap to Reverse Geocode the coordinates into an Address.
@@ -239,7 +246,7 @@ class UploadPhotoController extends Controller
 
         $user->refresh();
 
-        // Update the Leaderboards
+        // Update the Leaderboards and give xp.
         $this->updateLeaderboardsAction->run(
             $photo,
             $user->id,

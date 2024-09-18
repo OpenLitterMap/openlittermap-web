@@ -28,9 +28,15 @@ class UpdateLeaderboardsXpAction
         $this->addXp("leaderboard:users:$year", $incrXp, $userId);
     }
 
-    protected function addXp ($key, $xp, $userId) {
-        $currentScore = Redis::zscore($key, $userId) ?? 0;
-        $newScore = max(0, $currentScore + $xp);
-        Redis::zadd($key, $newScore, $userId);
+    protected function addXp ($key, $xp, $userId): void {
+        if ($xp <= 0) {
+            $currentScore = Redis::zscore($key, $userId) ?? 0;
+            $newScore = max(0, $currentScore + $xp);
+
+            Redis::zincrby($key, $newScore, $userId);
+        } else {
+
+            Redis::zincrby($key, $xp, $userId);
+        }
     }
 }

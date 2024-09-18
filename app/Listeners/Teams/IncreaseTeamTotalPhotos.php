@@ -2,11 +2,11 @@
 
 namespace App\Listeners\Teams;
 
-use App\Events\ImageUploaded;
-use App\Models\Teams\Team;
 use App\Models\User\User;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use App\Models\Teams\Team;
+use App\Events\ImageUploaded;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Contracts\Queue\ShouldQueue;
 
 class IncreaseTeamTotalPhotos implements ShouldQueue
 {
@@ -21,7 +21,7 @@ class IncreaseTeamTotalPhotos implements ShouldQueue
      * @param ImageUploaded $event
      * @return void
      */
-    public function handle(ImageUploaded $event)
+    public function handle (ImageUploaded $event): void
     {
         if (!$event->teamId) {
             return;
