@@ -3,8 +3,31 @@
 use Illuminate\Support\Facades\Route;
 
 Route::get('test', function () {
-    return response()->json([
-        'test' => 'hello'
+
+    // Mon 1st Sept 2024
+    $startDate = \Carbon\Carbon::parse('2024-09-01')->format('D jS M Y');
+
+    // Sun 7th Sept 2024
+    $endDate = \Carbon\Carbon::parse('2024-09-07')->format('D jS M Y');
+
+    $newUsers = 10;
+    $totalUsers = 8000;
+
+    $newPhotos = 20;
+    $totalPhotos = 50000;
+
+    $newTags = 100;
+    $totalTags = 200000;
+
+    return view('reports.impact', [
+        'startDate' => $startDate,
+        'endDate' => $endDate,
+        'newUsers' => $newUsers,
+        'totalUsers' => $totalUsers,
+        'newPhotos' => $newPhotos,
+        'totalPhotos' => $totalPhotos,
+        'newTags' => $newTags,
+        'totalTags' => $totalTags,
     ]);
 });
 
