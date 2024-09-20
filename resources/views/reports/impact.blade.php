@@ -13,8 +13,7 @@
             padding: 0;
         }
         .container {
-            width: 100%;
-            max-width: 1200px;
+            width: 1080px;
             margin: 0 auto;
             padding: 20px;
         }
