@@ -138,63 +138,30 @@
         <div class="category-card">
             <h3>Top 5 users</h3>
 
-            <div class="flex jc relative">
-                <img
-                    src="https://openlittermap.com/assets/icons/gold-medal-2.png"
-                    alt="Gold Medal"
-                    style="width: 2em; margin-right: 10px; position: absolute; top: 0; left: 0;"
-                />
+            @if (count($topUsers) > 0)
+            @foreach ($topUsers as $index => $topUser)
+                <div class="flex jc relative">
+                    @if ($index <= 3)
+                        <img
+                            src="{{ $medals[$index]['src'] }}"
+                            alt="{{ $medals[$index]['alt'] }}"
+                            style="width: 2em; margin-right: 10px; position: absolute; top: 0; left: 0;"
+                        />
+                    @endif
 
-                <div class="flag">
-                    <img src="https://openlittermap.com/assets/icons/flags/ie.png"/>
+                    <div class="flag">
+                        @if ($topUser['global_flag'])
+                            <img
+                                src="https://openlittermap.com/assets/icons/flags/{{ strtolower($topUser['global_flag']) }}.png"
+                                alt="{{ $topUser['global_flag'] }} Flag"
+                            />
+                        @endif
 
-                    <p>User1</p>
+                        <p>{{ $topUser['name'] ?: ($topUser['username'] ?: 'Anonymous') }}</p>
+                    </div>
                 </div>
-            </div>
-
-            <div class="flex jc relative">
-                <img
-                    src="https://openlittermap.com/assets/icons/silver-medal-2.png"
-                    alt="Silver Medal"
-                    style="width: 2em; margin-right: 10px; position: absolute; top: 0; left: 0;"
-                />
-
-                <div class="flag">
-                    <img src="https://openlittermap.com/assets/icons/flags/nl.png"/>
-
-                    <p>User2</p>
-                </div>
-            </div>
-
-            <div class="flex jc relative">
-                <img
-                    src="https://openlittermap.com/assets/icons/bronze-medal-2.png"
-                    alt="Bronze Medal"
-                    style="width: 2em; margin-right: 10px; position: absolute; top: 0; left: 0;"
-                />
-
-                <div class="flag">
-                    <img src="https://openlittermap.com/assets/icons/flags/gb.png"/>
-
-                    <p>User3</p>
-                </div>
-            </div>
-
-            <div class="flex jc relative">
-                <div class="flag">
-                    <img src="https://openlittermap.com/assets/icons/flags/pt.png"/>
-
-                    <p>User4</p>
-                </div>
-            </div>
-
-            <div class="flex jc relative">
-                <div class="flag">
-                    <img src="https://openlittermap.com/assets/icons/flags/de.png"/>
-
-                    <p>User5</p>
-                </div>
-            </div>
+            @endforeach
+            @endif
         </div>
 
         <div class="category-card">
