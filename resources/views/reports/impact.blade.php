@@ -165,11 +165,18 @@
         </div>
 
         <div class="category-card">
-            <h3>Total Litter: 5,000</h3>
-            <p>Cigarette Butts: 2,105</p>
-            <p>Cans: 1,170</p>
-            <p>Bottles: 510</p>
-            <p>Coffee Cups: 300</p>
+            <h3>Total Litter: {{ $totalTags }}</h3>
+
+            @if (count($topTags) > 0)
+            @foreach ($topTags as $category => $tags)
+{{--                <p>{{ $category }}</p>--}}
+                
+                @foreach ($tags as $tag => $quantity)
+                    <p>{{ $tag }}: {{ $quantity }}</p>
+                @endforeach
+
+            @endforeach
+            @endif
         </div>
         <div class="category-card">
             <h3>Total Brands: 1,217</h3>

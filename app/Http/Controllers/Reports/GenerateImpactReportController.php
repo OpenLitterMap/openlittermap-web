@@ -15,12 +15,12 @@ class GenerateImpactReportController extends Controller
     /**
      * Generate a weekly impact report
      */
-    public function __invoke ()
+    public function __invoke () //: View
     {
         $start = now()->subWeek()->startOfWeek();
         $end = now()->subWeek()->endOfWeek();
 
-        // Mon 1st Sept 2024 - Sun 7th Sept 2024
+        // Mon 9th Sept 2024 - Sun 15th Sept 2024
         $startDate = Carbon::parse($start)->format('D jS M Y');
         $endDate = Carbon::parse($end)->format('D jS M Y');
 
@@ -52,6 +52,9 @@ class GenerateImpactReportController extends Controller
         $topUsers = $this->getTopUsers($start, $end);
         $medals = $this->getMedals();
 
+        [$topTags, $topBrands] = $this->getTopLitter($start, $end);
+        $topMaterials = $this->getTopMaterials($start, $end);
+
         return view('reports.impact', [
             'startDate' => $startDate,
             'endDate' => $endDate,
@@ -62,7 +65,10 @@ class GenerateImpactReportController extends Controller
             'newTags' => $newTags,
             'totalTags' => $totalTags,
             'topUsers' => $topUsers,
-            'medals' => $medals
+            'medals' => $medals,
+            'topTags' => $topTags,
+            'topBrands' => $topBrands,
+            'topMaterials' => $topMaterials
         ]);
     }
 
@@ -139,5 +145,60 @@ class GenerateImpactReportController extends Controller
                 'alt' => 'Bronze Medal'
             ]
         ];
+    }
+
+    protected function getTopLitter ($start, $end): array
+    {
+        $topTags = [];
+        $topBrands = [];
+
+        $photos = Photo::whereDate('created_at', '<=', $start)
+            ->whereDate('created_at', '>=', $end)
+            ->get();
+
+        foreach ($photos as $photo)
+        {
+            // load the tags manually
+            $photoTags = $photo->tags();
+
+            foreach ($photoTags as $category => $attributes)
+            {
+
+                if ($category === 'brands')
+                {
+                    foreach ($attributes as $attribute => $quantity)
+                    {
+                        if (isset($topBrands[$attribute])) {
+                            $topBrands[$attribute] += $quantity;
+                        } else {
+                            $topBrands[$attribute] = $quantity;
+                        }
+                    }
+
+                    continue;
+                }
+
+                if (!isset($topTags[$category])) {
+                    $topTags[$category] = [];
+                }
+
+                // Loop through each attribute in the category
+                foreach ($attributes as $attribute => $quantity)
+                {
+                    // Increment the count for the specific attribute
+                    if (isset($topTags[$category][$attribute])) {
+                        $topTags[$category][$attribute] += $quantity;
+                    } else {
+                        $topTags[$category][$attribute] = $quantity;
+                    }
+                }
+            }
+        }
+
+        return [$topTags, $topBrands];
+    }
+
+    protected function getTopMaterials ($start, $end): array {
+        return [];
     }
 }
