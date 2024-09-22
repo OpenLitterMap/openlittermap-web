@@ -49,7 +49,7 @@
         }
         .categories {
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
         }
         .category-card {
             background-color: #edf7f9;
@@ -170,7 +170,7 @@
             @if (count($topTags) > 0)
             @foreach ($topTags as $category => $tags)
 {{--                <p>{{ $category }}</p>--}}
-                
+
                 @foreach ($tags as $tag => $quantity)
                     <p>{{ $tag }}: {{ $quantity }}</p>
                 @endforeach
@@ -180,16 +180,21 @@
         </div>
         <div class="category-card">
             <h3>Total Brands: 1,217</h3>
-            <p>Coca-cola: 500</p>
-            <p>Redbull: 200</p>
-            <p>Mc Donald's: 100</p>
+
+            @if (count($topBrands) > 0)
+
+                @foreach ($topBrands as $brand => $quantity)
+                    <p>{{ $brand }}: {{ $quantity }}</p>
+                @endforeach
+
+            @endif
         </div>
-        <div class="category-card">
-            <h3>Total Materials: 5,000</h3>
-            <p>Plastic: 2,500</p>
-            <p>Aluminium: 1,000</p>
-            <p>Other: 500</p>
-        </div>
+{{--        <div class="category-card">--}}
+{{--            <h3>Total Materials: 5,000</h3>--}}
+{{--            <p>Plastic: 2,500</p>--}}
+{{--            <p>Aluminium: 1,000</p>--}}
+{{--            <p>Other: 500</p>--}}
+{{--        </div>--}}
     </div>
 </div>
 

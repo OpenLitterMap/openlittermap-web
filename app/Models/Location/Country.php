@@ -3,8 +3,8 @@
 namespace App\Models\Location;
 
 use App\Models\Photo;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Country extends Location
 {

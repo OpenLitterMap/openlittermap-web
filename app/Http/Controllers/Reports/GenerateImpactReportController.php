@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Redis;
 use Illuminate\View\View;
 use App\Models\Location\Country;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\File;
 
 class GenerateImpactReportController extends Controller
 {
@@ -152,6 +153,8 @@ class GenerateImpactReportController extends Controller
         $topTags = [];
         $topBrands = [];
 
+        $litterJson = $this->getLitterJson();
+
         $photos = Photo::whereDate('created_at', '<=', $start)
             ->whereDate('created_at', '>=', $end)
             ->get();
@@ -163,39 +166,49 @@ class GenerateImpactReportController extends Controller
 
             foreach ($photoTags as $category => $attributes)
             {
-
                 if ($category === 'brands')
                 {
                     foreach ($attributes as $attribute => $quantity)
                     {
-                        if (isset($topBrands[$attribute])) {
-                            $topBrands[$attribute] += $quantity;
+                        $brandName = $litterJson['brands'][$attribute] ?? $attribute;
+
+                        if (isset($topBrands[$brandName])) {
+                            $topBrands[$brandName] += $quantity;
                         } else {
-                            $topBrands[$attribute] = $quantity;
+                            $topBrands[$brandName] = $quantity;
                         }
                     }
 
                     continue;
                 }
 
-                if (!isset($topTags[$category])) {
-                    $topTags[$category] = [];
-                }
-
                 // Loop through each attribute in the category
                 foreach ($attributes as $attribute => $quantity)
                 {
+                    // Map the category and attribute to human-readable names
+                    $categoryName = $litterJson['categories'][$category] ?? $category;
+                    $attributeName = $litterJson[$category][$attribute] ?? $attribute;
+
                     // Increment the count for the specific attribute
-                    if (isset($topTags[$category][$attribute])) {
-                        $topTags[$category][$attribute] += $quantity;
+                    if (isset($topTags[$categoryName][$attributeName])) {
+                        $topTags[$categoryName][$attributeName] += $quantity;
                     } else {
-                        $topTags[$category][$attribute] = $quantity;
+                        $topTags[$categoryName][$attributeName] = $quantity;
                     }
                 }
             }
         }
 
         return [$topTags, $topBrands];
+    }
+
+    protected function getLitterJson (): array
+    {
+        $path = resource_path('js/langs/en/litter.json');
+
+        $contents = File::get($path);
+
+        return json_decode($contents, true);
     }
 
     protected function getTopMaterials ($start, $end): array {
