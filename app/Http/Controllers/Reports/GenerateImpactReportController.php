@@ -112,10 +112,10 @@ class GenerateImpactReportController extends Controller
                 $weeklyXp = $userScores[$user->id] ?? 0; // Use the calculated XP from Redis
 
                 $showTeamName = $user->active_team && $user->teams
-                        ->where('pivot.team_id', $user->active_team)
-                        ->first(function ($value, $key) {
-                            return $value->pivot->show_name_leaderboards || $value->pivot->show_username_leaderboards;
-                        });
+                    ->where('pivot.team_id', $user->active_team)
+                    ->first(function ($value, $key) {
+                        return $value->pivot->show_name_leaderboards || $value->pivot->show_username_leaderboards;
+                    });
 
                 return [
                     'name' => $user->show_name ? $user->name : '',
@@ -172,6 +172,8 @@ class GenerateImpactReportController extends Controller
                     {
                         $brandName = $litterJson['brands'][$attribute] ?? $attribute;
 
+                        \Log::info(['brandName' => $brandName]);
+
                         if (isset($topBrands[$brandName])) {
                             $topBrands[$brandName] += $quantity;
                         } else {
@@ -188,6 +190,8 @@ class GenerateImpactReportController extends Controller
                     // Map the category and attribute to human-readable names
                     $categoryName = $litterJson['categories'][$category] ?? $category;
                     $attributeName = $litterJson[$category][$attribute] ?? $attribute;
+
+                    \Log::info(['categoryName' => $categoryName, 'attributeName' => $attributeName]);
 
                     // Increment the count for the specific attribute
                     if (isset($topTags[$categoryName][$attributeName])) {
