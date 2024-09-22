@@ -89,7 +89,7 @@ class PhotosController extends Controller
      * If the user is new, we submit the image for verification.
      * If the user is trusted, we can update OLM.
      */
-    public function addTags (AddTagsRequest $request, AddCustomTagsToPhotoAction $customTagsAction)
+    public function addTags (AddTagsRequest $request, AddCustomTagsToPhotoAction $customTagsAction): JsonResponse
     {
         $user = Auth::user();
         $photo = Photo::findOrFail($request->photo_id);

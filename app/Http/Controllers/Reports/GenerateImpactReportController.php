@@ -18,27 +18,24 @@ class GenerateImpactReportController extends Controller
      */
     public function __invoke () //: View
     {
-        $start = now()->subWeek()->startOfWeek();
-        $end = now()->subWeek()->endOfWeek();
+        $start = now()->subWeek()->startOfWeek()->toDateTimeString();
+        $end = now()->subWeek()->endOfWeek()->toDateTimeString();
 
         // Mon 9th Sept 2024 - Sun 15th Sept 2024
         $startDate = Carbon::parse($start)->format('D jS M Y');
         $endDate = Carbon::parse($end)->format('D jS M Y');
 
-        $newUsers = User::whereDate('created_at', '>=', $start)
-            ->whereDate('created_at', '<=', $end)
-            ->count();
+        // Users
+        $newUsers = User::whereBetween('created_at', [$start, $end])->count();
         $totalUsers = User::count();
+        // active users
 
-        $newPhotos = Photo::whereDate('created_at', '>=', $start)
-            ->whereDate('created_at', '<=', $end)
-            ->count();
+        // Photos
+        $newPhotos = Photo::whereBetween('created_at', [$start, $end])->count();
         $totalPhotos = Photo::count();
 
-        $newTags = Photo::whereDate('created_at', '>=', $start)
-            ->whereDate('created_at', '<=', $end)
-            ->sum('total_litter');
-
+        // Tags
+        $newTags = Photo::whereBetween('created_at', [$start, $end])->sum('total_litter');
         $totalTags = 0;
 
         $countries = Country::where('manual_verify', true)
@@ -73,12 +70,15 @@ class GenerateImpactReportController extends Controller
         ]);
     }
 
-    protected function getTopUsers ($start, $end): array
+    protected function getTopUsers (string $start, string $end): array
     {
         $userScores = [];
 
+        $startDate = Carbon::parse($start);
+        $endDate = Carbon::parse($end);
+
         // Loop through each day of the last week
-        for ($date = $start; $date->lte($end); $date->addDay()) {
+        for ($date = $startDate; $date->lte($endDate); $date->addDay()) {
             $year = $date->year;
             $month = $date->month;
             $day = $date->day;
@@ -155,9 +155,7 @@ class GenerateImpactReportController extends Controller
 
         $litterJson = $this->getLitterJson();
 
-        $photos = Photo::whereDate('created_at', '<=', $start)
-            ->whereDate('created_at', '>=', $end)
-            ->get();
+        $photos = Photo::whereBetween('created_at', [$start, $end])->get();
 
         foreach ($photos as $photo)
         {
@@ -171,8 +169,6 @@ class GenerateImpactReportController extends Controller
                     foreach ($attributes as $attribute => $quantity)
                     {
                         $brandName = $litterJson['brands'][$attribute] ?? $attribute;
-
-                        \Log::info(['brandName' => $brandName]);
 
                         if (isset($topBrands[$brandName])) {
                             $topBrands[$brandName] += $quantity;
@@ -191,19 +187,22 @@ class GenerateImpactReportController extends Controller
                     $categoryName = $litterJson['categories'][$category] ?? $category;
                     $attributeName = $litterJson[$category][$attribute] ?? $attribute;
 
-                    \Log::info(['categoryName' => $categoryName, 'attributeName' => $attributeName]);
-
                     // Increment the count for the specific attribute
-                    if (isset($topTags[$categoryName][$attributeName])) {
-                        $topTags[$categoryName][$attributeName] += $quantity;
+                    if (isset($topTags[$attributeName])) {
+                        $topTags[$attributeName] += $quantity;
                     } else {
-                        $topTags[$categoryName][$attributeName] = $quantity;
+                        $topTags[$attributeName] = $quantity;
                     }
                 }
             }
         }
 
-        return [$topTags, $topBrands];
+        // Sort by quantity in descending order
+        arsort($topTags);
+
+        $finalTags = array_slice($topTags, 0, 10);
+
+        return [$finalTags, $topBrands];
     }
 
     protected function getLitterJson (): array

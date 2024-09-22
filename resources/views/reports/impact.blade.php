@@ -136,7 +136,7 @@
     <div class="categories">
 
         <div class="category-card">
-            <h3>Top 5 users</h3>
+            <h3>Top 10 users</h3>
 
             @if (count($topUsers) > 0)
             @foreach ($topUsers as $index => $topUser)
@@ -168,13 +168,8 @@
             <h3>Total Litter: {{ $totalTags }}</h3>
 
             @if (count($topTags) > 0)
-            @foreach ($topTags as $category => $tags)
-{{--                <p>{{ $category }}</p>--}}
-
-                @foreach ($tags as $tag => $quantity)
-                    <p>{{ $tag }}: {{ $quantity }}</p>
-                @endforeach
-
+            @foreach ($topTags as $tag => $quantity)
+                <p>{{ $tag }}: {{ $quantity }}</p>
             @endforeach
             @endif
         </div>
@@ -189,12 +184,6 @@
 
             @endif
         </div>
-{{--        <div class="category-card">--}}
-{{--            <h3>Total Materials: 5,000</h3>--}}
-{{--            <p>Plastic: 2,500</p>--}}
-{{--            <p>Aluminium: 1,000</p>--}}
-{{--            <p>Other: 500</p>--}}
-{{--        </div>--}}
     </div>
 </div>
 
