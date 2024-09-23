@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OpenLitterMap Impact Report</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -89,6 +90,45 @@
         .relative {
             position: relative;
         }
+        .medal {
+            display: flex;
+            align-items: center;
+            margin-right: 1em;
+        }
+        .rank {
+            display: flex;
+            flex-direction: row;
+            width: 96px;
+            gap: 0;
+            text-align: center;
+            align-items: center;
+        }
+        .details {
+            display: flex;
+            align-items: center;
+        }
+        .social-container {
+            display: flex;
+            flex: 1;
+            flex-direction: row;
+            gap: 0.3rem;
+            justify-content: flex-end;
+            color: #3273dc;
+            align-items: center;
+
+            a {
+                width: 20px;
+                text-decoration: none;
+            }
+            a:hover {
+                transform: scale(1.1);
+                color: #3273dc;
+            }
+
+            i {
+                color: #3273dc;
+            }
+        }
     </style>
 </head>
 <body>
@@ -135,37 +175,59 @@
 
     <div class="categories">
 
-        <div class="category-card">
-            <h3>Top 10 users</h3>
+        <div class="category-card" style="flex: 1.5;">
+            <h3>Top 10 Users</h3>
 
             @if (count($topUsers) > 0)
             @foreach ($topUsers as $index => $topUser)
-                <div class="flex jc relative">
-                    @if ($index <= 3)
-                        <img
-                            src="{{ $medals[$index]['src'] }}"
-                            alt="{{ $medals[$index]['alt'] }}"
-                            style="width: 2em; margin-right: 10px; position: absolute; top: 0; left: 0;"
-                        />
-                    @endif
+                <div class="flex relative mr1">
 
-                    <div class="flag">
-                        @if ($topUser['global_flag'])
+                    <div class="medal">
+                        @if ($index <= 2)
                             <img
-                                src="https://openlittermap.com/assets/icons/flags/{{ strtolower($topUser['global_flag']) }}.png"
-                                alt="{{ $topUser['global_flag'] }} Flag"
+                                src="{{ $medals[$index]['src'] }}"
+                                alt="{{ $medals[$index]['alt'] }}"
+                                style="display: flex; align-items: center; margin-left: 1em; width: 20px;"
                             />
-                        @endif
 
-                        <p>{{ $topUser['name'] ?: ($topUser['username'] ?: 'Anonymous') }}</p>
+                        @else
+                            <div style="width: 20px; margin-left: 1em;"></div>
+                        @endif
                     </div>
+
+                    <div class="rank">
+                        <span style="flex: 1;">{{ $topUser['ordinal'] }}</span>
+
+                        <div class="flag">
+                            @if ($topUser['global_flag'])
+                                <img
+                                    src="https://openlittermap.com/assets/icons/flags/{{ strtolower($topUser['global_flag']) }}.png"
+                                    alt="{{ $topUser['global_flag'] }} Flag"
+                                />
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="details">
+                        <p class="name">{{ $topUser['name'] ?: ($topUser['username'] ?: 'Anonymous') }}</p>
+                    </div>
+
+                    @if ($topUser['social'])
+                        <div class="social-container">
+                            @foreach ($topUser['social'] as $social => $url)
+                                <a href="{{ $url }}" target="_blank">
+                                    <i class="fa {{ $social === 'personal' ? 'fa-link' : 'fa-' . $social }}"></i>
+                                </a>
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
             @endforeach
             @endif
         </div>
 
         <div class="category-card">
-            <h3>Total Litter: {{ $totalTags }}</h3>
+            <h3>Top 10 Tags</h3>
 
             @if (count($topTags) > 0)
             @foreach ($topTags as $tag => $quantity)
@@ -174,7 +236,7 @@
             @endif
         </div>
         <div class="category-card">
-            <h3>Total Brands: 1,217</h3>
+            <h3>Top 10 Brands</h3>
 
             @if (count($topBrands) > 0)
 

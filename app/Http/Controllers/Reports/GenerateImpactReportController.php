@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use App\Models\Photo;
 use App\Models\User\User;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Number;
 use Illuminate\View\View;
 use App\Models\Location\Country;
 use App\Http\Controllers\Controller;
@@ -16,7 +17,7 @@ class GenerateImpactReportController extends Controller
     /**
      * Generate a weekly impact report
      */
-    public function __invoke () //: View
+    public function __invoke (): View
     {
         $start = now()->subWeek()->startOfWeek()->toDateTimeString();
         $end = now()->subWeek()->endOfWeek()->toDateTimeString();
@@ -38,19 +39,10 @@ class GenerateImpactReportController extends Controller
         $newTags = Photo::whereBetween('created_at', [$start, $end])->sum('total_litter');
         $totalTags = 0;
 
-        $countries = Country::where('manual_verify', true)
-            ->orderBy('country', 'asc')
-            ->get();
-
-        foreach ($countries as $country)
-        {
-            $totalTags += $country->total_litter_redis;
-        }
-
         $topUsers = $this->getTopUsers($start, $end);
         $medals = $this->getMedals();
 
-        [$topTags, $topBrands] = $this->getTopLitter($start, $end);
+        [$topTags, $topBrands, $totalTags] = $this->getTopLitter($start, $end);
         $topMaterials = $this->getTopMaterials($start, $end);
 
         return view('reports.impact', [
@@ -78,7 +70,8 @@ class GenerateImpactReportController extends Controller
         $endDate = Carbon::parse($end);
 
         // Loop through each day of the last week
-        for ($date = $startDate; $date->lte($endDate); $date->addDay()) {
+        for ($date = $startDate; $date->lte($endDate); $date->addDay())
+        {
             $year = $date->year;
             $month = $date->month;
             $day = $date->day;
@@ -124,7 +117,8 @@ class GenerateImpactReportController extends Controller
                     'global_flag' => $user->global_flag,
                     'social' => !empty($user->social_links) ? $user->social_links : null,
                     'team' => $showTeamName ? $user->team->name : '',
-                    'rank' => $index + 1
+                    'rank' => $index + 1,
+                    'ordinal' => Number::ordinal($index + 1),
                 ];
             })
             ->toArray();
@@ -152,6 +146,7 @@ class GenerateImpactReportController extends Controller
     {
         $topTags = [];
         $topBrands = [];
+        $totalTags = 0;
 
         $litterJson = $this->getLitterJson();
 
@@ -175,6 +170,8 @@ class GenerateImpactReportController extends Controller
                         } else {
                             $topBrands[$brandName] = $quantity;
                         }
+
+                        $totalTags += $quantity;
                     }
 
                     continue;
@@ -193,16 +190,20 @@ class GenerateImpactReportController extends Controller
                     } else {
                         $topTags[$attributeName] = $quantity;
                     }
+
+                    $totalTags += $quantity;
                 }
             }
         }
 
         // Sort by quantity in descending order
         arsort($topTags);
+        arsort($topBrands);
 
         $finalTags = array_slice($topTags, 0, 10);
+        $finalBrands = array_slice($topBrands, 0, 10);
 
-        return [$finalTags, $topBrands];
+        return [$finalTags, $finalBrands, $totalTags];
     }
 
     protected function getLitterJson (): array
