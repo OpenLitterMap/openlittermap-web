@@ -129,6 +129,19 @@
                 color: #3273dc;
             }
         }
+        .top-user-row {
+            display: flex;
+            position: relative;
+            margin-right: 1em;
+            height: 50px;
+        }
+        .top-litter-row {
+            height: 50px;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
     </style>
 </head>
 <body>
@@ -180,7 +193,7 @@
 
             @if (count($topUsers) > 0)
             @foreach ($topUsers as $index => $topUser)
-                <div class="flex relative mr1">
+                <div class="top-user-row">
 
                     <div class="medal">
                         @if ($index <= 2)
@@ -230,20 +243,18 @@
             <h3>Top 10 Tags</h3>
 
             @if (count($topTags) > 0)
-            @foreach ($topTags as $tag => $quantity)
-                <p>{{ $tag }}: {{ $quantity }}</p>
-            @endforeach
+                @foreach ($topTags as $tag => $quantity)
+                    <p class="top-litter-row">{{ $tag }}: {{ $quantity }}</p>
+                @endforeach
             @endif
         </div>
         <div class="category-card">
             <h3>Top 10 Brands</h3>
 
             @if (count($topBrands) > 0)
-
                 @foreach ($topBrands as $brand => $quantity)
-                    <p>{{ $brand }}: {{ $quantity }}</p>
+                    <p class="top-litter-row">{{ $brand }}: {{ $quantity }}</p>
                 @endforeach
-
             @endif
         </div>
     </div>
