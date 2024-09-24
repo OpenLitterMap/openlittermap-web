@@ -105,32 +105,31 @@ class GenerateImpactReportController extends Controller
         // Get the top 10 user IDs
         $top10UserIds = array_slice(array_keys($userScores), 0, 10);
 
-        // Get the users
-        return User::query()
+        $users = User::query()
             ->with(['teams:id,name'])
             ->whereIn('id', $top10UserIds)
             ->get()
-            ->map(function (User $user, $index) use ($userScores) {
-                $weeklyXp = $userScores[$user->id] ?? 0; // Use the calculated XP from Redis
+            ->keyBy('id');
 
-                $showTeamName = $user->active_team && $user->teams
-                    ->where('pivot.team_id', $user->active_team)
-                    ->first(function ($value, $key) {
-                        return $value->pivot->show_name_leaderboards || $value->pivot->show_username_leaderboards;
-                    });
+        // Get the users
+        return collect($top10UserIds)->filter(function ($userId) use ($users) {
+            // Filter out null users
+            return $users->has($userId);
+        })->map(function ($userId, $index) use ($userScores, $users) {
+            $user = $users->get($userId);
+            $weeklyXp = $userScores[$userId] ?? 0;
 
-                return [
-                    'name' => $user->show_name ? $user->name : '',
-                    'username' => $user->show_username ? ('@' . $user->username) : '',
-                    'xp' => number_format($weeklyXp),
-                    'global_flag' => $user->global_flag,
-                    'social' => !empty($user->social_links) ? $user->social_links : null,
-                    'team' => $showTeamName ? $user->team->name : '',
-                    'rank' => $index + 1,
-                    'ordinal' => Number::ordinal($index + 1),
-                ];
-            })
-            ->toArray();
+            return [
+                'name' => $user->show_name ? $user->name : '',
+                'username' => $user->show_username ? ('@' . $user->username) : '',
+                'xp' => number_format($weeklyXp),
+                'global_flag' => $user->global_flag,
+                'social' => !empty($user->social_links) ? $user->social_links : null,
+                'team' => $user->teams->first() ? $user->teams->first()->name : '', // Use the first team, if any
+                'rank' => $index + 1,
+                'ordinal' => Number::ordinal($index + 1),
+            ];
+        })->toArray();
     }
 
     protected function getMedals (): array
