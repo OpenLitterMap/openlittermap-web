@@ -106,6 +106,8 @@
         .details {
             display: flex;
             align-items: center;
+            max-width: 200px;
+            text-align: left;
         }
         .social-container {
             display: flex;
@@ -132,7 +134,6 @@
         .top-user-row {
             display: flex;
             position: relative;
-            margin-right: 1em;
             height: 50px;
         }
         .top-litter-row {
@@ -202,7 +203,6 @@
                                 alt="{{ $medals[$index]['alt'] }}"
                                 style="display: flex; align-items: center; margin-left: 1em; width: 20px;"
                             />
-
                         @else
                             <div style="width: 20px; margin-left: 1em;"></div>
                         @endif
@@ -222,12 +222,16 @@
                     </div>
 
                     <div class="details">
-                        <p class="name">{{ $topUser['name'] ?: ($topUser['username'] ?: 'Anonymous') }}</p>
+                        @if($topUser['name'] || $topUser['username'])
+                            <span>{{ $topUser['name'] }} {{ $topUser['username'] }}</span>
+                        @else
+                            <span>Anonymous</span>
+                        @endif
                     </div>
 
                     @if ($topUser['social'])
                         <div class="social-container">
-                            @foreach ($topUser['social'] as $social => $url)
+                            @foreach (array_slice($topUser['social'], 0, 3) as $social => $url)
                                 <a href="{{ $url }}" target="_blank">
                                     <i class="fa {{ $social === 'personal' ? 'fa-link' : 'fa-' . $social }}"></i>
                                 </a>
@@ -248,6 +252,7 @@
                 @endforeach
             @endif
         </div>
+
         <div class="category-card">
             <h3>Top 10 Brands</h3>
 

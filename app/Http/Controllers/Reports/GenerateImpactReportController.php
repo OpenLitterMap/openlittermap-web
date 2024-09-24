@@ -31,19 +31,19 @@ class GenerateImpactReportController extends Controller
         $totalUsers = User::count();
         // active users
 
+        $topUsers = $this->getTopUsers($start, $end);
+        $medals = $this->getMedals();
+
         // Photos
         $newPhotos = Photo::whereBetween('created_at', [$start, $end])->count();
         $totalPhotos = Photo::count();
 
         // Tags
         $newTags = Photo::whereBetween('created_at', [$start, $end])->sum('total_litter');
-        $totalTags = 0;
-
-        $topUsers = $this->getTopUsers($start, $end);
-        $medals = $this->getMedals();
 
         [$topTags, $topBrands, $totalTags] = $this->getTopLitter($start, $end);
-        $topMaterials = $this->getTopMaterials($start, $end);
+
+        // $topTeams = $this->getTopTeams($start, $end);
 
         return view('reports.impact', [
             'startDate' => $startDate,
@@ -57,8 +57,7 @@ class GenerateImpactReportController extends Controller
             'topUsers' => $topUsers,
             'medals' => $medals,
             'topTags' => $topTags,
-            'topBrands' => $topBrands,
-            'topMaterials' => $topMaterials
+            'topBrands' => $topBrands
         ]);
     }
 
