@@ -165,22 +165,22 @@
             <div class="flex flex-1" style="justify-content: space-around; align-items: center;">
                 <div class="stats">
                     <div>
-                        <p><strong>{{ $newUsers }}</strong> New Users</p>
-                        <p><strong>{{ $totalUsers }}</strong> Total Users</p>
+                        <p><strong>{{ number_format($newUsers) }}</strong> New Users</p>
+                        <p><strong>{{ number_format($totalUsers) }}</strong> Total Users</p>
                     </div>
                 </div>
 
                 <div class="stats">
                     <div>
-                        <p><strong>{{ $newPhotos }}</strong> New Photos</p>
-                        <p><strong>{{ $totalPhotos }}</strong> Total Photos</p>
+                        <p><strong>{{ number_format($newPhotos) }}</strong> New Photos</p>
+                        <p><strong>{{ number_format($totalPhotos) }}</strong> Total Photos</p>
                     </div>
                 </div>
 
                 <div class="stats">
                     <div>
-                        <p><strong>{{ $newTags }}</strong> New Tags</p>
-                        <p><strong>{{ $totalTags }}</strong> Total Tags</p>
+                        <p><strong>{{ number_format($newTags) }}</strong> New Tags</p>
+                        <p><strong>{{ number_format($totalTags) }}</strong> Total Tags</p>
                     </div>
                 </div>
             </div>

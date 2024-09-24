@@ -5,10 +5,9 @@ namespace App\Http\Controllers\Reports;
 use Carbon\Carbon;
 use App\Models\Photo;
 use App\Models\User\User;
-use Illuminate\Support\Facades\Redis;
-use Illuminate\Support\Number;
 use Illuminate\View\View;
-use App\Models\Location\Country;
+use Illuminate\Support\Number;
+use Illuminate\Support\Facades\Redis;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\File;
 
@@ -39,11 +38,10 @@ class GenerateImpactReportController extends Controller
         $totalPhotos = Photo::count();
 
         // Tags
-        $newTags = Photo::whereBetween('created_at', [$start, $end])->sum('total_litter');
+        // We should move this to Redis.
+        $totalTags = Photo::sum('total_litter');
 
-        [$topTags, $topBrands, $totalTags] = $this->getTopLitter($start, $end);
-
-        // $topTeams = $this->getTopTeams($start, $end);
+        [$topTags, $topBrands, $newTags] = $this->getTopLitter($start, $end);
 
         return view('reports.impact', [
             'startDate' => $startDate,
@@ -145,7 +143,7 @@ class GenerateImpactReportController extends Controller
     {
         $topTags = [];
         $topBrands = [];
-        $totalTags = 0;
+        $newTags = 0;
 
         $litterJson = $this->getLitterJson();
 
@@ -170,7 +168,7 @@ class GenerateImpactReportController extends Controller
                             $topBrands[$brandName] = $quantity;
                         }
 
-                        $totalTags += $quantity;
+                        $newTags += $quantity;
                     }
 
                     continue;
@@ -190,7 +188,7 @@ class GenerateImpactReportController extends Controller
                         $topTags[$attributeName] = $quantity;
                     }
 
-                    $totalTags += $quantity;
+                    $newTags += $quantity;
                 }
             }
         }
@@ -202,7 +200,7 @@ class GenerateImpactReportController extends Controller
         $finalTags = array_slice($topTags, 0, 10);
         $finalBrands = array_slice($topBrands, 0, 10);
 
-        return [$finalTags, $finalBrands, $totalTags];
+        return [$finalTags, $finalBrands, $newTags];
     }
 
     protected function getLitterJson (): array
@@ -212,9 +210,5 @@ class GenerateImpactReportController extends Controller
         $contents = File::get($path);
 
         return json_decode($contents, true);
-    }
-
-    protected function getTopMaterials ($start, $end): array {
-        return [];
     }
 }
