@@ -1,8 +1,9 @@
 {
-  "name": "supercluster-php",
-  "version": "1.0.0",
-  "description": "Run MapBox supercluster from php.",
-  "main": "index.js",
+    "type": "module",
+    "name": "supercluster-php",
+    "version": "1.0.0",
+    "description": "Run MapBox supercluster from php.",
+    "main": "index.js",
     "keywords": [
         "supercluster",
         "litter",
@@ -12,16 +13,17 @@
         "mapbox"
     ],
     "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "http-server"
-  },
-  "author": "OpenLitterMap",
-  "license": "GPL v3.0",
-  "dependencies": {
-    "fs": "0.0.1-security",
-    "supercluster": "^7.1.0"
-  },
-  "devDependencies": {
-    "http-server": "^0.12.3"
-  }
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start": "http-server"
+    },
+    "author": "OpenLitterMap",
+    "license": "GPL v3.0",
+    "dependencies": {
+        "fs": "0.0.1-security",
+        "process": "^0.11.10",
+        "supercluster": "^8.0"
+    },
+    "devDependencies": {
+        "http-server": "^0.12.3"
+    }
 }

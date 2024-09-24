@@ -2,48 +2,38 @@
 
 namespace App\Http\Controllers\Uploads;
 
-use App\Exceptions\InvalidCoordinates;
+use Carbon\Carbon;
 use Geohash\GeoHash;
-use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
-use App\Actions\Photos\MakeImageAction;
-use App\Actions\Photos\UploadPhotoAction;
+
 use App\Events\NewCityAdded;
 use App\Events\NewCountryAdded;
 use App\Events\NewStateAdded;
 use App\Helpers\Post\UploadHelper;
-use Carbon\Carbon;
 use App\Models\Photo;
 use App\Models\User\User;
 use App\Events\ImageUploaded;
 use App\Events\Photo\IncrementPhotoMonth;
 use App\Http\Requests\UploadPhotoRequest;
+use App\Exceptions\InvalidCoordinates;
+
+use App\Actions\Photos\MakeImageAction;
+use App\Actions\Photos\UploadPhotoAction;
 use App\Actions\Locations\ReverseGeocodeLocationAction;
+use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 
 class UploadPhotoController extends Controller
 {
-    /** @var MakeImageAction */
-    private $makeImageAction;
+    protected UploadHelper $uploadHelper;
+    private MakeImageAction $makeImageAction;
+    private UploadPhotoAction $uploadPhotoAction;
+    private UpdateLeaderboardsForLocationAction $updateLeaderboardsAction;
 
-    /** @var UploadPhotoAction */
-    private $uploadPhotoAction;
-
-    /** @var UploadHelper */
-    protected $uploadHelper;
-
-    /** @var UpdateLeaderboardsForLocationAction */
-    private $updateLeaderboardsAction;
-
-    /**
-     * Initialise Helper Actions
-     *
-     * @param MakeImageAction $makeImageAction
-     * @param UploadPhotoAction $uploadPhotoAction
-     * @param UploadHelper $uploadHelper
-     */
     public function __construct (
         MakeImageAction $makeImageAction,
         UploadPhotoAction $uploadPhotoAction,
@@ -67,11 +57,10 @@ class UploadPhotoController extends Controller
      * then persist new record to photos table
      *
      * @param UploadPhotoRequest $request
-     * @return array
+     * @return JsonResponse
      */
-    public function __invoke (UploadPhotoRequest $request): array
+    public function __invoke (UploadPhotoRequest $request): JsonResponse
     {
-        /** @var User $user */
         $user = Auth::user();
 
         \Log::channel('photos')->info([
@@ -79,7 +68,9 @@ class UploadPhotoController extends Controller
             'user_id' => $user->id
         ]);
 
-        if (!$user->has_uploaded) $user->has_uploaded = 1;
+        if (!$user->has_uploaded) {
+            $user->has_uploaded = 1;
+        }
 
         $file = $request->file('file'); // /tmp/php7S8v..
 
@@ -105,9 +96,9 @@ class UploadPhotoController extends Controller
         if ($exif["GPSLatitude"][0] === "0/0" && $exif["GPSLongitude"][0] === "0/0")
         {
             abort(500,
-                "Sorry, Your Images have GeoTags, 
-                but they have values of Zero. 
-                You may have lost the geotags when transferring images across devices."
+                "Error: Your Images have GeoTags, but they have values of zero. 
+                You may have lost the geotags when transferring images across devices
+                or you might need to enable another setting to make them available."
             );
         }
 
@@ -181,7 +172,11 @@ class UploadPhotoController extends Controller
         if (($latitude === 0 && $longitude === 0) || ($latitude === '0' && $longitude === '0'))
         {
             \Log::info("invalid coordinates found for userId $user->id \n");
-            abort(500, "Invalid coordinates: lat=0, lon=0");
+            abort(500,
+                "Error: Your Images have GeoTags, but they have values of zero. 
+                You may have lost the geotags when transferring images across devices
+                or you might need to enable another setting to make them available."
+            );
         }
 
         // Use OpenStreetMap to Reverse Geocode the coordinates into an Address.
@@ -238,23 +233,20 @@ class UploadPhotoController extends Controller
             'five_hundred_square_filepath' => $bboxImageName,
             'address_array' => json_encode($addressArray)
         ]);
-        // $user->images_remaining -= 1;
         // End Step 4: Create the Photo
 
-        // Step 5: Reward XP & Update Leaderboards
-        // Reward XP
-        // To do - move this to Redis
+        // Step 5: Reward XP, update resources & Update Leaderboards
+        // $user->images_remaining -= 1;
+
+        // move this to redis
         // Since a user can upload multiple photos at once,
         // we might get old values for xp, so we update the values directly
         // without retrieving them
-        $user->update([
-            'xp' => DB::raw('ifnull(xp, 0) + 1'),
-            'total_images' => DB::raw('ifnull(total_images, 0) + 1')
-        ]);
+        $user->update(['total_images' => DB::raw('ifnull(total_images, 0) + 1')]);
 
         $user->refresh();
 
-        // Update the Leaderboards
+        // Update the Leaderboards and give xp.
         $this->updateLeaderboardsAction->run(
             $photo,
             $user->id,
@@ -305,10 +297,11 @@ class UploadPhotoController extends Controller
             $city->id,
             $dateTime
         ));
+        // End step 6: Dispatch Events & Notifications
 
-        return [
+        return response()->json([
             'success' => true
-        ];
+        ]);
     }
 
     /**

@@ -3,7 +3,7 @@
         <div class="hero-body">
             <div class="py-2 fundraiser">
                 <div class="image-wrapper has-text-centered">
-                    <img width="64" height="64" src="/assets/gofundme-brand-logo.png" alt="GoFundMe">
+                    <img width="64" height="64" src="../../../assets/gofundme-brand-logo.png" alt="GoFundMe">
                 </div>
                 <div class="subtitle has-text-light has-text-justified">
                     <i18n path="home.community.fundraiser-text" tag="p">
@@ -32,6 +32,7 @@
         </div>
     </section>
 </template>
+
 <script>
 export default {
     name: 'FundraiserSection',

@@ -18,134 +18,134 @@ const router = new VueRouter({
         // GUEST ROUTES
         {
             path: '/',
-            component: require('./views/home/Welcome').default
+            component: () => import('./views/home/Welcome.vue')
         },
         {
             path: '/confirm/email/:token',
-            component: require('./views/home/Welcome').default
+            component: () => import('./views/home/Welcome.vue')
         },
         {
             path: '/password/reset',
-            component: require('./views/Auth/passwords/Email').default
+            component: () => import('./views/Auth/passwords/Email.vue')
         },
         {
             path: '/password/reset/:token',
-            component: require('./views/Auth/passwords/Reset').default,
+            component: () => import('./views/Auth/passwords/Reset.vue'),
             props: true
         },
         {
             path: '/emails/unsubscribe/:token',
-            component: require('./views/home/Welcome').default
+            component: () => import('./views/home/Welcome.vue')
         },
         {
             path: '/about',
-            component: require('./views/home/About').default
+            component: () => import('./views/home/About.vue')
         },
         {
             path: '/cleanups',
-            component: require('./views/home/Cleanups').default,
+            component: () => import('./views/home/Cleanups.vue'),
             children: [
                 {
                     path: ':invite_link/join',
-                    component: require('./views/home/Cleanups').default
+                    component: () => import('./views/home/Cleanups.vue')
                 }
             ]
         },
         {
             path: '/history',
-            component: require('./views/general/History').default
+            component: () => import('./views/general/History.vue')
         },
-        {
-            path: '/littercoin',
-            component: require('./views/home/Littercoin').default
-        },
+        // {
+        //     path: '/littercoin',
+        //     component: () => import('./views/home/Littercoin.vue')
+        // },
         {
             path: '/littercoin/merchants',
-            component: require('./views/home/Merchants').default
+            component: () => import('./views/home/Merchants.vue')
         },
         {
             path: '/donate',
-            component: require('./views/home/Donate').default
+            component: () => import('./views/home/Donate.vue')
         },
         {
             path: '/contact-us',
-            component: require('./views/home/ContactUs').default
+            component: () => import('./views/home/ContactUs.vue')
         },
         {
             path: '/community',
-            component: require('./views/home/Community/Index').default
+            component: () => import('./views/home/Community/Index.vue')
         },
         {
             path: '/faq',
-            component: require('./views/home/FAQ').default
+            component: () => import('./views/home/FAQ.vue')
         },
         {
             path: '/global',
-            component: require('./views/global/GlobalMapContainer').default
+            component: () => import('./views/global/GlobalMapContainer.vue')
         },
         {
             path: '/tags',
-            component: require('./views/home/TagsViewer').default
+            component: () => import('./views/home/TagsViewer.vue')
         },
         {
             path: '/signup',
-            component: require('./views/Auth/SignUp').default
+            component: () => import('./views/Auth/SignUp.vue')
         },
         {
             path: '/join/:plan?',
-            component: require('./views/Auth/Subscribe').default
+            component: () => import('./views/Auth/Subscribe.vue')
         },
         {
             path: '/terms',
-            component: require('./views/general/Terms').default
+            component: () => import('./views/general/Terms.vue')
         },
         {
             path: '/privacy',
-            component: require('./views/general/Privacy').default
+            component: () => import('./views/general/Privacy.vue')
         },
         {
             path: '/references',
-            component: require('./views/general/References').default
+            component: () => import('./views/general/References.vue')
         },
         {
             path: '/leaderboard',
-            component: require('./views/Leaderboard/Leaderboard').default
+            component: () => import('./views/Leaderboard/Leaderboard.vue')
         },
         {
             path: '/credits',
-            component: require('./views/general/Credits').default
+            component: () => import('./views/general/Credits.vue')
         },
         // Countries
         {
             path: '/world',
-            component: require('./views/Locations/Countries').default
+            component: () => import('./views/Locations/Countries.vue')
         },
         // States
         {
             path: '/world/:country',
-            component: require('./views/Locations/States').default
+            component: () => import('./views/Locations/States.vue')
         },
         // Cities
         {
             path: '/world/:country/:state',
-            component: require('./views/Locations/Cities').default
+            component: () => import('./views/Locations/Cities.vue')
         },
         // City - Map
         {
             path: '/world/:country/:state/:city/map/:minDate?/:maxDate?/:hex?',
-            component: require('./views/Locations/CityMapContainer').default
+            component: () => import('./views/Locations/CityMapContainer.vue')
         },
         // Admin
         {
             path: '/admin/photos',
-            component: require('./views/admin/VerifyPhotos').default,
+            component: () => import('./views/admin/VerifyPhotos.vue'),
             meta: {
                 middleware: [ auth, admin ]
             }
         },
         {
             path: '/admin/merchants',
-            component: require('./views/admin/Merchants').default,
+            component: () => import('./views/admin/Merchants.vue'),
             meta: {
                 middleware: [ auth, admin ]
             }
@@ -153,146 +153,146 @@ const router = new VueRouter({
         // AUTH ROUTES
         {
             path: '/upload',
-            component: require('./views/general/Upload').default,
+            component: () => import('./views/general/Upload.vue'),
             meta: {
                 middleware: [ auth ]
             }
         },
         {
             path: '/submit', // old route
-            component: require('./views/general/Upload').default,
+            component: () => import('./views/general/Upload.vue'),
             meta: {
                 middleware: [ auth ]
             }
         },
         {
             path: '/tag',
-            component: require('./views/general/Tag').default,
+            component: () => import('./views/general/Tag.vue'),
             meta: {
                 middleware: [ auth ]
             }
         },
         {
             path: '/bulk-tag',
-            component: require('./views/general/BulkTag').default,
+            component: () => import('./views/general/BulkTag.vue'),
             meta: {
                 middleware: [ auth ]
             }
         },
         {
             path: '/profile',
-            component: require('./views/general/Profile').default,
+            component: () => import('./views/general/Profile.vue'),
             meta: {
                 middleware: [ auth ]
             }
         },
         {
             path: '/my-uploads',
-            component: require('./views/general/MyUploads').default,
+            component: () => import('./views/general/MyUploads.vue'),
             meta: {
                 middleware: [ auth ]
             }
         },
         {
             path: '/teams',
-            component: require('./views/Teams/Teams').default,
+            component: () => import('./views/Teams/Teams.vue'),
             meta: {
                 middleware: [ auth ]
             }
         },
         {
             path: '/settings',
-            component: require('./views/Settings').default,
+            component: () => import('./views/Settings.vue'),
             meta: {
                 middleware: [ auth ]
             },
             children: [
                 {
                     path: 'password',
-                    component: require('./views/Settings').default,
+                    component: () => import('./views/Settings.vue'),
                     meta: {
                         middleware: [ auth ]
                     },
                 },
                 {
                     path: 'details',
-                    component: require('./views/settings/Details').default,
+                    component: () => import('./views/settings/Details.vue'),
                     meta: {
                         middleware: [ auth ]
                     },
                 },
                 {
                     path: 'social',
-                    component: require('./views/settings/Social').default,
+                    component: () => import('./views/settings/Social.vue'),
                     meta: {
                         middleware: [ auth ]
                     },
                 },
                 {
                     path: 'account',
-                    component: require('./views/settings/Account').default,
+                    component: () => import('./views/settings/Account.vue'),
                     meta: {
                         middleware: [ auth ]
                     },
                 },
                 {
                     path: 'payments',
-                    component: require('./views/settings/Payments').default,
+                    component: () => import('./views/settings/Payments.vue'),
                     meta: {
                         middleware: [ auth ]
                     },
                 },
                 {
                     path: 'privacy',
-                    component: require('./views/settings/Privacy').default,
+                    component: () => import('./views/settings/Privacy.vue'),
                     meta: {
                         middleware: [ auth ]
                     },
                 },
                 {
                     path: 'littercoin',
-                    component: require('./views/settings/Littercoin').default,
+                    component: () => import('./views/settings/Littercoin.vue'),
                     meta: {
                         middleware: [ auth ]
                     },
                 },
                 {
                     path: 'picked-up',
-                    component: require('./views/settings/PickedUp').default,
+                    component: () => import('./views/settings/PickedUp.vue'),
                     meta: {
                         middleware: [ auth ]
                     },
                 },
                 {
                     path: 'emails',
-                    component: require('./views/settings/Emails').default,
+                    component: () => import('./views/settings/Emails.vue'),
                     meta: {
                         middleware: [ auth ]
                     },
                 },
                 {
                     path: 'show-flag',
-                    component: require('./views/settings/GlobalFlag').default,
+                    component: () => import('./views/settings/GlobalFlag.vue'),
                     meta: {
                         middleware: [ auth ]
                     },
                 },
                 // {
                 // 	path: 'phone',
-                // 	component: require('./views/Phone').default
+                // 	component: () => import('./views/Phone.vue')
                 // }
             ]
         },
         {
             path: '/bbox',
-            component: require('./views/bbox/BoundingBox').default,
+            component: () => import('./views/bbox/BoundingBox.vue'),
             meta: {
                 middleware: [ auth, can_bbox ]
             }
         },
         {
             path: '/bbox/verify',
-            component: require('./views/bbox/BoundingBox').default,
+            component: () => import('./views/bbox/BoundingBox.vue'),
             meta: {
                 middleware: [ auth, can_verify_boxes ]
             }

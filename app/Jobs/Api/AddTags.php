@@ -2,29 +2,28 @@
 
 namespace App\Jobs\Api;
 
-use App\Actions\Photos\AddCustomTagsToPhotoAction;
-use App\Actions\Photos\AddTagsToPhotoAction;
-use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
-use App\Models\User\User;
 use App\Models\Photo;
+use App\Models\User\User;
+use App\Actions\Photos\AddTagsToPhotoAction;
+use App\Actions\Photos\AddCustomTagsToPhotoAction;
+use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 
 use App\Events\TagsVerifiedByAdmin;
 
 use Illuminate\Bus\Queueable;
-
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 
 class AddTags implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $userId;
-    public $photoId;
-    public $tags;
-    public $customTags;
+    public int $userId;
+    public int $photoId;
+    public mixed $tags;
+    public mixed $customTags;
 
     /**
      * Create a new job instance.
@@ -42,12 +41,7 @@ class AddTags implements ShouldQueue
         $this->customTags = $customTags;
     }
 
-    /**
-     * Execute the job.
-     *
-     * @return void
-     */
-    public function handle ()
+    public function handle (): void
     {
         $litterTotals['all'] = 0;
         $litterTotals['litter'] = 0;
@@ -77,10 +71,7 @@ class AddTags implements ShouldQueue
             $customTagsTotals = $addCustomTagsAction->run($photo, $customTags);
         }
 
-        $user->xp += $litterTotals['all'] + $customTagsTotals;
-        $user->save();
-
-        /** @var UpdateLeaderboardsForLocationAction $updateLeaderboardsAction */
+        // This will also update XP on redis
         $updateLeaderboardsAction = app(UpdateLeaderboardsForLocationAction::class);
         $updateLeaderboardsAction->run($photo, $user->id, $litterTotals['all'] + $customTagsTotals);
 

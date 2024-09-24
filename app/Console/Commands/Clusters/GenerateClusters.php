@@ -60,7 +60,9 @@ class GenerateClusters extends Command
     {
         $this->info('Generating features...');
 
-        $photos = Photo::query()->select('lat', 'lon');
+        $photos = Photo::query()
+            ->select('verified', 'lat', 'lon')
+            ->where('verified', 2);
 
         if ($year) {
             $photos->whereYear('datetime', $year);

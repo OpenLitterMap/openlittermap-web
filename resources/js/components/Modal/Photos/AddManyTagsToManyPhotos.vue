@@ -20,9 +20,9 @@
 </template>
 
 <script>
-import AddTags from '../../Litter/AddTags';
-import Tags from '../../Litter/Tags';
-import Presence from '../../Litter/Presence';
+import AddTags from '../../Litter/AddTags.vue';
+import Tags from '../../Litter/Tags.vue';
+import Presence from '../../Litter/Presence.vue';
 
 export default {
     name: 'AddManyTagsToManyPhotos',

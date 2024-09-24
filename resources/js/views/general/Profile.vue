@@ -35,15 +35,15 @@
 </template>
 
 <script>
-import ProfileWelcome from '../../components/Profile/top/ProfileWelcome';
-import ProfileStats from '../../components/Profile/top/ProfileStats';
-import ProfileNextTarget from '../../components/Profile/top/ProfileNextTarget';
-import ProfileCategories from '../../components/Profile/middle/ProfileCategories';
-import ProfileMap from '../../components/Profile/middle/ProfileMap';
-import ProfileCalendar from '../../components/Profile/middle/ProfileCalendar';
-import ProfileDownload from '../../components/Profile/bottom/ProfileDownload';
-import ProfileTimeSeries from '../../components/Profile/bottom/ProfileTimeSeries';
-import ProfilePhotos from '../../components/Profile/bottom/ProfilePhotos';
+import ProfileWelcome from '../../components/Profile/top/ProfileWelcome.vue';
+import ProfileStats from '../../components/Profile/top/ProfileStats.vue';
+import ProfileNextTarget from '../../components/Profile/top/ProfileNextTarget.vue';
+import ProfileCategories from '../../components/Profile/middle/ProfileCategories.vue';
+import ProfileMap from '../../components/Profile/middle/ProfileMap.vue';
+import ProfileCalendar from '../../components/Profile/middle/ProfileCalendar.vue';
+import ProfileDownload from '../../components/Profile/bottom/ProfileDownload.vue';
+import ProfileTimeSeries from '../../components/Profile/bottom/ProfileTimeSeries.vue';
+import ProfilePhotos from '../../components/Profile/bottom/ProfilePhotos.vue';
 
 export default {
     name: 'Profile',

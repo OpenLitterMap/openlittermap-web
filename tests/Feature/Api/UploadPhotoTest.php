@@ -180,7 +180,7 @@ class UploadPhotoTest extends TestCase
         /** @var User $user */
         $user = User::factory()->create();
         $this->assertEquals(0, $user->has_uploaded);
-        $this->assertEquals(0, $user->xp);
+        $this->assertEquals(0, $user->xp_redis);
         $this->assertEquals(0, $user->total_images);
 
         $this->actingAs($user, 'api')->post('/api/photos/submit',
@@ -190,7 +190,7 @@ class UploadPhotoTest extends TestCase
         // User info gets updated
         $user->refresh();
         $this->assertEquals(1, $user->has_uploaded);
-        $this->assertEquals(1, $user->xp);
+        $this->assertEquals(1, $user->xp_redis);
         $this->assertEquals(1, $user->total_images);
     }
 
@@ -239,7 +239,7 @@ class UploadPhotoTest extends TestCase
     }
 
 
-    public function validationDataProvider(): array
+    public static function validationDataProvider(): array
     {
         return [
             [

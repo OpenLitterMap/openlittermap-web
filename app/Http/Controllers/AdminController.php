@@ -15,26 +15,23 @@ use App\Traits\AddTagsTrait;
 
 use Carbon\Carbon;
 
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 use App\Events\TagsVerifiedByAdmin;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Route;
 
 class AdminController extends Controller
 {
     use AddTagsTrait;
 
-    /** @var DeleteTagsFromPhotoAction */
-    protected $deleteTagsAction;
-    /** @var UpdateLeaderboardsForLocationAction */
-    protected $updateLeaderboardsAction;
-    /** @var DeletePhotoAction */
-    protected $deletePhotoAction;
-    /** @var CalculateTagsDifferenceAction */
-    protected $calculateTagsDiffAction;
+    protected DeleteTagsFromPhotoAction $deleteTagsAction;
+    protected UpdateLeaderboardsForLocationAction $updateLeaderboardsAction;
+    protected DeletePhotoAction $deletePhotoAction;
+    protected CalculateTagsDifferenceAction $calculateTagsDiffAction;
 
     /**
      * Apply IsAdmin middleware to all of these routes
@@ -106,7 +103,7 @@ class AdminController extends Controller
     /**
      * Verify an image, delete the image
      */
-    public function verify (Request $request)
+    public function verify (Request $request): JsonResponse
     {
         /** @var Photo $photo */
         $photo = Photo::findOrFail($request->photoId);
@@ -123,14 +120,17 @@ class AdminController extends Controller
         logAdminAction($photo, Route::getCurrentRoute()->getActionMethod());
 
         event (new TagsVerifiedByAdmin($photo->id));
+
+        return response()->json([
+            'success' => true
+        ]);
     }
 
     /**
      * Delete an image and its records
      */
-    public function destroy (Request $request)
+    public function destroy (Request $request): JsonResponse
     {
-        /** @var Photo $photo */
         $photo = Photo::findOrFail($request->photoId);
         $user = User::find($photo->user_id);
 
@@ -151,10 +151,10 @@ class AdminController extends Controller
 
         $totalXp = $tagUpdates['removedUserXp'] + 1; // 1xp from uploading
 
-        $user->xp = max(0, $user->xp - $totalXp);
         $user->total_images = $user->total_images > 0 ? $user->total_images - 1 : 0;
         $user->save();
 
+        // This will also update the users XP
         $this->updateLeaderboardsAction->run($photo, $user->id, -$totalXp);
 
         rewardXpToAdmin();
@@ -167,7 +167,9 @@ class AdminController extends Controller
             $photo->team_id
         ));
 
-        return ['success' => true];
+        return response()->json([
+            'success' => true
+        ]);
     }
 
     /**

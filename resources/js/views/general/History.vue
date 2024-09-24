@@ -18,7 +18,7 @@
 <script>
 import Loading from 'vue-loading-overlay';
 import 'vue-loading-overlay/dist/vue-loading.css'
-import LitterTable from "../../components/Litter/LitterTable";
+import LitterTable from "../../components/Litter/LitterTable.vue";
 
 export default {
     name: "History",

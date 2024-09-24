@@ -3,22 +3,18 @@
 namespace App\Listeners\Locations;
 
 use App\Events\NewCountryAdded;
-use Pressutto\LaravelSlack\Facades\Slack;
+use Illuminate\Notifications\Slack\SlackMessage;
 
 class NotifySlackOfNewCountry
 {
-    /**
-     * Handle the event.
-     *
-     * @param  NewCountryAdded  $event
-     * @return void
-     */
     public function handle (NewCountryAdded $event)
     {
         if (app()->environment() === 'production')
         {
-            Slack::to('#new-locations')
-                ->send("New country added :grin:. Say hello to $event->country, with code '$event->countryCode'!");
+            return (new SlackMessage)
+                ->to('#new-locations')
+                ->headerBlock("New country added :grin:")
+                ->text("Say hello to $event->country, with code '$event->countryCode'!");
         }
     }
 }

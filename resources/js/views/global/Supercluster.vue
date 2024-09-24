@@ -16,7 +16,8 @@
 </template>
 
 <script>
-import LiveEvents from '../../components/LiveEvents';
+import LiveEvents from '../../components/LiveEvents.vue';
+import SearchCustomTags from "../../components/global/SearchCustomTags.vue";
 
 import {
     CLUSTER_ZOOM_THRESHOLD,
@@ -34,7 +35,6 @@ import './SmoothWheelZoom.js';
 import glify from 'leaflet.glify';
 import { mapHelper } from '../../maps/mapHelpers';
 import dropdown from './select-dropdown';
-import SearchCustomTags from "../../components/global/SearchCustomTags";
 
 var map;
 var clusters;
@@ -330,7 +330,7 @@ export default {
             zoom: MIN_ZOOM,
             scrollWheelZoom: false,
             smoothWheelZoom: true,
-            smoothSensitivity: 1,
+            smoothSensitivity: 2
         });
 
         map.scrollWheelZoom = true;
@@ -697,14 +697,21 @@ export default {
          */
         flyToLocation (location)
         {
-            const latLng = [location.latitude, location.longitude];
+            const latLng = L.latLng(location.latitude, location.longitude);
             const zoom = location.photoId && Math.round(location.zoom) < CLUSTER_ZOOM_THRESHOLD
                 ? CLUSTER_ZOOM_THRESHOLD
                 : location.zoom;
 
-            map.flyTo(latLng, zoom, {
+            // Calculate the offset in pixels to position the point 10% from the bottom
+            const mapSize = map.getSize();
+            const point = map.project(latLng, zoom);
+            const offsetY = mapSize.y * 0.4; // 0.4 times the map height
+            const targetPoint = point.subtract([0, offsetY]);
+            const targetLatLng = map.unproject(targetPoint, zoom);
+
+            map.flyTo(targetLatLng, zoom, {
                 animate: true,
-                duration: location.duration ?? 5
+                duration: location.duration ?? 5,
             });
         },
 
@@ -773,6 +780,9 @@ export default {
 <style lang="scss" src="./select-dropdown.scss"></style>
 
 <style>
+
+    @import 'leaflet/dist/leaflet.css';
+
 
     #openlittermap {
         height: 100%;

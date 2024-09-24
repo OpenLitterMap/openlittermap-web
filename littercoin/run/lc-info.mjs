@@ -107,7 +107,7 @@ const fetchLittercoinInfo = async () => {
 }
 
 /**
- * Get all of the littercoin valdiator and related scripts
+ * Get all of the littercoin validator and related scripts
  * details in one custom object
  * @parms {}
  * @returns {lcValDetails} lcDetails

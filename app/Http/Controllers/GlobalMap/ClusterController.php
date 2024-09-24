@@ -3,12 +3,11 @@
 namespace App\Http\Controllers\GlobalMap;
 
 use App\Models\Cluster;
-use App\Traits\FilterClustersByGeohashTrait;
-
+use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Database\Eloquent\Builder;
+use App\Traits\FilterClustersByGeohashTrait;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Http\Request;
 
 class ClusterController extends Controller
 {
@@ -20,7 +19,7 @@ class ClusterController extends Controller
      * @param Request $request
      * @return array
      */
-    public function index(Request $request): array
+    public function index (Request $request): array
     {
         $clusters = $this->getClusters($request);
 
@@ -36,7 +35,7 @@ class ClusterController extends Controller
      * @param Request $request
      * @return Builder[]|Collection
      */
-    protected function getClusters(Request $request)
+    protected function getClusters (Request $request)
     {
         $query = Cluster::query();
 

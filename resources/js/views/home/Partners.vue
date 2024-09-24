@@ -2,32 +2,32 @@
     <div class="partners-list">
         <div class="partner has-text-centered">
             <a href="https://cardano.org/" target="_blank">
-                <img loading="lazy" src="/assets/partners/cardano.svg" alt="Partner">
+                <img loading="lazy" src="../../assets/partners/cardano.svg" alt="Partner">
             </a>
         </div>
         <div class="partner has-text-centered">
             <a href="https://elfc.com/" target="_blank">
-                <img loading="lazy" src="/assets/partners/engine-lease-finance-logo.png" alt="Partner">
+                <img loading="lazy" src="../../assets/partners/engine-lease-finance-logo.png" alt="Partner">
             </a>
         </div>
         <div class="partner has-text-centered">
             <a href="https://twitter.com/PlasticRaiders?s=20" target="_blank">
-                <img loading="lazy" src="/assets/partners/plastic_raiders.png" alt="Partner">
+                <img loading="lazy" src="../../assets/partners/plastic_raiders.png" alt="Partner">
             </a>
         </div>
         <div class="partner has-text-centered">
             <a href="https://www.sfi.ie/" target="_blank">
-                <img loading="lazy" src="/assets/partners/science-foundation-ireland.png" alt="Partner">
+                <img loading="lazy" src="../../assets/partners/science-foundation-ireland.png" alt="Partner">
             </a>
         </div>
         <div class="partner has-text-centered">
             <a href="https://www.digitalpublicgoods.net/" target="_blank">
-                <img loading="lazy" src="/assets/partners/dpga.png" alt="Partner">
+                <img loading="lazy" src="../../assets/partners/dpga.png" alt="Partner">
             </a>
         </div>
         <div class="partner has-text-centered">
             <a href="https://www.cardano4climate.com/" target="_blank">
-                <img loading="lazy" src="/assets/partners/c4clogo.jpeg" alt="Partner">
+                <img loading="lazy" src="../../assets/partners/c4clogo.jpeg" alt="Partner">
             </a>
         </div>
     </div>

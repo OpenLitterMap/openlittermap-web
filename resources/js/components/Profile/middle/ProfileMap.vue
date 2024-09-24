@@ -6,19 +6,30 @@
                 <i class="fa fa-expand"/>
             </button>
 
-            <div id="hexmap" ref="hexmap"/>
+            <div id="hexmap" ref="hexmap"></div>
         </fullscreen>
     </div>
 </template>
 
 <script>
 import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import 'leaflet-timedimension'
 import "leaflet-timedimension/dist/leaflet.timedimension.control.css"
 import {mapHelper} from '../../../maps/mapHelpers';
 
 export default {
     name: 'ProfileMap',
+    data() {
+        return {
+            map: null,
+            loading: true,
+            fullscreen: false,
+            pointsLayer: null,
+            timeLayer: null,
+            player: null
+        };
+    },
     async mounted() {
         /** 1. Create map object */
         this.map = L.map('hexmap', {
@@ -49,6 +60,7 @@ export default {
             transitionTime: 1000,
             loop: true
         }, timeDimension);
+
         this.player.on('play', () => {
             if (this.map?.hasLayer(this.pointsLayer)) {
                 this.map.removeLayer(this.pointsLayer);
@@ -64,16 +76,8 @@ export default {
             minSpeed: 5,
             maxSpeed: 100,
         }));
-    },
-    data() {
-        return {
-            map: null,
-            loading: true,
-            fullscreen: false,
-            pointsLayer: null,
-            timeLayer: null,
-            player: null
-        };
+
+        this.loading = false;
     },
     computed: {
         /**
@@ -124,24 +128,23 @@ export default {
 };
 </script>
 
-<style lang="css" scoped>
+<style>
+    #hexmap {
+        height: 100%;
+        margin: 0;
+        position: relative;
+    }
 
-#hexmap {
-    height: 100%;
-    margin: 0;
-    position: relative;
-}
+    .btn-map-fullscreen {
+        position: absolute;
+        top: 1em;
+        right: 1em;
+        z-index: 1234;
+    }
 
-.btn-map-fullscreen {
-    position: absolute;
-    top: 1em;
-    right: 1em;
-    z-index: 1234;
-}
-
-/* remove padding on mobile */
-.profile-map-container {
-    height: 100%;
-    position: relative;
-}
+    /* remove padding on mobile */
+    .profile-map-container {
+        height: 100%;
+        position: relative;
+    }
 </style>

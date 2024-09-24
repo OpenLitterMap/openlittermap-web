@@ -44,16 +44,15 @@
 </template>
 
 <script>
-import vue2Dropzone from 'vue2-dropzone';
 import Vue from 'vue';
+import vue2Dropzone from 'vue2-dropzone';
 
 export default {
     name: 'Upload',
     components: {
         vueDropzone: vue2Dropzone
     },
-    data ()
-    {
+    data () {
         return {
             options: {
                 url: '/upload',

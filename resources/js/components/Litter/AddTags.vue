@@ -139,9 +139,9 @@
 </template>
 
 <script>
-import Tags from './Tags';
-import Presence from './Presence';
-import ProfileDelete from './ProfileDelete';
+import Tags from './Tags.vue';
+import Presence from './Presence.vue';
+import ProfileDelete from './ProfileDelete.vue';
 import VueSimpleSuggest from 'vue-simple-suggest';
 import 'vue-simple-suggest/dist/styles.css';
 import { categories } from '../../extra/categories';

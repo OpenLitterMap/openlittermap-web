@@ -49,15 +49,15 @@ jobs:
     steps:
     - uses: shivammathur/setup-php@v2
       with:
-        php-version: '7.3'
+        php-version: '8.2'
         extensions: mbstring, dom, fileinfo, mysql
         # coverage: xdebug #optional
     - uses: actions/checkout@v3
-     # TODO: Remove this line when we can safely upgrade all our packages
-     # to versions that support Node 16.
+      with:
+        node-version: 18.20.3
     - uses: actions/setup-node@v3
       with:
-        node-version: 16
+        node-version: 18.20.3
     - name: Start mysql service
       run: sudo service mysql start
     - name: Setup minio
@@ -95,7 +95,7 @@ jobs:
     - name: Install NPM assets
       run: npm install --silent --force
     - name: Compile NPM assets
-      run: npm run dev --silent
+      run: npm run build --silent
     - name: Execute tests (Unit and Feature tests) via PHPUnit
       run: vendor/bin/phpunit
       env:

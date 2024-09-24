@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 
+Route::get('impact', 'Reports\GenerateImpactReportController');
+
 Route::get('/', 'HomeController@index');
 Route::get('/about', 'HomeController@index');
 Route::get('/world', 'HomeController@index');
@@ -181,13 +183,13 @@ Route::get('/settings/show-flag', 'HomeController@index');
 Route::get('/settings/teams', 'HomeController@index');
 
 // Publicly available Littercoin Page
-Route::get('/littercoin', 'HomeController@index');
-Route::get('/littercoin/merchants', 'HomeController@index');
+//Route::get('/littercoin', 'HomeController@index');
+//Route::get('/littercoin/merchants', 'HomeController@index');
 
 // Public Routes
-Route::get('/littercoin-info', 'Littercoin\PublicLittercoinController@getLittercoinInfo');
-Route::post('/add-ada-tx', 'Littercoin\PublicLittercoinController@addAdaTx');
-Route::post('/add-ada-submit-tx', 'Littercoin\PublicLittercoinController@submitAddAdaTx');
+//Route::get('/littercoin-info', 'Littercoin\PublicLittercoinController@getLittercoinInfo');
+//Route::post('/add-ada-tx', 'Littercoin\PublicLittercoinController@addAdaTx');
+//Route::post('/add-ada-submit-tx', 'Littercoin\PublicLittercoinController@submitAddAdaTx');
 
 // Actions used by Authenticated Littercoin Settings Page
 Route::get('/get-users-littercoin', 'Littercoin\LittercoinController@getUsersLittercoin');
@@ -297,6 +299,7 @@ Route::get('logout', 'UsersController@logout');
 
 // Register, Login
 Auth::routes();
+
 // Overwriting these auth blade views with Vue components
 Route::get('/password/reset', 'HomeController@index')
     ->middleware('guest');

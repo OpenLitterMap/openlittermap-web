@@ -32,9 +32,9 @@
 </template>
 
 <script>
-import MerchantMap from "../../components/Littercoin/Merchants/MerchantMap";
-import CreateMerchant from "../../components/Littercoin/Merchants/CreateMerchant";
-import ApproveMerchant from "../../components/Littercoin/Merchants/ApproveMerchant";
+import MerchantMap from "../../components/Littercoin/Merchants/MerchantMap.vue"
+import CreateMerchant from "../../components/Littercoin/Merchants/CreateMerchant.vue"
+import ApproveMerchant from "../../components/Littercoin/Merchants/ApproveMerchant.vue"
 
 export default {
     name: "Merchants",

@@ -2,18 +2,16 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Events\Littercoin\LittercoinMined;
-use App\Mail\Admin\AccountUpgraded;
-use App\Models\Littercoin;
 use App\Models\Photo;
+use App\Mail\Admin\AccountUpgraded;
 use App\Events\TagsVerifiedByAdmin;
 use App\Http\Controllers\Controller;
 
 use App\Models\User\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redis;
-use Illuminate\Support\Facades\Route;
 
 class VerifyImageWithTagsController extends Controller
 {
@@ -36,7 +34,7 @@ class VerifyImageWithTagsController extends Controller
      *
      * Todo: After Littercoin is sent, email the user, encouraging them to continue, share information about the app
      */
-    public function __invoke (Request $request): array
+    public function __invoke (Request $request): JsonResponse
     {
         // Update the photo as verified
         $photo = Photo::findOrFail($request->photoId);
@@ -56,11 +54,11 @@ class VerifyImageWithTagsController extends Controller
         // Log the action
         logAdminAction($photo, 'verify-tags');
 
-        return [
+        return response()->json([
             'success' => true,
             'userVerificationCount' => $counts['verificationCount'],
             'photosVerified' => $counts['photosVerified']
-        ];
+        ]);
     }
 
     /**

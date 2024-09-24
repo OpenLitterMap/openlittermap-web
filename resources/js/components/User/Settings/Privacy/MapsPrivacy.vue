@@ -89,3 +89,11 @@ export default {
     }
 }
 </script>
+
+<style>
+
+    input[type="checkbox"] {
+        margin-right: 0.5rem;
+    }
+
+</style>

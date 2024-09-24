@@ -416,6 +416,12 @@ export default {
                     author: 'Capinera, C.'
                 },
                 {
+                    date: '2024/01/15',
+                    title: 'German artificial intelligence (AI) technologies in waste management industry that can be implemented in Iran',
+                    link: 'https://d1wqtxts1xzle7.cloudfront.net/115878636/Milad_Shokrollahi_Paper_92103552_-libre.pdf?1718099227=&response-content-disposition=inline%3B+filename%3DGerman_artificial_intelligence_AI_techn.pdf&Expires=1727174926&Signature=QqRyD8qAGQuQFsAJb0LYB21c18TpbmIz21p4fHMADTWxZOxbIpObVinLLdzFVWbe~mNiklw~M8Do4yn51ODUIG5QuOlHjfnSIxQK7Fxx1TY1s8xEp-hRDgM4K32XTxI-QymY1nrIBy7mhvYcXzu4x~c6S4AVXPUIS1zf-YNdNyAd7mtKKyGQxpE0R5RZghIxNtQHt1isrGT8iDqIJd0~804OgMG0P3SjM-cwIaQS1qKA7Nwjo6SUzlKrzZLOCVNZ~qLUCQWxj5MkYdo9QUijzaGeOlzAVqjLwexOY9RqjrFQu5Adbt~B8UPSW3xTmCPh1Ssd2Y6Y0cUkkuZ169d0Nw__&Key-Pair-Id=APKAJLOHF5GGSLRBV4ZA',
+                    author: 'Shokrollahi, M.'
+                },
+                {
                     date: '2024/01/26',
                     title: 'pLitterStreet: Street Level Plastic Litter Detection and Mapping',
                     link: 'https://arxiv.org/abs/2401.14719',
@@ -452,6 +458,12 @@ export default {
                     author: 'Cui & Yasseri'
                 },
                 {
+                    date: '2024/04/24',
+                    title: 'Machine Vision for Solid Waste Detection',
+                    link: 'https://link.springer.com/chapter/10.1007/978-3-031-59531-8_12',
+                    author: 'Pimenov et al'
+                },
+                {
                     date: '2024/04/25',
                     title: 'A Review on Open Data Storage and Retrieval Techniques in Blockchain-based Applications',
                     link: 'https://ieeexplore.ieee.org/abstract/document/10533356',
@@ -462,6 +474,60 @@ export default {
                     title: 'Identifying E-Governance Approaches And Their Potential To Support Progress Toward The EU Green Deal',
                     link: 'https://edepot.wur.nl/659247',
                     author: 'Kogut et al'
+                },
+                {
+                    date: '2024/05/07',
+                    title: 'Open Data Sources for Post-Consumer Plastic Sorting: What We Have and What We Still Need',
+                    link: 'https://www.sciencedirect.com/science/article/pii/S2212827124001847',
+                    author: 'Basedow et al'
+                },
+                {
+                    date: '2024/06/08',
+                    title: 'Deep Learning in Waste Management: A Brief Survey',
+                    link: 'https://www.preprints.org/manuscript/202407.0637/v1',
+                    author: 'Kunwar et al'
+                },
+                {
+                    date: '2024/06/10',
+                    title: 'The use of citizen science data for biodiversity monitoring and informing the GBF indicators',
+                    link: 'https://pure.iiasa.ac.at/id/eprint/19822/1/GBF%20ppt%20-%20Fraisl%20v0.pdf',
+                    author: 'Fraisl, D'
+                },
+                {
+                    date: '2024/06/12',
+                    title: 'Design of an autonomous litter detection and collection system for Icelandic beaches',
+                    link: 'https://skemman.is/handle/1946/47664',
+                    author: 'Frey René'
+                },
+                {
+                    date: '2024/06/28',
+                    title: 'Quantification of litter in cities using a smartphone application and citizen science in conjunction with deep learning-based image processing',
+                    link: 'https://www.sciencedirect.com/science/article/pii/S0956053X24003817',
+                    author: 'Kako et al'
+                },
+                {
+                    date: '2024/08/18',
+                    title: 'Enhancing Μaritime Lοgistics with Blοckchain Τechnοlοgy : Applicatiοn tο secure and trace dangerοus gοοds in smart pοrts',
+                    link: 'https://theses.hal.science/tel-04652638/',
+                    author: 'Abdallah, R.'
+                },
+                {
+                    date: '2024/08/29',
+                    title: 'A Deep Learning-Based Approach to Garbage Detection in urban centers',
+                    link: 'https://eajse.tiu.edu.iq/index.php/eajse/article/view/25',
+                    author: 'Arif et al'
+                },
+                {
+                    date: '2024/09/14',
+                    title: 'Blockchain on Sustainable Environmental Measures: A Review',
+                    link: 'https://www.mdpi.com/2813-5288/2/3/16',
+                    author: 'Vladucu et al'
+                },
+                {
+                    date: '2024/09/20',
+                    title: 'Uncollected Solid Waste Detection and Reporting Using Machine-learning and Geotagging',
+                    link: 'https://papers.academic-conferences.org/index.php/ecie/article/view/2581',
+                    author: 'Ndlovu et al'
                 }
             ]
         };
@@ -494,3 +560,6 @@ export default {
     }
 
 </style>
+
+
+

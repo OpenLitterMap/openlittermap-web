@@ -137,73 +137,73 @@ export default {
 
         map.attributionControl.addAttribution('Litter data &copy; OpenLitterMap & Contributors ' + year);
 
-        /** 3. Create hex grid using aggregated data */
-        if (this.geojson)
-        {
-            hexFiltered = L.geoJson(this.aggregate, {
-                style,
-                onEachFeature,
-                filter: function (feature, layer) {
-                    if (feature.properties.values.length > 0) {
-                        let sum = 0;
-
-                        for (let i = 0; i < feature.properties.values.length; i++) sum += feature.properties.values[i]
-
-                        feature.properties.total = sum;
-                    }
-
-                    return feature.properties.values.length > 0;
-                }
-            }).addTo(map);
-
-            /** 4. Add info/control to the Top-Right */
-            info = L.control();
-            info.onAdd = function (map)
-            {
-                this._div = L.DomUtil.create('div', 'info');
-                this.update();
-                return this._div;
-            };
-
-            // Get Counts
-            const meterHexGrids = this.$t('locations.cityVueMap.meter-hex-grids');
-            const hoverToCount = this.$t('locations.cityVueMap.hover-to-count');
-            const piecesOfLitter = this.$t('locations.cityVueMap.pieces-of-litter');
-            const hoverOverPolygonsToCount = this.$t('locations.cityVueMap.hover-polygons-to-count');
-            const hex = this.hex;
-
-            info.update = function (props) {
-                this._div.innerHTML = '<h4>' + hex + ` ${meterHexGrids}</h4>` + (props ?
-                    `<b>${hoverToCount} </b><br />` + props.total + ` ${piecesOfLitter}`
-                    : `${hoverOverPolygonsToCount}.`);
-            };
-            info.addTo(map);
-
-            /** 5. Style the legend */
-            // Todo - we need to dynamically and statistically reflect the range of available values
-            let legend = L.control({position: 'bottomleft'});
-
-            legend.onAdd = function (map) {
-                let div = L.DomUtil.create('div', 'info legend'),
-                    grades = [1, 3, 6, 10, 20],
-                    labels = [],
-                    from, to;
-
-                for (let i = 0; i < grades.length; i++) {
-                    from = grades[i];
-                    to = grades[i + 1];
-
-                    labels.push(
-                        '<i style="background:' + getColor(from + 1) + '"></i> ' +
-                        from + (to ? '&ndash;' + to : '+')
-                    );
-                }
-
-                div.innerHTML = labels.join('<br>');
-                return div;
-            };
-            legend.addTo(map);
-        }
+        // /** 3. Create hex grid using aggregated data */
+        // if (this.geojson)
+        // {
+        //     hexFiltered = L.geoJson(this.aggregate, {
+        //         style,
+        //         onEachFeature,
+        //         filter: function (feature, layer) {
+        //             if (feature.properties.values.length > 0) {
+        //                 let sum = 0;
+        //
+        //                 for (let i = 0; i < feature.properties.values.length; i++) sum += feature.properties.values[i]
+        //
+        //                 feature.properties.total = sum;
+        //             }
+        //
+        //             return feature.properties.values.length > 0;
+        //         }
+        //     }).addTo(map);
+        //
+        //     /** 4. Add info/control to the Top-Right */
+        //     info = L.control();
+        //     info.onAdd = function (map)
+        //     {
+        //         this._div = L.DomUtil.create('div', 'info');
+        //         this.update();
+        //         return this._div;
+        //     };
+        //
+        //     // Get Counts
+        //     const meterHexGrids = this.$t('locations.cityVueMap.meter-hex-grids');
+        //     const hoverToCount = this.$t('locations.cityVueMap.hover-to-count');
+        //     const piecesOfLitter = this.$t('locations.cityVueMap.pieces-of-litter');
+        //     const hoverOverPolygonsToCount = this.$t('locations.cityVueMap.hover-polygons-to-count');
+        //     const hex = this.hex;
+        //
+        //     info.update = function (props) {
+        //         this._div.innerHTML = '<h4>' + hex + ` ${meterHexGrids}</h4>` + (props ?
+        //             `<b>${hoverToCount} </b><br />` + props.total + ` ${piecesOfLitter}`
+        //             : `${hoverOverPolygonsToCount}.`);
+        //     };
+        //     info.addTo(map);
+        //
+        //     /** 5. Style the legend */
+        //     // Todo - we need to dynamically and statistically reflect the range of available values
+        //     let legend = L.control({position: 'bottomleft'});
+        //
+        //     legend.onAdd = function (map) {
+        //         let div = L.DomUtil.create('div', 'info legend'),
+        //             grades = [1, 3, 6, 10, 20],
+        //             labels = [],
+        //             from, to;
+        //
+        //         for (let i = 0; i < grades.length; i++) {
+        //             from = grades[i];
+        //             to = grades[i + 1];
+        //
+        //             labels.push(
+        //                 '<i style="background:' + getColor(from + 1) + '"></i> ' +
+        //                 from + (to ? '&ndash;' + to : '+')
+        //             );
+        //         }
+        //
+        //         div.innerHTML = labels.join('<br>');
+        //         return div;
+        //     };
+        //     legend.addTo(map);
+        // }
 
         /** 6. Loop over geojson data and add to groups */
         this.addDataToLayerGroups();
@@ -213,28 +213,28 @@ export default {
     },
     computed: {
 
-        /**
-         * From our input geojson object,
-         * 1. Create bounding box
-         * 2. Create hexgrid within bounding box
-         * 3. Count point-in-polygon to filter out empty values
-         */
-        aggregate ()
-        {
-            // Create a bounding box from our set of features
-            let bbox = turf.bbox(this.geojson);
-
-            // Create a hexgrid from our data. This needs to be filtered to only show relevant data.
-            let hexgrid = turf.hexGrid(bbox, this.hex, 'meters');
-
-            // we need to parse here to avoid copying the object as shallow copies
-            // see https://github.com/Turfjs/turf/issues/1914
-            hexgrid = JSON.parse(JSON.stringify(hexgrid));
-
-            // To filter the hexgrid, we need to find hex values with point in polygon and remove 0 values
-            // "values" will be appended to the hexgrid
-            return turf.collect(hexgrid, this.geojson, 'total_litter', 'values');
-        },
+        // /**
+        //  * From our input geojson object,
+        //  * 1. Create bounding box
+        //  * 2. Create hexgrid within bounding box
+        //  * 3. Count point-in-polygon to filter out empty values
+        //  */
+        // aggregate ()
+        // {
+        //     // Create a bounding box from our set of features
+        //     let bbox = turf.bbox(this.geojson);
+        //
+        //     // Create a hexgrid from our data. This needs to be filtered to only show relevant data.
+        //     let hexgrid = turf.hexGrid(bbox, this.hex, 'meters');
+        //
+        //     // we need to parse here to avoid copying the object as shallow copies
+        //     // see https://github.com/Turfjs/turf/issues/1914
+        //     hexgrid = JSON.parse(JSON.stringify(hexgrid));
+        //
+        //     // To filter the hexgrid, we need to find hex values with point in polygon and remove 0 values
+        //     // "values" will be appended to the hexgrid
+        //     return turf.collect(hexgrid, this.geojson, 'total_litter', 'values');
+        // },
 
         /**
          * Where to center the map (on page load)

@@ -70,7 +70,7 @@ class ContactTest extends TestCase
         Mail::assertNothingSent();
     }
 
-    public function validationData(): array
+    public static function validationData(): array
     {
         return [
             [

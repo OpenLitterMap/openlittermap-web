@@ -11,12 +11,12 @@
 
 <script>
 
-import SocialSection from './SocialSection';
-import HeroSection from './HeroSection';
-import StatsSection from './StatsSection';
-import ZoomSection from './ZoomSection';
-import SlackSection from './SlackSection';
-import FundraiserSection from './FundraiserSection';
+import SocialSection from './SocialSection.vue';
+import HeroSection from './HeroSection.vue';
+import StatsSection from './StatsSection.vue';
+import ZoomSection from './ZoomSection.vue';
+import SlackSection from './SlackSection.vue';
+import FundraiserSection from './FundraiserSection.vue';
 
 export default {
     name: 'Index',

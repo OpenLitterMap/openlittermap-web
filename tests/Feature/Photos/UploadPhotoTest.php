@@ -2,22 +2,22 @@
 
 namespace Tests\Feature\Photos;
 
-use App\Actions\Photos\DeletePhotoAction;
+use Tests\TestCase;
+use Tests\Feature\HasPhotoUploads;
+use App\Models\Teams\Team;
+use App\Models\User\User;
 use App\Events\ImageUploaded;
 use App\Events\Photo\IncrementPhotoMonth;
 use App\Models\Location\City;
-use App\Models\Location\Country;
 use App\Models\Location\State;
-use App\Models\Teams\Team;
-use App\Models\User\User;
+use App\Models\Location\Country;
+use Intervention\Image\Facades\Image;
+use App\Actions\Photos\DeletePhotoAction;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Facades\Image;
-use Tests\Feature\HasPhotoUploads;
-use Tests\TestCase;
 
 use App\Models\Photo;
 
@@ -182,12 +182,14 @@ class UploadPhotoTest extends TestCase
             'active_team' => Team::factory()
         ]);
 
+        Redis::zrem('xp.users', $user->id);
+
         $this->actingAs($user);
 
         $imageAttributes = $this->getImageAndAttributes();
 
         $this->assertEquals(0, $user->has_uploaded);
-        $this->assertEquals(0, $user->xp);
+        $this->assertEquals(0, $user->xp_redis);
         $this->assertEquals(0, $user->total_images);
 
         $this->post('/submit', [
@@ -197,7 +199,7 @@ class UploadPhotoTest extends TestCase
         // User info gets updated
         $user->refresh();
         $this->assertEquals(1, $user->has_uploaded);
-        $this->assertEquals(1, $user->xp);
+        $this->assertEquals(1, $user->xp_redis);
         $this->assertEquals(1, $user->total_images);
     }
 

@@ -26,7 +26,11 @@
 				autocomplete="current-password"
 			/>
 
-			<button :class="button" :disabled="processing">{{ $t('auth.login.login-btn') }}</button>
+			<button
+                id="login-button"
+                :class="button"
+                :disabled="processing"
+            >{{ $t('auth.login.login-btn') }}</button>
 		 </form>
 
         <footer class="modal-card-foot" style="height: 50px;">

@@ -3,13 +3,11 @@
 namespace App\Actions\Locations;
 
 use App\Models\Photo;
-
 use Illuminate\Support\Facades\Redis;
 
 class UpdateLeaderboardsForLocationAction
 {
-    /** @var UpdateLeaderboardsXpAction */
-    protected $updateXpAction;
+    protected UpdateLeaderboardsXpAction $updateXpAction;
 
     /**
      * @param UpdateLeaderboardsXpAction $updateXpAction

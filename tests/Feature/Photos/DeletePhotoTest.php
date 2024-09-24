@@ -30,6 +30,8 @@ class DeletePhotoTest extends TestCase
         // User uploads a photo
         $user = User::factory()->create();
 
+        Redis::zrem('xp.users', $user->id);
+
         $this->actingAs($user);
 
         $imageAttributes = $this->getImageAndAttributes();
@@ -41,7 +43,7 @@ class DeletePhotoTest extends TestCase
         Storage::disk('bbox')->assertExists($imageAttributes['filepath']);
         $user->refresh();
         $this->assertEquals(1, $user->has_uploaded);
-        $this->assertEquals(1, $user->xp);
+        $this->assertEquals(1, $user->xp_redis);
         $this->assertEquals(1, $user->total_images);
         $this->assertCount(1, $user->photos);
         $photo = $user->photos->last();
@@ -51,7 +53,7 @@ class DeletePhotoTest extends TestCase
 
         $user->refresh();
         $this->assertEquals(1, $user->has_uploaded); // TODO shouldn't it decrement?
-        $this->assertEquals(0, $user->xp);
+        $this->assertEquals(0, $user->xp_redis);
         $this->assertEquals(0, $user->total_images);
         Storage::disk('s3')->assertMissing($imageAttributes['filepath']);
         Storage::disk('bbox')->assertMissing($imageAttributes['filepath']);

@@ -39,9 +39,9 @@
                         </router-link>
 
                         <!-- Littercoin -->
-                        <router-link to="/littercoin" class="navbar-item" @click.native="close">
-                            Littercoin
-                        </router-link>
+<!--                        <router-link to="/littercoin" class="navbar-item" @click.native="close">-->
+<!--                            Littercoin-->
+<!--                        </router-link>-->
 
                         <!-- Leaderboards -->
                         <router-link to="/leaderboard" class="navbar-item" @click.native="close">
@@ -156,7 +156,7 @@
 </template>
 
 <script>
-import Languages from '../global/Languages'
+import Languages from '../global/Languages.vue'
 
 export default {
     name: 'Nav',
@@ -273,7 +273,6 @@ export default {
 
     @media (max-width: 768px)
     {
-
         .flex-not-mobile {
             display: block;
         }
@@ -282,7 +281,6 @@ export default {
             font-size: 2rem;
             padding-left: 0.25em;
         }
-
     }
 
 </style>

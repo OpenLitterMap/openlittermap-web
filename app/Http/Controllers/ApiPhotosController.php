@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\NewCityAdded;
+use App\Events\NewCountryAdded;
+use App\Events\NewStateAdded;
 use GeoHash;
 use Carbon\Carbon;
 use App\Models\Photo;
@@ -30,28 +33,20 @@ use App\Http\Requests\Api\UploadPhotoWithOrWithoutTagsRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redis;
 
 class ApiPhotosController extends Controller
 {
-    protected $userId;
+    protected int $userId;
 
-    /** @var UploadHelper */
-    protected $uploadHelper;
-    /** @var UploadPhotoAction */
-    private $uploadPhotoAction;
-    /** @var DeletePhotoAction */
-    private $deletePhotoAction;
-    /** @var MakeImageAction */
-    private $makeImageAction;
+    protected UploadHelper $uploadHelper;
+    private UploadPhotoAction $uploadPhotoAction;
+    private DeletePhotoAction $deletePhotoAction;
+    private MakeImageAction $makeImageAction;
 
     /**
      * ApiPhotosController constructor
      * Apply middleware to all of these routes
-     *
-     * @param UploadHelper $uploadHelper
-     * @param UploadPhotoAction $uploadPhotoAction
-     * @param DeletePhotoAction $deletePhotoAction
-     * @param MakeImageAction $makeImageAction
      */
     public function __construct (
         UploadHelper $uploadHelper,
@@ -81,7 +76,6 @@ class ApiPhotosController extends Controller
     {
         $file = $request->file('photo');
 
-        /** @var User $user */
         $user = auth()->user();
 
         if (!$user->has_uploaded) $user->has_uploaded = 1;
@@ -185,14 +179,11 @@ class ApiPhotosController extends Controller
         // Since a user can upload multiple photos at once,
         // we might get old values for xp, so we update the values directly
         // without retrieving them
-        $user->update([
-            'xp' => DB::raw('ifnull(xp, 0) + 1'),
-            'total_images' => DB::raw('ifnull(total_images, 0) + 1')
-        ]);
+        $user->update(['total_images' => DB::raw('ifnull(total_images, 0) + 1')]);
 
         $user->refresh();
 
-        /** @var UpdateLeaderboardsForLocationAction $action */
+        // XP is awarded for each photo uploaded
         $action = app(UpdateLeaderboardsForLocationAction::class);
         $action->run($photo, $user->id, 1);
 
@@ -205,7 +196,29 @@ class ApiPhotosController extends Controller
             $city
         ));
 
-        // Move this to redis
+        // Broadcast an event to anyone viewing the Global Map
+        // Sends Notification to Twitter & Slack
+        if ($country->wasRecentlyCreated) {
+            event(new NewCountryAdded($country->country, $country->shortcode, now()));
+        }
+
+        if ($state->wasRecentlyCreated) {
+            event(new NewStateAdded($state->state, $country->country, now()));
+        }
+
+        if ($city->wasRecentlyCreated) {
+            event(new NewCityAdded(
+                $city->city,
+                $state->state,
+                $country->country,
+                now(),
+                $city->id,
+                $lat,
+                $lon,
+                $photo->id
+            ));
+        }
+
         event(new IncrementPhotoMonth(
             $country->id,
             $state->id,
@@ -306,14 +319,16 @@ class ApiPhotosController extends Controller
         }
         catch (PhotoAlreadyUploaded $e)
         {
-            \Log::info(['ApiPhotosController@uploadWithOrWithoutTags.1', $e->getMessage()]);
+            Log::info('ApiPhotosController@uploadWithOrWithoutTags.1', [$e->getMessage()]);
 
             return [
                 'success' => false,
                 'msg' => 'photo-already-uploaded'
             ];
-        } catch (InvalidCoordinates $e) {
-            \Log::info(['ApiPhotosoController@uploadWithOrWithoutTags.2', $e->getMessage()]);
+        }
+        catch (InvalidCoordinates $e)
+        {
+            Log::info('ApiPhotosoController@uploadWithOrWithoutTags.2', [$e->getMessage()]);
 
             return [
                 'success' => false,
@@ -358,15 +373,21 @@ class ApiPhotosController extends Controller
     /**
      * Delete an image
      */
-    public function deleteImage(Request $request)
+    public function deleteImage (Request $request)
     {
-        /** @var User $user */
         $user = auth()->user();
-        /** @var Photo $photo */
-        $photo = Photo::findOrFail($request->photoId);
 
-        if ($user->id !== $photo->user_id) {
-            abort(403);
+        // $photo = Photo::findOrFail($request->photoId);
+        $photo = Photo::where([
+            'id' => $request->photoId,
+            'user_id' => $user->id
+        ])->first();
+
+        if (!$photo) {
+            return response()->json([
+                'success' => false,
+                'msg' => 'Photo not found'
+            ], 403);
         }
 
         $this->deletePhotoAction->run($photo);
@@ -389,6 +410,8 @@ class ApiPhotosController extends Controller
             $photo->team_id
         ));
 
-        return ['success' => true];
+        return response()->json([
+            'success' => true
+        ]);
     }
 }

@@ -12,11 +12,6 @@
             <directory suffix="Test.php">./tests/Feature</directory>
         </testsuite>
     </testsuites>
-    <coverage processUncoveredFiles="true">
-        <include>
-            <directory suffix=".php">./app</directory>
-        </include>
-    </coverage>
     <php>
         <server name="APP_ENV" value="testing" />
         <server name="BCRYPT_ROUNDS" value="4" />
@@ -27,5 +22,7 @@
         <server name="SESSION_DRIVER" value="array" />
         <server name="TELESCOPE_ENABLED" value="false" />
         <server name="BROADCAST_DRIVER" value="log" />
+        <env name="REDIS_DB" value="3" />
+        <env name="REDIS_CACHE_DB" value="3" />
     </php>
 </phpunit>

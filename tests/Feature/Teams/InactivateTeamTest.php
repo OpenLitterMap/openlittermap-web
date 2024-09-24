@@ -8,7 +8,7 @@ use Tests\TestCase;
 
 class InactivateTeamTest extends TestCase
 {
-    public function routeDataProvider(): array
+    public static function routeDataProvider(): array
     {
         return [
             ['guard' => 'web', 'route' => 'teams/inactivate'],

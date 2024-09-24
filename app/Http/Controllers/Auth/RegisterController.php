@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Auth\Events\Registered;
 use App\Events\UserSignedUp;
+use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
 
 class RegisterController extends Controller
 {
@@ -63,8 +65,9 @@ class RegisterController extends Controller
     /**
      * Handle a registration request for the application.
      *
-     * @param  Request  $request
+     * @param Request $request
      * @return array
+     * @throws ValidationException
      */
     public function register (Request $request): array
     {
@@ -72,7 +75,7 @@ class RegisterController extends Controller
             'name' => 'required|min:3|max:25',
             'username' => 'required|min:3|max:20|unique:users|different:password',
             'email' => 'required|email|max:75|unique:users',
-            'password' => 'required|confirmed|min:6|case_diff|numbers|letters',
+            'password' => ['required', Password::min(8)->mixedCase()->numbers()->symbols()->uncompromised()]
 //            'g-recaptcha-response' => 'required|captcha'
         ]);
 

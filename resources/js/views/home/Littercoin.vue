@@ -7,7 +7,7 @@
             </h1>
 
             <img
-                src="/assets/littercoin/launched.png"
+                src="../../assets/littercoin/launched.png"
                 class="launching-soon hide-mobile"
             />
 
@@ -72,7 +72,11 @@
                                     v-model="walletChoice"
                                     value="nami"
                                 /> &nbsp;
-                                <img src = "/assets/icons/littercoin/nami.png" alt="Nami Wallet" style="width:20px;height:20px;"/>
+<!--                                <img-->
+<!--                                    src="../../assets/icons/littercoin/nami.png"-->
+<!--                                    alt="Nami Wallet"-->
+<!--                                    style="width:20px;height:20px;"-->
+<!--                                />-->
                                 <label for="name">&nbsp; Nami</label>
                             </p>
                             <br>
@@ -84,7 +88,11 @@
                                     v-model="walletChoice"
                                     value="eternl"
                                 />&nbsp;
-                                <img src = "/assets/icons/littercoin/eternl.png" alt="Eternl Wallet" style="width:20px;height:20px;"/>
+<!--                                <img-->
+<!--                                    src="../../assets/icons/littercoin/eternl.png"-->
+<!--                                    alt="Eternl Wallet"-->
+<!--                                    style="width:20px;height:20px;"-->
+<!--                                />-->
                                 <label for="eternl">&nbsp; Eternl</label>
                             </p>
                         </div>
@@ -129,7 +137,7 @@
         <!-- Credit: Polina Tankilevitch -->
         <!-- https://images.pexels.com/photos/3735156/pexels-photo-3735156.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2 -->
         <img
-            src="/assets/pexels-photo-3735156.jpeg"
+            src="../../assets/pexels-photo-3735156.jpeg"
         />
 
         <div class="text-container">
@@ -144,7 +152,7 @@
                     </h1>
 
                     <img
-                        src="/assets/littercoin/pick-up-litter.jpeg"
+                        src="../../assets/littercoin/pick-up-litter.jpeg"
                     />
                 </div>
 
@@ -154,7 +162,7 @@
                     </h1>
 
                     <img
-                        src="/assets/about/iphone.PNG"
+                        src="../../assets/about/iphone.png"
                     />
                 </div>
 
@@ -164,21 +172,21 @@
                     </h1>
 
                     <img
-                        src="/assets/logo_small.png"
+                        src="../../assets/logo_small.png"
                     />
 
                     <img
-                        src="/assets/icons/twitter2.png"
+                        src="../../assets/icons/twitter2.png"
                         style="width: 5em;"
                     />
 
                     <img
-                        src="/assets/icons/facebook2.png"
+                        src="../../assets/icons/facebook2.png"
                         style="width: 5em;"
                     />
 
                     <img
-                        src="/assets/icons/ig2.png"
+                        src="../../assets/icons/ig2.png"
                         style="width: 5em;"
                     />
                 </div>
@@ -250,10 +258,13 @@
 </template>
 
 <script>
-import BecomeAPartner from "../../components/BecomeAPartner";
+import BecomeAPartner from "../../components/BecomeAPartner.vue";
+
 export default {
     name: "Littercoin",
-    components: {BecomeAPartner},
+    components: {
+        BecomeAPartner
+    },
     data () {
         return {
             loading: true,

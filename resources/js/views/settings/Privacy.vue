@@ -32,10 +32,10 @@
 </template>
 
 <script>
-import MapsPrivacy from '../../components/User/Settings/Privacy/MapsPrivacy';
-import LeaderboardsPrivacy from '../../components/User/Settings/Privacy/LeaderboardsPrivacy';
-import CreatedByPrivacy from '../../components/User/Settings/Privacy/CreatedByPrivacy';
-import PreventOthersTaggingMyPhotos from '../../components/User/Settings/Privacy/PreventOthersTaggingMyPhotos';
+import MapsPrivacy from '../../components/User/Settings/Privacy/MapsPrivacy.vue';
+import LeaderboardsPrivacy from '../../components/User/Settings/Privacy/LeaderboardsPrivacy.vue';
+import CreatedByPrivacy from '../../components/User/Settings/Privacy/CreatedByPrivacy.vue';
+import PreventOthersTaggingMyPhotos from '../../components/User/Settings/Privacy/PreventOthersTaggingMyPhotos.vue';
 
 export default {
     name: 'Privacy',

@@ -22,14 +22,13 @@
 </template>
 
 <script>
-import SortLocations from './SortLocations'
+import SortLocations from './SortLocations.vue'
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
 
 export default {
     name: 'States',
-    async created ()
-    {
+    async created () {
         this.loading = true;
 
         window.scroll({ top: 0, left: 0 });
