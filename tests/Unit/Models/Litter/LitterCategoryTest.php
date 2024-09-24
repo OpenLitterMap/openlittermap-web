@@ -2,7 +2,6 @@
 
 namespace Tests\Unit\Models\Litter;
 
-
 use App\Models\Photo;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -31,7 +30,7 @@ class LitterCategoryTest extends TestCase
             ['id', 'created_at', 'updated_at']
         );
 
-        $this->assertEqualsCanonicalizing($types, $columnListing);
+        $this->assertEqualsCanonicalizing(array_values($types), array_values($columnListing));
     }
 
     /**
