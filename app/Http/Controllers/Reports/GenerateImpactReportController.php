@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Reports;
 use Carbon\Carbon;
 use App\Models\Photo;
 use App\Models\User\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 use Illuminate\Support\Number;
 use Illuminate\Support\Facades\Redis;
@@ -21,42 +22,53 @@ class GenerateImpactReportController extends Controller
         $start = now()->subWeek()->startOfWeek()->toDateTimeString();
         $end = now()->subWeek()->endOfWeek()->toDateTimeString();
 
-        // Mon 9th Sept 2024 - Sun 15th Sept 2024
-        $startDate = Carbon::parse($start)->format('D jS M Y');
-        $endDate = Carbon::parse($end)->format('D jS M Y');
+        // Generate a unique cache key based on the date range
+        $cacheKey = "impact_report:{$start}_{$end}";
+        $expirationTime = Carbon::parse($end)->endOfDay();
 
-        // Users
-        $newUsers = User::whereBetween('created_at', [$start, $end])->count();
-        $totalUsers = User::count();
-        // active users
+        // Try to retrieve the report from the cache
+        $report = Cache::remember($cacheKey, $expirationTime, function () use ($start, $end) {
+            // Generate the report if it's not in the cache
+            $startDate = Carbon::parse($start)->format('D jS M Y');
+            $endDate = Carbon::parse($end)->format('D jS M Y');
 
-        $topUsers = $this->getTopUsers($start, $end);
-        $medals = $this->getMedals();
+            // Users
+            $newUsers = User::whereBetween('created_at', [$start, $end])->count();
+            $totalUsers = User::count();
 
-        // Photos
-        $newPhotos = Photo::whereBetween('created_at', [$start, $end])->count();
-        $totalPhotos = Photo::count();
+            // Top Users
+            $topUsers = $this->getTopUsers($start, $end);
 
-        // Tags
-        // We should move this to Redis.
-        $totalTags = Photo::sum('total_litter');
+            // Medals
+            $medals = $this->getMedals();
 
-        [$topTags, $topBrands, $newTags] = $this->getTopLitter($start, $end);
+            // Photos
+            $newPhotos = Photo::whereBetween('created_at', [$start, $end])->count();
+            $totalPhotos = Photo::count();
 
-        return view('reports.impact', [
-            'startDate' => $startDate,
-            'endDate' => $endDate,
-            'newUsers' => $newUsers,
-            'totalUsers' => $totalUsers,
-            'newPhotos' => $newPhotos,
-            'totalPhotos' => $totalPhotos,
-            'newTags' => $newTags,
-            'totalTags' => $totalTags,
-            'topUsers' => $topUsers,
-            'medals' => $medals,
-            'topTags' => $topTags,
-            'topBrands' => $topBrands
-        ]);
+            // Tags
+            // We should move this to Redis
+            $totalTags = Photo::sum('tags_count');
+
+            [$topTags, $topBrands, $newTags] = $this->getTopLitter($start, $end);
+
+            return [
+                'startDate' => $startDate,
+                'endDate' => $endDate,
+                'newUsers' => $newUsers,
+                'totalUsers' => $totalUsers,
+                'newPhotos' => $newPhotos,
+                'totalPhotos' => $totalPhotos,
+                'newTags' => $newTags,
+                'totalTags' => $totalTags,
+                'topUsers' => $topUsers,
+                'medals' => $medals,
+                'topTags' => $topTags,
+                'topBrands' => $topBrands,
+            ];
+        });
+
+        return view('reports.impact', $report);
     }
 
     protected function getTopUsers (string $start, string $end): array
