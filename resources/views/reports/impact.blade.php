@@ -427,7 +427,7 @@
 
                                 @if (count($topUsers) > 0)
                                     @foreach ($topUsers as $index => $topUser)
-                                        <div class="top-user-row" title="{{ $topUser['xp'] }} XP">
+                                        <div class="top-user-row">
 
                                             <div class="medal">
                                                 @if ($index <= 2)
