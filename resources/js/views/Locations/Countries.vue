@@ -10,9 +10,9 @@
             :loading="loading"
         />
 
-        <SortLocations
-            locationType="country"
-        />
+<!--        <SortLocations-->
+<!--            locationType="country"-->
+<!--        />-->
     </div>
 </template>
 
