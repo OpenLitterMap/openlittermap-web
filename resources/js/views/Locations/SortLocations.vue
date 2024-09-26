@@ -1,5 +1,8 @@
 <template>
-    <section class="inner-locations-container" :class="container">
+    <section
+        class="inner-locations-container"
+        :class="container"
+    >
 
         <!-- Location Navbar -->
 		<location-navbar />
