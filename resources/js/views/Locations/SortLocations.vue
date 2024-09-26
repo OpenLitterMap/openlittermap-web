@@ -78,7 +78,7 @@ import LocationMetadata from '../../components/Locations/LocationMetadata.vue'
 // import TimeSeriesContainer from '../../components/Locations/Charts/TimeSeries/TimeSeriesContainer.vue'
 import LeaderboardList from '../../components/global/LeaderboardList.vue'
 // import Options from '../../components/Locations/Charts/Options/Options.vue'
-// import Download from '../../components/Locations/Charts/Download/Download.vue'
+import Download from '../../components/Locations/Charts/Download/Download.vue'
 
 export default {
     name: 'SortLocations',
