@@ -17,7 +17,11 @@
             autocomplete="email"
         />
 
-        <button :disabled="disableDownloadButton" class="button is-large is-danger mb1" @click="download">{{ $t('common.download') }}</button>
+        <button
+            :disabled="disableDownloadButton"
+            class="button is-large is-danger mb1"
+            @click="download"
+        >{{ $t('common.download') }}</button>
 
         <p>&copy; OpenLitterMap & Contributors.</p>
     </div>
