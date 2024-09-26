@@ -2,7 +2,7 @@
     <section class="inner-locations-container" :class="container">
 
         <!-- Location Navbar -->
-		<location-navbar />
+<!--		<location-navbar />-->
 
 	    <!-- v-show is a temp bug fix until cities table has working total_litter column -->
         <!-- v-show="location.total_litter_redis > 0"-->
@@ -19,12 +19,12 @@
         		<div class="columns">
 
 					<!-- Location Metadata -->
-					<LocationMetadata
-						:index="index"
-						:location="location"
-						:locationType="locationType"
-						:category="sortedBy"
-					/>
+<!--					<LocationMetadata-->
+<!--						:index="index"-->
+<!--						:location="location"-->
+<!--						:locationType="locationType"-->
+<!--						:category="sortedBy"-->
+<!--					/>-->
 
 					<!-- Charts -->
 					<div class="column is-half is-offset-1">

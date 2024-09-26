@@ -1,1 +1,0 @@
-import{n as _}from"./app-CyeqFB3p.js";/* empty css            */const n={};var s=function(){var e=this;return e._self._c,e._self._setupProxy,e._m(0)},t=[function(){var r=this,e=r._self._c;return r._self._setupProxy,e("div",[e("p",[r._v("Test")])])}],o=_(n,s,t,!1,null,null);const f=o.exports;export{f as default};
