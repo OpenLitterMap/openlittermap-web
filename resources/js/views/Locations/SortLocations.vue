@@ -2,7 +2,7 @@
     <section class="inner-locations-container" :class="container">
 
         <!-- Location Navbar -->
-<!--		<location-navbar />-->
+		<location-navbar />
 
 	    <!-- v-show is a temp bug fix until cities table has working total_litter column -->
         <!-- v-show="location.total_litter_redis > 0"-->
@@ -69,7 +69,7 @@
 <script>
 // import sortBy from 'lodash.sortby'
 
-// import LocationNavbar from '../../components/Locations/LocationNavBar.vue'
+import LocationNavbar from '../../components/Locations/LocationNavBar.vue'
 // import LocationMetadata from '../../components/Locations/LocationMetadata.vue'
 // import ChartsContainer from '../../components/Locations/Charts/PieCharts/ChartsContainer.vue'
 // import TimeSeriesContainer from '../../components/Locations/Charts/TimeSeries/TimeSeriesContainer.vue'
@@ -83,7 +83,7 @@ export default {
         'locationType',
     ],
 	components: {
-		// LocationNavbar,
+		LocationNavbar,
 		// LocationMetadata,
 		// ChartsContainer,
 		// TimeSeriesContainer,
