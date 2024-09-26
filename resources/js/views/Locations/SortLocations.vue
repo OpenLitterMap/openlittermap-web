@@ -67,7 +67,7 @@
 </template>
 
 <script>
-import sortBy from 'lodash.sortby'
+// import sortBy from 'lodash.sortby'
 
 import LocationNavbar from '../../components/Locations/LocationNavBar.vue'
 import LocationMetadata from '../../components/Locations/LocationMetadata.vue'
@@ -139,36 +139,37 @@ export default {
 		 */
 		orderedBy ()
 		{
-			if (this.sortedBy === "alphabetical")
-			{
-				return this.locations;
-			}
-			else if (this.sortedBy === 'most-data')
-			{
-				return sortBy(this.locations, 'total_litter_redis').reverse();
-			}
-			else if (this.sortedBy === 'most-data-per-person')
-			{
-				return sortBy(this.locations, 'avg_litter_per_user').reverse();
-			}
-            else if (this.sortedBy === 'most-recently-updated')
-            {
-                return sortBy(this.locations, 'updated_at').reverse();
-            }
-            else if (this.sortedBy === 'total-contributors')
-            {
-                return sortBy(this.locations, 'total_contributors_redis').reverse();
-            }
-            else if (this.sortedBy === 'first-created')
-            {
-                return sortBy(this.locations, 'created_at');
-            }
-            else if (this.sortedBy === 'most-recently-created')
-            {
-                return sortBy(this.locations, 'created_at').reverse();
-            }
-
-            return [];
+            return this.locations;
+			// if (this.sortedBy === "alphabetical")
+			// {
+			// 	return this.locations;
+			// }
+			// else if (this.sortedBy === 'most-data')
+			// {
+			// 	return sortBy(this.locations, 'total_litter_redis').reverse();
+			// }
+			// else if (this.sortedBy === 'most-data-per-person')
+			// {
+			// 	return sortBy(this.locations, 'avg_litter_per_user').reverse();
+			// }
+            // else if (this.sortedBy === 'most-recently-updated')
+            // {
+            //     return sortBy(this.locations, 'updated_at').reverse();
+            // }
+            // else if (this.sortedBy === 'total-contributors')
+            // {
+            //     return sortBy(this.locations, 'total_contributors_redis').reverse();
+            // }
+            // else if (this.sortedBy === 'first-created')
+            // {
+            //     return sortBy(this.locations, 'created_at');
+            // }
+            // else if (this.sortedBy === 'most-recently-created')
+            // {
+            //     return sortBy(this.locations, 'created_at').reverse();
+            // }
+            //
+            // return [];
 		},
 
 		/**
