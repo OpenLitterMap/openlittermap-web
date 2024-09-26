@@ -44,21 +44,21 @@
 							</p>
 						</div>
 
-						<component
-							:is="selectedTab"
-							:litter_data="location.litter_data"
-							:brands_data="location.brands_data"
-							:total_brands="location.total_brands"
-							:ppm="location.ppm"
-							:time="location.time"
-							@dateschanged="updateUrl"
-							:index="index"
-							:locationType="locationType"
-							:locationId="location.id"
-                            :leaders="getUsersForLocationLeaderboard"
-                            :total_ppm="location.total_ppm"
-                            :style="showOnlySelectedComponent(location.id) ? '' : 'display: none'"
-						/>
+<!--						<component-->
+<!--							:is="selectedTab"-->
+<!--							:litter_data="location.litter_data"-->
+<!--							:brands_data="location.brands_data"-->
+<!--							:total_brands="location.total_brands"-->
+<!--							:ppm="location.ppm"-->
+<!--							:time="location.time"-->
+<!--							@dateschanged="updateUrl"-->
+<!--							:index="index"-->
+<!--							:locationType="locationType"-->
+<!--							:locationId="location.id"-->
+<!--                            :leaders="getUsersForLocationLeaderboard"-->
+<!--                            :total_ppm="location.total_ppm"-->
+<!--                            :style="showOnlySelectedComponent(location.id) ? '' : 'display: none'"-->
+<!--						/>-->
 					</div>
 				</div>
 			</div>

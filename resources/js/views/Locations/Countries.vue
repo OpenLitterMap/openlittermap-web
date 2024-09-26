@@ -11,7 +11,6 @@
         />
 
         <SortLocations
-            v-if="!loading"
             locationType="country"
         />
     </div>
