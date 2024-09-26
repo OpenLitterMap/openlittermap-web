@@ -69,13 +69,13 @@
 <script>
 // import sortBy from 'lodash.sortby'
 
-import LocationNavbar from '../../components/Locations/LocationNavBar.vue'
-import LocationMetadata from '../../components/Locations/LocationMetadata.vue'
-import ChartsContainer from '../../components/Locations/Charts/PieCharts/ChartsContainer.vue'
-import TimeSeriesContainer from '../../components/Locations/Charts/TimeSeries/TimeSeriesContainer.vue'
-import LeaderboardList from '../../components/global/LeaderboardList.vue'
-import Options from '../../components/Locations/Charts/Options/Options.vue'
-import Download from '../../components/Locations/Charts/Download/Download.vue'
+// import LocationNavbar from '../../components/Locations/LocationNavBar.vue'
+// import LocationMetadata from '../../components/Locations/LocationMetadata.vue'
+// import ChartsContainer from '../../components/Locations/Charts/PieCharts/ChartsContainer.vue'
+// import TimeSeriesContainer from '../../components/Locations/Charts/TimeSeries/TimeSeriesContainer.vue'
+// import LeaderboardList from '../../components/global/LeaderboardList.vue'
+// import Options from '../../components/Locations/Charts/Options/Options.vue'
+// import Download from '../../components/Locations/Charts/Download/Download.vue'
 
 export default {
     name: 'SortLocations',
@@ -83,13 +83,13 @@ export default {
         'locationType',
     ],
 	components: {
-		LocationNavbar,
-		LocationMetadata,
-		ChartsContainer,
-		TimeSeriesContainer,
-        LeaderboardList,
-        Options,
-        Download
+		// LocationNavbar,
+		// LocationMetadata,
+		// ChartsContainer,
+		// TimeSeriesContainer,
+        // LeaderboardList,
+        // Options,
+        // Download
 	},
 	data () {
 		return {
