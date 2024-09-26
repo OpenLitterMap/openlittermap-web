@@ -19,12 +19,12 @@
         		<div class="columns">
 
 					<!-- Location Metadata -->
-<!--					<LocationMetadata-->
-<!--						:index="index"-->
-<!--						:location="location"-->
-<!--						:locationType="locationType"-->
-<!--						:category="sortedBy"-->
-<!--					/>-->
+					<LocationMetadata
+						:index="index"
+						:location="location"
+						:locationType="locationType"
+						:category="sortedBy"
+					/>
 
 					<!-- Charts -->
 					<div class="column is-half is-offset-1">
@@ -70,7 +70,7 @@
 import sortBy from 'lodash.sortby'
 
 import LocationNavbar from '../../components/Locations/LocationNavBar.vue'
-// import LocationMetadata from '../../components/Locations/LocationMetadata.vue'
+import LocationMetadata from '../../components/Locations/LocationMetadata.vue'
 // import ChartsContainer from '../../components/Locations/Charts/PieCharts/ChartsContainer.vue'
 // import TimeSeriesContainer from '../../components/Locations/Charts/TimeSeries/TimeSeriesContainer.vue'
 // import LeaderboardList from '../../components/global/LeaderboardList.vue'
@@ -84,7 +84,7 @@ export default {
     ],
 	components: {
 		LocationNavbar,
-		// LocationMetadata,
+		LocationMetadata,
 		// ChartsContainer,
 		// TimeSeriesContainer,
         // LeaderboardList,
