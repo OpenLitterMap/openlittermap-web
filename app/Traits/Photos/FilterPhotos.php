@@ -32,7 +32,7 @@ trait FilterPhotos
 
         $filters = json_decode($filters_json);
 
-        if (! is_null($selectAll))
+        if (!is_null($selectAll))
         {
             // If selectAll is false, and the user is passing IDs,
             if ($selectAll === false && ! is_null($ids) && sizeof($ids) > 0)

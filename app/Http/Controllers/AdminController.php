@@ -8,6 +8,7 @@ use App\Actions\Photos\DeleteTagsFromPhotoAction;
 use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 
 use App\Events\ImageDeleted;
+use App\Models\Littercoin;
 use App\Models\Photo;
 use App\Models\User\User;
 
@@ -146,6 +147,13 @@ class AdminController extends Controller
         logAdminAction($photo, Route::getCurrentRoute()->getActionMethod(), $tagUpdates);
 
         $this->deleteTagsAction->run($photo);
+
+        $littercoin = Littercoin::where('photo_id', $photo->id)->first();
+
+        if ($littercoin) {
+            $littercoin->photo_id = null;
+            $littercoin->save();
+        }
 
         $photo->delete();
 
