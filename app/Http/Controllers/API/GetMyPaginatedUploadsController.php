@@ -1,19 +1,20 @@
 <?php
 
-namespace App\Http\Controllers\History;
+namespace App\Http\Controllers\API;
 
-use App\Models\Photo;
 use App\Models\CustomTag;
-use Illuminate\Http\Request;
+use App\Models\Photo;
 use Illuminate\Http\JsonResponse;
-use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Auth;
 
-class GetPaginatedHistoryController extends Controller
+class GetMyPaginatedUploadsController
 {
     /**
      * Get a paginated response of all available verified data
+     *
+     * A lot of duplication here with GetPaginatedHistoryController
      *
      * Todo - validate the request
      *
@@ -22,6 +23,8 @@ class GetPaginatedHistoryController extends Controller
      */
     public function __invoke (Request $request): JsonResponse
     {
+        $user = Auth::guard('api')->user();
+
         // Default to page 1 if not provided
         $currentPage = $request->input('loadPage', 1);
 
@@ -29,15 +32,9 @@ class GetPaginatedHistoryController extends Controller
             return $currentPage;
         });
 
-        $mobileAppUser = Auth::guard('api')->user();
-
         $query = Photo::query()
 
-            ->when($mobileAppUser, function ($q) use ($mobileAppUser) {
-                $q->where('user_id', $mobileAppUser->id);
-            }, function ($q) {
-                $q->where('verified', '>=', 2);
-            })
+            ->where('user_id', $user->id)
 
             ->when($request->filterCountry !== 'all', function ($q) use ($request) {
                 $q->where('country_id', $request->filterCountry);
@@ -72,8 +69,8 @@ class GetPaginatedHistoryController extends Controller
         $photos = $query->with(['customTags' => function ($query) use ($notInclude) {
             $query->whereNotIn('tag', $notInclude);
         }])
-        ->orderBy('id', 'desc')
-        ->paginate($request->paginationAmount);
+            ->orderBy('id', 'desc')
+            ->paginate($request->paginationAmount);
 
         return response()->json([
             'success' => true,

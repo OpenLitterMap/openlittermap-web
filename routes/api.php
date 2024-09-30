@@ -19,6 +19,8 @@ Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function(){
     Route::get('/photos/web/load-more', 'API\WebPhotosController@loadMore');
 
     Route::post('/add-tags-to-uploaded-image', 'API\AddTagsToUploadedImageController');
+
+    // Route::get('/uploads/history', 'API\GetMyPaginatedUploadsController');
 });
 
 Route::get('/global/stats-data', 'API\GlobalStatsController@index');
