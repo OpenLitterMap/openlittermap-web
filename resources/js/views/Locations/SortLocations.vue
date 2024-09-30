@@ -3,7 +3,6 @@
         class="inner-locations-container"
         :class="container"
     >
-
         <!-- Location Navbar -->
 		<location-navbar />
 
