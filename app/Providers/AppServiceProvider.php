@@ -26,6 +26,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot()
     {
         Gate::define('viewPulse', function (User $user) {
+
+            \Log::info(['hasRole', $user->hasRole('superadmin')]);
+
             return $user->hasRole('superadmin');
         });
     }
