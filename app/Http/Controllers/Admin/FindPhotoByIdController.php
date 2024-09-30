@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
 use App\Models\Photo;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use App\Http\Controllers\Controller;
 
 class FindPhotoByIdController extends Controller
 {
     /**
      * Admin can load any photo by its ID
      */
-    public function __invoke (Request $request)
+    public function __invoke (Request $request): JsonResponse
     {
         $photo = Photo::with([
             'customTags',
@@ -22,11 +23,18 @@ class FindPhotoByIdController extends Controller
         ->where('id', $request['photoId'])
         ->first();
 
+        if (!$photo) {
+            return response()->json([
+                'success' => false,
+                'photo' => null
+            ]);
+        }
+
         $photo->tags();
 
-        return [
+        return response()->json([
             'success' => true,
             'photo' => $photo
-        ];
+        ]);
     }
 }

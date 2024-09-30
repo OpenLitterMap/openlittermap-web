@@ -7,6 +7,7 @@ use App\Jobs\Photos\AddTagsToPhoto;
 use App\Models\Photo;
 use App\Traits\Photos\FilterPhotos;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 
@@ -74,19 +75,19 @@ class UserPhotoController extends Controller
     /**
      * Return filtered array of the users photos
      *
-     * @return array
+     * @return JsonResponse
      */
-    public function filter ()
+    public function filter (): JsonResponse
     {
         $query = $this->filterPhotos(request()->filters);
 
         $count = $query->count();
         $paginate = $query->simplePaginate($this->paginate);
 
-        return [
+        return response()->json([
             'count' => $count,
             'paginate' => $paginate
-        ];
+        ]);
     }
 
     /**

@@ -45,6 +45,13 @@ export const actions = {
                 context.commit('initAdminItems', response.data.photo);
                 context.commit('initAdminCustomTags', response.data.photo);
             }
+            else {
+                Vue.$vToastify.error({
+                    title: "Error",
+                    body: "Photo not found",
+                    position: 'top-right'
+                });
+            }
         })
         .catch(error => {
             console.error('ADMIN_FIND_PHOTO_BY_ID', error);

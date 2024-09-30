@@ -334,8 +334,6 @@ Route::get('/merchants/get-next-merchant-to-approve', 'Littercoin\Merchants\GetN
 
 Route::post('/merchants/upload-photo', 'Merchants\UploadMerchantPhotoController');
 
-
-
 /**
  * ADMIN
  */
