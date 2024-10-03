@@ -6,6 +6,8 @@
 
 <script>
 import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
 import 'leaflet-timedimension';
 import 'leaflet-timedimension/dist/leaflet.timedimension.control.css';
 import { mapHelper } from '../../maps/mapHelpers';
@@ -164,17 +166,17 @@ export default {
 }
 </script>
 
-<style scoped>
-.map-container {
-    height: calc(100% - 72px);
-    margin: 0;
-    position: relative;
-    z-index: 1;
-}
+<style>
+    .map-container {
+        height: calc(100% - 72px);
+        margin: 0;
+        position: relative;
+        z-index: 1;
+    }
 
-#map {
-    height: 100%;
-    margin: 0;
-    position: relative;
-}
+    #map {
+        height: 100%;
+        margin: 0;
+        position: relative;
+    }
 </style>
