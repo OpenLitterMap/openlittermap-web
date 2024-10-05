@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers\GlobalMap;
 
+use App\Http\Controllers\Controller;
 use App\Models\Photo;
 use App\Traits\FilterPhotosByGeoHashTrait;
-
-use App\Http\Controllers\Controller;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -36,7 +35,7 @@ class GlobalMapController extends Controller
             )
             ->where([
                 ['verified', '>=', 2],
-                ['art_id', '!=', null]
+                ['art_id', '!=', null],
             ])
             ->with([
                 'user:id,name,username,show_username_maps,show_name_maps,settings',
@@ -51,8 +50,6 @@ class GlobalMapController extends Controller
 
     /**
      * Get photos point data at zoom levels 16 or above
-     *
-     * @return array
      */
     public function index(): array
     {
@@ -76,15 +73,14 @@ class GlobalMapController extends Controller
                 'user.team:is_trusted',
                 'team:id,name',
                 'customTags:photo_id,tag',
-                'adminVerificationLog.admin' => function ($q) {
+                'adminVerificationLog.admin' => function ($q): void {
                     $q->addSelect('id', 'show_name', 'show_username')
                         ->addSelect(DB::raw('CASE WHEN show_name = 1 THEN name ELSE NULL END as name'))
                         ->addSelect(DB::raw('CASE WHEN show_username = 1 THEN username ELSE NULL END as username'));
-                }
+                },
             ]);
 
-        if (request()->fromDate || request()->toDate)
-        {
+        if (request()->fromDate || request()->toDate) {
             $startDate = request()->fromDate && Carbon::hasFormat(request()->fromDate, 'Y-m-d')
                 ? Carbon::createFromFormat('Y-m-d', request()->fromDate)->startOfDay()
                 : Carbon::create(2017);
@@ -94,18 +90,15 @@ class GlobalMapController extends Controller
                 : now()->addDay();
 
             $query->whereBetween('datetime', [$startDate, $endDate]);
-        }
-        else if (request()->year)
-        {
+        } elseif (request()->year) {
             $query->whereYear('datetime', request()->year);
         }
 
-        if (request()->username)
-        {
-            $query->whereHas('user', function ($q) {
+        if (request()->username) {
+            $query->whereHas('user', function ($q): void {
                 $q->where([
                     'users.show_username_maps' => 1,
-                    'users.username' => request()->username
+                    'users.username' => request()->username,
                 ]);
             });
         }

@@ -24,14 +24,14 @@ class ListTeamMembersTest extends TestCase
         /** @var Team $team */
         $team = Team::factory()->create();
         $users = User::factory(3)->create();
-        $users->each(function (User $user) use ($team) {
+        $users->each(function (User $user) use ($team): void {
             $user->teams()->attach($team);
         });
         $otherTeam = Team::factory()->create();
         $otherMember = User::factory()->create();
         $otherMember->teams()->attach($otherTeam);
 
-        $response = $this->actingAs($users->first(), $guard)->getJson($route . '?team_id=' . $team->id);
+        $response = $this->actingAs($users->first(), $guard)->getJson($route.'?team_id='.$team->id);
 
         $response->assertOk();
         $response->assertJsonFragment(['success' => true]);
@@ -54,10 +54,10 @@ class ListTeamMembersTest extends TestCase
         $user = User::factory()->create();
         $user->teams()->attach($team, [
             'show_name_leaderboards' => true,
-            'show_username_leaderboards' => true
+            'show_username_leaderboards' => true,
         ]);
 
-        $response = $this->actingAs($user, $guard)->getJson($route . '?team_id=' . $team->id);
+        $response = $this->actingAs($user, $guard)->getJson($route.'?team_id='.$team->id);
 
         $member = $response->json('result.data.0');
         $this->assertEquals($user->id, $member['id']);
@@ -79,10 +79,10 @@ class ListTeamMembersTest extends TestCase
         $user = User::factory()->create();
         $user->teams()->attach($team, [
             'show_name_leaderboards' => false,
-            'show_username_leaderboards' => false
+            'show_username_leaderboards' => false,
         ]);
 
-        $response = $this->actingAs($user, $guard)->getJson($route . '?team_id=' . $team->id);
+        $response = $this->actingAs($user, $guard)->getJson($route.'?team_id='.$team->id);
         $member = $response->json('result.data.0');
         $this->assertEmpty($member['name']);
         $this->assertEmpty($member['username']);
@@ -101,7 +101,7 @@ class ListTeamMembersTest extends TestCase
         /** @var User $nonMember */
         $nonMember = User::factory()->create();
 
-        $response = $this->actingAs($nonMember, $guard)->getJson($route . '?team_id=' . $team->id);
+        $response = $this->actingAs($nonMember, $guard)->getJson($route.'?team_id='.$team->id);
 
         $response->assertOk();
         $response->assertJson(['success' => false, 'message' => 'not-a-member']);

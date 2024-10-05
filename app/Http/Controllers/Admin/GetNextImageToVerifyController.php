@@ -2,50 +2,43 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Models\Photo;
-use App\Http\Requests\GetImageForVerificationRequest;
-
 use App\Http\Controllers\Controller;
-
-use Illuminate\Support\Facades\Redis;
+use App\Http\Requests\GetImageForVerificationRequest;
+use App\Models\Photo;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Redis;
 
 class GetNextImageToVerifyController extends Controller
 {
     /**
      * Get the next image to verify
-     *
-     * @param GetImageForVerificationRequest $request
-     * @return array
      */
-    public function __invoke (GetImageForVerificationRequest $request): array
+    public function __invoke(GetImageForVerificationRequest $request): array
     {
         // Photos that are uploaded and tagged come first
         /** @var Photo $photo */
         $photo = $this->filterPhotos()
-            ->when($request->skip, function ($q) use ($request) {
+            ->when($request->skip, function ($q) use ($request): void {
                 $q->skip((int) $request->skip);
             })
             ->where('verification', 0.1)
             ->first();
 
-        if (!$photo)
-        {
+        if (! $photo) {
             // Photos that have been uploaded, but not tagged or submitted for verification
             /** @var Photo $photo */
             $photo = $this->filterPhotos()
-                ->when($request->skip, function ($q) use ($request) {
+                ->when($request->skip, function ($q) use ($request): void {
                     $q->skip($request->skip);
                 })
                 ->where('verification', 0)
                 ->first();
         }
 
-        if (!$photo)
-        {
+        if (! $photo) {
             return [
                 'success' => false,
-                'msg' => 'photo not found'
+                'msg' => 'photo not found',
             ];
         }
 
@@ -75,9 +68,8 @@ class GetNextImageToVerifyController extends Controller
 
         $userVerificationCount = false;
 
-        if (Redis::hexists("user_verification_count", $photo->user_id))
-        {
-            $userVerificationCount = Redis::hget("user_verification_count", $photo->user_id);
+        if (Redis::hexists('user_verification_count', $photo->user_id)) {
+            $userVerificationCount = Redis::hget('user_verification_count', $photo->user_id);
         }
 
         return [
@@ -85,12 +77,13 @@ class GetNextImageToVerifyController extends Controller
             'photosNotProcessed' => $photosNotProcessed,
             'photosAwaitingVerification' => $photosAwaitingVerification,
             'userVerificationCount' => $userVerificationCount,
-            'photosNotProcessedForAdminTagging' => $photosNotProcessedForAdminTagging
+            'photosNotProcessedForAdminTagging' => $photosNotProcessedForAdminTagging,
         ];
     }
 
     /**
      * Generates a query builder with filtered photos
+     *
      * @return Builder|mixed
      */
     private function filterPhotos(): Builder
@@ -99,7 +92,7 @@ class GetNextImageToVerifyController extends Controller
             ->whereHas('user', function ($q) {
                 return $q->where('verification_required', true);
             })
-            ->with(['user' => function ($q) {
+            ->with(['user' => function ($q): void {
                 $q->select('id', 'username', 'verification_required');
             }])
             ->with('customTags')

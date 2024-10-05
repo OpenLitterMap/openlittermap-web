@@ -44,11 +44,9 @@ class Resize500x500 extends Command
         Photo::where([
             ['verified', '>=', 2],
             ['filename', '!=', '/assets/verified.jpg'],
-            'five_hundred_square_filepath' => null
-        ])->chunk(500, function ($photos)
-        {
-            foreach ($photos as $photo)
-            {
+            'five_hundred_square_filepath' => null,
+        ])->chunk(500, function ($photos): void {
+            foreach ($photos as $photo) {
                 echo "Photo id $photo->id \n";
 
                 // Create an image object
@@ -68,7 +66,7 @@ class Resize500x500 extends Command
                 $x = explode('/', $photo->filename);
 
                 // Get the last element which is the filename with extension
-                $filename = $x[sizeof($x) -1];
+                $filename = $x[count($x) - 1];
                 $filepath = $year.'/'.$month.'/'.$day.'/'.$filename;
 
                 $s3 = \Storage::disk('bbox');

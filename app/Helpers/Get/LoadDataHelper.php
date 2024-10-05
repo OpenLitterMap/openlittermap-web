@@ -14,12 +14,8 @@ class LoadDataHelper
      * Get the States for a Country
      *
      * /world/{country}
-     *
-     * @param string $url
-     *
-     * @return array
      */
-    public static function getStates (string $url) : array
+    public static function getStates(string $url): array
     {
         $urlText = urldecode($url);
 
@@ -28,10 +24,10 @@ class LoadDataHelper
             ->orWhere('shortcode', $urlText)
             ->first();
 
-        if (!$country) {
+        if (! $country) {
             return [
                 'success' => false,
-                'msg' => 'country not found'
+                'msg' => 'country not found',
             ];
         }
 
@@ -46,34 +42,33 @@ class LoadDataHelper
             'updated_at',
             'user_id_last_uploaded'
         )
-        ->with([
-            'creator' => function ($q) {
-                $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby')
-                    ->where('show_name_createdby', true)
-                    ->orWhere('show_username_createdby', true);
-            },
-            'lastUploader' => function ($q) {
-                $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby', 'created_at', 'updated_at')
-                    ->where('show_name_createdby', true)
-                    ->orWhere('show_username_createdby', true);
-            }
-        ])
-        ->where([
-            'country_id' => $country->id,
-            'manual_verify' => 1,
-            ['total_litter', '>', 0],
-            ['total_contributors', '>', 0]
-        ])
-        ->orderBy('state', 'asc')
-        ->get();
+            ->with([
+                'creator' => function ($q): void {
+                    $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby')
+                        ->where('show_name_createdby', true)
+                        ->orWhere('show_username_createdby', true);
+                },
+                'lastUploader' => function ($q): void {
+                    $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby', 'created_at', 'updated_at')
+                        ->where('show_name_createdby', true)
+                        ->orWhere('show_username_createdby', true);
+                },
+            ])
+            ->where([
+                'country_id' => $country->id,
+                'manual_verify' => 1,
+                ['total_litter', '>', 0],
+                ['total_contributors', '>', 0],
+            ])
+            ->orderBy('state', 'asc')
+            ->get();
 
         $total_litter = 0;
         $total_photos = 0;
 
         $countryName = $country->country;
 
-        foreach ($states as $state)
-        {
+        foreach ($states as $state) {
             // Get Creator info
             $state = LocationHelper::getCreatorInfo($state);
 
@@ -99,22 +94,18 @@ class LoadDataHelper
             'countryName' => $countryName,
             'states' => $states,
             'total_litter' => $total_litter,
-            'total_photos' => $total_photos
+            'total_photos' => $total_photos,
         ];
     }
 
     /**
      * Get the cities for the /country/state
      *
-     * @param null $country (string)
-     * @param string $state
-     *
-     * @return array
+     * @param  null  $country  (string)
      */
-    public static function getCities ($country, string $state) : array
+    public static function getCities($country, string $state): array
     {
-        if ($country)
-        {
+        if ($country) {
             $countryText = urldecode($country);
 
             $country = Country::where('id', $countryText)
@@ -122,7 +113,9 @@ class LoadDataHelper
                 ->orWhere('shortcode', $countryText)
                 ->first();
 
-            if (!$country) return ['success' => false, 'msg' => 'country not found'];
+            if (! $country) {
+                return ['success' => false, 'msg' => 'country not found'];
+            }
         }
 
         $stateText = urldecode($state);
@@ -133,7 +126,9 @@ class LoadDataHelper
             ->orWhere('statenameb', $stateText)
             ->first();
 
-        if (!$state) return ['success' => false, 'msg' => 'state not found'];
+        if (! $state) {
+            return ['success' => false, 'msg' => 'state not found'];
+        }
 
         /**
          * Instead of loading the photos here on the city model,
@@ -151,38 +146,37 @@ class LoadDataHelper
             'total_contributors',
             'user_id_last_uploaded'
         )
-        ->with([
-            'creator' => function ($q) {
-                $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby')
-                    ->where('show_name_createdby', true)
-                    ->orWhere('show_username_createdby', true);
-            },
-            'lastUploader' => function ($q) {
-                $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby', 'created_at', 'updated_at')
-                    ->where('show_name_createdby', true)
-                    ->orWhere('show_username_createdby', true);
-            }
-        ])
-        ->where([
-            ['state_id', $state->id],
-            ['total_images', '>', 0],
-            ['total_litter', '>', 0],
-            ['total_contributors', '>', 0]
-        ])
-        ->orderBy('city', 'asc')
-        ->get();
+            ->with([
+                'creator' => function ($q): void {
+                    $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby')
+                        ->where('show_name_createdby', true)
+                        ->orWhere('show_username_createdby', true);
+                },
+                'lastUploader' => function ($q): void {
+                    $q->select('id', 'name', 'username', 'show_name_createdby', 'show_username_createdby', 'created_at', 'updated_at')
+                        ->where('show_name_createdby', true)
+                        ->orWhere('show_username_createdby', true);
+                },
+            ])
+            ->where([
+                ['state_id', $state->id],
+                ['total_images', '>', 0],
+                ['total_litter', '>', 0],
+                ['total_contributors', '>', 0],
+            ])
+            ->orderBy('city', 'asc')
+            ->get();
 
         $countryName = $country->country;
         $stateName = $state->state;
 
-        foreach ($cities as $city)
-        {
+        foreach ($cities as $city) {
             // Get Creator info
             $city = LocationHelper::getCreatorInfo($city);
 
             // Get Leaderboard
-//            $leaderboardIds = Redis::zrevrange("xp.country.$country->id.state.$state->id.city.$city->id", 0, 9, 'withscores');
-//            $city['leaderboard'] = Leaderboard::getLeadersByUserIds($leaderboardIds);
+            //            $leaderboardIds = Redis::zrevrange("xp.country.$country->id.state.$state->id.city.$city->id", 0, 9, 'withscores');
+            //            $city['leaderboard'] = Leaderboard::getLeadersByUserIds($leaderboardIds);
             $city['leaderboard'] = [];
 
             $city['avg_photo_per_user'] = $city->total_contributors > 0
@@ -198,7 +192,7 @@ class LoadDataHelper
             'success' => true,
             'country' => $countryName,
             'state' => $stateName,
-            'cities' => $cities
+            'cities' => $cities,
         ];
     }
 }

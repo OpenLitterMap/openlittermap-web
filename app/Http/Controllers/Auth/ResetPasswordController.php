@@ -4,12 +4,10 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Auth\ResetsPasswords;
-
-use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Password;
-
+use Illuminate\Support\Str;
 
 class ResetPasswordController extends Controller
 {
@@ -46,7 +44,6 @@ class ResetPasswordController extends Controller
     /**
      * Reset the given user's password.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function reset(Request $request)
@@ -57,7 +54,7 @@ class ResetPasswordController extends Controller
         // will update the password on an actual user model and persist it to the
         // database. Otherwise we will parse the error and return the response.
         $response = $this->broker()->reset(
-            $this->credentials($request), function ($user, $password) {
+            $this->credentials($request), function ($user, $password): void {
                 $this->resetPassword($user, $password);
             }
         );
@@ -97,7 +94,6 @@ class ResetPasswordController extends Controller
     /**
      * Get the password reset credentials from the request.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return array
      */
     protected function credentials(Request $request)
@@ -128,14 +124,14 @@ class ResetPasswordController extends Controller
     /**
      * Get the response for a successful password reset.
      *
-     * @param string $response
+     * @param  string  $response
      * @return \Illuminate\Http\JsonResponse
      */
     protected function sendResetResponse($response)
     {
         return response()->json([
             'success' => true,
-            'message' => trans($response)
+            'message' => trans($response),
         ]);
     }
 
@@ -150,7 +146,7 @@ class ResetPasswordController extends Controller
     {
         return response()->json([
             'success' => false,
-            'errors' => ['email' => [trans($response)]]
+            'errors' => ['email' => [trans($response)]],
         ], 422);
     }
 
@@ -174,7 +170,6 @@ class ResetPasswordController extends Controller
         return Auth::guard();
     }
 
-
     /**
      * Get the post register / login redirect path.
      *
@@ -188,5 +183,4 @@ class ResetPasswordController extends Controller
 
         return property_exists($this, 'redirectTo') ? $this->redirectTo : '/';
     }
-
 }

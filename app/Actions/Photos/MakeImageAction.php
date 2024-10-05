@@ -14,20 +14,17 @@ class MakeImageAction
     /**
      * Create an instance of Intervention Image using an UploadedFile
      *
-     * @param UploadedFile $file
-     * @param bool $resize
      *
-     * @return array
      * @throws Exception
      */
-    public function run (UploadedFile $file, bool $resize = false): array
+    public function run(UploadedFile $file, bool $resize = false): array
     {
         $imageAndExifData = $this->getImageAndExifData($file);
 
         if ($resize) {
             $imageAndExifData['image']->resize(500, 500);
 
-            $imageAndExifData['image']->resize(500, 500, function ($constraint) {
+            $imageAndExifData['image']->resize(500, 500, function ($constraint): void {
                 $constraint->aspectRatio();
             });
         }
@@ -36,18 +33,16 @@ class MakeImageAction
     }
 
     /**
-     * @param UploadedFile $file
-     * @return array
      * @throws Exception
      */
-    protected function getImageAndExifData (UploadedFile $file): array
+    protected function getImageAndExifData(UploadedFile $file): array
     {
         $extension = $file->getClientOriginalExtension();
 
         // If the image is not type HEIC, HEIF
         // We can assume its jpg, png, and can be handled by the default GD image library
         // Otherwise, we are going to have to handle HEIC separately.
-        if (!in_array(strtolower($extension), ['heif', 'heic'])) {
+        if (! in_array(strtolower($extension), ['heif', 'heic'])) {
             $image = Image::make($file)->orientate();
             $exif = $image->exif();
 
@@ -61,21 +56,21 @@ class MakeImageAction
 
         // Path for a temporary file from the upload -> storage/app/heic_images/sample1.heic
         $tmpFilepath = storage_path(
-            self::TEMP_HEIC_STORAGE_DIR .
-            $randomFilename . ".$extension"
+            self::TEMP_HEIC_STORAGE_DIR.
+            $randomFilename.".$extension"
         );
 
         // Path for a converted temporary file -> storage/app/heic_images/sample1.jpg
         $convertedFilepath = storage_path(
-            self::TEMP_HEIC_STORAGE_DIR .
-            $randomFilename . '.jpg'
+            self::TEMP_HEIC_STORAGE_DIR.
+            $randomFilename.'.jpg'
         );
 
         // Store the uploaded HEIC file on the server
         File::put($tmpFilepath, $file->getContent());
 
         // Run a shell command to execute ImageMagick conversion
-        exec('magick convert ' . $tmpFilepath . ' ' . $convertedFilepath);
+        exec('magick convert '.$tmpFilepath.' '.$convertedFilepath);
 
         // Make the image from the new converted file
         $image = Image::make($convertedFilepath)->orientate();

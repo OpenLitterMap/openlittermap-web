@@ -18,9 +18,8 @@ class ListLeaderboardsTest extends TestCase
     }
 
     /**
-     * @param $route
-     * @param $guard
      * @dataProvider routeDataProvider
+     *
      * @return void
      */
     public function test_it_can_list_the_global_teams_leaderboards($route, $guard)
@@ -39,7 +38,7 @@ class ListLeaderboardsTest extends TestCase
             ->getJson($route)
             ->assertOk()
             ->assertJsonCount(3)
-            ->assertJson(function (AssertableJson $json) {
+            ->assertJson(function (AssertableJson $json): void {
                 $json->has('0.name');
                 $json->has('0.total_litter');
                 $json->has('0.total_images');
@@ -51,9 +50,8 @@ class ListLeaderboardsTest extends TestCase
     }
 
     /**
-     * @param $route
-     * @param $guard
      * @dataProvider routeDataProvider
+     *
      * @return void
      */
     public function test_it_does_not_include_teams_that_dont_want_to_be_in_leaderboards($route, $guard)

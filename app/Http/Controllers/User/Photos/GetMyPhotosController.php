@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\User\Photos;
 
-use App\Models\Photo;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
+use App\Models\Photo;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Auth;
 
@@ -14,11 +14,8 @@ class GetMyPhotosController extends Controller
     /**
      * Get the users photos to display on a paginated table
      * Optional filters
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
-    public function __invoke (Request $request): JsonResponse
+    public function __invoke(Request $request): JsonResponse
     {
         // Todo - validate the request
 
@@ -43,14 +40,14 @@ class GetMyPhotosController extends Controller
         // Filter by tags: needs improvement to search by category, item, quantity
         // instead of looking at the result_string, we should be looking at the photos relationships
         if ($request->filterTag) {
-            $query->where('result_string', 'like', '%' . $request->filterTag . '%');
+            $query->where('result_string', 'like', '%'.$request->filterTag.'%');
         }
 
         if ($request->filterCustomTag) {
             $customTag = $request->filterCustomTag;
 
-            $query->whereHas('customTags', function ($q) use ($customTag) {
-                 $q->where('tag', 'like', '%' . $customTag . '%');
+            $query->whereHas('customTags', function ($q) use ($customTag): void {
+                $q->where('tag', 'like', '%'.$customTag.'%');
             });
         }
 
@@ -60,7 +57,7 @@ class GetMyPhotosController extends Controller
 
         return response()->json([
             'success' => true,
-            'photos' => $photos
+            'photos' => $photos,
         ]);
     }
 }

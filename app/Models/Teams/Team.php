@@ -10,41 +10,48 @@ class Team extends Model
     use HasFactory;
 
     protected $fillable = [
-    	'name',
+        'name',
         'type_id',
         'type_name',
-    	'members',
-    	'images_remaining',
-    	'total_images',
-    	'total_litter',
-    	'leader',
+        'members',
+        'images_remaining',
+        'total_images',
+        'total_litter',
+        'leader',
         'created_by',
         'identifier',
         'leaderboards',
-        'is_trusted'
+        'is_trusted',
     ];
 
-    protected $casts = [
-        'is_trusted' => 'boolean'
-    ];
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'is_trusted' => 'boolean',
+        ];
+    }
 
     /**
      * Relationships
      */
-    public function users ()
+    public function users()
     {
-    	return $this->belongsToMany('App\Models\User\User');
+        return $this->belongsToMany('App\Models\User\User');
     }
 
-    public function leader ()
+    public function leader()
     {
-    	return $this->belongsTo('App\Models\User\User', 'leader');
+        return $this->belongsTo('App\Models\User\User', 'leader');
     }
 
     // double check this
-    public function photos ()
+    public function photos()
     {
         return $this->hasManyThrough('App\Models\User\User', 'App\Models\Photo');
     }
-
 }

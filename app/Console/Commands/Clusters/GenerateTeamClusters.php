@@ -25,6 +25,7 @@ class GenerateTeamClusters extends Command
     protected $description = 'Generate all clusters for teams photos';
 
     private $clustersDir = 'team-clusters.json';
+
     private $featuresDir = 'team-features.json';
 
     /**
@@ -48,7 +49,7 @@ class GenerateTeamClusters extends Command
 
         $finish = microtime(true);
         $this->newLine();
-        $this->info("Total Time: " . ($finish - $start) . "\n");
+        $this->info('Total Time: '.($finish - $start)."\n");
 
         return 0;
     }
@@ -58,7 +59,7 @@ class GenerateTeamClusters extends Command
      */
     protected function generateFeatures(Team $team): void
     {
-        $this->info("Generating features...");
+        $this->info('Generating features...');
 
         $bar = $this->output->createProgressBar(
             Photo::whereTeamId($team->id)->count()
@@ -78,8 +79,8 @@ class GenerateTeamClusters extends Command
                 'type' => 'Feature',
                 'geometry' => [
                     'type' => 'Point',
-                    'coordinates' => [$photo->lon, $photo->lat]
-                ]
+                    'coordinates' => [$photo->lon, $photo->lat],
+                ],
             ];
 
             $features[] = $feature;
@@ -100,7 +101,7 @@ class GenerateTeamClusters extends Command
      */
     protected function generateClusters(Team $team): void
     {
-        $this->info("Generating clusters for each zoom level...");
+        $this->info('Generating clusters for each zoom level...');
 
         $rootDir = base_path();
         $zoomLevels = range(2, 16);
@@ -132,7 +133,7 @@ class GenerateTeamClusters extends Command
                     ];
                 })
                 ->chunk(1000)
-                ->each(function ($chunk) {
+                ->each(function ($chunk): void {
                     TeamCluster::insert($chunk->all());
                 });
 
@@ -144,12 +145,9 @@ class GenerateTeamClusters extends Command
         $this->info("\nClusters finished...");
     }
 
-    /**
-     * @param Team $team
-     */
     protected function deleteClusters(Team $team)
     {
-        $this->info("Deleting clusters...");
+        $this->info('Deleting clusters...');
 
         TeamCluster::whereTeamId($team->id)->delete();
     }

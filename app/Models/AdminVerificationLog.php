@@ -12,15 +12,24 @@ class AdminVerificationLog extends Model
 
     protected $guarded = [];
 
-    protected $casts = [
-        'added_tags' => 'array',
-        'removed_tags' => 'array'
-    ];
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'added_tags' => 'array',
+            'removed_tags' => 'array',
+        ];
+    }
 
     /**
      * The user who updated the tags
      */
-    public function admin () {
+    public function admin()
+    {
         return $this->belongsTo(User::class, 'admin_id', 'id');
     }
 }
