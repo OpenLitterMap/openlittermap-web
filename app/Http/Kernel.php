@@ -52,7 +52,7 @@ class Kernel extends HttpKernel
      *
      * @var array
      */
-    protected $routeMiddleware = [
+    protected $middlewareAliases = [
         'fw-block-blacklisted' => \PragmaRX\Firewall\Middleware\FirewallBlacklist::class,
         'admin' => \App\Http\Middleware\IsAdmin::class,
         'auth' => \App\Http\Middleware\Authenticate::class,

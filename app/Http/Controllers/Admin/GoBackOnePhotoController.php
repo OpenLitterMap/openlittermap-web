@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Models\Photo;
 use App\Http\Controllers\Controller;
+use App\Models\Photo;
 use Illuminate\Http\Request;
 
 class GoBackOnePhotoController extends Controller
@@ -13,39 +13,35 @@ class GoBackOnePhotoController extends Controller
      *
      * Allow them to go back 1 photo
      */
-    public function __invoke (Request $request)
+    public function __invoke(Request $request)
     {
-        $photoId = (int)$request['photoId'];
-        $filterMyOwnPhotos = (boolean)$request['filterMyOwnPhotos'];
+        $photoId = (int) $request['photoId'];
+        $filterMyOwnPhotos = (bool) $request['filterMyOwnPhotos'];
 
         $userId = auth()->user()->id;
         $query = Photo::query();
 
-        if ($filterMyOwnPhotos)
-        {
+        if ($filterMyOwnPhotos) {
             $query->where('user_id', $userId)
-                  ->where('id', '<', $photoId)
-                  ->orderBy('id', 'desc');
-        }
-        else
-        {
-            $photoId = $photoId -1;
+                ->where('id', '<', $photoId)
+                ->orderBy('id', 'desc');
+        } else {
+            $photoId = $photoId - 1;
 
             $query->where('id', $photoId);
         }
 
         $photo = $query->with([
             'customTags',
-            'user' => function ($q) {
+            'user' => function ($q): void {
                 $q->select('id', 'username');
-            }
+            },
         ])->first();
 
-        if (!$photo)
-        {
+        if (! $photo) {
             return [
                 'success' => false,
-                'msg' => 'photo not found'
+                'msg' => 'photo not found',
             ];
         }
 
@@ -54,7 +50,7 @@ class GoBackOnePhotoController extends Controller
 
         return [
             'success' => true,
-            'photo' => $photo
+            'photo' => $photo,
         ];
     }
 }

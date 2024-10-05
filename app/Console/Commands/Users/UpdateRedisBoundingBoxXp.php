@@ -43,9 +43,9 @@ class UpdateRedisBoundingBoxXp extends Command
      */
     public function handle()
     {
-        $this->line("Updating XP from bounding boxes");
+        $this->line('Updating XP from bounding boxes');
 
-        $this->withProgressBar(User::all(), function (User $user) {
+        $this->withProgressBar(User::all(), function (User $user): void {
             $addedBoxes = $user->boxes()->count();
             $verifiedBoxes = $user->boxesVerified()->count();
 

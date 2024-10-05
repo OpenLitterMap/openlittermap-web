@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\User\User;
-use App\Plan;
 use Exception;
 // use App\Billing\Payments;
 use Illuminate\Http\Request;
@@ -17,13 +16,15 @@ class WebhookController extends Controller
      * Handle a Stripe webhook call.
      * Change "customer.created" to handleCustomerCreated
      */
-    public function handleWebhook (Request $request)
+    public function handleWebhook(Request $request)
     {
-        $method = 'handle'.studly_case(str_replace('.', '_', $request->type));
+        $method = 'handle'.\Illuminate\Support\Str::studly(str_replace('.', '_', $request->type));
 
-        if (method_exists($this, $method)) return $this->{$method}($request->all());
-
-        else return $this->missingMethod();
+        if (method_exists($this, $method)) {
+            return $this->{$method}($request->all());
+        } else {
+            return $this->missingMethod();
+        }
     }
 
     /**
@@ -31,15 +32,13 @@ class WebhookController extends Controller
      *
      * This happens second.
      *
-     * @param $request
      * @return string[]
      */
-    protected function handleCustomerCreated ($request)
+    protected function handleCustomerCreated($request)
     {
         // \Log::info('handleCustomerCreated', $request);
 
-        if ($user = User::where('email', $request['data']['object']['email'])->first())
-        {
+        if ($user = User::where('email', $request['data']['object']['email'])->first()) {
             $user->stripe_id = $request['data']['object']['id'];
             $user->save();
 
@@ -51,12 +50,11 @@ class WebhookController extends Controller
      * Handle a successful payment
      * Not sure why this comes before customer.created, but this is first
      */
-    protected function handleChargeSucceeded (array $payload)
+    protected function handleChargeSucceeded(array $payload)
     {
         // \Log::info(['handleChargeSucceeded', $payload]);
 
-        if ($user = User::where('email', $payload['data']['object']['billing_details']['email'])->first())
-        {
+        if ($user = User::where('email', $payload['data']['object']['billing_details']['email'])->first()) {
             $user->payments()->create(['amount' => $payload['data']['object']['amount'], 'stripe_id' => $user->stripe_id]);
         }
 
@@ -66,17 +64,18 @@ class WebhookController extends Controller
     /**
      * Third
      */
-    protected function handleCustomerSubscriptionCreated (array $payload)
+    protected function handleCustomerSubscriptionCreated(array $payload)
     {
         // \Log::info(['handleSubscriptionCreated', $payload]);
 
-        if ($user = User::where('stripe_id', $payload['data']['object']['customer'])->first())
-        {
+        if ($user = User::where('stripe_id', $payload['data']['object']['customer'])->first()) {
             $name = $payload['data']['object']['items']['data'][0]['plan']['nickname'];
             $sub_id = $payload['data']['object']['id']; // sub_id
-            $plan_id =  $payload['data']['object']['items']['data'][0]['plan']['id'];
+            $plan_id = $payload['data']['object']['items']['data'][0]['plan']['id'];
 
-            if (is_null($name)) $name = $payload['data']['object']['items']['data'][0]['plan']['id'];
+            if (is_null($name)) {
+                $name = $payload['data']['object']['items']['data'][0]['plan']['id'];
+            }
 
             $user->subscriptions()->create([
                 'name' => $name ?: '', // Startup, Advanced, Pro.
@@ -85,7 +84,7 @@ class WebhookController extends Controller
                 'quantity' => 1,
                 'ends_at' => now()->addMonths(1),
                 'stripe_active' => 1,
-                'stripe_status' => 'active'
+                'stripe_status' => 'active',
             ]);
 
             return ['status' => 'success'];
@@ -99,17 +98,16 @@ class WebhookController extends Controller
     /**
      * Handle a cancelled customer from a Stripe subscription.
      *
-     * @param  array  $payload
      * @return \Symfony\Component\HttpFoundation\Response
      */
-    protected function handleCustomerSubscriptionDeleted (array $payload)
+    protected function handleCustomerSubscriptionDeleted(array $payload)
     {
         $user = $this->getUserByStripeId($payload['data']['object']['customer']);
 
         if ($user) {
             $user->subscriptions->filter(function ($subscription) use ($payload) {
                 return $subscription->stripe_id === $payload['data']['object']['id'];
-            })->each(function ($subscription) {
+            })->each(function ($subscription): void {
                 $subscription->markAsCancelled();
             });
         }
@@ -123,9 +121,10 @@ class WebhookController extends Controller
      * @param  string  $stripeId
      * @return \Laravel\Cashier\Billable
      */
-    protected function getUserByStripeId ($stripeId)
+    protected function getUserByStripeId($stripeId)
     {
         $model = getenv('STRIPE_MODEL') ?: config('services.stripe.model');
+
         return (new $model)->where('stripe_id', $stripeId)->first();
     }
 
@@ -135,7 +134,7 @@ class WebhookController extends Controller
      * @param  string  $id
      * @return bool
      */
-    protected function eventExistsOnStripe ($id)
+    protected function eventExistsOnStripe($id)
     {
         try {
             return ! is_null(StripeEvent::retrieve($id, config('services.stripe.secret')));
@@ -149,7 +148,7 @@ class WebhookController extends Controller
      *
      * @return bool
      */
-    protected function isInTestingEnvironment ()
+    protected function isInTestingEnvironment()
     {
         return getenv('CASHIER_ENV') === 'testing';
     }
@@ -157,10 +156,10 @@ class WebhookController extends Controller
     /**
      * Handle calls to missing methods on the controller.
      *
-     * @param  array   $parameters
+     * @param  array  $parameters
      * @return mixed
      */
-    public function missingMethod ($parameters = [])
+    public function missingMethod($parameters = [])
     {
         return new Response;
     }

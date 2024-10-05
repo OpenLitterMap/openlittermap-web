@@ -2,25 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use Auth;
-use App\Models\Photo;
-use App\Models\User\User;
 use App\Models\Litter\Categories\Smoking;
-use App\Models\Litter\Categories\Alcohol;
-use App\Models\Litter\Categories\Coffee;
-use App\Models\Litter\Categories\Food;
 use App\Models\Litter\Categories\SoftDrinks;
-use App\Models\Litter\Categories\Drugs;
-use App\Models\Litter\Categories\Sanitary;
-use App\Models\Litter\Categories\Other;
-use App\Models\Litter\Categories\Coastal;
-use App\Models\Litter\Categories\Pathway;
-use App\Models\Litter\Categories\Art;
-use App\Models\Litter\Categories\Brand;
-use App\Models\Litter\Categories\TrashDog;
-use DateTime;
-use Carbon\Carbon;
-use Illuminate\Http\Request;
+use App\Models\Photo;
+use Auth;
 use Excel;
 
 class TotalDataController extends Controller
@@ -28,16 +13,12 @@ class TotalDataController extends Controller
     /**
      * Export some data for machine learning
      */
-    public function getCSV ()
+    public function getCSV()
     {
-        if ($user = Auth::user())
-        {
-            if ($user->email == 'seanlynch@umail.ucc.ie')
-            {
-                Excel::create('cigarette_butts', function ($excel)
-                {
-                    $excel->sheet('OLM', function ($sheet)
-                    {
+        if ($user = Auth::user()) {
+            if ($user->email == 'seanlynch@umail.ucc.ie') {
+                Excel::create('cigarette_butts', function ($excel): void {
+                    $excel->sheet('OLM', function ($sheet): void {
                         $index = 0;
                         $export = [];
 
@@ -46,7 +27,7 @@ class TotalDataController extends Controller
                         $butts = Smoking::select('id')
                             ->where([
                                 ['id', '>', 984],
-                                ['butts', '>', 0]
+                                ['butts', '>', 0],
                             ])
                             ->get()
                             ->take(2500)
@@ -55,17 +36,16 @@ class TotalDataController extends Controller
                         // Get photos that match the smoking_id column
                         // eager load the cigarette_butt data again
                         $cig_photos = Photo::select('id', 'smoking_id', 'filename')
-                        ->whereIn('smoking_id', $butts)
-                        ->with([
-                            'smoking' => function ($a) {
-                                $a->select('id', 'butts');
-                            }
-                        ])
-                        ->get();
+                            ->whereIn('smoking_id', $butts)
+                            ->with([
+                                'smoking' => function ($a): void {
+                                    $a->select('id', 'butts');
+                                },
+                            ])
+                            ->get();
 
                         // Add to the CSV
-                        foreach ($cig_photos as $photo)
-                        {
+                        foreach ($cig_photos as $photo) {
                             $index++;
                             $export[$index]['filename'] = $photo->filename;
                             $export[$index]['photo_id'] = $photo->id;
@@ -81,7 +61,7 @@ class TotalDataController extends Controller
                         $cig_boxes = Smoking::select('id')
                             ->where([
                                 ['id', '>', 984],
-                                ['cigaretteBox', '>', 0]
+                                ['cigaretteBox', '>', 0],
                             ])
                             ->get()
                             ->take(2500)
@@ -90,15 +70,14 @@ class TotalDataController extends Controller
                         $cig_boxes_photos = Photo::select('id', 'smoking_id', 'filename')
                             ->whereIn('smoking_id', $cig_boxes)
                             ->with([
-                                'smoking' => function ($a) {
+                                'smoking' => function ($a): void {
                                     $a->select('id', 'cigaretteBox');
-                                }
+                                },
                             ])
                             ->get();
 
                         // Add to the CSV
-                        foreach ($cig_boxes_photos as $photo)
-                        {
+                        foreach ($cig_boxes_photos as $photo) {
                             $index++;
                             $export[$index]['filename'] = $photo->filename;
                             $export[$index]['photo_id'] = $photo->id;
@@ -114,7 +93,7 @@ class TotalDataController extends Controller
                         $plastic_bottle_ids = SoftDrinks::select('id')
                             ->where([
                                 ['id', '>', 1462],
-                                ['waterBottle', '>', 0]
+                                ['waterBottle', '>', 0],
                             ])
                             ->get()
                             ->take(2500)
@@ -123,15 +102,14 @@ class TotalDataController extends Controller
                         $plastic_bottle_photos = Photo::select('id', 'softdrinks_id', 'filename')
                             ->whereIn('softdrinks_id', $plastic_bottle_ids)
                             ->with([
-                                'softdrinks' => function ($a) {
+                                'softdrinks' => function ($a): void {
                                     $a->select('id', 'waterBottle');
-                                }
+                                },
                             ])
                             ->get();
 
                         // Add to the CSV
-                        foreach ($plastic_bottle_photos as $photo)
-                        {
+                        foreach ($plastic_bottle_photos as $photo) {
                             $index++;
                             $export[$index]['filename'] = $photo->filename;
                             $export[$index]['photo_id'] = $photo->id;
@@ -147,7 +125,7 @@ class TotalDataController extends Controller
                         $cans_ids = SoftDrinks::select('id')
                             ->where([
                                 ['id', '>', 1462],
-                                ['tinCan', '>', 0]
+                                ['tinCan', '>', 0],
                             ])
                             ->get()
                             ->take(2500)
@@ -156,15 +134,14 @@ class TotalDataController extends Controller
                         $tin_can_photos = Photo::select('id', 'softdrinks_id', 'filename')
                             ->whereIn('softdrinks_id', $cans_ids)
                             ->with([
-                                'softdrinks' => function ($a) {
+                                'softdrinks' => function ($a): void {
                                     $a->select('id', 'tinCan');
-                                }
+                                },
                             ])
                             ->get();
 
                         // Add to the CSV
-                        foreach ($tin_can_photos as $photo)
-                        {
+                        foreach ($tin_can_photos as $photo) {
                             $index++;
                             $export[$index]['filename'] = $photo->filename;
                             $export[$index]['photo_id'] = $photo->id;
@@ -184,56 +161,54 @@ class TotalDataController extends Controller
         }
     }
 
+    //    /**
+    //     * Return list of data for sean
+    //     */
+    //    public function butts ()
+    //    {
 
-//    /**
-//     * Return list of data for sean
-//     */
-//    public function butts ()
-//    {
+    //            return Photo::with([
+    //                'smoking' => function ($a) {
+    //                    $a->select('id', 'butts', 'cigaretteBox');
+    //                },
+    //                'softdrinks' => function ($b) {
+    //                    $b->select('id', 'waterBottle', 'fizzyDrinkBottle', 'tinCan', 'energy_can');
+    //                }
+    //            ])
+    //            ->where([
+    //                ['filename', '!=', '/assets/verified.jpg'],
+    //                'verified' => 2,
+    //                ['smoking_id', '!=', NULL],
+    //            ])->select('id', 'filename', 'smoking_id')->get()->take(2500);
+    //        }
+    //    }
 
-//            return Photo::with([
-//                'smoking' => function ($a) {
-//                    $a->select('id', 'butts', 'cigaretteBox');
-//                },
-//                'softdrinks' => function ($b) {
-//                    $b->select('id', 'waterBottle', 'fizzyDrinkBottle', 'tinCan', 'energy_can');
-//                }
-//            ])
-//            ->where([
-//                ['filename', '!=', '/assets/verified.jpg'],
-//                'verified' => 2,
-//                ['smoking_id', '!=', NULL],
-//            ])->select('id', 'filename', 'smoking_id')->get()->take(2500);
-//        }
-//    }
+    /**
+     * Return list of data for Laurens
+     */
+    public function laurens()
+    {
+        $user = Auth::user();
 
-	/**
-	 * Return list of data for Laurens
-	 */
-	public function laurens ()
-	{
-		$user = Auth::user();
+        if ($user->email == 'seanlynch@umail.ucc.ie' || $user->email == 'bakker.laurens@gmail.com') {
 
-		if ($user->email == 'seanlynch@umail.ucc.ie' || $user->email == 'bakker.laurens@gmail.com') {
+            $data = Photo::with([
+                'softdrinks' => function ($a): void {
+                    $a->select('id', 'waterBottle', 'fizzyDrinkBottle', 'tinCan');
+                },
+                'brands' => function ($b): void {
+                    $b->select('id', 'coke', 'pepsi')->where('coke', '!=', null);
+                },
+            ])
+                ->where([
+                    'verified' => 2,
+                    ['softdrinks_id', '!=', null],
+                    ['brands_id', '!=', null],
+                ])->select('id', 'filename', 'softdrinks_id', 'brands_id')->get()->take(1000);
 
-			$data = Photo::with([
-				'softdrinks' => function($a) {
-					$a->select('id', 'waterBottle', 'fizzyDrinkBottle', 'tinCan');
-				},
-				'brands' => function ($b) {
-					$b->select('id', 'coke', 'pepsi')->where('coke', '!=', null);
-				}
-			])
-			->where([
-				'verified' => 2,
-				['softdrinks_id', '!=', NULL],
-				['brands_id', '!=', NULL]
-			])->select('id', 'filename', 'softdrinks_id', 'brands_id')->get()->take(1000);
+            return $data;
+        }
 
-			return $data;
-		}
-
-		return redirect()->to('/');
-	}
-
+        return redirect()->to('/');
+    }
 }

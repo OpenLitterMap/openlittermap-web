@@ -9,7 +9,15 @@ class TeamType extends Model
 {
     use HasFactory;
 
-    protected $casts = [
-    	'price' => 'integer'
-    ];
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'price' => 'integer',
+        ];
+    }
 }

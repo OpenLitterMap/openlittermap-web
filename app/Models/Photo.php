@@ -10,11 +10,14 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * @property Collection $customTags
  * @property User $user
+ *
  * @method Builder onlyFromUsersThatAllowTagging
  */
 class Photo extends Model
@@ -25,12 +28,20 @@ class Photo extends Model
 
     protected $appends = ['selected', 'picked_up'];
 
-    protected $casts = ['datetime'];
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return ['datetime'];
+    }
 
     /**
      * Create an Accessor that adds ['selected' => false] to each record
      */
-    public function getSelectedAttribute ()
+    public function getSelectedAttribute(): bool
     {
         return false;
     }
@@ -38,23 +49,25 @@ class Photo extends Model
     /**
      * Wrapper around photo presence, for better readability
      */
-    public function getPickedUpAttribute ()
+    public function getPickedUpAttribute(): bool
     {
-        return !$this->remaining;
+        return ! $this->remaining;
     }
 
     /**
      * A photo can have many bounding boxes associated with it
      */
-    public function boxes ()
+    public function boxes(): HasMany
     {
         return $this->hasMany(Annotation::class);
     }
 
     /**
      * All Categories
+     *
+     * @return array<string>
      */
-    public static function categories ()
+    public static function categories(): array
     {
         return [
             'smoking',
@@ -77,7 +90,7 @@ class Photo extends Model
     /**
      * All Currently available Brands
      */
-    public static function getBrands ()
+    public static function getBrands(): array
     {
         return Brand::types();
     }
@@ -90,15 +103,15 @@ class Photo extends Model
      * - team
      * - total_categories
      */
-    public function user ()
+    public function user(): BelongsTo
     {
-    	return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     /**
      * Team that uploaded the photo
      */
-    public function team ()
+    public function team(): BelongsTo
     {
         return $this->belongsTo(Team::class, 'team_id');
     }
@@ -108,21 +121,15 @@ class Photo extends Model
      *
      * Remove any keys with null values
      */
-    public function tags (): array
+    public function tags(): array
     {
         $tags = [];
-        foreach ($this->categories() as $category)
-        {
-            if ($this->$category)
-            {
-                foreach ($this->$category->types() as $tag)
-                {
-                    if (is_null($this->$category[$tag]))
-                    {
-                        unset ($this->$category[$tag]);
-                    }
-                    else
-                    {
+        foreach ($this->categories() as $category) {
+            if ($this->$category) {
+                foreach ($this->$category->types() as $tag) {
+                    if (is_null($this->$category[$tag])) {
+                        unset($this->$category[$tag]);
+                    } else {
                         $tags[$category][$tag] = $this->$category[$tag];
                     }
                 }
@@ -135,18 +142,15 @@ class Photo extends Model
     /**
      * Update and return the total amount of litter in a photo
      */
-    public function total ()
+    public function total(): void
     {
         $total = 0;
 
-        foreach ($this->categories() as $category)
-        {
-            if ($this->$category)
-            {
+        foreach ($this->categories() as $category) {
+            if ($this->$category) {
                 // We dont want to include brands in total_litter
                 // Increment total_litter when its not brands
-                if ($category !== 'brands')
-                {
+                if ($category !== 'brands') {
                     $total += $this->$category->total();
                 }
             }
@@ -163,14 +167,12 @@ class Photo extends Model
      *
      * eg: "smoking.butts 3, alcohol.beerBottles 4,"
      */
-    public function translate ()
+    public function translate(): void
     {
         $result_string = '';
 
-        foreach ($this->categories() as $category)
-        {
-            if ($this->$category)
-            {
+        foreach ($this->categories() as $category) {
+            if ($this->$category) {
                 $result_string .= $this->$category->translate();
             }
         }
@@ -182,22 +184,22 @@ class Photo extends Model
     /**
      * Location relationships
      */
-    public function country ()
+    public function country(): HasOne
     {
-    	return $this->hasOne('App\Models\Location\Country');
+        return $this->hasOne('App\Models\Location\Country');
     }
 
-    public function state ()
+    public function state(): HasOne
     {
         return $this->hasOne('App\Models\Location\State');
     }
 
-    public function city ()
+    public function city(): HasOne
     {
-    	return $this->hasOne('App\Models\Location\City');
+        return $this->hasOne('App\Models\Location\City');
     }
 
-    public function adminVerificationLog()
+    public function adminVerificationLog(): HasOne
     {
         // Use hasOne or hasMany depending on your needs
         return $this->hasOne(AdminVerificationLog::class, 'photo_id');
@@ -206,77 +208,77 @@ class Photo extends Model
     /**
      * Litter categories
      */
-    public function smoking ()
+    public function smoking(): BelongsTo
     {
-    	return $this->belongsTo('App\Models\Litter\Categories\Smoking', 'smoking_id', 'id');
+        return $this->belongsTo('App\Models\Litter\Categories\Smoking', 'smoking_id', 'id');
     }
 
-    public function food ()
+    public function food(): BelongsTo
     {
-    	return $this->belongsTo('App\Models\Litter\Categories\Food', 'food_id', 'id');
+        return $this->belongsTo('App\Models\Litter\Categories\Food', 'food_id', 'id');
     }
 
-    public function coffee ()
+    public function coffee(): BelongsTo
     {
-    	return $this->belongsTo('App\Models\Litter\Categories\Coffee', 'coffee_id', 'id');
+        return $this->belongsTo('App\Models\Litter\Categories\Coffee', 'coffee_id', 'id');
     }
 
-    public function softdrinks ()
+    public function softdrinks(): BelongsTo
     {
-    	return $this->belongsTo('App\Models\Litter\Categories\SoftDrinks', 'softdrinks_id', 'id');
-	}
+        return $this->belongsTo('App\Models\Litter\Categories\SoftDrinks', 'softdrinks_id', 'id');
+    }
 
-	public function alcohol ()
+    public function alcohol(): BelongsTo
     {
-		return $this->belongsTo('App\Models\Litter\Categories\Alcohol', 'alcohol_id', 'id');
-	}
+        return $this->belongsTo('App\Models\Litter\Categories\Alcohol', 'alcohol_id', 'id');
+    }
 
-	public function sanitary ()
+    public function sanitary(): BelongsTo
     {
-		return $this->belongsTo('App\Models\Litter\Categories\Sanitary', 'sanitary_id', 'id');
-	}
+        return $this->belongsTo('App\Models\Litter\Categories\Sanitary', 'sanitary_id', 'id');
+    }
 
-    public function dumping ()
+    public function dumping(): BelongsTo
     {
         return $this->belongsTo('App\Models\Litter\Categories\Dumping', 'dumping_id', 'id');
     }
 
-	public function other ()
+    public function other(): BelongsTo
     {
-		return $this->belongsTo('App\Models\Litter\Categories\Other', 'other_id', 'id');
-	}
+        return $this->belongsTo('App\Models\Litter\Categories\Other', 'other_id', 'id');
+    }
 
-    public function industrial ()
+    public function industrial(): BelongsTo
     {
         return $this->belongsTo('App\Models\Litter\Categories\Industrial', 'industrial_id', 'id');
     }
 
-    public function coastal ()
+    public function coastal(): BelongsTo
     {
         return $this->belongsTo('App\Models\Litter\Categories\Coastal', 'coastal_id', 'id');
     }
 
-    public function art ()
+    public function art(): BelongsTo
     {
         return $this->belongsTo('App\Models\Litter\Categories\Art', 'art_id', 'id');
     }
 
-    public function brands ()
+    public function brands(): BelongsTo
     {
         return $this->belongsTo('App\Models\Litter\Categories\Brand', 'brands_id', 'id');
     }
 
-    public function trashdog ()
+    public function trashdog(): BelongsTo
     {
         return $this->belongsTo('App\Models\Litter\Categories\TrashDog', 'trashdog_id', 'id');
     }
 
-    public function dogshit ()
+    public function dogshit(): BelongsTo
     {
         return $this->belongsTo('App\Models\Litter\Categories\Dogshit', 'dogshit_id', 'id');
     }
 
-    public function material ()
+    public function material(): BelongsTo
     {
         return $this->belongsTo('App\Models\Litter\Categories\Material', 'material_id', 'id');
     }
@@ -290,9 +292,9 @@ class Photo extends Model
         return $this->hasMany(CustomTag::class);
     }
 
-    public function scopeOnlyFromUsersThatAllowTagging(Builder $query)
+    public function scopeOnlyFromUsersThatAllowTagging(Builder $query): void
     {
-        $query->whereNotIn('user_id', function ($q) {
+        $query->whereNotIn('user_id', function ($q): void {
             $q->select('id')
                 ->from('users')
                 ->where('prevent_others_tagging_my_photos', true);

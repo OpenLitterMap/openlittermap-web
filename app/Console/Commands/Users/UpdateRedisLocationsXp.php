@@ -46,11 +46,11 @@ class UpdateRedisLocationsXp extends Command
      */
     public function handle()
     {
-        $this->withProgressBar(User::all(), function (User $user) {
+        $this->withProgressBar(User::all(), function (User $user): void {
             $user->photos()
                 ->with(Photo::categories())
                 ->lazyById()
-                ->each(function (Photo $photo) {
+                ->each(function (Photo $photo): void {
                     $xp = $this->calculateXp($photo);
 
                     $this->updateLeaderboardsAction->run($photo, $photo->user_id, $xp);
@@ -60,10 +60,6 @@ class UpdateRedisLocationsXp extends Command
         return 0;
     }
 
-    /**
-     * @param Photo $photo
-     * @return int
-     */
     private function calculateXp(Photo $photo): int
     {
         $xpFromPhoto = 1;

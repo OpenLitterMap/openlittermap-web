@@ -14,12 +14,10 @@ trait FilterClustersByGeohashTrait
      *
      * For a specific zoom level, we want to return the bounding box of the clusters + neighbours
      *
-     * @param Builder $query
-     * @param $zoom int   -> zoom level of the browser
-     * @param $bbox array -> [west|left, south|bottom, east|right, north|top]
-     * @return Builder
+     * @param  $zoom  int   -> zoom level of the browser
+     * @param  $bbox  array -> [west|left, south|bottom, east|right, north|top]
      */
-    public function filterClustersByGeoHash (Builder $query, int $zoom, array $bbox): Builder
+    public function filterClustersByGeoHash(Builder $query, int $zoom, array $bbox): Builder
     {
         //$bbox = json_decode($bbox);
 
@@ -38,18 +36,15 @@ trait FilterClustersByGeohashTrait
 
         return $query
             ->where('zoom', $zoom)
-            ->where(function ($q) use ($geos) {
+            ->where(function ($q) use ($geos): void {
                 foreach ($geos as $geo) {
-                    $q->orWhere('geohash', 'like', $geo . '%'); // starts with
+                    $q->orWhere('geohash', 'like', $geo.'%'); // starts with
                 }
             });
     }
 
     /**
      * Converts the clusters into the format required by the map
-     *
-     * @param Collection $clusters
-     * @return array
      */
     protected function getFeatures(Collection $clusters): array
     {
@@ -58,13 +53,13 @@ trait FilterClustersByGeohashTrait
                 'type' => 'Feature',
                 'geometry' => [
                     'type' => 'Point',
-                    'coordinates' => [$cluster->lon, $cluster->lat]
+                    'coordinates' => [$cluster->lon, $cluster->lat],
                 ],
                 'properties' => [
                     'point_count' => $cluster->point_count,
                     'point_count_abbreviated' => $cluster->point_count_abbreviated,
-                    'cluster' => true
-                ]
+                    'cluster' => true,
+                ],
             ];
         })->toArray();
     }

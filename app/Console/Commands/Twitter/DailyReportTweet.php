@@ -2,15 +2,15 @@
 
 namespace App\Console\Commands\Twitter;
 
-use App\Models\CustomTag;
-use Carbon\Carbon;
-use App\Models\Photo;
-use Spatie\Emoji\Emoji;
 use App\Helpers\Twitter;
-use App\Models\User\User;
+use App\Models\CustomTag;
 use App\Models\Littercoin;
 use App\Models\Location\Country;
+use App\Models\Photo;
+use App\Models\User\User;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Spatie\Emoji\Emoji;
 
 class DailyReportTweet extends Command
 {
@@ -18,7 +18,7 @@ class DailyReportTweet extends Command
 
     protected $description = 'Send a daily report about OLM to Twitter OLM_bot account';
 
-    public function handle ()
+    public function handle()
     {
         $startOfYesterday = Carbon::yesterday()->startOfDay();
         $endOfYesterday = Carbon::yesterday()->endOfDay();
@@ -58,7 +58,7 @@ class DailyReportTweet extends Command
         $photos = Photo::select('id', 'created_at', 'country_id', 'total_litter')
             ->whereDate('created_at', '>=', $startOfYesterday)
             ->whereDate('created_at', '<=', $endOfYesterday)
-            ->orWhereHas('customTags', function ($query) use ($startOfYesterday, $endOfYesterday) {
+            ->orWhereHas('customTags', function ($query) use ($startOfYesterday, $endOfYesterday): void {
                 $query->whereDate('created_at', '>=', $startOfYesterday)
                     ->whereDate('created_at', '<=', $endOfYesterday);
             })
@@ -66,10 +66,8 @@ class DailyReportTweet extends Command
 
         $countryIds = [];
 
-        foreach ($photos as $photo)
-        {
-            if (!array_key_exists($photo->country_id, $countryIds))
-            {
+        foreach ($photos as $photo) {
+            if (! array_key_exists($photo->country_id, $countryIds)) {
                 $countryIds[$photo->country_id] = 0;
             }
 
@@ -131,7 +129,7 @@ class DailyReportTweet extends Command
             }
         }
 
-        $message .= " #openlittermap #OLMbot 🌍";
+        $message .= ' #openlittermap #OLMbot 🌍';
 
         Twitter::sendTweet($message);
     }
