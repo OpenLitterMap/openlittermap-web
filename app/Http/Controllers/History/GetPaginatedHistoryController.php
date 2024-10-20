@@ -63,7 +63,6 @@ class GetPaginatedHistoryController extends Controller
                 });
             });
 
-
         $notInclude = CustomTag::notIncludeTags();
         $query->whereDoesntHave('customTags', function ($q) use ($notInclude) {
             $q->whereIn('tag', $notInclude);

@@ -28,6 +28,8 @@ class Kernel extends ConsoleKernel
         $schedule->command('twitter:daily-report')->dailyAt('00:00');
         $schedule->command('clusters:generate-all')->dailyAt('00:10');
         $schedule->command('clusters:generate-team-clusters')->dailyAt('00:20');
+
+        $schedule->command('twitter:weekly-impact-report-tweet')->weeklyOn(1, '06:30');
     }
 
     /**

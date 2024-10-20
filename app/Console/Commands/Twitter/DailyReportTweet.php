@@ -2,15 +2,15 @@
 
 namespace App\Console\Commands\Twitter;
 
-use App\Models\CustomTag;
 use Carbon\Carbon;
 use App\Models\Photo;
 use Spatie\Emoji\Emoji;
 use App\Helpers\Twitter;
 use App\Models\User\User;
+use App\Models\CustomTag;
 use App\Models\Littercoin;
-use App\Models\Location\Country;
 use Illuminate\Console\Command;
+use App\Models\Location\Country;
 
 class DailyReportTweet extends Command
 {

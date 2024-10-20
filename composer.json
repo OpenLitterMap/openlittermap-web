@@ -33,6 +33,7 @@
         "maatwebsite/excel": "^3.1",
         "predis/predis": "^2.2",
         "pusher/pusher-php-server": "^7.0",
+        "spatie/browsershot": "^4.3",
         "spatie/emoji": "^4.0",
         "spatie/laravel-backup": "^8.0",
         "spatie/laravel-permission": "^6.0",

@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Models\CustomTag;
 use App\Models\Photo;
-use Illuminate\Http\JsonResponse;
+use App\Models\CustomTag;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Auth;
 

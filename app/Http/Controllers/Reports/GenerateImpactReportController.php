@@ -5,12 +5,12 @@ namespace App\Http\Controllers\Reports;
 use Carbon\Carbon;
 use App\Models\Photo;
 use App\Models\User\User;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 use Illuminate\Support\Number;
-use Illuminate\Support\Facades\Redis;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Cache;
 
 class GenerateImpactReportController extends Controller
 {
