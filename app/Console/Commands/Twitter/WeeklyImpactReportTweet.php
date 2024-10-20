@@ -37,11 +37,11 @@ class WeeklyImpactReportTweet extends Command
         $msg = "Weekly Impact Report for week $week of $year. Join us at openlittermap.com #litter #citizenscience #impact #openlittermap";
 
         // Tweet the image
-        // Twitter::sendTweetWithImage($msg, $path);
+        Twitter::sendTweetWithImage($msg, $path);
 
         $this->info("Tweet sent");
 
         // Delete the image
-        // unlink($path);
+        unlink($path);
     }
 }
