@@ -43,7 +43,7 @@
         "supercluster": "^8.0.1",
         "v-img": "^0.2.0",
         "v-mask": "^2.2.3",
-        "vue": "^2.7.16",
+        "vue": "^3.0.0",
         "vue-chartjs": "^3.5.1",
         "vue-click-outside": "^1.1.0",
         "vue-drag-resize": "^1.4.2",
