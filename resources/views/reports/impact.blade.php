@@ -44,6 +44,14 @@
             font-size: 24px;
             margin-bottom: 10px;
         }
+        .impact-logo {
+            max-width: 100%;
+            height: auto;
+            width: 10em;
+            align-self: center;
+            flex: 0.3;
+            margin-right: 2em;
+        }
         .stats {
             display: flex;
             justify-content: space-between;
@@ -153,13 +161,18 @@
         <div class="flex">
             <img
                 src="https://openlittermap.com/assets/logo.png"
-                style="max-width: 100%; height: auto; width: 10em; align-self: center; flex: 0.3;"
+                class="impact-logo"
                 alt="OpenLitterMap Logo"
             >
 
             <div style="flex: 0.5;">
-                <h1>Impact Report</h1>
-                <p>{{ $startDate }} <br> to {{ $endDate }}</p>
+                <h1>{{ ucfirst($period) }} Impact Report</h1>
+
+                @if ($period === 'weekly')
+                    <p>{{ $startDate }} <br> to {{ $endDate }}</p>
+                @elseif ($period === 'monthly')
+                    <p>{{ $startDate }}</p>
+                @endif
             </div>
 
             <div class="flex flex-1" style="justify-content: space-around; align-items: center;">

@@ -15,27 +15,45 @@ use Illuminate\Support\Facades\Cache;
 class GenerateImpactReportController extends Controller
 {
     /**
-     * Generate a weekly impact report
+     * Generate a weekly or monthly impact report
      */
-    public function __invoke ($year = null, $week = null): View
+    public function __invoke (string $period = "weekly", $year = null, $monthOrWeek = null): View
     {
-        if ($year === null || $week === null) {
-            $start = now()->startOfWeek()->toDateTimeString();
-            $end = now()->endOfWeek()->toDateTimeString();
-        } else {
-            $start = Carbon::now()->setISODate($year, $week)->startOfWeek()->toDateTimeString();
-            $end = Carbon::now()->setISODate($year, $week)->endOfWeek()->toDateTimeString();
+        if ($period !== "weekly" && $period !== "monthly") {
+            $period = "weekly";
         }
 
+        [$start, $end] = $this->getStartEndDates($period, $year, $monthOrWeek);
+
         // Generate a unique cache key based on the date range
-        $cacheKey = "impact_report:{$start}_{$end}";
+        $cacheKey = "impact_report:{$period}:{$start}_{$end}";
+
         $expirationTime = Carbon::parse($end)->endOfDay();
 
         // Try to retrieve the report from the cache
-        $report = Cache::remember($cacheKey, $expirationTime, function () use ($start, $end) {
-            // Generate the report if it's not in the cache
-            $startDate = Carbon::parse($start)->format('D jS M Y');
-            $endDate = Carbon::parse($end)->format('D jS M Y');
+        $report = $this->generateReport($cacheKey, $expirationTime, $start, $end, $period);
+
+        return view('reports.impact', $report);
+    }
+
+    protected function generateReport (
+        string $cacheKey,
+        Carbon $expirationTime,
+        string $start,
+        string $end,
+        string $period
+    ): array
+    {
+        // Generate the report if it's not in the cache
+        return Cache::remember($cacheKey, $expirationTime, function () use ($start, $end, $period)
+        {
+            if ($period === 'monthly') {
+                $startDate = Carbon::parse($start)->format('F Y');
+                $endDate = Carbon::parse($end)->format('F Y');
+            } else {
+                $startDate = Carbon::parse($start)->format('D jS M Y');
+                $endDate = Carbon::parse($end)->format('D jS M Y');
+            }
 
             // Users
             $newUsers = User::whereBetween('created_at', [$start, $end])->count();
@@ -70,10 +88,9 @@ class GenerateImpactReportController extends Controller
                 'medals' => $medals,
                 'topTags' => $topTags,
                 'topBrands' => $topBrands,
+                'period' => $period,
             ];
         });
-
-        return view('reports.impact', $report);
     }
 
     protected function getTopUsers (string $start, string $end): array
@@ -83,7 +100,7 @@ class GenerateImpactReportController extends Controller
         $startDate = Carbon::parse($start);
         $endDate = Carbon::parse($end);
 
-        // Loop through each day of the last week
+        // Loop through each day of the time-period
         for ($date = $startDate; $date->lte($endDate); $date->addDay())
         {
             $year = $date->year;
@@ -137,6 +154,36 @@ class GenerateImpactReportController extends Controller
         })->toArray();
     }
 
+    protected function getStartEndDates ($period, $year, $monthOrWeek): array
+    {
+        if ($period === 'weekly')
+        {
+            if ($year === null || $monthOrWeek === null) {
+                $start = now()->startOfWeek()->toDateTimeString();
+                $end = now()->endOfWeek()->toDateTimeString();
+            } else {
+                $start = Carbon::now()->setISODate($year, $monthOrWeek)->startOfWeek()->toDateTimeString();
+                $end = Carbon::now()->setISODate($year, $monthOrWeek)->endOfWeek()->toDateTimeString();
+            }
+        }
+        elseif ($period === 'monthly')
+        {
+            if ($year === null || $monthOrWeek === null) {
+                $start = now()->startOfMonth()->toDateTimeString();
+                $end = now()->endOfMonth()->toDateTimeString();
+            } else {
+                $start = Carbon::createFromDate($year, $monthOrWeek, 1)->startOfMonth()->toDateTimeString();
+                $end = Carbon::createFromDate($year, $monthOrWeek, 1)->endOfMonth()->toDateTimeString();
+            }
+        } else {
+            // Default to weekly report for current week
+            $start = now()->startOfWeek()->toDateTimeString();
+            $end = now()->endOfWeek()->toDateTimeString();
+        }
+
+        return [$start, $end];
+    }
+
     protected function getMedals (): array
     {
         return [
@@ -163,11 +210,11 @@ class GenerateImpactReportController extends Controller
 
         $litterJson = $this->getLitterJson();
 
-        $photos = Photo::whereBetween('created_at', [$start, $end])->get();
+        $photos = Photo::whereBetween('created_at', [$start, $end])->cursor();
 
         foreach ($photos as $photo)
         {
-            // load the tags manually
+            // load the tags manually (N+1 issue here needs fixing)
             $photoTags = $photo->tags();
 
             foreach ($photoTags as $category => $attributes)
@@ -178,11 +225,7 @@ class GenerateImpactReportController extends Controller
                     {
                         $brandName = $litterJson['brands'][$attribute] ?? $attribute;
 
-                        if (isset($topBrands[$brandName])) {
-                            $topBrands[$brandName] += $quantity;
-                        } else {
-                            $topBrands[$brandName] = $quantity;
-                        }
+                        $topBrands[$brandName] = ($topBrands[$brandName] ?? 0) + $quantity;
 
                         $newTags += $quantity;
                     }
@@ -194,15 +237,10 @@ class GenerateImpactReportController extends Controller
                 foreach ($attributes as $attribute => $quantity)
                 {
                     // Map the category and attribute to human-readable names
-                    $categoryName = $litterJson['categories'][$category] ?? $category;
                     $attributeName = $litterJson[$category][$attribute] ?? $attribute;
 
                     // Increment the count for the specific attribute
-                    if (isset($topTags[$attributeName])) {
-                        $topTags[$attributeName] += $quantity;
-                    } else {
-                        $topTags[$attributeName] = $quantity;
-                    }
+                    $topTags[$attributeName] = ($topTags[$attributeName] ?? 0) + $quantity;
 
                     $newTags += $quantity;
                 }

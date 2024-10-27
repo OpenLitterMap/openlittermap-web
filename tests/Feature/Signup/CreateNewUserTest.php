@@ -24,19 +24,19 @@ class CreateNewUserTest extends TestCase
         return [
             'missing_uppercase' => [
                 'password' => 'lowercase1#',
-                'error' => 'validation.password.mixed'
+                'error' => 'The password must contain at least one uppercase and one lowercase letter.'
             ],
             'missing_lowercase' => [
                 'password' => 'UPPERCASE1#',
-                'error' => 'validation.password.mixed'
+                'error' => 'The password must contain at least one uppercase and one lowercase letter.'
             ],
             'missing_numbers' => [
                 'password' => 'UpperLower#',
-                'error' => 'validation.password.numbers'
+                'error' => 'The password must contain at least one number.'
             ],
             'missing_symbols' => [
                 'password' => 'UpperLower1',
-                'error' => 'validation.password.symbols'
+                'error' => 'The password must contain at least one special character.'
             ],
         ];
     }
