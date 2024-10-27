@@ -17,10 +17,15 @@ class GenerateImpactReportController extends Controller
     /**
      * Generate a weekly impact report
      */
-    public function __invoke (): View
+    public function __invoke ($year = null, $week = null): View
     {
-        $start = now()->subWeek()->startOfWeek()->toDateTimeString();
-        $end = now()->subWeek()->endOfWeek()->toDateTimeString();
+        if ($year === null || $week === null) {
+            $start = now()->startOfWeek()->toDateTimeString();
+            $end = now()->endOfWeek()->toDateTimeString();
+        } else {
+            $start = Carbon::now()->setISODate($year, $week)->startOfWeek()->toDateTimeString();
+            $end = Carbon::now()->setISODate($year, $week)->endOfWeek()->toDateTimeString();
+        }
 
         // Generate a unique cache key based on the date range
         $cacheKey = "impact_report:{$start}_{$end}";

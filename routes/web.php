@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('impact', 'Reports\GenerateImpactReportController');
+Route::get('impact/{year?}/{week?}', 'Reports\GenerateImpactReportController');
 
 Route::get('/', 'HomeController@index');
 Route::get('/about', 'HomeController@index');

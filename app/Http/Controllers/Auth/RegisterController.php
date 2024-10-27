@@ -3,16 +3,12 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Models\User\User;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Foundation\Auth\RegistersUsers;
-
 use App\Mail\NewUserRegMail;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Auth\Events\Registered;
 use App\Events\UserSignedUp;
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 
@@ -31,10 +27,8 @@ class RegisterController extends Controller
 
     /**
      * Where to redirect users after registration.
-     *
-     * @var string
      */
-    protected $redirectTo = '/submit';
+    protected string $redirectTo = '/submit';
 
     /**
      * Create a new controller instance.
@@ -48,11 +42,8 @@ class RegisterController extends Controller
 
     /**
      * Create a new user instance after a valid registration.
-     *
-     * @param  array  $data
-     * @return User
      */
-    protected function create (array $data)
+    protected function create (array $data): User
     {
         return User::create([
             'name' => $data['name'],
@@ -65,8 +56,6 @@ class RegisterController extends Controller
     /**
      * Handle a registration request for the application.
      *
-     * @param Request $request
-     * @return array
      * @throws ValidationException
      */
     public function register (Request $request): array

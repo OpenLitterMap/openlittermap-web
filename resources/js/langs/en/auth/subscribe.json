@@ -6,7 +6,7 @@
     "form-field-name": "Name",
     "form-field-unique-id": "Unique Identifier",
     "form-field-email": "E-Mail Address",
-    "form-field-password": "Password. Must contain Uppercase, lowercase and a number.", 
+    "form-field-password": "Create a strong password",
     "form-field-pass-confirm": "Confirm Password",
     "form-account-conditions": "I have read and agree to the <a href='/terms'>Terms and Conditions of use</a> and <a href='/privacy'>Privacy Policy</a>",
     "form-btn": "Sign up",
