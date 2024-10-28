@@ -69,8 +69,7 @@ class GenerateImpactReportController extends Controller
             $newPhotos = Photo::whereBetween('created_at', [$start, $end])->count();
             $totalPhotos = Photo::count();
 
-            // Tags
-            // We should move this to Redis
+            // Tags - We should move this to Redis
             $totalTags = Photo::where('verified', '>=', 2)->sum('total_litter');
 
             [$topTags, $topBrands, $newTags] = $this->getTopLitter($start, $end);

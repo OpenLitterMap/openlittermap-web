@@ -7,22 +7,7 @@ use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
 class Kernel extends ConsoleKernel
 {
-    /**
-     * The Artisan commands provided by your application.
-     *
-     * @var array
-     */
-    protected $commands = [
-        //
-    ];
-
-    /**
-     * Define the application's command schedule.
-     *
-     * @param Schedule $schedule
-     * @return void
-     */
-    protected function schedule(Schedule $schedule)
+    protected function schedule (Schedule $schedule): void
     {
 //        $schedule->command('sitemap:generate')->daily();
         $schedule->command('twitter:daily-report')->dailyAt('00:00');
@@ -30,6 +15,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('clusters:generate-team-clusters')->dailyAt('00:20');
 
         $schedule->command('twitter:weekly-impact-report-tweet')->weeklyOn(1, '06:30');
+        $schedule->command('twitter:monthly-impact-report-tweet')->monthlyOn(1, '06:30');
     }
 
     /**
@@ -37,7 +23,7 @@ class Kernel extends ConsoleKernel
      *
      * @return void
      */
-    protected function commands()
+    protected function commands (): void
     {
         $this->load(__DIR__.'/Commands');
 
