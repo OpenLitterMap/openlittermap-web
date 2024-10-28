@@ -159,8 +159,8 @@ class GenerateImpactReportController extends Controller
         if ($period === 'weekly')
         {
             if ($year === null || $monthOrWeek === null) {
-                $start = now()->startOfWeek()->toDateTimeString();
-                $end = now()->endOfWeek()->toDateTimeString();
+                $start = now()->subWeek()->startOfWeek()->toDateTimeString();
+                $end = now()->subWeek()->endOfWeek()->toDateTimeString();
             } else {
                 $start = Carbon::now()->setISODate($year, $monthOrWeek)->startOfWeek()->toDateTimeString();
                 $end = Carbon::now()->setISODate($year, $monthOrWeek)->endOfWeek()->toDateTimeString();
