@@ -3,8 +3,8 @@
 namespace App\Console\Commands\Twitter;
 
 use App\Helpers\Twitter;
-use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
+use Illuminate\Console\Command;
 use Spatie\Browsershot\Browsershot;
 
 class MonthlyImpactReportTweet extends Command

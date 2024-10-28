@@ -25,6 +25,10 @@ class GenerateImpactReportController extends Controller
 
         [$start, $end] = $this->getStartEndDates($period, $year, $monthOrWeek);
 
+        if (Carbon::parse($start)->isAfter(now())) {
+            return view('pages.not-found');
+        }
+
         // Generate a unique cache key based on the date range
         $cacheKey = "impact_report:{$period}:{$start}_{$end}";
 
