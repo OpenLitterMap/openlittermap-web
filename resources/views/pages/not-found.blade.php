@@ -4,7 +4,8 @@
     <div class="section has-text-centered">
         <div class="container">
             <h1 class="title is-1">Thanks for checking out OpenLitterMap!</h1>
-            <h2 class="subtitle is-3">Unfortunately, this page does not exist yet.</h2>
+            <h2 class="subtitle is-3" style="margin-bottom: 0;">Oops! This impact report is still chilling in the future.</h2>
+            <h2 class="subtitle is-3">Come back with a time-machine or try again later.</h2>
 
             <div class="image-container mt-5 mb-5">
                 <img
