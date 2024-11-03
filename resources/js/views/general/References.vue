@@ -528,6 +528,12 @@ export default {
                     title: 'Uncollected Solid Waste Detection and Reporting Using Machine-learning and Geotagging',
                     link: 'https://papers.academic-conferences.org/index.php/ecie/article/view/2581',
                     author: 'Ndlovu et al'
+                },
+                {
+                    date: '2024/11/01',
+                    title: 'Plastic Detectives Are Watching Us: Citizen Science Towards Alternative Single-Use Plastic Related Behavior',
+                    link: 'https://scholar.google.com/scholar_url?url=https://www.preprints.org/manuscript/202411.0075/download/final_file&hl=en&sa=X&d=14689671757546275981&ei=vmwnZ_KHIv7Ey9YP__-v8AU&scisig=AFWwaeYdha0dy9GcYYDTUPI0EUKa&oi=scholaralrt&hist=D_BoqRYAAAAJ:9750119445415138579:AFWwaebzOqFUbhQ9j2dSBMJvVqHk&html=&pos=0&folt=kw',
+                    author: 'Krawczyk et al'
                 }
             ]
         };
