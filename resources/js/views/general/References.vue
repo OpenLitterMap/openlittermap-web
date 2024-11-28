@@ -534,6 +534,12 @@ export default {
                     title: 'Plastic Detectives Are Watching Us: Citizen Science Towards Alternative Single-Use Plastic Related Behavior',
                     link: 'https://scholar.google.com/scholar_url?url=https://www.preprints.org/manuscript/202411.0075/download/final_file&hl=en&sa=X&d=14689671757546275981&ei=vmwnZ_KHIv7Ey9YP__-v8AU&scisig=AFWwaeYdha0dy9GcYYDTUPI0EUKa&oi=scholaralrt&hist=D_BoqRYAAAAJ:9750119445415138579:AFWwaebzOqFUbhQ9j2dSBMJvVqHk&html=&pos=0&folt=kw',
                     author: 'Krawczyk et al'
+                },
+                {
+                    date: '2024/08/06',
+                    title: 'Crypto-Spatial: A New Direction in Geospatial Data',
+                    link: 'https://isprs-archives.copernicus.org/articles/XLVIII-5-2024/89/2024/isprs-archives-XLVIII-5-2024-89-2024.pdf',
+                    author: 'Rawal et al'
                 }
             ]
         };
