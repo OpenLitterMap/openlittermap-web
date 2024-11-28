@@ -60,6 +60,12 @@ export default {
                     author: 'Fritz et al.'
                 },
                 {
+                    date: '2019/11/22',
+                    title: 'Blockchain Solutions For Healthcare',
+                    link: 'https://sci-hub.st/downloads/2019-12-01/99/10.1016@B978-0-12-819178-1.00050-2.pdf',
+                    author: 'Zhang and Boulos'
+                },
+                {
                     date: '2019/12/04',
                     title: 'Citizen Science - International Encyclopedia of Human Geography (Second Edition, Pages 209-214)',
                     link: 'https://www.sciencedirect.com/science/article/pii/B9780081022955106018',
