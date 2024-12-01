@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('litter_objects', function (Blueprint $table) {
             $table->id();
             $table->string('key')->unique();
-            $table->string('name');
             $table->timestamps();
         });
     }

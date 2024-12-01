@@ -6,14 +6,16 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-class Category extends Model
+class Materials extends Model
 {
     use HasFactory;
 
     protected $guarded = [];
 
-    public function litterObjects (): BelongsToMany
+    public $table = 'materials';
+
+    public function photoTags (): BelongsToMany
     {
-        return $this->belongsToMany(LitterObject::class, 'category_litter_object')->withTimestamps();
+        return $this->belongsToMany(PhotoTag::class, 'material_photo_tag')->withTimestamps();
     }
 }

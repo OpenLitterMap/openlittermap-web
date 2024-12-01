@@ -28,6 +28,17 @@ class Photo extends Model
     protected $casts = ['datetime'];
 
     /**
+     * Each photo can have an array of tags.
+     * Each tag is an object with Category, Object, Materials, Brand, Quantity and Picked Up.
+     *
+     * @return HasMany
+     */
+    public function photoTags (): HasMany
+    {
+        return $this->hasMany(PhotoTag::class);
+    }
+
+    /**
      * Create an Accessor that adds ['selected' => false] to each record
      */
     public function getSelectedAttribute ()
@@ -54,7 +65,7 @@ class Photo extends Model
     /**
      * All Categories
      */
-    public static function categories ()
+    public static function categories (): array
     {
         return [
             'smoking',

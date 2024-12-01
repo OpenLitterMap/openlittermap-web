@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-class Category extends Model
+class TagType extends Model
 {
     use HasFactory;
 
@@ -14,6 +14,6 @@ class Category extends Model
 
     public function litterObjects (): BelongsToMany
     {
-        return $this->belongsToMany(LitterObject::class, 'category_litter_object')->withTimestamps();
+        return $this->belongsToMany(LitterObject::class, 'litter_object_tag_type')->withTimestamps();
     }
 }
