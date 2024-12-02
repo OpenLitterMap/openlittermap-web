@@ -2,19 +2,17 @@
 
 namespace Database\Seeders;
 
-use App\Models\Litter\Categories\Material;
-use App\Models\LitterObject;
-use App\Models\Materials;
 use App\Models\Photo;
 use App\Models\Category;
+use App\Models\Materials;
+use App\Models\LitterObject;
+use App\Models\TagType;
 use Illuminate\Database\Seeder;
+use App\Models\Litter\Categories\Material;
 
 class CategoryLitterObjectSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
-    public function run(): void
+    public function run (): void
     {
         $categories = Photo::categories();
 
@@ -32,80 +30,73 @@ class CategoryLitterObjectSeeder extends Seeder
             ]);
         }
 
-        $tags = [
+        $categoryTags = [
             'smoking' => [
                 'butts',
                 'lighters',
-                'box',
-                'pouch',
+                'box' => ['cigaretteBox', 'matchBox'],
+                'pouch' => ['tobaccoPouch'],
                 'papers',
-                'packaging',
+                'packaging' => ['cellophane', 'foil'],
                 'filters',
-                'filterbox',
-                'vape_pen',
-                'vape_oil',
-                'smokingOther'
+                'vape' => ['vapePen', 'vapeOil'],
+                'paraphernalia' => ['pipe', 'bong', 'grinder'],
+                'ashtray',
+                'other'
             ],
             'alcohol' => [
-                'beerBottle',
-                'spiritBottle',
-                'wineBottle',
-                'beerCan',
+                'bottle' => ['beer', 'wine', 'spirits', 'cider'],
+                'can' => ['beer', 'wine', 'spirits', 'cider'],
+                'packaging' => ['box', 'label'],
+                'glass' => ['wineGlass', 'pintGlass', 'shotGlass'],
+                'cup',
+                'straw',
                 'brokenGlass',
-                'bottleTops',
-                'paperCardAlcoholPackaging',
-                'plasticAlcoholPackaging',
-                'pint',
-                'six_pack_rings',
-                'alcohol_plastic_cups',
-                'alcoholOther'
+                'bottleTop',
+                'sixPackRings',
+                'pullRing',
+                'other'
             ],
             'coffee' => [
-                'coffeeCups',
-                'coffeeLids',
-                'coffeeOther'
+                'cup' => ['paperCup', 'plasticCup', 'styrofoamCup', 'reusableCup'],
+                'lid' => ['plasticLid', 'paperLid', 'compostableLid'],
+                'stirrer' => ['woodenStirrer', 'plasticStirrer', 'metalStirrer'],
+                'packaging' => ['coffeeBag', 'singleServePacket'],
+                'sleeves' => ['cardboardSleeve', 'reusableSleeve'],
+                'other'
             ],
             'food' => [
-                'sweetWrappers',
-                'paperFoodPackaging',
-                'plasticFoodPackaging',
-                'plasticCutlery',
-                'crisp_small',
-                'crisp_large',
-                'styrofoam_plate',
+                'wrapper' => ['sweetWrapper', 'chocolateWrapper'],
+                'packet' => ['saucePacket'],
+                'packaging' => ['plasticPackaging', 'paperPackaging', 'foamPackaging'],
+                'cutlery' => ['plasticCutlery', 'woodenCutlery', 'biodegradableCutlery'],
+                'crisps' => ['cripsSmall', 'crispsLarge'],
+                'plate' => ['paperPlate', 'plasticPlate', 'foamPlate'],
                 'napkins',
-                'sauce_packet',
-                'glass_jar',
-                'glass_jar_lid',
-                'aluminium_foil',
-                'pizza_box',
-                'foodOther',
-                'chewing_gum'
+                'jar',
+                'lid',
+                'aluminium',
+                'box',
+                'gum',
+                'bags',
+                'cans',
+                'other',
             ],
             'softdrinks' => [
-                'waterBottle',
-                'fizzyDrinkBottle',
-                'tinCan',
-                'bottleLid',
-                'bottleLabel',
-                'sportsDrink',
+                'bottle',
+                'can',
+                'lid',
+                'label',
                 'straws',
-                'plastic_cups',
-                'plastic_cup_tops',
-                'milk_bottle',
-                'milk_carton',
-                'paper_cups',
-                'juice_cartons',
-                'juice_bottles',
-                'juice_packet',
-                'ice_tea_bottles',
-                'ice_tea_can',
-                'energy_can',
-                'pullring',
-                'strawpacket',
-                'styro_cup',
-                'broken_glass',
-                'softDrinkOther'
+                'cup',
+                'carton',
+                'packet',
+                'pullRing',
+                'packaging',
+                'cup',
+                'glass',
+                'brokenGlass',
+                'other'
             ],
             'sanitary' => [
                 'gloves',
@@ -114,40 +105,43 @@ class CategoryLitterObjectSeeder extends Seeder
                 'nappies',
                 'menstral',
                 'deodorant',
-                'ear_swabs',
-                'tooth_pick',
-                'tooth_brush',
-                'wetwipes',
-                'hand_sanitiser',
-                'sanitaryOther'
+                'earSwabs',
+                'oralHygiene',
+                'wipes',
+                'sanitiser',
+                'medical',
+                'other'
             ],
             'other' => [
-                'random_litter',
-                'bags_litter',
-                'overflowing_bins',
+                'randomLitter',
+                'bagsLitter',
+                'overflowingBins',
                 'plastic',
                 'automobile',
                 'tyre',
-                'traffic_cone',
+                'trafficCone',
                 'metal',
-                'plastic_bags',
-                'election_posters',
-                'forsale_posters',
-                'cable_tie',
+                'plasticBags',
+                'posters',
+                'cableTie',
                 'books',
                 'magazine',
                 'paper',
                 'stationary',
-                'washing_up',
+                'washingUp',
                 'clothing',
-                'hair_tie',
-                'ear_plugs',
-                'elec_small',
-                'elec_large',
+                'hairTie',
+                'earPlugs',
+                'electric',
                 'batteries',
                 'balloons',
                 'life_buoy', // coastal?
-                'other'
+                'furniture',
+                'mattress',
+                'appliance',
+                'can', // paint
+                'other',
+                'graffiti',
             ],
             'dogshit' => [
                 'poo',
@@ -155,14 +149,34 @@ class CategoryLitterObjectSeeder extends Seeder
             ],
         ];
 
-        foreach ($tags as $category => $tags) {
-            $category = Category::where('key', $category)->first();
+        foreach ($categoryTags as $litterCategory => $litterTags)
+        {
+            $category = Category::where('key', $litterCategory)->first();
 
             $litterObjectIds = [];
 
-            foreach ($tags as $tag) {
+            foreach ($litterTags as $tag => $tagTypes)
+            {
+                // Handle items without TagTypes
+                if (is_int($tag)) {
+                    $tag = $tagTypes;
+                    $tagTypes = [];
+                }
 
                 $litterObject = LitterObject::firstOrCreate([ 'key' => $tag ]);
+
+                if (!empty($tagTypes))
+                {
+                    $tagTypeIds = [];
+
+                    foreach ($tagTypes as $tagType)
+                    {
+                        $tagType = TagType::firstOrCreate([ 'key' => $tagType ]);
+                        $tagTypeIds[] = $tagType->id;
+                    }
+
+                    $tag->tagTypes()->syncWithoutDetaching($tagTypeIds);
+                }
 
                 $litterObjectIds[] = $litterObject->id;
             }

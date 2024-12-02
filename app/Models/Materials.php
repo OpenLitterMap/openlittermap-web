@@ -14,8 +14,10 @@ class Materials extends Model
 
     public $table = 'materials';
 
+    public $timestamps = false;
+
     public function photoTags (): BelongsToMany
     {
-        return $this->belongsToMany(PhotoTag::class, 'material_photo_tag')->withTimestamps();
+        return $this->belongsToMany(PhotoTag::class, 'material_photo_tag');
     }
 }
