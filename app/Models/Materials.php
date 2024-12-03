@@ -16,8 +16,18 @@ class Materials extends Model
 
     public $timestamps = false;
 
-    public function photoTags (): BelongsToMany
+    public function photoTags(): BelongsToMany
     {
         return $this->belongsToMany(PhotoTag::class, 'material_photo_tag');
+    }
+
+    public function litterObjects(): BelongsToMany
+    {
+        return $this->belongsToMany(LitterObject::class, 'litter_object_material')->withTimestamps();
+    }
+
+    public function tagTypes(): BelongsToMany
+    {
+        return $this->belongsToMany(TagType::class, 'tag_type_material')->withTimestamps();
     }
 }

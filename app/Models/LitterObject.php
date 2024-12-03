@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Litter\Categories\Material;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -16,6 +17,11 @@ class LitterObject extends Model
     public function categories() :BelongsToMany
     {
         return $this->belongsToMany(Category::class, 'category_litter_object')->withTimestamps();
+    }
+
+    public function materials(): BelongsToMany
+    {
+        return $this->belongsToMany(Material::class, 'litter_object_material')->withTimestamps();
     }
 
     public function photoTags(): HasMany
