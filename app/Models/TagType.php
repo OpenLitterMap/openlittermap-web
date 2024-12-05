@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\Litter\Categories\Material;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -20,6 +19,11 @@ class TagType extends Model
 
     public function materials(): BelongsToMany
     {
-        return $this->belongsToMany(Material::class, 'tag_type_material')->withTimestamps();
+        return $this->belongsToMany(
+            Materials::class,
+            'tag_type_material',
+            'tag_type_id',
+            'material_id'
+        )->withTimestamps();
     }
 }

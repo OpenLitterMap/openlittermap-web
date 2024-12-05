@@ -12,18 +12,18 @@ class LogAdminVerificationActionTest extends TestCase
 {
     public function test_it_logs_an_admins_action()
     {
-        /** @var User $admin */
         $admin = User::factory()->create();
-        /** @var Photo $photo */
         $photo = Photo::factory()->create();
         $addedTags = [
             'tags' => ['smoking' => ['butts' => 3]],
             'customTags' => 'nice-tag'
         ];
+
         $removedTags = [
             'tags' => ['smoking' => ['lighters' => 1]],
             'customTags' => 'tag'
         ];
+
         $removedUserXp = 100;
         $rewardedAdminXp = 50;
 
