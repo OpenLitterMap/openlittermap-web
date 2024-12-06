@@ -32,6 +32,9 @@ class CategoryLitterObjectSeeder extends Seeder
             ]);
         }
 
+        // Category => LitterObject => Material, or
+        // Category => LitterObject => TagType => Material
+
         $categoryTags = [
 
             'alcohol' => [

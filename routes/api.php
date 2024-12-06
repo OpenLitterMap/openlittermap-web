@@ -1,10 +1,13 @@
 <?php
 
 use App\Models\Littercoin;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\API\Tags\GetTagsController;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/tags', GetTagsController::class);
 
 Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function(){
 
