@@ -15,10 +15,41 @@ class ProcessTagsNewTest extends TestCase
 
         $response = $this->get('/api/tags');
 
-        $text = json_decode($response->getContent(), true);
+        $response->assertStatus(200);
+        $response->assertJsonStructure([
+            'categories' => [
+                '*' => [
+                    'key',
+                    'litter_objects' => [
+                        '*' => [
+                            'key',
+                            'tag_types' => [
+                                '*' => [
+                                    'key',
+                                    'materials' => [
+                                        '*' => [
+                                            'key'
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ]);
+    }
 
-        Log::info($text);
+    public function test_it_returns_a_list_of_tags_for_a_category (): void
+    {
+        $this->seed(CategoryLitterObjectSeeder::class);
+
+        $response = $this->get('/api/tags/alcohol');
 
         $response->assertStatus(200);
+        $response->assertJsonPath('category.key', 'alcohol');
+        $response->assertJsonFragment(['key' => 'bottle']);
+        $response->assertJsonFragment(['key' => 'beer']);
+        $response->assertJsonMissing(['key' => 'water']);
     }
 }

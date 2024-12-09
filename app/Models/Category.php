@@ -12,6 +12,11 @@ class Category extends Model
 
     protected $guarded = [];
 
+    public function getRouteKeyName(): string
+    {
+        return 'key';
+    }
+
     public function litterObjects (): BelongsToMany
     {
         return $this->belongsToMany(LitterObject::class, 'category_litter_object')->withTimestamps();

@@ -63,7 +63,7 @@ class CategoryLitterObjectSeederTest extends TestCase
             $this->assertDatabaseHas('materials', ['key' => $material]);
         }
 
-        $beerTagType = TagType::where('key', 'beer')->first();
+        $beerTagType = TagType::where('key', 'beerBottle')->first();
         $glassMaterial = Materials::where('key', 'glass')->first();
         $this->assertTrue($beerTagType->materials->contains($glassMaterial));
 
@@ -71,7 +71,7 @@ class CategoryLitterObjectSeederTest extends TestCase
         $rubberMaterial = Materials::where('key', 'rubber')->first();
         $this->assertFalse($beerTagType->materials->contains($rubberMaterial));
 
-        $notMaterials = ['butts', 'beer', 'bottle'];
+        $notMaterials = ['butts', 'beerBottle', 'bottle'];
 
         foreach ($notMaterials as $notMaterial) {
             $this->assertDatabaseMissing('materials', ['key' => $notMaterial]);
@@ -83,10 +83,10 @@ class CategoryLitterObjectSeederTest extends TestCase
     {
         $this->seed(CategoryLitterObjectSeeder::class);
 
-        $this->assertDatabaseHas('tag_types', ['key' => 'beer']);
+        $this->assertDatabaseHas('tag_types', ['key' => 'beerBottle']);
 
         $bottleObject = LitterObject::where('key', 'bottle')->first();
-        $beerTagType = TagType::where('key', 'beer')->first();
+        $beerTagType = TagType::where('key', 'beerBottle')->first();
 
         $this->assertTrue($bottleObject->tagTypes->contains($beerTagType));
 

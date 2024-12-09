@@ -32,18 +32,24 @@ class CategoryLitterObjectSeeder extends Seeder
             ]);
         }
 
-        // Category => LitterObject => Material, or
-        // Category => LitterObject => TagType => Material
+        // Category => LitterObject[] => Material[]
+        // or
+        // Category => LitterObject[] => TagType[] => Material[]
 
         $categoryTags = [
 
+            // Category
             'alcohol' => [
+                // Object
                 'bottle' => [
+                    // TagType => Material
                     'beer' => ['material:glass'],
                     'cider' => ['material:glass', 'material:plastic'],
                     'spirits' => ['material:glass'],
                     'wine' => ['material:glass']
                 ],
+
+                // Object => Material
                 'bottleTop' => ['material:metal', 'material:plastic', 'material:cork'],
                 'brokenGlass' => ['material:glass'],
                 'can' => [
@@ -554,7 +560,10 @@ class CategoryLitterObjectSeeder extends Seeder
                 elseif ($parentObject instanceof LitterObject)
                 {
                     // We're at the TagType level
-                    $tagType = TagType::firstOrCreate(['key' => $itemKey]);
+                    $tagType = TagType::firstOrCreate([
+                        'key' => $itemKey,
+                        'category_id' => $category->id
+                    ]);
                     $parentObject->tagTypes()->syncWithoutDetaching([$tagType->id]);
 
                     // Recursively process the next level
@@ -594,7 +603,10 @@ class CategoryLitterObjectSeeder extends Seeder
                     elseif ($parentObject instanceof LitterObject)
                     {
                         // TagType without materials
-                        $tagType = TagType::firstOrCreate(['key' => $item]);
+                        $tagType = TagType::firstOrCreate([
+                            'key' => $item,
+                            'category_id' => $category->id
+                        ]);
 
                         $parentObject->tagTypes()->syncWithoutDetaching([$tagType->id]);
                     }

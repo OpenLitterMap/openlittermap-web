@@ -7,7 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/tags', GetTagsController::class);
+Route::get('/tags', [GetTagsController::class, 'getAllTags']);
+Route::get('/tags/{category}', [GetTagsController::class, 'getTagsForCategory']);
 
 Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function(){
 
