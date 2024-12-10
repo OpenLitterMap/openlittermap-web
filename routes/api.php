@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/tags', [GetTagsController::class, 'getAllTags']);
 Route::get('/tags/{category}', [GetTagsController::class, 'getTagsForCategory']);
+Route::get('/tags/{category}/{object}', [GetTagsController::class, 'getTagTypesForObject']);
+Route::get('/tags/materials/object/{object}', [GetTagsController::class, 'getMaterialsForObject']);
+Route::get('/tags/materials/tag-type/{tagType}', [GetTagsController::class, 'getMaterialsForTagType']);
 
 Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function(){
 

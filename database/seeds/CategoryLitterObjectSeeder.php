@@ -36,6 +36,10 @@ class CategoryLitterObjectSeeder extends Seeder
         // or
         // Category => LitterObject[] => TagType[] => Material[]
 
+        // Note: when a tagType is shared between many litter objects,
+        // we update "bottle" to become "bottle_beer" to avoid sharing materials
+        // eg "beer" could be glass or aluminium, but "bottle_beer" is only glass.
+
         $categoryTags = [
 
             // Category
@@ -43,21 +47,21 @@ class CategoryLitterObjectSeeder extends Seeder
                 // Object
                 'bottle' => [
                     // TagType => Material
-                    'beer' => ['material:glass'],
-                    'cider' => ['material:glass', 'material:plastic'],
-                    'spirits' => ['material:glass'],
-                    'wine' => ['material:glass']
+                    'beer_bottle' => ['material:glass'],
+                    'cider_bottle' => ['material:glass', 'material:plastic'],
+                    'spirits_bottle' => ['material:glass'],
+                    'wine_bottle' => ['material:glass']
                 ],
 
                 // Object => Material
                 'bottleTop' => ['material:metal', 'material:plastic', 'material:cork'],
                 'brokenGlass' => ['material:glass'],
                 'can' => [
-                    'beer' => ['material:aluminium'],
-                    'spirits' => ['material:aluminium'],
-                    'cider' => ['material:aluminium'],
+                    'beer_can' => ['material:aluminium'],
+                    'spirits_can' => ['material:aluminium'],
+                    'cider_can' => ['material:aluminium'],
                 ],
-                'cup' => ['material:plastic', 'material:paper', 'material:foam'],
+                'cup' => ['material:plastic'],
                 'drinkingGlass' => [
                     'wineGlass' => ['material:glass'],
                     'pintGlass' => ['material:glass'],
@@ -134,13 +138,11 @@ class CategoryLitterObjectSeeder extends Seeder
                     'gloves' => ['material:leather', 'material:wool', 'material:synthetic'],
                 ],
                 'dress' => [
-                    'casualDress' => ['material:cotton', 'material:polyester', 'material:linen'],
-                    'eveningDress' => ['material:silk', 'material:satin', 'material:chiffon'],
-                    'cocktailDress' => ['material:silk', 'material:polyester', 'material:lace'],
-                ],
-                'suit' => [
-                    'businessSuit' => ['material:wool', 'material:polyester', 'material:linen'],
-                    'tuxedo' => ['material:wool', 'material:satin'],
+                    'material:cotton',
+                    'material:polyester',
+                    'material:linen',
+                    'material:silk',
+                    'material:satin',
                 ],
                 'swimwear' => [
                     'swimsuit' => ['material:nylon', 'material:spandex', 'material:polyester'],
@@ -184,7 +186,6 @@ class CategoryLitterObjectSeeder extends Seeder
                     'material:foam',
                     'material:ceramic',
                     'material:metal',
-                    'material:glass'
                 ],
                 'lid' => ['material:plastic', 'material:paper', 'material:bioplastic', 'material:plantFiber'],
                 'stirrer' => ['material:wood', 'material:plastic','material:metal','material:bamboo'],

@@ -12,6 +12,11 @@ class TagType extends Model
 
     protected $guarded = [];
 
+    public function getRouteKeyName(): string
+    {
+        return 'key';
+    }
+
     public function litterObjects (): BelongsToMany
     {
         return $this->belongsToMany(LitterObject::class, 'litter_object_tag_type')->withTimestamps();
