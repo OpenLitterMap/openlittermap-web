@@ -8,10 +8,17 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/tags', [GetTagsController::class, 'getAllTags']);
-Route::get('/tags/{category}', [GetTagsController::class, 'getTagsForCategory']);
-Route::get('/tags/{category}/{object}', [GetTagsController::class, 'getTagTypesForObject']);
+Route::get('/tags/search', [GetTagsController::class, 'searchTags']);
+
+Route::get('/tags/category/{category}', [GetTagsController::class, 'getTagsForCategory']);
+Route::get('/tags/category/{category}/object/{object}', [GetTagsController::class, 'getTagTypesForCategoryObject']);
+
+Route::get('/tags/object/{object}', [GetTagsController::class, 'getTagsForObject']);
+Route::get('/tags/tag-type/{tagType}', [GetTagsController::class, 'getTagsForTagType']);
+
 Route::get('/tags/materials/object/{object}', [GetTagsController::class, 'getMaterialsForObject']);
 Route::get('/tags/materials/tag-type/{tagType}', [GetTagsController::class, 'getMaterialsForTagType']);
+
 
 Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function(){
 
