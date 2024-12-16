@@ -1,6 +1,6 @@
 <?php
 
-namespace Database\Seeders; // With laravel 8+, seeders are now namespaced
+namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 
@@ -11,7 +11,7 @@ class DatabaseSeeder extends Seeder
      *
      * @return void
      */
-    public function run()
+    public function run (): void
     {
         $this->call(PlanSeeder::class);
         $this->call(TeamTypeSeeder::class);
@@ -25,5 +25,6 @@ class DatabaseSeeder extends Seeder
         // $this->call(CountriesSeeder::class);
         // missing states seeder
         // $this->call(CitiesSeeder::class);
+        $this->call(CategoryLitterObjectSeeder::class);
     }
 }

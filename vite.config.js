@@ -9,10 +9,10 @@ export default defineConfig({
         }
     },
     plugins: [
-        laravel([
-            'resources/css/app.css',
-            'resources/js/app.js',
-        ]),
+        laravel({
+            input: ['resources/css/app.css', 'resources/js/app.js'],
+            refresh: true
+        }),
         vue({
             template: {
                 transformAssetUrls: {
@@ -32,10 +32,9 @@ export default defineConfig({
             },
         }),
     ],
-    // server: {
-    //     fs: {
-    //         // Allow serving files from one level up to the project root
-    //         allow: ['..']
-    //     }
-    // },
+    server: {
+        host: 'localhost',
+        port: 5173,
+        https: false
+    },
 });

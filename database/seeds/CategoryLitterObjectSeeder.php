@@ -616,7 +616,7 @@ class CategoryLitterObjectSeeder extends Seeder
         }
     }
 
-    protected function processMaterials (array $materials, $parentObject)
+    protected function processMaterials (array $materials, $parentObject): void
     {
         foreach ($materials as $materialEntry)
         {

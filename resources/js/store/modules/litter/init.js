@@ -11,5 +11,5 @@ export const init = {
     customTagsError: '',
     submitting: false,
     recentTags: {},
-    recentCustomTags: []
+    recentCustomTags: [],
 };

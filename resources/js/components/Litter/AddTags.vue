@@ -88,17 +88,20 @@
 
             <br><br>
 
-            <div>
+            <div class="flex mb1 jc col-gap-5px">
                 <button
                     :disabled="checkDecr"
                     class="button is-medium is-danger"
                     @click="decr"
                 >-</button>
 
-                <button
-                    class="button is-medium is-info"
-                    @click="addTag"
-                >{{ $t('tags.add-tag') }}</button>
+                <div class="flex col-gap-5px">
+                    <button
+                        class="button is-medium is-info"
+                        @click="addTag"
+                    >{{ $t('tags.add-tag') }}</button>
+
+                </div>
 
                 <button
                     :disabled="checkIncr"
@@ -106,8 +109,6 @@
                     @click="incr"
                 >+</button>
             </div>
-
-            <br>
 
             <button
                 v-show="! admin && this.id !== 0"
@@ -356,6 +357,10 @@ export default {
             return hasTags || hasCustomTags;
         },
 
+        isAddingObject () {
+            return this.$store.state.tags.selectedObjectId !== null;
+        },
+
         /**
          * All the custom tags that this user has submitted
          */
@@ -424,12 +429,37 @@ export default {
          */
         addTag ()
         {
-            this.$store.commit('addTag', {
-                photoId: this.id,
-                category: this.category.key,
-                tag: this.tag.key,
-                quantity: this.quantity
-            });
+            if (this.isAddingObject)
+            {
+                let category = this.category.key;
+                let brand = '';
+                let object = '';
+                let quantity = this.quantity;
+                let pickedUp = this.$store.state.litter.pickedUp;
+
+                if (category === 'brands') {
+                    brand = this.tag.key;
+                } else {
+                    object = this.tag.key;
+                }
+
+                this.$store.commit('addTagToObject', {
+                    category,
+                    object,
+                    quantity,
+                    brand,
+                    pickedUp
+                });
+            }
+            else
+            {
+                this.$store.commit('addTag', {
+                    photoId: this.id,
+                    category: this.category.key,
+                    tag: this.tag.key,
+                    quantity: this.quantity
+                });
+            }
 
             this.quantity = 1;
 

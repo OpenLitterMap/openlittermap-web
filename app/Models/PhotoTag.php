@@ -20,6 +20,11 @@ class PhotoTag extends Model
         return $this->belongsTo(Photo::class);
     }
 
+    public function category (): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
+    }
+
     public function object (): BelongsTo
     {
         return $this->belongsTo(LitterObject::class, 'object_id');

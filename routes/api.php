@@ -1,11 +1,13 @@
 <?php
 
 use App\Models\Littercoin;
-use App\Http\Controllers\API\Tags\GetTagsController;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+
+use App\Http\Controllers\API\Tags\GetTagsController;
+use App\Http\Controllers\API\Tags\UploadTagsController;
 
 Route::get('/tags', [GetTagsController::class, 'getAllTags']);
 Route::get('/tags/search', [GetTagsController::class, 'searchTags']);
@@ -19,6 +21,7 @@ Route::get('/tags/tag-type/{tagType}', [GetTagsController::class, 'getTagsForTag
 Route::get('/tags/materials/object/{object}', [GetTagsController::class, 'getMaterialsForObject']);
 Route::get('/tags/materials/tag-type/{tagType}', [GetTagsController::class, 'getMaterialsForTagType']);
 
+Route::post('/tags', [UploadTagsController::class, 'upload']);
 
 Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function(){
 

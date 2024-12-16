@@ -10,8 +10,6 @@ class Brand extends LitterCategory
 {
     protected $guarded = [];
 
-    public $table = 'brandslist';
-
     public function photoTags (): HasMany
     {
         return $this->hasMany(PhotoTag::class, 'brand_id');

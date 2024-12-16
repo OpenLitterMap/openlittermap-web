@@ -5,6 +5,8 @@
     <meta name="description" content="Join the global community mapping and sharing data on plastic pollution">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
     <script>
         window.PUSHER_APP_KEY = '{{ config('broadcasting.connections.pusher.key') }}';
         window.APP_DEBUG      = '{{ config('app.debug') ? 'true' : 'false' }}';

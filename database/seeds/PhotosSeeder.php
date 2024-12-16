@@ -25,7 +25,7 @@ class PhotosSeeder extends Seeder
                 'model' => $faker->word,
                 'datetime' => $faker->dateTimeThisYear,
                 'verified' => $faker->boolean,
-                'verification' => $faker->randomFloat(2, 0, 100),
+                'verification' => 0,
                 'remaining' => $faker->boolean,
                 'lat' => $faker->latitude,
                 'lon' => $faker->longitude,

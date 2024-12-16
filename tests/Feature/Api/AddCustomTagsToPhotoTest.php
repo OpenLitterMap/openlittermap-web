@@ -62,10 +62,12 @@ class AddCustomTagsToPhotoTest extends TestCase
      */
     public function test_it_validates_the_custom_tags($tags, $errors)
     {
-        /** @var User $user */
         $user = User::factory()->create();
+
         $this->actingAs($user, 'api');
+
         $this->post('/api/photos/submit', $this->getApiImageAttributes($this->imageAndAttributes));
+
         $photo = $user->fresh()->photos->last();
 
         $response = $this->postJson('/api/add-tags', [

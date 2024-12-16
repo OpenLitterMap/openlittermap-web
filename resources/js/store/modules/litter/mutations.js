@@ -5,7 +5,6 @@ import i18n from "../../../i18n";
 // import { MAX_RECENTLY_TAGS } from '../../../constants'
 
 export const mutations = {
-
     /**
      * Add a tag that was just used, so the user can easily use it again on the next image
      */

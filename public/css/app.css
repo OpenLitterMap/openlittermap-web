@@ -383,6 +383,10 @@ html {
   font-family: BlinkMacSystemFont, -apple-system, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
 }
 
+.relative {
+    position: relative;
+}
+
 .suggest-item {
   color: #363636 !important;
 }
@@ -416,8 +420,8 @@ html {
 }
 
 /**
-* Tooltip Styles
-*/
+ * Tooltip Styles
+ */
 
 .tooltip {
   position: relative;

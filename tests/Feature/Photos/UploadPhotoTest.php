@@ -159,14 +159,12 @@ class UploadPhotoTest extends TestCase
 
         // The Photo is persisted correctly
         $this->assertCount(1, $user->photos);
-        /** @var Photo $photo */
         $photo = $user->photos->last();
 
         $this->assertEquals($imageAttributes['imageName'], $photo->filename);
         $this->assertEquals($imageAttributes['bboxImageName'], $photo->five_hundred_square_filepath);
 
         // Cleanup
-        /** @var DeletePhotoAction $deletePhotoAction */
         $deletePhotoAction = app(DeletePhotoAction::class);
         $deletePhotoAction->run($photo);
     }
@@ -207,7 +205,7 @@ class UploadPhotoTest extends TestCase
     {
         Storage::fake('s3');
         Storage::fake('bbox');
-        /** @var User $user */
+
         $user = User::factory()->create();
         $imageAttributes = $this->getImageAndAttributes();
         $countryId = Country::factory()->create([
@@ -258,8 +256,8 @@ class UploadPhotoTest extends TestCase
         $this->postJson('/submit', [
             'file' => $nonImage
         ])
-            ->assertStatus(422)
-            ->assertJsonValidationErrors('file');
+        ->assertStatus(422)
+        ->assertJsonValidationErrors('file');
     }
 
     public function test_uploaded_photo_can_have_different_mime_types()

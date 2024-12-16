@@ -113,6 +113,13 @@
                                     :key="photo.id"
                                 />
 
+                                <!-- Create New Litter Object -->
+                                <button
+                                    style="margin-top: 10px;"
+                                    @click="createLitterObject"
+                                    class="button is-info"
+                                >Create Litter Object</button>
+
                                 <!-- Delete photo button -->
                                 <profile-delete
                                     :photoid="photo.id"
@@ -120,7 +127,10 @@
                                 />
                             </div>
 
-                            <!-- These are the tags the user has added -->
+                            <!-- These are the new tags -->
+                            <LitterObjects />
+
+                            <!-- These are the old/original tags the user has added -->
                             <Tags :photo-id="photo.id"/>
                         </div>
                     </div>
@@ -171,6 +181,7 @@ import Presence from '../../components/Litter/Presence.vue';
 import Tags from '../../components/Litter/Tags.vue';
 import ProfileDelete from '../../components/Litter/ProfileDelete.vue';
 import RecentTags from '../../components/Litter/RecentTags.vue';
+import LitterObjects from "../../components/Litter/LitterObjects.vue";
 
 export default {
     name: 'Tag',
@@ -180,7 +191,8 @@ export default {
         Presence,
         Tags,
         ProfileDelete,
-        RecentTags
+        RecentTags,
+        LitterObjects,
     },
     async mounted ()
     {
@@ -198,7 +210,6 @@ export default {
         };
     },
     computed: {
-
         /**
          * Get the current page the user is on
          */
@@ -267,6 +278,15 @@ export default {
     },
 
     methods: {
+
+        createLitterObject () {
+            const pickedUp = this.$store.state.litter.pickedUp;
+
+            this.$store.commit('createLitterObject', {
+                pickedUp,
+            });
+        },
+
         /**
          * Format date
          */

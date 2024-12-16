@@ -1,7 +1,6 @@
 <template>
     <div>
         <div class="container home-container">
-
             <!-- Title, Subtitle, App Icons -->
             <div class="columns c-1">
                 <div class="column is-half" style="padding-right: 1em !important;">
