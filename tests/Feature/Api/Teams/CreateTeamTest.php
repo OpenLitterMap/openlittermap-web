@@ -11,10 +11,8 @@ use Tests\TestCase;
 
 class CreateTeamTest extends TestCase
 {
-    /** @var User */
-    private $user;
-    /** @var int */
-    private $teamTypeId;
+    private User $user;
+    private int $teamTypeId;
 
     protected function setUp(): void
     {

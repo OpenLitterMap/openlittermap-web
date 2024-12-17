@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Admin;
 
-
 use App\Models\Location\Country;
 use App\Models\User\User;
 use Illuminate\Support\Facades\Storage;
@@ -14,13 +13,9 @@ class GetPhotoTest extends TestCase
 {
     use HasPhotoUploads;
 
-    /** @var User */
     protected $admin;
-    /** @var User */
     protected $user;
-
-    /** @var array */
-    private $imageAndAttributes;
+    private array $imageAndAttributes;
 
     protected function setUp(): void
     {

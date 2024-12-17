@@ -280,7 +280,6 @@ class AddTagsToPhotoTest extends TestCase
     public function test_leaderboards_are_updated_when_a_user_adds_tags_to_a_photo()
     {
         // User uploads an image -------------------------
-        /** @var User $user */
         $user = User::factory()->create();
         $this->actingAs($user, 'api');
         $this->post('/api/photos/submit', $this->getApiImageAttributes($this->imageAndAttributes));

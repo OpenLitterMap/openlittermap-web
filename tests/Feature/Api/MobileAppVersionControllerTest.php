@@ -1,12 +1,11 @@
 <?php
 
-namespace Api;
+namespace Tests\Feature\Api;
 
 use Tests\TestCase;
 
 class MobileAppVersionControllerTest extends TestCase
 {
-
     public function test_it_returns_mobile_app_versions()
     {
         $response = $this->get('/api/mobile-app-version')

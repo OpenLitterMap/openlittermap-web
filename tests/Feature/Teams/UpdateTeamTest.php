@@ -10,9 +10,7 @@ class UpdateTeamTest extends TestCase
 {
     public function test_a_team_leader_can_update_a_team()
     {
-        /** @var User $leader */
         $leader = User::factory()->create();
-        /** @var Team $team */
         $team = Team::factory()->create([
             'leader' => $leader->id
         ]);
@@ -41,11 +39,8 @@ class UpdateTeamTest extends TestCase
 
     public function test_team_members_or_other_users_can_not_update_a_team()
     {
-        /** @var User $leader */
         $leader = User::factory()->create();
-        /** @var User $member */
         $member = User::factory()->create();
-        /** @var Team $team */
         $team = Team::factory()->create([
             'leader' => $leader->id
         ]);
@@ -79,9 +74,7 @@ class UpdateTeamTest extends TestCase
 
     public function test_fields_are_validated()
     {
-        /** @var User $leader */
         $leader = User::factory()->create();
-        /** @var Team $team */
         $team = Team::factory()->create([
             'leader' => $leader->id
         ]);

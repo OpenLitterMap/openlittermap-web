@@ -13,9 +13,7 @@ class ListTeamsTest extends TestCase
     public function test_it_can_list_a_users_teams()
     {
         // User joins a team -------------------------
-        /** @var User $user */
         $user = User::factory()->create();
-        /** @var Team $team */
         $team = Team::factory()->create();
         $otherTeam = Team::factory()->create();
         $user->teams()->attach($team);

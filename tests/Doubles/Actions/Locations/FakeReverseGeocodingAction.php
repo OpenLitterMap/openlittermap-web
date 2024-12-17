@@ -4,7 +4,7 @@ namespace Tests\Doubles\Actions\Locations;
 
 class FakeReverseGeocodingAction
 {
-    private $address = [
+    private array $address = [
         "house_number" => "10735",
         "road" => "Carlisle Pike",
         "city" => "Latimore Township",
@@ -15,7 +15,8 @@ class FakeReverseGeocodingAction
         "country_code" => "us",
         "suburb" => "unknown"
     ];
-    private $imageDisplayName = '10735, Carlisle Pike, Latimore Township,' .
+
+    private string $imageDisplayName = '10735, Carlisle Pike, Latimore Township,' .
     ' Adams County, Pennsylvania, 17324, USA';
 
     public function run ($latitude, $longitude): array
@@ -26,7 +27,7 @@ class FakeReverseGeocodingAction
         ];
     }
 
-    public function withAddress(array $address): FakeReverseGeocodingAction
+    public function withAddress (array $address): FakeReverseGeocodingAction
     {
         $this->address = array_merge($this->address, $address);
 

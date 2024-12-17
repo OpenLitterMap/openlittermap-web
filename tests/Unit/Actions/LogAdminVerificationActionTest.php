@@ -1,6 +1,6 @@
 <?php
 
-namespace Actions;
+namespace Tests\Unit\Actions;
 
 use App\Actions\LogAdminVerificationAction;
 use App\Models\AdminVerificationLog;
@@ -27,7 +27,6 @@ class LogAdminVerificationActionTest extends TestCase
         $removedUserXp = 100;
         $rewardedAdminXp = 50;
 
-        /** @var LogAdminVerificationAction $action */
         $action = app(LogAdminVerificationAction::class);
         $action->run(
             $admin,

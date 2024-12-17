@@ -32,7 +32,6 @@ class SettingsTest extends TestCase
      */
     public function test_a_user_can_update_their_settings($guard, $route)
     {
-        /** @var User $user */
         $user = User::factory()->create();
 
         $response = $this->actingAs($user, $guard)->patchJson($route, [
@@ -50,7 +49,6 @@ class SettingsTest extends TestCase
      */
     public function test_it_validates_settings_updates($settings, $errors)
     {
-        /** @var User $user */
         $user = User::factory()->create();
 
         $response = $this->actingAs($user)->patchJson('/settings', $settings);
@@ -64,7 +62,6 @@ class SettingsTest extends TestCase
      */
     public function test_it_validates_settings_updates_from_api($settings, $errors)
     {
-        /** @var User $user */
         $user = User::factory()->create();
 
         $response = $this->actingAs($user, 'api')->patchJson('/api/settings', $settings);
