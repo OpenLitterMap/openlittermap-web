@@ -8,11 +8,12 @@ use App\Models\Location\State;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use App\Actions\Locations\ReverseGeocodeLocationAction;
+use Intervention\Image\Facades\Image;
 use Tests\Doubles\Actions\Locations\FakeReverseGeocodingAction;
 
 trait HasPhotoUploads
 {
-    protected $imagePath;
+    protected string $imagePath;
     private string $imageDisplayName = '10735, Carlisle Pike, Latimore Township, Adams County, Pennsylvania, 17324, USA';
     private array $address = [
         "house_number" => "10735",
@@ -37,8 +38,9 @@ trait HasPhotoUploads
 
     protected function getImageAndAttributes ($mimeType = 'jpg', $withAddress = []): array
     {
-        $exifImage = file_get_contents($this->imagePath);
-        $file = UploadedFile::fake()->createWithContent('image.' . $mimeType, $exifImage);
+        $image = file_get_contents($this->imagePath);
+        $file = UploadedFile::fake()->createWithContent("image.$mimeType", $image);
+
         $latitude = 40.053030045789;
         $longitude = -77.15449870066;
         $geoHash = 'dr15u73vccgyzbs9w4uj';

@@ -7,8 +7,7 @@ use GuzzleHttp\Exception\GuzzleException;
 
 class ReverseGeocodeLocationAction
 {
-    /** @var Client */
-    private $client;
+    private Client $client;
 
     /**
      * @param Client $client

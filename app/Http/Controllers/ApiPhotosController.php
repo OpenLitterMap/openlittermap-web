@@ -78,7 +78,10 @@ class ApiPhotosController extends Controller
 
         $user = auth()->user();
 
-        if (!$user->has_uploaded) $user->has_uploaded = 1;
+        if (!$user->has_uploaded) {
+            $user->has_uploaded = 1;
+            $user->save();
+        }
 
         Log::channel('photos')->info([
             'app_upload' => $request->all(),
@@ -151,7 +154,6 @@ class ApiPhotosController extends Controller
             ? $request->picked_up
             : !$user->items_remaining;
 
-        /** @var Photo $photo */
         $photo = $user->photos()->create([
             'filename' => $imageName,
             'datetime' => $date,

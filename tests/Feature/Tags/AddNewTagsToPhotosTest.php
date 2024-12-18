@@ -50,7 +50,7 @@ class AddNewTagsToPhotosTest extends TestCase
 
         $categoryString = 'smoking';
         $objectString = 'butts';
-        $pickedUpStatus = true;
+        $pickedUpStatus = 1;
         $quantity = 3;
         $brandString = 'marlboro';
         $materials = [
@@ -84,7 +84,7 @@ class AddNewTagsToPhotosTest extends TestCase
         $brand = BrandList::where('key', $brandString)->first();
 
         $this->assertDatabaseHas('photo_tags', [
-            'photo_id' => 1,
+            'photo_id' => $photo->id,
             'category_id' => $category->id,
             'object_id' => $litterObject->id,
             'picked_up' => $pickedUpStatus,
@@ -164,7 +164,7 @@ class AddNewTagsToPhotosTest extends TestCase
 
         $photo = $user2->fresh()->photos->last();
 
-        $this->assertEquals(2, $photo->user_id);
+        $this->assertEquals($user2->id, $photo->user_id);
 
         // Log in as user1
         $this->actingAs($user1, 'api');

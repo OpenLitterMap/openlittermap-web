@@ -3,8 +3,8 @@
 namespace App\Actions\Photos;
 
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Image;
+use Illuminate\Support\Facades\Storage;
 
 class UploadPhotoAction
 {

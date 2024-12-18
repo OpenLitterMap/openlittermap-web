@@ -70,6 +70,7 @@ class UploadPhotoController extends Controller
 
         if (!$user->has_uploaded) {
             $user->has_uploaded = 1;
+            $user->save();
         }
 
         $file = $request->file('file'); // /tmp/php7S8v..
@@ -96,7 +97,7 @@ class UploadPhotoController extends Controller
         if ($exif["GPSLatitude"][0] === "0/0" && $exif["GPSLongitude"][0] === "0/0")
         {
             abort(500,
-                "Error: Your Images have GeoTags, but they have values of zero. 
+                "Error: Your Images have GeoTags, but they have values of zero.
                 You may have lost the geotags when transferring images across devices
                 or you might need to enable another setting to make them available."
             );
@@ -173,7 +174,7 @@ class UploadPhotoController extends Controller
         {
             \Log::info("invalid coordinates found for userId $user->id \n");
             abort(500,
-                "Error: Your Images have GeoTags, but they have values of zero. 
+                "Error: Your Images have GeoTags, but they have values of zero.
                 You may have lost the geotags when transferring images across devices
                 or you might need to enable another setting to make them available."
             );

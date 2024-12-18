@@ -29,11 +29,9 @@ class TrustedTeamsTest extends TestCase
         Event::fake();
 
         // User is not verified
-        /** @var User $user */
         $user = User::factory()->create(['verification_required' => true]);
 
         // However, user is part of a trusted team
-        /** @var Team $team */
         $team = Team::factory()->create(['is_trusted' => true]);
         $user->teams()->attach($team);
         $user->active_team = $team->id;
@@ -42,7 +40,9 @@ class TrustedTeamsTest extends TestCase
         // User uploads a photo and tags it
         $this->actingAs($user);
 
-        $this->post('/submit', ['file' => $this->getImageAndAttributes()['file'],]);
+        $file = $this->getImageAndAttributes()['file'];
+
+        $this->post('/submit', ['file' => $file]);
 
         $photo = $user->fresh()->photos->last();
 
