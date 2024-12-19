@@ -26,7 +26,7 @@ class AddTotalContributorsToCountries extends Migration
     public function down()
     {
         Schema::table('countries', function (Blueprint $table) {
-            //
+            $table->dropColumn('total_contributors');
         });
     }
 }

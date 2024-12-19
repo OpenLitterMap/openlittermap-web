@@ -29,6 +29,6 @@ class CreateCoffeeTable extends Migration
      */
     public function down()
     {
-        //
+        Schema::drop('coffee');
     }
 }

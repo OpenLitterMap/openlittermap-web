@@ -13,20 +13,20 @@ class CreateOthersTableAgain extends Migration
      */
     public function up()
     {
-        // Schema::create('others', function (Blueprint $table) {
-        //     $table->increments('id');
-
-        //     $table->integer('photo_id')->unsigned();
-        //     $table->foreign('photo_id')->references('id')->on('photos')->onDelete('cascade');
-
-        //     $table->integer('dogshit')->unsigned()->nullable();
-        //     $table->integer('dump')->unsigned()->nullable();
-        //     $table->integer('plastic')->unsigned()->nullable();
-        //     $table->integer('metal')->unsigned()->nullable();
-        //     $table->integer('other')->unsigned()->nullable();
-
-        //     $table->timestamps();
-        // });
+//         Schema::create('others', function (Blueprint $table) {
+//             $table->increments('id');
+//
+//             $table->integer('photo_id')->unsigned();
+//             $table->foreign('photo_id')->references('id')->on('photos')->onDelete('cascade');
+//
+//             $table->integer('dogshit')->unsigned()->nullable();
+//             $table->integer('dump')->unsigned()->nullable();
+//             $table->integer('plastic')->unsigned()->nullable();
+//             $table->integer('metal')->unsigned()->nullable();
+//             $table->integer('other')->unsigned()->nullable();
+//
+//             $table->timestamps();
+//         });
     }
 
     /**
@@ -36,6 +36,10 @@ class CreateOthersTableAgain extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('others');
+//        Schema::table('others', function (Blueprint $table) {
+//            $table->dropForeign(['photo_id']);
+//        });
+//
+//        Schema::dropIfExists('others');
     }
 }

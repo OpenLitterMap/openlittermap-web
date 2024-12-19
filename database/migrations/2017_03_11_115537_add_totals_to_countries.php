@@ -37,7 +37,18 @@ class AddTotalsToCountries extends Migration
     public function down()
     {
         Schema::table('countries', function (Blueprint $table) {
-            //
+            $table->dropColumn('total_images');
+            $table->dropColumn('total_smoking');
+            $table->dropColumn('total_cigaretteButts');
+            $table->dropColumn('total_food');
+            $table->dropColumn('total_softDrinks');
+            $table->dropColumn('total_plasticBottles');
+            $table->dropColumn('total_alcohol');
+            $table->dropColumn('total_coffee');
+            $table->dropColumn('total_drugs');
+            $table->dropColumn('total_needles');
+            $table->dropColumn('total_sanitary');
+            $table->dropColumn('total_other');
         });
     }
 }

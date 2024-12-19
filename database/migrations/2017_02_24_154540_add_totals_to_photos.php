@@ -48,7 +48,29 @@ class AddTotalsToPhotos extends Migration
     public function down()
     {
         Schema::table('photos', function (Blueprint $table) {
-            //
+            $table->dropForeign(['smoking_id']);
+            $table->dropColumn('smoking_id');
+
+            $table->dropForeign(['food_id']);
+            $table->dropColumn('food_id');
+
+            $table->dropForeign(['coffee_id']);
+            $table->dropColumn('coffee_id');
+
+            $table->dropForeign(['alcohol_id']);
+            $table->dropColumn('alcohol_id');
+
+            $table->dropForeign(['softdrinks_id']);
+            $table->dropColumn('softdrinks_id');
+
+            $table->dropForeign(['drugs_id']);
+            $table->dropColumn('drugs_id');
+
+            $table->dropForeign(['sanitary_id']);
+            $table->dropColumn('sanitary_id');
+
+            $table->dropForeign(['other_id']);
+            $table->dropColumn('other_id');
         });
     }
 }

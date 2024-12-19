@@ -56,6 +56,11 @@ class CreateMaterialTable extends Migration
      */
     public function down()
     {
+        Schema::table('photos', function (Blueprint $table) {
+            $table->dropForeign(['material_id']);
+            $table->dropColumn('material_id');
+        });
+
         Schema::dropIfExists('material');
     }
 }

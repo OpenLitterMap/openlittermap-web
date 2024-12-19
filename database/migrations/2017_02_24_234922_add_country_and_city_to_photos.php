@@ -29,7 +29,10 @@ class AddCountryAndCityToPhotos extends Migration
     public function down()
     {
         Schema::table('photos', function (Blueprint $table) {
-            //
+            $table->dropForeign(['country_id']);
+            $table->dropColumn('country_id');
+            $table->dropForeign(['city_id']);
+            $table->dropColumn('city_id');
         });
     }
 }

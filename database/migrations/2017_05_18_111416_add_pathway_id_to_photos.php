@@ -27,7 +27,8 @@ class AddPathwayIdToPhotos extends Migration
     public function down()
     {
         Schema::table('photos', function (Blueprint $table) {
-            //
+            $table->dropForeign(['pathways_id']);
+            $table->dropColumn('pathways_id');
         });
     }
 }

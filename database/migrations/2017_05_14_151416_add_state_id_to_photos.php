@@ -27,7 +27,8 @@ class AddStateIdToPhotos extends Migration
     public function down()
     {
         Schema::table('photos', function (Blueprint $table) {
-            //
+            $table->dropForeign(['state_id']);
+            $table->dropColumn('state_id');
         });
     }
 }

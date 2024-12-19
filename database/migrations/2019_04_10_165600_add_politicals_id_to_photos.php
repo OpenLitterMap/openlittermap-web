@@ -27,7 +27,8 @@ class AddPoliticalsIdToPhotos extends Migration
     public function down()
     {
         Schema::table('photos', function (Blueprint $table) {
-            //
+            $table->dropForeign(['political_id']);
+            $table->dropColumn('political_id');
         });
     }
 }

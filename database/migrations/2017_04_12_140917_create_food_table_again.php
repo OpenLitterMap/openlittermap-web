@@ -13,21 +13,21 @@ class CreateFoodTableAgain extends Migration
      */
     public function up()
     {
-        // Schema::create('food', function (Blueprint $table) {
-        //     $table->increments('id');
-
-        //     $table->integer('photo_id')->unsigned();
-        //     $table->foreign('photo_id')->references('id')->on('photos')->onDelete('cascade');
-            
-        //     $table->integer('sweetWrappers')->unsigned()->nullable();
-        //     $table->integer('cardboardFoodPackaging')->unsigned()->nullable();
-        //     $table->integer('paperFoodPackaging')->unsigned()->nullable();
-        //     $table->integer('plasticFoodPackaging')->unsigned()->nullable();
-        //     $table->integer('plasticCutlery')->unsigned()->nullable();
-        //     $table->integer('foodOther')->unsigned()->nullable();
-
-        //     $table->timestamps();
-        // });
+//         Schema::create('food', function (Blueprint $table) {
+//             $table->increments('id');
+//
+//             $table->integer('photo_id')->unsigned();
+//             $table->foreign('photo_id')->references('id')->on('photos')->onDelete('cascade');
+//
+//             $table->integer('sweetWrappers')->unsigned()->nullable();
+//             $table->integer('cardboardFoodPackaging')->unsigned()->nullable();
+//             $table->integer('paperFoodPackaging')->unsigned()->nullable();
+//             $table->integer('plasticFoodPackaging')->unsigned()->nullable();
+//             $table->integer('plasticCutlery')->unsigned()->nullable();
+//             $table->integer('foodOther')->unsigned()->nullable();
+//
+//             $table->timestamps();
+//         });
     }
 
     /**
@@ -37,6 +37,10 @@ class CreateFoodTableAgain extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('food');
+//        Schema::table('food', function (Blueprint $table) {
+//            $table->dropForeign(['photo_id']);
+//        });
+//
+//        Schema::dropIfExists('food');
     }
 }

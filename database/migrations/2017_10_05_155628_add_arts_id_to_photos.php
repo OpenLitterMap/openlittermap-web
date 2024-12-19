@@ -27,7 +27,8 @@ class AddArtsIdToPhotos extends Migration
     public function down()
     {
         Schema::table('photos', function (Blueprint $table) {
-            //
+            $table->dropForeign(['art_id']);
+            $table->dropColumn('art_id');
         });
     }
 }

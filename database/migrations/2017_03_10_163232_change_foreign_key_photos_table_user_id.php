@@ -13,10 +13,10 @@ class ChangeForeignKeyPhotosTableUserId extends Migration
      */
     public function up()
     {
-        // Schema::table('photos', function (Blueprint $table) {
-        //     $table->dropForeign('photos_user_id_foreign');
-        //     $table->foreign('user_id')->references('id')->on('users');
-        // });
+         Schema::table('photos', function (Blueprint $table) {
+//             $table->dropForeign(['user_id']);
+//             $table->foreign('user_id')->references('id')->on('users');
+         });
     }
 
     /**
@@ -27,7 +27,7 @@ class ChangeForeignKeyPhotosTableUserId extends Migration
     public function down()
     {
         Schema::table('photos', function (Blueprint $table) {
-            //
+//            $table->dropForeign(['user_id']);
         });
     }
 }

@@ -16,6 +16,10 @@ class CreatePermissionTables extends Migration
         $tableNames = config('permission.table_names');
         $columnNames = config('permission.column_names');
 
+        if (Schema::hasTable('old_roles')) {
+            return;
+        }
+
        Schema::rename('roles', 'old_roles');
 
         if (empty($tableNames)) {

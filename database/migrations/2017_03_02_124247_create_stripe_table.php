@@ -31,8 +31,6 @@ class CreateStripeTable extends Migration
      */
     public function down()
     {
-        Schema::table('stripe', function (Blueprint $table) {
-            //
-        });
+        Schema::dropIfExists('stripe');
     }
 }

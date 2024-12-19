@@ -13,6 +13,11 @@ class CreateDumpsTable extends Migration
      */
     public function up()
     {
+        // Check if the table exists
+        if (Schema::hasTable('dumping')) {
+            return;
+        }
+
         Schema::create('dumping', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->integer('small')->unsigned()->nullable();

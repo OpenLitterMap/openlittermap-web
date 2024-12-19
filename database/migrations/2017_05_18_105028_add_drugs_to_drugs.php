@@ -27,7 +27,8 @@ class AddDrugsToDrugs extends Migration
     public function down()
     {
         Schema::table('drugs', function (Blueprint $table) {
-            //
+            $table->dropColumn('baggie');
+            $table->dropColumn('crack_pipes');
         });
     }
 }
