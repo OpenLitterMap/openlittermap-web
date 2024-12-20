@@ -24,175 +24,175 @@
 // Dependencies: none
 //
 //
-// Disclaimer: I made Helios available as FOSS so that the Cardano community can test it 
+// Disclaimer: I made Helios available as FOSS so that the Cardano community can test it
 //     extensively. I don't guarantee the library is bug-free, nor do I guarantee
 //     backward compatibility with future versions.
 //
 //
 // Example usage:
-//     > import * as helios from "helios.js";
+//     > import * as helios from "helios.old_js";
 //     > console.log(helios.Program.new("spending my_validator ...").compile().serialize());
-//     
+//
 //
 // Documentation: https://www.hyperion-bt.org/Helios-Book
 //
 //
-// Note: I recommend keeping the Helios library as a single unminified file for optimal 
+// Note: I recommend keeping the Helios library as a single unminified file for optimal
 //     auditability.
 //
-// 
+//
 // Overview of internals:
 //    Section 1: Global constants            VERSION, DEBUG, debug, STRICT_BABBAGE, TAB, IS_TESTNET
 //
-//    Section 2: Utilities                   assert, assertDefined, assertClass, assertNumber, eq, 
-//                                           assertEq, idiv, ipow2, imask, imod8, bigIntToBytes, 
-//                                           bytesToBigInt, padZeroes, byteToBitString, 
-//                                           hexToBytes, bytesToHex, textToBytes, bytesToText, 
+//    Section 2: Utilities                   assert, assertDefined, assertClass, assertNumber, eq,
+//                                           assertEq, idiv, ipow2, imask, imod8, bigIntToBytes,
+//                                           bytesToBigInt, padZeroes, byteToBitString,
+//                                           hexToBytes, bytesToHex, textToBytes, bytesToText,
 //                                           replaceTabs, BitReader, BitWriter, Source, hl
 //
-//    Section 3: Tokens                      Site, RuntimeError, Token, Word, SymbolToken, Group, 
-//                                           PrimitiveLiteral, IntLiteral, BoolLiteral, 
+//    Section 3: Tokens                      Site, RuntimeError, Token, Word, SymbolToken, Group,
+//                                           PrimitiveLiteral, IntLiteral, BoolLiteral,
 //                                           ByteArrayLiteral, StringLiteral
 //
-//    Section 4: Cryptography functions      BLAKE2B_DIGEST_SIZE, setBlake2bDigestSize, 
-//                                           DEFAULT_BASE32_ALPHABET, BECH32_BASE32_ALPHABET, 
+//    Section 4: Cryptography functions      BLAKE2B_DIGEST_SIZE, setBlake2bDigestSize,
+//                                           DEFAULT_BASE32_ALPHABET, BECH32_BASE32_ALPHABET,
 //                                           imod32, irotr, posMod, UInt64, Crypto
 //
 //    Section 5: Cbor encoder/decoder        CborData
 //
-//    Section 6: Uplc data types             UPLC_DATA_NODE_MEM_SIZE, UplcData, IntData, 
+//    Section 6: Uplc data types             UPLC_DATA_NODE_MEM_SIZE, UplcData, IntData,
 //                                           ByteArrayData, ListData, MapData, ConstrData
 //
-//    Section 7: Helios data objects         HeliosData, Int, Time, Duration, Bool, HeliosString, 
-//                                           ByteArray, List, HeliosMap, Option, Hash, DatumHash, 
-//                                           PubKeyHash, ScriptHash, MintingPolicyHash, 
-//                                           StakeKeyHash, StakingValidatorHash, ValidatorHash, 
+//    Section 7: Helios data objects         HeliosData, Int, Time, Duration, Bool, HeliosString,
+//                                           ByteArray, List, HeliosMap, Option, Hash, DatumHash,
+//                                           PubKeyHash, ScriptHash, MintingPolicyHash,
+//                                           StakeKeyHash, StakingValidatorHash, ValidatorHash,
 //                                           TxId, TxOutputId, Address, Assets, Value
 //
-//    Section 8: Uplc cost-models            NetworkParams, CostModel, ConstCost, LinearCost, 
-//                                           ArgSizeCost, Arg0SizeCost, Arg1SizeCost, 
-//                                           Arg2SizeCost, MinArgSizeCost, MaxArgSizeCost, 
-//                                           SumArgSizesCost, ArgSizeDiffCost, ArgSizeProdCost, 
+//    Section 8: Uplc cost-models            NetworkParams, CostModel, ConstCost, LinearCost,
+//                                           ArgSizeCost, Arg0SizeCost, Arg1SizeCost,
+//                                           Arg2SizeCost, MinArgSizeCost, MaxArgSizeCost,
+//                                           SumArgSizesCost, ArgSizeDiffCost, ArgSizeProdCost,
 //                                           ArgSizeDiagCost
 //
-//    Section 9: Uplc built-in functions     UPLC_BUILTINS, dumpCostModels, findUplcBuiltin, 
+//    Section 9: Uplc built-in functions     UPLC_BUILTINS, dumpCostModels, findUplcBuiltin,
 //                                           isUplcBuiltin
 //
-//    Section 10: Uplc AST                   ScriptPurpose, getPurposeName, UplcValue, UplcType, 
-//                                           DEFAULT_UPLC_RTE_CALLBACKS, UplcRte, UplcStack, 
-//                                           UplcAnon, UplcDelayedValue, UplcInt, UplcByteArray, 
-//                                           UplcString, UplcUnit, UplcBool, UplcPair, UplcList, 
-//                                           UplcDataValue, UplcTerm, UplcVariable, UplcDelay, 
-//                                           UplcLambda, UplcCall, UplcConst, UplcForce, 
+//    Section 10: Uplc AST                   ScriptPurpose, getPurposeName, UplcValue, UplcType,
+//                                           DEFAULT_UPLC_RTE_CALLBACKS, UplcRte, UplcStack,
+//                                           UplcAnon, UplcDelayedValue, UplcInt, UplcByteArray,
+//                                           UplcString, UplcUnit, UplcBool, UplcPair, UplcList,
+//                                           UplcDataValue, UplcTerm, UplcVariable, UplcDelay,
+//                                           UplcLambda, UplcCall, UplcConst, UplcForce,
 //                                           UplcError, UplcBuiltin
 //
-//    Section 11: Uplc program               UPLC_VERSION_COMPONENTS, UPLC_VERSION, 
-//                                           PLUTUS_SCRIPT_VERSION, deserializeUplcBytes, 
+//    Section 11: Uplc program               UPLC_VERSION_COMPONENTS, UPLC_VERSION,
+//                                           PLUTUS_SCRIPT_VERSION, deserializeUplcBytes,
 //                                           deserializeUplc
 //
 //    Section 12: Tokenization               Tokenizer, tokenize, tokenizeIR
 //
-//    Section 13: Helios eval entities       EvalEntity, Type, AnyType, DataType, AnyDataType, 
-//                                           BuiltinType, BuiltinEnumMember, StatementType, 
-//                                           StructStatementType, EnumStatementType, 
-//                                           EnumMemberStatementType, FuncType, NotType, Instance, 
-//                                           DataInstance, ConstStatementInstance, FuncInstance, 
-//                                           FuncStatementInstance, MultiInstance, VoidInstance, 
-//                                           ErrorInstance, BuiltinFuncInstance, PrintFunc, 
-//                                           VoidType, ErrorType, IntType, BoolType, StringType, 
-//                                           ByteArrayType, ParamType, ParamFuncValue, ListType, 
-//                                           MapType, OptionType, OptionSomeType, OptionNoneType, 
-//                                           HashType, PubKeyHashType, StakeKeyHashType, 
-//                                           PubKeyType, ScriptHashType, ValidatorHashType, 
-//                                           MintingPolicyHashType, StakingValidatorHashType, 
-//                                           DatumHashType, ScriptContextType, ScriptPurposeType, 
-//                                           MintingScriptPurposeType, SpendingScriptPurposeType, 
-//                                           RewardingScriptPurposeType, 
-//                                           CertifyingScriptPurposeType, StakingPurposeType, 
-//                                           StakingRewardingPurposeType, 
-//                                           StakingCertifyingPurposeType, DCertType, 
-//                                           RegisterDCertType, DeregisterDCertType, 
-//                                           DelegateDCertType, RegisterPoolDCertType, 
-//                                           RetirePoolDCertType, TxType, TxIdType, TxInputType, 
-//                                           TxOutputType, OutputDatumType, NoOutputDatumType, 
-//                                           HashedOutputDatumType, InlineOutputDatumType, 
-//                                           RawDataType, TxOutputIdType, AddressType, 
-//                                           CredentialType, CredentialPubKeyType, 
-//                                           CredentialValidatorType, StakingHashType, 
-//                                           StakingHashStakeKeyType, StakingHashValidatorType, 
-//                                           StakingCredentialType, StakingHashCredentialType, 
-//                                           StakingPtrCredentialType, TimeType, DurationType, 
+//    Section 13: Helios eval entities       EvalEntity, Type, AnyType, DataType, AnyDataType,
+//                                           BuiltinType, BuiltinEnumMember, StatementType,
+//                                           StructStatementType, EnumStatementType,
+//                                           EnumMemberStatementType, FuncType, NotType, Instance,
+//                                           DataInstance, ConstStatementInstance, FuncInstance,
+//                                           FuncStatementInstance, MultiInstance, VoidInstance,
+//                                           ErrorInstance, BuiltinFuncInstance, PrintFunc,
+//                                           VoidType, ErrorType, IntType, BoolType, StringType,
+//                                           ByteArrayType, ParamType, ParamFuncValue, ListType,
+//                                           MapType, OptionType, OptionSomeType, OptionNoneType,
+//                                           HashType, PubKeyHashType, StakeKeyHashType,
+//                                           PubKeyType, ScriptHashType, ValidatorHashType,
+//                                           MintingPolicyHashType, StakingValidatorHashType,
+//                                           DatumHashType, ScriptContextType, ScriptPurposeType,
+//                                           MintingScriptPurposeType, SpendingScriptPurposeType,
+//                                           RewardingScriptPurposeType,
+//                                           CertifyingScriptPurposeType, StakingPurposeType,
+//                                           StakingRewardingPurposeType,
+//                                           StakingCertifyingPurposeType, DCertType,
+//                                           RegisterDCertType, DeregisterDCertType,
+//                                           DelegateDCertType, RegisterPoolDCertType,
+//                                           RetirePoolDCertType, TxType, TxIdType, TxInputType,
+//                                           TxOutputType, OutputDatumType, NoOutputDatumType,
+//                                           HashedOutputDatumType, InlineOutputDatumType,
+//                                           RawDataType, TxOutputIdType, AddressType,
+//                                           CredentialType, CredentialPubKeyType,
+//                                           CredentialValidatorType, StakingHashType,
+//                                           StakingHashStakeKeyType, StakingHashValidatorType,
+//                                           StakingCredentialType, StakingHashCredentialType,
+//                                           StakingPtrCredentialType, TimeType, DurationType,
 //                                           TimeRangeType, AssetClassType, ValueType
 //
-//    Section 14: Scopes                     GlobalScope, Scope, TopScope, ModuleScope, 
+//    Section 14: Scopes                     GlobalScope, Scope, TopScope, ModuleScope,
 //                                           FuncStatementScope
 //
-//    Section 15: Helios AST expressions     Expr, TypeExpr, TypeRefExpr, TypePathExpr, 
-//                                           ListTypeExpr, MapTypeExpr, OptionTypeExpr, 
-//                                           VoidTypeExpr, FuncTypeExpr, ValueExpr, AssignExpr, 
-//                                           PrintExpr, VoidExpr, ChainExpr, PrimitiveLiteralExpr, 
-//                                           LiteralDataExpr, StructLiteralField, 
-//                                           StructLiteralExpr, ListLiteralExpr, MapLiteralExpr, 
-//                                           NameTypePair, FuncArg, FuncLiteralExpr, ValueRefExpr, 
-//                                           ValuePathExpr, UnaryExpr, BinaryExpr, ParensExpr, 
-//                                           CallExpr, MemberExpr, IfElseExpr, SwitchCase, 
-//                                           UnconstrDataSwitchCase, SwitchDefault, SwitchExpr, 
+//    Section 15: Helios AST expressions     Expr, TypeExpr, TypeRefExpr, TypePathExpr,
+//                                           ListTypeExpr, MapTypeExpr, OptionTypeExpr,
+//                                           VoidTypeExpr, FuncTypeExpr, ValueExpr, AssignExpr,
+//                                           PrintExpr, VoidExpr, ChainExpr, PrimitiveLiteralExpr,
+//                                           LiteralDataExpr, StructLiteralField,
+//                                           StructLiteralExpr, ListLiteralExpr, MapLiteralExpr,
+//                                           NameTypePair, FuncArg, FuncLiteralExpr, ValueRefExpr,
+//                                           ValuePathExpr, UnaryExpr, BinaryExpr, ParensExpr,
+//                                           CallExpr, MemberExpr, IfElseExpr, SwitchCase,
+//                                           UnconstrDataSwitchCase, SwitchDefault, SwitchExpr,
 //                                           EnumSwitchExpr, DataSwitchExpr
 //
 //    Section 16: Literal functions          buildLiteralExprFromJson, buildLiteralExprFromValue
 //
-//    Section 17: Helios AST statements      Statement, ImportStatement, ConstStatement, 
-//                                           DataField, DataDefinition, StructStatement, 
-//                                           FuncStatement, EnumMember, EnumStatement, 
+//    Section 17: Helios AST statements      Statement, ImportStatement, ConstStatement,
+//                                           DataField, DataDefinition, StructStatement,
+//                                           FuncStatement, EnumMember, EnumStatement,
 //                                           ImplDefinition
 //
-//    Section 18: Helios AST building        buildProgramStatements, buildScriptPurpose, 
-//                                           extractScriptPurposeAndName, buildConstStatement, 
-//                                           splitDataImpl, buildStructStatement, buildDataFields, 
-//                                           buildFuncStatement, buildFuncLiteralExpr, 
-//                                           buildFuncArgs, buildEnumStatement, 
-//                                           buildImportStatements, buildEnumMember, 
-//                                           buildImplDefinition, buildImplMembers, buildTypeExpr, 
-//                                           buildListTypeExpr, buildMapTypeExpr, 
-//                                           buildOptionTypeExpr, buildFuncTypeExpr, 
-//                                           buildFuncRetTypeExprs, buildTypePathExpr, 
-//                                           buildTypeRefExpr, buildValueExpr, 
-//                                           buildMaybeAssignOrPrintExpr, buildAssignLhs, 
-//                                           makeBinaryExprBuilder, makeUnaryExprBuilder, 
-//                                           buildChainedValueExpr, buildChainStartValueExpr, 
-//                                           buildParensExpr, buildCallArgs, buildIfElseExpr, 
-//                                           buildSwitchExpr, buildSwitchCaseName, 
-//                                           buildSwitchCase, buildSwitchCaseNameType, 
-//                                           buildMultiArgSwitchCase, buildSingleArgSwitchCase, 
-//                                           buildSwitchCaseBody, buildSwitchDefault, 
-//                                           buildListLiteralExpr, buildMapLiteralExpr, 
-//                                           buildStructLiteralExpr, buildStructLiteralField, 
+//    Section 18: Helios AST building        buildProgramStatements, buildScriptPurpose,
+//                                           extractScriptPurposeAndName, buildConstStatement,
+//                                           splitDataImpl, buildStructStatement, buildDataFields,
+//                                           buildFuncStatement, buildFuncLiteralExpr,
+//                                           buildFuncArgs, buildEnumStatement,
+//                                           buildImportStatements, buildEnumMember,
+//                                           buildImplDefinition, buildImplMembers, buildTypeExpr,
+//                                           buildListTypeExpr, buildMapTypeExpr,
+//                                           buildOptionTypeExpr, buildFuncTypeExpr,
+//                                           buildFuncRetTypeExprs, buildTypePathExpr,
+//                                           buildTypeRefExpr, buildValueExpr,
+//                                           buildMaybeAssignOrPrintExpr, buildAssignLhs,
+//                                           makeBinaryExprBuilder, makeUnaryExprBuilder,
+//                                           buildChainedValueExpr, buildChainStartValueExpr,
+//                                           buildParensExpr, buildCallArgs, buildIfElseExpr,
+//                                           buildSwitchExpr, buildSwitchCaseName,
+//                                           buildSwitchCase, buildSwitchCaseNameType,
+//                                           buildMultiArgSwitchCase, buildSingleArgSwitchCase,
+//                                           buildSwitchCaseBody, buildSwitchDefault,
+//                                           buildListLiteralExpr, buildMapLiteralExpr,
+//                                           buildStructLiteralExpr, buildStructLiteralField,
 //                                           buildValuePathExpr
 //
-//    Section 19: IR definitions             onNotifyRawUsage, setRawUsageNotifier, RawFunc, 
+//    Section 19: IR definitions             onNotifyRawUsage, setRawUsageNotifier, RawFunc,
 //                                           makeRawFunctions, wrapWithRawFunctions
 //
-//    Section 20: IR Context objects         IRScope, IRVariable, IRValue, IRFuncValue, 
+//    Section 20: IR Context objects         IRScope, IRVariable, IRValue, IRFuncValue,
 //                                           IRLiteralValue, IRDeferredValue, IRCallStack
 //
-//    Section 21: IR AST objects             IRNameExprRegistry, IRExprRegistry, IRExpr, 
-//                                           IRNameExpr, IRLiteralExpr, IRConstExpr, IRFuncExpr, 
-//                                           IRCallExpr, IRCoreCallExpr, IRUserCallExpr, 
-//                                           IRAnonCallExpr, IRNestedAnonCallExpr, IRFuncDefExpr, 
+//    Section 21: IR AST objects             IRNameExprRegistry, IRExprRegistry, IRExpr,
+//                                           IRNameExpr, IRLiteralExpr, IRConstExpr, IRFuncExpr,
+//                                           IRCallExpr, IRCoreCallExpr, IRUserCallExpr,
+//                                           IRAnonCallExpr, IRNestedAnonCallExpr, IRFuncDefExpr,
 //                                           IRErrorCallExpr
 //
 //    Section 22: IR AST build functions     buildIRExpr, buildIRFuncExpr
 //
 //    Section 23: IR Program                 IRProgram, IRParametricProgram
 //
-//    Section 24: Helios program             Module, MainModule, RedeemerProgram, 
-//                                           DatumRedeemerProgram, TestingProgram, 
+//    Section 24: Helios program             Module, MainModule, RedeemerProgram,
+//                                           DatumRedeemerProgram, TestingProgram,
 //                                           SpendingProgram, MintingProgram, StakingProgram
 //
-//    Section 25: Tx types                   Tx, TxBody, TxWitnesses, TxInput, UTxO, TxRefInput, 
-//                                           TxOutput, DCert, StakeAddress, Signature, Redeemer, 
-//                                           SpendingRedeemer, MintingRedeemer, Datum, 
-//                                           HashedDatum, InlineDatum, encodeMetadata, 
+//    Section 25: Tx types                   Tx, TxBody, TxWitnesses, TxInput, UTxO, TxRefInput,
+//                                           TxOutput, DCert, StakeAddress, Signature, Redeemer,
+//                                           SpendingRedeemer, MintingRedeemer, Datum,
+//                                           HashedDatum, InlineDatum, encodeMetadata,
 //                                           decodeMetadata, TxMetadata
 //
 //    Section 26: Highlighting function      SyntaxCategory, highlight
@@ -272,8 +272,8 @@ export var N_DUMMY_INPUTS = 2;
 /**
  * Throws an error if 'cond' is false.
  * @package
- * @param {boolean} cond 
- * @param {string} msg 
+ * @param {boolean} cond
+ * @param {string} msg
  */
 function assert(cond, msg = "unexpected") {
 	if (!cond) {
@@ -285,8 +285,8 @@ function assert(cond, msg = "unexpected") {
  * Throws an error if 'obj' is undefined. Returns 'obj' itself (for chained application).
  * @package
  * @template T
- * @param {T | undefined | null} obj 
- * @param {string} msg 
+ * @param {T | undefined | null} obj
+ * @param {string} msg
  * @returns {T}
  */
 function assertDefined(obj, msg = "unexpected undefined value") {
@@ -314,8 +314,8 @@ function assertClass(obj, C, msg = "unexpected class") {
 
 /**
  * @package
- * @param {any} obj 
- * @param {string} msg 
+ * @param {any} obj
+ * @param {string} msg
  * @returns {number}
  */
 function assertNumber(obj, msg = "expected a number") {
@@ -332,8 +332,8 @@ function assertNumber(obj, msg = "expected a number") {
  * Compares two objects (deep recursive comparison)
  * @package
  * @template T
- * @param {T} a 
- * @param {T} b 
+ * @param {T} a
+ * @param {T} b
  * @returns {boolean}
  */
 function eq(a, b) {
@@ -387,7 +387,7 @@ function assertEq(a, b, msg) {
  * idiv(355, 113) => 3
  * @package
  * @param {number} a
- * @param {number} b 
+ * @param {number} b
  */
 function idiv(a, b) {
 	return Math.floor(a / b);
@@ -405,16 +405,16 @@ function ipow2(p) {
 }
 
 /**
- * Masks bits of 'b' by setting bits outside the range ['i0', 'i1') to 0. 
+ * Masks bits of 'b' by setting bits outside the range ['i0', 'i1') to 0.
  * 'b' is an 8 bit integer (i.e. number between 0 and 255).
  * The return value is also an 8 bit integer, shift right by 'i1'.
- 
+
  * @example
  * imask(0b11111111, 1, 4) => 0b0111 // (i.e. 7)
  * @package
- * @param {number} b 
- * @param {number} i0 
- * @param {number} i1 
+ * @param {number} b
+ * @param {number} i0
+ * @param {number} i1
  * @returns {number}
  */
 function imask(b, i0, i1) {
@@ -495,7 +495,7 @@ function bytesToBigInt(b) {
  * padZeroes("1111", 8) => "00001111"
  * @package
  * @param {string} bits
- * @param {number} n 
+ * @param {number} n
  * @returns {string}
  */
 function padZeroes(bits, n) {
@@ -511,11 +511,11 @@ function padZeroes(bits, n) {
 
 /**
  * Converts a 8 bit integer number into a bit string with an optional "0b" prefix.
- * The result is padded with leading zeroes to become 'n' chars long ('2 + n' chars long if you count the "0b" prefix). 
+ * The result is padded with leading zeroes to become 'n' chars long ('2 + n' chars long if you count the "0b" prefix).
  * @example
  * byteToBitString(7) => "0b00000111"
  * @package
- * @param {number} b 
+ * @param {number} b
  * @param {number} n
  * @param {boolean} prefix
  * @returns {string}
@@ -533,13 +533,13 @@ function byteToBitString(b, n = 8, prefix = true) {
 /**
  * Converts a hexadecimal representation of bytes into an actual list of uint8 bytes.
  * @example
- * hexToBytes("00ff34") => [0, 255, 52] 
- * @param {string} hex 
+ * hexToBytes("00ff34") => [0, 255, 52]
+ * @param {string} hex
  * @returns {number[]}
  */
 export function hexToBytes(hex) {
 	hex = hex.trim();
-	
+
 	const bytes = [];
 
 	for (let i = 0; i < hex.length; i += 2) {
@@ -570,7 +570,7 @@ export function bytesToHex(bytes) {
  * Encodes a string into a list of uint8 bytes using UTF-8 encoding.
  * @example
  * textToBytes("hello world") => [104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100]
- * @param {string} str 
+ * @param {string} str
  * @returns {number[]}
  */
 export function textToBytes(str) {
@@ -581,7 +581,7 @@ export function textToBytes(str) {
  * Decodes a list of uint8 bytes into a string using UTF-8 encoding.
  * @example
  * bytesToText([104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100]) => "hello world"
- * @param {number[]} bytes 
+ * @param {number[]} bytes
  * @returns {string}
  */
 export function bytesToText(bytes) {
@@ -590,11 +590,11 @@ export function bytesToText(bytes) {
 
 /**
  * Replaces the tab characters of a string with spaces.
- * This is used to create a prettier IR (which is built-up from many template js strings in this file, which might contain tabs depending on the editor used)
+ * This is used to create a prettier IR (which is built-up from many template old_js strings in this file, which might contain tabs depending on the editor used)
  * @example
  * replaceTabs("\t\t\t") => [TAB, TAB, TAB].join("")
  * @package
- * @param {string} str 
+ * @param {string} str
  * @returns {string}
  */
 function replaceTabs(str) {
@@ -786,7 +786,7 @@ class BitWriter {
 	 * Add padding to the BitWriter in order to align with the byte boundary.
 	 * If 'force == true' then 8 bits are added if the BitWriter is already aligned.
      * @package
-	 * @param {boolean} force 
+	 * @param {boolean} force
 	 */
 	padToByteBoundary(force = false) {
 		let nPad = 0;
@@ -844,7 +844,7 @@ class Source {
 	#fileIndex;
 
 	/**
-	 * @param {string} raw 
+	 * @param {string} raw
 	 * @param {?number} fileIndex
 	 */
 	constructor(raw, fileIndex = null) {
@@ -878,11 +878,11 @@ class Source {
 	getChar(pos) {
 		return this.#raw[pos];
 	}
-	
+
 	/**
 	 * Returns word under pos
      * @package
-	 * @param {number} pos 
+	 * @param {number} pos
 	 * @returns {?string}
 	 */
 	getWord(pos) {
@@ -890,7 +890,7 @@ class Source {
 		const chars = [];
 
 		/**
-		 * @param {string | undefined} c 
+		 * @param {string | undefined} c
 		 * @returns {boolean}
 		 */
 		function isWordChar(c) {
@@ -926,7 +926,7 @@ class Source {
 	/**
 	 * Calculates the line number of the line where the given character is located (0-based).
      * @package
-	 * @param {number} pos 
+	 * @param {number} pos
 	 * @returns {number}
 	 */
 	posToLine(pos) {
@@ -989,8 +989,8 @@ class Source {
  * Is just a marker so IDE support can work on literal helios sources inside javascript/typescript files.
  * @example
  * hl`hello ${"world"}!` => "hello world!"
- * @param {string[]} a 
- * @param  {...any} b 
+ * @param {string[]} a
+ * @param  {...any} b
  * @returns {string}
  */
 export function hl(a, ...b) {
@@ -1023,8 +1023,8 @@ class Site {
 	#codeMapSite;
 
 	/**
-	 * @param {Source} src 
-	 * @param {number} pos 
+	 * @param {Source} src
+	 * @param {number} pos
 	 */
 	constructor(src, pos) {
 		this.#src = src;
@@ -1048,7 +1048,7 @@ class Site {
 	get line() {
 		return this.#src.posToLine(this.#pos);
 	}
-	
+
 	get endSite() {
 		return this.#endSite;
 	}
@@ -1072,14 +1072,14 @@ class Site {
 	}
 
 	/**
-	 * @type {?Site} 
+	 * @type {?Site}
 	 */
 	get codeMapSite() {
 		return this.#codeMapSite;
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 */
 	setCodeMapSite(site) {
 		this.#codeMapSite = site;
@@ -1087,7 +1087,7 @@ class Site {
 
 	/**
 	 * Returns a SyntaxError
-	 * @param {string} info 
+	 * @param {string} info
 	 * @returns {UserError}
 	 */
 	syntaxError(info = "") {
@@ -1105,7 +1105,7 @@ class Site {
 
 	/**
 	 * Returns a ReferenceError
-	 * @param {string} info 
+	 * @param {string} info
 	 * @returns {UserError}
 	 */
 	referenceError(info = "") {
@@ -1146,8 +1146,8 @@ class Site {
 
 	/**
 	 * @param {string} msg
-	 * @param {Source} src 
-	 * @param {number} pos 
+	 * @param {Source} src
+	 * @param {number} pos
 	 */
 	constructor(msg, src, pos) {
 		super(msg);
@@ -1157,9 +1157,9 @@ class Site {
 
 	/**
 	 * @param {string} type
-	 * @param {Source} src 
-	 * @param {number} pos 
-	 * @param {string} info 
+	 * @param {Source} src
+	 * @param {number} pos
+	 * @param {string} info
 	 */
 	static new(type, src, pos, info = "") {
 		let line = src.posToLine(pos);
@@ -1181,9 +1181,9 @@ class Site {
 
 	/**
 	 * Constructs a SyntaxError
-	 * @param {Source} src 
-	 * @param {number} pos 
-	 * @param {string} info 
+	 * @param {Source} src
+	 * @param {number} pos
+	 * @param {string} info
 	 * @returns {UserError}
 	 */
 	static syntaxError(src, pos, info = "") {
@@ -1192,9 +1192,9 @@ class Site {
 
 	/**
 	 * Constructs a TypeError
-	 * @param {Source} src 
-	 * @param {number} pos 
-	 * @param {string} info 
+	 * @param {Source} src
+	 * @param {number} pos
+	 * @param {string} info
 	 * @returns {UserError}
 	 */
 	static typeError(src, pos, info = "") {
@@ -1202,7 +1202,7 @@ class Site {
 	}
 
 	/**
-	 * @param {Error} e 
+	 * @param {Error} e
 	 * @returns {boolean}
 	 */
 	static isTypeError(e) {
@@ -1211,9 +1211,9 @@ class Site {
 
 	/**
 	 * Constructs a ReferenceError (i.e. name undefined, or name unused)
-	 * @param {Source} src 
-	 * @param {number} pos 
-	 * @param {string} info 
+	 * @param {Source} src
+	 * @param {number} pos
+	 * @param {string} info
 	 * @returns {UserError}
 	 */
 	static referenceError(src, pos, info = "") {
@@ -1221,7 +1221,7 @@ class Site {
 	}
 
 	/**
-	 * @param {Error} e 
+	 * @param {Error} e
 	 * @returns {boolean}
 	 */
 	static isReferenceError(e) {
@@ -1250,7 +1250,7 @@ class Site {
 	/**
 	 * Dumps the error without throwing.
 	 * If 'verbose == true' the Source is also pretty printed with line-numbers.
-	 * @param {boolean} verbose 
+	 * @param {boolean} verbose
 	 */
 	dump(verbose = false) {
 		if (verbose) {
@@ -1272,9 +1272,9 @@ class Site {
 	 * Catches any UserErrors thrown inside 'fn()`.
 	 * Dumps the error
 	 * @template T
-	 * @param {() => T} fn 
-	 * @param {boolean} verbose 
-	 * @returns {T | undefined}	
+	 * @param {() => T} fn
+	 * @param {boolean} verbose
+	 * @returns {T | undefined}
 	 */
 	static catch(fn, verbose = false) {
 		try {
@@ -1296,10 +1296,10 @@ class RuntimeError extends UserError {
 	#isIR; // last trace added
 
 	/**
-	 * @param {string} msg 
-	 * @param {Source} src 
-	 * @param {number} pos 
-	 * @param {boolean} isIR 
+	 * @param {string} msg
+	 * @param {Source} src
+	 * @param {number} pos
+	 * @param {boolean} isIR
 	 */
 	constructor(msg, src, pos, isIR) {
 		super(msg, src, pos);
@@ -1307,8 +1307,8 @@ class RuntimeError extends UserError {
 	}
 
 	/**
-	 * @param {Source} src 
-	 * @param {number} pos 
+	 * @param {Source} src
+	 * @param {number} pos
 	 * @param {boolean} isIR
 	 * @param {string} info
 	 * @returns {RuntimeError}
@@ -1325,10 +1325,10 @@ class RuntimeError extends UserError {
 	}
 
 	/**
-	 * @param {Source} src 
-	 * @param {number} pos 
-	 * @param {boolean} isIR 
-	 * @param {string} info 
+	 * @param {Source} src
+	 * @param {number} pos
+	 * @param {boolean} isIR
+	 * @param {string} info
 	 * @returns {RuntimeError}
 	 */
 	addTrace(src, pos, isIR, info = "") {
@@ -1341,7 +1341,7 @@ class RuntimeError extends UserError {
 		let msg = `Trace${info == "" ? ":" : ","} line ${line + 1}`;
 		if (isIR) {
 			msg += " of IR";
-		} 
+		}
 
 		let word = src.getWord(pos);
 		if (word !== null && word !== "print") {
@@ -1352,15 +1352,15 @@ class RuntimeError extends UserError {
 			msg += `: ${info}`;
 		}
 
-		
+
 		msg += "\n" + this.message;
 
 		return new RuntimeError(msg, this.src, this.pos, isIR);
 	}
-	
+
 	/**
-	 * @param {Site} site 
-	 * @param {string} info 
+	 * @param {Site} site
+	 * @param {string} info
 	 * @returns {RuntimeError}
 	 */
 	addTraceSite(site, info = "") {
@@ -1379,7 +1379,7 @@ export class Token {
 	#site;
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 */
 	constructor(site) {
 		this.#site = assertDefined(site); // position in source of start of token
@@ -1433,7 +1433,7 @@ export class Token {
 
 	/**
 	 * Returns a SyntaxError at the current Site.
-	 * @param {string} msg 
+	 * @param {string} msg
 	 * @returns {UserError}
 	 */
 	syntaxError(msg) {
@@ -1460,7 +1460,7 @@ export class Token {
 
 	/**
 	 * Throws a SyntaxError if 'this' isn't a Word.
-	 * @param {?(string | string[])} value 
+	 * @param {?(string | string[])} value
 	 * @returns {Word}
 	 */
 	assertWord(value = null) {
@@ -1473,7 +1473,7 @@ export class Token {
 
 	/**
 	 * Throws a SyntaxError if 'this' isn't a Symbol.
-	 * @param {?(string | string[])} value 
+	 * @param {?(string | string[])} value
 	 * @returns {SymbolToken}
 	 */
 	assertSymbol(value = null) {
@@ -1486,7 +1486,7 @@ export class Token {
 
 	/**
 	 * Throws a SyntaxError if 'this' isn't a Group.
-	 * @param {?string} type 
+	 * @param {?string} type
 	 * @param {?number} nFields
 	 * @returns {Group}
 	 */
@@ -1507,8 +1507,8 @@ class Word extends Token {
 	#value;
 
 	/**
-	 * @param {Site} site 
-	 * @param {string} value 
+	 * @param {Site} site
+	 * @param {string} value
 	 */
 	constructor(site, value) {
 		super(site);
@@ -1516,7 +1516,7 @@ class Word extends Token {
 	}
 
 	/**
-	 * @param {string} value 
+	 * @param {string} value
 	 * @returns {Word}
 	 */
 	static new(value) {
@@ -1528,7 +1528,7 @@ class Word extends Token {
 	}
 
 	/**
-	 * @param {?(string | string[])} value 
+	 * @param {?(string | string[])} value
 	 * @returns {boolean}
 	 */
 	isWord(value = null) {
@@ -1544,7 +1544,7 @@ class Word extends Token {
 	}
 
 	/**
-	 * @param {?(string | string[])} value 
+	 * @param {?(string | string[])} value
 	 * @returns {Word}
 	 */
 	assertWord(value = null) {
@@ -1613,8 +1613,8 @@ class Word extends Token {
 	/**
 	 * Finds the index of the first Word(value) in a list of tokens
 	 * Returns -1 if none found
-	 * @param {Token[]} ts 
-	 * @param {string | string[]} value 
+	 * @param {Token[]} ts
+	 * @param {string | string[]} value
 	 * @returns {number}
 	 */
 	static find(ts, value) {
@@ -1643,7 +1643,7 @@ class SymbolToken extends Token {
 	}
 
 	/**
-	 * @param {?(string | string[])} value 
+	 * @param {?(string | string[])} value
 	 * @returns {boolean}
 	 */
 	isSymbol(value = null) {
@@ -1659,7 +1659,7 @@ class SymbolToken extends Token {
 	}
 
 	/**
-	 * @param {?(string | string[])} value 
+	 * @param {?(string | string[])} value
 	 * @returns {SymbolToken}
 	 */
 	assertSymbol(value) {
@@ -1691,8 +1691,8 @@ class SymbolToken extends Token {
 	/**
 	 * Finds the index of the last Symbol(value) in a list of tokens.
 	 * Returns -1 if none found.
-	 * @param {Token[]} ts 
-	 * @param {string | string[]} value 
+	 * @param {Token[]} ts
+	 * @param {string | string[]} value
 	 * @returns {number}
 	 */
 	static findLast(ts, value) {
@@ -1716,9 +1716,9 @@ class Group extends Token {
 	#firstComma;
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @param {string} type - "(", "[" or "{"
-	 * @param {Token[][]} fields 
+	 * @param {Token[][]} fields
 	 * @param {?SymbolToken} firstComma
 	 */
 	constructor(site, type, fields, firstComma = null) {
@@ -1735,7 +1735,7 @@ class Group extends Token {
 	}
 
 	/**
-	 * @param {?string} type 
+	 * @param {?string} type
 	 * @returns {boolean}
 	 */
 	isGroup(type = null) {
@@ -1747,8 +1747,8 @@ class Group extends Token {
 	}
 
 	/**
-	 * @param {?string} type 
-	 * @param {?number} nFields 
+	 * @param {?string} type
+	 * @param {?number} nFields
 	 * @returns {Group}
 	 */
 	assertGroup(type = null, nFields = null) {
@@ -1782,7 +1782,7 @@ class Group extends Token {
 	}
 
 	/**
-	 * @param {Token} t 
+	 * @param {Token} t
 	 * @returns {boolean}
 	 */
 	static isOpenSymbol(t) {
@@ -1790,7 +1790,7 @@ class Group extends Token {
 	}
 
 	/**
-	 * @param {Token} t 
+	 * @param {Token} t
 	 * @returns {boolean}
 	 */
 	static isCloseSymbol(t) {
@@ -1830,8 +1830,8 @@ class Group extends Token {
 	/**
 	 * Finds the index of first Group(type) in list of tokens
 	 * Returns -1 if none found.
-	 * @param {Token[]} ts 
-	 * @param {string} type 
+	 * @param {Token[]} ts
+	 * @param {string} type
 	 * @returns {number}
 	 */
 	static find(ts, type) {
@@ -1845,7 +1845,7 @@ class Group extends Token {
  */
 class PrimitiveLiteral extends Token {
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 */
 	constructor(site) {
 		super(site);
@@ -1867,8 +1867,8 @@ class IntLiteral extends PrimitiveLiteral {
 	#value;
 
 	/**
-	 * @param {Site} site 
-	 * @param {bigint} value 
+	 * @param {Site} site
+	 * @param {bigint} value
 	 */
 	constructor(site, value) {
 		super(site);
@@ -1895,8 +1895,8 @@ class BoolLiteral extends PrimitiveLiteral {
 	#value;
 
 	/**
-	 * @param {Site} site 
-	 * @param {boolean} value 
+	 * @param {Site} site
+	 * @param {boolean} value
 	 */
 	constructor(site, value) {
 		super(site);
@@ -1923,8 +1923,8 @@ class ByteArrayLiteral extends PrimitiveLiteral {
 	#bytes;
 
 	/**
-	 * @param {Site} site 
-	 * @param {number[]} bytes 
+	 * @param {Site} site
+	 * @param {number[]} bytes
 	 */
 	constructor(site, bytes) {
 		super(site);
@@ -1948,8 +1948,8 @@ class StringLiteral extends PrimitiveLiteral {
 	#value;
 
 	/**
-	 * @param {Site} site 
-	 * @param {string} value 
+	 * @param {Site} site
+	 * @param {string} value
 	 */
 	constructor(site, value) {
 		super(site);
@@ -1985,8 +1985,8 @@ class StringLiteral extends PrimitiveLiteral {
 	#site;
 
 	/**
-	 * @param {string | IR[]} content 
-	 * @param {?Site} site 
+	 * @param {string | IR[]} content
+	 * @param {?Site} site
 	 */
 	constructor(content, site = null) {
 		this.#content = content;
@@ -2106,7 +2106,7 @@ class StringLiteral extends PrimitiveLiteral {
 	/**
 	 * Wraps 'inner' IR source with some definitions (used for top-level statements and for builtins)
      * @package
-	 * @param {IR} inner 
+	 * @param {IR} inner
 	 * @param {IRDefinitions} definitions - name -> definition
 	 * @returns {IR}
 	 */
@@ -2142,9 +2142,9 @@ class StringLiteral extends PrimitiveLiteral {
 var BLAKE2B_DIGEST_SIZE = 32; // bytes
 
 /**
- * Changes the value of BLAKE2B_DIGEST_SIZE 
- *  (because the nodejs crypto module only supports 
- *   blake2b-512 and not blake2b-256, and we want to avoid non-standard dependencies in the 
+ * Changes the value of BLAKE2B_DIGEST_SIZE
+ *  (because the nodejs crypto module only supports
+ *   blake2b-512 and not blake2b-256, and we want to avoid non-standard dependencies in the
  *   test-suite)
  * @package
  * @param {number} s - 32 or 64
@@ -2166,7 +2166,7 @@ const DEFAULT_BASE32_ALPHABET = "abcdefghijklmnopqrstuvwxyz234567";
  * @type {string}
  */
 const BECH32_BASE32_ALPHABET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
- 
+
 /**
  * Make sure resulting number fits in uint32
  * @package
@@ -2189,8 +2189,8 @@ function irotr(x, n) {
 
 /**
  * @package
- * @param {bigint} x 
- * @param {bigint} n 
+ * @param {bigint} x
+ * @param {bigint} n
  * @returns {bigint}
  */
 function posMod(x, n) {
@@ -2215,7 +2215,7 @@ class UInt64 {
 	 * @param {number} high  - uint32 number
 	 * @param {number} low - uint32 number
 	 */
-	constructor(high, low) {		
+	constructor(high, low) {
 		this.#high = imod32(high);
 		this.#low = imod32(low);
 	}
@@ -2254,7 +2254,7 @@ class UInt64 {
 
 	/**
      * @package
-	 * @param {string} str 
+	 * @param {string} str
 	 * @returns {UInt64}
 	 */
 	static fromString(str) {
@@ -2299,15 +2299,15 @@ class UInt64 {
 		];
 
 		if (!littleEndian) {
-			res.reverse(); 
-		} 
-		
+			res.reverse();
+		}
+
 		return res;
 	}
 
 	/**
      * @package
-	 * @param {UInt64} other 
+	 * @param {UInt64} other
 	 * @returns {boolean}
 	 */
 	eq(other) {
@@ -2316,7 +2316,7 @@ class UInt64 {
 
 	/**
      * @package
-	 * @returns {UInt64} 
+	 * @returns {UInt64}
 	 */
 	not() {
 		return new UInt64(~this.#high, ~this.#low);
@@ -2333,7 +2333,7 @@ class UInt64 {
 
 	/**
      * @package
-	 * @param {UInt64} other 
+	 * @param {UInt64} other
 	 * @returns {UInt64}
 	 */
 	xor(other) {
@@ -2342,7 +2342,7 @@ class UInt64 {
 
 	/**
      * @package
-	 * @param {UInt64} other 
+	 * @param {UInt64} other
 	 * @returns {UInt64}
 	 */
 	add(other) {
@@ -2359,7 +2359,7 @@ class UInt64 {
 
 	/**
      * @package
-	 * @param {number} n 
+	 * @param {number} n
 	 * @returns {UInt64}
 	 */
 	rotr(n) {
@@ -2369,7 +2369,7 @@ class UInt64 {
 			return (new UInt64(this.#low, this.#high)).rotr(n - 32);
 		} else {
 			return new UInt64(
-				imod32((this.#high >>> n) | (this.#low  << (32 - n))), 
+				imod32((this.#high >>> n) | (this.#low  << (32 - n))),
 				imod32((this.#low  >>> n) | (this.#high << (32 - n)))
 			);
 		}
@@ -2386,7 +2386,7 @@ class UInt64 {
 		} else {
 			return new UInt64(this.#high >>> n, (this.#low >>> n) | (this.#high << (32 - n)));
 		}
-	}	
+	}
 }
 
 /**
@@ -2425,7 +2425,7 @@ export class Crypto {
 	static rand(seed) {
 		return this.mulberry32(seed);
 	}
-	
+
 	/**
 	 * Encode bytes in special base32.
 	 * @example
@@ -2452,7 +2452,7 @@ export class Crypto {
 	/**
 	 * Internal method
      * @package
-	 * @param {number[]} bytes 
+	 * @param {number[]} bytes
 	 * @returns {number[]} - list of numbers between 0 and 32
 	 */
 	static encodeBase32Bytes(bytes)  {
@@ -2541,7 +2541,7 @@ export class Crypto {
 	 * Used as part of the bech32 checksum.
 	 * Internal method.
      * @package
-	 * @param {number[]} bytes 
+	 * @param {number[]} bytes
 	 * @returns {number}
 	 */
 	static calcBech32Polymod(bytes) {
@@ -2566,7 +2566,7 @@ export class Crypto {
 	 * Generate the bech32 checksum
 	 * Internal method
      * @package
-	 * @param {string} hrp 
+	 * @param {string} hrp
 	 * @param {number[]} data - numbers between 0 and 32
 	 * @returns {number[]} - 6 numbers between 0 and 32
 	 */
@@ -2590,7 +2590,7 @@ export class Crypto {
 	 * @example
 	 * Crypto.encodeBech32("addr_test", hexToBytes("70a9508f015cfbcffc3d88ac4c1c934b5b82d2bb281d464672f6c49539")) => "addr_test1wz54prcptnaullpa3zkyc8ynfddc954m9qw5v3nj7mzf2wggs2uld"
      * @package
-	 * @param {string} hrp 
+	 * @param {string} hrp
 	 * @param {number[]} data - uint8 0 - 256
 	 * @returns {string}
 	 */
@@ -2610,7 +2610,7 @@ export class Crypto {
 	 * @example
 	 * bytesToHex(Crypto.decodeBech32("addr_test1wz54prcptnaullpa3zkyc8ynfddc954m9qw5v3nj7mzf2wggs2uld")[1]) => "70a9508f015cfbcffc3d88ac4c1c934b5b82d2bb281d464672f6c49539"
      * @package
-	 * @param {string} addr 
+	 * @param {string} addr
 	 * @returns {[string, number[]]}
 	 */
 	static decodeBech32(addr) {
@@ -2655,7 +2655,7 @@ export class Crypto {
 		const data =[];
 
 		const i = addr.indexOf("1");
-        
+
 		if (i == -1 || i == 0) {
 			return false;
 		}
@@ -2689,7 +2689,7 @@ export class Crypto {
 	/**
 	 * Calculates sha2-256 (32bytes) hash of a list of uint8 numbers.
 	 * Result is also a list of uint8 number.
-	 * @example 
+	 * @example
 	 * bytesToHex(Crypto.sha2_256([0x61, 0x62, 0x63])) => "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
 	 * @example
 	 * Crypto.sha2_256(textToBytes("Hello, World!")) => [223, 253, 96, 33, 187, 43, 213, 176, 175, 103, 98, 144, 128, 158, 195, 165, 49, 145, 221, 129, 199, 247, 10, 75, 40, 104, 138, 54, 33, 130, 152, 111]
@@ -2730,7 +2730,7 @@ export class Crypto {
 			dst.push(imod8(nBits >> 16));
 			dst.push(imod8(nBits >> 8));
 			dst.push(imod8(nBits >> 0));
-			
+
 			return dst;
 		}
 
@@ -2761,16 +2761,16 @@ export class Crypto {
 		 * @type {number[]} - 8 uint32 number
 		 */
 		const hash = [
-			0x6a09e667, 
-			0xbb67ae85, 
-			0x3c6ef372, 
-			0xa54ff53a, 
-			0x510e527f, 
-			0x9b05688c, 
-			0x1f83d9ab, 
+			0x6a09e667,
+			0xbb67ae85,
+			0x3c6ef372,
+			0xa54ff53a,
+			0x510e527f,
+			0x9b05688c,
+			0x1f83d9ab,
 			0x5be0cd19,
 		];
-	
+
 		/**
 		 * @param {number} x
 		 * @returns {number}
@@ -2858,16 +2858,16 @@ export class Crypto {
 			result.push(imod8(item >>  8));
 			result.push(imod8(item >>  0));
 		}
-	
+
 		return result;
 	}
 
 	/**
 	 * Calculates sha2-512 (64bytes) hash of a list of uint8 numbers.
 	 * Result is also a list of uint8 number.
-	 * @example 
+	 * @example
 	 * bytesToHex(Crypto.sha2_512([0x61, 0x62, 0x63])) => "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f"
-	 * @example 
+	 * @example
 	 * bytesToHex(Crypto.sha2_512([])) => "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e"
      * @package
 	 * @param {number[]} bytes - list of uint8 numbers
@@ -2906,7 +2906,7 @@ export class Crypto {
 			dst.push(imod8(nBits >> 16));
 			dst.push(imod8(nBits >> 8));
 			dst.push(imod8(nBits >> 0));
-			
+
 			return dst;
 		}
 
@@ -2914,45 +2914,45 @@ export class Crypto {
 		 * @type {UInt64[]} - 80 uint64 numbers
 		 */
 		const k = [
-			new UInt64(0x428a2f98, 0xd728ae22), new UInt64(0x71374491, 0x23ef65cd), 
+			new UInt64(0x428a2f98, 0xd728ae22), new UInt64(0x71374491, 0x23ef65cd),
 			new UInt64(0xb5c0fbcf, 0xec4d3b2f), new UInt64(0xe9b5dba5, 0x8189dbbc),
-			new UInt64(0x3956c25b, 0xf348b538), new UInt64(0x59f111f1, 0xb605d019), 
+			new UInt64(0x3956c25b, 0xf348b538), new UInt64(0x59f111f1, 0xb605d019),
 			new UInt64(0x923f82a4, 0xaf194f9b), new UInt64(0xab1c5ed5, 0xda6d8118),
-			new UInt64(0xd807aa98, 0xa3030242), new UInt64(0x12835b01, 0x45706fbe), 
+			new UInt64(0xd807aa98, 0xa3030242), new UInt64(0x12835b01, 0x45706fbe),
 			new UInt64(0x243185be, 0x4ee4b28c), new UInt64(0x550c7dc3, 0xd5ffb4e2),
-			new UInt64(0x72be5d74, 0xf27b896f), new UInt64(0x80deb1fe, 0x3b1696b1), 
+			new UInt64(0x72be5d74, 0xf27b896f), new UInt64(0x80deb1fe, 0x3b1696b1),
 			new UInt64(0x9bdc06a7, 0x25c71235), new UInt64(0xc19bf174, 0xcf692694),
-			new UInt64(0xe49b69c1, 0x9ef14ad2), new UInt64(0xefbe4786, 0x384f25e3), 
+			new UInt64(0xe49b69c1, 0x9ef14ad2), new UInt64(0xefbe4786, 0x384f25e3),
 			new UInt64(0x0fc19dc6, 0x8b8cd5b5), new UInt64(0x240ca1cc, 0x77ac9c65),
-			new UInt64(0x2de92c6f, 0x592b0275), new UInt64(0x4a7484aa, 0x6ea6e483), 
+			new UInt64(0x2de92c6f, 0x592b0275), new UInt64(0x4a7484aa, 0x6ea6e483),
 			new UInt64(0x5cb0a9dc, 0xbd41fbd4), new UInt64(0x76f988da, 0x831153b5),
-			new UInt64(0x983e5152, 0xee66dfab), new UInt64(0xa831c66d, 0x2db43210), 
+			new UInt64(0x983e5152, 0xee66dfab), new UInt64(0xa831c66d, 0x2db43210),
 			new UInt64(0xb00327c8, 0x98fb213f), new UInt64(0xbf597fc7, 0xbeef0ee4),
-			new UInt64(0xc6e00bf3, 0x3da88fc2), new UInt64(0xd5a79147, 0x930aa725), 
+			new UInt64(0xc6e00bf3, 0x3da88fc2), new UInt64(0xd5a79147, 0x930aa725),
 			new UInt64(0x06ca6351, 0xe003826f), new UInt64(0x14292967, 0x0a0e6e70),
-			new UInt64(0x27b70a85, 0x46d22ffc), new UInt64(0x2e1b2138, 0x5c26c926), 
+			new UInt64(0x27b70a85, 0x46d22ffc), new UInt64(0x2e1b2138, 0x5c26c926),
 			new UInt64(0x4d2c6dfc, 0x5ac42aed), new UInt64(0x53380d13, 0x9d95b3df),
-			new UInt64(0x650a7354, 0x8baf63de), new UInt64(0x766a0abb, 0x3c77b2a8), 
+			new UInt64(0x650a7354, 0x8baf63de), new UInt64(0x766a0abb, 0x3c77b2a8),
 			new UInt64(0x81c2c92e, 0x47edaee6), new UInt64(0x92722c85, 0x1482353b),
-			new UInt64(0xa2bfe8a1, 0x4cf10364), new UInt64(0xa81a664b, 0xbc423001), 
+			new UInt64(0xa2bfe8a1, 0x4cf10364), new UInt64(0xa81a664b, 0xbc423001),
 			new UInt64(0xc24b8b70, 0xd0f89791), new UInt64(0xc76c51a3, 0x0654be30),
-			new UInt64(0xd192e819, 0xd6ef5218), new UInt64(0xd6990624, 0x5565a910), 
+			new UInt64(0xd192e819, 0xd6ef5218), new UInt64(0xd6990624, 0x5565a910),
 			new UInt64(0xf40e3585, 0x5771202a), new UInt64(0x106aa070, 0x32bbd1b8),
-			new UInt64(0x19a4c116, 0xb8d2d0c8), new UInt64(0x1e376c08, 0x5141ab53), 
+			new UInt64(0x19a4c116, 0xb8d2d0c8), new UInt64(0x1e376c08, 0x5141ab53),
 			new UInt64(0x2748774c, 0xdf8eeb99), new UInt64(0x34b0bcb5, 0xe19b48a8),
-			new UInt64(0x391c0cb3, 0xc5c95a63), new UInt64(0x4ed8aa4a, 0xe3418acb), 
+			new UInt64(0x391c0cb3, 0xc5c95a63), new UInt64(0x4ed8aa4a, 0xe3418acb),
 			new UInt64(0x5b9cca4f, 0x7763e373), new UInt64(0x682e6ff3, 0xd6b2b8a3),
-			new UInt64(0x748f82ee, 0x5defb2fc), new UInt64(0x78a5636f, 0x43172f60), 
+			new UInt64(0x748f82ee, 0x5defb2fc), new UInt64(0x78a5636f, 0x43172f60),
 			new UInt64(0x84c87814, 0xa1f0ab72), new UInt64(0x8cc70208, 0x1a6439ec),
-			new UInt64(0x90befffa, 0x23631e28), new UInt64(0xa4506ceb, 0xde82bde9), 
+			new UInt64(0x90befffa, 0x23631e28), new UInt64(0xa4506ceb, 0xde82bde9),
 			new UInt64(0xbef9a3f7, 0xb2c67915), new UInt64(0xc67178f2, 0xe372532b),
-			new UInt64(0xca273ece, 0xea26619c), new UInt64(0xd186b8c7, 0x21c0c207), 
+			new UInt64(0xca273ece, 0xea26619c), new UInt64(0xd186b8c7, 0x21c0c207),
 			new UInt64(0xeada7dd6, 0xcde0eb1e), new UInt64(0xf57d4f7f, 0xee6ed178),
-			new UInt64(0x06f067aa, 0x72176fba), new UInt64(0x0a637dc5, 0xa2c898a6), 
+			new UInt64(0x06f067aa, 0x72176fba), new UInt64(0x0a637dc5, 0xa2c898a6),
 			new UInt64(0x113f9804, 0xbef90dae), new UInt64(0x1b710b35, 0x131c471b),
-			new UInt64(0x28db77f5, 0x23047d84), new UInt64(0x32caab7b, 0x40c72493), 
+			new UInt64(0x28db77f5, 0x23047d84), new UInt64(0x32caab7b, 0x40c72493),
 			new UInt64(0x3c9ebe0a, 0x15c9bebc), new UInt64(0x431d67c4, 0x9c100d4c),
-			new UInt64(0x4cc5d4be, 0xcb3e42b6), new UInt64(0x597f299c, 0xfc657e2a), 
+			new UInt64(0x4cc5d4be, 0xcb3e42b6), new UInt64(0x597f299c, 0xfc657e2a),
 			new UInt64(0x5fcb6fab, 0x3ad6faec), new UInt64(0x6c44198c, 0x4a475817),
 		];
 
@@ -2970,10 +2970,10 @@ export class Crypto {
 			new UInt64(0x1f83d9ab, 0xfb41bd6b),
 			new UInt64(0x5be0cd19, 0x137e2179),
 		];
-	
+
 		/**
 		 * @param {UInt64} x
-		 * @returns {UInt64} 
+		 * @returns {UInt64}
 		 */
 		function sigma0(x) {
 			return x.rotr(1).xor(x.rotr(8)).xor(x.shiftr(7));
@@ -3052,7 +3052,7 @@ export class Crypto {
 
 			result = result.concat(item.toBytes(false));
 		}
-	
+
 		return result;
 	}
 
@@ -3118,7 +3118,7 @@ export class Crypto {
 			}
 
 			assert(dst.length%RATE == 0);
-			
+
 			return dst;
 		}
 
@@ -3136,11 +3136,11 @@ export class Crypto {
 
 		/**
 		 * Round constants used in the sha3 permute function
-		 * @type {UInt64[]} 
+		 * @type {UInt64[]}
 		 */
 		const RC = [
-			new UInt64(0x00000000, 0x00000001) , 
-			new UInt64(0x00000000, 0x00008082) , 
+			new UInt64(0x00000000, 0x00000001) ,
+			new UInt64(0x00000000, 0x00008082) ,
 			new UInt64(0x80000000, 0x0000808a) ,
 			new UInt64(0x80000000, 0x80008000) ,
 			new UInt64(0x00000000, 0x0000808b) ,
@@ -3164,21 +3164,21 @@ export class Crypto {
 			new UInt64(0x00000000, 0x80000001) ,
 			new UInt64(0x80000000, 0x80008008) ,
 		];
-		
+
 		/**
-		 * @param {UInt64[]} s 
+		 * @param {UInt64[]} s
 		 */
-		function permute(s) {	
+		function permute(s) {
 			/**
 			 * @type {UInt64[]}
-			 */		
+			 */
 			const c = new Array(5);
 
 			/**
 			 * @type {UInt64[]}
 			 */
 			const b = new Array(25);
-			
+
 			for (let round = 0; round < 24; round++) {
 				for (let i = 0; i < 5; i++) {
 					c[i] = s[i].xor(s[i+5]).xor(s[i+10]).xor(s[i+15]).xor(s[i+20]);
@@ -3193,7 +3193,7 @@ export class Crypto {
 					for (let j = 0; j < 5; j++) {
 						s[i+5*j] = s[i+5*j].xor(tmp);
 					}
-				}				
+				}
 
 				b[0] = s[0];
 
@@ -3256,12 +3256,12 @@ export class Crypto {
 	 * Calculates blake2-256 (32 bytes) hash of a list of uint8 numbers.
 	 * Result is also a list of uint8 number.
 	 * Blake2b is a 64bit algorithm, so we need to be careful when replicating 64-bit operations with 2 32-bit numbers (low-word overflow must spill into high-word, and shifts must go over low/high boundary)
-	 * @example                                        
+	 * @example
 	 * bytesToHex(Crypto.blake2b([0, 1])) => "01cf79da4945c370c68b265ef70641aaa65eaa8f5953e3900d97724c2c5aa095"
 	 * @example
 	 * bytesToHex(Crypto.blake2b(textToBytes("abc"), 64)) => "ba80a53f981c4d0d6a2797b69f12f6e94c212f14685ac4b74b12bb6fdbffa2d17d87c5392aab792dc252d5de4533cc9518d38aa8dbf1925ab92386edd4009923"
      * @package
-	 * @param {number[]} bytes 
+	 * @param {number[]} bytes
 	 * @param {number} digestSize - 32 or 64
 	 * @returns {number[]}
 	 */
@@ -3276,14 +3276,14 @@ export class Crypto {
 		 * Initialization vector
 		 */
 		const IV = [
-			new UInt64(0x6a09e667, 0xf3bcc908), 
+			new UInt64(0x6a09e667, 0xf3bcc908),
 			new UInt64(0xbb67ae85, 0x84caa73b),
-			new UInt64(0x3c6ef372, 0xfe94f82b), 
+			new UInt64(0x3c6ef372, 0xfe94f82b),
 			new UInt64(0xa54ff53a, 0x5f1d36f1),
 			new UInt64(0x510e527f, 0xade682d1),
 			new UInt64(0x9b05688c, 0x2b3e6c1f),
-			new UInt64(0x1f83d9ab, 0xfb41bd6b), 
-			new UInt64(0x5be0cd19, 0x137e2179), 
+			new UInt64(0x1f83d9ab, 0xfb41bd6b),
+			new UInt64(0x5be0cd19, 0x137e2179),
 		];
 
 		const SIGMA = [
@@ -3312,7 +3312,7 @@ export class Crypto {
 			for (let i = 0; i < nZeroes; i++) {
 				dst.push(0);
 			}
-			
+
 			return dst;
 		}
 
@@ -3363,7 +3363,7 @@ export class Crypto {
 				for (let i = 0; i < 4; i++) {
 					mix(v, chunk, i, i+4, i+8, i+12, s[i*2], s[i*2+1]);
 				}
-				
+
 				for (let i = 0; i < 4; i++) {
 					mix(v, chunk, i, (i+1)%4 + 4, (i+2)%4 + 8, (i+3)%4 + 12, s[8+i*2], s[8 + i*2 + 1]);
 				}
@@ -3371,21 +3371,21 @@ export class Crypto {
 
 			for (let i = 0; i < 8; i++) {
 				h[i] = h[i].xor(v[i].xor(v[i+8]));
-			}		
+			}
 		}
- 
+
 		const nBytes = bytes.length;
 
 		bytes = pad(bytes);
 
 		// init hash vector
 		const h = IV.slice();
-		
+
 
 		// setup the param block
 		const paramBlock = new Uint8Array(64);
 		paramBlock[0] = digestSize; // n output  bytes
-		paramBlock[1] = 0; // key-length (always zero in our case) 
+		paramBlock[1] = 0; // key-length (always zero in our case)
 		paramBlock[2] = 1; // fanout
 		paramBlock[3] = 1; // depth
 
@@ -3397,7 +3397,7 @@ export class Crypto {
 				paramBlockView.getUint32(i*8, true),
 			));
 		}
-		
+
 		// loop all chunks
 		for (let chunkStart = 0; chunkStart < bytes.length; chunkStart += WIDTH) {
 			const chunkEnd = chunkStart + WIDTH; // exclusive
@@ -3407,7 +3407,7 @@ export class Crypto {
 			for (let i = 0; i < WIDTH; i += 8) {
 				chunk64[i/8] = UInt64.fromBytes(chunk.slice(i, i+8));
 			}
-			
+
 			if (chunkStart == bytes.length - WIDTH) {
 				// last block
 				compress(h, chunk64, nBytes, true);
@@ -3432,9 +3432,9 @@ export class Crypto {
 	 *  * Crypto.Ed25519.derivePublicKey(privateKey)
 	 *  * Crypto.Ed25519.sign(message, privateKey)
 	 *  * Crypto.Ed25519.verify(message, signature, publicKey)
-	 * 
+	 *
 	 * This is implementation is slow (~0.5s per verification), but should be good enough for simple client-side usage
-	 * 
+	 *
 	 * Ported from: https://ed25519.cr.yp.to/python/ed25519.py
      * @package
 	 */
@@ -3444,7 +3444,7 @@ export class Crypto {
 		const CURVE_ORDER = 7237005577332262213973186563042994240857116359379907606001950938285454250989n; // ipow2(252n) + 27742317777372353535851937790883648493n;
 		const D = -4513249062541557337682894930092624173785641285191125241628941591882900924598840740n; // -121665n * invert(121666n);
 		const I = 19681161376707505956807079304988542015446066515923890162744021073123829784752n; // expMod(2n, (Q - 1n)/4n, Q);
-		
+
 		/**
 		 * @type {[bigint, bigint]}
 		 */
@@ -3454,9 +3454,9 @@ export class Crypto {
 		];
 
 		/**
-		 * @param {bigint} b 
-		 * @param {bigint} e 
-		 * @param {bigint} m 
+		 * @param {bigint} b
+		 * @param {bigint} e
+		 * @param {bigint} m
 		 * @returns {bigint}
 		 */
 		function expMod(b, e, m) {
@@ -3475,7 +3475,7 @@ export class Crypto {
 		}
 
 		/**
-		 * @param {bigint} n 
+		 * @param {bigint} n
 		 * @returns {bigint}
 		 */
 		function invert(n) {
@@ -3504,7 +3504,7 @@ export class Crypto {
 		}
 
 		/**
-		 * @param {bigint} y 
+		 * @param {bigint} y
 		 * @returns {bigint}
 		 */
 		function recoverX(y) {
@@ -3521,13 +3521,13 @@ export class Crypto {
 			}
 
 			return x;
-		}		
+		}
 
 		/**
 		 * Curve point 'addition'
 		 * Note: this is probably the bottleneck of this Ed25519 implementation
-		 * @param {[bigint, bigint]} a 
-		 * @param {[bigint, bigint]} b 
+		 * @param {[bigint, bigint]} a
+		 * @param {[bigint, bigint]} b
 		 * @returns {[bigint, bigint]}
 		 */
 		function edwards(a, b) {
@@ -3542,8 +3542,8 @@ export class Crypto {
 		}
 
 		/**
-		 * @param {[bigint, bigint]} point 
-		 * @param {bigint} n 
+		 * @param {[bigint, bigint]} point
+		 * @param {bigint} n
 		 * @returns {[bigint, bigint]}
 		 */
 		function scalarMul(point, n) {
@@ -3562,12 +3562,12 @@ export class Crypto {
 
 		/**
 		 * Curve point 'multiplication'
-		 * @param {bigint} y 
+		 * @param {bigint} y
 		 * @returns {number[]}
 		 */
 		function encodeInt(y) {
 			const bytes = bigIntToBytes(y).reverse();
-			
+
 			while (bytes.length < 32) {
 				bytes.push(0);
 			}
@@ -3576,7 +3576,7 @@ export class Crypto {
 		}
 
 		/**
-		 * @param {number[]} s 
+		 * @param {number[]} s
 		 * @returns {bigint}
 		 */
 		function decodeInt(s) {
@@ -3600,7 +3600,7 @@ export class Crypto {
 		}
 
 		/**
-		 * @param {number[]} bytes 
+		 * @param {number[]} bytes
 		 * @param {number} i - bit index
 		 * @returns {number} - 0 or 1
 		 */
@@ -3621,7 +3621,7 @@ export class Crypto {
 		}
 
 		/**
-		 * @param {number[]} s 
+		 * @param {number[]} s
 		 */
 		function decodePoint(s) {
 			assert(s.length == 32);
@@ -3650,7 +3650,7 @@ export class Crypto {
 
 		/**
 		 * Couldn't think of a proper name for this function
-		 * @param {number[]} h 
+		 * @param {number[]} h
 		 * @returns {bigint}
 		 */
 		function calca(h) {
@@ -3665,7 +3665,7 @@ export class Crypto {
 		}
 
 		/**
-		 * @param {number[]} m 
+		 * @param {number[]} m
 		 * @returns {bigint}
 		 */
 		function ihash(m) {
@@ -3676,7 +3676,7 @@ export class Crypto {
 
 		return {
 			/**
-			 * @param {number[]} privateKey 
+			 * @param {number[]} privateKey
 			 * @returns {number[]}
 			 */
 			derivePublicKey: function(privateKey) {
@@ -3688,8 +3688,8 @@ export class Crypto {
 			},
 
 			/**
-			 * @param {number[]} message 
-			 * @param {number[]} privateKey 
+			 * @param {number[]} message
+			 * @param {number[]} privateKey
 			 * @returns {number[]}
 			 */
 			sign: function(message, privateKey) {
@@ -3707,16 +3707,16 @@ export class Crypto {
 			},
 
 			/**
-			 * @param {number[]} signature 
-			 * @param {number[]} message 
-			 * @param {number[]} publicKey 
+			 * @param {number[]} signature
+			 * @param {number[]} message
+			 * @param {number[]} publicKey
 			 * @returns {boolean}
 			 */
 			verify: function(signature, message, publicKey) {
 				if (signature.length != 64) {
 					throw new Error(`unexpected signature length ${signature.length}`);
 				}
-	
+
 				if (publicKey.length != 32) {
 					throw new Error(`unexpected publickey length ${publicKey.length}`);
 				}
@@ -4655,7 +4655,7 @@ export class IntData extends UplcData {
 	}
 
 	/**
-	 * Returns string, not js object, because of unbounded integers
+	 * Returns string, not old_js object, because of unbounded integers
 	 * @returns {string}
 	 */
 	toSchemaJson() {
@@ -4770,7 +4770,7 @@ export class ByteArrayData extends UplcData {
 	/**
 	 * Bytearray comparison, which can be used for sorting bytearrays
 	 * @example
-	 * ByteArrayData.comp(hexToBytes("0101010101010101010101010101010101010101010101010101010101010101"), hexToBytes("0202020202020202020202020202020202020202020202020202020202020202")) => -1 
+	 * ByteArrayData.comp(hexToBytes("0101010101010101010101010101010101010101010101010101010101010101"), hexToBytes("0202020202020202020202020202020202020202020202020202020202020202")) => -1
 	 * @param {number[]} a
 	 * @param {number[]} b
 	 * @returns {number} - 0 -> equals, 1 -> gt, -1 -> lt
@@ -5111,8 +5111,8 @@ export class HeliosData extends CborData {
  * Helios Int type
  */
 export class Int extends HeliosData {
-    /** 
-     * @type {bigint} 
+    /**
+     * @type {bigint}
      */
     #value;
 
@@ -5245,14 +5245,14 @@ export class Duration extends Int {
  * Helios Bool type
  */
 export class Bool extends HeliosData {
-    /** 
-     * @type {boolean} 
+    /**
+     * @type {boolean}
      */
     #value;
 
     /**
      * @package
-     * @param {boolean | string} rawValue 
+     * @param {boolean | string} rawValue
      * @returns {boolean}
      */
     static cleanConstructorArg(rawValue) {
@@ -5272,7 +5272,7 @@ export class Bool extends HeliosData {
     }
 
     /**
-     * @param {boolean | string} rawValue 
+     * @param {boolean | string} rawValue
      */
     constructor(rawValue) {
         super();
@@ -5283,7 +5283,7 @@ export class Bool extends HeliosData {
     get bool() {
         return this.#value;
     }
-    
+
     /**
      * @package
      * @returns {UplcData}
@@ -5292,7 +5292,7 @@ export class Bool extends HeliosData {
         return new ConstrData(this.#value ? 1 : 0, []);
     }
 
-    /** 
+    /**
      * @param {UplcData} data
      * @returns {Bool}
      */
@@ -5309,7 +5309,7 @@ export class Bool extends HeliosData {
     }
 
     /**
-     * @param {string | number[]} bytes 
+     * @param {string | number[]} bytes
      * @returns {Bool}
      */
     static fromUplcCbor(bytes) {
@@ -5328,7 +5328,7 @@ export class HeliosString extends HeliosData {
     #value;
 
     /**
-     * @param {string} value 
+     * @param {string} value
      */
     constructor(value) {
         super();
@@ -5349,7 +5349,7 @@ export class HeliosString extends HeliosData {
     }
 
     /**
-     * @param {UplcData} data 
+     * @param {UplcData} data
      * @returns {HeliosString}
      */
     static fromUplcData(data) {
@@ -5357,7 +5357,7 @@ export class HeliosString extends HeliosData {
     }
 
     /**
-     * @param {string | number[]} bytes 
+     * @param {string | number[]} bytes
      * @returns {HeliosString}
      */
     static fromUplcCbor(bytes) {
@@ -5376,7 +5376,7 @@ export class ByteArray extends HeliosData {
 
     /**
      * @package
-     * @param {string | number[]} rawValue 
+     * @param {string | number[]} rawValue
      */
     static cleanConstructorArg(rawValue) {
         if (Array.isArray(rawValue)) {
@@ -5393,7 +5393,7 @@ export class ByteArray extends HeliosData {
     }
 
     /**
-     * @param {string | number[]} rawValue 
+     * @param {string | number[]} rawValue
      */
     constructor(rawValue) {
         super();
@@ -5424,7 +5424,7 @@ export class ByteArray extends HeliosData {
     }
 
     /**
-     * @param {UplcData} data 
+     * @param {UplcData} data
      * @returns {ByteArray}
      */
     static fromUplcData(data) {
@@ -5453,13 +5453,13 @@ export function List(ItemClass) {
     const typeName = `[]${ItemClass.name}`;
 
     class List_ extends HeliosData {
-        /** 
-         * @type {T[]} 
+        /**
+         * @type {T[]}
          */
         #items;
 
         /**
-         * @param {any[]} rawList 
+         * @param {any[]} rawList
          */
         constructor(rawList) {
             super();
@@ -5484,7 +5484,7 @@ export function List(ItemClass) {
         /**
          * Overload 'instanceof' operator
          * @package
-         * @param {any} other 
+         * @param {any} other
          * @returns {boolean}
          */
         static [Symbol.hasInstance](other) {
@@ -5507,7 +5507,7 @@ export function List(ItemClass) {
         }
 
         /**
-         * @param {UplcData} data 
+         * @param {UplcData} data
          * @returns {List_}
          */
         static fromUplcData(data) {
@@ -5515,7 +5515,7 @@ export function List(ItemClass) {
         }
 
         /**
-         * @param {string | number[]} bytes 
+         * @param {string | number[]} bytes
          * @returns {List_}
          */
         static fromUplcCbor(bytes) {
@@ -5534,7 +5534,7 @@ export function List(ItemClass) {
 /**
  * @template {HeliosData} TKey
  * @template {HeliosData} TValue
- * @param {HeliosDataClass<TKey>} KeyClass 
+ * @param {HeliosDataClass<TKey>} KeyClass
  * @param {HeliosDataClass<TValue>} ValueClass
  * @returns {HeliosDataClass<HeliosMap_>}
  */
@@ -5542,7 +5542,7 @@ export function HeliosMap(KeyClass, ValueClass) {
     assert(!new.target, "HeliosMap can't be called with new");
     assert(KeyClass.prototype instanceof HeliosData);
     assert(ValueClass.prototype instanceof HeliosData);
-    
+
     const typeName = `Map[${KeyClass.name}]${ValueClass.name}`;
 
     class HeliosMap_ extends HeliosData {
@@ -5648,7 +5648,7 @@ export function HeliosMap(KeyClass, ValueClass) {
         /**
          * Overload 'instanceof' operator
          * @package
-         * @param {any} other 
+         * @param {any} other
          * @returns {boolean}
          */
         static [Symbol.hasInstance](other) {
@@ -5671,7 +5671,7 @@ export function HeliosMap(KeyClass, ValueClass) {
         }
 
         /**
-         * @param {UplcData} data 
+         * @param {UplcData} data
          * @returns {HeliosMap_}
          */
         static fromUplcData(data) {
@@ -5679,7 +5679,7 @@ export function HeliosMap(KeyClass, ValueClass) {
         }
 
         /**
-         * @param {string | number[]} bytes 
+         * @param {string | number[]} bytes
          * @returns {HeliosMap_}
          */
         static fromUplcCbor(bytes) {
@@ -5714,7 +5714,7 @@ export function Option(SomeClass) {
 
         /**
          * @package
-         * @param {?any} rawValue 
+         * @param {?any} rawValue
          * @returns {?T}
          */
         static cleanConstructorArg(rawValue) {
@@ -5727,7 +5727,7 @@ export function Option(SomeClass) {
             }
         }
 
-        /** 
+        /**
          * @param {?any} rawValue
          */
         constructor(rawValue = null) {
@@ -5747,7 +5747,7 @@ export function Option(SomeClass) {
         /**
          * Overload 'instanceof' operator
          * @package
-         * @param {any} other 
+         * @param {any} other
          * @returns {boolean}
          */
         static [Symbol.hasInstance](other) {
@@ -5770,7 +5770,7 @@ export function Option(SomeClass) {
         }
 
         /**
-         * @param {UplcData} data 
+         * @param {UplcData} data
          * @returns {Option_}
          */
         static fromUplcData(data) {
@@ -5814,7 +5814,7 @@ class Hash extends HeliosData {
 	#bytes;
 
 	/**
-	 * @param {string | number[]} rawValue 
+	 * @param {string | number[]} rawValue
 	 * @returns {number[]}
 	 */
 	static cleanConstructorArg(rawValue) {
@@ -5826,7 +5826,7 @@ class Hash extends HeliosData {
 	}
 
 	/**
-	 * @param {number[]} bytes 
+	 * @param {number[]} bytes
 	 */
 	constructor(bytes) {
 		super();
@@ -5863,7 +5863,7 @@ class Hash extends HeliosData {
 
 	/**
 	 * Used internally for metadataHash and scriptDataHash
-	 * @param {number[]} bytes 
+	 * @param {number[]} bytes
 	 * @returns {Hash}
 	 */
 	static fromCbor(bytes) {
@@ -5872,7 +5872,7 @@ class Hash extends HeliosData {
 
 	/**
 	 * Might be needed for internal use
-	 * @param {string} str 
+	 * @param {string} str
 	 * @returns {Hash}
 	 */
 	static fromHex(str) {
@@ -5894,8 +5894,8 @@ class Hash extends HeliosData {
 	}
 
 	/**
-	 * @param {Hash} a 
-	 * @param {Hash} b 
+	 * @param {Hash} a
+	 * @param {Hash} b
 	 * @returns {number}
 	 */
 	static compare(a, b) {
@@ -5915,7 +5915,7 @@ export class DatumHash extends Hash {
 	}
 
 	/**
-	 * @param {number[]} bytes 
+	 * @param {number[]} bytes
 	 * @returns {DatumHash}
 	 */
 	static fromCbor(bytes) {
@@ -5923,15 +5923,15 @@ export class DatumHash extends Hash {
 	}
 
 	/**
-	 * @param {UplcData} data 
+	 * @param {UplcData} data
 	 * @returns {DatumHash}
 	 */
 	 static fromUplcData(data) {
 		return new DatumHash(data.bytes);
 	}
-	
+
 	/**
-	 * @param {string | number[]} bytes 
+	 * @param {string | number[]} bytes
 	 * @returns {DatumHash}
 	 */
 	static fromUplcCbor(bytes) {
@@ -5939,7 +5939,7 @@ export class DatumHash extends Hash {
 	}
 
 	/**
-	 * @param {string} str 
+	 * @param {string} str
 	 * @returns {DatumHash}
 	 */
 	static fromHex(str) {
@@ -5948,9 +5948,9 @@ export class DatumHash extends Hash {
 }
 
 export class PubKeyHash extends Hash {
-	
+
 	/**
-	 * @param {string | number[]} rawValue 
+	 * @param {string | number[]} rawValue
 	 */
 	constructor(rawValue) {
 		const bytes = Hash.cleanConstructorArg(rawValue);
@@ -5960,7 +5960,7 @@ export class PubKeyHash extends Hash {
 	}
 
 	/**
-	 * @param {number[]} bytes 
+	 * @param {number[]} bytes
 	 * @returns {PubKeyHash}
 	 */
 	static fromCbor(bytes) {
@@ -5968,15 +5968,15 @@ export class PubKeyHash extends Hash {
 	}
 
 	/**
-	 * @param {UplcData} data 
+	 * @param {UplcData} data
 	 * @returns {PubKeyHash}
 	 */
 	static fromUplcData(data) {
 		return new PubKeyHash(data.bytes);
 	}
-	
+
 	/**
-	 * @param {string | number[]} bytes 
+	 * @param {string | number[]} bytes
 	 * @returns {PubKeyHash}
 	 */
 	static fromUplcCbor(bytes) {
@@ -5984,7 +5984,7 @@ export class PubKeyHash extends Hash {
 	}
 
 	/**
-	 * @param {string} str 
+	 * @param {string} str
 	 * @returns {PubKeyHash}
 	 */
 	static fromHex(str) {
@@ -6006,7 +6006,7 @@ export class ScriptHash extends Hash {
 
 export class MintingPolicyHash extends ScriptHash {
 	/**
-	 * @param {number[]} bytes 
+	 * @param {number[]} bytes
 	 * @returns {MintingPolicyHash}
 	 */
 	static fromCbor(bytes) {
@@ -6014,15 +6014,15 @@ export class MintingPolicyHash extends ScriptHash {
 	}
 
 	/**
-	 * @param {UplcData} data 
+	 * @param {UplcData} data
 	 * @returns {MintingPolicyHash}
 	 */
 	static fromUplcData(data) {
 		return new MintingPolicyHash(data.bytes);
 	}
-			
+
 	/**
-	 * @param {string | number[]} bytes 
+	 * @param {string | number[]} bytes
 	 * @returns {MintingPolicyHash}
 	 */
 	static fromUplcCbor(bytes) {
@@ -6030,7 +6030,7 @@ export class MintingPolicyHash extends ScriptHash {
 	}
 
 	/**
-	 * @param {string} str 
+	 * @param {string} str
 	 * @returns {MintingPolicyHash}
 	 */
 	static fromHex(str) {
@@ -6052,13 +6052,13 @@ export class StakeKeyHash extends Hash {
 	 */
 	constructor(rawValue) {
 		const bytes = Hash.cleanConstructorArg(rawValue);
-		
+
 		assert(bytes.length == 28, `expected 28 bytes for StakeKeyHash, got ${bytes.length}`);
 		super(bytes);
 	}
 
 	/**
-	 * @param {number[]} bytes 
+	 * @param {number[]} bytes
 	 * @returns {StakeKeyHash}
 	 */
 	static fromCbor(bytes) {
@@ -6066,15 +6066,15 @@ export class StakeKeyHash extends Hash {
 	}
 
 	/**
-	 * @param {UplcData} data 
+	 * @param {UplcData} data
 	 * @returns {StakeKeyHash}
 	 */
 	static fromUplcData(data) {
 		return new StakeKeyHash(data.bytes);
 	}
-		
+
 	/**
-	 * @param {string | number[]} bytes 
+	 * @param {string | number[]} bytes
 	 * @returns {StakeKeyHash}
 	 */
 	static fromUplcCbor(bytes) {
@@ -6082,7 +6082,7 @@ export class StakeKeyHash extends Hash {
 	}
 
 	/**
-	 * @param {string} str 
+	 * @param {string} str
 	 * @returns {StakeKeyHash}
 	 */
 	static fromHex(str) {
@@ -6092,7 +6092,7 @@ export class StakeKeyHash extends Hash {
 
 export class StakingValidatorHash extends ScriptHash {
 	/**
-	 * @param {number[]} bytes 
+	 * @param {number[]} bytes
 	 * @returns {StakingValidatorHash}
 	 */
 	static fromCbor(bytes) {
@@ -6100,15 +6100,15 @@ export class StakingValidatorHash extends ScriptHash {
 	}
 
 	/**
-	 * @param {UplcData} data 
+	 * @param {UplcData} data
 	 * @returns {StakingValidatorHash}
 	 */
 	static fromUplcData(data) {
 		return new StakingValidatorHash(data.bytes);
 	}
-			
+
 	/**
-	 * @param {string | number[]} bytes 
+	 * @param {string | number[]} bytes
 	 * @returns {StakingValidatorHash}
 	 */
 	static fromUplcCbor(bytes) {
@@ -6116,7 +6116,7 @@ export class StakingValidatorHash extends ScriptHash {
 	}
 
 	/**
-	 * @param {string} str 
+	 * @param {string} str
 	 * @returns {StakingValidatorHash}
 	 */
 	static fromHex(str) {
@@ -6126,7 +6126,7 @@ export class StakingValidatorHash extends ScriptHash {
 
 export class ValidatorHash extends ScriptHash {
 	/**
-	 * @param {number[]} bytes 
+	 * @param {number[]} bytes
 	 * @returns {ValidatorHash}
 	 */
 	static fromCbor(bytes) {
@@ -6134,15 +6134,15 @@ export class ValidatorHash extends ScriptHash {
 	}
 
 	/**
-	 * @param {UplcData} data 
+	 * @param {UplcData} data
 	 * @returns {ValidatorHash}
 	 */
 	static fromUplcData(data) {
 		return new ValidatorHash(data.bytes);
 	}
-		
+
 	/**
-	 * @param {string | number[]} bytes 
+	 * @param {string | number[]} bytes
 	 * @returns {ValidatorHash}
 	 */
 	static fromUplcCbor(bytes) {
@@ -6150,7 +6150,7 @@ export class ValidatorHash extends ScriptHash {
 	}
 
 	/**
-	 * @param {string} str 
+	 * @param {string} str
 	 * @returns {ValidatorHash}
 	 */
 	static fromHex(str) {
@@ -6163,7 +6163,7 @@ export class ValidatorHash extends ScriptHash {
  */
 export class TxId extends Hash {
 	/**
-	 * @param {string | number[]} rawValue 
+	 * @param {string | number[]} rawValue
 	 */
 	constructor(rawValue) {
         const bytes = Hash.cleanConstructorArg(rawValue);
@@ -6180,7 +6180,7 @@ export class TxId extends Hash {
     }
 
 	/**
-	 * @param {number[]} bytes 
+	 * @param {number[]} bytes
 	 * @returns {TxId}
 	 */
 	static fromCbor(bytes) {
@@ -6199,7 +6199,7 @@ export class TxId extends Hash {
     }
 
     /**
-     * @param {string | number[]} bytes 
+     * @param {string | number[]} bytes
      * @returns {TxId}
      */
     static fromUplcCbor(bytes) {
@@ -6207,7 +6207,7 @@ export class TxId extends Hash {
     }
 
 	/**
-	 * @param {string} str 
+	 * @param {string} str
 	 * @returns {TxId}
 	 */
 	static fromHex(str) {
@@ -6299,7 +6299,7 @@ export class TxOutputId extends HeliosData {
     }
 
     /**
-     * @param {string | number[]} bytes 
+     * @param {string | number[]} bytes
      * @returns {TxOutputId}
      */
     static fromUplcCbor(bytes) {
@@ -6392,8 +6392,8 @@ export class Address extends HeliosData {
 	}
 
     /**
-     * @param {PubKeyHash | ValidatorHash} hash 
-     * @param {?(StakeKeyHash | StakingValidatorHash)} stakingHash 
+     * @param {PubKeyHash | ValidatorHash} hash
+     * @param {?(StakeKeyHash | StakingValidatorHash)} stakingHash
      * @param {boolean} isTestnet
      * @returns {Address}
      */
@@ -6488,7 +6488,7 @@ export class Address extends HeliosData {
 	}
 
 	/**
-     * 
+     *
      * @private
 	 * @returns {ConstrData}
 	 */
@@ -6552,14 +6552,14 @@ export class Address extends HeliosData {
 	}
 
     /**
-     * @param {UplcData} data 
+     * @param {UplcData} data
      * @param {boolean} isTestnet
      * @returns {Address}
      */
     static fromUplcData(data, isTestnet = IS_TESTNET) {
         assert(data.index == 0);
         assert(data.fields.length == 2);
-        
+
         const credData = data.fields[0];
         const stakData = data.fields[1];
 
@@ -6608,7 +6608,7 @@ export class Address extends HeliosData {
     }
 
     /**
-     * @param {string | number[]} bytes 
+     * @param {string | number[]} bytes
      * @param {boolean} isTestnet
      * @returns {Address}
      */
@@ -6649,7 +6649,7 @@ export class Address extends HeliosData {
 		let type = this.#bytes[0] >> 4;
 
         let bytes = this.#bytes.slice(29);
-        
+
 
         if (type == 0 || type == 1) {
             assert(bytes.length == 28);
@@ -6684,7 +6684,7 @@ export class Assets extends CborData {
 	#assets;
 
 	/**
-	 * @param {[MintingPolicyHash | number[] | string, [number[] | string, bigint | number][]][]} assets 
+	 * @param {[MintingPolicyHash | number[] | string, [number[] | string, bigint | number][]][]} assets
 	 */
 	constructor(assets = []) {
 		super();
@@ -6714,7 +6714,7 @@ export class Assets extends CborData {
 	 */
 	get nTokenTypes() {
 		let count = 0;
-		
+
 		this.#assets.forEach(([mph, tokens]) => {
 			tokens.forEach(([tokenName, _]) => {
 				count += 1
@@ -6733,7 +6733,7 @@ export class Assets extends CborData {
 
 	/**
 	 * @param {MintingPolicyHash} mph
-	 * @param {number[]} tokenName 
+	 * @param {number[]} tokenName
 	 * @returns {boolean}
 	 */
 	has(mph, tokenName) {
@@ -6748,7 +6748,7 @@ export class Assets extends CborData {
 
 	/**
 	 * @param {MintingPolicyHash} mph
-	 * @param {number[]} tokenName 
+	 * @param {number[]} tokenName
 	 * @returns {bigint}
 	 */
 	get(mph, tokenName) {
@@ -6781,7 +6781,7 @@ export class Assets extends CborData {
 	/**
 	 * Mutates 'this'
 	 * @param {MintingPolicyHash} mph
-	 * @param {number[]} tokenName 
+	 * @param {number[]} tokenName
 	 * @param {bigint} quantity
 	 */
 	addComponent(mph, tokenName, quantity) {
@@ -6807,8 +6807,8 @@ export class Assets extends CborData {
 	}
 
 	/**
-	 * @param {Assets} other 
-	 * @param {(a: bigint, b: bigint) => bigint} op 
+	 * @param {Assets} other
+	 * @param {(a: bigint, b: bigint) => bigint} op
 	 * @returns {Assets}
 	 */
 	applyBinOp(other, op) {
@@ -6830,7 +6830,7 @@ export class Assets extends CborData {
 	}
 
 	/**
-	 * @param {Assets} other 
+	 * @param {Assets} other
 	 * @returns {Assets}
 	 */
 	add(other) {
@@ -6838,7 +6838,7 @@ export class Assets extends CborData {
 	}
 
 	/**
-	 * @param {Assets} other 
+	 * @param {Assets} other
 	 * @returns {Assets}
 	 */
 	sub(other) {
@@ -6878,7 +6878,7 @@ export class Assets extends CborData {
 	}
 
 	/**
-	 * @param {Assets} other 
+	 * @param {Assets} other
 	 * @returns {boolean}
 	 */
 	eq(other) {
@@ -6903,7 +6903,7 @@ export class Assets extends CborData {
 
 	/**
 	 * Strict gt, if other contains assets this one doesn't contain => return false
-	 * @param {Assets} other 
+	 * @param {Assets} other
 	 * @returns {boolean}
 	 */
 	gt(other) {
@@ -6931,7 +6931,7 @@ export class Assets extends CborData {
 	}
 
 	/**
-	 * @param {Assets} other 
+	 * @param {Assets} other
 	 * @returns {boolean}
 	 */
 	ge(other) {
@@ -7015,7 +7015,7 @@ export class Assets extends CborData {
 			 * @type {[number[], bigint][]}
 			 */
 			let innerMap = [];
-			
+
 			CborData.decodeMap(pairBytes, innerPairBytes => {
 				innerMap.push([
 					CborData.decodeBytes(innerPairBytes),
@@ -7103,10 +7103,10 @@ export class Value extends HeliosData {
 
 	/** @type {Assets} */
 	#assets;
-	
+
 	/**
-	 * @param {bigint} lovelace 
-	 * @param {Assets} assets 
+	 * @param {bigint} lovelace
+	 * @param {Assets} assets
 	 */
 	constructor(lovelace = 0n, assets = new Assets()) {
 		super();
@@ -7115,9 +7115,9 @@ export class Value extends HeliosData {
 	}
 
 	/**
-	 * @param {MintingPolicyHash} mph 
-	 * @param {number[]} tokenName 
-	 * @param {bigint} quantity 
+	 * @param {MintingPolicyHash} mph
+	 * @param {number[]} tokenName
+	 * @param {bigint} quantity
 	 * @returns {Value}
 	 */
 	static asset(mph, tokenName, quantity) {
@@ -7166,7 +7166,7 @@ export class Value extends HeliosData {
 	}
 
 	/**
-	 * @param {number[]} bytes 
+	 * @param {number[]} bytes
 	 * @returns {Value}
 	 */
 	static fromCbor(bytes) {
@@ -7193,7 +7193,7 @@ export class Value extends HeliosData {
 	}
 
 	/**
-	 * @param {Value[]} values 
+	 * @param {Value[]} values
 	 * @returns {Value}
 	 */
 	static sum(values) {
@@ -7205,9 +7205,9 @@ export class Value extends HeliosData {
 
 		return s;
 	}
-	
+
 	/**
-	 * @param {Value} other 
+	 * @param {Value} other
 	 * @returns {Value}
 	 */
 	add(other) {
@@ -7215,7 +7215,7 @@ export class Value extends HeliosData {
 	}
 
 	/**
-	 * @param {Value} other 
+	 * @param {Value} other
 	 * @returns {Value}
 	 */
 	sub(other) {
@@ -7223,7 +7223,7 @@ export class Value extends HeliosData {
 	}
 
 	/**
-	 * @param {Value} other 
+	 * @param {Value} other
 	 * @returns {boolean}
 	 */
 	eq(other) {
@@ -7231,8 +7231,8 @@ export class Value extends HeliosData {
 	}
 
 	/**
-	 * Strictly greater than. Returns false if any asset is missing 
-	 * @param {Value} other 
+	 * Strictly greater than. Returns false if any asset is missing
+	 * @param {Value} other
 	 * @returns {boolean}
 	 */
 	gt(other) {
@@ -7240,8 +7240,8 @@ export class Value extends HeliosData {
 	}
 
 	/**
-	 * Strictly >= 
-	 * @param {Value} other 
+	 * Strictly >=
+	 * @param {Value} other
 	 * @returns {boolean}
 	 */
 	ge(other) {
@@ -7280,7 +7280,7 @@ export class Value extends HeliosData {
 		let map = this.#assets._toUplcData();
 
 		if (this.#lovelace != 0n || isInScriptContext) {
-			let inner = map.map; 
+			let inner = map.map;
 
 			inner.unshift([
 				new ByteArrayData([]),
@@ -7313,7 +7313,7 @@ export class Value extends HeliosData {
 
 			if (mphBytes.length == 0) {
 				//lovelace
-				assert(innerMap.length == 1 && innerMap[0][0].bytes.length == 0); 
+				assert(innerMap.length == 1 && innerMap[0][0].bytes.length == 0);
 				sum = sum.add(new Value(innerMap[0][1].int));
 			} else {
 				// other assets
@@ -7332,7 +7332,7 @@ export class Value extends HeliosData {
 	}
 
 	/**
-	 * @param {string | number[]} bytes 
+	 * @param {string | number[]} bytes
 	 * @returns {Value}
 	 */
 	static fromUplcCbor(bytes) {
@@ -7358,12 +7358,12 @@ export class NetworkParams {
 	#raw;
 
 	/**
-	 * @param {Object} raw 
+	 * @param {Object} raw
 	 */
 	constructor(raw) {
 		this.#raw = raw;
 	}
-	
+
     /**
      * @package
      * @type {Object}
@@ -7374,7 +7374,7 @@ export class NetworkParams {
 
 	/**
      * @package
-	 * @param {string} key 
+	 * @param {string} key
 	 * @returns {number}
 	 */
 	getCostModelParameter(key) {
@@ -7383,7 +7383,7 @@ export class NetworkParams {
 
 	/**
      * @package
-	 * @param {string} name 
+	 * @param {string} name
 	 * @returns {Cost}
 	 */
 	getTermCost(name) {
@@ -7481,7 +7481,7 @@ export class NetworkParams {
 			assertNumber(this.#raw?.latestParams?.executionUnitPrices?.priceSteps),
 		];
 	}
-	
+
 	/**
      * @package
 	 * @type {number[]}
@@ -7604,7 +7604,7 @@ class CostModel {
 	}
 
 	/**
-	 * @param {number[]} args 
+	 * @param {number[]} args
 	 * @returns {bigint}
 	 */
 	calc(args) {
@@ -7635,7 +7635,7 @@ class ConstCost extends CostModel {
 	}
 
 	/**
-	 * @param {NetworkParams} params 
+	 * @param {NetworkParams} params
 	 * @param {string} baseName - eg. addInteger-cpu-arguments
 	 * @returns {ConstCost}
 	 */
@@ -7681,7 +7681,7 @@ class LinearCost extends CostModel {
 	}
 
 	/**
-	 * @param {NetworkParams} params 
+	 * @param {NetworkParams} params
 	 * @param {string} baseName - eg. addInteger-cpu-arguments
 	 * @returns {[bigint, bigint]}
 	 */
@@ -7742,15 +7742,15 @@ class ArgSizeCost extends LinearCost {
  */
 class Arg0SizeCost extends ArgSizeCost {
 	/**
-	 * @param {bigint} a 
-	 * @param {bigint} b 
+	 * @param {bigint} a
+	 * @param {bigint} b
 	 */
 	constructor(a, b) {
 		super(a, b, 0);
 	}
 
 	/**
-	 * @param {NetworkParams} params 
+	 * @param {NetworkParams} params
 	 * @param {string} baseName - eg. addInteger-cpu-arguments
 	 * @returns {Arg0SizeCost}
 	 */
@@ -7767,15 +7767,15 @@ class Arg0SizeCost extends ArgSizeCost {
  */
 class Arg1SizeCost extends ArgSizeCost {
 	/**
-	 * @param {bigint} a 
-	 * @param {bigint} b 
+	 * @param {bigint} a
+	 * @param {bigint} b
 	 */
 	constructor(a, b) {
 		super(a, b, 1);
 	}
 
 	/**
-	 * @param {NetworkParams} params 
+	 * @param {NetworkParams} params
 	 * @param {string} baseName - eg. addInteger-cpu-arguments
 	 * @returns {Arg1SizeCost}
 	 */
@@ -7792,15 +7792,15 @@ class Arg1SizeCost extends ArgSizeCost {
  */
 class Arg2SizeCost extends ArgSizeCost {
 	/**
-	 * @param {bigint} a 
-	 * @param {bigint} b 
+	 * @param {bigint} a
+	 * @param {bigint} b
 	 */
 	constructor(a, b) {
 		super(a, b, 2);
 	}
 
 	/**
-	 * @param {NetworkParams} params 
+	 * @param {NetworkParams} params
 	 * @param {string} baseName - eg. addInteger-cpu-arguments
 	 * @returns {Arg2SizeCost}
 	 */
@@ -7824,7 +7824,7 @@ class MinArgSizeCost extends LinearCost {
 		super(a, b);
 	}
 	/**
-	 * @param {NetworkParams} params 
+	 * @param {NetworkParams} params
 	 * @param {string} baseName - eg. addInteger-cpu-arguments
 	 * @returns {MaxArgSizeCost}
 	 */
@@ -7857,7 +7857,7 @@ class MaxArgSizeCost extends LinearCost {
 	}
 
 	/**
-	 * @param {NetworkParams} params 
+	 * @param {NetworkParams} params
 	 * @param {string} baseName - eg. addInteger-cpu-arguments
 	 * @returns {MaxArgSizeCost}
 	 */
@@ -7890,7 +7890,7 @@ class SumArgSizesCost extends LinearCost {
 	}
 
 	/**
-	 * @param {NetworkParams} params 
+	 * @param {NetworkParams} params
 	 * @param {string} baseName - eg. addInteger-cpu-arguments
 	 * @returns {MaxArgSizeCost}
 	 */
@@ -7917,7 +7917,7 @@ class SumArgSizesCost extends LinearCost {
 
 /**
  * cost = a + b*max(size(arg0)-size(arg1), min)
- * (only for Uplc functions with two arguments) 
+ * (only for Uplc functions with two arguments)
  * @package
  */
 class ArgSizeDiffCost extends LinearCost {
@@ -7933,7 +7933,7 @@ class ArgSizeDiffCost extends LinearCost {
 		this.#min = min
 	}
 	/**
-	 * @param {NetworkParams} params 
+	 * @param {NetworkParams} params
 	 * @param {string} baseName - eg. addInteger-cpu-arguments
 	 * @returns {ArgSizeDiffCost}
 	 */
@@ -7982,7 +7982,7 @@ class ArgSizeProdCost extends LinearCost {
 	}
 
 	/**
-	 * @param {NetworkParams} params 
+	 * @param {NetworkParams} params
 	 * @param {string} baseName - eg. addInteger-cpu-arguments
 	 * @returns {MaxArgSizeCost}
 	 */
@@ -7999,7 +7999,7 @@ class ArgSizeProdCost extends LinearCost {
 	 */
 	calc(args) {
 		assert(args.length == 2);
-		
+
 		const [x, y] = args;
 
 		if (x > y) {
@@ -8035,7 +8035,7 @@ class ArgSizeDiagCost extends LinearCost {
 		this.#constant = constant;
 	}
 	/**
-	 * @param {NetworkParams} params 
+	 * @param {NetworkParams} params
 	 * @param {string} baseName - eg. addInteger-cpu-arguments
 	 * @returns {ArgSizeDiagCost}
 	 */
@@ -8047,7 +8047,7 @@ class ArgSizeDiagCost extends LinearCost {
 	}
 
 	/**
-	 * @param {number[]} args 
+	 * @param {number[]} args
 	 * @returns {bigint}
 	 */
 	calc(args) {
@@ -8090,10 +8090,10 @@ class ArgSizeDiagCost extends LinearCost {
 	#cpuCostModelClass;
 
 	/**
-	 * @param {string} name 
+	 * @param {string} name
 	 * @param {number} forceCount - number of type parameters of a Plutus-core builtin function (0, 1 or 2)
-	 * @param {CostModelClass} memCostModelClass 
-	 * @param {CostModelClass} cpuCostModelClass 
+	 * @param {CostModelClass} memCostModelClass
+	 * @param {CostModelClass} cpuCostModelClass
 	 */
 	constructor(name, forceCount, memCostModelClass, cpuCostModelClass) {
 		this.#name = name;
@@ -8150,10 +8150,10 @@ class ArgSizeDiagCost extends LinearCost {
 	}
 }
 
-/** 
+/**
  * A list of all PlutusScript builins, with associated costmodels (actual costmodel parameters are loaded from NetworkParams during runtime)
  * @package
- * @type {UplcBuiltinConfig[]} 
+ * @type {UplcBuiltinConfig[]}
  */
 const UPLC_BUILTINS = (
 	/**
@@ -8162,8 +8162,8 @@ const UPLC_BUILTINS = (
 	function () {
 		/**
 		 * Constructs a builtinInfo object
-		 * @param {string} name 
-		 * @param {number} forceCount 
+		 * @param {string} name
+		 * @param {number} forceCount
 		 * @param {CostModelClass} memCostModel
 		 * @param {CostModelClass} cpuCostModel
 		 * @returns {UplcBuiltinConfig}
@@ -8178,7 +8178,7 @@ const UPLC_BUILTINS = (
 			builtinConfig("subtractInteger",          0, MaxArgSizeCost, MaxArgSizeCost),
 			builtinConfig("multiplyInteger",          0, SumArgSizesCost, SumArgSizesCost),
 			builtinConfig("divideInteger",            0, ArgSizeDiffCost, ArgSizeProdCost),
-			builtinConfig("quotientInteger",          0, ArgSizeDiffCost, ArgSizeProdCost), 
+			builtinConfig("quotientInteger",          0, ArgSizeDiffCost, ArgSizeProdCost),
 			builtinConfig("remainderInteger",         0, ArgSizeDiffCost, ArgSizeProdCost),
 			builtinConfig("modInteger",               0, ArgSizeDiffCost, ArgSizeProdCost),
 			builtinConfig("equalsInteger",            0, ConstCost, MinArgSizeCost),
@@ -8246,8 +8246,8 @@ function dumpCostModels(networkParams) {
 /**
  * Returns index of a named builtin
  * Throws an error if builtin doesn't exist
- * @param {string} name 
- * @returns 
+ * @param {string} name
+ * @returns
  */
 export function findUplcBuiltin(name) {
 	let i = UPLC_BUILTINS.findIndex(info => { return "__core__" + info.name == name });
@@ -8257,7 +8257,7 @@ export function findUplcBuiltin(name) {
 
 /**
  * Checks if a named builtin exists
- * @param {string} name 
+ * @param {string} name
  * @param {boolean} strict - if true then throws an error if builtin doesn't exist
  * @returns {boolean}
  */
@@ -8313,14 +8313,14 @@ function getPurposeName(id) {
 }
 
 
-/** 
+/**
  * a UplcValue is passed around by Plutus-core expressions.
  */
 export class UplcValue {
 	#site;
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 */
 	constructor(site) {
 		assert(site != undefined && (site instanceof Site));
@@ -8330,7 +8330,7 @@ export class UplcValue {
 	/**
 	 * Return a copy of the UplcValue at a different Site.
      * @package
-	 * @param {Site} newSite 
+	 * @param {Site} newSite
 	 * @returns {UplcValue}
 	 */
 	copy(newSite) {
@@ -8365,8 +8365,8 @@ export class UplcValue {
 	/**
 	 * Throws an error because most values can't be called (overridden by UplcAnon)
      * @package
-	 * @param {UplcRte | UplcStack} rte 
-	 * @param {Site} site 
+	 * @param {UplcRte | UplcStack} rte
+	 * @param {Site} site
 	 * @param {UplcValue} value
 	 * @returns {Promise<UplcValue>}
 	 */
@@ -8376,7 +8376,7 @@ export class UplcValue {
 
 	/**
      * @package
-	 * @param {UplcRte | UplcStack} rte 
+	 * @param {UplcRte | UplcStack} rte
 	 * @returns {Promise<UplcValue>}
 	 */
 	async eval(rte) {
@@ -8403,7 +8403,7 @@ export class UplcValue {
 	get string() {
 		throw this.site.typeError(`expected a Plutus-core string, got '${this.toString()}'`);
 	}
-	
+
 	/**
 	 * @type {boolean}
 	 */
@@ -8517,7 +8517,7 @@ export class UplcValue {
 	 */
 	toFlatValue(bitWriter) {
 		bitWriter.write('1' + this.typeBits() + '0');
-		
+
 		this.toFlatValueInternal(bitWriter);
 	}
 }
@@ -8526,7 +8526,7 @@ export class UplcType {
 	#typeBits;
 
 	/**
-	 * @param {string} typeBits 
+	 * @param {string} typeBits
 	 */
 	constructor(typeBits) {
 		this.#typeBits = typeBits;
@@ -8540,7 +8540,7 @@ export class UplcType {
 	}
 
 	/**
-	 * @param {UplcValue} value 
+	 * @param {UplcValue} value
 	 * @returns {boolean}
 	 */
 	isSameType(value) {
@@ -8619,7 +8619,7 @@ class UplcRte {
 	 */
 
 	/**
-	 * @param {UplcRTECallbacks} callbacks 
+	 * @param {UplcRTECallbacks} callbacks
 	 * @param {?NetworkParams} networkParams
 	 */
 	constructor(callbacks = DEFAULT_UPLC_RTE_CALLBACKS, networkParams = null) {
@@ -8633,7 +8633,7 @@ class UplcRte {
 	/**
 	 * @param {string} name - for breakdown
 	 * @param {boolean} isTerm
-	 * @param {Cost} cost 
+	 * @param {Cost} cost
 	 */
 	incrCost(name, isTerm, cost) {
 		if (cost.mem <= 0n || cost.cpu <= 0n) {
@@ -8707,7 +8707,7 @@ class UplcRte {
 
 	/**
 	 * Gets variable using Debruijn index. Throws error here because UplcRTE is the stack root and doesn't contain any values.
-	 * @param {number} i 
+	 * @param {number} i
 	 * @returns {UplcValue}
 	 */
 	get(i) {
@@ -8716,8 +8716,8 @@ class UplcRte {
 
 	/**
 	 * Creates a child stack.
-	 * @param {UplcValue} value 
-	 * @param {?string} valueName 
+	 * @param {UplcValue} value
+	 * @param {?string} valueName
 	 * @returns {UplcStack}
 	 */
 	push(value, valueName = null) {
@@ -8726,7 +8726,7 @@ class UplcRte {
 
 	/**
 	 * Calls the print callback (or does nothing if print callback isn't defined)
-	 * @param {string} msg 
+	 * @param {string} msg
 	 * @returns {Promise<void>}
 	 */
 	async print(msg) {
@@ -8737,8 +8737,8 @@ class UplcRte {
 
 	/**
 	 * Calls the onStartCall callback.
-	 * @param {Site} site 
-	 * @param {UplcRawStack} rawStack 
+	 * @param {Site} site
+	 * @param {UplcRawStack} rawStack
 	 * @returns {Promise<void>}
 	 */
 	async startCall(site, rawStack) {
@@ -8754,9 +8754,9 @@ class UplcRte {
 	/**
 	 * Calls the onEndCall callback if '#notifyCalls == true'.
 	 * '#notifyCalls' is set to true if 'rawStack == #marker'.
-	 * @param {Site} site 
-	 * @param {UplcRawStack} rawStack 
-	 * @param {UplcValue} result 
+	 * @param {Site} site
+	 * @param {UplcRawStack} rawStack
+	 * @param {UplcValue} result
 	 * @returns {Promise<void>}
 	 */
 	async endCall(site, rawStack, result) {
@@ -8816,7 +8816,7 @@ class UplcStack {
 			this.#parent.incrLambdaCost()
 		}
 	}
-	
+
 	incrDelayCost() {
 		if (this.#parent !== null) {
 			this.#parent.incrDelayCost();
@@ -8860,7 +8860,7 @@ class UplcStack {
 	/**
 	 * Gets a value using the Debruijn index. If 'i == 1' then the current value is returned.
 	 * Otherwise 'i' is decrement and passed to the parent stack.
-	 * @param {number} i 
+	 * @param {number} i
 	 * @returns {UplcValue}
 	 */
 	get(i) {
@@ -8884,8 +8884,8 @@ class UplcStack {
 
 	/**
 	 * Instantiates a child stack.
-	 * @param {UplcValue} value 
-	 * @param {?string} valueName 
+	 * @param {UplcValue} value
+	 * @param {?string} valueName
 	 * @returns {UplcStack}
 	 */
 	push(value, valueName = null) {
@@ -8894,7 +8894,7 @@ class UplcStack {
 
 	/**
 	 * Calls the onPrint callback in the RTE (root of stack).
-	 * @param {string} msg 
+	 * @param {string} msg
 	 * @returns {Promise<void>}
 	 */
 	async print(msg) {
@@ -8905,8 +8905,8 @@ class UplcStack {
 
 	/**
 	 * Calls the onStartCall callback in the RTE (root of stack).
-	 * @param {Site} site 
-	 * @param {UplcRawStack} rawStack 
+	 * @param {Site} site
+	 * @param {UplcRawStack} rawStack
 	 * @returns {Promise<void>}
 	 */
 	async startCall(site, rawStack) {
@@ -8915,7 +8915,7 @@ class UplcStack {
 		}
 	}
 
-	/** 
+	/**
 	 * Calls the onEndCall callback in the RTE (root of stack).
 	 * @param {Site} site
 	 * @param {UplcRawStack} rawStack
@@ -8928,7 +8928,7 @@ class UplcStack {
 		}
 	}
 
-	/** 
+	/**
 	 * @returns {UplcRawStack}
 	*/
 	toList() {
@@ -8967,13 +8967,13 @@ class UplcAnon extends UplcValue {
 	#callSite;
 
 	/**
-	 * 
-	 * @param {Site} site 
-	 * @param {UplcRte | UplcStack} rte 
+	 *
+	 * @param {Site} site
+	 * @param {UplcRte | UplcStack} rte
 	 * @param {string[] | number} args - args can be list of argNames (for debugging), or the number of args
-	 * @param {UplcAnonCallback} fn 
-	 * @param {number} argCount 
-	 * @param {?Site} callSite 
+	 * @param {UplcAnonCallback} fn
+	 * @param {number} argCount
+	 * @param {?Site} callSite
 	 */
 	constructor(site, rte, args, fn, argCount = 0, callSite = null) {
 		super(site);
@@ -9008,7 +9008,7 @@ class UplcAnon extends UplcValue {
 	}
 
 	/**
-	 * @param {Site} newSite 
+	 * @param {Site} newSite
 	 * @returns {UplcAnon}
 	 */
 	copy(newSite) {
@@ -9033,9 +9033,9 @@ class UplcAnon extends UplcValue {
 	}
 
 	/**
-	 * @param {UplcRte | UplcStack} rte 
-	 * @param {Site} site 
-	 * @param {UplcValue} value 
+	 * @param {UplcRte | UplcStack} rte
+	 * @param {Site} site
+	 * @param {UplcValue} value
 	 * @returns {Promise<UplcValue>}
 	 */
 	async call(rte, site, value) {
@@ -9067,10 +9067,10 @@ class UplcAnon extends UplcValue {
 				if (result instanceof Promise) {
 					result = await result;
 				}
-	
+
 				// the same rawStack object can be used as a marker for 'Step-Over' in the debugger
 				await this.#rte.endCall(callSite, rawStack, result);
-	
+
 				return result.copy(callSite);
 			} catch(e) {
 				// TODO: better trace
@@ -9136,7 +9136,7 @@ class UplcDelayedValue extends UplcValue {
 	}
 
 	/**
-	 * @param {Site} newSite 
+	 * @param {Site} newSite
 	 * @returns {UplcValue}
 	 */
 	copy(newSite) {
@@ -9201,7 +9201,7 @@ export class UplcInt extends UplcValue {
 	/**
 	 * Constructs a UplcInt without requiring a Site
 	 * @param {bigint | number} value
-	 * @returns {UplcInt} 
+	 * @returns {UplcInt}
 	 */
 	static new(value) {
 		if (typeof value == 'number') {
@@ -9218,9 +9218,9 @@ export class UplcInt extends UplcValue {
 
 	/**
 	 * Creates a UplcInt wrapped in a UplcConst, so it can be used a term
-	 * @param {Site} site 
-	 * @param {bigint} value 
-	 * @returns 
+	 * @param {Site} site
+	 * @param {bigint} value
+	 * @returns
 	 */
 	static newSignedTerm(site, value) {
 		return new UplcConst(new UplcInt(site, value, true));
@@ -9234,7 +9234,7 @@ export class UplcInt extends UplcValue {
 	}
 
 	/**
-	 * @param {Site} newSite 
+	 * @param {Site} newSite
 	 * @returns {UplcInt}
 	 */
 	copy(newSite) {
@@ -9250,7 +9250,7 @@ export class UplcInt extends UplcValue {
 
 	/**
 	 * Parses a single byte in the Plutus-core byte-list representation of an int
-	 * @param {number} b 
+	 * @param {number} b
 	 * @returns {number}
 	 */
 	static parseRawByte(b) {
@@ -9259,7 +9259,7 @@ export class UplcInt extends UplcValue {
 
 	/**
 	 * Returns true if 'b' is the last byte in the Plutus-core byte-list representation of an int.
-	 * @param {number} b 
+	 * @param {number} b
 	 * @returns {boolean}
 	 */
 	static rawByteIsLast(b) {
@@ -9268,7 +9268,7 @@ export class UplcInt extends UplcValue {
 
 	/**
 	 * Combines a list of Plutus-core bytes into a bigint (leading bit of each byte is ignored).
-     * Differs from bytesToBigInt in utils.js because only 7 bits are used from each byte.
+     * Differs from bytesToBigInt in utils.old_js because only 7 bits are used from each byte.
 	 * @param {number[]} bytes
 	 * @returns {bigint}
 	 */
@@ -9313,8 +9313,8 @@ export class UplcInt extends UplcValue {
 		}
 	}
 
-	/** 
-	 * Unapplies zigzag encoding 
+	/**
+	 * Unapplies zigzag encoding
 	 * @example
 	 * (new UplcInt(Site.dummy(), 1n, false)).toSigned().int => -1n
 	 * @returns {UplcInt}
@@ -9368,7 +9368,7 @@ export class UplcInt extends UplcValue {
 	 * Encodes unsigned integer with plutus flat encoding.
 	 * Throws error if signed.
 	 * Used by encoding plutus core program version and debruijn indices.
-	 * @param {BitWriter} bitWriter 
+	 * @param {BitWriter} bitWriter
 	 */
 	toFlatUnsigned(bitWriter) {
 		assert(!this.#signed);
@@ -9384,7 +9384,7 @@ export class UplcInt extends UplcValue {
 	}
 
 	/**
-	 * @param {BitWriter} bitWriter 
+	 * @param {BitWriter} bitWriter
 	 */
 	toFlatValueInternal(bitWriter) {
 		assert(this.#signed);
@@ -9415,7 +9415,7 @@ export class UplcByteArray extends UplcValue {
 
 	/**
 	 * Construct a UplcByteArray without requiring a Site
-	 * @param {number[]} bytes 
+	 * @param {number[]} bytes
 	 * @returns {UplcByteArray}
 	 */
 	static new(bytes) {
@@ -9424,9 +9424,9 @@ export class UplcByteArray extends UplcValue {
 
 	/**
 	 * Creates new UplcByteArray wrapped in UplcConst so it can be used as a term.
-	 * @param {Site} site 
-	 * @param {number[]} bytes 
-	 * @returns 
+	 * @param {Site} site
+	 * @param {number[]} bytes
+	 * @returns
 	 */
 	static newTerm(site, bytes) {
 		return new UplcConst(new UplcByteArray(site, bytes));
@@ -9440,7 +9440,7 @@ export class UplcByteArray extends UplcValue {
 	}
 
 	/**
-	 * @param {Site} newSite 
+	 * @param {Site} newSite
 	 * @returns {UplcByteArray}
 	 */
 	copy(newSite) {
@@ -9480,8 +9480,8 @@ export class UplcByteArray extends UplcValue {
 	 * Write a list of bytes to the bitWriter using flat encoding.
 	 * Used by UplcString, UplcByteArray and UplcDataValue
 	 * Equivalent to E_B* function in Plutus-core docs
-	 * @param {BitWriter} bitWriter 
-	 * @param {number[]} bytes 
+	 * @param {BitWriter} bitWriter
+	 * @param {number[]} bytes
 	 */
 	static writeBytes(bitWriter, bytes) {
 		bitWriter.padToByteBoundary(true);
@@ -9520,8 +9520,8 @@ export class UplcString extends UplcValue {
 	#value;
 
 	/**
-	 * @param {Site} site 
-	 * @param {string} value 
+	 * @param {Site} site
+	 * @param {string} value
 	 */
 	constructor(site, value) {
 		super(site);
@@ -9530,7 +9530,7 @@ export class UplcString extends UplcValue {
 
 	/**
 	 * Constructs a UplcStrin without requiring a Site
-	 * @param {string} value 
+	 * @param {string} value
 	 * @returns {UplcString}
 	 */
 	static new(value) {
@@ -9539,8 +9539,8 @@ export class UplcString extends UplcValue {
 
 	/**
 	 * Creates a new UplcString wrapped with UplcConst so it can be used as a term.
-	 * @param {Site} site 
-	 * @param {string} value 
+	 * @param {Site} site
+	 * @param {string} value
 	 * @returns {UplcConst}
 	 */
 	static newTerm(site, value) {
@@ -9555,7 +9555,7 @@ export class UplcString extends UplcValue {
 	}
 
 	/**
-	 * @param {Site} newSite 
+	 * @param {Site} newSite
 	 * @returns {UplcString}
 	 */
 	copy(newSite) {
@@ -9598,7 +9598,7 @@ export class UplcString extends UplcValue {
  */
 export class UplcUnit extends UplcValue {
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 */
 	constructor(site) {
 		super(site);
@@ -9614,7 +9614,7 @@ export class UplcUnit extends UplcValue {
 
 	/**
 	 * Creates a new UplcUnit wrapped with UplcConst so it can be used as a term
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {UplcConst}
 	 */
 	static newTerm(site) {
@@ -9629,7 +9629,7 @@ export class UplcUnit extends UplcValue {
 	}
 
 	/**
-	 * @param {Site} newSite 
+	 * @param {Site} newSite
 	 * @returns {UplcUnit}
 	 */
 	copy(newSite) {
@@ -9668,8 +9668,8 @@ export class UplcBool extends UplcValue {
 	#value;
 
 	/**
-	 * @param {Site} site 
-	 * @param {boolean} value 
+	 * @param {Site} site
+	 * @param {boolean} value
 	 */
 	constructor(site, value) {
 		super(site);
@@ -9678,7 +9678,7 @@ export class UplcBool extends UplcValue {
 
 	/**
 	 * Constructs a UplcBool without requiring a Site
-	 * @param {boolean} value 
+	 * @param {boolean} value
 	 * @returns {UplcBool}
 	 */
 	static new(value) {
@@ -9687,8 +9687,8 @@ export class UplcBool extends UplcValue {
 
 	/**
 	 * Creates a new UplcBool wrapped with UplcConst so it can be used as a term.
-	 * @param {Site} site 
-	 * @param {boolean} value 
+	 * @param {Site} site
+	 * @param {boolean} value
 	 * @returns {UplcConst}
 	 */
 	static newTerm(site, value) {
@@ -9703,7 +9703,7 @@ export class UplcBool extends UplcValue {
 	}
 
 	/**
-	 * @param {Site} newSite 
+	 * @param {Site} newSite
 	 * @returns {UplcBool}
 	 */
 	copy(newSite) {
@@ -9771,8 +9771,8 @@ export class UplcPair extends UplcValue {
 
 	/**
 	 * Constructs a UplcPair without requiring a Site
-	 * @param {UplcValue} first 
-	 * @param {UplcValue} second 
+	 * @param {UplcValue} first
+	 * @param {UplcValue} second
 	 * @returns {UplcPair}
 	 */
 	static new(first, second) {
@@ -9781,7 +9781,7 @@ export class UplcPair extends UplcValue {
 
 	/**
 	 * Creates a new UplcBool wrapped with UplcConst so it can be used as a term.
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @param {UplcValue} first
 	 * @param {UplcValue} second
 	 * @returns {UplcConst}
@@ -9798,7 +9798,7 @@ export class UplcPair extends UplcValue {
 	}
 
 	/**
-	 * @param {Site} newSite 
+	 * @param {Site} newSite
 	 * @returns {UplcPair}
 	 */
 	copy(newSite) {
@@ -9864,7 +9864,7 @@ export class UplcPair extends UplcValue {
 	}
 }
 
-/** 
+/**
  * Plutus-core list value class.
  * Only used during evaluation.
 */
@@ -9873,9 +9873,9 @@ export class UplcList extends UplcValue {
 	#items;
 
 	/**
-	 * @param {Site} site 
-	 * @param {UplcType} itemType 
-	 * @param {UplcValue[]} items 
+	 * @param {Site} site
+	 * @param {UplcType} itemType
+	 * @param {UplcValue[]} items
 	 */
 	constructor(site, itemType, items) {
 		super(site);
@@ -9885,8 +9885,8 @@ export class UplcList extends UplcValue {
 
 	/**
 	 * Constructs a UplcList without requiring a Site
-	 * @param {UplcType} type 
-	 * @param {UplcValue[]} items 
+	 * @param {UplcType} type
+	 * @param {UplcValue[]} items
 	 */
 	static new(type, items) {
 		return new UplcList(Site.dummy(), type, items);
@@ -9954,7 +9954,7 @@ export class UplcList extends UplcValue {
 	}
 
 	/**
-	 * @param {BitWriter} bitWriter 
+	 * @param {BitWriter} bitWriter
 	 */
 	toFlatValueInternal(bitWriter) {
 		for (let item of this.#items) {
@@ -9974,8 +9974,8 @@ export class UplcDataValue extends UplcValue {
 	#data;
 
 	/**
-	 * @param {Site} site 
-	 * @param {UplcData} data 
+	 * @param {Site} site
+	 * @param {UplcData} data
 	 */
 	constructor(site, data) {
 		super(site);
@@ -9991,7 +9991,7 @@ export class UplcDataValue extends UplcValue {
 	}
 
 	/**
-	 * @param {Site} newSite 
+	 * @param {Site} newSite
 	 * @returns {UplcDataValue}
 	 */
 	copy(newSite) {
@@ -10034,7 +10034,7 @@ export class UplcDataValue extends UplcValue {
 	}
 
 	/**
-	 * @param {UplcDataValue | UplcData} data 
+	 * @param {UplcDataValue | UplcData} data
 	 * @returns {UplcData}
 	 */
 	static unwrap(data) {
@@ -10081,7 +10081,7 @@ class UplcTerm {
 
 	/**
 	 * Calculates a value, and also increments the cost
-	 * @param {UplcRte | UplcStack} rte 
+	 * @param {UplcRte | UplcStack} rte
 	 * @returns {Promise<UplcValue>}
 	 */
 	async eval(rte) {
@@ -10090,7 +10090,7 @@ class UplcTerm {
 
 	/**
 	 * Writes bits of flat encoded Plutus-core terms to bitWriter. Doesn't return anything.
-	 * @param {BitWriter} bitWriter 
+	 * @param {BitWriter} bitWriter
 	 */
 	toFlat(bitWriter) {
 		throw new Error("not yet implemented");
@@ -10105,8 +10105,8 @@ class UplcVariable extends UplcTerm {
 	#index;
 
 	/**
-	 * @param {Site} site 
-	 * @param {UplcInt} index 
+	 * @param {Site} site
+	 * @param {UplcInt} index
 	 */
 	constructor(site, index) {
 		super(site, 0);
@@ -10121,7 +10121,7 @@ class UplcVariable extends UplcTerm {
 	}
 
 	/**
-	 * @param {BitWriter} bitWriter 
+	 * @param {BitWriter} bitWriter
 	 */
 	toFlat(bitWriter) {
 		bitWriter.write('0000');
@@ -10148,8 +10148,8 @@ class UplcDelay extends UplcTerm {
 	#expr;
 
 	/**
-	 * @param {Site} site 
-	 * @param {UplcTerm} expr 
+	 * @param {Site} site
+	 * @param {UplcTerm} expr
 	 */
 	constructor(site, expr) {
 		super(site, 1);
@@ -10157,14 +10157,14 @@ class UplcDelay extends UplcTerm {
 	}
 
 	/**
-	 * @returns {string} 
+	 * @returns {string}
 	 */
 	toString() {
 		return `(delay ${this.#expr.toString()})`;
 	}
 
 	/**
-	 * @param {BitWriter} bitWriter 
+	 * @param {BitWriter} bitWriter
 	 */
 	toFlat(bitWriter) {
 		bitWriter.write('0001');
@@ -10172,7 +10172,7 @@ class UplcDelay extends UplcTerm {
 	}
 
 	/**
-	 * @param {UplcRte | UplcStack} rte 
+	 * @param {UplcRte | UplcStack} rte
 	 * @returns {Promise<UplcValue>}
 	 */
 	async eval(rte) {
@@ -10210,7 +10210,7 @@ class UplcLambda extends UplcTerm {
 	}
 
 	/**
-	 * @param {BitWriter} bitWriter 
+	 * @param {BitWriter} bitWriter
 	 */
 	toFlat(bitWriter) {
 		bitWriter.write('0010');
@@ -10218,7 +10218,7 @@ class UplcLambda extends UplcTerm {
 	}
 
 	/**
-	 * @param {UplcRte | UplcStack} rte 
+	 * @param {UplcRte | UplcStack} rte
 	 * @returns {Promise<UplcValue>}
 	 */
 	async eval(rte) {
@@ -10257,7 +10257,7 @@ class UplcCall extends UplcTerm {
 	}
 
 	/**
-	 * @param {BitWriter} bitWriter 
+	 * @param {BitWriter} bitWriter
 	 */
 	toFlat(bitWriter) {
 		bitWriter.write('0011');
@@ -10266,8 +10266,8 @@ class UplcCall extends UplcTerm {
 	}
 
 	/**
-	 * @param {UplcRte | UplcStack} rte 
-	 * @returns 
+	 * @param {UplcRte | UplcStack} rte
+	 * @returns
 	 */
 	async eval(rte) {
 		rte.incrCallCost();
@@ -10287,7 +10287,7 @@ class UplcConst extends UplcTerm {
 	#value;
 
 	/**
-	 * @param {UplcValue} value 
+	 * @param {UplcValue} value
 	 */
 	constructor(value) {
 		super(value.site, 4);
@@ -10314,7 +10314,7 @@ class UplcConst extends UplcTerm {
 	}
 
 	/**
-	 * @param {BitWriter} bitWriter 
+	 * @param {BitWriter} bitWriter
 	 */
 	toFlat(bitWriter) {
 		bitWriter.write('0100');
@@ -10322,7 +10322,7 @@ class UplcConst extends UplcTerm {
 	}
 
 	/**
-	 * @param {UplcStack | UplcRte} rte 
+	 * @param {UplcStack | UplcRte} rte
 	 * @returns {Promise<UplcValue>}
 	 */
 	async eval(rte) {
@@ -10356,7 +10356,7 @@ class UplcForce extends UplcTerm {
 	}
 
 	/**
-	 * @param {BitWriter} bitWriter 
+	 * @param {BitWriter} bitWriter
 	 */
 	toFlat(bitWriter) {
 		bitWriter.write('0101');
@@ -10364,7 +10364,7 @@ class UplcForce extends UplcTerm {
 	}
 
 	/**
-	 * @param {UplcRte | UplcStack} rte 
+	 * @param {UplcRte | UplcStack} rte
 	 * @returns {Promise<UplcValue>}
 	 */
 	async eval(rte) {
@@ -10383,8 +10383,8 @@ class UplcError extends UplcTerm {
 	#msg;
 
 	/**
-	 * @param {Site} site 
-	 * @param {string} msg 
+	 * @param {Site} site
+	 * @param {string} msg
 	 */
 	constructor(site, msg = "") {
 		super(site, 6);
@@ -10399,7 +10399,7 @@ class UplcError extends UplcTerm {
 	}
 
 	/**
-	 * @param {BitWriter} bitWriter 
+	 * @param {BitWriter} bitWriter
 	 */
 	toFlat(bitWriter) {
 		bitWriter.write('0110');
@@ -10407,7 +10407,7 @@ class UplcError extends UplcTerm {
 
 	/**
 	 * Throws a RuntimeError when evaluated.
-	 * @param {UplcRte | UplcStack} rte 
+	 * @param {UplcRte | UplcStack} rte
 	 * @returns {Promise<UplcValue>}
 	 */
 	async eval(rte) {
@@ -10424,8 +10424,8 @@ class UplcBuiltin extends UplcTerm {
 	#name;
 
 	/**
-	 * @param {Site} site 
-	 * @param {string | number} name 
+	 * @param {Site} site
+	 * @param {string | number} name
 	 */
 	constructor(site, name) {
 		super(site, 7);
@@ -10451,7 +10451,7 @@ class UplcBuiltin extends UplcTerm {
 	}
 
 	/**
-	 * @param {BitWriter} bitWriter 
+	 * @param {BitWriter} bitWriter
 	 */
 	toFlat(bitWriter) {
 		bitWriter.write('0111');
@@ -10696,7 +10696,7 @@ class UplcBuiltin extends UplcTerm {
 				return new UplcAnon(this.site, rte, 1, (callSite, _, a) => {
 					rte.calcAndIncrCost(this, a);
 
-					return new UplcByteArray(callSite, Crypto.blake2b(a.bytes)); 
+					return new UplcByteArray(callSite, Crypto.blake2b(a.bytes));
 				});
 			case "verifyEd25519Signature":
 				return new UplcAnon(this.site, rte, 3, (callSite, _, key, msg, signature) => {
@@ -10708,7 +10708,7 @@ class UplcBuiltin extends UplcTerm {
 					}
 
 					let msgBytes = msg.bytes;
-					
+
 					let signatureBytes = signature.bytes;
 					if (signatureBytes.length != 64) {
 						throw callSite.runtimeError(`expected signature of length 64 for verifyEd25519Signature, got signature of length ${signatureBytes.length}`);
@@ -10881,7 +10881,7 @@ class UplcBuiltin extends UplcTerm {
 			case "iData":
 				return new UplcAnon(this.site, rte, 1, (callSite, _, a) => {
 					rte.calcAndIncrCost(this, a);
-					
+
 					return new UplcDataValue(callSite, new IntData(a.int));
 				});
 			case "bData":
@@ -11018,7 +11018,7 @@ class UplcBuiltin extends UplcTerm {
 	/**
 	 * Returns appropriate callback wrapped with UplcAnon depending on builtin name.
 	 * Emulates every Plutus-core that Helios exposes to the user.
-	 * @param {UplcRte | UplcStack} rte 
+	 * @param {UplcRte | UplcStack} rte
 	 * @returns {Promise<UplcValue>}
 	 */
 	async eval(rte) {
@@ -11038,7 +11038,7 @@ class UplcBuiltin extends UplcTerm {
 				v = new UplcDelayedValue(this.site, () => vPrev);
 			}
 		}
- 
+
 		return v;
 	}
 }
@@ -11090,7 +11090,7 @@ const PLUTUS_SCRIPT_VERSION = "PlutusScriptV2";
 	#purpose;
 
 	/**
-	 * @param {UplcTerm} expr 
+	 * @param {UplcTerm} expr
 	 * @param {?number} purpose // TODO: enum type
 	 * @param {UplcInt[]} version
 	 */
@@ -11165,7 +11165,7 @@ const PLUTUS_SCRIPT_VERSION = "PlutusScriptV2";
 	/**
 	 * Flat encodes the entire Plutus-core program.
 	 * Note that final padding isn't added now but is handled by bitWriter upon finalization.
-	 * @param {BitWriter} bitWriter 
+	 * @param {BitWriter} bitWriter
 	 */
 	toFlat(bitWriter) {
 		for (let v of this.#version) {
@@ -11176,7 +11176,7 @@ const PLUTUS_SCRIPT_VERSION = "PlutusScriptV2";
 	}
 
 	/**
-	 * @param {UplcRte} rte 
+	 * @param {UplcRte} rte
 	 * @returns {Promise<UplcValue>}
 	 */
 	async eval(rte) {
@@ -11200,9 +11200,9 @@ const PLUTUS_SCRIPT_VERSION = "PlutusScriptV2";
 
 		let fn = await this.eval(rte);
 
-		// program site is at pos 0, but now the call site is actually at the end 
+		// program site is at pos 0, but now the call site is actually at the end
 		let globalCallSite = new Site(this.site.src, this.site.src.length);
-		
+
 		/** @type {UplcValue} */
 		let result = fn;
 
@@ -11238,7 +11238,7 @@ const PLUTUS_SCRIPT_VERSION = "PlutusScriptV2";
 				if (arg instanceof UplcAnon) {
 					throw new Error("UplcAnon cannot be applied to UplcProgram");
 				}
-				
+
 				expr = new UplcCall(arg.site, expr, new UplcConst(arg));
 			} else if (arg instanceof HeliosData) {
 				expr = new UplcCall(Site.dummy(), expr, new UplcConst(new UplcDataValue(Site.dummy(), arg._toUplcData())));
@@ -11250,7 +11250,7 @@ const PLUTUS_SCRIPT_VERSION = "PlutusScriptV2";
 
 	/**
 	 * @param {?UplcValue[]} args - if null the top-level term is returned as a value
-	 * @param {UplcRTECallbacks} callbacks 
+	 * @param {UplcRTECallbacks} callbacks
 	 * @param {?NetworkParams} networkParams
 	 * @returns {Promise<UplcValue | UserError>}
 	 */
@@ -11289,7 +11289,7 @@ const PLUTUS_SCRIPT_VERSION = "PlutusScriptV2";
 
 	/**
 	 * @typedef {{
-	 *   mem: bigint, 
+	 *   mem: bigint,
 	 *   cpu: bigint,
 	 *   size: number,
 	 *   builtins: {[name: string]: Cost},
@@ -11326,7 +11326,7 @@ const PLUTUS_SCRIPT_VERSION = "PlutusScriptV2";
 		 * @type {{[name: string]: Cost}}
 		 */
 		const terms = {};
-		
+
 		/**
 		 * @type {(name: string, isTerm: boolean, cost: Cost) => void}
 		 */
@@ -11359,7 +11359,7 @@ const PLUTUS_SCRIPT_VERSION = "PlutusScriptV2";
 				}
 			}
 		};
-		
+
 		/** @type {string[]} */
 		let messages = [];
 
@@ -11461,7 +11461,7 @@ const PLUTUS_SCRIPT_VERSION = "PlutusScriptV2";
 	}
 
 	/**
-	 * @param {number[]} bytes 
+	 * @param {number[]} bytes
 	 * @returns {UplcProgram}
 	 */
 	static fromCbor(bytes) {
@@ -11473,16 +11473,16 @@ const PLUTUS_SCRIPT_VERSION = "PlutusScriptV2";
  * Plutus-core deserializer creates a Plutus-core form an array of bytes
  */
  class UplcDeserializer extends BitReader {
-	
+
 	/**
-	 * @param {number[]} bytes 
+	 * @param {number[]} bytes
 	 */
 	constructor(bytes) {
 		super(bytes);
 	}
 
 	/**
-	 * @param {string} category 
+	 * @param {string} category
 	 * @returns {number}
 	 */
 	tagWidth(category) {
@@ -11512,7 +11512,7 @@ const PLUTUS_SCRIPT_VERSION = "PlutusScriptV2";
 	/**
 	 * Reads a Plutus-core list with a specified size per element
 	 * Calls itself recursively until the end of the list is reached
-	 * @param {number} elemSize 
+	 * @param {number} elemSize
 	 * @returns {number[]}
 	 */
 	readLinkedList(elemSize) {
@@ -11559,7 +11559,7 @@ const PLUTUS_SCRIPT_VERSION = "PlutusScriptV2";
 
 	/**
 	 * Reads a single unbounded integer
-	 * @param {boolean} signed 
+	 * @param {boolean} signed
 	 * @returns {UplcInt}
 	 */
 	readInteger(signed = false) {
@@ -11628,7 +11628,7 @@ const PLUTUS_SCRIPT_VERSION = "PlutusScriptV2";
 	}
 
 	/**
-	 * @param {() => UplcValue} typedReader 
+	 * @param {() => UplcValue} typedReader
 	 * @returns {UplcValue[]}
 	 */
 	readList(typedReader) {
@@ -11697,7 +11697,7 @@ const PLUTUS_SCRIPT_VERSION = "PlutusScriptV2";
 
 	/**
 	 * Reads a single constant
-	 * @param {number[]} typeList 
+	 * @param {number[]} typeList
 	 * @returns {UplcValue}
 	 */
 	readTypedValue(typeList) {
@@ -11710,7 +11710,7 @@ const PLUTUS_SCRIPT_VERSION = "PlutusScriptV2";
 
 	/**
 	 * Constructs a reader for a single construct recursively
-	 * @param {number[]} typeList 
+	 * @param {number[]} typeList
 	 * NOTE: the implicit assumption is that this functions modifies the typeList
 	 * by removing all elements that it "consumed" to define a type
 	 * @returns {() => UplcValue}
@@ -11799,7 +11799,7 @@ const PLUTUS_SCRIPT_VERSION = "PlutusScriptV2";
 }
 
 /**
- * @param {number[]} bytes 
+ * @param {number[]} bytes
  * @returns {UplcProgram}
  */
 export function deserializeUplcBytes(bytes) {
@@ -11826,7 +11826,7 @@ export function deserializeUplcBytes(bytes) {
 
 /**
  * Parses a plutus core program. Returns a UplcProgram object
- * @param {string} jsonString 
+ * @param {string} jsonString
  * @returns {UplcProgram}
  */
 export function deserializeUplc(jsonString) {
@@ -11862,15 +11862,15 @@ export class Tokenizer {
 
 	/**
 	 * Tokens are accumulated in '#ts'
-	 * @type {Token[]} 
+	 * @type {Token[]}
 	 */
 	#ts;
 	#codeMap;
 	#codeMapPos;
 
 	/**
-	 * @param {Source} src 
-	 * @param {?CodeMap} codeMap 
+	 * @param {Source} src
+	 * @param {?CodeMap} codeMap
 	 */
 	constructor(src, codeMap = null) {
 		assert(src instanceof Source);
@@ -11896,7 +11896,7 @@ export class Tokenizer {
 	}
 
 	/**
-	 * @param {Token} t 
+	 * @param {Token} t
 	 */
 	pushToken(t) {
 		this.#ts.push(t);
@@ -11939,8 +11939,8 @@ export class Tokenizer {
 
 	/**
 	 * Start reading precisely one token
-	 * @param {Site} site 
-	 * @param {string} c 
+	 * @param {Site} site
+	 * @param {string} c
 	 */
 	readToken(site, c) {
 		if (c == '_' || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
@@ -11984,7 +11984,7 @@ export class Tokenizer {
 		return Tokenizer.nestGroups(this.#ts);
 	}
 
-	/** 
+	/**
 	 * Returns a generator
 	 * Use gen.next().value to access to the next Token
 	 * Doesn't perform any grouping
@@ -12017,7 +12017,7 @@ export class Tokenizer {
 	 * Reads one word token.
 	 * Immediately turns "true" or "false" into a BoolLiteral instead of keeping it as Word
 	 * @param {Site} site
-	 * @param {string} c0 - first character 
+	 * @param {string} c0 - first character
 	 */
 	readWord(site, c0) {
 		let chars = [];
@@ -12045,7 +12045,7 @@ export class Tokenizer {
 	/**
 	 * Reads and discards a comment if current '/' char is followed by '/' or '*'.
 	 * Otherwise pushes Symbol('/') onto #ts
-	 * @param {Site} site 
+	 * @param {Site} site
 	 */
 	// comments are discarded
 	readMaybeComment(site) {
@@ -12076,7 +12076,7 @@ export class Tokenizer {
 
 	/**
 	 * Reads and discards a multi-line comment (from '/' '*' to '*' '/')
-	 * @param {Site} site 
+	 * @param {Site} site
 	 */
 	readMultiLineComment(site) {
 		let prev = '';
@@ -12096,7 +12096,7 @@ export class Tokenizer {
 
 	/**
 	 * REads a literal integer
-	 * @param {Site} site 
+	 * @param {Site} site
 	 */
 	readSpecialInteger(site) {
 		let c = this.readChar();
@@ -12120,21 +12120,21 @@ export class Tokenizer {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 */
 	readBinaryInteger(site) {
 		this.readRadixInteger(site, "0b", c => (c == '0' || c == '1'));
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 */
 	readOctalInteger(site) {
 		this.readRadixInteger(site, "0o", c => (c >= '0' && c <= '7'));
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 */
 	readHexInteger(site) {
 		this.readRadixInteger(site, "0x",
@@ -12142,7 +12142,7 @@ export class Tokenizer {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @param {string} c0 - first character
 	 */
 	readDecimalInteger(site, c0) {
@@ -12166,8 +12166,8 @@ export class Tokenizer {
 	}
 
 	/**
-	 * @param {Site} site 
-	 * @param {string} prefix 
+	 * @param {Site} site
+	 * @param {string} prefix
 	 * @param {(c: string) => boolean} valid - checks if character is valid as part of the radix
 	 */
 	readRadixInteger(site, prefix, valid) {
@@ -12197,7 +12197,7 @@ export class Tokenizer {
 
 	/**
 	 * Reads literal hexadecimal representation of ByteArray
-	 * @param {Site} site 
+	 * @param {Site} site
 	 */
 	readByteArray(site) {
 		let c = this.readChar();
@@ -12223,7 +12223,7 @@ export class Tokenizer {
 	/**
 	 * Reads literal string delimited by double quotes.
 	 * Allows for three escape character: '\\', '\n' and '\t'
-	 * @param {Site} site 
+	 * @param {Site} site
 	 */
 	readString(site) {
 		let c = this.readChar();
@@ -12272,7 +12272,7 @@ export class Tokenizer {
 
 	/**
 	 * Reads single or double character symbols
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @param {string} c0 - first character
 	 */
 	readSymbol(site, c0) {
@@ -12312,7 +12312,7 @@ export class Tokenizer {
 
 	/**
 	 * Separates tokens in fields (separted by commas)
-	 * @param {Token[]} ts 
+	 * @param {Token[]} ts
 	 * @returns {Group}
 	 */
 	static buildGroup(ts) {
@@ -12396,7 +12396,7 @@ export class Tokenizer {
 	/**
 	 * Match group open with group close symbols in order to form groups.
 	 * This is recursively applied to nested groups.
-	 * @param {Token[]} ts 
+	 * @param {Token[]} ts
 	 * @returns {Token[]}
 	 */
 	static nestGroups(ts) {
@@ -12424,7 +12424,7 @@ export class Tokenizer {
 /**
  * Tokenizes a string (wrapped in Source)
  * @package
- * @param {Source} src 
+ * @param {Source} src
  * @returns {Token[]}
  */
 function tokenize(src) {
@@ -12436,8 +12436,8 @@ function tokenize(src) {
 /**
  * Tokenizes an IR string with a codemap to the original source
  * @package
- * @param {string} rawSrc 
- * @param {CodeMap} codeMap 
+ * @param {string} rawSrc
+ * @param {CodeMap} codeMap
  * @returns {Token[]}
  */
 function tokenizeIR(rawSrc, codeMap) {
@@ -12598,8 +12598,8 @@ class EvalEntity {
 	/**
 	 * Returns 'true' if 'this' is an instance of 'type'. Throws an error if 'this' isn't a Instance.
 	 * 'type' can be a class, or a class instance.
-	 * @param {Site} site 
-	 * @param {Type | TypeClass} type 
+	 * @param {Site} site
+	 * @param {Type | TypeClass} type
 	 * @returns {boolean}
 	 */
 	isInstanceOf(site, type) {
@@ -12607,9 +12607,9 @@ class EvalEntity {
 	}
 
 	/**
-	 * Returns the return type of a function (wrapped as a Instance) if the args have the correct types. 
+	 * Returns the return type of a function (wrapped as a Instance) if the args have the correct types.
 	 * Throws an error if 'this' isn't a function value, or if the args don't correspond.
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @param {Instance[]} args
 	 * @returns {Instance}
 	 */
@@ -12671,7 +12671,7 @@ class EvalEntity {
 
 	/**
 	 * Returns the constructor index so Plutus-core data can be created correctly.
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	getConstrIndex(site) {
@@ -12692,9 +12692,9 @@ class Type extends EvalEntity {
 	 * Compares two types. Throws an error if neither is a Type.
 	 * @example
 	 * Type.same(Site.dummy(), new IntType(), new IntType()) => true
-	 * @param {Site} site 
-	 * @param {Type} a 
-	 * @param {Type} b 
+	 * @param {Site} site
+	 * @param {Type} a
+	 * @param {Type} b
 	 * @returns {boolean}
 	 */
 	static same(site, a, b) {
@@ -12725,7 +12725,7 @@ class Type extends EvalEntity {
 
 	/**
 	 * Returns the underlying Type. Throws an error in this case because a Type can't return another Type.
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {Type}
 	 */
 	getType(site) {
@@ -12734,7 +12734,7 @@ class Type extends EvalEntity {
 
 	/**
 	 * Throws an error because a Type can't be an instance of another Type.
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @param {Type | TypeClass} type
 	 * @returns {boolean}
 	 */
@@ -12744,8 +12744,8 @@ class Type extends EvalEntity {
 
 	/**
 	 * Throws an error because a Type isn't callable.
-	 * @param {Site} site 
-	 * @param {Instance[]} args 
+	 * @param {Site} site
+	 * @param {Instance[]} args
 	 * @returns {Instance}
 	 */
 	call(site, args) {
@@ -12789,8 +12789,8 @@ class AnyType extends Type {
 	}
 
 	/**
-	 * @param {Site} site 
-	 * @param {Type} other 
+	 * @param {Site} site
+	 * @param {Type} other
 	 * @returns {boolean}
 	 */
 	isBaseOf(site, other) {
@@ -12807,8 +12807,8 @@ class DataType extends Type {
 	}
 
 	/**
-	 * @param {Site} site 
-	 * @param {Type} type 
+	 * @param {Site} site
+	 * @param {Type} type
 	 * @returns {boolean}
 	 */
 	isBaseOf(site, type) {
@@ -12874,7 +12874,7 @@ class BuiltinType extends DataType {
 
 	/**
 	 * Returns one of default instance members, or throws an error.
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -12891,7 +12891,7 @@ class BuiltinType extends DataType {
 
 	/**
 	 * Returns the number of data fields in a builtin type (not yet used)
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	nFields(site) {
@@ -12901,7 +12901,7 @@ class BuiltinType extends DataType {
 	/**
 	 * Returns the constructor index of a builtin type (eg. 1 for Option::None).
 	 * By default non-enum builtin types that are encoded as Plutus-core data use the '0' constructor index.
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	getConstrIndex(site) {
@@ -12923,7 +12923,7 @@ class BuiltinEnumMember extends BuiltinType {
 	#parentType;
 
 	/**
-	 * @param {BuiltinType} parentType 
+	 * @param {BuiltinType} parentType
 	 */
 	constructor(parentType) {
 		super();
@@ -12935,7 +12935,7 @@ class BuiltinEnumMember extends BuiltinType {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -12946,9 +12946,9 @@ class BuiltinEnumMember extends BuiltinType {
 				return super.getTypeMember(name);
 		}
 	}
-	
+
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -12971,7 +12971,7 @@ class StatementType extends DataType {
 	#statement;
 
 	/**
-	 * @param {T} statement 
+	 * @param {T} statement
 	 */
 	constructor(statement) {
 		super();
@@ -12993,8 +12993,8 @@ class StatementType extends DataType {
 	}
 
 	/**
-	 * @param {Site} site 
-	 * @param {Type} type 
+	 * @param {Site} site
+	 * @param {Type} type
 	 * @returns {boolean}
 	 */
 	isBaseOf(site, type) {
@@ -13016,7 +13016,7 @@ class StatementType extends DataType {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -13024,7 +13024,7 @@ class StatementType extends DataType {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -13033,7 +13033,7 @@ class StatementType extends DataType {
 
 	/**
 	 * Returns the number of fields in a Struct or in an EnumMember.
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	nFields(site) {
@@ -13062,7 +13062,7 @@ class StatementType extends DataType {
 
 	/**
 	 * Returns the constructor index so that __core__constrData can be called correctly.
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	getConstrIndex(site) {
@@ -13152,7 +13152,7 @@ class StructStatementType extends StatementType {
 
 			/**
 			 * Overload 'instanceof' operator
-			 * @param {any} other 
+			 * @param {any} other
 			 * @returns {boolean}
 			 */
 			static [Symbol.hasInstance](other) {
@@ -13178,7 +13178,7 @@ class StructStatementType extends StatementType {
 			}
 
 			/**
-			 * @param {string | number[]} bytes 
+			 * @param {string | number[]} bytes
 			 * @returns {Struct}
 			 */
 			static fromUplcCbor(bytes) {
@@ -13186,7 +13186,7 @@ class StructStatementType extends StatementType {
 			}
 
 			/**
-			 * @param {UplcData} data 
+			 * @param {UplcData} data
 			 * @returns {Struct}
 			 */
 			static fromUplcData(data) {
@@ -13204,7 +13204,7 @@ class StructStatementType extends StatementType {
 			}
 		}
 
-		Object.defineProperty(Struct, "name", {value: this.name, writable: false});		
+		Object.defineProperty(Struct, "name", {value: this.name, writable: false});
 
 		return Struct;
 	}
@@ -13250,7 +13250,7 @@ class EnumStatementType extends StatementType {
 
 			/**
 			 * Overload 'instanceof' operator
-			 * @param {any} other 
+			 * @param {any} other
 			 * @returns {boolean}
 			 */
 			static [Symbol.hasInstance](other) {
@@ -13273,7 +13273,7 @@ class EnumStatementType extends StatementType {
 			}
 
 			/**
-			 * @param {UplcData} data 
+			 * @param {UplcData} data
 			 * @returns {HeliosData}
 			 */
 			static fromUplcData(data) {
@@ -13357,13 +13357,13 @@ class EnumMemberStatementType extends StatementType {
 				if (args.length != nFields) {
 					throw new Error(`expected ${nFields} args, got ${args.length}`);
 				}
- 
+
 				this.#fields = [];
- 
+
 				args.forEach((arg, i) => {
 					const [fieldName, fieldType] = fields[i];
 					const FieldClass = fieldType.userType;
- 
+
 					const instance = arg instanceof FieldClass ? arg : new FieldClass(arg);
 
  					this.#fields.push(instance);
@@ -13371,16 +13371,16 @@ class EnumMemberStatementType extends StatementType {
 
 				});
 			}
- 
+
 			/**
 			 * Overload 'instanceof' operator
-			 * @param {any} other 
+			 * @param {any} other
 			 * @returns {boolean}
 			 */
 			static [Symbol.hasInstance](other) {
 				return (other._enumVariantStatement === statement) && (other instanceof HeliosData);
 			}
- 
+
 			/**
 			 * @type {EnumTypeStatement}
 			 */
@@ -13394,39 +13394,39 @@ class EnumMemberStatementType extends StatementType {
 			get _enumVariantStatement() {
 				return statement;
 			}
- 
+
 			/**
 			 * @returns {UplcData}
 			 */
 			_toUplcData() {
 				return new ConstrData(index, this.#fields.map(f => f._toUplcData()));
 			}
- 
+
 			/**
-			 * @param {string | number[]} bytes 
+			 * @param {string | number[]} bytes
 			 * @returns {EnumVariant}
 			 */
 			static fromUplcCbor(bytes) {
 				return EnumVariant.fromUplcData(UplcData.fromCbor(bytes));
 			}
- 
+
 			/**
-			 * @param {UplcData} data 
+			 * @param {UplcData} data
 			 * @returns {EnumVariant}
 			 */
 			static fromUplcData(data) {
 				assert(data.index == index, "wrong index");
 
 				const dataItems = data.list;
- 
+
 				if (dataItems.length != nFields) {
 					throw new Error("unexpected number of fields");
 				}
- 
+
 				const args = dataItems.map((item, i) => {
 					return fields[i][1].userType.fromUplcData(item);
 				});
- 
+
 				return new EnumVariant(...args);
 			}
 		}
@@ -13446,8 +13446,8 @@ class FuncType extends Type {
 	#retTypes;
 
 	/**
-	 * @param {Type[]} argTypes 
-	 * @param {Type | Type[]} retTypes 
+	 * @param {Type[]} argTypes
+	 * @param {Type | Type[]} retTypes
 	 */
 	constructor(argTypes, retTypes) {
 		super();
@@ -13487,8 +13487,8 @@ class FuncType extends Type {
 	 * Checks if the type of the first arg is the same as 'type'
 	 * Also returns false if there are no args.
 	 * For a method to be a valid instance member its first argument must also be named 'self', but that is checked elsewhere
-	 * @param {Site} site 
-	 * @param {Type} type 
+	 * @param {Site} site
+	 * @param {Type} type
 	 * @returns {boolean}
 	 */
 	isMaybeMethod(site, type) {
@@ -13499,7 +13499,7 @@ class FuncType extends Type {
 		}
 	}
 
-	/** 
+	/**
 	 * Checks if any of 'this' argTypes or retType is same as Type.
 	 * Only if this checks return true is the association allowed.
 	 * @param {Site} site
@@ -13527,8 +13527,8 @@ class FuncType extends Type {
 	 * The number of args needs to be the same.
 	 * Each argType of the FuncType we are checking against needs to be the same or less specific (i.e. isBaseOf(this.#argTypes[i]))
 	 * The retType of 'this' needs to be the same or more specific
-	 * @param {Site} site 
-	 * @param {Type} type 
+	 * @param {Site} site
+	 * @param {Type} type
 	 * @returns {boolean}
 	 */
 	isBaseOf(site, type) {
@@ -13564,12 +13564,12 @@ class FuncType extends Type {
 			return false;
 		}
 	}
-	
+
 	/**
 	 * Checks if arg types are valid.
-	 * Throws errors if not valid. Returns the return type if valid. 
-	 * @param {Site} site 
-	 * @param {Instance[]} args 
+	 * Throws errors if not valid. Returns the return type if valid.
+	 * @param {Site} site
+	 * @param {Instance[]} args
 	 * @returns {Type[]}
 	 */
 	checkCall(site, args) {
@@ -13591,7 +13591,7 @@ class NotType extends EvalEntity {
 	constructor() {
 		super();
 	}
-	
+
 	/**
 	 * @returns {boolean}
 	 */
@@ -13601,8 +13601,8 @@ class NotType extends EvalEntity {
 
 	/**
 	 * Throws an error because NotType can't be a base-Type of anything.
-	 * @param {Site} site 
-	 * @param {Type} type 
+	 * @param {Site} site
+	 * @param {Type} type
 	 * @returns {boolean}
 	 */
 	isBaseOf(site, type) {
@@ -13628,7 +13628,7 @@ class Instance extends NotType {
 	}
 
 	/**
-	 * @param {Type | Type[]} type 
+	 * @param {Type | Type[]} type
 	 * @returns {Instance}
 	 */
 	static new(type) {
@@ -13681,7 +13681,7 @@ class DataInstance extends Instance {
 	#type;
 
 	/**
-	 * @param {DataType} type 
+	 * @param {DataType} type
 	 */
 	constructor(type) {
 		assert(!(type instanceof FuncType));
@@ -13699,7 +13699,7 @@ class DataInstance extends Instance {
 
 	/**
 	 * Gets the underlying Type.
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {Type}
 	 */
 	getType(site) {
@@ -13713,9 +13713,9 @@ class DataInstance extends Instance {
 	/**
 	 * Checks if 'this' is instance of 'type'.
 	 * 'type' can be a class, or a class instance.
-	 * @param {Site} site 
-	 * @param {Type | TypeClass} type 
-	 * @returns 
+	 * @param {Site} site
+	 * @param {Type | TypeClass} type
+	 * @returns
 	 */
 	isInstanceOf(site, type) {
 		if (typeof type == 'function') {
@@ -13727,7 +13727,7 @@ class DataInstance extends Instance {
 
 	/**
 	 * Returns the number of fields of a struct, enum member, or builtin type.
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	nFields(site) {
@@ -13746,8 +13746,8 @@ class DataInstance extends Instance {
 
 	/**
 	 * Returns the index of a named field
-	 * @param {Site} site 
-	 * @param {string} name 
+	 * @param {Site} site
+	 * @param {string} name
 	 * @returns {number}
 	 */
 	getFieldIndex(site, name) {
@@ -13755,7 +13755,7 @@ class DataInstance extends Instance {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -13764,8 +13764,8 @@ class DataInstance extends Instance {
 
 	/**
 	 * Throws an error bec
-	 * @param {Site} site 
-	 * @param {Instance[]} args 
+	 * @param {Site} site
+	 * @param {Instance[]} args
 	 * @returns {Instance}
 	 */
 	call(site, args) {
@@ -13780,7 +13780,7 @@ class ConstStatementInstance extends DataInstance {
 	#statement;
 
 	/**
-	 * @param {DataType} type 
+	 * @param {DataType} type
 	 * @param {ConstTypeStatement} statement - can't use ConstStatement because that would give circular dependency
 	 */
 	constructor(type, statement) {
@@ -13804,7 +13804,7 @@ class FuncInstance extends Instance {
 	#type;
 
 	/**
-	 * @param {FuncType} type 
+	 * @param {FuncType} type
 	 */
 	constructor(type) {
 		assert(type instanceof FuncType);
@@ -13852,9 +13852,9 @@ class FuncInstance extends Instance {
 
 	/**
 	 * Checks if 'this' is an instance of 'type'.
-	 * Type can be a class or a class instance. 
-	 * @param {Site} site 
-	 * @param {Type | TypeClass} type 
+	 * Type can be a class or a class instance.
+	 * @param {Site} site
+	 * @param {Type | TypeClass} type
 	 * @returns {boolean}
 	 */
 	isInstanceOf(site, type) {
@@ -13866,8 +13866,8 @@ class FuncInstance extends Instance {
 	}
 
 	/**
-	 * @param {Site} site 
-	 * @param {Instance[]} args 
+	 * @param {Site} site
+	 * @param {Instance[]} args
 	 * @returns {Instance}
 	 */
 	call(site, args) {
@@ -13876,7 +13876,7 @@ class FuncInstance extends Instance {
 
 	/**
 	 * Throws an error because a function value doesn't have any fields.
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	nFields(site) {
@@ -13895,8 +13895,8 @@ class FuncInstance extends Instance {
 
 	/**
 	 * Throws an error because a function value have any fields.
-	 * @param {Site} site 
-	 * @param {string} name 
+	 * @param {Site} site
+	 * @param {string} name
 	 * @returns {number}
 	 */
 	getFieldIndex(site, name) {
@@ -13905,7 +13905,7 @@ class FuncInstance extends Instance {
 
 	/**
 	 * Throws an error because a function value doesn't have members.
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -13921,7 +13921,7 @@ class FuncStatementInstance extends FuncInstance {
 	#statement
 
 	/**
-	 * @param {FuncType} type 
+	 * @param {FuncType} type
 	 * @param {RecurseableStatement} statement - can't use FuncStatement because that would give circular dependency
 	 */
 	constructor(type, statement) {
@@ -13957,7 +13957,7 @@ class MultiInstance extends Instance {
 	#values;
 
 	/**
-	 * @param {Instance[]} values 
+	 * @param {Instance[]} values
 	 */
 	constructor(values) {
 		super();
@@ -14014,8 +14014,8 @@ class VoidInstance extends Instance {
 	}
 
 	/**
-	 * @param {Site} site 
-	 * @param {Type | TypeClass} type 
+	 * @param {Site} site
+	 * @param {Type | TypeClass} type
 	 * @returns {boolean}
 	 */
 	isInstanceOf(site, type) {
@@ -14023,7 +14023,7 @@ class VoidInstance extends Instance {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {Type}
 	 */
 	getType(site) {
@@ -14031,7 +14031,7 @@ class VoidInstance extends Instance {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @param {Instance[]} args
 	 * @returns {Instance}
 	 */
@@ -14074,7 +14074,7 @@ class VoidInstance extends Instance {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	getConstrIndex(site) {
@@ -14089,7 +14089,7 @@ class VoidInstance extends Instance {
  */
 class ErrorInstance extends VoidInstance {
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {Type}
 	 */
 	 getType(site) {
@@ -14167,8 +14167,8 @@ class VoidType extends Type {
 	}
 
 	/**
-	 * @param {Site} site 
-	 * @param {Type} type 
+	 * @param {Site} site
+	 * @param {Type} type
 	 * @returns {boolean}
 	 */
 	isBaseOf(site, type) {
@@ -14186,8 +14186,8 @@ class ErrorType extends VoidType {
 	}
 
 	/**
-	 * @param {Site} site 
-	 * @param {Type} type 
+	 * @param {Site} site
+	 * @param {Type} type
 	 * @returns {boolean}
 	 */
 	isBaseOf(site, type) {
@@ -14209,7 +14209,7 @@ class IntType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -14217,7 +14217,7 @@ class IntType extends BuiltinType {
 			case "from_little_endian":
 				return Instance.new(new FuncType([new ByteArrayType()], new IntType()));
 			case "max":
-			case "min": 
+			case "min":
 				return Instance.new(new FuncType([new IntType(), new IntType()], new IntType()));
 			case "parse":
 				return Instance.new(new FuncType([new StringType()], new IntType()));
@@ -14227,7 +14227,7 @@ class IntType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -14288,7 +14288,7 @@ class BoolType extends BuiltinType {
 
 	/**
 	 * @package
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -14303,7 +14303,7 @@ class BoolType extends BuiltinType {
 
 	/**
 	 * @package
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -14356,7 +14356,7 @@ class StringType extends BuiltinType {
 
 	/**
 	 * @package
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -14410,7 +14410,7 @@ class ByteArrayType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -14488,7 +14488,7 @@ class ParamType extends Type {
 
 	/**
 	 * @param {Site} site
-	 * @param {Type} type 
+	 * @param {Type} type
 	 */
 	setType(site, type) {
 		if (this.#checkType !== null) {
@@ -14499,7 +14499,7 @@ class ParamType extends Type {
 	}
 
 	/**
-	 * @param {Type} type 
+	 * @param {Type} type
 	 * @param {?Type} expected
 	 * @returns {Type}
 	 */
@@ -14563,7 +14563,7 @@ class ParamType extends Type {
 
 	/**
 	 * Returns the number of fields of a struct, enum member, or builtin type.
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	nFields(site) {
@@ -14603,7 +14603,7 @@ class ParamType extends Type {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -14613,7 +14613,7 @@ class ParamType extends Type {
 			return this.#type.getInstanceMember(name);
 		}
 	}
-	
+
 	/**
 	 * Returns 'true' if 'this' is a base-type of 'type'. Throws an error if 'this' isn't a Type.
 	 * @param {Site} site
@@ -14653,7 +14653,7 @@ class ParamFuncValue extends FuncInstance {
 
 	/**
 	 * @param {ParamType[]} params
-	 * @param {FuncType} fnType 
+	 * @param {FuncType} fnType
 	 * @param {?() => string} correctMemberName
 	 */
 	constructor(params, fnType, correctMemberName = null) {
@@ -14679,7 +14679,7 @@ class ParamFuncValue extends FuncInstance {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {Type}
 	 */
 	getType(site) {
@@ -14691,8 +14691,8 @@ class ParamFuncValue extends FuncInstance {
 	}
 
 	/**
-	 * @param {Site} site 
-	 * @param {Type} type 
+	 * @param {Site} site
+	 * @param {Type} type
 	 * @returns {boolean}
 	 */
 	isInstanceOf(site, type) {
@@ -14704,8 +14704,8 @@ class ParamFuncValue extends FuncInstance {
 	}
 
 	/**
-	 * @param {Site} site 
-	 * @param {Instance[]} args 
+	 * @param {Site} site
+	 * @param {Instance[]} args
 	 * @returns {Instance}
 	 */
 	call(site, args) {
@@ -14721,7 +14721,7 @@ class ListType extends BuiltinType {
 	#itemType;
 
 	/**
-	 * @param {Type} itemType 
+	 * @param {Type} itemType
 	 */
 	constructor(itemType) {
 		super();
@@ -14742,8 +14742,8 @@ class ListType extends BuiltinType {
 
 	/**
 	 * @package
-	 * @param {Site} site 
-	 * @param {Type} type 
+	 * @param {Site} site
+	 * @param {Type} type
 	 * @returns {boolean}
 	 */
 	isBaseOf(site, type) {
@@ -14758,7 +14758,7 @@ class ListType extends BuiltinType {
 
 	/**
 	 * @package
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -14774,7 +14774,7 @@ class ListType extends BuiltinType {
 
 	/**
 	 * @package
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -14860,8 +14860,8 @@ class MapType extends BuiltinType {
 	#valueType;
 
 	/**
-	 * @param {Type} keyType 
-	 * @param {Type} valueType 
+	 * @param {Type} keyType
+	 * @param {Type} valueType
 	 */
 	constructor(keyType, valueType) {
 		super();
@@ -14891,8 +14891,8 @@ class MapType extends BuiltinType {
 
 	/**
 	 * @package
-	 * @param {Site} site 
-	 * @param {Type} type 
+	 * @param {Site} site
+	 * @param {Type} type
 	 * @returns {boolean}
 	 */
 	isBaseOf(site, type) {
@@ -14907,7 +14907,7 @@ class MapType extends BuiltinType {
 
 	/**
 	 * @package
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -15017,7 +15017,7 @@ class OptionType extends BuiltinType {
 	#someType;
 
 	/**
-	 * @param {Type} someType 
+	 * @param {Type} someType
 	 */
 	constructor(someType) {
 		super();
@@ -15030,7 +15030,7 @@ class OptionType extends BuiltinType {
 
 	/**
 	 * @package
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	nEnumMembers(site) {
@@ -15039,8 +15039,8 @@ class OptionType extends BuiltinType {
 
 	/**
 	 * @package
-	 * @param {Site} site 
-	 * @param {Type} type 
+	 * @param {Site} site
+	 * @param {Type} type
 	 * @returns {boolean}
 	 */
 	isBaseOf(site, type) {
@@ -15049,14 +15049,14 @@ class OptionType extends BuiltinType {
 		if (type instanceof OptionType) {
 			return this.#someType.isBaseOf(site, type.#someType);
 		} else {
-			return (new OptionSomeType(this.#someType)).isBaseOf(site, type) || 
+			return (new OptionSomeType(this.#someType)).isBaseOf(site, type) ||
 				(new OptionNoneType(this.#someType)).isBaseOf(site, type);
 		}
 	}
 
 	/**
 	 * @package
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -15072,7 +15072,7 @@ class OptionType extends BuiltinType {
 
 	/**
 	 * @package
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -15123,7 +15123,7 @@ class OptionSomeType extends BuiltinEnumMember {
 	#someType;
 
 	/**
-	 * @param {Type} someType 
+	 * @param {Type} someType
 	 */
 	constructor(someType) {
 		super(new OptionType(someType));
@@ -15135,8 +15135,8 @@ class OptionSomeType extends BuiltinEnumMember {
 	}
 
 	/**
-	 * @param {Site} site 
-	 * @param {Type} type 
+	 * @param {Site} site
+	 * @param {Type} type
 	 * @returns {boolean}
 	 */
 	isBaseOf(site, type) {
@@ -15178,7 +15178,7 @@ class OptionSomeType extends BuiltinEnumMember {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -15191,7 +15191,7 @@ class OptionSomeType extends BuiltinEnumMember {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	getConstrIndex(site) {
@@ -15211,7 +15211,7 @@ class OptionNoneType extends BuiltinEnumMember {
 	#someType;
 
 	/**
-	 * @param {Type} someType 
+	 * @param {Type} someType
 	 */
 	constructor(someType) {
 		super(new OptionType(someType));
@@ -15223,8 +15223,8 @@ class OptionNoneType extends BuiltinEnumMember {
 	}
 
 	/**
-	 * @param {Site} site 
-	 * @param {Type} type 
+	 * @param {Site} site
+	 * @param {Type} type
 	 * @returns {boolean}
 	 */
 	isBaseOf(site, type) {
@@ -15238,7 +15238,7 @@ class OptionNoneType extends BuiltinEnumMember {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	getConstrIndex(site) {
@@ -15269,7 +15269,7 @@ class HashType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -15282,7 +15282,7 @@ class HashType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -15351,7 +15351,7 @@ class PubKeyType extends BuiltinType {
 
 	/**
 	 * @package
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -15415,7 +15415,7 @@ class ValidatorHashType extends HashType {
 	#purpose;
 
 	/**
-	 * @param {number} purpose 
+	 * @param {number} purpose
 	 */
 	constructor(purpose = -1) {
 		super();
@@ -15424,7 +15424,7 @@ class ValidatorHashType extends HashType {
 
 	/**
 	 * @package
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -15467,7 +15467,7 @@ class MintingPolicyHashType extends HashType {
 	#purpose;
 
 	/**
-	 * @param {number} purpose 
+	 * @param {number} purpose
 	 */
 	constructor(purpose = -1) {
 		super();
@@ -15476,7 +15476,7 @@ class MintingPolicyHashType extends HashType {
 
 	/**
 	 * @package
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -15519,7 +15519,7 @@ class StakingValidatorHashType extends HashType {
 	#purpose;
 
 	/**
-	 * @param {number} purpose 
+	 * @param {number} purpose
 	 */
 	constructor(purpose = -1) {
 		super();
@@ -15528,7 +15528,7 @@ class StakingValidatorHashType extends HashType {
 
 	/**
 	 * @package
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -15589,7 +15589,7 @@ class ScriptContextType extends BuiltinType {
 	#purpose;
 
 	/**
-	 * @param {number} purpose 
+	 * @param {number} purpose
 	 */
 	constructor(purpose) {
 		super();
@@ -15601,7 +15601,7 @@ class ScriptContextType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -15668,7 +15668,7 @@ class ScriptContextType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -15733,22 +15733,22 @@ class ScriptPurposeType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Site} site 
-	 * @param {Type} type 
+	 * @param {Site} site
+	 * @param {Type} type
 	 * @returns {boolean}
 	 */
 	isBaseOf(site, type) {
 		let b = super.isBaseOf(site, type) ||
-				(new MintingScriptPurposeType()).isBaseOf(site, type) || 
-				(new SpendingScriptPurposeType()).isBaseOf(site, type) || 
-				(new RewardingScriptPurposeType()).isBaseOf(site, type) || 
-				(new CertifyingScriptPurposeType()).isBaseOf(site, type); 
+				(new MintingScriptPurposeType()).isBaseOf(site, type) ||
+				(new SpendingScriptPurposeType()).isBaseOf(site, type) ||
+				(new RewardingScriptPurposeType()).isBaseOf(site, type) ||
+				(new CertifyingScriptPurposeType()).isBaseOf(site, type);
 
 		return b;
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -15775,7 +15775,7 @@ class ScriptPurposeType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	nEnumMembers(site) {
@@ -15800,7 +15800,7 @@ class MintingScriptPurposeType extends BuiltinEnumMember {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -15813,7 +15813,7 @@ class MintingScriptPurposeType extends BuiltinEnumMember {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	getConstrIndex(site) {
@@ -15838,7 +15838,7 @@ class SpendingScriptPurposeType extends BuiltinEnumMember {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -15851,7 +15851,7 @@ class SpendingScriptPurposeType extends BuiltinEnumMember {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	getConstrIndex(site) {
@@ -15868,7 +15868,7 @@ class SpendingScriptPurposeType extends BuiltinEnumMember {
  */
 class RewardingScriptPurposeType extends BuiltinEnumMember {
 	/**
-	 * @param {?BuiltinType} parentType 
+	 * @param {?BuiltinType} parentType
 	 */
 	constructor(parentType = null) {
 		super(parentType === null ? new ScriptPurposeType() : parentType);
@@ -15879,7 +15879,7 @@ class RewardingScriptPurposeType extends BuiltinEnumMember {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -15892,7 +15892,7 @@ class RewardingScriptPurposeType extends BuiltinEnumMember {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	getConstrIndex(site) {
@@ -15921,7 +15921,7 @@ class CertifyingScriptPurposeType extends BuiltinEnumMember {
 
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -15934,7 +15934,7 @@ class CertifyingScriptPurposeType extends BuiltinEnumMember {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	getConstrIndex(site) {
@@ -15956,20 +15956,20 @@ class StakingPurposeType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Site} site 
-	 * @param {Type} type 
+	 * @param {Site} site
+	 * @param {Type} type
 	 * @returns {boolean}
 	 */
 	isBaseOf(site, type) {
 		let b = super.isBaseOf(site, type) ||
-				(new StakingRewardingPurposeType()).isBaseOf(site, type) || 
-				(new StakingCertifyingPurposeType()).isBaseOf(site, type); 
+				(new StakingRewardingPurposeType()).isBaseOf(site, type) ||
+				(new StakingCertifyingPurposeType()).isBaseOf(site, type);
 
 		return b;
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -15984,7 +15984,7 @@ class StakingPurposeType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	nEnumMembers(site) {
@@ -16041,23 +16041,23 @@ class DCertType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Site} site 
-	 * @param {Type} type 
+	 * @param {Site} site
+	 * @param {Type} type
 	 * @returns {boolean}
 	 */
 	isBaseOf(site, type) {
 		let b = super.isBaseOf(site, type) ||
-				(new RegisterDCertType()).isBaseOf(site, type) || 
-				(new DeregisterDCertType()).isBaseOf(site, type) || 
-				(new DelegateDCertType()).isBaseOf(site, type) || 
+				(new RegisterDCertType()).isBaseOf(site, type) ||
+				(new DeregisterDCertType()).isBaseOf(site, type) ||
+				(new DelegateDCertType()).isBaseOf(site, type) ||
 				(new RegisterPoolDCertType()).isBaseOf(site, type) ||
-				(new RetirePoolDCertType()).isBaseOf(site, type); 
+				(new RetirePoolDCertType()).isBaseOf(site, type);
 
 		return b;
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -16088,7 +16088,7 @@ class DCertType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	nEnumMembers(site) {
@@ -16108,9 +16108,9 @@ class RegisterDCertType extends BuiltinEnumMember {
 	toString() {
 		return "DCert::Register";
 	}
-	
+
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -16123,7 +16123,7 @@ class RegisterDCertType extends BuiltinEnumMember {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	getConstrIndex(site) {
@@ -16143,9 +16143,9 @@ class DeregisterDCertType extends BuiltinEnumMember {
 	toString() {
 		return "DCert::Deregister";
 	}
-	
+
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -16158,7 +16158,7 @@ class DeregisterDCertType extends BuiltinEnumMember {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	getConstrIndex(site) {
@@ -16178,9 +16178,9 @@ class DelegateDCertType extends BuiltinEnumMember {
 	toString() {
 		return "DCert::Delegate";
 	}
-	
+
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -16195,7 +16195,7 @@ class DelegateDCertType extends BuiltinEnumMember {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	getConstrIndex(site) {
@@ -16215,9 +16215,9 @@ class RegisterPoolDCertType extends BuiltinEnumMember {
 	toString() {
 		return "DCert::RegisterPool";
 	}
-	
+
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -16232,7 +16232,7 @@ class RegisterPoolDCertType extends BuiltinEnumMember {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	getConstrIndex(site) {
@@ -16252,9 +16252,9 @@ class RetirePoolDCertType extends BuiltinEnumMember {
 	toString() {
 		return "DCert::RetirePool";
 	}
-	
+
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -16269,7 +16269,7 @@ class RetirePoolDCertType extends BuiltinEnumMember {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	getConstrIndex(site) {
@@ -16295,7 +16295,7 @@ class TxType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -16324,7 +16324,7 @@ class TxType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -16396,7 +16396,7 @@ class TxIdType extends BuiltinType {
 
 	/**
 	 * @package
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -16416,7 +16416,7 @@ class TxIdType extends BuiltinType {
 
 	/**
 	 * @package
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -16460,7 +16460,7 @@ class TxInputType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -16480,7 +16480,7 @@ class TxInputType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -16509,7 +16509,7 @@ class TxOutputType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -16530,7 +16530,7 @@ class TxOutputType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -16562,21 +16562,21 @@ class OutputDatumType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Site} site 
-	 * @param {Type} type 
+	 * @param {Site} site
+	 * @param {Type} type
 	 * @returns {boolean}
 	 */
 	isBaseOf(site, type) {
 		let b = super.isBaseOf(site, type) ||
-				(new NoOutputDatumType()).isBaseOf(site, type) || 
-				(new HashedOutputDatumType()).isBaseOf(site, type) || 
-				(new InlineOutputDatumType()).isBaseOf(site, type);; 
+				(new NoOutputDatumType()).isBaseOf(site, type) ||
+				(new HashedOutputDatumType()).isBaseOf(site, type) ||
+				(new InlineOutputDatumType()).isBaseOf(site, type);;
 
 		return b;
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -16611,7 +16611,7 @@ class OutputDatumType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -16624,7 +16624,7 @@ class OutputDatumType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	nEnumMembers(site) {
@@ -16649,7 +16649,7 @@ class NoOutputDatumType extends BuiltinEnumMember {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	getConstrIndex(site) {
@@ -16672,9 +16672,9 @@ class HashedOutputDatumType extends BuiltinEnumMember {
 	toString() {
 		return "OutputDatum::Hash";
 	}
-	
+
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -16687,7 +16687,7 @@ class HashedOutputDatumType extends BuiltinEnumMember {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	getConstrIndex(site) {
@@ -16710,9 +16710,9 @@ class InlineOutputDatumType extends BuiltinEnumMember {
 	toString() {
 		return "OutputDatum::Inline";
 	}
-	
+
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -16725,7 +16725,7 @@ class InlineOutputDatumType extends BuiltinEnumMember {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	getConstrIndex(site) {
@@ -16748,7 +16748,7 @@ class RawDataType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -16761,7 +16761,7 @@ class RawDataType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -16789,7 +16789,7 @@ class TxOutputIdType extends BuiltinType {
 
 	/**
 	 * @package
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -16803,7 +16803,7 @@ class TxOutputIdType extends BuiltinType {
 
 	/**
 	 * @package
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -16850,7 +16850,7 @@ class AddressType extends BuiltinType {
 
 	/**
 	 * @package
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -16869,7 +16869,7 @@ class AddressType extends BuiltinType {
 
 	/**
 	 * @package
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -16911,21 +16911,21 @@ class CredentialType extends BuiltinType {
 
 	/**
 	 * @package
-	 * @param {Site} site 
-	 * @param {Type} type 
+	 * @param {Site} site
+	 * @param {Type} type
 	 * @returns {boolean}
 	 */
 	isBaseOf(site, type) {
 		let b = super.isBaseOf(site, type) ||
-				(new CredentialPubKeyType()).isBaseOf(site, type) || 
-				(new CredentialValidatorType()).isBaseOf(site, type); 
+				(new CredentialPubKeyType()).isBaseOf(site, type) ||
+				(new CredentialValidatorType()).isBaseOf(site, type);
 
 		return b;
 	}
 
 	/**
 	 * @package
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -16945,7 +16945,7 @@ class CredentialType extends BuiltinType {
 
 	/**
 	 * @package
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	nEnumMembers(site) {
@@ -16972,9 +16972,9 @@ class CredentialPubKeyType extends BuiltinEnumMember {
 	toString() {
 		return "Credential::PubKey";
 	}
-	
+
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -16987,7 +16987,7 @@ class CredentialPubKeyType extends BuiltinEnumMember {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	getConstrIndex(site) {
@@ -17012,7 +17012,7 @@ class CredentialValidatorType extends BuiltinEnumMember {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -17025,7 +17025,7 @@ class CredentialValidatorType extends BuiltinEnumMember {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	getConstrIndex(site) {
@@ -17047,20 +17047,20 @@ class StakingHashType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Site} site 
-	 * @param {Type} type 
+	 * @param {Site} site
+	 * @param {Type} type
 	 * @returns {boolean}
 	 */
 	isBaseOf(site, type) {
 		let b = super.isBaseOf(site, type) ||
-				(new StakingHashStakeKeyType()).isBaseOf(site, type) || 
-				(new StakingHashValidatorType()).isBaseOf(site, type); 
+				(new StakingHashStakeKeyType()).isBaseOf(site, type) ||
+				(new StakingHashValidatorType()).isBaseOf(site, type);
 
 		return b;
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -17079,7 +17079,7 @@ class StakingHashType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	nEnumMembers(site) {
@@ -17102,9 +17102,9 @@ class StakingHashStakeKeyType extends BuiltinEnumMember {
 	toString() {
 		return "StakingHash::StakeKey";
 	}
-	
+
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -17117,7 +17117,7 @@ class StakingHashStakeKeyType extends BuiltinEnumMember {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	getConstrIndex(site) {
@@ -17142,7 +17142,7 @@ class StakingHashValidatorType extends BuiltinEnumMember {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -17155,7 +17155,7 @@ class StakingHashValidatorType extends BuiltinEnumMember {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	getConstrIndex(site) {
@@ -17177,20 +17177,20 @@ class StakingCredentialType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Site} site 
-	 * @param {Type} type 
+	 * @param {Site} site
+	 * @param {Type} type
 	 * @returns {boolean}
 	 */
 	isBaseOf(site, type) {
 		let b = super.isBaseOf(site, type) ||
-				(new StakingHashCredentialType()).isBaseOf(site, type) || 
-				(new StakingPtrCredentialType()).isBaseOf(site, type); 
+				(new StakingHashCredentialType()).isBaseOf(site, type) ||
+				(new StakingPtrCredentialType()).isBaseOf(site, type);
 
 		return b;
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -17209,7 +17209,7 @@ class StakingCredentialType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	nEnumMembers(site) {
@@ -17232,9 +17232,9 @@ class StakingHashCredentialType extends BuiltinEnumMember {
 	toString() {
 		return "StakingCredential::Hash";
 	}
-	
+
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -17247,7 +17247,7 @@ class StakingHashCredentialType extends BuiltinEnumMember {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	getConstrIndex(site) {
@@ -17272,7 +17272,7 @@ class StakingPtrCredentialType extends BuiltinEnumMember {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	getConstrIndex(site) {
@@ -17293,7 +17293,7 @@ export class TimeType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -17306,7 +17306,7 @@ export class TimeType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -17351,7 +17351,7 @@ class DurationType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -17364,7 +17364,7 @@ class DurationType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -17406,7 +17406,7 @@ class TimeRangeType extends BuiltinType {
 		return "TimeRange";
 	}
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -17427,7 +17427,7 @@ class TimeRangeType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -17459,7 +17459,7 @@ class AssetClassType extends BuiltinType {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -17489,7 +17489,7 @@ class ValueType extends BuiltinType {
 
 	/**
 	 * @package
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -17509,7 +17509,7 @@ class ValueType extends BuiltinType {
 
 	/**
 	 * @package
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name) {
@@ -17585,7 +17585,7 @@ class GlobalScope {
 
 	/**
 	 * Checks if scope contains a name
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {boolean}
 	 */
 	has(name) {
@@ -17614,7 +17614,7 @@ class GlobalScope {
 	/**
 	 * Gets a named value from the scope.
 	 * Throws an error if not found.
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	get(name) {
@@ -17692,7 +17692,7 @@ class GlobalScope {
         scope.set("assert",               new AssertFunc());
 		scope.set("error",                new ErrorFunc());
         scope.set("print",                new PrintFunc());
-		
+
 
 		return scope;
 	}
@@ -17706,7 +17706,7 @@ class GlobalScope {
 	}
 
 	/**
-	 * @param {(name: string, type: Type) => void} callback 
+	 * @param {(name: string, type: Type) => void} callback
 	 */
 	loopTypes(callback) {
 		for (let [k, v] of this.#values) {
@@ -17725,14 +17725,14 @@ class Scope {
 	/** @type {GlobalScope | Scope} */
 	#parent;
 
-	/** 
+	/**
 	 * TopScope can elverage the #values to store ModuleScopes
-	 * @type {[Word, (EvalEntity | Scope)][]} 
+	 * @type {[Word, (EvalEntity | Scope)][]}
 	 */
 	#values;
 
 	/**
-	 * @param {GlobalScope | Scope} parent 
+	 * @param {GlobalScope | Scope} parent
 	 */
 	constructor(parent) {
 		this.#parent = parent;
@@ -17748,7 +17748,7 @@ class Scope {
 
 	/**
 	 * Checks if scope contains a name
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {boolean}
 	 */
 	has(name) {
@@ -17767,8 +17767,8 @@ class Scope {
 
 	/**
 	 * Sets a named value. Throws an error if not unique
-	 * @param {Word} name 
-	 * @param {EvalEntity | Scope} value 
+	 * @param {Word} name
+	 * @param {EvalEntity | Scope} value
 	 */
 	set(name, value) {
 		if (this.has(name)) {
@@ -17780,7 +17780,7 @@ class Scope {
 
 	/**
 	 * Gets a named value from the scope. Throws an error if not found
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity | Scope}
 	 */
 	get(name) {
@@ -17838,7 +17838,7 @@ class Scope {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {boolean}
 	 */
 	isUsed(name) {
@@ -17852,7 +17852,7 @@ class Scope {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {Type}
 	 */
 	assertType(site) {
@@ -17860,7 +17860,7 @@ class Scope {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {Instance}
 	 */
 	assertValue(site) {
@@ -17875,7 +17875,7 @@ class Scope {
 	}
 
 	/**
-	 * @param {(name: string, type: Type) => void} callback 
+	 * @param {(name: string, type: Type) => void} callback
 	 */
 	loopTypes(callback) {
 		this.#parent.loopTypes(callback);
@@ -17896,7 +17896,7 @@ class TopScope extends Scope {
 	#strict;
 
 	/**
-	 * @param {GlobalScope} parent 
+	 * @param {GlobalScope} parent
 	 * @param {boolean} strict
 	 */
 	constructor(parent, strict = true) {
@@ -17905,15 +17905,15 @@ class TopScope extends Scope {
 	}
 
 	/**
-	 * @param {Word} name 
-	 * @param {EvalEntity | Scope} value 
+	 * @param {Word} name
+	 * @param {EvalEntity | Scope} value
 	 */
 	set(name, value) {
 		super.set(name, value);
 	}
 
 	/**
-	 * @param {boolean} s 
+	 * @param {boolean} s
 	 */
 	setStrict(s) {
 		this.#strict = s;
@@ -17927,7 +17927,7 @@ class TopScope extends Scope {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {ModuleScope}
 	 */
 	getModuleScope(name) {
@@ -17964,7 +17964,7 @@ class FuncStatementScope extends Scope {
 	}
 
 	/**
-	 * @param {RecurseableStatement} statement 
+	 * @param {RecurseableStatement} statement
 	 * @returns {boolean}
 	 */
 	isRecursive(statement) {
@@ -17987,7 +17987,7 @@ class FuncStatementScope extends Scope {
  */
 class Expr extends Token {
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 */
 	constructor(site) {
 		super(site);
@@ -18007,7 +18007,7 @@ class TypeExpr extends Expr {
 	#cache;
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @param {?Type} cache
 	 */
 	constructor(site, cache = null) {
@@ -18024,7 +18024,7 @@ class TypeExpr extends Expr {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {Type}
 	 */
 	evalInternal(scope) {
@@ -18032,7 +18032,7 @@ class TypeExpr extends Expr {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {Type}
 	 */
 	eval(scope) {
@@ -18068,7 +18068,7 @@ class TypeRefExpr extends TypeExpr {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {Type}
 	 */
 	evalInternal(scope) {
@@ -18099,8 +18099,8 @@ class TypePathExpr extends TypeExpr {
 	#memberName;
 
 	/**
-	 * @param {Site} site 
-	 * @param {TypeExpr} baseExpr 
+	 * @param {Site} site
+	 * @param {TypeExpr} baseExpr
 	 * @param {Word} memberName
 	 */
 	constructor(site, baseExpr, memberName) {
@@ -18114,7 +18114,7 @@ class TypePathExpr extends TypeExpr {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {Type}
 	 */
 	evalInternal(scope) {
@@ -18142,8 +18142,8 @@ class ListTypeExpr extends TypeExpr {
 	#itemTypeExpr;
 
 	/**
-	 * @param {Site} site 
-	 * @param {TypeExpr} itemTypeExpr 
+	 * @param {Site} site
+	 * @param {TypeExpr} itemTypeExpr
 	 */
 	constructor(site, itemTypeExpr) {
 		super(site);
@@ -18155,7 +18155,7 @@ class ListTypeExpr extends TypeExpr {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {Type}
 	 */
 	evalInternal(scope) {
@@ -18182,9 +18182,9 @@ class MapTypeExpr extends TypeExpr {
 	#valueTypeExpr;
 
 	/**
-	 * @param {Site} site 
-	 * @param {TypeExpr} keyTypeExpr 
-	 * @param {TypeExpr} valueTypeExpr 
+	 * @param {Site} site
+	 * @param {TypeExpr} keyTypeExpr
+	 * @param {TypeExpr} valueTypeExpr
 	 */
 	constructor(site, keyTypeExpr, valueTypeExpr) {
 		super(site);
@@ -18197,7 +18197,7 @@ class MapTypeExpr extends TypeExpr {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {Type}
 	 */
 	evalInternal(scope) {
@@ -18232,8 +18232,8 @@ class OptionTypeExpr extends TypeExpr {
 	#someTypeExpr;
 
 	/**
-	 * @param {Site} site 
-	 * @param {TypeExpr} someTypeExpr 
+	 * @param {Site} site
+	 * @param {TypeExpr} someTypeExpr
 	 */
 	constructor(site, someTypeExpr) {
 		super(site);
@@ -18245,7 +18245,7 @@ class OptionTypeExpr extends TypeExpr {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {Type}
 	 */
 	evalInternal(scope) {
@@ -18277,13 +18277,13 @@ class VoidTypeExpr extends TypeExpr {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {Type}
 	 */
 	evalInternal(scope) {
 		return new VoidType();
 	}
-	
+
 	use() {
 	}
 }
@@ -18297,9 +18297,9 @@ class FuncTypeExpr extends TypeExpr {
 	#retTypeExprs;
 
 	/**
-	 * @param {Site} site 
-	 * @param {TypeExpr[]} argTypeExprs 
-	 * @param {TypeExpr[]} retTypeExprs 
+	 * @param {Site} site
+	 * @param {TypeExpr[]} argTypeExprs
+	 * @param {TypeExpr[]} retTypeExprs
 	 */
 	constructor(site, argTypeExprs, retTypeExprs) {
 		super(site);
@@ -18319,7 +18319,7 @@ class FuncTypeExpr extends TypeExpr {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {Type}
 	 */
 	evalInternal(scope) {
@@ -18345,7 +18345,7 @@ class ValueExpr extends Expr {
 	#cache;
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 */
 	constructor(site) {
 		super(site);
@@ -18369,7 +18369,7 @@ class ValueExpr extends Expr {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {Instance}
 	 */
 	evalInternal(scope) {
@@ -18377,7 +18377,7 @@ class ValueExpr extends Expr {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {Instance}
 	 */
 	eval(scope) {
@@ -18391,7 +18391,7 @@ class ValueExpr extends Expr {
 	/**
 	 * Returns Intermediate Representation of a value expression.
 	 * The IR should be indented to make debugging easier.
-	 * @param {string} indent 
+	 * @param {string} indent
 	 * @returns {IR}
 	 */
 	toIR(indent = "") {
@@ -18409,10 +18409,10 @@ class AssignExpr extends ValueExpr {
 	#downstreamExpr;
 
 	/**
-	 * @param {Site} site 
-	 * @param {NameTypePair[]} nameTypes 
-	 * @param {ValueExpr} upstreamExpr 
-	 * @param {ValueExpr} downstreamExpr 
+	 * @param {Site} site
+	 * @param {NameTypePair[]} nameTypes
+	 * @param {ValueExpr} upstreamExpr
+	 * @param {ValueExpr} downstreamExpr
 	 */
 	constructor(site, nameTypes, upstreamExpr, downstreamExpr) {
 		super(site);
@@ -18437,7 +18437,7 @@ class AssignExpr extends ValueExpr {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {Instance}
 	 */
 	evalInternal(scope) {
@@ -18491,9 +18491,9 @@ class AssignExpr extends ValueExpr {
 			} else if (this.#upstreamExpr.isLiteral()) {
 				// enum variant type resulting from a constructor-like associated function must be cast back into its enum type
 				if ((this.#upstreamExpr instanceof CallExpr &&
-					this.#upstreamExpr.fnExpr instanceof ValuePathExpr) || 
-					(this.#upstreamExpr instanceof ValuePathExpr && 
-					!this.#upstreamExpr.isZeroFieldConstructor())) 
+					this.#upstreamExpr.fnExpr instanceof ValuePathExpr) ||
+					(this.#upstreamExpr instanceof ValuePathExpr &&
+					!this.#upstreamExpr.isZeroFieldConstructor()))
 				{
 					let upstreamType = upstreamVal.getType(this.#upstreamExpr.site);
 
@@ -18524,8 +18524,8 @@ class AssignExpr extends ValueExpr {
 	}
 
 	/**
-	 * 
-	 * @param {string} indent 
+	 *
+	 * @param {string} indent
 	 * @returns {IR}
 	 */
 	toIR(indent = "") {
@@ -18559,9 +18559,9 @@ class PrintExpr extends ValueExpr {
 	#downstreamExpr;
 
 	/**
-	 * @param {Site} site 
-	 * @param {ValueExpr} msgExpr 
-	 * @param {ValueExpr} downstreamExpr 
+	 * @param {Site} site
+	 * @param {ValueExpr} msgExpr
+	 * @param {ValueExpr} downstreamExpr
 	 */
 	constructor(site, msgExpr, downstreamExpr) {
 		super(site);
@@ -18579,7 +18579,7 @@ class PrintExpr extends ValueExpr {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {Instance}
 	 */
 	evalInternal(scope) {
@@ -18602,7 +18602,7 @@ class PrintExpr extends ValueExpr {
 	}
 
 	/**
-	 * @param {string} indent 
+	 * @param {string} indent
 	 * @returns {IR}
 	 */
 	toIR(indent = "") {
@@ -18633,7 +18633,7 @@ class VoidExpr extends ValueExpr {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {Instance}
 	 */
 	evalInternal(scope) {
@@ -18657,9 +18657,9 @@ class ChainExpr extends ValueExpr {
 	#downstreamExpr;
 
 	/**
-	 * @param {Site} site 
-	 * @param {ValueExpr} upstreamExpr 
-	 * @param {ValueExpr} downstreamExpr 
+	 * @param {Site} site
+	 * @param {ValueExpr} upstreamExpr
+	 * @param {ValueExpr} downstreamExpr
 	 */
 	constructor(site, upstreamExpr, downstreamExpr) {
 		super(site);
@@ -18693,7 +18693,7 @@ class ChainExpr extends ValueExpr {
 	}
 
 	/**
-	 * @param {string} indent 
+	 * @param {string} indent
 	 * @returns {IR}
 	 */
 	toIR(indent = "") {
@@ -18715,7 +18715,7 @@ class PrimitiveLiteralExpr extends ValueExpr {
 	#primitive;
 
 	/**
-	 * @param {PrimitiveLiteral} primitive 
+	 * @param {PrimitiveLiteral} primitive
 	 */
 	constructor(primitive) {
 		super(primitive.site);
@@ -18747,11 +18747,11 @@ class PrimitiveLiteralExpr extends ValueExpr {
 			return new ByteArrayType(this.#primitive.bytes.length == 32 ? 32 : null);
 		} else {
 			throw new Error("unhandled primitive type");
-		}	
+		}
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {Instance}
 	 */
 	evalInternal(scope) {
@@ -18792,7 +18792,7 @@ class LiteralDataExpr extends ValueExpr {
 	#data;
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @param {Type} type
 	 * @param {UplcData} data
 	 */
@@ -18822,7 +18822,7 @@ class LiteralDataExpr extends ValueExpr {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {Instance}
 	 */
 	evalInternal(scope) {
@@ -18846,8 +18846,8 @@ class StructLiteralField {
 	#value;
 
 	/**
-	 * @param {?Word} name 
-	 * @param {ValueExpr} value 
+	 * @param {?Word} name
+	 * @param {ValueExpr} value
 	 */
 	constructor(name, value) {
 		this.#name = name;
@@ -18886,7 +18886,7 @@ class StructLiteralField {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {Instance}
 	 */
 	eval(scope) {
@@ -18898,7 +18898,7 @@ class StructLiteralField {
 	}
 
 	/**
-	 * @param {string} indent 
+	 * @param {string} indent
 	 * @returns {IR}
 	 */
 	toIR(indent = "") {
@@ -18917,8 +18917,8 @@ class StructLiteralExpr extends ValueExpr {
 	#constrIndex;
 
 	/**
-	 * @param {TypeExpr} typeExpr 
-	 * @param {StructLiteralField[]} fields 
+	 * @param {TypeExpr} typeExpr
+	 * @param {StructLiteralField[]} fields
 	 */
 	constructor(typeExpr, fields) {
 		super(typeExpr.site);
@@ -18941,8 +18941,8 @@ class StructLiteralExpr extends ValueExpr {
 	}
 
 	/**
-	 * @param {Scope} scope 
-	 * @returns 
+	 * @param {Scope} scope
+	 * @returns
 	 */
 	evalInternal(scope) {
 		let type = this.#typeExpr.eval(scope);
@@ -18959,7 +18959,7 @@ class StructLiteralExpr extends ValueExpr {
 
 		for (let i = 0; i < this.#fields.length; i++) {
 			let f = this.#fields[i];
-		
+
 			let fieldVal = f.eval(scope);
 
 			if (f.isNamed()) {
@@ -18972,7 +18972,7 @@ class StructLiteralExpr extends ValueExpr {
 			} else {
 				// check the positional type
 				let memberType = instance.getFieldType(f.site, i);
-				
+
 				if (!fieldVal.isInstanceOf(f.site, memberType)) {
 					throw f.site.typeError(`wrong field type for field ${i.toString()}, expected ${memberType.toString()}, got ${fieldVal.getType(Site.dummy()).toString()}`);
 				}
@@ -19023,7 +19023,7 @@ class StructLiteralExpr extends ValueExpr {
 				]);
 			}
 
-			// in case of a struct with only one field, return that field directly 
+			// in case of a struct with only one field, return that field directly
 			if (fields.length == 1 && this.#typeExpr.type instanceof StructStatementType) {
 				return fIR;
 			}
@@ -19045,7 +19045,7 @@ class StructLiteralExpr extends ValueExpr {
 			// regular struct
 			return new IR([
 				new IR("__core__listData", this.site),
-				new IR("("), 
+				new IR("("),
 				res,
 				new IR(")")
 			]);
@@ -19068,9 +19068,9 @@ class ListLiteralExpr extends ValueExpr {
 	#itemExprs;
 
 	/**
-	 * @param {Site} site 
-	 * @param {TypeExpr} itemTypeExpr 
-	 * @param {ValueExpr[]} itemExprs 
+	 * @param {Site} site
+	 * @param {TypeExpr} itemTypeExpr
+	 * @param {ValueExpr[]} itemExprs
 	 */
 	constructor(site, itemTypeExpr, itemExprs) {
 		super(site);
@@ -19116,13 +19116,13 @@ class ListLiteralExpr extends ValueExpr {
 	}
 
 	/**
-	 * @param {string} indent 
+	 * @param {string} indent
 	 * @returns {IR}
 	 */
 	toIR(indent = "") {
 		let isBool = this.#itemTypeExpr.type instanceof BoolType;
 
-		// unsure if list literals in untyped Plutus-core accept arbitrary terms, so we will use the more verbose constructor functions 
+		// unsure if list literals in untyped Plutus-core accept arbitrary terms, so we will use the more verbose constructor functions
 		let res = new IR("__core__mkNilData(())");
 
 		// starting from last element, keeping prepending a data version of that item
@@ -19161,10 +19161,10 @@ class MapLiteralExpr extends ValueExpr {
 	#pairExprs;
 
 	/**
-	 * @param {Site} site 
-	 * @param {TypeExpr} keyTypeExpr 
+	 * @param {Site} site
+	 * @param {TypeExpr} keyTypeExpr
 	 * @param {TypeExpr} valueTypeExpr
-	 * @param {[ValueExpr, ValueExpr][]} pairExprs 
+	 * @param {[ValueExpr, ValueExpr][]} pairExprs
 	 */
 	constructor(site, keyTypeExpr, valueTypeExpr, pairExprs) {
 		super(site);
@@ -19219,13 +19219,13 @@ class MapLiteralExpr extends ValueExpr {
 	}
 
 	/**
-	 * @param {string} indent 
+	 * @param {string} indent
 	 * @returns {IR}
 	 */
 	toIR(indent = "") {
 		let isBoolValue = this.#valueTypeExpr.type instanceof BoolType;
 
-		// unsure if list literals in untyped Plutus-core accept arbitrary terms, so we will use the more verbose constructor functions 
+		// unsure if list literals in untyped Plutus-core accept arbitrary terms, so we will use the more verbose constructor functions
 		let res = new IR("__core__mkNilPairData(())");
 
 		// starting from last element, keeping prepending a data version of that item
@@ -19261,7 +19261,7 @@ class MapLiteralExpr extends ValueExpr {
 }
 
 /**
- * NameTypePair is base class of FuncArg and DataField (differs from StructLiteralField) 
+ * NameTypePair is base class of FuncArg and DataField (differs from StructLiteralField)
  * @package
  */
 class NameTypePair {
@@ -19269,8 +19269,8 @@ class NameTypePair {
 	#typeExpr;
 
 	/**
-	 * @param {Word} name 
-	 * @param {?TypeExpr} typeExpr 
+	 * @param {Word} name
+	 * @param {?TypeExpr} typeExpr
 	 */
 	constructor(name, typeExpr) {
 		this.#name = name;
@@ -19337,7 +19337,7 @@ class NameTypePair {
 
 	/**
 	 * Evaluates the type, used by FuncLiteralExpr and DataDefinition
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {Type}
 	 */
 	evalType(scope) {
@@ -19367,8 +19367,8 @@ class NameTypePair {
  */
 class FuncArg extends NameTypePair {
 	/**
-	 * @param {Word} name 
-	 * @param {?TypeExpr} typeExpr 
+	 * @param {Word} name
+	 * @param {?TypeExpr} typeExpr
 	 */
 	constructor(name, typeExpr) {
 		super(name, typeExpr);
@@ -19385,10 +19385,10 @@ class FuncLiteralExpr extends ValueExpr {
 	#bodyExpr;
 
 	/**
-	 * @param {Site} site 
-	 * @param {FuncArg[]} args 
-	 * @param {(?TypeExpr)[]} retTypeExprs 
-	 * @param {ValueExpr} bodyExpr 
+	 * @param {Site} site
+	 * @param {FuncArg[]} args
+	 * @param {(?TypeExpr)[]} retTypeExprs
+	 * @param {ValueExpr} bodyExpr
 	 */
 	constructor(site, args, retTypeExprs, bodyExpr) {
 		super(site);
@@ -19448,8 +19448,8 @@ class FuncLiteralExpr extends ValueExpr {
 	}
 
 	/**
-	 * @param {Scope} scope 
-	 * @returns 
+	 * @param {Scope} scope
+	 * @returns
 	 */
 	evalType(scope) {
 		let args = this.#args;
@@ -19470,12 +19470,12 @@ class FuncLiteralExpr extends ValueExpr {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {FuncInstance}
 	 */
 	evalInternal(scope) {
 		let fnType = this.evalType(scope);
-		
+
 		// argTypes is calculated separately again here so it includes self
 		let argTypes = this.#args.map(a => a.evalType(scope));
 
@@ -19559,8 +19559,8 @@ class FuncLiteralExpr extends ValueExpr {
 	}
 
 	/**
-	 * @param {?string} recursiveName 
-	 * @param {string} indent 
+	 * @param {?string} recursiveName
+	 * @param {string} indent
 	 * @returns {IR}
 	 */
 	toIRInternal(recursiveName, indent = "") {
@@ -19608,8 +19608,8 @@ class FuncLiteralExpr extends ValueExpr {
 	}
 
 	/**
-	 * @param {string} recursiveName 
-	 * @param {string} indent 
+	 * @param {string} recursiveName
+	 * @param {string} indent
 	 * @returns {IR}
 	 */
 	toIRRecursive(recursiveName, indent = "") {
@@ -19617,7 +19617,7 @@ class FuncLiteralExpr extends ValueExpr {
 	}
 
 	/**
-	 * @param {string} indent 
+	 * @param {string} indent
 	 * @returns {IR}
 	 */
 	toIR(indent = "") {
@@ -19634,7 +19634,7 @@ class ValueRefExpr extends ValueExpr {
 	#isRecursiveFunc;
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 */
 	constructor(name) {
 		super(name.site);
@@ -19647,7 +19647,7 @@ class ValueRefExpr extends ValueExpr {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {Instance}
 	 */
 	evalInternal(scope) {
@@ -19669,7 +19669,7 @@ class ValueRefExpr extends ValueExpr {
 	}
 
 	/**
-	 * @param {string} indent 
+	 * @param {string} indent
 	 * @returns {IR}
 	 */
 	toIR(indent = "") {
@@ -19691,7 +19691,7 @@ class ValueRefExpr extends ValueExpr {
 				new IR(")")
 			]);
 		}
-		
+
 		return ir;
 	}
 }
@@ -19706,8 +19706,8 @@ class ValuePathExpr extends ValueExpr {
 	#isRecursiveFunc;
 
 	/**
-	 * @param {TypeExpr} baseTypeExpr 
-	 * @param {Word} memberName 
+	 * @param {TypeExpr} baseTypeExpr
+	 * @param {Word} memberName
 	 */
 	constructor(baseTypeExpr, memberName) {
 		super(memberName.site);
@@ -19757,7 +19757,7 @@ class ValuePathExpr extends ValueExpr {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {Instance}
 	 */
 	evalInternal(scope) {
@@ -19824,8 +19824,8 @@ class UnaryExpr extends ValueExpr {
 	#a;
 
 	/**
-	 * @param {SymbolToken} op 
-	 * @param {ValueExpr} a 
+	 * @param {SymbolToken} op
+	 * @param {ValueExpr} a
 	 */
 	constructor(op, a) {
 		super(op.site);
@@ -19857,7 +19857,7 @@ class UnaryExpr extends ValueExpr {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {Instance}
 	 */
 	evalInternal(scope) {
@@ -19874,7 +19874,7 @@ class UnaryExpr extends ValueExpr {
 	}
 
 	/**
-	 * @param {string} indent 
+	 * @param {string} indent
 	 * @returns {IR}
 	 */
 	toIR(indent = "") {
@@ -19900,9 +19900,9 @@ class BinaryExpr extends ValueExpr {
 	#alt; // use alt (each operator can have one overload)
 
 	/**
-	 * @param {SymbolToken} op 
-	 * @param {ValueExpr} a 
-	 * @param {ValueExpr} b 
+	 * @param {SymbolToken} op
+	 * @param {ValueExpr} a
+	 * @param {ValueExpr} b
 	 */
 	constructor(op, a, b) {
 		super(op.site);
@@ -19913,7 +19913,7 @@ class BinaryExpr extends ValueExpr {
 		this.#alt = false;
 	}
 
-	/** 
+	/**
 	 * @type {ValueExpr}
 	 */
 	get first() {
@@ -19921,7 +19921,7 @@ class BinaryExpr extends ValueExpr {
 	}
 
 	/**
-	 * @type {ValueExpr} 
+	 * @type {ValueExpr}
 	 */
 	get second() {
 		return this.#swap ? this.#a : this.#b;
@@ -19984,7 +19984,7 @@ class BinaryExpr extends ValueExpr {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {Instance}
 	 */
 	evalInternal(scope) {
@@ -20038,7 +20038,7 @@ class BinaryExpr extends ValueExpr {
 	}
 
 	/**
-	 * @param {string} indent 
+	 * @param {string} indent
 	 * @returns {IR}
 	 */
 	toIR(indent = "") {
@@ -20074,7 +20074,7 @@ class ParensExpr extends ValueExpr {
 	#exprs;
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @param {ValueExpr[]} exprs
 	 */
 	constructor(site, exprs) {
@@ -20087,7 +20087,7 @@ class ParensExpr extends ValueExpr {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {Instance}
 	 */
 	evalInternal(scope) {
@@ -20103,7 +20103,7 @@ class ParensExpr extends ValueExpr {
 	}
 
 	/**
-	 * @param {string} indent 
+	 * @param {string} indent
 	 * @returns {IR}
 	 */
 	toIR(indent = "") {
@@ -20128,9 +20128,9 @@ class CallExpr extends ValueExpr {
 	#argExprs;
 
 	/**
-	 * @param {Site} site 
-	 * @param {ValueExpr} fnExpr 
-	 * @param {ValueExpr[]} argExprs 
+	 * @param {Site} site
+	 * @param {ValueExpr} fnExpr
+	 * @param {ValueExpr[]} argExprs
 	 */
 	constructor(site, fnExpr, argExprs) {
 		super(site);
@@ -20155,7 +20155,7 @@ class CallExpr extends ValueExpr {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {Instance}
 	 */
 	evalInternal(scope) {
@@ -20177,7 +20177,7 @@ class CallExpr extends ValueExpr {
 	}
 
 	/**
-	 * @param {string} indent 
+	 * @param {string} indent
 	 * @returns {IR}
 	 */
 	toIR(indent = "") {
@@ -20256,9 +20256,9 @@ class MemberExpr extends ValueExpr {
 	#isRecursiveFunc;
 
 	/**
-	 * @param {Site} site 
-	 * @param {ValueExpr} objExpr 
-	 * @param {Word} memberName 
+	 * @param {Site} site
+	 * @param {ValueExpr} objExpr
+	 * @param {Word} memberName
 	 */
 	constructor(site, objExpr, memberName) {
 		super(site);
@@ -20272,7 +20272,7 @@ class MemberExpr extends ValueExpr {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {Instance}
 	 */
 	evalInternal(scope) {
@@ -20298,7 +20298,7 @@ class MemberExpr extends ValueExpr {
 	}
 
 	/**
-	 * @param {string} indent 
+	 * @param {string} indent
 	 * @returns {IR}
 	 */
 	toIR(indent = "") {
@@ -20336,7 +20336,7 @@ class MemberExpr extends ValueExpr {
 }
 
 /**
- * if-then-else expression 
+ * if-then-else expression
  * @package
  */
 class IfElseExpr extends ValueExpr {
@@ -20344,9 +20344,9 @@ class IfElseExpr extends ValueExpr {
 	#branches;
 
 	/**
-	 * @param {Site} site 
-	 * @param {ValueExpr[]} conditions 
-	 * @param {ValueExpr[]} branches 
+	 * @param {Site} site
+	 * @param {ValueExpr[]} conditions
+	 * @param {ValueExpr[]} branches
 	 */
 	constructor(site, conditions, branches) {
 		assert(branches.length == conditions.length + 1);
@@ -20420,7 +20420,7 @@ class IfElseExpr extends ValueExpr {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {Instance}
 	 */
 	evalInternal(scope) {
@@ -20441,10 +20441,10 @@ class IfElseExpr extends ValueExpr {
 			let branchVal = b.eval(scope);
 
 			branchMultiType = IfElseExpr.reduceBranchMultiType(
-				b.site, 
-				branchMultiType, 
-				(branchVal instanceof MultiInstance) ? 
-					branchVal.values.map(v => v.getType(b.site)) : 
+				b.site,
+				branchMultiType,
+				(branchVal instanceof MultiInstance) ?
+					branchVal.values.map(v => v.getType(b.site)) :
 					[branchVal.getType(b.site)]
 			);
 		}
@@ -20467,7 +20467,7 @@ class IfElseExpr extends ValueExpr {
 	}
 
 	/**
-	 * @param {string} indent 
+	 * @param {string} indent
 	 * @returns {IR}
 	 */
 	toIR(indent = "") {
@@ -20510,10 +20510,10 @@ class SwitchCase extends Token {
 	#constrIndex;
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @param {?Word} varName - optional
 	 * @param {Word} memberName - not optional
-	 * @param {ValueExpr} bodyExpr 
+	 * @param {ValueExpr} bodyExpr
 	 */
 	constructor(site, varName, memberName, bodyExpr) {
 		super(site);
@@ -20565,7 +20565,7 @@ class SwitchCase extends Token {
 	/**
 	 * Evaluates the switch type and body value of a case.
 	 * Evaluated switch type is only used if #varName !== null
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @param {Type} enumType
 	 * @returns {Instance}
 	 */
@@ -20648,7 +20648,7 @@ class SwitchCase extends Token {
 
 	/**
 	 * Accept an arg because will be called with the result of the controlexpr
-	 * @param {string} indent 
+	 * @param {string} indent
 	 * @returns {IR}
 	 */
 	toIR(indent = "") {
@@ -20668,10 +20668,10 @@ class UnconstrDataSwitchCase extends SwitchCase {
 	#lstVarName;
 
 	/**
-	 * @param {Site} site 
-	 * @param {?Word} intVarName 
-	 * @param {?Word} lstVarName 
-	 * @param {ValueExpr} bodyExpr 
+	 * @param {Site} site
+	 * @param {?Word} intVarName
+	 * @param {?Word} lstVarName
+	 * @param {ValueExpr} bodyExpr
 	 */
 	constructor(site, intVarName, lstVarName, bodyExpr) {
 		super(site, null, new Word(site, "(Int, []Data)"), bodyExpr);
@@ -20689,7 +20689,7 @@ class UnconstrDataSwitchCase extends SwitchCase {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @param {Type} enumType
 	 * @returns {Instance}
 	 */
@@ -20727,7 +20727,7 @@ class UnconstrDataSwitchCase extends SwitchCase {
 
 	/**
 	 * Accepts two args
-	 * @param {string} indent 
+	 * @param {string} indent
 	 * @returns {IR}
 	 */
 	 toIR(indent = "") {
@@ -20764,7 +20764,7 @@ class SwitchDefault extends Token {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {Instance}
 	 */
 	eval(scope) {
@@ -20776,7 +20776,7 @@ class SwitchDefault extends Token {
 	}
 
 	/**
-	 * @param {string} indent 
+	 * @param {string} indent
 	 * @returns {IR}
 	 */
 	toIR(indent = "") {
@@ -20796,7 +20796,7 @@ class SwitchExpr extends ValueExpr {
 	#cases;
 	#defaultCase;
 
-	/** 
+	/**
 	 * @param {Site} site
 	 * @param {ValueExpr} controlExpr - input value of the switch
 	 * @param {SwitchCase[]} cases
@@ -20844,7 +20844,7 @@ class SwitchExpr extends ValueExpr {
  */
 class EnumSwitchExpr extends SwitchExpr {
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {Instance}
 	 */
 	evalInternal(scope) {
@@ -20862,11 +20862,11 @@ class EnumSwitchExpr extends SwitchExpr {
 
 		for (let c of this.cases) {
 			let branchVal = c.evalEnumMember(scope, enumType);
-	
+
 			branchMultiType = IfElseExpr.reduceBranchMultiType(
-				c.site, 
-				branchMultiType, 
-				(branchVal instanceof MultiInstance) ? 
+				c.site,
+				branchMultiType,
+				(branchVal instanceof MultiInstance) ?
 					branchVal.values.map(v => v.getType(c.site)) :
 					[branchVal.getType(c.site)]
 			);
@@ -20877,7 +20877,7 @@ class EnumSwitchExpr extends SwitchExpr {
 
 			branchMultiType = IfElseExpr.reduceBranchMultiType(
 				this.defaultCase.site,
-				branchMultiType, 
+				branchMultiType,
 				(defaultVal instanceof MultiInstance) ?
 					defaultVal.values.map(v => v.getType(assertDefined(this.defaultCase).site)) :
 					[defaultVal.getType(this.defaultCase.site)]
@@ -20892,7 +20892,7 @@ class EnumSwitchExpr extends SwitchExpr {
 	}
 
 	/**
-	 * @param {string} indent 
+	 * @param {string} indent
 	 * @returns {IR}
 	 */
 	toIR(indent = "") {
@@ -20936,7 +20936,7 @@ class EnumSwitchExpr extends SwitchExpr {
  */
 class DataSwitchExpr extends SwitchExpr {
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {Instance}
 	 */
 	evalInternal(scope) {
@@ -20960,8 +20960,8 @@ class DataSwitchExpr extends SwitchExpr {
 			let branchVal = c.evalDataMember(scope);
 
 			branchMultiType = IfElseExpr.reduceBranchMultiType(
-				c.site, 
-				branchMultiType, 
+				c.site,
+				branchMultiType,
 				(branchVal instanceof MultiInstance) ?
 					branchVal.values.map(v => v.getType(c.site)) :
 					[branchVal.getType(c.site)]
@@ -20972,8 +20972,8 @@ class DataSwitchExpr extends SwitchExpr {
 			let defaultVal = this.defaultCase.eval(scope);
 
 			branchMultiType = IfElseExpr.reduceBranchMultiType(
-				this.defaultCase.site, 
-				branchMultiType, 
+				this.defaultCase.site,
+				branchMultiType,
 				(defaultVal instanceof MultiInstance) ?
 					defaultVal.values.map(v => v.getType(assertDefined(this.defaultCase).site)) :
 					[defaultVal.getType(this.defaultCase.site)]
@@ -20988,7 +20988,7 @@ class DataSwitchExpr extends SwitchExpr {
 	}
 
 	/**
-	 * @param {string} indent 
+	 * @param {string} indent
 	 * @returns {IR}
 	 */
 	toIR(indent = "") {
@@ -21165,8 +21165,8 @@ function buildLiteralExprFromJson(site, type, value, path) {
 		}
 
 		return new MapLiteralExpr(
-			site, 
-			new TypeExpr(site, type.keyType), 
+			site,
+			new TypeExpr(site, type.keyType),
 			new TypeExpr(site, type.valueType),
 			pairs
 		);
@@ -21214,7 +21214,7 @@ function buildLiteralExprFromJson(site, type, value, path) {
  * @package
  * @param {Site} site
  * @param {Type} type - expected type
- * @param {UplcValue} value 
+ * @param {UplcValue} value
  * @param {string} path - context for debugging
  * @returns {ValueExpr}
  */
@@ -21273,8 +21273,8 @@ function buildLiteralExprFromValue(site, type, value, path) {
 			}
 
 			return new MapLiteralExpr(
-				site, 
-				new TypeExpr(site, type.keyType), 
+				site,
+				new TypeExpr(site, type.keyType),
 				new TypeExpr(site, type.valueType),
 				pairs
 			);
@@ -21328,8 +21328,8 @@ class Statement extends Token {
 	#basePath; // set by the parent Module
 
 	/**
-	 * @param {Site} site 
-	 * @param {Word} name 
+	 * @param {Site} site
+	 * @param {Word} name
 	 */
 	constructor(site, name) {
 		super(site);
@@ -21339,7 +21339,7 @@ class Statement extends Token {
 	}
 
 	/**
-	 * @param {string} basePath 
+	 * @param {string} basePath
 	 */
 	setBasePath(basePath) {
 		this.#basePath = basePath;
@@ -21364,7 +21364,7 @@ class Statement extends Token {
 	}
 
 	/**
-	 * @param {ModuleScope} scope 
+	 * @param {ModuleScope} scope
 	 */
 	eval(scope) {
 		throw new Error("not yet implemented");
@@ -21390,7 +21390,7 @@ class Statement extends Token {
 	/**
 	 * Returns IR of statement.
 	 * No need to specify indent here, because all statements are top-level
-	 * @param {IRDefinitions} map 
+	 * @param {IRDefinitions} map
 	 */
 	toIR(map) {
 		throw new Error("not yet implemented");
@@ -21405,13 +21405,13 @@ class ImportStatement extends Statement {
 	#origName;
 	#moduleName;
 
-	/** 
-	 * @type {?Statement} 
+	/**
+	 * @type {?Statement}
 	 */
 	#origStatement;
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @param {Word} name
 	 * @param {Word} origName
 	 * @param {Word} moduleName
@@ -21462,7 +21462,7 @@ class ImportStatement extends Statement {
 	}
 
 	/**
-	 * @param {ModuleScope} scope 
+	 * @param {ModuleScope} scope
 	 */
 	eval(scope) {
 		let v = this.evalInternal(scope);
@@ -21487,7 +21487,7 @@ class ImportStatement extends Statement {
 	}
 
 	/**
-	 * @param {IRDefinitions} map 
+	 * @param {IRDefinitions} map
 	 */
 	toIR(map) {
 		// import statements only have a scoping function and don't do anything to the IR
@@ -21510,10 +21510,10 @@ class ConstStatement extends Statement {
 	#valueExpr;
 
 	/**
-	 * @param {Site} site 
-	 * @param {Word} name 
+	 * @param {Site} site
+	 * @param {Word} name
 	 * @param {?TypeExpr} typeExpr - can be null in case of type inference
-	 * @param {ValueExpr} valueExpr 
+	 * @param {ValueExpr} valueExpr
 	 */
 	constructor(site, name, typeExpr, valueExpr) {
 		super(site, name);
@@ -21530,7 +21530,7 @@ class ConstStatement extends Statement {
 	}
 
 	/**
-	 * @param {string | UplcValue} value 
+	 * @param {string | UplcValue} value
 	 */
 	changeValue(value) {
 		let type = this.type;
@@ -21566,7 +21566,7 @@ class ConstStatement extends Statement {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {Instance}
 	 */
 	evalInternal(scope) {
@@ -21594,7 +21594,7 @@ class ConstStatement extends Statement {
 
 	/**
 	 * Evaluates rhs and adds to scope
-	 * @param {TopScope} scope 
+	 * @param {TopScope} scope
 	 */
 	eval(scope) {
 		scope.set(this.name, this.evalInternal(scope));
@@ -21621,11 +21621,11 @@ class ConstStatement extends Statement {
 			this.#valueExpr.toIR(),
 			new IR(")")
 		])
-		
+
 	}
 
 	/**
-	 * @param {IRDefinitions} map 
+	 * @param {IRDefinitions} map
 	 */
 	toIR(map) {
 		map.set(this.path, this.toIRInternal());
@@ -21638,8 +21638,8 @@ class ConstStatement extends Statement {
  */
 class DataField extends NameTypePair {
 	/**
-	 * @param {Word} name 
-	 * @param {TypeExpr} typeExpr 
+	 * @param {Word} name
+	 * @param {TypeExpr} typeExpr
 	 */
 	constructor(name, typeExpr) {
 		super(name, typeExpr);
@@ -21654,9 +21654,9 @@ class DataDefinition extends Statement {
 	#fields;
 
 	/**
-	 * @param {Site} site 
-	 * @param {Word} name 
-	 * @param {DataField[]} fields 
+	 * @param {Site} site
+	 * @param {Word} name
+	 * @param {DataField[]} fields
 	 */
 	constructor(site, name, fields) {
 		super(site, name);
@@ -21670,7 +21670,7 @@ class DataDefinition extends Statement {
 	/**
 	 * Returns index of a field.
 	 * Returns -1 if not found.
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {number}
 	 */
 	findField(name) {
@@ -21688,7 +21688,7 @@ class DataDefinition extends Statement {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {boolean}
 	 */
 	hasField(name) {
@@ -21713,7 +21713,7 @@ class DataDefinition extends Statement {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	nFields(site) {
@@ -21721,8 +21721,8 @@ class DataDefinition extends Statement {
 	}
 
 	/**
-	 * @param {Site} site 
-	 * @param {number} i 
+	 * @param {Site} site
+	 * @param {number} i
 	 * @returns {Type}
 	 */
 	getFieldType(site, i) {
@@ -21730,8 +21730,8 @@ class DataDefinition extends Statement {
 	}
 
 	/**
-	 * @param {Site} site 
-	 * @param {string} name 
+	 * @param {Site} site
+	 * @param {string} name
 	 * @returns {number}
 	 */
 	getFieldIndex(site, name) {
@@ -21751,9 +21751,9 @@ class DataDefinition extends Statement {
 	getFieldName(i) {
 		return this.#fields[i].name.toString();
 	}
-	
+
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	nEnumMembers(site) {
@@ -21761,7 +21761,7 @@ class DataDefinition extends Statement {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name) {
@@ -21775,8 +21775,8 @@ class DataDefinition extends Statement {
 	/**
 	 * Gets insance member value.
 	 * If dryRun == true usage is triggered
-	 * @param {Word} name 
-	 * @param {boolean} dryRun 
+	 * @param {Word} name
+	 * @param {boolean} dryRun
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name, dryRun = false) {
@@ -21792,7 +21792,7 @@ class DataDefinition extends Statement {
 	use() {
 		if (!this.used) {
 			super.use();
-			
+
 			for (let f of this.#fields) {
 				f.use();
 			}
@@ -21866,9 +21866,9 @@ class StructStatement extends DataDefinition {
 	#impl;
 
 	/**
-	 * @param {Site} site 
-	 * @param {Word} name 
-	 * @param {DataField[]} fields 
+	 * @param {Site} site
+	 * @param {Word} name
+	 * @param {DataField[]} fields
 	 * @param {ImplDefinition} impl
 	 */
 	constructor(site, name, fields, impl) {
@@ -21887,7 +21887,7 @@ class StructStatement extends DataDefinition {
 
 	/**
 	 * Returns -1, which means -> don't use ConstrData, but use []Data directly
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	getConstrIndex(site) {
@@ -21896,7 +21896,7 @@ class StructStatement extends DataDefinition {
 
 	/**
 	 * Evaluates own type and adds to scope
-	 * @param {TopScope} scope 
+	 * @param {TopScope} scope
 	 */
 	eval(scope) {
 		if (scope.isStrict() && this.fields.length == 0) {
@@ -21913,8 +21913,8 @@ class StructStatement extends DataDefinition {
 	}
 
 	/**
-	 * @param {Word} name 
-	 * @param {boolean} dryRun 
+	 * @param {Word} name
+	 * @param {boolean} dryRun
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name, dryRun = false) {
@@ -21976,9 +21976,9 @@ class FuncStatement extends Statement {
 	#recursive;
 
 	/**
-	 * @param {Site} site 
-	 * @param {Word} name 
-	 * @param {FuncLiteralExpr} funcExpr 
+	 * @param {Site} site
+	 * @param {Word} name
+	 * @param {FuncLiteralExpr} funcExpr
 	 */
 	constructor(site, name, funcExpr) {
 		super(site, name);
@@ -22013,7 +22013,7 @@ class FuncStatement extends Statement {
 
 	/**
 	 * Evaluates a function and returns a func value
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {Instance}
 	 */
 	evalInternal(scope) {
@@ -22023,7 +22023,7 @@ class FuncStatement extends Statement {
 	/**
 	 * Evaluates type of a funtion.
 	 * Separate from evalInternal so we can use this function recursively inside evalInternal
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 * @returns {FuncType}
 	 */
 	evalType(scope) {
@@ -22050,7 +22050,7 @@ class FuncStatement extends Statement {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 */
 	eval(scope) {
 		// add to scope before evaluating, to allow recursive calls
@@ -22078,14 +22078,14 @@ class FuncStatement extends Statement {
 	}
 
 	/**
-	 * @param {IRDefinitions} map 
+	 * @param {IRDefinitions} map
 	 */
 	toIR(map) {
 		map.set(this.path, this.toIRInternal());
 	}
 
 	/**
-	 * @param {Statement} s 
+	 * @param {Statement} s
 	 * @returns {boolean}
 	 */
 	static isMethod(s) {
@@ -22118,7 +22118,7 @@ class EnumMember extends DataDefinition {
 		this.#constrIndex = null;
 	}
 
-	/** 
+	/**
 	 * @param {EnumStatement} parent
 	 * @param {number} i
 	*/
@@ -22126,7 +22126,7 @@ class EnumMember extends DataDefinition {
 		this.#parent = parent;
 		this.#constrIndex = i;
 	}
-	
+
 	/**
 	 * @type {EnumStatement}
 	 */
@@ -22143,7 +22143,7 @@ class EnumMember extends DataDefinition {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	getConstrIndex(site) {
@@ -22155,7 +22155,7 @@ class EnumMember extends DataDefinition {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 */
 	eval(scope) {
 		if (this.#parent === null) {
@@ -22166,8 +22166,8 @@ class EnumMember extends DataDefinition {
 	}
 
 	/**
-	 * @param {Word} name 
-	 * @param {boolean} dryRun 
+	 * @param {Word} name
+	 * @param {boolean} dryRun
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name, dryRun = false) {
@@ -22196,16 +22196,16 @@ class EnumStatement extends Statement {
 	#impl;
 
 	/**
-	 * @param {Site} site 
-	 * @param {Word} name 
-	 * @param {EnumMember[]} members 
+	 * @param {Site} site
+	 * @param {Word} name
+	 * @param {EnumMember[]} members
 	 * @param {ImplDefinition} impl
 	 */
 	constructor(site, name, members, impl) {
 		super(site, name);
 		this.#members = members;
 		this.#impl = impl;
-		
+
 		for (let i = 0; i < this.#members.length; i++) {
 			this.#members[i].registerParent(this, i);
 		}
@@ -22218,7 +22218,7 @@ class EnumStatement extends Statement {
 	/**
 	 * Returns index of enum member.
 	 * Returns -1 if not found
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @returns {number}
 	 */
 	// returns an index
@@ -22237,7 +22237,7 @@ class EnumStatement extends Statement {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @param {number} i
 	 * @returns {EnumMember}
 	 */
@@ -22258,7 +22258,7 @@ class EnumStatement extends Statement {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 */
 	eval(scope) {
 		scope.set(this.name, this.type);
@@ -22281,7 +22281,7 @@ class EnumStatement extends Statement {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	nFields(site) {
@@ -22298,8 +22298,8 @@ class EnumStatement extends Statement {
 	}
 
 	/**f
-	 * @param {Site} site 
-	 * @param {string} name 
+	 * @param {Site} site
+	 * @param {string} name
 	 * @returns {number}
 	 */
 	getFieldIndex(site, name) {
@@ -22307,24 +22307,24 @@ class EnumStatement extends Statement {
 	}
 
 	/**
-	 * @param {number} i 
+	 * @param {number} i
 	 * @returns {string}
 	 */
 	getFieldName(i) {
 		throw Site.dummy().typeError("enum doesn't have fields");
 	}
-	
+
     /**
-     * @param {Word} name 
+     * @param {Word} name
      * @returns {boolean}
      */
     hasField(name) {
         throw name.site.typeError("enum doesn't have fields");
     }
 
-	/** 
-	 * @param {Word} name 
-	 * @param {boolean} dryRun 
+	/**
+	 * @param {Word} name
+	 * @param {boolean} dryRun
 	 * @returns {Instance}
 	 */
 	getInstanceMember(name, dryRun = false) {
@@ -22336,7 +22336,7 @@ class EnumStatement extends Statement {
 	}
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @param {boolean} dryRun
 	 * @returns {EvalEntity}
 	 */
@@ -22350,7 +22350,7 @@ class EnumStatement extends Statement {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	getConstrIndex(site) {
@@ -22358,7 +22358,7 @@ class EnumStatement extends Statement {
 	}
 
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 * @returns {number}
 	 */
 	nEnumMembers(site) {
@@ -22375,7 +22375,7 @@ class EnumStatement extends Statement {
 	}
 
 	/**
-	 * @param {IRDefinitions} map 
+	 * @param {IRDefinitions} map
 	 */
 	toIR(map) {
 		for (let member of this.#members) {
@@ -22402,7 +22402,7 @@ class ImplDefinition {
 
 	/**
 	 * @param {TypeRefExpr} selfTypeExpr;
-	 * @param {(FuncStatement | ConstStatement)[]} statements 
+	 * @param {(FuncStatement | ConstStatement)[]} statements
 	 */
 	constructor(selfTypeExpr, statements) {
 		this.#selfTypeExpr = selfTypeExpr;
@@ -22416,7 +22416,7 @@ class ImplDefinition {
 	}
 
 	/**
-	 * @param {Scope} scope 
+	 * @param {Scope} scope
 	 */
 	eval(scope) {
 		let selfType = this.#selfTypeExpr.eval(scope);
@@ -22476,10 +22476,10 @@ class ImplDefinition {
 				throw name.referenceError(`'${this.#selfTypeExpr.toString()}.${name.toString()}' undefined`);
 		}
 	}
-	
+
 	/**
-	 * @param {Word} name 
-	 * @param {boolean} dryRun 
+	 * @param {Word} name
+	 * @param {boolean} dryRun
 	 * @returns {EvalEntity}
 	 */
 	getTypeMember(name, dryRun = false) {
@@ -22527,7 +22527,7 @@ class ImplDefinition {
 
 	/**
 	 * Returns IR of all impl members
-	 * @param {IRDefinitions} map 
+	 * @param {IRDefinitions} map
 	 */
 	toIR(map) {
 		let path = this.#selfTypeExpr.path;
@@ -22600,7 +22600,7 @@ function buildProgramStatements(ts) {
 
 /**
  * @package
- * @param {Token[]} ts 
+ * @param {Token[]} ts
  * @returns {[number, Word]} - [purpose, name] (ScriptPurpose is an integer)
  * @package
  */
@@ -22637,7 +22637,7 @@ function buildScriptPurpose(ts) {
 /**
  * Parses Helios quickly to extract the script purpose header.
  * Returns null if header is missing or incorrectly formed (instead of throwing an error)
- * @param {string} rawSrc 
+ * @param {string} rawSrc
  * @returns {?[string, string]} - [purpose, name]
  */
 export function extractScriptPurposeAndName(rawSrc) {
@@ -22673,8 +22673,8 @@ export function extractScriptPurposeAndName(rawSrc) {
 
 /**
  * @package
- * @param {Site} site 
- * @param {Token[]} ts 
+ * @param {Site} site
+ * @param {Token[]} ts
  * @returns {ConstStatement}
  */
 function buildConstStatement(site, ts) {
@@ -22730,8 +22730,8 @@ function splitDataImpl(ts) {
 
 /**
  * @package
- * @param {Site} site 
- * @param {Token[]} ts 
+ * @param {Site} site
+ * @param {Token[]} ts
  * @returns {StructStatement}
  */
 function buildStructStatement(site, ts) {
@@ -22765,7 +22765,7 @@ function buildStructStatement(site, ts) {
 
 /**
  * @package
- * @param {Token[]} ts 
+ * @param {Token[]} ts
  * @returns {DataField[]}
  */
 function buildDataFields(ts) {
@@ -22827,8 +22827,8 @@ function buildDataFields(ts) {
 
 /**
  * @package
- * @param {Site} site 
- * @param {Token[]} ts 
+ * @param {Site} site
+ * @param {Token[]} ts
  * @param {?TypeExpr} methodOf - methodOf !== null then first arg can be named 'self'
  * @returns {FuncStatement}
  */
@@ -22846,7 +22846,7 @@ function buildFuncStatement(site, ts, methodOf = null) {
 
 /**
  * @package
- * @param {Token[]} ts 
+ * @param {Token[]} ts
  * @param {?TypeExpr} methodOf - methodOf !== null then first arg can be named 'self'
  * @param {boolean} allowInferredRetType
  * @returns {FuncLiteralExpr}
@@ -22874,7 +22874,7 @@ function buildFuncLiteralExpr(ts, methodOf = null, allowInferredRetType = false)
 
 /**
  * @package
- * @param {Group} parens 
+ * @param {Group} parens
  * @param {?TypeExpr} methodOf - methodOf !== nul then first arg can be named 'self'
  * @returns {FuncArg[]}
  */
@@ -22953,8 +22953,8 @@ function buildFuncArgs(parens, methodOf = null) {
 
 /**
  * @package
- * @param {Site} site 
- * @param {Token[]} ts 
+ * @param {Site} site
+ * @param {Token[]} ts
  * @returns {EnumStatement}
  */
 function buildEnumStatement(site, ts) {
@@ -22997,8 +22997,8 @@ function buildEnumStatement(site, ts) {
 
 /**
  * @package
- * @param {Site} site 
- * @param {Token[]} ts 
+ * @param {Site} site
+ * @param {Token[]} ts
  * @returns {ImportStatement[]}
  */
 function buildImportStatements(site, ts) {
@@ -23069,7 +23069,7 @@ function buildImportStatements(site, ts) {
 
 /**
  * @package
- * @param {Token[]} ts 
+ * @param {Token[]} ts
  * @returns {EnumMember}
  */
 function buildEnumMember(ts) {
@@ -23086,9 +23086,9 @@ function buildEnumMember(ts) {
 	}
 }
 
-/** 
+/**
  * @package
- * @param {Token[]} ts 
+ * @param {Token[]} ts
  * @param {TypeRefExpr} selfTypeExpr - reference to parent type
  * @param {Word[]} fieldNames - to check if impl statements have a unique name
  * @param {?Site} endSite
@@ -23096,7 +23096,7 @@ function buildEnumMember(ts) {
  */
 function buildImplDefinition(ts, selfTypeExpr, fieldNames, endSite) {
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 */
 	function assertNonAuto(name) {
 		if (name.toString() == "serialize" || name.toString() == "__eq" || name.toString() == "__neq" || name.toString() == "from_data") {
@@ -23110,8 +23110,8 @@ function buildImplDefinition(ts, selfTypeExpr, fieldNames, endSite) {
 
 	const statements = buildImplMembers(ts, selfTypeExpr);
 
-	/** 
-	 * @param {number} i 
+	/**
+	 * @param {number} i
 	 */
 	function assertUnique(i) {
 		let s = statements[i];
@@ -23146,7 +23146,7 @@ function buildImplDefinition(ts, selfTypeExpr, fieldNames, endSite) {
 
 /**
  * @package
- * @param {Token[]} ts 
+ * @param {Token[]} ts
  * @param {TypeExpr} methodOf
  * @returns {(ConstStatement | FuncStatement)[]}
  */
@@ -23176,7 +23176,7 @@ function buildImplMembers(ts, methodOf) {
 
 /**
  * @package
- * @param {Token[]} ts 
+ * @param {Token[]} ts
  * @returns {TypeExpr}
  */
 function buildTypeExpr(ts) {
@@ -23201,7 +23201,7 @@ function buildTypeExpr(ts) {
 
 /**
  * @package
- * @param {Token[]} ts 
+ * @param {Token[]} ts
  * @returns {ListTypeExpr}
  */
 function buildListTypeExpr(ts) {
@@ -23214,7 +23214,7 @@ function buildListTypeExpr(ts) {
 
 /**
  * @package
- * @param {Token[]} ts 
+ * @param {Token[]} ts
  * @returns {MapTypeExpr}
  */
 function buildMapTypeExpr(ts) {
@@ -23244,7 +23244,7 @@ function buildMapTypeExpr(ts) {
 
 /**
  * @package
- * @param {Token[]} ts 
+ * @param {Token[]} ts
  * @returns {TypeExpr}
  */
 function buildOptionTypeExpr(ts) {
@@ -23270,7 +23270,7 @@ function buildOptionTypeExpr(ts) {
 
 /**
  * @package
- * @param {Token[]} ts 
+ * @param {Token[]} ts
  * @returns {FuncTypeExpr}
  */
 function buildFuncTypeExpr(ts) {
@@ -23287,8 +23287,8 @@ function buildFuncTypeExpr(ts) {
 
 /**
  * @package
- * @param {Site} site 
- * @param {Token[]} ts 
+ * @param {Site} site
+ * @param {Token[]} ts
  * @param {boolean} allowInferredRetType
  * @returns {(?TypeExpr)[]}
  */
@@ -23322,7 +23322,7 @@ function buildFuncRetTypeExprs(site, ts, allowInferredRetType = false) {
 
 /**
  * @package
- * @param {Token[]} ts 
+ * @param {Token[]} ts
  * @returns {TypePathExpr}
  */
 function buildTypePathExpr(ts) {
@@ -23341,7 +23341,7 @@ function buildTypePathExpr(ts) {
 
 /**
  * @package
- * @param {Token[]} ts 
+ * @param {Token[]} ts
  * @returns {TypeRefExpr}
  */
 function buildTypeRefExpr(ts) {
@@ -23356,8 +23356,8 @@ function buildTypeRefExpr(ts) {
 
 /**
  * @package
- * @param {Token[]} ts 
- * @param {number} prec 
+ * @param {Token[]} ts
+ * @param {number} prec
  * @returns {ValueExpr}
  */
 function buildValueExpr(ts, prec = 0) {
@@ -23368,9 +23368,9 @@ function buildValueExpr(ts, prec = 0) {
 	const exprBuilders = [
 		/**
 		 * 0: lowest precedence is assignment
-		 * @param {Token[]} ts_ 
-		 * @param {number} prec_ 
-		 * @returns 
+		 * @param {Token[]} ts_
+		 * @param {number} prec_
+		 * @returns
 		 */
 		function (ts_, prec_) {
 			return buildMaybeAssignOrPrintExpr(ts_, prec_);
@@ -23384,9 +23384,9 @@ function buildValueExpr(ts, prec = 0) {
 		makeUnaryExprBuilder(['!', '+', '-']), // 7: logical not, negate
 		/**
 		 * 8: variables or literal values chained with: (enum)member access, indexing and calling
-		 * @param {Token[]} ts_ 
-		 * @param {number} prec_ 
-		 * @returns 
+		 * @param {Token[]} ts_
+		 * @param {number} prec_
+		 * @returns
 		 */
 		function (ts_, prec_) {
 			return buildChainedValueExpr(ts_, prec_);
@@ -23437,7 +23437,7 @@ function buildMaybeAssignOrPrintExpr(ts, prec) {
 			const lts = ts.splice(0, equalsPos);
 
 			const lhs = buildAssignLhs(equalsSite, lts);
-			
+
 			assertDefined(ts.shift()).assertSymbol("=");
 
 			semicolonPos = SymbolToken.find(ts, ";");
@@ -23495,8 +23495,8 @@ function buildMaybeAssignOrPrintExpr(ts, prec) {
 
 /**
  * @package
- * @param {Site} site 
- * @param {Token[]} ts 
+ * @param {Site} site
+ * @param {Token[]} ts
  * @returns {NameTypePair[]}
  */
 function buildAssignLhs(site, ts) {
@@ -23554,11 +23554,11 @@ function buildAssignLhs(site, ts) {
 					name.assertNotKeyword();
 
 					const maybeColon = fts.shift();
-					
+
 					if (maybeColon === undefined) {
 						throw name.syntaxError(`expected ':' after '${name.toString()}'`);
 					}
-					
+
 					const colon = maybeColon.assertSymbol(":");
 
 					if (fts.length === 0) {
@@ -23591,7 +23591,7 @@ function buildAssignLhs(site, ts) {
 
 /**
  * @package
- * @param {string | string[]} symbol 
+ * @param {string | string[]} symbol
  * @returns {(ts: Token[], prec: number) => ValueExpr}
  */
 function makeBinaryExprBuilder(symbol) {
@@ -23615,7 +23615,7 @@ function makeBinaryExprBuilder(symbol) {
 
 /**
  * @package
- * @param {string | string[]} symbol 
+ * @param {string | string[]} symbol
  * @returns {(ts: Token[], prec: number) => ValueExpr}
  */
 function makeUnaryExprBuilder(symbol) {
@@ -23633,8 +23633,8 @@ function makeUnaryExprBuilder(symbol) {
 
 /**
  * @package
- * @param {Token[]} ts 
- * @param {number} prec 
+ * @param {Token[]} ts
+ * @param {number} prec
  * @returns {ValueExpr}
  */
 function buildChainedValueExpr(ts, prec) {
@@ -23669,7 +23669,7 @@ function buildChainedValueExpr(ts, prec) {
 
 /**
  * @package
- * @param {Token[]} ts 
+ * @param {Token[]} ts
  * @returns {ValueExpr}
  */
 function buildChainStartValueExpr(ts) {
@@ -23687,7 +23687,7 @@ function buildChainStartValueExpr(ts) {
 		if (ts[0].isGroup("[")) {
 			return buildListLiteralExpr(ts);
 		} else if (ts[0].isWord("Map") && ts[1].isGroup("[")) {
-			return buildMapLiteralExpr(ts); 
+			return buildMapLiteralExpr(ts);
 		} else {
 			// could be switch or literal struct construction
 			const iBraces = Group.find(ts, "{");
@@ -23734,7 +23734,7 @@ function buildParensExpr(ts) {
 
 /**
  * @package
- * @param {Group} parens 
+ * @param {Group} parens
  * @returns {ValueExpr[]}
  */
 function buildCallArgs(parens) {
@@ -23743,7 +23743,7 @@ function buildCallArgs(parens) {
 
 /**
  * @package
- * @param {Token[]} ts 
+ * @param {Token[]} ts
  * @returns {IfElseExpr}
  */
 function buildIfElseExpr(ts) {
@@ -23803,7 +23803,7 @@ function buildIfElseExpr(ts) {
 /**
  * @package
  * @param {ValueExpr} controlExpr
- * @param {Token[]} ts 
+ * @param {Token[]} ts
  * @returns {ValueExpr} - EnumSwitchExpr or DataSwitchExpr
  */
 function buildSwitchExpr(controlExpr, ts) {
@@ -23876,7 +23876,7 @@ function buildSwitchExpr(controlExpr, ts) {
  * @param {Site} site
  * @param {Token[]} ts
  * @param {boolean} isAfterColon
- * @returns {Word} 
+ * @returns {Word}
  */
 function buildSwitchCaseName(site, ts, isAfterColon) {
 	const first = ts.shift();
@@ -23888,7 +23888,7 @@ function buildSwitchCaseName(site, ts, isAfterColon) {
 			throw site.syntaxError("invalid switch case syntax");
 		}
 	}
-		
+
 	if (first.isWord("Map")) {
 		const second = ts.shift();
 
@@ -23930,7 +23930,7 @@ function buildSwitchCaseName(site, ts, isAfterColon) {
 
 		return first.assertWord().assertNotKeyword();
 	} else if (first.isGroup("[")) {
-		// list 
+		// list
 		first.assertGroup("[", 0);
 
 		const second = ts.shift();
@@ -23951,7 +23951,7 @@ function buildSwitchCaseName(site, ts, isAfterColon) {
 
 /**
  * @package
- * @param {Token[]} ts 
+ * @param {Token[]} ts
  * @returns {SwitchCase}
  */
 function buildSwitchCase(ts) {
@@ -23974,7 +23974,7 @@ function buildSwitchCase(ts) {
 
 /**
  * @package
- * @param {Token[]} ts 
+ * @param {Token[]} ts
  * @returns {[?Word, Word]} - varName is optional
  */
 function buildSwitchCaseNameType(ts) {
@@ -23988,7 +23988,7 @@ function buildSwitchCaseNameType(ts) {
 
 	if (colonPos != -1) {
 		varName = assertDefined(ts.shift()).assertWord().assertNotKeyword();
-		
+
 		const maybeColon = ts.shift();
 		if (maybeColon === undefined) {
 			throw varName.syntaxError("invalid switch case syntax, expected '(<name>: <enum-member>)', got '(<name>)'");
@@ -24046,14 +24046,14 @@ function buildMultiArgSwitchCase(tsLeft, ts) {
 
 /**
  * @package
- * @param {Token[]} tsLeft 
- * @param {Token[]} ts 
+ * @param {Token[]} tsLeft
+ * @param {Token[]} ts
  * @returns {SwitchCase}
  */
 function buildSingleArgSwitchCase(tsLeft, ts) {
 	/** @type {[?Word, Word]} */
 	const [varName, memberName] = buildSwitchCaseNameType(tsLeft);
-	
+
 	const maybeArrow = ts.shift();
 
 	if (maybeArrow === undefined) {
@@ -24069,8 +24069,8 @@ function buildSingleArgSwitchCase(tsLeft, ts) {
 
 /**
  * @package
- * @param {Site} site 
- * @param {Token[]} ts 
+ * @param {Site} site
+ * @param {Token[]} ts
  * @returns {ValueExpr}
  */
 function buildSwitchCaseBody(site, ts) {
@@ -24099,7 +24099,7 @@ function buildSwitchCaseBody(site, ts) {
 
 /**
  * @package
- * @param {Token[]} ts 
+ * @param {Token[]} ts
  * @returns {SwitchDefault}
  */
 function buildSwitchDefault(ts) {
@@ -24135,7 +24135,7 @@ function buildSwitchDefault(ts) {
 
 /**
  * @package
- * @param {Token[]} ts 
+ * @param {Token[]} ts
  * @returns {ListLiteralExpr}
  */
 function buildListLiteralExpr(ts) {
@@ -24211,7 +24211,7 @@ function buildMapLiteralExpr(ts) {
 
 /**
  * @package
- * @param {Token[]} ts 
+ * @param {Token[]} ts
  * @returns {StructLiteralExpr}
  */
 function buildStructLiteralExpr(ts) {
@@ -24270,7 +24270,7 @@ function buildStructLiteralField(bracesSite, ts) {
 
 /**
  * @package
- * @param {Token[]} ts 
+ * @param {Token[]} ts
  * @returns {ValueExpr}
  */
 function buildValuePathExpr(ts) {
@@ -24283,7 +24283,7 @@ function buildValuePathExpr(ts) {
 	assertDefined(ts.shift()).assertSymbol("::");
 
 	const memberName = assertDefined(ts.shift()).assertWord().assertNotKeyword();
-	
+
 	return new ValuePathExpr(typeExpr, memberName);
 }
 
@@ -24300,7 +24300,7 @@ var onNotifyRawUsage = null;
 
 /**
  * Set the statistics collector (used by the test-suite)
- * @param {(name: string, count: number) => void} callback 
+ * @param {(name: string, count: number) => void} callback
  */
 function setRawUsageNotifier(callback) {
 	onNotifyRawUsage = callback;
@@ -24318,8 +24318,8 @@ class RawFunc {
 
 	/**
 	 * Construct a RawFunc, and immediately scan the definition for dependencies
-	 * @param {string} name 
-	 * @param {string} definition 
+	 * @param {string} name
+	 * @param {string} definition
 	 */
 	constructor(name, definition) {
 		this.#name = name;
@@ -24344,8 +24344,8 @@ class RawFunc {
 
 	/**
 	 * Loads 'this.#dependecies' (if not already loaded), then load 'this'
-	 * @param {Map<string, RawFunc>} db 
-	 * @param {Map<string, IR>} dst 
+	 * @param {Map<string, RawFunc>} db
+	 * @param {Map<string, IR>} dst
 	 * @returns {void}
 	 */
 	load(db, dst) {
@@ -24381,7 +24381,7 @@ function makeRawFunctions() {
 	// local utility functions
 
 	/**
-	 * @param {RawFunc} fn 
+	 * @param {RawFunc} fn
 	 */
 	function add(fn) {
 		if (db.has(fn.name)) {
@@ -24392,7 +24392,7 @@ function makeRawFunctions() {
 
 	/**
 	 * Adds basic auto members to a fully named type
-	 * @param {string} ns 
+	 * @param {string} ns
 	 */
 	function addDataFuncs(ns) {
 		add(new RawFunc(`${ns}____eq`, "__helios__common____eq"));
@@ -24403,7 +24403,7 @@ function makeRawFunctions() {
 
 	/**
 	 * Adds basic auto members to a fully named enum type
-	 * @param {string} ns 
+	 * @param {string} ns
 	 */
 	function addEnumDataFuncs(ns) {
 		add(new RawFunc(`${ns}____eq`, "__helios__common____eq"));
@@ -24414,9 +24414,9 @@ function makeRawFunctions() {
 	/**
 	 * Generates the IR needed to unwrap a Plutus-core constrData
 	 * @param {string} dataExpr
-	 * @param {number} iConstr 
-	 * @param {number} iField 
-	 * @param {string} errorExpr 
+	 * @param {number} iConstr
+	 * @param {number} iField
+	 * @param {string} errorExpr
 	 * @returns {string}
 	 */
 	function unData(dataExpr, iConstr, iField, errorExpr = "error(\"unexpected constructor index\")") {
@@ -24449,9 +24449,9 @@ function makeRawFunctions() {
 	/**
 	 * Generates IR for constructing a list.
 	 * By default the result is kept as list, and not converted to data
-	 * @param {string[]} args 
-	 * @param {boolean} toData 
-	 * @returns 
+	 * @param {string[]} args
+	 * @param {boolean} toData
+	 * @returns
 	 */
 	function makeList(args, toData = false) {
 		let n = args.length;
@@ -24519,12 +24519,12 @@ function makeRawFunctions() {
 		}(
 			(recurse, self, fn) -> {
 				__core__ifThenElse(
-					__core__nullList(self), 
-					() -> {false}, 
+					__core__nullList(self),
+					() -> {false},
 					() -> {
 						__core__ifThenElse(
 							fn(__core__headList(self)),
-							() -> {true}, 
+							() -> {true},
 							() -> {recurse(recurse, __core__tailList(self), fn)}
 						)()
 					}
@@ -24532,7 +24532,7 @@ function makeRawFunctions() {
 			}
 		)
 	}`));
-	add(new RawFunc("__helios__common__all", 
+	add(new RawFunc("__helios__common__all",
 	`(self, fn) -> {
 		(recurse) -> {
 			recurse(recurse, self, fn)
@@ -24563,7 +24563,7 @@ function makeRawFunctions() {
 					() -> {lst},
 					() -> {
 						__core__mkCons(
-							fn(__core__headList(rem)), 
+							fn(__core__headList(rem)),
 							recurse(recurse, __core__tailList(rem), lst)
 						)
 					}
@@ -24571,19 +24571,19 @@ function makeRawFunctions() {
 			}
 		)
 	}`));
-	add(new RawFunc("__helios__common__filter", 
+	add(new RawFunc("__helios__common__filter",
 	`(self, fn, nil) -> {
 		(recurse) -> {
 			recurse(recurse, self, fn)
 		}(
 			(recurse, self, fn) -> {
 				__core__ifThenElse(
-					__core__nullList(self), 
-					() -> {nil}, 
+					__core__nullList(self),
+					() -> {nil},
 					() -> {
 						__core__ifThenElse(
 							fn(__core__headList(self)),
-							() -> {__core__mkCons(__core__headList(self), recurse(recurse, __core__tailList(self), fn))}, 
+							() -> {__core__mkCons(__core__headList(self), recurse(recurse, __core__tailList(self), fn))},
 							() -> {recurse(recurse, __core__tailList(self), fn)}
 						)()
 					}
@@ -24591,7 +24591,7 @@ function makeRawFunctions() {
 			}
 		)
 	}`));
-	add(new RawFunc("__helios__common__filter_list", 
+	add(new RawFunc("__helios__common__filter_list",
 	`(self, fn) -> {
 		__helios__common__filter(self, fn, __helios__common__list_0)
 	}`));
@@ -24606,12 +24606,12 @@ function makeRawFunctions() {
 		}(
 			(recurse, self, fn) -> {
 				__core__ifThenElse(
-					__core__nullList(self), 
-					() -> {error("not found")}, 
+					__core__nullList(self),
+					() -> {error("not found")},
 					() -> {
 						__core__ifThenElse(
-							fn(__core__headList(self)), 
-							() -> {callback(__core__headList(self))}, 
+							fn(__core__headList(self)),
+							() -> {callback(__core__headList(self))},
 							() -> {recurse(recurse, __core__tailList(self), fn)}
 						)()
 					}
@@ -24626,12 +24626,12 @@ function makeRawFunctions() {
 		}(
 			(recurse, self, fn) -> {
 				__core__ifThenElse(
-					__core__nullList(self), 
-					() -> {__core__constrData(1, __helios__common__list_0)}, 
+					__core__nullList(self),
+					() -> {__core__constrData(1, __helios__common__list_0)},
 					() -> {
 						__core__ifThenElse(
-							fn(__core__headList(self)), 
-							() -> {__core__constrData(0, __helios__common__list_1(callback(__core__headList(self))))}, 
+							fn(__core__headList(self)),
+							() -> {__core__constrData(0, __helios__common__list_1(callback(__core__headList(self))))},
 							() -> {recurse(recurse, __core__tailList(self), fn)}
 						)()
 					}
@@ -24646,8 +24646,8 @@ function makeRawFunctions() {
 		}(
 			(recurse, self, fn, z) -> {
 				__core__ifThenElse(
-					__core__nullList(self), 
-					() -> {z}, 
+					__core__nullList(self),
+					() -> {z},
 					() -> {recurse(recurse, __core__tailList(self), fn, fn(z, __core__headList(self)))}
 				)()
 			}
@@ -24660,8 +24660,8 @@ function makeRawFunctions() {
 		}(
 			(recurse, self, fn, z) -> {
 				__core__ifThenElse(
-					__core__nullList(self), 
-					() -> {z}, 
+					__core__nullList(self),
+					() -> {z},
 					() -> {fn(__core__headList(self), () -> {recurse(recurse, __core__tailList(self), fn, z)})}
 				)()
 			}
@@ -24689,7 +24689,7 @@ function makeRawFunctions() {
 			}
 		)
 	}`));
-	add(new RawFunc("__helios__common__sort", 
+	add(new RawFunc("__helios__common__sort",
 	`(lst, comp) -> {
 		(recurse) -> {
 			recurse(recurse, lst)
@@ -24715,12 +24715,12 @@ function makeRawFunctions() {
 			}(
 				(recurse, self, key) -> {
 					__core__ifThenElse(
-						__core__nullList(self), 
-						fnNotFound, 
+						__core__nullList(self),
+						fnNotFound,
 						() -> {
 							__core__ifThenElse(
-								__core__equalsData(key, __core__fstPair(__core__headList(self))), 
-								() -> {fnFound(__core__sndPair(__core__headList(self)))}, 
+								__core__equalsData(key, __core__fstPair(__core__headList(self))),
+								() -> {fnFound(__core__sndPair(__core__headList(self)))},
 								() -> {recurse(recurse, __core__tailList(self), key)}
 							)()
 						}
@@ -24736,8 +24736,8 @@ function makeRawFunctions() {
 	add(new RawFunc("__helios__common__unBoolData",
 	`(d) -> {
 		__core__ifThenElse(
-			__core__equalsInteger(__core__fstPair(__core__unConstrData(d)), 0), 
-			false, 
+			__core__equalsInteger(__core__fstPair(__core__unConstrData(d)), 0),
+			false,
 			true
 		)
 	}`));
@@ -24753,15 +24753,15 @@ function makeRawFunctions() {
 	`(s) -> {
 		__core__bData(__core__encodeUtf8(s))
 	}`));
-	add(new RawFunc("__helios__common__length", 
+	add(new RawFunc("__helios__common__length",
 	`(lst) -> {
 		(recurse) -> {
 			__core__iData(recurse(recurse, lst))
 		}(
 			(recurse, lst) -> {
 				__core__ifThenElse(
-					__core__nullList(lst), 
-					() -> {0}, 
+					__core__nullList(lst),
+					() -> {0},
 					() -> {__core__addInteger(recurse(recurse, __core__tailList(lst)), 1)}
 				)()
 			}
@@ -24775,7 +24775,7 @@ function makeRawFunctions() {
 			a
 		)
 	}`));
-	add(new RawFunc("__helios__common__min", 
+	add(new RawFunc("__helios__common__min",
 	`(a, b) -> {
 		__core__ifThenElse(
 			__core__lessThanEqualsInteger(a, b),
@@ -24783,7 +24783,7 @@ function makeRawFunctions() {
 			b
 		)
 	}`));
-	add(new RawFunc("__helios__common__concat", 
+	add(new RawFunc("__helios__common__concat",
 	`(a, b) -> {
 		(recurse) -> {
 			recurse(recurse, b, a)
@@ -24835,7 +24835,7 @@ function makeRawFunctions() {
 			}(__core__unBData(self))
 		}
 	}`));
-	add(new RawFunc("__helios__common__starts_with", 
+	add(new RawFunc("__helios__common__starts_with",
 	`(self, selfLengthFn) -> {
 		(self) -> {
 			(prefix) -> {
@@ -24871,11 +24871,11 @@ function makeRawFunctions() {
 			}
 		}(__core__unBData(self))
 	}`));
-	add(new RawFunc("__helios__common__fields", 
+	add(new RawFunc("__helios__common__fields",
 	`(self) -> {
 		__core__sndPair(__core__unConstrData(self))
 	}`));
-	add(new RawFunc("__helios__common__field_0", 
+	add(new RawFunc("__helios__common__field_0",
 	`(self) -> {
 		__core__headList(__helios__common__fields(self))
 	}`));
@@ -24897,7 +24897,7 @@ function makeRawFunctions() {
 	`(self) -> {
 		__core__headList(__core__unListData(self))
 	}`));
-	add(new RawFunc("__helios__common__tuple_fields_after_0", 
+	add(new RawFunc("__helios__common__tuple_fields_after_0",
 	`(self) -> {
 		__core__tailList(__core__unListData(self))
 	}`));
@@ -24912,7 +24912,7 @@ function makeRawFunctions() {
 	}`));
 	}
 	add(new RawFunc("__helios__common__list_0", "__core__mkNilData(())"));
-	add(new RawFunc("__helios__common__list_1", 
+	add(new RawFunc("__helios__common__list_1",
 	`(a) -> {
 		__core__mkCons(a, __helios__common__list_0)
 	}`));
@@ -24934,21 +24934,21 @@ function makeRawFunctions() {
 		__core__mkCons(${first}, __helios__common__list_${(i-1).toString()}(${woFirst.join(", ")}))
 	}`));
 	}
-	add(new RawFunc("__helios__common__hash_datum_data", 
+	add(new RawFunc("__helios__common__hash_datum_data",
 	`(data) -> {
 		__core__bData(__core__blake2b_256(__core__serialiseData(data)))
 	}`));
 
 
 	// Global builtin functions
-	add(new RawFunc("__helios__print", 
+	add(new RawFunc("__helios__print",
 	`(msg) -> {
 		__core__trace(__helios__common__unStringData(msg), ())
 	}`));
 	add(new RawFunc("__helios__error",
 	`(msg) -> {
 		__core__trace(
-			__helios__common__unStringData(msg), 
+			__helios__common__unStringData(msg),
 			() -> {
 				error("error thrown by user-code")
 			}
@@ -25122,10 +25122,10 @@ function makeRawFunctions() {
 							}(
 								__core__consByteString(
 									__core__ifThenElse(
-										__core__lessThanInteger(partial, 10), 
-										__core__addInteger(partial, 48), 
+										__core__lessThanInteger(partial, 10),
+										__core__addInteger(partial, 48),
 										__core__addInteger(partial, 87)
-									), 
+									),
 									#
 								)
 							)
@@ -25235,7 +25235,7 @@ function makeRawFunctions() {
 										recurse(recurse, new_acc, __core__addInteger(i, 1))
 									}(
 										__core__addInteger(
-											__core__multiplyInteger(acc, 10), 
+											__core__multiplyInteger(acc, 10),
 											__helios__int__parse_digit(__core__indexByteString(bytes, i))
 										)
 									)
@@ -25247,7 +25247,7 @@ function makeRawFunctions() {
 			)
 		}(__core__unBData(string))
 	}`));
-	add(new RawFunc("__helios__int__from_little_endian", 
+	add(new RawFunc("__helios__int__from_little_endian",
 	`(bytes) -> {
 		(bytes) -> {
 			__core__iData(
@@ -25281,7 +25281,7 @@ function makeRawFunctions() {
 
 
 	// Bool builtins
-	add(new RawFunc(`__helios__bool____eq`, 
+	add(new RawFunc(`__helios__bool____eq`,
 	`(a) -> {
 		(b) -> {
 			__core__ifThenElse(a, b, __helios__common__not(b))
@@ -25293,7 +25293,7 @@ function makeRawFunctions() {
 			__core__ifThenElse(a, __helios__common__not(b), b)
 		}
 	}`));
-	add(new RawFunc(`__helios__bool__serialize`, 
+	add(new RawFunc(`__helios__bool__serialize`,
 	`(self) -> {
 		__helios__common__serialize(__helios__common__boolData(self))
 	}`));
@@ -25304,15 +25304,15 @@ function makeRawFunctions() {
 	add(new RawFunc("__helios__bool__and",
 	`(a, b) -> {
 		__core__ifThenElse(
-			a(), 
-			() -> {b()}, 
+			a(),
+			() -> {b()},
 			() -> {false}
 		)()
 	}`));
 	add(new RawFunc("__helios__bool__or",
 	`(a, b) -> {
 		__core__ifThenElse(
-			a(), 
+			a(),
 			() -> {true},
 			() -> {b()}
 		)()
@@ -25343,7 +25343,7 @@ function makeRawFunctions() {
 					__helios__string____add(prefix)(
 						__helios__bool__show(self)()
 					)
-				), 
+				),
 				self
 			)
 		}
@@ -25422,7 +25422,7 @@ function makeRawFunctions() {
 	`(self) -> {
 		__helios__common__slice_bytearray(self, __core__lengthOfByteString)
 	}`));
-	add(new RawFunc("__helios__bytearray__starts_with", 
+	add(new RawFunc("__helios__bytearray__starts_with",
 	`(self) -> {
 		__helios__common__starts_with(self, __core__lengthOfByteString)
 	}`));
@@ -25481,7 +25481,7 @@ function makeRawFunctions() {
 												__core__consByteString(48, hexBytes),
 												hexBytes
 											)
-										}(__core__unBData(__helios__int__to_hex(__core__iData(__core__indexByteString(self, 0)))()))), 
+										}(__core__unBData(__helios__int__to_hex(__core__iData(__core__indexByteString(self, 0)))()))),
 										recurse(recurse, __core__sliceByteString(1, n, self))
 									)
 								},
@@ -25500,15 +25500,15 @@ function makeRawFunctions() {
 	add(new RawFunc("__helios__bytearray32__serialize", "__helios__bytearray__serialize"));
 	add(new RawFunc("__helios__bytearray32____add", "__helios__bytearray____add"));
 	add(new RawFunc("__helios__bytearray32__length", "(_) -> {__core__iData(32)}"));
-	add(new RawFunc("__helios__bytearray32__slice", 
+	add(new RawFunc("__helios__bytearray32__slice",
 	`(self) -> {
 		__helios__common__slice_bytearray(self, (self) -> {32})
 	}`));
-	add(new RawFunc("__helios__bytearray32__starts_with", 
+	add(new RawFunc("__helios__bytearray32__starts_with",
 	`(self) -> {
 		__helios__common__starts_with(self, (self) -> {32})
 	}`));
-	add(new RawFunc("__helios__bytearray32__ends_with", 
+	add(new RawFunc("__helios__bytearray32__ends_with",
 	`(self) -> {
 		__helios__common__ends_with(self, (self) -> {32})
 	}`));
@@ -25580,15 +25580,15 @@ function makeRawFunctions() {
 				}(
 					(recurse, self, index) -> {
 						__core__ifThenElse(
-							__core__nullList(self), 
-							() -> {error("index out of range")}, 
+							__core__nullList(self),
+							() -> {error("index out of range")},
 							() -> {__core__ifThenElse(
-								__core__lessThanInteger(index, 0), 
-								() -> {error("index out of range")}, 
+								__core__lessThanInteger(index, 0),
+								() -> {error("index out of range")},
 								() -> {
 									__core__ifThenElse(
-										__core__equalsInteger(index, 0), 
-										() -> {__core__headList(self)}, 
+										__core__equalsInteger(index, 0),
+										() -> {__core__headList(self)},
 										() -> {recurse(recurse, __core__tailList(self), __core__subtractInteger(index, 1))}
 									)()
 								}
@@ -25714,16 +25714,16 @@ function makeRawFunctions() {
 			}
 		}(__core__unListData(self))
 	}`));
-	add(new RawFunc("__helios__boollist__new", 
+	add(new RawFunc("__helios__boollist__new",
 	`(n, fn) -> {
 		__helios__list__new(
-			n, 
+			n,
 			(i) -> {
 				__helios__common__boolData(fn(i))
 			}
 		)
 	}`));
-	add(new RawFunc("__helios__boollist__new_const", 
+	add(new RawFunc("__helios__boollist__new_const",
 	`(n, item) -> {
 		__helios__list__new_const(n, __helios__common__boolData(item))
 	}`));
@@ -25733,19 +25733,19 @@ function makeRawFunctions() {
 	add(new RawFunc("__helios__boollist__from_data", "__helios__list__from_data"));
 	add(new RawFunc("__helios__boollist____add", "__helios__list____add"));
 	add(new RawFunc("__helios__boollist__length", "__helios__list__length"));
-	add(new RawFunc("__helios__boollist__head", 
+	add(new RawFunc("__helios__boollist__head",
 	`(self) -> {
 		__helios__common__unBoolData(__helios__list__head(self))
 	}`));
 	add(new RawFunc("__helios__boollist__tail", "__helios__list__tail"));
 	add(new RawFunc("__helios__boollist__is_empty", "__helios__list__is_empty"));
-	add(new RawFunc("__helios__boollist__get", 
+	add(new RawFunc("__helios__boollist__get",
 	`(self) -> {
 		(index) -> {
 			__helios__common__unBoolData(__helios__list__get(self)(index))
 		}
 	}`));
-	add(new RawFunc("__helios__boollist__any", 
+	add(new RawFunc("__helios__boollist__any",
 	`(self) -> {
 		(fn) -> {
 			__helios__list__any(self)(
@@ -25935,11 +25935,11 @@ function makeRawFunctions() {
 	`(self) -> {
 		(key) -> {
 			__helios__common__map_get(
-				self, 
-				key, 
+				self,
+				key,
 				(x) -> {
 					__core__constrData(0, __helios__common__list_1(x))
-				}, 
+				},
 				() -> {
 					__core__constrData(1, __helios__common__list_0)
 				}
@@ -26023,17 +26023,17 @@ function makeRawFunctions() {
 				}(
 					(recurse, self, fn) -> {
 						__core__ifThenElse(
-							__core__nullList(self), 
-							() -> {error("not found")}, 
+							__core__nullList(self),
+							() -> {error("not found")},
 							() -> {
 								(head) -> {
 									__core__ifThenElse(
-										fn(__core__fstPair(head), __core__sndPair(head)), 
+										fn(__core__fstPair(head), __core__sndPair(head)),
 										() -> {
 											(callback) -> {
 												callback(__core__fstPair(head), __core__sndPair(head))
 											}
-										}, 
+										},
 										() -> {recurse(recurse, __core__tailList(self), fn)}
 									)()
 								}(__core__headList(self))
@@ -26053,16 +26053,16 @@ function makeRawFunctions() {
 				}(
 					(recurse, self, fn) -> {
 						__core__ifThenElse(
-							__core__nullList(self), 
+							__core__nullList(self),
 							() -> {
 								(callback) -> {
 									callback(() -> {error("not found")}, false)
 								}
-							}, 
+							},
 							() -> {
 								(head) -> {
 									__core__ifThenElse(
-										fn(__core__fstPair(head), __core__sndPair(head)), 
+										fn(__core__fstPair(head), __core__sndPair(head)),
 										() -> {
 											(callback) -> {
 												callback(
@@ -26074,7 +26074,7 @@ function makeRawFunctions() {
 													true
 												)
 											}
-										}, 
+										},
 										() -> {recurse(recurse, __core__tailList(self), fn)}
 									)()
 								}(__core__headList(self))
@@ -26091,7 +26091,7 @@ function makeRawFunctions() {
 			(fn) -> {
 				(fn) -> {
 					__helios__common__find(
-						self, 
+						self,
 						fn,
 						__core__fstPair
 					)
@@ -26127,7 +26127,7 @@ function makeRawFunctions() {
 			(fn) -> {
 				(fn) -> {
 					__helios__common__find(
-						self, 
+						self,
 						fn,
 						__core__sndPair
 					)
@@ -26208,7 +26208,7 @@ function makeRawFunctions() {
 						fn(z, __core__fstPair(pair), __core__sndPair(pair))
 					}
 				)
-				
+
 			}
 		}(__core__unMapData(self))
 	}`));
@@ -26223,7 +26223,7 @@ function makeRawFunctions() {
 						fn(__core__fstPair(pair), __core__sndPair(pair), next)
 					}
 				)
-				
+
 			}
 		}(__core__unMapData(self))
 	}`));
@@ -26254,7 +26254,7 @@ function makeRawFunctions() {
 			}
 		}(__core__unMapData(self))
 	}`));
-	add(new RawFunc("__helios__map__set", 
+	add(new RawFunc("__helios__map__set",
 	`(self) -> {
 		(self) -> {
 			(key, value) -> {
@@ -26336,7 +26336,7 @@ function makeRawFunctions() {
 	add(new RawFunc("__helios__boolmap__length", "__helios__map__length"));
 	add(new RawFunc("__helios__boolmap__tail", "__helios__map__tail"));
 	add(new RawFunc("__helios__boolmap__is_empty", "__helios__map__is_empty"));
-	add(new RawFunc("__helios__boolmap__get", 
+	add(new RawFunc("__helios__boolmap__get",
 	`(self) -> {
 		(key) -> {
 			__helios__common__unBoolData(__helios__map__get(self)(key))
@@ -26407,7 +26407,7 @@ function makeRawFunctions() {
 											}
 										)
 									}
-								}, 
+								},
 								ok
 							)
 						})
@@ -26428,11 +26428,11 @@ function makeRawFunctions() {
 			(fn) -> {
 				(fn) -> {
 					__helios__common__find(
-						self, 
+						self,
 						fn,
 						(result) -> {
 							__helios__common__unBoolData(__core__sndPair(result))
-						}	
+						}
 					)
 				}(
 					(pair) -> {
@@ -26448,11 +26448,11 @@ function makeRawFunctions() {
 			(fn) -> {
 				(fn) -> {
 					__helios__common__find_safe(
-						self, 
+						self,
 						fn,
 						(result) -> {
 							__core__sndPair(result)
-						}	
+						}
 					)
 				}(
 					(pair) -> {
@@ -26534,7 +26534,7 @@ function makeRawFunctions() {
 			)
 		}
 	}`));
-	add(new RawFunc("__helios__boolmap__set", 
+	add(new RawFunc("__helios__boolmap__set",
 	`(self) -> {
 		(key, value) -> {
 			__helios__map__set(self)(key, __helios__common__boolData(value))
@@ -26556,7 +26556,7 @@ function makeRawFunctions() {
 
 	// Option[T] builtins
 	addDataFuncs("__helios__option");
-	add(new RawFunc("__helios__option__map", 
+	add(new RawFunc("__helios__option__map",
 	`(self) -> {
 		(fn) -> {
 			(pair) -> {
@@ -26584,7 +26584,7 @@ function makeRawFunctions() {
 			)
 		}
 	}`));
-	add(new RawFunc("__helios__option__unwrap", 
+	add(new RawFunc("__helios__option__unwrap",
 	`(self) -> {
 		() -> {
 			__helios__common__field_0(self)
@@ -26603,7 +26603,7 @@ function makeRawFunctions() {
 		__helios__common__assert_constr_index(data, 0)
 	}`));
 	add(new RawFunc("__helios__option__some__some", "__helios__common__field_0"));
-	
+
 
 	// Option[T]::None
 	addEnumDataFuncs("__helios__option__none");
@@ -26653,22 +26653,22 @@ function makeRawFunctions() {
 		}
 	}`));
 
-	
+
 	// Option[Bool]::Some
 	add(new RawFunc("__helios__booloption__some____eq", "__helios__option__some____eq"));
 	add(new RawFunc("__helios__booloption__some____neq", "__helios__option__some____neq"));
 	add(new RawFunc("__helios__booloption__some__serialize", "__helios__option__some__serialize"));
-	add(new RawFunc("__helios__booloption__some__new", 
+	add(new RawFunc("__helios__booloption__some__new",
 	`(b) -> {
 		__helios__option__some__new(__helios__common__boolData(b))
 	}`));
 	add(new RawFunc("__helios__booloption__some__cast", "__helios__option__some__cast"));
-	add(new RawFunc("__helios__booloption__some__some", 
+	add(new RawFunc("__helios__booloption__some__some",
 	`(self) -> {
 		__helios__common__unBoolData(__helios__option__some__some(self))
 	}`));
 
-	
+
 	// Option[Bool]::None
 	add(new RawFunc("__helios__booloption__none____eq",      "__helios__option__none____eq"));
 	add(new RawFunc("__helios__booloption__none____neq",     "__helios__option__none____neq"));
@@ -26676,7 +26676,7 @@ function makeRawFunctions() {
 	add(new RawFunc("__helios__booloption__none__new",       "__helios__option__none__new"));
 	add(new RawFunc("__helios__booloption__none__cast",      "__helios__option__none__cast"));
 
-	
+
 	// Hash builtins
 	addDataFuncs("__helios__hash");
 	add(new RawFunc("__helios__hash____lt", "__helios__bytearray____lt"));
@@ -26688,7 +26688,7 @@ function makeRawFunctions() {
 	add(new RawFunc("__helios__hash__CURRENT", "__core__bData(#0000000000000000000000000000000000000000000000000000000000000000)"));
 	add(new RawFunc("__helios__hash__from_script_hash", "__helios__common__identity"));
 
-	
+
 	// ScriptHash builtin
 	addDataFuncs("__helios__scripthash");
 
@@ -26697,7 +26697,7 @@ function makeRawFunctions() {
 	addDataFuncs("__helios__pubkey");
 	add(new RawFunc("__helios__pubkey__new", "__helios__common__identity"));
 	add(new RawFunc("__helios__pubkey__show", "__helios__bytearray__show"));
-	add(new RawFunc("__helios__pubkey__verify", 
+	add(new RawFunc("__helios__pubkey__verify",
 	`(self) -> {
 		(message, signature) -> {
 			__core__verifyEd25519Signature(__core__unBData(self), __core__unBData(message), __core__unBData(signature))
@@ -26798,13 +26798,13 @@ function makeRawFunctions() {
 		}
 	}`));
 	add(new RawFunc("__helios__scriptcontext__get_current_minting_policy_hash", "__helios__scriptcontext__get_spending_purpose_output_id"));
-	add(new RawFunc("__helios__scriptcontext__get_staking_purpose", 
+	add(new RawFunc("__helios__scriptcontext__get_staking_purpose",
 	`(self) -> {
 		() -> {
 			__helios__scriptcontext__purpose(self)
 		}
 	}`));
-	add(new RawFunc("__helios__scriptcontext__get_script_purpose", 
+	add(new RawFunc("__helios__scriptcontext__get_script_purpose",
 	`(self) -> {
 		() -> {
 			__helios__scriptcontext__purpose(self)
@@ -26820,7 +26820,7 @@ function makeRawFunctions() {
 	addEnumDataFuncs("__helios__stakingpurpose__rewarding");
 	add(new RawFunc("__helios__stakingpurpose__rewarding__credential", "__helios__common__field_0"));
 
-	
+
 	// StakingPurpose::Certifying builtins
 	addEnumDataFuncs("__helios__stakingpurpose__certifying");
 	add(new RawFunc("__helios__stakingpurpose__certifying__dcert", "__helios__common__field_0"));
@@ -26850,17 +26850,17 @@ function makeRawFunctions() {
 	addEnumDataFuncs("__helios__scriptpurpose__minting");
 	add(new RawFunc("__helios__scriptpurpose__minting__policy_hash", "__helios__common__field_0"));
 
-	
+
 	// ScriptPurpose::Spending builtins
 	addEnumDataFuncs("__helios__scriptpurpose__spending");
 	add(new RawFunc("__helios__scriptpurpose__spending__output_id", "__helios__common__field_0"));
 
-	
+
 	// ScriptPurpose::Rewarding builtins
 	addEnumDataFuncs("__helios__scriptpurpose__rewarding");
 	add(new RawFunc("__helios__scriptpurpose__rewarding__credential", "__helios__common__field_0"));
 
-	
+
 	// ScriptPurpose::Certifying builtins
 	addEnumDataFuncs("__helios__scriptpurpose__certifying");
 	add(new RawFunc("__helios__scriptpurpose__certifying__dcert", "__helios__common__field_0"));
@@ -26989,7 +26989,7 @@ function makeRawFunctions() {
 	`(self, fn) -> {
 		__core__listData(
 			__helios__common__filter_list(
-				__core__unListData(__helios__tx__outputs(self)), 
+				__core__unListData(__helios__tx__outputs(self)),
 				fn
 			)
 		)
@@ -27020,7 +27020,7 @@ function makeRawFunctions() {
 	`(self, pubKeyHash, datum) -> {
 		(datumHash) -> {
 			__helios__tx__filter_outputs(
-				self, 
+				self,
 				(output) -> {
 					__helios__bool__and(
 						() -> {
@@ -27037,7 +27037,7 @@ function makeRawFunctions() {
 	add(new RawFunc("__helios__tx__outputs_sent_to_inline_datum",
 	`(self, pubKeyHash, datum) -> {
 		__helios__tx__filter_outputs(
-			self, 
+			self,
 			(output) -> {
 				__helios__bool__and(
 					() -> {
@@ -27076,7 +27076,7 @@ function makeRawFunctions() {
 	`(self, validatorHash, datum) -> {
 		(datumHash) -> {
 			__helios__tx__filter_outputs(
-				self, 
+				self,
 				(output) -> {
 					__helios__bool__and(
 						() -> {
@@ -27093,7 +27093,7 @@ function makeRawFunctions() {
 	add(new RawFunc("__helios__tx__outputs_locked_by_inline_datum",
 	`(self, validatorHash, datum) -> {
 		__helios__tx__filter_outputs(
-			self, 
+			self,
 			(output) -> {
 				__helios__bool__and(
 					() -> {
@@ -27149,25 +27149,25 @@ function makeRawFunctions() {
 	`(self) -> {
 		__core__headList(__core__sndPair(__core__unConstrData(self)))
 	}`));
-	add(new RawFunc("__helios__txid____lt", 
+	add(new RawFunc("__helios__txid____lt",
 	`(self) -> {
 		(other) -> {
 			__helios__bytearray____lt(__helios__txid__bytes(self))(__helios__txid__bytes(other))
 		}
 	}`));
-	add(new RawFunc("__helios__txid____leq", 
+	add(new RawFunc("__helios__txid____leq",
 	`(self) -> {
 		(other) -> {
 			__helios__bytearray____leq(__helios__txid__bytes(self))(__helios__txid__bytes(other))
 		}
 	}`));
-	add(new RawFunc("__helios__txid____gt", 
+	add(new RawFunc("__helios__txid____gt",
 	`(self) -> {
 		(other) -> {
 			__helios__bytearray____gt(__helios__txid__bytes(self))(__helios__txid__bytes(other))
 		}
 	}`));
-	add(new RawFunc("__helios__txid____geq", 
+	add(new RawFunc("__helios__txid____geq",
 	`(self) -> {
 		(other) -> {
 			__helios__bytearray____geq(__helios__txid__bytes(self))(__helios__txid__bytes(other))
@@ -27175,7 +27175,7 @@ function makeRawFunctions() {
 	}`));
 	add(new RawFunc("__helios__txid__new",
 	`(bytes) -> {
-		__core__constrData(0, __helios__common__list_1(bytes)) 
+		__core__constrData(0, __helios__common__list_1(bytes))
 	}`));
 	add(new RawFunc("__helios__txid__CURRENT", "__helios__txid__new(__core__bData(#0000000000000000000000000000000000000000000000000000000000000000))"));
 	add(new RawFunc("__helios__txid__show",
@@ -27192,11 +27192,11 @@ function makeRawFunctions() {
 	}`));
 	add(new RawFunc("__helios__txinput__output_id", "__helios__common__field_0"));
 	add(new RawFunc("__helios__txinput__output", "__helios__common__field_1"));
-	
+
 
 	// TxOutput builtins
 	addDataFuncs("__helios__txoutput");
-	add(new RawFunc("__helios__txoutput__new", 
+	add(new RawFunc("__helios__txoutput__new",
 	`(address, value, datum) -> {
 		__core__constrData(0, __helios__common__list_4(address, value, datum, __helios__option__none__new()))
 	}`));
@@ -27238,7 +27238,7 @@ function makeRawFunctions() {
 					__helios__credential__is_validator(credential),
 					() -> {
 						__core__equalsData(
-							hash, 
+							hash,
 							__helios__credential__validator__hash(
 								__helios__credential__validator__cast(credential)
 							)
@@ -27257,7 +27257,7 @@ function makeRawFunctions() {
 					__helios__credential__is_pubkey(credential),
 					() -> {
 						__core__equalsData(
-							pkh, 
+							pkh,
 							__helios__credential__pubkey__hash(
 								__helios__credential__pubkey__cast(credential)
 							)
@@ -27273,9 +27273,9 @@ function makeRawFunctions() {
 		__helios__list__fold(outputs)(
 			(prev, txOutput) -> {
 				__helios__value____add(prev)(__helios__txoutput__value(txOutput))
-			}, 
+			},
 			__helios__value__ZERO
-		)	
+		)
 	}`));
 
 
@@ -27313,7 +27313,7 @@ function makeRawFunctions() {
 
 	// OutputDatum::None
 	addEnumDataFuncs("__helios__outputdatum__none");
-	
+
 
 	// OutputDatum::Hash
 	addEnumDataFuncs("__helios__outputdatum__hash");
@@ -27327,7 +27327,7 @@ function makeRawFunctions() {
 
 	// RawData
 	addDataFuncs("__helios__data");
-	add(new RawFunc("__helios__data__tag", 
+	add(new RawFunc("__helios__data__tag",
 	`(self) -> {
 		__core__iData(__core__fstPair(__core__unConstrData(self)))
 	}`));
@@ -27337,7 +27337,7 @@ function makeRawFunctions() {
 	addDataFuncs("__helios__txoutputid");
 	add(new RawFunc("__helios__txoutputid__tx_id", "__helios__common__field_0"));
 	add(new RawFunc("__helios__txoutputid__index", "__helios__common__field_1"));
-	add(new RawFunc("__helios__txoutputid__comp", 
+	add(new RawFunc("__helios__txoutputid__comp",
 	`(self, other, comp_txid, comp_index) -> {
 		(a_txid, a_index) -> {
 			(b_txid, b_index) -> {
@@ -27361,25 +27361,25 @@ function makeRawFunctions() {
 			}(__helios__txoutputid__tx_id(other), __helios__txoutputid__index(other))
 		}(__helios__txoutputid__tx_id(self), __helios__txoutputid__index(self))
 	}`));
-	add(new RawFunc("__helios__txoutputid____lt", 
+	add(new RawFunc("__helios__txoutputid____lt",
 	`(self) -> {
 		(other) -> {
 			__helios__txoutputid__comp(self, other, __helios__txid____lt, __helios__int____lt)
 		}
 	}`));
-	add(new RawFunc("__helios__txoutputid____leq", 
+	add(new RawFunc("__helios__txoutputid____leq",
 	`(self) -> {
 		(other) -> {
 			__helios__txoutputid__comp(self, other, __helios__txid____leq, __helios__int____leq)
 		}
 	}`));
-	add(new RawFunc("__helios__txoutputid____gt", 
+	add(new RawFunc("__helios__txoutputid____gt",
 	`(self) -> {
 		(other) -> {
 			__helios__txoutputid__comp(self, other, __helios__txid____gt, __helios__int____gt)
 		}
 	}`));
-	add(new RawFunc("__helios__txoutputid____geq", 
+	add(new RawFunc("__helios__txoutputid____geq",
 	`(self) -> {
 		(other) -> {
 			__helios__txoutputid__comp(self, other, __helios__txid____geq, __helios__int____geq)
@@ -27393,7 +27393,7 @@ function makeRawFunctions() {
 
 	// Address
 	addDataFuncs("__helios__address");
-	add(new RawFunc("__helios__address__new", 
+	add(new RawFunc("__helios__address__new",
 	`(cred, staking_cred) -> {
 		__core__constrData(0, __helios__common__list_2(cred, staking_cred))
 	}`));
@@ -27471,16 +27471,16 @@ function makeRawFunctions() {
 
 	// StakingCredential builtins
 	addDataFuncs("__helios__stakingcredential");
-	add(new RawFunc("__helios__stakingcredential__new_hash", 
+	add(new RawFunc("__helios__stakingcredential__new_hash",
 	`(cred) -> {
 		__core__constrData(0, __helios__common__list_1(cred))
 	}`));
-	add(new RawFunc("__helios__stakingcredential__new_ptr", 
+	add(new RawFunc("__helios__stakingcredential__new_ptr",
 	`(i, j, k) -> {
 		__core__constrData(1, __helios__common__list_3(i, j, k))
 	}`));
 
-	
+
 	// StakingCredential::Hash builtins
 	addEnumDataFuncs("__helios__stakingcredential__hash");
 	add(new RawFunc("__helios__stakingcredential__hash__hash", "__helios__common__field_0"));
@@ -27581,7 +27581,7 @@ function makeRawFunctions() {
 			))
 		))
 	}`));
-	add(new RawFunc("__helios__timerange__is_before", 
+	add(new RawFunc("__helios__timerange__is_before",
 	`(self) -> {
 		(t) -> {
 			(upper) -> {
@@ -27736,14 +27736,14 @@ function makeRawFunctions() {
 					__core__mapData(
 						__core__mkCons(
 							__core__mkPairData(
-								mintingPolicyHash, 
+								mintingPolicyHash,
 								__core__mapData(
 									__core__mkCons(
-										__core__mkPairData(tokenName, i), 
+										__core__mkPairData(tokenName, i),
 										__core__mkNilPairData(())
 									)
 								)
-							), 
+							),
 							__core__mkNilPairData(())
 						)
 					)
@@ -27752,7 +27752,7 @@ function makeRawFunctions() {
 		)()
 	}`));
 	add(new RawFunc("__helios__value__from_map", "__helios__common__identity"));
-	add(new RawFunc("__helios__value__to_map", 
+	add(new RawFunc("__helios__value__to_map",
 	`(self) -> {
 		() -> {
 			self
@@ -27765,8 +27765,8 @@ function makeRawFunctions() {
 		}(
 			(recurse, map) -> {
 				__core__ifThenElse(
-					__core__nullList(map), 
-					() -> {__helios__common__list_0}, 
+					__core__nullList(map),
+					() -> {__helios__common__list_0},
 					() -> {__core__mkCons(__core__fstPair(__core__headList(map)), recurse(recurse, __core__tailList(map)))}
 				)()
 			}
@@ -27782,12 +27782,12 @@ function makeRawFunctions() {
 			}(
 				(recurse, keys, map) -> {
 					__core__ifThenElse(
-						__core__nullList(map), 
-						() -> {__helios__common__list_0}, 
+						__core__nullList(map),
+						() -> {__helios__common__list_0},
 						() -> {
 							(key) -> {
 								__core__ifThenElse(
-									__helios__common__is_in_bytearray_list(aKeys, key), 
+									__helios__common__is_in_bytearray_list(aKeys, key),
 									() -> {recurse(recurse, keys, __core__tailList(map))},
 									() -> {__core__mkCons(key, recurse(recurse, keys, __core__tailList(map)))}
 								)()
@@ -27806,11 +27806,11 @@ function makeRawFunctions() {
 		}(
 			(recurse, map) -> {
 				__core__ifThenElse(
-					__core__nullList(map), 
+					__core__nullList(map),
 					() -> {__core__mkNilPairData(())},
 					() -> {
 						__core__ifThenElse(
-							__core__equalsData(__core__fstPair(__core__headList(map)), mph), 
+							__core__equalsData(__core__fstPair(__core__headList(map)), mph),
 							() -> {__core__unMapData(__core__sndPair(__core__headList(map)))},
 							() -> {recurse(recurse, __core__tailList(map))}
 						)()
@@ -27826,12 +27826,12 @@ function makeRawFunctions() {
 		}(
 			(recurse, map, key) -> {
 				__core__ifThenElse(
-					__core__nullList(map), 
-					() -> {0}, 
+					__core__nullList(map),
+					() -> {0},
 					() -> {
 						__core__ifThenElse(
-							__core__equalsData(__core__fstPair(__core__headList(map)), key), 
-							() -> {__core__unIData(__core__sndPair(__core__headList(map)))}, 
+							__core__equalsData(__core__fstPair(__core__headList(map)), key),
+							() -> {__core__unIData(__core__sndPair(__core__headList(map)))},
 							() -> {recurse(recurse, __core__tailList(map), key)}
 						)()
 					}
@@ -27847,14 +27847,14 @@ function makeRawFunctions() {
 			}(
 				(recurse, keys, result) -> {
 					__core__ifThenElse(
-						__core__nullList(keys), 
-						() -> {result}, 
+						__core__nullList(keys),
+						() -> {result},
 						() -> {
 							(key, tail) -> {
 								(sum) -> {
 									__core__ifThenElse(
-										__core__equalsInteger(sum, 0), 
-										() -> {tail}, 
+										__core__equalsInteger(sum, 0),
+										() -> {tail},
 										() -> {__core__mkCons(__core__mkPairData(key, __core__iData(sum)), tail)}
 									)()
 								}(op(__helios__value__get_inner_map_int(a, key), __helios__value__get_inner_map_int(b, key)))
@@ -27873,14 +27873,14 @@ function makeRawFunctions() {
 			}(
 				(recurse, keys, result) -> {
 					__core__ifThenElse(
-						__core__nullList(keys), 
-						() -> {result}, 
+						__core__nullList(keys),
+						() -> {result},
 						() -> {
 							(key, tail) -> {
 								(item) -> {
 									__core__ifThenElse(
-										__core__nullList(item), 
-										() -> {tail}, 
+										__core__nullList(item),
+										() -> {tail},
 										() -> {__core__mkCons(__core__mkPairData(key, __core__mapData(item)), tail)}
 									)()
 								}(__helios__value__add_or_subtract_inner(op)(__helios__value__get_inner_map(a, key), __helios__value__get_inner_map(b, key)))
@@ -27906,9 +27906,9 @@ function makeRawFunctions() {
 								(head) -> {
 									__core__mkCons(
 										__core__mkPairData(
-											__core__fstPair(head), 
+											__core__fstPair(head),
 											__core__mapData(recurseInner(recurseInner, __core__unMapData(__core__sndPair(head))))
-										),  
+										),
 										recurseOuter(recurseOuter, __core__tailList(outer))
 									)
 								}(__core__headList(outer))
@@ -27944,13 +27944,13 @@ function makeRawFunctions() {
 		}(
 			(recurse, keys) -> {
 				__core__ifThenElse(
-					__core__nullList(keys), 
-					() -> {true}, 
+					__core__nullList(keys),
+					() -> {true},
 					() -> {
 						(key) -> {
 							__core__ifThenElse(
-								__helios__common__not(comp(__helios__value__get_inner_map_int(a, key), __helios__value__get_inner_map_int(b, key))), 
-								() -> {false}, 
+								__helios__common__not(comp(__helios__value__get_inner_map_int(a, key), __helios__value__get_inner_map_int(b, key))),
+								() -> {false},
 								() -> {recurse(recurse, __core__tailList(keys))}
 							)()
 						}(__core__headList(keys))
@@ -27967,19 +27967,19 @@ function makeRawFunctions() {
 			}(
 				(recurse, keys) -> {
 					__core__ifThenElse(
-						__core__nullList(keys), 
-						() -> {true}, 
+						__core__nullList(keys),
+						() -> {true},
 						() -> {
 							(key) -> {
 								__core__ifThenElse(
 									__helios__common__not(
 										__helios__value__compare_inner(
-											comp, 
-											__helios__value__get_inner_map(a, key), 
+											comp,
+											__helios__value__get_inner_map(a, key),
 											__helios__value__get_inner_map(b, key)
 										)
-									), 
-									() -> {false}, 
+									),
+									() -> {false},
 									() -> {recurse(recurse, __core__tailList(keys))}
 								)()
 							}(__core__headList(keys))
@@ -28050,8 +28050,8 @@ function makeRawFunctions() {
 					__helios__value__compare(
 						(a, b) -> {
 							__helios__common__not(__core__lessThanEqualsInteger(a, b))
-						}, 
-						self, 
+						},
+						self,
 						other
 					)
 				}
@@ -28078,8 +28078,8 @@ function makeRawFunctions() {
 					__helios__value__compare(
 						(a, b) -> {
 							__core__lessThanInteger(a, b)
-						}, 
-						self, 
+						},
+						self,
 						other
 					)
 				}
@@ -28101,20 +28101,20 @@ function makeRawFunctions() {
 				}(
 					(outer, inner, map) -> {
 						__core__ifThenElse(
-							__core__nullList(map), 
-							() -> {error("policy not found")}, 
+							__core__nullList(map),
+							() -> {error("policy not found")},
 							() -> {
 								__core__ifThenElse(
-									__core__equalsData(__core__fstPair(__core__headList(map)), mintingPolicyHash), 
-									() -> {inner(inner, __core__unMapData(__core__sndPair(__core__headList(map))))}, 
+									__core__equalsData(__core__fstPair(__core__headList(map)), mintingPolicyHash),
+									() -> {inner(inner, __core__unMapData(__core__sndPair(__core__headList(map))))},
 									() -> {outer(outer, inner, __core__tailList(map))}
 								)()
 							}
 						)()
 					}, (inner, map) -> {
 						__core__ifThenElse(
-							__core__nullList(map), 
-							() -> {error("tokenName not found")}, 
+							__core__nullList(map),
+							() -> {error("tokenName not found")},
 							() -> {
 								__core__ifThenElse(
 									__core__equalsData(__core__fstPair(__core__headList(map)), tokenName),
@@ -28137,20 +28137,20 @@ function makeRawFunctions() {
 				}(
 					(outer, inner, map) -> {
 						__core__ifThenElse(
-							__core__nullList(map), 
-							() -> {__core__iData(0)}, 
+							__core__nullList(map),
+							() -> {__core__iData(0)},
 							() -> {
 								__core__ifThenElse(
-									__core__equalsData(__core__fstPair(__core__headList(map)), mintingPolicyHash), 
-									() -> {inner(inner, __core__unMapData(__core__sndPair(__core__headList(map))))}, 
+									__core__equalsData(__core__fstPair(__core__headList(map)), mintingPolicyHash),
+									() -> {inner(inner, __core__unMapData(__core__sndPair(__core__headList(map))))},
 									() -> {outer(outer, inner, __core__tailList(map))}
 								)()
 							}
 						)()
 					}, (inner, map) -> {
 						__core__ifThenElse(
-							__core__nullList(map), 
-							() -> {__core__iData(0)}, 
+							__core__nullList(map),
+							() -> {__core__iData(0)},
 							() -> {
 								__core__ifThenElse(
 									__core__equalsData(__core__fstPair(__core__headList(map)), tokenName),
@@ -28180,7 +28180,7 @@ function makeRawFunctions() {
 			)
 		}
 	}`));
-	add(new RawFunc("__helios__value__get_policy", 
+	add(new RawFunc("__helios__value__get_policy",
 	`(self) -> {
 		(mph) -> {
 			(map) -> {
@@ -28202,7 +28202,7 @@ function makeRawFunctions() {
 					}
 				)
 			}(__core__unMapData(self))
-		} 
+		}
 	}`));
 	add(new RawFunc("__helios__value__contains_policy",
 	`(self) -> {
@@ -28233,7 +28233,7 @@ function makeRawFunctions() {
 }
 
 /**
- * @param {IR} ir 
+ * @param {IR} ir
  * @returns {IR}
  * @package
  */
@@ -28291,7 +28291,7 @@ class IRScope {
 	#variable;
 
 	/**
-	 * @param {?IRScope} parent 
+	 * @param {?IRScope} parent
 	 * @param {?IRVariable} variable
 	 */
 	constructor(parent, variable) {
@@ -28301,8 +28301,8 @@ class IRScope {
 
 	/**
 	 * Calculates the Debruijn index of a named value. Internal method
-	 * @param {Word | IRVariable} name 
-	 * @param {number} index 
+	 * @param {Word | IRVariable} name
+	 * @param {number} index
 	 * @returns {[number, IRVariable]}
 	 */
 	getInternal(name, index) {
@@ -28317,7 +28317,7 @@ class IRScope {
 
 	/**
 	 * Calculates the Debruijn index.
-	 * @param {Word | IRVariable} name 
+	 * @param {Word | IRVariable} name
 	 * @returns {[number, IRVariable]}
 	 */
 	get(name) {
@@ -28327,7 +28327,7 @@ class IRScope {
 
 	/**
 	 * Checks if a named builtin exists
-	 * @param {string} name 
+	 * @param {string} name
 	 * @param {boolean} strict - if true then throws an error if builtin doesn't exist
 	 * @returns {boolean}
 	 */
@@ -28345,8 +28345,8 @@ class IRScope {
 	/**
 	 * Returns index of a named builtin
 	 * Throws an error if builtin doesn't exist
-	 * @param {string} name 
-	 * @returns 
+	 * @param {string} name
+	 * @returns
 	 */
 	static findBuiltin(name) {
 		let i = UPLC_BUILTINS.findIndex(info => { return "__core__" + info.name == name });
@@ -28390,7 +28390,7 @@ class IRValue {
 	}
 
 	/**
-	 * @param {IRValue[]} args 
+	 * @param {IRValue[]} args
 	 * @returns {?IRValue}
 	 */
 	call(args) {
@@ -28420,7 +28420,7 @@ class IRFuncValue extends IRValue {
 	}
 
 	/**
-	 * @param {IRValue[]} args 
+	 * @param {IRValue[]} args
 	 * @returns {?IRValue}
 	 */
 	call(args) {
@@ -28435,7 +28435,7 @@ class IRLiteralValue extends IRValue {
 	#value;
 
 	/**
-	 * @param {UplcValue} value 
+	 * @param {UplcValue} value
 	 */
 	constructor(value) {
 		super();
@@ -28470,14 +28470,14 @@ class IRDeferredValue extends IRValue {
         this.#cache = undefined;
     }
     /**
-     * @param {IRValue[]} args 
+     * @param {IRValue[]} args
      * @returns {?IRValue}
      */
     call(args) {
         if (this.#cache === undefined) {
             this.#cache = this.#deferred();
         }
-        
+
         if (this.#cache != null) {
             return this.#cache.call(args);
         } else {
@@ -28492,7 +28492,7 @@ class IRDeferredValue extends IRValue {
         if (this.#cache === undefined) {
             this.#cache = this.#deferred();
         }
-        
+
         if (this.#cache != null) {
             return this.#cache.value;
         } else {
@@ -28513,9 +28513,9 @@ class IRCallStack {
 
 	/**
 	 * @param {boolean} throwRTErrors
-	 * @param {?IRCallStack} parent 
-	 * @param {?IRVariable} variable 
-	 * @param {?IRValue} value 
+	 * @param {?IRCallStack} parent
+	 * @param {?IRVariable} variable
+	 * @param {?IRValue} value
 	 */
 	constructor(throwRTErrors, parent = null, variable = null, value = null) {
 		this.#throwRTErrors = throwRTErrors;
@@ -28529,7 +28529,7 @@ class IRCallStack {
 	}
 
 	/**
-	 * @param {IRVariable} variable 
+	 * @param {IRVariable} variable
 	 * @returns {?IRValue}
 	 */
 	get(variable) {
@@ -28543,8 +28543,8 @@ class IRCallStack {
 	}
 
 	/**
-	 * @param {IRVariable} variable 
-	 * @param {IRValue} value 
+	 * @param {IRVariable} variable
+	 * @param {IRValue} value
 	 * @returns {IRCallStack}
 	 */
 	set(variable, value) {
@@ -28588,7 +28588,7 @@ export class IRNameExprRegistry {
 	}
 
 	/**
-	 * @param {IRNameExpr} nameExpr 
+	 * @param {IRNameExpr} nameExpr
 	 */
 	register(nameExpr) {
 		if (!nameExpr.isCore()) {
@@ -28616,7 +28616,7 @@ export class IRNameExprRegistry {
 	}
 
 	/**
-	 * @param {IRVariable} variable 
+	 * @param {IRVariable} variable
 	 * @returns {number}
 	 */
 	countReferences(variable) {
@@ -28630,7 +28630,7 @@ export class IRNameExprRegistry {
 	}
 
 	/**
-	 * @param {IRVariable} variable 
+	 * @param {IRVariable} variable
 	 * @returns {boolean}
 	 */
 	maybeInsideLoop(variable) {
@@ -28655,7 +28655,7 @@ export class IRExprRegistry {
 	#inline;
 
 	/**
-	 * @param {IRNameExprRegistry} nameExprs 
+	 * @param {IRNameExprRegistry} nameExprs
 	 */
 	constructor(nameExprs) {
 		this.#nameExprs = nameExprs;
@@ -28663,7 +28663,7 @@ export class IRExprRegistry {
 	}
 
 	/**
-	 * @param {IRVariable} variable 
+	 * @param {IRVariable} variable
 	 * @returns {number}
 	 */
 	countReferences(variable) {
@@ -28671,7 +28671,7 @@ export class IRExprRegistry {
 	}
 
 	/**
-	 * @param {IRVariable} variable 
+	 * @param {IRVariable} variable
 	 * @returns {boolean}
 	 */
 	maybeInsideLoop(variable) {
@@ -28695,8 +28695,8 @@ export class IRExprRegistry {
 	}
 
 	/**
-	 * @param {IRVariable} variable 
-	 * @param {IRExpr} expr 
+	 * @param {IRVariable} variable
+	 * @param {IRExpr} expr
 	 */
 	addInlineable(variable, expr) {
 		this.#inline.set(variable, expr);
@@ -28709,7 +28709,7 @@ export class IRExprRegistry {
  */
 class IRExpr extends Token {
 	/**
-	 * @param {Site} site 
+	 * @param {Site} site
 	 */
 	constructor(site) {
 		super(site);
@@ -28717,7 +28717,7 @@ class IRExpr extends Token {
 
 	/**
 	 * For pretty printing the IR
-	 * @param {string} indent 
+	 * @param {string} indent
 	 * @returns {string}
 	 */
 	toString(indent = "") {
@@ -28726,7 +28726,7 @@ class IRExpr extends Token {
 
 	/**
 	 * Link IRNameExprs to variables
-	 * @param {IRScope} scope 
+	 * @param {IRScope} scope
 	 */
 	resolveNames(scope) {
 		throw new Error("not yet implemented");
@@ -28734,7 +28734,7 @@ class IRExpr extends Token {
 
 	/**
 	 * Turns all IRConstExpr istances into IRLiteralExpr instances
-	 * @param {IRCallStack} stack 
+	 * @param {IRCallStack} stack
 	 * @returns {IRExpr}
 	 */
 	evalConstants(stack) {
@@ -28778,7 +28778,7 @@ class IRExpr extends Token {
 	}
 
 	/**
-	 * @param {IRExprRegistry} registry 
+	 * @param {IRExprRegistry} registry
 	 * @returns {IRExpr}
 	 */
 	simplifyTopology(registry) {
@@ -28801,7 +28801,7 @@ class IRNameExpr extends IRExpr {
 	#name;
 
 	/**
-	 * @type {?number} - cached debruijn index 
+	 * @type {?number} - cached debruijn index
 	 */
 	#index;
 
@@ -28811,7 +28811,7 @@ class IRNameExpr extends IRExpr {
 	#variable;
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @param {?IRVariable} variable
 	 */
 	constructor(name, variable = null) {
@@ -28853,7 +28853,7 @@ class IRNameExpr extends IRExpr {
 	}
 
 	/**
-	 * @param {IRVariable} ref 
+	 * @param {IRVariable} ref
 	 * @returns {boolean}
 	 */
 	isVariable(ref) {
@@ -28865,7 +28865,7 @@ class IRNameExpr extends IRExpr {
 	}
 
 	/**
-	 * @param {string} indent 
+	 * @param {string} indent
 	 * @returns {string}
 	 */
 	toString(indent = "") {
@@ -28886,7 +28886,7 @@ class IRNameExpr extends IRExpr {
 	}
 
 	/**
-	 * @param {IRCallStack} stack 
+	 * @param {IRCallStack} stack
 	 * @returns {IRExpr}
 	 */
 	evalConstants(stack) {
@@ -28933,7 +28933,7 @@ class IRNameExpr extends IRExpr {
 	}
 
 	/**
-	 * @param {IRExprRegistry} registry 
+	 * @param {IRExprRegistry} registry
 	 * @returns {IRExpr}
 	 */
 	simplifyTopology(registry) {
@@ -28976,7 +28976,7 @@ class IRLiteralExpr extends IRExpr {
 	#value;
 
 	/**
-	 * @param {UplcValue} value 
+	 * @param {UplcValue} value
 	 */
 	constructor(value) {
 		super(value.site);
@@ -28992,7 +28992,7 @@ class IRLiteralExpr extends IRExpr {
 	}
 
 	/**
-	 * @param {string} indent 
+	 * @param {string} indent
 	 * @returns {string}
 	 */
 	toString(indent = "") {
@@ -29001,7 +29001,7 @@ class IRLiteralExpr extends IRExpr {
 
 	/**
 	 * Linking doesn't do anything for literals
-	 * @param {IRScope} scope 
+	 * @param {IRScope} scope
 	 */
 	resolveNames(scope) {
 	}
@@ -29040,7 +29040,7 @@ class IRLiteralExpr extends IRExpr {
 	}
 
 	/**
-	 * @param {IRExprRegistry} registry 
+	 * @param {IRExprRegistry} registry
 	 * @returns {IRExpr}
 	 */
 	simplifyTopology(registry) {
@@ -29063,8 +29063,8 @@ class IRConstExpr extends IRExpr {
 	#expr;
 
 	/**
-	 * @param {Site} site 
-	 * @param {IRExpr} expr 
+	 * @param {Site} site
+	 * @param {IRExpr} expr
 	 */
 	constructor(site, expr) {
 		super(site);
@@ -29076,7 +29076,7 @@ class IRConstExpr extends IRExpr {
 	}
 
 	/**
-	 * @param {IRScope} scope 
+	 * @param {IRScope} scope
 	 */
 	resolveNames(scope) {
 		this.#expr.resolveNames(scope);
@@ -29097,7 +29097,7 @@ class IRConstExpr extends IRExpr {
 	}
 
 	/**
-	 * @param {IRCallStack} stack 
+	 * @param {IRCallStack} stack
 	 * @returns {?IRValue}
 	 */
 	eval(stack) {
@@ -29114,9 +29114,9 @@ class IRFuncExpr extends IRExpr {
 	#body;
 
 	/**
-	 * @param {Site} site 
-	 * @param {IRVariable[]} args 
-	 * @param {IRExpr} body 
+	 * @param {Site} site
+	 * @param {IRVariable[]} args
+	 * @param {IRExpr} body
 	 */
 	constructor(site, args, body) {
 		super(site);
@@ -29133,7 +29133,7 @@ class IRFuncExpr extends IRExpr {
 	}
 
 	/**
-	 * @param {string} indent 
+	 * @param {string} indent
 	 * @returns {string}
 	 */
 	toString(indent = "") {
@@ -29147,7 +29147,7 @@ class IRFuncExpr extends IRExpr {
 	}
 
 	/**
-	 * @param {IRScope} scope 
+	 * @param {IRScope} scope
 	 */
 	resolveNames(scope) {
 		// in the zero-arg case no Debruijn indices need to be added because we use Delay/Force
@@ -29160,7 +29160,7 @@ class IRFuncExpr extends IRExpr {
 	}
 
 	/**
-	 * @param {IRCallStack} stack 
+	 * @param {IRCallStack} stack
 	 */
 	evalConstants(stack) {
 		return new IRFuncExpr(this.site, this.args, this.#body.evalConstants(stack));
@@ -29185,13 +29185,13 @@ class IRFuncExpr extends IRExpr {
 	}
 
 	/**
-	 * @param {IRLiteralRegistry} literals 
+	 * @param {IRLiteralRegistry} literals
 	 * @returns {IRExpr}
 	 */
 	simplifyLiterals(literals) {
 		return new IRFuncExpr(this.site, this.args, this.#body.simplifyLiterals(literals));
 	}
-	
+
 	/**
 	 * @param {IRNameExprRegistry} nameExprs
 	 */
@@ -29208,14 +29208,14 @@ class IRFuncExpr extends IRExpr {
 	}
 
 	/**
-	 * @param {IRExprRegistry} registry 
+	 * @param {IRExprRegistry} registry
 	 * @returns {IRExpr}
 	 */
 	simplifyTopology(registry) {
 		return new IRFuncExpr(this.site, this.args, this.#body.simplifyTopology(registry));
 	}
 
-	/** 
+	/**
 	 * @returns {UplcTerm}
 	 */
 	toUplc() {
@@ -29244,14 +29244,14 @@ class IRCallExpr extends IRExpr {
 
 	/**
 	 * @param {Site} site
-	 * @param {IRExpr[]} argExprs 
-	 * @param {Site} parensSite 
+	 * @param {IRExpr[]} argExprs
+	 * @param {Site} parensSite
 	 */
 	constructor(site, argExprs, parensSite) {
 		super(site);
 		this.#argExprs = argExprs;
 		this.#parensSite = parensSite;
-		
+
 	}
 
 	get argExprs() {
@@ -29263,7 +29263,7 @@ class IRCallExpr extends IRExpr {
 	}
 
 	/**
-	 * @param {string} indent 
+	 * @param {string} indent
 	 * @returns {string}
 	 */
 	argsToString(indent = "") {
@@ -29271,7 +29271,7 @@ class IRCallExpr extends IRExpr {
 	}
 
 	/**
-	 * @param {IRScope} scope 
+	 * @param {IRScope} scope
 	 */
 	resolveNamesInArgs(scope) {
 		for (let argExpr of this.#argExprs) {
@@ -29280,16 +29280,16 @@ class IRCallExpr extends IRExpr {
 	}
 
 	/**
-	 * @param {IRCallStack} stack 
+	 * @param {IRCallStack} stack
 	 * @returns {IRExpr[]}
 	 */
 	evalConstantsInArgs(stack) {
 		return this.#argExprs.map(a => a.evalConstants(stack));
 	}
 
-	/** 
+	/**
 	 * @param {IRCallStack} stack
-	 * @returns {?IRValue[]} 
+	 * @returns {?IRValue[]}
 	 */
 	evalArgs(stack) {
 		/**
@@ -29318,14 +29318,14 @@ class IRCallExpr extends IRExpr {
 	}
 
 	/**
-	 * @param {IRNameExprRegistry} nameExprs 
+	 * @param {IRNameExprRegistry} nameExprs
 	 */
 	registerNameExprsInArgs(nameExprs) {
 		this.#argExprs.forEach(a => a.registerNameExprs(nameExprs));
 	}
 
 	/**
-	 * @param {IRExprRegistry} registry 
+	 * @param {IRExprRegistry} registry
 	 * @returns {IRExpr[]}
 	 */
 	simplifyTopologyInArgs(registry) {
@@ -29358,9 +29358,9 @@ class IRCoreCallExpr extends IRCallExpr {
 	#name;
 
 	/**
-	 * @param {Word} name 
-	 * @param {IRExpr[]} argExprs 
-	 * @param {Site} parensSite 
+	 * @param {Word} name
+	 * @param {IRExpr[]} argExprs
+	 * @param {Site} parensSite
 	 */
 	constructor(name, argExprs, parensSite) {
 		super(name.site, argExprs, parensSite);
@@ -29396,7 +29396,7 @@ class IRCoreCallExpr extends IRCallExpr {
 	}
 
 	/**
-	 * @param {IRScope} scope 
+	 * @param {IRScope} scope
 	 */
 	resolveNames(scope) {
 		this.resolveNamesInArgs(scope);
@@ -29406,7 +29406,7 @@ class IRCoreCallExpr extends IRCallExpr {
 	 * @param {Site} site
 	 * @param {boolean} throwRTErrors
 	 * @param {string} builtinName
-	 * @param {IRValue[]} args 
+	 * @param {IRValue[]} args
 	 * @returns {?IRValue}
 	 */
 	static evalValues(site, throwRTErrors, builtinName, args) {
@@ -29457,13 +29457,13 @@ class IRCoreCallExpr extends IRCallExpr {
 	}
 
 	/**
-	 * @param {IRCallStack} stack 
+	 * @param {IRCallStack} stack
 	 * @returns {IRExpr}
 	 */
 	evalConstants(stack) {
 		return new IRCoreCallExpr(this.#name, this.evalConstantsInArgs(stack), this.parensSite);
 	}
-	
+
 	/**
 	 * @param {IRCallStack} stack
 	 * @returns {?IRValue}
@@ -29474,7 +29474,7 @@ class IRCoreCallExpr extends IRCallExpr {
 		if (args !== null) {
 			return IRCoreCallExpr.evalValues(this.site, stack.throwRTErrors, this.builtinName, args);
 		}
-		
+
 		return null;
 	}
 
@@ -29543,14 +29543,14 @@ class IRCoreCallExpr extends IRCallExpr {
 						if (a.value.bool && !b.value.bool) {
 							return cond;
 						} else if (
-							!a.value.bool && 
-							b.value.bool && 
-							cond instanceof IRUserCallExpr && 
-							cond.fnExpr instanceof IRNameExpr && 
+							!a.value.bool &&
+							b.value.bool &&
+							cond instanceof IRUserCallExpr &&
+							cond.fnExpr instanceof IRNameExpr &&
 							cond.fnExpr.name === "__helios__common__not"
 						) {
 							return cond.argExprs[0];
-						}	
+						}
 					}
 				}
 				break;
@@ -29614,7 +29614,7 @@ class IRCoreCallExpr extends IRCallExpr {
 	}
 
 	/**
-	 * @param {IRExprRegistry} registry 
+	 * @param {IRExprRegistry} registry
 	 * @returns {IRExpr}
 	 */
 	simplifyTopology(registry) {
@@ -29631,15 +29631,15 @@ class IRCoreCallExpr extends IRCallExpr {
 						return arg.argExprs[0];
 					}
 				}
-				break;			
+				break;
 			case "equalsData": {
 				const [a, b] = args;
 
 				if (a instanceof IRCoreCallExpr && b instanceof IRCoreCallExpr) {
 					if (a.builtinName === "iData" && b.builtinName === "iData") {
-						return new IRCoreCallExpr(new Word(this.site, "__core__equalsInteger"), [a.argExprs[0], b.argExprs[0]], this.parensSite);	
+						return new IRCoreCallExpr(new Word(this.site, "__core__equalsInteger"), [a.argExprs[0], b.argExprs[0]], this.parensSite);
 					} else if (a.builtinName === "bData" && b.builtinName === "bData") {
-						return new IRCoreCallExpr(new Word(this.site, "__core__equalsByteString"), [a.argExprs[0], b.argExprs[0]], this.parensSite);	
+						return new IRCoreCallExpr(new Word(this.site, "__core__equalsByteString"), [a.argExprs[0], b.argExprs[0]], this.parensSite);
 					} else if (a.builtinName === "decodeUtf8" && b.builtinName === "decodeUtf8") {
 						return new IRCoreCallExpr(new Word(this.site, "__core__equalsString"), [a.argExprs[0], b.argExprs[0]], this.parensSite);
 					}
@@ -29733,11 +29733,11 @@ class IRCoreCallExpr extends IRCallExpr {
 		let term = new UplcBuiltin(site, builtinName);
 
 		let nForce = UPLC_BUILTINS[IRScope.findBuiltin(name)].forceCount;
- 
+
 		for (let i = 0; i < nForce; i++) {
 			term = new UplcForce(site, term);
 		}
- 
+
 		return term;
 	}
 
@@ -29759,9 +29759,9 @@ class IRUserCallExpr extends IRCallExpr {
 	#fnExpr;
 
 	/**
-	 * @param {IRExpr} fnExpr 
-	 * @param {IRExpr[]} argExprs 
-	 * @param {Site} parensSite 
+	 * @param {IRExpr} fnExpr
+	 * @param {IRExpr[]} argExprs
+	 * @param {Site} parensSite
 	 */
 	constructor(fnExpr, argExprs, parensSite) {
 		super(fnExpr.site, argExprs, parensSite);
@@ -29770,9 +29770,9 @@ class IRUserCallExpr extends IRCallExpr {
 	}
 
 	/**
-	 * @param {IRExpr} fnExpr 
-	 * @param {IRExpr[]} argExprs 
-	 * @param {Site} parensSite 
+	 * @param {IRExpr} fnExpr
+	 * @param {IRExpr[]} argExprs
+	 * @param {Site} parensSite
 	 * @returns {IRUserCallExpr}
 	 */
 	static new(fnExpr, argExprs, parensSite) {
@@ -29808,7 +29808,7 @@ class IRUserCallExpr extends IRCallExpr {
 	}
 
 	/**
-	 * @param {IRScope} scope 
+	 * @param {IRScope} scope
 	 */
 	resolveNames(scope) {
 		this.#fnExpr.resolveNames(scope);
@@ -29829,7 +29829,7 @@ class IRUserCallExpr extends IRCallExpr {
 	}
 
 	/**
-	 * @param {IRCallStack} stack 
+	 * @param {IRCallStack} stack
 	 * @returns {?IRValue}
 	 */
 	eval(stack) {
@@ -29869,17 +29869,17 @@ class IRUserCallExpr extends IRCallExpr {
 
 		return IRUserCallExpr.new(
 			this.#fnExpr.simplifyLiterals(literals),
-			args, 
+			args,
 			this.parensSite
 		);
 	}
 
 	/**
-	 * @param {IRNameExprRegistry} nameExprs 
+	 * @param {IRNameExprRegistry} nameExprs
 	 */
 	registerNameExprs(nameExprs) {
 		this.registerNameExprsInArgs(nameExprs);
-		
+
 		this.#fnExpr.registerNameExprs(nameExprs);
 	}
 
@@ -29888,7 +29888,7 @@ class IRUserCallExpr extends IRCallExpr {
 	}
 
 	/**
-	 * @param {IRExprRegistry} registry 
+	 * @param {IRExprRegistry} registry
 	 * @returns {IRExpr}
 	 */
 	simplifyTopology(registry) {
@@ -29957,9 +29957,9 @@ export class IRAnonCallExpr extends IRUserCallExpr {
 	#anon;
 
 	/**
-	 * @param {IRFuncExpr} fnExpr 
-	 * @param {IRExpr[]} argExprs 
-	 * @param {Site} parensSite 
+	 * @param {IRFuncExpr} fnExpr
+	 * @param {IRExpr[]} argExprs
+	 * @param {Site} parensSite
 	 */
 	constructor(fnExpr, argExprs, parensSite) {
 		super(fnExpr, argExprs, parensSite)
@@ -30044,7 +30044,7 @@ export class IRAnonCallExpr extends IRUserCallExpr {
 	}
 
 	/**
-	 * @param {IRNameExprRegistry} nameExprs 
+	 * @param {IRNameExprRegistry} nameExprs
 	 */
 	registerNameExprs(nameExprs) {
 		this.registerNameExprsInArgs(nameExprs);
@@ -30053,9 +30053,9 @@ export class IRAnonCallExpr extends IRUserCallExpr {
 
 		this.#anon.body.registerNameExprs(nameExprs);
 	}
-	
+
 	/**
-	 * @param {IRExprRegistry} registry 
+	 * @param {IRExprRegistry} registry
 	 * @returns {IRExpr}
 	 */
 	simplifyTopology(registry) {
@@ -30152,8 +30152,8 @@ export class IRFuncDefExpr extends IRAnonCallExpr {
 	#def;
 
 	/**
-	 * @param {IRFuncExpr} fnExpr 
-	 * @param {IRFuncExpr} defExpr 
+	 * @param {IRFuncExpr} fnExpr
+	 * @param {IRFuncExpr} defExpr
 	 * @param {Site} parensSite
 	 */
 	constructor(fnExpr, defExpr, parensSite) {
@@ -30171,8 +30171,8 @@ class IRErrorCallExpr extends IRExpr {
 	#msg;
 
 	/**
-	 * @param {Site} site 
-	 * @param {string} msg 
+	 * @param {Site} site
+	 * @param {string} msg
 	 */
 	constructor(site, msg = "") {
 		super(site);
@@ -30180,7 +30180,7 @@ class IRErrorCallExpr extends IRExpr {
 	}
 
 	/**
-	 * @param {string} indent 
+	 * @param {string} indent
 	 * @returns {string}
 	 */
 	toString(indent = "") {
@@ -30188,7 +30188,7 @@ class IRErrorCallExpr extends IRExpr {
 	}
 
 	/**
-	 * @param {IRScope} scope 
+	 * @param {IRScope} scope
 	 */
 	resolveNames(scope) {
 	}
@@ -30214,7 +30214,7 @@ class IRErrorCallExpr extends IRExpr {
 	}
 
 	/**
-	 * @param {IRLiteralRegistry} literals 
+	 * @param {IRLiteralRegistry} literals
 	 * @returns {IRExpr}
 	 */
 	simplifyLiterals(literals) {
@@ -30254,7 +30254,7 @@ class IRErrorCallExpr extends IRExpr {
 
 /**
  * Build an Intermediate Representation expression
- * @param {Token[]} ts 
+ * @param {Token[]} ts
  * @returns {IRExpr}
  * @package
  */
@@ -30382,7 +30382,7 @@ function buildIRExpr(ts) {
 
 /**
  * Build an IR function expression
- * @param {Token[]} ts 
+ * @param {Token[]} ts
  * @returns {IRFuncExpr}
  */
 function buildIRFuncExpr(ts) {
@@ -30441,7 +30441,7 @@ class IRProgram {
 	}
 
 	/**
-	 * @param {IRExpr} expr 
+	 * @param {IRExpr} expr
 	 * @returns {IRFuncExpr | IRCallExpr | IRLiteralExpr}
 	 */
 	static assertValidRoot(expr) {
@@ -30454,7 +30454,7 @@ class IRProgram {
 
 	/**
 	 * @package
-	 * @param {IR} ir 
+	 * @param {IR} ir
 	 * @param {?number} purpose
 	 * @param {boolean} simplify
 	 * @param {boolean} throwSimplifyRTErrors - if true -> throw RuntimErrors caught during evaluation steps
@@ -30467,7 +30467,7 @@ class IRProgram {
 		let irTokens = tokenizeIR(irSrc, codeMap);
 
 		let expr = buildIRExpr(irTokens);
-		
+
 		expr.resolveNames(scope);
 
 		expr = expr.evalConstants(new IRCallStack(throwSimplifyRTErrors));
@@ -30486,7 +30486,7 @@ class IRProgram {
 	}
 
 	/**
-	 * @param {IRExpr} expr 
+	 * @param {IRExpr} expr
 	 * @returns {IRExpr}
 	 */
 	static simplify(expr) {
@@ -30586,7 +30586,7 @@ export class IRParametricProgram {
 
 	/**
 	 * @package
-	 * @param {IR} ir 
+	 * @param {IR} ir
 	 * @param {?number} purpose
 	 * @param {string[]} parameters
 	 * @param {boolean} simplify
@@ -30634,7 +30634,7 @@ class Module {
 	#statements;
 
 	/**
-	 * @param {Word} name 
+	 * @param {Word} name
 	 * @param {Statement[]} statements
 	 */
 	constructor(name, statements) {
@@ -30690,7 +30690,7 @@ class Module {
 	}
 
 	/**
-	 * @param {ModuleScope} scope 
+	 * @param {ModuleScope} scope
 	 */
 	evalTypes(scope) {
 		for (let s of this.statements) {
@@ -30756,7 +30756,7 @@ class Module {
 	/**
 	 * This module can depend on other modules
 	 * TODO: detect circular dependencies
-	 * @param {Module[]} modules 
+	 * @param {Module[]} modules
 	 * @param {Module[]} stack
 	 * @returns {Module[]}
 	 */
@@ -30805,8 +30805,8 @@ class Module {
  */
 class MainModule extends Module {
 	/**
-	 * @param {Word} name 
-	 * @param {Statement[]} statements 
+	 * @param {Word} name
+	 * @param {Statement[]} statements
 	 */
 	constructor(name, statements) {
 		super(name, statements);
@@ -30818,7 +30818,7 @@ class MainModule extends Module {
 	get mainFunc() {
 		for (let s of this.statements) {
 			if (s.name.value == "main") {
-				if (!(s instanceof FuncStatement)) {	
+				if (!(s instanceof FuncStatement)) {
 					throw s.typeError("'main' isn't a function statement");
 				} else {
 					return s;
@@ -30849,7 +30849,7 @@ class MainModule extends Module {
 	 * @type {Object.<string, HeliosData>}
 	 */
 	#parameters;
-	
+
 	/**
 	 * @param {number} purpose
 	 * @param {Module[]} modules
@@ -30862,7 +30862,7 @@ class MainModule extends Module {
 	}
 
 	/**
-	 * @param {string} rawSrc 
+	 * @param {string} rawSrc
 	 * @returns {[purpose, Module[]]}
 	 */
 	static parseMain(rawSrc) {
@@ -30901,8 +30901,8 @@ class MainModule extends Module {
 	}
 
 	/**
-	 * 
-	 * @param {string} mainName 
+	 *
+	 * @param {string} mainName
 	 * @param {string[]} moduleSrcs
 	 * @returns {Module[]}
 	 */
@@ -30929,7 +30929,7 @@ class MainModule extends Module {
 
 	/**
 	 * Creates  a new program.
-	 * @param {string} mainSrc 
+	 * @param {string} mainSrc
 	 * @param {string[]} moduleSrcs - optional sources of modules, which can be used for imports
 	 * @returns {Program}
 	 */
@@ -30939,7 +30939,7 @@ class MainModule extends Module {
 		let site = modules[0].name.site;
 
 		let imports = Program.parseImports(modules[0].name.value, moduleSrcs);
-		
+
 		let mainImports = modules[0].filterDependencies(imports);
 
 		/** @type {Module[]} */
@@ -30951,7 +30951,7 @@ class MainModule extends Module {
 
 		// create the final order of all the modules (this is the order in which statements will be added to the IR)
 		modules = mainImports.concat([modules[0]]).concat(postImports).concat(modules.slice(1));
-	
+
 		/**
 		 * @type {Program}
 		 */
@@ -30983,8 +30983,8 @@ class MainModule extends Module {
 		return program;
 	}
 
-	/** 
-	 * @type {Module[]} 
+	/**
+	 * @type {Module[]}
 	 */
 	get mainImportedModules() {
 		/** @type {Module[]} */
@@ -31131,7 +31131,7 @@ class MainModule extends Module {
 		}
 
 		this.mainFunc.use();
-		
+
 		return topScope;
 	}
 
@@ -31188,9 +31188,9 @@ class MainModule extends Module {
 	}
 
 	/**
-	 * Change the literal value of a const statements  
-	 * @param {string} name 
-	 * @param {string | UplcValue} value 
+	 * Change the literal value of a const statements
+	 * @param {string} name
+	 * @param {string | UplcValue} value
 	 * @returns {Program} - returns 'this' so that changeParam calls can be chained
 	 */
 	changeParam(name, value) {
@@ -31208,9 +31208,9 @@ class MainModule extends Module {
 	}
 
 	/**
-	 * Change the literal value of a const statements  
+	 * Change the literal value of a const statements
 	 * @package
-	 * @param {string} name 
+	 * @param {string} name
 	 * @param {UplcData} data
 	 */
 	changeParamSafe(name, data) {
@@ -31229,7 +31229,7 @@ class MainModule extends Module {
 
 	/**
 	 * Doesn't use wrapEntryPoint
-	 * @param {string} name 
+	 * @param {string} name
 	 * @returns {UplcValue}
 	 */
 	evalParam(name) {
@@ -31272,7 +31272,7 @@ class MainModule extends Module {
 			return new UplcDataValue(irProgram.site, irProgram.data);
 		}
 	}
-	
+
 	/**
 	 * Alternative way to get the parameters as HeliosData instances
 	 * @returns {Object.<string, HeliosData>}
@@ -31286,20 +31286,20 @@ class MainModule extends Module {
 		const handler = {
 			/**
 			 * Return from this.#parameters if available, or calculate
-			 * @param {Object.<string, HeliosData>} target 
+			 * @param {Object.<string, HeliosData>} target
 			 * @param {string} name
-			 * @returns 
+			 * @returns
 			 */
 			get(target, name) {
 				if (name in target) {
 					return target[name];
 				} else {
 					const type = assertDefined(types[name], `invalid param name '${name}'`);
-					
+
 					const uplcValue = that.evalParam(name);
 
 					const value = (uplcValue instanceof UplcBool) ? new Bool(uplcValue.bool) : type.userType.fromUplcData(uplcValue.data);
-						
+
 					target[name] = value;
 
 					return value;
@@ -31364,7 +31364,7 @@ class MainModule extends Module {
 					throw new Error(`parameter ${p} not found (hint: must come before main)`);
 				}
 			});
-		}		
+		}
 
 		/**
 		 * @type {Map<string, IR>}
@@ -31386,7 +31386,7 @@ class MainModule extends Module {
 						]);
 					}
 
-					map.set(statement.path, ir); 
+					map.set(statement.path, ir);
 
 					continue;
 				}
@@ -31398,7 +31398,7 @@ class MainModule extends Module {
 				break;
 			}
 		}
- 
+
 		// builtin functions are added when the IR program is built
 		// also replace all tabs with four spaces
 		return wrapWithRawFunctions(IR.wrapWithDefinitions(ir, map));
@@ -31425,14 +31425,14 @@ class MainModule extends Module {
 	}
 
 	/**
-	 * @param {boolean} simplify 
+	 * @param {boolean} simplify
 	 * @returns {UplcProgram}
 	 */
 	compile(simplify = false) {
 		const ir = this.toIR([]);
 
 		const irProgram = IRProgram.new(ir, this.#purpose, simplify);
-		
+
 		//console.log(new Source(irProgram.toString()).pretty());
 		return irProgram.toUplc();
 	}
@@ -31458,7 +31458,7 @@ class MainModule extends Module {
 class RedeemerProgram extends Program {
 	/**
 	 * @param {number} purpose
-	 * @param {Module[]} modules 
+	 * @param {Module[]} modules
 	 */
 	constructor(purpose, modules) {
 		super(purpose, modules);
@@ -31516,7 +31516,7 @@ class RedeemerProgram extends Program {
 	/**
 	 * @package
 	 * @param {string[]} parameters
-	 * @returns {IR} 
+	 * @returns {IR}
 	 */
 	toIR(parameters = []) {
 		/** @type {IR[]} */
@@ -31569,7 +31569,7 @@ class DatumRedeemerProgram extends Program {
 
 	/**
 	 * @package
-	 * @param {GlobalScope} scope 
+	 * @param {GlobalScope} scope
 	 * @returns {TopScope}
 	 */
 	evalTypesInternal(scope) {
@@ -31680,7 +31680,7 @@ class DatumRedeemerProgram extends Program {
 
 class TestingProgram extends Program {
 	/**
-	 * @param {Module[]} modules 
+	 * @param {Module[]} modules
 	 */
 	constructor(modules) {
 		super(ScriptPurpose.Testing, modules);
@@ -31702,7 +31702,7 @@ class TestingProgram extends Program {
 
 		const topScope = this.evalTypesInternal(scope);
 
-		// main can have any arg types, and any return type 
+		// main can have any arg types, and any return type
 
 		if (this.mainFunc.retTypes.length > 1) {
 			throw this.mainFunc.typeError("program entry-point can only return one value");
@@ -31754,13 +31754,13 @@ class SpendingProgram extends DatumRedeemerProgram {
 	evalTypes() {
 		const scope = GlobalScope.new(ScriptPurpose.Spending);
 
-		return this.evalTypesInternal(scope);	
+		return this.evalTypesInternal(scope);
 	}
 }
 
 class MintingProgram extends RedeemerProgram {
 	/**
-	 * @param {Module[]} modules 
+	 * @param {Module[]} modules
 	 */
 	constructor(modules) {
 		super(ScriptPurpose.Minting, modules);
@@ -31780,13 +31780,13 @@ class MintingProgram extends RedeemerProgram {
 	evalTypes() {
 		const scope = GlobalScope.new(ScriptPurpose.Minting);
 
-		return this.evalTypesInternal(scope);	
+		return this.evalTypesInternal(scope);
 	}
 }
 
 class StakingProgram extends RedeemerProgram {
 	/**
-	 * @param {Module[]} modules 
+	 * @param {Module[]} modules
 	 */
 	constructor(modules) {
 		super(ScriptPurpose.Staking, modules);
@@ -31803,7 +31803,7 @@ class StakingProgram extends RedeemerProgram {
 	evalTypes() {
 		const scope = GlobalScope.new(ScriptPurpose.Staking);
 
-		return this.evalTypesInternal(scope);	
+		return this.evalTypesInternal(scope);
 	}
 }
 
@@ -31828,21 +31828,21 @@ export class Tx extends CborData {
 	 */
 	#valid;
 
-	/** 
-	 * @type {?TxMetadata} 
+	/**
+	 * @type {?TxMetadata}
 	 */
 	#metadata;
 
 	// the following field(s) aren't used by the serialization (only for building)
 	/**
 	 * Upon finalization the slot is calculated and stored in the body
-	 * @type {?Date} 
+	 * @type {?Date}
 	 */
 	#validTo;
 
 	/**
-	 * Upon finalization the slot is calculated and stored in the body 
-	 *  @type {?Date} 
+	 * Upon finalization the slot is calculated and stored in the body
+	 *  @type {?Date}
 	 */
 	#validFrom;
 
@@ -31890,7 +31890,7 @@ export class Tx extends CborData {
 		}
 	}
 
-	/** 
+	/**
 	 * @returns {number[]}
 	 */
 	toCbor() {
@@ -31903,7 +31903,7 @@ export class Tx extends CborData {
 	}
 
 	/**
-	 * @param {number[]} bytes 
+	 * @param {number[]} bytes
 	 * @returns {Tx}
 	 */
 	static fromCbor(bytes) {
@@ -31980,7 +31980,7 @@ export class Tx extends CborData {
 
 	/**
 	 * Throws error if assets of given mph are already being minted in this transaction
-	 * @param {MintingPolicyHash} mph 
+	 * @param {MintingPolicyHash} mph
 	 * @param {[number[] | string, bigint][]} tokens - list of pairs of [tokenName, quantity], tokenName can be list of bytes or hex-string
 	 * @param {UplcDataValue | UplcData} redeemer
 	 * @returns {Tx}
@@ -32084,20 +32084,20 @@ export class Tx extends CborData {
 	}
 
 	/**
-	 * @param {TxOutput} output 
+	 * @param {TxOutput} output
 	 * @returns {Tx}
 	 */
 	addOutput(output) {
 		assert(!this.#valid);
-		
-		// min lovelace is checked during build, because 
+
+		// min lovelace is checked during build, because
 		this.#body.addOutput(output);
 
 		return this;
 	}
 
 	/**
-	 * @param {TxOutput[]} outputs 
+	 * @param {TxOutput[]} outputs
 	 * @returns {Tx}
 	 */
 	addOutputs(outputs) {
@@ -32137,7 +32137,7 @@ export class Tx extends CborData {
 	/**
 	 * Usually adding only one collateral input is enough
 	 * Must be less than the limit in networkParams (eg. 3), or else an error is thrown during finalization
-	 * @param {UTxO} input 
+	 * @param {UTxO} input
 	 * @returns {Tx}
 	 */
 	addCollateral(input) {
@@ -32160,7 +32160,7 @@ export class Tx extends CborData {
 		if (!this.#valid) {
 			// add dummy signatures
 			let nUniquePubKeyHashes = this.#body.countUniqueSigners();
-			
+
 			this.#witnesses.addDummySignatures(nUniquePubKeyHashes);
 		}
 
@@ -32223,7 +32223,7 @@ export class Tx extends CborData {
 	}
 
 	/**
-	 * @param {NetworkParams} networkParams 
+	 * @param {NetworkParams} networkParams
 	 * @param {Address} changeAddress
 	 * @returns {Promise<void>}
 	 */
@@ -32232,7 +32232,7 @@ export class Tx extends CborData {
 	}
 
 	/**
-	 * @param {NetworkParams} networkParams 
+	 * @param {NetworkParams} networkParams
 	 * @returns {Promise<void>}
 	 */
 	async checkExecutionBudgets(networkParams) {
@@ -32240,7 +32240,7 @@ export class Tx extends CborData {
 	}
 
 	/**
-	 * @param {Address} changeAddress 
+	 * @param {Address} changeAddress
 	 */
 	balanceAssets(changeAddress) {
 		const inputAssets = this.#body.sumInputAndMintedAssets();
@@ -32261,14 +32261,14 @@ export class Tx extends CborData {
 	}
 
 	/**
-	 * Calculate the base fee which will be multiplied by the required min collateral percentage 
-	 * @param {NetworkParams} networkParams 
-	 * @param {Address} changeAddress 
-	 * @param {UTxO[]} spareUtxos 
+	 * Calculate the base fee which will be multiplied by the required min collateral percentage
+	 * @param {NetworkParams} networkParams
+	 * @param {Address} changeAddress
+	 * @param {UTxO[]} spareUtxos
 	 */
 	estimateCollateralBaseFee(networkParams, changeAddress, spareUtxos) {
         assert(N_DUMMY_INPUTS == 1 || N_DUMMY_INPUTS == 2, "expected N_DUMMY_INPUTs == 1 or N_DUMMY_INPUTS == 2");
-		
+
         // create the collateral return output (might not actually be added if there isn't enough lovelace)
 		const dummyOutput = new TxOutput(changeAddress, new Value(0n));
 		dummyOutput.correctLovelace(networkParams);
@@ -32296,7 +32296,7 @@ export class Tx extends CborData {
 
 		return baseFee;
 	}
-	
+
 	/**
 	 * @param {NetworkParams} networkParams
 	 * @param {Address} changeAddress
@@ -32319,7 +32319,7 @@ export class Tx extends CborData {
 		const collateralInputs = [];
 
 		/**
-		 * @param {TxInput[]} inputs 
+		 * @param {TxInput[]} inputs
 		 */
 		function addCollateralInputs(inputs) {
 			// first try using the UTxOs that already form the inputs
@@ -32333,12 +32333,12 @@ export class Tx extends CborData {
 				while (collateralInputs.length >= networkParams.maxCollateralInputs) {
 					collateralInputs.shift();
 				}
-	
+
 				collateralInputs.push(input);
 				collateral += input.value.lovelace;
 			}
 		}
-		
+
 		addCollateralInputs(this.#body.inputs.slice());
 
 		addCollateralInputs(spareUtxos.map(utxo => utxo.asTxInput));
@@ -32375,7 +32375,7 @@ export class Tx extends CborData {
 	 * Iteratively increments the fee because the fee increase the tx size which in turn increases the fee (always converges within two steps though).
 	 * Throws error if transaction can't be balanced.
 	 * Shouldn't be used directly
-	 * @param {NetworkParams} networkParams 
+	 * @param {NetworkParams} networkParams
 	 * @param {Address} changeAddress
 	 * @param {UTxO[]} spareUtxos - used when there are yet enough inputs to cover everything (eg. due to min output lovelace requirements, or fees)
 	 */
@@ -32389,11 +32389,11 @@ export class Tx extends CborData {
 		changeOutput.correctLovelace(networkParams);
 
 		this.#body.addOutput(changeOutput);
-		
+
 		const minLovelace = changeOutput.value.lovelace;
 
 		let fee = this.setFee(networkParams, this.estimateFee(networkParams));
-		
+
 		let inputValue = this.#body.sumInputAndMintedValue();
 
 		let feeValue = new Value(fee);
@@ -32401,7 +32401,7 @@ export class Tx extends CborData {
 		nonChangeOutputValue = feeValue.add(nonChangeOutputValue);
 
 		spareUtxos = spareUtxos.filter(utxo => utxo.value.assets.isZero());
-		
+
 		// use some spareUtxos if the inputValue doesn't cover the outputs and fees
 
 		while (!inputValue.ge(nonChangeOutputValue.add(changeOutput.value))) {
@@ -32484,13 +32484,13 @@ export class Tx extends CborData {
 	 * Throws an error if there isn't enough collateral
 	 * Also throws an error if the script doesn't require collateral, but collateral was actually included
 	 * Shouldn't be used directly
-	 * @param {NetworkParams} networkParams 
+	 * @param {NetworkParams} networkParams
 	 */
 	checkCollateral(networkParams) {
 		if (this.isSmart()) {
 			let minCollateralPct = networkParams.minCollateralPct;
 
-			// only use the exBudget 
+			// only use the exBudget
 
 			const fee = this.#body.fee;
 
@@ -32503,7 +32503,7 @@ export class Tx extends CborData {
 	/**
 	 * Throws error if tx is too big
 	 * Shouldn't be used directly
-	 * @param {NetworkParams} networkParams 
+	 * @param {NetworkParams} networkParams
 	 */
 	checkSize(networkParams) {
 		let size = this.toCbor().length;
@@ -32515,7 +32515,7 @@ export class Tx extends CborData {
 
 	/**
 	 * Final check that fee is big enough
-	 * @param {NetworkParams} networkParams 
+	 * @param {NetworkParams} networkParams
 	 */
 	checkFee(networkParams) {
 		assert(this.estimateFee(networkParams) <= this.#body.fee, "fee too small");
@@ -32561,7 +32561,7 @@ export class Tx extends CborData {
 		// balance the non-ada assets
 		this.balanceAssets(changeAddress)
 
-		// make sure that each output contains the necessary minimum amount of lovelace	
+		// make sure that each output contains the necessary minimum amount of lovelace
 		this.#body.correctOutputs(networkParams);
 
 		// the scripts executed at this point will not see the correct txHash nor the correct fee
@@ -32598,9 +32598,9 @@ export class Tx extends CborData {
 	}
 
 	/**
-	 * Throws an error if verify==true and signature is invalid 
+	 * Throws an error if verify==true and signature is invalid
 	 * Adding many signatures might be a bit slow
-	 * @param {Signature} signature 
+	 * @param {Signature} signature
 	 * @param {boolean} verify
 	 * @returns {Tx}
 	 */
@@ -32619,8 +32619,8 @@ export class Tx extends CborData {
 	/**
 	 * Throws an error if verify==true and any of the signatures is invalid
 	 * Adding many signatures might be a bit slow
-	 * @param {Signature[]} signatures 
-	 * @param {boolean} verify 
+	 * @param {Signature[]} signatures
+	 * @param {boolean} verify
 	 * @returns {Tx}
 	 */
 	addSignatures(signatures, verify = true) {
@@ -32662,7 +32662,7 @@ class TxBody extends CborData {
 	/**
 	 * Inputs must be sorted before submitting (first by TxId, then by utxoIndex)
 	 * Spending redeemers must point to the sorted inputs
-	 * @type {TxInput[]} 
+	 * @type {TxInput[]}
 	 */
 	#inputs;
 
@@ -32681,7 +32681,7 @@ class TxBody extends CborData {
 	/**
 	 * Withdrawals must be sorted by address
 	 * Stake rewarding redeemers must point to the sorted withdrawals
-	 * @type {Map<Address, bigint>} 
+	 * @type {Map<Address, bigint>}
 	 */
 	#withdrawals;
 
@@ -32691,7 +32691,7 @@ class TxBody extends CborData {
 	/**
 	 * Internally the assets must be sorted by mintingpolicyhash
 	 * Minting redeemers must point to the sorted minted assets
-	 * @type {Assets} 
+	 * @type {Assets}
 	 */
 	#minted;
 
@@ -32787,7 +32787,7 @@ class TxBody extends CborData {
 		object.set(0, CborData.encodeDefList(this.#inputs));
 		object.set(1, CborData.encodeDefList(this.#outputs));
 		object.set(2, CborData.encodeInteger(this.#fee));
-		
+
 		if (this.#lastValidSlot !== null) {
 			object.set(3, CborData.encodeInteger(this.#lastValidSlot));
 		}
@@ -32968,7 +32968,7 @@ class TxBody extends CborData {
 	/**
 	 * @param {NetworkParams} networkParams
 	 * @param {Redeemer[]} redeemers
-	 * @param {ListData} datums 
+	 * @param {ListData} datums
 	 * @param {TxId} txId
 	 * @returns {ConstrData}
 	 */
@@ -32979,14 +32979,14 @@ class TxBody extends CborData {
 			new ListData(this.#outputs.map(output => output.toData())),
 			(new Value(this.#fee))._toUplcData(),
 			// NOTE: all other Value instances in ScriptContext contain some lovelace, but #minted can never contain any lovelace, yet cardano-node always prepends 0 lovelace to the #minted MapData
-			(new Value(0n, this.#minted))._toUplcData(true), 
+			(new Value(0n, this.#minted))._toUplcData(true),
 			new ListData(this.#certs.map(cert => cert.toData())),
 			new MapData(Array.from(this.#withdrawals.entries()).map(w => [w[0].toStakingData(), new IntData(w[1])])),
 			this.toValidTimeRangeData(networkParams),
 			new ListData(this.#signers.map(rs => new ByteArrayData(rs.bytes))),
 			new MapData(redeemers.map(r => [r.toScriptPurposeData(this), r.data])),
 			new MapData(datums.list.map(d => [
-				new ByteArrayData(Crypto.blake2b(d.toCbor())), 
+				new ByteArrayData(Crypto.blake2b(d.toCbor())),
 				d
 			])),
 			// DEBUG extra data to see if it influences the ex budget
@@ -32995,13 +32995,13 @@ class TxBody extends CborData {
 	}
 
 	/**
-	 * @param {NetworkParams} networkParams 
+	 * @param {NetworkParams} networkParams
 	 * @param {Redeemer[]} redeemers
 	 * @param {ListData} datums
 	 * @param {number} redeemerIdx
 	 * @returns {UplcData}
 	 */
-	toScriptContextData(networkParams, redeemers, datums, redeemerIdx) {		
+	toScriptContextData(networkParams, redeemers, datums, redeemerIdx) {
 		return new ConstrData(0, [
 			// tx (we can't know the txId right now, because we don't know the execution costs yet, but a dummy txId should be fine)
 			this.toTxData(networkParams, redeemers, datums, TxId.dummy()),
@@ -33083,7 +33083,7 @@ class TxBody extends CborData {
 	}
 
 	/**
-	 * @param {TxInput} input 
+	 * @param {TxInput} input
 	 * @param {boolean} checkUniqueness
 	 */
 	addInput(input, checkUniqueness = true) {
@@ -33129,7 +33129,7 @@ class TxBody extends CborData {
  	}
 
 	/**
-	 * @param {TxInput} input 
+	 * @param {TxInput} input
 	 */
 	addRefInput(input) {
 		this.#refInputs.push(input);
@@ -33148,7 +33148,7 @@ class TxBody extends CborData {
 	 * Dummy outputs are needed to be able to correctly estimate fees
 	 * Throws an error if the output doesn't exist in list of outputs
 	 * Internal use only!
-	 * @param {TxOutput} output 
+	 * @param {TxOutput} output
 	 */
 	removeOutput(output) {
 		let idx = -1;
@@ -33169,21 +33169,21 @@ class TxBody extends CborData {
 
 		assert(this.#outputs.length == n - 1, "output not removed");
 	}
-	
+
 	/**
-	 * @param {PubKeyHash} hash 
+	 * @param {PubKeyHash} hash
 	 */
 	addSigner(hash) {
 		this.#signers.push(hash);
 	}
 
 	/**
-	 * @param {TxInput} input 
+	 * @param {TxInput} input
 	 */
 	addCollateral(input) {
 		this.#collateral.push(input);
 	}
-	
+
 	/**
 	 * @param {Hash} scriptDataHash
 	 */
@@ -33199,7 +33199,7 @@ class TxBody extends CborData {
 	}
 
 	/**
-	 * @param {TxOutput | null} output 
+	 * @param {TxOutput | null} output
 	 */
 	setCollateralReturn(output) {
 		this.#collateralReturn = output;
@@ -33277,10 +33277,10 @@ class TxBody extends CborData {
 			assert(minLovelace <= output.value.lovelace, `not enough lovelace in output (expected at least ${minLovelace.toString()}, got ${output.value.lovelace})`);
 		}
 	}
-	
+
 	/**
 	 * @param {NetworkParams} networkParams
-	 * @param {?bigint} minCollateral 
+	 * @param {?bigint} minCollateral
 	 */
 	checkCollateral(networkParams, minCollateral) {
 		assert(this.#collateral.length <= networkParams.maxCollateralInputs);
@@ -33325,7 +33325,7 @@ class TxBody extends CborData {
 				assert(TxInput.comp(prev, input) <= -1, "inputs not sorted");
 			}
 		});
-	 
+
 		// TODO: also add withdrawals in sorted manner
 		this.#withdrawals = new Map(Array.from(this.#withdrawals.entries()).sort((a, b) => {
 			return Address.compStakingHashes(a[0], b[0]);
@@ -33430,7 +33430,7 @@ export class TxWitnesses extends CborData {
 	}
 
 	/**
-	 * @param {number[]} bytes 
+	 * @param {number[]} bytes
 	 * @returns {TxWitnesses}
 	 */
 	static fromCbor(bytes) {
@@ -33470,7 +33470,7 @@ export class TxWitnesses extends CborData {
 
 	/**
 	 * Throws error if signatures are incorrect
-	 * @param {number[]} bodyBytes 
+	 * @param {number[]} bodyBytes
 	 */
 	verifySignatures(bodyBytes) {
 		for (let signature of this.#signatures) {
@@ -33506,7 +33506,7 @@ export class TxWitnesses extends CborData {
 	}
 
 	/**
-	 * @param {Signature} signature 
+	 * @param {Signature} signature
 	 */
 	addSignature(signature) {
 		this.#signatures.push(signature);
@@ -33528,7 +33528,7 @@ export class TxWitnesses extends CborData {
 	/**
 	 * Index is calculated later
 	 * @param {TxInput} input
-	 * @param {UplcData} redeemerData 
+	 * @param {UplcData} redeemerData
 	 */
 	addSpendingRedeemer(input, redeemerData) {
 		this.#redeemers.push(new SpendingRedeemer(input, -1, redeemerData)); // actual input index is determined later
@@ -33543,7 +33543,7 @@ export class TxWitnesses extends CborData {
 	}
 
 	/**
-	 * @param {UplcData} data 
+	 * @param {UplcData} data
 	 */
 	addDatumData(data) {
 		// check that it hasn't already been included
@@ -33561,7 +33561,7 @@ export class TxWitnesses extends CborData {
 
 	/**
 	 * Throws error if script was already added before
-	 * @param {UplcProgram} program 
+	 * @param {UplcProgram} program
 	 * @param {boolean} isRef
 	 */
 	attachScript(program, isRef = false) {
@@ -33596,7 +33596,7 @@ export class TxWitnesses extends CborData {
 	}
 
 	/**
-	 * @param {NetworkParams} networkParams 
+	 * @param {NetworkParams} networkParams
 	 * @returns {?Hash} - returns null if there are no redeemers
 	 */
 	calcScriptDataHash(networkParams) {
@@ -33611,7 +33611,7 @@ export class TxWitnesses extends CborData {
 			let sortedCostParams = networkParams.sortedCostParams;
 
 			bytes = bytes.concat(CborData.encodeMap([[
-				CborData.encodeInteger(1n), 
+				CborData.encodeInteger(1n),
 				CborData.encodeDefList(sortedCostParams.map(cp => CborData.encodeInteger(BigInt(cp)))),
 			]]));
 
@@ -33622,12 +33622,12 @@ export class TxWitnesses extends CborData {
 	}
 
 	/**
-	 * 
-	 * @param {NetworkParams} networkParams 
+	 *
+	 * @param {NetworkParams} networkParams
 	 * @param {TxBody} body
-	 * @param {Redeemer} redeemer 
+	 * @param {Redeemer} redeemer
 	 * @param {UplcData} scriptContext
-	 * @returns {Promise<Cost>} 
+	 * @returns {Promise<Cost>}
 	 */
 	async executeRedeemer(networkParams, body, redeemer, scriptContext) {
 		if (redeemer instanceof SpendingRedeemer) {
@@ -33648,8 +33648,8 @@ export class TxWitnesses extends CborData {
 					const script = this.getScript(validatorHash);
 
 					const args = [
-						new UplcDataValue(Site.dummy(), datumData), 
-						new UplcDataValue(Site.dummy(), redeemer.data), 
+						new UplcDataValue(Site.dummy(), datumData),
+						new UplcDataValue(Site.dummy(), redeemer.data),
 						new UplcDataValue(Site.dummy(), scriptContext),
 					];
 
@@ -33657,7 +33657,7 @@ export class TxWitnesses extends CborData {
 
 					profile.messages.forEach(m => console.log(m));
 
-					if (profile.result instanceof UserError) {	
+					if (profile.result instanceof UserError) {
 						throw profile.result;
 					} else {
 						return {mem: profile.mem, cpu: profile.cpu};
@@ -33678,7 +33678,7 @@ export class TxWitnesses extends CborData {
 
 			profile.messages.forEach(m => console.log(m));
 
-			if (profile.result instanceof UserError) {	
+			if (profile.result instanceof UserError) {
 				throw profile.result;
 			} else {
 				return {mem: profile.mem, cpu: profile.cpu};
@@ -33690,7 +33690,7 @@ export class TxWitnesses extends CborData {
 
 	/**
 	 * Executes the redeemers in order to calculate the necessary ex units
-	 * @param {NetworkParams} networkParams 
+	 * @param {NetworkParams} networkParams
 	 * @param {TxBody} body - needed in order to create correct ScriptContexts
 	 * @param {Address} changeAddress - needed for dummy input and dummy output
 	 * @returns {Promise<void>}
@@ -33760,8 +33760,8 @@ export class TxWitnesses extends CborData {
 
 	/**
 	 * Reruns all the redeemers to make sure the ex budgets are still correct (can change due to outputs added during rebalancing)
-	 * @param {NetworkParams} networkParams 
-	 * @param {TxBody} body 
+	 * @param {NetworkParams} networkParams
+	 * @param {TxBody} body
 	 */
 	async checkExecutionBudgets(networkParams, body) {
 		for (let i = 0; i < this.#redeemers.length; i++) {
@@ -33818,8 +33818,8 @@ class TxInput extends CborData {
 	#origOutput;
 
 	/**
-	 * @param {TxId} txId 
-	 * @param {bigint} utxoIdx 
+	 * @param {TxId} txId
+	 * @param {bigint} utxoIdx
 	 * @param {?TxOutput} origOutput - used during building, not part of serialization
 	 */
 	constructor(txId, utxoIdx, origOutput = null) {
@@ -33828,7 +33828,7 @@ class TxInput extends CborData {
 		this.#utxoIdx = utxoIdx;
 		this.#origOutput = origOutput;
 	}
-	
+
 	/**
 	 * @type {TxId}
 	 */
@@ -33905,7 +33905,7 @@ class TxInput extends CborData {
 	}
 
 	/**
-	 * @param {number[]} bytes 
+	 * @param {number[]} bytes
 	 * @returns {TxInput}
 	 */
 	static fromCbor(bytes) {
@@ -33936,8 +33936,8 @@ class TxInput extends CborData {
 	}
 
 	/**
-	 * Tx inputs must be ordered. 
-	 * The following function can be used directly by a js array sort
+	 * Tx inputs must be ordered.
+	 * The following function can be used directly by a old_js array sort
 	 * @param {TxInput} a
 	 * @param {TxInput} b
 	 * @returns {number}
@@ -33950,7 +33950,7 @@ class TxInput extends CborData {
 		} else {
 			return res;
 		}
-	} 
+	}
 
 	/**
 	 * @returns {Object}
@@ -33971,8 +33971,8 @@ export class UTxO {
 	#input;
 
 	/**
-	 * @param {TxId} txId 
-	 * @param {bigint} utxoIdx 
+	 * @param {TxId} txId
+	 * @param {bigint} utxoIdx
 	 * @param {TxOutput} origOutput
 	 */
 	constructor(txId, utxoIdx, origOutput) {
@@ -34042,7 +34042,7 @@ export class UTxO {
 		if (maybeTxInput !== null && origOutput !== null) {
             /** @type {TxInput} */
             const txInput = maybeTxInput;
-            
+
 			return new UTxO(txInput.txId, txInput.utxoIdx, origOutput);
 		} else {
 			throw new Error("unexpected");
@@ -34076,7 +34076,7 @@ export class UTxO {
 
 export class TxRefInput extends TxInput {
 	/**
-	 * @param {TxId} txId 
+	 * @param {TxId} txId
 	 * @param {bigint} utxoId
 	 * @param {TxOutput} origOutput
 	 */
@@ -34099,10 +34099,10 @@ export class TxOutput extends CborData {
 	#refScript;
 
 	/**
-	 * @param {Address} address 
-	 * @param {Value} value 
-	 * @param {?Datum} datum 
-	 * @param {?UplcProgram} refScript 
+	 * @param {Address} address
+	 * @param {Value} value
+	 * @param {?Datum} datum
+	 * @param {?UplcProgram} refScript
 	 */
 	constructor(address, value, datum = null, refScript = null) {
 		assert(datum === null || datum instanceof Datum); // check this explicitely because caller might be using this constructor without proper type-checking
@@ -34142,8 +34142,8 @@ export class TxOutput extends CborData {
 	}
 
 	/**
-	 * Mutation is handy when correctin the quantity of lovelace in a utxo 
-	 * @param {Datum} datum 
+	 * Mutation is handy when correctin the quantity of lovelace in a utxo
+	 * @param {Datum} datum
 	 */
 	setDatum(datum) {
 		this.#datum = datum;
@@ -34212,7 +34212,7 @@ export class TxOutput extends CborData {
 	}
 
 	/**
-	 * @param {number[]} bytes 
+	 * @param {number[]} bytes
 	 * @returns {TxOutput}
 	 */
 	static fromCbor(bytes) {
@@ -34230,7 +34230,7 @@ export class TxOutput extends CborData {
 
 		if (CborData.isObject(bytes)) {
 			CborData.decodeObject(bytes, (i, fieldBytes) => {
-				switch(i) { 
+				switch(i) {
 					case 0:
 						address = Address.fromCbor(fieldBytes);
 						break;
@@ -34268,7 +34268,7 @@ export class TxOutput extends CborData {
 		} else if (CborData.isTuple(bytes)) {
 			// this is the pre-vasil format, which is still sometimes returned by wallet connector functions
 			CborData.decodeTuple(bytes, (i, fieldBytes) => {
-				switch(i) { 
+				switch(i) {
 					case 0:
 						address = Address.fromCbor(fieldBytes);
 						break;
@@ -34338,7 +34338,7 @@ export class TxOutput extends CborData {
 	/**
 	 * Mutates. Makes sure the output contains at least the minimum quantity of lovelace.
 	 * Other parts of the output can optionally also be mutated
-	 * @param {NetworkParams} networkParams 
+	 * @param {NetworkParams} networkParams
 	 * @param {?((output: TxOutput) => void)} updater
 	 */
 	correctLovelace(networkParams, updater = null) {
@@ -34363,7 +34363,7 @@ class DCert extends CborData {
 	}
 
 	/**
-	 * @param {number[]} bytes 
+	 * @param {number[]} bytes
 	 * @returns {DCert}
 	 */
 	static fromCbor(bytes) {
@@ -34385,7 +34385,7 @@ export class StakeAddress {
 	#bytes;
 
 	/**
-	 * @param {number[]} bytes 
+	 * @param {number[]} bytes
 	 */
 	constructor(bytes) {
 		assert(bytes.length == 29);
@@ -34411,7 +34411,7 @@ export class StakeAddress {
 	/**
 	 * Convert regular Address into StakeAddress.
 	 * Throws an error if the given Address doesn't have a staking part.
-	 * @param {Address} addr 
+	 * @param {Address} addr
 	 * @returns {StakeAddress}
 	 */
 	static fromAddress(addr) {
@@ -34541,8 +34541,8 @@ export class Signature extends CborData {
 	#signature;
 
 	/**
-	 * @param {number[]} pubKey 
-	 * @param {number[]} signature 
+	 * @param {number[]} pubKey
+	 * @param {number[]} signature
 	 */
 	constructor(pubKey, signature) {
 		super();
@@ -34572,7 +34572,7 @@ export class Signature extends CborData {
 	}
 
 	/**
-	 * @param {number[]} bytes 
+	 * @param {number[]} bytes
 	 * @returns {Signature}
 	 */
 	static fromCbor(bytes) {
@@ -34642,8 +34642,8 @@ class Redeemer extends CborData {
 	#exUnits;
 
 	/**
-	 * @param {UplcData} data 
-	 * @param {Cost} exUnits 
+	 * @param {UplcData} data
+	 * @param {Cost} exUnits
 	 */
 	constructor(data, exUnits = {mem: 0n, cpu: 0n}) {
 		super();
@@ -34675,11 +34675,11 @@ class Redeemer extends CborData {
 	/**
 	 * type:
 	 *   0 -> spending
-	 *   1 -> minting 
+	 *   1 -> minting
 	 *   2 -> certifying
 	 *   3 -> rewarding
-	 * @param {number} type 
-	 * @param {number} index 
+	 * @param {number} type
+	 * @param {number} index
 	 * @returns {number[]}
 	 */
 	toCborInternal(type, index) {
@@ -34695,7 +34695,7 @@ class Redeemer extends CborData {
 	}
 
 	/**
-	 * @param {number[]} bytes 
+	 * @param {number[]} bytes
 	 * @returns {Redeemer}
 	 */
 	static fromCbor(bytes) {
@@ -34722,7 +34722,7 @@ class Redeemer extends CborData {
 				case 2:
 					data = UplcData.fromCbor(fieldBytes);
 					break;
-				case 3: 
+				case 3:
 					/** @type {?bigint} */
 					let mem = null;
 
@@ -34767,7 +34767,7 @@ class Redeemer extends CborData {
 				case 1:
 					return new MintingRedeemer(null, index, data, cost);
 				default:
-					throw new Error("unhandled redeemer type (Todo)");	
+					throw new Error("unhandled redeemer type (Todo)");
 			}
 		}
 	}
@@ -34793,7 +34793,7 @@ class Redeemer extends CborData {
 	}
 
 	/**
-	 * @param {TxBody} body 
+	 * @param {TxBody} body
 	 * @returns {ConstrData}
 	 */
 	toScriptPurposeData(body) {
@@ -34801,26 +34801,26 @@ class Redeemer extends CborData {
 	}
 
 	/**
-	 * @param {TxBody} body 
+	 * @param {TxBody} body
 	 */
 	updateIndex(body) {
 		throw new Error("not yet implemented");
 	}
 
 	/**
-	 * @param {Cost} cost 
+	 * @param {Cost} cost
 	 */
 	setCost(cost) {
 		this.#exUnits = cost;
 	}
 
 	/**
-	 * @param {NetworkParams} networkParams 
+	 * @param {NetworkParams} networkParams
 	 * @returns {bigint}
 	 */
 	estimateFee(networkParams) {
 		// this.#exUnits.mem and this.#exUnits can be 0 if we are estimating the fee for an initial balance
-		
+
 		let [memFee, cpuFee] = networkParams.exFeeParams;
 
 		return BigInt(Math.ceil(Number(this.#exUnits.mem)*memFee + Number(this.#exUnits.cpu)*cpuFee));
@@ -34834,8 +34834,8 @@ class SpendingRedeemer extends Redeemer {
 	/**
 	 * @param {?TxInput} input
 	 * @param {number} inputIndex
-	 * @param {UplcData} data 
-	 * @param {Cost} exUnits 
+	 * @param {UplcData} data
+	 * @param {Cost} exUnits
 	 */
 	constructor(input, inputIndex, data, exUnits = {mem: 0n, cpu: 0n}) {
 		super(data, exUnits);
@@ -34872,7 +34872,7 @@ class SpendingRedeemer extends Redeemer {
 	}
 
 	/**
-	 * @param {TxBody} body 
+	 * @param {TxBody} body
 	 * @returns {ConstrData}
 	 */
 	toScriptPurposeData(body) {
@@ -34928,7 +34928,7 @@ class MintingRedeemer extends Redeemer {
 		return this.toCborInternal(1, this.#mphIndex);
 	}
 
-	/** 
+	/**
 	 * @returns {Object}
 	 */
 	dump() {
@@ -34942,7 +34942,7 @@ class MintingRedeemer extends Redeemer {
 	}
 
 	/**
-	 * @param {TxBody} body 
+	 * @param {TxBody} body
 	 * @returns {ConstrData}
 	 */
 	toScriptPurposeData(body) {
@@ -34954,7 +34954,7 @@ class MintingRedeemer extends Redeemer {
 	}
 
 	/**
-	 * @param {TxBody} body 
+	 * @param {TxBody} body
 	 */
 	updateIndex(body) {
 		if (this.#mph === null) {
@@ -34977,7 +34977,7 @@ export class Datum extends CborData {
 	}
 
 	/**
-	 * @param {number[]} bytes 
+	 * @param {number[]} bytes
 	 * @returns {Datum}
 	 */
 	static fromCbor(bytes) {
@@ -35097,7 +35097,7 @@ export class HashedDatum extends Datum {
 	#origData;
 
 	/**
-	 * @param {DatumHash} hash 
+	 * @param {DatumHash} hash
 	 * @param {?UplcData} origData
 	 */
 	constructor(hash, origData = null) {
@@ -35157,7 +35157,7 @@ export class HashedDatum extends Datum {
 	}
 
 	/**
-	 * @param {UplcData} data 
+	 * @param {UplcData} data
 	 * @returns {HashedDatum}
 	 */
 	static fromData(data) {
@@ -35256,7 +35256,7 @@ class InlineDatum extends Datum {
  */
 
 /**
- * @param {Metadata} metadata 
+ * @param {Metadata} metadata
  * @returns {number[]}
  */
 function encodeMetadata(metadata) {
@@ -35279,7 +35279,7 @@ function encodeMetadata(metadata) {
 						encodeMetadata(pair[1])
 					];
 				} else {
-					throw new Error("invalid metadata schema");		
+					throw new Error("invalid metadata schema");
 				}
 			}));
 		} else {
@@ -35292,7 +35292,7 @@ function encodeMetadata(metadata) {
 
 /**
  * Shifts bytes to next Cbor element
- * @param {number[]} bytes 
+ * @param {number[]} bytes
  * @returns {Metadata}
  */
 function decodeMetadata(bytes) {
@@ -35330,7 +35330,7 @@ function decodeMetadata(bytes) {
 
 class TxMetadata {
 	/**
-	 * @type {Object.<number, Metadata>} 
+	 * @type {Object.<number, Metadata>}
 	 */
 	#metadata;
 
@@ -35378,7 +35378,7 @@ class TxMetadata {
 			CborData.encodeInteger(BigInt(key)),
 			encodeMetadata(this.#metadata[key])
 		]);
-		
+
 		return CborData.encodeMap(pairs);
 	}
 
@@ -35392,7 +35392,7 @@ class TxMetadata {
 
 		CborData.decodeMap(data, (pairBytes) => {
 			txMetadata.add(
-				Number(CborData.decodeInteger(pairBytes)), 
+				Number(CborData.decodeInteger(pairBytes)),
 				decodeMetadata(pairBytes)
 			);
 		});
@@ -35451,7 +35451,7 @@ export function highlight(src) {
 
 	/** @type {SymbolToken[]} */
 	let groupStack = [];
-	
+
 	for (let i = 0; i < n; i++) {
 		let c = src[i];
 		let isLast = i == n - 1;
@@ -35463,7 +35463,7 @@ export function highlight(src) {
 					if (!isLast && src[i+1] == "/") {
 						data[j++] = SyntaxCategory.Comment;
 						data[j++] = SyntaxCategory.Comment;
-		
+
 						i++;
 						state = SyntaxState.SLComment;
 					} else if (!isLast && src[i+1] == "*") {
@@ -35718,7 +35718,7 @@ export function highlight(src) {
 				break;
 			default:
 				throw new Error("unhandled SyntaxState");
-		}		
+		}
 	}
 
 	for (let s of groupStack) {
@@ -35796,7 +35796,7 @@ export class FuzzyTest {
 	 * @param {number} max
 	 * @returns {ValueGenerator}
 	 */
-	int(min = -10000000, max = 10000000) {		
+	int(min = -10000000, max = 10000000) {
 		let rand = this.rawInt(min, max);
 
 		return function() {
@@ -35823,12 +35823,12 @@ export class FuzzyTest {
 			for (let i = 0; i < n; i++) {
 				chars.push(String.fromCodePoint(Math.round(rand()*1112064)));
 			}
-			
+
 			return new UplcDataValue(Site.dummy(), ByteArrayData.fromString(chars.join("")));
 		}
 	}
 
-	/** 
+	/**
 	 * Returns a generator for strings with ascii characters from 32 (space) to 126 (tilde)
 	 * @param {number} minLength
 	 * @param {number} maxLength
@@ -35847,7 +35847,7 @@ export class FuzzyTest {
 			for (let i = 0; i < n; i++) {
 				chars.push(String.fromCharCode(Math.round(rand()*94 + 32)));
 			}
-			
+
 			return new UplcDataValue(Site.dummy(), ByteArrayData.fromString(chars.join("")));
 		}
 	}
@@ -35911,7 +35911,7 @@ export class FuzzyTest {
 	}
 
 	/**
-	 * Returns a generator for bytearrays 
+	 * Returns a generator for bytearrays
 	 * @param {number} minLength
 	 * @param {number} maxLength
 	 * @returns {ValueGenerator}
@@ -36071,7 +36071,7 @@ export class FuzzyTest {
 			const fields = fieldGenerators.map(g => g().data);
 
 			const finalTag = (typeof tag == "number") ? tag : Math.round(tag()*100);
-			
+
 			return new UplcDataValue(Site.dummy(), new ConstrData(finalTag, fields));
 		}
 	}
@@ -36099,7 +36099,7 @@ export class FuzzyTest {
 
 			for (let it = 0; it < nRuns; it++) {
 				let args = argGens.map(gen => gen());
-			
+
 				let result = await program.run(args);
 
 				let obj = propTest(args, result);
@@ -36152,7 +36152,7 @@ export class FuzzyTest {
 				}
 
 				let args = paramArgs.map(paramArg => program.evalParam(paramArg));
-			
+
 				let coreProgram = Program.new(src).compile(simplify);
 
 				let result = await coreProgram.run(args);
@@ -36194,8 +36194,8 @@ export class FuzzyTest {
  */
 export class CoinSelection {
     /**
-     * @param {UTxO[]} utxos 
-     * @param {Value} amount 
+     * @param {UTxO[]} utxos
+     * @param {Value} amount
      * @param {boolean} largestFirst
      * @returns {[UTxO[], UTxO[]]} - [picked, not picked that can be used as spares]
      */
@@ -36303,8 +36303,8 @@ export class CoinSelection {
     }
 
     /**
-     * @param {UTxO[]} utxos 
-     * @param {Value} amount 
+     * @param {UTxO[]} utxos
+     * @param {Value} amount
      * @returns {[UTxO[], UTxO[]]} - [selected, not selected]
      */
     static selectSmallestFirst(utxos, amount) {
@@ -36312,8 +36312,8 @@ export class CoinSelection {
     }
 
     /**
-     * @param {UTxO[]} utxos 
-     * @param {Value} amount 
+     * @param {UTxO[]} utxos
+     * @param {Value} amount
      * @returns {[UTxO[], UTxO[]]} - [selected, not selected]
      */
     static selectLargestFirst(utxos, amount) {
@@ -36356,7 +36356,7 @@ export class Cip30Wallet {
     #handle;
 
     /**
-     * @param {Cip30Handle} handle 
+     * @param {Cip30Handle} handle
      */
     constructor(handle) {
         this.#handle = handle;
@@ -36391,17 +36391,17 @@ export class Cip30Wallet {
     }
 
     /**
-     * @param {Tx} tx 
+     * @param {Tx} tx
      * @returns {Promise<Signature[]>}
      */
     async signTx(tx) {
         const res = await this.#handle.signTx(bytesToHex(tx.toCbor()), true);
-        
+
         return TxWitnesses.fromCbor(hexToBytes(res)).signatures;
     }
 
     /**
-     * @param {Tx} tx 
+     * @param {Tx} tx
      * @returns {Promise<TxId>}
      */
     async submitTx(tx) {
@@ -36415,7 +36415,7 @@ export class WalletHelper {
     #wallet;
 
     /**
-     * @param {Wallet} wallet 
+     * @param {Wallet} wallet
      */
     constructor(wallet) {
         this.#wallet = wallet;
@@ -36484,10 +36484,10 @@ export class WalletHelper {
     }
 
     /**
-     * @param {Value} amount 
+     * @param {Value} amount
      * @param {(allUtxos: UTxO[], anount: Value) => [UTxO[], UTxO[]]} algorithm
      * @returns {Promise<[UTxO[], UTxO[]]>} - [picked, not picked that can be used as spares]
-     */ 
+     */
     async pickUtxos(amount, algorithm = CoinSelection.selectSmallestFirst) {
         return algorithm(await this.#wallet.utxos, amount);
     }
@@ -36579,12 +36579,12 @@ export class BlockfrostV0 {
 
     /**
      * Determine the network which the wallet is connected to.
-     * @param {Wallet} wallet 
+     * @param {Wallet} wallet
      * @param {{
      *     preview?: string,
      *     preprod?: string,
      *     mainnet?: string
-     * }} projectIds 
+     * }} projectIds
      * @returns {Promise<BlockfrostV0>}
      */
     static async resolve(wallet, projectIds) {
@@ -36607,8 +36607,8 @@ export class BlockfrostV0 {
                     if (await preprodNetwork.hasUtxo(refUtxo)) {
                         return preprodNetwork;
                     }
-                } 
-                
+                }
+
                 if (previewProjectId !== undefined) {
                     const previewNetwork = new BlockfrostV0("preview", previewProjectId);
 
@@ -36629,8 +36629,8 @@ export class BlockfrostV0 {
     }
 
     /**
-     * @param {any} obj 
-     * @returns 
+     * @param {any} obj
+     * @returns
      */
     static parseValue(obj) {
         let value = new Value();
@@ -36680,7 +36680,7 @@ export class BlockfrostV0 {
     /**
      * Returns oldest UTxOs first, newest last.
      * TODO: pagination
-     * @param {Address} address 
+     * @param {Address} address
      * @returns {Promise<UTxO[]>}
      */
     async getUtxos(address) {
@@ -36692,13 +36692,13 @@ export class BlockfrostV0 {
             }
         });
 
-        /** 
-         * @type {any} 
+        /**
+         * @type {any}
          */
         let all = await response.json();
 
         if (all?.status_code >= 300) {
-            all = []; 
+            all = [];
         }
 
         return all.map(obj => {
@@ -36712,10 +36712,10 @@ export class BlockfrostV0 {
                 )
             );
         });
-    }  
+    }
 
-    /** 
-     * @param {Tx} tx 
+    /**
+     * @param {Tx} tx
      * @returns {Promise<TxId>}
      */
     async submitTx(tx) {
@@ -36739,9 +36739,9 @@ export class BlockfrostV0 {
         if (response.status != 200) {
             throw new Error(responseText);
         } else {
-            return new TxId(JSON.parse(responseText));  
+            return new TxId(JSON.parse(responseText));
         }
-    }   
+    }
 }
 
 
@@ -36757,7 +36757,7 @@ export class WalletEmulator {
     #privateKey;
     #publicKey;
 
-    /** 
+    /**
      * @param {Network} network
      * @param {NumberGenerator} random - used to generate the private key
      */
@@ -36771,7 +36771,7 @@ export class WalletEmulator {
 
     /**
      * Generate a private key from a random number generator (not cryptographically secure!)
-     * @param {NumberGenerator} random 
+     * @param {NumberGenerator} random
      * @returns {number[]} - Ed25519 private key is 32 bytes long
      */
     static genPrivateKey(random) {
@@ -36833,7 +36833,7 @@ export class WalletEmulator {
     }
 
     /**
-     * @param {Tx} tx 
+     * @param {Tx} tx
      * @returns {Promise<TxId>}
      */
     async submitTx(tx) {
@@ -36861,9 +36861,9 @@ class GenesisTx {
 
     /**
      * @param {number} id
-     * @param {Address} address 
+     * @param {Address} address
      * @param {bigint} lovelace
-     * @param {Assets} assets 
+     * @param {Assets} assets
      */
     constructor(id, address, lovelace, assets) {
         this.#id = id;
@@ -36888,9 +36888,9 @@ class GenesisTx {
     }
 
     /**
-     * @param {TxId} txId 
-     * @param {bigint} utxoIdx 
-     * @returns 
+     * @param {TxId} txId
+     * @param {bigint} utxoIdx
+     * @returns
      */
     consumes(txId, utxoIdx) {
         return false;
@@ -36928,7 +36928,7 @@ class RegularTx {
     #tx;
 
     /**
-     * @param {Tx} tx 
+     * @param {Tx} tx
      */
     constructor(tx) {
         this.#tx = tx;
@@ -36955,8 +36955,8 @@ class RegularTx {
     }
 
     /**
-     * @param {Address} address 
-     * @param {UTxO[]} utxos 
+     * @param {Address} address
+     * @param {UTxO[]} utxos
      * @returns {UTxO[]}
      */
     collectUtxos(address, utxos) {
@@ -37008,7 +37008,7 @@ export class NetworkEmulator {
     #blocks;
 
     /**
-     * @param {number} seed 
+     * @param {number} seed
      */
     constructor(seed = 0) {
         this.#slot = 0n;
@@ -37034,9 +37034,9 @@ export class NetworkEmulator {
 
     /**
      * Creates a UTxO using a GenesisTx.
-     * @param {WalletEmulator} wallet 
-     * @param {bigint} lovelace 
-     * @param {Assets} assets 
+     * @param {WalletEmulator} wallet
+     * @param {bigint} lovelace
+     * @param {Assets} assets
      */
     createUtxo(wallet, lovelace, assets = new Assets([])) {
         if (lovelace != 0n || !assets.isZero()) {
@@ -37054,7 +37054,7 @@ export class NetworkEmulator {
 
     /**
      * Mint a block with the current mempool, and advance the slot.
-     * @param {bigint} nSlots 
+     * @param {bigint} nSlots
      */
     tick(nSlots) {
         if (this.#mempool.length > 0) {
@@ -37086,8 +37086,8 @@ export class NetworkEmulator {
     }
 
     /**
-     * @param {TxId} txId 
-     * @param {bigint} utxoIdx 
+     * @param {TxId} txId
+     * @param {bigint} utxoIdx
      * @returns {boolean}
      */
     isConsumed(txId, utxoIdx) {
@@ -37101,7 +37101,7 @@ export class NetworkEmulator {
     }
 
     /**
-     * @param {Tx} tx 
+     * @param {Tx} tx
      * @returns {Promise<TxId>}
      */
     async submitTx(tx) {
@@ -37117,7 +37117,7 @@ export class NetworkEmulator {
 }
 
 /**
- * The following functions are used in ./test-suite.js and ./test-script-addr.js and aren't (yet) 
+ * The following functions are used in ./test-suite.old_js and ./test-script-addr.old_js and aren't (yet)
  * intended to be used by regular users of this library.
  */
 export const exportedForTesting = {

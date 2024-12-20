@@ -9,5 +9,5 @@ php:
 js:
   finder:
     not-name:
-      - webpack.mix.js
+      - webpack.mix.old_js
 css: true

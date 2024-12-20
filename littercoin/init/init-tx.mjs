@@ -1,16 +1,16 @@
 import path from 'path';
 import { promises as fs } from 'fs';
 import {
-    Address, 
-    Assets, 
-    ConstrData, 
-    Datum, 
-    IntData, 
-    ListData, 
+    Address,
+    Assets,
+    ConstrData,
+    Datum,
+    IntData,
+    ListData,
     NetworkParams,
-    Program, 
+    Program,
     PubKeyHash,
-    Value, 
+    Value,
     textToBytes,
     TxOutput,
     Tx
@@ -21,13 +21,13 @@ import { signTx } from "../run/sign-tx.mjs";
 
 
 /**
- * Main calling function via the command line 
+ * Main calling function via the command line
  * Usage: node init-tx.mjs adaQty ownerAddress
  * @params {string}
  * @output {string} txId
- * 
+ *
  * Note: Requires 5000000 lovelace locked at address to be used for collateral
-  
+
     ##############################################################
     # You must do these steps first before running this script
     ##############################################################
@@ -36,7 +36,7 @@ import { signTx } from "../run/sign-tx.mjs";
     # Step 2.   update src/threadtoken.hl with admin UTXO that will be spent
     # Step 3.   node ./init/deploy-init.mjs
     # Step 4.   update src/mint.hl and src/rewardsToken.hl with thread token value
-    # Step 5.   node ./init/deploy-mint.js
+    # Step 5.   node ./init/deploy-mint.old_js
     # Step 6.   update ./src/validator.hl with threadtoken, littercoin, rewards and merchant mph values
     # Step 7.   node ./init/init-tx.mjs
     # Step 8.   cp ./src/*.hl ../public/contracts
@@ -111,7 +111,7 @@ const main = async () => {
         }
 
         console.log("utxo", utxo.txId.hex);
-        
+
         // Set default datum values
         const datAda = new IntData(BigInt(2000000));
         const datLC = new IntData(BigInt(2));
@@ -120,7 +120,7 @@ const main = async () => {
         // Network Parameters
         const networkParamsFile = await fs.readFile(contractDirectory + '/' + process.env.NETWORK_PARAMS_FILE, 'utf8');
         const networkParams = new NetworkParams(JSON.parse(networkParamsFile.toString()));
-  
+
         // Thread token minting script
         const threadTokenFile = await fs.readFile(contractDirectory + '/threadToken.hl', 'utf8');
         const threadTokenScript = threadTokenFile.toString();
@@ -133,7 +133,7 @@ const main = async () => {
         const lcValFile = await fs.readFile(contractDirectory + '/' + lcValScriptName, 'utf8');
         const lcValScript = lcValFile.toString();
         const compiledValScript = Program.new(lcValScript).compile(optimize);
-        const lcValHash = compiledValScript.validatorHash; 
+        const lcValHash = compiledValScript.validatorHash;
         const lcValAddr = Address.fromValidatorHash(lcValHash);
 
         // Start building the transaction
@@ -206,4 +206,4 @@ const main = async () => {
 main();
 
 
-  
+

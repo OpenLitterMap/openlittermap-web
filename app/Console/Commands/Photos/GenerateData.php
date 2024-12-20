@@ -138,7 +138,7 @@ class GenerateData extends Command
 
     protected function getLitterJson (): array
     {
-        $path = resource_path('js/langs/en/litter.json');
+        $path = resource_path('old_js/langs/en/litter.json');
 
         $contents = File::get($path);
 

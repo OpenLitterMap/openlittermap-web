@@ -1,33 +1,34 @@
 <?php
 
+use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('impact/{period?}/{year?}/{monthOrWeek?}', 'Reports\GenerateImpactReportController');
 
-Route::get('/', 'HomeController@index');
-Route::get('/about', 'HomeController@index');
-Route::get('/world', 'HomeController@index');
-Route::get('/tags', 'HomeController@index');
-Route::get('/community', 'HomeController@index');
-Route::get('/community/stats', 'CommunityController@stats');
-Route::get('/references', 'HomeController@index');
-Route::get('/leaderboard', 'HomeController@index');
-Route::get('/faq', 'HomeController@index');
+Route::get('/', HomeController::class);
+Route::get('/about', HomeController::class);
+Route::get('/world', HomeController::class);
+Route::get('/tags', HomeController::class);
+Route::get('/community', HomeController::class);
+Route::get('/references', HomeController::class);
+Route::get('/leaderboard', HomeController::class);
+Route::get('/faq', HomeController::class);
 
+Route::get('/community/stats', 'CommunityController@stats');
 Route::get('/tags-search', 'DisplayTagsOnMapController@show');
 
-Route::get('/cleanups', 'HomeController@index');
+Route::get('/cleanups', HomeController::class);
 Route::post('/cleanups/create', 'Cleanups\CreateCleanupController');
 Route::get('/cleanups/get-cleanups', 'Cleanups\GetCleanupsGeoJsonController');
-Route::get('/cleanups/{inviteLink}/join', 'HomeController@index');
+Route::get('/cleanups/{inviteLink}/join', HomeController::class);
 Route::post('/cleanups/{inviteLink}/join', 'Cleanups\JoinCleanupController');
 Route::post('/cleanups/{inviteLink}/leave', 'Cleanups\LeaveCleanupController');
 
-Route::get('/history', 'HomeController@index');
+Route::get('/history', HomeController::class);
 Route::get('/history/paginated', 'History\GetPaginatedHistoryController');
 
 // Registration
-Route::get('/signup', 'HomeController@index');
+Route::get('/signup', HomeController::class);
 
 // Monthly subscription
 Route::post('subscribe', 'SubscribersController@create');
@@ -55,13 +56,13 @@ Route::get('cities', 'Location\LocationsController@getCities');
 /* Download data */
 Route::post('download', 'DownloadControllerNew@index');
 
-//Route::get('/world/{country?}', 'HomeController@index');
-//Route::get('/world/{country}/{state}', 'HomeController@index');
-Route::get('/world/{country?}/{state?}/{city?}/{id?}', 'HomeController@index');
+//Route::get('/world/{country?}', [HomeController::class);
+//Route::get('/world/{country}/{state}', [HomeController::class);
+Route::get('/world/{country?}/{state?}/{city?}/{id?}', HomeController::class);
 
 // Route::get('/world/{country}/{city}/city_hex_map', 'MapController@getCity');
 // Similarly, get the city and pass the world dynamically
-Route::get('/world/{country}/{state}/{city}/map/{minfilter?}/{maxfilter?}/{hex?}', 'HomeController@index');
+Route::get('/world/{country}/{state}/{city}/map/{minfilter?}/{maxfilter?}/{hex?}', HomeController::class);
 Route::get('/world/{country}/{state}/{city?}/download/get', 'DownloadsController@getDataByCity');
 
 // "maps" was used before "world". We will keep this for now to keep old links active.
@@ -82,16 +83,16 @@ Route::group(['middleware' => 'fw-block-blacklisted'], function () {
 });
 
 // Donation page
-Route::get('donate', 'HomeController@index');
+Route::get('donate', HomeController::class);
 Route::get('donate/amounts', 'DonateController@index');
 Route::post('donate', 'DonateController@submit');
 
 // Contact page
-Route::get('/contact-us', 'HomeController@index');
+Route::get('/contact-us', HomeController::class);
 Route::post('/contact-us', 'ContactUsController')->name('contact');
 
 // Get data for the Global Map
-Route::get('global', 'HomeController@index');
+Route::get('global', HomeController::class);
 Route::get('/global/clusters', 'GlobalMap\ClusterController@index');
 Route::get('/global/points', 'GlobalMap\GlobalMapController@index');
 Route::get('/global/art-data', 'GlobalMap\GlobalMapController@artData');
@@ -108,8 +109,8 @@ Route::get('/global/leaderboard/location', 'Leaderboard\GetUsersForLocationLeade
 Route::get('/current-user', 'UsersController@getAuthUser');
 
 // Upload page
-Route::get('submit', 'HomeController@index'); // old route
-Route::get('upload', 'HomeController@index')->name('upload');
+Route::get('submit', HomeController::class); // old rote
+Route::get('upload', HomeController::class)->name('upload');
 
 // Move more authenticated routes into this group instead of applying middleware on controllers
 Route::group(['middleware' => 'auth'], function () {
@@ -122,16 +123,16 @@ Route::group(['middleware' => 'auth'], function () {
 });
 
 // Tag litter to an image
-Route::get('tag', 'HomeController@index');
+Route::get('tag', HomeController::class);
 
 // Bulk tag images
-Route::get('bulk-tag', 'HomeController@index');
+Route::get('bulk-tag', HomeController::class);
 
 // The users profile
-Route::get('profile', 'HomeController@index');
+Route::get('profile', HomeController::class);
 
 // The users upload
-Route::get('my-uploads', 'HomeController@index');
+Route::get('my-uploads', HomeController::class);
 
 // Get unverified paginated photos for tagging
 Route::get('photos', 'PhotosController@unverified');
@@ -168,23 +169,23 @@ Route::post('/user/profile/photos/delete', 'User\UserPhotoController@destroy');
 /**
  * USER SETTINGS
  */
-Route::get('/settings', 'HomeController@index');
-Route::get('/settings/password', 'HomeController@index');
-Route::get('/settings/details', 'HomeController@index');
-Route::get('/settings/social', 'HomeController@index');
-Route::get('/settings/account', 'HomeController@index');
-Route::get('/settings/payments', 'HomeController@index');
-Route::get('/settings/privacy', 'HomeController@index');
-Route::get('/settings/littercoin', 'HomeController@index');
-Route::get('/settings/phone', 'HomeController@index');
-Route::get('/settings/picked-up', 'HomeController@index');
-Route::get('/settings/email', 'HomeController@index');
-Route::get('/settings/show-flag', 'HomeController@index');
-Route::get('/settings/teams', 'HomeController@index');
+Route::get('/settings', HomeController::class);
+Route::get('/settings/password', HomeController::class);
+Route::get('/settings/details', HomeController::class);
+Route::get('/settings/social', HomeController::class);
+Route::get('/settings/account', HomeController::class);
+Route::get('/settings/payments', HomeController::class);
+Route::get('/settings/privacy', HomeController::class);
+Route::get('/settings/littercoin', HomeController::class);
+Route::get('/settings/phone', HomeController::class);
+Route::get('/settings/picked-up', HomeController::class);
+Route::get('/settings/email', HomeController::class);
+Route::get('/settings/show-flag', HomeController::class);
+Route::get('/settings/teams', HomeController::class);
 
 // Publicly available Littercoin Page
-//Route::get('/littercoin', 'HomeController@index');
-//Route::get('/littercoin/merchants', 'HomeController@index');
+//Route::get('/littercoin', [HomeController::class);
+//Route::get('/littercoin/merchants', [HomeController::class);
 
 // Public Routes
 //Route::get('/littercoin-info', 'Littercoin\PublicLittercoinController@getLittercoinInfo');
@@ -247,7 +248,7 @@ Route::post('/settings/save-flag', 'SettingsController@saveFlag');
 Route::patch('/settings', 'SettingsController@update');
 
 // Teams
-Route::get('/teams', 'HomeController@index');
+Route::get('/teams', HomeController::class);
 Route::get('/teams/get-types', 'Teams\TeamsController@types');
 Route::get('/teams/data', 'Teams\TeamsDataController@index');
 Route::get('/teams/clusters/{team}', 'Teams\TeamsClusterController@clusters');
@@ -301,15 +302,15 @@ Route::get('logout', 'UsersController@logout');
 Auth::routes();
 
 // Overwriting these auth blade views with Vue components
-Route::get('/password/reset', 'HomeController@index')
+Route::get('/password/reset', [HomeController::class])
     ->middleware('guest');
-Route::get('/password/reset/{token}', 'HomeController@index')
+Route::get('/password/reset/{token}', [HomeController::class])
     ->name('password.reset')
     ->middleware('guest');
 
 
 /** PAYMENTS */
-Route::get('/join/{plan?}', 'HomeController@index');
+Route::get('/join/{plan?}', HomeController::class);
 
 Route::get('plans', function () {
     return \App\Plan::all();
@@ -340,7 +341,7 @@ Route::post('/merchants/upload-photo', 'Merchants\UploadMerchantPhotoController'
 Route::group(['prefix' => '/admin', 'middleware' => 'admin'], function () {
 
     // route
-    Route::get('photos', 'HomeController@index');
+    Route::get('photos', HomeController::class);
 
     Route::get('/find-photo-by-id', 'Admin\FindPhotoByIdController');
 
@@ -374,7 +375,7 @@ Route::group(['prefix' => '/admin', 'middleware' => 'admin'], function () {
     Route::post('/destroy', 'AdminController@destroy');
 
     // Merchants
-    Route::get('/merchants', 'HomeController@index');
+    Route::get('/merchants', HomeController::class);
 
     Route::post('/merchants/approve', 'Littercoin\Merchants\ApproveMerchantController');
     Route::post('/merchants/delete', 'Littercoin\Merchants\DeleteMerchantController');
@@ -383,7 +384,7 @@ Route::group(['prefix' => '/admin', 'middleware' => 'admin'], function () {
 Route::group(['prefix' => '/bbox', 'middleware' => ['can_bbox']], function () {
 
     // Add coordinates
-    Route::get('/', 'HomeController@index');
+    Route::get('/', HomeController::class);
 
     // Load the next image to add bounding boxes to
     Route::get('/index', 'Bbox\BoundingBoxController@index');
@@ -401,7 +402,7 @@ Route::group(['prefix' => '/bbox', 'middleware' => ['can_bbox']], function () {
     Route::post('/tags/wrong', 'Bbox\BoundingBoxController@wrongTags');
 
     // Admin - View boxes to verify
-    Route::get('/verify', 'HomeController@index');
+    Route::get('/verify', HomeController::class);
     Route::get('/verify/index', 'Bbox\VerifyBoxController@index');
     Route::post('/verify/update', 'Bbox\VerifyBoxController@update');
 });

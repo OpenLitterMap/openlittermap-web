@@ -16,6 +16,9 @@ use Laravel\Passport\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use LaravelAndVueJS\Traits\LaravelPermissionToVueJS;
 
+use Filament\Panel;
+use Filament\Models\Contracts\FilamentUser;
+
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Collection;
@@ -36,7 +39,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
  * @property array $settings
  * @property array $social_links
  */
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     use Notifiable, Billable, HasApiTokens, HasRoles, LaravelPermissionToVueJS, HasFactory;
 
@@ -63,6 +66,18 @@ class User extends Authenticatable
         static::addGlobalScope('photosCount', function($builder) {
             $builder->withCount('photos'); // photos_count
         });
+    }
+
+    /**
+     * Filament Panel access
+     *
+     * @param Panel $panel
+     * @return bool
+     */
+    public function canAccessPanel (Panel $panel): bool
+    {
+        return true;
+        // return str_ends_with($this->email, '@example.com') && $this->hasVerifiedEmail();
     }
 
     /**
@@ -127,11 +142,12 @@ class User extends Authenticatable
     ];
 
     protected $casts = [
+        'verified' => 'boolean',
         'show_name' => 'boolean',
         'show_username' => 'boolean',
         'verification_required' => 'boolean',
         'prevent_others_tagging_my_photos' => 'boolean',
-        'settings' => 'array'
+        'settings' => 'array',
     ];
 
     protected $appends = [

@@ -47,5 +47,15 @@ class UserSeeder extends Seeder
             'remaining_teams' => 1
         ]);
         $user->assignRole('helper');
+
+        User::create(['email' => 'normal@example.com',
+            'password' => 'password',
+            'username' => 'normal',
+            'name' => 'normal',
+            'verified' => 1,
+            'can_bbox'=> 1,
+            'verification_required' => 0,
+            'remaining_teams' => 1
+        ]);
     }
 }

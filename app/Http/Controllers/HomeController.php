@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class HomeController extends Controller
 {
@@ -12,7 +13,7 @@ class HomeController extends Controller
      * @auth bool, logged in or guest
      * @user null, or authenticated user
      */
-    public function index ()
+    public function __invoke (): View
     {
         $user = null;
         $auth = Auth::check();
@@ -28,7 +29,7 @@ class HomeController extends Controller
         // or when a user unsubscribes from emails
         $unsub = false;
 
-        return view('root', compact(
+        return view('app', compact(
             'auth',
             'user',
             'verified',

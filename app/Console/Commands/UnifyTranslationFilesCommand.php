@@ -21,7 +21,7 @@ class UnifyTranslationFilesCommand extends Command
 
         if ($path === 'all') {
             foreach ($this->getAllTranslationFiles() as $file) {
-                $filePath = str_replace(resource_path('js/langs/en/'), '', $file->getPathname());
+                $filePath = str_replace(resource_path('old_js/langs/en/'), '', $file->getPathname());
                 $this->unifyLanguagesForFile($filePath);
             }
         } else {
@@ -38,8 +38,8 @@ class UnifyTranslationFilesCommand extends Command
         $langs = ['de', 'es', 'fr', 'hu', 'nl', 'pl', 'pt', 'sw'];
 
         foreach ($langs as $lang) {
-            if (!File::exists(resource_path("js/langs/$lang/$path"))) {
-                File::put(resource_path("js/langs/$lang/$path"), '{}');
+            if (!File::exists(resource_path("old_js/langs/$lang/$path"))) {
+                File::put(resource_path("old_js/langs/$lang/$path"), '{}');
             }
 
             $translatedJson = $this->getTranslationFile($lang, $path);
@@ -64,7 +64,7 @@ class UnifyTranslationFilesCommand extends Command
 
     private function getTranslationFile(string $lang, string $path): array
     {
-        $source = File::get(resource_path("js/langs/$lang/$path"));
+        $source = File::get(resource_path("old_js/langs/$lang/$path"));
 
         return json_decode($source, true);
     }
@@ -72,7 +72,7 @@ class UnifyTranslationFilesCommand extends Command
     private function putTranslationFile(string $lang, array $translation, string $path)
     {
         $output = json_encode($translation, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-        $file = File::get(resource_path("js/langs/$lang/$path"));
+        $file = File::get(resource_path("old_js/langs/$lang/$path"));
 
         $trimmedOutput = preg_replace('/\s+/', '', $output);
         $trimmedExisting = preg_replace('/\s+/', '', $file);
@@ -82,7 +82,7 @@ class UnifyTranslationFilesCommand extends Command
             return;
         }
 
-        File::put(resource_path("js/langs/$lang/$path"), $output);
+        File::put(resource_path("old_js/langs/$lang/$path"), $output);
     }
 
     /**
@@ -90,7 +90,7 @@ class UnifyTranslationFilesCommand extends Command
      */
     private function getAllTranslationFiles(): array
     {
-        return collect(File::allFiles(resource_path("js/langs/en")))
+        return collect(File::allFiles(resource_path("old_js/langs/en")))
             ->filter(function (SplFileInfo $file) {
                 return $file->getExtension() === 'json';
             })

@@ -15,7 +15,6 @@ class AddLittercoinIdToPhotos extends Migration
     {
         Schema::table('photos', function (Blueprint $table) {
             $table->unsignedBigInteger('littercoin_id')->nullable();
-
             $table->foreign('littercoin_id')->references('id')->on('littercoins');
         });
     }
@@ -28,9 +27,8 @@ class AddLittercoinIdToPhotos extends Migration
     public function down()
     {
         Schema::table('photos', function (Blueprint $table) {
-            $table->dropForeign(['littercoin_id']);
-
-            $table->dropColumn('littercoin_id');
+            // $table->dropForeign(['littercoin_id']);
+            // $table->dropColumn('littercoin_id');
         });
     }
 }

@@ -1,0 +1,201 @@
+import Vue from 'vue'
+import i18n from '../../../i18n'
+import routes from '../../../routes';
+
+export const actions = {
+
+    /**
+     * Download data for a location
+     *
+     * @payload (type|string) is location_type. eg 'country', 'state' or 'city'
+     */
+    async DOWNLOAD_DATA (context, payload)
+    {
+        let title = i18n.t('notifications.success');
+        let body  = 'Your download is being processed and will be emailed to you soon';
+
+        await axios.post('/download', {
+            locationType: payload.locationType,
+            locationId: payload.locationId,
+            email: payload.email
+        })
+        .then(response => {
+            console.log('download_data', response);
+
+            if (response.data.success)
+            {
+                /* improve this */
+                Vue.$vToastify.success({
+                    title,
+                    body,
+                    position: 'top-right'
+                });
+            }
+            else
+            {
+                /* improve this */
+                Vue.$vToastify.success({
+                    title: 'Error',
+                    body: 'Sorry, there was an error with the download. Please contact support',
+                    position: 'top-right'
+                });
+            }
+
+
+        })
+        .catch(error => {
+            console.error('download_data', error);
+        });
+    },
+
+    // We don't need this yet but we might later
+    // /**
+    //  * Load the data for any location
+    //  */
+    // async GET_LOCATION_DATA (context, payload)
+    // {
+    //     await axios.get('location', {
+    //         params: {
+    //             locationType: payload.locationType,
+    //             id: payload.id
+    //         }
+    //     })
+    //     .then(response => {
+    //         console.log('get_location_data', response);
+    //
+    //         if (payload.locationType === 'country')
+    //         {
+    //             context.commit('setStates', response.data)
+    //
+    //             routes.push('/world/' + response.data.countryName);
+    //         }
+    //         else if (payload.locationType === 'state')
+    //         {
+    //             context.commit('setCities', response.data)
+    //         }
+    //         else if (payload.locationType === 'city')
+    //         {
+    //             console.log('set cities?');
+    //         }
+    //         else
+    //         {
+    //             console.log('wrong location type');
+    //         }
+    //
+    //         // router.push({ path:  '/world/' + response.data.countryName });
+    //
+    //     })
+    //     .catch(error => {
+    //         console.log('get_location_data', error);
+    //     });
+    // },
+
+    /**
+     * Replacement for GET_COUNTRIES
+     *
+     * We should move this to worldcup.old_js
+     */
+    async GET_WORLD_CUP_DATA (context)
+    {
+        await axios.get('/get-world-cup-data')
+            .then(response => {
+                console.log('get_world_cup_data', response);
+
+                context.commit('setCountries', response.data);
+            })
+            .catch(error => {
+                console.log('error.get_world_cup_data', error);
+            });
+    },
+
+    async GET_LIST_OF_COUNTRY_NAMES (context)
+    {
+        await axios.get('/countries/names')
+            .then(response => {
+                console.log('get_list_of_country_names', response);
+
+                if (response.data.success) {
+                    context.commit('setCountryNames', response.data.countries);
+                }
+            })
+            .catch(error => {
+                console.log('error.get_list_of_country_names', error);
+            });
+    },
+
+    /**
+     * Get all countries data + global metadata for the world cup page
+     */
+    async GET_COUNTRIES (context)
+    {
+        await axios.get('countries')
+            .then(response => {
+                console.log('get_countries', response);
+
+                context.commit('setCountries', response.data);
+            })
+            .catch(error => {
+                console.log('error.get_countries', error);
+            });
+    },
+
+    /**
+     * Get all states for a country
+     */
+    async GET_STATES (context, payload)
+    {
+        await axios.get('/states', {
+            params: {
+                country: payload
+            }
+        })
+        .then(response => {
+            console.log('get_states', response);
+
+            if (response.data.success)
+            {
+                context.commit('countryName', response.data.countryName);
+
+                context.commit('setLocations', response.data.states)
+            }
+            else
+            {
+                routes.push({ 'path': '/world' });
+            }
+        })
+        .catch(error => {
+            console.log('error.get_states', error);
+        });
+    },
+
+    /**
+     * Get all cities for a state, country
+     */
+    async GET_CITIES (context, payload)
+    {
+        await axios.get('/cities', {
+            params: {
+                country: payload.country,
+                state: payload.state
+            }
+        })
+        .then(response => {
+            console.log('get_cities', response);
+
+            if (response.data.success)
+            {
+                context.commit('countryName', response.data.country);
+                context.commit('stateName', response.data.state);
+
+                context.commit('setLocations', response.data.cities)
+            }
+            else
+            {
+                routes.push({ 'path': '/world' })
+            }
+        })
+        .catch(error => {
+            console.log('error.get_cities', error);
+        });
+    }
+};

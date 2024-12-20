@@ -1699,7 +1699,7 @@
         arguments[4][4][0].apply(exports,arguments)
     },{"dup":4}],22:[function(require,module,exports){
         var linestring = require('@turf/helpers').lineString;
-        var Spline = require('./spline.js');
+        var Spline = require('./spline.old_js');
 
         /**
          * Takes a {@link LineString|line} and returns a curved version
@@ -10592,13 +10592,13 @@ return d[d.length-1];};return ", funcName].join("")
     },{"@turf/helpers":335}],335:[function(require,module,exports){
         arguments[4][6][0].apply(exports,arguments)
     },{"dup":6}],336:[function(require,module,exports){
-        var simplify = require('simplify-js');
+        var simplify = require('simplify-old_js');
 
 // supported GeoJSON geometries, used to check whether to wrap in simpleFeature()
         var supportedTypes = ['LineString', 'MultiLineString', 'Polygon', 'MultiPolygon'];
 
         /**
-         * Takes a {@link LineString} or {@link Polygon} and returns a simplified version. Internally uses [simplify-js](http://mourner.github.io/simplify-js/) to perform simplification.
+         * Takes a {@link LineString} or {@link Polygon} and returns a simplified version. Internally uses [simplify-old_js](http://mourner.github.io/simplify-js/) to perform simplification.
          *
          * @name simplify
          * @param {Feature<(LineString|Polygon|MultiLineString|MultiPolygon)>|FeatureCollection|GeometryCollection} feature feature to be simplified
@@ -10777,8 +10777,8 @@ return d[d.length-1];};return ", funcName].join("")
     },{"simplify-js":337}],337:[function(require,module,exports){
         /*
  (c) 2013, Vladimir Agafonkin
- Simplify.js, a high-performance JS polyline simplification library
- mourner.github.io/simplify-js
+ Simplify.old_js, a high-performance JS polyline simplification library
+ mourner.github.io/simplify-old_js
 */
 
         (function () { 'use strict';
@@ -12681,7 +12681,7 @@ return d[d.length-1];};return ", funcName].join("")
 //
 // THIS IS NOT TESTED NOR LIKELY TO WORK OUTSIDE V8!
 //
-// Originally from narwhal.js (http://narwhaljs.org)
+// Originally from narwhal.old_js (http://narwhaljs.org)
 // Copyright (c) 2009 Thomas Robinson <280north.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -13099,7 +13099,7 @@ return d[d.length-1];};return ", funcName].join("")
 
     },{}],390:[function(require,module,exports){
         if (typeof Object.create === 'function') {
-            // implementation from standard node.js 'util' module
+            // implementation from standard node.old_js 'util' module
             module.exports = function inherits(ctor, superCtor) {
                 ctor.super_ = superCtor
                 ctor.prototype = Object.create(superCtor.prototype, {
@@ -13690,11 +13690,11 @@ return d[d.length-1];};return ", funcName].join("")
             /**
              * Inherit the prototype methods from one constructor into another.
              *
-             * The Function.prototype.inherits from lang.js rewritten as a standalone
+             * The Function.prototype.inherits from lang.old_js rewritten as a standalone
              * function (not on Function.prototype). NOTE: If this file is to be loaded
              * during bootstrapping this function needs to be rewritten using some native
              * functions as prototype setup using normal JavaScript does not work as
-             * expected during bootstrapping (see mirror.js in r114903).
+             * expected during bootstrapping (see mirror.old_js in r114903).
              *
              * @param {function} ctor Constructor function which needs to inherit the
              *     prototype.
