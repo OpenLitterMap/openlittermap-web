@@ -179,7 +179,7 @@
 
 <script>
 import Footer from './Footer.vue';
-import Partners from './Partners.vue';
+import Partners from '../../../js/views/Welcome/components/Partners.vue';
 
 export default {
     name: 'Welcome',

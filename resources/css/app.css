@@ -1,3 +1,18 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+    .main-title {
+        @apply
+            text-3xl
+            font-extrabold
+            text-[#363636]
+            leading-[1.125]
+            mb-[1em];
+
+        @screen md {
+            @apply text-6xl;
+        }
+    }
+}

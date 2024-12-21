@@ -62,7 +62,6 @@ export default {
         if (this.unsub) this.showUnsubscribed = true;
     },
     computed: {
-
         /**
          * Boolean to show or hide the modal
          */

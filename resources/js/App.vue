@@ -1,13 +1,7 @@
 <template>
     <div>
-        <h1>Hello World</h1>
+        <Nav />
+
+        <router-view />
     </div>
 </template>
-
-<script setup>
-
-</script>
-
-<style scoped>
-
-</style>

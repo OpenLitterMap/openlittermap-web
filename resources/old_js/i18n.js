@@ -2,7 +2,7 @@ import Vue from 'vue'
 import VueI18n from 'vue-i18n'
 Vue.use(VueI18n)
 
-import { langs } from './langs'
+import { langs } from '../js/langs'
 
 export default new VueI18n({
     locale: 'en',
