@@ -2,13 +2,13 @@
     <!-- Why -->
     <div class="mb-10">
         <h1 class="main-title">{{ $t('home.welcome.why-collect-data') }}?</h1>
-        <div v-for="(why, index) in whyItems" :key="index" class="md:flex mb-20">
-            <div class="flex-4 pr-20">
-                <img :src="why.icon" class="about-icon" alt="why icon" />
+        <div v-for="(why, index) in whyItems" :key="index" class="md:flex mb-10 md:mb-20">
+            <div class="flex-4 pr-20 pl-20 mb-10 md:mb-0">
+                <img :src="why.icon" class="h-[10em]" alt="why icon" />
             </div>
             <div class="flex-1 ma">
-                <h2 class="main-subtitle">{{ why.title }}</h2>
-                <h3 class="welcome-subtitle mb1em">{{ why.subtitle }}</h3>
+                <h2 class="why-how-title">{{ why.title }}</h2>
+                <h3 class="why-how-text">{{ why.subtitle }}</h3>
             </div>
         </div>
     </div>
@@ -16,13 +16,13 @@
     <!-- How -->
     <div>
         <h1 class="main-title">{{ $t('home.welcome.how-does-it-work') }}?</h1>
-        <div v-for="(step, index) in howItWorksItems" :key="index" class="md:flex mb-20">
-            <div class="flex-4 pr-20">
-                <img :src="step.icon" class="about-icon" />
+        <div v-for="(step, index) in howItWorksItems" :key="index" class="md:flex mb-10 md:mb-20">
+            <div class="flex-4 pr-20 pl-20 mb-10 md:mb-0">
+                <img :src="step.icon" class="h-[10em]" alt="icon"/>
             </div>
             <div class="flex-1 ma">
-                <h2 class="main-subtitle">{{ step.title }}</h2>
-                <h3 class="welcome-subtitle mb1em">{{ step.subtitle }}</h3>
+                <h2 class="why-how-title">{{ step.title }}</h2>
+                <h3 class="why-how-text">{{ step.subtitle }}</h3>
             </div>
         </div>
     </div>
@@ -70,33 +70,5 @@ const howItWorksItems = [
 </script>
 
 <style scoped>
-
-    .main-title {
-        font-size: 4rem;
-        font-weight: 800;
-        color: #363636;
-        line-height: 1.125;
-        margin-bottom: 1em;
-    }
-
-    .main-subtitle {
-        font-size: 2rem;
-        color: #4a4a4a;
-        font-weight: 700;
-        line-height: 1.5;
-        margin-bottom: 0.5em;
-    }
-
-    .welcome-subtitle {
-        color: #4a4a4a;
-        font-size: 2rem;
-        font-weight: 400;
-        line-height: 1.5;
-    }
-
-    .about-icon {
-        height: 10em;
-        text-align: center;
-    }
 
 </style>

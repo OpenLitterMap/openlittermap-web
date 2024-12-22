@@ -178,7 +178,7 @@
 </template>
 
 <script>
-import Footer from './Footer.vue';
+import Footer from '../../../js/views/Welcome/components/Footer.vue';
 import Partners from '../../../js/views/Welcome/components/Partners.vue';
 
 export default {

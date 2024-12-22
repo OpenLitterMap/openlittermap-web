@@ -1,7 +1,7 @@
 <template>
     <!-- Title, Subtitle, App Icons -->
     <div class="md:flex mb-10">
-        <div class="flex-1 pr-10">
+        <div class="flex-1 md:pr-10">
             <transition
                 v-if="headings.length > 0"
                 name="slide-fade-left"
@@ -15,12 +15,12 @@
                 ></h1>
             </transition>
 
-            <h2 class="text-4xl text-gray-text">
+            <h2 class="main-subtitle text-gray-text">
                 {{ $t('home.welcome.help-us') }}.
             </h2>
 
             <!-- Download app icons -->
-            <div class="flex">
+            <div class="flex my-[-2em] md:my-0">
                 <img :src="iosIcon" class="max-h-[10rem] mr-4 cursor-pointer" @click="ios" alt="ios logo"/>
                 <img :src="androidIcon" class="max-h-[10rem] cursor-pointer" @click="android" alt="android logo" />
             </div>

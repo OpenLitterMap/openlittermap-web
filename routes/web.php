@@ -1,7 +1,8 @@
 <?php
 
-use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\SubscribersController;
 
 Route::get('impact/{period?}/{year?}/{monthOrWeek?}', 'Reports\GenerateImpactReportController');
 
@@ -31,7 +32,7 @@ Route::get('/history/paginated', 'History\GetPaginatedHistoryController');
 Route::get('/signup', HomeController::class);
 
 // Monthly subscription
-Route::post('subscribe', 'SubscribersController@create');
+Route::post('subscribe', SubscribersController::class);
 
 /* Stripe Webhooks - excluded from CSRF protection */
 Route::post('/stripe/webhook', 'WebhookController@handleWebhook')->name('webhook');

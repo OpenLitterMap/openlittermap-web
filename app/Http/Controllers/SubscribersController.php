@@ -4,13 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Subscriber;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class SubscribersController extends Controller
 {
     /**
      * Create a new subscriber
      */
-    public function create (Request $request)
+    public function __invoke (Request $request): JsonResponse
     {
         $request->validate([
            'email' => 'required|email|unique:subscribers|max:100'
@@ -20,6 +21,8 @@ class SubscribersController extends Controller
             'email' => $request->email
         ]);
 
-        return ['msg' => 'success'];
+        return response()->json([
+            'success' => true
+        ]);
     }
 }

@@ -5,7 +5,7 @@
             <div class="flex items-center space-x-4">
                 <router-link to="/" class="flex items-center text-4xl font-bold">
 <!--                    <img src="/assets/logo.png" alt="Logo" class="h-8 w-8 mr-2" />-->
-                    <span class="hidden md:block">🌎 OpenLitterMap</span>
+                    <span class="md:block">#OpenLitterMap</span>
                 </router-link>
             </div>
 

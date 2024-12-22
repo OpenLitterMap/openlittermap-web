@@ -13,6 +13,7 @@ export default {
         extend: {
             colors: {
                 'gray-text': '#4a4a4a',
+                'olm-green': '#03aa6f',
             },
         },
     },
