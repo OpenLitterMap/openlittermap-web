@@ -13,7 +13,7 @@
 
 <script>
 import Nav from '../components/General/Nav.vue'
-import Modal from '../components/Modal/Modal.vue'
+import Modal from '../../js/components/Modal/Modal.vue'
 import WelcomeBanner from '../components/WelcomeBanner.vue'
 import Unsubscribed from '../components/Notifications/Unsubscribed.vue'
 

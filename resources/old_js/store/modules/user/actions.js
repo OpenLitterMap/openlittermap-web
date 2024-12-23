@@ -232,51 +232,7 @@ export const actions = {
         });
     },
 
-    /**
-     * Try to log the user in
-     * Todo - return the user object
-     */
-    async LOGIN (context, payload)
-    {
-        await axios.post('/login', {
-            email: payload.email,
-            password: payload.password
-        })
-        .then(response => {
-            console.log('login_success', response);
 
-            context.commit('hideModal');
-            context.commit('login');
-
-            window.location.href = '/upload'; // we need to force page refresh to put CSRF token in the session
-        })
-        .catch(error => {
-            console.log('error.login', error.response.data);
-
-            context.commit('errorLogin', error.response.data.email);
-        });
-    },
-
-    /**
-     * Try to log the user out
-     */
-    async LOGOUT (context)
-    {
-        await axios.get('/logout')
-            .then(response => {
-                console.log('logout', response);
-
-                context.commit('logout');
-
-                // this will reset state for all objects
-                context.commit('resetState');
-
-                window.location.href = '/';
-            })
-            .catch(error => {
-                console.log('error.logout', error);
-            });
-    },
 
     /**
      * Save all privacy settings on Privacy.vue

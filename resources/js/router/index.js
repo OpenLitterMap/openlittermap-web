@@ -14,6 +14,11 @@ const routes = [
         name: 'About',
         component: About,
     },
+    {
+        path: '/upload',
+        name: 'Upload',
+
+    }
 ];
 
 const router = createRouter({

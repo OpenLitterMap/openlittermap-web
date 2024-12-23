@@ -1,3 +1,5 @@
+import './bootstrap.js';
+
 import { createApp } from 'vue';
 import App from './App.vue';
 import router from './router';
@@ -9,9 +11,11 @@ const pinia = createPinia()
 import Toast from "vue-toastification";
 import "vue-toastification/dist/index.css";
 import Nav from './components/Nav.vue';
+import Modal from './components/Modal/Modal.vue';
 
 const app = createApp(App);
 app.component('Nav', Nav);
+app.component('Modal', Modal);
 app.use(i18n);
 app.use(router);
 app.use(pinia);

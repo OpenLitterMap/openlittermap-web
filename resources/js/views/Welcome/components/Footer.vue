@@ -166,8 +166,8 @@
         </div>
 
         <!-- Very bottom section -->
-        <div class="mt-10 border-t border-blue-400 py-4 text-center">
-            <p class="text-blue-100">
+        <div class="md:flex justify-center py-4 text-center mt-10">
+            <p class="flex-[0.5] text-blue-100 border-t border-blue-400 pt-8">
                 OpenLitterMap is the academic precursor to a global engagement platform.
                 Starting pre-iPhone in 2008 with crowdsourced litter & plastic pollution monitoring,
                 we are still looking for the fundamental research funding to transform global public education

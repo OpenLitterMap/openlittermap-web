@@ -1,10 +1,9 @@
 <template>
     <nav class="bg-black text-white p-3">
         <div class="container mx-auto px-4 flex justify-between items-center py-3">
-            <!-- Logo and Title -->
+
             <div class="flex items-center space-x-4">
-                <router-link to="/" class="flex items-center text-4xl font-bold">
-<!--                    <img src="/assets/logo.png" alt="Logo" class="h-8 w-8 mr-2" />-->
+                <router-link to="/" class="flex items-center text-4xl">
                     <span class="md:block">#OpenLitterMap</span>
                 </router-link>
             </div>
@@ -42,68 +41,37 @@
     </nav>
 </template>
 
-<script>
+<script setup>
 import { ref, computed } from "vue";
+import { useModalStore } from "../stores/modal/index.js";
+const modalStore = useModalStore();
 
-export default {
-    name: "Nav",
+const open = ref(false);
 
-    setup() {
-        const open = ref(false);
-        const dropdownOpen = ref(false);
+const auth = computed(() => {
+    return false;
+});
 
-        const auth = computed(() => {
-            return false;
-        });
-
-        const toggleOpen = () => {
-            open.value = !open.value;
-        };
-
-        const close = () => {
-            open.value = false;
-            dropdownOpen.value = false;
-        };
-
-        const login = () => {
-            console.log("Show login modal");
-        };
-
-        const logout = async () => {
-            console.log("Logging out...");
-        };
-
-        const isDesktop = computed(() => {
-            return window.innerWidth >= 768;
-        });
-
-        const burger = computed(() =>
-            open.value ? "burger is-active" : "burger"
-        );
-
-        const toggleDropdown = () => {
-            dropdownOpen.value = !dropdownOpen.value;
-        };
-
-        return {
-            open,
-            auth,
-            burger,
-            toggleOpen,
-            close,
-            login,
-            logout,
-            toggleDropdown,
-            dropdownOpen,
-            isDesktop,
-        };
-    }
+const toggleOpen = () => {
+    open.value = !open.value;
 };
+
+const login = () => {
+    modalStore.showModal({
+        type: "Login",
+        title: "Login",
+        showIcon: true
+    });
+};
+
+const logout = async () => {
+    console.log("Logging out...");
+};
+
 </script>
 
 <style scoped>
 
-    /* Utility Classes for Reusability */
     .nav-item {
         @apply block py-2 text-white hover:text-yellow-300 transition duration-200;
     }
@@ -116,7 +84,6 @@ export default {
         @apply border border-white text-white px-4 py-2 rounded hover:bg-white hover:text-black transition;
     }
 
-    /* Mobile Hamburger Menu Animation */
     button:focus {
         outline: none;
     }
