@@ -17,5 +17,15 @@ export default {
             },
         },
     },
-    plugins: [],
+    plugins: [
+        function ({ addBase }) {
+            addBase({
+                'html, body': {
+                    margin: '0',
+                    padding: '0',
+                    height: '100%',
+                },
+            });
+        },
+    ],
 }

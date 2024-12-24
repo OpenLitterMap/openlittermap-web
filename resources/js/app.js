@@ -6,8 +6,8 @@ import router from './router';
 import i18n from './i18n';
 import { createPinia } from 'pinia'
 const pinia = createPinia()
-// import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
-// pinia.use(piniaPluginPersistedstate);
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
+pinia.use(piniaPluginPersistedstate);
 import Toast from "vue-toastification";
 import "vue-toastification/dist/index.css";
 import Nav from './components/Nav.vue';

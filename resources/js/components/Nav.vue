@@ -16,7 +16,7 @@
             </button>
 
             <!-- Links -->
-            <div :class="['flex flex-col md:flex-row md:space-x-6', open ? 'block' : 'hidden md:block']">
+            <div :class="['md:space-x-6', open ? 'md:block' : 'hidden md:flex']">
                 <router-link to="/about" class="nav-item">About</router-link>
 <!--                <router-link to="/cleanups" class="nav-item">Cleanups</router-link>-->
 <!--                <router-link to="/history" class="nav-item">History</router-link>-->
@@ -24,6 +24,12 @@
 <!--                <router-link to="/global" class="nav-item">Global Map</router-link>-->
 <!--                <router-link to="/community" class="nav-item">Community</router-link>-->
 <!--                <router-link to="/world" class="nav-item">World Cup</router-link>-->
+
+                <div v-if="auth">
+                    <router-link to="/upload" class="nav-item">
+                        {{ $t('nav.upload') }}
+                    </router-link>
+                </div>
             </div>
 
             <!-- Login/Signup -->
@@ -44,13 +50,13 @@
 <script setup>
 import { ref, computed } from "vue";
 import { useModalStore } from "../stores/modal/index.js";
+import { useUserStore } from "../stores/user/index.js";
 const modalStore = useModalStore();
+const userStore = useUserStore();
+
+const auth = computed(() => userStore.auth);
 
 const open = ref(false);
-
-const auth = computed(() => {
-    return false;
-});
 
 const toggleOpen = () => {
     open.value = !open.value;

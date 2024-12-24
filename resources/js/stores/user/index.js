@@ -21,22 +21,14 @@ export const useUserStore = defineStore("user", {
         totalUsers: 0, // Should be on users.old_js
         user: {}
     }),
+
+    persist: true,
+
     actions: {
         clearErrorLogin () {
             this.errorLogin = '';
         },
 
-        /**
-         * The user has been authenticated
-         */
-        doLogin ()
-        {
-            this.auth = true;
-        },
-
-        /**
-         * Log the user out
-         */
         logout ()
         {
             this.auth = false;
@@ -55,13 +47,12 @@ export const useUserStore = defineStore("user", {
                 password: payload.password
             })
             .then(response => {
-                console.log('login_success', response);
-
                 const modalStore = useModalStore();
                 modalStore.hideModal();
-                this.doLogin();
+                this.auth = true;
 
-                window.location.href = '/upload'; // we need to force page refresh to put CSRF token in the session
+                // we need to force page refresh to put CSRF token in the session
+                window.location.href = '/upload';
             })
             .catch(error => {
                 console.log('error.login', error.response.data);

@@ -110,16 +110,10 @@ Route::get('/global/leaderboard/location', 'Leaderboard\GetUsersForLocationLeade
 Route::get('/current-user', 'UsersController@getAuthUser');
 
 // Upload page
-Route::get('submit', HomeController::class); // old rote
 Route::get('upload', HomeController::class)->name('upload');
 
 // Move more authenticated routes into this group instead of applying middleware on controllers
 Route::group(['middleware' => 'auth'], function () {
-    // Upload the image from web
-    // old route
-    Route::post('/submit', 'Uploads\UploadPhotoController');
-
-    // new route
     Route::post('/upload', 'Uploads\UploadPhotoController');
 });
 

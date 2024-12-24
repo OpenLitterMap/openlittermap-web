@@ -1,9 +1,13 @@
 <template>
-    <div>
+    <div class="h-full">
         <Nav />
 
         <Modal />
 
-        <router-view />
+        <router-view
+            style="height: calc(100% - 90px);"
+        />
     </div>
 </template>
+<script setup lang="ts">
+</script>

@@ -22,6 +22,12 @@
   "dependencies": {
     "autoprefixer": "^10.4.20",
     "axios": "^1.7.9",
+    "filepond": "^4.32.6",
+    "filepond-plugin-file-validate-size": "^2.2.8",
+    "filepond-plugin-file-validate-type": "^1.2.9",
+    "filepond-plugin-image-exif-orientation": "^1.0.11",
+    "filepond-plugin-image-preview": "^4.6.12",
+    "filepond-plugin-image-resize": "^2.0.10",
     "laravel-echo": "^1.17.1",
     "pinia": "^2.3.0",
     "pinia-plugin-persistedstate": "^4.2.0",
@@ -29,6 +35,7 @@
     "pusher-js": "^8.4.0-rc2",
     "tailwindcss": "^3.4.17",
     "vue": "^3.5.13",
+    "vue-filepond": "^7.0.4",
     "vue-i18n": "^11.0.0-rc.1",
     "vue-router": "^4.5.0",
     "vue-toastification": "^2.0.0-rc.5"
