@@ -34,6 +34,7 @@ export const useUserStore = defineStore("user", {
             this.auth = false;
             this.admin = false;
             this.helper = false;
+            window.location.href = "/";
         },
 
         /**

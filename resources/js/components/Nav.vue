@@ -71,7 +71,7 @@ const login = () => {
 };
 
 const logout = async () => {
-    console.log("Logging out...");
+    userStore.logout();
 };
 
 </script>

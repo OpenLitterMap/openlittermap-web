@@ -1,9 +1,9 @@
 <?php
 
-use App\Actions\Locations\UpdateLeaderboardsXpAction;
-use App\Actions\LogAdminVerificationAction;
-use App\Models\Photo;
 use Carbon\Carbon;
+use App\Models\Photo;
+use App\Actions\LogAdminVerificationAction;
+use App\Actions\Locations\UpdateLeaderboardsXpAction;
 
 if (!function_exists('array_diff_assoc_recursive'))
 {
@@ -96,5 +96,39 @@ if (!function_exists('sort_ppm'))
                 "01-" . $key
             )->unix();
         });
+    }
+}
+
+if (!function_exists('getDateTimeForPhoto'))
+{
+    /**
+     * Get the DateTime for the photo
+     * @param array $exif
+     * @return string|null
+     */
+    function getDateTimeForPhoto (array $exif): ?string
+    {
+        $dateTime = $exif['DateTimeOriginal'] ?? null;
+
+        if (!$dateTime) {
+            $dateTime = $exif['DateTime'] ?? null;
+        }
+
+        if (!$dateTime && isset($exif['FileDateTime'])) {
+            $dateTime = $exif['FileDateTime'];
+        }
+
+        if (!$dateTime) {
+            \Log::warning('DateTime not found in EXIF data', [
+                'user_id' => auth()->id(),
+                'exif' => $exif
+            ]);
+
+            // send email to admin to check exif data
+
+            return null;
+        }
+
+        return Carbon::parse($dateTime);
     }
 }

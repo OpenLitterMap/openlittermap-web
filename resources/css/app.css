@@ -9,6 +9,17 @@ body {
     height: 100%;
 }
 
+@layer utilities {
+    .hov {
+        @apply transition duration-300;
+    }
+
+    .hov:hover {
+        box-shadow: 0 20px 30px -11px rgba(31, 35, 65, 0.37);
+        transform: translate(0px, -2px);
+    }
+}
+
 @layer components {
 
     #app { @apply h-full }

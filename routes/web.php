@@ -1,10 +1,16 @@
 <?php
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\SubscribersController;
+use App\Http\Controllers\Uploads\UploadPhotoController;
 
 Route::get('impact/{period?}/{year?}/{monthOrWeek?}', 'Reports\GenerateImpactReportController');
+
+Route::get('/check-auth', function () {
+    return response()->json(['user' => Auth::user()]);
+});
 
 Route::get('/', HomeController::class);
 Route::get('/about', HomeController::class);
@@ -114,7 +120,7 @@ Route::get('upload', HomeController::class)->name('upload');
 
 // Move more authenticated routes into this group instead of applying middleware on controllers
 Route::group(['middleware' => 'auth'], function () {
-    Route::post('/upload', 'Uploads\UploadPhotoController');
+    Route::post('/upload', UploadPhotoController::class);
 });
 
 // Tag litter to an image

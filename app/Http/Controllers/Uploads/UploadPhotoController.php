@@ -10,11 +10,9 @@ use App\Events\NewCountryAdded;
 use App\Events\NewStateAdded;
 use App\Helpers\Post\UploadHelper;
 use App\Models\Photo;
-use App\Models\User\User;
 use App\Events\ImageUploaded;
 use App\Events\Photo\IncrementPhotoMonth;
 use App\Http\Requests\UploadPhotoRequest;
-use App\Exceptions\InvalidCoordinates;
 
 use App\Actions\Photos\MakeImageAction;
 use App\Actions\Photos\UploadPhotoAction;
@@ -25,7 +23,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redis;
 
 class UploadPhotoController extends Controller
 {
@@ -73,7 +70,7 @@ class UploadPhotoController extends Controller
             $user->save();
         }
 
-        $file = $request->file('file'); // /tmp/php7S8v..
+        $file = $request->file('photo');
 
         $imageAndExifData = $this->makeImageAction->run($file);
         $image = $imageAndExifData['image'];
@@ -102,44 +99,9 @@ class UploadPhotoController extends Controller
                 or you might need to enable another setting to make them available."
             );
         }
-
-        $dateTime = '';
-
-        // Some devices store the timestamp key in a different format and using a different key.
-        if (array_key_exists('DateTimeOriginal', $exif))
-        {
-            $dateTime = $exif["DateTimeOriginal"];
-        }
-        if (!$dateTime)
-        {
-            if (array_key_exists('DateTime', $exif))
-            {
-                $dateTime = $exif["DateTime"];
-            }
-        }
-        if (!$dateTime)
-        {
-            if (array_key_exists('FileDateTime', $exif))
-            {
-                $dateTime = $exif["FileDateTime"];
-                $dateTime = Carbon::createFromTimestamp($dateTime);
-            }
-        }
-
-        // convert to YYYY-MM-DD hh:mm:ss format
-        $dateTime = Carbon::parse($dateTime);
-
-        // Check if the user has already uploaded this image
-        // todo - load error automatically without clicking it
-        // todo - translate
-        if (app()->environment() === "production")
-        {
-            if (Photo::where(['user_id' => $user->id, 'datetime' => $dateTime])->first())
-            {
-                abort(500, "You have already uploaded this file!");
-            }
-        }
         // End Step 1: Verification
+
+        $dateTime = getDateTimeForPhoto($exif);
 
         // Step 2: Upload The Image(s)
         // Upload images to both 's3' and 'bbox' disks, resized for 'bbox'
