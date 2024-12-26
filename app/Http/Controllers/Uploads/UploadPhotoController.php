@@ -103,6 +103,8 @@ class UploadPhotoController extends Controller
 
         $dateTime = getDateTimeForPhoto($exif);
 
+        \Log::info($dateTime);
+
         // Step 2: Upload The Image(s)
         // Upload images to both 's3' and 'bbox' disks, resized for 'bbox'
         $imageName = $this->uploadPhotoAction->run(

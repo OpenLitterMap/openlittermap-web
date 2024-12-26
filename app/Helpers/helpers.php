@@ -104,9 +104,9 @@ if (!function_exists('getDateTimeForPhoto'))
     /**
      * Get the DateTime for the photo
      * @param array $exif
-     * @return string|null
+     * @return Carbon|null
      */
-    function getDateTimeForPhoto (array $exif): ?string
+    function getDateTimeForPhoto (array $exif): ?Carbon
     {
         $dateTime = $exif['DateTimeOriginal'] ?? null;
 

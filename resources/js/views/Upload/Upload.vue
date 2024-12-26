@@ -1,23 +1,21 @@
 <template>
-    <div
-        class="flex justify-center px-20 pt-20 bg-gradient-to-r from-amber-200 to-yellow-500"
-    >
+    <div class="flex relative justify-center px-20 pt-20 bg-gradient-to-r from-amber-200 to-yellow-500">
         <div>
-            <h1 class="text-5xl font-semibold mb-8 text-center">Click or Drop to upload your photos</h1>
+            <h1 class="text-5xl font-semibold mb-6 text-center">Click or Drop to upload your photos</h1>
 
-            <div class="text-center mb-6">
-
-                <!-- Display after uploading one file successfully -->
-                <p class="text-2xl font-bold-500 mb-4">Next you need to tag the litter</p>
-
-                <button class="bg-[#2793da] px-10 py-4 rounded-2xl text-white hov">
-                    Tag Litter &nbsp;
-
-                    <i data-v-fcf00e23="" aria-hidden="true" class="fa fa-arrow-right"></i>
-                </button>
+            <div
+                v-if="uploadProgress > 0"
+                class="text-center mb-6"
+            >
+                <p>Upload Progress: {{ uploadProgress.toFixed() }}%</p>
             </div>
 
+            <p v-if="team" class="text-center">
+                {{ $t('common.team') }}: <strong>{{team}}</strong>
+            </p>
+
             <FilePond
+                ref="pond"
                 name="photo"
                 allowMultiple
                 max-file-size="20MB"
@@ -26,15 +24,25 @@
                 :server="server"
                 :acceptedFileTypes="acceptedFileTypes"
                 @processfile="handleFileUpload"
-                style="height: 10em !important;"
                 :labelFileProcessingError="options.labelFileProcessingError"
             />
 
-            <div class="text-center">
-<!--                <p class="text-2xl mb-8">Team: todo</p>-->
-
+            <div class="text-center mt-10 pb-10">
                 <p class="text-4xl font-bold">Thank you!</p>
             </div>
+
+            <!-- After uploading-->
+            <transition name="fade">
+                <div v-if="showTagLitterSection" class="absolute right-10 bottom-10 text-center mb-6">
+                    <p class="text-2xl font-bold-500 mb-4">Next you need to tag the litter</p>
+
+                    <button class="bg-[#2793da] px-6 py-4 rounded-2xl text-white hov">
+                        Tag Litter &nbsp;
+
+                        <i data-v-fcf00e23="" aria-hidden="true" class="fa fa-arrow-right"></i>
+                    </button>
+                </div>
+            </transition>
         </div>
     </div>
 </template>
@@ -52,6 +60,12 @@ import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
 import { useToast } from "vue-toastification";
 const toast = useToast();
 
+import {computed, ref} from 'vue';
+const showTagLitterSection = ref(false);
+
+import {useUserStore} from "../../stores/user/index.js";
+const userStore = useUserStore();
+
 const FilePond = vueFilePond(
     FilePondPluginImagePreview,
     FilePondPluginFileValidateType,
@@ -59,6 +73,9 @@ const FilePond = vueFilePond(
     FilePondPluginImageExifOrientation,
     FilePondPluginFileValidateSize,
 );
+
+const uploadProgress = ref(0);
+const pond = ref(null);
 
 const acceptedFileTypes = [
     'image/jpeg',
@@ -80,7 +97,7 @@ const server = {
         },
         timeout: 120000, // 2 minutes
         onload: null,
-        onerror: (response, file, load, error, progress, abort) => {
+        onerror: (response) => {
             try {
                 const errorResponse = JSON.parse(response);
 
@@ -116,8 +133,27 @@ const handleFileUpload = (error, file) => {
 
         // Show success notification
         toast.success(`File ${name} uploaded successfully`);
+
+        updateProgress();
+
+        showTagLitterSection.value = true;
     }
 };
+
+const updateProgress = () => {
+    const files = pond.value.getFiles();
+
+    // https://pqina.nl/filepond/docs/api/exports/#filestatus
+    const processedFiles = files.filter(file => file.status === 5); // PROCESSING_COMPLETE
+
+    uploadProgress.value = files.length
+        ? (processedFiles.length / files.length) * 100
+        : 0;
+}
+
+const team = computed(() => {
+    return userStore.user?.team?.name;
+});
 
 </script>
 
@@ -149,6 +185,18 @@ const handleFileUpload = (error, file) => {
         .filepond--root .filepond--drop-label {
             width: 20em; /* Shrink width for very small screens */
         }
+    }
+
+    .fade-enter-active {
+        transition: opacity 2s ease;
+    }
+    .fade-enter-from {
+        opacity: 0;
+        transform: translateX(50px);
+    }
+    .fade-enter-to {
+        opacity: 1;
+        transform: translateX(0);
     }
 
 </style>
