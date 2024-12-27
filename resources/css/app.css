@@ -2,13 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-html,
-body {
-    margin: 0;
-    padding: 0;
-    height: 100vh;
-}
-
 @layer utilities {
     .hov {
         @apply transition duration-300;

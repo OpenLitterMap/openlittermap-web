@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 
 import Welcome from '../views/Welcome/Welcome.vue';
 import About from '../views/About.vue';
+import GlobalMap from "../views/Maps/GlobalMap.vue";
 import Upload from '../views/Upload/Upload.vue';
 
 // Import Middleware
@@ -19,6 +20,11 @@ const routes = [
         path: '/about',
         name: 'About',
         component: About,
+    },
+    {
+        path: '/global',
+        name: 'GlobalMap',
+        component: GlobalMap,
     },
     {
         path: '/upload',

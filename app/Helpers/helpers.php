@@ -132,3 +132,58 @@ if (!function_exists('getDateTimeForPhoto'))
         return Carbon::parse($dateTime);
     }
 }
+
+if (!function_exists('getCoordinatesFromExif'))
+{
+    function getCoordinatesFromPhoto (array $exif): ?array
+    {
+        $lat_ref   = $exif["GPSLatitudeRef"];
+        $lat       = $exif["GPSLatitude"];
+        $long_ref  = $exif["GPSLongitudeRef"];
+        $lon       = $exif["GPSLongitude"];
+
+        return dmsToDec($lat, $lon, $lat_ref, $long_ref);
+    }
+}
+
+if (!function_exists('dmsToDec'))
+{
+    /**
+     * Convert Degrees, Minutes and Seconds to Lat, Long
+     * Cheers to Hassan for this!
+     *
+     *  "GPSLatitude" => array:3 [
+            0 => "51/1"
+            1 => "50/1"
+            2 => "888061/1000000"
+        ]
+     */
+    function dmsToDec ($lat, $lon, $lat_ref, $long_ref): ?array
+    {
+        $lat[0] = explode("/", $lat[0]);
+        $lat[1] = explode("/", $lat[1]);
+        $lat[2] = explode("/", $lat[2]);
+
+        $lon[0] = explode("/", $lon[0]);
+        $lon[1] = explode("/", $lon[1]);
+        $lon[2] = explode("/", $lon[2]);
+
+        $lat[0] = (int)$lat[0][0] / (int)$lat[0][1];
+        $lon[0] = (int)$lon[0][0] / (int)$lon[0][1];
+
+        $lat[1] = (int)$lat[1][0] / (int)$lat[1][1];
+        $lon[1] = (int)$lon[1][0] / (int)$lon[1][1];
+
+        $lat[2] = (int)$lat[2][0] / (int)$lat[2][1];
+        $lon[2] = (int)$lon[2][0] / (int)$lon[2][1];
+
+        $lat = $lat[0]+((($lat[1]*60)+($lat[2]))/3600);
+        $lon = $lon[0]+((($lon[1]*60)+($lon[2]))/3600);
+
+        if ($lat_ref === "S") $lat = $lat * -1;
+        if ($long_ref === "W") $lon = $lon * -1;
+
+        return [$lat, $lon];
+    }
+}
+

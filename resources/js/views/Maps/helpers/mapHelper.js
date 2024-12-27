@@ -1,7 +1,7 @@
-import i18n from '../i18n';
-import moment from 'moment';
+// import i18n from '../../../../old_js/i18n.js';
+// import moment from 'moment';
 
-const helper = {
+const mapHelper = {
     /**
      * These options control how the popup renders
      * @see https://leafletjs.com/reference-1.7.1.html#popup-l-popup

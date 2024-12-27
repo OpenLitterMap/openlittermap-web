@@ -2,17 +2,16 @@
 
 namespace App\Http\Controllers\Uploads;
 
-use Carbon\Carbon;
 use Geohash\GeoHash;
+
+use App\Models\Photo;
+use App\Helpers\Post\UploadHelper;
 
 use App\Events\NewCityAdded;
 use App\Events\NewCountryAdded;
 use App\Events\NewStateAdded;
-use App\Helpers\Post\UploadHelper;
-use App\Models\Photo;
 use App\Events\ImageUploaded;
 use App\Events\Photo\IncrementPhotoMonth;
-use App\Http\Requests\UploadPhotoRequest;
 
 use App\Actions\Photos\MakeImageAction;
 use App\Actions\Photos\UploadPhotoAction;
@@ -20,6 +19,9 @@ use App\Actions\Locations\ReverseGeocodeLocationAction;
 use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UploadPhotoRequest;
+use GuzzleHttp\Exception\GuzzleException;
+
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -47,7 +49,11 @@ class UploadPhotoController extends Controller
     /**
      * The user wants to upload a photo
      *
-     * Check for GPS co-ordinates or abort
+     * Validation:
+     * 1. Check photo is not already uploaded
+     * 2. Check for GPS co-ordinates or fail validation.
+     *
+     * Steps:
      * Get/Create Country, State, and City for the lat/lon
      *
      * Move photo to AWS S3 in production || local in development
@@ -55,6 +61,7 @@ class UploadPhotoController extends Controller
      *
      * @param UploadPhotoRequest $request
      * @return JsonResponse
+     * @throws GuzzleException
      */
     public function __invoke (UploadPhotoRequest $request): JsonResponse
     {
@@ -65,48 +72,15 @@ class UploadPhotoController extends Controller
             'user_id' => $user->id
         ]);
 
-        if (!$user->has_uploaded) {
-            $user->has_uploaded = 1;
-            $user->save();
-        }
-
         $file = $request->file('photo');
 
         $imageAndExifData = $this->makeImageAction->run($file);
         $image = $imageAndExifData['image'];
         $exif = $imageAndExifData['exif'];
 
-        // Step 1: Verification
-        if (is_null($exif))
-        {
-            abort(500, "Sorry, no GPS on this one.");
-        }
-
-        // Check if the EXIF has GPS data
-        // todo - make this error appear on the frontend dropzone without clicking the "X"
-        // todo - translate the error
-        if (!array_key_exists("GPSLatitudeRef", $exif))
-        {
-            abort(500, "Sorry, no GPS on this one.");
-        }
-
-        // Check for 0 value
-        if ($exif["GPSLatitude"][0] === "0/0" && $exif["GPSLongitude"][0] === "0/0")
-        {
-            abort(500,
-                "Error: Your Images have GeoTags, but they have values of zero.
-                You may have lost the geotags when transferring images across devices
-                or you might need to enable another setting to make them available."
-            );
-        }
-        // End Step 1: Verification
-
         $dateTime = getDateTimeForPhoto($exif);
 
-        \Log::info($dateTime);
-
-        // Step 2: Upload The Image(s)
-        // Upload images to both 's3' and 'bbox' disks, resized for 'bbox'
+        // Step 1: Upload The Image(s) to both 's3' and 'bbox' disks
         $imageName = $this->uploadPhotoAction->run(
             $image,
             $dateTime,
@@ -120,31 +94,14 @@ class UploadPhotoController extends Controller
             $file->hashName(),
             'bbox'
         );
-        // End Step 2: Upload The Image(s)
 
-        // Step 3: Get GPS & Check for Locations
-        // Get coordinates
-        $lat_ref   = $exif["GPSLatitudeRef"];
-        $lat       = $exif["GPSLatitude"];
-        $long_ref  = $exif["GPSLongitudeRef"];
-        $lon       = $exif["GPSLongitude"];
+        // Step 2: Get GPS & Check for Locations
+        $coordinates = getCoordinatesFromPhoto($exif);
 
-        $latlong = self::dmsToDec($lat, $lon, $lat_ref, $long_ref);
+        $latitude = $coordinates[0];
+        $longitude = $coordinates[1];
 
-        $latitude = $latlong[0];
-        $longitude = $latlong[1];
-
-        if (($latitude === 0 && $longitude === 0) || ($latitude === '0' && $longitude === '0'))
-        {
-            \Log::info("invalid coordinates found for userId $user->id \n");
-            abort(500,
-                "Error: Your Images have GeoTags, but they have values of zero.
-                You may have lost the geotags when transferring images across devices
-                or you might need to enable another setting to make them available."
-            );
-        }
-
-        // Use OpenStreetMap to Reverse Geocode the coordinates into an Address.
+        // Use OpenStreetMap to Reverse Geocode the coordinates into an address.
         $revGeoCode = app(ReverseGeocodeLocationAction::class)->run($latitude, $longitude);
 
         // The entire address as a string
@@ -161,26 +118,24 @@ class UploadPhotoController extends Controller
         $country = $this->uploadHelper->getCountryFromAddressArray($addressArray);
         $state = $this->uploadHelper->getStateFromAddressArray($country, $addressArray);
         $city = $this->uploadHelper->getCityFromAddressArray($country, $state, $addressArray, $latitude, $longitude);
-        // End Step 3: Get GPS & Check for Locations
 
-        // Step 4: Create the Photo
+        // Step 3: Create the Photo
         // prepare data we need to create
         $geohasher = new GeoHash();
-        $geohash = $geohasher->encode($latlong[0], $latlong[1]);
+        $geohash = $geohasher->encode($latitude, $longitude);
 
         // Get phone model
         $model = (array_key_exists('Model', $exif) && !empty($exif["Model"]))
             ? $exif["Model"]
             : 'Unknown';
 
-        /** Create the $var Photo $photo */
         $photo = Photo::create([
             'user_id' => $user->id,
             'filename' => $imageName,
             'datetime' => $dateTime,
             'remaining' => !$user->picked_up,
-            'lat' => $latlong[0],
-            'lon' => $latlong[1],
+            'lat' => $latitude,
+            'lon' => $longitude,
             'display_name' => $display_name,
             'location' => $location,
             'road' => $road,
@@ -198,9 +153,8 @@ class UploadPhotoController extends Controller
             'five_hundred_square_filepath' => $bboxImageName,
             'address_array' => json_encode($addressArray)
         ]);
-        // End Step 4: Create the Photo
 
-        // Step 5: Reward XP, update resources & Update Leaderboards
+        // Step 4: Reward XP, update resources & Update Leaderboards
         // $user->images_remaining -= 1;
 
         // move this to redis
@@ -208,7 +162,6 @@ class UploadPhotoController extends Controller
         // we might get old values for xp, so we update the values directly
         // without retrieving them
         $user->update(['total_images' => DB::raw('ifnull(total_images, 0) + 1')]);
-
         $user->refresh();
 
         // Update the Leaderboards and give xp.
@@ -217,9 +170,8 @@ class UploadPhotoController extends Controller
             $user->id,
             1
         );
-        // End Step 5: Update Leaderboards
 
-        // Step 6: Dispatch Events & Notifications
+        // Step 5: Dispatch Events & Notifications
         // Broadcast this event to anyone viewing the global map
         // This will also update country, state, and city.total_contributors_redis
         event(new ImageUploaded(
@@ -262,48 +214,9 @@ class UploadPhotoController extends Controller
             $city->id,
             $dateTime
         ));
-        // End step 6: Dispatch Events & Notifications
 
         return response()->json([
             'success' => true
         ]);
-    }
-
-    /**
-     * Convert Degrees, Minutes and Seconds to Lat, Long
-     * Cheers to Hassan for this!
-     *
-     *  "GPSLatitude" => array:3 [ might be an array
-    0 => "51/1"
-    1 => "50/1"
-    2 => "888061/1000000"
-    ]
-     */
-    private static function dmsToDec ($lat, $lon, $lat_ref, $long_ref)
-    {
-        $lat[0] = explode("/", $lat[0]);
-        $lat[1] = explode("/", $lat[1]);
-        $lat[2] = explode("/", $lat[2]);
-
-        $lon[0] = explode("/", $lon[0]);
-        $lon[1] = explode("/", $lon[1]);
-        $lon[2] = explode("/", $lon[2]);
-
-        $lat[0] = (int)$lat[0][0] / (int)$lat[0][1];
-        $lon[0] = (int)$lon[0][0] / (int)$lon[0][1];
-
-        $lat[1] = (int)$lat[1][0] / (int)$lat[1][1];
-        $lon[1] = (int)$lon[1][0] / (int)$lon[1][1];
-
-        $lat[2] = (int)$lat[2][0] / (int)$lat[2][1];
-        $lon[2] = (int)$lon[2][0] / (int)$lon[2][1];
-
-        $lat = $lat[0]+((($lat[1]*60)+($lat[2]))/3600);
-        $lon = $lon[0]+((($lon[1]*60)+($lon[2]))/3600);
-
-        if ($lat_ref === "S") $lat = $lat * -1;
-        if ($long_ref === "W") $lon = $lon * -1;
-
-        return [$lat, $lon];
     }
 }

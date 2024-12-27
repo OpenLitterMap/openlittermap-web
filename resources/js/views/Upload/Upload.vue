@@ -1,18 +1,31 @@
 <template>
-    <div class="flex relative justify-center px-20 pt-20 bg-gradient-to-r from-amber-200 to-yellow-500">
-        <div>
+    <div
+        class="flex relative justify-center px-20 pt-20 bg-gradient-to-r from-amber-200 to-yellow-500"
+        :style="isUploading ? 'min-height: 100vh' : 'height: 100vh'"
+    >
+        <div class="h-100">
             <h1 class="text-5xl font-semibold mb-6 text-center">Click or Drop to upload your photos</h1>
 
-            <div
-                v-if="uploadProgress > 0"
-                class="text-center mb-6"
-            >
+            <div v-if="uploadProgress > 0" class="text-center mb-6">
                 <p>Upload Progress: {{ uploadProgress.toFixed() }}%</p>
             </div>
 
             <p v-if="team" class="text-center">
                 {{ $t('common.team') }}: <strong>{{team}}</strong>
             </p>
+
+            <!-- After uploading-->
+            <transition name="fade">
+                <div v-if="uploadSuccess" class="text-center mb-6">
+                    <p class="text-2xl font-bold-500 mb-4">Next you need to tag the litter</p>
+
+                    <button class="bg-[#2793da] px-6 py-4 rounded-2xl text-white hov">
+                        Tag Litter &nbsp;
+
+                        <i data-v-fcf00e23="" aria-hidden="true" class="fa fa-arrow-right"></i>
+                    </button>
+                </div>
+            </transition>
 
             <FilePond
                 ref="pond"
@@ -23,6 +36,7 @@
                 class="custom-filepond"
                 :server="server"
                 :acceptedFileTypes="acceptedFileTypes"
+                @addfile="handleFileAdded"
                 @processfile="handleFileUpload"
                 :labelFileProcessingError="options.labelFileProcessingError"
             />
@@ -30,19 +44,6 @@
             <div class="text-center mt-10 pb-10">
                 <p class="text-4xl font-bold">Thank you!</p>
             </div>
-
-            <!-- After uploading-->
-            <transition name="fade">
-                <div v-if="showTagLitterSection" class="absolute right-10 bottom-10 text-center mb-6">
-                    <p class="text-2xl font-bold-500 mb-4">Next you need to tag the litter</p>
-
-                    <button class="bg-[#2793da] px-6 py-4 rounded-2xl text-white hov">
-                        Tag Litter &nbsp;
-
-                        <i data-v-fcf00e23="" aria-hidden="true" class="fa fa-arrow-right"></i>
-                    </button>
-                </div>
-            </transition>
         </div>
     </div>
 </template>
@@ -61,7 +62,7 @@ import { useToast } from "vue-toastification";
 const toast = useToast();
 
 import {computed, ref} from 'vue';
-const showTagLitterSection = ref(false);
+const uploadSuccess = ref(false);
 
 import {useUserStore} from "../../stores/user/index.js";
 const userStore = useUserStore();
@@ -108,10 +109,7 @@ const server = {
                 return 'An unknown error occurred. Please contact support';
             }
         },
-        ondata: null,
-    },
-    fetch: null,
-    revert: null
+    }
 };
 
 // Configure FilePond labels
@@ -121,6 +119,15 @@ const options = {
         return error.body;
     },
 };
+
+import { useUploadingStore } from "../../stores/uploading/index.js";
+const uploadingStore = useUploadingStore();
+const isUploading = computed(() => uploadingStore.isUploading);
+
+// Handle when a file is dropped onto the view
+const handleFileAdded = () => {
+    uploadingStore.setIsUploading(true);
+}
 
 // Handle file upload success and errors
 const handleFileUpload = (error, file) => {
@@ -136,7 +143,7 @@ const handleFileUpload = (error, file) => {
 
         updateProgress();
 
-        showTagLitterSection.value = true;
+        uploadSuccess.value = true;
     }
 };
 

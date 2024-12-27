@@ -30,12 +30,12 @@ class ReverseGeocodeLocationAction
     {
         $apiKey = config('services.location.secret');
 
-        $url = "https://eu1.locationiq.com/v1/reverse.php?format=json" .
-            "&key=" . $apiKey . "&lat=" . $latitude . "&lon=" . $longitude . "&zoom=20";
+        $url = "https://eu1.locationiq.com/v1/reverse.php?format=json"
+            . "&key=" . $apiKey
+            . "&lat=" . $latitude
+            . "&lon=" . $longitude
+            . "&zoom=20";
 
-        return json_decode(
-            $this->client->get($url)->getBody(),
-            true
-        );
+        return json_decode($this->client->get($url)->getBody(), true);
     }
 }

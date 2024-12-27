@@ -3,27 +3,19 @@
 namespace App\Http\Requests;
 
 use App\Models\Photo;
-use Illuminate\Support\Carbon;
 use Illuminate\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UploadPhotoRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     *
-     * @return bool
-     */
-    public function authorize(): bool
-    {
-        return true;
-    }
+    public $stopOnFirstFailure = true;
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array
-     */
+    protected string $gpsError1 = "Sorry, no GPS on this one.";
+
+    protected string $gpsError2 = "Error: Your Images have GeoTags, but they have values of zero.
+        You may have lost the geotags when transferring images across devices
+        or you might need to enable another setting to make them available.";
+
     public function rules(): array
     {
         return [
@@ -49,6 +41,8 @@ class UploadPhotoRequest extends FormRequest
             function (Validator $validator): void {
                 $photo = $this->photo;
 
+                \Log::info($photo);
+
                 $exif = exif_read_data($photo->getRealPath());
 
                 $dateTime = getDateTimeForPhoto($exif);
@@ -60,6 +54,32 @@ class UploadPhotoRequest extends FormRequest
 
                 if ($photoExists) {
                     $validator->errors()->add('photo', 'You have already uploaded this photo');
+                }
+
+                if (!array_key_exists("GPSLatitudeRef", $exif)) {
+                    $validator->errors()->add('photo', $this->gpsError1);
+                }
+
+                // Check if the EXIF has GPS data
+                // todo - translate the error
+                if (!array_key_exists("GPSLatitudeRef", $exif))
+                {
+                    $validator->errors()->add('photo', $this->gpsError1);
+                }
+
+                if ($exif["GPSLatitude"][0] === "0/0" && $exif["GPSLongitude"][0] === "0/0")
+                {
+                    $validator->errors()->add('photo', $this->gpsError2);
+                }
+
+                $coordinates = getCoordinatesFromPhoto($exif);
+
+                $lat = $coordinates[0];
+                $lon = $coordinates[1];
+
+                if (($lat === 0 && $lon === 0) || ($lat === '0' && $lon === '0'))
+                {
+                    $validator->errors()->add('photo', $this->gpsError2);
                 }
             }
         ];

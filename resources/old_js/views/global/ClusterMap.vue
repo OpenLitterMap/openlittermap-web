@@ -16,11 +16,11 @@ import {
 } from '../../constants';
 
 import L from 'leaflet';
-import './SmoothWheelZoom.js';
+import '../../../js/views/Maps/helpers/SmoothWheelZoom.js';
 
 // Todo - fix this export bug (The request of a dependency is an expression...)
 import glify from 'leaflet.glify';
-import { mapHelper } from '../../maps/mapHelpers';
+import { mapHelper } from '../../../js/views/Maps/helpers/mapHelpers.js';
 
 export default {
     name: 'ClusterMap',

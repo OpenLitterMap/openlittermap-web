@@ -18,7 +18,7 @@ L.Icon.Default.mergeOptions({
 
 import 'leaflet-timedimension';
 import 'leaflet-timedimension/dist/leaflet.timedimension.control.css';
-import { mapHelper } from '../../maps/mapHelpers';
+import { mapHelper } from '../../../js/views/Maps/helpers/mapHelpers.js';
 import { MIN_ZOOM, MAX_ZOOM } from '../../constants';
 
 export default {

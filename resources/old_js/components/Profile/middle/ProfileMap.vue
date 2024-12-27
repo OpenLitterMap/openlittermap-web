@@ -16,7 +16,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-timedimension'
 import "leaflet-timedimension/dist/leaflet.timedimension.control.css"
-import {mapHelper} from '../../../maps/mapHelpers';
+import {mapHelper} from '../../../../js/views/Maps/helpers/mapHelpers.js';
 
 export default {
     name: 'ProfileMap',

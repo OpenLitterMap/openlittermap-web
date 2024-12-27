@@ -11,7 +11,7 @@ import * as turf from '../../../../public/js/turf.js'
 
 import { categories } from '../../extra/categories'
 import { litterkeys } from '../../extra/litterkeys'
-import {mapHelper} from '../../maps/mapHelpers';
+import {mapHelper} from '../../../js/views/Maps/helpers/mapHelpers.js';
 
 var map;
 var info;
