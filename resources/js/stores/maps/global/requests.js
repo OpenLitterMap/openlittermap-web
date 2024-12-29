@@ -30,7 +30,7 @@ export const requests = {
         .then(response => {
             console.log('get_clusters', response);
 
-            this.geojson = response.data;
+            this.clustersGeojson = response.data;
         })
         .catch(error => {
             console.error('get_clusters', error);

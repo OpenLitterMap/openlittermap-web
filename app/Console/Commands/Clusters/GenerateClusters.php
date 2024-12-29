@@ -179,6 +179,12 @@ class GenerateClusters extends Command
             } else {
                 $this->line("\nNo new photos for $year.");
             }
+
+            if (app()->environment('local')) {
+                if (empty($yearsWithData)) {
+                    $yearsWithData[] = now()->year;
+                }
+            }
         }
 
         return empty($yearsWithData)

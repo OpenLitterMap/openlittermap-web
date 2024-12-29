@@ -13,3 +13,6 @@
 	transition: stroke-dashoffset 0.3s ease-out, stroke-opacity 0.3s ease-in;
 }
 
+.leaflet-marker-icon {
+    border-radius: 20px;
+}

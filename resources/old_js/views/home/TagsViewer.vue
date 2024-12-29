@@ -19,7 +19,7 @@ L.Icon.Default.mergeOptions({
 import 'leaflet-timedimension';
 import 'leaflet-timedimension/dist/leaflet.timedimension.control.css';
 import { mapHelper } from '../../../js/views/Maps/helpers/mapHelpers.js';
-import { MIN_ZOOM, MAX_ZOOM } from '../../constants';
+import { MIN_ZOOM, MAX_ZOOM } from '../../../js/views/Maps/helpers/index.js';
 
 export default {
     name: 'TagsViewer',

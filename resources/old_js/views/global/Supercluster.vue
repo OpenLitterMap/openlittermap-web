@@ -26,7 +26,7 @@ import {
     LARGE_CLUSTER_SIZE,
     MIN_ZOOM,
     ZOOM_STEP
-} from '../../constants';
+} from '../../../js/views/Maps/helpers/index.js';
 
 import L from 'leaflet';
 import '../../../js/views/Maps/helpers/SmoothWheelZoom.js';

@@ -7,7 +7,10 @@ export default {
         './resources/views/filament/**/*.blade.php',
         './vendor/filament/**/*.blade.php',
         './resources/views/**/*.blade.php',
-        './resources/js/**/*.vue'
+        './resources/js/**/*.vue',
+        './resources/css/leaflet/MarkerCluster.css',
+        './resources/css/leaflet/MarkerCluster.Default.css',
+
     ],
     theme: {
         extend: {
@@ -27,5 +30,11 @@ export default {
                 },
             });
         },
+    ],
+    safelist: [
+        'marker-cluster-small',
+        'marker-cluster-medium',
+        'marker-cluster-large',
+        'mi',
     ],
 }

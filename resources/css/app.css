@@ -2,17 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer utilities {
-    .hov {
-        @apply transition duration-300;
-    }
-
-    .hov:hover {
-        box-shadow: 0 20px 30px -11px rgba(31, 35, 65, 0.37);
-        transform: translate(0px, -2px);
-    }
-}
-
 @layer components {
 
     #app { @apply h-full }
@@ -58,4 +47,19 @@
             mb-[1em];
     }
 
+    /* Leaflet */
+    .mi {
+        @apply h-full m-auto md:flex md:justify-center rounded-[20px];
+    }
+}
+
+@layer utilities {
+    .hov {
+        @apply transition duration-300;
+    }
+
+    .hov:hover {
+        box-shadow: 0 20px 30px -11px rgba(31, 35, 65, 0.37);
+        transform: translate(0px, -2px);
+    }
 }

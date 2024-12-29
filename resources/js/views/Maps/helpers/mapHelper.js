@@ -1,7 +1,6 @@
-// import i18n from '../../../../old_js/i18n.js';
-// import moment from 'moment';
+import moment from 'moment';
 
-const mapHelper = {
+export const mapHelper = {
     /**
      * These options control how the popup renders
      * @see https://leafletjs.com/reference-1.7.1.html#popup-l-popup
@@ -40,7 +39,7 @@ const mapHelper = {
     /**
      * Get the removed custom + pre-defined Tags for the litter popup
      */
-    getRemovedTags: (removedTags) => {
+    getRemovedTags: (removedTags, t) => {
         let str = "Removed Tags: ";
 
         if (removedTags.customTags)
@@ -56,7 +55,7 @@ const mapHelper = {
         {
             Object.keys(removedTags.tags).forEach(category => {
                 Object.entries(removedTags.tags[category]).forEach((entry) => {
-                    str += i18n.t(`litter.${category}.${entry[0]}`) + `(${entry[1]})`;
+                    str += t(`litter.${category}.${entry[0]}`) + `(${entry[1]})`;
                 });
 
                 str += '<br>';
@@ -83,13 +82,18 @@ const mapHelper = {
      * @param tagsString
      * @param customTags
      * @param isTrustedUser
+     * @param t
      * @returns {string}
      */
-    parseTags: (tagsString, customTags, isTrustedUser) => {
+    parseTags: (tagsString, customTags, isTrustedUser, t) => {
+
+        console.log({ t });
+        console.log(t);
+
         if (!tagsString && !customTags) {
             return isTrustedUser
-                ? i18n.t('litter.not-tagged-yet')
-                : i18n.t('litter.not-verified');
+                ? t('litter.not-tagged-yet')
+                : t('litter.not-verified');
         }
 
         let tags = '';
@@ -101,9 +105,9 @@ const mapHelper = {
             let b = i.split(' ');
 
             if (b[0] === 'art.item') {
-                tags += i18n.t('litter.' + b[0]) + '<br>';
+                tags += t('litter.' + b[0]) + '<br>';
             } else {
-                tags += i18n.t('litter.' + b[0]) + ': ' + b[1] + '<br>';
+                tags += t('litter.' + b[0]) + ': ' + b[1] + '<br>';
             }
         });
 
@@ -117,9 +121,9 @@ const mapHelper = {
      * @param username
      * @returns {string}
      */
-    formatUserName: (name, username) => {
+    formatUserName: (name, username, t) => {
         return (name || username)
-            ? `${i18n.t('locations.cityVueMap.by')} ${name ? name : ''} ${username ? '@' + username : ''}`
+            ? `${t('locations.cityVueMap.by')} ${name ? name : ''} ${username ? '@' + username : ''}`
             : '';
     },
 
@@ -129,10 +133,10 @@ const mapHelper = {
      * @returns {string}
      * @param pickedUp
      */
-    formatPickedUp: (pickedUp) => {
+    formatPickedUp: (pickedUp, t) => {
         return pickedUp
-            ? `${i18n.t('litter.presence.picked-up')}`
-            : `${i18n.t('litter.presence.still-there')}`;
+            ? `${t('litter.presence.picked-up')}`
+            : `${t('litter.presence.still-there')}`;
     },
 
     /**
@@ -141,9 +145,9 @@ const mapHelper = {
      * @param teamName
      * @returns {string}
      */
-    formatTeam: (teamName) => {
+    formatTeam: (teamName, t) => {
         return teamName
-            ? `${i18n.t('common.team')} ${teamName}`
+            ? `${t('common.team')} ${teamName}`
             : '';
     },
 
@@ -153,8 +157,8 @@ const mapHelper = {
      * @param takenOn
      * @returns {string}
      */
-    formatPhotoTakenTime: (takenOn) => {
-        return i18n.t('locations.cityVueMap.taken-on') + ' ' + moment(takenOn).format('LLL');
+    formatPhotoTakenTime: (takenOn, t) => {
+        return t('locations.cityVueMap.taken-on') + ' ' + moment(takenOn).format('LLL');
     },
 
     /**
@@ -162,20 +166,21 @@ const mapHelper = {
      *
      * @param properties
      * @param url
+     * @param t
      * @returns {string}
      */
-    getMapImagePopupContent: (properties, url = null) => {
-        const user = helper.formatUserName(properties.name, properties.username)
+    getMapImagePopupContent: (properties, url = null, t) => {
+        const user = mapHelper.formatUserName(properties.name, properties.username, t)
         const isTrustedUser = properties.filename !== '/assets/images/waiting.png';
         const customTags = properties.custom_tags?.join('<br>');
-        const tags = helper.parseTags(properties.result_string, customTags, isTrustedUser);
-        const takenDateString = helper.formatPhotoTakenTime(properties.datetime);
-        const teamFormatted = helper.formatTeam(properties.team);
-        const pickedUpFormatted = helper.formatPickedUp(properties.picked_up);
+        const tags = mapHelper.parseTags(properties.result_string, customTags, isTrustedUser, t);
+        const takenDateString = mapHelper.formatPhotoTakenTime(properties.datetime, t);
+        const teamFormatted = mapHelper.formatTeam(properties.team, t);
+        const pickedUpFormatted = mapHelper.formatPickedUp(properties.picked_up, t);
         const isLitterArt = properties.result_string && properties.result_string.includes('art.item');
         const hasSocialLinks = properties.social && Object.keys(properties.social).length;
-        const admin = properties.admin ? helper.getAdminName(properties.admin) : null;
-        const removedTags = properties.admin?.removedTags ? helper.getRemovedTags(properties.admin.removedTags) : '';
+        const admin = properties.admin ? mapHelper.getAdminName(properties.admin) : null;
+        const removedTags = properties.admin?.removedTags ? mapHelper.getRemovedTags(properties.admin.removedTags, t) : '';
 
         return `
             <img
@@ -258,8 +263,8 @@ const mapHelper = {
 
     /**
      * Build the HTML to include in the popup content
-     * @param properties: Merchant object
      * @returns string (with html)
+     * @param properties
      */
     getMerchantContent: (properties) => {
         let photos = '';
@@ -291,5 +296,3 @@ const mapHelper = {
         `;
     }
 };
-
-export {helper as mapHelper};
