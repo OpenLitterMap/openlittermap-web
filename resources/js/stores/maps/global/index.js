@@ -1,12 +1,16 @@
 import { defineStore } from "pinia";
 import { requests } from "./requests.js";
 
-export const useGlobalStore = defineStore("global", {
+export const useGlobalMapStore = defineStore("globalMap", {
 
     state: () => {
         return {
             artData: [],
             clustersGeojson: {
+                type: 'FeatureCollection',
+                features: []
+            },
+            pointsGeojson: {
                 type: 'FeatureCollection',
                 features: []
             },

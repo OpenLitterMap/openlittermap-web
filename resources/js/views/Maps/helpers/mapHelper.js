@@ -86,10 +86,6 @@ export const mapHelper = {
      * @returns {string}
      */
     parseTags: (tagsString, customTags, isTrustedUser, t) => {
-
-        console.log({ t });
-        console.log(t);
-
         if (!tagsString && !customTags) {
             return isTrustedUser
                 ? t('litter.not-tagged-yet')

@@ -18,14 +18,10 @@ export const requests = {
     /**
      * Get clusters for the global map
      */
-    async GET_CLUSTERS (payload)
+    async GET_CLUSTERS ({ zoom, year, bbox = null })
     {
         await axios.get('/global/clusters', {
-            params: {
-                zoom: payload.zoom,
-                year: payload.year,
-                bbox: null
-            }
+            params: { zoom, year, bbox }
         })
         .then(response => {
             console.log('get_clusters', response);
@@ -34,6 +30,40 @@ export const requests = {
         })
         .catch(error => {
             console.error('get_clusters', error);
+        });
+    },
+
+    /**
+     * Get points for the global map
+     */
+    async GET_POINTS ({
+        zoom,
+        bbox,
+        layers,
+        year,
+        fromDate,
+        toDate,
+        username
+    })
+    {
+        await axios.get('/global/points', {
+            params: {
+                zoom,
+                bbox,
+                layers,
+                year,
+                fromDate,
+                toDate,
+                username
+            }
+        })
+        .then(response => {
+            console.log('get_points', response);
+
+            this.pointsGeojson = response.data;
+        })
+        .catch(error => {
+            console.error('get_points', error);
         });
     },
 

@@ -7,7 +7,7 @@ export default {
         './resources/views/filament/**/*.blade.php',
         './vendor/filament/**/*.blade.php',
         './resources/views/**/*.blade.php',
-        './resources/js/**/*.vue',
+        './resources/js/**/*.{vue,js,ts}',
         './resources/css/leaflet/MarkerCluster.css',
         './resources/css/leaflet/MarkerCluster.Default.css',
 

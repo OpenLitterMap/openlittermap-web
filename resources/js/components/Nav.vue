@@ -22,6 +22,7 @@
 <!--                <router-link to="/history" class="nav-item">History</router-link>-->
 <!--                <router-link to="/leaderboard" class="nav-item">Leaderboard</router-link>-->
                 <router-link to="/global" class="nav-item">Global Map</router-link>
+                <router-link to="/references" class="nav-item">References</router-link>
 <!--                <router-link to="/community" class="nav-item">Community</router-link>-->
 <!--                <router-link to="/world" class="nav-item">World Cup</router-link>-->
 

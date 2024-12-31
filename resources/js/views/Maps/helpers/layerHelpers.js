@@ -1,18 +1,24 @@
-import { green_dot, grey_dot } from './icons';
-import {MEDIUM_CLUSTER_SIZE, LARGE_CLUSTER_SIZE, ZOOM_STEP, MAX_ZOOM, CLUSTER_ZOOM_THRESHOLD} from './constants.js';
 import L from "leaflet";
-import {mapHelper} from "./mapHelper.js";
+import {
+    MEDIUM_CLUSTER_SIZE,
+    LARGE_CLUSTER_SIZE,
+    ZOOM_STEP,
+    MAX_ZOOM,
+    CLUSTER_ZOOM_THRESHOLD
+} from './constants.js';
+import { green_dot, grey_dot } from './icons';
+import { mapHelper } from "./mapHelper.js";
 
 /**
  * Create the cluster or point icon to display for each feature
  */
-export function createClusterIcon (feature, latlng)
+export function createClusterIcon (feature, latLng)
 {
     if (!feature.properties.cluster)
     {
         return (feature.properties.verified === 2)
-            ? L.marker(latlng, { icon: green_dot })
-            : L.marker(latlng, { icon: grey_dot });
+            ? L.marker(latLng, { icon: green_dot })
+            : L.marker(latLng, { icon: grey_dot });
     }
 
     const count = feature.properties.point_count;
@@ -28,7 +34,7 @@ export function createClusterIcon (feature, latlng)
         iconSize: L.point(40, 40)
     });
 
-    return L.marker(latlng, { icon });
+    return L.marker(latLng, { icon });
 }
 
 export function onEachFeature (feature, layer, map)
@@ -55,8 +61,9 @@ export function onEachFeature (feature, layer, map)
  * @param feature
  * @param latLng
  * @param t - translation function
+ * @param mapInstance
  */
-export function renderLeafletPopup (feature, latLng, t)
+export function renderLeafletPopup (feature, latLng, t, mapInstance)
 {
     const url = new URL(window.location.href);
     url.searchParams.set('lat', feature.geometry.coordinates[0]);
@@ -66,6 +73,6 @@ export function renderLeafletPopup (feature, latLng, t)
 
     L.popup(mapHelper.popupOptions)
         .setLatLng(latLng)
-        .setContent(mapHelper.getMapImagePopupContent(feature.properties, url.toString()), t)
-        .openOn(map);
+        .setContent(mapHelper.getMapImagePopupContent(feature.properties, url.toString(), t))
+        .openOn(mapInstance);
 }

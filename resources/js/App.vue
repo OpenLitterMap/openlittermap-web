@@ -1,5 +1,5 @@
 <template>
-    <div :style="isUploading ? '' : 'height: 100%'">
+    <div :style="{ height: showFullHeight ? '100%' : 'auto' }">
         <Nav />
 
         <Modal />
@@ -11,13 +11,27 @@
 </template>
 
 <script setup>
-
 import { useUploadingStore } from "./stores/uploading/index.js";
-import {computed} from "vue";
+import { computed, watch, ref } from "vue";
+import { useRoute } from "vue-router";
 
 // There is a bug when displaying the height on the upload page.
 const uploadingStore = useUploadingStore();
 uploadingStore.setIsUploading(false);
 const isUploading = computed(() => uploadingStore.isUploading);
+
+const route = useRoute();
+const routeName = computed(() => route.name);
+
+const showFullHeight = ref(true);
+
+watch([isUploading, () => route.name], ([isUploadingValue, routeName]) => {
+    if (isUploadingValue || routeName === 'GlobalMap') {
+        showFullHeight.value = true;
+    } else {
+        // References.vue
+        showFullHeight.value = false;
+    }
+});
 
 </script>

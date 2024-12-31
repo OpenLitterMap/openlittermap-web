@@ -4,11 +4,13 @@ import Welcome from '../views/Welcome/Welcome.vue';
 import About from '../views/About.vue';
 import GlobalMap from "../views/Maps/GlobalMap.vue";
 import Upload from '../views/Upload/Upload.vue';
+import References from '../views/Academic/References.vue';
 
 // Import Middleware
 import middlewarePipeline from './middleware/middlewarePipeline';
 
 import auth from './middleware/auth'
+
 
 const routes = [
     {
@@ -26,6 +28,12 @@ const routes = [
         name: 'GlobalMap',
         component: GlobalMap,
     },
+    {
+        path: '/references',
+        name: 'References',
+        component: References
+    },
+    // Auth Reoutes
     {
         path: '/upload',
         name: 'Upload',
