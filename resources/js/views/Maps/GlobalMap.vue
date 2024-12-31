@@ -4,7 +4,10 @@
         <div id="openlittermap" ref="openlittermap" />
 
         <!-- Search Custom Tags -->
-        <!-- LiveEvents -->
+        <LiveEvents
+            @fly-to-location="updateUrlPhotoIdAndFlyToLocation"
+            :mapInstance="mapInstance"
+        />
     </div>
 </template>
 
@@ -17,12 +20,14 @@ import 'leaflet/dist/leaflet.css';
 import glify from "leaflet.glify";
 
 import { CLUSTER_ZOOM_THRESHOLD, MAX_ZOOM, MIN_ZOOM } from "./helpers/constants.js";
-import { flyToLocationFromURL, updateLocationInURL } from "./helpers/urlHelpers.js";
+import { flyToLocationFromURL, updateLocationInURL, updateUrlPhotoIdAndFlyToLocation } from "./helpers/urlHelpers.js";
 import { createClusterIcon, onEachFeature, renderLeafletPopup } from "./helpers/layerHelpers.js";
 
 import { useGlobalMapStore } from "../../stores/maps/global/index.js";
 import { useCleanupStore } from "../../stores/cleanups/index.js";
 import { useMerchantStore } from "../../stores/littercoin/merchants/index.js";
+
+import LiveEvents from "../../components/Websockets/GlobalMap/LiveEvents.vue";
 
 const $loading = useLoading();
 const { t } = useI18n();

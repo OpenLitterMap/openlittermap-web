@@ -15,7 +15,7 @@
 import Nav from '../components/General/Nav.vue'
 import Modal from '../../js/components/Modal/Modal.vue'
 import WelcomeBanner from '../components/WelcomeBanner.vue'
-import Unsubscribed from '../components/Notifications/Unsubscribed.vue'
+import Unsubscribed from '../../js/components/Websockets/GlobalMap/Notifications/Unsubscribed.vue'
 
 export default {
     name: 'RootContainer',

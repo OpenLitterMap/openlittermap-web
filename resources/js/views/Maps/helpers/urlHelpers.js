@@ -55,3 +55,23 @@ export const updateLocationInURL = (mapInstance) => {
 
     window.history.pushState(null, '', url);
 };
+
+/**
+ * Updates the url with the photoId
+ * and goes to the location
+ */
+export const updateUrlPhotoIdAndFlyToLocation = ({ latitude, longitude, photoId, mapInstance }) => {
+    const zoom = Math.round(mapInstance.getZoom());
+    const url = new URL(window.location.href);
+    url.searchParams.set('photo', photoId);
+    window.history.pushState(null, '', url);
+
+    const flyDistanceInMeters = mapInstance.distance(mapInstance.getCenter(), [latitude, longitude]);
+
+    // If we're viewing points and moving within 2km
+    if (zoom >= CLUSTER_ZOOM_THRESHOLD && flyDistanceInMeters <= 2000) {
+        mapInstance.flyTo([latitude, longitude], zoom, { duration: 1 });
+    } else {
+        mapInstance.flyTo([latitude, longitude], zoom);
+    }
+}

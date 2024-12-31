@@ -17,14 +17,14 @@
 </template>
 
 <script>
-import CleanupCreated from "./Notifications/CleanupCreated.vue";
-import ImageUploaded from './Notifications/ImageUploaded.vue';
-import LittercoinMined from './Notifications/LittercoinMined.vue';
-import NewCountryAdded from './Notifications/NewCountryAdded.vue';
-import NewStateAdded from './Notifications/NewStateAdded.vue';
-import NewCityAdded from './Notifications/NewCityAdded.vue';
-import TeamCreated from './Notifications/TeamCreated.vue';
-import UserSignedUp from './Notifications/UserSignedUp.vue';
+import CleanupCreated from "../../js/components/Websockets/GlobalMap/Notifications/CleanupCreated.vue";
+import ImageUploaded from '../../js/components/Websockets/GlobalMap/Notifications/ImageUploaded.vue';
+import LittercoinMined from '../../js/components/Websockets/GlobalMap/Notifications/LittercoinMined.vue';
+import NewCountryAdded from '../../js/components/Websockets/GlobalMap/Notifications/NewCountryAdded.vue';
+import NewStateAdded from '../../js/components/Websockets/GlobalMap/Notifications/NewStateAdded.vue';
+import NewCityAdded from '../../js/components/Websockets/GlobalMap/Notifications/NewCityAdded.vue';
+import TeamCreated from '../../js/components/Websockets/GlobalMap/Notifications/TeamCreated.vue';
+import UserSignedUp from '../../js/components/Websockets/GlobalMap/Notifications/UserSignedUp.vue';
 
 export default {
 	name: 'live-events',
