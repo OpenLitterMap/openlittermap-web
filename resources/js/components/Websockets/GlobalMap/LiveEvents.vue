@@ -1,15 +1,15 @@
 <template>
-    <div
-        class="absolute top-16 right-2 w-80 max-h-[80vh] overflow-y-scroll z-[999] text-sm p-4"
-    >
+    <div class="absolute top-16 right-2 w-80 max-h-[80vh] overflow-y-scroll z-[999] text-sm p-4">
         <transition-group
             name="list"
             @after-enter="handleAfterEnter"
+            @before-leave="handleBeforeLeave"
+            @after-leave="handleAfterLeave"
         >
             <span
                 v-for="(event, index) in events"
                 :key="event.id"
-                class="grid gap-2"
+                class="grid gap-2 text-dark-text"
             >
                 <component
                     :is="components[event.type]"
@@ -22,7 +22,8 @@
 </template>
 
 <script setup>
-import { defineProps, ref, onMounted } from 'vue';
+import {defineProps, ref, onMounted, onUnmounted} from 'vue';
+import { v4 as uuidv4 } from 'uuid';
 import CleanupCreated from "./Notifications/CleanupCreated.vue";
 import ImageUploaded from './Notifications/ImageUploaded.vue';
 import LittercoinMined from './Notifications/LittercoinMined.vue';
@@ -59,18 +60,34 @@ onMounted(() => {
     listenForEvents();
 });
 
+onUnmounted(() => {
+    clearTimeout(timer.value);
+    Echo.leaveChannel('main');
+});
+
 /**
  * 1) Push new event into 'pendingEvents' queue.
  * 2) If we’re not currently animating, move one event from 'pendingEvents' -> 'events'.
  */
 const addEvent = (eventType, payload) => {
+
     if (!components[eventType]) {
         console.error(`Component "${eventType}" is not registered.`);
         return;
     }
 
+    const existingEvent = pendingEvents.value.find(
+        (event) => event.payload.id === payload.id
+    );
+    if (existingEvent) {
+        console.warn('Duplicate event detected, skipping:', payload.id);
+        return;
+    }
+
+    const id = uuidv4();
+
     pendingEvents.value.unshift({
-        id: new Date().getTime(),
+        id,
         type: eventType,
         payload
     });
@@ -98,21 +115,40 @@ const handleAfterEnter = () => {
     processQueue();
 };
 
+// Prevent accidental overlap in animations
+const handleBeforeLeave = (el) => {
+    el.style.pointerEvents = 'none';
+};
+
+// Prevent accidental overlap in animations
+const handleAfterLeave = (el) => {
+    el.style.pointerEvents = '';
+};
+
 /**
  * Tracks single or double-clicks on an event.
  */
 const handleClick = (event, index) => {
-    clicks.value++;
 
-    if (clicks.value === 1) {
-        timer.value = setTimeout(() => {
-            flyToLocation(event);
-            clicks.value = 0;
-        }, 300);
-    } else {
+    // Check if a timer exists (indicating a potential double-click sequence)
+    if (timer.value) {
         clearTimeout(timer.value);
-        removeEvent(index);
+        timer.value = null;
         clicks.value = 0;
+
+        // perform doubleClick action
+        removeEvent(index);
+    } else {
+        clicks.value++;
+
+        timer.value = setTimeout(() => {
+
+            timer.value = null;
+            clicks.value = 0;
+
+            // Perform single-click action
+            flyToLocation(event);
+        }, 300);
     }
 };
 
@@ -122,10 +158,19 @@ const flyToLocation = (event) => {
     }
 };
 
+const removeEventTimeouts = new Map();
 const removeEvent = (index) => {
-    events.value.splice(index, 1);
+    // Prevent multiple calls for the same index.
+    if (removeEventTimeouts.has(index)) return;
 
-    updateDocumentTitle();
+    removeEventTimeouts.set(
+        index,
+        setTimeout(() => {
+            events.value.splice(index, 1);
+            removeEventTimeouts.delete(index);
+            updateDocumentTitle();
+        }, 100)
+    );
 };
 
 const listenForEvents = () => {
@@ -228,6 +273,6 @@ const updateDocumentTitle = () => {
       new item entering at a time anyway.
     */
     .list-move {
-        transition: transform 0.4s ease-in-out;
+        transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.5, 1);
     }
 </style>

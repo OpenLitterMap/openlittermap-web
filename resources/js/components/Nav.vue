@@ -52,12 +52,12 @@
 import { ref, computed } from "vue";
 import { useModalStore } from "../stores/modal/index.js";
 import { useUserStore } from "../stores/user/index.js";
+
 const modalStore = useModalStore();
 const userStore = useUserStore();
 
-const auth = computed(() => userStore.auth);
-
 const open = ref(false);
+const auth = computed(() => userStore.auth);
 
 const toggleOpen = () => {
     open.value = !open.value;
@@ -74,7 +74,6 @@ const login = () => {
 const logout = async () => {
     userStore.logout();
 };
-
 </script>
 
 <style scoped>

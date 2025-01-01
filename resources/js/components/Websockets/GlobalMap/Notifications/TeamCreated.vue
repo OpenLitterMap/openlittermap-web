@@ -1,32 +1,37 @@
 <template>
-    <GlobalMapNotification
-        @click="$emit('click', $event)"
-        color="colourful"
-    >
-        <template v-slot:image>
-            <div class="-mt-2">
-                <i class="fa fa-users fa-fw"/>
+    <GlobalMapNotification color="colourful">
+        <!-- Image slot -->
+        <template #image>
+            <!-- Negative top margin replaced with Tailwind bracket notation -->
+            <div class="-mt-[2px]">
+                <i class="fa fa-users fa-fw"></i>
             </div>
         </template>
-        <template v-slot:content>
-            <p>{{ $t('home.globalMap.team-created') }}</p>
-            <i>{{ $t('home.globalMap.say-hello-to') }} <strong>{{ payload.teamName }}</strong>!</i>
+
+        <!-- Content slot -->
+        <template #content>
+            <p>{{ t('home.globalMap.team-created') }}</p>
+            <i>
+                {{ t('home.globalMap.say-hello-to') }}
+                <strong>{{ payload.teamName }}</strong>!
+            </i>
         </template>
     </GlobalMapNotification>
 </template>
 
-<script>
+<script setup>
+import { defineProps } from 'vue';
+import { useI18n } from "vue-i18n";
 import GlobalMapNotification from './GlobalMapNotification.vue';
-
-export default {
-    name: 'TeamCreated',
-    components: {GlobalMapNotification},
-    props: ['payload'],
-};
+const { t } = useI18n();
+const props = defineProps({
+    payload: {
+        type: Object,
+        default: null,
+    },
+});
 </script>
 
-<style lang="scss" scoped>
-.-mt-2 {
-    margin-top: -2px;
-}
+<style scoped>
+
 </style>

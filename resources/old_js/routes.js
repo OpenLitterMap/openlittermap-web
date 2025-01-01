@@ -53,7 +53,7 @@ const router = new VueRouter({
         },
         {
             path: '/history',
-            component: () => import('./views/general/History.vue')
+            component: () => import('../js/views/General/History.vue')
         },
         // {
         //     path: '/littercoin',

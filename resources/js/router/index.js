@@ -1,27 +1,26 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
-import Welcome from '../views/Welcome/Welcome.vue';
 import About from '../views/About.vue';
 import GlobalMap from "../views/Maps/GlobalMap.vue";
-import Upload from '../views/Upload/Upload.vue';
+import History from "../views/General/History.vue";
 import References from '../views/Academic/References.vue';
+import Upload from '../views/Upload/Upload.vue';
+import Welcome from '../views/Welcome/Welcome.vue';
 
 // Import Middleware
 import middlewarePipeline from './middleware/middlewarePipeline';
-
 import auth from './middleware/auth'
 
-
 const routes = [
-    {
-        path: '/',
-        name: 'Welcome',
-        component: Welcome,
-    },
     {
         path: '/about',
         name: 'About',
         component: About,
+    },
+    {
+        path: '/history',
+        name: 'History',
+        component: History,
     },
     {
         path: '/global',
@@ -32,6 +31,11 @@ const routes = [
         path: '/references',
         name: 'References',
         component: References
+    },
+    {
+        path: '/',
+        name: 'Welcome',
+        component: Welcome,
     },
     // Auth Reoutes
     {

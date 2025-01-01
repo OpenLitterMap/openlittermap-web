@@ -1,8 +1,5 @@
 <template>
-    <GlobalMapNotification
-        @click="$emit('click', $event)"
-        color="littercoin"
-    >
+    <GlobalMapNotification color="littercoin">
         <template v-slot:image>
             <div class="flex items-center h-full">
                 <img src="../../../../../old_js/assets/icons/mining.png" class="ltr-icon" alt="Mining"/>

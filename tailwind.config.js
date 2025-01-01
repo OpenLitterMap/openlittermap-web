@@ -16,6 +16,7 @@ export default {
         extend: {
             colors: {
                 'gray-text': '#4a4a4a',
+                'dark-text': '#363636',
                 'olm-green': '#03aa6f',
             },
         },

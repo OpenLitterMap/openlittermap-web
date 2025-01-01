@@ -1,47 +1,34 @@
 <template>
-    <GlobalMapNotification
-        @click="$emit('click', $event)"
-        color="yellow"
-    >
-        <template v-slot:image>
-            <div class="-mt-2">
-                <i class="fa fa-user fa-fw" />
+    <GlobalMapNotification color="yellow">
+        <!-- Image Slot -->
+        <template #image>
+            <div class="-mt-[2px]">
+                <i class="fa fa-user fa-fw"></i>
             </div>
         </template>
-        <template v-slot:content>
-            <strong>{{ $t('home.globalMap.new-user') }}</strong>
-            <p>{{ $t('home.globalMap.user-signed-up') }}</p>
+
+        <!-- Content Slot -->
+        <template #content>
+            <strong>{{ t('home.globalMap.new-user') }}</strong>
+            <p>{{ t('home.globalMap.user-signed-up') }}</p>
         </template>
     </GlobalMapNotification>
 </template>
 
-<script>
-import GlobalMapNotification from './GlobalMapNotification.vue';
+<script setup>
+import { useI18n } from 'vue-i18n'
+import GlobalMapNotification from './GlobalMapNotification.vue'
 
-export default {
-    name: 'UserSignedUp',
-    props: ['payload'],
-    components: {
-        GlobalMapNotification
-    }
-};
+const props = defineProps({
+    payload: {
+        type: [String, Number, Object, Boolean, Array],
+        default: null,
+    },
+})
+
+const { t } = useI18n()
+
 </script>
 
-<style lang="scss" scoped>
-
-    .flex {
-        display: flex;
-    }
-
-    .items-center {
-        align-items: center;
-    }
-
-    .h-full {
-        height: 100%;
-    }
-    .-mt-2 {
-        margin-top: -2px;
-    }
-
+<style scoped>
 </style>

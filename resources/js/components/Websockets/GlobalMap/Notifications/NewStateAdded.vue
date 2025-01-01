@@ -1,32 +1,29 @@
 <template>
-    <GlobalMapNotification
-        @click="$emit('click', $event)"
-        color="blue"
-    >
-        <template v-slot:image>
-            <div class="-mt-2">
+    <GlobalMapNotification color="blue">
+        <template #image>
+            <div class="-mt-[2px]">
                 <i class="fa fa-flag fa-fw"/>
             </div>
         </template>
-        <template v-slot:content>
-            <strong>{{ $t('home.globalMap.new-state') }}</strong>
-            <p>{{ $t('home.globalMap.say-hello-to') }} <i>{{ payload.state }}</i></p>
+        <template #content>
+            <strong>{{ t('home.globalMap.new-state') }}</strong>
+            <p>{{ t('home.globalMap.say-hello-to') }} <i>{{ payload.state }}</i></p>
         </template>
     </GlobalMapNotification>
 </template>
 
-<script>
+<script setup>
+import { defineProps } from 'vue';
+import { useI18n } from 'vue-i18n';
 import GlobalMapNotification from './GlobalMapNotification.vue';
-
-export default {
-    name: 'NewStateAdded',
-    components: {GlobalMapNotification},
-    props: ['payload'],
-};
+const { t } = useI18n();
+const props = defineProps({
+    payload: {
+        type: Object,
+        default: null
+    }
+});
 </script>
 
-<style lang="scss" scoped>
-.-mt-2 {
-    margin-top: -2px;
-}
+<style scoped>
 </style>

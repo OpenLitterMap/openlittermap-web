@@ -26,7 +26,7 @@ const routeName = computed(() => route.name);
 const showFullHeight = ref(true);
 
 watch([isUploading, () => route.name], ([isUploadingValue, routeName]) => {
-    if (isUploadingValue || routeName === 'GlobalMap') {
+    if (routeName === 'GlobalMap' || routeName === 'Upload') {
         showFullHeight.value = true;
     } else {
         // References.vue
