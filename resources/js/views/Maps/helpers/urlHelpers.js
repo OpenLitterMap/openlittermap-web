@@ -61,17 +61,20 @@ export const updateLocationInURL = (mapInstance) => {
  * and goes to the location
  */
 export const updateUrlPhotoIdAndFlyToLocation = ({ latitude, longitude, photoId, mapInstance }) => {
-    const zoom = Math.round(mapInstance.getZoom());
+
     const url = new URL(window.location.href);
     url.searchParams.set('photo', photoId);
     window.history.pushState(null, '', url);
 
-    const flyDistanceInMeters = mapInstance.distance(mapInstance.getCenter(), [latitude, longitude]);
+    const targetZoom = 17;
 
-    // If we're viewing points and moving within 2km
-    if (zoom >= CLUSTER_ZOOM_THRESHOLD && flyDistanceInMeters <= 2000) {
-        mapInstance.flyTo([latitude, longitude], zoom, { duration: 1 });
+    // Check if we're viewing points and moving within 2km
+    const currentMapZoom = Math.round(mapInstance.getZoom());
+
+    const flyDistanceInMeters = mapInstance.distance(mapInstance.getCenter(), [latitude, longitude]);
+    if (currentMapZoom >= CLUSTER_ZOOM_THRESHOLD && flyDistanceInMeters <= 2000) {
+        mapInstance.flyTo([latitude, longitude], targetZoom, { duration: 1 });
     } else {
-        mapInstance.flyTo([latitude, longitude], zoom);
+        mapInstance.flyTo([latitude, longitude], targetZoom);
     }
 }

@@ -1,61 +1,43 @@
 <template>
     <GlobalMapNotification color="littercoin">
-        <template v-slot:image>
+        <template #image>
             <div class="flex items-center h-full">
-                <img src="../../../../../old_js/assets/icons/mining.png" class="ltr-icon" alt="Mining"/>
+                <img src="../../../../../old_js/assets/icons/mining.png" class="w-8" alt="Mining"/>
             </div>
         </template>
-        <template v-slot:content>
+        <template #content>
             <div class="flex items-center h-full">
                 <div>
-                    <p>{{ $t('home.globalMap.littercoin-mined') }}</p>
-                    <i>{{ $t('common.reason') }}: <span class="ltr-strong">{{ getLittercoinReason(payload.reason) }}</span></i>
+                    <p>{{ t('home.globalMap.littercoin-mined') }}</p>
+                    <i>{{ t('common.reason') }}: <span class="font-semibold">{{ getLittercoinReason(payload.reason) }}</span></i>
                 </div>
             </div>
         </template>
     </GlobalMapNotification>
 </template>
 
-<script>
+<script setup>
+import { defineProps } from 'vue';
+import { useI18n } from 'vue-i18n';
 import GlobalMapNotification from './GlobalMapNotification.vue';
 
-export default {
-    name: 'LittercoinMined',
-    components: {GlobalMapNotification},
-    props: ['payload'],
-    methods: {
-        /**
-         * Using the LittercoinMined event key,
-         */
-        getLittercoinReason (reason) {
-            if (reason === 'verified-box') {
-                return this.$i18n.t('home.globalMap.littercoin-100-boxes-verified');
-            } else if (reason === '100-images-verified') {
-                return this.$i18n.t('home.globalMap.littercoin-100-verified');
-            }
-        }
+const { t } = useI18n();
+
+const props = defineProps({
+    payload: {
+        type: Object,
+        default: null,
+    },
+});
+
+const getLittercoinReason = (reason) => {
+    if (reason === 'verified-box') {
+        return t('home.globalMap.littercoin-100-boxes-verified');
+    } else if (reason === '100-images-verified') {
+        return t('home.globalMap.littercoin-100-verified');
     }
-};
+}
 </script>
 
-<style lang="scss" scoped>
-.flex {
-    display: flex;
-}
-
-.items-center {
-    align-items: center;
-}
-
-.h-full {
-    height: 100%;
-}
-
-.ltr-icon {
-    max-width: 32px;
-}
-
-.ltr-strong {
-    font-weight: 600;
-}
+<style scoped>
 </style>

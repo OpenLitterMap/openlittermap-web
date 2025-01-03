@@ -18,16 +18,7 @@
 <script setup>
 import { useI18n } from 'vue-i18n'
 import GlobalMapNotification from './GlobalMapNotification.vue'
-
-const props = defineProps({
-    payload: {
-        type: [String, Number, Object, Boolean, Array],
-        default: null,
-    },
-})
-
 const { t } = useI18n()
-
 </script>
 
 <style scoped>

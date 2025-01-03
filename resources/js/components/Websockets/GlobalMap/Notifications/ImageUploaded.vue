@@ -1,23 +1,20 @@
 <template>
-    <div
-        class="event"
-        @click="$emit('click', $event)"
-    >
-        <div class="top-heading">
+    <div class="relative rounded-lg mb-2 p-2 bg-green-500 cursor-pointer">
+        <div class="flex items-center gap-2">
             <img
                 v-if="payload.countryCode"
                 :src="countryFlag(payload.countryCode)"
                 :alt="payload.countryCode"
+                class="object-fill rounded-full h-4 w-4 lg:h-6 lg:w-6"
             />
-            <i v-else class="fa fa-image fa-2x"/>
+            <i v-else class="fa fa-image fa-2x" />
             <div>
-                <p class="event-bold">
-                    <span v-if="payload.isPickedUp">{{ $t('home.globalMap.litter-picked-up') }}</span>
-                    <span v-else>{{ $t('home.globalMap.litter-uploaded') }}</span>
+                <p class="font-bold">
+                    <span v-if="payload.isPickedUp">{{ t('home.globalMap.litter-picked-up') }}</span>
+                    <span v-else>{{ t('home.globalMap.litter-uploaded') }}</span>
                 </p>
-
-                <p class="event-location">
-                    <i class="city-name">{{ cityText }}</i>{{ country }}
+                <p class="text-xs lg:text-sm">
+                    <i class="hidden md:inline">{{ cityText }}</i>{{ country }}
                 </p>
             </div>
             <div class="event-source">
@@ -25,162 +22,67 @@
             </div>
         </div>
 
-        <p v-if="payload.user.name || payload.user.username">
-            {{ $t('locations.cityVueMap.by') }}
-            <span class="event-bold">
+        <p v-if="payload.user.name || payload.user.username" class="text-sm">
+            {{ t('locations.cityVueMap.by') }}
+            <span class="font-bold">
                 {{ payload.user.name }}
                 {{ payload.user.username ? ('@' + payload.user.username) : '' }}
             </span>
         </p>
 
-        <p class="event-team" v-if="payload.teamName">
+        <p v-if="payload.teamName" class="text-sm truncate">
             {{ $t('common.team') }}
-            <span class="event-bold">{{ payload.teamName }}</span>
+            <span class="font-bold">{{ payload.teamName }}</span>
         </p>
     </div>
 </template>
 
-<script>
+<script setup>
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 
-export default {
-    name: 'ImageUploaded',
-    props: ['payload'],
-    data () {
-        return {
-            dir: '/assets/icons/flags/',
-        };
+const props = defineProps({
+    payload: {
+        type: Object,
+        default: () => ({}),
     },
-    methods: {
-        /**
-         * Return location of country_flag.png
-         */
-        countryFlag (countryCode)
-        {
-            if (!countryCode) return '';
+});
 
-            return this.dir + countryCode.toLowerCase() + '.png';
-        },
-    },
-    computed: {
-        country() {
-            return this.payload.country?.includes('error_') ? null : this.payload.country;
-        },
-        state() {
-            return this.payload.state?.includes('error_') ? null : this.payload.state;
-        },
-        city() {
-            return this.payload.city?.includes('error_') ? null : this.payload.city;
-        },
-        cityText() {
-            let result = [this.city, this.state].filter((t) => t).join(', ');
-            if (result && this.country) result += ', '
-            return result;
-        },
+const { t } = useI18n();
 
-        /**
-         * Icon to display that shows where the image was uploaded from
-         */
-        photoSource()
-        {
-            return (this.payload.photoSource === 'web')
-                ? 'fa-desktop'
-                : 'fa-mobile large-icon';
-        }
-    }
+const country = computed(() => {
+    return props.payload.country?.includes('error_') ? null : props.payload.country;
+});
+
+const state = computed(() => {
+    return props.payload.state?.includes('error_') ? null : props.payload.state;
+});
+
+const city = computed(() => {
+    return props.payload.city?.includes('error_') ? null : props.payload.city;
+});
+
+const cityText = computed(() => {
+    let result = [city.value, state.value].filter((t) => t).join(', ');
+    if (result && country.value) result += ', ';
+    return result;
+});
+
+const countryFlag = (countryCode) => {
+    if (!countryCode) return '';
+
+    return '/assets/icons/flags/' + countryCode.toLowerCase() + '.png';
 };
+
+const photoSource = computed(() => {
+    return (props.payload.photoSource === 'web')
+        ? 'fa-desktop'
+        : 'fa-mobile large-icon';
+});
 </script>
 
-<style lang="scss" scoped>
-.event {
-    position: relative;
-    border-radius: 8px;
-    margin-bottom: 10px;
-    padding: 8px;
-    background-color: #88d267;
-    cursor: pointer;
-
-    .event-source {
-        position: absolute;
-        top: 8px;
-        right: 8px;
-
-        .large-icon {
-            font-size: 16px;
-        }
+<style scoped>
+    .large-icon {
+        font-size: 1rem;
     }
-
-    .event-bold {
-        font-weight: 700;
-    }
-
-    .event-team {
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        overflow: hidden;
-    }
-
-    .top-heading {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-
-        .event-location {
-            font-size: 8px;
-        }
-
-        img {
-            object-fit: fill;
-            border-radius: 50%;
-            height: 16px;
-            width: 16px;
-        }
-    }
-}
-
-.city-name {
-    display: none;
-}
-
-@media (min-width: 768px) {
-    .city-name {
-        display: inline;
-    }
-
-    .event {
-        .top-heading {
-            .event-location {
-                font-size: 10px;
-            }
-        }
-    }
-}
-
-@media (min-width: 1024px) {
-    .event {
-        padding: 10px;
-
-        .event-source {
-            top: 10px;
-            right: 10px;
-
-            .large-icon {
-                font-size: 24px;
-                margin-right: 4px;
-            }
-        }
-
-        .top-heading {
-            gap: 10px;
-
-            .event-location {
-                font-size: 12px;
-            }
-
-            img {
-                height: 24px;
-                width: 24px;
-            }
-        }
-    }
-}
 </style>

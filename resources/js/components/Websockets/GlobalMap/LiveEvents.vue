@@ -22,7 +22,7 @@
 </template>
 
 <script setup>
-import {defineProps, ref, onMounted, onUnmounted} from 'vue';
+import {defineProps, ref, toRefs, onMounted, onUnmounted} from 'vue';
 import { v4 as uuidv4 } from 'uuid';
 import CleanupCreated from "./Notifications/CleanupCreated.vue";
 import ImageUploaded from './Notifications/ImageUploaded.vue';
@@ -44,10 +44,13 @@ const components = {
     UserSignedUp
 };
 
-defineProps({
-    mapInstance: Object
+const props = defineProps({
+    mapInstance: {
+        type: Object,
+        required: true,
+    },
 });
-
+const { mapInstance } = toRefs(props);
 const emit = defineEmits(['fly-to-location']);
 
 const events = ref([]);          // The “shown” events (animated into the UI)
