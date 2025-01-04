@@ -80,6 +80,13 @@ onMounted(async () => {
     // Respond to map events
     mapInstance.value.on('moveend', mapUpdated);
 
+    mapInstance.value.on('popupclose', (evt) => {
+        console.log('popup closed', evt);
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.delete('photo');
+        window.history.replaceState(null, '', currentUrl.toString());
+    });
+
     loader.hide();
 
     // If there is lat + long + zoom in the url, fly to that location

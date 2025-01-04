@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Photo;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
@@ -13,10 +14,38 @@ class HomeController extends Controller
      * @auth bool, logged in or guest
      * @user null, or authenticated user
      */
-    public function __invoke (): View
+    public function __invoke ()
     {
         $user = null;
         $auth = Auth::check();
+
+        // If the user is viewing the global map and loading a photo,
+        // we need to load the original latLon coordinates from the photoId
+        if (request()->path() === 'global' && request()->has('photo')) {
+            $latLon = Photo::where('id', request('photo'))->first(['lat', 'lon']);
+
+            // Replace the latLon in the URL with the original photo coordinates
+            if ($latLon) {
+                // Compare what’s in the request vs. the “correct” lat/lon
+                $requestedLat = request('lat');
+                $requestedLon = request('lon');
+                $correctLat = $latLon->lat;
+                $correctLon = $latLon->lon;
+
+                // If the user’s current URL differs from the correct lat/lon,
+                // only then do we redirect
+                if ($requestedLat != $correctLat || $requestedLon != $correctLon) {
+                    // Build the corrected query string
+                    $query = [
+                        'lat'   => $correctLat,
+                        'lon'   => $correctLon,
+                        'zoom'  => request('zoom'),   // keep zoom if you want
+                        'photo' => request('photo'),
+                    ];
+                    return redirect()->to('/global?' . http_build_query($query));
+                }
+            }
+        }
 
         if ($auth)
         {

@@ -22,6 +22,12 @@ export const flyToLocationFromURL = (mapInstance) => {
     flyToLocation({latitude, longitude, zoom, photoId}, mapInstance);
 };
 
+/**
+ * Fly to the location with offset to set the image popup at the bottom of the screen
+ *
+ * @param location
+ * @param mapInstance
+ */
 export const flyToLocation = (location, mapInstance) => {
     const latLng = L.latLng(location.latitude, location.longitude);
     const zoom = location.photoId && Math.round(location.zoom) < CLUSTER_ZOOM_THRESHOLD
@@ -29,11 +35,13 @@ export const flyToLocation = (location, mapInstance) => {
         : location.zoom;
 
     // Calculate the offset in pixels to position the point 10% from the bottom
+    // Bug here - when re-loaded, the map position keeps moving up.
+    // When a photoId is given, we should ground-truth the position with the original lat/lon coordinates.
     const mapSize = mapInstance.getSize();
-    const point = mapInstance.project(latLng, zoom);
-    const offsetY = mapSize.y * 0.4; // 0.4 times the map height
-    const targetPoint = point.subtract([0, offsetY]);
-    const targetLatLng = mapInstance.unproject(targetPoint, zoom);
+    const originalPoint = mapInstance.project(latLng, zoom);
+    const offsetY = mapSize.y * 0.225; // 0.25 times the map height
+    const shiftedPoint = originalPoint.subtract([0, offsetY]);
+    const targetLatLng = mapInstance.unproject(shiftedPoint, zoom);
 
     mapInstance.flyTo(targetLatLng, zoom, {
         animate: true,
@@ -66,15 +74,15 @@ export const updateUrlPhotoIdAndFlyToLocation = ({ latitude, longitude, photoId,
     url.searchParams.set('photo', photoId);
     window.history.pushState(null, '', url);
 
-    const targetZoom = 17;
+    const zoom = 17;
 
     // Check if we're viewing points and moving within 2km
     const currentMapZoom = Math.round(mapInstance.getZoom());
-
     const flyDistanceInMeters = mapInstance.distance(mapInstance.getCenter(), [latitude, longitude]);
+
     if (currentMapZoom >= CLUSTER_ZOOM_THRESHOLD && flyDistanceInMeters <= 2000) {
-        mapInstance.flyTo([latitude, longitude], targetZoom, { duration: 1 });
+        flyToLocation({latitude, longitude, zoom, photoId, duration: 1}, mapInstance);
     } else {
-        mapInstance.flyTo([latitude, longitude], targetZoom);
+        flyToLocation({latitude, longitude, zoom, photoId}, mapInstance);
     }
 }

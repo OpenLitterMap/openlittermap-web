@@ -57,6 +57,7 @@ export function onEachFeature (feature, layer, map)
 
 /**
  * Helper method to create a Popup
+ * Close popup is handled on GlobalMap.vue
  *
  * @param feature
  * @param latLng
