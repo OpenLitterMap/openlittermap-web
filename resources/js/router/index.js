@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import About from '../views/About.vue';
 import GlobalMap from "../views/Maps/GlobalMap.vue";
 import History from "../views/General/History.vue";
+import Leaderboard from '../views/General/Leaderboards/Leaderboard.vue';
 import References from '../views/Academic/References.vue';
 import Upload from '../views/Upload/Upload.vue';
 import Welcome from '../views/Welcome/Welcome.vue';
@@ -26,6 +27,11 @@ const routes = [
         path: '/global',
         name: 'GlobalMap',
         component: GlobalMap,
+    },
+    {
+        path: '/leaderboard',
+        name: 'Leaderboard',
+        component: Leaderboard,
     },
     {
         path: '/references',

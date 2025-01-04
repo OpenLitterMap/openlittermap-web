@@ -1,16 +1,18 @@
 <?php
 
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\ContactUsController;
+use App\Http\Controllers\SubscribersController;
+use App\Http\Controllers\GlobalMap\ClusterController;
+use App\Http\Controllers\Uploads\UploadPhotoController;
+use App\Http\Controllers\GlobalMap\GlobalMapController;
+use App\Http\Controllers\Reports\GenerateImpactReportController;
+use App\Http\Controllers\Leaderboard\GetUsersForGlobalLeaderboardController;
+use App\Http\Controllers\Leaderboard\GetUsersForLocationLeaderboardController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\HomeController;
-use App\Http\Controllers\SubscribersController;
-use App\Http\Controllers\Uploads\UploadPhotoController;
 
-Route::get('impact/{period?}/{year?}/{monthOrWeek?}', 'Reports\GenerateImpactReportController');
-
-Route::get('/check-auth', function () {
-    return response()->json(['user' => Auth::user()]);
-});
+Route::get('impact/{period?}/{year?}/{monthOrWeek?}', GenerateImpactReportController::class);
 
 Route::get('/', HomeController::class);
 Route::get('/about', HomeController::class);
@@ -96,19 +98,19 @@ Route::post('donate', 'DonateController@submit');
 
 // Contact page
 Route::get('/contact-us', HomeController::class);
-Route::post('/contact-us', 'ContactUsController')->name('contact');
+Route::post('/contact-us', ContactUsController::class)->name('contact');
 
 // Get data for the Global Map
 Route::get('global', HomeController::class);
-Route::get('/global/clusters', 'GlobalMap\ClusterController@index');
-Route::get('/global/points', 'GlobalMap\GlobalMapController@index');
-Route::get('/global/art-data', 'GlobalMap\GlobalMapController@artData');
+Route::get('/global/clusters', [ClusterController::class, 'index']);
+Route::get('/global/points', [GlobalMapController::class, 'index']);
+Route::get('/global/art-data', [GlobalMapController::class, 'artData']);
 
 Route::get('/global/search/custom-tags', 'GlobalMap\Search\FindCustomTagsController');
 
 // Get data for the Global Leaderboard
-Route::get('/global/leaderboard', 'Leaderboard\GetUsersForGlobalLeaderboardController');
-Route::get('/global/leaderboard/location', 'Leaderboard\GetUsersForLocationLeaderboardController');
+Route::get('/global/leaderboard', GetUsersForGlobalLeaderboardController::class);
+Route::get('/global/leaderboard/location', GetUsersForLocationLeaderboardController::class);
 
 /** Auth Routes */
 

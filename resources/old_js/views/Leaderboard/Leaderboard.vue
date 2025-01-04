@@ -1,7 +1,6 @@
 <template>
     <section class="is-link hero is-bold is-fullheight">
         <section class="wrapper is-link is-bold">
-
             <div
                 class="leaderboard-heading"
                 @click="openWorldCup"
@@ -53,7 +52,7 @@
 
 <script>
 import Loading from "vue-loading-overlay";
-import LeaderboardList from "../../components/global/LeaderboardList.vue";
+import LeaderboardList from "../../../js/views/General/Leaderboards/components/LeaderboardList.vue";
 
 export default {
     name: "Leaderboard",

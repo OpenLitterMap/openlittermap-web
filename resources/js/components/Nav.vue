@@ -20,7 +20,7 @@
                 <router-link to="/about" class="nav-item">About</router-link>
 <!--                <router-link to="/cleanups" class="nav-item">Cleanups</router-link>-->
 <!--                <router-link to="/history" class="nav-item">History</router-link>-->
-<!--                <router-link to="/leaderboard" class="nav-item">Leaderboard</router-link>-->
+                <router-link to="/leaderboard" class="nav-item">Leaderboard</router-link>
                 <router-link to="/global" class="nav-item">Global Map</router-link>
                 <router-link to="/references" class="nav-item">References</router-link>
 <!--                <router-link to="/community" class="nav-item">Community</router-link>-->

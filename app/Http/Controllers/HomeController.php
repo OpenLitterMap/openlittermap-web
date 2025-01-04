@@ -26,14 +26,11 @@ class HomeController extends Controller
 
             // Replace the latLon in the URL with the original photo coordinates
             if ($latLon) {
-                // Compare what’s in the request vs. the “correct” lat/lon
                 $requestedLat = request('lat');
                 $requestedLon = request('lon');
                 $correctLat = $latLon->lat;
                 $correctLon = $latLon->lon;
 
-                // If the user’s current URL differs from the correct lat/lon,
-                // only then do we redirect
                 if ($requestedLat != $correctLat || $requestedLon != $correctLon) {
                     // Build the corrected query string
                     $query = [
@@ -42,6 +39,7 @@ class HomeController extends Controller
                         'zoom'  => request('zoom'),   // keep zoom if you want
                         'photo' => request('photo'),
                     ];
+
                     return redirect()->to('/global?' . http_build_query($query));
                 }
             }
