@@ -2,6 +2,7 @@
     <div
         class="flex relative justify-center px-20 pt-20 bg-gradient-to-r from-amber-200 to-yellow-500"
         :style="isUploading ? 'min-height: 100vh' : 'height: 100vh'"
+        style="height: calc(100% - 90px);"
     >
         <div class="h-100">
             <h1 class="text-5xl font-semibold mb-6 text-center">Click or Drop to upload your photos</h1>

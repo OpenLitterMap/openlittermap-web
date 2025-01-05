@@ -13,18 +13,23 @@ class DatabaseSeeder extends Seeder
      */
     public function run (): void
     {
+        // Before creating users & photos
         $this->call(PlanSeeder::class);
         $this->call(TeamTypeSeeder::class);
         $this->call(DonationAmountsSeeder::class);
         $this->call(LevelSeeder::class);
         $this->call(RoleSeeder::class);
-        $this->call(UserSeeder::class);
         $this->call(PermissionSeeder::class);
         $this->call(RoleHasPermissionsSeeder::class);
+
+        // Create Locations
+        $this->call(LocationsSeeder::class);
+
+        // Create Users & Photos & reward XP
+        $this->call(UserSeeder::class);
         $this->call(PhotosSeeder::class);
-        // $this->call(CountriesSeeder::class);
-        // missing states seeder
-        // $this->call(CitiesSeeder::class);
+
+        // Populate photos with Tags v2
         $this->call(CategoryLitterObjectSeeder::class);
     }
 }

@@ -29,7 +29,7 @@ class UpdateLeaderboardsForLocationAction
     public function run (
         Photo $photo,
         int $userId,
-        int $incrXp
+        int $incrXp = 1
     ) :void
     {
         $year = now()->year;

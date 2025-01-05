@@ -1,13 +1,14 @@
 <template>
-    <section class="bg-blue-500 hero font-bold h-screen">
-        <div class="wrapper bg-blue-500 font-bold px-4 py-2 sm:px-6 md:px-8">
-            <!-- Heading -->
+    <section class="bg-blue-bg">
+        <div class="font-bold px-4 py-2 sm:px-6 md:px-8">
+
+            <!-- Go Back to the World Cup -->
             <div
-                class="flex items-center justify-center gap-4 mt-8 mb-8 cursor-pointer"
+                class="flex items-center justify-center gap-4 mt-8 mb-2 cursor-pointer"
                 @click="openWorldCup"
             >
                 <i class="fa fa-arrow-left text-white text-xl transition-transform transform hover:-translate-x-4"></i>
-                <h3 class="text-4xl text-center text-white underline hover:no-underline">
+                <h3 class="text-4xl text-center text-white">
                     {{ t('location.global-leaderboard') }}
                 </h3>
             </div>

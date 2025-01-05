@@ -18,6 +18,7 @@ import { useI18n } from 'vue-i18n';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import glify from "leaflet.glify";
+import { useRouter, useRoute } from "vue-router";
 
 import { CLUSTER_ZOOM_THRESHOLD, MAX_ZOOM, MIN_ZOOM } from "./helpers/constants.js";
 import { flyToLocationFromURL, updateLocationInURL, updateUrlPhotoIdAndFlyToLocation } from "./helpers/urlHelpers.js";
@@ -31,6 +32,8 @@ import LiveEvents from "../../components/Websockets/GlobalMap/LiveEvents.vue";
 
 const $loading = useLoading();
 const { t } = useI18n();
+const router = useRouter();
+const route = useRoute();
 
 const mapInstance = ref(null);
 const clusters = ref(null);
@@ -112,6 +115,9 @@ onBeforeUnmount(() => {
         mapInstance.value.remove();
         mapInstance.value = null;
     }
+
+    // Remove all params from the URL
+    router.replace({ path: route.path });
 });
 
 /**

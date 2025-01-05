@@ -165,11 +165,7 @@ class UploadPhotoController extends Controller
         $user->refresh();
 
         // Update the Leaderboards and give xp.
-        $this->updateLeaderboardsAction->run(
-            $photo,
-            $user->id,
-            1
-        );
+        $this->updateLeaderboardsAction->run($photo, $user->id);
 
         // Step 5: Dispatch Events & Notifications
         // Broadcast this event to anyone viewing the global map

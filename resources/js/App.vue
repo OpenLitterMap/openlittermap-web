@@ -4,9 +4,8 @@
 
         <Modal />
 
-        <router-view
-            style="height: calc(100% - 90px);"
-        />
+        <!-- style="height: calc(100% - 90px);"-->
+        <router-view />
     </div>
 </template>
 

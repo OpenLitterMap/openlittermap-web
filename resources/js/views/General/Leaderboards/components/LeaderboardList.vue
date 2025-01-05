@@ -9,7 +9,7 @@
         <!-- Empty Leaderboard Message. Needs translation -->
         <p
             v-if="leaders.length === 0"
-            class="text-white font-semibold text-2xl text-center mt-4"
+            class="text-white font-semibold text-3xl text-center mt-4"
         >Nobody has uploaded yet!</p>
 
         <!-- Leaderboard List -->
@@ -28,9 +28,9 @@
             </div>
 
             <!-- Rank -->
-            <div class="flex items-center text-center w-[96[x]">
-                <span>{{ getPosition(leader.rank || index + 1) }}</span>
-                <div class="flag mt-2">
+            <div class="flex items-center text-center w-[96px]">
+                <span class="w-[48px] font-normal">{{ getPosition(leader.rank || index + 1) }}</span>
+                <div class="w-[48px] flag mt-2">
                     <img
                         v-if="leader.global_flag"
                         :src="getCountryFlag(leader.global_flag)"
@@ -62,9 +62,9 @@
             </div>
 
             <!-- XP -->
-            <div class="flex justify-evenly">
-                <div class="value font-medium">{{ leader.xp }}</div>
-                <div class="text text-sm text-gray-500">XP</div>
+            <div class="flex justify-evenly items-center w-[100px]">
+                <div class="font-medium">{{ leader.xp }}</div>
+                <div class="font-normal">XP</div>
             </div>
         </div>
     </div>

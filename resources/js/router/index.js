@@ -43,7 +43,7 @@ const routes = [
         name: 'Welcome',
         component: Welcome,
     },
-    // Auth Reoutes
+    // Auth Routes
     {
         path: '/upload',
         name: 'Upload',

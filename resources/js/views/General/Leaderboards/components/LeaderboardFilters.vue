@@ -5,7 +5,7 @@
             <p
                 v-for="option in options"
                 :key="option"
-                class="border border-gray-300 px-4 py-2 rounded cursor-pointer text-black "
+                class="border border-gray-300 px-4 py-2 rounded cursor-pointer text-black font-normal"
                 :class="option === selected ? 'bg-green-500 ' : 'bg-white'"
                 @click="changeOption(option)"
             >{{ getNameForOption(option) }}</p>

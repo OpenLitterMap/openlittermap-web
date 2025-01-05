@@ -14,6 +14,9 @@ export default {
     ],
     theme: {
         extend: {
+            backgroundImage: {
+                'blue-bg': 'linear-gradient(141deg, #1577c6 0%, #3273dc 71%, #4366e5 100%)',
+            },
             colors: {
                 'gray-text': '#4a4a4a',
                 'dark-text': '#363636',
