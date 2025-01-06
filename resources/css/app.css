@@ -6,6 +6,10 @@
 
     #app { @apply h-full }
 
+    .olm-full {
+        min-height: calc(100% - 90px);
+    }
+
     .main-title {
         @apply
             text-4xl

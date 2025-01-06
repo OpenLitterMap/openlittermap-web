@@ -40,25 +40,30 @@
                 </div>
             </div>
 
-            <!-- Details -->
+            <!-- User & Team -->
             <div class="details flex-1 ml-4">
                 <div class="name font-medium">
                     {{ leader.name || leader.username || t('common.anonymous') }}
                 </div>
-                <div v-if="leader.team" class="team text-sm text-gray-500">
+                <div v-if="leader.team" class="text-sm text-gray-500">
                     {{ t('common.team') }} {{ leader.team }}
                 </div>
-                <div v-if="leader.social" class="social-container flex flex-wrap gap-2 mt-2">
-                    <a
-                        v-for="(link, type) in leader.social"
-                        :key="type"
-                        :href="link"
-                        target="_blank"
-                        class="text-blue-500 hover:scale-110 transition-transform"
-                    >
-                        <i :class="type === 'personal' ? 'fa fa-link' : `fa fa-${type}`"></i>
-                    </a>
-                </div>
+            </div>
+
+            <!-- Social Icons -->
+            <div
+                v-if="leader.social"
+                class="flex flex-wrap gap-4 mx-6"
+            >
+                <a
+                    v-for="(link, type) in leader.social"
+                    :key="type"
+                    :href="link"
+                    target="_blank"
+                    class="text-blue-500 hover:scale-110 transition-transform"
+                >
+                    <i :class="type === 'personal' ? 'fa fa-link' : `fa fa-${type}`"></i>
+                </a>
             </div>
 
             <!-- XP -->

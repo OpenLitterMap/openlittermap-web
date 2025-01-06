@@ -1,6 +1,6 @@
 <template>
-    <section class="bg-blue-bg">
-        <div class="font-bold px-4 py-2 sm:px-6 md:px-8">
+    <section class="bg-blue-bg olm-full">
+        <div class="font-bold px-4 py-2 sm:px-6 md:px-8 h-full">
 
             <!-- Go Back to the World Cup -->
             <div
