@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
-import About from '../views/About.vue';
+import About from '../views/General/About.vue';
+import AddTags from '../views/General/Tagging/AddTags.vue';
 import GlobalMap from "../views/Maps/GlobalMap.vue";
 import History from "../views/General/History.vue";
 import Leaderboard from '../views/General/Leaderboards/Leaderboard.vue';
@@ -44,6 +45,14 @@ const routes = [
         component: Welcome,
     },
     // Auth Routes
+    {
+        path: '/add-tags',
+        name: 'AddTags',
+        component: AddTags,
+        meta: {
+            middleware: [auth]
+        },
+    },
     {
         path: '/upload',
         name: 'Upload',

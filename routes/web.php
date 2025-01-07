@@ -126,7 +126,7 @@ Route::group(['middleware' => 'auth'], function () {
 });
 
 // Tag litter to an image
-Route::get('tag', HomeController::class);
+Route::get('add-tags', HomeController::class);
 
 // Bulk tag images
 Route::get('bulk-tag', HomeController::class);

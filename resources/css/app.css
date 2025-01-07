@@ -7,7 +7,7 @@
     #app { @apply h-full }
 
     .olm-full {
-        min-height: calc(100% - 90px);
+        min-height: calc(100% - 104px);
     }
 
     .main-title {

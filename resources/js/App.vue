@@ -1,5 +1,5 @@
 <template>
-    <div :style="{ height: showFullHeight ? '100%' : 'auto' }">
+    <div class="h-full">
         <Nav />
 
         <Modal />
@@ -24,13 +24,13 @@ const routeName = computed(() => route.name);
 
 const showFullHeight = ref(true);
 
-watch([isUploading, () => route.name], ([isUploadingValue, routeName]) => {
-    if (routeName === 'GlobalMap' || routeName === 'Upload' || routeName === 'Leaderboard') {
-        showFullHeight.value = true;
-    } else {
-        // References.vue
-        showFullHeight.value = false;
-    }
-});
+// watch([isUploading, () => route.name], ([isUploadingValue, routeName]) => {
+//     if (routeName === 'GlobalMap' || routeName === 'Upload' || routeName === 'Leaderboard') {
+//         showFullHeight.value = true;
+//     } else {
+//         // References.vue
+//         showFullHeight.value = false;
+//     }
+// });
 
 </script>
