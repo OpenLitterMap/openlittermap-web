@@ -15,7 +15,7 @@ class GetTagsController extends Controller
     /**
      * Get the Tags in their nested structure
      */
-    public function getAllTags (): JsonResponse
+    public function index (): JsonResponse
     {
         $tags = Category::with([
             'litterObjects' => function ($q) {

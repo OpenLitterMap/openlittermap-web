@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Photo;
-use App\Models\User\User;
 
 use App\Events\ImageDeleted;
 use App\Events\TagsVerifiedByAdmin;
@@ -132,37 +131,6 @@ class PhotosController extends Controller
         return response()->json([
             'success' => true,
             'msg' => 'success'
-        ]);
-    }
-
-    /**
-     * Get unverified photos for tagging
-     */
-    public function unverified (GetPreviousCustomTagsAction $previousTagsAction): JsonResponse
-    {
-        $user = Auth::user();
-
-        $query = Photo::where([
-            'user_id' => $user->id,
-            'verified' => 0,
-            'verification' => 0
-        ]);
-
-        // we need to get this before the pagination
-        $remaining = $query->count();
-
-        $photos = $query
-            ->with('team')
-            ->select('id', 'filename', 'lat', 'lon', 'model', 'remaining', 'display_name', 'datetime', 'team_id')
-            ->simplePaginate(1);
-
-        $total = Photo::where('user_id', $user->id)->count();
-
-        return response()->json([
-            'photos' => $photos,
-            'remaining' => $remaining,
-            'total' => $total,
-            'custom_tags' => $previousTagsAction->run($user)
         ]);
     }
 }

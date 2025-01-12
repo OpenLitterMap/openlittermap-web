@@ -19,6 +19,6 @@ class Category extends Model
 
     public function litterObjects (): BelongsToMany
     {
-        return $this->belongsToMany(LitterObject::class, 'category_litter_object')->withTimestamps();
+        return $this->belongsToMany(LitterObject::class, 'category_litter_object');
     }
 }

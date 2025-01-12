@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { useModalStore } from "../modal";
+import { requests } from "./requests.js";
 
 export const useUserStore = defineStore("user", {
     state: () => ({
@@ -37,50 +37,6 @@ export const useUserStore = defineStore("user", {
             window.location.href = "/";
         },
 
-        /**
-         * Try to log the user in
-         * Todo - return the user object
-         */
-        async LOGIN (payload)
-        {
-            await axios.post('/login', {
-                email: payload.email,
-                password: payload.password
-            })
-            .then(response => {
-                const modalStore = useModalStore();
-                modalStore.hideModal();
-                this.auth = true;
-
-                // we need to force page refresh to put CSRF token in the session
-                window.location.href = '/upload';
-            })
-            .catch(error => {
-                console.log('error.login', error.response.data);
-
-                this.errorLogin = error.response.data.email;
-            });
-        },
-
-        /**
-         * Try to log the user out
-         */
-        async LOGOUT ()
-        {
-            await axios.get('/logout')
-                .then(response => {
-                    console.log('logout', response);
-
-                    this.logout();
-
-                    // this will reset state for all objects
-                    this.$reset();
-
-                    window.location.href = '/';
-                })
-                .catch(error => {
-                    console.log('error.logout', error);
-                });
-        },
+        ...requests
     },
 });

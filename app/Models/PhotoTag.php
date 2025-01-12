@@ -37,6 +37,6 @@ class PhotoTag extends Model
 
     public function materials (): BelongsToMany
     {
-        return $this->belongsToMany(Material::class, 'material_photo_tag')->withTimestamps();
+        return $this->belongsToMany(Material::class, 'material_photo_tag');
     }
 }

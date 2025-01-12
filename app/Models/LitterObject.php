@@ -20,7 +20,7 @@ class LitterObject extends Model
 
     public function categories(): BelongsToMany
     {
-        return $this->belongsToMany(Category::class, 'category_litter_object')->withTimestamps();
+        return $this->belongsToMany(Category::class, 'category_litter_object');
     }
 
     public function materials(): BelongsToMany
@@ -30,7 +30,7 @@ class LitterObject extends Model
             'litter_object_material',
             'litter_object_id',
             'material_id'
-        )->withTimestamps();
+        );
     }
 
     public function photoTags(): HasMany
@@ -40,6 +40,6 @@ class LitterObject extends Model
 
     public function tagTypes(): BelongsToMany
     {
-        return $this->belongsToMany(TagType::class, 'litter_object_tag_type')->withTimestamps();
+        return $this->belongsToMany(TagType::class, 'litter_object_tag_type');
     }
 }

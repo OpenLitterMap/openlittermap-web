@@ -19,7 +19,7 @@ class TagType extends Model
 
     public function litterObjects (): BelongsToMany
     {
-        return $this->belongsToMany(LitterObject::class, 'litter_object_tag_type')->withTimestamps();
+        return $this->belongsToMany(LitterObject::class, 'litter_object_tag_type');
     }
 
     public function materials(): BelongsToMany
@@ -29,6 +29,6 @@ class TagType extends Model
             'tag_type_material',
             'tag_type_id',
             'material_id'
-        )->withTimestamps();
+        );
     }
 }

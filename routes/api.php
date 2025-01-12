@@ -1,15 +1,18 @@
 <?php
 
+use App\Http\Controllers\Photos\GetUsersUntaggedPhotosController;
 use App\Models\Littercoin;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
+use App\Http\Controllers\API\GetUntaggedUploadController;
+
 use App\Http\Controllers\API\Tags\GetTagsController;
 use App\Http\Controllers\API\Tags\UploadTagsController;
 
-Route::get('/tags', [GetTagsController::class, 'getAllTags']);
+Route::get('/tags', [GetTagsController::class, 'index']);
 Route::get('/tags/search', [GetTagsController::class, 'searchTags']);
 
 Route::get('/tags/category/{category}', [GetTagsController::class, 'getTagsForCategory']);
@@ -31,7 +34,7 @@ Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function(){
     Route::get('/photos/web/index', 'API\GetUntaggedUploadController');
 
     // new version
-    Route::get('/photos/get-untagged-uploads', 'API\GetUntaggedUploadController');
+    Route::get('/photos/get-untagged-uploads', GetUntaggedUploadController::class);
 
     Route::get('/photos/web/load-more', 'API\WebPhotosController@loadMore');
 
@@ -39,6 +42,14 @@ Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function(){
 
     // Route::get('/uploads/history', 'API\GetMyPaginatedUploadsController');
 });
+
+
+Route::group(['prefix' => 'v3', 'middleware' => ['web', 'auth:api,web']], function () {
+
+     Route::get('/user/photos/untagged', [GetUsersUntaggedPhotosController::class, 'index']);
+
+});
+
 
 Route::get('/global/stats-data', 'API\GlobalStatsController@index');
 Route::get('/mobile-app-version', 'API\MobileAppVersionController');

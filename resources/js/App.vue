@@ -10,6 +10,10 @@
 </template>
 
 <script setup>
+import { useUserStore } from "./stores/user/index.js";
+const userStore = useUserStore();
+userStore.CHECK_AUTH();
+
 import { useUploadingStore } from "./stores/uploading/index.js";
 import { computed, watch, ref } from "vue";
 import { useRoute } from "vue-router";

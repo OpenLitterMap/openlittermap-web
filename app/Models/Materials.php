@@ -23,11 +23,11 @@ class Materials extends Model
 
     public function litterObjects(): BelongsToMany
     {
-        return $this->belongsToMany(LitterObject::class, 'litter_object_material')->withTimestamps();
+        return $this->belongsToMany(LitterObject::class, 'litter_object_material');
     }
 
     public function tagTypes(): BelongsToMany
     {
-        return $this->belongsToMany(TagType::class, 'tag_type_material')->withTimestamps();
+        return $this->belongsToMany(TagType::class, 'tag_type_material');
     }
 }

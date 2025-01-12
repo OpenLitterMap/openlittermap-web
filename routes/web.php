@@ -12,6 +12,12 @@ use App\Http\Controllers\Leaderboard\GetUsersForLocationLeaderboardController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/check-auth', function () {
+    return response()->json([
+        'success' => Auth::check()
+    ]);
+});
+
 Route::get('impact/{period?}/{year?}/{monthOrWeek?}', GenerateImpactReportController::class);
 
 Route::get('/', HomeController::class);
@@ -138,7 +144,7 @@ Route::get('profile', HomeController::class);
 Route::get('my-uploads', HomeController::class);
 
 // Get unverified paginated photos for tagging
-Route::get('photos', 'PhotosController@unverified');
+// Route::get('photos', 'PhotosController@unverified');
 
 // Get the users photos to display links
 Route::get('photos/get-my-photos', 'User\Photos\GetMyPhotosController');
