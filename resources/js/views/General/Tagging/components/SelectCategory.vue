@@ -1,121 +1,85 @@
 <template>
-    <Listbox
-        as="div"
-        :value="modelValue"
-        @update:modelValue="onChange"
-        class="relative"
-    >
-        <!-- Button -->
-        <ListboxButton
-            class="relative w-60 cursor-default rounded bg-white py-2 pl-3 pr-8 text-left shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-indigo-500"
-        >
-            <!-- If no selection, show placeholder text -->
-            <span class="block truncate">
-                {{ modelValue || 'Select Category' }}
-            </span>
+    <div>
+        <Combobox as="div" v-model="selectedCategory" @change="onChange">
+            <div class="relative">
+                <ComboboxInput
+                    v-model="searchQuery"
+                    placeholder="Select or Search Category..."
+                    class="w-full rounded bg-white py-2 px-3 text-left shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
 
-            <!-- Down Arrow Icon -->
-            <span
-                class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-gray-500"
-            >
-                <svg
-                    class="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
+                <ComboboxButton
+                    class="absolute inset-y-0 right-0 flex items-center pr-2"
                 >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M19 9l-7 7-7-7"
-                    />
-                </svg>
-            </span>
-        </ListboxButton>
-
-        <!-- Transition for opening/closing the options -->
-        <transition
-            enter="transition duration-100 ease-out"
-            enter-from="transform scale-95 opacity-0"
-            enter-to="transform scale-100 opacity-100"
-            leave="transition duration-75 ease-in"
-            leave-from="transform scale-100 opacity-100"
-            leave-to="transform scale-95 opacity-0"
-        >
-            <ListboxOptions
-                class="absolute mt-1 max-h-60 w-60 overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
-            >
-                <!-- Input field for filtering -->
-                <div class="px-3 py-2">
-                    <input
-                        type="text"
-                        v-model="searchQuery"
-                        placeholder="Search..."
-                        class="w-full rounded border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
-                </div>
-
-                <!-- Loop over the filtered categories array -->
-                <ListboxOption
-                    v-for="category in filteredCategories"
-                    :key="category"
-                    :value="category"
-                    :class="
-                        ({ active, selected }) => [
-                            'relative cursor-default select-none py-2 pl-10 pr-4',
-                            active
-                                ? 'bg-indigo-600 text-white'
-                                : 'text-gray-900',
-                            selected ? 'font-medium' : 'font-normal',
-                        ]
-                    "
-                >
-                    <!-- Show the category string -->
-                    <span class="block truncate">
-                        {{ category }}
-                    </span>
-
-                    <!-- Checkmark if this option is the selected one -->
-                    <span
-                        v-if="modelValue === category"
-                        class="absolute inset-y-0 left-0 flex items-center pl-3 text-white"
+                    <svg
+                        class="h-4 w-4 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
                     >
-                        <svg
-                            class="h-5 w-5"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
                             stroke-width="2"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                d="M5 13l4 4L19 7"
-                            />
-                        </svg>
-                    </span>
-                </ListboxOption>
-            </ListboxOptions>
-        </transition>
-    </Listbox>
+                            d="M19 9l-7 7-7-7"
+                        />
+                    </svg>
+                </ComboboxButton>
+            </div>
+
+            <transition
+                enter="transition duration-100 ease-out"
+                enter-from="transform scale-95 opacity-0"
+                enter-to="transform scale-100 opacity-100"
+                leave="transition duration-75 ease-in"
+                leave-from="transform scale-100 opacity-100"
+                leave-to="transform scale-95 opacity-0"
+            >
+                <ComboboxOptions
+                    v-if="filteredCategories.length"
+                    class="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
+                >
+                    <ComboboxOption
+                        v-for="category in filteredCategories"
+                        :key="category"
+                        :value="category"
+                        :class="
+                            ({ active }) => [
+                                'relative cursor-default select-none py-2 pl-3 pr-9',
+                                active
+                                    ? 'bg-indigo-600 text-white'
+                                    : 'text-gray-900',
+                            ]
+                        "
+                    >
+                        {{ category }}
+                    </ComboboxOption>
+                </ComboboxOptions>
+
+                <div
+                    v-else
+                    class="absolute mt-1 w-full rounded-md bg-white py-2 px-3 text-gray-500 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                >
+                    No results found.
+                </div>
+            </transition>
+        </Combobox>
+    </div>
 </template>
 
 <script setup>
-    import { ref, computed } from 'vue';
+    import { ref, computed, watch } from 'vue';
     import { defineProps, defineEmits } from 'vue';
     import {
-        Listbox,
-        ListboxButton,
-        ListboxOptions,
-        ListboxOption,
+        Combobox,
+        ComboboxInput,
+        ComboboxButton,
+        ComboboxOptions,
+        ComboboxOption,
     } from '@headlessui/vue';
 
-    // Props
-    // - modelValue = the current selected category (a string)
-    // - categories = array of category strings
+    // Props for parent -> child data
     const props = defineProps({
         modelValue: {
             type: String,
@@ -127,28 +91,41 @@
         },
     });
 
-    // Emit events
-    // We'll emit 'update:modelValue' whenever the user picks a new category
+    // Emit: notify the parent when the user picks a new option
     const emit = defineEmits(['update:modelValue']);
 
-    // State for the search query
+    // The user’s typed query for filtering
     const searchQuery = ref('');
 
-    // Filtered categories based on the search query
+    // The currently selected category
+    // We mirror 'modelValue' to keep it in sync with the parent via v-model
+    const selectedCategory = ref(props.modelValue);
+
+    // Whenever parent updates modelValue, mirror it locally
+    // (this is optional if you want a fully controlled component)
+    watch(
+        () => props.modelValue,
+        (newVal) => {
+            selectedCategory.value = newVal;
+        }
+    );
+
+    // Filter the categories list based on searchQuery
     const filteredCategories = computed(() =>
-        props.categories.filter((category) =>
-            category.toLowerCase().includes(searchQuery.value.toLowerCase())
+        props.categories.filter((cat) =>
+            cat.toLowerCase().includes(searchQuery.value.toLowerCase())
         )
     );
 
-    // Called when user selects a new value in the Listbox
-    function onChange(newValue) {
-        console.log({ newValue });
-        // This tells the parent to update selectedCategory
-        emit('update:modelValue', newValue);
+    /**
+     * Fires whenever the user changes the selection in the ComboBox.
+     * This triggers our local state and also notifies the parent with 'update:modelValue'.
+     */
+    function onChange(newVal) {
+        emit('update:modelValue', newVal);
     }
 </script>
 
 <style scoped>
-    /* Additional styles or Tailwind classes can go here if needed. */
+    /* Optional additional styling */
 </style>
