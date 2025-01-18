@@ -20,7 +20,9 @@
     "plastic pollution"
   ],
   "dependencies": {
+    "@headlessui/tailwindcss": "^0.2.1",
     "@headlessui/vue": "^1.7.23",
+    "@heroicons/vue": "^2.2.0",
     "autoprefixer": "^10.4.20",
     "axios": "^1.7.9",
     "filepond": "^4.32.6",

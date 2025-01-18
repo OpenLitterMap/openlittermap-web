@@ -1,4 +1,4 @@
-import preset from './vendor/filament/support/tailwind.config.preset'
+import preset from './vendor/filament/support/tailwind.config.preset';
 
 export default {
     presets: [preset],
@@ -10,12 +10,12 @@ export default {
         './resources/js/**/*.{vue,js,ts}',
         './resources/css/leaflet/MarkerCluster.css',
         './resources/css/leaflet/MarkerCluster.Default.css',
-
     ],
     theme: {
         extend: {
             backgroundImage: {
-                'blue-bg': 'linear-gradient(141deg, #1577c6 0%, #3273dc 71%, #4366e5 100%)',
+                'blue-bg':
+                    'linear-gradient(141deg, #1577c6 0%, #3273dc 71%, #4366e5 100%)',
             },
             colors: {
                 'gray-text': '#4a4a4a',
@@ -25,6 +25,8 @@ export default {
         },
     },
     plugins: [
+        require('@headlessui/tailwindcss'),
+
         function ({ addBase }) {
             addBase({
                 'html, body': {
@@ -41,4 +43,4 @@ export default {
         'marker-cluster-large',
         'mi',
     ],
-}
+};

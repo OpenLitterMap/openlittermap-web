@@ -19,10 +19,10 @@
 
                     <!-- Add Tags -->
                     <div class="border-gray-50">
-                        <div>
+                        <div class="mb-4">
                             <input
                                 type="text"
-                                placeholder="Search all tags"
+                                placeholder="TODO: Search all tags"
                                 v-model="searchAllTags"
                             />
                         </div>
@@ -36,7 +36,9 @@
                         <!-- Show the selected category -->
                         <p class="mt-4">
                             Currently selected:
-                            <strong>{{ selectedCategory }}</strong>
+                            <strong class="capitalize">{{
+                                selectedCategory.category
+                            }}</strong>
                         </p>
                     </div>
                 </div>
@@ -58,7 +60,7 @@
 
     const $loading = useLoading();
     const searchAllTags = ref('');
-    const selectedCategory = ref(null);
+    const selectedCategory = ref({ id: 0, category: '' });
 
     onMounted(async () => {
         const loader = $loading.show({ container: null });
