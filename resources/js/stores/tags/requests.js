@@ -8,13 +8,18 @@ export const requests = {
             .then((response) => {
                 console.log('GET_TAGS', response);
 
+                // All Tags
                 this.tags = response.data.tags;
+
+                // Categories
                 this.categories = response.data.tags.map((tag) => {
                     return {
                         id: tag.id,
-                        category: tag.key,
+                        key: tag.key,
                     };
                 });
+
+                this.setObjectsForCategories();
             })
             .catch((error) => {
                 console.error('GET_TAGS', error);

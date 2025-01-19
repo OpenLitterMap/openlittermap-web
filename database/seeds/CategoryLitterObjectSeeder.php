@@ -553,19 +553,21 @@ class CategoryLitterObjectSeeder extends Seeder
                 if ($parentObject === null) {
                     // We're at the LitterObject level
                     $litterObject = LitterObject::firstOrCreate(['key' => $itemKey]);
-                    $category->litterObjects()->syncWithoutDetaching([$litterObject->id]);
 
                     // Recursively process the next level
                     $this->processLitterTags($category, $value, $litterObject);
                 }
                 elseif ($parentObject instanceof LitterObject)
                 {
-                    // We're at the TagType level
                     $tagType = TagType::firstOrCreate([
                         'key' => $itemKey,
-                        'category_id' => $category->id
                     ]);
-                    $parentObject->tagTypes()->syncWithoutDetaching([$tagType->id]);
+
+                    $parentObject
+                        ->tagTypes()
+                        ->syncWithoutDetaching([
+                            $tagType->id => ['category_id' => $category->id]
+                        ]);
 
                     // Recursively process the next level
                     $this->processLitterTags($category, $value, $tagType);
@@ -597,9 +599,7 @@ class CategoryLitterObjectSeeder extends Seeder
                     if ($parentObject === null)
                     {
                         // LitterObject without TagTypes
-                        $litterObject = LitterObject::firstOrCreate(['key' => $item]);
-
-                        $category->litterObjects()->syncWithoutDetaching([$litterObject->id]);
+                        LitterObject::firstOrCreate(['key' => $item]);
                     }
                     elseif ($parentObject instanceof LitterObject)
                     {
@@ -609,7 +609,11 @@ class CategoryLitterObjectSeeder extends Seeder
                             'category_id' => $category->id
                         ]);
 
-                        $parentObject->tagTypes()->syncWithoutDetaching([$tagType->id]);
+                        $parentObject
+                            ->tagTypes()
+                            ->syncWithoutDetaching([
+                                $tagType->id => ['category_id' => $category->id]
+                            ]);
                     }
                 }
             }

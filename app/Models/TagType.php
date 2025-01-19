@@ -17,9 +17,23 @@ class TagType extends Model
         return 'key';
     }
 
-    public function litterObjects (): BelongsToMany
+// old 2-way pivot table
+//    public function litterObjects (): BelongsToMany
+//    {
+//        return $this->belongsToMany(LitterObject::class, 'litter_object_tag_type');
+//    }
+
+    // New 3-way pivot table
+    public function litterObjects(): BelongsToMany
     {
-        return $this->belongsToMany(LitterObject::class, 'litter_object_tag_type');
+        return $this->belongsToMany(
+            LitterObject::class,
+            'category_litter_object_tag_type',
+            'tag_type_id',
+            'litter_object_id'
+        )
+        ->withPivot('category_id')
+        ->withTimestamps();
     }
 
     public function materials(): BelongsToMany

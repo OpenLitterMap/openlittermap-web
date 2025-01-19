@@ -38,8 +38,22 @@ class LitterObject extends Model
         return $this->hasMany(PhotoTag::class, 'object_id');
     }
 
+    // old 2-way pivot table
+//    public function tagTypes(): BelongsToMany
+//    {
+//        return $this->belongsToMany(TagType::class, 'litter_object_tag_type');
+//    }
+
+    // New 3-way pivot table
     public function tagTypes(): BelongsToMany
     {
-        return $this->belongsToMany(TagType::class, 'litter_object_tag_type');
+        return $this->belongsToMany(
+            TagType::class,
+            'category_litter_object_tag_type',
+            'litter_object_id',
+            'tag_type_id'
+        )
+        ->withPivot('category_id')
+        ->withTimestamps();
     }
 }
