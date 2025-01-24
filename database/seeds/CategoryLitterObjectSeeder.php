@@ -2,13 +2,13 @@
 
 namespace Database\Seeders;
 
-use App\Models\Photo;
-use App\Models\TagType;
-use App\Models\Category;
-use App\Models\Materials;
-use App\Models\LitterObject;
-use Illuminate\Database\Seeder;
 use App\Models\Litter\Categories\Material;
+use App\Models\Litter\Tags\Category;
+use App\Models\Litter\Tags\LitterObject;
+use App\Models\Litter\Tags\Materials;
+use App\Models\Litter\Tags\TagType;
+use App\Models\Photo;
+use Illuminate\Database\Seeder;
 
 class CategoryLitterObjectSeeder extends Seeder
 {
@@ -47,19 +47,19 @@ class CategoryLitterObjectSeeder extends Seeder
                 // Object
                 'bottle' => [
                     // TagType => Material
-                    'beer_bottle' => ['material:glass'],
-                    'cider_bottle' => ['material:glass', 'material:plastic'],
-                    'spirits_bottle' => ['material:glass'],
-                    'wine_bottle' => ['material:glass']
+                    'beer' => ['material:glass'],
+                    'cider' => ['material:glass', 'material:plastic'],
+                    'spirits' => ['material:glass'],
+                    'wine' => ['material:glass']
                 ],
 
                 // Object => Material
                 'bottleTop' => ['material:metal', 'material:plastic', 'material:cork'],
                 'brokenGlass' => ['material:glass'],
                 'can' => [
-                    'beer_can' => ['material:aluminium'],
-                    'spirits_can' => ['material:aluminium'],
-                    'cider_can' => ['material:aluminium'],
+                    'beer' => ['material:aluminium'],
+                    'spirits' => ['material:aluminium'],
+                    'cider' => ['material:aluminium'],
                 ],
                 'cup' => ['material:plastic'],
                 'drinkingGlass' => [

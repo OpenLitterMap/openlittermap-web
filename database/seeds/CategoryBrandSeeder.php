@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\BrandList;
-use App\Models\Category;
 use App\Models\Litter\Categories\Brand;
+use App\Models\Litter\Tags\BrandList;
+use App\Models\Litter\Tags\Category;
 use Illuminate\Database\Seeder;
 
 class CategoryBrandSeeder extends Seeder

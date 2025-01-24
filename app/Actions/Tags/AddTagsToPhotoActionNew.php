@@ -2,7 +2,7 @@
 
 namespace App\Actions\Tags;
 
-use App\Models\Category;
+use App\Models\Litter\Tags\Category;
 
 class AddTagsToPhotoActionNew
 {

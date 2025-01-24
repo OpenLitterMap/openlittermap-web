@@ -2,12 +2,12 @@
 
 namespace Tests\Feature\Tags;
 
-use Tests\TestCase;
-use App\Models\TagType;
-use App\Models\Category;
-use App\Models\Materials;
-use App\Models\LitterObject;
+use App\Models\Litter\Tags\Category;
+use App\Models\Litter\Tags\LitterObject;
+use App\Models\Litter\Tags\Materials;
+use App\Models\Litter\Tags\TagType;
 use Database\Seeders\CategoryLitterObjectSeeder;
+use Tests\TestCase;
 
 class CategoryLitterObjectSeederTest extends TestCase
 {

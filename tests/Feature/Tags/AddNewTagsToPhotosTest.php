@@ -2,15 +2,15 @@
 
 namespace Tests\Feature\Tags;
 
-use App\Models\Category;
-use App\Models\Materials;
-use App\Models\BrandList;
+use App\Models\Litter\Tags\BrandList;
+use App\Models\Litter\Tags\Category;
+use App\Models\Litter\Tags\LitterObject;
+use App\Models\Litter\Tags\Materials;
 use App\Models\User\User;
-use App\Models\LitterObject;
-use Tests\TestCase;
-use Tests\Feature\HasPhotoUploads;
-use Illuminate\Support\Facades\Storage;
 use Database\Seeders\CategoryLitterObjectSeeder;
+use Illuminate\Support\Facades\Storage;
+use Tests\Feature\HasPhotoUploads;
+use Tests\TestCase;
 
 class AddNewTagsToPhotosTest extends TestCase
 {

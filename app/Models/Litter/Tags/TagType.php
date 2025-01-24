@@ -1,10 +1,11 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Litter\Tags;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TagType extends Model
 {
@@ -15,6 +16,11 @@ class TagType extends Model
     public function getRouteKeyName(): string
     {
         return 'key';
+    }
+
+    public function litterModels(): HasMany
+    {
+        return $this->hasMany(LitterModel::class);
     }
 
 // old 2-way pivot table

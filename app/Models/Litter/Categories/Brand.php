@@ -2,8 +2,8 @@
 
 namespace App\Models\Litter\Categories;
 
-use App\Models\PhotoTag;
 use App\Models\Litter\LitterCategory;
+use App\Models\Litter\Tags\PhotoTag;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Brand extends LitterCategory

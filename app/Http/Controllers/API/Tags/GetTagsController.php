@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers\API\Tags;
 
-use App\Models\Materials;
-use App\Models\TagType;
-use App\Models\Category;
-use App\Models\LitterObject;
-use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
+use App\Models\Litter\Tags\Category;
+use App\Models\Litter\Tags\LitterModel;
+use App\Models\Litter\Tags\LitterObject;
+use App\Models\Litter\Tags\Materials;
+use App\Models\Litter\Tags\TagType;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class GetTagsController extends Controller
 {
@@ -17,30 +19,21 @@ class GetTagsController extends Controller
      */
     public function index (): JsonResponse
     {
-        $tags = Category::select('id', 'key')
-            ->with([
-                'litterObjects' => function ($q) {
-                    // For each LitterObject, also eager-load TagTypes
-                    $q->orderBy('key', 'asc')
-                        ->with(['tagTypes' => function ($qt) {
-                            $qt->orderBy('key', 'asc');
-                        }]);
-                },
-            ])
-            ->orderBy('key', 'asc')
-            ->get();
+        $rows = LitterModel::with(['category:id,key', 'litterObject:id,key', 'tagType:id,key'])->get();
+
+        $grouped = $rows->groupBy(fn ($row) => $row->category->key)
+            ->map(function ($catGroup) {
+                return $catGroup
+                    ->groupBy(fn ($row) => $row->litterObject->key)
+                    ->map(function ($objGroup) {
+                        return $objGroup->map(fn ($r) => $r->tagType)->values();
+                    });
+            });
 
         return response()->json([
-            'tags' => $tags
+            'tags' => $grouped
         ]);
     }
-
-    //                'litterObjects.materials' => function ($q) {
-//                    $q->orderBy('key', 'asc');
-//                },
-//                'litterObjects.tagTypes.materials' => function ($q) {
-//                    $q->orderBy('key', 'asc');
-//                }
 
     /**
      * Search across all tags

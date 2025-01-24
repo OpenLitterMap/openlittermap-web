@@ -15,7 +15,6 @@ return new class extends Migration
             $table->dropForeign(['category_id']);
             $table->dropUnique(['key', 'category_id']);
             $table->dropColumn('category_id');
-            $table->primary(['key']);
         });
     }
 
@@ -27,7 +26,7 @@ return new class extends Migration
         Schema::table('tag_types', function (Blueprint $table) {
             $table->unsignedBigInteger('category_id');
             $table->foreign('category_id')->references('id')->on('categories');
-            $table->dropPrimary(['key']);
+            $table->dropPrimary('key');
             $table->primary(['key', 'category_id']);
         });
     }

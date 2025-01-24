@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\AI\Annotation;
 use App\Models\Litter\Categories\Brand;
+use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Teams\Team;
 use App\Models\User\User;
 use Illuminate\Database\Eloquent\Builder;

@@ -1,11 +1,12 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Litter\Tags;
 
-use Illuminate\Database\Eloquent\Model;
 use App\Models\Litter\Categories\Brand;
 use App\Models\Litter\Categories\Material;
+use App\Models\Photo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 

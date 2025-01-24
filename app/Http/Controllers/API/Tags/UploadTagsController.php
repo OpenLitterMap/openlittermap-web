@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers\API\Tags;
 
-use App\Models\Photo;
-use App\Models\PhotoTag;
-use App\Models\Category;
-use App\Models\BrandList;
-use App\Models\Materials;
-use App\Models\LitterObject;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
+use App\Models\Litter\Tags\BrandList;
+use App\Models\Litter\Tags\Category;
+use App\Models\Litter\Tags\LitterObject;
+use App\Models\Litter\Tags\Materials;
+use App\Models\Litter\Tags\PhotoTag;
+use App\Models\Photo;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class UploadTagsController extends Controller
