@@ -2,15 +2,17 @@
 
 namespace Database\Seeders;
 
-use App\Models\Litter\Categories\Material;
-use App\Models\Litter\Tags\Category;
-use App\Models\Litter\Tags\LitterObject;
-use App\Models\Litter\Tags\Materials;
-use App\Models\Litter\Tags\TagType;
+use App\Models\Litter\Tags\LitterModel;
 use App\Models\Photo;
+use App\Models\Litter\Tags\TagType;
+use App\Models\Litter\Tags\Category;
+use App\Models\Litter\Tags\Materials;
+use App\Models\Litter\Tags\LitterObject;
+use App\Models\Litter\Categories\Material;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Log;
 
-class CategoryLitterObjectSeeder extends Seeder
+class LitterModelSeeder extends Seeder
 {
     public function run (): void
     {
@@ -32,11 +34,11 @@ class CategoryLitterObjectSeeder extends Seeder
             ]);
         }
 
-        // Category => LitterObject[] => Material[]
+        // Category => LitterObject[] => [ MorphMany Material[] ]
         // or
-        // Category => LitterObject[] => TagType[] => Material[]
+        // Category => LitterObject[] => TagType[] => [ Morphy Many Material[] ]
 
-        // Note: when a tagType is shared between many litter objects,
+        // Outdated note: when a tagType is shared between many litter objects,
         // we update "bottle" to become "bottle_beer" to avoid sharing materials
         // eg "beer" could be glass or aluminium, but "bottle_beer" is only glass.
 
@@ -533,105 +535,210 @@ class CategoryLitterObjectSeeder extends Seeder
             ],
         ];
 
-        foreach ($categoryTags as $litterCategory => $litterTags)
+        foreach ($categoryTags as $categoryKey => $objectsAndTags)
         {
-            $category = Category::firstOrCreate(['key' => $litterCategory]);
+            $category = Category::firstOrCreate(['key' => $categoryKey]);
 
-            $this->processLitterTags($category, $litterTags);
+            $this->processLitterTags($category, null, $objectsAndTags);
         }
     }
 
-    protected function processLitterTags (Category $category, array $tags, $parentObject = null): void
+    /**
+     * Recursively process the given tags for a Category.
+     *
+     * @param  Category                  $category
+     * @param  LitterObject|TagType|null $parent   (null => creating LitterObjects,
+     *                                             LitterObject => adding TagTypes/materials,
+     *                                             TagType => attach materials or go deeper)
+     * @param  mixed                     $data     (could be nested arrays or single strings).
+     * @param  LitterObject|null         $objectContext Keep track of the current object when $parent is TagType
+     */
+    protected function processLitterTags(
+        Category $category,
+        LitterObject|TagType|null $parent,
+        mixed $data,
+        LitterObject|null $objectContext = null
+    ): void
     {
-        foreach ($tags as $key => $value)
-        {
-            if (is_array($value))
-            {
-                // The key is either a LitterObject or TagType
-                $itemKey = $key;
-
-                if ($parentObject === null) {
-                    // We're at the LitterObject level
-                    $litterObject = LitterObject::firstOrCreate(['key' => $itemKey]);
-
-                    // Recursively process the next level
-                    $this->processLitterTags($category, $value, $litterObject);
-                }
-                elseif ($parentObject instanceof LitterObject)
-                {
-                    $tagType = TagType::firstOrCreate([
-                        'key' => $itemKey,
-                    ]);
-
-                    $parentObject
-                        ->tagTypes()
-                        ->syncWithoutDetaching([
-                            $tagType->id => ['category_id' => $category->id]
-                        ]);
-
-                    // Recursively process the next level
-                    $this->processLitterTags($category, $value, $tagType);
-                }
-                elseif ($parentObject instanceof TagType)
-                {
-                    // We're at a deeper level (unlikely based on your data)
-                    // Process materials if present
-                    $this->processMaterials($value, $parentObject);
+        if (is_array($data)) {
+            foreach ($data as $key => $value) {
+                if (is_int($key)) {
+                    // The value is a string => "other", or "material:xxx"
+                    $this->handleStringItem($category, $parent, $value, $objectContext);
+                } else {
+                    // $key is something like "bottle", "can", "beer"
+                    $this->handleArrayItem($category, $parent, $key, $value, $objectContext);
                 }
             }
-            else
-            {
-                // The value is a string, could be a LitterObject, TagType, or Material
-                $item = is_int($key) ? $value : $key;
+        } else {
+            // $data is a single string
+            $this->handleStringItem($category, $parent, $data, $objectContext);
+        }
+    }
 
-                if (strpos($item, 'material:') === 0)
-                {
-                    // It's a material
-                    $materialKey = substr($item, strlen('material:'));
-                    $material = Materials::firstOrCreate(['key' => $materialKey]);
+    /**
+     * Handle a single string item, which may be:
+     *  - "other" => a LitterObject if $parent is null
+     *  - "material:xxx" => attach material to the parent
+     */
+    protected function handleStringItem(
+        Category $category,
+        LitterObject|TagType|null $parent,
+        string $item,
+        LitterObject|null $objectContext
+    ): void
+    {
+        if (str_starts_with($item, 'material:')) {
+            // It's a material
+            $materialKey = substr($item, strlen('material:'));
+            $material = Materials::firstOrCreate(['key' => $materialKey]);
 
-                    if ($parentObject) {
-                        $parentObject->materials()->syncWithoutDetaching([$material->id]);
-                    }
-                }
-                else
-                {
-                    if ($parentObject === null)
-                    {
-                        // LitterObject without TagTypes
-                        LitterObject::firstOrCreate(['key' => $item]);
-                    }
-                    elseif ($parentObject instanceof LitterObject)
-                    {
-                        // TagType without materials
-                        $tagType = TagType::firstOrCreate([
-                            'key' => $item,
-                            'category_id' => $category->id
-                        ]);
+            // Attach to the parent polymorphically (global) + pivot (contextual)
+            if ($parent) {
+                // 1) Polymorphic attach => "global" materials
+                $parent->materials()->syncWithoutDetaching([$material->id]);
 
-                        $parentObject
-                            ->tagTypes()
-                            ->syncWithoutDetaching([
-                                $tagType->id => ['category_id' => $category->id]
-                            ]);
-                    }
-                }
+                // 2) Pivot-based attach => "contextual" materials
+                $this->attachMaterialToPivot($category, $parent, $material, $objectContext);
+            }
+
+        } else {
+            // It's presumably a LitterObject name or TagType name
+            if ($parent === null) {
+                // => LitterObject, no parent
+                $object = LitterObject::firstOrCreate(['key' => $item]);
+
+                // Insert a pivot row with tag_type_id=null
+                LitterModel::firstOrCreate([
+                    'category_id'      => $category->id,
+                    'litter_object_id' => $object->id,
+                    'tag_type_id'      => null,
+                ]);
+
+            } elseif ($parent instanceof LitterObject) {
+                // => The string is a TagType name
+                $tagType = TagType::firstOrCreate(['key' => $item]);
+                $parent->tagTypes()->syncWithoutDetaching([
+                    $tagType->id => ['category_id' => $category->id]
+                ]);
+
+            } elseif ($parent instanceof TagType) {
+                // deeper nesting if needed
+            } else {
+                Log::warning("Unknown parent type in handleStringItem", [
+                    'parent_class' => get_class($parent),
+                    'item' => $item
+                ]);
             }
         }
     }
 
-    protected function processMaterials (array $materials, $parentObject): void
+    /**
+     * Handle an array item with key => value, e.g.:
+     *  "bottle" => ["beer" => ["material:glass"], ...]
+     *  "can"    => ["beer" => ["material:aluminium"]]
+     *
+     * If $parent === null => The key is a LitterObject
+     * If $parent is a LitterObject => The key is a TagType
+     */
+    protected function handleArrayItem(
+        Category $category,
+        LitterObject|TagType|null $parent,
+        string $key,
+        array $value,
+        LitterObject|null $objectContext
+    ): void
     {
-        foreach ($materials as $materialEntry)
-        {
-            if (strpos($materialEntry, 'material:') === 0)
-            {
-                $materialKey = substr($materialEntry, strlen('material:'));
+        if ($parent === null) {
+            // => LitterObject
+            $litterObject = LitterObject::firstOrCreate(['key' => $key]);
 
-                $material = Materials::firstOrCreate(['key' => $materialKey]);
+            // If no sub-TagTypes => insert pivot row with tag_type_id=null
+            if (!$this->arrayContainsTagTypes($value)) {
+                LitterModel::firstOrCreate([
+                    'category_id'      => $category->id,
+                    'litter_object_id' => $litterObject->id,
+                    'tag_type_id'      => null,
+                ]);
+            }
 
-                $parentObject->materials()->syncWithoutDetaching([$material->id]);
+            // Recurse => now $parent is the LitterObject
+            $this->processLitterTags($category, $litterObject, $value, $litterObject);
+
+        } elseif ($parent instanceof LitterObject) {
+            // => The key is a TagType
+            $tagType = TagType::firstOrCreate(['key' => $key]);
+
+            // (cat, object, tag) pivot
+            $parent->tagTypes()->syncWithoutDetaching([
+                $tagType->id => ['category_id' => $category->id]
+            ]);
+
+            // Recurse => now $parent is TagType, but keep the $objectContext as $parent
+            $this->processLitterTags($category, $tagType, $value, $parent);
+
+        } elseif ($parent instanceof TagType) {
+            // deeper nesting
+            $this->processLitterTags($category, $parent, [$key => $value], $objectContext);
+        }
+    }
+
+    /**
+     * Attach $material to the triple pivot row that corresponds to (category, $parent, $objectContext).
+     */
+    protected function attachMaterialToPivot(
+        Category $category,
+        LitterObject|TagType $parent,
+        Materials $material,
+        LitterObject|null $objectContext
+    ): void
+    {
+        // 1) If parent is a LitterObject => (cat, object, null)
+        if ($parent instanceof LitterObject) {
+            $litterModel = LitterModel::firstOrCreate([
+                'category_id'      => $category->id,
+                'litter_object_id' => $parent->id,
+                'tag_type_id'      => null,
+            ]);
+            $litterModel->contextualMaterials()->syncWithoutDetaching([$material->id]);
+            return;
+        }
+
+        // 2) If parent is a TagType => we need the objectContext to find (cat, object, tag).
+        if (!$objectContext) {
+            Log::warning("No object context to attach materials for TagType {$parent->key}");
+            return;
+        }
+
+        $litterModel = LitterModel::firstOrCreate([
+            'category_id'      => $category->id,
+            'litter_object_id' => $objectContext->id,
+            'tag_type_id'      => $parent->id,
+        ]);
+
+        // Attach material
+        $litterModel->contextualMaterials()->syncWithoutDetaching([$material->id]);
+    }
+
+    /**
+     * Decide if an array is purely "materials" or if it has subkeys => TagTypes.
+     */
+    protected function arrayContainsTagTypes(array $value): bool
+    {
+        foreach ($value as $k => $v) {
+            // If the key is NOT an integer => TagType name
+            if (!is_int($k)) {
+                return true;
+            }
+            // If the key is integer but $v is not "material:..."
+            if (is_string($v) && !str_starts_with($v, 'material:')) {
+                return true;
+            }
+            // If $v is an array => likely TagTypes
+            if (is_array($v)) {
+                return true;
             }
         }
+        return false;
     }
 }

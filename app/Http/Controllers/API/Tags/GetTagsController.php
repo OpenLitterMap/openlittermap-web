@@ -19,16 +19,49 @@ class GetTagsController extends Controller
      */
     public function index (): JsonResponse
     {
-        $rows = LitterModel::with(['category:id,key', 'litterObject:id,key', 'tagType:id,key'])->get();
+        // $rows = LitterModel::with(['category:id,key', 'litterObject:id,key', 'tagType:id,key'])->get();
 
-        $grouped = $rows->groupBy(fn ($row) => $row->category->key)
+        // Load all LitterModels with their nested relationships
+        $rows = LitterModel::with([
+            'category:id,key',
+            'litterObject' => function ($q) {
+                $q->select('id','key')
+                    ->with(['contextualMaterials:id,key']);
+            },
+            'tagType' => function ($q) {
+                $q->select('id','key')
+                    ->with(['contextualMaterials:id,key']);
+            }
+        ])->get();
+
+        $grouped = $rows
+            ->groupBy(fn ($row) => $row->category->key)
             ->map(function ($catGroup) {
-                return $catGroup
-                    ->groupBy(fn ($row) => $row->litterObject->key)
+                // For each category, group by litterObject->key
+                return $catGroup->groupBy(fn ($row) => $row->litterObject->key)
                     ->map(function ($objGroup) {
-                        return $objGroup->map(fn ($r) => $r->tagType)->values();
+                        // 3) Transform each pivot row => get TagType + Materials
+                        return $objGroup->map(function ($r) {
+                            // If there's a TagType, collect its materials
+                            if ($r->tagType) {
+                                return [
+                                    'id' => $r->tagType->id,
+                                    'key' => $r->tagType->key,
+                                    'materials' => $r->tagType->contextualMaterials->pluck('key'),
+                                ];
+                            } else {
+                                // tagType = null => possibly it's an Object-only row
+                                // or you can omit this if you're only interested in tagTypes
+                                return [
+                                    'id' => null,
+                                    'key' => null,
+                                    'materials' => [],
+                                ];
+                            }
+                        })->values();
                     });
             });
+
 
         return response()->json([
             'tags' => $grouped

@@ -11,14 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tag_type_material', function (Blueprint $table) {
+        Schema::create('materialables', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('tag_type_id')->constrained('tag_types')->onDelete('cascade');
-            $table->foreignId('material_id')->constrained('materials')->onDelete('cascade');
+            $table->foreignId('materials_id')->constrained('materials')->cascadeOnDelete();
+            $table->unsignedBigInteger('materialable_id');
+            $table->string('materialable_type');
             $table->timestamps();
 
-            // prevent duplicate entries
-            $table->unique(['tag_type_id', 'material_id']);
+            $table->index(['materialable_id', 'materialable_type']);
         });
     }
 
@@ -27,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('tag_type_material');
+        Schema::dropIfExists('materialables');
     }
 };

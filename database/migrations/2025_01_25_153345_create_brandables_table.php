@@ -11,10 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('brand_category', function (Blueprint $table) {
-            $table->foreignId('brandlist_id')->constrained('brandslist')->onDelete('cascade');
-            $table->foreignId('category_id')->constrained('categories')->onDelete('cascade');
+        Schema::create('brandables', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('brandlist_id')->constrained('brandslist')->cascadeOnDelete();
+            $table->unsignedBigInteger('brandable_id');
+            $table->string('brandable_type');
             $table->timestamps();
+
+            $table->index(['brandable_id', 'brandable_type']);
         });
     }
 
@@ -23,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('brand_category');
+        Schema::dropIfExists('brandables');
     }
 };

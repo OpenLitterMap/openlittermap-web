@@ -2,11 +2,11 @@
 
 namespace App\Models\Litter\Tags;
 
+use App\Models\Photo;
 use App\Models\Litter\Categories\Brand;
 use App\Models\Litter\Categories\Material;
-use App\Models\Photo;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
@@ -34,10 +34,5 @@ class PhotoTag extends Model
     public function brand (): BelongsTo
     {
         return $this->belongsTo(Brand::class, 'brand_id');
-    }
-
-    public function materials (): BelongsToMany
-    {
-        return $this->belongsToMany(Material::class, 'material_photo_tag');
     }
 }

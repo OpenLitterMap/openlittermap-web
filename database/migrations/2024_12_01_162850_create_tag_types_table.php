@@ -13,11 +13,8 @@ return new class extends Migration
     {
         Schema::create('tag_types', function (Blueprint $table) {
             $table->id();
-            $table->string('key');
-            $table->foreignId('category_id')->constrained('categories')->onDelete('cascade');
+            $table->string('key')->unique();
             $table->timestamps();
-
-            $table->unique(['key', 'category_id']);
         });
     }
 

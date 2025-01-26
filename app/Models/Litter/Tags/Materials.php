@@ -21,13 +21,13 @@ class Materials extends Model
         return $this->belongsToMany(PhotoTag::class, 'material_photo_tag');
     }
 
-    public function litterObjects(): BelongsToMany
+    public function litterObjects()
     {
-        return $this->belongsToMany(LitterObject::class, 'litter_object_material');
+        return $this->morphedByMany(LitterObject::class, 'materialable');
     }
 
-    public function tagTypes(): BelongsToMany
+    public function tagTypes()
     {
-        return $this->belongsToMany(TagType::class, 'tag_type_material');
+        return $this->morphedByMany(TagType::class, 'materialable');
     }
 }

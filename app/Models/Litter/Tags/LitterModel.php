@@ -4,14 +4,11 @@ namespace App\Models\Litter\Tags;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class LitterModel extends Model
 {
-    protected $table = 'category_litter_object_tag_type';
-
-    protected $primaryKey = null;
-
-    public $incrementing = false;
+    protected $table = 'litter_models';
 
     protected $guarded = [];
 
@@ -27,8 +24,15 @@ class LitterModel extends Model
         return $this->belongsTo(LitterObject::class);
     }
 
+    // Nullable
     public function tagType(): BelongsTo
     {
         return $this->belongsTo(TagType::class);
+    }
+
+    // The new many-to-many pivot for "contextual" materials
+    public function contextualMaterials(): BelongsToMany
+    {
+        return $this->belongsToMany(Materials::class, 'litter_model_materials', 'litter_model_id', 'material_id');
     }
 }

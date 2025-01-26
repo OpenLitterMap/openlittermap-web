@@ -15,11 +15,12 @@ return new class extends Migration
             $table->id();
             $table->unsignedInteger('photo_id');
             $table->foreign('photo_id')->references('id')->on('photos')->onDelete('cascade');
-            $table->foreignId('category_id')->nullable()->constrained('categories')->onDelete('cascade');
-            $table->foreignId('object_id')->nullable()->constrained('litter_objects')->onDelete('cascade');
-            $table->foreignId('brandlist_id')->nullable()->constrained('brandslist')->onDelete('set null');
+
+            // Relationship to litter_model_id created after create_litter_objects_table migration
+
             $table->integer('quantity')->nullable();
             $table->boolean('picked_up')->nullable();
+
             $table->timestamps();
         });
     }

@@ -30,6 +30,6 @@ class DatabaseSeeder extends Seeder
         $this->call(PhotosSeeder::class);
 
         // Populate photos with Tags v2
-        $this->call(CategoryLitterObjectSeeder::class);
+        $this->call(LitterModelSeeder::class);
     }
 }

@@ -11,18 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('category_litter_object_tag_type', function (Blueprint $table) {
-            $table->unsignedBigInteger('category_id');
-            $table->unsignedBigInteger('litter_object_id');
-            $table->unsignedBigInteger('tag_type_id');
+        Schema::create('litter_models', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('category_id')->constrained('categories');
+            $table->foreignId('litter_object_id')->constrained('litter_objects');
+            $table->foreignId('tag_type_id')->nullable()->constrained('tag_types');
 
-            $table->primary(['category_id','litter_object_id','tag_type_id']);
-
-            $table->foreign('category_id')->references('id')->on('categories');
-            $table->foreign('litter_object_id')->references('id')->on('litter_objects');
-            $table->foreign('tag_type_id')->references('id')->on('tag_types');
+            $table->unique(['category_id', 'litter_object_id', 'tag_type_id']);
 
             $table->timestamps();
+        });
+
+        Schema::table('photo_tags', function (Blueprint $table) {
+            $table->foreignId('litter_model_id')
+                ->after('photo_id')
+                ->nullable()
+                ->constrained('litter_models');
         });
     }
 
@@ -31,6 +35,11 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('category_litter_object_tag_type');
+        Schema::table('photo_tags', function (Blueprint $table) {
+            $table->dropForeign(['litter_model_id']);
+            $table->dropColumn('litter_model_id');
+        });
+
+        Schema::dropIfExists('litter_models');
     }
 };
