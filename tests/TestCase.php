@@ -2,9 +2,11 @@
 
 namespace Tests;
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Illuminate\Support\Facades\Storage;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -31,5 +33,10 @@ abstract class TestCase extends BaseTestCase
         Redis::connection()->flushdb();
 
         parent::tearDown();
+    }
+
+    protected function loadLitterTags(): void
+    {
+
     }
 }

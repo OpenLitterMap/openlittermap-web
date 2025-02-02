@@ -30,8 +30,8 @@ class LitterModel extends Model
         return $this->belongsTo(TagType::class);
     }
 
-    // The new many-to-many pivot for "contextual" materials
-    public function contextualMaterials(): BelongsToMany
+    // The new many-to-many pivot for materials
+    public function modelMaterials(): BelongsToMany
     {
         return $this->belongsToMany(Materials::class, 'litter_model_materials', 'litter_model_id', 'material_id');
     }

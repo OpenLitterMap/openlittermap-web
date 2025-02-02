@@ -2,44 +2,22 @@
 
 namespace Tests\Feature\Tags;
 
-use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
-use Database\Seeders\CategoryLitterObjectSeeder;
+use Illuminate\Support\Facades\Log;
+use Database\Seeders\Tests\LoadTagsSeeder;
 
 class ProcessTagsNewTest extends TestCase
 {
     /** @test */
     public function test_it_returns_a_list_of_tags (): void
     {
-        $this->seed(CategoryLitterObjectSeeder::class);
+        $this->seed(LoadTagsSeeder::class);
 
         $response = $this->get('/api/tags');
 
         Log::info($response->json());
 
         $response->assertStatus(200);
-//        $response->assertJsonStructure([
-//            'tags' => [
-//                '*' => [
-//                    'key',
-//                    'litter_objects' => [
-//                        '*' => [
-//                            'key',
-//                            'tag_types' => [
-//                                '*' => [
-//                                    'key',
-//                                    'materials' => [
-//                                        '*' => [
-//                                            'key'
-//                                        ]
-//                                    ]
-//                                ]
-//                            ]
-//                        ]
-//                    ]
-//                ]
-//            ]
-//        ]);
     }
 
 //    public function test_it_returns_a_list_of_tags_for_a_category (): void

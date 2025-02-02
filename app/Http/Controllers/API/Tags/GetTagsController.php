@@ -10,7 +10,6 @@ use App\Models\Litter\Tags\Materials;
 use App\Models\Litter\Tags\TagType;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
 class GetTagsController extends Controller
 {
@@ -19,49 +18,56 @@ class GetTagsController extends Controller
      */
     public function index (): JsonResponse
     {
-        // $rows = LitterModel::with(['category:id,key', 'litterObject:id,key', 'tagType:id,key'])->get();
-
         // Load all LitterModels with their nested relationships
         $rows = LitterModel::with([
             'category:id,key',
-            'litterObject' => function ($q) {
-                $q->select('id','key')
-                    ->with(['contextualMaterials:id,key']);
-            },
-            'tagType' => function ($q) {
-                $q->select('id','key')
-                    ->with(['contextualMaterials:id,key']);
-            }
+            'litterObject:id,key',
+            'tagType:id,key',
+            'modelMaterials'
         ])->get();
 
-        $grouped = $rows
-            ->groupBy(fn ($row) => $row->category->key)
+        $grouped = $rows->groupBy(fn($row) => $row->category->key)
             ->map(function ($catGroup) {
-                // For each category, group by litterObject->key
-                return $catGroup->groupBy(fn ($row) => $row->litterObject->key)
+                $category = $catGroup->first()->category;
+
+                // For each Category group, group by LitterObject->key
+                $litterObjects = $catGroup->groupBy(fn($row) => $row->litterObject->key)
                     ->map(function ($objGroup) {
-                        // 3) Transform each pivot row => get TagType + Materials
-                        return $objGroup->map(function ($r) {
-                            // If there's a TagType, collect its materials
+                        // All rows in objGroup share the same LitterObject
+                        $litterObject = $objGroup->first()->litterObject;
+
+                        // Collect TagTypes
+                        $tagTypes = $objGroup->map(function ($r) {
                             if ($r->tagType) {
                                 return [
-                                    'id' => $r->tagType->id,
-                                    'key' => $r->tagType->key,
-                                    'materials' => $r->tagType->contextualMaterials->pluck('key'),
-                                ];
-                            } else {
-                                // tagType = null => possibly it's an Object-only row
-                                // or you can omit this if you're only interested in tagTypes
-                                return [
-                                    'id' => null,
-                                    'key' => null,
-                                    'materials' => [],
+                                    'id'        => $r->tagType->id,
+                                    'key'       => $r->tagType->key,
+                                    'materials' => $r->modelMaterials
+                                        ? $r->modelMaterials->pluck('key')
+                                        : [],
                                 ];
                             }
-                        })->values();
-                    });
-            });
+                            return null;
+                        })->filter()->values();
 
+                        return [
+                            'id'        => $litterObject->id,
+                            'key'       => $litterObject->key,
+                            // If you truly need the LitterObject-level morph materials, keep this line.
+                            // Otherwise, remove it if you only want row-based materials:
+                            // 'materials' => $litterObject->materials->pluck('key'),
+                            'tag_types' => $tagTypes,
+                        ];
+                    })
+                    ->values();
+
+                return [
+                    'id'             => $category->id,
+                    'key'            => $category->key,
+                    'litter_objects' => $litterObjects,
+                ];
+            })
+            ->values();
 
         return response()->json([
             'tags' => $grouped

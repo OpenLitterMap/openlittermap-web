@@ -10,7 +10,9 @@ use App\Models\Litter\Tags\Materials;
 use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Categories\Material;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class LitterModelSeeder extends Seeder
 {
@@ -37,10 +39,6 @@ class LitterModelSeeder extends Seeder
         // Category => LitterObject[] => [ MorphMany Material[] ]
         // or
         // Category => LitterObject[] => TagType[] => [ Morphy Many Material[] ]
-
-        // Outdated note: when a tagType is shared between many litter objects,
-        // we update "bottle" to become "bottle_beer" to avoid sharing materials
-        // eg "beer" could be glass or aluminium, but "bottle_beer" is only glass.
 
         $categoryTags = [
 
@@ -700,7 +698,7 @@ class LitterModelSeeder extends Seeder
                 'litter_object_id' => $parent->id,
                 'tag_type_id'      => null,
             ]);
-            $litterModel->contextualMaterials()->syncWithoutDetaching([$material->id]);
+            $litterModel->modelMaterials()->syncWithoutDetaching([$material->id]);
             return;
         }
 
@@ -717,7 +715,7 @@ class LitterModelSeeder extends Seeder
         ]);
 
         // Attach material
-        $litterModel->contextualMaterials()->syncWithoutDetaching([$material->id]);
+        $litterModel->modelMaterials()->syncWithoutDetaching([$material->id]);
     }
 
     /**
