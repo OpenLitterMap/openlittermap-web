@@ -8,6 +8,8 @@ use App\Models\Litter\Tags\LitterModel;
 use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\Materials;
 use App\Models\Litter\Tags\TagType;
+use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -16,17 +18,103 @@ class GetTagsController extends Controller
     /**
      * Get the Tags in their nested structure
      */
-    public function index (): JsonResponse
+    public function index (Request $request): JsonResponse
     {
-        // Load all LitterModels with their nested relationships
-        $rows = LitterModel::with([
-            'category:id,key',
-            'litterObject:id,key',
-            'tagType:id,key',
-            'modelMaterials'
-        ])->get();
+        [$query, $searchQuery] = $this->generateQueryFromRequest($request);
 
-        $grouped = $rows->groupBy(fn($row) => $row->category->key)
+        $rows = $this->loadRowsFromQuery($query, $searchQuery);
+
+        $grouped = $this->groupTags($rows);
+
+        return response()->json([
+            'tags' => $grouped
+        ]);
+    }
+
+    /**
+     * Build a query that filters by available models.
+     */
+    protected function generateQueryFromRequest (Request $request)
+    {
+        $categoryKey   = $request['category'] ?? null;
+        $objectKey     = $request['object'] ?? null;
+        $tagTypeKey    = $request['tag_type'] ?? null;
+        $materialsKeys = $request['materials'] ? explode(',', $request['materials']) : null;
+        $searchQuery   = $request['search'] ?? null;
+
+        $query = LitterModel::query();
+
+        if ($categoryKey) {
+            $query->whereHas('category', function($q) use ($categoryKey) {
+                $q->where('key', $categoryKey);
+            });
+        }
+
+        if ($objectKey) {
+            $query->whereHas('litterObject', function($q) use ($objectKey) {
+                $q->where('key', $objectKey);
+            });
+        }
+
+        if ($tagTypeKey) {
+            $query->whereHas('tagType', function($q) use ($tagTypeKey) {
+                $q->where('key', $tagTypeKey);
+            });
+        }
+
+        if (!empty($materialsKeys) && $materialsKeys[0] !== '') {
+            $query->whereHas('modelMaterials', function ($q) use ($materialsKeys) {
+                $q->whereIn('key', $materialsKeys);
+            });
+        }
+
+        if ($searchQuery) {
+            $query->where(function ($q) use ($searchQuery) {
+                $q->orWhereHas('category', fn($subQ) => $subQ->where('key', 'LIKE', "{$searchQuery}%"))
+                    ->orWhereHas('litterObject', fn($subQ) => $subQ->where('key', 'LIKE', "{$searchQuery}%"))
+                    ->orWhereHas('tagType', fn($subQ) => $subQ->where('key', 'LIKE', "{$searchQuery}%"))
+                    ->orWhereHas('modelMaterials', fn($subQ) => $subQ->where('key', 'LIKE', "{$searchQuery}%"));
+            });
+        }
+
+        return [$query, $searchQuery];
+    }
+
+    /**
+     * Load the data from the generated query.
+     * Eager load materials, and filter them by search if it exists.
+     */
+    protected function loadRowsFromQuery (Builder $query, ?string $searchQuery): Collection
+    {
+        return $query->with([
+            'category:id,key',
+            'litterObject' => function ($q) use ($searchQuery) {
+                $q->select('id','key')
+                    ->with(['materials' => function ($subQ) use ($searchQuery) {
+                        if ($searchQuery) {
+                            $subQ->where('key', 'LIKE', $searchQuery.'%');
+                        }
+                    }]);
+            },
+            'tagType' => function ($q) use ($searchQuery) {
+                $q->select('id','key')
+                    ->with(['materials' => function ($subQ) use ($searchQuery) {
+                        if ($searchQuery) {
+                            $subQ->where('key', 'LIKE', $searchQuery.'%');
+                        }
+                    }]);
+            },
+            'modelMaterials' => function ($q) use ($searchQuery) {
+                if ($searchQuery) {
+                    $q->where('key', 'LIKE', $searchQuery.'%');
+                }
+            }
+            ])->get();
+    }
+
+    protected function groupTags (Collection $rows): Collection
+    {
+        return $rows->groupBy(fn($row) => $row->category->key)
             ->map(function ($catGroup) {
                 $category = $catGroup->first()->category;
 
@@ -40,39 +128,34 @@ class GetTagsController extends Controller
                         $tagTypes = $objGroup->map(function ($r) {
                             if ($r->tagType) {
                                 return [
-                                    'id'        => $r->tagType->id,
-                                    'key'       => $r->tagType->key,
-                                    'materials' => $r->modelMaterials
-                                        ? $r->modelMaterials->pluck('key')
-                                        : [],
+                                    'id' => $r->tagType->id,
+                                    'key' => $r->tagType->key,
+                                    'materials' => $r->modelMaterials ? $r->modelMaterials->pluck('key') : [],
                                 ];
                             }
+
                             return null;
                         })->filter()->values();
 
                         return [
-                            'id'        => $litterObject->id,
-                            'key'       => $litterObject->key,
-                            // If you truly need the LitterObject-level morph materials, keep this line.
-                            // Otherwise, remove it if you only want row-based materials:
-                            // 'materials' => $litterObject->materials->pluck('key'),
+                            'id' => $litterObject->id,
+                            'key' => $litterObject->key,
+                            'materials' => $litterObject->materials->pluck('key'),
                             'tag_types' => $tagTypes,
                         ];
                     })
                     ->values();
 
                 return [
-                    'id'             => $category->id,
-                    'key'            => $category->key,
+                    'id' => $category->id,
+                    'key' => $category->key,
                     'litter_objects' => $litterObjects,
                 ];
             })
             ->values();
-
-        return response()->json([
-            'tags' => $grouped
-        ]);
     }
+
+    // OLD CODE PROBABLY USELESS
 
     /**
      * Search across all tags

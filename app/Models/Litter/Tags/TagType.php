@@ -33,8 +33,7 @@ class TagType extends Model
             'tag_type_id',
             'litter_object_id'
         )
-        ->withPivot('category_id')
-        ->withTimestamps();
+        ->withPivot('category_id');
     }
 
     public function materials(): MorphToMany

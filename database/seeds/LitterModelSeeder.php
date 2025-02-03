@@ -39,6 +39,8 @@ class LitterModelSeeder extends Seeder
         // Category => LitterObject[] => [ MorphMany Material[] ]
         // or
         // Category => LitterObject[] => TagType[] => [ Morphy Many Material[] ]
+        // or
+        // LitterModel => Materials[]
 
         $categoryTags = [
 
@@ -295,60 +297,82 @@ class LitterModelSeeder extends Seeder
             ],
 
             'industrial' => [
+                // Object: "container"
                 'container' => [
-                    'oilDrum' => ['material:metal', 'material:plastic'],
+                    // Tag Types
+                    'oilDrum'     => ['material:metal', 'material:plastic'],
                     'chemicalBag' => ['material:plastic', 'material:paper'],
                 ],
+
+                // Object: "oil" + materials
                 'oil' => ['material:oil'],
+
+                // Object: "chemical" + materials
                 'chemical' => ['material:chemical'],
+
+                // Object: "industrialPlastic"
                 'industrialPlastic' => [
-                    'plasticPellets' => ['material:plastic'],
-                    'plasticSheeting' => ['material:plastic'],
-                    'plasticPipe' => ['material:plastic'],
+                    'plasticPellets'   => ['material:plastic'],
+                    'plasticSheeting'  => ['material:plastic'],
+                    'plasticPipe'      => ['material:plastic'],
                     'plasticContainer' => ['material:plastic'],
-                    'plasticWrapping' => ['material:plastic'],
+                    'plasticWrapping'  => ['material:plastic'],
                 ],
+
+                // Object: "construction"
                 'construction' => [
-                    'brick' => ['material:clay', 'material:concrete'],
-                    'cementBag' => ['material:paper', 'material:plastic'],
+                    'brick'         => ['material:clay', 'material:concrete'],
+                    'cementBag'     => ['material:paper', 'material:plastic'],
                     'concreteBlock' => ['material:concrete'],
-                    'rebar' => ['material:metal'],
-                    'insulation' => [
-                        'fiberglassInsulation' => ['material:fiberglass'],
-                        'foamInsulation' => ['material:foam'],
-                    ],
-                    'asphalt' => ['material:asphalt'],
-                    'tile' => ['material:ceramic', 'material:stone'],
-                    'drywall' => ['material:gypsum', 'material:paper'],
+                    'rebar'         => ['material:metal'],
+                    'insulation'    => ['material:fiberglass', 'material:foam'],
+                    'asphalt'       => ['material:asphalt'],
+                    'tile'          => ['material:ceramic', 'material:stone'],
+                    'drywall'       => ['material:gypsum', 'material:paper'],
                 ],
+
+                // Object: "tape" + materials
                 'tape' => ['material:plastic', 'material:adhesive'],
-                'industrialOther' => [
-                    'pallet' => [
-                        'woodenPallet' => ['material:wood'],
-                        'plasticPallet' => ['material:plastic'],
-                    ],
-                    'strapping' => [
-                        'plasticStrapping' => ['material:plastic'],
-                        'metalStrapping' => ['material:metal'],
-                    ],
-                    'wire' => [
-                        'copperWire' => ['material:copper', 'material:plastic'],
-                        'steelWire' => ['material:steel'],
-                    ],
-                    'hose' => [
-                        'rubberHose' => ['material:rubber'],
-                        'plasticHose' => ['material:plastic'],
-                    ],
-                    'pipe' => [
-                        'metalPipe' => ['material:metal'],
-                        'plasticPipe' => ['material:plastic'],
-                        'concretePipe' => ['material:concrete'],
-                    ],
-                    'industrialContainer' => [
-                        'material:metal',
-                        'material:plastic',
-                    ],
+
+                // Object: "pallet"
+                'pallet' => [
+                    'woodenPallet'  => ['material:wood'],
+                    'plasticPallet' => ['material:plastic'],
                 ],
+
+                // Object: "strapping"
+                'strapping' => [
+                    'plasticStrapping' => ['material:plastic'],
+                    'metalStrapping'   => ['material:metal'],
+                ],
+
+                // Object: "wire"
+                'wire' => [
+                    'copperWire' => ['material:copper', 'material:plastic'],
+                    'steelWire'  => ['material:steel'],
+                ],
+
+                // Object: "hose"
+                'hose' => [
+                    'rubberHose'  => ['material:rubber'],
+                    'plasticHose' => ['material:plastic'],
+                ],
+
+                // Object: "pipe"
+                'pipe' => [
+                    'metalPipe'     => ['material:metal'],
+                    'plasticPipe'   => ['material:plastic'],
+                    'concretePipe'  => ['material:concrete'],
+                ],
+
+                // Object: "industrialContainer"
+                'industrialContainer' => [
+                    'material:metal',
+                    'material:plastic',
+                ],
+
+                // Object: "other" (no tag types or materials)
+                'other',
             ],
 
             'other' => [
