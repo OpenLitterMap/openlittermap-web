@@ -1,5 +1,5 @@
 <template>
-    <div class="w-[20em]">
+    <div class="w-[20em] mb-4">
         <Combobox as="div" v-model="internalSelected" @update:modelValue="onChange" by="id">
             <div class="relative">
                 <!-- The users text input -->
@@ -124,6 +124,7 @@ watch(
  */
 const filteredOptions = computed(() => {
     const q = searchQuery.value.toLowerCase();
+
     return props.tags?.filter((c) => c.key.toLowerCase().includes(q));
 });
 

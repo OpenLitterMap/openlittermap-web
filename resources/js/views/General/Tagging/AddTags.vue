@@ -24,19 +24,30 @@
                         <!--                        </div>-->
 
                         <!-- Select Category -->
-                        <SelectTag
-                            :tags="tagsStore.categories"
-                            v-model="selectedCategory"
-                            placeholder="category"
-                            class="mb-4"
-                        />
+                        <SelectTag :tags="tagsStore.categories" v-model="selectedCategory" placeholder="category" />
 
                         <!-- Select Object -->
                         <SelectTag
                             v-show="selectedCategory.id > 0"
-                            :tags="tagsStore.objectsForCategory[selectedCategory.key]"
+                            :tags="getLitterObjectsForCategory"
                             v-model="selectedObject"
                             placeholder="object"
+                        />
+
+                        <!-- Select Tag Type -->
+                        <SelectTag
+                            v-show="selectedObject.id > 0"
+                            :tags="getTagTypes"
+                            v-model="selectedTagType"
+                            placeholder="tag type"
+                        />
+
+                        <!-- Select Material -->
+                        <SelectTag
+                            v-show="selectedTagType.id > 0"
+                            :tags="getMaterialsForLitterObjectOrTagType"
+                            v-model="selectedMaterial"
+                            placeholder="material"
                         />
                     </div>
                 </div>
@@ -61,6 +72,38 @@ const searchAllTags = ref('');
 const selectedCategory = ref({ id: 0, key: '' });
 const selectedObject = ref({ id: 0, key: '' });
 const selectedTagType = ref({ id: 0, key: '' });
+const selectedMaterial = ref([]);
+
+const getLitterObjectsForCategory = computed(() => {
+    if (!selectedCategory.value.key) return [];
+
+    return tagsStore.objectsForCategory[selectedCategory.value.key];
+});
+
+const getTagTypes = computed(() => {
+    if (selectedObject.value.id > 0) {
+        const object = getLitterObjectsForCategory.value.find((o) => o.key === selectedObject.value.key);
+
+        return object?.tag_types || [];
+    }
+
+    return [];
+});
+
+const getMaterialsForLitterObjectOrTagType = computed(() => {
+    const objectMaterials =
+        getLitterObjectsForCategory.value.find((o) => o.key === selectedObject.value.key)?.materials || [];
+
+    const tagTypeMaterials = getTagTypes.value.find((t) => t.key === selectedTagType.value.key)?.materials || [];
+
+    const stringArray = [...objectMaterials, ...tagTypeMaterials];
+
+    // Convert strings => { id, key } to match id, key logic of SelectTag.vue
+    return stringArray.map((item) => ({
+        id: item,
+        key: item,
+    }));
+});
 
 onMounted(async () => {
     const loader = $loading.show({ container: null });
