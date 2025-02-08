@@ -4,7 +4,6 @@ namespace App\Models\Litter\Tags;
 
 use App\Models\Photo;
 use App\Models\Litter\Categories\Brand;
-use App\Models\Litter\Categories\Material;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

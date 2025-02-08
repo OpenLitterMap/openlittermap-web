@@ -4,12 +4,10 @@ namespace App\Http\Controllers\API\Tags;
 
 use App\Http\Controllers\Controller;
 use App\Models\Litter\Tags\Category;
-use App\Models\Litter\Tags\LitterModel;
-use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\Materials;
-use App\Models\Litter\Tags\TagType;
+use App\Models\Litter\Tags\LitterObject;
+use App\Models\Litter\Tags\CategoryLitterObject;
 use Illuminate\Support\Collection;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -17,32 +15,55 @@ class GetTagsController extends Controller
 {
     /**
      * Get the Tags in their nested structure
+     *
+     * We will cache this or move to json.
      */
     public function index (Request $request): JsonResponse
     {
+        // Get nested data structure
         [$query, $searchQuery] = $this->generateQueryFromRequest($request);
 
         $rows = $this->loadRowsFromQuery($query, $searchQuery);
 
-        $grouped = $this->groupTags($rows);
+        $groupedTags = $this->groupTags($rows);
 
         return response()->json([
-            'tags' => $grouped
+            'tags' => $groupedTags,
+        ]);
+    }
+
+    /**
+     * Get all tags without grouping
+     *
+     * Ordered alphabetically.
+     */
+    public function getAllTags (): JsonResponse {
+        $categories = Category::select('key')->orderBy('key')->get()->pluck('key');
+        $litterObjects = LitterObject::select('key')->orderBy('key')->get()->pluck('key');
+        $materials = Materials::select('key')->orderBy('key')->get()->pluck('key');
+
+        $tags = collect([
+            'categories' => $categories,
+            'litter_objects' => $litterObjects,
+            'materials' => $materials,
+        ]);
+
+        return response()->json([
+            'tags' => $tags
         ]);
     }
 
     /**
      * Build a query that filters by available models.
      */
-    protected function generateQueryFromRequest (Request $request)
+    protected function generateQueryFromRequest (Request $request): array
     {
         $categoryKey   = $request['category'] ?? null;
         $objectKey     = $request['object'] ?? null;
-        $tagTypeKey    = $request['tag_type'] ?? null;
         $materialsKeys = $request['materials'] ? explode(',', $request['materials']) : null;
         $searchQuery   = $request['search'] ?? null;
 
-        $query = LitterModel::query();
+        $query = CategoryLitterObject::query();
 
         if ($categoryKey) {
             $query->whereHas('category', function($q) use ($categoryKey) {
@@ -52,18 +73,13 @@ class GetTagsController extends Controller
 
         if ($objectKey) {
             $query->whereHas('litterObject', function($q) use ($objectKey) {
-                $q->where('key', $objectKey);
-            });
-        }
-
-        if ($tagTypeKey) {
-            $query->whereHas('tagType', function($q) use ($tagTypeKey) {
-                $q->where('key', $tagTypeKey);
+                $q->where('key', $objectKey)
+                  ->orWhere('key', 'LIKE', "%{$objectKey}%");
             });
         }
 
         if (!empty($materialsKeys) && $materialsKeys[0] !== '') {
-            $query->whereHas('modelMaterials', function ($q) use ($materialsKeys) {
+            $query->whereHas('materials', function ($q) use ($materialsKeys) {
                 $q->whereIn('key', $materialsKeys);
             });
         }
@@ -72,8 +88,7 @@ class GetTagsController extends Controller
             $query->where(function ($q) use ($searchQuery) {
                 $q->orWhereHas('category', fn($subQ) => $subQ->where('key', 'LIKE', "{$searchQuery}%"))
                     ->orWhereHas('litterObject', fn($subQ) => $subQ->where('key', 'LIKE', "{$searchQuery}%"))
-                    ->orWhereHas('tagType', fn($subQ) => $subQ->where('key', 'LIKE', "{$searchQuery}%"))
-                    ->orWhereHas('modelMaterials', fn($subQ) => $subQ->where('key', 'LIKE', "{$searchQuery}%"));
+                    ->orWhereHas('materials', fn($subQ) => $subQ->where('key', 'LIKE', "{$searchQuery}%"));
             });
         }
 
@@ -84,75 +99,42 @@ class GetTagsController extends Controller
      * Load the data from the generated query.
      * Eager load materials, and filter them by search if it exists.
      */
-    protected function loadRowsFromQuery (Builder $query, ?string $searchQuery): Collection
+    protected function loadRowsFromQuery ($query, ?string $searchQuery): Collection
     {
         return $query->with([
             'category:id,key',
-            'litterObject' => function ($q) use ($searchQuery) {
-                $q->select('id','key')
-                    ->with(['materials' => function ($subQ) use ($searchQuery) {
-                        if ($searchQuery) {
-                            $subQ->where('key', 'LIKE', $searchQuery.'%');
-                        }
-                    }]);
-            },
-            'tagType' => function ($q) use ($searchQuery) {
-                $q->select('id','key')
-                    ->with(['materials' => function ($subQ) use ($searchQuery) {
-                        if ($searchQuery) {
-                            $subQ->where('key', 'LIKE', $searchQuery.'%');
-                        }
-                    }]);
-            },
-            'modelMaterials' => function ($q) use ($searchQuery) {
+            'litterObject:id,key',
+            'materials' => function ($q) use ($searchQuery) {
                 if ($searchQuery) {
                     $q->where('key', 'LIKE', $searchQuery.'%');
                 }
-            }
-            ])->get();
+            },
+        ])
+        ->get();
     }
 
     protected function groupTags (Collection $rows): Collection
     {
         return $rows->groupBy(fn($row) => $row->category->key)
-            ->map(function ($catGroup) {
+            ->map(function (Collection $catGroup) {
                 $category = $catGroup->first()->category;
 
-                // For each Category group, group by LitterObject->key
-                $litterObjects = $catGroup->groupBy(fn($row) => $row->litterObject->key)
-                    ->map(function ($objGroup) {
-                        // All rows in objGroup share the same LitterObject
-                        $litterObject = $objGroup->first()->litterObject;
-
-                        // Collect TagTypes
-                        $tagTypes = $objGroup->map(function ($r) {
-                            if ($r->tagType) {
-                                return [
-                                    'id' => $r->tagType->id,
-                                    'key' => $r->tagType->key,
-                                    'materials' => $r->modelMaterials ? $r->modelMaterials->pluck('key') : [],
-                                ];
-                            }
-
-                            return null;
-                        })->filter()->values();
-
-                        return [
-                            'id' => $litterObject->id,
-                            'key' => $litterObject->key,
-                            'materials' => $litterObject->materials->pluck('key'),
-                            'tag_types' => $tagTypes,
-                        ];
-                    })
-                    ->values();
+                // Each pivot record represents a unique (Category, LitterObject) pair.
+                // Map each to a litter object with its contextual materials.
+                $litterObjects = $catGroup->map(function ($row) {
+                    return [
+                        'id'        => $row->litterObject->id,
+                        'key'       => $row->litterObject->key,
+                        'materials' => $row->materials->pluck('key'),
+                    ];
+                })->sortBy('key')->values();
 
                 return [
-                    'id' => $category->id,
-                    'key' => $category->key,
+                    'id'             => $category->id,
+                    'key'            => $category->key,
                     'litter_objects' => $litterObjects,
                 ];
-            })
-            ->values();
+            });
     }
 
     // OLD CODE PROBABLY USELESS

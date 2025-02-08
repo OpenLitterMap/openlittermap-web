@@ -11,14 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('materialables', function (Blueprint $table) {
+        Schema::create('category_litter_object', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('materials_id')->constrained('materials')->cascadeOnDelete();
-            $table->unsignedBigInteger('materialable_id');
-            $table->string('materialable_type');
+            $table->foreignId('category_id')->constrained()->onDelete('cascade');
+            $table->foreignId('litter_object_id')->constrained()->onDelete('cascade');
             $table->timestamps();
 
-            $table->index(['materialable_id', 'materialable_type']);
+            $table->unique(['category_id', 'litter_object_id']);
         });
     }
 
@@ -27,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('materialables');
+        Schema::dropIfExists('category_litter_object');
     }
 };

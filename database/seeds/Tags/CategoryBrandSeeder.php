@@ -1,6 +1,6 @@
 <?php
 
-namespace Database\Seeders;
+namespace Database\Seeders\Tags;
 
 use App\Models\Litter\Categories\Brand;
 use App\Models\Litter\Tags\BrandList;

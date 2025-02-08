@@ -19,30 +19,17 @@ class LitterObject extends Model
         return 'key';
     }
 
-    public function litterModels(): HasMany
+    public function categories()
     {
-        return $this->hasMany(LitterModel::class);
+        return $this->belongsToMany(Category::class, 'category_litter_object')->using(CategoryLitterObject::class);
     }
 
-    public function photoTags(): HasMany
-    {
-        return $this->hasMany(PhotoTag::class, 'object_id');
-    }
-
+    /**
+     * (Optional) Global materials relationship.
+     * This uses a polymorphic many-to-many relation if other models also need materials.
+     */
     public function materials(): MorphToMany
     {
-        return $this->morphToMany(Materials::class, 'materialable');
-    }
-
-    // New 3-way pivot table
-    public function tagTypes(): BelongsToMany
-    {
-        return $this->belongsToMany(
-            TagType::class,
-            'litter_models',
-            'litter_object_id',
-            'tag_type_id'
-        )
-        ->withPivot('category_id');
+        return $this->morphToMany(Materials::class, 'materialable', 'materialables');
     }
 }

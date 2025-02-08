@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Database\Seeders\Tags\GenerateTagsSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -30,6 +31,6 @@ class DatabaseSeeder extends Seeder
         $this->call(PhotosSeeder::class);
 
         // Populate photos with Tags v2
-        $this->call(LitterModelSeeder::class);
+        $this->call(GenerateTagsSeeder::class);
     }
 }

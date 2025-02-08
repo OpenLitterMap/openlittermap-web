@@ -14,43 +14,44 @@
                     <img :src="paginatedPhotos?.data[0]?.filename" alt="photo" class="max-w-[42em] mr-10" />
 
                     <!-- Add Tags -->
-                    <div class="border-gray-50">
-                        <!--                        <div class="mb-4">-->
-                        <!--                            <input-->
-                        <!--                                type="text"-->
-                        <!--                                placeholder="TODO: Search all tags"-->
-                        <!--                                v-model="searchAllTags"-->
-                        <!--                            />-->
-                        <!--                        </div>-->
-
+                    <div class="flex flex-col border-gray-50">
                         <!-- Select Category -->
-                        <SelectTag :tags="tagsStore.categories" v-model="selectedCategory" placeholder="category" />
+                        <SelectTag :tags="getCategories" v-model="selectedCategory" placeholder="category" />
 
                         <!-- Select Object -->
-                        <SelectTag
-                            v-show="selectedCategory.id > 0"
-                            :tags="getLitterObjectsForCategory"
-                            v-model="selectedObject"
-                            placeholder="object"
-                        />
+                        <!--                        v-show="selectedCategory.id > 0"-->
+                        <SelectTag :tags="getLitterObjects" v-model="selectedObject" placeholder="object" />
 
                         <!-- Select Tag Type -->
-                        <SelectTag
-                            v-show="selectedObject.id > 0"
-                            :tags="getTagTypes"
-                            v-model="selectedTagType"
-                            placeholder="tag type"
-                        />
+                        <!--                        v-show="selectedObject.id > 0 && getTagTypes.length"-->
+                        <SelectTag :tags="getTagTypes" v-model="selectedTagType" placeholder="tag type" />
 
                         <!-- Select Material -->
+                        <!--                        v-show="-->
+                        <!--                        (getTagTypes && selectedTagType.id > 0) ||-->
+                        <!--                        (getLitterObjects &&-->
+                        <!--                        selectedObject.id > 0 &&-->
+                        <!--                        getMaterialsForLitterObjectOrTagType.length)-->
+                        <!--                        "-->
                         <SelectTag
-                            v-show="selectedTagType.id > 0"
                             :tags="getMaterialsForLitterObjectOrTagType"
                             v-model="selectedMaterial"
                             placeholder="material"
                         />
+
+                        <button class="mt-auto bg-blue-500 text-white px-4 py-2 rounded-md" @click="addTags">
+                            Add Tags
+                        </button>
                     </div>
                 </div>
+
+                <!--                        <div class="mb-4">-->
+                <!--                            <input-->
+                <!--                                type="text"-->
+                <!--                                placeholder="TODO: Search all tags"-->
+                <!--                                v-model="searchAllTags"-->
+                <!--                            />-->
+                <!--                        </div>-->
             </div>
         </div>
     </div>
@@ -74,15 +75,22 @@ const selectedObject = ref({ id: 0, key: '' });
 const selectedTagType = ref({ id: 0, key: '' });
 const selectedMaterial = ref([]);
 
-const getLitterObjectsForCategory = computed(() => {
-    if (!selectedCategory.value.key) return [];
+// Computed
+const getCategories = computed(() => {
+    return tagsStore.categories;
+});
 
-    return tagsStore.objectsForCategory[selectedCategory.value.key];
+const getLitterObjects = computed(() => {
+    if (selectedCategory.value.key) {
+        return tagsStore.objectsForCategory[selectedCategory.value.key];
+    }
+
+    return tagsStore.objects;
 });
 
 const getTagTypes = computed(() => {
     if (selectedObject.value.id > 0) {
-        const object = getLitterObjectsForCategory.value.find((o) => o.key === selectedObject.value.key);
+        const object = getLitterObjects.value.find((o) => o.key === selectedObject.value.key);
 
         return object?.tag_types || [];
     }
@@ -91,8 +99,7 @@ const getTagTypes = computed(() => {
 });
 
 const getMaterialsForLitterObjectOrTagType = computed(() => {
-    const objectMaterials =
-        getLitterObjectsForCategory.value.find((o) => o.key === selectedObject.value.key)?.materials || [];
+    const objectMaterials = getLitterObjects.value.find((o) => o.key === selectedObject.value.key)?.materials || [];
 
     const tagTypeMaterials = getTagTypes.value.find((t) => t.key === selectedTagType.value.key)?.materials || [];
 
@@ -105,12 +112,22 @@ const getMaterialsForLitterObjectOrTagType = computed(() => {
     }));
 });
 
+const addTags = () => {
+    console.log(
+        'Add tags',
+        selectedCategory.value,
+        selectedObject.value,
+        selectedTagType.value,
+        selectedMaterial.value
+    );
+};
+
 onMounted(async () => {
     const loader = $loading.show({ container: null });
 
     await photosStore.GET_USERS_UNTAGGED_PHOTOS();
 
-    if (tagsStore.tags.length === 0) {
+    if (tagsStore.groupedTags.length === 0) {
         await tagsStore.GET_TAGS();
     }
 

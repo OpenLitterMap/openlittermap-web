@@ -17,6 +17,8 @@ return new class extends Migration
             $table->foreign('photo_id')->references('id')->on('photos')->onDelete('cascade');
 
             // Relationship to litter_model_id created after create_litter_objects_table migration
+            $table->foreignId('category_id')->constrained()->onDelete('cascade');
+            $table->foreignId('litter_object_id')->constrained()->onDelete('cascade');
 
             $table->integer('quantity')->nullable();
             $table->boolean('picked_up')->nullable();

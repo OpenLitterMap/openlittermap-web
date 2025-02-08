@@ -6,13 +6,14 @@
                 <ComboboxInput
                     :displayValue="displayValue"
                     @input="onInput"
-                    :placeholder="`Search or Select ${placeholder}`"
+                    :placeholder="`${placeholder}`"
                     class="capitalize rounded-md border border-gray-300 bg-white py-2 px-3 text-left shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full"
                 />
 
                 <!-- Clear selected input -->
+                <!-- Material.id is a string -->
                 <button
-                    v-if="modelValue.id > 0"
+                    v-if="modelValue.id !== 0"
                     @click="clearSelected"
                     class="absolute inset-y-0 right-8 flex items-center pr-2"
                     type="button"
@@ -85,7 +86,6 @@ import { ref, computed, watch, defineProps, defineEmits } from 'vue';
 import { Combobox, ComboboxInput, ComboboxButton, ComboboxOptions, ComboboxOption } from '@headlessui/vue';
 import { CheckIcon } from '@heroicons/vue/20/solid';
 
-// PROPS
 const props = defineProps({
     modelValue: {
         type: Object,
@@ -102,7 +102,6 @@ const props = defineProps({
     },
 });
 
-// EMITS
 const emit = defineEmits(['update:modelValue']);
 
 // The user's typed text

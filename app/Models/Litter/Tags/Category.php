@@ -18,32 +18,11 @@ class Category extends Model
         return 'key';
     }
 
-    public function litterModels(): HasMany
-    {
-        return $this->hasMany(LitterModel::class);
-    }
-
     public function litterObjects(): BelongsToMany
     {
-        return $this->belongsToMany(
-            LitterObject::class,
-            'litter_models', // triple pivot table
-            'category_id',
-            'litter_object_id'
-        )
-        // Because the pivot has 3 columns, we can also do ->withPivot('tag_type_id') if you want direct pivot info
-        ->distinct();
-    }
-
-    public function tagTypes(): BelongsToMany
-    {
-        return $this->belongsToMany(
-            TagType::class,
-            'litter_models', // triple pivot table
-            'category_id',
-            'tag_type_id'
-        )
-        // Because the pivot has 3 columns, we can also do ->withPivot('litter_object_id') if you want direct pivot info
-        ->distinct();
+        return $this->belongsToMany(LitterObject::class, 'category_litter_object')
+            ->using(CategoryLitterObject::class)
+            ->withPivot('id')
+            ->with('pivot.materials');
     }
 }
