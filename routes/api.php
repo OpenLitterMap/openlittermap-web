@@ -1,19 +1,18 @@
 <?php
 
-use App\Http\Controllers\Photos\GetUsersUntaggedPhotosController;
 use App\Models\Littercoin;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-use App\Http\Controllers\API\GetUntaggedUploadController;
-
 use App\Http\Controllers\API\Tags\GetTagsController;
 use App\Http\Controllers\API\Tags\UploadTagsController;
+use App\Http\Controllers\API\GetUntaggedUploadController;
+use App\Http\Controllers\Photos\GetUsersUntaggedPhotosController;
 
 Route::get('/tags', [GetTagsController::class, 'index']);
-//Route::get('/tags/search', [GetTagsController::class, 'searchTags']);
+Route::get('/tags/all', [GetTagsController::class, 'getAllTags']);
 
 Route::post('/tags', [UploadTagsController::class, 'upload']);
 

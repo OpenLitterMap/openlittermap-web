@@ -46,7 +46,8 @@
     "vue-i18n": "^11.0.0-rc.1",
     "vue-loading-overlay": "^6.0.6",
     "vue-router": "^4.5.0",
-    "vue-toastification": "^2.0.0-rc.5"
+    "vue-toastification": "^2.0.0-rc.5",
+    "vue-virtual-scroller": "^2.0.0-beta.8"
   },
   "devDependencies": {
     "@tailwindcss/forms": "^0.5.9",

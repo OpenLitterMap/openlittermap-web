@@ -13,6 +13,8 @@ class Category extends Model
 
     protected $guarded = [];
 
+    protected $hidden = ['pivot'];
+
     public function getRouteKeyName(): string
     {
         return 'key';

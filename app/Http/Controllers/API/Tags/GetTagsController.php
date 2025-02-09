@@ -38,18 +38,19 @@ class GetTagsController extends Controller
      * Ordered alphabetically.
      */
     public function getAllTags (): JsonResponse {
-        $categories = Category::select('key')->orderBy('key')->get()->pluck('key');
-        $litterObjects = LitterObject::select('key')->orderBy('key')->get()->pluck('key');
-        $materials = Materials::select('key')->orderBy('key')->get()->pluck('key');
+        $categories = Category::select('id', 'key')->orderBy('key')->get();
 
-        $tags = collect([
-            'categories' => $categories,
-            'litter_objects' => $litterObjects,
-            'materials' => $materials,
-        ]);
+        $litterObjects = LitterObject::with(['categories:id,key', 'materials:id,key'])
+            ->select('id', 'key')
+            ->orderBy('key')
+            ->get();
+
+        $materials = Materials::select('id', 'key')->orderBy('key')->get();
 
         return response()->json([
-            'tags' => $tags
+            'categories' => $categories,
+            'objects' => $litterObjects,
+            'materials' => $materials,
         ]);
     }
 
@@ -125,7 +126,12 @@ class GetTagsController extends Controller
                     return [
                         'id'        => $row->litterObject->id,
                         'key'       => $row->litterObject->key,
-                        'materials' => $row->materials->pluck('key'),
+                        'materials' => $row->materials->map(function ($material) {
+                            return [
+                                'id'  => $material->id,
+                                'key' => $material->key,
+                            ];
+                        }),
                     ];
                 })->sortBy('key')->values();
 

@@ -16,6 +16,8 @@ class Materials extends Model
 
     public $timestamps = false;
 
+    protected $hidden = ['pivot'];
+
     public function categoryLitterObjects(): BelongsToMany
     {
         return $this->belongsToMany(

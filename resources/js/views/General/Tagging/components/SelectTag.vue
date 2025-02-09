@@ -1,5 +1,5 @@
 <template>
-    <div class="w-[20em] mb-4">
+    <div class="mb-4">
         <Combobox as="div" v-model="internalSelected" @update:modelValue="onChange" by="id">
             <div class="relative">
                 <!-- The users text input -->
@@ -54,7 +54,7 @@
                 >
                     <ComboboxOption
                         v-for="option in filteredOptions"
-                        :key="option.id"
+                        :key="option.id + '-' + option.key + '-' + option.hasOwnProperty('text') ? option.text : ''"
                         :value="option"
                         :class="
                             ({ active }) => [
@@ -71,7 +71,10 @@
                             }"
                             class="flex py-2 px-4"
                         >
-                            <span class="flex-1 capitalize">{{ option.key }}</span>
+                            <span class="flex-1 capitalize">{{
+                                option.hasOwnProperty('text') ? option.text : option.key
+                            }}</span>
+
                             <CheckIcon v-show="selected" class="h-4 w-4" />
                         </li>
                     </ComboboxOption>
@@ -89,7 +92,7 @@ import { CheckIcon } from '@heroicons/vue/20/solid';
 const props = defineProps({
     modelValue: {
         type: Object,
-        default: () => ({ id: 0, key: '' }),
+        default: () => ({ id: 0, key: '', text: '' }),
     },
     tags: {
         type: Array,
@@ -119,12 +122,24 @@ watch(
 );
 
 /**
- * Filter your keys by searchQuery
+ * Pre-process the tags to pre-compute lowercase (ie translations will go here)
  */
+const processedTags = computed(() => {
+    if (!props.tags) return [];
+
+    return props.tags
+        .filter((tag) => tag && typeof tag.key === 'string')
+        .map((tag) => ({
+            ...tag,
+            lowerKey: tag.key.toLowerCase(),
+            lowerText: tag.hasOwnProperty('text') ? tag.text.toLowerCase() : tag.key.toLowerCase(),
+        }));
+});
+
 const filteredOptions = computed(() => {
     const q = searchQuery.value.toLowerCase();
 
-    return props.tags?.filter((c) => c.key.toLowerCase().includes(q));
+    return processedTags.value.filter((c) => c.lowerText.includes(q)).slice(0, 100);
 });
 
 /**
@@ -163,10 +178,14 @@ function onInput(event) {
  * so the parent’s v-model is updated.
  */
 function onChange(newSelection) {
+    console.log({ newSelection });
+
     emit('update:modelValue', newSelection);
 
     // Also reflect it in our typed text:
-    if (newSelection && newSelection.key) {
+    if (newSelection && newSelection.text) {
+        searchQuery.value = newSelection.text;
+    } else if (newSelection && newSelection.key) {
         searchQuery.value = newSelection.key;
     }
 }

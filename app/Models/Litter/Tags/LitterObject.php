@@ -3,9 +3,7 @@
 namespace App\Models\Litter\Tags;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class LitterObject extends Model
@@ -13,6 +11,8 @@ class LitterObject extends Model
     use HasFactory;
 
     protected $guarded = [];
+
+    protected $hidden = ['pivot'];
 
     public function getRouteKeyName(): string
     {
@@ -24,12 +24,13 @@ class LitterObject extends Model
         return $this->belongsToMany(Category::class, 'category_litter_object')->using(CategoryLitterObject::class);
     }
 
-    /**
-     * (Optional) Global materials relationship.
-     * This uses a polymorphic many-to-many relation if other models also need materials.
-     */
-    public function materials(): MorphToMany
+    public function materials(): BelongsToMany
     {
-        return $this->morphToMany(Materials::class, 'materialable', 'materialables');
+        return $this->belongsToMany(
+            Materials::class,
+            'category_litter_object_material',
+            'category_litter_object_id',
+            'material_id'
+        );
     }
 }

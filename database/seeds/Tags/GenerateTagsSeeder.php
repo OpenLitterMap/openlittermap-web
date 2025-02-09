@@ -299,7 +299,6 @@ class GenerateTagsSeeder extends Seeder
                 'energy_can' => ['material:aluminium'],
                 'juice_can' => ['material:aluminium'],
                 'icedTea_can' => ['material:aluminium'],
-                'coffee_can' => ['material:aluminium'],
                 'sparklingWater_can' => ['material:aluminium'],
 
                 'juice_carton' => ['material:cardboard', 'material:foil', 'material:plastic'],
@@ -316,12 +315,8 @@ class GenerateTagsSeeder extends Seeder
                 'pullRing' => ['material:aluminium'],
 
                 'packaging' => ['material:cardboard', 'material:plastic', 'material:foil'],
-
-                'sixPackRing' => ['material:plastic'],
-                'shrinkWrap' => ['material:plastic'],
-                'box' => ['material:cardboard'],
-
                 'straw' => ['material:plastic', 'material:paper', 'material:metal', 'material:bamboo'],
+                'straw_packaging' => ['material:paper', 'material:plastic'],
                 'juice_pouch' => ['material:plastic', 'material:foil'],
                 'other'
             ],
