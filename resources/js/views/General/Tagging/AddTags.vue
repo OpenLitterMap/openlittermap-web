@@ -7,11 +7,21 @@
 
             <div v-else>
                 <!-- Header-->
-                <div class="bg-gray-100 p-5 rounded-md mb-10">
+                <div class="bg-gray-100 p-5 rounded-md mb-10 flex justify-evenly">
                     <p>Found {{ paginatedPhotos?.data?.length }} photos</p>
+
+                    <p>Team: Cleanup</p>
+
+                    <p>x photos remaining</p>
+
+                    <p>XP to level up: 69</p>
                 </div>
 
                 <div class="flex">
+                    <div class="w-1/5">
+                        <p>Left col</p>
+                    </div>
+
                     <!-- Image Container -->
                     <div class="flex flex-col items-center w-1/3">
                         <img :src="paginatedPhotos?.data[0]?.filename" alt="photo" />
@@ -63,14 +73,14 @@
                     </div>
 
                     <!-- Right container-->
-                    <div class="md:w-1/2 lg:w-2/3">
+                    <div class="md:w-1/2">
                         <div class="px-20">
-                            <ul role="list" class="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
+                            <ul role="list" class="grid grid-cols-2 gap-6">
                                 <li
                                     v-for="tag in newTags"
                                     :key="tag.id"
                                     @click="newTagSelected = tag.id"
-                                    class="col-span-1 flex flex-col rounded-lg bg-slate-700 shadow p-4"
+                                    class="col-span-1 flex flex-col rounded-lg bg-[#4e5a6c] shadow p-4"
                                     :class="newTagSelected === tag.id ? 'bg-blue-600' : ''"
                                 >
                                     <p class="text-xl mb-4">{{ tag.quantity }} {{ tag.object.key }}</p>
@@ -91,15 +101,29 @@
                                     </div>
 
                                     <div class="flex">
-                                        <p class="mr-4">Picked up?</p>
+                                        <div class="flex w-2/3 m-auto">
+                                            <p class="mr-2">Picked up</p>
 
-                                        <ToggleSwitch />
-                                    </div>
+                                            <ToggleSwitch :model-value="tag.pickedUp" />
+                                        </div>
 
-                                    <div class="flex">
-                                        <p>Delete</p>
+                                        <div class="flex w-1/3 gap-1">
+                                            <button
+                                                type="button"
+                                                @click="deleteTag(tag.id)"
+                                                class="inline-flex items-center justify-center px-2.5 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-500 active:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150"
+                                            >
+                                                <i class="fas fa-fw fa-trash-alt text-xs"></i>
+                                            </button>
 
-                                        <p>Copy</p>
+                                            <button
+                                                type="button"
+                                                @click="duplicateTag(tag.id)"
+                                                class="inline-flex items-center justify-center px-2.5 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-500 active:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150"
+                                            >
+                                                <i class="fas fa-fw fa-copy text-xs"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                 </li>
                             </ul>
@@ -235,6 +259,26 @@ const addTag = () => {
         object: selectedObject.value,
         material: selectedMaterial.value,
         quantity: selectedQuantity.value,
+        pickedUp: true, // set by users settings
+    });
+};
+
+const deleteTag = (id) => {
+    newTags.value = newTags.value.filter((tag) => tag.id !== id);
+};
+
+const duplicateTag = (id) => {
+    const originalTag = newTags.value.find((tag) => tag.id === id);
+
+    console.log({ originalTag });
+
+    newTags.value.push({
+        id: Math.random().toString(16).slice(2),
+        category: originalTag.category,
+        object: originalTag.object,
+        material: originalTag.material,
+        quantity: originalTag.quantity,
+        pickedUp: originalTag.pickedUp,
     });
 };
 
