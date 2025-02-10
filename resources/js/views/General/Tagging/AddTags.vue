@@ -18,7 +18,7 @@
                 </div>
 
                 <div class="flex">
-                    <div class="w-1/5">
+                    <div class="w-[5em]">
                         <p>Left col</p>
                     </div>
 
@@ -27,7 +27,9 @@
                         <img :src="paginatedPhotos?.data[0]?.filename" alt="photo" />
 
                         <div class="w-full">
+                            <!-- Needs a key to re-render -->
                             <SelectTag
+                                :key="searchAllTagsKey"
                                 :tags="getAllTags"
                                 v-model="searchAllTags"
                                 placeholder="Search All Tags or Create Your Own!"
@@ -155,6 +157,9 @@ const selectedMaterial = ref({ id: 0, key: '' });
 const searchAllTags = ref({ id: 0, key: '', text: '' });
 const selectedQuantity = ref(1);
 const selectedBrand = ref({ id: 0, key: '' });
+const searchAllTagsKey = ref(0);
+const newTags = ref([]);
+const newTagSelected = ref(null);
 
 // Needs checkboxes to filter by all tags or materials
 const getAllTags = computed(() => {
@@ -229,7 +234,7 @@ watch(selectedObject, (newObj) => {
     }
 
     if (newObj) {
-        if (newObj.categories.length === 1) {
+        if (newObj.categories?.length === 1) {
             selectedCategory.value = newObj.categories[0];
         }
 
@@ -242,25 +247,34 @@ watch(selectedObject, (newObj) => {
 });
 
 watch(searchAllTags, (newVal) => {
-    selectedCategory.value = { id: newVal.categoryId, key: newVal.categoryKey };
-    selectedObject.value = { id: newVal.objectId, key: newVal.objectKey };
-    selectedMaterial.value = { id: newVal.materialId, key: newVal.materialKey };
+    if (newVal && newVal.id && newVal.categoryId && newVal.objectId && newVal.materialId) {
+        selectedCategory.value = { id: newVal.categoryId, key: newVal.categoryKey };
+        selectedObject.value = { id: newVal.objectId, key: newVal.objectKey };
+        selectedMaterial.value = { id: newVal.materialId, key: newVal.materialKey };
+    }
 });
 
-const newTags = ref([]);
-const newTagSelected = ref(null);
-
 const addTag = () => {
-    const uuid = () => Math.random().toString(16).slice(2);
-
     newTags.value.push({
-        id: uuid,
-        category: selectedCategory.value,
-        object: selectedObject.value,
-        material: selectedMaterial.value,
+        id: Math.random().toString(16).slice(2),
+        category: { ...selectedCategory.value },
+        object: { ...selectedObject.value },
+        material: { ...selectedMaterial.value },
         quantity: selectedQuantity.value,
-        pickedUp: true, // set by users settings
+        pickedUp: true, // change to users default settings
     });
+
+    resetInputs();
+};
+
+const resetInputs = () => {
+    selectedCategory.value = { id: 0, key: '' };
+    selectedObject.value = { id: 0, key: '' };
+    selectedMaterial.value = { id: 0, key: '' };
+    searchAllTags.value = { id: 0, key: '', text: '' };
+    selectedQuantity.value = 1;
+    // Increment key to re-render SelectTag component
+    searchAllTagsKey.value++;
 };
 
 const deleteTag = (id) => {
@@ -269,8 +283,6 @@ const deleteTag = (id) => {
 
 const duplicateTag = (id) => {
     const originalTag = newTags.value.find((tag) => tag.id === id);
-
-    console.log({ originalTag });
 
     newTags.value.push({
         id: Math.random().toString(16).slice(2),
