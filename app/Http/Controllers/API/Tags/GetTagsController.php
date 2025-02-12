@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API\Tags;
 
 use App\Http\Controllers\Controller;
+use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\Materials;
 use App\Models\Litter\Tags\LitterObject;
@@ -47,10 +48,13 @@ class GetTagsController extends Controller
 
         $materials = Materials::select('id', 'key')->orderBy('key')->get();
 
+        $brands = BrandList::select('id', 'key')->orderBy('key')->get();
+
         return response()->json([
             'categories' => $categories,
             'objects' => $litterObjects,
             'materials' => $materials,
+            'brands' => $brands
         ]);
     }
 

@@ -81,9 +81,7 @@
                                 <li
                                     v-for="tag in newTags"
                                     :key="tag.id"
-                                    @click="newTagSelected = tag.id"
                                     class="col-span-1 flex flex-col rounded-lg bg-[#4e5a6c] shadow p-4"
-                                    :class="newTagSelected === tag.id ? 'bg-blue-600' : ''"
                                 >
                                     <p class="text-xl mb-4">{{ tag.quantity }} {{ tag.object.key }}</p>
 
@@ -96,7 +94,7 @@
                                     <SelectTag :tags="getBrands" v-model="selectedBrand" placeholder="Add Brands" />
 
                                     <div class="mb-4">
-                                        <p>Suggested tags:</p>
+                                        <p>Extra tags:</p>
 
                                         <p>tag-1</p>
                                         <p>tag-2</p>
