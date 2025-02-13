@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('brandslist', function (Blueprint $table) {
             $table->id();
             $table->string('key')->unique();
+            $table->boolean('is_custom')->default(true);
             $table->timestamps();
         });
     }

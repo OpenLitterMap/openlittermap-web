@@ -223,7 +223,7 @@ const getMaterials = computed(() => {
 });
 
 const getBrands = computed(() => {
-    return [];
+    return tagsStore.brands;
 });
 
 watch(selectedObject, (newObj) => {
@@ -252,7 +252,16 @@ watch(searchAllTags, (newVal) => {
     }
 });
 
+// const tagSelected = computed(() => {
+//     // return searchAllTags.value.id === 0 || selectedObject.value.id === 0;
+//     return true;
+// });
+
 const addTag = () => {
+    // if (!tagSelected.value) {
+    //     return;
+    // }
+
     newTags.value.push({
         id: Math.random().toString(16).slice(2),
         category: { ...selectedCategory.value },

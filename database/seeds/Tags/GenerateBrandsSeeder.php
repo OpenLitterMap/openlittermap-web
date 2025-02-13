@@ -17,6 +17,7 @@ class GenerateBrandsSeeder extends Seeder
         foreach ($brands as $brand) {
             BrandList::firstOrCreate([
                 'key' => $brand,
+                'is_custom' => false
             ]);
         }
 

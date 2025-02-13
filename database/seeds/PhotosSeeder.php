@@ -38,13 +38,16 @@ class PhotosSeeder extends Seeder
         $state = $country->states->random();
         $city = $state->cities->random();
 
+        $verified = $faker->randomElement([0, 1, 2]);
+        $verification = $verified === 2 ? 1 : $faker->randomElement([0, 1]);
+
         return Photo::create([
             'user_id' => $userId,
             'filename' => 'images/butts.png',
             'model' => "iPhone 12",
             'datetime' => $faker->dateTimeThisYear,
-            'verified' => 2,
-            'verification' => 1,
+            'verified' => $verified,
+            'verification' => $verification,
             'remaining' => $faker->boolean,
             'lat' => $faker->latitude,
             'lon' => $faker->longitude,

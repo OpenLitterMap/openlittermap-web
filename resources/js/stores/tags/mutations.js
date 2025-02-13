@@ -4,9 +4,10 @@ export const mutations = {
         this.groupedTags = tags;
     },
 
-    initAllTags({ categories, objects, materials }) {
+    initAllTags({ categories, objects, materials, brands }) {
         this.categories = categories;
         this.objects = objects;
         this.materials = materials;
+        this.brands = brands;
     },
 };

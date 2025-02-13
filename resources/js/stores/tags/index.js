@@ -12,6 +12,7 @@ export const useTagsStore = defineStore('tags', {
         categories: [],
         objects: [],
         materials: [],
+        brands: [],
     }),
 
     actions: {
