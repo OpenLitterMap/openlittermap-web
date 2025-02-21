@@ -188,7 +188,6 @@ class GenerateTagsSeeder extends Seeder
                     'material:concrete',
                     'material:paper',
                     'material:plastic',
-                    'material:concrete',
                     'material:metal',
                     'material:fiberglass',
                     'material:foam',
@@ -331,7 +330,6 @@ class GenerateTagsSeeder extends Seeder
                 'stapler' => ['material:metal', 'material:plastic'],
                 'paperClip' => ['material:metal'],
                 'rubberBand' => ['material:rubber'],
-                'cableTie' => ['material:plastic'],
             ],
         ];
 

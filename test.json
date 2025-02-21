@@ -16,8 +16,7 @@
         "stationery": "Stationery",
         "other": "Other",
         "material": "Material",
-        "dogshit": "Pets",
-        "pets": "Pets"
+        "dogshit": "Pets"
     },
     "smoking": {
         "butts": "Cigarette Butts",
@@ -40,8 +39,7 @@
         "pipe": "Pipe",
         "rollingPapers": "Rolling Papers",
         "vapeOil": "Vape Oil",
-        "vapePen": "Vape Pen",
-        "other": "Other"
+        "vapePen": "Vape Pen"
     },
     "alcohol": {
         "beerBottle": "Beer Bottles",
@@ -71,8 +69,7 @@
         "spirits_can": "Spirits Can",
         "straw": "Straw",
         "wine_bottle": "Wine Bottle",
-        "wine_glass": "Wine Glass",
-        "other": "Other"
+        "wine_glass": "Wine Glass"
     },
     "art": {
         "item": "Litter Art"
@@ -85,9 +82,7 @@
         "lid": "Lid",
         "packaging": "Packaging",
         "pod": "Pod",
-        "sleeves": "Sleeves",
-        "other": "Other",
-        "stirrer": "Stirrer"
+        "sleeves": "Sleeves"
     },
     "food": {
         "sweetWrappers": "Sweet Wrappers",
@@ -114,12 +109,7 @@
         "packaging": "Packaging",
         "packet": "Packet",
         "tinfoil": "Tinfoil",
-        "wrapper": "Wrapper",
-        "crisps": "Crisps",
-        "jar": "Jar",
-        "napkin": "Napkin",
-        "other": "Other",
-        "plate": "Plate"
+        "wrapper": "Wrapper"
     },
     "softdrinks": {
         "waterBottle": "Plastic Water bottle",
@@ -165,11 +155,7 @@
         "sports_bottle": "Sports Bottle",
         "straw": "Straw",
         "straw_packaging": "Straw Packaging",
-        "water_bottle": "Water Bottle",
-        "pullRing": "Pull Ring",
-        "drinkingGlass": "Drinking Glass",
-        "juice_bottle": "Juice Bottle",
-        "other": "Other"
+        "water_bottle": "Water Bottle"
     },
     "sanitary": {
         "gloves": "Gloves",
@@ -191,17 +177,7 @@
         "plaster": "Plaster",
         "sanitiser": "Sanitiser",
         "syringe": "Syringe",
-        "wipes": "Wipes",
-        "condom_wrapper": "Condom Wrapper",
-        "dentalFloss": "Dental Floss",
-        "deodorant_can": "Deodorant Can",
-        "earSwabs": "Ear Swabs",
-        "other": "Other",
-        "sanitaryPad": "Sanitary Pad",
-        "tampon": "Tampon",
-        "toothbrush": "Toothbrush",
-        "toothpasteBox": "Toothpaste Box",
-        "toothpasteTube": "Toothpaste Tube"
+        "wipes": "Wipes"
     },
     "dumping": {
         "small": "Small",
@@ -220,9 +196,7 @@
         "pallet": "Pallet",
         "pipe": "Pipe",
         "plastic": "Plastic",
-        "wire": "Wire",
-        "container": "Container",
-        "other": "Other"
+        "wire": "Wire"
     },
     "coastal": {
         "microplastics": "Microplastics",
@@ -246,8 +220,7 @@
         "styro_large": "Styrofoam large",
         "coastal_other": "Coastal-Other",
         "degraded_bag": "Degraded Bag",
-        "degraded_bottle": "Degraded Bottle",
-        "other": "Other"
+        "degraded_bottle": "Degraded Bottle"
     },
     "brands": {
         "aadrink": "AA Drink",
@@ -387,7 +360,6 @@
         "bags_litter": "Bags of Litter",
         "overflowing_bins": "Overflowing Bins",
         "tyre": "Tyre",
-        "cable_tie": "Cable Tie",
         "other": "Other-Other",
         "bagsLitter": "Bags Litter",
         "cableTie": "Cable Tie",
@@ -396,12 +368,7 @@
         "posters": "Posters",
         "randomLitter": "Random Litter",
         "trafficCone": "Traffic Cone",
-        "washingUp": "Washing Up",
-        "appliance": "Appliance",
-        "furniture": "Furniture",
-        "graffiti": "Graffiti",
-        "mattress": "Mattress",
-        "paintCan": "Paint Can"
+        "washingUp": "Washing Up"
     },
     "presence": {
         "picked-up": "I picked it up!",
@@ -454,8 +421,7 @@
         "mirror": "Mirror",
         "oil_can": "Oil Can",
         "tyre": "Tyre",
-        "wheel": "Wheel",
-        "other": "Other"
+        "wheel": "Wheel"
     },
     "electronics": {
         "battery": "Battery",
@@ -463,9 +429,7 @@
         "headphones": "Headphones",
         "laptop": "Laptop",
         "mobilePhone": "Mobile Phone",
-        "tablet": "Tablet",
-        "charger": "Charger",
-        "other": "Other"
+        "tablet": "Tablet"
     },
     "stationery": {
         "book": "Book",
@@ -477,9 +441,5 @@
         "pencil": "Pencil",
         "rubberBand": "Rubber Band",
         "stapler": "Stapler"
-    },
-    "pets": {
-        "dogshit": "Dogshit",
-        "dogshit_in_bag": "Dogshit In Bag"
     }
 }

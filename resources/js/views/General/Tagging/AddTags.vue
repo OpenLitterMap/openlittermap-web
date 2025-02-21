@@ -138,6 +138,7 @@
 <script setup>
 import { useLoading } from 'vue-loading-overlay';
 import { onMounted, computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import { usePhotosStore } from '../../../stores/photos/index.js';
 import { useTagsStore } from '../../../stores/tags/index.js';
@@ -148,6 +149,7 @@ import ToggleSwitch from './components/ToggleSwitch.vue';
 const photosStore = usePhotosStore();
 const tagsStore = useTagsStore();
 
+const { t } = useI18n();
 const $loading = useLoading();
 const selectedCategory = ref({ id: 0, key: '' });
 const selectedObject = ref({ id: 0, key: '' });
@@ -161,37 +163,55 @@ const newTagSelected = ref(null);
 
 // Needs checkboxes to filter by all tags or materials
 const getAllTags = computed(() => {
-    const objectTags = tagsStore.objects.flatMap((obj) =>
-        obj.materials.flatMap((material) =>
-            obj.categories.map((cat) => ({
-                id: `cat-${cat.id}-obj-${obj.id}-mat-${material.id}`,
-                key: `${cat.key}-${obj.key}-${material.key}`,
+    const tags = [];
 
-                categoryKey: cat.key,
-                categoryId: cat.id,
+    // Iterate over each category in tagsStore.groupedTags.
+    // We assume tagsStore.groupedTags is an object where each key represents a category.
+    Object.keys(tagsStore.groupedTags).forEach((categoryKey) => {
+        const categoryGroup = tagsStore.groupedTags[categoryKey];
+        // Use the category group's id if provided; otherwise fallback to the categoryKey.
+        const categoryId = categoryGroup.id || categoryKey;
+        const categoryText = t(`litter.categories.${categoryKey}`);
 
-                objectKey: obj.key,
-                objectId: obj.id,
+        // Iterate over the litter_objects array within this category.
+        (categoryGroup.litter_objects || []).forEach((obj) => {
+            const objectText = t(`litter.${categoryKey}.${obj.key}`);
 
-                materialKey: material.key,
-                materialId: material.id,
-
-                text: `${cat.key} - ${obj.key} - ${material.key}`,
-                type: 'object',
-            }))
-        )
-    );
-
-    const materialTags = tagsStore.materials.map((mat) => {
-        return {
-            id: mat.id,
-            key: mat.key,
-            text: mat.key,
-            type: 'material',
-        };
+            if (obj.materials && obj.materials.length > 0) {
+                // For objects with materials, create a tag for each material.
+                obj.materials.forEach((material) => {
+                    tags.push({
+                        id: `cat-${categoryId}-obj-${obj.id}-mat-${material.id}`,
+                        key: `${categoryKey}-${obj.key}-${material.key}`,
+                        categoryKey: categoryKey,
+                        categoryId: categoryId,
+                        objectKey: obj.key,
+                        objectId: obj.id,
+                        materialKey: material.key,
+                        materialId: material.id,
+                        text: `${categoryText} - ${objectText} - ${material.key}`,
+                        type: 'object',
+                    });
+                });
+            } else {
+                // For objects without materials, create a tag that includes only the category and object.
+                tags.push({
+                    id: `cat-${categoryId}-obj-${obj.id}`,
+                    key: `${categoryKey}-${obj.key}`,
+                    categoryKey: categoryKey,
+                    categoryId: categoryId,
+                    objectKey: obj.key,
+                    objectId: obj.id,
+                    materialKey: null,
+                    materialId: null,
+                    text: `${categoryText} - ${objectText}`,
+                    type: 'object',
+                });
+            }
+        });
     });
 
-    return [...objectTags, ...materialTags];
+    return tags;
 });
 
 const getCategories = computed(() => {

@@ -1,6 +1,5 @@
 import { auth } from './auth/index.js';
 import common from './common.json';
-import creditcard from './creditcard.json';
 import { home } from './home/index.js';
 import litter from './litter.json';
 import location from './location.json';
@@ -17,7 +16,6 @@ import upload from './upload.json';
 export const en = {
     auth,
     common,
-    creditcard,
     home,
     litter,
     location,
@@ -29,5 +27,5 @@ export const en = {
     signup,
     tags,
     teams,
-    upload
+    upload,
 };
