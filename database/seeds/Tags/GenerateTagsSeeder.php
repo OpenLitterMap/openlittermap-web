@@ -267,7 +267,7 @@ class GenerateTagsSeeder extends Seeder
             ],
 
             'smoking' => [
-                'butts' => ['material:plastic', 'material:paper', 'material:biodegradable'],
+                'butts' => ['material:plastic'], // suggestedTags: , 'material:paper', 'material:biodegradable'
                 'lighters' => ['material:plastic', 'material:metal'],
                 'cigarette_box' => ['material:cardboard'],
                 'match_box' => ['material:cardboard'],

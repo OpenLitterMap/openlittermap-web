@@ -69,7 +69,7 @@
                                 'bg-blue-500 text-white': active,
                                 'bg-white text-black': !active,
                             }"
-                            class="flex py-2 px-4"
+                            class="flex py-2 px-4 cursor-pointer"
                         >
                             <span class="flex-1 capitalize">{{
                                 option.hasOwnProperty('text') ? option.text : option.key
@@ -147,7 +147,7 @@ const filteredOptions = computed(() => {
  * We create a new object to trigger a re-render
  */
 function clearSelected() {
-    const emptySelection = { id: 0, key: '' };
+    const emptySelection = { id: 0, key: '', text: '' };
 
     emit('update:modelValue', { ...emptySelection });
 
@@ -162,6 +162,10 @@ function clearSelected() {
  * Otherwise, show the typed search.
  */
 function displayValue(selectedObj) {
+    if (selectedObj && selectedObj.text) {
+        return selectedObj.text;
+    }
+
     return selectedObj && selectedObj.key ? selectedObj.key : searchQuery.value;
 }
 
@@ -178,8 +182,6 @@ function onInput(event) {
  * so the parent’s v-model is updated.
  */
 function onChange(newSelection) {
-    console.log({ newSelection });
-
     emit('update:modelValue', newSelection);
 
     // Also reflect it in our typed text:

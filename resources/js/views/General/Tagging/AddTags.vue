@@ -77,25 +77,25 @@
                     <!-- Right container-->
                     <div class="md:w-1/2">
                         <div class="px-20">
+                            <!-- Added tags -->
                             <ul role="list" class="grid grid-cols-2 gap-6">
                                 <li
                                     v-for="tag in newTags"
                                     :key="tag.id"
                                     class="col-span-1 flex flex-col rounded-lg bg-[#4e5a6c] shadow p-4"
                                 >
-                                    <p class="text-xl mb-4">{{ tag.quantity }} {{ tag.object.key }}</p>
+                                    <p class="text-xl mb-4">{{ tag.quantity }} {{ tag.object.text }}</p>
 
                                     <SelectTag
                                         :tags="getMaterials"
-                                        v-model="selectedMaterial"
+                                        v-model="tag.material"
                                         placeholder="Add Materials"
                                     />
 
-                                    <SelectTag :tags="getBrands" v-model="selectedBrand" placeholder="Add Brands" />
+                                    <SelectTag :tags="getBrands" v-model="tag.brand" placeholder="Add Brands" />
 
                                     <div class="mb-4">
-                                        <p>Extra tags:</p>
-
+                                        <p>Suggested tags:</p>
                                         <p>tag-1</p>
                                         <p>tag-2</p>
                                     </div>
@@ -151,12 +151,12 @@ const tagsStore = useTagsStore();
 
 const { t } = useI18n();
 const $loading = useLoading();
-const selectedCategory = ref({ id: 0, key: '' });
-const selectedObject = ref({ id: 0, key: '' });
-const selectedMaterial = ref({ id: 0, key: '' });
+const selectedCategory = ref({ id: 0, key: '', text: '' });
+const selectedObject = ref({ id: 0, key: '', text: '' });
+const selectedMaterial = ref({ id: 0, key: '', text: '' });
 const searchAllTags = ref({ id: 0, key: '', text: '' });
 const selectedQuantity = ref(1);
-const selectedBrand = ref({ id: 0, key: '' });
+const selectedBrand = ref({ id: 0, key: '', text: '' });
 const searchAllTagsKey = ref(0);
 const newTags = ref([]);
 const newTagSelected = ref(null);
@@ -215,7 +215,13 @@ const getAllTags = computed(() => {
 });
 
 const getCategories = computed(() => {
-    return tagsStore.categories;
+    return tagsStore.categories.map((category) => {
+        return {
+            id: category.id,
+            key: category.key,
+            text: t(`litter.categories.${category.key}`),
+        };
+    });
 });
 
 const getObjects = computed(() => {
@@ -266,7 +272,11 @@ watch(selectedObject, (newObj) => {
 
 watch(searchAllTags, (newVal) => {
     if (newVal && newVal.id && newVal.categoryId && newVal.objectId && newVal.materialId) {
-        selectedCategory.value = { id: newVal.categoryId, key: newVal.categoryKey };
+        selectedCategory.value = {
+            id: newVal.categoryId,
+            key: newVal.categoryKey,
+            text: t(`litter.categories.${newVal.categoryKey}`),
+        };
         selectedObject.value = { id: newVal.objectId, key: newVal.objectKey };
         selectedMaterial.value = { id: newVal.materialId, key: newVal.materialKey };
     }
@@ -295,7 +305,7 @@ const addTag = () => {
 };
 
 const resetInputs = () => {
-    selectedCategory.value = { id: 0, key: '' };
+    selectedCategory.value = { id: 0, key: '', text: '' };
     selectedObject.value = { id: 0, key: '' };
     selectedMaterial.value = { id: 0, key: '' };
     searchAllTags.value = { id: 0, key: '', text: '' };
