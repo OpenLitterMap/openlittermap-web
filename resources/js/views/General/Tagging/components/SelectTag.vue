@@ -8,6 +8,7 @@
                     @input="onInput"
                     :placeholder="`${placeholder}`"
                     class="capitalize rounded-md border border-gray-300 bg-white py-2 px-3 text-left shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full"
+                    :style="size === 'small' ? 'height: 35px' : ''"
                 />
 
                 <!-- Clear selected input -->
@@ -101,6 +102,11 @@ const props = defineProps({
     placeholder: {
         type: String,
         default: '',
+        required: false,
+    },
+    size: {
+        type: String,
+        default: 'normal',
         required: false,
     },
 });

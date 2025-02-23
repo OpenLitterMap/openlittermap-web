@@ -58,7 +58,9 @@
 
                                 <button
                                     @click="addTag"
-                                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                                    :disabled="!tagSelected"
+                                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    v-tooltip="!tagSelected ? 'Please select a tag' : ''"
                                 >
                                     Add Tag
                                 </button>
@@ -84,20 +86,66 @@
                                     :key="tag.id"
                                     class="col-span-1 flex flex-col rounded-lg bg-[#4e5a6c] shadow p-4"
                                 >
-                                    <p class="text-xl mb-4">{{ tag.quantity }} {{ tag.object.text }}</p>
+                                    <div class="flex mb-4 items-center">
+                                        <p class="text-xl flex-1">
+                                            {{ tag.quantity }}
+                                            {{ t('litter.' + tag.category.key + '.' + tag.object.key)
+                                            }}{{ tag.quantity === 1 ? '' : 's' }}
+                                        </p>
+
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            max="100"
+                                            step="1"
+                                            v-model="tag.quantity"
+                                            class="w-16 form-input focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </div>
 
                                     <SelectTag
                                         :tags="getMaterials"
                                         v-model="tag.material"
                                         placeholder="Add Materials"
+                                        size="small"
                                     />
 
-                                    <SelectTag :tags="getBrands" v-model="tag.brand" placeholder="Add Brands" />
+                                    <SelectTag
+                                        :tags="getBrands"
+                                        v-model="tag.brand"
+                                        placeholder="Add Brands"
+                                        size="small"
+                                    />
 
                                     <div class="mb-4">
-                                        <p>Suggested tags:</p>
-                                        <p>tag-1</p>
-                                        <p>tag-2</p>
+                                        <p class="text-sm">Suggested tags:</p>
+
+                                        <div
+                                            v-if="tag.extraTags && tag.extraTags.length"
+                                            class="mt-2 text-sm flex flex-wrap gap-1"
+                                        >
+                                            <span
+                                                v-for="extraTag in tag.extraTags"
+                                                :key="extraTag.id"
+                                                @click="toggleExtraTag(extraTag)"
+                                                :class="[
+                                                    'inline-flex cursor-pointer items-center gap-x-1.5 rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset',
+                                                    extraTag.selected
+                                                        ? ' ring-green-500 border-green-500'
+                                                        : 'text-gray-900 ring-gray-200',
+                                                ]"
+                                            >
+                                                <svg
+                                                    class="h-1.5 w-1.5 fill-current"
+                                                    :class="extraTag.selected ? 'text-green-500' : 'text-gray-500'"
+                                                    viewBox="0 0 6 6"
+                                                    aria-hidden="true"
+                                                >
+                                                    <circle cx="3" cy="3" r="3"></circle>
+                                                </svg>
+                                                {{ extraTag.key }}
+                                            </span>
+                                        </div>
                                     </div>
 
                                     <div class="flex">
@@ -177,37 +225,17 @@ const getAllTags = computed(() => {
         (categoryGroup.litter_objects || []).forEach((obj) => {
             const objectText = t(`litter.${categoryKey}.${obj.key}`);
 
-            if (obj.materials && obj.materials.length > 0) {
-                // For objects with materials, create a tag for each material.
-                obj.materials.forEach((material) => {
-                    tags.push({
-                        id: `cat-${categoryId}-obj-${obj.id}-mat-${material.id}`,
-                        key: `${categoryKey}-${obj.key}-${material.key}`,
-                        categoryKey: categoryKey,
-                        categoryId: categoryId,
-                        objectKey: obj.key,
-                        objectId: obj.id,
-                        materialKey: material.key,
-                        materialId: material.id,
-                        text: `${categoryText} - ${objectText} - ${material.key}`,
-                        type: 'object',
-                    });
-                });
-            } else {
-                // For objects without materials, create a tag that includes only the category and object.
-                tags.push({
-                    id: `cat-${categoryId}-obj-${obj.id}`,
-                    key: `${categoryKey}-${obj.key}`,
-                    categoryKey: categoryKey,
-                    categoryId: categoryId,
-                    objectKey: obj.key,
-                    objectId: obj.id,
-                    materialKey: null,
-                    materialId: null,
-                    text: `${categoryText} - ${objectText}`,
-                    type: 'object',
-                });
-            }
+            tags.push({
+                id: `cat-${categoryId}-obj-${obj.id}`,
+                key: `${categoryKey}-${obj.key}`,
+                categoryKey: categoryKey,
+                categoryId: categoryId,
+                objectKey: obj.key,
+                objectId: obj.id,
+                text: `${categoryText} - ${objectText}`,
+                type: 'object',
+                materials: [...(obj.materials || [])],
+            });
         });
     });
 
@@ -226,10 +254,14 @@ const getCategories = computed(() => {
 
 const getObjects = computed(() => {
     if (selectedCategory.value.key) {
-        return tagsStore.groupedTags[selectedCategory.value.key].litter_objects;
+        return tagsStore.groupedTags[selectedCategory.value.key].litter_objects.map((obj) => {
+            return {
+                id: obj.id,
+                key: obj.key,
+                text: t(`litter.${selectedCategory.value.key}.${obj.key}`),
+            };
+        });
     }
-
-    return tagsStore.objects;
 });
 
 const getMaterials = computed(() => {
@@ -271,43 +303,64 @@ watch(selectedObject, (newObj) => {
 });
 
 watch(searchAllTags, (newVal) => {
-    if (newVal && newVal.id && newVal.categoryId && newVal.objectId && newVal.materialId) {
+    //  && newVal.materialId
+    if (newVal && newVal.id && newVal.categoryId && newVal.objectId) {
         selectedCategory.value = {
             id: newVal.categoryId,
             key: newVal.categoryKey,
             text: t(`litter.categories.${newVal.categoryKey}`),
         };
-        selectedObject.value = { id: newVal.objectId, key: newVal.objectKey };
-        selectedMaterial.value = { id: newVal.materialId, key: newVal.materialKey };
+        selectedObject.value = {
+            id: newVal.objectId,
+            key: newVal.objectKey,
+            text: t(`litter.${newVal.categoryKey}.${newVal.objectKey}`),
+            materials: newVal.materials ? newVal.materials : [],
+        };
+        // selectedMaterial.value = { id: newVal.materialId, key: newVal.materialKey };
     }
 });
 
-// const tagSelected = computed(() => {
-//     // return searchAllTags.value.id === 0 || selectedObject.value.id === 0;
-//     return true;
-// });
+const tagSelected = computed(() => {
+    return !(searchAllTags.value.id === 0 && selectedObject.value.id === 0);
+});
 
 const addTag = () => {
-    // if (!tagSelected.value) {
-    //     return;
-    // }
+    if (!tagSelected.value) {
+        return;
+    }
 
+    // If there is only 1 material, apply it
+    // If there are 2+ materials, add them to suggested tags
     newTags.value.push({
         id: Math.random().toString(16).slice(2),
         category: { ...selectedCategory.value },
         object: { ...selectedObject.value },
-        material: { ...selectedMaterial.value },
+        // materials: selectedObject.value.materials?.length === 1 ? [selectedObject.value.materials[0]] : [],
         quantity: selectedQuantity.value,
         pickedUp: true, // change to users default settings
+
+        // Brands, Materials, Custom Tags & anything else
+        extraTags:
+            selectedObject.value.materials?.length > 1
+                ? selectedObject.value.materials.map((material) => ({
+                      ...material,
+                      selected: false,
+                      type: 'material',
+                  }))
+                : [],
     });
 
     resetInputs();
 };
 
+const toggleExtraTag = (extraTag) => {
+    extraTag.selected = !extraTag.selected;
+};
+
 const resetInputs = () => {
     selectedCategory.value = { id: 0, key: '', text: '' };
-    selectedObject.value = { id: 0, key: '' };
-    selectedMaterial.value = { id: 0, key: '' };
+    selectedObject.value = { id: 0, key: '', text: '' };
+    selectedMaterial.value = { id: 0, key: '', text: '' };
     searchAllTags.value = { id: 0, key: '', text: '' };
     selectedQuantity.value = 1;
     // Increment key to re-render SelectTag component
@@ -347,4 +400,8 @@ onMounted(async () => {
 const paginatedPhotos = computed(() => photosStore.paginated);
 </script>
 
-<style scoped></style>
+<style scoped>
+input[type='number']::-webkit-inner-spin-button {
+    opacity: 1;
+}
+</style>

@@ -31,6 +31,7 @@
     "filepond-plugin-image-exif-orientation": "^1.0.11",
     "filepond-plugin-image-preview": "^4.6.12",
     "filepond-plugin-image-resize": "^2.0.10",
+    "floating-vue": "^5.2.2",
     "laravel-echo": "^1.17.1",
     "leaflet": "^1.9.4",
     "leaflet.glify": "^3.3.1",

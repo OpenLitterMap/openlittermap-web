@@ -16,6 +16,7 @@ pinia.use(piniaPluginPersistedstate);
 import Toast from 'vue-toastification';
 import { LoadingPlugin } from 'vue-loading-overlay';
 import { RecycleScroller } from 'vue-virtual-scroller';
+import FloatingVue from 'floating-vue';
 
 // Global global components
 import Nav from './components/Nav.vue';
@@ -25,6 +26,10 @@ import Modal from './components/Modal/Modal.vue';
 import 'vue-toastification/dist/index.css';
 import 'vue-loading-overlay/dist/css/index.css';
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
+import 'floating-vue/dist/style.css';
+
+// Disable on mobile
+FloatingVue.options.themes.tooltip.disabled = window.innerWidth <= 768;
 
 // Register app, components and use plugins
 const app = createApp(App);
@@ -38,4 +43,5 @@ app.use(router);
 app.use(pinia);
 app.use(Toast);
 app.use(LoadingPlugin);
+app.use(FloatingVue);
 app.mount('#app');
