@@ -1,5 +1,5 @@
 <template>
-    <div class="bg-slate-800 olm-full">
+    <div class="bg-[#1e283a] olm-full">
         <div class="h-full py-12 px-24">
             <div v-if="paginatedPhotos?.data?.length === 0">
                 <p>No photos</p>
@@ -84,7 +84,7 @@
                                 <li
                                     v-for="tag in newTags"
                                     :key="tag.id"
-                                    class="col-span-1 flex flex-col rounded-lg bg-[#4e5a6c] shadow p-4"
+                                    class="col-span-1 flex flex-col rounded-lg bg-[#435064] shadow p-4"
                                 >
                                     <div class="flex mb-4 items-center">
                                         <p class="text-xl flex-1">
@@ -99,7 +99,7 @@
                                             max="100"
                                             step="1"
                                             v-model="tag.quantity"
-                                            class="w-16 form-input focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            class="w-16 h-[2.5em] form-input focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         />
                                     </div>
 
@@ -262,6 +262,8 @@ const getObjects = computed(() => {
             };
         });
     }
+
+    return [];
 });
 
 const getMaterials = computed(() => {
@@ -335,13 +337,12 @@ const addTag = () => {
         id: Math.random().toString(16).slice(2),
         category: { ...selectedCategory.value },
         object: { ...selectedObject.value },
-        // materials: selectedObject.value.materials?.length === 1 ? [selectedObject.value.materials[0]] : [],
         quantity: selectedQuantity.value,
         pickedUp: true, // change to users default settings
 
         // Brands, Materials, Custom Tags & anything else
         extraTags:
-            selectedObject.value.materials?.length > 1
+            selectedObject.value.materials?.length > 0
                 ? selectedObject.value.materials.map((material) => ({
                       ...material,
                       selected: false,

@@ -1,12 +1,14 @@
 <template>
     <div class="mb-4">
-        <Combobox as="div" v-model="internalSelected" @update:modelValue="onChange" by="id">
+        <Combobox as="div" :value="internalSelected" @update:modelValue="onChange" by="id">
             <div class="relative">
                 <!-- The users text input -->
                 <ComboboxInput
                     :displayValue="displayValue"
                     @input="onInput"
                     :placeholder="`${placeholder}`"
+                    @keydown.enter="handleSubmit"
+                    @blur="handleSubmit"
                     class="capitalize rounded-md border border-gray-300 bg-white py-2 px-3 text-left shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full"
                     :style="size === 'small' ? 'height: 35px' : ''"
                 />
@@ -14,7 +16,7 @@
                 <!-- Clear selected input -->
                 <!-- Material.id is a string -->
                 <button
-                    v-if="modelValue.id !== 0"
+                    v-if="internalSelected.id !== 0"
                     @click="clearSelected"
                     class="absolute inset-y-0 right-8 flex items-center pr-2"
                     type="button"
@@ -111,7 +113,7 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits(['update:modelValue', 'tagSelected']);
 
 // The user's typed text
 const searchQuery = ref('');
@@ -155,11 +157,13 @@ const filteredOptions = computed(() => {
 function clearSelected() {
     const emptySelection = { id: 0, key: '', text: '' };
 
-    emit('update:modelValue', { ...emptySelection });
+    // emit('update:modelValue', { ...emptySelection });
 
     internalSelected.value = emptySelection;
 
     searchQuery.value = '';
+
+    emit('update:modelValue', { ...emptySelection });
 }
 
 /**
@@ -188,6 +192,8 @@ function onInput(event) {
  * so the parent’s v-model is updated.
  */
 function onChange(newSelection) {
+    internalSelected.value = newSelection;
+
     emit('update:modelValue', newSelection);
 
     // Also reflect it in our typed text:
@@ -196,5 +202,9 @@ function onChange(newSelection) {
     } else if (newSelection && newSelection.key) {
         searchQuery.value = newSelection.key;
     }
+}
+
+function handleSubmit() {
+    emit('tagSelected', internalSelected.value);
 }
 </script>
