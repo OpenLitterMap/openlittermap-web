@@ -23,7 +23,7 @@
                     </div>
 
                     <!-- Image Container -->
-                    <div class="flex flex-col items-center w-1/3">
+                    <div class="flex flex-col items-center w-2/5 2xl:w-1/3">
                         <img :src="paginatedPhotos?.data[0]?.filename" alt="photo" />
 
                         <div class="w-full">
@@ -77,8 +77,8 @@
                     </div>
 
                     <!-- Right container-->
-                    <div class="md:w-1/2">
-                        <div class="px-20">
+                    <div class="w-1/2 px-10 2xl:w-1/2">
+                        <div class="2xl:px-20">
                             <!-- Added tags -->
                             <ul role="list" class="grid grid-cols-2 gap-6">
                                 <li
@@ -87,7 +87,7 @@
                                     class="col-span-1 flex flex-col rounded-lg bg-[#435064] shadow p-4"
                                 >
                                     <div class="flex mb-4 items-center">
-                                        <p class="text-xl flex-1">
+                                        <p class="2xl:text-xl flex-1">
                                             {{ tag.quantity }}
                                             {{ t('litter.' + tag.category.key + '.' + tag.object.key)
                                             }}{{ tag.quantity === 1 ? '' : 's' }}
@@ -98,27 +98,42 @@
                                             min="1"
                                             max="100"
                                             step="1"
-                                            v-model="tag.quantity"
-                                            class="w-16 h-[2.5em] form-input focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            v-model.number="tag.quantity"
+                                            @input="enforceQuantityRange(tag)"
+                                            class="w-10 2xl:w-16 min-w-fit pr-2 text-center h-[2em] 2xl:h-[2.5em] form-input focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         />
                                     </div>
 
                                     <SelectTag
-                                        :tags="getMaterials"
-                                        v-model="tag.material"
-                                        placeholder="Add Materials"
+                                        :tags="getBrands"
+                                        placeholder="Add Brands"
                                         size="small"
+                                        @update:modelValue="(newVal) => updateNestedTag('brand', tag.id, newVal)"
                                     />
 
                                     <SelectTag
-                                        :tags="getBrands"
-                                        v-model="tag.brand"
-                                        placeholder="Add Brands"
+                                        :tags="getMaterials"
+                                        placeholder="Add Materials"
                                         size="small"
+                                        @update:modelValue="(newVal) => updateNestedTag('material', tag.id, newVal)"
+                                    />
+
+                                    <CreateTag
+                                        placeholder="Add Custom Tags"
+                                        size="small"
+                                        @createTag="(newVal) => updateNestedTag('custom', tag.id, newVal)"
                                     />
 
                                     <div class="mb-4">
-                                        <p class="text-sm">Suggested tags:</p>
+                                        <div class="flex items-center">
+                                            <p class="text-sm pr-2">Extra tags:</p>
+
+                                            <!-- Information icon -->
+                                            <InformationCircleIcon
+                                                class="w-4 h-4 text-blue-500"
+                                                v-tooltip="'Choose from our suggested tags or add your own'"
+                                            />
+                                        </div>
 
                                         <div
                                             v-if="tag.extraTags && tag.extraTags.length"
@@ -187,10 +202,12 @@
 import { useLoading } from 'vue-loading-overlay';
 import { onMounted, computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { InformationCircleIcon } from '@heroicons/vue/24/outline';
 
 import { usePhotosStore } from '../../../stores/photos/index.js';
 import { useTagsStore } from '../../../stores/tags/index.js';
 import SelectTag from './components/SelectTag.vue';
+import CreateTag from './components/CreateTag.vue';
 import QuantityPicker from './components/QuantityPicker.vue';
 import ToggleSwitch from './components/ToggleSwitch.vue';
 
@@ -204,10 +221,8 @@ const selectedObject = ref({ id: 0, key: '', text: '' });
 const selectedMaterial = ref({ id: 0, key: '', text: '' });
 const searchAllTags = ref({ id: 0, key: '', text: '' });
 const selectedQuantity = ref(1);
-const selectedBrand = ref({ id: 0, key: '', text: '' });
 const searchAllTagsKey = ref(0);
 const newTags = ref([]);
-const newTagSelected = ref(null);
 
 // Needs checkboxes to filter by all tags or materials
 const getAllTags = computed(() => {
@@ -383,6 +398,49 @@ const duplicateTag = (id) => {
         quantity: originalTag.quantity,
         pickedUp: originalTag.pickedUp,
     });
+};
+const updateNestedTag = (type, id, newVal) => {
+    // If the new selection is cleared (or empty), don't update.
+    if (!newVal || !newVal.id) {
+        return;
+    }
+
+    // Find the tag in newTags array by its id.
+    const tagIndex = newTags.value.findIndex((tag) => tag.id === id);
+    if (tagIndex === -1) return;
+
+    const tag = newTags.value[tagIndex];
+
+    // Create the new extra tag data.
+    const updatedExtraTag = {
+        ...newVal,
+        selected: true,
+        type,
+    };
+
+    // Check for an existing extra tag based only on newVal.id, newVal.key, and type.
+    const exists = tag.extraTags.find(
+        (extra) => extra.type === type && extra.id === newVal.id && extra.key === newVal.key
+    );
+
+    if (!exists) {
+        tag.extraTags.push(updatedExtraTag);
+    } else {
+        // If it exists, update its properties (including selected) with the new values.
+        Object.assign(exists, updatedExtraTag);
+    }
+
+    // Replace the tag in the array to ensure reactivity.
+    newTags.value.splice(tagIndex, 1, { ...tag });
+};
+
+// Ensure tag.quantity stays between 1 and 100
+const enforceQuantityRange = (tag) => {
+    if (tag.quantity < 1) {
+        tag.quantity = 1;
+    } else if (tag.quantity > 100) {
+        tag.quantity = 100;
+    }
 };
 
 onMounted(async () => {

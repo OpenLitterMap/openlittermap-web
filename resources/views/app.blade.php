@@ -3,7 +3,6 @@
     @include('header')
     <body>
         <div id="app">
-            @filamentScripts
             @yield('content')
         </div>
     </body>

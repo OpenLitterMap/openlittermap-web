@@ -1,11 +1,5 @@
-import preset from './vendor/filament/support/tailwind.config.preset';
-
 export default {
-    presets: [preset],
     content: [
-        './app/Filament/**/*.php',
-        './resources/views/filament/**/*.blade.php',
-        './vendor/filament/**/*.blade.php',
         './resources/views/**/*.blade.php',
         './resources/js/**/*.{vue,js,ts}',
         './resources/css/leaflet/MarkerCluster.css',
@@ -14,8 +8,7 @@ export default {
     theme: {
         extend: {
             backgroundImage: {
-                'blue-bg':
-                    'linear-gradient(141deg, #1577c6 0%, #3273dc 71%, #4366e5 100%)',
+                'blue-bg': 'linear-gradient(141deg, #1577c6 0%, #3273dc 71%, #4366e5 100%)',
             },
             colors: {
                 'gray-text': '#4a4a4a',
@@ -37,10 +30,5 @@ export default {
             });
         },
     ],
-    safelist: [
-        'marker-cluster-small',
-        'marker-cluster-medium',
-        'marker-cluster-large',
-        'mi',
-    ],
+    safelist: ['marker-cluster-small', 'marker-cluster-medium', 'marker-cluster-large', 'mi'],
 };

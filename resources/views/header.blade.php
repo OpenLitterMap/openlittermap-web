@@ -14,7 +14,6 @@
 
     <script src="https://kit.fontawesome.com/c0364fbb6d.js" crossorigin="anonymous"></script>
 
-    @filamentStyles
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <script>

@@ -1,6 +1,6 @@
 <template>
     <div class="mb-4">
-        <Combobox as="div" :value="internalSelected" @update:modelValue="onChange" by="id">
+        <Combobox as="div" :modelValue="internalSelected" @update:modelValue="onChange" by="id">
             <div class="relative">
                 <!-- The users text input -->
                 <ComboboxInput
@@ -18,7 +18,7 @@
                 <button
                     v-if="internalSelected.id !== 0"
                     @click="clearSelected"
-                    class="absolute inset-y-0 right-8 flex items-center pr-2"
+                    class="absolute inset-y-0 right-8 flex items-center 2xl:pr-2"
                     type="button"
                 >
                     <svg
@@ -99,7 +99,7 @@ const props = defineProps({
     },
     tags: {
         type: Array,
-        required: true,
+        required: false,
     },
     placeholder: {
         type: String,
@@ -157,8 +157,6 @@ const filteredOptions = computed(() => {
 function clearSelected() {
     const emptySelection = { id: 0, key: '', text: '' };
 
-    // emit('update:modelValue', { ...emptySelection });
-
     internalSelected.value = emptySelection;
 
     searchQuery.value = '';
@@ -192,19 +190,25 @@ function onInput(event) {
  * so the parent’s v-model is updated.
  */
 function onChange(newSelection) {
-    internalSelected.value = newSelection;
-
     emit('update:modelValue', newSelection);
 
-    // Also reflect it in our typed text:
-    if (newSelection && newSelection.text) {
-        searchQuery.value = newSelection.text;
-    } else if (newSelection && newSelection.key) {
-        searchQuery.value = newSelection.key;
-    }
+    const emptySelection = { id: 0, key: '', text: '' };
+    internalSelected.value = emptySelection;
+
+    // internalSelected.value = newSelection;
+    // Clear the search query
+    searchQuery.value = '';
 }
 
 function handleSubmit() {
+    // Clear the search query & input
+    // Create a new object to re-render
+    const emptySelection = { id: 0, key: '', text: '' };
+
+    internalSelected.value = emptySelection;
+
+    searchQuery.value = '';
+
     emit('tagSelected', internalSelected.value);
 }
 </script>
