@@ -14,8 +14,6 @@
         "benjamincrozat/laravel-dropbox-driver": "^3.0",
         "doctrine/dbal": "^3.0",
         "fakerphp/faker": "^1.23",
-        "filament/filament": "^3.2",
-        "filament/tables": "^3.2",
         "guzzlehttp/guzzle": "^7.2.1",
         "intervention/image": "^2.7",
         "laravel/cashier": "^15.0",
@@ -80,8 +78,7 @@
     "scripts": {
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
-            "@php artisan package:discover --ansi",
-            "@php artisan filament:upgrade"
+            "@php artisan package:discover --ansi"
         ],
         "post-root-package-install": [
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
