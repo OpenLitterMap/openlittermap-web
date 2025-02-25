@@ -2,20 +2,26 @@
 
 namespace App\Http\Controllers\API\Tags;
 
-use App\Http\Controllers\Controller;
+use App\Models\Photo;
 use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\Materials;
 use App\Models\Litter\Tags\PhotoTag;
-use App\Models\Photo;
-use Illuminate\Http\JsonResponse;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
 class UploadTagsController extends Controller
 {
-    public function upload (Request $request): JsonResponse
+    /**
+     * Attach tags to a photo.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function store (Request $request): JsonResponse
     {
         $request->validate([
             'photoId' => 'required|integer|exists:photos,id',
@@ -47,12 +53,12 @@ class UploadTagsController extends Controller
             $quantity = null;
             $pickedUp = null;
 
-            if (isset($tag['category'])) {
-                $category = Category::where('key', $tag['category'])->first();
+            if (isset($tag['categoryId'])) {
+                $category = Category::find($tag['categoryId'])->first();
             }
 
-            if (isset($tag['object'])) {
-                $object = LitterObject::where('key', $tag['object'])->first();
+            if (isset($tag['objectId'])) {
+                $object = LitterObject::find($tag['objectId'])->first();
             }
 
             // check if the object->categories is of type category
@@ -69,43 +75,43 @@ class UploadTagsController extends Controller
                 }
             }
 
-            if (isset($tag['brand'])) {
-                $brand = BrandList::where('key', $tag['brand'])->first();
-            }
+            // Extra Tags
+//            if (isset($tag['brand'])) {
+//                $brand = BrandList::where('key', $tag['brand'])->first();
+//            }
 
-            if (isset($tag['quantity'])) {
-                $quantity = $tag['quantity'];
-            }
+            $quantity = $tag['quantity'] ?? 1;
 
             if (isset($tag['picked_up'])) {
                 $pickedUp = $tag['picked_up'];
             }
 
-            if ($passed)
+            if (!$passed) {
+                continue;
+            }
+
+            $photoTag = PhotoTag::firstOrCreate([
+                'photo_id' => $photoId,
+                'category_id' => $category?->id,
+                'object_id' => $object?->id,
+                'brandlist_id' => $brand?->id,
+                'quantity' => $quantity,
+                'picked_up' => $pickedUp
+            ]);
+
+            if (isset($tag['materials']) && count($tag['materials']) > 0)
             {
-                $photoTag = PhotoTag::firstOrCreate([
-                    'photo_id' => $photoId,
-                    'category_id' => $category?->id,
-                    'object_id' => $object?->id,
-                    'brandlist_id' => $brand?->id,
-                    'quantity' => $quantity,
-                    'picked_up' => $pickedUp
-                ]);
-
-                if (isset($tag['materials']) && count($tag['materials']) > 0)
+                foreach ($tag['materials'] as $material)
                 {
-                    foreach ($tag['materials'] as $material)
-                    {
-                        $materialId = Materials::where('key', $material)->first()->id ?? null;
+                    $materialId = Materials::where('key', $material)->first()->id ?? null;
 
-                        $photoTag->materials()->attach($materialId);
-                    }
-
-                    $photoTag->load('materials');
+                    $photoTag->materials()->attach($materialId);
                 }
 
-                $photoTags[] = $photoTag;
+                $photoTag->load('materials');
             }
+
+            $photoTags[] = $photoTag;
         }
 
         return response()->json([

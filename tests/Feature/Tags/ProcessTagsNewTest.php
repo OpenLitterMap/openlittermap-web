@@ -38,8 +38,8 @@ class ProcessTagsNewTest extends TestCase
         $response->assertStatus(200);
         $response->assertJsonPath('tags.alcohol.key', 'alcohol');
         $response->assertJsonPath('tags.alcohol.litter_objects.0.key', 'beer_bottle');
-        $response->assertJsonPath('tags.alcohol.litter_objects.0.materials.0', 'glass');
-        $response->assertJsonMissingPath('tags.0.litter_objects.0.materials.1', 'plastic');
+        $response->assertJsonPath('tags.alcohol.litter_objects.0.materials.0.key', 'glass');
+        $response->assertJsonMissingPath('tags.0.litter_objects.0.materials.1.key', 'plastic');
 
         $response->assertJsonFragment(['key' => 'cider_bottle']);
         $response->assertJsonFragment(['key' => 'wine_bottle']);

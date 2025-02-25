@@ -8,18 +8,95 @@
             <div v-else>
                 <!-- Header-->
                 <div class="bg-gray-100 p-5 rounded-md mb-10 flex justify-evenly">
-                    <p>Found {{ paginatedPhotos?.data?.length }} photos</p>
+                    <span class="text-center">XP to level up: <br />69</span>
 
-                    <p>Team: Cleanup</p>
+                    <div class="min-w-[15em] text-center">
+                        <p>{{ remainingPhotos }} untagged photos</p>
 
-                    <p>x photos remaining</p>
+                        <div class="flex justify-between">
+                            <span class="flex cursor-pointer">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="1.5"
+                                    stroke="currentColor"
+                                    class="size-6"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M6.75 15.75 3 12m0 0 3.75-3.75M3 12h18"
+                                    />
+                                </svg>
 
-                    <p>XP to level up: 69</p>
+                                Previous
+                            </span>
+                            <span class="flex cursor-pointer">
+                                Next
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="1.5"
+                                    stroke="currentColor"
+                                    class="size-6"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M17.25 8.25 21 12m0 0-3.75 3.75M21 12H3"
+                                    />
+                                </svg>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <p>Team</p>
+                        <span>Cleanup</span>
+                    </div>
+
+                    <div>
+                        <button
+                            class="p-2 rounded bg-green-500"
+                            :disabled="!newTags.length"
+                            :class="!newTags.length ? 'opacity-50 cursor-not-allowed' : ''"
+                            v-tooltip="!newTags.length ? 'Please add a tag' : ''"
+                            @click="submit"
+                        >
+                            Submit
+                        </button>
+                    </div>
                 </div>
 
                 <div class="flex">
-                    <div class="w-[5em]">
-                        <p>Left col</p>
+                    <div class="flex flex-col items-center space-y-1 w-[5em] mx-4">
+                        <!-- Level label -->
+                        <div class="text-center font-bold text-sm">Level 1</div>
+
+                        <!-- Vertical progress bar container -->
+                        <div class="relative h-4/5 w-3 bg-gray-200 rounded-full dark:bg-gray-700 flex flex-col-reverse">
+                            <!-- Filled portion (progress) -->
+                            <div class="bg-blue-600 w-full rounded-full" :style="{ height: xpProgress + '%' }"></div>
+
+                            <!-- Horizontal marker line at current percentage -->
+                            <div
+                                class="absolute left-0 w-full border-t-2 border-red-500"
+                                :style="{ bottom: xpProgress + '%' }"
+                            ></div>
+
+                            <!-- Centered percentage label -->
+                            <div
+                                class="absolute left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-xs font-bold text-red-500"
+                                :style="{
+                                    bottom: `calc(${xpProgress}% - 1.25em)`,
+                                    left: '-1.5em',
+                                }"
+                            >
+                                {{ xpProgress }}%
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Image Container -->
@@ -223,6 +300,8 @@ const searchAllTags = ref({ id: 0, key: '', text: '' });
 const selectedQuantity = ref(1);
 const searchAllTagsKey = ref(0);
 const newTags = ref([]);
+const xpProgress = ref(45);
+const isUploading = ref(false);
 
 // Needs checkboxes to filter by all tags or materials
 const getAllTags = computed(() => {
@@ -399,6 +478,7 @@ const duplicateTag = (id) => {
         pickedUp: originalTag.pickedUp,
     });
 };
+
 const updateNestedTag = (type, id, newVal) => {
     // If the new selection is cleared (or empty), don't update.
     if (!newVal || !newVal.id) {
@@ -443,6 +523,14 @@ const enforceQuantityRange = (tag) => {
     }
 };
 
+const submit = async () => {
+    isUploading.value = true;
+
+    await photosStore.UPLOAD_TAGS();
+
+    isUploading.value = false;
+};
+
 onMounted(async () => {
     const loader = $loading.show({ container: null });
 
@@ -457,6 +545,7 @@ onMounted(async () => {
 });
 
 const paginatedPhotos = computed(() => photosStore.paginated);
+const remainingPhotos = computed(() => photosStore.remaining);
 </script>
 
 <style scoped>

@@ -14,7 +14,7 @@ use App\Http\Controllers\Photos\GetUsersUntaggedPhotosController;
 Route::get('/tags', [GetTagsController::class, 'index']);
 Route::get('/tags/all', [GetTagsController::class, 'getAllTags']);
 
-Route::post('/tags', [UploadTagsController::class, 'upload']);
+// Route::post('/tags', [UploadTagsController::class, 'upload']);
 
 Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function(){
 
@@ -37,6 +37,8 @@ Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function(){
 Route::group(['prefix' => 'v3', 'middleware' => ['web', 'auth:api,web']], function () {
 
      Route::get('/user/photos/untagged', [GetUsersUntaggedPhotosController::class, 'index']);
+
+     Route::post('/tags', [UploadTagsController::class, 'store']);
 
 });
 

@@ -24,7 +24,7 @@ class Category extends Model
     {
         return $this->belongsToMany(LitterObject::class, 'category_litter_object')
             ->using(CategoryLitterObject::class)
-            ->withPivot('id')
-            ->with('pivot.materials');
+            ->withPivot('id');
+            // ->with('pivot.materials');
     }
 }

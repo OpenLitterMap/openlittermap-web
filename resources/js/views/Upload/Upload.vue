@@ -1,7 +1,7 @@
 <template>
     <div
         class="flex relative justify-center px-20 pt-20 bg-gradient-to-r from-amber-200 to-yellow-500"
-        style="min-height: calc(100% - 104px);"
+        style="min-height: calc(100% - 72px)"
     >
         <div class="h-full">
             <h1 class="text-5xl font-semibold mb-10 text-center">Click or Drop to upload your photos</h1>
@@ -11,7 +11,7 @@
             </div>
 
             <p v-if="team" class="text-center">
-                {{ $t('common.team') }}: <strong>{{team}}</strong>
+                {{ $t('common.team') }}: <strong>{{ team }}</strong>
             </p>
 
             <!-- After uploading-->
@@ -58,13 +58,13 @@ import FilePondPluginFileValidateSize from 'filepond-plugin-file-validate-size';
 import 'filepond/dist/filepond.min.css';
 import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
 
-import { useToast } from "vue-toastification";
+import { useToast } from 'vue-toastification';
 const toast = useToast();
 
-import {computed, ref} from 'vue';
+import { computed, ref } from 'vue';
 const uploadSuccess = ref(false);
 
-import {useUserStore} from "../../stores/user/index.js";
+import { useUserStore } from '../../stores/user/index.js';
 const userStore = useUserStore();
 
 const FilePond = vueFilePond(
@@ -72,20 +72,13 @@ const FilePond = vueFilePond(
     FilePondPluginFileValidateType,
     FilePondPluginImageResize,
     FilePondPluginImageExifOrientation,
-    FilePondPluginFileValidateSize,
+    FilePondPluginFileValidateSize
 );
 
 const uploadProgress = ref(0);
 const pond = ref(null);
 
-const acceptedFileTypes = [
-    'image/jpeg',
-    'image/jpg',
-    'image/png',
-    'image/webp',
-    '.heic',
-    '.heif',
-];
+const acceptedFileTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', '.heic', '.heif'];
 
 const server = {
     url: '.', // current host
@@ -109,7 +102,7 @@ const server = {
                 return 'An unknown error occurred. Please contact support';
             }
         },
-    }
+    },
 };
 
 // Configure FilePond labels
@@ -120,14 +113,14 @@ const options = {
     },
 };
 
-import { useUploadingStore } from "../../stores/uploading/index.js";
+import { useUploadingStore } from '../../stores/uploading/index.js';
 const uploadingStore = useUploadingStore();
 const isUploading = computed(() => uploadingStore.isUploading);
 
 // Handle when a file is dropped onto the view
 const handleFileAdded = () => {
     uploadingStore.setIsUploading(true);
-}
+};
 
 // Handle file upload success and errors
 const handleFileUpload = (error, file) => {
@@ -151,59 +144,54 @@ const updateProgress = () => {
     const files = pond.value.getFiles();
 
     // https://pqina.nl/filepond/docs/api/exports/#filestatus
-    const processedFiles = files.filter(file => file.status === 5); // PROCESSING_COMPLETE
+    const processedFiles = files.filter((file) => file.status === 5); // PROCESSING_COMPLETE
 
-    uploadProgress.value = files.length
-        ? (processedFiles.length / files.length) * 100
-        : 0;
-}
+    uploadProgress.value = files.length ? (processedFiles.length / files.length) * 100 : 0;
+};
 
 const team = computed(() => {
     return userStore.user?.team?.name;
 });
-
 </script>
 
 <style>
+@media (max-width: 1300px) {
+    .filepond--root,
+    .filepond--root .filepond--drop-label {
+        width: 50em; /* Shrink width for medium screens */
+    }
+}
 
-    @media (max-width: 1300px) {
-        .filepond--root,
-        .filepond--root .filepond--drop-label {
-            width: 50em; /* Shrink width for medium screens */
-        }
+@media (max-width: 1024px) {
+    .filepond--root,
+    .filepond--root .filepond--drop-label {
+        width: 40em; /* Shrink width for medium screens */
     }
+}
 
-    @media (max-width: 1024px) {
-        .filepond--root,
-        .filepond--root .filepond--drop-label {
-            width: 40em; /* Shrink width for medium screens */
-        }
+@media (max-width: 768px) {
+    .filepond--root,
+    .filepond--root .filepond--drop-label {
+        width: 30em; /* Shrink width for small screens */
     }
+}
 
-    @media (max-width: 768px) {
-        .filepond--root,
-        .filepond--root .filepond--drop-label {
-            width: 30em; /* Shrink width for small screens */
-        }
+@media (max-width: 520px) {
+    .filepond--root,
+    .filepond--root .filepond--drop-label {
+        width: 20em; /* Shrink width for very small screens */
     }
+}
 
-    @media (max-width: 520px) {
-        .filepond--root,
-        .filepond--root .filepond--drop-label {
-            width: 20em; /* Shrink width for very small screens */
-        }
-    }
-
-    .fade-enter-active {
-        transition: opacity 2s ease;
-    }
-    .fade-enter-from {
-        opacity: 0;
-        transform: translateX(50px);
-    }
-    .fade-enter-to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-
+.fade-enter-active {
+    transition: opacity 2s ease;
+}
+.fade-enter-from {
+    opacity: 0;
+    transform: translateX(50px);
+}
+.fade-enter-to {
+    opacity: 1;
+    transform: translateX(0);
+}
 </style>

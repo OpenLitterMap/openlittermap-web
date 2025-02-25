@@ -4,7 +4,6 @@ namespace App\Models\Litter\Tags;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class LitterObject extends Model
 {
@@ -24,13 +23,14 @@ class LitterObject extends Model
         return $this->belongsToMany(Category::class, 'category_litter_object')->using(CategoryLitterObject::class);
     }
 
-    public function materials(): BelongsToMany
-    {
-        return $this->belongsToMany(
-            Materials::class,
-            'category_litter_object_material',
-            'category_litter_object_id',
-            'material_id'
-        );
-    }
+    // this is wrong.
+//    public function materials(): BelongsToMany
+//    {
+//        return $this->belongsToMany(
+//            Materials::class,
+//            'category_litter_object_material',
+//            'category_litter_object_id',
+//            'material_id'
+//        );
+//    }
 }
