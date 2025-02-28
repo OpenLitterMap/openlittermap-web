@@ -73,7 +73,7 @@
                 <div class="flex">
                     <div class="flex flex-col items-center space-y-1 w-[5em] mx-4">
                         <!-- Level label -->
-                        <div class="text-center font-bold text-sm">Level 1</div>
+                        <div class="text-center text-green-700 font-bold text-sm">Level 1</div>
 
                         <!-- Vertical progress bar container -->
                         <div class="relative h-4/5 w-3 bg-gray-200 rounded-full dark:bg-gray-700 flex flex-col-reverse">
@@ -155,7 +155,7 @@
 
                     <!-- Right container-->
                     <div class="w-1/2 px-10 2xl:w-1/2">
-                        <div class="2xl:px-20">
+                        <div class="2xl:px-8">
                             <!-- Added tags -->
                             <ul role="list" class="grid grid-cols-2 gap-6">
                                 <li

@@ -41,7 +41,7 @@ class GetTagsController extends Controller
     public function getAllTags (): JsonResponse {
         $categories = Category::select('id', 'key')->orderBy('key')->get();
 
-        $litterObjects = LitterObject::with(['categories:id,key', 'materials:id,key'])
+        $litterObjects = LitterObject::with(['categories:id,key'])
             ->select('id', 'key')
             ->orderBy('key')
             ->get();

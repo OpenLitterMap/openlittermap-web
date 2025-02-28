@@ -64,17 +64,37 @@ class GenerateTagsSeederTest extends TestCase
         }
 
         $beerObject = LitterObject::where('key', 'beer_bottle')->first();
+        $this->assertNotNull($beerObject, "Beer bottle object not found.");
+
+        $aggregatedMaterials = $beerObject->categories->flatMap(function ($category) {
+            return $category->pivot->materials()->get();
+        });
+
+        // Check that glass is associated with the beer bottle.
         $glassMaterial = Materials::where('key', 'glass')->first();
-        $this->assertTrue($beerObject->materials->contains($glassMaterial));
+        $this->assertNotNull($glassMaterial, "Glass material record not found.");
+        $this->assertTrue(
+            $aggregatedMaterials->contains(function ($item) use ($glassMaterial) {
+                return $item->id === $glassMaterial->id;
+            }),
+            "Failed asserting that beer bottle is associated with glass."
+        );
 
-        // Check the beer does not have rubber material
+        // Check that beer bottle does not have rubber material.
         $rubberMaterial = Materials::where('key', 'rubber')->first();
-        $this->assertFalse($beerObject->materials->contains($rubberMaterial));
+        if ($rubberMaterial) {
+            $this->assertFalse(
+                $aggregatedMaterials->contains(function ($item) use ($rubberMaterial) {
+                    return $item->id === $rubberMaterial->id;
+                }),
+                "Failed asserting that beer bottle is not associated with rubber."
+            );
+        }
 
+        // Assert that unexpected material keys do not exist in the materials table.
         $notMaterials = ['butts', 'beer_bottle', 'bottle'];
-
-        foreach ($notMaterials as $notMaterial) {
-            $this->assertDatabaseMissing('materials', ['key' => $notMaterial]);
+        foreach ($notMaterials as $notMaterialKey) {
+            $this->assertDatabaseMissing('materials', ['key' => $notMaterialKey]);
         }
     }
 
@@ -107,34 +127,41 @@ class GenerateTagsSeederTest extends TestCase
 
         // Cup is used across 3 categories.
         $cupObject = LitterObject::where('key', 'cup')->first();
+
         $expectedMaterials = ['ceramic', 'foam', 'paper', 'plastic', 'metal'];
         $notExpectedMaterials = ['cotton', 'nylon'];
 
         // Aggregate all materials from the pivot records of the associated categories.
         $aggregatedMaterials = $cupObject->categories->flatMap(function ($category) {
-            return $category->pivot->materials;
-        })->unique('id');
+            return $category->pivot->materials()->get();
+        });
 
-        \Log::info($aggregatedMaterials);
-
+        // Assert that each expected material is associated.
         foreach ($expectedMaterials as $materialKey) {
             $materialModel = Materials::where('key', $materialKey)->first();
+            $this->assertNotNull($materialModel, "Material record for key '{$materialKey}' not found.");
             $this->assertTrue(
-                $aggregatedMaterials->contains($materialModel),
+                $aggregatedMaterials->contains(function ($item) use ($materialModel) {
+                    return $item->id === $materialModel->id;
+                }),
                 "Failed asserting that material '{$materialKey}' is associated with cup."
             );
         }
 
+        // Assert that each not-expected material is not associated.
         foreach ($notExpectedMaterials as $materialKey) {
             $materialModel = Materials::where('key', $materialKey)->first();
-            $this->assertFalse(
-                $aggregatedMaterials->contains($materialModel),
-                "Failed asserting that material '{$materialKey}' is not associated with cup."
-            );
+            if ($materialModel) {
+                $this->assertFalse(
+                    $aggregatedMaterials->contains(function ($item) use ($materialModel) {
+                        return $item->id === $materialModel->id;
+                    }),
+                    "Failed asserting that material '{$materialKey}' is not associated with cup."
+                );
+            }
         }
     }
 
-    /** @test */
     /** @test */
     public function it_does_not_duplicate_entries()
     {

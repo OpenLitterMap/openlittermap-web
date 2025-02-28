@@ -7,7 +7,7 @@ use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\Materials;
 use App\Models\User\User;
-use Database\Seeders\CategoryLitterObjectSeeder;
+use Database\Seeders\Tags\GenerateTagsSeeder;
 use Illuminate\Support\Facades\Storage;
 use Tests\Feature\HasPhotoUploads;
 use Tests\TestCase;
@@ -35,7 +35,7 @@ class AddNewTagsToPhotosTest extends TestCase
      */
     public function test_it_adds_all_tags_to_a_photo (): void
     {
-        $this->seed(CategoryLitterObjectSeeder::class);
+        $this->seed(GenerateTagsSeeder::class);
 
         // User uploads an image
         $user = User::factory()->create();
@@ -108,7 +108,7 @@ class AddNewTagsToPhotosTest extends TestCase
 
     public function test_it_shows_errors_if_object_does_not_match_category (): void
     {
-        $this->seed(CategoryLitterObjectSeeder::class);
+        $this->seed(GenerateTagsSeeder::class);
 
         // User uploads an image
         $user = User::factory()->create();

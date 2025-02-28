@@ -8,13 +8,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class CategoryLitterObject extends Pivot
 {
+    public $incrementing = true;
+
     protected $table = 'category_litter_object';
 
     protected $guarded = [];
 
-    /**
-     * Get the category that this pivot belongs to.
-     */
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class, 'category_id');

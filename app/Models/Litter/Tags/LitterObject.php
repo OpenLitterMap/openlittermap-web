@@ -20,7 +20,9 @@ class LitterObject extends Model
 
     public function categories()
     {
-        return $this->belongsToMany(Category::class, 'category_litter_object')->using(CategoryLitterObject::class);
+        return $this->belongsToMany(Category::class, 'category_litter_object')
+            ->using(CategoryLitterObject::class)
+            ->withPivot('id', 'litter_object_id', 'category_id');
     }
 
     // this is wrong.
