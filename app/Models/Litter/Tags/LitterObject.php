@@ -25,14 +25,15 @@ class LitterObject extends Model
             ->withPivot('id', 'litter_object_id', 'category_id');
     }
 
-    // this is wrong.
-//    public function materials(): BelongsToMany
-//    {
-//        return $this->belongsToMany(
-//            Materials::class,
-//            'category_litter_object_material',
-//            'category_litter_object_id',
-//            'material_id'
-//        );
-//    }
+    /**
+     * We need to call the function materials() to get the materials
+     *
+     * @return mixed
+     */
+    public function materials()
+    {
+        return $this->categories->flatMap(function ($category) {
+            return $category->pivot->materials()->get();
+        });
+    }
 }

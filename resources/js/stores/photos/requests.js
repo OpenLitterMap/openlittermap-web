@@ -15,7 +15,7 @@ export const requests = {
             });
     },
 
-    async UPLOAD_TAGS(photoId, tags) {
+    async UPLOAD_TAGS({ photoId, tags }) {
         await axios
             .post('/api/v3/tags', {
                 photo_id: photoId,
@@ -26,6 +26,9 @@ export const requests = {
             })
             .catch((error) => {
                 console.error('upload_tags', error);
+            })
+            .finally(() => {
+                return { test: true };
             });
     },
 };

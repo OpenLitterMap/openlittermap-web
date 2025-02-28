@@ -240,7 +240,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="flex">
+                                    <div class="flex mt-auto">
                                         <div class="flex w-2/3 m-auto">
                                             <p class="mr-2">Picked up</p>
 
@@ -523,10 +523,49 @@ const enforceQuantityRange = (tag) => {
     }
 };
 
+const prepareTagsForUpload = () => {
+    return newTags.value.map((tag) => {
+        const materials = tag.extraTags
+            .filter((extraTag) => extraTag.selected && extraTag.type === 'material')
+            .map((extraTag) => {
+                return {
+                    id: extraTag.id,
+                    key: extraTag.key,
+                };
+            });
+
+        const custom_tags = tag.extraTags
+            .filter((extraTag) => extraTag.selected && extraTag.type === 'custom')
+            .map((extraTag) => {
+                return {
+                    key: extraTag.key,
+                };
+            });
+
+        return {
+            category: { id: tag.category.id, key: tag.category.key },
+            object: { id: tag.object.id, key: tag.object.key },
+            quantity: tag.quantity,
+            picked_up: tag.pickedUp,
+            materials,
+            custom_tags,
+        };
+    });
+};
+
 const submit = async () => {
     isUploading.value = true;
 
-    await photosStore.UPLOAD_TAGS();
+    const tags = prepareTagsForUpload();
+
+    console.log({ tags });
+
+    const r = await photosStore.UPLOAD_TAGS({
+        photoId: paginatedPhotos.value.data[0].id,
+        tags,
+    });
+
+    console.log({ r });
 
     isUploading.value = false;
 };

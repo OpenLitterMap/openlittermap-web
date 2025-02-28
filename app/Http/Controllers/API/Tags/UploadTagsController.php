@@ -24,11 +24,11 @@ class UploadTagsController extends Controller
     public function store (Request $request): JsonResponse
     {
         $request->validate([
-            'photoId' => 'required|integer|exists:photos,id',
+            'photo_id' => 'required|integer|exists:photos,id',
             'tags' => 'required|array'
         ]);
 
-        $photoId = $request['photoId'];
+        $photoId = $request['photo_id'];
 
         // Check the user making this request owns this photo.
         $userId = Auth::user()->id;
@@ -53,12 +53,12 @@ class UploadTagsController extends Controller
             $quantity = null;
             $pickedUp = null;
 
-            if (isset($tag['categoryId'])) {
-                $category = Category::find($tag['categoryId'])->first();
+            if (isset($tag['category']['id'])) {
+                $category = Category::find($tag['category']['id'])->first();
             }
 
-            if (isset($tag['objectId'])) {
-                $object = LitterObject::find($tag['objectId'])->first();
+            if (isset($tag['object']['id'])) {
+                $object = LitterObject::find($tag['object']['id'])->first();
             }
 
             // check if the object->categories is of type category
@@ -76,9 +76,7 @@ class UploadTagsController extends Controller
             }
 
             // Extra Tags
-//            if (isset($tag['brand'])) {
-//                $brand = BrandList::where('key', $tag['brand'])->first();
-//            }
+
 
             $quantity = $tag['quantity'] ?? 1;
 
@@ -103,13 +101,22 @@ class UploadTagsController extends Controller
             {
                 foreach ($tag['materials'] as $material)
                 {
-                    $materialId = Materials::where('key', $material)->first()->id ?? null;
+                    $materialId = Materials::find($material['id'])->first()->id ?? null;
 
-                    $photoTag->materials()->attach($materialId);
+                    if ($materialId) {
+                        $photoTag->materials()->attach($materialId);
+                    }
                 }
 
                 $photoTag->load('materials');
             }
+
+            // CustomTags
+            // Brands
+
+//            if (isset($tag['brand'])) {
+//                $brand = BrandList::where('key', $tag['brand'])->first();
+//            }
 
             $photoTags[] = $photoTag;
         }
