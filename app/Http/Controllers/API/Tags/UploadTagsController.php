@@ -28,16 +28,14 @@ class UploadTagsController extends Controller
             'tags' => 'required|array'
         ]);
 
-        $photoId = $request['photo_id'];
+        $photoId = $request->input('photo_id');
 
         // Check the user making this request owns this photo.
-        $userId = Auth::user()->id;
+        $user = Auth::user();
         $photo = Photo::find($photoId);
 
-        if ($photo->user_id !== $userId) {
-            return response()->json([
-                'msg' => 'Unauthenticated.'
-            ], 403);
+        if (!$photo || $photo->user_id !== $user->id) {
+            return response()->json(['msg' => 'Unauthenticated.'], 403);
         }
 
         $photoTags = [];
@@ -45,67 +43,36 @@ class UploadTagsController extends Controller
 
         foreach ($request['tags'] as $tag)
         {
-            $passed = true;
-
-            $category = null;
-            $object = null;
-            $brand = null;
-            $quantity = null;
-            $pickedUp = null;
-
-            if (isset($tag['category']['id'])) {
-                $category = Category::find($tag['category']['id'])->first();
-            }
-
-            if (isset($tag['object']['id'])) {
-                $object = LitterObject::find($tag['object']['id'])->first();
-            }
-
-            // check if the object->categories is of type category
-            if ($category && $object) {
-                if (!$category->litterObjects->contains($object)) {
-
-                    $passed = false;
-
-                    $errors[] = [
-                        'msg' => 'Category does not contain object',
-                        'category' => $tag['category'],
-                        'object' => $tag['object']
-                    ];
-                }
-            }
-
-            // Extra Tags
-
-
+            $category = isset($tag['category']['id']) ? Category::find($tag['category']['id']) : null;
+            $object   = isset($tag['object']['id']) ? LitterObject::find($tag['object']['id']) : null;
             $quantity = $tag['quantity'] ?? 1;
+            $pickedUp = $tag['picked_up'] ?? null;
 
-            if (isset($tag['picked_up'])) {
-                $pickedUp = $tag['picked_up'];
-            }
-
-            if (!$passed) {
-                continue;
+            // Verify that the category and object are associated.
+            if ($category && $object && !$category->litterObjects->contains($object)) {
+                throw new \Exception("Category '{$category->key}' does not contain object '{$object->key}'.");
             }
 
             $photoTag = PhotoTag::firstOrCreate([
                 'photo_id' => $photoId,
                 'category_id' => $category?->id,
                 'object_id' => $object?->id,
-                'brandlist_id' => $brand?->id,
                 'quantity' => $quantity,
                 'picked_up' => $pickedUp
             ]);
 
-            if (isset($tag['materials']) && count($tag['materials']) > 0)
+            if (isset($tag['materials']) && is_array($tag['materials']) && count($tag['materials']) > 0)
             {
-                foreach ($tag['materials'] as $material)
+                foreach ($tag['materials'] as $materialData)
                 {
-                    $materialId = Materials::find($material['id'])->first()->id ?? null;
+                    $materialModel = Materials::find($materialData['id']);
 
-                    if ($materialId) {
-                        $photoTag->materials()->attach($materialId);
+                    if (!$materialModel) {
+                        throw new \Exception("Material with ID {$materialData['id']} not found.");
                     }
+
+                    // Use syncWithoutDetaching to prevent duplicate entries.
+                    $photoTag->materials()->syncWithoutDetaching($materialModel->id);
                 }
 
                 $photoTag->load('materials');
@@ -123,7 +90,6 @@ class UploadTagsController extends Controller
 
         return response()->json([
             'photoTags' => $photoTags,
-            'errors' => $errors
         ]);
     }
 }
