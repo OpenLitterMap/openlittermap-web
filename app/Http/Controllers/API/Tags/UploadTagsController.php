@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API\Tags;
 
+use App\Models\Litter\Tags\CustomTagNew;
 use App\Models\Photo;
 use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
@@ -39,7 +40,6 @@ class UploadTagsController extends Controller
         }
 
         $photoTags = [];
-        $errors = [];
 
         foreach ($request['tags'] as $tag)
         {
@@ -56,7 +56,7 @@ class UploadTagsController extends Controller
             $photoTag = PhotoTag::firstOrCreate([
                 'photo_id' => $photoId,
                 'category_id' => $category?->id,
-                'object_id' => $object?->id,
+                'litter_object_id' => $object?->id,
                 'quantity' => $quantity,
                 'picked_up' => $pickedUp
             ]);
@@ -72,13 +72,24 @@ class UploadTagsController extends Controller
                     }
 
                     // Use syncWithoutDetaching to prevent duplicate entries.
-                    $photoTag->materials()->syncWithoutDetaching($materialModel->id);
+                    // $photoTag->materials()->syncWithoutDetaching($materialModel->id);
                 }
-
-                $photoTag->load('materials');
             }
 
             // CustomTags
+            if (isset($tag['custom_tags']) && is_array($tag['custom_tags']) && count($tag['custom_tags']))
+            {
+                foreach ($tag['custom_tags'] as $customTagData)
+                {
+                    $customTagModel = CustomTagNew::firstOrCreate(['key' => $customTagData['key']]);
+
+                    // if new -> send to admin for approval
+
+                    // Use syncWithoutDetaching to prevent duplicate entries.
+                    // $photoTag->customTags()->syncWithoutDetaching($customTagModel->id);
+                }
+            }
+
             // Brands
 
 //            if (isset($tag['brand'])) {

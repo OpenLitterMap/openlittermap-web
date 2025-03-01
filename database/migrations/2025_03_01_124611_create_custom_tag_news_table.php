@@ -11,14 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('brandables', function (Blueprint $table) {
+        Schema::create('custom_tags_new', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('brandlist_id')->constrained('brandslist')->cascadeOnDelete();
-            $table->unsignedBigInteger('brandable_id');
-            $table->string('brandable_type');
+            $table->string('key')->unique();
+            $table->boolean('approved')->default(false);
             $table->timestamps();
-
-            $table->index(['brandable_id', 'brandable_type']);
         });
     }
 
@@ -27,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('brandables');
+        Schema::dropIfExists('custom_tag_news');
     }
 };
