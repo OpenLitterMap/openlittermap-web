@@ -2,11 +2,15 @@
 
 namespace Tests\Feature\Tags;
 
+use App\LitterModels;
+use App\Models\User\User;
 use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
+use App\Models\Litter\Tags\CustomTagNew;
 use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\Materials;
-use App\Models\User\User;
+use App\Models\Litter\Tags\PhotoTag;
+use Database\Seeders\Tags\GenerateBrandsSeeder;
 use Database\Seeders\Tags\GenerateTagsSeeder;
 use Illuminate\Support\Facades\Storage;
 use Tests\Feature\HasPhotoUploads;
@@ -36,8 +40,8 @@ class AddNewTagsToPhotosTest extends TestCase
     public function test_it_adds_tags_to_a_photo (): void
     {
         $this->seed(GenerateTagsSeeder::class);
+        $this->seed(GenerateBrandsSeeder::class);
 
-        // User uploads an image
         $user = User::factory()->create();
 
         $this->actingAs($user, 'api');
@@ -46,7 +50,7 @@ class AddNewTagsToPhotosTest extends TestCase
             $this->getApiImageAttributes($this->imageAndAttributes)
         );
 
-        $photo = $user->fresh()->photos->last();
+        $photo = $user->photos->last();
 
         $category = Category::where('key', 'smoking')->first();
         $object = LitterObject::where('key', 'butts')->first();
@@ -62,11 +66,16 @@ class AddNewTagsToPhotosTest extends TestCase
                 'picked_up' => $pickedUp,
                 'quantity' => $quantity,
                 'materials' => [
-                    $materials[0],
-                    $materials[1]
+                    ['id' => $materials[0]->id, 'key' => $materials[0]->key],
+                    ['id' => $materials[1]->id, 'key' => $materials[1]->key]
                 ],
-                // brands
-                // custom_tags
+                'brands' => [
+                    $brand
+                ],
+                'custom_tags' => [
+                    'new tag 1',
+                    'new tag 2'
+                ]
             ]
         ];
 
@@ -83,21 +92,56 @@ class AddNewTagsToPhotosTest extends TestCase
             'litter_object_id' => $object->id,
             'picked_up' => $pickedUp,
             'quantity' => $quantity,
-            // 'brandlist_id' => $brand?->id
         ]);
 
-        $materialOneId = Materials::where('key', $materials[0])->first()->id ?? null;
-        $materialTwoId = Materials::where('key', $materials[1])->first()->id ?? null;
+        // Retrieve the created photo tag record.
+        $photoTag = PhotoTag::where('photo_id', $photo->id)
+            ->where('category_id', $category->id)
+            ->where('litter_object_id', $object->id)
+            ->first();
+        $this->assertNotNull($photoTag);
 
-//        $this->assertDatabaseHas('material_photo_tag', [
-//            'photo_tag_id' => 1,
-//            'material_id' => $materialOneId,
-//        ]);
-//
-//        $this->assertDatabaseHas('material_photo_tag', [
-//            'photo_tag_id' => 1,
-//            'material_id' => $materialTwoId,
-//        ]);
+        // Assert that extra tag records were created for the materials.
+        $this->assertDatabaseHas('photo_tag_extra_tags', [
+            'photo_tag_id' => $photoTag->id,
+            'tag_type'     => LitterModels::MATERIALS->value,
+            'tag_type_id'  => $materials[0]->id,
+            'quantity'     => 1,  // assuming a default extra quantity of 1
+        ]);
+        $this->assertDatabaseHas('photo_tag_extra_tags', [
+            'photo_tag_id' => $photoTag->id,
+            'tag_type'     => LitterModels::MATERIALS->value,
+            'tag_type_id'  => $materials[1]->id,
+            'quantity'     => 1,
+        ]);
+
+        // Assert that an extra tag record was created for the brand.
+        $this->assertDatabaseHas('photo_tag_extra_tags', [
+            'photo_tag_id' => $photoTag->id,
+            'tag_type'     => LitterModels::BRANDS->value,
+            'tag_type_id'  => $brand->id,
+            'quantity'     => 1,
+        ]);
+
+        // For custom tags, first ensure the tags are created.
+        $customTag1 = CustomTagNew::where('key', 'new tag 1')->first();
+        $customTag2 = CustomTagNew::where('key', 'new tag 2')->first();
+        $this->assertNotNull($customTag1);
+        $this->assertNotNull($customTag2);
+
+        // Assert that extra tag records were created for each custom tag.
+        $this->assertDatabaseHas('photo_tag_extra_tags', [
+            'photo_tag_id' => $photoTag->id,
+            'tag_type'     => LitterModels::CUSTOM_TAGS->value,
+            'tag_type_id'  => $customTag1->id,
+            'quantity'     => 1,
+        ]);
+        $this->assertDatabaseHas('photo_tag_extra_tags', [
+            'photo_tag_id' => $photoTag->id,
+            'tag_type'     => LitterModels::CUSTOM_TAGS->value,
+            'tag_type_id'  => $customTag2->id,
+            'quantity'     => 1,
+        ]);
     }
 
     public function test_it_shows_errors_if_object_does_not_match_category (): void

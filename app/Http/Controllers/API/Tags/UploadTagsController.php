@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\API\Tags;
 
 use App\Models\Litter\Tags\CustomTagNew;
-use App\Models\Photo;
 use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\LitterObject;
@@ -13,6 +12,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class UploadTagsController extends Controller
 {
@@ -21,30 +21,43 @@ class UploadTagsController extends Controller
      *
      * @param Request $request
      * @return JsonResponse
+     * @throws \Exception
      */
     public function store (Request $request): JsonResponse
     {
         $request->validate([
-            'photo_id' => 'required|integer|exists:photos,id',
-            'tags' => 'required|array'
+            'photo_id' => [
+                'required',
+                'integer',
+                Rule::exists('photos', 'id')->where(function ($query) {
+                    $query->where('user_id', Auth::id());
+                })
+            ],
+            'tags' => 'required|array',
         ]);
 
-        $photoId = $request->input('photo_id');
+        $photoTags = $this->addTagsToPhoto($request['tags'], $request->input('photo_id'));
 
-        // Check the user making this request owns this photo.
-        $user = Auth::user();
-        $photo = Photo::find($photoId);
+        return response()->json([
+            'success' => true,
+            'photoTags' => $photoTags,
+        ]);
+    }
 
-        if (!$photo || $photo->user_id !== $user->id) {
-            return response()->json(['msg' => 'Unauthenticated.'], 403);
-        }
-
+    /**
+     * @param array $tags
+     * @param int $photoId
+     * @return array
+     * @throws \Exception
+     */
+    public function addTagsToPhoto(array $tags, int $photoId): array
+    {
         $photoTags = [];
 
-        foreach ($request['tags'] as $tag)
+        foreach ($tags as $tag)
         {
             $category = isset($tag['category']['id']) ? Category::find($tag['category']['id']) : null;
-            $object   = isset($tag['object']['id']) ? LitterObject::find($tag['object']['id']) : null;
+            $object = isset($tag['object']['id']) ? LitterObject::find($tag['object']['id']) : null;
             $quantity = $tag['quantity'] ?? 1;
             $pickedUp = $tag['picked_up'] ?? null;
 
@@ -61,46 +74,67 @@ class UploadTagsController extends Controller
                 'picked_up' => $pickedUp
             ]);
 
-            if (isset($tag['materials']) && is_array($tag['materials']) && count($tag['materials']) > 0)
-            {
-                foreach ($tag['materials'] as $materialData)
-                {
+            if (isset($tag['materials']) && is_array($tag['materials']) && count($tag['materials']) > 0) {
+                foreach ($tag['materials'] as $materialData) {
                     $materialModel = Materials::find($materialData['id']);
 
                     if (!$materialModel) {
                         throw new \Exception("Material with ID {$materialData['id']} not found.");
                     }
 
-                    // Use syncWithoutDetaching to prevent duplicate entries.
-                    // $photoTag->materials()->syncWithoutDetaching($materialModel->id);
+                    $photoTag->extraTags()->create([
+                        'tag_type' => 'material',
+                        'tag_type_id' => $materialModel->id,
+                        'quantity' => $materialData['quantity'] ?? 1,
+                    ]);
                 }
             }
 
             // CustomTags
-            if (isset($tag['custom_tags']) && is_array($tag['custom_tags']) && count($tag['custom_tags']))
-            {
-                foreach ($tag['custom_tags'] as $customTagData)
-                {
-                    $customTagModel = CustomTagNew::firstOrCreate(['key' => $customTagData['key']]);
+            if (isset($tag['custom_tags']) && is_array($tag['custom_tags']) && count($tag['custom_tags'])) {
+                foreach ($tag['custom_tags'] as $customTagData) {
+
+                    // Clean for vulnerabilities
+                    $cleanTag = strip_tags($customTagData);
+                    $cleanTag = trim($cleanTag);
+
+                    // Validate against a whitelist pattern (only letters, numbers, spaces, hyphens, and underscores).
+                    if (!preg_match('/^[\w\s-]+$/', $cleanTag)) {
+                        throw new \Exception('Invalid custom tag.');
+                    }
+
+                    $customTagModel = CustomTagNew::firstOrCreate(['key' => $cleanTag]);
 
                     // if new -> send to admin for approval
 
-                    // Use syncWithoutDetaching to prevent duplicate entries.
-                    // $photoTag->customTags()->syncWithoutDetaching($customTagModel->id);
+                    $photoTag->extraTags()->create([
+                        'tag_type' => 'custom_tag',
+                        'tag_type_id' => $customTagModel->id,
+                        'quantity' => $customTagData['quantity'] ?? 1,
+                    ]);
                 }
             }
 
             // Brands
+            if (isset($tag['brands']) && is_array($tag['brands']) && count($tag['brands'])) {
+                foreach ($tag['brands'] as $brandData) {
+                    $brandModel = BrandList::find($brandData['id']);
 
-//            if (isset($tag['brand'])) {
-//                $brand = BrandList::where('key', $tag['brand'])->first();
-//            }
+                    if (!$brandModel) {
+                        throw new \Exception("Brand {$brandData['key']} not found.");
+                    }
+
+                    $photoTag->extraTags()->create([
+                        'tag_type' => 'brand',
+                        'tag_type_id' => $brandModel->id,
+                        'quantity' => $brandData['quantity'] ?? 1,
+                    ]);
+                }
+            }
 
             $photoTags[] = $photoTag;
         }
 
-        return response()->json([
-            'photoTags' => $photoTags,
-        ]);
+        return $photoTags;
     }
 }

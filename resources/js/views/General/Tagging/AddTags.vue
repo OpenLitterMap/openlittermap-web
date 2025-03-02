@@ -6,101 +6,13 @@
             </div>
 
             <div v-else>
-                <!-- Header-->
-                <div class="bg-gray-100 p-5 rounded-md mb-10 flex justify-evenly">
-                    <span class="text-center">XP to level up: <br />69</span>
+                <AddTagsHeader :newTags="newTags" :photoId="paginatedPhotos?.data[0]?.id" />
 
-                    <div class="min-w-[15em] text-center">
-                        <p>{{ remainingPhotos }} untagged photos</p>
+                <VerticalXpBar />
 
-                        <div class="flex justify-between">
-                            <span class="flex cursor-pointer">
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke-width="1.5"
-                                    stroke="currentColor"
-                                    class="size-6"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        d="M6.75 15.75 3 12m0 0 3.75-3.75M3 12h18"
-                                    />
-                                </svg>
-
-                                Previous
-                            </span>
-                            <span class="flex cursor-pointer">
-                                Next
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke-width="1.5"
-                                    stroke="currentColor"
-                                    class="size-6"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        d="M17.25 8.25 21 12m0 0-3.75 3.75M21 12H3"
-                                    />
-                                </svg>
-                            </span>
-                        </div>
-                    </div>
-
-                    <div>
-                        <p>Team</p>
-                        <span>Cleanup</span>
-                    </div>
-
-                    <div>
-                        <button
-                            class="p-2 rounded bg-green-500"
-                            :disabled="!newTags.length"
-                            :class="!newTags.length ? 'opacity-50 cursor-not-allowed' : ''"
-                            v-tooltip="!newTags.length ? 'Please add a tag' : ''"
-                            @click="submit"
-                        >
-                            Submit
-                        </button>
-                    </div>
-                </div>
-
-                <div class="flex">
-                    <div class="flex flex-col items-center space-y-1 w-[5em] mx-4">
-                        <!-- Level label -->
-                        <div class="text-center text-green-700 font-bold text-sm">Level 1</div>
-
-                        <!-- Vertical progress bar container -->
-                        <div class="relative h-4/5 w-3 bg-gray-200 rounded-full dark:bg-gray-700 flex flex-col-reverse">
-                            <!-- Filled portion (progress) -->
-                            <div class="bg-blue-600 w-full rounded-full" :style="{ height: xpProgress + '%' }"></div>
-
-                            <!-- Horizontal marker line at current percentage -->
-                            <div
-                                class="absolute left-0 w-full border-t-2 border-red-500"
-                                :style="{ bottom: xpProgress + '%' }"
-                            ></div>
-
-                            <!-- Centered percentage label -->
-                            <div
-                                class="absolute left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-xs font-bold text-red-500"
-                                :style="{
-                                    bottom: `calc(${xpProgress}% - 1.25em)`,
-                                    left: '-1.5em',
-                                }"
-                            >
-                                {{ xpProgress }}%
-                            </div>
-                        </div>
-                    </div>
-
+                <div class="flex ml-[7em] w-full md:pr-[3em]">
                     <!-- Image Container -->
-                    <div class="flex flex-col items-center w-2/5 2xl:w-1/3">
+                    <div class="flex flex-col items-center w-2/5">
                         <img :src="paginatedPhotos?.data[0]?.filename" alt="photo" />
 
                         <div class="w-full">
@@ -150,13 +62,15 @@
                                     +
                                 </button>
                             </div>
+
+                            <PreviousNextButtons />
                         </div>
                     </div>
 
                     <!-- Right container-->
-                    <div class="w-1/2 px-10 2xl:w-1/2">
-                        <div class="2xl:px-8">
-                            <!-- Added tags -->
+                    <div class="w-2/3 pl-12 2xl:w-1/2">
+                        <!-- class="2xl:px-8"-->
+                        <div>
                             <ul role="list" class="grid grid-cols-2 gap-6">
                                 <li
                                     v-for="tag in newTags"
@@ -283,10 +197,13 @@ import { InformationCircleIcon } from '@heroicons/vue/24/outline';
 
 import { usePhotosStore } from '../../../stores/photos/index.js';
 import { useTagsStore } from '../../../stores/tags/index.js';
+import AddTagsHeader from './components/AddTagsHeader.vue';
+import VerticalXpBar from './components/VerticalXpBar.vue';
 import SelectTag from './components/SelectTag.vue';
 import CreateTag from './components/CreateTag.vue';
 import QuantityPicker from './components/QuantityPicker.vue';
 import ToggleSwitch from './components/ToggleSwitch.vue';
+import PreviousNextButtons from './components/PreviousNextButtons.vue';
 
 const photosStore = usePhotosStore();
 const tagsStore = useTagsStore();
@@ -300,8 +217,21 @@ const searchAllTags = ref({ id: 0, key: '', text: '' });
 const selectedQuantity = ref(1);
 const searchAllTagsKey = ref(0);
 const newTags = ref([]);
-const xpProgress = ref(45);
-const isUploading = ref(false);
+
+onMounted(async () => {
+    const loader = $loading.show({ container: null });
+
+    await photosStore.GET_USERS_UNTAGGED_PHOTOS();
+
+    if (tagsStore.groupedTags.length === 0) {
+        await tagsStore.GET_TAGS();
+        await tagsStore.GET_ALL_TAGS();
+    }
+
+    loader.hide();
+});
+
+const paginatedPhotos = computed(() => photosStore.paginated);
 
 // Needs checkboxes to filter by all tags or materials
 const getAllTags = computed(() => {
@@ -522,69 +452,6 @@ const enforceQuantityRange = (tag) => {
         tag.quantity = 100;
     }
 };
-
-const prepareTagsForUpload = () => {
-    return newTags.value.map((tag) => {
-        const materials = tag.extraTags
-            .filter((extraTag) => extraTag.selected && extraTag.type === 'material')
-            .map((extraTag) => {
-                return {
-                    id: extraTag.id,
-                    key: extraTag.key,
-                };
-            });
-
-        const custom_tags = tag.extraTags
-            .filter((extraTag) => extraTag.selected && extraTag.type === 'custom')
-            .map((extraTag) => {
-                return {
-                    key: extraTag.key,
-                };
-            });
-
-        return {
-            category: { id: tag.category.id, key: tag.category.key },
-            object: { id: tag.object.id, key: tag.object.key },
-            quantity: tag.quantity,
-            picked_up: tag.pickedUp,
-            materials,
-            custom_tags,
-        };
-    });
-};
-
-const submit = async () => {
-    isUploading.value = true;
-
-    const tags = prepareTagsForUpload();
-
-    console.log({ tags });
-
-    const r = await photosStore.UPLOAD_TAGS({
-        photoId: paginatedPhotos.value.data[0].id,
-        tags,
-    });
-
-    console.log({ r });
-
-    isUploading.value = false;
-};
-
-onMounted(async () => {
-    const loader = $loading.show({ container: null });
-
-    await photosStore.GET_USERS_UNTAGGED_PHOTOS();
-
-    if (tagsStore.groupedTags.length === 0) {
-        await tagsStore.GET_TAGS();
-        await tagsStore.GET_ALL_TAGS();
-    }
-
-    loader.hide();
-});
-
-const paginatedPhotos = computed(() => photosStore.paginated);
-const remainingPhotos = computed(() => photosStore.remaining);
 </script>
 
 <style scoped>

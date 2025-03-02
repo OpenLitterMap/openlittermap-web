@@ -30,9 +30,9 @@ class PhotoTag extends Model
         return $this->belongsTo(LitterObject::class, 'object_id');
     }
 
-    public function extras(): HasMany
+    public function extraTags(): HasMany
     {
-        return $this->hasMany(PhotoTagExtra::class);
+        return $this->hasMany(PhotoTagExtraTags::class);
     }
 
     public function brand(): BelongsTo

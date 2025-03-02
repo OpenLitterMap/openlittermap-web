@@ -11,19 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('photo_tag_extras', function (Blueprint $table) {
+        Schema::create('photo_tag_extra_tags', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('photo_tag_id');
             $table->foreign('photo_tag_id')->references('id')->on('photo_tags')->onDelete('cascade');
 
             // Polymorphic relationship
-            $table->unsignedBigInteger('extra_type_id');
-            $table->string('extra_type');
+            $table->string('tag_type');
+            $table->unsignedBigInteger('tag_type_id');
+
             $table->integer('quantity')->default(1);
             $table->integer('index')->nullable();
             $table->timestamps();
 
-            $table->index(['extra_type', 'extra_type_id']);
+            $table->index(['tag_type', 'tag_type_id']);
         });
     }
 
