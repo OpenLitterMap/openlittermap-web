@@ -8,7 +8,7 @@
             <div v-else>
                 <AddTagsHeader :newTags="newTags" :photoId="paginatedPhotos?.data[0]?.id" />
 
-                <VerticalXpBar />
+                <VerticalXpBar :newTags="newTags" />
 
                 <div class="flex ml-[7em] w-full md:pr-[3em]">
                     <!-- Image Container -->
@@ -63,7 +63,11 @@
                                 </button>
                             </div>
 
-                            <PreviousNextButtons />
+                            <PreviousNextButtons
+                                :paginatedPhotos="paginatedPhotos"
+                                @previous="loadPreviousPhoto"
+                                @next="loadNextPhoto"
+                            />
                         </div>
                     </div>
 
@@ -232,6 +236,18 @@ onMounted(async () => {
 });
 
 const paginatedPhotos = computed(() => photosStore.paginated);
+
+const loadPreviousPhoto = async () => {
+    if (photosStore.paginated?.prev_page_url) {
+        await photosStore.GET_USERS_UNTAGGED_PHOTOS(photosStore.paginated.current_page - 1);
+    }
+};
+
+const loadNextPhoto = async () => {
+    if (photosStore.paginated?.next_page_url) {
+        await photosStore.GET_USERS_UNTAGGED_PHOTOS(photosStore.paginated.current_page + 1);
+    }
+};
 
 // Needs checkboxes to filter by all tags or materials
 const getAllTags = computed(() => {

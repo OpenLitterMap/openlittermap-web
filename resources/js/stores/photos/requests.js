@@ -1,7 +1,7 @@
 export const requests = {
-    async GET_USERS_UNTAGGED_PHOTOS() {
+    async GET_USERS_UNTAGGED_PHOTOS(page = 1) {
         await axios
-            .get('/api/v3/user/photos/untagged')
+            .get(`/api/v3/user/photos/untagged?page=${page}`)
             .then((response) => {
                 console.log('get_users_untagged_photos', response);
 

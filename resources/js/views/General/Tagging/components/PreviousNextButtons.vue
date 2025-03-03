@@ -1,6 +1,14 @@
 <template>
     <div class="flex justify-center gap-6 mt-8">
-        <span class="flex cursor-pointer hover:text-gray-300" @click="previous">
+        <!-- Previous Button -->
+        <span
+            class="flex items-center group"
+            :class="{
+                'cursor-not-allowed': !hasPreviousPage,
+                'hover:text-gray-300 cursor-pointer': hasPreviousPage,
+            }"
+            @click="previous"
+        >
             <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
@@ -11,10 +19,18 @@
             >
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 15.75 3 12m0 0 3.75-3.75M3 12h18" />
             </svg>
-
             Previous
         </span>
-        <span class="flex cursor-pointer hover:text-gray-300" @click="next">
+
+        <!-- Next Button -->
+        <span
+            class="flex items-center group"
+            :class="{
+                'cursor-not-allowed text-gray-400': !hasNextPage,
+                'hover:text-gray-300 cursor-pointer': hasNextPage,
+            }"
+            @click="next"
+        >
             Next
             <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -31,13 +47,31 @@
 </template>
 
 <script setup>
+import { defineEmits, defineProps, computed } from 'vue';
+
+const props = defineProps({
+    previous: Function,
+    next: Function,
+    paginatedPhotos: {
+        type: Object,
+        default: () => ({}), // Ensures it's always an object
+    },
+});
+
+const emit = defineEmits(['previous', 'next']);
+
+const hasPreviousPage = computed(() => !!props.paginatedPhotos?.prev_page_url);
+const hasNextPage = computed(() => !!props.paginatedPhotos?.next_page_url);
+
 const previous = () => {
-    console.log('Previous');
+    if (hasPreviousPage.value) {
+        emit('previous');
+    }
 };
 
 const next = () => {
-    console.log('Next');
+    if (hasNextPage.value) {
+        emit('next');
+    }
 };
 </script>
-
-<style scoped></style>

@@ -33,10 +33,15 @@ class GetUsersUntaggedPhotosController extends Controller
             ->orderBy('id', 'asc')
             ->paginate(2);
 
+        // We should move this into the GET TAGS request after refactoring custom tags.
+        $customTags = (request('page') === '1')
+            ? $previousTagsAction->run($user)
+            : null;
+
         return response()->json([
             'photos' => $photos,
             'remaining' => $remaining,
-            'custom_tags' => $previousTagsAction->run($user)
+            'custom_tags' => $customTags
         ]);
     }
 }
