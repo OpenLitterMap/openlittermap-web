@@ -5,23 +5,29 @@
             <div class="text-center text-green-700 font-bold text-sm">Level {{ userLevel }}</div>
 
             <!-- Vertical progress bar container -->
-            <div class="relative h-full w-3 bg-gray-200 rounded-full dark:bg-gray-700 flex flex-col-reverse">
-                <!-- Existing XP (blue) -->
-                <div class="bg-blue-600 w-full rounded-full" :style="{ height: existingXPProgress + '%' }"></div>
-
-                <!-- Newly gained XP (green) -->
+            <div class="relative h-full w-3 bg-gray-200 rounded-full dark:bg-gray-700">
+                <!-- Total XP (blue): from 0% to xpProgress -->
                 <div
-                    class="bg-green-500 w-full rounded-full absolute bottom-0"
-                    :style="{ height: newXPProgress + '%' }"
+                    class="bg-blue-600 w-full rounded-full absolute bottom-0"
+                    :style="{ height: xpProgress + '%' }"
                 ></div>
 
-                <!-- Horizontal marker line at current percentage -->
+                <!-- Newly gained XP (green): from existingXPProgress% to xpProgress% -->
+                <div
+                    class="bg-green-500 w-full rounded-full absolute"
+                    :style="{
+                        bottom: existingXPProgress + '%',
+                        height: xpProgress - existingXPProgress + '%',
+                    }"
+                ></div>
+
+                <!-- Horizontal marker line at the total XP percentage -->
                 <div
                     class="absolute left-0 w-full border-t-2 border-red-500"
                     :style="{ bottom: xpProgress + '%' }"
                 ></div>
 
-                <!-- Centered percentage label -->
+                <!-- Centered percentage label at the total XP percentage -->
                 <div
                     class="absolute left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-xs font-bold text-red-500"
                     :style="{
@@ -41,6 +47,7 @@
 
 <script setup>
 import { ref, computed, defineProps } from 'vue';
+import { useUserStore } from '../../../../stores/user/index.js';
 
 const props = defineProps({
     newTags: {
@@ -49,33 +56,40 @@ const props = defineProps({
     },
 });
 
-// Simulated current XP and XP required for the next level
-const currentXP = ref(120); // Example: Current XP
-const xpToNextLevel = ref(200); // Example: XP needed for next level
-const userLevel = ref(1); // Example: Current user level
+const userStore = useUserStore();
+
+// Reactive references for XP data
+const currentXP = ref(userStore.user.xp_redis);
+const xpRequired = ref(userStore.user.next_level.xp);
+const userLevel = ref(userStore.user.level);
 
 // Function to calculate new XP gained
 const calculateXP = (tags) => {
     let totalXP = 0;
-
     tags.forEach((tag) => {
-        totalXP += tag.quantity; // Each category.object tag is worth its quantity
+        totalXP += tag.quantity;
         if (tag.extraTags) {
-            totalXP += tag.extraTags.length; // Extra tags (brand, material, custom) add 1 XP each
+            tag.extraTags.forEach((extra) => {
+                if (extra.selected) {
+                    totalXP++;
+                }
+            });
         }
     });
-
     return totalXP;
 };
 
-// Compute XP
+// newXP: XP gained from the new tags
 const newXP = computed(() => calculateXP(props.newTags));
-const totalXP = computed(() => currentXP.value + newXP.value);
-const xpProgress = computed(() => Math.min((totalXP.value / xpToNextLevel.value) * 100, 100));
 
-// Calculate progress bars separately
-const existingXPProgress = computed(() => Math.min((currentXP.value / xpToNextLevel.value) * 100, 100));
-const newXPProgress = computed(() => Math.min((newXP.value / xpToNextLevel.value) * 100, 100));
+// totalXP: user's final XP after adding newXP
+const totalXP = computed(() => currentXP.value + newXP.value);
+
+// xpProgress: total XP as a percentage of xpRequired
+const xpProgress = computed(() => Math.round(Math.min((totalXP.value / xpRequired.value) * 100, 100)));
+
+// existingXPProgress: user's old XP (before newXP) as a percentage of xpRequired
+const existingXPProgress = computed(() => Math.round(Math.min((currentXP.value / xpRequired.value) * 100, 100)));
 </script>
 
 <style scoped></style>

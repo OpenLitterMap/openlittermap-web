@@ -32,7 +32,7 @@ import 'floating-vue/dist/style.css';
 FloatingVue.options.themes.tooltip.disabled = window.innerWidth <= 768;
 
 // Register app, components and use plugins
-const app = createApp(App);
+const app = createApp(App, window.initialProps);
 
 app.component('Nav', Nav);
 app.component('Modal', Modal);

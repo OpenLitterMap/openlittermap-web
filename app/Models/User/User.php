@@ -2,6 +2,7 @@
 
 namespace App\Models\User;
 
+use App\Level;
 use App\Payment;
 use App\Models\Photo;
 use App\Models\CustomTag;
@@ -142,7 +143,9 @@ class User extends Authenticatable
         'picked_up',
         'user_verification_count',
         'littercoin_progress',
-        'total_littercoin'
+        'total_littercoin',
+        'next_level',
+        'xp_redis'
     ];
 
     /**
@@ -270,6 +273,11 @@ class User extends Authenticatable
         $year = now()->year;
 
         return (int) Redis::zscore("leaderboard:users:$year", $this->id);
+    }
+
+    public function getNextLevelAttribute (): Level
+    {
+        return Level::find($this->level + 1);
     }
 
     /**

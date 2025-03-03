@@ -1,7 +1,7 @@
-import { defineStore } from "pinia";
-import { requests } from "./requests.js";
+import { defineStore } from 'pinia';
+import { requests } from './requests.js';
 
-export const useUserStore = defineStore("user", {
+export const useUserStore = defineStore('user', {
     state: () => ({
         admin: false,
         auth: false,
@@ -9,7 +9,7 @@ export const useUserStore = defineStore("user", {
         errorLogin: '',
         errors: {},
         geojson: {
-            features: []
+            features: [],
         },
         helper: false,
         position: 0,
@@ -19,24 +19,27 @@ export const useUserStore = defineStore("user", {
         totalPhotos: 0,
         totalTags: 0,
         totalUsers: 0, // Should be on users.old_js
-        user: {}
+        user: {},
     }),
 
     persist: true,
 
     actions: {
-        clearErrorLogin () {
+        clearErrorLogin() {
             this.errorLogin = '';
         },
 
-        logout ()
-        {
+        logout() {
             this.auth = false;
             this.admin = false;
             this.helper = false;
-            window.location.href = "/";
+            window.location.href = '/';
         },
 
-        ...requests
+        initUser(user) {
+            this.user = user;
+        },
+
+        ...requests,
     },
 });

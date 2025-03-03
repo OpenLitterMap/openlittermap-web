@@ -7,5 +7,14 @@
         </div>
     </body>
 
+    <script>
+        window.initialProps = {!! json_encode([
+            'auth'     => $auth,
+            'user'     => $user,
+            'verified' => $verified,
+            'unsub'    => $unsub,
+        ]) !!};
+    </script>
+
     <script src="https://js.stripe.com/v3"></script>
 </html>
