@@ -66,6 +66,7 @@ const userLevel = ref(userStore.user.level);
 // Function to calculate new XP gained
 const calculateXP = (tags) => {
     let totalXP = 0;
+
     tags.forEach((tag) => {
         totalXP += tag.quantity;
         if (tag.extraTags) {
@@ -76,6 +77,7 @@ const calculateXP = (tags) => {
             });
         }
     });
+
     return totalXP;
 };
 

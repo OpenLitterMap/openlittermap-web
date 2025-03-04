@@ -2,20 +2,29 @@
 
 namespace App\Http\Controllers\API\Tags;
 
-use App\Models\Litter\Tags\CustomTagNew;
-use App\Models\Litter\Tags\BrandList;
+use App\Models\Photo;
 use App\Models\Litter\Tags\Category;
-use App\Models\Litter\Tags\LitterObject;
-use App\Models\Litter\Tags\Materials;
 use App\Models\Litter\Tags\PhotoTag;
+use App\Models\Litter\Tags\BrandList;
+use App\Models\Litter\Tags\Materials;
+use App\Models\Litter\Tags\LitterObject;
+use App\Models\Litter\Tags\CustomTagNew;
 use App\Http\Controllers\Controller;
+use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
 
 class UploadTagsController extends Controller
 {
+    private UpdateLeaderboardsForLocationAction $updateLeaderboards;
+
+    public function __construct(UpdateLeaderboardsForLocationAction $updateLeaderboards)
+    {
+        $this->updateLeaderboards = $updateLeaderboards;
+    }
+
     /**
      * Attach tags to a photo.
      *
@@ -25,18 +34,24 @@ class UploadTagsController extends Controller
      */
     public function store (Request $request): JsonResponse
     {
+        $userId = Auth::id();
+
         $request->validate([
             'photo_id' => [
                 'required',
                 'integer',
-                Rule::exists('photos', 'id')->where(function ($query) {
-                    $query->where('user_id', Auth::id());
+                Rule::exists('photos', 'id')->where(function ($query) use ($userId) {
+                    $query->where('user_id', $userId);
                 })
             ],
             'tags' => 'required|array',
         ]);
 
-        $photoTags = $this->addTagsToPhoto($request['tags'], $request->input('photo_id'));
+        $photoId = $request->input('photo_id');
+
+        $photoTags = $this->addTagsToPhoto($request['tags'], $photoId);
+
+        $this->updateLeaderboardsAndXP($userId, $photoId, $photoTags);
 
         return response()->json([
             'success' => true,
@@ -50,7 +65,7 @@ class UploadTagsController extends Controller
      * @return array
      * @throws \Exception
      */
-    public function addTagsToPhoto(array $tags, int $photoId): array
+    protected function addTagsToPhoto(array $tags, int $photoId): array
     {
         $photoTags = [];
 
@@ -136,5 +151,35 @@ class UploadTagsController extends Controller
         }
 
         return $photoTags;
+    }
+
+    protected function updateLeaderboardsAndXP(int $userId, int $photoId, array $photoTags): void
+    {
+        $photo = Photo::find($photoId);
+
+        $xp = $this->calculateXP($photoTags);
+
+        $this->updateLeaderboards->run($photo, $userId, $xp);
+    }
+
+    protected function calculateXP(array $tags) {
+        $totalXP = 0;
+
+        foreach ($tags as $tag) {
+            // Add the base quantity from the tag
+            $totalXP += $tag['quantity'];
+
+            // Check if extraTags exist and is an array
+            if (isset($tag['extraTags']) && is_array($tag['extraTags'])) {
+                foreach ($tag['extraTags'] as $extra) {
+                    // If the extra tag is selected, increment the XP
+                    if (isset($extra['selected']) && $extra['selected']) {
+                        $totalXP++;
+                    }
+                }
+            }
+        }
+
+        return $totalXP;
     }
 }
