@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\API\Tags\GetTagsController;
-use App\Http\Controllers\API\Tags\UploadTagsController;
+use App\Http\Controllers\API\Tags\PhotoTagsController;
 use App\Http\Controllers\API\GetUntaggedUploadController;
 use App\Http\Controllers\Photos\GetUsersUntaggedPhotosController;
 
@@ -38,7 +38,7 @@ Route::group(['prefix' => 'v3', 'middleware' => ['web', 'auth:api,web']], functi
 
      Route::get('/user/photos/untagged', [GetUsersUntaggedPhotosController::class, 'index']);
 
-     Route::post('/tags', [UploadTagsController::class, 'store']);
+     Route::post('/tags', [PhotoTagsController::class, 'store']);
 
 });
 

@@ -1,5 +1,5 @@
 <template>
-    <div class="w-[10em] mb-4">
+    <div class="mb-4">
         <Combobox as="div" v-model="internalSelected" @update:modelValue="onChange">
             <div class="relative">
                 <!-- Text input (shows current value or search text) -->

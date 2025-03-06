@@ -10,13 +10,12 @@ use App\Models\Litter\Tags\Materials;
 use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\CustomTagNew;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\PhotoTagsRequest;
 use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
-class UploadTagsController extends Controller
+class PhotoTagsController extends Controller
 {
     private UpdateLeaderboardsForLocationAction $updateLeaderboards;
 
@@ -28,28 +27,19 @@ class UploadTagsController extends Controller
     /**
      * Attach tags to a photo.
      *
-     * @param Request $request
+     * @param PhotoTagsRequest $request
      * @return JsonResponse
      * @throws \Exception
      */
-    public function store (Request $request): JsonResponse
+    public function store (PhotoTagsRequest $request): JsonResponse
     {
+        $validatedData = $request->validated();
+
         $userId = Auth::id();
 
-        $request->validate([
-            'photo_id' => [
-                'required',
-                'integer',
-                Rule::exists('photos', 'id')->where(function ($query) use ($userId) {
-                    $query->where('user_id', $userId);
-                })
-            ],
-            'tags' => 'required|array',
-        ]);
+        $photoId = $validatedData['photo_id'];
 
-        $photoId = $request->input('photo_id');
-
-        $photoTags = $this->addTagsToPhoto($request['tags'], $photoId);
+        $photoTags = $this->addTagsToPhoto($userId, $validatedData['tags'], $photoId);
 
         $this->updateLeaderboardsAndXP($userId, $photoId, $photoTags);
 
@@ -65,7 +55,7 @@ class UploadTagsController extends Controller
      * @return array
      * @throws \Exception
      */
-    protected function addTagsToPhoto(array $tags, int $photoId): array
+    protected function addTagsToPhoto(int $userId, array $tags, int $photoId): array
     {
         $photoTags = [];
 
@@ -105,7 +95,7 @@ class UploadTagsController extends Controller
                 }
             }
 
-            // CustomTags
+            // CustomTags attached to an object
             if (isset($tag['custom_tags']) && is_array($tag['custom_tags']) && count($tag['custom_tags'])) {
                 foreach ($tag['custom_tags'] as $customTagData) {
 
@@ -121,6 +111,11 @@ class UploadTagsController extends Controller
                     $customTagModel = CustomTagNew::firstOrCreate(['key' => $cleanTag]);
 
                     // if new -> send to admin for approval
+                    if ($customTagModel->wasRecentlyCreated) {
+                        // $customTagModel->sendForApproval();
+                        $customTagModel->created_by = $userId;
+                        $customTagModel->save();
+                    }
 
                     $photoTag->extraTags()->create([
                         'tag_type' => 'custom_tag',
@@ -128,6 +123,23 @@ class UploadTagsController extends Controller
                         'quantity' => $customTagData['quantity'] ?? 1,
                     ]);
                 }
+            }
+
+            // Custom tag is the primary tag
+            if (isset($tag['custom']) && $tag['custom']) {
+                $customTagModel = CustomTagNew::firstOrCreate(['key' => $tag['custom']]);
+
+                // if new -> send to admin for approval
+                if ($customTagModel->wasRecentlyCreated) {
+                    $customTagModel->created_by = $userId;
+                    $customTagModel->save();
+                }
+
+                $photoTag->extraTags()->create([
+                    'tag_type' => 'custom_tag',
+                    'tag_type_id' => $customTagModel->id,
+                    'quantity' => $tag['quantity'] ?? 1,
+                ]);
             }
 
             // Brands
@@ -166,13 +178,10 @@ class UploadTagsController extends Controller
         $totalXP = 0;
 
         foreach ($tags as $tag) {
-            // Add the base quantity from the tag
             $totalXP += $tag['quantity'];
 
-            // Check if extraTags exist and is an array
             if (isset($tag['extraTags']) && is_array($tag['extraTags'])) {
                 foreach ($tag['extraTags'] as $extra) {
-                    // If the extra tag is selected, increment the XP
                     if (isset($extra['selected']) && $extra['selected']) {
                         $totalXP++;
                     }

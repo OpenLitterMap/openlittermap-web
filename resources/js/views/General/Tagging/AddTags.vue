@@ -23,6 +23,7 @@
                                 v-model="searchAllTags"
                                 placeholder="Search All Tags or Create Your Own!"
                                 class="mt-10"
+                                @addCustomTag="addCustomTag"
                             />
 
                             <div class="flex gap-2">
@@ -82,10 +83,17 @@
                                     class="col-span-1 flex flex-col rounded-lg bg-[#435064] shadow p-4"
                                 >
                                     <div class="flex mb-4 items-center">
-                                        <p class="2xl:text-xl flex-1">
+                                        <span
+                                            v-if="tag.hasOwnProperty('custom') && tag.custom"
+                                            class="2xl:text-xl flex-1"
+                                        >
+                                            {{ tag.key }}
+                                        </span>
+
+                                        <!-- We need to pluralize this -->
+                                        <p v-else class="2xl:text-xl flex-1">
                                             {{ tag.quantity }}
-                                            {{ t('litter.' + tag.category.key + '.' + tag.object.key)
-                                            }}{{ tag.quantity === 1 ? '' : 's' }}
+                                            {{ t('litter.' + tag.category.key + '.' + tag.object.key) }}
                                         </p>
 
                                         <input
@@ -345,6 +353,7 @@ watch(selectedObject, (newObj) => {
 });
 
 watch(searchAllTags, (newVal) => {
+    console.log({ newVal });
     //  && newVal.materialId
     if (newVal && newVal.id && newVal.categoryId && newVal.objectId) {
         selectedCategory.value = {
@@ -392,6 +401,14 @@ const addTag = () => {
     });
 
     resetInputs();
+};
+
+const addCustomTag = (tag) => {
+    if (tag.custom) {
+        newTags.value.push(tag);
+
+        searchAllTags.value = { id: 0, key: '', text: '' };
+    }
 };
 
 const toggleExtraTag = (extraTag) => {

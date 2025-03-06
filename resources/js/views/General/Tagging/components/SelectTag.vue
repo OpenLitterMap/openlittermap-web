@@ -88,8 +88,8 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, defineProps, defineEmits } from 'vue';
-import { Combobox, ComboboxInput, ComboboxButton, ComboboxOptions, ComboboxOption } from '@headlessui/vue';
+import { computed, defineEmits, defineProps, ref, watch } from 'vue';
+import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions } from '@headlessui/vue';
 import { CheckIcon } from '@heroicons/vue/20/solid';
 
 const props = defineProps({
@@ -113,7 +113,7 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(['update:modelValue', 'tagSelected']);
+const emit = defineEmits(['update:modelValue', 'addCustomTag']); // , 'tagSelected'
 
 // The user's typed text
 const searchQuery = ref('');
@@ -201,14 +201,27 @@ function onChange(newSelection) {
 }
 
 function handleSubmit() {
+    // If the user typed a custom tag, create and emit it.
+    const trimmed = searchQuery.value.trim();
+
+    if (trimmed !== '') {
+        const customTag = {
+            id: Date.now(),
+            custom: true,
+            key: trimmed,
+            quantity: 1,
+            pickedUp: true, // change to users default value
+            extraTags: [],
+        };
+
+        emit('addCustomTag', customTag);
+    }
+
     // Clear the search query & input
     // Create a new object to re-render
-    const emptySelection = { id: 0, key: '', text: '' };
-
-    internalSelected.value = emptySelection;
-
+    internalSelected.value = { id: 0, key: '', text: '' };
     searchQuery.value = '';
 
-    emit('tagSelected', internalSelected.value);
+    // emit('tagSelected', internalSelected.value);
 }
 </script>

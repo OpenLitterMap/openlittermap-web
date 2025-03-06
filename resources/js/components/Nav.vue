@@ -1,6 +1,6 @@
 <template>
     <nav class="bg-black text-white p-1">
-        <div class="container mx-auto px-4 flex justify-between items-center py-1">
+        <div class="container mx-auto px-4 flex justify-between items-center" :class="checkLargeNav ? 'py-4' : 'py-1'">
             <!-- Logo -->
             <div class="flex items-center space-x-4">
                 <router-link to="/" class="flex items-center text-3xl">
@@ -80,9 +80,11 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { useModalStore } from '../stores/modal/index.js';
 import { useUserStore } from '../stores/user/index.js';
 
+const router = useRouter();
 const modalStore = useModalStore();
 const userStore = useUserStore();
 
@@ -105,6 +107,10 @@ const login = () => {
 const logout = async () => {
     userStore.logout();
 };
+
+const checkLargeNav = computed(() => {
+    return router.currentRoute.value.path === '/';
+});
 </script>
 
 <style scoped>
