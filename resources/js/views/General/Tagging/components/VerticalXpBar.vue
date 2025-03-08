@@ -1,5 +1,5 @@
 <template>
-    <div class="absolute h-2/3 w-[5em] mx-4">
+    <div class="absolute h-3/5 w-[5em] mx-4">
         <div class="h-full flex flex-col items-center space-y-1">
             <!-- Level label -->
             <div class="text-center text-green-700 font-bold text-sm">Level {{ userLevel }}</div>

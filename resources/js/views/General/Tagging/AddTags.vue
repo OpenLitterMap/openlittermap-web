@@ -6,7 +6,7 @@
             </div>
 
             <div v-else>
-                <AddTagsHeader :newTags="newTags" :photoId="paginatedPhotos?.data[0]?.id" />
+                <AddTagsHeader :paginatedPhotos="paginatedPhotos" :newTags="newTags" />
 
                 <VerticalXpBar :newTags="newTags" />
 
@@ -63,12 +63,6 @@
                                     +
                                 </button>
                             </div>
-
-                            <PreviousNextButtons
-                                :paginatedPhotos="paginatedPhotos"
-                                @previous="loadPreviousPhoto"
-                                @next="loadNextPhoto"
-                            />
                         </div>
                     </div>
 
@@ -215,7 +209,6 @@ import SelectTag from './components/SelectTag.vue';
 import CreateTag from './components/CreateTag.vue';
 import QuantityPicker from './components/QuantityPicker.vue';
 import ToggleSwitch from './components/ToggleSwitch.vue';
-import PreviousNextButtons from './components/PreviousNextButtons.vue';
 
 const photosStore = usePhotosStore();
 const tagsStore = useTagsStore();
@@ -244,18 +237,6 @@ onMounted(async () => {
 });
 
 const paginatedPhotos = computed(() => photosStore.paginated);
-
-const loadPreviousPhoto = async () => {
-    if (photosStore.paginated?.prev_page_url) {
-        await photosStore.GET_USERS_UNTAGGED_PHOTOS(photosStore.paginated.current_page - 1);
-    }
-};
-
-const loadNextPhoto = async () => {
-    if (photosStore.paginated?.next_page_url) {
-        await photosStore.GET_USERS_UNTAGGED_PHOTOS(photosStore.paginated.current_page + 1);
-    }
-};
 
 // Needs checkboxes to filter by all tags or materials
 const getAllTags = computed(() => {
@@ -353,8 +334,6 @@ watch(selectedObject, (newObj) => {
 });
 
 watch(searchAllTags, (newVal) => {
-    console.log({ newVal });
-    //  && newVal.materialId
     if (newVal && newVal.id && newVal.categoryId && newVal.objectId) {
         selectedCategory.value = {
             id: newVal.categoryId,
@@ -367,7 +346,6 @@ watch(searchAllTags, (newVal) => {
             text: t(`litter.${newVal.categoryKey}.${newVal.objectKey}`),
             materials: newVal.materials ? newVal.materials : [],
         };
-        // selectedMaterial.value = { id: newVal.materialId, key: newVal.materialKey };
     }
 });
 

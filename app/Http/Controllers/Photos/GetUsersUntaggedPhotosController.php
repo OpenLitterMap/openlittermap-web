@@ -31,7 +31,7 @@ class GetUsersUntaggedPhotosController extends Controller
             ->with('team')
             ->select('id', 'filename', 'lat', 'lon', 'model', 'remaining', 'display_name', 'datetime', 'team_id')
             ->orderBy('id', 'asc')
-            ->paginate(2);
+            ->paginate(1);
 
         // We should move this into the GET TAGS request after refactoring custom tags.
         $customTags = (request('page') === '1')

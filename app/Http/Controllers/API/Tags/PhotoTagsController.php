@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API\Tags;
 
+use App\Events\TagsVerifiedByAdmin;
 use App\Models\Photo;
 use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\PhotoTag;
@@ -43,6 +44,8 @@ class PhotoTagsController extends Controller
 
         $this->updateLeaderboardsAndXP($userId, $photoId, $photoTags);
 
+        $this->updateVerification($photoId);
+
         return response()->json([
             'success' => true,
             'photoTags' => $photoTags,
@@ -50,6 +53,7 @@ class PhotoTagsController extends Controller
     }
 
     /**
+     * @param int $userId
      * @param array $tags
      * @param int $photoId
      * @return array
@@ -190,5 +194,29 @@ class PhotoTagsController extends Controller
         }
 
         return $totalXP;
+    }
+
+    protected function updateVerification(int $photoId): void
+    {
+        $user = Auth::user();
+        $photo = Photo::find($photoId);
+
+        if (!$user->is_trusted)
+        {
+            // Bring the photo to an initial state of verification
+            // 0 for testing, 0.1 for production
+            // This value can be +/- 0.1 when users vote True or False
+            // When verification reaches 1.0, it verified increases from 0 to 1
+            $photo->verification = 0.1;
+        }
+        else
+        {
+            // the user is trusted. Dispatch event to update OLM.
+            $photo->verification = 1;
+            $photo->verified = 2;
+            event (new TagsVerifiedByAdmin($photo->id));
+        }
+
+        $photo->save();
     }
 }

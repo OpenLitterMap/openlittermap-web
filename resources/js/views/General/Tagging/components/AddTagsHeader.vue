@@ -1,19 +1,29 @@
 <template>
     <div class="bg-gray-100 p-5 rounded-md mb-10 flex justify-evenly">
-        <span class="text-center">XP to level up: <br />69</span>
+        <div>
+            <p class="text-center">Photo #{{ photo?.id ? photo.id : '' }}</p>
+
+            <p class="mt-2">Taken at: {{ getDate() }}</p>
+        </div>
 
         <div class="flex justify-center items-center min-w-[15em]">
-            <p>{{ remainingPhotos }} untagged photos</p>
+            <PreviousNextButtons
+                :paginatedPhotos="paginatedPhotos"
+                :remainingPhotos="remainingPhotos"
+                :currentPhotoPage="currentPhotoPage"
+                @previous="loadPreviousPhoto"
+                @next="loadNextPhoto"
+            />
         </div>
 
         <div class="text-center">
             <p>Team:</p>
-            <span class="font-bold">Cleanup</span>
+            <p class="font-bold mt-2">{{ photo.team?.name ? photo.team.name : 'None' }}</p>
         </div>
 
         <div class="flex">
             <button
-                class="p-2 rounded bg-green-500 w-[5em]"
+                class="p-1 rounded bg-green-500 w-[6em]"
                 :disabled="!newTags.length"
                 :class="!newTags.length ? 'opacity-50 cursor-not-allowed' : ''"
                 v-tooltip="!newTags.length ? 'Please add a tag' : ''"
@@ -27,25 +37,47 @@
 
 <script setup>
 import { computed, ref } from 'vue';
-import { usePhotosStore } from '@/stores/photos';
+import { usePhotosStore } from '../../../../stores/photos/index.js';
+import PreviousNextButtons from './PreviousNextButtons.vue';
+import moment from 'moment';
+
 const photosStore = usePhotosStore();
+const remainingPhotos = computed(() => photosStore.remaining);
+const currentPhotoPage = computed(() => photosStore.paginated?.current_page);
 
 const props = defineProps({
     newTags: {
         type: Array,
         required: true,
     },
-    photoId: {
-        type: Number,
+    paginatedPhotos: {
+        type: Object,
         required: true,
     },
 });
 
+const loadPreviousPhoto = async () => {
+    if (photosStore.paginated?.prev_page_url) {
+        await photosStore.GET_USERS_UNTAGGED_PHOTOS(photosStore.paginated.current_page - 1);
+    }
+};
+
+const loadNextPhoto = async () => {
+    if (photosStore.paginated?.next_page_url) {
+        await photosStore.GET_USERS_UNTAGGED_PHOTOS(photosStore.paginated.current_page + 1);
+    }
+};
+
 const isUploading = ref(false);
-const remainingPhotos = computed(() => photosStore.remaining);
+const photo = computed(() => props.paginatedPhotos?.data[0]);
+const photoId = computed(() => photo?.id);
+
+const getDate = () => {
+    return moment(props.paginatedPhotos?.data[0]?.datetime).format('LLL');
+};
 
 const prepareTagsForUpload = () => {
-    return props.newTags.value.map((tag) => {
+    return props.newTags.map((tag) => {
         const materials = tag.extraTags
             .filter((extraTag) => extraTag.selected && extraTag.type === 'material')
             .map((extraTag) => {
@@ -76,7 +108,7 @@ const submit = async () => {
     const tags = prepareTagsForUpload();
 
     await photosStore.UPLOAD_TAGS({
-        photoId: props.photoId,
+        photoId: photoId.value,
         tags,
     });
 
