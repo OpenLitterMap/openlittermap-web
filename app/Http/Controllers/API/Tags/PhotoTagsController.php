@@ -83,6 +83,20 @@ class PhotoTagsController extends Controller
                 'picked_up' => $pickedUp
             ]);
 
+            // Custom tag is the primary tag
+            if (isset($tag['custom']) && $tag['custom']) {
+                $customTagModel = CustomTagNew::firstOrCreate(['key' => $tag['custom']]);
+
+                // if new -> send to admin for approval
+                if ($customTagModel->wasRecentlyCreated) {
+                    $customTagModel->created_by = $userId;
+                    $customTagModel->save();
+                }
+
+                $photoTag->custom_tag_primary_id = $customTagModel->id;
+                $photoTag->save();
+            }
+
             if (isset($tag['materials']) && is_array($tag['materials']) && count($tag['materials']) > 0) {
                 foreach ($tag['materials'] as $materialData) {
                     $materialModel = Materials::find($materialData['id']);
@@ -127,23 +141,6 @@ class PhotoTagsController extends Controller
                         'quantity' => $customTagData['quantity'] ?? 1,
                     ]);
                 }
-            }
-
-            // Custom tag is the primary tag
-            if (isset($tag['custom']) && $tag['custom']) {
-                $customTagModel = CustomTagNew::firstOrCreate(['key' => $tag['custom']]);
-
-                // if new -> send to admin for approval
-                if ($customTagModel->wasRecentlyCreated) {
-                    $customTagModel->created_by = $userId;
-                    $customTagModel->save();
-                }
-
-                $photoTag->extraTags()->create([
-                    'tag_type' => 'custom_tag',
-                    'tag_type_id' => $customTagModel->id,
-                    'quantity' => $tag['quantity'] ?? 1,
-                ]);
             }
 
             // Brands

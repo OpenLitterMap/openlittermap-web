@@ -1,3 +1,8 @@
+import { useToast } from 'vue-toastification';
+import i18n from '../../i18n.js';
+const toast = useToast();
+const t = i18n.global.t;
+
 export const requests = {
     async GET_USERS_UNTAGGED_PHOTOS(page = 1) {
         await axios
@@ -21,8 +26,22 @@ export const requests = {
                 photo_id: photoId,
                 tags: tags,
             })
-            .then((response) => {
+            .then(async (response) => {
                 console.log('upload_tags', response);
+
+                if (response.data.success) {
+                    const title = t('notifications.tags.uploaded-success');
+
+                    toast.success(title);
+
+                    // Check if there is another photo
+                    if (this.remaining > 0) {
+                        // load next photo
+                        await this.GET_USERS_UNTAGGED_PHOTOS(this.paginated.current_page + 1);
+                    } else {
+                        toast.info('No more photos left to tag');
+                    }
+                }
             })
             .catch((error) => {
                 console.error('upload_tags', error);

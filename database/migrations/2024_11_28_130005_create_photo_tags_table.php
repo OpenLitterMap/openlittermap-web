@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->unsignedInteger('photo_id');
             $table->foreign('photo_id')->references('id')->on('photos')->onDelete('cascade');
-            $table->foreignId('category_id')->constrained()->onDelete('cascade');
-            $table->foreignId('litter_object_id')->constrained()->onDelete('cascade');
+            $table->foreignId('category_id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignId('litter_object_id')->nullable()->constrained()->onDelete('cascade');
             $table->integer('quantity')->nullable();
             $table->boolean('picked_up')->nullable();
             $table->timestamps();

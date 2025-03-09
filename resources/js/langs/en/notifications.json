@@ -11,5 +11,8 @@
         "unsubscribed": "You have unsubscribed. You will no longer receive the good news!",
         "flag-updated": "Your flag has been updated"
     },
-    "something-went-wrong": "Something went wrong. Please, try again or contact us!"
+    "something-went-wrong": "Something went wrong. Please, try again or contact us!",
+    "tags": {
+        "uploaded-success": "Tags uploaded successfully"
+    }
 }

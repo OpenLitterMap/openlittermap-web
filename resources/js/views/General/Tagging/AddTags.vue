@@ -1,8 +1,10 @@
 <template>
     <div class="bg-[#1e283a] olm-full">
         <div class="h-full py-12 px-24">
-            <div v-if="paginatedPhotos?.data?.length === 0">
-                <p>No photos</p>
+            <div v-if="paginatedPhotos?.data?.length === 0" class="flex flex-col items-center">
+                <p class="text-4xl text-white text-center mb-8">No photos to tag</p>
+
+                <img :src="litterWorldImg" alt="Litter World" class="w-1/2 h-1/2" />
             </div>
 
             <div v-else>
@@ -222,6 +224,7 @@ const searchAllTags = ref({ id: 0, key: '', text: '' });
 const selectedQuantity = ref(1);
 const searchAllTagsKey = ref(0);
 const newTags = ref([]);
+import litterWorldImg from '@/assets/pixel_art/litterworld.jpeg';
 
 onMounted(async () => {
     const loader = $loading.show({ container: null });

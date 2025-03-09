@@ -18,7 +18,7 @@
 
         <div class="text-center">
             <p>Team:</p>
-            <p class="font-bold mt-2">{{ photo.team?.name ? photo.team.name : 'None' }}</p>
+            <p class="font-bold mt-2">{{ photo?.team?.name ? photo?.team?.name : 'None' }}</p>
         </div>
 
         <div class="flex">
@@ -70,7 +70,6 @@ const loadNextPhoto = async () => {
 
 const isUploading = ref(false);
 const photo = computed(() => props.paginatedPhotos?.data[0]);
-const photoId = computed(() => photo?.id);
 
 const getDate = () => {
     return moment(props.paginatedPhotos?.data[0]?.datetime).format('LLL');
@@ -91,14 +90,26 @@ const prepareTagsForUpload = () => {
             .filter((extraTag) => extraTag.selected && extraTag.type === 'custom')
             .map((extraTag) => extraTag.key);
 
-        return {
-            category: { id: tag.category.id, key: tag.category.key },
-            object: { id: tag.object.id, key: tag.object.key },
-            quantity: tag.quantity,
-            picked_up: tag.pickedUp,
-            materials,
-            custom_tags,
-        };
+        // Check if the parent-level tag is a custom tag
+        if (tag.hasOwnProperty('custom') && tag.custom) {
+            return {
+                custom: true,
+                key: tag.key,
+                picked_up: tag.pickedUp,
+                quantity: tag.quantity,
+                materials,
+                custom_tags,
+            };
+        } else {
+            return {
+                category: { id: tag.category.id, key: tag.category.key },
+                object: { id: tag.object.id, key: tag.object.key },
+                quantity: tag.quantity,
+                picked_up: tag.pickedUp,
+                materials,
+                custom_tags,
+            };
+        }
     });
 };
 
@@ -108,7 +119,7 @@ const submit = async () => {
     const tags = prepareTagsForUpload();
 
     await photosStore.UPLOAD_TAGS({
-        photoId: photoId.value,
+        photoId: photo.value.id,
         tags,
     });
 

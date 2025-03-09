@@ -1,7 +1,6 @@
 <template>
     <nav class="bg-black text-white p-1">
-        <div class="container mx-auto px-4 flex justify-between items-center" :class="checkLargeNav ? 'py-4' : 'py-1'">
-            <!-- Logo -->
+        <div class="container mx-auto px-4 flex justify-between items-center py-1">
             <div class="flex items-center space-x-4">
                 <router-link to="/" class="flex items-center text-3xl">
                     <span class="md:block">#OpenLitterMap</span>
@@ -30,49 +29,48 @@
                     <router-link to="/upload" class="nav-item">
                         {{ $t('nav.upload') }}
                     </router-link>
-
-                    <!-- Dropdown -->
-                    <div
-                        class="nav-item relative"
-                        @mouseover="webDropdownOpen = true"
-                        @mouseleave="webDropdownOpen = false"
-                    >
-                        <!-- Dropdown Trigger -->
-                        <span class="nav-item text-white cursor-pointer hover:underline">Menu</span>
-
-                        <!-- Dropdown Menu -->
-                        <div
-                            v-if="webDropdownOpen"
-                            @mouseover="webDropdownOpen = true"
-                            @mouseleave="webDropdownOpen = false"
-                            class="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 group-hover:block"
-                        >
-                            <router-link to="/add-tags" class="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                                >Add Tags</router-link
-                            >
-
-                            <router-link to="/profile" class="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                                >Profile</router-link
-                            >
-
-                            <router-link to="/settings" class="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                                >Settings</router-link
-                            >
-                        </div>
-                    </div>
                 </div>
             </div>
 
             <!-- Login/Signup -->
             <div v-if="!auth" class="hidden md:flex space-x-4">
-                <button @click="login" class="btn-secondary">Login</button>
-                <router-link to="/signup" class="btn-primary">Sign Up</router-link>
+                <button @click="login" class="nav-item">Login</button>
+                <router-link to="/signup" class="nav-item">Sign Up</router-link>
             </div>
 
             <!-- User Dropdown -->
             <div v-else class="hidden md:flex items-center space-x-4">
-                <button @click="logout" class="btn-secondary">Logout</button>
-                <router-link to="/profile" class="btn-primary">Profile</router-link>
+                <!-- Dropdown -->
+                <div
+                    class="nav-item relative"
+                    @mouseover="webDropdownOpen = true"
+                    @mouseleave="webDropdownOpen = false"
+                >
+                    <!-- Dropdown Trigger -->
+                    <span class="nav-item text-white cursor-pointer hover:underline">Menu</span>
+
+                    <!-- Dropdown Menu -->
+                    <div
+                        v-if="webDropdownOpen"
+                        @mouseover="webDropdownOpen = true"
+                        @mouseleave="webDropdownOpen = false"
+                        class="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 group-hover:block"
+                    >
+                        <router-link to="/add-tags" class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
+                            >Add Tags</router-link
+                        >
+
+                        <router-link to="/profile" class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
+                            >Profile</router-link
+                        >
+
+                        <router-link to="/settings" class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
+                            >Settings</router-link
+                        >
+                    </div>
+                </div>
+
+                <button @click="logout" class="nav-item">Logout</button>
             </div>
         </div>
     </nav>
@@ -107,23 +105,11 @@ const login = () => {
 const logout = async () => {
     userStore.logout();
 };
-
-const checkLargeNav = computed(() => {
-    return router.currentRoute.value.path === '/';
-});
 </script>
 
 <style scoped>
 .nav-item {
     @apply block py-2 text-white hover:text-yellow-300 transition duration-200;
-}
-
-.btn-primary {
-    @apply bg-yellow-400 text-black font-semibold px-4 py-2 rounded hover:bg-yellow-500 transition;
-}
-
-.btn-secondary {
-    @apply border border-white text-white px-4 py-2 rounded hover:bg-white hover:text-black transition;
 }
 
 button:focus {

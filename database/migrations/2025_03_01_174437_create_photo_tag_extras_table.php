@@ -33,6 +33,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('photo_tag_extras');
+        Schema::dropIfExists('photo_tag_extra_tags');
     }
 };
