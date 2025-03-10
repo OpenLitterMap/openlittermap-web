@@ -8,7 +8,7 @@
             </div>
 
             <div v-else>
-                <AddTagsHeader :paginatedPhotos="paginatedPhotos" :newTags="newTags" />
+                <AddTagsHeader :paginatedPhotos="paginatedPhotos" :newTags="newTags" @clearTags="resetInputs" />
 
                 <VerticalXpBar :newTags="newTags" />
 
@@ -117,6 +117,15 @@
                                         @update:modelValue="(newVal) => updateNestedTag('material', tag.id, newVal)"
                                     />
 
+                                    <SelectTag
+                                        :key="'custom' + searchAllTagsKey"
+                                        :tags="getAllTags"
+                                        size="small"
+                                        placeholder="Add Objects or Custom Tags"
+                                        :emit-on-select="true"
+                                        @selectedTag="addNestedObject"
+                                    />
+
                                     <CreateTag
                                         placeholder="Add Custom Tags"
                                         size="small"
@@ -199,7 +208,7 @@
 
 <script setup>
 import { useLoading } from 'vue-loading-overlay';
-import { onMounted, computed, ref, watch } from 'vue';
+import { onMounted, computed, ref, watch, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { InformationCircleIcon } from '@heroicons/vue/24/outline';
 
@@ -236,8 +245,22 @@ onMounted(async () => {
         await tagsStore.GET_ALL_TAGS();
     }
 
+    document.addEventListener('keydown', handleKeyDown);
+
     loader.hide();
 });
+
+onUnmounted(() => {
+    document.removeEventListener('keydown', handleKeyDown);
+});
+
+// Function to listen for Cmd + Enter (Mac) or Ctrl + Enter (Windows)
+const handleKeyDown = (event) => {
+    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+        event.preventDefault(); // Prevent unintended behavior
+        addTag();
+    }
+};
 
 const paginatedPhotos = computed(() => photosStore.paginated);
 
@@ -392,6 +415,33 @@ const addCustomTag = (tag) => {
     }
 };
 
+const addNestedObject = (tag) => {
+    // Check if the tag already exists
+    let tagIndex = newTags.value.findIndex((t) => t.id === tag.id);
+
+    if (tagIndex === -1) {
+        // If it does not exist, add it to newTags.value
+        const newTag = {
+            id: tag.id,
+            category: {
+                id: tag.categoryId,
+                key: tag.categoryKey,
+            },
+            object: {
+                id: tag.objectId,
+                key: tag.objectKey,
+            },
+            quantity: 1, // Default quantity
+            pickedUp: true,
+        };
+
+        newTags.value.push(newTag);
+        tagIndex = newTags.value.length - 1; // Update index to new tag
+    }
+
+    updateNestedTag(tag.type, tag.id, tag);
+};
+
 const toggleExtraTag = (extraTag) => {
     extraTag.selected = !extraTag.selected;
 };
@@ -431,6 +481,7 @@ const updateNestedTag = (type, id, newVal) => {
 
     // Find the tag in newTags array by its id.
     const tagIndex = newTags.value.findIndex((tag) => tag.id === id);
+    console.log({ tagIndex });
     if (tagIndex === -1) return;
 
     const tag = newTags.value[tagIndex];

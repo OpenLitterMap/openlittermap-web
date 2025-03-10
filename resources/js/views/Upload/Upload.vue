@@ -19,11 +19,11 @@
                 <div v-if="uploadSuccess" class="text-center mb-6">
                     <p class="text-2xl font-bold-500 mb-4">Next you need to tag the litter</p>
 
-                    <button class="bg-[#2793da] px-6 py-4 rounded-2xl text-white hov">
+                    <router-link to="/tag" class="bg-[#2793da] px-6 py-4 rounded-2xl text-white hov">
                         Tag Litter &nbsp;
 
                         <i data-v-fcf00e23="" aria-hidden="true" class="fa fa-arrow-right"></i>
-                    </button>
+                    </router-link>
                 </div>
             </transition>
 

@@ -111,9 +111,14 @@ const props = defineProps({
         default: 'normal',
         required: false,
     },
+    emitOnSelect: {
+        type: Boolean,
+        default: false,
+        required: false,
+    },
 });
 
-const emit = defineEmits(['update:modelValue', 'addCustomTag']); // , 'tagSelected'
+const emit = defineEmits(['update:modelValue', 'addCustomTag', 'selectedTag']);
 
 // The user's typed text
 const searchQuery = ref('');
@@ -192,6 +197,12 @@ function onInput(event) {
 function onChange(newSelection) {
     emit('update:modelValue', newSelection);
 
+    // NEW: Emit event when a predefined tag is selected
+    if (props.emitOnSelect) {
+        console.log('tryEmit', newSelection);
+        emit('selectedTag', newSelection);
+    }
+
     const emptySelection = { id: 0, key: '', text: '' };
     internalSelected.value = emptySelection;
 
@@ -207,7 +218,8 @@ function handleSubmit() {
     if (trimmed !== '') {
         const customTag = {
             id: Date.now(),
-            custom: true,
+            custom: true, // deprecate this
+            type: 'custom', // use this instead
             key: trimmed,
             quantity: 1,
             pickedUp: true, // change to users default value

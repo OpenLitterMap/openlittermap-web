@@ -2,8 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router';
 
 import About from '../views/General/About.vue';
 import AddTags from '../views/General/Tagging/AddTags.vue';
-import GlobalMap from "../views/Maps/GlobalMap.vue";
-import History from "../views/General/History.vue";
+import GlobalMap from '../views/Maps/GlobalMap.vue';
+import History from '../views/General/History.vue';
 import Leaderboard from '../views/General/Leaderboards/Leaderboard.vue';
 import References from '../views/Academic/References.vue';
 import Upload from '../views/Upload/Upload.vue';
@@ -11,7 +11,7 @@ import Welcome from '../views/Welcome/Welcome.vue';
 
 // Import Middleware
 import middlewarePipeline from './middleware/middlewarePipeline';
-import auth from './middleware/auth'
+import auth from './middleware/auth';
 
 const routes = [
     {
@@ -37,7 +37,7 @@ const routes = [
     {
         path: '/references',
         name: 'References',
-        component: References
+        component: References,
     },
     {
         path: '/',
@@ -46,11 +46,11 @@ const routes = [
     },
     // Auth Routes
     {
-        path: '/add-tags',
+        path: '/tag',
         name: 'AddTags',
         component: AddTags,
         meta: {
-            middleware: [auth]
+            middleware: [auth],
         },
     },
     {
@@ -60,7 +60,7 @@ const routes = [
         meta: {
             middleware: [auth],
         },
-    }
+    },
 ];
 
 const router = createRouter({

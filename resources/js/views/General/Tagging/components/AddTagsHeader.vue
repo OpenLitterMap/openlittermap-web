@@ -36,7 +36,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, defineEmits, ref } from 'vue';
 import { usePhotosStore } from '../../../../stores/photos/index.js';
 import PreviousNextButtons from './PreviousNextButtons.vue';
 import moment from 'moment';
@@ -55,6 +55,8 @@ const props = defineProps({
         required: true,
     },
 });
+
+const emit = defineEmits(['clearTags']);
 
 const loadPreviousPhoto = async () => {
     if (photosStore.paginated?.prev_page_url) {
@@ -124,6 +126,8 @@ const submit = async () => {
     });
 
     isUploading.value = false;
+
+    emit('clearTags');
 };
 </script>
 

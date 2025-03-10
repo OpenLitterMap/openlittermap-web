@@ -1,6 +1,6 @@
 <template>
     <nav class="bg-black text-white p-1">
-        <div class="container mx-auto px-4 flex justify-between items-center py-1">
+        <div class="container mx-auto px-4 flex justify-between items-center py-2">
             <div class="flex items-center space-x-4">
                 <router-link to="/" class="flex items-center text-3xl">
                     <span class="md:block">#OpenLitterMap</span>
@@ -56,7 +56,7 @@
                         @mouseleave="webDropdownOpen = false"
                         class="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 group-hover:block"
                     >
-                        <router-link to="/add-tags" class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
+                        <router-link to="/tag" class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
                             >Add Tags</router-link
                         >
 

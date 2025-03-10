@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\API\Tags;
 
-use App\Events\TagsVerifiedByAdmin;
 use App\Models\Photo;
+use App\Events\TagsVerifiedByAdmin;
 use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Litter\Tags\BrandList;
@@ -40,7 +40,7 @@ class PhotoTagsController extends Controller
 
         $photoId = $validatedData['photo_id'];
 
-        $photoTags = $this->addTagsToPhoto($userId, $validatedData['tags'], $photoId);
+        $photoTags = $this->addTagsToPhoto($userId, $photoId, $validatedData['tags']);
 
         $this->updateLeaderboardsAndXP($userId, $photoId, $photoTags);
 
@@ -54,12 +54,12 @@ class PhotoTagsController extends Controller
 
     /**
      * @param int $userId
-     * @param array $tags
      * @param int $photoId
+     * @param array $tags
      * @return array
      * @throws \Exception
      */
-    protected function addTagsToPhoto(int $userId, array $tags, int $photoId): array
+    protected function addTagsToPhoto(int $userId, int $photoId, array $tags): array
     {
         $photoTags = [];
 
@@ -75,6 +75,8 @@ class PhotoTagsController extends Controller
                 throw new \Exception("Category '{$category->key}' does not contain object '{$object->key}'.");
             }
 
+            // The parent-level tag on a PhotoTag can either by Category.id + Object.id
+            // or custom_tag_primary_id
             $photoTag = PhotoTag::firstOrCreate([
                 'photo_id' => $photoId,
                 'category_id' => $category?->id,
@@ -83,7 +85,7 @@ class PhotoTagsController extends Controller
                 'picked_up' => $pickedUp
             ]);
 
-            // Custom tag is the primary tag
+            // If custom_tag the primary tag
             if (isset($tag['custom']) && $tag['custom']) {
                 $customTagModel = CustomTagNew::firstOrCreate(['key' => $tag['custom']]);
 
