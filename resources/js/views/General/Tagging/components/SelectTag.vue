@@ -116,6 +116,11 @@ const props = defineProps({
         default: false,
         required: false,
     },
+    parentTagId: {
+        type: String,
+        default: '',
+        required: false,
+    },
 });
 
 const emit = defineEmits(['update:modelValue', 'addCustomTag', 'selectedTag']);
@@ -199,7 +204,8 @@ function onChange(newSelection) {
 
     // NEW: Emit event when a predefined tag is selected
     if (props.emitOnSelect) {
-        console.log('tryEmit', newSelection);
+        newSelection['parentTagId'] = props.parentTagId;
+
         emit('selectedTag', newSelection);
     }
 

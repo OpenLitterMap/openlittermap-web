@@ -123,6 +123,7 @@
                                         size="small"
                                         placeholder="Add Objects or Custom Tags"
                                         :emit-on-select="true"
+                                        :parent-tag-id="tag.id"
                                         @selectedTag="addNestedObject"
                                     />
 
@@ -416,30 +417,7 @@ const addCustomTag = (tag) => {
 };
 
 const addNestedObject = (tag) => {
-    // Check if the tag already exists
-    let tagIndex = newTags.value.findIndex((t) => t.id === tag.id);
-
-    if (tagIndex === -1) {
-        // If it does not exist, add it to newTags.value
-        const newTag = {
-            id: tag.id,
-            category: {
-                id: tag.categoryId,
-                key: tag.categoryKey,
-            },
-            object: {
-                id: tag.objectId,
-                key: tag.objectKey,
-            },
-            quantity: 1, // Default quantity
-            pickedUp: true,
-        };
-
-        newTags.value.push(newTag);
-        tagIndex = newTags.value.length - 1; // Update index to new tag
-    }
-
-    updateNestedTag(tag.type, tag.id, tag);
+    updateNestedTag(tag.type, tag.parentTagId, tag);
 };
 
 const toggleExtraTag = (extraTag) => {
