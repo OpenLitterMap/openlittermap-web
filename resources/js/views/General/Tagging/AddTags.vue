@@ -121,7 +121,7 @@
                                         :key="'custom' + searchAllTagsKey"
                                         :tags="getAllTags"
                                         size="small"
-                                        placeholder="Add Objects or Custom Tags"
+                                        placeholder="Add More Objects"
                                         :emit-on-select="true"
                                         :parent-tag-id="tag.id"
                                         @selectedTag="addNestedObject"

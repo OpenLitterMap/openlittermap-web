@@ -1,6 +1,6 @@
 <template>
     <nav class="bg-black text-white p-1">
-        <div class="container mx-auto px-4 flex justify-between items-center py-2">
+        <div class="container mx-auto px-4 flex justify-between items-center py-4">
             <div class="flex items-center space-x-4">
                 <router-link to="/" class="flex items-center text-3xl">
                     <span class="md:block">#OpenLitterMap</span>
@@ -47,7 +47,7 @@
                     @mouseleave="webDropdownOpen = false"
                 >
                     <!-- Dropdown Trigger -->
-                    <span class="nav-item text-white cursor-pointer hover:underline">Menu</span>
+                    <span class="text-white cursor-pointer hover:underline">Menu</span>
 
                     <!-- Dropdown Menu -->
                     <div
@@ -78,11 +78,9 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
 import { useModalStore } from '../stores/modal/index.js';
 import { useUserStore } from '../stores/user/index.js';
 
-const router = useRouter();
 const modalStore = useModalStore();
 const userStore = useUserStore();
 
