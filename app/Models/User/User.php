@@ -3,6 +3,7 @@
 namespace App\Models\User;
 
 use App\Level;
+use App\Models\Badges\Badge;
 use App\Payment;
 use App\Models\Photo;
 use App\Models\CustomTag;
@@ -494,6 +495,11 @@ class User extends Authenticatable
     public function art ()
     {
         return $this->hasManyThrough('App\Art', 'App\Models\Photo');
+    }
+
+    public function badges()
+    {
+        return $this->belongsToMany(Badge::class, 'user_badges')->withTimestamps()->withPivot('awarded_at');
     }
 
     /**

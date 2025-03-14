@@ -21,7 +21,7 @@
             <p class="font-bold mt-2">{{ photo?.team?.name ? photo?.team?.name : 'None' }}</p>
         </div>
 
-        <div class="flex">
+        <div class="flex w-[8em]">
             <button
                 class="p-1 rounded bg-green-500 w-[6em]"
                 :disabled="!newTags.length"
@@ -29,7 +29,9 @@
                 v-tooltip="!newTags.length ? 'Please add a tag' : ''"
                 @click="submit"
             >
-                Submit
+                <span v-if="!isUploading">Submit</span>
+
+                <Spinner v-else class="text-center" />
             </button>
         </div>
     </div>
@@ -39,6 +41,7 @@
 import { computed, defineEmits, ref } from 'vue';
 import { usePhotosStore } from '../../../../stores/photos/index.js';
 import PreviousNextButtons from './PreviousNextButtons.vue';
+import Spinner from '../../../../components/Loading/Spinner.vue';
 import moment from 'moment';
 
 const photosStore = usePhotosStore();

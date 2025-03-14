@@ -47,4 +47,8 @@ return [
         'secret' => env('STRIPE_SECRET'),
     ],
 
+    'openai' => [
+        'key' => env('OPEN_AI_KEY')
+    ]
+
 ];

@@ -6,8 +6,8 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
-        "ext-json": "*",
         "ext-exif": "*",
+        "ext-json": "*",
         "abraham/twitteroauth": "^3.1",
         "ahmedsaoud31/laravel-permission-to-vuejs": "dev-master",
         "anhskohbo/no-captcha": "^3.3",
@@ -29,6 +29,7 @@
         "laravel/ui": "^4.0",
         "league/flysystem-aws-s3-v3": "^3.0",
         "maatwebsite/excel": "^3.1",
+        "openai-php/client": "^0.10.3",
         "predis/predis": "^2.2",
         "pusher/pusher-php-server": "^7.0",
         "spatie/browsershot": "^4.3",
@@ -49,7 +50,10 @@
     "config": {
         "optimize-autoloader": true,
         "preferred-install": "dist",
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "php-http/discovery": false
+        }
     },
     "extra": {
         "laravel": {

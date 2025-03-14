@@ -12,6 +12,7 @@ use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\CustomTagNew;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\PhotoTagsRequest;
+use App\Actions\Badges\CheckLocationTypeAward;
 use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -19,10 +20,15 @@ use Illuminate\Support\Facades\Auth;
 class PhotoTagsController extends Controller
 {
     private UpdateLeaderboardsForLocationAction $updateLeaderboards;
+    private CheckLocationTypeAward $checkLocationTypeAward;
 
-    public function __construct(UpdateLeaderboardsForLocationAction $updateLeaderboards)
+    public function __construct(
+        UpdateLeaderboardsForLocationAction $updateLeaderboards,
+        CheckLocationTypeAward $checkLocationTypeAward
+    )
     {
         $this->updateLeaderboards = $updateLeaderboards;
+        $this->checkLocationTypeAward = $checkLocationTypeAward;
     }
 
     /**
@@ -44,7 +50,7 @@ class PhotoTagsController extends Controller
 
         $this->updateLeaderboardsAndXP($userId, $photoId, $photoTags);
 
-        $this->updateVerification($photoId);
+        // $this->updateVerification($photoId);
 
         return response()->json([
             'success' => true,
@@ -85,6 +91,10 @@ class PhotoTagsController extends Controller
                 'picked_up' => $pickedUp
             ]);
 
+            if ($object->key === 'bagsLitter' && $pickedUp) {
+                $this->checkLocationTypeAward->checkLandUseAward($userId, $photoTag);
+            }
+
             // If custom_tag the primary tag
             if (isset($tag['custom']) && $tag['custom']) {
                 $customTagModel = CustomTagNew::firstOrCreate(['key' => $tag['custom']]);
@@ -123,8 +133,8 @@ class PhotoTagsController extends Controller
                     $cleanTag = strip_tags($customTagData);
                     $cleanTag = trim($cleanTag);
 
-                    // Validate against a whitelist pattern (only letters, numbers, spaces, hyphens, and underscores).
-                    if (!preg_match('/^[\w\s-]+$/', $cleanTag)) {
+                    // Validate against a whitelist pattern (only letters, numbers, spaces, hyphens, colons, and underscores).
+                    if (!preg_match('/^[\w\s:-]+$/', $cleanTag)) {
                         throw new \Exception('Invalid custom tag.');
                     }
 

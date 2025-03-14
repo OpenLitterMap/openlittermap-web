@@ -8,7 +8,7 @@
             </div>
 
             <div v-else>
-                <AddTagsHeader :paginatedPhotos="paginatedPhotos" :newTags="newTags" @clearTags="resetInputs" />
+                <AddTagsHeader :paginatedPhotos="paginatedPhotos" :newTags="newTags" @clearTags="resetAllInputs" />
 
                 <VerticalXpBar :newTags="newTags" />
 
@@ -424,6 +424,7 @@ const toggleExtraTag = (extraTag) => {
     extraTag.selected = !extraTag.selected;
 };
 
+// This resets the SelectTags, not newTags
 const resetInputs = () => {
     selectedCategory.value = { id: 0, key: '', text: '' };
     selectedObject.value = { id: 0, key: '', text: '' };
@@ -432,6 +433,11 @@ const resetInputs = () => {
     selectedQuantity.value = 1;
     // Increment key to re-render SelectTag component
     searchAllTagsKey.value++;
+};
+
+const resetAllInputs = () => {
+    newTags.value = [];
+    resetInputs();
 };
 
 const deleteTag = (id) => {
@@ -459,7 +465,6 @@ const updateNestedTag = (type, id, newVal) => {
 
     // Find the tag in newTags array by its id.
     const tagIndex = newTags.value.findIndex((tag) => tag.id === id);
-    console.log({ tagIndex });
     if (tagIndex === -1) return;
 
     const tag = newTags.value[tagIndex];

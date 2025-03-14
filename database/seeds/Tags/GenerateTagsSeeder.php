@@ -223,6 +223,7 @@ class GenerateTagsSeeder extends Seeder
                 'paintCan',
                 'other',
                 'graffiti',
+                'umbrella' => ['material:plastic', 'material:metal', 'material:cloth'],
             ],
 
             'pets' => [

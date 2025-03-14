@@ -36,8 +36,7 @@ export const requests = {
 
                     // Check if there is another photo
                     if (this.remaining > 0) {
-                        // load next photo
-                        await this.GET_USERS_UNTAGGED_PHOTOS(this.paginated.current_page + 1);
+                        await this.GET_USERS_UNTAGGED_PHOTOS(this.paginated.current_page);
                     } else {
                         toast.info('No more photos left to tag');
                     }

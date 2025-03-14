@@ -401,7 +401,8 @@
         "furniture": "Furniture",
         "graffiti": "Graffiti",
         "mattress": "Mattress",
-        "paintCan": "Paint Can"
+        "paintCan": "Paint Can",
+        "umbrella": "Umbrella"
     },
     "presence": {
         "picked-up": "I picked it up!",
