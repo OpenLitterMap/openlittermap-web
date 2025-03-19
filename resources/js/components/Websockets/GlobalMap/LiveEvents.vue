@@ -6,25 +6,17 @@
             @before-leave="handleBeforeLeave"
             @after-leave="handleAfterLeave"
         >
-            <span
-                v-for="(event, index) in events"
-                :key="event.id"
-                class="grid gap-2 text-dark-text"
-            >
-                <component
-                    :is="components[event.type]"
-                    :payload="event.payload"
-                    @click="handleClick(event, index)"
-                />
+            <span v-for="(event, index) in events" :key="event.id" class="grid gap-2 text-dark-text">
+                <component :is="components[event.type]" :payload="event.payload" @click="handleClick(event, index)" />
             </span>
         </transition-group>
     </div>
 </template>
 
 <script setup>
-import {defineProps, ref, toRefs, onMounted, onUnmounted} from 'vue';
+import { defineProps, ref, toRefs, onMounted, onUnmounted } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
-import CleanupCreated from "./Notifications/CleanupCreated.vue";
+import CleanupCreated from './Notifications/CleanupCreated.vue';
 import ImageUploaded from './Notifications/ImageUploaded.vue';
 import LittercoinMined from './Notifications/LittercoinMined.vue';
 import NewCountryAdded from './Notifications/NewCountryAdded.vue';
@@ -32,6 +24,7 @@ import NewStateAdded from './Notifications/NewStateAdded.vue';
 import NewCityAdded from './Notifications/NewCityAdded.vue';
 import TeamCreated from './Notifications/TeamCreated.vue';
 import UserSignedUp from './Notifications/UserSignedUp.vue';
+import BadgeCreated from './Notifications/BadgeCreated.vue';
 
 const components = {
     CleanupCreated,
@@ -41,7 +34,8 @@ const components = {
     NewStateAdded,
     NewCityAdded,
     TeamCreated,
-    UserSignedUp
+    UserSignedUp,
+    BadgeCreated,
 };
 
 const props = defineProps({
@@ -53,9 +47,9 @@ const props = defineProps({
 const { mapInstance } = toRefs(props);
 const emit = defineEmits(['fly-to-location']);
 
-const events = ref([]);          // The “shown” events (animated into the UI)
-const pendingEvents = ref([]);   // Events waiting to be shown
-const animating = ref(false);    // Flag to allow only 1 event to animate at a time
+const events = ref([]); // The “shown” events (animated into the UI)
+const pendingEvents = ref([]); // Events waiting to be shown
+const animating = ref(false); // Flag to allow only 1 event to animate at a time
 const clicks = ref(0);
 const timer = ref(null);
 
@@ -73,15 +67,12 @@ onUnmounted(() => {
  * 2) If we’re not currently animating, move one event from 'pendingEvents' -> 'events'.
  */
 const addEvent = (eventType, payload) => {
-
     if (!components[eventType]) {
         console.error(`Component "${eventType}" is not registered.`);
         return;
     }
 
-    const existingEvent = pendingEvents.value.find(
-        (event) => event.payload.id === payload.id
-    );
+    const existingEvent = pendingEvents.value.find((event) => event.payload.id === payload.id);
     if (existingEvent) {
         console.warn('Duplicate event detected, skipping:', payload.id);
         return;
@@ -92,7 +83,7 @@ const addEvent = (eventType, payload) => {
     pendingEvents.value.unshift({
         id,
         type: eventType,
-        payload
+        payload,
     });
 
     processQueue();
@@ -132,7 +123,6 @@ const handleAfterLeave = (el) => {
  * Tracks single or double-clicks on an event.
  */
 const handleClick = (event, index) => {
-
     // Check if a timer exists (indicating a potential double-click sequence)
     if (timer.value) {
         clearTimeout(timer.value);
@@ -145,7 +135,6 @@ const handleClick = (event, index) => {
         clicks.value++;
 
         timer.value = setTimeout(() => {
-
             timer.value = null;
             clicks.value = 0;
 
@@ -157,7 +146,7 @@ const handleClick = (event, index) => {
 
 const flyToLocation = (event) => {
     if (event.payload?.latitude && event.payload?.longitude) {
-        emit("fly-to-location", { ...event.payload, zoom: 17, mapInstance: mapInstance.value });
+        emit('fly-to-location', { ...event.payload, zoom: 17, mapInstance: mapInstance.value });
     }
 };
 
@@ -201,81 +190,81 @@ const listenForEvents = () => {
         })
         .listen('UserSignedUp', (payload) => {
             addEvent('UserSignedUp', payload.now);
+        })
+        .listen('.App\\Events\\Images\\BadgeCreated', (payload) => {
+            addEvent('BadgeCreated', payload);
         });
 };
 
 const updateDocumentTitle = () => {
-    document.title = events.value.length === 0
-        ? 'OpenLitterMap'
-        : `(${events.value.length}) OpenLitterMap`;
+    document.title = events.value.length === 0 ? 'OpenLitterMap' : `(${events.value.length}) OpenLitterMap`;
 };
-
 </script>
 
 <style scoped>
-    .list-item {
-        display: grid;
-    }
-    .grid-img {
-        padding: 16px;
-    }
-    .grid-main {
-        padding-top: 10px;
-        padding-bottom: 10px;
-    }
+.list-item {
+    display: grid;
+}
+.grid-img {
+    padding: 16px;
+}
+.grid-main {
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
 
-    /* Slow slide in from the right */
-    @keyframes slideInRightCalm {
-        0% {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        100% {
-            transform: translateX(0);
-            opacity: 1;
-        }
+/* Slow slide in from the right */
+@keyframes slideInRightCalm {
+    0% {
+        transform: translateX(100%);
+        opacity: 0;
     }
-
-    /* Slide out to the left */
-    @keyframes slideOutLeft {
-        0% {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        100% {
-            transform: translateX(-100%);
-            opacity: 0;
-        }
+    100% {
+        transform: translateX(0);
+        opacity: 1;
     }
+}
 
-    /* =========================
+/* Slide out to the left */
+@keyframes slideOutLeft {
+    0% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+}
+
+/* =========================
      * Vue Transition Classes
      * ========================= */
 
-    /* Slower, calm approach (1.5s) */
-    .list-enter-active {
-        animation: slideInRightCalm 1.5s ease-in-out forwards;
-    }
-    .list-leave-active {
-        animation: slideOutLeft 1.5s ease forwards;
-    }
+/* Slower, calm approach (1.5s) */
+.list-enter-active {
+    animation: slideInRightCalm 1.5s ease-in-out forwards;
+}
+.list-leave-active {
+    animation: slideOutLeft 1.5s ease forwards;
+}
 
-    /* Vue needs these initial/end states for transitions to work properly */
-    .list-enter {
-        opacity: 0;
-        transform: translateX(100%);
-    }
-    .list-leave-to {
-        opacity: 0;
-        transform: translateX(-100%);
-    }
+/* Vue needs these initial/end states for transitions to work properly */
+.list-enter {
+    opacity: 0;
+    transform: translateX(100%);
+}
+.list-leave-to {
+    opacity: 0;
+    transform: translateX(-100%);
+}
 
-    /*
+/*
       The .list-move transition ensures items reorder smoothly,
       but with our queue approach, you’ll typically see only one
       new item entering at a time anyway.
     */
-    .list-move {
-        transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.5, 1);
-    }
+.list-move {
+    transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.5, 1);
+}
 </style>

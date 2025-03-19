@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Events\Images\BadgeCreated;
 use App\Events\ImageUploaded;
 use App\Events\ImageDeleted;
 use App\Events\NewCityAdded;
@@ -11,6 +12,7 @@ use App\Events\TagsVerifiedByAdmin;
 
 use App\Listeners\AddTags\IncrementLocation;
 use App\Listeners\AddTags\CompileResultsString;
+use App\Listeners\Images\TweetBadgeCreated;
 use App\Listeners\Locations\Twitter\TweetNewCity;
 use App\Listeners\Locations\Twitter\TweetNewCountry;
 use App\Listeners\Locations\Twitter\TweetNewState;
@@ -105,6 +107,9 @@ class EventServiceProvider extends ServiceProvider
             NotifySlackOfNewCity::class,
             TweetNewCity::class
         ],
+        BadgeCreated::class => [
+            TweetBadgeCreated::class,
+        ]
     ];
 
     /**

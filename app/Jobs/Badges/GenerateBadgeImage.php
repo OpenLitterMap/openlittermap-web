@@ -3,11 +3,11 @@
 namespace App\Jobs\Badges;
 
 use App\Models\Badges\Badge;
+use App\Events\Images\BadgeCreated;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use OpenAI;
 
 class GenerateBadgeImage implements ShouldQueue
 {
@@ -24,7 +24,10 @@ class GenerateBadgeImage implements ShouldQueue
     {
         $client = \OpenAI::client(config('services.openai.key'));
 
-        $prompt = "Generate a vibrant, clean, and engaging gamification badge icon for OpenLitterMap representing a cleanup award in a {$this->badge->subtype} area. The badge should be in the shape of a shield with a ribbon containing the text '{$this->badge->subtype}'. Use a transparent background.";
+        $prompt = "Create a minimalistic and vibrant gamification badge icon for OpenLitterMap that represents a cleanup award in a {$this->badge->subtype} area.
+        The badge should feature a modern shield design with a flowing ribbon that prominently displays the text '{$this->badge->subtype}' in clear, error-free lettering.
+        Include a background that represents the theme of the area.
+        The image should have a transparent background.";
 
         $response = $client->images()->create([
             'model' => 'dall-e-3',
@@ -47,7 +50,7 @@ class GenerateBadgeImage implements ShouldQueue
             // Update the Badge model
             $this->badge->update(['filename' => $filePath]);
 
-            Log::info("Badge image generated successfully", ['badge_id' => $this->badge->id, 'path' => $filePath]);
+            event(new BadgeCreated($this->badge));
         } else {
             Log::error("Badge image generation failed", ['response' => $response]);
         }

@@ -1,35 +1,27 @@
 <?php
 
-namespace App\Events\Littercoin;
+namespace App\Events\Images;
 
+use App\Models\Badges\Badge;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class LittercoinMined implements ShouldBroadcast
+class BadgeCreated implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $userId, $reason, $now;
+    public Badge $badge;
 
-    /**
-     * Create a new event instance.
-     *
-     * @return void
-     */
-    public function __construct ($userId, $reason)
+    public function __construct(Badge $badge)
     {
-        $this->userId = $userId;
-        $this->reason = $reason;
-        $this->now = now();
+        $this->badge = $badge;
     }
 
     /**
      * Get the channels the event should broadcast on.
-     *
-     * @return \Illuminate\Broadcasting\Channel|array
      */
     public function broadcastOn()
     {

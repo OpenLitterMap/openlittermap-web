@@ -91,6 +91,7 @@ class PhotoTagsController extends Controller
                 'picked_up' => $pickedUp
             ]);
 
+            // Check for verified user
             if ($object->key === 'bagsLitter' && $pickedUp) {
                 $this->checkLocationTypeAward->checkLandUseAward($userId, $photoTag);
             }
