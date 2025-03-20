@@ -43,21 +43,6 @@ return [
             ],
         ],
 
-//        'pusher' => [
-//            'driver' => 'pusher',
-//            'key' => env('PUSHER_APP_KEY'),
-//            'secret' => env('PUSHER_APP_SECRET'),
-//            'app_id' => env('PUSHER_APP_ID'),
-//            'options' => [
-//                'cluster' => env('PUSHER_APP_CLUSTER'),
-//                'useTLS' => false,
-//                'encrypted'  => false, // was commented out
-//                'host'       => env('WEBSOCKET_BROADCAST_HOST'),
-//                'port'       => 8080,
-//                'scheme'     => 'http'
-//            ],
-//        ],
-
         'redis' => [
             'driver' => 'redis',
             'connection' => 'default',

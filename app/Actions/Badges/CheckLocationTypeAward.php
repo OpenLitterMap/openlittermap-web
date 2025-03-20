@@ -23,13 +23,13 @@ class CheckLocationTypeAward
             return;
         }
 
-        [$landUseTypes, $natureTypes] = $this->fetchLanduseNaturalTypes($photo->lat, $photo->lon);
+        [$landUseTypes, $natureTypes] = $this->fetchLandNatureTypesFromOSM($photo->lat, $photo->lon);
 
         $this->createAwardBadges($landUseTypes, 'landuse');
         $this->createAwardBadges($natureTypes, 'nature');
     }
 
-    protected function fetchLanduseNaturalTypes($lat, $lon): array
+    protected function fetchLandNatureTypesFromOSM($lat, $lon): array
     {
         $query = "[out:json];(way(around:50,$lat,$lon)[landuse];way(around:50,$lat,$lon)[natural];);out;";
 
@@ -37,7 +37,8 @@ class CheckLocationTypeAward
             'data' => $query
         ]);
 
-        $elements = $response->json('elements');
+        $elements = $response->json('elements') ?? [];
+
         $landUseTypes = $this->extractLandUseTypes($elements);
         $naturalTypes = $this->extractNaturalTypes($elements);
 
@@ -72,15 +73,17 @@ class CheckLocationTypeAward
 
     protected function createAwardBadges (array $landUseOrNatureTypes, string $type): void
     {
-        foreach ($landUseOrNatureTypes as $landUseOrNatureType) {
+        foreach ($landUseOrNatureTypes as $index => $landUseOrNatureType) {
 
-            $badge = Badge::firstOrCreate(['type' => $type, 'subtype' => $landUseOrNatureType]);
+            if ($index === 0) {
+                $badge = Badge::firstOrCreate(['type' => $type, 'subtype' => $landUseOrNatureType]);
 
-            if ($badge->filename === null) {
-                dispatch (new GenerateBadgeImage($badge));
+                if ($badge->filename === null) {
+                    dispatch (new GenerateBadgeImage($badge));
+                }
+
+                $badge->users()->syncWithoutDetaching($this->userId);
             }
-
-            $badge->users()->syncWithoutDetaching($this->userId);
         }
     }
 }

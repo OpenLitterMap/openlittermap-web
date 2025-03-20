@@ -14,7 +14,6 @@ class UserSignedUp implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    // PROTECTED PRIVATE properties will not be serialized or sent through.
     public string $now;
 
     /**

@@ -67,6 +67,9 @@ onUnmounted(() => {
  * 2) If we’re not currently animating, move one event from 'pendingEvents' -> 'events'.
  */
 const addEvent = (eventType, payload) => {
+    console.log({ eventType });
+    console.log({ payload });
+
     if (!components[eventType]) {
         console.error(`Component "${eventType}" is not registered.`);
         return;
