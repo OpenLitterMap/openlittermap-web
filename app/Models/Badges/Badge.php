@@ -22,6 +22,6 @@ class Badge extends Model
 
     public function getFullPathAttribute(): string
     {
-        return Storage::disk('public')->path($this->filename);
+        return Storage::disk('public')->url($this->filename);
     }
 }

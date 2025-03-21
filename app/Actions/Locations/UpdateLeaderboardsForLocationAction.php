@@ -17,6 +17,34 @@ class UpdateLeaderboardsForLocationAction
         $this->updateXpAction = $updateXpAction;
     }
 
+    // New OLM.v5
+    public function updateLeaderboardsAndRewardXP(int $userId, int $photoId, array $photoTags): void
+    {
+        $photo = Photo::find($photoId);
+
+        $xp = $this->calculateXP($photoTags);
+
+        $this->run($photo, $userId, $xp);
+    }
+
+    protected function calculateXP(array $tags) {
+        $totalXP = 0;
+
+        foreach ($tags as $tag) {
+            $totalXP += $tag['quantity'];
+
+            if (isset($tag['extraTags']) && is_array($tag['extraTags'])) {
+                foreach ($tag['extraTags'] as $extra) {
+                    if (isset($extra['selected']) && $extra['selected']) {
+                        $totalXP++;
+                    }
+                }
+            }
+        }
+
+        return $totalXP;
+    }
+
     /**
      * Update the Leaderboards for each Location
      *

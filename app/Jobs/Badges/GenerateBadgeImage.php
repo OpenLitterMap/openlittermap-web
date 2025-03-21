@@ -24,10 +24,10 @@ class GenerateBadgeImage implements ShouldQueue
     {
         $client = \OpenAI::client(config('services.openai.key'));
 
-        $prompt = "Create a minimalistic and vibrant gamification badge icon for OpenLitterMap that represents a cleanup award in a {$this->badge->subtype} area.
-        The badge should feature a modern shield design with a flowing ribbon that prominently displays the text '{$this->badge->subtype}' in clear, error-free lettering.
-        Include a background that represents the theme of the area.
-        The image should have a transparent background.";
+        // The background should be transparent but DALLE-3 doesn't support transparent images yet.
+        $prompt = "Create a vibrant minimalistic gamification badge representing a cleanup award in a {$this->badge->subtype} geographic area.
+        Place relative geographic features in the foreground and background.
+        The badge should feature a modern shield design with a flowing ribbon that prominently displays the text '{$this->badge->subtype}' in clear, error-free lettering.";
 
         $response = $client->images()->create([
             'model' => 'dall-e-3',

@@ -44,9 +44,6 @@ export const requests = {
             })
             .catch((error) => {
                 console.error('upload_tags', error);
-            })
-            .finally(() => {
-                return { test: true };
             });
     },
 };
