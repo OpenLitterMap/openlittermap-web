@@ -41,11 +41,13 @@
     "postcss": "^8.4.49",
     "pusher-js": "^8.4.0-rc2",
     "tailwindcss": "^3.4.17",
+    "typed.js": "^2.1.0",
     "uuid": "^11.0.3",
     "vue": "^3.5.13",
     "vue-filepond": "^7.0.4",
     "vue-i18n": "^11.0.0-rc.1",
     "vue-loading-overlay": "^6.0.6",
+    "vue-number-animation": "^2.0.2",
     "vue-router": "^4.5.0",
     "vue-toastification": "^2.0.0-rc.5",
     "vue-virtual-scroller": "^2.0.0-beta.8"

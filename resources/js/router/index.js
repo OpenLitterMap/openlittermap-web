@@ -12,12 +12,18 @@ import Welcome from '../views/Welcome/Welcome.vue';
 // Import Middleware
 import middlewarePipeline from './middleware/middlewarePipeline';
 import auth from './middleware/auth';
+import Countries from '../views/Locations/Countries.vue';
 
 const routes = [
     {
         path: '/about',
         name: 'About',
         component: About,
+    },
+    {
+        path: '/world',
+        name: 'World',
+        component: Countries,
     },
     {
         path: '/history',
