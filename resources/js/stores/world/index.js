@@ -32,5 +32,18 @@ export const useWorldStore = defineStore('world', {
 
     actions: {
         ...requests,
+
+        setSortLocationsBy(sort) {
+            this.sortLocationsBy = sort;
+        },
+
+        /**
+         * When a slider on city/options moves, update the min-date, max-date and hex-size
+         */
+        updateCitySlider({ index, dates, hex }) {
+            this.locations[index].minDate = dates[0];
+            this.locations[index].maxDate = dates[1];
+            this.locations[index].hex = hex;
+        },
     },
 });

@@ -6,6 +6,10 @@
 <script setup>
 import { computed } from 'vue';
 import { Bar } from 'vue-chartjs';
+import { Chart, registerables } from 'chart.js';
+
+// Register all necessary Chart.js components including scales
+Chart.register(...registerables);
 
 // Define the ppm prop
 const props = defineProps({
@@ -56,7 +60,7 @@ const chartOptions = {
     plugins: {
         legend: {
             labels: {
-                color: '#000000', // In Chart.js v3, use "color" instead of "fontColor"
+                color: '#000000',
             },
         },
     },

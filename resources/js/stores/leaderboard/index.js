@@ -1,8 +1,7 @@
-import { defineStore } from "pinia";
-import { requests } from "./requests.js";
+import { defineStore } from 'pinia';
+import { requests } from './requests.js';
 
 export const useLeaderboardStore = defineStore('leaderboard', {
-
     state: () => ({
         currentPage: 1,
         hasNextPage: false,
@@ -17,7 +16,6 @@ export const useLeaderboardStore = defineStore('leaderboard', {
     }),
 
     actions: {
-        ...requests
-    }
-
+        ...requests,
+    },
 });
