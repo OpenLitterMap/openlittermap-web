@@ -123,6 +123,7 @@ class Photo extends Model
     public function tags (): array
     {
         $tags = [];
+
         foreach ($this->categories() as $category)
         {
             if ($this->$category)

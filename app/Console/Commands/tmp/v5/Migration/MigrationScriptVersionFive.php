@@ -2,6 +2,12 @@
 
 namespace App\Console\Commands\tmp\v5\Migration;
 
+use App\Models\Litter\Categories\Brand;
+use App\Models\Litter\Tags\BrandList;
+use App\Models\Litter\Tags\Category;
+use App\Models\Litter\Tags\LitterObject;
+use App\Models\Litter\Tags\Materials;
+use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Location\City;
 use App\Models\Location\Country;
 use App\Models\Location\State;
@@ -18,7 +24,6 @@ class MigrationScriptVersionFive extends Command
 
     public function handle(): void
     {
-        // Loop over all photos
         $photos = Photo::query()
             ->select('id', 'datetime', 'user_id', 'country_id', 'state_id', 'city_id')
             ->orderBy('id', 'desc');
@@ -37,52 +42,139 @@ class MigrationScriptVersionFive extends Command
         }
     }
 
-    protected function updateTags (Photo $photo) {
-        // get old tags
+    // upgrade older tags to use newer format
+    protected function updateTags (Photo $photo): void {
+
+        $tags = $photo->tags;
+
         // loop over them
+        foreach ($tags as $category => $categoryTags) {
 
-        // try to insert into new format
-        // if tag fails, log it
-        // if exists, add to new PhotoTag format
+            $newCategory = Category::firstOrCreate(['key' => $category]);
+
+            $photoTag = PhotoTag::firstOrCreate([
+                'photo_id' => $photo->id,
+                'category_id' => $newCategory->id,
+            ]);
+
+            foreach ($categoryTags as $tag => $quantity) {
+                $newObject = LitterObject::firstOrCreate(['key' => $tag]);
+
+                if ($photoTag->litter_object_id === null) {
+                    $photoTag->litter_object_id = $newObject->id;
+                    $photoTag->quantity = $quantity;
+                    $photoTag->save();
+                } else {
+                    $photoTag = PhotoTag::firstOrCreate([
+                        'photo_id' => $photo->id,
+                        'category_id' => $newCategory->id,
+                        'litter_object_id' => $newObject->id,
+                        'quantity' => $quantity
+                    ]);
+                }
+
+                if ($category === "material") {
+                    $newMaterial = Materials::firstOrCreate(['key' => $tag]);
+
+                    if ($photoTag->material_id === null) {
+                        $photoTag->material_id = $newMaterial->id;
+                        $photoTag->save();
+                    } else {
+                        $photoTag = PhotoTag::firstOrCreate([
+                            'photo_id' => $photo->id,
+                            'category_id' => $newCategory?->id,
+                            'litter_object_id' => $newObject?->id,
+                            'material_id' => $newMaterial->id,
+                            'quantity' => $quantity
+                        ]);
+                    }
+                }
+            }
+        }
     }
 
-    protected function updateTotals (Photo $photo) {
+    protected function updateTotals (Photo $photo): void {
 
-        // get new tags for photo and update totals
+        $locations = [
+            'global',
+            'country',
+            'state',
+            'city'
+        ];
 
-        // global.totals.tags
-        // global.totals.custom_tags
-        // global.totals.categories
-        // global.totals.litter
-        // global.totals.brands
+        // v1 tags
+        $tags = $photo->tags;
+        $customTags = $photo->custom_tags;
+        $country = $photo->country;
+        $state = $photo->state;
+        $city = $photo->city;
 
-        // country.totals.tags
-        // country.totals.custom_tags
-        // country.totals.categories
-        // country.totals.litter
-        // country.totals.brands
+        // We need to get these from the original v1 tags
+        $categories = $photo->categories;
+        $objects = $categories->objects;
+        $materials = $photo->materials;
+        $brands = $photo->brands;
 
-        // state.totals.tags
-        // state.totals.custom_tags
-        // state.totals.categories
-        // state.totals.litter
-        // state.totals.brands
+        $tagsCount = $tags->count();
+        $customTagsCount = $customTags->count();
 
-        // global.categories.category
-        // country.categories.category
-        // state.categories.category
+        foreach ($locations as $location) {
+
+            if ($location === 'global') {
+                $key = "global";
+            } else {
+                if ($location === "country") {
+                    $key = "country:$country->id";
+                } elseif ($location === "state") {
+                    $key = "state:$state->id";
+                } elseif ($location === "city") {
+                    $key = "city:$city->id";
+                }
+            }
+
+            Redis::hincrby("$key:totals", 'photos', 1);
+            Redis::hincrby("$key:totals", 'tags', $tagsCount);
+            Redis::hincrby("$key:totals", 'custom_tags', $customTagsCount);
+
+            foreach ($categories as $category) {
+
+                $categoryId = Category::where('key', $category)->first()->id;
+
+                Redis::hincrby("$key:totals:category", $categoryId, 1);
+            }
+
+            // g.categories.category.object.material
+            foreach ($objects as $object) {
+                $objectId = LitterObject::where('key', $object)->first()->id;
+
+                Redis::hincrby("$key:totals:objects", $objectId, 1);
+            }
+
+            foreach ($materials as $material) {
+                $materialId = Materials::where('key', $material)->first()->id;
+
+                Redis::hincrby("$key:materials", $materialId, 1);
+            }
+
+            foreach ($brands as $brand) {
+                $brandId = BrandList::where('key', $brand)->first()->id;
+
+                Redis::hincrby("$key:totals:brands", $brandId, 1);
+            }
+        }
     }
 
-    protected function updateTimeSeries(Photo $photo) {
+    public function updateTimeSeries(Photo $photo): void {
+        $created_at = $photo->created_at;
+        $taken_at = $photo->datetime;
 
-        Redis::hincrby('global:totals', 'photos', 1);
+        Redis::hincrby("test", 1);
 
-        // get date for photo
-
-        // country:id total_photos:yyyy:mm:dd
-        // state:id total_photos:yyyy:mm:dd:
-        // city:id total_photos:yyyy:mm:dd
-        // user:id total_photos:yyyy:mm:dd
+        // global:timeseries:ppd:yyyy:mm:dd
+        // country:id:totals.timeseries.photos:yyyy:mm:dd
+        // state:id:totals.timeseries.photos:yyyy:mm:dd
+        // city:id:totals.timeseries.photos:yyyy:mm:dd
+        // user:id:totals.timeseries.photos:yyyy:mm:dd
 
         // country:id:photos_per_day:yyyy:mm:dd
         // state:id:photos_per_day:yyyy:mm:dd
