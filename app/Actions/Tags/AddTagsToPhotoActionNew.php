@@ -12,7 +12,7 @@ use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\Materials;
 use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Photo;
-use Illuminate\Support\Facades\Auth;
+use App\Models\User\User;
 
 class AddTagsToPhotoActionNew
 {
@@ -37,7 +37,7 @@ class AddTagsToPhotoActionNew
 
         $this->updateLeaderboards->updateLeaderboardsAndRewardXP($userId, $photoId, $photoTags);
 
-        $this->updateVerification($photoId);
+        $this->updateVerification($userId, $photoId);
 
         return $photoTags;
     }
@@ -107,8 +107,11 @@ class AddTagsToPhotoActionNew
             if (isset($tag['custom_tags']) && is_array($tag['custom_tags']) && count($tag['custom_tags'])) {
                 foreach ($tag['custom_tags'] as $customTagData) {
 
+                    // If $customTagData is an array, extract the 'key'; otherwise, use it directly.
+                    $customTagKey = is_array($customTagData) ? ($customTagData['key'] ?? '') : $customTagData;
+
                     // Clean for vulnerabilities
-                    $cleanTag = strip_tags($customTagData);
+                    $cleanTag = strip_tags($customTagKey);
                     $cleanTag = trim($cleanTag);
 
                     // Validate against a whitelist pattern (only letters, numbers, spaces, hyphens, colons, and underscores).
@@ -156,12 +159,12 @@ class AddTagsToPhotoActionNew
         return $photoTags;
     }
 
-    protected function updateVerification(int $photoId): void
+    protected function updateVerification(int $userId, int $photoId): void
     {
-        $user = Auth::user();
+        $user = User::find($userId);
         $photo = Photo::find($photoId);
 
-        if (!$user->is_trusted)
+        if ($user->verification_required)
         {
             // Bring the photo to an initial state of verification
             // 0 for testing, 0.1 for production

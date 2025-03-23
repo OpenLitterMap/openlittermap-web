@@ -49,10 +49,6 @@ class UploadPhotoController extends Controller
     /**
      * The user wants to upload a photo
      *
-     * Validation:
-     * 1. Check photo is not already uploaded
-     * 2. Check for GPS co-ordinates or fail validation.
-     *
      * Steps:
      * Get/Create Country, State, and City for the lat/lon
      *
@@ -161,11 +157,8 @@ class UploadPhotoController extends Controller
         // Since a user can upload multiple photos at once,
         // we might get old values for xp, so we update the values directly
         // without retrieving them
-        $user->update(['total_images' => DB::raw('ifnull(total_images, 0) + 1')]);
-        $user->refresh();
-
-        // Update the Leaderboards and give xp.
-        $this->updateLeaderboardsAction->run($photo, $user->id);
+        // $user->update(['total_images' => DB::raw('ifnull(total_images, 0) + 1')]);
+        // $user->refresh();
 
         // Step 5: Dispatch Events & Notifications
         // Broadcast this event to anyone viewing the global map
@@ -177,6 +170,9 @@ class UploadPhotoController extends Controller
             $state,
             $city,
         ));
+
+        // Update the Leaderboards and give xp.
+        $this->updateLeaderboardsAction->run($photo, $user->id);
 
         // Broadcast an event to anyone viewing the Global Map
         // Sends Notification to Twitter & Slack

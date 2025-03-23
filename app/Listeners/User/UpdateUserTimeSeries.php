@@ -16,8 +16,6 @@ class UpdateUserTimeSeries implements ShouldQueue
      *
      * @param  TagsVerifiedByAdmin  $event
      * @return void
-     *
-     * Todo: move this to redis
      */
     public function handle (TagsVerifiedByAdmin $event)
     {

@@ -12,14 +12,17 @@ class IncrementPhotoMonth implements ShouldQueue
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $country_id, $state_id, $city_id, $created_at;
+    public ?int $city_id;
+    public ?int $state_id;
+    public ?int $country_id;
+    public string $created_at;
 
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct ($country_id, $state_id, $city_id, $created_at)
+    public function __construct (?int $country_id, ?int $state_id, ?int $city_id, string $created_at)
     {
         $this->country_id = $country_id;
         $this->state_id   = $state_id;

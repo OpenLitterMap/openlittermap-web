@@ -13,18 +13,8 @@ use Illuminate\Support\Facades\Redis;
 
 class GeneratePhotosPerMonth extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'time-series:generate-photos-per-month';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'Generate the photos per month for each User and Location';
 
     /**

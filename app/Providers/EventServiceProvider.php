@@ -8,8 +8,10 @@ use App\Events\ImageDeleted;
 use App\Events\NewCityAdded;
 use App\Events\NewCountryAdded;
 use App\Events\NewStateAdded;
+use App\Events\Photo\IncrementPhotoMonth;
 use App\Events\TagsVerifiedByAdmin;
 
+use App\Events\UserSignedUp;
 use App\Listeners\AddTags\IncrementLocation;
 use App\Listeners\AddTags\CompileResultsString;
 use App\Listeners\Images\TweetBadgeCreated;
@@ -17,6 +19,10 @@ use App\Listeners\Locations\Twitter\TweetNewCity;
 use App\Listeners\Locations\Twitter\TweetNewCountry;
 use App\Listeners\Locations\Twitter\TweetNewState;
 use App\Listeners\Locations\User\UpdateUserIdLastUpdatedLocation;
+use App\Listeners\SendNewUserEmail;
+use App\Listeners\UpdateTimes\IncrementCityMonth;
+use App\Listeners\UpdateTimes\IncrementCountryMonth;
+use App\Listeners\UpdateTimes\IncrementStateMonth;
 use App\Listeners\User\UpdateUserCategories;
 use App\Listeners\User\UpdateUserTimeSeries;
 use App\Listeners\Littercoin\RewardLittercoin;
@@ -55,7 +61,7 @@ class EventServiceProvider extends ServiceProvider
 
             // Update total_images for a team, and total_photos for a TeamUser pivot, on SQL
             // this needs to be migrated to Redis
-            IncreaseTeamTotalPhotos::class
+            IncreaseTeamTotalPhotos::class,
         ],
         ImageDeleted::class => [
             RemoveLocationContributor::class,
@@ -81,19 +87,19 @@ class EventServiceProvider extends ServiceProvider
             // Update the users total_litter, total_brands, total_photos and total_category on Redis
             UpdateUserCategories::class,
 
-            // Photos per month, or ppm, needs to be migrated to Redis
+            // Photos per month (ppm)
             UpdateUserTimeSeries::class,
 
             // Update the last_user_id_uploaded for each Location
             UpdateUserIdLastUpdatedLocation::class,
         ],
-        'App\Events\UserSignedUp' => [
-            'App\Listeners\SendNewUserEmail'
+        UserSignedUp::class => [
+            SendNewUserEmail::class,
         ],
-        'App\Events\Photo\IncrementPhotoMonth' => [
-            'App\Listeners\UpdateTimes\IncrementCountryMonth',
-            'App\Listeners\UpdateTimes\IncrementStateMonth',
-            'App\Listeners\UpdateTimes\IncrementCityMonth',
+        IncrementPhotoMonth::class => [
+            IncrementCountryMonth::class,
+            IncrementStateMonth::class,
+            IncrementCityMonth::class,
         ],
         NewCountryAdded::class => [
             NotifySlackOfNewCountry::class,

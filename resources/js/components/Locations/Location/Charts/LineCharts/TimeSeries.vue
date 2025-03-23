@@ -55,7 +55,7 @@ const chartData = computed(() => {
 
 // Define chart options using the Chart.js v3 configuration format
 const chartOptions = {
-    responsive: true,
+    responsive: false,
     maintainAspectRatio: false,
     plugins: {
         legend: {
