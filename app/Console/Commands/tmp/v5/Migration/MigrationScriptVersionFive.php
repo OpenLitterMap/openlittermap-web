@@ -47,7 +47,6 @@ class MigrationScriptVersionFive extends Command
 
         $tags = $photo->tags;
 
-        // loop over them
         foreach ($tags as $category => $categoryTags) {
 
             $newCategory = Category::firstOrCreate(['key' => $category]);
