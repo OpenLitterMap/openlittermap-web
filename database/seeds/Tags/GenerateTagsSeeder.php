@@ -434,11 +434,11 @@ class GenerateTagsSeeder extends Seeder
      */
     protected function attachMaterialToPivot(Category $category, LitterObject $litterObject, Materials $material): void
     {
-        $pivot = CategoryLitterObject::firstOrCreate([
+        $categoryObject = CategoryLitterObject::firstOrCreate([
             'category_id'      => $category->id,
             'litter_object_id' => $litterObject->id,
         ]);
 
-        $pivot->materials()->syncWithoutDetaching([$material->id]);
+        $categoryObject->materials()->syncWithoutDetaching([$material->id]);
     }
 }

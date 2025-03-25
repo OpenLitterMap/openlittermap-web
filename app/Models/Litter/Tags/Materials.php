@@ -16,15 +16,15 @@ class Materials extends Model
 
     public $timestamps = false;
 
-    protected $hidden = ['pivot'];
-
-    public function categoryLitterObjects(): BelongsToMany
-    {
-        return $this->belongsToMany(
-            CategoryLitterObject::class,
-            'category_litter_object_material',
-            'material_id',
-            'category_litter_object_id'
-        );
-    }
+//    protected $hidden = ['pivot'];
+//
+//    public function categoryLitterObjects(): BelongsToMany
+//    {
+//        return $this->belongsToMany(
+//            CategoryLitterObject::class,
+//            'category_litter_object_material',
+//            'material_id',
+//            'category_litter_object_id'
+//        );
+//    }
 }

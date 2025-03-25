@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Taggable extends Model
 {
-    protected $table = 'category_litter_object_taggables';
+    protected $table = 'taggables';
 
     protected $fillable = [
         'category_litter_object_id',

@@ -2,9 +2,10 @@
 
 namespace App\Models\Litter\Tags;
 
+use App\Models\Litter\Categories\Brand;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class CategoryLitterObject extends Pivot
 {
@@ -27,13 +28,25 @@ class CategoryLitterObject extends Pivot
         return $this->belongsTo(LitterObject::class, 'litter_object_id');
     }
 
-    public function materials(): BelongsToMany
+    public function materials(): MorphToMany
     {
-        return $this->belongsToMany(
+        return $this->morphedByMany(
             Materials::class,
-            'category_litter_object_material',
+            'taggable',
+            'taggables',
             'category_litter_object_id',
-            'material_id'
-        );
+            'taggable_id'
+        )->withPivot('count')->withTimestamps();
+    }
+
+    public function brands(): MorphToMany
+    {
+        return $this->morphedByMany(
+            Brand::class,
+            'taggable',
+            'taggables',
+            'category_litter_object_id',
+            'taggable_id'
+        )->withPivot('count')->withTimestamps();
     }
 }
