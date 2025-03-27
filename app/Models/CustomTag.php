@@ -20,6 +20,8 @@ class CustomTag extends Model
             'Willingness to pay people real money but not paying respect to volunteers yields poor results.',
             'A negative leader casts a shadow, not a path worth following',
             'As of September 1, 2023 I am no longer an ambassador for OLM',
+            'I might as well remove the tags that I gave to this picture',
+            'if the project is moving from a community to a autocracy and data quality is no longer important',
         ];
     }
 }
