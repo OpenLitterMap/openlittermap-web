@@ -23,6 +23,20 @@ class PreMigrationScript extends Command
     protected $objectKeys = [];
     protected $materialKeys = [];
 
+    // Users have created column A. We should use column B instead.
+    protected $categoryMaps = [
+        'alcohol can' => 'alcohol',
+        'bikepart' => 'bikeparts',
+        'narcotics' => 'drugs',
+        'motorzeis' => 'other',
+        'bosmaaier' => 'other',
+        'firework' => 'fireworks',
+        'bycicle' => 'cycling',
+        'fastfoos' => 'fastfood',
+        'firelwork' => 'fireworks',
+        'buildingmaterials' => 'industrial'
+    ];
+
     public function handle()
     {
         $this->info("🚀 Starting to process custom_tags (simple version)...");
@@ -72,6 +86,7 @@ class PreMigrationScript extends Command
                 return;
             }
         }
+
         $this->processSegment(trim($rawTag));
     }
 
