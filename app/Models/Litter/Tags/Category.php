@@ -20,6 +20,16 @@ class Category extends Model
         return 'key';
     }
 
+    public function parent()
+    {
+        return $this->belongsTo(Category::class, 'parent_id');
+    }
+
+    public function subcategories(): HasMany
+    {
+        return $this->hasMany(Category::class, 'parent_id');
+    }
+
     public function litterObjects(): BelongsToMany
     {
         return $this->belongsToMany(LitterObject::class, 'category_litter_object')

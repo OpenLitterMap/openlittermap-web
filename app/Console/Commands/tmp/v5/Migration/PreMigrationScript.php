@@ -23,25 +23,42 @@ class PreMigrationScript extends Command
     protected $objectKeys = [];
     protected $materialKeys = [];
 
-    // Users have created column A. We should use column B instead.
+    // Custom category mappings (column A => column B)
     protected $categoryMaps = [
-        'alcohol can' => 'alcohol',
-        'bikepart' => 'bikeparts',
-        'narcotics' => 'drugs',
-        'motorzeis' => 'other',
-        'bosmaaier' => 'other',
-        'firework' => 'fireworks',
-        'bycicle' => 'cycling',
-        'fastfoos' => 'fastfood',
-        'firelwork' => 'fireworks',
-        'buildingmaterials' => 'industrial'
+        'alcohol can'      => 'alcohol',
+        'bikepart'         => 'bikeparts',
+        'narcotics'        => 'drugs',
+        'motorzeis'        => 'other',
+        'bosmaaier'        => 'other',
+        'firework'         => 'fireworks',
+        'bycicle'          => 'cycling',
+        'fastfoos'         => 'fastfood',
+        'firelwork'        => 'fireworks',
+        'buildingmaterials'=> 'industrial',
+        'medicine'         => 'medical',
+    ];
+
+    protected $subcategories = [
+        'icecream'    => 'food',
+        'dairy'       => 'food',
+        'fruit'       => 'food',
+        'fastfood'    => 'food',
+        'energydrink' => 'softdrinks',
+        'bikeparts'   => 'cycling',
+        'bicycle'     => 'cycling',
+    ];
+
+    protected $materialMaps = [
+        'platic' => 'plastic',
+        'plasric' => 'plastic',
+        'cardboard packaging' => 'cardboard',
     ];
 
     public function handle()
     {
-        $this->info("🚀 Starting to process custom_tags (simple version)...");
+        $this->info("🚀 Starting to process custom_tags...");
 
-        // Pre-load known keys from lookup tables, all lowercased
+        // Pre-load known keys from lookup tables (all lowercased)
         $this->brandKeys    = array_map('strtolower', BrandList::pluck('key')->all());
         $this->categoryKeys = array_map('strtolower', Category::pluck('key')->all());
         $this->objectKeys   = array_map('strtolower', LitterObject::pluck('key')->all());
@@ -54,44 +71,40 @@ class PreMigrationScript extends Command
             }
         });
 
+        sort($this->objectKeys, SORT_STRING);
+
+        foreach ($this->objectKeys as $key) {
+            $this->info($key);
+        }
+
         $this->info("✅ Tag processing completed.");
     }
 
     /**
-     * Processes a raw tag.
+     * Process a raw tag.
      *
-     * If a colon is present and the prefix matches one of the known types
-     * (brand, category, object, material), then use that type hint.
-     * Otherwise, split the tag by colon and process each segment individually.
+     * If the tag contains a colon and the prefix matches a generic type,
+     * use that type hint. Otherwise, split and process each segment.
      */
     protected function processTag(string $rawTag)
     {
         if (strpos($rawTag, ':') !== false) {
-            // Only split into two parts so we keep the type hint with the value
-            list($prefix, $value) = explode(':', $rawTag, 2);
-            $prefix = trim($prefix);
-            $value  = trim($value);
-
-            $typeHint = strtolower($prefix);
+            list($prefix, $value) = array_map('trim', explode(':', $rawTag, 2));
             $genericTypes = ['brand', 'category', 'object', 'material'];
-            if (in_array($typeHint, $genericTypes)) {
-                // Use the prefix as the type
-                $this->classifyAndLogWithType($value, ucfirst($typeHint));
-                return;
-            } else {
-                // Not a recognized prefix; process each segment individually.
-                foreach (explode(':', $rawTag) as $segment) {
-                    $this->processSegment(trim($segment));
-                }
+            if (in_array(strtolower($prefix), $genericTypes)) {
+                $this->classifyAndLogTag($value, ucfirst($prefix));
                 return;
             }
+            foreach (explode(':', $rawTag) as $segment) {
+                $this->processSegment(trim($segment));
+            }
+            return;
         }
-
         $this->processSegment(trim($rawTag));
     }
 
     /**
-     * Skips generic/ignore-list words; classifies otherwise.
+     * Process an individual tag segment if it is not generic or ignored.
      */
     protected function processSegment(string $segment)
     {
@@ -99,62 +112,57 @@ class PreMigrationScript extends Command
         $generic = ['brand', 'brands', 'bn', 'category', 'cat', 'object', 'objects', 'material', 'materials'];
         $ignore  = array_map('strtolower', CustomTag::notIncludeTags());
 
-        // Skip if it’s a generic or ignored term
         if (in_array($lower, $generic) || in_array($lower, $ignore)) {
             return;
         }
 
-        $this->classifyAndLog($segment);
+        $this->classifyAndLogTag($segment);
     }
 
     /**
-     * Removes any trailing "=number" style quantity, then classifies and logs.
+     * Classifies a tag and logs it.
+     *
+     * If a type hint is provided, it is used directly (with mapping for Categories).
+     * Otherwise, the tag is classified using determineTagType().
      */
-    protected function classifyAndLog(string $tagString)
+    protected function classifyAndLogTag(string $tagString, string $typeHint = null)
     {
-        $quantity = null;
         $cleanTag = trim($tagString);
 
-        // Detect "=number" suffix
+        // Remove any trailing "=number" suffix (quantity handling removed for simplicity)
         if (preg_match('/^(.*)=(\d+)$/', $cleanTag, $matches)) {
             $cleanTag = trim($matches[1]);
-            $quantity = (int) $matches[2];
         }
 
-        // Determine the tag type based on lookup arrays
-        $result = $this->determineTagType($cleanTag);
-        $type   = $result['type'];
+        if ($typeHint) {
+            $lower = strtolower($cleanTag);
+            if (strtolower($typeHint) === 'category') {
+                if (array_key_exists($lower, $this->categoryMaps)) {
+                    $cleanTag = $this->categoryMaps[$lower];
+                }
+            } elseif (strtolower($typeHint) === 'material') {
+                if (array_key_exists($lower, $this->materialMaps)) {
+                    $cleanTag = $this->materialMaps[$lower];
+                }
+            }
+            $type = ucfirst($typeHint);
+        } else {
+            $result = $this->determineTagType($cleanTag);
+            $type   = $result['type'];
+            if (isset($result['tag'])) {
+                $cleanTag = $result['tag'];
+            }
+        }
 
-        // For display purposes, re-add the quantity suffix if applicable.
-        $display = $cleanTag . ($quantity !== null ? "={$quantity}" : '');
-
-        $this->logTag($cleanTag, $display, $type);
+        $this->addTag($cleanTag, $type);
     }
 
     /**
-     * Similar to classifyAndLog() but uses a provided type hint.
+     * Classifies a tag based on its value.
+     *
+     * Returns an array with the determined type and, if applicable, a canonical tag.
      */
-    protected function classifyAndLogWithType(string $tagString, string $type)
-    {
-        $quantity = null;
-        $cleanTag = trim($tagString);
-
-        if (preg_match('/^(.*)=(\d+)$/', $cleanTag, $matches)) {
-            $cleanTag = trim($matches[1]);
-            $quantity = (int) $matches[2];
-        }
-
-        $display = $cleanTag . ($quantity !== null ? "={$quantity}" : '');
-        $this->logTag($cleanTag, $display, $type);
-    }
-
-    /**
-     * A simple classification approach for tags without explicit type hint:
-     *   1) Single character => Undefined
-     *   2) Checks against lookup arrays (brand, category, object, material) in order.
-     *   3) Otherwise, fallback => "CustomTagNew"
-     */
-    protected function determineTagType(string $tag)
+    protected function determineTagType(string $tag): array
     {
         $clean = trim($tag);
         $lower = strtolower($clean);
@@ -163,26 +171,29 @@ class PreMigrationScript extends Command
             return ['type' => 'Undefined'];
         }
 
+        if (array_key_exists($lower, $this->categoryMaps)) {
+            return ['type' => 'Category', 'tag' => $this->categoryMaps[$lower]];
+        }
         if (in_array($lower, $this->brandKeys)) {
-            return ['type' => 'Brand'];
+            return ['type' => 'Brand', 'tag' => $clean];
         }
         if (in_array($lower, $this->categoryKeys)) {
-            return ['type' => 'Category'];
+            return ['type' => 'Category', 'tag' => $clean];
         }
         if (in_array($lower, $this->objectKeys)) {
-            return ['type' => 'Object'];
+            return ['type' => 'Object', 'tag' => $clean];
         }
         if (in_array($lower, $this->materialKeys)) {
-            return ['type' => 'Material'];
+            return ['type' => 'Material', 'tag' => $clean];
         }
 
-        return ['type' => 'CustomTagNew'];
+        return ['type' => 'CustomTagNew', 'tag' => $clean];
     }
 
     /**
-     * Logs the tag and creates a new record if it wasn’t already processed.
+     * Logs the tag and creates a new record if not already processed.
      */
-    protected function logTag(string $cleanTag, string $display, string $type)
+    protected function addTag(string $cleanTag, string $type)
     {
         $lowerKey = strtolower($cleanTag);
         $loggedKey = $type . '|' . $lowerKey;
@@ -191,37 +202,50 @@ class PreMigrationScript extends Command
         }
 
         switch ($type) {
+//            case 'Category':
+//                $parentId = null;
+//                if (array_key_exists($lowerKey, $this->subcategories)) {
+//                    $parentKey = strtolower($this->subcategories[$lowerKey]);
+//                    $parentCategory = Category::firstOrCreate(['key' => $parentKey]);
+//                    $parentId = $parentCategory->id;
+//                }
+//                if (!in_array($lowerKey, $this->categoryKeys)) {
+//                    // Uncomment to persist:
+//                    // Category::create(['key' => $lowerKey, 'parent_id' => $parentId]);
+//                    $this->categoryKeys[] = $lowerKey;
+//                    $message = "Created new Category: $lowerKey";
+//                    if ($parentId) {
+//                        $message .= " (Parent: $parentKey)";
+//                    }
+//                    $this->info($message);
+//                }
+//                break;
 //            case 'Brand':
 //                if (!in_array($lowerKey, $this->brandKeys)) {
-//                    // BrandList::create(['key' => $lowerKey, 'name' => $cleanTag]);
+//                    // Uncomment to persist:
+//                    // BrandList::create(['key' => $lowerKey]);
 //                    $this->brandKeys[] = $lowerKey;
-//                    $this->info("Created new Brand: {$display}");
+//                    $this->info("Created new Brand: $lowerKey");
 //                }
 //                break;
-            case 'Category':
-                if (!in_array($lowerKey, $this->categoryKeys)) {
-                    // Category::create(['key' => $lowerKey, 'name' => $cleanTag]);
-                    $this->categoryKeys[] = $lowerKey;
-                    $this->info("Created new Category: {$display}");
+            case 'Object':
+                if (!in_array($lowerKey, $this->objectKeys)) {
+                    // Uncomment to persist:
+                    // LitterObject::create(['key' => $lowerKey]);
+                    $this->objectKeys[] = $lowerKey;
+                    // $this->info("Created new Object: $lowerKey");
                 }
                 break;
-//            case 'Object':
-//                if (!in_array($lowerKey, $this->objectKeys)) {
-//                    // LitterObject::create(['key' => $lowerKey, 'name' => $cleanTag]);
-//                    $this->objectKeys[] = $lowerKey;
-//                    $this->info("Created new Object: {$display}");
-//                }
-//                break;
 //            case 'Material':
 //                if (!in_array($lowerKey, $this->materialKeys)) {
-//                    // Materials::create(['key' => $lowerKey, 'name' => $cleanTag]);
+//                    // Uncomment to persist:
+//                    // Materials::create(['key' => $lowerKey]);
 //                    $this->materialKeys[] = $lowerKey;
-//                    $this->info("Created new Material: {$display}");
+//                    $this->info("Created new Material: $lowerKey");
 //                }
 //                break;
 //            case 'CustomTagNew':
-//                // CustomTagNew::create(['key' => $lowerKey, 'name' => $cleanTag]);
-//                $this->info("Created new CustomTagNew: {$display}");
+//                $this->info("Custom tag encountered: $lowerKey");
 //                break;
             default:
                 break;
