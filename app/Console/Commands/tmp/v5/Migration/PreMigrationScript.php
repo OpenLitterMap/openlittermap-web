@@ -223,7 +223,7 @@ class PreMigrationScript extends Command
 //            case 'Brand':
 //                if (!in_array($lowerKey, $this->brandKeys)) {
 //                    // Uncomment to persist:
-//                    // BrandList::create(['key' => $lowerKey]);
+//                    // BrandList::create(['key' => $lowerKey, 'is_custom' => true]);
 //                    $this->brandKeys[] = $lowerKey;
 //                    $this->info("Created new Brand: $lowerKey");
 //                }
@@ -231,7 +231,7 @@ class PreMigrationScript extends Command
             case 'Object':
                 if (!in_array($lowerKey, $this->objectKeys)) {
                     // Uncomment to persist:
-                    // LitterObject::create(['key' => $lowerKey]);
+                    // LitterObject::firstOrCreate(['key' => $lowerKey, 'is_custom' => true]);
                     $this->objectKeys[] = $lowerKey;
                     // $this->info("Created new Object: $lowerKey");
                 }
