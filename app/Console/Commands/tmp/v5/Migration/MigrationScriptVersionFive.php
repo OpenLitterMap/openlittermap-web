@@ -12,6 +12,9 @@ use App\Models\Location\City;
 use App\Models\Location\Country;
 use App\Models\Location\State;
 use App\Models\Photo;
+use App\Services\Tags\ClassifyTagsService;
+use App\Services\Tags\PhotoTagService;
+use App\Services\Tags\UpdateTagsService;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Redis;
@@ -19,75 +22,36 @@ use Illuminate\Support\Facades\Redis;
 class MigrationScriptVersionFive extends Command
 {
     protected $signature = 'olm:v5';
-
     protected $description = 'Upgrade OpenLitterMap data to v5';
+
+    protected UpdateTagsService $updateTagsService;
+
+    public function __construct(
+        UpdateTagsService $updateTagsService
+    ) {
+        parent::__construct();
+
+        $this->updateTagsService = $updateTagsService;
+    }
 
     public function handle(): void
     {
         $photos = Photo::query()
-            ->select('id', 'datetime', 'user_id', 'country_id', 'state_id', 'city_id')
+            ->select('id', 'datetime', 'user_id', 'country_id', 'state_id', 'city_id', 'remaining')
             ->orderBy('id', 'desc');
 
         foreach ($photos->cursor() as $photo)
         {
-            $this->updateTags($photo);
-            $this->updateTotals($photo);
-            $this->updateTimeSeries($photo);
-            $this->updateLeaderboards($photo);
-            $this->updateUserAchievements($photo);
+            $this->updateTagsService->updateTags($photo);
+            $this->updateTagsService->updateCustomTags($photo);
         }
     }
 
-    // upgrade older tags to use newer format
-    protected function updateTags (Photo $photo): void {
 
-        $tags = $photo->tags;
-
-        foreach ($tags as $categoryKey => $categoryTags)
-        {
-            $category = Category::where(['key' => $categoryKey])->first();
-
-            $photoTag = PhotoTag::firstOrCreate([
-                'photo_id' => $photo->id,
-                'category_id' => $category->id,
-            ]);
-
-            foreach ($categoryTags as $tag => $quantity)
-            {
-                $newObject = LitterObject::firstOrCreate(['key' => $tag]);
-
-                if ($photoTag->litter_object_id === null) {
-                    $photoTag->litter_object_id = $newObject->id;
-                    $photoTag->quantity = $quantity;
-                    $photoTag->save();
-                } else {
-                    $photoTag = PhotoTag::firstOrCreate([
-                        'photo_id' => $photo->id,
-                        'category_id' => $category->id,
-                        'litter_object_id' => $newObject->id,
-                        'quantity' => $quantity
-                    ]);
-                }
-
-                if ($category === "material") {
-                    $newMaterial = Materials::firstOrCreate(['key' => $tag]);
-
-                    if ($photoTag->material_id === null) {
-                        $photoTag->material_id = $newMaterial->id;
-                        $photoTag->save();
-                    } else {
-                        $photoTag = PhotoTag::firstOrCreate([
-                            'photo_id' => $photo->id,
-                            'category_id' => $category?->id,
-                            'litter_object_id' => $newObject?->id,
-                            'material_id' => $newMaterial->id,
-                            'quantity' => $quantity
-                        ]);
-                    }
-                }
-            }
-        }
-    }
+    //            $this->updateTotals($photo);
+//            $this->updateTimeSeries($photo);
+//            $this->updateLeaderboards($photo);
+//            $this->updateUserAchievements($photo);
 
     protected function updateTotals (Photo $photo): void {
 
