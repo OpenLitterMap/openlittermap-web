@@ -3,6 +3,7 @@
 namespace App\Console\Commands\tmp\v5\Migration;
 
 use App\Models\CustomTag;
+use App\Models\Litter\Tags\CustomTagNew;
 use Illuminate\Console\Command;
 use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
@@ -22,6 +23,7 @@ class PreMigrationScript extends Command
     protected $categoryKeys = [];
     protected $objectKeys = [];
     protected $materialKeys = [];
+    protected $customTagKeys = [];
 
     // Custom category mappings (column A => column B)
     protected $categoryMaps = [
@@ -63,6 +65,7 @@ class PreMigrationScript extends Command
         $this->categoryKeys = array_map('strtolower', Category::pluck('key')->all());
         $this->objectKeys   = array_map('strtolower', LitterObject::pluck('key')->all());
         $this->materialKeys = array_map('strtolower', Materials::pluck('key')->all());
+        $this->customTagKeys = array_map('strtolower', CustomTagNew::pluck('key')->all());
 
         // Process custom tags in chunks
         CustomTag::chunk(100, function ($customTags) {
@@ -202,51 +205,57 @@ class PreMigrationScript extends Command
         }
 
         switch ($type) {
-//            case 'Category':
-//                $parentId = null;
-//                if (array_key_exists($lowerKey, $this->subcategories)) {
-//                    $parentKey = strtolower($this->subcategories[$lowerKey]);
-//                    $parentCategory = Category::firstOrCreate(['key' => $parentKey]);
-//                    $parentId = $parentCategory->id;
-//                }
-//                if (!in_array($lowerKey, $this->categoryKeys)) {
-//                    // Uncomment to persist:
-//                    // Category::create(['key' => $lowerKey, 'parent_id' => $parentId]);
-//                    $this->categoryKeys[] = $lowerKey;
-//                    $message = "Created new Category: $lowerKey";
-//                    if ($parentId) {
-//                        $message .= " (Parent: $parentKey)";
-//                    }
-//                    $this->info($message);
-//                }
-//                break;
-//            case 'Brand':
-//                if (!in_array($lowerKey, $this->brandKeys)) {
-//                    // Uncomment to persist:
-//                    // BrandList::create(['key' => $lowerKey, 'is_custom' => true]);
-//                    $this->brandKeys[] = $lowerKey;
-//                    $this->info("Created new Brand: $lowerKey");
-//                }
-//                break;
-            case 'Object':
-                if (!in_array($lowerKey, $this->objectKeys)) {
-                    // Uncomment to persist:
-                    // LitterObject::firstOrCreate(['key' => $lowerKey, 'is_custom' => true]);
-                    $this->objectKeys[] = $lowerKey;
-                    // $this->info("Created new Object: $lowerKey");
+            case 'Category':
+                $parentId = null;
+                if (array_key_exists($lowerKey, $this->subcategories)) {
+                    $parentKey = strtolower($this->subcategories[$lowerKey]);
+                    $parentCategory = Category::firstOrCreate(
+                        ['key' => $parentKey],
+                        ['crowdsourced' => true]
+                    );
+                    $parentId = $parentCategory->id;
+                }
+                if (!in_array($lowerKey, $this->categoryKeys)) {
+                    Category::firstOrCreate(
+                        ['key' => $lowerKey, 'parent_id' => $parentId],
+                        ['crowdsourced' => true]
+                    );
+                    $this->categoryKeys[] = $lowerKey;
+                    $message = "Created new Category: $lowerKey";
+                    if ($parentId) {
+                        $message .= " (Parent: $parentKey)";
+                    }
+                    $this->info($message);
                 }
                 break;
-//            case 'Material':
-//                if (!in_array($lowerKey, $this->materialKeys)) {
-//                    // Uncomment to persist:
-//                    // Materials::create(['key' => $lowerKey]);
-//                    $this->materialKeys[] = $lowerKey;
-//                    $this->info("Created new Material: $lowerKey");
-//                }
-//                break;
-//            case 'CustomTagNew':
-//                $this->info("Custom tag encountered: $lowerKey");
-//                break;
+            case 'Brand':
+                if (!in_array($lowerKey, $this->brandKeys)) {
+                    BrandList::firstOrCreate(['key' => $lowerKey], ['crowdsourced' => 1]);
+                    $this->brandKeys[] = $lowerKey;
+                    $this->info("Created new Brand: $lowerKey");
+                }
+                break;
+            case 'Object':
+                if (!in_array($lowerKey, $this->objectKeys)) {
+                    LitterObject::firstOrCreate(['key' => $lowerKey], ['crowdsourced' => 1]);
+                    $this->objectKeys[] = $lowerKey;
+                    $this->info("Created new Object: $lowerKey");
+                }
+                break;
+            case 'Material':
+                if (!in_array($lowerKey, $this->materialKeys)) {
+                    Materials::create(['key' => $lowerKey], ['crowdsourced' => 1]);
+                    $this->materialKeys[] = $lowerKey;
+                    $this->info("Created new Material: $lowerKey");
+                }
+                break;
+            case 'CustomTagNew':
+                if (!in_array($lowerKey, $this->customTagKeys)) {
+                    CustomTagNew::firstOrCreate(['key' => $lowerKey], ['crowdsourced' => 1]);
+                    $this->customTagKeys[] = $lowerKey;
+                    $this->info("Created new custom tag: $lowerKey");
+                }
+                break;
             default:
                 break;
         }

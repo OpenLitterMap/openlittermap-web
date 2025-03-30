@@ -31,13 +31,9 @@ class MigrationScriptVersionFive extends Command
         foreach ($photos->cursor() as $photo)
         {
             $this->updateTags($photo);
-
             $this->updateTotals($photo);
-
             $this->updateTimeSeries($photo);
-
             $this->updateLeaderboards($photo);
-
             $this->updateUserAchievements($photo);
         }
     }
@@ -47,16 +43,17 @@ class MigrationScriptVersionFive extends Command
 
         $tags = $photo->tags;
 
-        foreach ($tags as $category => $categoryTags) {
-
-            $newCategory = Category::firstOrCreate(['key' => $category]);
+        foreach ($tags as $categoryKey => $categoryTags)
+        {
+            $category = Category::where(['key' => $categoryKey])->first();
 
             $photoTag = PhotoTag::firstOrCreate([
                 'photo_id' => $photo->id,
-                'category_id' => $newCategory->id,
+                'category_id' => $category->id,
             ]);
 
-            foreach ($categoryTags as $tag => $quantity) {
+            foreach ($categoryTags as $tag => $quantity)
+            {
                 $newObject = LitterObject::firstOrCreate(['key' => $tag]);
 
                 if ($photoTag->litter_object_id === null) {
@@ -66,7 +63,7 @@ class MigrationScriptVersionFive extends Command
                 } else {
                     $photoTag = PhotoTag::firstOrCreate([
                         'photo_id' => $photo->id,
-                        'category_id' => $newCategory->id,
+                        'category_id' => $category->id,
                         'litter_object_id' => $newObject->id,
                         'quantity' => $quantity
                     ]);
@@ -81,7 +78,7 @@ class MigrationScriptVersionFive extends Command
                     } else {
                         $photoTag = PhotoTag::firstOrCreate([
                             'photo_id' => $photo->id,
-                            'category_id' => $newCategory?->id,
+                            'category_id' => $category?->id,
                             'litter_object_id' => $newObject?->id,
                             'material_id' => $newMaterial->id,
                             'quantity' => $quantity

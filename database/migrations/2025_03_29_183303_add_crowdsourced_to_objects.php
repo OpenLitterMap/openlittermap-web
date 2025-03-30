@@ -8,23 +8,57 @@ return new class extends Migration
 {
     public function up(): void
     {
+        Schema::table('categories', function (Blueprint $table) {
+            $table->boolean('crowdsourced')->default(false)->after('key');
+        });
+
         Schema::table('litter_objects', function (Blueprint $table) {
-            $table->boolean('is_custom')->default(false);
+            $table->boolean('crowdsourced')->default(false)->after('key');
         });
 
         Schema::table('materials', function (Blueprint $table) {
-            $table->boolean('is_custom')->default(false);
+            $table->boolean('crowdsourced')->default(false)->after('key');
+        });
+
+        Schema::table('brandslist', function (Blueprint $table) {
+            $table->boolean('crowdsourced')->default(false)->after('key');
+        });
+
+        Schema::table('custom_tags_new', function (Blueprint $table) {
+            $table->boolean('crowdsourced')->default(false)->after('key');
         });
     }
 
     public function down(): void
     {
-        Schema::table('litter_objects', function (Blueprint $table) {
-            $table->dropColumn('is_custom');
-        });
+        if (Schema::hasColumn('categories', 'crowdsourced')) {
+            Schema::table('categories', function (Blueprint $table) {
+                $table->dropColumn('crowdsourced');
+            });
+        }
 
-        Schema::table('materials', function (Blueprint $table) {
-            $table->dropColumn('is_custom');
-        });
+        if (Schema::hasColumn('litter_objects', 'crowdsourced')) {
+            Schema::table('litter_objects', function (Blueprint $table) {
+                $table->dropColumn('crowdsourced');
+            });
+        }
+
+        if (Schema::hasColumn('materials', 'crowdsourced')) {
+            Schema::table('materials', function (Blueprint $table) {
+                $table->dropColumn('crowdsourced');
+            });
+        }
+
+        if (Schema::hasColumn('brandslist', 'crowdsourced')) {
+            Schema::table('brandslist', function (Blueprint $table) {
+                $table->dropColumn('crowdsourced');
+            });
+        }
+
+        if (Schema::hasColumn('custom_tags_new', 'crowdsourced')) {
+            Schema::table('custom_tags_new', function (Blueprint $table) {
+                $table->dropColumn('crowdsourced');
+            });
+        }
     }
 };
