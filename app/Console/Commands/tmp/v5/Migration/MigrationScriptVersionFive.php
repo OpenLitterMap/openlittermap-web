@@ -47,8 +47,7 @@ class MigrationScriptVersionFive extends Command
         }
     }
 
-
-    //            $this->updateTotals($photo);
+//            $this->updateTotals($photo);
 //            $this->updateTimeSeries($photo);
 //            $this->updateLeaderboards($photo);
 //            $this->updateUserAchievements($photo);
