@@ -11,18 +11,24 @@ class Smoking extends LitterCategory
     public static function types (): array
     {
         return [
-            'butts',
-            'lighters',
-            'cigaretteBox',
-            'tobaccoPouch',
-            'skins',
-            'smoking_plastic',
-            'filters',
-            'filterbox',
-            'vape_pen',
-            'vape_oil',
-            'smokingOther',
+            'butts', // same
+            'lighters', // same
+            'cigaretteBox', // now cigarette_box
+            'tobaccoPouch', // same
+            'skins', // now rollingPapers
+            'smoking_plastic', // now packaging with materials: plastic, cellophane
+            'filters', // now with materials: plastic, biodegradable
+            'filterbox', // missing
+            'vape_pen', // now vapePen
+            'vape_oil', // now vapeOil
+            'smokingOther', // now other
+
+            // new
+            // match_box
+            // pipe
+            // bong
+            // grinder
+            // ashtray
         ];
     }
-
 }
