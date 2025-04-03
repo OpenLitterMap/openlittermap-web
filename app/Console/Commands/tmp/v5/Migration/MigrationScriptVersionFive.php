@@ -43,7 +43,6 @@ class MigrationScriptVersionFive extends Command
         foreach ($photos->cursor() as $photo)
         {
             $this->updateTagsService->updateTags($photo);
-            $this->updateTagsService->updateCustomTags($photo);
         }
     }
 

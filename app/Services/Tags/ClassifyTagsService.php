@@ -109,40 +109,6 @@ class ClassifyTagsService
         return ['type' => 'undefined', 'key'  => $key];
     }
 
-    /**
-     * @deprecated
-     * Transform old keys to their new mappings.
-     *
-     * If $key is recognized as an old tag,
-     * return an array describing how to transform it. Otherwise return null.
-     */
-    protected function handleDeprecatedTag(string $key): ?array
-    {
-        static $mapping = [
-
-            // Alcohol
-            'beerBottle' => [
-                'object' => 'beer_bottle',
-                'materials' => ['glass'],
-            ],
-            'paperCardAlcoholPackaging' => [
-                'object' => 'packaging',
-                'materials' => ['paper', 'cardboard'],
-            ],
-            'plasticAlcoholPackaging' => [
-                'object' => 'packaging',
-                'materials' => ['plastic'],
-            ],
-
-            // Smoking
-
-
-        ];
-
-        // If it's in our map, return the transformation. Otherwise null.
-        return $mapping[$key] ?? null;
-    }
-
     public static function normalizeDeprecatedTag(string $key): ?array
     {
         return match ($key) {
@@ -153,23 +119,104 @@ class ClassifyTagsService
             'spiritBottle' => ['object' => 'spirits_bottle', 'materials' => ['glass']],
             'wineBottle' => ['object' => 'wine_bottle', 'materials' => ['glass']],
             'brokenGlass' => ['object' => 'brokenGlass', 'materials' => ['glass']],
-            'bottleTops' => ['object' => 'bottleTop', 'materials' => ['metal', 'plastic', 'cork']],
+            'bottleTops' => ['object' => 'bottleTop', 'materials' => ['metal']],
             'paperCardAlcoholPackaging' => ['object' => 'packaging', 'materials' => ['cardboard', 'paper']],
             'plasticAlcoholPackaging' => ['object' => 'packaging', 'materials' => ['plastic']],
             'pint' => ['object' => 'pint_glass', 'materials' => ['glass']],
             'six_pack_rings' => ['object' => 'sixPackRings', 'materials' => ['plastic']],
             'alcohol_plastic_cups' => ['object' => 'cup', 'materials' => ['plastic']],
-            'alcoholOther' => ['object' => 'other', 'materials' => []],
+            'alcoholOther' => ['object' => 'other'],
+
+            // Coastal
+            'degraded_plasticbottle' => ['object' => 'bottle', 'materials' => ['plastic'], 'states' => ['degraded']],
+            'degraded_plasticbag' => ['object' => 'bag', 'materials' => ['plastic'], 'states' => ['degraded']],
+            'coastal_other' => ['object' => 'other'],
+
+            // Coffee
+            'coffeeCups' => ['object' => 'cup', 'materials' => ['paper', 'plastic', 'foam', 'ceramic', 'metal']],
+            'coffeeLids' => ['object' => 'lid', 'materials' => ['plastic', 'paper', 'bioplastic', 'plantFiber']],
+            'coffeeOther' => ['object' => 'other'],
+
+            // Food
+            'sweetWrappers' => ['object' => 'wrapper', 'materials' => ['plastic']],
+            'paperFoodPackaging' => ['object' => 'packaging', 'materials' => ['paper']],
+            'plasticFoodPackaging' => ['object' => 'packaging', 'materials' => ['plastic']],
+            'plasticCutlery' => ['object' => 'cutlery', 'materials' => ['plastic']],
+            'crisp_small' => ['object' => 'crisps', 'materials' => ['foil'], 'sizes' => ['small', 'medium']],
+            'crisp_large' => ['object' => 'crisps', 'materials' => ['foil'], 'sizes' => ['large']],
+            'styrofoam_plate' => ['object' => 'plate', 'materials' => ['styrofoam']],
+            'napkins' => ['object' => 'napkin', 'materials' => ['paper']],
+            'sauce_packet' => ['object' => 'packet', 'materials' => ['plastic']],
+            'glass_jar' => ['object' => 'jar', 'materials' => ['glass']],
+            'glass_jar_lid' => ['object' => 'lid', 'materials' => ['glass']],
+            'pizza_box' => ['object' => 'pizza_box', 'materials' => ['cardboard']],
+            'aluminium_foil' => ['object' => 'tinfoil', 'materials' => ['aluminium']],
+            'chewing_gum' => ['object' => 'gum', 'materials' => ['rubber']],
+            'foodOther' => ['object' => 'other', 'materials' => []],
+
+            // Industrial
+            'industrial_plastic' => ['object' => 'plastic', 'materials' => ['plastic']],
+            'bricks' => ['object' => 'bricks', 'materials' => ['clay']],
+            'industrial_other' => ['object' => 'other'],
+
+            // Other
+            'random_litter' => ['object' => 'randomLitter'],
+            'bags_litter' => ['object' => 'bagsLitter'],
+            'overflowing_bins' => ['object' => 'overflowingBins'],
+            'plastic_bags' => ['object' => 'plasticBags'],
+            'traffic_cone' => ['object' => 'trafficCone'],
+            'election_posters' => ['object' => 'posters'],
+            'forsale_posters' => ['object' => 'posters'],
+            'cable_tie' => ['object' => 'cableTie'],
+            'washing_up' => ['object' => 'washingUp'],
+            'life_buoy' => ['object' => 'life_buoy'],
+            'clothing' => ['object' => 'clothing'],
+            'balloons' => ['object' => 'balloons'],
+            'umbrella' => ['object' => 'umbrella', 'materials' => ['plastic', 'metal', 'cloth']],
+            'other' => ['object' => 'other'],
+
+            // Sanitary
+            'menstral' => ['object' => 'sanitaryPad', 'materials' => ['cotton', 'plastic']],
+            'deodorant' => ['object' => 'deodorant_can', 'materials' => ['aluminium']],
+            'ear_swabs' => ['object' => 'earSwabs', 'materials' => ['plastic', 'cotton']],
+            'tooth_brush' => ['object' => 'toothbrush', 'materials' => ['plastic', 'nylon', 'bamboo', 'wood']],
+            'hand_sanitiser' => ['object' => 'sanitiser', 'materials' => ['plastic']],
+            'wetwipes' => ['object' => 'wipes', 'materials' => ['fabric', 'plastic', 'biodegradable']],
+            'sanitaryOther' => ['object' => 'other'],
 
             // Smoking
             'cigaretteBox' => ['object' => 'cigarette_box', 'materials' => ['cardboard']],
             'skins' => ['object' => 'rollingPapers', 'materials' => ['paper']],
             'smoking_plastic' => ['object' => 'packaging', 'materials' => ['plastic']],
-            'filterbox' => ['object' => 'filters', 'materials' => ['plastic', 'biodegradable']],
+            'filterbox' => ['object' => 'filters', 'materials' => ['cardboard']],
             'vape_pen' => ['object' => 'vapePen', 'materials' => ['plastic', 'metal']],
             'vape_oil' => ['object' => 'vapeOil', 'materials' => ['plastic', 'glass']],
-            'smokingOther' => ['object' => 'other', 'materials' => []],
-            default => null
+            'smokingOther' => ['object' => 'other'],
+
+            // SoftDrinks
+            'waterBottle' => ['object' => 'water_bottle', 'materials' => ['plastic']],
+            'fizzyDrinkBottle' => ['object' => 'fizzy_bottle', 'materials' => ['plastic']],
+            'bottleLid' => ['object' => 'lid', 'materials' => ['plastic']],
+            'bottleLabel' => ['object' => 'label', 'materials' => ['plastic']],
+            'tinCan' => ['object' => 'soda_can', 'materials' => ['aluminium']],
+            'sportsDrink' => ['object' => 'sports_bottle', 'materials' => ['plastic']],
+            'straws' => ['object' => 'straw', 'materials' => ['plastic']],
+            'plastic_cups' => ['object' => 'cup', 'materials' => ['plastic']],
+            'plastic_cup_tops' => ['object' => 'lid', 'materials' => ['plastic']],
+            'milk_bottle' => ['object' => 'milk_bottle', 'materials' => ['plastic']],
+            'milk_carton' => ['object' => 'milk_carton', 'materials' => ['plastic']],
+            'paper_cups' => ['object' => 'cup', 'materials' => ['paper']],
+            'pullring' => ['object' => 'pullRing', 'materials' => ['aluminium']],
+            'juice_cartons' => ['object' => 'juice_carton', 'materials' => ['cardboard', 'foil', 'plastic']],
+            'juice_bottles' => ['object' => 'juice_bottle', 'materials' => ['plastic']],
+            'juice_packet' => ['object' => 'juice_pouch', 'materials' => ['plastic', 'foil']],
+            'ice_tea_bottles' => ['object' => 'iceTea_bottle', 'materials' => ['glass']],
+            'ice_tea_can' => ['object' => 'icedTea_can', 'materials' => ['aluminium']],
+            'energy_can' => ['object' => 'energy_can', 'materials' => ['aluminium']],
+            'strawpacket' => ['object' => 'straw_packaging', 'materials' => ['plastic']],
+            'styro_cup' => ['object' => 'cup', 'materials' => ['styrofoam']],
+            'broken_glass' => ['object' => 'brokenGlass', 'materials' => ['glass']],
+            'softDrinkOther' => ['object' => 'other'],
         };
     }
 
@@ -179,6 +226,7 @@ class ClassifyTagsService
     public function getCategory(string $rawKey): ?Category
     {
         $key = $this->normalize($rawKey);
+
         return Category::where('key', $key)->first();
     }
 }

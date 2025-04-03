@@ -2,12 +2,15 @@
 
 namespace Database\Seeders\Tags;
 
+use App\Models\Litter\Tags\LitterState;
+use App\Models\Litter\Tags\Taggable;
 use App\Models\Photo;
 use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\Materials;
 use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Categories\Material;
 use App\Models\Litter\Tags\CategoryLitterObject;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
 
 class GenerateTagsSeeder extends Seeder
@@ -90,7 +93,7 @@ class GenerateTagsSeeder extends Seeder
                 'fishing_gear_nets' => ['material:rope', 'material:plastic'],
                 'ghost_nets' => ['material:rope', 'material:plastic'],
                 'buoys' => ['material:plastic'],
-                'degraded_bottle' => ['material:plastic'],
+                'degraded_bottle' => ['material:plastic', 'state:degraded'],
                 'degraded_bag' => ['material:plastic'],
                 'degraded_straws' => ['material:plastic'],
                 'degraded_lighters' => ['material:plastic'],
@@ -156,7 +159,12 @@ class GenerateTagsSeeder extends Seeder
                     'material:bamboo',
                     'material:metal',
                 ],
-                'crisps' => ['material:foil'],
+                'crisps' => [
+                    'material:foil',
+                    'size:small',
+                    'size:medium',
+                    'size:large',
+                ],
                 'plate' => [
                     'material:plastic',
                     'material:paper',
@@ -172,7 +180,7 @@ class GenerateTagsSeeder extends Seeder
                 'tinfoil' => ['material:aluminium'],
                 'box' => ['material:cardboard', 'material:plastic', 'material:wood', 'material:metal'],
                 'pizza_box' => ['material:cardboard'],
-                'gum' => ['material:rubber',],
+                'gum' => ['material:rubber'],
                 'bag' => ['material:plastic', 'material:paper', 'material:cloth', 'material:bioplastic'],
                 'can' => ['material:aluminium', 'material:steel'],
                 'other',
@@ -193,6 +201,11 @@ class GenerateTagsSeeder extends Seeder
                     'material:foam',
                     'material:asphalt',
                     'material:ceramic',
+                    'material:stone'
+                ],
+                'bricks' => [
+                    'material:clay',
+                    'material:concrete',
                     'material:stone'
                 ],
                 'tape' => ['material:plastic', 'material:adhesive'],
@@ -387,10 +400,21 @@ class GenerateTagsSeeder extends Seeder
             $material = Materials::firstOrCreate(['key' => $materialKey]);
 
             if ($parent) {
-                // Attach the material in the context of the (category, litter object) pivot.
-                $this->attachMaterialToPivot($category, $parent, $material);
+                $this->makeTaggable($category, $parent, $material);
             }
-        } else {
+        }
+        elseif (str_starts_with($item, 'state:'))
+        {
+            $stateKey = substr($item, strlen('state:'));
+            $state = LitterState::firstOrCreate(['key' => $stateKey]);
+
+            if ($parent) {
+                $this->makeTaggable($category, $parent, $state);
+            }
+        }
+        // elseif size:
+        else
+        {
             // Otherwise, treat the string as a LitterObject key (e.g., "other").
             $litterObject = LitterObject::firstOrCreate(['key' => $item]);
 
@@ -426,6 +450,9 @@ class GenerateTagsSeeder extends Seeder
     }
 
     /**
+     * @deprecated
+     * This is now handled by making CategoryObjects taggable.
+     *
      * Attach a material to the contextual pivot (category, litter object).
      *
      * @param  Category      $category
@@ -440,5 +467,22 @@ class GenerateTagsSeeder extends Seeder
         ]);
 
         $categoryObject->materials()->syncWithoutDetaching([$material->id]);
+    }
+
+    /**
+     * Unified way to attach any taggable model (material, state, etc.)
+     */
+    protected function makeTaggable(Category $category, LitterObject $litterObject, Model $taggable): void
+    {
+        $categoryObject = CategoryLitterObject::firstOrCreate([
+            'category_id'      => $category->id,
+            'litter_object_id' => $litterObject->id,
+        ]);
+
+        Taggable::firstOrCreate([
+            'category_litter_object_id' => $categoryObject->id,
+            'taggable_type'             => get_class($taggable),
+            'taggable_id'               => $taggable->id,
+        ]);
     }
 }

@@ -17,6 +17,10 @@ class Taggable extends Model
         'count',
     ];
 
+    // Brands
+    // Materials
+    // State
+    // Sizes
     public function taggable(): MorphTo
     {
         return $this->morphTo();
