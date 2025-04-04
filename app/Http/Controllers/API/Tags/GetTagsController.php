@@ -7,7 +7,7 @@ use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\Materials;
 use App\Models\Litter\Tags\LitterObject;
-use App\Models\Litter\Tags\CategoryLitterObject;
+use App\Models\Litter\Tags\CategoryObject;
 use Illuminate\Support\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -68,7 +68,7 @@ class GetTagsController extends Controller
         $materialsKeys = $request['materials'] ? explode(',', $request['materials']) : null;
         $searchQuery   = $request['search'] ?? null;
 
-        $query = CategoryLitterObject::query();
+        $query = CategoryObject::query();
 
         if ($categoryKey) {
             $query->whereHas('category', function($q) use ($categoryKey) {

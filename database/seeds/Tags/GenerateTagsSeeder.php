@@ -9,7 +9,7 @@ use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\Materials;
 use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Categories\Material;
-use App\Models\Litter\Tags\CategoryLitterObject;
+use App\Models\Litter\Tags\CategoryObject;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
 
@@ -419,7 +419,7 @@ class GenerateTagsSeeder extends Seeder
             $litterObject = LitterObject::firstOrCreate(['key' => $item]);
 
             // Create (or update) the pivot record for the category and litter object.
-            CategoryLitterObject::firstOrCreate([
+            CategoryObject::firstOrCreate([
                 'category_id'      => $category->id,
                 'litter_object_id' => $litterObject->id,
             ]);
@@ -440,7 +440,7 @@ class GenerateTagsSeeder extends Seeder
         $litterObject = LitterObject::firstOrCreate(['key' => $key]);
 
         // Create (or update) the pivot record between the category and this litter object.
-        CategoryLitterObject::firstOrCreate([
+        CategoryObject::firstOrCreate([
             'category_id'      => $category->id,
             'litter_object_id' => $litterObject->id,
         ]);
@@ -461,7 +461,7 @@ class GenerateTagsSeeder extends Seeder
      */
     protected function attachMaterialToPivot(Category $category, LitterObject $litterObject, Materials $material): void
     {
-        $categoryObject = CategoryLitterObject::firstOrCreate([
+        $categoryObject = CategoryObject::firstOrCreate([
             'category_id'      => $category->id,
             'litter_object_id' => $litterObject->id,
         ]);
@@ -474,7 +474,7 @@ class GenerateTagsSeeder extends Seeder
      */
     protected function makeTaggable(Category $category, LitterObject $litterObject, Model $taggable): void
     {
-        $categoryObject = CategoryLitterObject::firstOrCreate([
+        $categoryObject = CategoryObject::firstOrCreate([
             'category_id'      => $category->id,
             'litter_object_id' => $litterObject->id,
         ]);

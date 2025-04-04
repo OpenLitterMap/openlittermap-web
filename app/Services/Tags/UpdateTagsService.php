@@ -10,7 +10,7 @@ use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Litter\Tags\PhotoTagExtraTags;
 use App\Models\Litter\Tags\Taggable;
 use App\Models\Photo;
-use App\Models\Litter\Tags\CategoryLitterObject;
+use App\Models\Litter\Tags\CategoryObject;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Log;
 
@@ -37,22 +37,25 @@ class UpdateTagsService
             return;
         }
 
-        // Step 1: Parse all tags by category key
-        // E.g. $photo->tags = ["smoking" => ["butts" => 1], "alcohol" => ["beerBottle" => 1]]
-        $newTags = $this->transformTags($photo->tags, $photo->customTags);
+        // Step 1: Parse all the photos tags
+        // We don't know the relations between the tags yet.
+        $parsedTags = $this->parseTags($photo);
 
         // Step 2: Populate new pivot + morph structure
-        $this->populatePivotAndTaggables($newTags);
+        $this->createPivotsAndTaggables($photo, $parsedTags);
 
         // Step 3: Create legacy photo_tags + photo_tag_extras
-        $this->createLegacyPhotoTagData($photo, $newTags);
+        $this->createPhotoTags($photo, $parsedTags);
     }
 
-    protected function transformTags(array $originalTags, Collection $customTags): array
+    protected function parseTags(Photo $photo): array
     {
         $result = [];
+        $originalTags = $photo->tags ?? [];
+        $customTags = $photo->customTags ?? [];
 
-        foreach ($originalTags as $categoryKey => $oldTags)
+        // E.g. [["smoking" => ["butts" => 1], "alcohol" => ["beerBottle" => 1], "brands" => ["pepsi" => 1, "marlboro" => 1]]
+        foreach ($originalTags as $categoryKey => $items)
         {
             $category = $this->classifyTags->getCategory($categoryKey);
 
@@ -61,111 +64,40 @@ class UpdateTagsService
                 continue;
             }
 
-            // Get all data from each tag
-            // We don't know their relationships yet.
-            [$objects, $brands, $materials, $customTagsNew] = $this->getObjectsFromTags($oldTags);
-
             // Store in final array
             $result[$categoryKey] = [
                 'category_id'   => $category->id,
-                'objects'       => $objects,
-                'brands'        => $brands,
-                'materials'     => $materials,
-                'customTagsNew' => $customTagsNew,
+                'objects'       => [],
+                'brands'        => [],
+                'materials'     => [],
+                'customTagsNew' => [],
             ];
+
+            foreach ($items as $tag => $count) {
+                $parsed = $this->classifyTags->classify($tag);
+                $parsed['count'] = (int) $count ?: 1;
+
+                match ($parsed['type']) {
+                    'object' => $result[$categoryKey]['objects'][] = $parsed,
+                    'brand' => $result[$categoryKey]['brands'][] = $parsed,
+                    'material' => $result[$categoryKey]['materials'][] = $parsed,
+                    default => Log::info("Unhandled tag type: {$parsed['type']} for tag: {$tag}")
+                };
+            }
+        }
+
+        if (!empty($customTags)) {
+            foreach ($customTags as $ctag) {
+                $parsed = $this->classifyTags->normalizeCustomTag($ctag);
+                $result['custom_tags'][] = [
+                    'key'   => $parsed['key'],
+                    'id'    => $parsed['id'],
+                    'count' => $parsed['count'] ?? 1,
+                ];
+            }
         }
 
         return $result;
-    }
-
-    protected function getObjectsFromTags (array $tags): array
-    {
-        $objects    = [];
-        $brands     = [];
-        $materials  = [];
-        $customTags = [];
-
-        foreach ($tags as $tag => $qty)
-        {
-            $qty = (int) $qty ?: 1;
-
-            $classified = $this->classifyTags->classify($tag);
-
-            if ($classified['type'] === 'undefined') {
-                Log::warning("Undefined tag: {$tag}");
-                continue;
-            }
-
-            switch ($classified['type']) {
-                case 'object':
-                    $objData = [
-                        'key'   => $classified['key'],
-                        'id'    => $classified['id'],
-                        'count' => $qty,
-                    ];
-
-                    // If the classifier returned extra materials or brands,
-                    // we can look them up & attach as needed
-                    $extraMaterialIds = $this->fetchMaterialIds($classified['materials'] ?? []);
-                    if (!empty($extraMaterialIds)) {
-                        $objData['extra_material_ids'] = $extraMaterialIds;
-                    }
-
-                    $objects[] = $objData;
-                    break;
-
-                case 'brand':
-                    $brands[] = [
-                        'key'   => $classified['key'],
-                        'id'    => $classified['id'],
-                        'count' => $qty,
-                    ];
-                    break;
-
-                case 'material':
-                    $materials[] = [
-                        'key'   => $classified['key'],
-                        'id'    => $classified['id'],
-                        'count' => $qty,
-                    ];
-                    break;
-
-                case 'custom':
-                    $customTags[] = [
-                        'key'   => $classified['key'],
-                        'id'    => $classified['id'],
-                        'count' => $qty,
-                    ];
-                    break;
-
-                case 'category':
-                    Log::info("Encountered category tag (unexpected here): {$classified['key']}");
-                    break;
-            }
-        }
-
-        return [$objects, $brands, $materials, $customTags];
-    }
-
-    /**
-     * Utility to convert an array of material keys into their DB IDs if they exist.
-     * e.g. $materials = ['paper', 'cardboard'] => [11, 12].
-     * This uses classifyNewKey() or direct lookup of $this->classifyTags->materials to do so.
-     */
-    protected function fetchMaterialIds(array $materialKeys): array
-    {
-        $ids = [];
-        foreach ($materialKeys as $mKey) {
-            // We can reuse classifyNewKey or do direct array checks
-            $classRes = $this->classifyTags->classifyNewKey($mKey);
-
-            if ($classRes['type'] === 'material') {
-                $ids[] = $classRes['id'];
-            } else {
-                Log::warning("Extra material not found: {$mKey}");
-            }
-        }
-        return $ids;
     }
 
     /**
@@ -174,47 +106,39 @@ class UpdateTagsService
      * ---------------------------------------------------------------------
      *
      * For each category => multiple objects, we:
-     *   - Create/find CategoryLitterObject pivot row
+     *   - Create/find CategoryObject pivot row
      *   - Attach brand(s) or material(s) in `taggables` (via ->brands()->sync, etc.)
      *   - If an object has "extra_material_ids," attach them as well
      */
-    protected function populatePivotAndTaggables(array $parsedData): void
+    protected function createPivotsAndTaggables(Photo $photo, array $parsed): void
     {
-        foreach ($parsedData as $categoryKey => $group)
+        foreach ($parsed as $groupKey => $group)
         {
-            $categoryId = $group['category_id'];
-            $objects    = $group['objects'];
-            $brands     = $group['brands'];
-            $materials  = $group['materials'];
-            $customTags = $group['customTagsNew'];
-
-            // 1) If no objects, skip
-            if (empty($objects)) {
+            if (!isset($group['objects']) || empty($group['objects'])) {
                 continue;
             }
 
-            // 2) For each object, create pivot row, attach brand(s)/material(s)
-            foreach ($objects as $obj)
+            foreach ($group['objects'] as $object)
             {
-                $pivot = CategoryLitterObject::firstOrCreate([
-                    'category_id'      => $categoryId,
-                    'litter_object_id' => $obj['id'],
+                $pivot = CategoryObject::firstOrCreate([
+                    'category_id' => $group['category_id'],
+                    'litter_object_id' => $object['id'],
                 ]);
 
-                $this->attachTaggables($pivot->id, $brands, BrandList::class);
-                $this->attachTaggables($pivot->id, $materials, Materials::class);
-                $this->attachTaggables($pivot->id, $customTags, CustomTagNew::class);
+                $this->attachTaggables($pivot->id, $group['brands'], BrandList::class);
+                $this->attachTaggables($pivot->id, $group['materials'], Materials::class);
+                $this->attachTaggables($pivot->id, $group['customTagsNew'], CustomTagNew::class);
 
-                // Also attach extra materials from object
-                if (!empty($obj['extra_material_ids'] ?? [])) {
-                    foreach ($obj['extra_material_ids'] as $matId) {
-                        Taggable::firstOrCreate([
-                            'category_litter_object_id' => $pivot->id,
-                            'taggable_type'             => Materials::class,
-                            'taggable_id'               => $matId,
-                        ], [
-                            'count' => $obj['count'],
-                        ]);
+                if (!empty($object['materials'] ?? [])) {
+                    foreach ($object['materials'] as $matKey) {
+                        $material = $this->classifyTags->classifyNewKey($matKey);
+                        if ($material['type'] === 'material') {
+                            Taggable::firstOrCreate([
+                                'category_litter_object_id' => $pivot->id,
+                                'taggable_type' => Materials::class,
+                                'taggable_id'   => $material['id'],
+                            ], ['count' => $object['count']]);
+                        }
                     }
                 }
             }
@@ -234,81 +158,34 @@ class UpdateTagsService
         }
     }
 
-    /**
-     * ---------------------------------------------------------------------
-     * STEP 3: Create or update legacy photo_tags + photo_tag_extras
-     * ---------------------------------------------------------------------
-     *
-     * We do this after we have the new pivot structure. In some cases,
-     * you might not need the old tables anymore, but if you do, here’s how:
-     */
-    protected function createLegacyPhotoTagData(Photo $photo, array $parsedData): void
+    protected function createPhotoTags(Photo $photo, array $parsed): void
     {
-        foreach ($parsedData as $categoryKey => $group) {
-            $categoryId = $group['category_id'];
-
-            // We only create photo_tags for “objects.” If no objects, we skip.
-            if (empty($group['objects'])) {
+        foreach ($parsed as $groupKey => $group) {
+            if (!isset($group['objects']) || empty($group['objects'])) {
                 continue;
             }
 
-            foreach ($group['objects'] as $objIndex => $obj) {
-                // A) Create the main photo_tag for this object
-                $photoTag = PhotoTag::create([
+            foreach ($group['objects'] as $object) {
+                PhotoTag::create([
                     'photo_id'         => $photo->id,
-                    'category_id'      => $categoryId,
-                    'litter_object_id' => $obj['id'],
-                    'quantity'         => $obj['count'],
+                    'category_id'      => $group['category_id'],
+                    'litter_object_id' => $object['id'],
+                    'quantity'         => $object['count'],
                     'picked_up'        => !$photo->remaining,
                 ]);
+            }
+        }
 
-                // B) For brand(s), we can create PhotoTagExtraTags with tag_type='brand'
-                //    Example naive logic: if exactly one brand => link it
-                //    If multiple brands => skip or attach all
-                $brands = $group['brands'] ?? [];
-                if (count($brands) === 1) {
-                    $brand = $brands[0];
-                    PhotoTagExtraTags::create([
-                        'photo_tag_id' => $photoTag->id,
-                        'tag_type'     => 'brand',
-                        'tag_type_id'  => $brand['id'],
-                        'quantity'     => $brand['count'],
-                        'index'        => $objIndex,
-                    ]);
-                }
-
-                // C) For material(s), also store them as extras
-                //    Combine top-level materials + any extra from object
-                $materials = $group['materials'] ?? [];
-                $attachAllMaterialIds = [];
-                foreach ($materials as $mat) {
-                    // We'll store them in array to create multiple PhotoTagExtraTags
-                    $attachAllMaterialIds[] = [
-                        'id'    => $mat['id'],
-                        'count' => $mat['count'],
-                    ];
-                }
-                // Add object-level extra materials
-                if (!empty($obj['extra_material_ids'] ?? [])) {
-                    foreach ($obj['extra_material_ids'] as $mid) {
-                        $attachAllMaterialIds[] = [
-                            'id'    => $mid,
-                            'count' => $obj['count'],
-                        ];
-                    }
-                }
-
-                // Now create PhotoTagExtraTags for each
-                foreach ($attachAllMaterialIds as $mData) {
-                    PhotoTagExtraTags::create([
-                        'photo_tag_id' => $photoTag->id,
-                        'tag_type'     => 'material',
-                        'tag_type_id'  => $mData['id'],
-                        'quantity'     => $mData['count'],
-                        'index'        => $objIndex,
-                    ]);
-                }
+        if (!empty($parsed['custom_tags'] ?? [])) {
+            foreach ($parsed['custom_tags'] as $custom) {
+                PhotoTag::firstOrCreate([
+                    'photo_id'              => $photo->id,
+                    'custom_tag_primary_id' => $custom['id'],
+                    'quantity'              => $custom['count'],
+                    'picked_up'             => !$photo->remaining,
+                ]);
             }
         }
     }
+
 }

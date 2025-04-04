@@ -46,9 +46,11 @@ class MigrationScriptVersionFive extends Command
         }
     }
 
+// Redis
 //            $this->updateTotals($photo);
 //            $this->updateTimeSeries($photo);
 //            $this->updateLeaderboards($photo);
+// New
 //            $this->updateUserAchievements($photo);
 
     protected function updateTotals (Photo $photo): void {

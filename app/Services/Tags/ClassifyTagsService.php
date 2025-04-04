@@ -220,6 +220,51 @@ class ClassifyTagsService
         };
     }
 
+    public function normalizeCustomTag(string $rawTag): array
+    {
+        $tag = trim($rawTag);
+        $typeHint = null;
+        $count = 1;
+
+        // Remove trailing =X if present
+        if (preg_match('/^(.*)=(\d+)$/', $tag, $matches)) {
+            $tag = trim($matches[1]);
+            $count = (int) $matches[2];
+        }
+
+        // Handle optional prefix (e.g. Brand:, Material:)
+        if (str_contains($tag, ':')) {
+            [$prefix, $value] = array_map('trim', explode(':', $tag, 2));
+            $valid = ['brand', 'category', 'object', 'material'];
+            if (in_array(strtolower($prefix), $valid)) {
+                $typeHint = ucfirst(strtolower($prefix));
+                $tag = $value;
+            }
+        }
+
+        $key = strtolower($tag);
+        $type = $typeHint ?? $this->guessTagType($key);
+
+        // Create missing records if needed
+        $result = $this->createAndReturn($key, match ($type) {
+            'Category' => Category::class,
+            'Brand'    => BrandList::class,
+            'Object'   => LitterObject::class,
+            'Material' => Materials::class,
+            default    => CustomTagNew::class,
+        }, match ($type) {
+            'Category' => $this->categories,
+            'Brand'    => $this->brands,
+            'Object'   => $this->objects,
+            'Material' => $this->materials,
+            default    => $this->customTags,
+        }, strtolower($type));
+
+        $result['count'] = $count;
+        return $result;
+    }
+
+
     /**
      * Helper to fetch Category by normalized key.
      */
@@ -228,5 +273,19 @@ class ClassifyTagsService
         $key = $this->normalize($rawKey);
 
         return Category::where('key', $key)->first();
+    }
+
+    protected function createAndReturn(string $key, string $model, array &$cache, string $type): array
+    {
+        if (!array_key_exists($key, $cache)) {
+            $created = $model::firstOrCreate(['key' => $key], ['crowdsourced' => true]);
+            $cache[$key] = $created->id;
+        }
+
+        return [
+            'type' => $type,
+            'key'  => $key,
+            'id'   => $cache[$key],
+        ];
     }
 }

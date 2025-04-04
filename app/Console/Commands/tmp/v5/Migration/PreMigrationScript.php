@@ -10,23 +10,26 @@ use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\Materials;
 use App\Models\Litter\Tags\LitterObject;
 
+/**
+ * Loops over original CustomTags data and creates new Category, Objects, Materials and Brands.
+ */
 class PreMigrationScript extends Command
 {
     protected $signature = 'olm:update:pre-migration-v5';
-    protected $description = 'Process tags from custom_tags with simple classification and create new records if not already found.';
+    protected $description = 'Process custom_tags with simple classification and create new records if not already found.';
 
     // Prevent duplicate log messages
-    protected $loggedTags = [];
+    protected array $loggedTags = [];
 
     // Pre-loaded arrays of known keys (all lowercased)
-    protected $brandKeys = [];
-    protected $categoryKeys = [];
-    protected $objectKeys = [];
-    protected $materialKeys = [];
-    protected $customTagKeys = [];
+    protected array $brandKeys = [];
+    protected array $categoryKeys = [];
+    protected array $objectKeys = [];
+    protected array $materialKeys = [];
+    protected array $customTagKeys = [];
 
     // Custom category mappings (column A => column B)
-    protected $categoryMaps = [
+    protected array $categoryMaps = [
         'alcohol can'      => 'alcohol',
         'bikepart'         => 'bikeparts',
         'narcotics'        => 'drugs',
@@ -40,7 +43,7 @@ class PreMigrationScript extends Command
         'medicine'         => 'medical',
     ];
 
-    protected $subcategories = [
+    protected array $subcategories = [
         'icecream'    => 'food',
         'dairy'       => 'food',
         'fruit'       => 'food',
@@ -50,13 +53,13 @@ class PreMigrationScript extends Command
         'bicycle'     => 'cycling',
     ];
 
-    protected $materialMaps = [
+    protected array $materialMaps = [
         'platic' => 'plastic',
         'plasric' => 'plastic',
         'cardboard packaging' => 'cardboard',
     ];
 
-    public function handle()
+    public function handle(): void
     {
         $this->info("🚀 Starting to process custom_tags...");
 
@@ -67,10 +70,10 @@ class PreMigrationScript extends Command
         $this->materialKeys = array_map('strtolower', Materials::pluck('key')->all());
         $this->customTagKeys = array_map('strtolower', CustomTagNew::pluck('key')->all());
 
-        // Process custom tags in chunks
+        // Production data was imported into our local custom_tags table.
         CustomTag::chunk(100, function ($customTags) {
             foreach ($customTags as $customTag) {
-                $this->processTag($customTag->tag);
+                $this->processCustomTag($customTag->tag);
             }
         });
 
@@ -89,9 +92,9 @@ class PreMigrationScript extends Command
      * If the tag contains a colon and the prefix matches a generic type,
      * use that type hint. Otherwise, split and process each segment.
      */
-    protected function processTag(string $rawTag)
+    protected function processCustomTag(string $rawTag): void
     {
-        if (strpos($rawTag, ':') !== false) {
+        if (str_contains($rawTag, ':')) {
             list($prefix, $value) = array_map('trim', explode(':', $rawTag, 2));
             $genericTypes = ['brand', 'category', 'object', 'material'];
             if (in_array(strtolower($prefix), $genericTypes)) {
@@ -103,6 +106,7 @@ class PreMigrationScript extends Command
             }
             return;
         }
+
         $this->processSegment(trim($rawTag));
     }
 

@@ -3,7 +3,7 @@
 namespace Tests\Feature\Tags;
 
 use App\Models\Litter\Tags\Category;
-use App\Models\Litter\Tags\CategoryLitterObject;
+use App\Models\Litter\Tags\CategoryObject;
 use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\Materials;
 use Database\Seeders\Tags\GenerateTagsSeeder;
@@ -107,7 +107,7 @@ class GenerateTagsSeederTest extends TestCase
         $smokingCategory = Category::where('key', 'smoking')->first();
         $buttsObject = LitterObject::where('key', 'butts')->first();
 
-        $categoryLitterObject = CategoryLitterObject::where([
+        $categoryLitterObject = CategoryObject::where([
             'category_id' => $smokingCategory->id,
             'litter_object_id' => $buttsObject->id
         ])->first();

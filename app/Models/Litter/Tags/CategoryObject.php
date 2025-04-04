@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class CategoryLitterObject extends Pivot
+class CategoryObject extends Pivot
 {
     public $incrementing = true;
 

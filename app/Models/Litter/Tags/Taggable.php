@@ -28,6 +28,6 @@ class Taggable extends Model
 
     public function categoryLitterObject(): BelongsTo
     {
-        return $this->belongsTo(CategoryLitterObject::class);
+        return $this->belongsTo(CategoryObject::class);
     }
 }
