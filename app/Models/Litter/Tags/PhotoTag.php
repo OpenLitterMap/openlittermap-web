@@ -39,4 +39,18 @@ class PhotoTag extends Model
     {
         return $this->belongsTo(Brand::class, 'brand_id');
     }
+
+    public function attachExtraTags (array $extras, string $type, int $index): void
+    {
+        foreach ($extras as $tag) {
+            PhotoTagExtraTags::firstOrCreate([
+                'photo_tag_id' => $this->id,
+                'tag_type' => $type,
+                'tag_type_id' => $tag['id'],
+                'index' => $index,
+            ], [
+                'quantity' => $tag['quantity'],
+            ]);
+        }
+    }
 }

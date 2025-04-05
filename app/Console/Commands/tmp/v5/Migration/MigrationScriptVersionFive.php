@@ -30,7 +30,6 @@ class MigrationScriptVersionFive extends Command
         UpdateTagsService $updateTagsService
     ) {
         parent::__construct();
-
         $this->updateTagsService = $updateTagsService;
     }
 
@@ -40,10 +39,17 @@ class MigrationScriptVersionFive extends Command
             ->select('id', 'datetime', 'user_id', 'country_id', 'state_id', 'city_id', 'remaining')
             ->orderBy('id', 'desc');
 
+        $bar = $this->output->createProgressBar($photos->count());
+        $bar->start();
+
         foreach ($photos->cursor() as $photo)
         {
             $this->updateTagsService->updateTags($photo);
+            $bar->advance();
         }
+
+        $bar->finish();
+        $this->info("\n✅ Migration complete.");
     }
 
 // Redis

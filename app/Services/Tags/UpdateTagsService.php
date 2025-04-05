@@ -2,16 +2,12 @@
 
 namespace App\Services\Tags;
 
-use App\Models\Litter\Tags\BrandList;
-use App\Models\Litter\Tags\Category;
-use App\Models\Litter\Tags\CustomTagNew;
-use App\Models\Litter\Tags\Materials;
-use App\Models\Litter\Tags\PhotoTag;
-use App\Models\Litter\Tags\PhotoTagExtraTags;
-use App\Models\Litter\Tags\Taggable;
 use App\Models\Photo;
+use App\Models\Litter\Tags\PhotoTag;
+use App\Models\Litter\Tags\BrandList;
+use App\Models\Litter\Tags\Materials;
+use App\Models\Litter\Tags\CustomTagNew;
 use App\Models\Litter\Tags\CategoryObject;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Log;
 
 class UpdateTagsService
@@ -24,11 +20,11 @@ class UpdateTagsService
     }
 
     /**
-     * Main method to handle the migration or update of tags for a photo.
+     * Main method to handle the migration.
      *
-     *  1) Parse $photo->tags (old or new) and classify them (objects, materials, brands, etc.).
+     *  1) Parse deprecating $photo->tags and classify them into new format (objects, materials, brands, etc.).
      *  2) Populate pivot + morph data (category_litter_object + taggables).
-     *  3) Create legacy photo_tags + photo_tag_extras.
+     *  3) Create new photo_tags + photo_tag_extras.
      */
     public function updateTags(Photo $photo): void
     {
@@ -37,12 +33,15 @@ class UpdateTagsService
             return;
         }
 
-        // Step 1: Parse all the photos tags
+        // Step 1: Parse all the photos tags into the new format.
         // We don't know the relations between the tags yet.
         $parsedTags = $this->parseTags($photo);
 
         // Step 2: Populate new pivot + morph structure
-        $this->createPivotsAndTaggables($photo, $parsedTags);
+        // Create relationships between the tags
+        // eg softdrinks.energy_can => redbull, monster
+        // eg alcohol.beer_can => budweiser, heineken
+        $this->createTaggableRelationships($photo, $parsedTags);
 
         // Step 3: Create legacy photo_tags + photo_tag_extras
         $this->createPhotoTags($photo, $parsedTags);
@@ -52,7 +51,7 @@ class UpdateTagsService
     {
         $result = [];
         $originalTags = $photo->tags ?? [];
-        $customTags = $photo->customTags ?? [];
+        $customTagsOld = $photo->customTags ?? [];
 
         // E.g. [["smoking" => ["butts" => 1], "alcohol" => ["beerBottle" => 1], "brands" => ["pepsi" => 1, "marlboro" => 1]]
         foreach ($originalTags as $categoryKey => $items)
@@ -64,35 +63,35 @@ class UpdateTagsService
                 continue;
             }
 
-            // Store in final array
             $result[$categoryKey] = [
-                'category_id'   => $category->id,
-                'objects'       => [],
-                'brands'        => [],
-                'materials'     => [],
-                'customTagsNew' => [],
+                'category_id' => $category->id,
+                'objects'     => [],
+                'brands'      => [],
+                'materials'   => [],
+                'customTags'  => [],
             ];
 
-            foreach ($items as $tag => $count) {
+            foreach ($items as $tag => $quantity) {
                 $parsed = $this->classifyTags->classify($tag);
-                $parsed['count'] = (int) $count ?: 1;
+                $parsed['quantity'] = (int) $quantity ?: 1;
 
                 match ($parsed['type']) {
                     'object' => $result[$categoryKey]['objects'][] = $parsed,
                     'brand' => $result[$categoryKey]['brands'][] = $parsed,
                     'material' => $result[$categoryKey]['materials'][] = $parsed,
+                    'custom' => $result[$categoryKey]['customTags'][] = $parsed,
                     default => Log::info("Unhandled tag type: {$parsed['type']} for tag: {$tag}")
                 };
             }
         }
 
-        if (!empty($customTags)) {
-            foreach ($customTags as $ctag) {
-                $parsed = $this->classifyTags->normalizeCustomTag($ctag);
+        if (!empty($customTagsOld)) {
+            foreach ($customTagsOld as $customTagOld) {
+                $parsed = $this->classifyTags->normalizeCustomTag($customTagOld);
                 $result['custom_tags'][] = [
                     'key'   => $parsed['key'],
                     'id'    => $parsed['id'],
-                    'count' => $parsed['count'] ?? 1,
+                    'quantity' => $parsed['quantity'] ?? 1,
                 ];
             }
         }
@@ -100,92 +99,86 @@ class UpdateTagsService
         return $result;
     }
 
-    /**
-     * ---------------------------------------------------------------------
-     * STEP 2: Create or update the new pivot + morph structure
-     * ---------------------------------------------------------------------
-     *
-     * For each category => multiple objects, we:
-     *   - Create/find CategoryObject pivot row
-     *   - Attach brand(s) or material(s) in `taggables` (via ->brands()->sync, etc.)
-     *   - If an object has "extra_material_ids," attach them as well
-     */
-    protected function createPivotsAndTaggables(Photo $photo, array $parsed): void
+    protected function createTaggableRelationships(Photo $photo, array $parsed): void
     {
         foreach ($parsed as $groupKey => $group)
         {
-            if (!isset($group['objects']) || empty($group['objects'])) {
+            if (empty($group['objects'])) {
                 continue;
             }
 
             foreach ($group['objects'] as $object)
             {
-                $pivot = CategoryObject::firstOrCreate([
+                $catObj = CategoryObject::firstOrCreate([
                     'category_id' => $group['category_id'],
                     'litter_object_id' => $object['id'],
                 ]);
 
-                $this->attachTaggables($pivot->id, $group['brands'], BrandList::class);
-                $this->attachTaggables($pivot->id, $group['materials'], Materials::class);
-                $this->attachTaggables($pivot->id, $group['customTagsNew'], CustomTagNew::class);
-
-                if (!empty($object['materials'] ?? [])) {
-                    foreach ($object['materials'] as $matKey) {
-                        $material = $this->classifyTags->classifyNewKey($matKey);
-                        if ($material['type'] === 'material') {
-                            Taggable::firstOrCreate([
-                                'category_litter_object_id' => $pivot->id,
-                                'taggable_type' => Materials::class,
-                                'taggable_id'   => $material['id'],
-                            ], ['count' => $object['count']]);
-                        }
-                    }
-                }
+                $catObj->attachTaggables($group['brands'], BrandList::class);
+                $catObj->attachTaggables($group['materials'], Materials::class);
+                $catObj->attachTaggables($group['customTagsNew'], CustomTagNew::class);
             }
-        }
-    }
-
-    protected function attachTaggables(int $pivotId, array $taggables, string $class): void
-    {
-        foreach ($taggables as $tag) {
-            Taggable::firstOrCreate([
-                'category_litter_object_id' => $pivotId,
-                'taggable_type'             => $class,
-                'taggable_id'               => $tag['id'],
-            ], [
-                'count' => $tag['count'],
-            ]);
         }
     }
 
     protected function createPhotoTags(Photo $photo, array $parsed): void
     {
-        foreach ($parsed as $groupKey => $group) {
-            if (!isset($group['objects']) || empty($group['objects'])) {
-                continue;
+        $hasObjects = false;
+
+        foreach ($parsed as $groupKey => $group)
+        {
+            if (!empty($group['objects']))
+            {
+                $hasObjects = true;
+
+                foreach ($group['objects'] as $index => $object) {
+
+                    $photoTag = $photo->createTag([
+                        'category_id' => $group['category_id'],
+                        'litter_object_id' => $object['id'],
+                        'quantity' => $object['quantity'],
+                        'picked_up' => !$photo->remaining,
+                    ]);
+
+                    $photoTag->attachExtraTags($group['brands'], 'brand', $index);
+                    $photoTag->attachExtraTags($group['materials'], 'material', $index);
+                    $photoTag->attachExtraTags($group['customTagsNew'], 'custom', $index);
+                }
             }
 
-            foreach ($group['objects'] as $object) {
-                PhotoTag::create([
-                    'photo_id'         => $photo->id,
-                    'category_id'      => $group['category_id'],
-                    'litter_object_id' => $object['id'],
-                    'quantity'         => $object['count'],
-                    'picked_up'        => !$photo->remaining,
-                ]);
+            if (!empty($parsed['custom_tags'] ?? [])) {
+                foreach ($parsed['custom_tags'] as $custom) {
+                    PhotoTag::firstOrCreate([
+                        'photo_id' => $photo->id,
+                        'custom_tag_primary_id' => $custom['id'],
+                        'quantity' => $custom['quantity'],
+                        'picked_up' => !$photo->remaining,
+                    ]);
+                }
             }
         }
 
-        if (!empty($parsed['custom_tags'] ?? [])) {
+        // Create PhotoTag with custom_tag_primary_id only if there were no objects
+        if (!$hasObjects && !empty($parsed['custom_tags'] ?? []))
+        {
             foreach ($parsed['custom_tags'] as $custom) {
                 PhotoTag::firstOrCreate([
-                    'photo_id'              => $photo->id,
+                    'photo_id' => $photo->id,
                     'custom_tag_primary_id' => $custom['id'],
-                    'quantity'              => $custom['count'],
-                    'picked_up'             => !$photo->remaining,
+                    'quantity' => $custom['quantity'],
+                    'picked_up' => !$photo->remaining,
                 ]);
+            }
+        }
+        elseif ($hasObjects && !empty($parsed['custom_tags'] ?? []))
+        {
+            foreach ($parsed['custom_tags'] as $index => $custom) {
+                // Attach as extra tags if objects exist
+                $lastPhotoTag = PhotoTag::where('photo_id', $photo->id)->latest()->first();
+                if ($lastPhotoTag) {
+                    $lastPhotoTag->attachPhotoTagExtras([$custom], 'custom', $index);
+                }
             }
         }
     }
-
 }

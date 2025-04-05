@@ -49,4 +49,17 @@ class CategoryObject extends Pivot
             'taggable_id'
         )->withPivot('count')->withTimestamps();
     }
+
+    public function attachTaggables(array $taggables, string $class): void
+    {
+        foreach ($taggables as $tag) {
+            Taggable::firstOrCreate([
+                'category_litter_object_id' => $this->id,
+                'taggable_type'             => $class,
+                'taggable_id'               => $tag['id'],
+            ], [
+                'quantity' => $tag['quantity'],
+            ]);
+        }
+    }
 }

@@ -61,8 +61,7 @@ class ClassifyTagsService
             // 3) Run normal classification on the new key
             $result = $this->classifyNewKey($objectKey);
 
-            // 4) Merge in the extra data from oldTagData (e.g., extra materials)
-            //    You can store them in extra fields on $result if needed:
+            // Do we need this?
             if (!empty($deprecatedTag['materials'])) {
                 // For example, store them in $result['extra_material_keys']
                 $result['materials'] = $deprecatedTag['materials'];
@@ -224,18 +223,18 @@ class ClassifyTagsService
     {
         $tag = trim($rawTag);
         $typeHint = null;
-        $count = 1;
+        $quantity = 1;
 
         // Remove trailing =X if present
         if (preg_match('/^(.*)=(\d+)$/', $tag, $matches)) {
             $tag = trim($matches[1]);
-            $count = (int) $matches[2];
+            $quantity = (int) $matches[2];
         }
 
         // Handle optional prefix (e.g. Brand:, Material:)
         if (str_contains($tag, ':')) {
             [$prefix, $value] = array_map('trim', explode(':', $tag, 2));
-            $valid = ['brand', 'category', 'object', 'material'];
+            $valid = ['brand', 'brands', 'bn', 'category', 'cat', 'object', 'objects', 'material', 'materials'];
             if (in_array(strtolower($prefix), $valid)) {
                 $typeHint = ucfirst(strtolower($prefix));
                 $tag = $value;
@@ -260,7 +259,7 @@ class ClassifyTagsService
             default    => $this->customTags,
         }, strtolower($type));
 
-        $result['count'] = $count;
+        $result['quantity'] = $quantity;
         return $result;
     }
 

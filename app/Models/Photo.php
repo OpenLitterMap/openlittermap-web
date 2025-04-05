@@ -311,4 +311,9 @@ class Photo extends Model
                 ->where('prevent_others_tagging_my_photos', true);
         });
     }
+
+    public function createTag (array $data): PhotoTag
+    {
+        return $this->photoTags()->create($data);
+    }
 }
