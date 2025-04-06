@@ -4,9 +4,11 @@ namespace App\Services\Tags;
 
 use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
+use App\Models\Litter\Tags\CategoryObject;
 use App\Models\Litter\Tags\CustomTagNew;
 use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\Materials;
+use Illuminate\Support\Facades\Log;
 
 class ClassifyTagsService
 {
@@ -287,4 +289,84 @@ class ClassifyTagsService
             'id'   => $cache[$key],
         ];
     }
+
+    public function resolveBrandObjectLinks(array $group): array
+    {
+        $brandObjectLinks = [];
+
+        $objects = $group['objects'] ?? [];
+        $brands = $group['brands'] ?? [];
+
+        if (empty($objects) || empty($brands)) {
+            return $brandObjectLinks;
+        }
+
+        // 1. Simple 1:1 match. We assume the object and brand are related.
+        if (count($objects) === 1 && count($brands) === 1)
+        {
+            $object = $objects[0];
+            $brand = $brands[0];
+
+            $catObj = CategoryObject::firstOrCreate([
+                'category_id' => $group['category_id'],
+                'litter_object_id' => $object['id'],
+            ]);
+
+            $alreadyTagged = $catObj->taggables()
+                ->where('taggable_id', $brand['id'])
+                ->where('taggable_type', BrandList::class)
+                ->exists();
+
+            if (!$alreadyTagged) {
+                $catObj->attachTaggables([$brand], BrandList::class);
+                echo "Linked brand '{$brand['key']}' to object '{$object['key']}' in category {$group['category_id']}\n";
+            }
+
+            return [[
+                'object' => $object,
+                'brand' => $brand,
+            ]];
+        }
+
+        // 2. Load taggables in bulk
+        $catObjs = CategoryObject::where('category_id', $group['category_id'])
+            ->whereIn('litter_object_id', collect($objects)->pluck('id'))
+            ->with('taggables')
+            ->get()
+            ->keyBy('litter_object_id');
+
+        // 3. Match brands using taggables
+        $matchedBrandIds = [];
+
+        // 4. Match brands to objects based on taggables
+        foreach ($objects as $object) {
+            $catObj = $catObjs[$object['id']] ?? null;
+            if (!$catObj) continue;
+
+            foreach ($brands as $brand) {
+                $matched = $catObj->taggables
+                    ->where('taggable_id', $brand['id'])
+                    ->where('taggable_type', BrandList::class)
+                    ->isNotEmpty();
+
+                if ($matched) {
+                    $brandObjectLinks[] = [
+                        'object' => $object,
+                        'brand' => $brand,
+                    ];
+                    $matchedBrandIds[] = $brand['id'];
+                }
+            }
+        }
+
+        // 5. Log unmatched brands
+        foreach ($brands as $brand) {
+            if (!in_array($brand['id'], $matchedBrandIds)) {
+                Log::warning("Unmatched brand '{$brand['key']}' (ID: {$brand['id']}) in photo ID {$photo->id}");
+            }
+        }
+
+        return $brandObjectLinks;
+    }
+
 }

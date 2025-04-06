@@ -22,14 +22,13 @@ class UpdateTagsService
     /**
      * Main method to handle the migration.
      *
-     *  1) Parse deprecating $photo->tags and classify them into new format (objects, materials, brands, etc.).
+     *  1) Parse deprecating $photo->tags into new format (objects, materials, brands, etc.).
      *  2) Populate pivot + morph data (category_litter_object + taggables).
      *  3) Create new photo_tags + photo_tag_extras.
      */
     public function updateTags(Photo $photo): void
     {
-        // If no tags exist, bail out
-        if (!is_array($photo->tags) || empty($photo->tags)) {
+        if (empty($photo->tags)) {
             return;
         }
 
@@ -88,10 +87,14 @@ class UpdateTagsService
         if (!empty($customTagsOld)) {
             foreach ($customTagsOld as $customTagOld) {
                 $parsed = $this->classifyTags->normalizeCustomTag($customTagOld);
+
+                $parsed['category_key'] = $parsed['category_key'] ?? null;
+
                 $result['custom_tags'][] = [
                     'key'   => $parsed['key'],
                     'id'    => $parsed['id'],
                     'quantity' => $parsed['quantity'] ?? 1,
+                    'category_key' => $parsed['category_key']
                 ];
             }
         }
@@ -116,7 +119,7 @@ class UpdateTagsService
 
                 $catObj->attachTaggables($group['brands'], BrandList::class);
                 $catObj->attachTaggables($group['materials'], Materials::class);
-                $catObj->attachTaggables($group['customTagsNew'], CustomTagNew::class);
+                $catObj->attachTaggables($group['customTags'], CustomTagNew::class);
             }
         }
     }
@@ -131,8 +134,8 @@ class UpdateTagsService
             {
                 $hasObjects = true;
 
-                foreach ($group['objects'] as $index => $object) {
-
+                foreach ($group['objects'] as $index => $object)
+                {
                     $photoTag = $photo->createTag([
                         'category_id' => $group['category_id'],
                         'litter_object_id' => $object['id'],
@@ -140,41 +143,48 @@ class UpdateTagsService
                         'picked_up' => !$photo->remaining,
                     ]);
 
-                    $photoTag->attachExtraTags($group['brands'], 'brand', $index);
+                    $brandLinks = $this->classifyTags->resolveBrandObjectLinks($group);
+
+                    $matchedBrands = collect($brandLinks)
+                        ->where('object.id', $object['id'])
+                        ->pluck('brand')
+                        ->unique('id')
+                        ->values()
+                        ->all();
+
+                    $photoTag->attachExtraTags($matchedBrands, 'brand', $index);
                     $photoTag->attachExtraTags($group['materials'], 'material', $index);
                     $photoTag->attachExtraTags($group['customTagsNew'], 'custom', $index);
                 }
             }
-
-            if (!empty($parsed['custom_tags'] ?? [])) {
-                foreach ($parsed['custom_tags'] as $custom) {
-                    PhotoTag::firstOrCreate([
-                        'photo_id' => $photo->id,
-                        'custom_tag_primary_id' => $custom['id'],
-                        'quantity' => $custom['quantity'],
-                        'picked_up' => !$photo->remaining,
-                    ]);
-                }
-            }
         }
 
-        // Create PhotoTag with custom_tag_primary_id only if there were no objects
+        // If no objects exist, create one PhotoTag using the first custom tag as primary
         if (!$hasObjects && !empty($parsed['custom_tags'] ?? []))
         {
-            foreach ($parsed['custom_tags'] as $custom) {
-                PhotoTag::firstOrCreate([
-                    'photo_id' => $photo->id,
-                    'custom_tag_primary_id' => $custom['id'],
-                    'quantity' => $custom['quantity'],
-                    'picked_up' => !$photo->remaining,
-                ]);
+            $customTags = $parsed['custom_tags'];
+            $primary = array_shift($customTags);
+
+            // Create the primary PhotoTag
+            $photoTag = PhotoTag::create([
+                'photo_id' => $photo->id,
+                'custom_tag_primary_id' => $primary['id'],
+                'quantity' => $primary['quantity'],
+                'picked_up' => !$photo->remaining,
+            ]);
+
+            // Attach any additional custom tags as extras
+            foreach ($customTags as $index => $customExtra) {
+                $photoTag->attachPhotoTagExtras([$customExtra], 'custom', $index);
             }
         }
         elseif ($hasObjects && !empty($parsed['custom_tags'] ?? []))
         {
-            foreach ($parsed['custom_tags'] as $index => $custom) {
+            foreach ($parsed['custom_tags'] as $index => $custom)
+            {
                 // Attach as extra tags if objects exist
                 $lastPhotoTag = PhotoTag::where('photo_id', $photo->id)->latest()->first();
+
                 if ($lastPhotoTag) {
                     $lastPhotoTag->attachPhotoTagExtras([$custom], 'custom', $index);
                 }
