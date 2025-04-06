@@ -143,7 +143,7 @@ class UpdateTagsService
                         'picked_up' => !$photo->remaining,
                     ]);
 
-                    $brandLinks = $this->classifyTags->resolveBrandObjectLinks($group);
+                    $brandLinks = $this->classifyTags->resolveBrandObjectLinks($photo->id, $group);
 
                     $matchedBrands = collect($brandLinks)
                         ->where('object.id', $object['id'])

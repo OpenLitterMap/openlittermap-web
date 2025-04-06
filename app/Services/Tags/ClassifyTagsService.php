@@ -46,7 +46,7 @@ class ClassifyTagsService
      */
     public function classify(string $tag): array
     {
-        // 1) Check if it's a deprecated tag
+        // Check if it's a deprecated tag
         $deprecatedTag = $this->normalizeDeprecatedTag($tag);
 
         if ($deprecatedTag !== null) {
@@ -57,15 +57,15 @@ class ClassifyTagsService
             //   'brands' => [],
             //   ...
             // ]
+
             // Replace $key with the new key
             $objectKey = $deprecatedTag['object'] ?? $tag;
 
-            // 3) Run normal classification on the new key
+            // Run normal classification on the new key
             $result = $this->classifyNewKey($objectKey);
 
             // Do we need this?
             if (!empty($deprecatedTag['materials'])) {
-                // For example, store them in $result['extra_material_keys']
                 $result['materials'] = $deprecatedTag['materials'];
             }
             if (!empty($deprecatedTag['brands'])) {
@@ -75,7 +75,6 @@ class ClassifyTagsService
             return $result;
         }
 
-        // If not a deprecated tag, do the normal classification
         $key = $this->normalize($tag);
 
         return $this->classifyNewKey($key);
@@ -107,6 +106,7 @@ class ClassifyTagsService
             return ['type' => 'custom', 'id' => $this->customTags[$key], 'key'  => $key];
         }
 
+        Log::notice("Undefined tag classification: '{$key}'");
         return ['type' => 'undefined', 'key'  => $key];
     }
 
@@ -227,44 +227,64 @@ class ClassifyTagsService
         $typeHint = null;
         $quantity = 1;
 
-        // Remove trailing =X if present
+        // 1. Extract quantity if "=X" exists
         if (preg_match('/^(.*)=(\d+)$/', $tag, $matches)) {
             $tag = trim($matches[1]);
             $quantity = (int) $matches[2];
         }
 
-        // Handle optional prefix (e.g. Brand:, Material:)
+        //  Extract prefix:postfix eg brand:pepsi
         if (str_contains($tag, ':')) {
             [$prefix, $value] = array_map('trim', explode(':', $tag, 2));
-            $valid = ['brand', 'brands', 'bn', 'category', 'cat', 'object', 'objects', 'material', 'materials'];
-            if (in_array(strtolower($prefix), $valid)) {
-                $typeHint = ucfirst(strtolower($prefix));
-                $tag = $value;
-            }
+            $prefix = strtolower($prefix);
+            $tag = $value;
+
+            $typeHint = match ($prefix) {
+                'brand', 'brands', 'bn' => 'Brand',
+                'category', 'cat'       => 'Category',
+                'object', 'objects'     => 'Object',
+                'material', 'materials' => 'Material',
+                default                 => null,
+            };
         }
 
         $key = strtolower($tag);
         $type = $typeHint ?? $this->guessTagType($key);
 
-        // Create missing records if needed
-        $result = $this->createAndReturn($key, match ($type) {
-            'Category' => Category::class,
-            'Brand'    => BrandList::class,
-            'Object'   => LitterObject::class,
-            'Material' => Materials::class,
-            default    => CustomTagNew::class,
-        }, match ($type) {
-            'Category' => $this->categories,
-            'Brand'    => $this->brands,
-            'Object'   => $this->objects,
-            'Material' => $this->materials,
-            default    => $this->customTags,
-        }, strtolower($type));
+        switch ($type) {
+            case 'Category': $cacheRef = &$this->categories; break;
+            case 'Brand':    $cacheRef = &$this->brands;     break;
+            case 'Object':   $cacheRef = &$this->objects;    break;
+            case 'Material': $cacheRef = &$this->materials;  break;
+            default:         $cacheRef = &$this->customTags; break;
+        }
 
-        $result['quantity'] = $quantity;
-        return $result;
+        $model = match ($type) {
+            'Category' => Category::class,
+            'Brand' => BrandList::class,
+            'Object' => LitterObject::class,
+            'Material' => Materials::class,
+            default => CustomTagNew::class,
+        };
+
+        return $this->createAndReturn(
+            $key,
+            $model,
+            $cacheRef,
+            strtolower($type),
+            $quantity
+        );
     }
 
+    protected function guessTagType(string $key): string
+    {
+        if (isset($this->brands[$key])) return 'Brand';
+        if (isset($this->objects[$key])) return 'Object';
+        if (isset($this->materials[$key])) return 'Material';
+        if (isset($this->categories[$key])) return 'Category';
+
+        return 'Custom';
+    }
 
     /**
      * Helper to fetch Category by normalized key.
@@ -276,21 +296,34 @@ class ClassifyTagsService
         return Category::where('key', $key)->first();
     }
 
-    protected function createAndReturn(string $key, string $model, array &$cache, string $type): array
+    protected function createAndReturn(string $key, string $model, array &$cache, string $type, int $quantity): array
     {
         if (!array_key_exists($key, $cache)) {
             $created = $model::firstOrCreate(['key' => $key], ['crowdsourced' => true]);
-            $cache[$key] = $created->id;
+            $id = $created->id;
+
+            // Update the passed-in local cache
+            $cache[$key] = $id;
+
+            // Update the class-level cache
+            match ($type) {
+                'category' => $this->categories[$key] = $id,
+                'brand'    => $this->brands[$key] = $id,
+                'object'   => $this->objects[$key] = $id,
+                'material' => $this->materials[$key] = $id,
+                default    => $this->customTags[$key] = $id,
+            };
         }
 
         return [
             'type' => $type,
             'key'  => $key,
             'id'   => $cache[$key],
+            'quantity' => $quantity,
         ];
     }
 
-    public function resolveBrandObjectLinks(array $group): array
+    public function resolveBrandObjectLinks(int $photoId, array $group): array
     {
         $brandObjectLinks = [];
 
@@ -362,11 +395,10 @@ class ClassifyTagsService
         // 5. Log unmatched brands
         foreach ($brands as $brand) {
             if (!in_array($brand['id'], $matchedBrandIds)) {
-                Log::warning("Unmatched brand '{$brand['key']}' (ID: {$brand['id']}) in photo ID {$photo->id}");
+                Log::warning("Unmatched brand '{$brand['key']}' (ID: {$brand['id']}) in photo ID {$photoId}");
             }
         }
 
         return $brandObjectLinks;
     }
-
 }
