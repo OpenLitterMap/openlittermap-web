@@ -1,63 +1,22 @@
 <?php
 
-namespace App\Console\Commands\tmp\v5\Migration;
+namespace App\Services\Redis;
 
-use App\Models\Litter\Categories\Brand;
 use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\Materials;
-use App\Models\Litter\Tags\PhotoTag;
-use App\Models\Location\City;
-use App\Models\Location\Country;
-use App\Models\Location\State;
 use App\Models\Photo;
-use App\Services\Tags\ClassifyTagsService;
-use App\Services\Tags\PhotoTagService;
-use App\Services\Tags\UpdateTagsService;
-use Illuminate\Console\Command;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Redis;
 
-class MigrationScriptVersionFive extends Command
+class UpdateRedisService
 {
-    protected $signature = 'olm:v5';
-    protected $description = 'Upgrade OpenLitterMap data to v5';
-
-    protected UpdateTagsService $updateTagsService;
-
-    public function __construct(
-        UpdateTagsService $updateTagsService
-    ) {
-        parent::__construct();
-        $this->updateTagsService = $updateTagsService;
-    }
-
-    public function handle(): void
+    public function updateRedis(Photo $photo): void
     {
-        $photos = Photo::query()
-            ->select('id', 'datetime', 'user_id', 'country_id', 'state_id', 'city_id', 'remaining')
-            ->orderBy('id', 'desc');
-
-        $bar = $this->output->createProgressBar($photos->count());
-        $bar->start();
-
-        foreach ($photos->cursor() as $photo)
-        {
-            $this->updateTagsService->updateTags($photo);
-            $bar->advance();
-        }
-
-        $bar->finish();
-        $this->info("\n✅ Migration complete.");
+        $this->updateTotals($photo);
+        $this->updateTimeSeries($photo);
+        $this->updateLeaderboards($photo);
     }
-
-// Redis
-//            $this->updateTotals($photo);
-//            $this->updateTimeSeries($photo);
-//            $this->updateLeaderboards($photo);
-// New
-//            $this->updateUserAchievements($photo);
 
     protected function updateTotals (Photo $photo): void {
 
@@ -81,7 +40,7 @@ class MigrationScriptVersionFive extends Command
         $materials = $photo->materials;
         $brands = $photo->brands;
 
-        $tagsCount = $tags->count();
+        $tagsCount = $photo->total_tags;
         $customTagsCount = $customTags->count();
 
         foreach ($locations as $location) {
@@ -102,27 +61,30 @@ class MigrationScriptVersionFive extends Command
             Redis::hincrby("$key:totals", 'tags', $tagsCount);
             Redis::hincrby("$key:totals", 'custom_tags', $customTagsCount);
 
-            foreach ($categories as $category) {
-
+            foreach ($categories as $category)
+            {
                 $categoryId = Category::where('key', $category)->first()->id;
 
                 Redis::hincrby("$key:totals:category", $categoryId, 1);
             }
 
             // g.categories.category.object.material
-            foreach ($objects as $object) {
+            foreach ($objects as $object)
+            {
                 $objectId = LitterObject::where('key', $object)->first()->id;
 
                 Redis::hincrby("$key:totals:objects", $objectId, 1);
             }
 
-            foreach ($materials as $material) {
+            foreach ($materials as $material)
+            {
                 $materialId = Materials::where('key', $material)->first()->id;
 
                 Redis::hincrby("$key:materials", $materialId, 1);
             }
 
-            foreach ($brands as $brand) {
+            foreach ($brands as $brand)
+            {
                 $brandId = BrandList::where('key', $brand)->first()->id;
 
                 Redis::hincrby("$key:totals:brands", $brandId, 1);
@@ -169,11 +131,5 @@ class MigrationScriptVersionFive extends Command
 
         // leaderboard:users:yyyy:mm:dd
         // leaderboard:locationType:locationId:yyyy:mm:dd
-    }
-
-    protected function updateUserAchievements (Photo $photo) {
-
-        // uploaded x days in a row
-        // track days uploaded in a row
     }
 }

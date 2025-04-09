@@ -145,7 +145,24 @@ class Photo extends Model
         return $tags;
     }
 
+    public function calculateTotalTags (): int
+    {
+        $baseTags = $this->photoTags()->sum('quantity');
+
+        $extraTags = $this->photoTags()
+            ->with('extraTags')
+            ->get()
+            ->flatMap(fn($tag) => $tag->extraTags)
+            ->sum('quantity');
+
+        $this->total_tags = $baseTags + $extraTags;
+        $this->save();
+
+        return $this->total_tags;
+    }
+
     /**
+     * @deprecated
      * Update and return the total amount of litter in a photo
      */
     public function total ()

@@ -44,6 +44,9 @@ class UpdateTagsService
 
         // Step 3: Create legacy photo_tags + photo_tag_extras
         $this->createPhotoTags($photo, $parsedTags);
+
+        // Step 4: Compute metadata
+        $photo->calculateTotalTags();
     }
 
     protected function parseTags(Photo $photo): array
@@ -79,6 +82,7 @@ class UpdateTagsService
                     'brand' => $result[$categoryKey]['brands'][] = $parsed,
                     'material' => $result[$categoryKey]['materials'][] = $parsed,
                     'custom' => $result[$categoryKey]['customTags'][] = $parsed,
+                    'undefined' => Log::warning("Undefined tag type: {$parsed['type']} for tag: {$tag}"),
                     default => Log::info("Unhandled tag type: {$parsed['type']} for tag: {$tag}")
                 };
             }
@@ -133,6 +137,7 @@ class UpdateTagsService
             if (!empty($group['objects']))
             {
                 $hasObjects = true;
+                $brandLinks = $this->classifyTags->resolveBrandObjectLinks($photo->id, $group);
 
                 foreach ($group['objects'] as $index => $object)
                 {
@@ -143,8 +148,6 @@ class UpdateTagsService
                         'picked_up' => !$photo->remaining,
                     ]);
 
-                    $brandLinks = $this->classifyTags->resolveBrandObjectLinks($photo->id, $group);
-
                     $matchedBrands = collect($brandLinks)
                         ->where('object.id', $object['id'])
                         ->pluck('brand')
@@ -154,7 +157,7 @@ class UpdateTagsService
 
                     $photoTag->attachExtraTags($matchedBrands, 'brand', $index);
                     $photoTag->attachExtraTags($group['materials'], 'material', $index);
-                    $photoTag->attachExtraTags($group['customTagsNew'], 'custom', $index);
+                    $photoTag->attachExtraTags($group['customTags'], 'custom', $index);
                 }
             }
         }
@@ -180,14 +183,11 @@ class UpdateTagsService
         }
         elseif ($hasObjects && !empty($parsed['custom_tags'] ?? []))
         {
+            $lastPhotoTag = PhotoTag::where('photo_id', $photo->id)->latest()->first();
+
             foreach ($parsed['custom_tags'] as $index => $custom)
             {
-                // Attach as extra tags if objects exist
-                $lastPhotoTag = PhotoTag::where('photo_id', $photo->id)->latest()->first();
-
-                if ($lastPhotoTag) {
-                    $lastPhotoTag->attachPhotoTagExtras([$custom], 'custom', $index);
-                }
+                $lastPhotoTag?->attachPhotoTagExtras([$custom], 'custom', $index);
             }
         }
     }

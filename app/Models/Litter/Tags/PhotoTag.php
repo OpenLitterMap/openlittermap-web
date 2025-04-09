@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Log;
 
 class PhotoTag extends Model
 {
@@ -42,15 +43,35 @@ class PhotoTag extends Model
 
     public function attachExtraTags (array $extras, string $type, int $index): void
     {
+        if (empty($extras)) {
+            return;
+        }
+
+        $rows = [];
+
         foreach ($extras as $tag) {
-            PhotoTagExtraTags::firstOrCreate([
+            if (empty($tag['id'])) {
+                Log::warning("Skipping extra tag with missing ID for type {$type}");
+                continue;
+            }
+
+            $rows[] = [
                 'photo_tag_id' => $this->id,
-                'tag_type' => $type,
-                'tag_type_id' => $tag['id'],
-                'index' => $index,
-            ], [
-                'quantity' => $tag['quantity'],
-            ]);
+                'tag_type'     => $type,
+                'tag_type_id'  => $tag['id'],
+                'index'        => $index,
+                'quantity'     => $tag['quantity'] ?? 1,
+                'created_at'   => now(),
+                'updated_at'   => now(),
+            ];
+        }
+
+        if (!empty($rows)) {
+            PhotoTagExtraTags::upsert(
+                $rows,
+                ['photo_tag_id', 'tag_type', 'tag_type_id', 'index'],
+                ['quantity', 'updated_at']
+            );
         }
     }
 }
