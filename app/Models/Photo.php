@@ -26,7 +26,10 @@ class Photo extends Model
 
     protected $appends = ['selected', 'picked_up'];
 
-    protected $casts = ['datetime'];
+    protected $casts = [
+        'datetime' => 'datetime',
+        'summary' => 'array',
+    ];
 
     /**
      * Each photo can have an array of tags.
