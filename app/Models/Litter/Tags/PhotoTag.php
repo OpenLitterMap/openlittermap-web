@@ -31,6 +31,11 @@ class PhotoTag extends Model
         return $this->belongsTo(LitterObject::class, 'litter_object_id');
     }
 
+    public function primaryCustomTag(): BelongsTo
+    {
+        return $this->belongsTo(CustomTagNew::class, 'custom_tag_primary_id');
+    }
+
     public function extraTags(): HasMany
     {
         return $this->hasMany(PhotoTagExtraTags::class);

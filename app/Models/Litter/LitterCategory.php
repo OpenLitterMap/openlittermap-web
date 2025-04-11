@@ -5,6 +5,9 @@ namespace App\Models\Litter;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/*
+ * @deprecated
+ */
 abstract class LitterCategory extends Model
 {
     use HasFactory;

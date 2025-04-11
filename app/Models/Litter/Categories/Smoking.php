@@ -4,6 +4,9 @@ namespace App\Models\Litter\Categories;
 
 use App\Models\Litter\LitterCategory;
 
+/*
+ * @deprecated
+ */
 class Smoking extends LitterCategory
 {
     protected $table = 'smoking';
