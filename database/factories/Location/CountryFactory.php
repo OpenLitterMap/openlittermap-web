@@ -26,7 +26,6 @@ class CountryFactory extends Factory
             'created_by' => User::factory()->create(),
             'country' => $this->faker->country,
             'shortcode' => $this->faker->countryCode,
-            'slug' => $this->faker->slug,
         ];
     }
 }

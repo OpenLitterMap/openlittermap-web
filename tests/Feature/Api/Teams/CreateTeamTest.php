@@ -47,6 +47,9 @@ class CreateTeamTest extends TestCase
 
     public function test_a_user_can_not_create_more_teams_than_allowed()
     {
+        $this->user->remaining_teams = 1;
+        $this->user->save();
+
         $this->postJson('/api/teams/create', [
             'name' => 'team name',
             'identifier' => 'test-id',
@@ -93,7 +96,7 @@ class CreateTeamTest extends TestCase
 
         $team = Team::whereIdentifier('test-id')->first();
         $this->assertEquals($team->id, $this->user->active_team);
-        $this->assertEquals(0, $this->user->remaining_teams);
+        $this->assertEquals(9, $this->user->remaining_teams);
 
         $teamPivot = $this->user->teams()->first();
         $this->assertNotNull($teamPivot);

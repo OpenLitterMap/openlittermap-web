@@ -21,7 +21,6 @@ class ListTeamMembersTest extends TestCase
      */
     public function test_it_can_list_team_members($guard, $route)
     {
-        /** @var Team $team */
         $team = Team::factory()->create();
         $users = User::factory(3)->create();
         $users->each(function (User $user) use ($team) {
@@ -48,9 +47,7 @@ class ListTeamMembersTest extends TestCase
      */
     public function test_team_members_have_the_correct_data($guard, $route)
     {
-        /** @var Team $team */
         $team = Team::factory()->create();
-        /** @var User $user */
         $user = User::factory()->create();
         $user->teams()->attach($team, [
             'show_name_leaderboards' => true,
@@ -73,9 +70,7 @@ class ListTeamMembersTest extends TestCase
      */
     public function test_it_hides_members_names_and_usernames_depending_on_their_settings($guard, $route)
     {
-        /** @var Team $team */
         $team = Team::factory()->create();
-        /** @var User $user */
         $user = User::factory()->create();
         $user->teams()->attach($team, [
             'show_name_leaderboards' => false,
@@ -93,12 +88,9 @@ class ListTeamMembersTest extends TestCase
      */
     public function test_only_members_of_a_team_can_view_its_members($guard, $route)
     {
-        /** @var Team $team */
         $team = Team::factory()->create();
-        /** @var User $user */
         $user = User::factory()->create();
         $user->teams()->attach($team);
-        /** @var User $nonMember */
         $nonMember = User::factory()->create();
 
         $response = $this->actingAs($nonMember, $guard)->getJson($route . '?team_id=' . $team->id);

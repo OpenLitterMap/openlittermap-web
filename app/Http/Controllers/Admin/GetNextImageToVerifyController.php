@@ -4,49 +4,32 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Photo;
 use App\Http\Requests\GetImageForVerificationRequest;
-
 use App\Http\Controllers\Controller;
-
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Database\Eloquent\Builder;
 
 class GetNextImageToVerifyController extends Controller
 {
-    /**
-     * Get the next image to verify
-     *
-     * @param GetImageForVerificationRequest $request
-     * @return array
-     */
-    public function __invoke (GetImageForVerificationRequest $request): array
+    public function __invoke (GetImageForVerificationRequest $request): JsonResponse
     {
         // Photos that are uploaded and tagged come first
-        /** @var Photo $photo */
         $photo = $this->filterPhotos()
             ->when($request->skip, function ($q) use ($request) {
                 $q->skip((int) $request->skip);
             })
-            ->where('verification', 0.1)
+            ->where(function ($query) {
+                $query->where('verification', 0)
+                    ->orWhere('verification', 0.1);
+            })
             ->first();
 
         if (!$photo)
         {
-            // Photos that have been uploaded, but not tagged or submitted for verification
-            /** @var Photo $photo */
-            $photo = $this->filterPhotos()
-                ->when($request->skip, function ($q) use ($request) {
-                    $q->skip($request->skip);
-                })
-                ->where('verification', 0)
-                ->first();
-        }
-
-        if (!$photo)
-        {
-            return [
+            return response()->json([
                 'success' => false,
                 'msg' => 'photo not found'
-            ];
+            ]);
         }
 
         // Load the tags for the photo
@@ -80,6 +63,8 @@ class GetNextImageToVerifyController extends Controller
             $userVerificationCount = Redis::hget("user_verification_count", $photo->user_id);
         }
 
+        \Log::info(['photo' => $photo]);
+
         return [
             'photo' => $photo,
             'photosNotProcessed' => $photosNotProcessed,
@@ -91,7 +76,7 @@ class GetNextImageToVerifyController extends Controller
 
     /**
      * Generates a query builder with filtered photos
-     * @return Builder|mixed
+     * @return Builder
      */
     private function filterPhotos(): Builder
     {

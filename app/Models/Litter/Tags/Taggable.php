@@ -14,7 +14,7 @@ class Taggable extends Model
         'category_litter_object_id',
         'taggable_type',
         'taggable_id',
-        'count',
+        'quantity',
     ];
 
     // Brands

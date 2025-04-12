@@ -37,7 +37,7 @@ class CategoryObject extends Pivot
             'taggables',
             'category_litter_object_id',
             'taggable_id'
-        )->withPivot('count')->withTimestamps();
+        )->withPivot('quantity')->withTimestamps();
     }
 
     public function brands(): MorphToMany
@@ -48,7 +48,7 @@ class CategoryObject extends Pivot
             'taggables',
             'category_litter_object_id',
             'taggable_id'
-        )->withPivot('count')->withTimestamps();
+        )->withPivot('quantity')->withTimestamps();
     }
 
     public function attachTaggables(array $taggables, string $class): void

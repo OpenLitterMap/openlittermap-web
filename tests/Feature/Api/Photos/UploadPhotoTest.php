@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Api;
+namespace Tests\Feature\Api\Photos;
 
 use App\Actions\Photos\DeletePhotoAction;
 use App\Events\ImageUploaded;
@@ -80,7 +80,10 @@ class UploadPhotoTest extends TestCase
         $photo = $user->photos->last();
 
         $this->assertEquals($imageAttributes['imageName'], $photo->filename);
-        $this->assertEquals($imageAttributes['dateTime'], $photo->datetime);
+        $this->assertEquals(
+            $imageAttributes['dateTime']->format('Y-m-d H:i:s'),
+            $photo->datetime->format('Y-m-d H:i:s')
+        );
         $this->assertEquals($imageAttributes['latitude'], $photo->lat);
         $this->assertEquals($imageAttributes['longitude'], $photo->lon);
         $this->assertEquals($imageAttributes['displayName'], $photo->display_name);
@@ -129,6 +132,9 @@ class UploadPhotoTest extends TestCase
 
     public function test_an_api_user_can_upload_a_photo_on_a_real_storage()
     {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+
         $user = User::factory()->create();
 
         $this->actingAs($user, 'api');

@@ -128,6 +128,11 @@ Route::get('upload', HomeController::class)->name('upload');
 
 // Move more authenticated routes into this group instead of applying middleware on controllers
 Route::group(['middleware' => 'auth'], function () {
+
+    // old route
+    Route::post('/submit', UploadPhotoController::class);
+
+    // newer route
     Route::post('/upload', UploadPhotoController::class);
 });
 

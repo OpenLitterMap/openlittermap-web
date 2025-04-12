@@ -36,12 +36,6 @@ class Photo extends Model
 //         'customTags' => 'array',
     ];
 
-    /**
-     * Each photo can have an array of tags.
-     * Each tag is an object with Category, Object, Materials, Brand, Quantity and Picked Up.
-     *
-     * @return HasMany
-     */
     public function photoTags (): HasMany
     {
         return $this->hasMany(PhotoTag::class);

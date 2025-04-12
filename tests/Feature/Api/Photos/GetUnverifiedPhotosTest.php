@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Api;
+namespace Tests\Feature\Api\Photos;
 
 use App\Models\User\User;
 use Illuminate\Support\Facades\Storage;
@@ -28,7 +28,7 @@ class GetUnverifiedPhotosTest extends TestCase
 
         // Some other user uploads a photo, it shouldn't be included in our results
         $this->actingAs($otherUser)
-            ->post('/submit', ['file' => $this->getImageAndAttributes()['file']]);
+            ->post('/submit', ['photo' => $this->getImageAndAttributes()['file']]);
 
         // We haven't uploaded anything, we expect photos to be empty
         $this->actingAs($user, 'api')
@@ -38,7 +38,7 @@ class GetUnverifiedPhotosTest extends TestCase
 
         // We upload a photo, we expect it to be returned
         $this->actingAs($user)
-            ->post('/submit', ['file' => $this->getImageAndAttributes()['file']]);
+            ->post('/submit', ['photo' => $this->getImageAndAttributes()['file']]);
 
         $unverifiedPhoto = $user->fresh()->photos->first();
 
@@ -53,7 +53,7 @@ class GetUnverifiedPhotosTest extends TestCase
 
         // We upload another photo, which gets verified, and shouldn't be returned
         $this->actingAs($user)
-            ->post('/submit', ['file' => $this->getImageAndAttributes()['file']]);
+            ->post('/submit', ['photo' => $this->getImageAndAttributes()['file']]);
 
         $verifiedPhoto = $user->fresh()->photos->last();
         $verifiedPhoto->verified = 2;

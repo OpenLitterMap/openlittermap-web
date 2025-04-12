@@ -42,16 +42,16 @@ class AddTagsToPhotoActionNew
         return $photoTags;
     }
 
+    /**
+     * @throws \Exception
+     */
     protected function addTagsToPhoto (int $userId, int $photoId, array $tags): array
     {
         $photoTags = [];
 
         foreach ($tags as $tag)
         {
-            $category = isset($tag['category']['id']) ? Category::find($tag['category']['id']) : null;
-            $object = isset($tag['object']['id']) ? LitterObject::find($tag['object']['id']) : null;
-            $quantity = $tag['quantity'] ?? 1;
-            $pickedUp = $tag['picked_up'] ?? null;
+            [$category, $object, $quantity, $pickedUp] = $this->getTags($tag);
 
             // Verify that the category and object are associated.
             if ($category && $object && !$category->litterObjects->contains($object)) {
@@ -157,6 +157,35 @@ class AddTagsToPhotoActionNew
         }
 
         return $photoTags;
+    }
+
+    protected function getTags ($tag): array
+    {
+        $category = null;
+        $object = null;
+
+        // Load category by ID or key
+        if (isset($tag['category'])) {
+            if (is_array($tag['category']) && isset($tag['category']['id'])) {
+                $category = Category::find($tag['category']['id']);
+            } elseif (is_string($tag['category'])) {
+                $category = Category::where('key', $tag['category'])->first();
+            }
+        }
+
+        // Load object by ID or key
+        if (isset($tag['object'])) {
+            if (is_array($tag['object']) && isset($tag['object']['id'])) {
+                $object = LitterObject::find($tag['object']['id']);
+            } elseif (is_string($tag['object'])) {
+                $object = LitterObject::where('key', $tag['object'])->first();
+            }
+        }
+
+        $quantity = $tag['quantity'] ?? 1;
+        $pickedUp = $tag['picked_up'] ?? null;
+
+        return [$category, $object, $quantity, $pickedUp];
     }
 
     protected function updateVerification(int $userId, int $photoId): void

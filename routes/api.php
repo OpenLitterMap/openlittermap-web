@@ -33,7 +33,6 @@ Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function(){
     // Route::get('/uploads/history', 'API\GetMyPaginatedUploadsController');
 });
 
-
 Route::group(['prefix' => 'v3', 'middleware' => ['web', 'auth:api,web']], function () {
 
      Route::get('/user/photos/untagged', [GetUsersUntaggedPhotosController::class, 'index']);
@@ -41,7 +40,6 @@ Route::group(['prefix' => 'v3', 'middleware' => ['web', 'auth:api,web']], functi
      Route::post('/tags', [PhotoTagsController::class, 'store']);
 
 });
-
 
 Route::get('/global/stats-data', 'API\GlobalStatsController@index');
 Route::get('/mobile-app-version', 'API\MobileAppVersionController');

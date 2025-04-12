@@ -3,6 +3,7 @@
 namespace Tests\Feature\Admin;
 
 use App\Models\Location\Country;
+use App\Models\Photo;
 use App\Models\User\User;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
@@ -38,21 +39,56 @@ class GetPhotoTest extends TestCase
     public function test_an_admin_can_filter_photos_by_country()
     {
         // User uploads a photo in the US
-        $this->actingAs($this->user)->post('/submit', ['file' => $this->imageAndAttributes['file']]);
+        $this->actingAs($this->user)->post('/submit', ['photo' => $this->imageAndAttributes['file']]);
+
+        \Log::info(['photosCount', Photo::count()]);
+
         $photoInUS = $this->user->fresh()->photos->last();
 
+        $this->assertDatabaseHas('photos', [
+            'country_id' => $photoInUS->country_id,
+            'user_id' => $this->user->id,
+        ]);
+
+        Country::where('shortcode', 'ca')->delete();
+
         // User uploads a photo in Canada
-        $canada = Country::factory(['shortcode' => 'ca', 'country' => 'Canada'])->create();
-        $canadaAttributes = $this->getImageAndAttributes('jpg', [
-            'country_code' => 'ca', 'country' => 'Canada'
-        ])['file'];
-        $this->geocodingAction->withAddress(['country_code' => 'ca', 'country' => 'Canada']);
-        $this->actingAs($this->user)->post('/submit', ['file' => $canadaAttributes]);
+        $canada = Country::factory()->create([
+            'country' => 'Canada',
+            'shortcode' => 'ca',
+            'slug' => 'canada',
+            'created_by' => $this->user->id,
+        ]);
+
+        $this->address = [
+            "house_number" => "123",
+            "road" => "Bloor Street",
+            "city" => "Toronto",
+            "county" => "York",
+            "state" => "Ontario",
+            "postcode" => "M5H 2N2",
+            "country" => "Canada",
+            "country_code" => "ca",
+            "suburb" => "Downtown"
+        ];
+
+        $canadaAttributes = $this->getImageAndAttributes('jpg')['file'];
+
+        $this->actingAs($this->user)->post('/submit', ['photo' => $canadaAttributes]);
+
+        \Log::info('Latest photo:', \App\Models\Photo::latest()->first()->toArray());
+
+        $this->assertDatabaseHas('photos', [
+            'country_id' => $canada->id,
+            'user_id' => $this->user->id,
+        ]);
 
         // Admin gets the next photo by country -------------------
         $response = $this->actingAs($this->admin)
             ->getJson('/admin/get-next-image-to-verify?country_id=' . $canada->id)
             ->assertOk();
+
+        \Log::info($response->json());
 
         // And it's the correct photo
         $this->assertEquals($canada->id, $response->json('photo.country_id'));
@@ -73,7 +109,7 @@ class GetPhotoTest extends TestCase
     public function test_an_admin_should_not_see_photos_of_users_that_dont_want_their_photos_tagged_by_others()
     {
         $this->user->update(['prevent_others_tagging_my_photos' => true]);
-        $this->actingAs($this->user)->post('/submit', ['file' => $this->imageAndAttributes['file']]);
+        $this->actingAs($this->user)->post('/submit', ['photo' => $this->imageAndAttributes['file']]);
 
         $response = $this->actingAs($this->admin)->getJson('/admin/get-next-image-to-verify')->assertOk();
 

@@ -40,7 +40,7 @@ class IncorrectTagsTest extends TestCase
 
         $imageAndAttributes = $this->getImageAndAttributes();
 
-        $this->post('/submit', ['file' => $imageAndAttributes['file']]);
+        $this->post('/submit', ['photo' => $imageAndAttributes['file']]);
 
         $this->photo = $this->user->fresh()->photos->last();
     }

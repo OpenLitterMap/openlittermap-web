@@ -142,7 +142,7 @@ class JoinTeamTest extends TestCase
         $this->actingAs($user);
 
         $this->post('/submit', [
-            'file' => $this->getImageAndAttributes()['file'],
+            'photo' => $this->getImageAndAttributes()['file'],
         ]);
 
         $photo = $user->fresh()->photos->last();

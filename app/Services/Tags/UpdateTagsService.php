@@ -28,7 +28,7 @@ class UpdateTagsService
      */
     public function updateTags(Photo $photo): void
     {
-        if (empty($photo->tags)) {
+        if (empty($photo->tags())) {
             return;
         }
 
@@ -52,7 +52,7 @@ class UpdateTagsService
     protected function parseTags(Photo $photo): array
     {
         $result = [];
-        $originalTags = $photo->tags ?? [];
+        $originalTags = $photo->tags() ?? [];
         $customTagsOld = $photo->customTags ?? [];
 
         // E.g. [["smoking" => ["butts" => 1], "alcohol" => ["beerBottle" => 1], "brands" => ["pepsi" => 1, "marlboro" => 1]]
@@ -178,7 +178,7 @@ class UpdateTagsService
 
             // Attach any additional custom tags as extras
             foreach ($customTags as $index => $customExtra) {
-                $photoTag->attachPhotoTagExtras([$customExtra], 'custom', $index);
+                $photoTag->attachExtraTags([$customExtra], 'custom', $index);
             }
         }
         elseif ($hasObjects && !empty($parsed['custom_tags'] ?? []))
@@ -187,7 +187,7 @@ class UpdateTagsService
 
             foreach ($parsed['custom_tags'] as $index => $custom)
             {
-                $lastPhotoTag?->attachPhotoTagExtras([$custom], 'custom', $index);
+                $lastPhotoTag?->attachExtraTags([$custom], 'custom', $index);
             }
         }
     }

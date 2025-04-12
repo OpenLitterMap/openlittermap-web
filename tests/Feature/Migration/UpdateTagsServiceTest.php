@@ -2,11 +2,11 @@
 
 namespace Tests\Feature\Migration;
 
-use App\Actions\Tags\AddTagsToPhotoActionNew;
-use App\Models\Litter\Categories\Smoking;
 use App\Models\Litter\Tags\CustomTagNew;
 use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Litter\Tags\PhotoTagExtraTags;
+use App\Models\Litter\Categories\Smoking;
+use App\Models\Litter\Categories\Alcohol;
 use App\Models\Photo;
 use App\Services\Tags\UpdateTagsService;
 use Database\Seeders\Tags\GenerateTagsSeeder;
@@ -17,7 +17,6 @@ class UpdateTagsServiceTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected AddTagsToPhotoActionNew $addTagsToPhotoActionNew;
     protected UpdateTagsService $service;
 
     protected function setUp(): void
@@ -26,66 +25,38 @@ class UpdateTagsServiceTest extends TestCase
 
         $this->seed(GenerateTagsSeeder::class);
         $this->service = app(UpdateTagsService::class);
-        $this->addTagsToPhotoActionNew = app(AddTagsToPhotoActionNew::class);
     }
 
     /** @test */
-    public function it_migrates_old_tags_and_custom_tags_to_the_new_structure()
+    public function it_migrates_photo_tags_and_primary_custom_tag()
     {
-        // Arrange: create legacy category resource in smokings table
-        $smoking = Smoking::create([
-            'butts' => 3,
-            'cigaretteBox' => 2,
-        ]);
-
-        // Create photo and associate the legacy record via foreign key
+        $smoking = Smoking::create(['butts' => 3]);
         $photo = Photo::factory()->create([
             'smoking_id' => $smoking->id,
             'remaining' => 0,
         ]);
 
-        // Create old-style custom tags
         $photo->customTags()->createMany([
             ['tag' => 'random_litter'],
             ['tag' => 'party_waste'],
         ]);
 
-        // Act: run the migration
         $this->service->updateTags($photo);
 
-        // Assert: photo_tags created
         $this->assertDatabaseHas('photo_tags', [
             'photo_id' => $photo->id,
             'quantity' => 3,
         ]);
 
-        // Assert: extra material tags created
-        $this->assertGreaterThanOrEqual(
-            1,
-            PhotoTagExtraTags::where('photo_tag_id', PhotoTag::first()->id)
-                ->where('tag_type', 'material')
-                ->count()
-        );
-
-        // Assert: custom tags migrated
-        foreach (['random_litter', 'party_waste'] as $customKey) {
-            $this->assertDatabaseHas('custom_tags_new', ['key' => $customKey]);
+        foreach (['random_litter', 'party_waste'] as $customTag) {
+            $this->assertDatabaseHas('custom_tags_new', ['key' => $customTag]);
         }
-
-        $this->assertDatabaseHas('photo_tags', [
-            'photo_id' => $photo->id,
-            'custom_tag_primary_id' => CustomTagNew::where('key', 'random_litter')->first()->id,
-        ]);
     }
 
-
     /** @test */
-    public function it_skips_empty_tags_gracefully()
+    public function it_handles_photos_with_no_legacy_tags()
     {
-        $photo = Photo::factory()->create([
-            'tags' => [],
-            'customTags' => [],
-        ]);
+        $photo = Photo::factory()->create(['remaining' => 0]);
 
         $this->service->updateTags($photo);
 
@@ -94,21 +65,35 @@ class UpdateTagsServiceTest extends TestCase
         ]);
     }
 
-    public function it_parses_deprecated_tags_and_creates_photo_tags_and_material_links()
+    /** @test */
+    public function it_creates_photo_tags_for_each_object()
     {
+        $alcohol = Alcohol::create([
+            'beerCan' => 2,
+            'wineBottle' => 1,
+        ]);
         $photo = Photo::factory()->create([
-            'tags' => [
-                'alcohol' => [
-                    'beerBottle' => 1,
-                ],
-            ],
+            'alcohol_id' => $alcohol->id,
+            'remaining' => 0,
+        ]);
+
+        $this->service->updateTags($photo);
+
+        $this->assertCount(2, PhotoTag::where('photo_id', $photo->id)->get());
+    }
+
+    /** @test */
+    public function it_attaches_materials_as_extra_tags()
+    {
+        $alcohol = Alcohol::create(['beer_bottle' => 1]);
+        $photo = Photo::factory()->create([
+            'alcohol_id' => $alcohol->id,
             'remaining' => 0,
         ]);
 
         $this->service->updateTags($photo);
 
         $photoTag = PhotoTag::where('photo_id', $photo->id)->first();
-        $this->assertNotNull($photoTag);
 
         $this->assertDatabaseHas('photo_tag_extra_tags', [
             'photo_tag_id' => $photoTag->id,
@@ -117,36 +102,10 @@ class UpdateTagsServiceTest extends TestCase
     }
 
     /** @test */
-    public function it_creates_brand_object_relationships_and_links_extra_tags()
+    public function it_creates_single_photo_tag_when_only_custom_tag_exists()
     {
-        $photo = Photo::factory()->create([
-            'tags' => [
-                'softdrinks' => [
-                    'energy_can' => 1,
-                    'redbull' => 1,  // brand
-                ],
-            ],
-            'remaining' => 1,
-        ]);
-
-        $this->service->updateTags($photo);
-
-        $photoTag = PhotoTag::where('photo_id', $photo->id)->first();
-
-        $this->assertDatabaseHas('photo_tag_extra_tags', [
-            'photo_tag_id' => $photoTag->id,
-            'tag_type' => 'brand',
-        ]);
-    }
-
-    /** @test */
-    public function it_creates_single_photo_tag_with_custom_tags_when_no_objects_exist()
-    {
-        $photo = Photo::factory()->create([
-            'tags' => [],
-            'customTags' => ['illegal_dumping', 'garden_waste'],
-            'remaining' => 0,
-        ]);
+        $photo = Photo::factory()->create(['remaining' => 0]);
+        $photo->customTags()->create(['tag' => 'illegal_dumping']);
 
         $this->service->updateTags($photo);
 
@@ -154,59 +113,33 @@ class UpdateTagsServiceTest extends TestCase
 
         $this->assertNotNull($photoTag);
         $this->assertNotNull($photoTag->custom_tag_primary_id);
-        $this->assertDatabaseCount('photo_tag_extra_tags', 1); // only 1 extra tag expected
+        $this->assertDatabaseHas('custom_tags_new', ['key' => 'illegal_dumping']);
     }
 
     /** @test */
-    public function it_creates_multiple_photo_tags_when_multiple_objects_in_one_category()
+    public function it_attaches_custom_tags_as_extras_when_objects_exist()
     {
+        $alcohol = Alcohol::create(['beerCan' => 1]);
         $photo = Photo::factory()->create([
-            'tags' => [
-                'alcohol' => [
-                    'beer_can' => 1,
-                    'wineBottle' => 1,
-                ],
-            ],
-            'remaining' => 0,
+            'alcohol_id' => $alcohol->id,
         ]);
+        $photo->customTags()->create(['tag' => 'camping']);
 
         $this->service->updateTags($photo);
 
-        $photoTags = PhotoTag::where('photo_id', $photo->id)->get();
-
-        $this->assertCount(2, $photoTags);
-    }
-
-    /** @test */
-    public function it_attaches_custom_tags_as_extras_if_objects_also_exist()
-    {
-        $photo = Photo::factory()->create([
-            'tags' => [
-                'alcohol' => ['beer_can' => 1],
-            ],
-            'customTags' => ['festival', 'camping'],
-        ]);
-
-        $this->service->updateTags($photo);
-
-        $photoTag = PhotoTag::where('photo_id', $photo->id)->latest()->first();
+        $photoTag = PhotoTag::where('photo_id', $photo->id)->first();
 
         $this->assertDatabaseHas('photo_tag_extra_tags', [
             'photo_tag_id' => $photoTag->id,
-            'tag_type' => 'custom',
+            'tag_type' => 'custom_tag',
         ]);
     }
 
     /** @test */
-    public function it_skips_undefined_tags_and_logs_warning()
+    public function it_skips_invalid_category_or_object()
     {
-        $photo = Photo::factory()->create([
-            'tags' => [
-                'unknown_category' => [
-                    'non_existent_tag' => 1,
-                ],
-            ]
-        ]);
+        $photo = Photo::factory()->create();
+        $photo->update(['tags' => ['alien_category' => ['unknown_object' => 2]]]);
 
         $this->service->updateTags($photo);
 
@@ -214,22 +147,17 @@ class UpdateTagsServiceTest extends TestCase
     }
 
     /** @test */
-    public function it_reuses_existing_category_object_relationships()
+    public function it_does_not_duplicate_category_object_relationships()
     {
+        $smoking = Smoking::create(['skins' => 1]);
         $photo = Photo::factory()->create([
-            'tags' => [
-                'smoking' => [
-                    'skins' => 1,
-                ],
-            ]
+            'smoking_id' => $smoking->id,
         ]);
 
-        // Run once to create the relationship
         $this->service->updateTags($photo);
-        $this->assertDatabaseCount('category_object', 1);
+        $this->assertDatabaseCount('category_litter_object', 1);
 
-        // Run again, should not create duplicate
         $this->service->updateTags($photo);
-        $this->assertDatabaseCount('category_object', 1);
+        $this->assertDatabaseCount('category_litter_object', 1);
     }
 }

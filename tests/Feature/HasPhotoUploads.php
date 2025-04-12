@@ -38,20 +38,29 @@ trait HasPhotoUploads
 
     protected function getImageAndAttributes ($mimeType = 'jpg', $withAddress = []): array
     {
-        $image = file_get_contents($this->imagePath);
-        $file = UploadedFile::fake()->createWithContent("image.$mimeType", $image);
+        // $image = file_get_contents($this->imagePath);
+        $image = Image::canvas(1, 1, '#'.dechex(mt_rand(0, 0xFFFFFF)));
+        $file = UploadedFile::fake()->create("image.$mimeType", 100, $mimeType);
 
         $latitude = 40.053030045789;
         $longitude = -77.15449870066;
         $geoHash = 'dr15u73vccgyzbs9w4uj';
         $displayName = $this->imageDisplayName;
-        $this->address = array_merge($this->address, $withAddress);
+
+        if (!empty($withAddress)) {
+            $this->address = $withAddress;
+            $this->setMockForGeocodingAction();
+        }
+        $this->geocodingAction->withAddress($this->address);
+        \Log::info('Geocoding address used:', $this->address);
+
         $address = $this->address;
 
-        $dateTime = now();
+        $dateTime = now()->addSeconds(rand(1, 999)); // carbon instance
         $year = $dateTime->year;
         $month = $dateTime->month < 10 ? "0$dateTime->month" : $dateTime->month;
         $day = $dateTime->day < 10 ? "0$dateTime->day" : $dateTime->day;
+        $formattedDateTime = $dateTime->format('Y:m:d H:i:s'); // string
 
         $filepath = "$year/$month/$day/{$file->hashName()}";
         $imageName = Storage::disk('s3')->url($filepath);
@@ -59,7 +68,8 @@ trait HasPhotoUploads
 
         return compact(
             'latitude', 'longitude', 'geoHash', 'displayName', 'address',
-            'dateTime', 'filepath', 'file', 'imageName', 'bboxImageName'
+            'dateTime', 'filepath', 'file', 'imageName', 'bboxImageName',
+            'formattedDateTime',
         );
     }
 
@@ -92,7 +102,7 @@ trait HasPhotoUploads
 
     protected function setMockForGeocodingAction (): void
     {
-        $this->geocodingAction = new FakeReverseGeocodingAction();
+        $this->geocodingAction = (new FakeReverseGeocodingAction())->withAddress($this->address);
         $this->swap(ReverseGeocodeLocationAction::class, $this->geocodingAction);
     }
 }

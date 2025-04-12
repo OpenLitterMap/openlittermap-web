@@ -42,7 +42,7 @@ class AddCustomTagsToPhotoTest extends TestCase
 
         Redis::zrem('xp.users', $user->id);
 
-        $this->actingAs($user)->post('/submit', ['file' => $this->imageAndAttributes['file'],]);
+        $this->actingAs($user)->post('/submit', ['photo' => $this->imageAndAttributes['file'],]);
         $photo = $user->fresh()->photos->last();
         $this->assertEquals(1, $user->fresh()->xp_redis);
 
@@ -62,7 +62,7 @@ class AddCustomTagsToPhotoTest extends TestCase
     public function test_it_validates_the_custom_tags($tags, $errors)
     {
         $user = User::factory()->create();
-        $this->actingAs($user)->post('/submit', ['file' => $this->imageAndAttributes['file'],]);
+        $this->actingAs($user)->post('/submit', ['photo' => $this->imageAndAttributes['file'],]);
         $photo = $user->fresh()->photos->last();
 
         $response = $this->postJson('/add-tags', [

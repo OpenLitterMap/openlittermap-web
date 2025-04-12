@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Api;
+namespace Tests\Feature\Api\Photos;
 
 use App\Events\ImageUploaded;
 use App\Events\Photo\IncrementPhotoMonth;
@@ -59,7 +59,10 @@ class UploadPhotoWithTagsTest extends TestCase
         Storage::disk('bbox')->assertExists($imageAttributes['filepath']);
         $this->assertCount(1, $user->photos);
         $this->assertEquals($imageAttributes['imageName'], $photo->filename);
-        $this->assertEquals($imageAttributes['dateTime'], $photo->datetime);
+        $this->assertEquals(
+            $imageAttributes['dateTime']->format('Y-m-d H:i:s'),
+            $photo->datetime->format('Y-m-d H:i:s')
+        );
         $this->assertNotNull($photo->smoking_id);
         $this->assertInstanceOf(Smoking::class, $photo->smoking);
         $this->assertEquals(3, $photo->smoking->butts);

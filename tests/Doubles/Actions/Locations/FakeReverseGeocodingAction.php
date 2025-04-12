@@ -4,23 +4,27 @@ namespace Tests\Doubles\Actions\Locations;
 
 class FakeReverseGeocodingAction
 {
-    private array $address = [
-        "house_number" => "10735",
-        "road" => "Carlisle Pike",
-        "city" => "Latimore Township",
-        "county" => "Adams County",
-        "state" => "Pennsylvania",
-        "postcode" => "17324",
-        "country" => "United States of America",
-        "country_code" => "us",
-        "suburb" => "unknown"
-    ];
+    private array $address = [];
+
+//    private array $address = [
+//        "house_number" => "10735",
+//        "road" => "Carlisle Pike",
+//        "city" => "Latimore Township",
+//        "county" => "Adams County",
+//        "state" => "Pennsylvania",
+//        "postcode" => "17324",
+//        "country" => "United States of America",
+//        "country_code" => "us",
+//        "suburb" => "unknown"
+//    ];
 
     private string $imageDisplayName = '10735, Carlisle Pike, Latimore Township,' .
     ' Adams County, Pennsylvania, 17324, USA';
 
     public function run ($latitude, $longitude): array
     {
+        \Log::info('Fake geocoder returning:', $this->address);
+
         return [
             'display_name' => $this->imageDisplayName,
             'address' => $this->address

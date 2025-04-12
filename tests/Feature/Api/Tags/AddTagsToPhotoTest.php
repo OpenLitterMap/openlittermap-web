@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Api;
+namespace Tests\Feature\Api\Tags;
 
 use App\Events\TagsVerifiedByAdmin;
 use App\Models\Litter\Categories\Smoking;

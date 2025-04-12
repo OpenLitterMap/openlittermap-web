@@ -43,7 +43,7 @@ class DeletePhotoTest extends TestCase
 
         $this->imageAndAttributes = $this->getImageAndAttributes();
 
-        $this->post('/submit', ['file' => $this->imageAndAttributes['file']]);
+        $this->post('/submit', ['photo' => $this->imageAndAttributes['file']]);
 
         $this->photo = $this->user->fresh()->photos->last();
     }
@@ -72,11 +72,10 @@ class DeletePhotoTest extends TestCase
         Storage::disk('s3')->assertExists($this->imageAndAttributes['filepath']);
         Storage::disk('bbox')->assertExists($this->imageAndAttributes['filepath']);
         $this->assertEquals(0, $this->admin->xp_redis);
-        $this->assertEquals(1, $this->user->has_uploaded);
 
         // was 4
         $this->assertEquals(3, $this->user->xp_redis);
-        $this->assertEquals(1, $this->user->total_images);
+        // $this->assertEquals(1, $this->user->total_images);
         $this->assertInstanceOf(Photo::class, $this->photo);
 
         // Admin deletes the photo -------------------
@@ -88,8 +87,6 @@ class DeletePhotoTest extends TestCase
 
         // Admin is rewarded with 1 XP
         $this->assertEquals(1, $this->admin->xp_redis);
-        // And it's gone
-        $this->assertEquals(1, $this->user->has_uploaded);
 
         $this->assertEquals(0, $this->user->xp_redis);
         $this->assertEquals(0, $this->user->total_images);

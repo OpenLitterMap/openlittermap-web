@@ -113,7 +113,7 @@ class ClassifyTagsService
     public static function normalizeDeprecatedTag(string $key): ?array
     {
         return match ($key) {
-
+            default => null,
             // Alcohol
             'beerBottle' => ['object' => 'beer_bottle', 'materials' => ['glass']],
             'beerCan' => ['object' => 'beer_can', 'materials' => ['aluminium']],
@@ -248,10 +248,10 @@ class ClassifyTagsService
             };
         }
 
-        $key = strtolower($tag);
-        $type = $typeHint ?? $this->guessTagType($key);
+        $tagString = strtolower($tag);
+        $tagType = $typeHint ?? $this->guessTagType($tagString);
 
-        switch ($type) {
+        switch ($tagType) {
             case 'Category': $cacheRef = &$this->categories; break;
             case 'Brand':    $cacheRef = &$this->brands;     break;
             case 'Object':   $cacheRef = &$this->objects;    break;
@@ -259,7 +259,7 @@ class ClassifyTagsService
             default:         $cacheRef = &$this->customTags; break;
         }
 
-        $model = match ($type) {
+        $model = match ($tagType) {
             'Category' => Category::class,
             'Brand' => BrandList::class,
             'Object' => LitterObject::class,
@@ -268,10 +268,10 @@ class ClassifyTagsService
         };
 
         return $this->createAndReturn(
-            $key,
+            $tagString,
             $model,
             $cacheRef,
-            strtolower($type),
+            strtolower($tagType),
             $quantity
         );
     }

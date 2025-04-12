@@ -42,7 +42,7 @@ class TrustedTeamsTest extends TestCase
 
         $file = $this->getImageAndAttributes()['file'];
 
-        $this->post('/submit', ['file' => $file]);
+        $this->post('/submit', ['photo' => $file]);
 
         $photo = $user->fresh()->photos->last();
 

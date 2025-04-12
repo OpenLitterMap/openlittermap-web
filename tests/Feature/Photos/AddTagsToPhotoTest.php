@@ -38,7 +38,7 @@ class AddTagsToPhotoTest extends TestCase
         $this->actingAs($user);
 
         $this->post('/submit', [
-            'file' => $this->imageAndAttributes['file'],
+            'photo' => $this->imageAndAttributes['file'],
         ]);
 
         $photo = $user->fresh()->photos->last();
@@ -75,7 +75,7 @@ class AddTagsToPhotoTest extends TestCase
         Redis::del("xp.users", $user->id);
 
         $this->post('/submit', [
-            'file' => $this->imageAndAttributes['file'],
+            'photo' => $this->imageAndAttributes['file'],
         ]);
 
         $photo = $user->fresh()->photos->last();
@@ -111,7 +111,7 @@ class AddTagsToPhotoTest extends TestCase
         $this->actingAs($user);
 
         $this->post('/submit', [
-            'file' => $this->imageAndAttributes['file'],
+            'photo' => $this->imageAndAttributes['file'],
         ]);
 
         $photo = $user->fresh()->photos->last();
@@ -176,7 +176,7 @@ class AddTagsToPhotoTest extends TestCase
         $this->actingAs($user);
 
         $this->post('/submit', [
-            'file' => $this->imageAndAttributes['file'],
+            'photo' => $this->imageAndAttributes['file'],
         ]);
 
         $photo = $user->fresh()->photos->last();
@@ -209,7 +209,7 @@ class AddTagsToPhotoTest extends TestCase
         $this->actingAs($user);
 
         $this->post('/submit', [
-            'file' => $this->imageAndAttributes['file'],
+            'photo' => $this->imageAndAttributes['file'],
         ]);
 
         $photo = $user->fresh()->photos->last();
@@ -244,7 +244,7 @@ class AddTagsToPhotoTest extends TestCase
         $this->actingAs($user);
 
         $this->post('/submit', [
-            'file' => $this->imageAndAttributes['file'],
+            'photo' => $this->imageAndAttributes['file'],
         ]);
 
         $photo = $user->fresh()->photos->last();
@@ -280,7 +280,7 @@ class AddTagsToPhotoTest extends TestCase
         /** @var User $user */
         $user = User::factory()->create();
         $this->actingAs($user);
-        $this->post('/submit', ['file' => $this->imageAndAttributes['file'],]);
+        $this->post('/submit', ['photo' => $this->imageAndAttributes['file'],]);
         $photo = $user->fresh()->photos->last();
         Redis::del("xp.users");
         Redis::del("xp.country.$photo->country_id");

@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Api;
+namespace Tests\Feature\Api\Photos;
 
 
 use App\Events\ImageDeleted;

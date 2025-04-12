@@ -278,7 +278,7 @@ class User extends Authenticatable
         return (int) Redis::zscore("leaderboard:users:$year", $this->id);
     }
 
-    public function getNextLevelAttribute (): Level
+    public function getNextLevelAttribute (): ?Level
     {
         return Level::find($this->level + 1);
     }
