@@ -106,7 +106,6 @@ class AdminController extends Controller
      */
     public function verify (Request $request): JsonResponse
     {
-        /** @var Photo $photo */
         $photo = Photo::findOrFail($request->photoId);
 
         $this->deletePhotoAction->run($photo);
@@ -185,7 +184,6 @@ class AdminController extends Controller
      */
     public function updateDelete (Request $request)
     {
-        /** @var Photo $photo */
         $photo = Photo::find($request->photoId);
 
         $this->deletePhotoAction->run($photo);

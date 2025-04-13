@@ -8,6 +8,7 @@ use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Materials;
 use App\Models\Litter\Tags\CustomTagNew;
 use App\Models\Litter\Tags\CategoryObject;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Log;
 
 class UpdateTagsService
@@ -28,19 +29,25 @@ class UpdateTagsService
      */
     public function updateTags(Photo $photo): void
     {
-        if (empty($photo->tags())) {
+        // [["smoking" => ["butts" => 1], "alcohol" => ["beerBottle" => 1], "brands" => ["pepsi" => 1, "marlboro" => 1]]
+        $originalTags = $photo->tags() ?? [];
+
+        // ['tag1', 'brand=x', 'object:thing=2', 'material:plastic']
+        $customTagsOld = $photo->customTags ?? [];
+
+        if (empty($originalTags) && empty($customTagsOld)) {
+            Log::info("No tags to migrate for photo ID: {$photo->id}");
             return;
         }
 
         // Step 1: Parse all the photos tags into the new format.
-        // We don't know the relations between the tags yet.
-        $parsedTags = $this->parseTags($photo);
+        $parsedTags = $this->parseTags($originalTags, $customTagsOld);
 
         // Step 2: Populate new pivot + morph structure
-        // Create relationships between the tags
+        // This will create new relationships between the tags
         // eg softdrinks.energy_can => redbull, monster
         // eg alcohol.beer_can => budweiser, heineken
-        $this->createTaggableRelationships($photo, $parsedTags);
+        $this->createTaggableRelationships($parsedTags);
 
         // Step 3: Create legacy photo_tags + photo_tag_extras
         $this->createPhotoTags($photo, $parsedTags);
@@ -49,13 +56,10 @@ class UpdateTagsService
         $photo->calculateTotalTags();
     }
 
-    protected function parseTags(Photo $photo): array
+    protected function parseTags(array $originalTags, Collection $customTagsOld): array
     {
         $result = [];
-        $originalTags = $photo->tags() ?? [];
-        $customTagsOld = $photo->customTags ?? [];
 
-        // E.g. [["smoking" => ["butts" => 1], "alcohol" => ["beerBottle" => 1], "brands" => ["pepsi" => 1, "marlboro" => 1]]
         foreach ($originalTags as $categoryKey => $items)
         {
             $category = $this->classifyTags->getCategory($categoryKey);
@@ -90,15 +94,13 @@ class UpdateTagsService
 
         if (!empty($customTagsOld)) {
             foreach ($customTagsOld as $customTagOld) {
-                $parsed = $this->classifyTags->normalizeCustomTag($customTagOld);
-
-                $parsed['category_key'] = $parsed['category_key'] ?? null;
+                $parsed = $this->classifyTags->normalizeCustomTag($customTagOld->tag);
 
                 $result['custom_tags'][] = [
                     'key'   => $parsed['key'],
                     'id'    => $parsed['id'],
                     'quantity' => $parsed['quantity'] ?? 1,
-                    'category_key' => $parsed['category_key']
+                    'category_key' => $parsed['category_key'] ?? null,
                 ];
             }
         }
@@ -106,10 +108,15 @@ class UpdateTagsService
         return $result;
     }
 
-    protected function createTaggableRelationships(Photo $photo, array $parsed): void
+    protected function createTaggableRelationships(array $parsed): void
     {
         foreach ($parsed as $groupKey => $group)
         {
+            // Skip if it’s the top-level 'custom_tags', which is not a real category
+            if ($groupKey === 'custom_tags') {
+                continue;
+            }
+
             if (empty($group['objects'])) {
                 continue;
             }
@@ -134,6 +141,11 @@ class UpdateTagsService
 
         foreach ($parsed as $groupKey => $group)
         {
+            // Skip top-level “custom_tags” entry
+            if ($groupKey === 'custom_tags') {
+                continue;
+            }
+
             if (!empty($group['objects']))
             {
                 $hasObjects = true;
@@ -155,9 +167,25 @@ class UpdateTagsService
                         ->values()
                         ->all();
 
+                    $matchedMaterials = [];
+
+                    if (!empty($object['materials'])) {
+                        // Grab from DB each material whose 'key' is in $object['materials']
+                        $matchedMaterials = Materials::whereIn('key', $object['materials'])
+                            ->get()
+                            ->map(function ($mat) {
+                                return [
+                                    'id'       => $mat->id,
+                                    'key'      => $mat->key,
+                                    'quantity' => 1,  // or some other quantity logic
+                                ];
+                            })
+                            ->all();
+                    }
+
                     $photoTag->attachExtraTags($matchedBrands, 'brand', $index);
-                    $photoTag->attachExtraTags($group['materials'], 'material', $index);
-                    $photoTag->attachExtraTags($group['customTags'], 'custom', $index);
+                    $photoTag->attachExtraTags($matchedMaterials, 'material', $index);
+                    $photoTag->attachExtraTags($group['customTags'], 'custom_tag', $index);
                 }
             }
         }
@@ -178,7 +206,7 @@ class UpdateTagsService
 
             // Attach any additional custom tags as extras
             foreach ($customTags as $index => $customExtra) {
-                $photoTag->attachExtraTags([$customExtra], 'custom', $index);
+                $photoTag->attachExtraTags([$customExtra], 'custom_tag', $index);
             }
         }
         elseif ($hasObjects && !empty($parsed['custom_tags'] ?? []))
@@ -187,7 +215,7 @@ class UpdateTagsService
 
             foreach ($parsed['custom_tags'] as $index => $custom)
             {
-                $lastPhotoTag?->attachExtraTags([$custom], 'custom', $index);
+                $lastPhotoTag?->attachExtraTags([$custom], 'custom_tag', $index);
             }
         }
     }

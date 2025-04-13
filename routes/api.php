@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ApiPhotosController;
 use App\Models\Littercoin;
 
 use Illuminate\Http\Request;
@@ -70,7 +71,8 @@ Route::get('/user', function (Request $request) {
 Route::post('/password/email', 'Auth\ForgotPasswordController@sendResetLinkEmail');
 
 // Upload Photos
-Route::post('/photos/submit', 'ApiPhotosController@store');
+Route::post('/photos/submit', [ApiPhotosController::class, 'store'])
+    ->middleware('auth:api');
 
 // Upload Photos with tags - old route
 Route::post('/photos/submit-with-tags', 'ApiPhotosController@uploadWithOrWithoutTags')
@@ -88,7 +90,7 @@ Route::post('/photos/upload/with-or-without-tags', 'ApiPhotosController@uploadWi
 Route::delete('/photos/delete', 'ApiPhotosController@deleteImage');
 
 // Check for any photos uploaded on web
-Route::get('/check-web-photos', 'ApiPhotosController@check')
+Route::get('/check-web-photos', [ApiPhotosController::class, 'check'])
     ->middleware('auth:api');
 
 /**

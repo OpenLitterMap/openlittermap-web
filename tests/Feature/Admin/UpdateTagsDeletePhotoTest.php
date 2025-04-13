@@ -106,8 +106,8 @@ class UpdateTagsDeletePhotoTest extends TestCase
 
         if ($deletesPhoto) {
             // Assert photo is deleted
-            Storage::disk('s3')->assertMissing($this->imageAndAttributes['filepath']);
-            Storage::disk('bbox')->assertMissing($this->imageAndAttributes['filepath']);
+            Storage::disk('s3')->assertMissing($this->imageAndAttributes['fullFilePath']);
+            Storage::disk('bbox')->assertMissing($this->imageAndAttributes['fullBBoxFilePath']);
 
             $this->assertEquals('/assets/verified.jpg', $this->photo->filename);
         }

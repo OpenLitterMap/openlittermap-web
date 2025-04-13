@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ContactUsController;
 use App\Http\Controllers\SubscribersController;
@@ -371,7 +372,7 @@ Route::group(['prefix' => '/admin', 'middleware' => 'admin'], function () {
     // Route::get('/photos', 'AdminController@getPhotos');
 
     // Verify an image - delete
-    Route::post('/verify', 'AdminController@verify');
+    Route::post('/verify', [AdminController::class, 'verify']);
 
     // Verify an image - keep
     Route::post('/verify-tags-as-correct', 'Admin\VerifyImageWithTagsController');
@@ -380,13 +381,13 @@ Route::group(['prefix' => '/admin', 'middleware' => 'admin'], function () {
     Route::post('/reset-tags', 'Admin\AdminResetTagsController');
 
     // Contents of an image updated, Delete the image
-    Route::post('/contentsupdatedelete', 'AdminController@updateDelete');
+    Route::post('/contentsupdatedelete', [AdminController::class, 'updateDelete']);
 
     // Contents of an image updated, Keep the image
     Route::post('/update-tags', 'Admin\UpdateTagsController');
 
     // Delete an image and its record
-    Route::post('/destroy', 'AdminController@destroy');
+    Route::post('/destroy', [AdminController::class, 'destroy']);
 
     // Merchants
     Route::get('/merchants', HomeController::class);

@@ -54,7 +54,8 @@ class PhotoTag extends Model
 
         $rows = [];
 
-        foreach ($extras as $tag) {
+        foreach ($extras as $tag)
+        {
             if (empty($tag['id'])) {
                 Log::warning("Skipping extra tag with missing ID for type {$type}");
                 continue;

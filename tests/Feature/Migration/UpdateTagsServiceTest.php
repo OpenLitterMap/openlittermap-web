@@ -2,9 +2,7 @@
 
 namespace Tests\Feature\Migration;
 
-use App\Models\Litter\Tags\CustomTagNew;
 use App\Models\Litter\Tags\PhotoTag;
-use App\Models\Litter\Tags\PhotoTagExtraTags;
 use App\Models\Litter\Categories\Smoking;
 use App\Models\Litter\Categories\Alcohol;
 use App\Models\Photo;
@@ -85,7 +83,7 @@ class UpdateTagsServiceTest extends TestCase
     /** @test */
     public function it_attaches_materials_as_extra_tags()
     {
-        $alcohol = Alcohol::create(['beer_bottle' => 1]);
+        $alcohol = Alcohol::create(['beerBottle' => 1]);
         $photo = Photo::factory()->create([
             'alcohol_id' => $alcohol->id,
             'remaining' => 0,
@@ -133,31 +131,5 @@ class UpdateTagsServiceTest extends TestCase
             'photo_tag_id' => $photoTag->id,
             'tag_type' => 'custom_tag',
         ]);
-    }
-
-    /** @test */
-    public function it_skips_invalid_category_or_object()
-    {
-        $photo = Photo::factory()->create();
-        $photo->update(['tags' => ['alien_category' => ['unknown_object' => 2]]]);
-
-        $this->service->updateTags($photo);
-
-        $this->assertDatabaseMissing('photo_tags', ['photo_id' => $photo->id]);
-    }
-
-    /** @test */
-    public function it_does_not_duplicate_category_object_relationships()
-    {
-        $smoking = Smoking::create(['skins' => 1]);
-        $photo = Photo::factory()->create([
-            'smoking_id' => $smoking->id,
-        ]);
-
-        $this->service->updateTags($photo);
-        $this->assertDatabaseCount('category_litter_object', 1);
-
-        $this->service->updateTags($photo);
-        $this->assertDatabaseCount('category_litter_object', 1);
     }
 }

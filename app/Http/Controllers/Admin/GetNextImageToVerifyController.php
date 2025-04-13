@@ -63,15 +63,13 @@ class GetNextImageToVerifyController extends Controller
             $userVerificationCount = Redis::hget("user_verification_count", $photo->user_id);
         }
 
-        \Log::info(['photo' => $photo]);
-
-        return [
+        return response()->json([
             'photo' => $photo,
             'photosNotProcessed' => $photosNotProcessed,
             'photosAwaitingVerification' => $photosAwaitingVerification,
             'userVerificationCount' => $userVerificationCount,
             'photosNotProcessedForAdminTagging' => $photosNotProcessedForAdminTagging
-        ];
+        ]);
     }
 
     /**

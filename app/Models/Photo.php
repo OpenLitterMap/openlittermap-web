@@ -31,7 +31,7 @@ class Photo extends Model
         'datetime' => 'datetime',
         'summary' => 'array',
 
-        // deprecated
+// deprecated
 //         'tags' => 'array',
 //         'customTags' => 'array',
     ];

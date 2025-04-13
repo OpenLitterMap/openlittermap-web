@@ -66,7 +66,6 @@ class DeletePhotoTest extends TestCase
     public function test_leaderboards_are_updated_when_a_user_deletes_a_photo()
     {
         // User uploads a photo
-        /** @var User $user */
         $user = User::factory()->create();
         $this->actingAs($user, 'api')->post('/api/photos/submit',
             $this->getApiImageAttributes($this->getImageAndAttributes())

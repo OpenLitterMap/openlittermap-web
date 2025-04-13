@@ -234,8 +234,6 @@ class ApiPhotosController extends Controller
     /**
      * Upload Photo
      *
-     * @param Request $request
-     *
      * array (
         'lat' => '55.455525',
         'lon' => '-5.713071670000001',
@@ -251,8 +249,6 @@ class ApiPhotosController extends Controller
                 'hashName' => NULL
             ))
         );
-     *
-     * @return array
      */
     public function store (Request $request): array
     {
@@ -360,12 +356,10 @@ class ApiPhotosController extends Controller
      */
     public function check ()
     {
-        /** @var User $user */
         $user = auth()->user();
 
         $photos = $user->photos()
             ->where('verified', 0)
-            ->where('verification', 0)
             ->select('id', 'filename')
             ->get();
 

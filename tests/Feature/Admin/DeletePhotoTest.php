@@ -31,9 +31,7 @@ class DeletePhotoTest extends TestCase
 
         $this->setImagePath();
 
-        /** @var User $admin */
         $this->admin = User::factory()->create(['verification_required' => false]);
-
         $this->admin->assignRole(Role::create(['name' => 'admin']));
 
         $this->user = User::factory()->create(['verification_required' => true]);
@@ -90,8 +88,8 @@ class DeletePhotoTest extends TestCase
 
         $this->assertEquals(0, $this->user->xp_redis);
         $this->assertEquals(0, $this->user->total_images);
-        Storage::disk('s3')->assertMissing($this->imageAndAttributes['filepath']);
-        Storage::disk('bbox')->assertMissing($this->imageAndAttributes['filepath']);
+        Storage::disk('s3')->assertMissing($this->photo->filename);
+        Storage::disk('bbox')->assertMissing($this->photo->five_hundred_square_filepath);
         $this->assertCount(0, $this->user->photos);
         $this->assertDatabaseMissing('photos', ['id' => $this->photo->id]);
     }

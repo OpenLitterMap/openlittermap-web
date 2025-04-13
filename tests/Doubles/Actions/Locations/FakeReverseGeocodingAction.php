@@ -23,8 +23,6 @@ class FakeReverseGeocodingAction
 
     public function run ($latitude, $longitude): array
     {
-        \Log::info('Fake geocoder returning:', $this->address);
-
         return [
             'display_name' => $this->imageDisplayName,
             'address' => $this->address

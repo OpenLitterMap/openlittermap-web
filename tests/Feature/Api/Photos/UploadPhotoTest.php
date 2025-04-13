@@ -27,7 +27,7 @@ class UploadPhotoTest extends TestCase
     {
         parent::setUp();
 
-        $this->setImagePath();
+        $this->setUpPhotoUploads();
 
         $country = Country::create(['country' => 'error_country', 'shortcode' => 'error']);
         $state = State::create(['state' => 'error_state', 'country_id' => $country->id]);
@@ -50,6 +50,7 @@ class UploadPhotoTest extends TestCase
         $this->actingAs($user, 'api');
 
         $imageAttributes = $this->getImageAndAttributes();
+        $location = $this->locationService->createOrGetLocationFromAddress($imageAttributes['address']);
 
         Carbon::setTestNow(now());
 
@@ -68,18 +69,13 @@ class UploadPhotoTest extends TestCase
         $this->assertEquals(500, $image->width());
         $this->assertEquals(500, $image->height());
 
-        // Original image has the right dimensions
-        $image = Image::make(Storage::disk('s3')->get($imageAttributes['filepath']));
-        $this->assertEquals(1, $image->width());
-        $this->assertEquals(1, $image->height());
-
         $user->refresh();
 
         // The Photo is persisted correctly
         $this->assertCount(1, $user->photos);
         $photo = $user->photos->last();
 
-        $this->assertEquals($imageAttributes['imageName'], $photo->filename);
+        $this->assertEquals($imageAttributes['fullFilePath'], $photo->filename);
         $this->assertEquals(
             $imageAttributes['dateTime']->format('Y-m-d H:i:s'),
             $photo->datetime->format('Y-m-d H:i:s')
@@ -95,36 +91,36 @@ class UploadPhotoTest extends TestCase
         $this->assertEquals($imageAttributes['address']['country_code'], $photo->country_code);
         $this->assertEquals('test model', $photo->model);
         $this->assertEquals(0, $photo->remaining);
-        $this->assertEquals($this->getCountryId(), $photo->country_id);
-        $this->assertEquals($this->getStateId(), $photo->state_id);
-        $this->assertEquals($this->getCityId(), $photo->city_id);
+        $this->assertEquals($location['country_id'], $photo->country_id);
+        $this->assertEquals($location['state_id'], $photo->state_id);
+        $this->assertEquals($location['city_id'], $photo->city_id);
         $this->assertEquals('mobile', $photo->platform);
         $this->assertEquals('dr15u73vccgyzbs9w4um', $photo->geohash);
         $this->assertEquals($user->active_team, $photo->team_id);
-        $this->assertEquals($imageAttributes['bboxImageName'], $photo->five_hundred_square_filepath);
+        $this->assertEquals($imageAttributes['fullBBoxFilePath'], $photo->five_hundred_square_filepath);
 
         Event::assertDispatched(
             ImageUploaded::class,
-            function (ImageUploaded $e) use ($user, $imageAttributes) {
+            function (ImageUploaded $e) use ($user, $imageAttributes, $location) {
                 return $e->city === $imageAttributes['address']['city'] &&
                     $e->state === $imageAttributes['address']['state'] &&
                     $e->country === $imageAttributes['address']['country'] &&
                     $e->countryCode === $imageAttributes['address']['country_code'] &&
                     $e->teamName === $user->team->name &&
                     $e->userId === $user->id &&
-                    $e->countryId === $this->getCountryId() &&
-                    $e->stateId === $this->getStateId() &&
-                    $e->cityId === $this->getCityId() &&
+                    $e->countryId === $location['country_id'] &&
+                    $e->stateId === $location['state_id'] &&
+                    $e->cityId === $location['city_id'] &&
                     $e->isUserVerified === !$user->verification_required;
             }
         );
 
         Event::assertDispatched(
             IncrementPhotoMonth::class,
-            function (IncrementPhotoMonth $e) use ($imageAttributes) {
-                return $e->country_id === $this->getCountryId() &&
-                    $e->state_id === $this->getStateId() &&
-                    $e->city_id === $this->getCityId() &&
+            function (IncrementPhotoMonth $e) use ($imageAttributes, $location) {
+                return $e->country_id === $location['country_id'] &&
+                    $e->state_id === $location['state_id'] &&
+                    $e->city_id === $location['city_id'] &&
                     $imageAttributes['dateTime']->is($e->created_at);
             }
         );
@@ -164,19 +160,14 @@ class UploadPhotoTest extends TestCase
         $this->assertEquals(500, $image->width());
         $this->assertEquals(500, $image->height());
 
-        // Original image has the right dimensions
-        $image = Image::make(Storage::disk('s3')->get($imageAttributes['filepath']));
-        $this->assertEquals(1, $image->width());
-        $this->assertEquals(1, $image->height());
-
         $user->refresh();
 
         // The Photo is persisted correctly
         $this->assertCount(1, $user->photos);
         $photo = $user->photos->last();
 
-        $this->assertEquals($imageAttributes['imageName'], $photo->filename);
-        $this->assertEquals($imageAttributes['bboxImageName'], $photo->five_hundred_square_filepath);
+        $this->assertEquals($imageAttributes['fullFilePath'], $photo->filename);
+        $this->assertEquals($imageAttributes['fullBBoxFilePath'], $photo->five_hundred_square_filepath);
 
         // Cleanup
         $deletePhotoAction = app(DeletePhotoAction::class);

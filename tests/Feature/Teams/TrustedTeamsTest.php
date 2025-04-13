@@ -42,7 +42,8 @@ class TrustedTeamsTest extends TestCase
 
         $file = $this->getImageAndAttributes()['file'];
 
-        $this->post('/submit', ['photo' => $file]);
+        $response = $this->post('/submit', ['photo' => $file]);
+        $response->assertStatus(200);
 
         $photo = $user->fresh()->photos->last();
 
@@ -66,11 +67,9 @@ class TrustedTeamsTest extends TestCase
         Event::fake();
 
         // User is not verified
-        /** @var User $user */
         $user = User::factory()->create(['verification_required' => true]);
 
         // However, user is part of a trusted team
-        /** @var Team $team */
         $team = Team::factory()->create(['is_trusted' => true]);
         $user->teams()->attach($team);
         $user->active_team = $team->id;
@@ -78,9 +77,14 @@ class TrustedTeamsTest extends TestCase
 
         // User uploads a photo and tags it
         $this->actingAs($user, 'api');
+
         $imageAttributes = $this->getImageAndAttributes();
-        $this->post('/api/photos/submit', $this->getApiImageAttributes($imageAttributes));
+
+        $response = $this->post('/api/photos/submit', $this->getApiImageAttributes($imageAttributes));
+        $response->assertStatus(200);
+
         $photo = $user->fresh()->photos->last();
+
         $this->post('/api/add-tags', [
             'photo_id' => $photo->id,
             'tags' => ['smoking' => ['butts' => 3]]

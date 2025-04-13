@@ -59,7 +59,7 @@ class CategoryObject extends Pivot
 
         $rows = [];
 
-        foreach ($taggables as $tag) {
+        foreach ($taggables as $tag){
             if (!isset($tag['id'])) {
                 Log::warning("Skipping taggable with missing ID for class {$class}");
                 continue;

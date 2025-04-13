@@ -26,14 +26,9 @@ class CorrectTagsDeletePhotoTest extends TestCase
     {
         parent::setUp();
 
-        Storage::fake('s3');
-        Storage::fake('bbox');
+        $this->setUpPhotoUploads();
 
-        $this->setImagePath();
-
-        /** @var User $admin */
         $this->admin = User::factory()->create(['verification_required' => false]);
-
         $this->admin->assignRole(Role::create(['name' => 'admin']));
 
         $this->user = User::factory()->create(['verification_required' => true]);
@@ -45,7 +40,8 @@ class CorrectTagsDeletePhotoTest extends TestCase
 
         $this->post('/submit', ['photo' => $this->imageAndAttributes['file']]);
 
-        $this->photo = $this->user->fresh()->photos->last();
+        $this->photo = $this->createPhotoFromImageAttributes($this->imageAndAttributes, $this->user);
+        // $this->photo = $this->user->fresh()->photos->last();
 
         // User tags the image
         $this->actingAs($this->user);
@@ -83,8 +79,8 @@ class CorrectTagsDeletePhotoTest extends TestCase
         $this->photo->refresh();
 
         // And it's gone
-        Storage::disk('s3')->assertMissing($this->imageAndAttributes['filepath']);
-        Storage::disk('bbox')->assertMissing($this->imageAndAttributes['filepath']);
+        Storage::disk('s3')->assertMissing($this->imageAndAttributes['fullFilePath']);
+        Storage::disk('bbox')->assertMissing($this->imageAndAttributes['fullBBoxFilePath']);
         $this->assertEquals('/assets/verified.jpg', $this->photo->filename);
         $this->assertEquals(1, $this->photo->verification);
         $this->assertEquals(2, $this->photo->verified);

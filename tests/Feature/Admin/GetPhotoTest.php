@@ -2,13 +2,16 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Models\Location\City;
 use App\Models\Location\Country;
+use App\Models\Location\State;
 use App\Models\Photo;
 use App\Models\User\User;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
 use Tests\Feature\HasPhotoUploads;
 use Tests\TestCase;
+use Tests\Support\TestLocationService;
 
 class GetPhotoTest extends TestCase
 {
@@ -26,8 +29,8 @@ class GetPhotoTest extends TestCase
         Storage::fake('bbox');
 
         $this->setImagePath();
+        $this->setUpPhotoUploads();
 
-        /** @var User $admin */
         $this->admin = User::factory()->create(['verification_required' => false]);
         $this->admin->assignRole(Role::create(['name' => 'admin']));
 
@@ -41,8 +44,6 @@ class GetPhotoTest extends TestCase
         // User uploads a photo in the US
         $this->actingAs($this->user)->post('/submit', ['photo' => $this->imageAndAttributes['file']]);
 
-        \Log::info(['photosCount', Photo::count()]);
-
         $photoInUS = $this->user->fresh()->photos->last();
 
         $this->assertDatabaseHas('photos', [
@@ -50,14 +51,10 @@ class GetPhotoTest extends TestCase
             'user_id' => $this->user->id,
         ]);
 
-        Country::where('shortcode', 'ca')->delete();
-
         // User uploads a photo in Canada
         $canada = Country::factory()->create([
             'country' => 'Canada',
             'shortcode' => 'ca',
-            'slug' => 'canada',
-            'created_by' => $this->user->id,
         ]);
 
         $this->address = [
@@ -72,11 +69,11 @@ class GetPhotoTest extends TestCase
             "suburb" => "Downtown"
         ];
 
-        $canadaAttributes = $this->getImageAndAttributes('jpg')['file'];
+        // reapply the mock geocoder
+        $this->setMockForGeocodingAction();
+        $canadaAttributes = $this->getImageAndAttributes('jpg');
 
-        $this->actingAs($this->user)->post('/submit', ['photo' => $canadaAttributes]);
-
-        \Log::info('Latest photo:', \App\Models\Photo::latest()->first()->toArray());
+        $this->createPhotoFromImageAttributes($canadaAttributes, $this->user);
 
         $this->assertDatabaseHas('photos', [
             'country_id' => $canada->id,
@@ -87,8 +84,6 @@ class GetPhotoTest extends TestCase
         $response = $this->actingAs($this->admin)
             ->getJson('/admin/get-next-image-to-verify?country_id=' . $canada->id)
             ->assertOk();
-
-        \Log::info($response->json());
 
         // And it's the correct photo
         $this->assertEquals($canada->id, $response->json('photo.country_id'));

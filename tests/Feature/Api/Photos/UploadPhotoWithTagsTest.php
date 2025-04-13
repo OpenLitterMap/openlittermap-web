@@ -58,7 +58,7 @@ class UploadPhotoWithTagsTest extends TestCase
         Storage::disk('s3')->assertExists($imageAttributes['filepath']);
         Storage::disk('bbox')->assertExists($imageAttributes['filepath']);
         $this->assertCount(1, $user->photos);
-        $this->assertEquals($imageAttributes['imageName'], $photo->filename);
+        $this->assertEquals($imageAttributes['fullFilePath'], $photo->filename);
         $this->assertEquals(
             $imageAttributes['dateTime']->format('Y-m-d H:i:s'),
             $photo->datetime->format('Y-m-d H:i:s')
