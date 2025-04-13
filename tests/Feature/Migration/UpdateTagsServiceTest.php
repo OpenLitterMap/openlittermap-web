@@ -2,11 +2,14 @@
 
 namespace Tests\Feature\Migration;
 
+use App\Models\Litter\Tags\LitterObject;
+use App\Models\Litter\Categories\Brand;
 use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Litter\Categories\Smoking;
 use App\Models\Litter\Categories\Alcohol;
 use App\Models\Photo;
 use App\Services\Tags\UpdateTagsService;
+use Database\Seeders\Tags\GenerateBrandsSeeder;
 use Database\Seeders\Tags\GenerateTagsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -22,6 +25,7 @@ class UpdateTagsServiceTest extends TestCase
         parent::setUp();
 
         $this->seed(GenerateTagsSeeder::class);
+        $this->seed(GenerateBrandsSeeder::class);
         $this->service = app(UpdateTagsService::class);
     }
 
@@ -131,5 +135,94 @@ class UpdateTagsServiceTest extends TestCase
             'photo_tag_id' => $photoTag->id,
             'tag_type' => 'custom_tag',
         ]);
+    }
+
+    public function test_one_object_one_brand_links_automatically()
+    {
+        $alcohol = Alcohol::create([
+            'beerBottle' => 1,
+        ]);
+
+        $brands = Brand::create([
+            'heineken' => 1,
+        ]);
+
+        $photo = Photo::factory()->create(['remaining' => 0]);
+        $photo->alcohol_id = $alcohol->id;
+        $photo->brands_id  = $brands->id;
+        $photo->save();
+
+        // Migrate
+        $this->service->updateTags($photo);
+
+        // We expect exactly 1 PhotoTag for object 'beer_bottle'
+        $tags = PhotoTag::where('photo_id', $photo->id)->get();
+        $this->assertCount(1, $tags);
+
+        $beerBottleObjId = LitterObject::where('key', 'beer_bottle')->value('id');
+        $photoTag = $tags->first();
+        $this->assertEquals($beerBottleObjId, $photoTag->litter_object_id);
+
+        $brandExtras = $photoTag->extraTags()->where('tag_type', 'brand')->get();
+        $this->assertCount(1, $brandExtras, "Expected brand 'heineken' to be linked to 'beer_bottle'.");
+    }
+
+    /**
+     * 1) Combine old "smoking" + "alcohol" keys:
+     *    - smoking => 'cigaretteBox' = 2
+     *    - alcohol => 'beerBottle' = 3
+     *    - brand within alcohol => 'heineken' = 1 (some code bases store brands in the same table)
+     */
+    public function test_migrates_smoking_and_alcohol_tags_in_one_photo()
+    {
+        // Create a Smoking category row with old keys
+        $smoking = Smoking::create([
+            'cigaretteBox' => 2,
+        ]);
+
+        $alcohol = Alcohol::create([
+            'beerBottle' => 3,
+        ]);
+
+        $brand = Brand::create([
+            'heineken' => 1,
+        ]);
+
+        // Create a Photo and link it to these categories
+        $photo = Photo::factory()->create(['remaining' => 0]);
+        $photo->smoking_id = $smoking->id;
+        $photo->alcohol_id = $alcohol->id;
+        $photo->brands_id  = $brand->id;
+        $photo->save();
+
+        // Add a custom tag for variety
+        $photo->customTags()->create(['tag' => 'festival_cleanup']);
+
+        // Migrate
+        $this->service->updateTags($photo);
+
+        // We expect to see two objects (cigarette_box + beer_bottle) in photo_tags
+        $tags = PhotoTag::where('photo_id', $photo->id)->get();
+        $this->assertCount(2, $tags);
+
+        $cigaretteBoxId = LitterObject::where('key', 'cigarette_box')->value('id');
+        $beerBottleId   = LitterObject::where('key', 'beer_bottle')->value('id');
+
+        // Check "cigarette_box"
+        $cigBoxTag = $tags->firstWhere('litter_object_id', $cigaretteBoxId);
+        $this->assertNotNull($cigBoxTag, "Expected a PhotoTag for 'cigaretteBox' object.");
+        $this->assertEquals(2, $cigBoxTag->quantity);
+
+        // Check "beer_bottle"
+        $beerBottleTag = $tags->firstWhere('litter_object_id', $beerBottleId);
+        $this->assertNotNull($beerBottleTag, "Expected a PhotoTag for 'beerBottle' object.");
+        $this->assertEquals(3, $beerBottleTag->quantity);
+
+        // Check brand
+        // \Log::info($tags->toArray());
+//        $beerBottles = $beerBottleTag->extraTags()->where('tag_type', 'brand')->get();
+//        $this->assertCount(1, $beerBottles);
+
+        $this->assertDatabaseHas('custom_tags_new', ['key' => 'festival_cleanup']);
     }
 }

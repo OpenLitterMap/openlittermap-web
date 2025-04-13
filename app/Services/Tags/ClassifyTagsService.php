@@ -8,6 +8,7 @@ use App\Models\Litter\Tags\CategoryObject;
 use App\Models\Litter\Tags\CustomTagNew;
 use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\Materials;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class ClassifyTagsService
@@ -325,80 +326,133 @@ class ClassifyTagsService
 
     public function resolveBrandObjectLinks(int $photoId, array $group): array
     {
-        $brandObjectLinks = [];
+        $matched = [];
 
         $objects = $group['objects'] ?? [];
-        $brands = $group['brands'] ?? [];
+        $brands  = $group['brands']  ?? [];
 
+        // If no objects or brands, nothing to do
         if (empty($objects) || empty($brands)) {
-            return $brandObjectLinks;
+            return $matched;
         }
 
-        // 1. Simple 1:1 match. We assume the object and brand are related.
-        if (count($objects) === 1 && count($brands) === 1)
-        {
-            $object = $objects[0];
-            $brand = $brands[0];
-
-            $catObj = CategoryObject::firstOrCreate([
-                'category_id' => $group['category_id'],
-                'litter_object_id' => $object['id'],
-            ]);
-
-            $alreadyTagged = $catObj->taggables()
-                ->where('taggable_id', $brand['id'])
-                ->where('taggable_type', BrandList::class)
-                ->exists();
-
-            if (!$alreadyTagged) {
-                $catObj->attachTaggables([$brand], BrandList::class);
-                echo "Linked brand '{$brand['key']}' to object '{$object['key']}' in category {$group['category_id']}\n";
-            }
-
-            return [[
-                'object' => $object,
-                'brand' => $brand,
-            ]];
+        // ─────────────────────────────────────────────────────────
+        // CASE 1: Exactly 1 object AND 1 brand => auto-link
+        // ─────────────────────────────────────────────────────────
+        if (count($objects) === 1 && count($brands) === 1) {
+            $matched[] = $this->linkBrandToObject(
+                $group['category_id'],
+                $objects[0],
+                $brands[0]
+            );
+            return $matched;
         }
 
-        // 2. Load taggables in bulk
-        $catObjs = CategoryObject::where('category_id', $group['category_id'])
-            ->whereIn('litter_object_id', collect($objects)->pluck('id'))
-            ->with('taggables')
-            ->get()
-            ->keyBy('litter_object_id');
+        // ─────────────────────────────────────────────────────────
+        // CASE 2: If multiple objects AND multiple brands
+        //   => look up existing brand↔object pivots, then log leftover
+        // ─────────────────────────────────────────────────────────
+        elseif (count($objects) > 1 && count($brands) > 1) {
+            \Log::info("Photo #{$photoId} has multiple objects and multiple brands. Checking existing relationships...");
 
-        // 3. Match brands using taggables
-        $matchedBrandIds = [];
+            // For convenience, store them in collections we can filter
+            $unmatchedObjects = collect($objects);
+            $unmatchedBrands  = collect($brands);
 
-        // 4. Match brands to objects based on taggables
-        foreach ($objects as $object) {
-            $catObj = $catObjs[$object['id']] ?? null;
-            if (!$catObj) continue;
-
+            // 1) For each brand, see if we have known pivots in category_object_taggables
             foreach ($brands as $brand) {
-                $matched = $catObj->taggables
+                // Get all catObj IDs for brand in the same category
+                $catObjIds = \DB::table('category_object_taggables')
                     ->where('taggable_id', $brand['id'])
                     ->where('taggable_type', BrandList::class)
-                    ->isNotEmpty();
+                    ->pluck('category_object_id');
 
-                if ($matched) {
-                    $brandObjectLinks[] = [
-                        'object' => $object,
-                        'brand' => $brand,
-                    ];
-                    $matchedBrandIds[] = $brand['id'];
+                if ($catObjIds->isEmpty()) {
+                    continue;
+                }
+
+                // Which objects do those catObj IDs represent?
+                $objectIds = CategoryObject::whereIn('id', $catObjIds)
+                    ->where('category_id', $group['category_id'])
+                    ->pluck('litter_object_id')
+                    ->all();
+
+                // If any of our $unmatchedObjects share those objectIds, link them
+                foreach ($unmatchedObjects as $objIndex => $objData) {
+                    if (in_array($objData['id'], $objectIds, true)) {
+                        // Found an existing pivot => link brand to object if not already
+                        $matched[] = $this->linkBrandToObject(
+                            $group['category_id'],
+                            $objData,
+                            $brand
+                        );
+                        // Remove from "unmatched" sets so we don't re-link them
+                        $unmatchedObjects->forget($objIndex);
+                        $unmatchedBrands = $unmatchedBrands->reject(
+                            fn($b) => $b['id'] === $brand['id']
+                        );
+                        // We can break if we assume 1 brand→1 object
+                        // or omit break if brand can match multiple objects
+                        break;
+                    }
                 }
             }
-        }
 
-        // 5. Log unmatched brands
-        foreach ($brands as $brand) {
-            if (!in_array($brand['id'], $matchedBrandIds)) {
-                Log::warning("Unmatched brand '{$brand['key']}' (ID: {$brand['id']}) in photo ID {$photoId}");
+            // 2) Log any leftover unmatched brands
+            foreach ($unmatchedBrands as $brand) {
+                \Log::warning("Unmatched brand '{$brand['key']}' in photo #{$photoId}");
             }
+            foreach ($unmatchedObjects as $object) {
+                \Log::warning("Unmatched object '{$object['key']}' in photo #{$photoId}");
+            }
+
+            return $matched;
         }
 
-        return $brandObjectLinks;
+        // ─────────────────────────────────────────────────────────
+        // CASE 3: If exactly one side is multiple, or some other pattern
+        //   => fallback to your existing logic
+        // ─────────────────────────────────────────────────────────
+        else {
+            \Log::info("Photo #{$photoId} has a partial multiple scenario; using normal pivot logic.");
+
+            // We can reuse the 'multiple' pivot logic from above, or
+            // just do the simpler approach. For example:
+            return $this->attemptPartialMatches($photoId, $group);
+        }
+    }
+
+
+    /**
+     * Helper that:
+     *   - Creates the pivot link between the brand & the object in the DB if not existing
+     *   - Returns the brand-object array that your createPhotoTags() can later use
+     */
+    protected function linkBrandToObject(array $group, array $object, array $brand): array
+    {
+        // Create or find the category-object pivot
+        $catObj = CategoryObject::firstOrCreate([
+            'category_id' => $group['category_id'],
+            'litter_object_id' => $object['id'],
+        ]);
+
+        // Attach the brand if not already
+        $alreadyTagged = $catObj->taggables()
+            ->where('taggable_id', $brand['id'])
+            ->where('taggable_type', BrandList::class)
+            ->exists();
+
+        if (!$alreadyTagged) {
+            $catObj->attachTaggables([$brand], BrandList::class);
+            Log::info(
+                "Auto-linked brand '{$brand['key']}' to object '{$object['key']}' in category_id={$group['category_id']}"
+            );
+        }
+
+        // Return the linked pair for later usage in createPhotoTags()
+        return [
+            'object' => $object,
+            'brand'  => $brand,
+        ];
     }
 }

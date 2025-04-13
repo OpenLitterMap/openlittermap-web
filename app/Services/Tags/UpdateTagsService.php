@@ -32,6 +32,9 @@ class UpdateTagsService
         // [["smoking" => ["butts" => 1], "alcohol" => ["beerBottle" => 1], "brands" => ["pepsi" => 1, "marlboro" => 1]]
         $originalTags = $photo->tags() ?? [];
 
+        // 1) Merge single brand into single object if that pattern applies
+        $originalTags = $this->mergeSingleObjectAndBrand($originalTags);
+
         // ['tag1', 'brand=x', 'object:thing=2', 'material:plastic']
         $customTagsOld = $photo->customTags ?? [];
 
@@ -41,6 +44,7 @@ class UpdateTagsService
         }
 
         // Step 1: Parse all the photos tags into the new format.
+        // We don't know the relationship between them yet
         $parsedTags = $this->parseTags($originalTags, $customTagsOld);
 
         // Step 2: Populate new pivot + morph structure
@@ -54,6 +58,52 @@ class UpdateTagsService
 
         // Step 4: Compute metadata
         $photo->calculateTotalTags();
+    }
+
+    /**
+     * If $originalTags has exactly two top-level keys, e.g.:
+     *     [ 'alcohol' => ['beerBottle'=>1], 'brands'=>['heineken'=>1] ]
+     * and both those sub-arrays each have exactly 1 entry,
+     * merge them into a single category array. This lets the code
+     * interpret them as "1 object => 1 brand" in the same category block.
+     *
+     * Otherwise, do nothing and return the original array unchanged.
+     */
+    private function mergeSingleObjectAndBrand(array $originalTags): array
+    {
+        $keys = array_keys($originalTags);
+
+        // If we have exactly 2 keys and one is 'brands'
+        if (count($keys) === 2 && in_array('brands', $keys, true)) {
+            // Copy out the brand sub-array
+            $brandData = $originalTags['brands'];
+            unset($originalTags['brands']);
+
+            // Now there's 1 other key
+            $remainingKeys = array_keys($originalTags);
+            $onlyKey = $remainingKeys[0] ?? null;
+            if ($onlyKey === null) {
+                // Shouldn't happen unless originalTags was weirdly empty
+                $originalTags['brands'] = $brandData; // revert
+                return $originalTags;
+            }
+
+            // Check the sub-arrays
+            $objectCount = count($originalTags[$onlyKey]);
+            $brandCount  = count($brandData);
+
+            // If both sub-arrays each have exactly 1 entry => merge them
+            if ($objectCount === 1 && $brandCount === 1) {
+                \Log::info("Merging single brand into single object category '{$onlyKey}'.");
+                $originalTags[$onlyKey] = array_merge($originalTags[$onlyKey], $brandData);
+            } else {
+                \Log::info("Multiple objects or multiple brands exist; skipping direct merge.");
+                // restore 'brands' so parseTags sees them separately
+                $originalTags['brands'] = $brandData;
+            }
+        }
+
+        return $originalTags;
     }
 
     protected function parseTags(array $originalTags, Collection $customTagsOld): array
@@ -112,11 +162,6 @@ class UpdateTagsService
     {
         foreach ($parsed as $groupKey => $group)
         {
-            // Skip if it’s the top-level 'custom_tags', which is not a real category
-            if ($groupKey === 'custom_tags') {
-                continue;
-            }
-
             if (empty($group['objects'])) {
                 continue;
             }
@@ -141,11 +186,6 @@ class UpdateTagsService
 
         foreach ($parsed as $groupKey => $group)
         {
-            // Skip top-level “custom_tags” entry
-            if ($groupKey === 'custom_tags') {
-                continue;
-            }
-
             if (!empty($group['objects']))
             {
                 $hasObjects = true;
