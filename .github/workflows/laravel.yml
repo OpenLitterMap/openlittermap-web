@@ -13,10 +13,10 @@ jobs:
 
     env:
       APP_ENV: testing
-      DB_HOST: 127.0.0.1
+      DB_HOST: mysql
       DB_DATABASE: olm_test
       DB_USERNAME: root
-      DB_PASSWORD: password
+      DB_PASSWORD: secret
       BROADCAST_DRIVER: log
       CACHE_DRIVER: array
       QUEUE_CONNECTION: sync
@@ -36,7 +36,7 @@ jobs:
         image: mysql:5.7
         env:
           MYSQL_ALLOW_EMPTY_PASSWORD: false
-          MYSQL_ROOT_PASSWORD: password
+          MYSQL_ROOT_PASSWORD: secret
           MYSQL_DATABASE: olm_test
         ports:
           - 3306/tcp
@@ -59,8 +59,8 @@ jobs:
     - uses: actions/setup-node@v3
       with:
         node-version: 18.20.3
-    - name: Start mysql service
-      run: sudo service mysql start
+#    - name: Start mysql service
+#      run: sudo service mysql start
     - name: Setup minio
       run: |
           docker run -d -p 9000:9000 --name minio \
@@ -82,6 +82,8 @@ jobs:
       run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
     - name: Generate key
       run: php artisan key:generate
+    - name: Clear Config
+      run: php artisan config:clear
     - name: Install Passport
       run: php artisan passport:keys
     - name: Clear Config
