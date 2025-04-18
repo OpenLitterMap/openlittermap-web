@@ -42,7 +42,6 @@ class MigrationScript extends Command
     {
         Photo::whereNull('migrated_at')
             ->with('customTags')
-            ->orderBy('id', 'desc')
             ->chunkById(500, function ($photos)
             {
                 DB::transaction(function () use ($photos)
@@ -55,12 +54,12 @@ class MigrationScript extends Command
                         // Update Redis with new tags
                         $this->updateRedisService->updateRedis($photo);
 
-                        // updateAchivements - new
+                        // update achievements - new
 
                         $photo->update(['migrated_at' => now()]);
-
-                        $this->info("Migrated photo IDs " . $photos->first()->id . "–" . $photos->last()->id);
                     }
+
+                    $this->info("Migrated photo IDs " . $photos->first()->id . "–" . $photos->last()->id);
                 }, 3);
             });
 

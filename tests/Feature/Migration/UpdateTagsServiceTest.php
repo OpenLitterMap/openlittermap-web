@@ -328,6 +328,48 @@ class UpdateTagsServiceTest extends TestCase
         $this->assertEquals(0, $cigTag->extraTags()->where('tag_type', 'brand')->count());
     }
 
+    /** @test */
+    public function update_tags_is_idempotent(): void
+    {
+        $smoking = Smoking::create(['butts' => 2]);
+        $photo   = Photo::factory()->create(['smoking_id' => $smoking->id]);
+
+        $this->service->updateTags($photo);
+        $this->service->updateTags($photo);   // second run
+
+        $this->assertCount(1, PhotoTag::where('photo_id', $photo->id)->get());
+        $this->assertEquals(
+            2,
+            PhotoTag::where('photo_id', $photo->id)->value('quantity')
+        );
+
+        // extras should also be unique
+        $extraRows = DB::table('photo_tag_extra_tags')->where('photo_tag_id', PhotoTag::first()->id)->count();
+        $this->assertEquals(0, $extraRows);
+    }
+
+    /** @test */
+    public function photo_with_only_brands_creates_brand_only_tag(): void
+    {
+        $brandRow = Brand::create(['coke'=>1, 'pepsi'=>1]);
+        $photo = Photo::factory()->create(['brands_id'=>$brandRow->id]);
+
+        $this->service->updateTags($photo);
+
+        $this->assertCount(1, PhotoTag::where('photo_id',$photo->id)->get());
+        $this->assertEquals(2, PhotoTag::first()->extraTags()->where('tag_type','brand')->count());
+    }
+
+    /** @test */
+    public function photo_migrated_at_is_updated(): void
+    {
+        $photo = Photo::factory()->create(['remaining' => 0]);
+
+        $this->service->updateTags($photo);
+
+        $this->assertNotNull($photo->fresh()->migrated_at);
+    }
+
     /* -----------------------------  unhappy paths  ----------------------------- */
 
     /** @test */

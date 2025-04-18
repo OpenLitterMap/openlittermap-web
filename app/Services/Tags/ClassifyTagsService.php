@@ -33,6 +33,11 @@ class ClassifyTagsService
         $this->customTags = CustomTagNew::pluck('id', 'key')->all();
     }
 
+    public function materialMap(): array
+    {
+        return $this->materials; // [key => id] pre‑hydrated in constructor
+    }
+
     /**
      * Normalize a tag string (lowercase, trim).
      */
