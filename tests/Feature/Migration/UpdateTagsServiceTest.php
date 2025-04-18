@@ -226,9 +226,8 @@ class UpdateTagsServiceTest extends TestCase
         $this->assertEquals(3, $beerBottleTag->quantity);
 
         // Check brand
-        // \Log::info($tags->toArray());
-//        $beerBottles = $beerBottleTag->extraTags()->where('tag_type', 'brand')->get();
-//        $this->assertCount(1, $beerBottles);
+        $beerBottles = $beerBottleTag->extraTags()->where('tag_type', 'brand')->get();
+        $this->assertCount(1, $beerBottles);
 
         $this->assertDatabaseHas('custom_tags_new', ['key' => 'festival_cleanup']);
     }
@@ -333,7 +332,7 @@ class UpdateTagsServiceTest extends TestCase
     public function update_tags_is_idempotent(): void
     {
         $smoking = Smoking::create(['butts' => 2]);
-        $photo   = Photo::factory()->create(['smoking_id' => $smoking->id]);
+        $photo = Photo::factory()->create(['smoking_id' => $smoking->id]);
 
         $this->service->updateTags($photo);
         $this->service->updateTags($photo);   // second run
@@ -375,7 +374,7 @@ class UpdateTagsServiceTest extends TestCase
     public function empty_brand_or_object_blocks_do_not_throw(): void
     {
         $alcohol = Alcohol::create([]);
-        $photo   = Photo::factory()->create(['alcohol_id' => $alcohol->id]);
+        $photo = Photo::factory()->create(['alcohol_id' => $alcohol->id]);
 
         $this->service->updateTags($photo);
 
@@ -422,7 +421,7 @@ class UpdateTagsServiceTest extends TestCase
         // Setup additional category: Food with 'napkins'
         LitterObject::firstOrCreate(['key' => 'napkins']);
 
-        $food      = Food::create([ 'napkins' => 1 ]);
+        $food = Food::create([ 'napkins' => 1 ]);
         $smoking = Smoking::create([ 'butts' => 1 ]);
 
         // Photo with both smoking_id and food_id set
@@ -445,7 +444,7 @@ class UpdateTagsServiceTest extends TestCase
     public function it_ignores_zero_quantities_when_migrating_columns()
     {
         $smoking = Smoking::create([ 'butts' => 0, 'cigaretteBox' => 0 ]);
-        $photo   = Photo::factory()->create([ 'smoking_id' => $smoking->id ]);
+        $photo = Photo::factory()->create([ 'smoking_id' => $smoking->id ]);
 
         $this->service->updateTags($photo);
         $this->assertCount(0, PhotoTag::where('photo_id', $photo->id)->get(), 'Zero-qty tags should not migrate');
@@ -455,7 +454,7 @@ class UpdateTagsServiceTest extends TestCase
     public function it_idempotently_skips_already_migrated_column_based_photos()
     {
         $smoking = Smoking::create([ 'butts' => 1 ]);
-        $photo   = Photo::factory()->create([ 'smoking_id' => $smoking->id ]);
+        $photo = Photo::factory()->create([ 'smoking_id' => $smoking->id ]);
 
         // First migration
         $this->service->updateTags($photo);
