@@ -18,6 +18,7 @@ use App\Services\Tags\PhotoTagService;
 use App\Services\Tags\UpdateTagsService;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
 class MigrationScript extends Command
@@ -39,34 +40,30 @@ class MigrationScript extends Command
 
     public function handle(): void
     {
-        $photos = Photo::query()
-            ->select('id', 'datetime', 'user_id', 'country_id', 'state_id', 'city_id', 'remaining')
-            ->orderBy('id', 'desc');
+        Photo::whereNull('migrated_at')
+            ->with('customTags')
+            ->orderBy('id', 'desc')
+            ->chunkById(500, function ($photos)
+            {
+                DB::transaction(function () use ($photos)
+                {
+                    foreach ($photos as $photo)
+                    {
+                        // Convert all Tags to the new format
+                        $this->updateTagsService->updateTags($photo);
 
-        $bar = $this->output->createProgressBar(Photo::count());
-        $bar->start();
+                        // Update Redis with new tags
+                        $this->updateRedisService->updateRedis($photo);
 
-        foreach ($photos->cursor() as $photo)
-        {
-            // Convert all Tags to the new format
-            $this->updateTagsService->updateTags($photo);
+                        // updateAchivements - new
 
-            // Update Redis with new tags
-            $this->updateRedisService->updateRedis($photo);
+                        $photo->update(['migrated_at' => now()]);
 
-            // New
-            // $this->updateUserAchievements($photo);
+                        $this->info("Migrated photo IDs " . $photos->first()->id . "–" . $photos->last()->id);
+                    }
+                }, 3);
+            });
 
-            $bar->advance();
-        }
-
-        $bar->finish();
         $this->info("\n✅ Migration complete.");
-    }
-
-    protected function updateUserAchievements (Photo $photo) {
-
-        // uploaded x days in a row
-        // track days uploaded in a row
     }
 }

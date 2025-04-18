@@ -326,133 +326,91 @@ class ClassifyTagsService
 
     public function resolveBrandObjectLinks(int $photoId, array $group): array
     {
+        $objects = collect($group['objects']);   // [['id'=>7,'key'=>'beer_bottle'], …]
+        $brands  = collect($group['brands']);    // [['id'=>9,'key'=>'heineken'],   …]
+
+        // Bail out quickly if nothing to match
+        if ($objects->isEmpty() || $brands->isEmpty()) {
+            return [];
+        }
+
+        // ───────────────────────────────────────────────
+        // CASE 1 : exactly 1 object + 1 brand
+        // ───────────────────────────────────────────────
+        if ($objects->count() === 1 && $brands->count() === 1) {
+            return [
+                $this->createPivotIfMissing(
+                    $group['category_id'],
+                    $objects->first(),
+                    $brands->first()
+                ),
+            ];
+        }
+
+        // ───────────────────────────────────────────────
+        // CASE 2 : many objects + many brands
+        // ───────────────────────────────────────────────
+        // 1) Load all pivots for *these* objects in *this* category at once
+        $catObjIds = CategoryObject::where('category_id', $group['category_id'])
+            ->whereIn('litter_object_id', $objects->pluck('id'))
+            ->pluck('id', 'litter_object_id');                      // [objectId => catObjId]
+
+        $existing = DB::table('taggables')
+            ->whereIn('category_litter_object_id', $catObjIds->values())
+            ->where('taggable_type', BrandList::class)
+            ->whereIn('taggable_id', $brands->pluck('id'))
+            ->get(['category_litter_object_id', 'taggable_id'])     // rows we already have
+            ->groupBy('category_litter_object_id');
+
         $matched = [];
 
-        $objects = $group['objects'] ?? [];
-        $brands  = $group['brands']  ?? [];
+        // 2) iterate once through objects; for each, see if *its* catObj has one of the brands
+        foreach ($objects as $object)
+        {
+            $catObjId = $catObjIds[$object['id']] ?? null;
 
-        // If no objects or brands, nothing to do
-        if (empty($objects) || empty($brands)) {
-            return $matched;
-        }
+            if (!$catObjId) {
+                continue;
+            }
 
-        // ─────────────────────────────────────────────────────────
-        // CASE 1: Exactly 1 object AND 1 brand => auto-link
-        // ─────────────────────────────────────────────────────────
-        if (count($objects) === 1 && count($brands) === 1) {
-            $matched[] = $this->linkBrandToObject(
-                $group['category_id'],
-                $objects[0],
-                $brands[0]
-            );
-            return $matched;
-        }
+            $brandIdsForObj = $existing[$catObjId] ?? collect();
 
-        // ─────────────────────────────────────────────────────────
-        // CASE 2: If multiple objects AND multiple brands
-        //   => look up existing brand↔object pivots, then log leftover
-        // ─────────────────────────────────────────────────────────
-        elseif (count($objects) > 1 && count($brands) > 1) {
-            \Log::info("Photo #{$photoId} has multiple objects and multiple brands. Checking existing relationships...");
-
-            // For convenience, store them in collections we can filter
-            $unmatchedObjects = collect($objects);
-            $unmatchedBrands  = collect($brands);
-
-            // 1) For each brand, see if we have known pivots in category_object_taggables
-            foreach ($brands as $brand) {
-                // Get all catObj IDs for brand in the same category
-                $catObjIds = \DB::table('category_object_taggables')
-                    ->where('taggable_id', $brand['id'])
-                    ->where('taggable_type', BrandList::class)
-                    ->pluck('category_object_id');
-
-                if ($catObjIds->isEmpty()) {
-                    continue;
-                }
-
-                // Which objects do those catObj IDs represent?
-                $objectIds = CategoryObject::whereIn('id', $catObjIds)
-                    ->where('category_id', $group['category_id'])
-                    ->pluck('litter_object_id')
-                    ->all();
-
-                // If any of our $unmatchedObjects share those objectIds, link them
-                foreach ($unmatchedObjects as $objIndex => $objData) {
-                    if (in_array($objData['id'], $objectIds, true)) {
-                        // Found an existing pivot => link brand to object if not already
-                        $matched[] = $this->linkBrandToObject(
-                            $group['category_id'],
-                            $objData,
-                            $brand
-                        );
-                        // Remove from "unmatched" sets so we don't re-link them
-                        $unmatchedObjects->forget($objIndex);
-                        $unmatchedBrands = $unmatchedBrands->reject(
-                            fn($b) => $b['id'] === $brand['id']
-                        );
-                        // We can break if we assume 1 brand→1 object
-                        // or omit break if brand can match multiple objects
-                        break;
-                    }
+            foreach ($brandIdsForObj as $row) {
+                $brand = $brands->firstWhere('id', $row->taggable_id);
+                if ($brand) {
+                    $matched[] = ['object' => $object, 'brand' => $brand];
                 }
             }
-
-            // 2) Log any leftover unmatched brands
-            foreach ($unmatchedBrands as $brand) {
-                \Log::warning("Unmatched brand '{$brand['key']}' in photo #{$photoId}");
-            }
-            foreach ($unmatchedObjects as $object) {
-                \Log::warning("Unmatched object '{$object['key']}' in photo #{$photoId}");
-            }
-
-            return $matched;
         }
 
-        // ─────────────────────────────────────────────────────────
-        // CASE 3: If exactly one side is multiple, or some other pattern
-        //   => fallback to your existing logic
-        // ─────────────────────────────────────────────────────────
-        else {
-            \Log::info("Photo #{$photoId} has a partial multiple scenario; using normal pivot logic.");
+        // 3) log every (object,brand) pair that did NOT have a pivot
+        $matchedHashes = collect($matched)->map(
+            fn ($p) => $p['object']['id'].'-'.$p['brand']['id']
+        )->all();
 
-            // We can reuse the 'multiple' pivot logic from above, or
-            // just do the simpler approach. For example:
-            return $this->attemptPartialMatches($photoId, $group);
+        foreach ($objects as $o) {
+            foreach ($brands as $b) {
+                $hash = $o['id'].'-'.$b['id'];
+                if (!in_array($hash, $matchedHashes, true)) {
+                    Log::warning(
+                        "No pivot for photo #{$photoId}: object='{$o['key']}', brand='{$b['key']}'"
+                    );
+                }
+            }
         }
+
+        return $matched;
     }
 
-
-    /**
-     * Helper that:
-     *   - Creates the pivot link between the brand & the object in the DB if not existing
-     *   - Returns the brand-object array that your createPhotoTags() can later use
-     */
-    protected function linkBrandToObject(array $group, array $object, array $brand): array
+    private function createPivotIfMissing(int $categoryId, array $object, array $brand): array
     {
-        // Create or find the category-object pivot
         $catObj = CategoryObject::firstOrCreate([
-            'category_id' => $group['category_id'],
+            'category_id'      => $categoryId,
             'litter_object_id' => $object['id'],
         ]);
 
-        // Attach the brand if not already
-        $alreadyTagged = $catObj->taggables()
-            ->where('taggable_id', $brand['id'])
-            ->where('taggable_type', BrandList::class)
-            ->exists();
+        $catObj->attachTaggables([$brand], BrandList::class);
 
-        if (!$alreadyTagged) {
-            $catObj->attachTaggables([$brand], BrandList::class);
-            Log::info(
-                "Auto-linked brand '{$brand['key']}' to object '{$object['key']}' in category_id={$group['category_id']}"
-            );
-        }
-
-        // Return the linked pair for later usage in createPhotoTags()
-        return [
-            'object' => $object,
-            'brand'  => $brand,
-        ];
+        return ['object' => $object, 'brand' => $brand];
     }
 }

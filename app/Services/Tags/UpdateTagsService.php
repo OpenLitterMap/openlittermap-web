@@ -4,10 +4,7 @@ namespace App\Services\Tags;
 
 use App\Models\Photo;
 use App\Models\Litter\Tags\PhotoTag;
-use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Materials;
-use App\Models\Litter\Tags\CustomTagNew;
-use App\Models\Litter\Tags\CategoryObject;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Log;
 
@@ -24,19 +21,12 @@ class UpdateTagsService
      * Main method to handle the migration.
      *
      *  1) Parse deprecating $photo->tags into new format (objects, materials, brands, etc.).
-     *  2) Populate pivot + morph data (category_litter_object + taggables).
-     *  3) Create new photo_tags + photo_tag_extras.
+     *  2) Create PhotoTag and PhotoTagExtraTag rows.
+     *  3) Re‑calculate the total_tags and compute the new summary per photo.
      */
     public function updateTags(Photo $photo): void
     {
-        // [["smoking" => ["butts" => 1], "alcohol" => ["beerBottle" => 1], "brands" => ["pepsi" => 1, "marlboro" => 1]]
-        $originalTags = $photo->tags() ?? [];
-
-        // 1) Merge single brand into single object if that pattern applies
-        $originalTags = $this->mergeSingleObjectAndBrand($originalTags);
-
-        // ['tag1', 'brand=x', 'object:thing=2', 'material:plastic']
-        $customTagsOld = $photo->customTags ?? [];
+        [$originalTags, $customTagsOld] = $this->getTags($photo);
 
         if (empty($originalTags) && empty($customTagsOld)) {
             Log::info("No tags to migrate for photo ID: {$photo->id}");
@@ -47,71 +37,79 @@ class UpdateTagsService
         // We don't know the relationship between them yet
         $parsedTags = $this->parseTags($originalTags, $customTagsOld);
 
-        // Step 2: Populate new pivot + morph structure
-        // This will create new relationships between the tags
-        // eg softdrinks.energy_can => redbull, monster
-        // eg alcohol.beer_can => budweiser, heineken
-        $this->createTaggableRelationships($parsedTags);
-
-        // Step 3: Create legacy photo_tags + photo_tag_extras
+        // Step 2: Create legacy photo_tags + photo_tag_extras
         $this->createPhotoTags($photo, $parsedTags);
 
-        // Step 4: Compute metadata
+        // Step 3: Compute metadata
         $photo->calculateTotalTags();
     }
 
-    /**
-     * If $originalTags has exactly two top-level keys, e.g.:
-     *     [ 'alcohol' => ['beerBottle'=>1], 'brands'=>['heineken'=>1] ]
-     * and both those sub-arrays each have exactly 1 entry,
-     * merge them into a single category array. This lets the code
-     * interpret them as "1 object => 1 brand" in the same category block.
-     *
-     * Otherwise, do nothing and return the original array unchanged.
-     */
-    private function mergeSingleObjectAndBrand(array $originalTags): array
+    protected function getTags(Photo $photo): array
     {
-        $keys = array_keys($originalTags);
+        // [["smoking" => ["butts" => 1], "alcohol" => ["beerBottle" => 1], "brands" => ["pepsi" => 1, "marlboro" => 1]]
+        $tags = $photo->tags() ?? [];
 
-        // If we have exactly 2 keys and one is 'brands'
-        if (count($keys) === 2 && in_array('brands', $keys, true)) {
-            // Copy out the brand sub-array
-            $brandData = $originalTags['brands'];
-            unset($originalTags['brands']);
+        $originalTags = $this->mergeSingleObjectAndBrand($tags);
 
-            // Now there's 1 other key
-            $remainingKeys = array_keys($originalTags);
-            $onlyKey = $remainingKeys[0] ?? null;
-            if ($onlyKey === null) {
-                // Shouldn't happen unless originalTags was weirdly empty
-                $originalTags['brands'] = $brandData; // revert
-                return $originalTags;
-            }
+        // ['tag1', 'brand=x', 'object:thing=2', 'material:plastic']
+        $customTagsOld = $photo->customTags ?? [];
 
-            // Check the sub-arrays
-            $objectCount = count($originalTags[$onlyKey]);
-            $brandCount  = count($brandData);
+        return [$originalTags, $customTagsOld];
+    }
 
-            // If both sub-arrays each have exactly 1 entry => merge them
-            if ($objectCount === 1 && $brandCount === 1) {
-                \Log::info("Merging single brand into single object category '{$onlyKey}'.");
-                $originalTags[$onlyKey] = array_merge($originalTags[$onlyKey], $brandData);
-            } else {
-                \Log::info("Multiple objects or multiple brands exist; skipping direct merge.");
-                // restore 'brands' so parseTags sees them separately
-                $originalTags['brands'] = $brandData;
+    /**
+     * If the legacy payload is exactly:
+     *     [ <category> => [ <object>=qty ], 'brands' => [ <brand>=qty ] ]
+     * move the brand into that category block so later code
+     * sees one object + one brand in the same group.
+     */
+    private function mergeSingleObjectAndBrand(array $tags): array
+    {
+        if (
+            count($tags) === 2 &&
+            isset($tags['brands']) &&
+            count($tags['brands']) === 1
+        ) {
+            $keys = array_keys($tags); // eg ['smoking', 'brands']
+            $otherKey = $keys[0] === 'brands' ? $keys[1] : $keys[0];
+
+            if ($otherKey !== null && count($tags[$otherKey]) === 1) {
+                Log::info("Auto‑merging single brand into '{$otherKey}' block.");
+
+                // merge brand array into the category array
+                $tags[$otherKey] = array_merge(
+                    $tags[$otherKey],
+                    $tags['brands']
+                );
+
+                unset($tags['brands']);
             }
         }
 
-        return $originalTags;
+        return $tags;
     }
 
     protected function parseTags(array $originalTags, Collection $customTagsOld): array
     {
         $result = [];
+        $globalBrands  = [];
 
         foreach ($originalTags as $categoryKey => $items)
         {
+            /* -----------------------------------------------------------
+             * 1. Handle the special top‑level "brands" block
+             * ----------------------------------------------------------- */
+            if ($categoryKey === 'brands') {
+                foreach ($items as $tag => $qty) {
+                    $parsed             = $this->classifyTags->classify($tag);
+                    $parsed['quantity'] = (int) $qty ?: 1;
+                    if ($parsed['type'] === 'brand') {
+                        $globalBrands[] = $parsed;
+                    }
+                }
+                continue;  // skip the normal category logic
+            }
+
             $category = $this->classifyTags->getCategory($categoryKey);
 
             if (!$category) {
@@ -142,6 +140,16 @@ class UpdateTagsService
             }
         }
 
+        /* ---------------------------------------------------------------
+         * 2.  Sprinkle those brands into every group that has objects
+         * --------------------------------------------------------------- */
+        if ($globalBrands) {
+            foreach ($result as &$group) {
+                $group['brands'] = array_merge($group['brands'], $globalBrands);
+            }
+            unset($group);
+        }
+
         if (!empty($customTagsOld)) {
             foreach ($customTagsOld as $customTagOld) {
                 $parsed = $this->classifyTags->normalizeCustomTag($customTagOld->tag);
@@ -158,33 +166,11 @@ class UpdateTagsService
         return $result;
     }
 
-    protected function createTaggableRelationships(array $parsed): void
-    {
-        foreach ($parsed as $groupKey => $group)
-        {
-            if (empty($group['objects'])) {
-                continue;
-            }
-
-            foreach ($group['objects'] as $object)
-            {
-                $catObj = CategoryObject::firstOrCreate([
-                    'category_id' => $group['category_id'],
-                    'litter_object_id' => $object['id'],
-                ]);
-
-                $catObj->attachTaggables($group['brands'], BrandList::class);
-                $catObj->attachTaggables($group['materials'], Materials::class);
-                $catObj->attachTaggables($group['customTags'], CustomTagNew::class);
-            }
-        }
-    }
-
     protected function createPhotoTags(Photo $photo, array $parsed): void
     {
         $hasObjects = false;
 
-        foreach ($parsed as $groupKey => $group)
+        foreach ($parsed as $group)
         {
             if (!empty($group['objects']))
             {
@@ -201,8 +187,8 @@ class UpdateTagsService
                     ]);
 
                     $matchedBrands = collect($brandLinks)
-                        ->where('object.id', $object['id'])
-                        ->pluck('brand')
+                        ->filter(fn ($pair) => $pair['object']['id'] === $object['id'])
+                        ->map(fn (array $pair) => $pair['brand'])
                         ->unique('id')
                         ->values()
                         ->all();
