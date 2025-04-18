@@ -17,12 +17,8 @@ class UpdateTagsService
         $this->classifyTags = $classifyTags;
     }
 
-    /**
-     * Main migration entry point.
-     */
     public function updateTags(Photo $photo): void
     {
-        // Idempotency: skip if already migrated
         if ($photo->migrated_at !== null) {
             return;
         }
@@ -49,25 +45,14 @@ class UpdateTagsService
         $photo->update(['migrated_at' => now()]);
     }
 
-    /**
-     * Fetch and normalize legacy tags.
-     *
-     * @return array [originalTags, EloquentCollection<CustomTag>]
-     */
     protected function getTags(Photo $photo): array
     {
-        $tags = $photo->tags() ?? [];
+        $tags           = $photo->tags() ?? [];
         $originalTags   = $this->mergeSingleObjectAndBrand($tags);
         $customTagsOld  = $photo->customTags ?? new EloquentCollection();
         return [$originalTags, $customTagsOld];
     }
 
-    /**
-     * Turn legacy tags + custom tags into structured arrays:
-     * - 'groups'             => [<categoryKey> => [category_id, objects, brands, materials]]
-     * - 'globalBrands'       => [<brandParsed>...]
-     * - 'topLevelCustomTags' => [<customParsed>...]
-     */
     protected function parseTags(array $originalTags, EloquentCollection $customTagsOld): array
     {
         $groups             = [];
@@ -77,9 +62,13 @@ class UpdateTagsService
         // 1) Category-based blocks
         foreach ($originalTags as $categoryKey => $items) {
             if ($categoryKey === 'brands') {
-                foreach ($items as $tag => $qty) {
+                foreach ($items as $tag => $qtyRaw) {
+                    $qty = (int) $qtyRaw;
+                    if ($qty <= 0) {
+                        continue;
+                    }
                     $parsed = $this->classifyTags->classify($tag);
-                    $parsed['quantity'] = (int)$qty ?: 1;
+                    $parsed['quantity'] = $qty;
                     if ($parsed['type'] === 'brand') {
                         $globalBrands[] = $parsed;
                     }
@@ -100,13 +89,36 @@ class UpdateTagsService
                 'materials'   => [],
             ];
 
-            foreach ($items as $tag => $quantity) {
+            foreach ($items as $tag => $qtyRaw) {
+                $qty = (int) $qtyRaw;
+                if ($qty <= 0) {
+                    continue;
+                }
+
+                // Initial classification
                 $parsed = $this->classifyTags->classify($tag);
-                $parsed['quantity'] = (int)$quantity ?: 1;
+                $parsed['quantity'] = $qty;
+
+                // If undefined and plural, try singular fallback
+                if ($parsed['type'] === 'undefined' && str_ends_with($tag, 's')) {
+                    $singular = substr($tag, 0, -1);
+                    $parsed2 = $this->classifyTags->classify($singular);
+                    $parsed2['quantity'] = $qty;
+                    if ($parsed2['type'] !== 'undefined') {
+                        $parsed = $parsed2;
+                    }
+                }
+
                 switch ($parsed['type']) {
-                    case 'object':   $groups[$categoryKey]['objects'][]   = $parsed; break;
-                    case 'brand':    $groups[$categoryKey]['brands'][]    = $parsed; break;
-                    case 'material': $groups[$categoryKey]['materials'][] = $parsed; break;
+                    case 'object':
+                        $groups[$categoryKey]['objects'][] = $parsed;
+                        break;
+                    case 'brand':
+                        $groups[$categoryKey]['brands'][] = $parsed;
+                        break;
+                    case 'material':
+                        $groups[$categoryKey]['materials'][] = $parsed;
+                        break;
                     default:
                         Log::info("Skipping tag type: {$parsed['type']} for tag: {$tag}");
                 }
@@ -141,13 +153,6 @@ class UpdateTagsService
         ];
     }
 
-    /**
-     * Given parsedTags, create the appropriate PhotoTag records:
-     * - category groups (object tags + extras)
-     * - brands-only
-     * - custom-only
-     * - attach top-level custom tags to last tag
-     */
     protected function createPhotoTags(Photo $photo, array $parsedTags): void
     {
         $groups             = $parsedTags['groups'];
@@ -156,7 +161,7 @@ class UpdateTagsService
 
         $hasObjects = false;
 
-        // 1) Category-based tags
+        // Category-based tags
         foreach ($groups as $group) {
             if (! empty($group['objects'])) {
                 $hasObjects = true;
@@ -164,27 +169,24 @@ class UpdateTagsService
             }
         }
 
-        // 2) Brands-only
+        // Brands-only
         if (! $hasObjects && empty($topLevelCustomTags) && ! empty($globalBrands)) {
             $this->createBrandsOnlyTag($photo, $globalBrands);
             return;
         }
 
-        // 3) Custom-only
+        // Custom-only
         if (! $hasObjects && ! empty($topLevelCustomTags)) {
             $this->createCustomOnlyTag($photo, $topLevelCustomTags);
             return;
         }
 
-        // 4) Attach any top-level custom tags to the last created tag
+        // Attach any top-level custom tags to the last created tag
         if ($hasObjects && ! empty($topLevelCustomTags)) {
             $this->attachCustomTagsToLast($photo, $topLevelCustomTags);
         }
     }
 
-    /**
-     * Create tags for each object in the group, plus its brand/material extras
-     */
     private function createFromCategoryGroup(Photo $photo, array $group): void
     {
         $brandLinks = $this->classifyTags->resolveBrandObjectLinks($photo->id, $group);
@@ -197,7 +199,6 @@ class UpdateTagsService
                 'picked_up'        => ! $photo->remaining,
             ]);
 
-            // Brands
             $matchedBrands = collect($brandLinks)
                 ->filter(fn($pair) => $pair['object']['id'] === $object['id'])
                 ->pluck('brand')
@@ -206,7 +207,6 @@ class UpdateTagsService
                 ->all();
             $photoTag->attachExtraTags($matchedBrands, 'brand', $index);
 
-            // Materials
             if (! empty($object['materials'] ?? [])) {
                 static $materialCache;
                 if (! isset($materialCache)) {
@@ -223,7 +223,6 @@ class UpdateTagsService
         }
     }
 
-    /** Create a single PhotoTag for global brands only */
     private function createBrandsOnlyTag(Photo $photo, array $globalBrands): void
     {
         $photoTag = PhotoTag::create([
@@ -235,23 +234,20 @@ class UpdateTagsService
         $photoTag->attachExtraTags($globalBrands, 'brand', 0);
     }
 
-    /** Create a primary PhotoTag when only custom tags exist */
-    private function createCustomOnlyTag(Photo $photo, array $custom ):
-    void
+    private function createCustomOnlyTag(Photo $photo, array $customTags): void
     {
-        $primary = array_shift($custom);
+        $primary = array_shift($customTags);
         $photoTag = PhotoTag::create([
             'photo_id'              => $photo->id,
             'custom_tag_primary_id' => $primary['id'],
             'quantity'              => $primary['quantity'],
             'picked_up'             => ! $photo->remaining,
         ]);
-        foreach ($custom as $idx => $extra) {
+        foreach ($customTags as $idx => $extra) {
             $photoTag->attachExtraTags([$extra], 'custom_tag', $idx);
         }
     }
 
-    /** Attach leftover top-level custom tags to the last created PhotoTag */
     private function attachCustomTagsToLast(Photo $photo, array $customTags): void
     {
         $last = $photo->photoTags()->latest()->first();
@@ -263,7 +259,6 @@ class UpdateTagsService
         }
     }
 
-    /** Preserve legacy single-object+single-brand merge logic */
     private function mergeSingleObjectAndBrand(array $tags): array
     {
         if (

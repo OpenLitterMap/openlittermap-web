@@ -174,7 +174,7 @@ class GenerateTagsSeeder extends Seeder
                     'material:glass',
                     'material:bioplastic',
                 ],
-                'napkin' => ['material:paper', 'material:cloth', 'material:biodegradable'],
+                'napkins' => ['material:paper', 'material:cloth', 'material:biodegradable'],
                 'jar' => ['material:glass', 'material:plastic', 'material:metal'],
                 'lid' => ['material:ceramic', 'material:metal', 'material:plastic', 'material:glass'],
                 'tinfoil' => ['material:aluminium'],

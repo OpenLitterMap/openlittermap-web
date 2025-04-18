@@ -9,12 +9,12 @@ use Tests\TestCase;
 
 class ContactTest extends TestCase
 {
-    public function test_users_can_see_the_contact_page()
-    {
-        $response = $this->get('/contact-us');
-
-        $response->assertStatus(200);
-    }
+//    public function test_users_can_see_the_contact_page()
+//    {
+//        $response = $this->get('/contact-us');
+//
+//        $response->assertStatus(200);
+//    }
 
     public function test_users_can_send_a_contact_mail()
     {

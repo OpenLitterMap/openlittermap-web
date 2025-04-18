@@ -152,7 +152,6 @@ class ClassifyTagsService
             'crisp_small' => ['object' => 'crisps', 'materials' => ['foil'], 'sizes' => ['small', 'medium']],
             'crisp_large' => ['object' => 'crisps', 'materials' => ['foil'], 'sizes' => ['large']],
             'styrofoam_plate' => ['object' => 'plate', 'materials' => ['styrofoam']],
-            'napkins' => ['object' => 'napkin', 'materials' => ['paper']],
             'sauce_packet' => ['object' => 'packet', 'materials' => ['plastic']],
             'glass_jar' => ['object' => 'jar', 'materials' => ['glass']],
             'glass_jar_lid' => ['object' => 'lid', 'materials' => ['glass']],

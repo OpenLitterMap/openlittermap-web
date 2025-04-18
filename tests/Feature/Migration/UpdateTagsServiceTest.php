@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Migration;
 
+use App\Models\Litter\Categories\Food;
 use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\CategoryObject;
@@ -370,8 +371,6 @@ class UpdateTagsServiceTest extends TestCase
         $this->assertNotNull($photo->fresh()->migrated_at);
     }
 
-    /* -----------------------------  unhappy paths  ----------------------------- */
-
     /** @test */
     public function empty_brand_or_object_blocks_do_not_throw(): void
     {
@@ -382,5 +381,94 @@ class UpdateTagsServiceTest extends TestCase
 
         // still zero photo_tags
         $this->assertDatabaseCount('photo_tags', 0);
+    }
+
+    /** @test */
+    public function it_migrates_smoking_column_tags_to_photo_tags()
+    {
+        // Create legacy Smoking record with two tag counts
+        $smoking = Smoking::create([
+            'butts'         => 2,
+            'cigaretteBox'  => 3,
+            'lighters'      => 0,    // zero should be ignored
+        ]);
+
+        // Attach to photo
+        $photo = Photo::factory()->create([ 'smoking_id' => $smoking->id ]);
+
+        // Run migration
+        $this->service->updateTags($photo);
+
+        // Refresh and fetch tags
+        $photo->refresh();
+        $tags = PhotoTag::where('photo_id', $photo->id)->get();
+
+        // Expect exactly two tags: butts (2), cigaretteBox (3)
+        $this->assertCount(2, $tags);
+
+        $buttsTag = $tags->firstWhere('litter_object_id', LitterObject::where('key', 'butts')->value('id'));
+        $cigBoxTag = $tags->firstWhere('litter_object_id', LitterObject::where('key', 'cigarette_box')->value('id'));
+
+        $this->assertNotNull($buttsTag);
+        $this->assertEquals(2, $buttsTag->quantity);
+
+        $this->assertNotNull($cigBoxTag);
+        $this->assertEquals(3, $cigBoxTag->quantity);
+    }
+
+    /** @test */
+    public function it_handles_multiple_column_categories_on_same_photo()
+    {
+        // Setup additional category: Food with 'napkins'
+        LitterObject::firstOrCreate(['key' => 'napkins']);
+
+        $food      = Food::create([ 'napkins' => 1 ]);
+        $smoking = Smoking::create([ 'butts' => 1 ]);
+
+        // Photo with both smoking_id and food_id set
+        $photo = Photo::factory()->create([
+            'smoking_id' => $smoking->id,
+            'food_id'    => $food->id,
+        ]);
+
+        $this->service->updateTags($photo);
+
+        $tags = PhotoTag::where('photo_id', $photo->id)->get();
+        // Expect two tags: butts and napkins
+        $this->assertCount(2, $tags);
+
+        $keys = $tags->map(fn($t) => LitterObject::find($t->litter_object_id)->key)->sort()->values();
+        $this->assertEquals(['butts','napkins'], $keys->all());
+    }
+
+    /** @test */
+    public function it_ignores_zero_quantities_when_migrating_columns()
+    {
+        $smoking = Smoking::create([ 'butts' => 0, 'cigaretteBox' => 0 ]);
+        $photo   = Photo::factory()->create([ 'smoking_id' => $smoking->id ]);
+
+        $this->service->updateTags($photo);
+        $this->assertCount(0, PhotoTag::where('photo_id', $photo->id)->get(), 'Zero-qty tags should not migrate');
+    }
+
+    /** @test */
+    public function it_idempotently_skips_already_migrated_column_based_photos()
+    {
+        $smoking = Smoking::create([ 'butts' => 1 ]);
+        $photo   = Photo::factory()->create([ 'smoking_id' => $smoking->id ]);
+
+        // First migration
+        $this->service->updateTags($photo);
+        $this->assertCount(1, PhotoTag::where('photo_id', $photo->id)->get());
+
+        // Change legacy data to see if second run tries to re-migrate
+        $smoking->update([ 'butts' => 5 ]);
+
+        // Second migration should detect migrated_at and skip
+        $this->service->updateTags($photo);
+        $this->assertCount(1, PhotoTag::where('photo_id', $photo->id)->get(), 'Should not duplicate tags');
+
+        // Quantity remains original (1), not updated to 5
+        $this->assertEquals(1, PhotoTag::where('photo_id', $photo->id)->value('quantity'));
     }
 }
