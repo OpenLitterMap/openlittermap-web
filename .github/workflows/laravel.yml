@@ -80,14 +80,21 @@ jobs:
       run: php -r "file_exists('.env') || copy('.env.example', '.env');"
     - name: Install Dependencies
       run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+    - name: Wait for MySQL
+      run: |
+        for i in {1..30}; do
+          nc -z mysql 3306 && echo "MySQL is up!" && break
+          echo "Waiting for MySQL..."
+          sleep 2
+        done
     - name: Generate key
       run: php artisan key:generate
+      env:
+        DB_CONNECTION: null
     - name: Clear Config
       run: php artisan config:clear
     - name: Install Passport
       run: php artisan passport:keys
-    - name: Clear Config
-      run: php artisan config:clear
     - name: Run Migration
       run: php artisan migrate -v
       env:
