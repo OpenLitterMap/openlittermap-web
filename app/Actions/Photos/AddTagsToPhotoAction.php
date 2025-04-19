@@ -21,6 +21,14 @@ class AddTagsToPhotoAction
         $litter = 0;
         $brands = 0;
 
+        if (empty($tags)) {
+            return [
+                'litter' => $litter,
+                'brands' => $brands,
+                'all' => 0
+            ];
+        }
+
         foreach ($tags as $category => $items)
         {
             $this->createCategory($photo, $category);

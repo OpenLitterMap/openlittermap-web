@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Models\Photo;
 use App\Jobs\Api\AddTags;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\AddTagsRequest;
@@ -16,7 +17,7 @@ class AddTagsToUploadedImageController extends Controller
      *
      * version 2.2
      */
-    public function __invoke (AddTagsRequest $request): array
+    public function __invoke (AddTagsRequest $request): JsonResponse
     {
         $user = auth()->user();
         $photo = Photo::find($request->photo_id);
@@ -45,9 +46,9 @@ class AddTagsToUploadedImageController extends Controller
         $photo->remaining = !$pickedUp;
         $photo->save();
 
-        return [
+        return response()->json([
             'success' => true,
             'msg' => 'dispatched'
-        ];
+        ]);
     }
 }

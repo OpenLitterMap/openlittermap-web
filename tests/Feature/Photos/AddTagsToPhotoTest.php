@@ -146,8 +146,8 @@ class AddTagsToPhotoTest extends TestCase
             'tags' => ['smoking' => ['butts' => 3]],
             'picked_up' => false
         ])
-            ->assertStatus(422)
-            ->assertJsonValidationErrors(['photo_id']);
+        ->assertStatus(422)
+        ->assertJsonValidationErrors(['photo_id']);
 
         // Non-existing photo_id -------------------
         $this->postJson('/add-tags', [
@@ -187,8 +187,8 @@ class AddTagsToPhotoTest extends TestCase
             'tags' => [],
             'picked_up' => false
         ])
-            ->assertStatus(422)
-            ->assertJsonValidationErrors(['tags']);
+        ->assertStatus(422)
+        ->assertJsonValidationErrors(['tags']);
 
         // tags is not an array -------------------
         $this->postJson('/add-tags', [

@@ -13,6 +13,7 @@ use App\Models\Litter\Tags\Materials;
 use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Photo;
 use App\Models\User\User;
+use Illuminate\Validation\ValidationException;
 
 class AddTagsToPhotoActionNew
 {
@@ -55,7 +56,14 @@ class AddTagsToPhotoActionNew
 
             // Verify that the category and object are associated.
             if ($category && $object && !$category->litterObjects->contains($object)) {
-                throw new \Exception("Category '{$category->key}' does not contain object '{$object->key}'.");
+                // throw new \Exception("Category '{$category->key}' does not contain object '{$object->key}'.");
+                throw ValidationException::withMessages([
+                    'tags' => [[
+                        'msg' => 'Category does not contain object',
+                        'category' => $category->key,
+                        'object' => $object->key,
+                    ]]
+                ]);
             }
 
             // The parent-level tag on a PhotoTag can either by Category.id + Object.id

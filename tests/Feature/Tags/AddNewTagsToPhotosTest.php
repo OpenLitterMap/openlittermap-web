@@ -148,7 +148,6 @@ class AddNewTagsToPhotosTest extends TestCase
     {
         $this->seed(GenerateTagsSeeder::class);
 
-        // User uploads an image
         $user = User::factory()->create();
         $this->actingAs($user, 'api');
 
@@ -158,45 +157,25 @@ class AddNewTagsToPhotosTest extends TestCase
         $categoryString = 'alcohol';
         $objectString = 'butts';
 
-        $tags = [
-            [
-                'category' => $categoryString,
-                'object' => $objectString
-            ]
-        ];
-
-        try {
-            $response = $this->post('/api/v3/tags', [
-                'photo_id' => $photo->id,
-                'tags' => $tags
-            ]);
-
-            // This will be skipped if exception is thrown
-            $this->fail('Expected exception not thrown.');
-        } catch (\Exception $e) {
-            // ✅ Assert the exception message
-            // $this->assertEquals("Category 'alcohol' does not contain object 'butts'", $e->getMessage());
-
-            // Re-fetch the photo just in case
-            $photo = $photo->fresh();
-
-            // ✅ Assert no photo_tags were created
-            $this->assertDatabaseEmpty('photo_tags');
-
-            // ✅ If you want to simulate what would be in the controller response in future:
-            $errors = [
+        $response = $this->postJson('/api/v3/tags', [
+            'photo_id' => $photo->id,
+            'tags' => [
                 [
-                    'msg' => 'Category does not contain object',
                     'category' => $categoryString,
-                    'object' => $objectString,
+                    'object' => $objectString
                 ]
-            ];
+            ]
+        ]);
 
-            $this->assertCount(1, $errors);
-            $this->assertEquals('Category does not contain object', $errors[0]['msg']);
-            $this->assertEquals('alcohol', $errors[0]['category']);
-            $this->assertEquals('butts', $errors[0]['object']);
-        }
+        $response->assertStatus(422);
+
+        $response->assertJsonFragment([
+            'msg' => 'Category does not contain object',
+            'category' => $categoryString,
+            'object' => $objectString,
+        ]);
+
+        $this->assertDatabaseEmpty('photo_tags');
     }
 
     public function test_it_fails_to_upload_if_the_user_does_not_own_the_photo (): void

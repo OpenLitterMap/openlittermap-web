@@ -32,16 +32,12 @@ class UpdateTagsService
             return;
         }
 
-        // Parse all tags into structured payload
         $parsedTags = $this->parseTags($originalTags, $customTagsOld);
 
-        // Create new PhotoTag rows
         $this->createPhotoTags($photo, $parsedTags);
 
-        // Recalculate totals
         $photo->calculateTotalTags();
 
-        // Mark as migrated
         $photo->update(['migrated_at' => now()]);
     }
 
