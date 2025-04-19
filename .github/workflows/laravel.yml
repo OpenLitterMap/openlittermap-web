@@ -89,8 +89,6 @@ jobs:
         done
     - name: Generate key
       run: php artisan key:generate
-      env:
-        DB_CONNECTION: null
     - name: Clear Config
       run: php artisan config:clear
     - name: Install Passport
