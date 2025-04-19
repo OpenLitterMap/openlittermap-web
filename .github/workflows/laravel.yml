@@ -76,12 +76,12 @@ jobs:
 
           aws --endpoint-url http://127.0.0.1:9000/ s3 mb s3://olm-public
           aws --endpoint-url http://127.0.0.1:9000/ s3 mb s3://olm-public-bbox
-    - name: Generate key
-      run: php artisan key:generate
     - name: Copy .env
       run: php -r "file_exists('.env') || copy('.env.example', '.env');"
     - name: Install Dependencies
       run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+    - name: Generate key
+      run: php artisan key:generate
     - name: Clear Config
       run: php artisan config:clear
     - name: Install Passport
