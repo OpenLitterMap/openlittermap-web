@@ -87,8 +87,8 @@ jobs:
       - name: StartMinIO(test‑S3)
         run: |
           docker run -d --name minio -p 9000:9000 \
-            -e MINIO_ACCESS_KEY=minioadmin \
-            -e MINIO_SECRET_KEY=minioadmin \
+            -e MINIO_ACCESS_KEY=homestead \
+            -e MINIO_SECRET_KEY=secret \
             minio/minio server /data
           aws --endpoint-url http://127.0.0.1:9000 s3 mb s3://olm-public
           aws --endpoint-url http://127.0.0.1:9000 s3 mb s3://olm-public-bbox
