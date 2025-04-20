@@ -63,14 +63,9 @@ jobs:
         with:
           node-version: 18
 
-      # copy your testing env _before_ any artisan commands
       - name: Copy test env
         run: cp .env.testing .env
 
-      - name: Generate application key
-        run: php artisan key:generate --no-interaction
-
-      # wait for MySQL to be ready
       - name: Wait for MySQL
         run: |
           for i in {1..30}; do
@@ -80,15 +75,15 @@ jobs:
           done
           exit 1
 
-      # install without running any composer scripts (so no `artisan package:discover` yet)
       - name: Composer install (no scripts)
         run: composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts
 
-      # now that your code is in place, run migrations
+      - name: Generate application key
+        run: php artisan key:generate --no-interaction
+
       - name: Run migrations
         run: php artisan migrate --force --no-interaction -vvv
 
-      # _then_ discover packages (this will now see your tables)
       - name: Discover packages
         run: php artisan package:discover --ansi
 
