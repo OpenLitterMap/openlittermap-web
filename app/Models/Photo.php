@@ -112,7 +112,7 @@ class Photo extends Model
     }
 
     /**
-     * Build and persist a single‐query JSON summary of this photo's tags + aggregates.
+     * Build and persist a single‑query JSON summary of this photo's tags + aggregates.
      *
      * @return $this
      */
@@ -124,61 +124,61 @@ class Photo extends Model
             ->get()
             ->map(function (PhotoTag $tag) {
                 return [
-                    'photo_tag_id'             => $tag->id,
-                    'category_id'              => $tag->category_id,
-                    'litter_object_id'         => $tag->litter_object_id,
-                    'custom_tag_primary_id'    => $tag->custom_tag_primary_id,
-                    'quantity'                 => $tag->quantity,
-                    'picked_up'                => $tag->picked_up,
-                    'extra_tags'               => $tag->extraTags->map(function ($extra) {
-                        $type = $extra->tag_type;
-                        $id   = $extra->tag_type_id;
-
+                    'photo_tag_id'          => $tag->id,
+                    'category_id'           => $tag->category_id,
+                    'litter_object_id'      => $tag->litter_object_id,
+                    'custom_tag_primary_id' => $tag->custom_tag_primary_id,
+                    'quantity'              => $tag->quantity,
+                    'picked_up'             => $tag->picked_up,
+                    'extra_tags'            => $tag->extraTags->map(function ($extra) {
                         return [
-                            'type'      => $type,
-                            'id'        => $id,
-                            'key' => $extra->extraTag?->key,
-                            'quantity'  => $extra->quantity,
+                            'type'     => $extra->tag_type,
+                            'id'       => $extra->tag_type_id,
+                            'key'      => $extra->extraTag?->key,
+                            'quantity' => $extra->quantity,
                         ];
                     })->toArray(),
                 ];
             });
 
         // 2) Initialize counters
-        $totalTags       = 0;
-        $totalObjects    = 0;
-        $byCategory      = [];
-        $materialCount   = 0;
-        $brandCount      = 0;
-        $customTagCount  = 0;
+        $totalTags      = 0;
+        $totalObjects   = 0;
+        $byCategory     = [];
+        $byObject       = [];
+        $byMaterial     = [];
+        $byBrand        = [];
+        $customTagCount = 0;
 
-        // 3) Walk through items and their extra_tags to accumulate
+        // 3) Walk through items to accumulate
         foreach ($tags as $item) {
-            // Base tag quantity
             $qty = $item['quantity'];
             $totalTags += $qty;
 
-            // If it's an object (non‑null litter_object_id)
-            if (! is_null($item['litter_object_id'])) {
+            // Objects breakdown
+            if (!is_null($item['litter_object_id'])) {
                 $totalObjects += $qty;
+                $objectId = $item['litter_object_id'];
+                $byObject[$objectId] = ($byObject[$objectId] ?? 0) + $qty;
             }
 
-            // Category totals
+            // Category breakdown
             $cat = $item['category_id'] ?? 'uncategorized';
             $byCategory[$cat] = ($byCategory[$cat] ?? 0) + $qty;
 
-            // Extra‐tags breakdown
+            // Extra‑tags breakdown
             foreach ($item['extra_tags'] as $extra) {
-                $totalTags += $extra['quantity'];
+                $extraQty = $extra['quantity'];
+                $totalTags += $extraQty;
                 switch ($extra['type']) {
                     case 'material':
-                        $materialCount += $extra['quantity'];
+                        $byMaterial[$extra['id']] = ($byMaterial[$extra['id']] ?? 0) + $extraQty;
                         break;
                     case 'brand':
-                        $brandCount += $extra['quantity'];
+                        $byBrand[$extra['id']] = ($byBrand[$extra['id']] ?? 0) + $extraQty;
                         break;
                     case 'custom_tag':
-                        $customTagCount += $extra['quantity'];
+                        $customTagCount += $extraQty;
                         break;
                 }
             }
@@ -186,14 +186,15 @@ class Photo extends Model
 
         // 4) Structure the full summary
         $summary = [
-            'items' => $tags->toArray(),
+            'items'  => $tags->toArray(),
             'totals' => [
-                'total_tags'       => $totalTags,
-                'total_objects'    => $totalObjects,
-                'by_category'      => $byCategory,
-                'materials'        => $materialCount,
-                'brands'           => $brandCount,
-                'custom_tags'      => $customTagCount,
+                'total_tags'      => $totalTags,
+                'total_objects'   => $totalObjects,
+                'by_category'     => $byCategory,
+                'by_object'       => $byObject,
+                'by_material'     => $byMaterial,
+                'by_brand'        => $byBrand,
+                'custom_tags'     => $customTagCount,
             ],
         ];
 

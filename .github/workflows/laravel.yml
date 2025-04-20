@@ -9,6 +9,7 @@ on:
 jobs:
   tests:
     runs-on: ubuntu-latest
+    environment: testing
 
     services:
       mysql:
@@ -28,6 +29,7 @@ jobs:
     env:
       APP_KEY: ${{ secrets.APP_KEY }}
       APP_ENV: testing
+
       DB_CONNECTION: mysql
       DB_HOST: 127.0.0.1
       DB_PORT: 3306
@@ -58,14 +60,11 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: 8.2
-          extensions: mbstring, dom, fileinfo, mysql
+          extensions: mbstring, dom, fileinfo, mysql, pdo_mysql
 
       - uses: actions/setup-node@v3
         with:
           node-version: 18
-
-      - name: Strip APP_KEY from .env.testing
-        run: sed -i '/^APP_KEY=/d' .env.testing
 
       - name: Copy test env
         run: cp .env.testing .env
@@ -81,9 +80,6 @@ jobs:
 
       - name: Composer install (no scripts)
         run: composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts
-
-      - name: Generate key
-        run: php artisan key:generate --force --no-interaction
 
       - name: Run migrations
         run: php artisan migrate --force --no-interaction -vvv
