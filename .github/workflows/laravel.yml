@@ -81,7 +81,7 @@ jobs:
           cp .env.testing .env
           # now .env contains the APP_KEY you use locally
 
-      - name: Debug: list workspace & preview .env
+      - name: list workspace & preview .env
         run: |
           echo "── Listing workspace ─────────────────────"
           ls -1a
@@ -89,7 +89,7 @@ jobs:
           echo "── Head of .env ──────────────────────────"
           head -n 5 .env || echo ".env missing"
 
-      - name: Debug: validate APP_KEY
+      - name: validate APP_KEY
         run: |
           php <<'EOPHP'
           $k = getenv('APP_KEY');
