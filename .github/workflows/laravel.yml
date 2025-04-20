@@ -87,14 +87,14 @@ jobs:
           echo "Waiting for MySQL..."
           sleep 2
         done
+    - name: Run Migration
+      run: php artisan migrate -v
     - name: Generate key
       run: php artisan key:generate
     - name: Clear Config
       run: php artisan config:clear
     - name: Install Passport
       run: php artisan passport:keys
-    - name: Run Migration
-      run: php artisan migrate -v
       env:
           DB_PORT: 3306
           REDIS_PORT: ${{ job.services.redis.ports['6379'] }}
