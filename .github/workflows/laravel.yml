@@ -8,7 +8,6 @@ on:
 
 jobs:
   tests:
-    environment: testing
     runs-on: ubuntu-latest
 
     services:
@@ -28,7 +27,6 @@ jobs:
 
     env:
       APP_ENV: testing
-      APP_KEY: ${{ secrets.APP_KEY }}
       DB_CONNECTION: mysql
       DB_HOST: 127.0.0.1
       DB_PORT: 3306
@@ -79,6 +77,9 @@ jobs:
 
       - name: Composer install (no scripts)
         run: composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts
+
+      - name: Generate key
+        run: php artisan key:generate
 
       - name: Run migrations
         run: php artisan migrate --force --no-interaction -vvv
