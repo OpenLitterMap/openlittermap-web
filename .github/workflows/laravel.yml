@@ -121,7 +121,7 @@ jobs:
 
       # 9.  Run the migrations *after* key‑gen; --force avoids the CI safety‑prompt
       - name: Run database migrations
-        run: php artisan migrate --force --no-interaction --vvv
+        run: php artisan migrate --force --no-interaction -vvv
 
       # 9½. Let Laravel discover packages *after* the DB exists
       - name: Artisan package:discover
