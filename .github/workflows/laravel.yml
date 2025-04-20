@@ -13,7 +13,7 @@ jobs:
 
     env:
       APP_ENV: testing
-      DB_HOST: mysql
+      DB_HOST: 127.0.0.1
       DB_DATABASE: olm_test
       DB_USERNAME: root
       DB_PASSWORD: secret
@@ -39,7 +39,7 @@ jobs:
           MYSQL_ROOT_PASSWORD: secret
           MYSQL_DATABASE: olm_test
         ports:
-          - 3306/tcp
+          - 3306:3306
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
       redis:
         image: redis
@@ -83,7 +83,7 @@ jobs:
     - name: Wait for MySQL
       run: |
         for i in {1..30}; do
-          nc -z mysql 3306 && echo "MySQL is up!" && break
+          nc -z 127.0.0.1 3306 && echo "MySQL is up!" && break
           echo "Waiting for MySQL..."
           sleep 2
         done
@@ -96,7 +96,7 @@ jobs:
     - name: Run Migration
       run: php artisan migrate -v
       env:
-          DB_PORT: ${{ job.services.mysql.ports['3306'] }}
+          DB_PORT: 3306
           REDIS_PORT: ${{ job.services.redis.ports['6379'] }}
     - name: Directory Permissions
       run: chmod -R 777 storage bootstrap/cache
@@ -107,5 +107,5 @@ jobs:
     - name: Execute tests (Unit and Feature tests) via PHPUnit
       run: vendor/bin/phpunit
       env:
-          DB_PORT: ${{ job.services.mysql.ports['3306'] }}
+          DB_PORT: 3306
           REDIS_PORT: ${{ job.services.redis.ports['6379'] }}
