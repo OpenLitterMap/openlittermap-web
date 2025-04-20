@@ -2,7 +2,11 @@
 
 namespace App\Providers;
 
+use App\Models\Litter\Tags\BrandList;
+use App\Models\Litter\Tags\CustomTagNew;
+use App\Models\Litter\Tags\Materials;
 use App\Models\User\User;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -25,6 +29,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        Relation::morphMap([
+            'brand'      => BrandList::class,
+            'material'   => Materials::class,
+            'custom_tag' => CustomTagNew::class,
+        ]);
+
         Gate::define('viewPulse', function (User $user) {
             return $user->hasRole('superadmin');
         });

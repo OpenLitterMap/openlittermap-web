@@ -31,7 +31,7 @@ class CategoryObject extends Pivot
 
     public function materials(): MorphToMany
     {
-        return $this->morphedByMany(
+        return $this->morphToMany(
             Materials::class,
             'taggable',
             'taggables',
@@ -42,8 +42,19 @@ class CategoryObject extends Pivot
 
     public function brands(): MorphToMany
     {
-        return $this->morphedByMany(
+        return $this->morphToMany(
             Brand::class,
+            'taggable',
+            'taggables',
+            'category_litter_object_id',
+            'taggable_id'
+        )->withPivot('quantity')->withTimestamps();
+    }
+
+    public function customTags(): MorphToMany
+    {
+        return $this->morphToMany(
+            CustomTagNew::class,
             'taggable',
             'taggables',
             'category_litter_object_id',

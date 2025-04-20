@@ -2,8 +2,9 @@
 
 namespace Database\Seeders\Tags;
 
+use App\Models\Litter\Categories\Brand;
+use App\Models\Litter\Tags\CustomTagNew;
 use App\Models\Litter\Tags\LitterState;
-use App\Models\Litter\Tags\Taggable;
 use App\Models\Photo;
 use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\Materials;
@@ -394,35 +395,40 @@ class GenerateTagsSeeder extends Seeder
      */
     protected function handleStringItem(Category $category, ?LitterObject $parent, string $item): void
     {
-        if (str_starts_with($item, 'material:')) {
-            // Process a material item.
-            $materialKey = substr($item, strlen('material:'));
-            $material = Materials::firstOrCreate(['key' => $materialKey]);
-
-            if ($parent) {
-                $this->makeTaggable($category, $parent, $material);
-            }
-        }
-        elseif (str_starts_with($item, 'state:'))
-        {
-            $stateKey = substr($item, strlen('state:'));
-            $state = LitterState::firstOrCreate(['key' => $stateKey]);
-
-            if ($parent) {
-                $this->makeTaggable($category, $parent, $state);
-            }
-        }
-        // elseif size:
-        else
-        {
-            // Otherwise, treat the string as a LitterObject key (e.g., "other").
+        if (! $parent && ! str_contains($item, ':')) {
             $litterObject = LitterObject::firstOrCreate(['key' => $item]);
-
-            // Create (or update) the pivot record for the category and litter object.
             CategoryObject::firstOrCreate([
                 'category_id'      => $category->id,
                 'litter_object_id' => $litterObject->id,
             ]);
+
+            return;
+        }
+
+        // If it has a "prefix:value" form, pick the right model and attach
+        if (str_contains($item, ':')) {
+            [$prefix, $value] = explode(':', $item, 2);
+            $prefix = strtolower(trim($prefix));
+            $value  = trim($value);
+
+            switch ($prefix) {
+                case 'material':
+                    $model = Materials::firstOrCreate(['key' => $value]);
+                    break;
+                case 'state':
+                    $model = LitterState::firstOrCreate(['key' => $value]);
+                    break;
+                default:
+                    // unknown tag type—ignore
+                    return;
+            }
+
+            // contextually attach to the category_object pivot
+            if ($parent) {
+                $this->makeTaggable($category, $parent, $model);
+            }
+
+            return;
         }
     }
 
@@ -450,39 +456,23 @@ class GenerateTagsSeeder extends Seeder
     }
 
     /**
-     * @deprecated
-     * This is now handled by making CategoryObjects taggable.
-     *
-     * Attach a material to the contextual pivot (category, litter object).
-     *
-     * @param  Category      $category
-     * @param  LitterObject  $litterObject
-     * @param  Materials     $material
-     */
-    protected function attachMaterialToPivot(Category $category, LitterObject $litterObject, Materials $material): void
-    {
-        $categoryObject = CategoryObject::firstOrCreate([
-            'category_id'      => $category->id,
-            'litter_object_id' => $litterObject->id,
-        ]);
-
-        $categoryObject->materials()->syncWithoutDetaching([$material->id]);
-    }
-
-    /**
      * Unified way to attach any taggable model (material, state, etc.)
      */
     protected function makeTaggable(Category $category, LitterObject $litterObject, Model $taggable): void
     {
-        $categoryObject = CategoryObject::firstOrCreate([
+        $pivot = CategoryObject::firstOrCreate([
             'category_id'      => $category->id,
             'litter_object_id' => $litterObject->id,
         ]);
 
-        Taggable::firstOrCreate([
-            'category_litter_object_id' => $categoryObject->id,
-            'taggable_type'             => get_class($taggable),
-            'taggable_id'               => $taggable->id,
-        ]);
+        if ($taggable instanceof Materials) {
+            $pivot->materials()->syncWithoutDetaching([$taggable->id]);
+        }
+        elseif ($taggable instanceof Brand) {
+            $pivot->brands()->syncWithoutDetaching([$taggable->id]);
+        }
+        elseif ($taggable instanceof CustomTagNew) {
+            $pivot->customTags()->syncWithoutDetaching([$taggable->id]);
+        }
     }
 }

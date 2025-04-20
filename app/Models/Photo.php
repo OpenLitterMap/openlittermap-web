@@ -4,6 +4,9 @@ namespace App\Models;
 
 use App\Models\AI\Annotation;
 use App\Models\Litter\Categories\Brand;
+use App\Models\Litter\Tags\BrandList;
+use App\Models\Litter\Tags\CustomTagNew;
+use App\Models\Litter\Tags\Materials;
 use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Teams\Team;
 use App\Models\User\User;
@@ -117,7 +120,7 @@ class Photo extends Model
     {
         // 1) Eager‑load all PhotoTag + their extraTags
         $tags = $this->photoTags()
-            ->with('extraTags')
+            ->with('extraTags.extraTag')
             ->get()
             ->map(function (PhotoTag $tag) {
                 return [
@@ -127,19 +130,24 @@ class Photo extends Model
                     'custom_tag_primary_id'    => $tag->custom_tag_primary_id,
                     'quantity'                 => $tag->quantity,
                     'picked_up'                => $tag->picked_up,
-                    'extra_tags'               => $tag->extraTags->map(fn($extra) => [
-                        'type'      => $extra->type,     // 'brand','material','custom_tag'
-                        'id'        => $extra->id,
-                        'key'       => $extra->key,
-                        'quantity'  => $extra->quantity,
-                    ])->toArray(),
+                    'extra_tags'               => $tag->extraTags->map(function ($extra) {
+                        $type = $extra->tag_type;
+                        $id   = $extra->tag_type_id;
+
+                        return [
+                            'type'      => $type,
+                            'id'        => $id,
+                            'key' => $extra->extraTag?->key,
+                            'quantity'  => $extra->quantity,
+                        ];
+                    })->toArray(),
                 ];
             });
 
         // 2) Initialize counters
         $totalTags       = 0;
         $totalObjects    = 0;
-        $byCategory      = []; // category_id => sum of quantities
+        $byCategory      = [];
         $materialCount   = 0;
         $brandCount      = 0;
         $customTagCount  = 0;

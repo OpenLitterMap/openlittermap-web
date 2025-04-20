@@ -32,9 +32,13 @@ class Category extends Model
 
     public function litterObjects(): BelongsToMany
     {
-        return $this->belongsToMany(LitterObject::class, 'category_litter_object')
-            ->using(CategoryObject::class)
-            ->withPivot('id');
-            // ->with('pivot.materials');
+        return $this->belongsToMany(
+            LitterObject::class,
+            'category_litter_object',
+            'category_id',
+            'litter_object_id'
+        )
+        ->using(CategoryObject::class)
+        ->withTimestamps();
     }
 }
