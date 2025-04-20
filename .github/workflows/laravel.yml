@@ -79,9 +79,6 @@ jobs:
       - name: Composer install (no scripts)
         run: composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts
 
-      - name: Generate application key
-        run: php artisan key:generate --no-interaction
-
       - name: Run migrations
         run: php artisan migrate --force --no-interaction -vvv
 
