@@ -84,7 +84,7 @@ jobs:
           node-version: 18
 
       # 4.  Bring MinIO up and create the buckets we need
-      - name: Start MinIO (test‑S3)
+      - name: StartMinIO(test‑S3)
         run: |
           docker run -d --name minio -p 9000:9000 \
             -e MINIO_ACCESS_KEY=minioadmin \
