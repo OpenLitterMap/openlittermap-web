@@ -31,7 +31,6 @@ jobs:
 
     env:
       # secrets
-      APP_KEY: ${{ secrets.APP_KEY }}
       APP_ENV: testing
 
       # database
