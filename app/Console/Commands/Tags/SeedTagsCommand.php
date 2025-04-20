@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\Tags;
 
+use Database\Seeders\Tags\GenerateBrandsSeeder;
 use Database\Seeders\Tags\GenerateTagsSeeder;
 use Illuminate\Console\Command;
 
@@ -14,6 +15,7 @@ class SeedTagsCommand extends Command
     public function handle()
     {
         (new GenerateTagsSeeder)->run();
+        (new GenerateBrandsSeeder)->run();
 
         $this->info('Tags seeded successfully!');
     }
