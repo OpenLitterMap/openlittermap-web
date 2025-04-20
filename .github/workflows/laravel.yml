@@ -67,6 +67,9 @@ jobs:
       - name: Copy test env
         run: cp .env.testing .env
 
+      - name: Generate application key
+        run: php artisan key:generate --no-interaction
+
       # wait for MySQL to be ready
       - name: Wait for MySQL
         run: |

@@ -45,13 +45,7 @@ class GenerateBrandsSeeder extends Seeder
             // Insert the brands in one batch insert if any valid brands were found.
             if (!empty($fileBrands)) {
                 DB::table('brandslist')->insertOrIgnore($fileBrands);
-
-                $this->command->info("Successfully imported " . count($fileBrands) . " brands.");
-            } else {
-                $this->command->info("No valid brands found in the file.");
             }
-        } else {
-            $this->command->warn("File not found: {$filePath}");
         }
     }
 }
