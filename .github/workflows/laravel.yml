@@ -81,19 +81,19 @@ jobs:
           cp .env.testing .env
           # now .env contains your local APP_KEY
 
-      - name: Debug: List workspace & head of .env
+      - name: List workspace & head of .env
         run: |
           echo "── Workspace ──"
           ls -1a
           echo; echo "── .env head ──"
           head -n 5 .env
 
-      - name: Debug: Show APP_KEY line from .env
+      - name: Show APP_KEY line from .env
         run: |
           echo "APP_KEY in .env:"
           grep -E '^APP_KEY=' .env || echo "(!) no APP_KEY line found"
 
-      - name: Debug: Base64‑decode length check
+      - name: Base64‑decode length check
         run: |
           KEY=$(grep -E '^APP_KEY=' .env | cut -d= -f2-)
           echo "Raw value: $KEY"
