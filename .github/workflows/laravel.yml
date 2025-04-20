@@ -42,13 +42,13 @@ jobs:
       DB_USERNAME: root
       DB_PASSWORD: secret
 
-      # misc drivers
+      # drivers
       BROADCAST_DRIVER: log
       CACHE_DRIVER: array
       QUEUE_CONNECTION: sync
       SESSION_DRIVER: array
 
-      # fake S3/MinIO (used only by tests)
+      # fake S3/MinIO
       AWS_ACCESS_KEY_ID: minioadmin
       AWS_SECRET_ACCESS_KEY: minioadmin
       AWS_DEFAULT_REGION: us-east-1
@@ -62,8 +62,7 @@ jobs:
       x500_AWS_ENDPOINT: http://127.0.0.1:9000
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
       - name: Remove old config cache
         run: rm -f bootstrap/cache/config.php
@@ -99,24 +98,35 @@ jobs:
 
       - name: Laravel sees APP_KEY
         run: |
-          # extract the key from .env
           KEY=$(grep -E '^APP_KEY=' .env | cut -d= -f2-)
           echo "→ APP_KEY in .env: $KEY"
-
-          # check prefix
           if [[ $KEY != base64:* ]]; then
             echo "‼️ Missing 'base64:' prefix"
             exit 1
           fi
+          BYTES=$(echo "${KEY#base64:}" | base64 --decode 2>/dev/null | wc -c)
+          echo "→ Decoded payload length: $BYTES bytes (should be 32)"
 
-          # decode and measure
-          DECODED=$(echo "${KEY#base64:}" | base64 --decode 2>/dev/null)
-          if [ $? -ne 0 ]; then
-            echo "‼️ Payload is not valid Base64"
-            exit 1
-          fi
-          LENGTH=$(echo -n "$DECODED" | wc -c)
-          echo "→ Decoded payload length: $LENGTH bytes (should be 32)"
+      - name: Try a real encryption pass
+        run: |
+          php <<'EOPHP'
+          require 'vendor/autoload.php';
+          $app = require 'bootstrap/app.php';
+          $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+
+          // show cipher to be sure
+          $cipher = config('app.cipher');
+          echo "→ Using cipher: $cipher\n";
+
+          $enc = $app['encrypter'];
+          try {
+              $value = $enc->encrypt('ping');
+              echo "✔︎ Encrypt OK: $value\n";
+          } catch (Throwable $e) {
+              echo "‼️ Encryption error: " . $e->getMessage() . "\n";
+              exit(1);
+          }
+          EOPHP
 
       - name: Run migrations
         run: php artisan migrate --force --no-interaction -vvv
@@ -126,7 +136,7 @@ jobs:
           npm ci --silent --force
           npm run build --if-present
 
-      - name: PHPUnit
-        run: vendor/bin/phpunit --colors=always
+      - name: PHPUnit (verbose)
+        run: vendor/bin/phpunit --colors=always --verbose
         env:
           REDIS_PORT: ${{ job.services.redis.ports[6379] }}

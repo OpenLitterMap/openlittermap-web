@@ -130,4 +130,134 @@ class UpdateRedisServiceTest extends TestCase
         );
         $this->assertSame('1', Redis::get('country:11:ts:daily:photos:2025-04-20'));
     }
+
+    /** @test */
+    public function it_handles_bulk_photo_summaries_and_aggregates_correctly()
+    {
+        // fixed timestamp so all time‑series keys match
+        $ts = Carbon::parse('2025-04-20 12:00:00');
+
+        // accumulators for expected values
+        $expectedPhotos      = 0;
+        $expectedTags        = 0;
+        $expectedCustomTags  = 0;
+        $expectedByCategory  = [];
+        $expectedObjects     = [];
+        $expectedMaterials   = [];
+        $expectedBrands      = [];
+        $expectedCustomBreak = [];
+
+        // simulate 100 photos with alternating summaries
+        for ($i = 1; $i <= 100; $i++) {
+            // odd: smoking→butts + extras, even: food→cups without extras
+            if ($i % 2 === 1) {
+                $summary = [
+                    'tags'   => [
+                        'smoking' => [
+                            'butts' => [
+                                'quantity'    => 1,
+                                'materials'   => ['paper'  => 1],
+                                'brands'      => ['brandX' => 1],
+                                'custom_tags' => ['cleanup'=> 1],
+                            ],
+                        ],
+                    ],
+                    'totals' => [
+                        'total_tags'    => 4,  // 1 + (1 material + 1 brand + 1 custom)
+                        'total_objects' => 1,
+                        'by_category'   => ['smoking' => 3], // excludes custom
+                        'materials'     => 1,
+                        'brands'        => 1,
+                        'custom_tags'   => 1,
+                    ],
+                ];
+            } else {
+                $summary = [
+                    'tags'   => [
+                        'food' => [
+                            'cups' => [
+                                'quantity'    => 2,
+                                'materials'   => [],
+                                'brands'      => [],
+                                'custom_tags' => [],
+                            ],
+                        ],
+                    ],
+                    'totals' => [
+                        'total_tags'    => 2,
+                        'total_objects' => 2,
+                        'by_category'   => ['food' => 2],
+                        'materials'     => 0,
+                        'brands'        => 0,
+                        'custom_tags'   => 0,
+                    ],
+                ];
+            }
+
+            // accumulate expectations
+            $expectedPhotos++;
+            $expectedTags       += $summary['totals']['total_tags'];
+            $expectedCustomTags += $summary['totals']['custom_tags'];
+
+            foreach ($summary['totals']['by_category'] as $cat => $qty) {
+                $expectedByCategory[$cat] = ($expectedByCategory[$cat] ?? 0) + $qty;
+            }
+            foreach ($summary['tags'] as $cat => $objects) {
+                foreach ($objects as $obj => $data) {
+                    $expectedObjects[$obj]      = ($expectedObjects[$obj] ?? 0) + $data['quantity'];
+                    foreach ($data['materials'] as $mat => $mqty) {
+                        $expectedMaterials[$mat] = ($expectedMaterials[$mat] ?? 0) + $mqty;
+                    }
+                    foreach ($data['brands'] as $b => $bqty) {
+                        $expectedBrands[$b] = ($expectedBrands[$b] ?? 0) + $bqty;
+                    }
+                    foreach ($data['custom_tags'] as $ct => $ctqty) {
+                        $expectedCustomBreak[$ct] = ($expectedCustomBreak[$ct] ?? 0) + $ctqty;
+                    }
+                }
+            }
+
+            // create a photo skeleton and run
+            $photo = new Photo();
+            $photo->forceFill(['summary' => $summary]);
+            $photo->created_at = $ts;
+            $photo->setRelation('country', (object)['id' => 1]);
+            $photo->setRelation('state',   (object)['id' => 1]);
+            $photo->setRelation('city',    (object)['id' => 1]);
+            $photo->setRelation('user',    (object)['id' => 1]);
+
+            (new UpdateRedisService())->updateRedis($photo);
+        }
+
+        // Assert totals
+        $this->assertSame((string)$expectedPhotos, Redis::hget('global:totals', 'photos'));
+        $this->assertSame((string)$expectedTags,   Redis::hget('global:totals', 'tags'));
+        $this->assertSame((string)$expectedCustomTags, Redis::hget('global:totals', 'custom_tags'));
+
+        // Assert by-category
+        foreach ($expectedByCategory as $cat => $qty) {
+            $this->assertSame((string)$qty, Redis::hget("global:totals:categories", $cat));
+        }
+
+        // Assert object breakdown
+        foreach ($expectedObjects as $obj => $qty) {
+            $this->assertSame((string)$qty, Redis::hget("global:totals:objects", $obj));
+        }
+
+        // Assert material & brand breakdowns
+        foreach ($expectedMaterials as $mat => $qty) {
+            $this->assertSame((string)$qty, Redis::hget("global:totals:materials", $mat));
+        }
+        foreach ($expectedBrands as $b => $qty) {
+            $this->assertSame((string)$qty, Redis::hget("global:totals:brands", $b));
+        }
+
+        // Assert custom‐tag breakdown
+        foreach ($expectedCustomBreak as $ct => $qty) {
+            $this->assertSame((string)$qty, Redis::hget("global:totals:custom_tags_breakdown", $ct));
+        }
+
+        // Assert time-series counter for that date
+        $this->assertSame((string)$expectedPhotos, Redis::get('global:ts:daily:photos:' . $ts->format('Y-m-d')));
+    }
 }
