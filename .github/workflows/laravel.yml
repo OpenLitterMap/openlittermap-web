@@ -64,10 +64,7 @@ jobs:
           node-version: 18
 
       - name: Copy test env
-        run: cp .env.testing .env          # already contains APP_KEY
-
-      - name: Composer install
-        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+        run: cp .env.testing .env
 
       - name: Wait for MySQL
         run: |
@@ -77,6 +74,9 @@ jobs:
             sleep 2
           done
           exit 1
+
+      - name: Composer install
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
       - name: Run migrations
         run: php artisan migrate --force --no-interaction -vvv
