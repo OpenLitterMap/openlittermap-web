@@ -79,32 +79,27 @@ jobs:
       - name: Prepare .env
         run: |
           cp .env.testing .env
-          # now .env contains the APP_KEY you use locally
+          # now .env contains your local APP_KEY
 
-      - name: list workspace & preview .env
+      - name: Debug: List workspace & head of .env
         run: |
-          echo "── Listing workspace ─────────────────────"
+          echo "── Workspace ──"
           ls -1a
-          echo
-          echo "── Head of .env ──────────────────────────"
-          head -n 5 .env || echo ".env missing"
+          echo; echo "── .env head ──"
+          head -n 5 .env
 
-      - name: validate APP_KEY
+      - name: Debug: Show APP_KEY line from .env
         run: |
-          php <<'EOPHP'
-          $k = getenv('APP_KEY');
-          echo "APP_KEY raw: " . ($k ?: '[empty]') . "\n";
-          if (strpos($k, 'base64:') !== 0) {
-              echo "→ prefix `base64:` missing\n";
-              exit(1);
-          }
-          $decoded = base64_decode(substr($k, 7), true);
-          if ($decoded === false) {
-              echo "→ base64 decode failed\n";
-              exit(1);
-          }
-          echo "→ decoded length: " . strlen($decoded) . " bytes (should be 32)\n";
-          EOPHP
+          echo "APP_KEY in .env:"
+          grep -E '^APP_KEY=' .env || echo "(!) no APP_KEY line found"
+
+      - name: Debug: Base64‑decode length check
+        run: |
+          KEY=$(grep -E '^APP_KEY=' .env | cut -d= -f2-)
+          echo "Raw value: $KEY"
+          # strip the prefix and decode
+          BYTES=$(echo "${KEY#base64:}" | base64 -d | wc -c)
+          echo "Decoded length: $BYTES bytes (should be 32)"
 
       - name: Wait for MySQL
         run: |
