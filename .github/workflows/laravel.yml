@@ -1,18 +1,24 @@
 name: Laravel CI
-
-on:
-  push:
-    branches: [ master, staging ]
-  pull_request:
-    branches: [ master, staging ]
+on: [push, pull_request]
 
 jobs:
-  laravel-tests:
+  tests:
     runs-on: ubuntu-latest
 
-    # ───────────────────────────────
-    # Environment shared by all steps
-    # ───────────────────────────────
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: secret
+          MYSQL_DATABASE: olm_test
+        ports: [3306:3306]
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -psecret"
+          --health-interval=10s --health-timeout=5s --health-retries=3
+      redis:
+        image: redis:7
+        ports: [6379:6379]
+
     env:
       APP_ENV: testing
       DB_CONNECTION: mysql
@@ -21,146 +27,55 @@ jobs:
       DB_DATABASE: olm_test
       DB_USERNAME: root
       DB_PASSWORD: secret
-
       BROADCAST_DRIVER: log
       CACHE_DRIVER: array
       QUEUE_CONNECTION: sync
       SESSION_DRIVER: array
-
-      AWS_KEY:           minioadmin
-      AWS_SECRET:        minioadmin
-      AWS_REGION:        us-east-1
-      AWS_BUCKET:        olm-public
-      AWS_ENDPOINT:      http://127.0.0.1:9000
-      x500_AWS_KEY:      minioadmin
-      x500_AWS_SECRET:   minioadmin
-      x500_AWS_REGION:   us-east-1
-      x500_AWS_BUCKET:   olm-public-bbox
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_EC2_METADATA_DISABLED: true
+      AWS_BUCKET: olm-public
+      AWS_ENDPOINT: http://127.0.0.1:9000
+      x500_AWS_ACCESS_KEY_ID: minioadmin
+      x500_AWS_SECRET_ACCESS_KEY: minioadmin
+      x500_AWS_REGION: us-east-1
+      x500_AWS_BUCKET: olm-public-bbox
       x500_AWS_ENDPOINT: http://127.0.0.1:9000
 
-    # ───────────────────────────────
-    # Service containers
-    # ───────────────────────────────
-    services:
-      mysql:
-        image: mysql:5.7
-        env:
-          MYSQL_ROOT_PASSWORD: secret
-          MYSQL_DATABASE: olm_test
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -psecret"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
-
-      redis:
-        image: redis:7
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd="redis-cli ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
-
-    # ───────────────────────────────
-    # Job steps
-    # ───────────────────────────────
     steps:
-      # 1.  Check out the code
       - uses: actions/checkout@v3
-
-      # 2.  PHP (needs to be before Composer)
       - uses: shivammathur/setup-php@v2
         with:
           php-version: 8.2
           extensions: mbstring, dom, fileinfo, mysql
 
-      # 3.  Node (for vite / mix)
       - uses: actions/setup-node@v3
-        with:
-          node-version: 18
+        with: { node-version: 18 }
 
-      # 4.  Bring MinIO up and create the buckets we need
-      - name: StartMinIO(test‑S3)
-        env:
-          AWS_ACCESS_KEY_ID:     minioadmin
-          AWS_SECRET_ACCESS_KEY: minioadmin
-          AWS_EC2_METADATA_DISABLED: true
-        run: |
-          docker run -d --name minio -p 9000:9000 \
-            -e MINIO_ROOT_USER=minioadmin \
-            -e MINIO_ROOT_PASSWORD=minioadmin \
-            minio/minio server /data
-          # optional: wait until the service answers
-          until curl -sf http://127.0.0.1:9000/minio/health/live; do sleep 1; done
+      - run: cp .env.testing .env            # already contains APP_KEY
 
-          aws --endpoint-url http://127.0.0.1:9000 s3 mb s3://olm-public
-          aws --endpoint-url http://127.0.0.1:9000 s3 mb s3://olm-public-bbox
+      - name: Composer install
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
-      # 5.  Copy the dedicated test environment file
-      - name: Prepare .env
-        run: cp .env.testing .env
-
-      # 6.  Install Composer dependencies
-      - name: Install Composer dependencies
-        run: composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts
-
-      # 8.  Wait until MySQL is healthy
       - name: Wait for MySQL
         run: |
           for i in {1..30}; do
-            nc -z 127.0.0.1 3306 && echo "MySQL is up!" && exit 0
+            nc -z 127.0.0.1 3306 && exit 0
             echo "Waiting for MySQL…"
             sleep 2
           done
-          echo "MySQL never came up" >&2
           exit 1
 
-      # 9.  Run the migrations *after* key‑gen; --force avoids the CI safety‑prompt
-
-      - name: Run migration with raw trace
-        run: |
-          # run inside bash so we can capture the exit code
-          set +e
-          php -d xdebug.default_enable=0 -r '
-              putenv("APP_ENV=testing");
-              putenv("APP_DEBUG=1");
-              try {
-                  require "vendor/autoload.php";
-                  (new Illuminate\Foundation\Application)->make("Illuminate\Contracts\Console\Kernel")
-                      ->call("migrate", ["--force" => true, "-vvv" => true]);
-              } catch(Throwable $e) {
-                  echo $e, PHP_EOL;   # dumps FULL back‑trace
-                  exit(1);
-              }
-          '
-          
       - name: Run database migrations
-        run: php artisan migrate -vvv
+        run: php artisan migrate --force --no-interaction -vvv
 
-      # 9½. Let Laravel discover packages *after* the DB exists
-      - name: Artisan package:discover
-        run: php artisan package:discover --ansi
+      - name: NPM ci + build
+        run: |
+          npm ci --silent --force
+          npm run build --if-present
 
-      # 10.  (optional) seed or passport keys, etc.
-      - name: Install Passport keys
-        run: php artisan passport:keys --no-interaction
-
-      # 11.  Front‑end build
-      - name: Install NPM packages
-        run: npm ci --force
-      - name: Build assets
-        run: npm run build --if-present
-
-      # 12.  Make sure the framework can write
-      - name: Fix directory permissions
-        run: chmod -R 777 storage bootstrap/cache
-
-      # 13.  PHPUnit tests
-      - name: Run tests
+      - name: PHPUnit
         run: vendor/bin/phpunit --colors=always
         env:
           REDIS_PORT: ${{ job.services.redis.ports[6379] }}
