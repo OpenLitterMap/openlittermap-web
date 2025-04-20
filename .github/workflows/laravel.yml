@@ -2,17 +2,19 @@ name: Laravel CI
 
 on:
   push:
-    branches: [master, staging, upgrade/tagging-2025]
+    branches:
+      - master
+      - staging
+      - upgrade/tagging-2025
   pull_request:
-    branches: [master, staging, upgrade/tagging-2025]   # so PRs from that branch are tested too
+    branches:
+      - master
+      - staging
+      - upgrade/tagging-2025
 
 jobs:
   tests:
     runs-on: ubuntu-latest
-
-    # environment is only needed if you use protection rules;
-    # otherwise remove the next line and store APP_KEY as a repo secret.
-    # environment: testing
 
     services:
       mysql:
@@ -30,10 +32,9 @@ jobs:
         ports: [6379:6379]
 
     env:
-      # secrets
+      # we rely on the APP_KEY inside .env.testing here
       APP_ENV: testing
 
-      # database
       DB_CONNECTION: mysql
       DB_HOST: 127.0.0.1
       DB_PORT: 3306
@@ -41,13 +42,11 @@ jobs:
       DB_USERNAME: root
       DB_PASSWORD: secret
 
-      # misc drivers
       BROADCAST_DRIVER: log
       CACHE_DRIVER: array
       QUEUE_CONNECTION: sync
       SESSION_DRIVER: array
 
-      # fake S3/MinIO (used only by tests)
       AWS_ACCESS_KEY_ID: minioadmin
       AWS_SECRET_ACCESS_KEY: minioadmin
       AWS_DEFAULT_REGION: us-east-1
@@ -72,15 +71,11 @@ jobs:
         with:
           node-version: 18
 
-      # prepare environment file
-      - name: Create .env for the test run
+      - name: Prepare .env
         run: |
           cp .env.testing .env
-          echo "APP_KEY=${APP_KEY}" >> .env
-        env:
-          APP_KEY: ${{ secrets.APP_KEY }}
+          # now .env contains the same APP_KEY you use locally
 
-      # wait for MySQL to be ready
       - name: Wait for MySQL
         run: |
           for i in {1..30}; do

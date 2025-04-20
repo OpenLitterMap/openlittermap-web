@@ -76,7 +76,7 @@ class GeneratePhotoSummaryTest extends TestCase
         $this->assertEquals(1, $totals['custom_tags']);
 
         $this->assertArrayHasKey('smoking', $totals['by_category']);
-        $this->assertEquals(3, $totals['by_category']['smoking']);
+        $this->assertEquals(4, $totals['by_category']['smoking']);
 
         $this->assertArrayHasKey('smoking', $summary['tags']);
         $objects = $summary['tags']['smoking'];
@@ -85,7 +85,7 @@ class GeneratePhotoSummaryTest extends TestCase
         $this->assertEquals(2, $entry['quantity']);
         $this->assertEquals(['adidas' => 1], $entry['brands']);
         $this->assertEquals([], $entry['materials']);
-        $this->assertEquals([], $entry['custom_tags']);
+        $this->assertEquals(['street_clean' => 1], $entry['custom_tags']);
     }
 
     /** @test */
