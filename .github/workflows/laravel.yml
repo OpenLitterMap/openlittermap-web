@@ -100,8 +100,8 @@ jobs:
       - name: Discover packages
         run: php artisan package:discover --ansi
 
-      # 6. Debug: what key does Laravel actually have?
-      - name: Debug: Laravel sees APP_KEY
+      # 6. what key does Laravel actually have?
+      - name: Laravel sees APP_KEY
         run: |
           php -r "
           require 'vendor/autoload.php';
