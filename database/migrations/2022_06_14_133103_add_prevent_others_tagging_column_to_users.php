@@ -21,4 +21,16 @@ class AddPreventOthersTaggingColumnToUsers extends Migration
                 ->index();
         });
     }
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn('prevent_others_tagging_my_photos');
+        });
+    }
 }

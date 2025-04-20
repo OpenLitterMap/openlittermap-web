@@ -10,6 +10,7 @@ use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\Materials;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class ClassifyTagsService
 {
@@ -21,7 +22,9 @@ class ClassifyTagsService
 
     public function __construct()
     {
-        $this->preloadCaches();
+        if (Schema::hasTable('categories')) {
+            $this->preloadCaches();
+        }
     }
 
     protected function preloadCaches(): void

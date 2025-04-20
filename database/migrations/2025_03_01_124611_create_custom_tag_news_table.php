@@ -26,6 +26,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('custom_tag_new');
+        Schema::table('custom_tags_new', function (Blueprint $table) {
+            $table->dropForeign(['created_by']);
+        });
+
+        Schema::dropIfExists('custom_tags_new');
     }
 };

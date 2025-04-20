@@ -27,7 +27,8 @@ class AddLittercoinOwedToUsers extends Migration
     public function down()
     {
         Schema::table('users', function (Blueprint $table) {
-            //
+            $table->dropColumn("littercoin_owed");
+            $table->dropColumn("littercoin_paid");
         });
     }
 }
