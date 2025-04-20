@@ -106,7 +106,7 @@ jobs:
 
       # 6.  Install Composer dependencies
       - name: Install Composer dependencies
-        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts
 
       # 7.  Generate APP_KEY (must happen *before* migrations so service‑providers don’t explode)
       - name: Generate APP key
@@ -126,6 +126,10 @@ jobs:
       # 9.  Run the migrations *after* key‑gen; --force avoids the CI safety‑prompt
       - name: Run database migrations
         run: php artisan migrate --force --no-interaction --verbose
+
+      # 9½. Let Laravel discover packages *after* the DB exists
+      - name: Artisan package:discover
+        run: php artisan package:discover --ansi
 
       # 10.  (optional) seed or passport keys, etc.
       - name: Install Passport keys
