@@ -21,78 +21,73 @@ class UpdateRedisService
     protected function updateTotals (Photo $photo): void
     {
         $locations = ['global', 'country', 'state', 'city'];
+        // global:totals:photos++
+        // global:totals:tags++
+        // global:totals:categories:category
+        // global:totals:objects:object
+        // global:totals:brands:brand
+        // global:totals:materials:material
 
-        $summary = $photo->summary ?? [];
-        $totals  = $summary['totals'] ?? [];
-        $items   = $summary['items']  ?? [];
+        // v2 tags
+        $summary = $photo->summary;
+        $categories = [];
+        $objects = [];
+        $brands = [];
+        $materials = [];
+        $customTags = [];
+        $customTagsCount = 0;
 
-        $tagsCount       = $totals['total_tags']      ?? 0;
-        $customTagsCount = $totals['custom_tags']     ?? 0;
-        $byCategory      = $totals['by_category']     ?? [];
+        $country = $photo->country;
+        $state = $photo->state;
+        $city = $photo->city;
 
-        // collect object, material, brand breakdowns from items
-        $objectCounts   = [];
-        $materialCounts = [];
-        $brandCounts    = [];
+        $tagsCount = $photo->total_tags;
 
-        foreach ($items as $item) {
-            // base object
-            if (!is_null($item['litter_object_id'])) {
-                $objectCounts[$item['litter_object_id']] =
-                    ($objectCounts[$item['litter_object_id']] ?? 0) + $item['quantity'];
-            }
-            // extra tags
-            foreach ($item['extra_tags'] as $extra) {
-                if ($extra['type'] === 'material') {
-                    $materialCounts[$extra['id']] =
-                        ($materialCounts[$extra['id']] ?? 0) + $extra['quantity'];
-                } elseif ($extra['type'] === 'brand') {
-                    $brandCounts[$extra['id']] =
-                        ($brandCounts[$extra['id']] ?? 0) + $extra['quantity'];
+        foreach ($locations as $location)
+        {
+            if ($location === 'global') {
+                $key = "global";
+            } else {
+                if ($location === "country") {
+                    $key = "country:$country->id";
+                } elseif ($location === "state") {
+                    $key = "state:$state->id";
+                } elseif ($location === "city") {
+                    $key = "city:$city->id";
                 }
             }
-        }
 
-        // for each location context
-        foreach ($locations as $location) {
-            switch ($location) {
-                case 'global':
-                    $key = 'global';
-                    break;
-                case 'country':
-                    $key = "country:{$photo->country->id}";
-                    break;
-                case 'state':
-                    $key = "state:{$photo->state->id}";
-                    break;
-                case 'city':
-                    $key = "city:{$photo->city->id}";
-                    break;
+            Redis::hincrby("$key:totals", 'photos', 1);
+            Redis::hincrby("$key:totals", 'tags', $tagsCount);
+            Redis::hincrby("$key:totals", 'custom_tags', $customTagsCount);
+
+            foreach ($categories as $category)
+            {
+                $categoryId = Category::where('key', $category)->first()->id;
+
+                Redis::hincrby("$key:totals:category", $categoryId, 1);
             }
 
-            // overall counts
-            Redis::hincrby("{$key}:totals", 'photos', 1);
-            Redis::hincrby("{$key}:totals", 'tags', $tagsCount);
-            Redis::hincrby("{$key}:totals", 'custom_tags', $customTagsCount);
+            // g.categories.category.object.material
+            foreach ($objects as $object)
+            {
+                $objectId = LitterObject::where('key', $object)->first()->id;
 
-            // by category
-            foreach ($byCategory as $categoryId => $qty) {
-                Redis::hincrby("{$key}:totals:category", $categoryId, $qty);
+                Redis::hincrby("$key:totals:objects", $objectId, 1);
             }
 
-            // by object
-            foreach ($objectCounts as $objectId => $qty) {
-                Redis::hincrby("{$key}:totals:objects", $objectId, $qty);
+            foreach ($materials as $material)
+            {
+                $materialId = Materials::where('key', $material)->first()->id;
+
+                Redis::hincrby("$key:materials", $materialId, 1);
             }
 
-            // by material
-            foreach ($materialCounts as $materialId => $qty) {
-                Redis::hincrby("{$key}:materials", $materialId, $qty);
-            }
+            foreach ($brands as $brand)
+            {
+                $brandId = BrandList::where('key', $brand)->first()->id;
 
-            // by brand
-            foreach ($brandCounts as $brandId => $qty) {
-                Redis::hincrby("{$key}:totals:brands", $brandId, $qty);
+                Redis::hincrby("$key:totals:brands", $brandId, 1);
             }
         }
     }
