@@ -26,6 +26,7 @@ jobs:
         ports: [6379:6379]
 
     env:
+      APP_KEY: ${{ secrets.APP_KEY }}
       APP_ENV: testing
       DB_CONNECTION: mysql
       DB_HOST: 127.0.0.1
@@ -62,6 +63,9 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 18
+
+      - name: Strip APP_KEY from .env.testing
+        run: sed -i '/^APP_KEY=/d' .env.testing
 
       - name: Copy test env
         run: cp .env.testing .env
