@@ -120,6 +120,24 @@ jobs:
           exit 1
 
       # 9.  Run the migrations *after* key‑gen; --force avoids the CI safety‑prompt
+
+      - name: Run migration with raw trace
+        run: |
+          # run inside bash so we can capture the exit code
+          set +e
+          php -d xdebug.default_enable=0 -r '
+              putenv("APP_ENV=testing");
+              putenv("APP_DEBUG=1");
+              try {
+                  require "vendor/autoload.php";
+                  (new Illuminate\Foundation\Application)->make("Illuminate\Contracts\Console\Kernel")
+                      ->call("migrate", ["--force" => true, "-vvv" => true]);
+              } catch(Throwable $e) {
+                  echo $e, PHP_EOL;   # dumps FULL back‑trace
+                  exit(1);
+              }
+          '
+          
       - name: Run database migrations
         run: php artisan migrate -vvv
 
