@@ -34,7 +34,6 @@ jobs:
     env:
       APP_ENV: testing
 
-      # database
       DB_CONNECTION: mysql
       DB_HOST: 127.0.0.1
       DB_PORT: 3306
@@ -42,13 +41,12 @@ jobs:
       DB_USERNAME: root
       DB_PASSWORD: secret
 
-      # misc drivers
       BROADCAST_DRIVER: log
       CACHE_DRIVER: array
       QUEUE_CONNECTION: sync
       SESSION_DRIVER: array
 
-      # fake S3/MinIO (used only by tests)
+      # Fake S3/MinIO for tests
       AWS_ACCESS_KEY_ID: minioadmin
       AWS_SECRET_ACCESS_KEY: minioadmin
       AWS_DEFAULT_REGION: us-east-1
@@ -65,6 +63,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # 1. Make sure no stale cached config lingers
+      - name: Remove old config cache
+        run: rm -f bootstrap/cache/config.php
+
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -76,31 +78,11 @@ jobs:
         with:
           node-version: 18
 
+      # 2. Copy your committed .env.testing → .env
       - name: Prepare .env
-        run: |
-          cp .env.testing .env
-          # now .env contains your local APP_KEY
+        run: cp .env.testing .env
 
-      - name: List workspace & head of .env
-        run: |
-          echo "── Workspace ──"
-          ls -1a
-          echo; echo "── .env head ──"
-          head -n 5 .env
-
-      - name: Show APP_KEY line from .env
-        run: |
-          echo "APP_KEY in .env:"
-          grep -E '^APP_KEY=' .env || echo "(!) no APP_KEY line found"
-
-      - name: Base64‑decode length check
-        run: |
-          KEY=$(grep -E '^APP_KEY=' .env | cut -d= -f2-)
-          echo "Raw value: $KEY"
-          # strip the prefix and decode
-          BYTES=$(echo "${KEY#base64:}" | base64 -d | wc -c)
-          echo "Decoded length: $BYTES bytes (should be 32)"
-
+      # 3. Wait for MySQL to come up
       - name: Wait for MySQL
         run: |
           for i in {1..30}; do
@@ -110,17 +92,41 @@ jobs:
           done
           exit 1
 
+      # 4. Install PHP deps (skip scripts so we can control discovery)
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts
 
+      # 5. Rediscover any packages (so your providers are loaded)
+      - name: Discover packages
+        run: php artisan package:discover --ansi
+
+      # 6. Debug: what key does Laravel actually have?
+      - name: Debug: Laravel sees APP_KEY
+        run: |
+          php -r "
+          require 'vendor/autoload.php';
+          \$app = require 'bootstrap/app.php';
+          \$app->make(Illuminate\\Contracts\\Console\\Kernel::class)->bootstrap();
+          \$key = config('app.key');
+          echo '→ Laravel config(\'app.key\'): ' . (\$key ?: '[none]') . \"\n\";
+          if (strlen(\$key) !== 44 || strpos(\$key, 'base64:') !== 0) {
+            echo '‼️ Key is invalid length or missing base64 prefix.' . \"\n\";
+            exit(1);
+          }
+          echo '✔︎ Key format & length look good.' . \"\n\";
+          "
+
+      # 7. Migrate
       - name: Run migrations
         run: php artisan migrate --force --no-interaction -vvv
 
+      # 8. Frontend (if you need it)
       - name: npm ci & build (optional)
         run: |
           npm ci --silent --force
           npm run build --if-present
 
+      # 9. PHPUnit
       - name: PHPUnit
         run: vendor/bin/phpunit --colors=always
         env:
