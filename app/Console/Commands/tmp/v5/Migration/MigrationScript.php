@@ -2,24 +2,13 @@
 
 namespace App\Console\Commands\tmp\v5\Migration;
 
-use App\Models\Litter\Categories\Brand;
-use App\Models\Litter\Tags\BrandList;
-use App\Models\Litter\Tags\Category;
-use App\Models\Litter\Tags\LitterObject;
-use App\Models\Litter\Tags\Materials;
-use App\Models\Litter\Tags\PhotoTag;
-use App\Models\Location\City;
-use App\Models\Location\Country;
-use App\Models\Location\State;
 use App\Models\Photo;
 use App\Services\Redis\UpdateRedisService;
-use App\Services\Tags\ClassifyTagsService;
-use App\Services\Tags\PhotoTagService;
 use App\Services\Tags\UpdateTagsService;
 use Illuminate\Console\Command;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class MigrationScript extends Command
 {
@@ -28,6 +17,9 @@ class MigrationScript extends Command
 
     protected UpdateTagsService $updateTagsService;
     protected UpdateRedisService $updateRedisService;
+
+    protected int $processed = 0;
+    protected int $totalPhotos = 0;
 
     public function __construct(
         UpdateTagsService $updateTagsService,
@@ -40,29 +32,64 @@ class MigrationScript extends Command
 
     public function handle(): void
     {
+        $this->totalPhotos = Photo::whereNull('migrated_at')->count();
+
+        if ($this->totalPhotos === 0) {
+            $this->info('🎉 All photos are already migrated.');
+            return;
+        }
+
+        $this->info("Starting migration of {$this->totalPhotos} photos...\n");
+
         Photo::whereNull('migrated_at')
             ->with('customTags')
             ->chunkById(500, function ($photos)
             {
-                DB::transaction(function () use ($photos)
+                try
                 {
-                    foreach ($photos as $photo)
+                    DB::transaction(function () use ($photos)
                     {
-                        // Convert all Tags to the new format
-                        $this->updateTagsService->updateTags($photo);
+                        foreach ($photos as $photo)
+                        {
+                            $this->updateTagsService->updateTags($photo);
 
-                        // Update Redis with new tags
-                        $this->updateRedisService->updateRedis($photo);
+                            $this->updateRedisService->updateRedis($photo);
 
-                        // update achievements - new
+                            // Update Achievements
 
-                        $photo->update(['migrated_at' => now()]);
-                    }
+                            $photo->update(['migrated_at' => now()]);
+                            $this->processed++;
 
-                    $this->info("Migrated photo IDs " . $photos->first()->id . "–" . $photos->last()->id);
-                }, 3);
+                            // Output percentage every 100 photos
+                            if ($this->processed % 100 === 0 || $this->processed === $this->totalPhotos) {
+                                $percent = number_format(($this->processed / $this->totalPhotos) * 100, 2);
+                                $this->line("Progress: {$this->processed}/{$this->totalPhotos} ({$percent}%)");
+                            }
+                        }
+
+                        $this->info("✅ Migrated photos {$photos->first()->id} – {$photos->last()->id}");
+                    }, 3);
+                }
+                catch (Throwable $e)
+                {
+                    $firstId = $photos->first()->id ?? 'unknown';
+                    $lastId = $photos->last()->id ?? 'unknown';
+
+                    $errorMessage = "❌ Error migrating photos $firstId – $lastId: " . $e->getMessage();
+                    $this->error($errorMessage);
+
+                    // Write to log file
+                    Log::channel('migration')->error($errorMessage, [
+                        'trace' => $e->getTraceAsString(),
+                        'photo_ids' => [$firstId, $lastId],
+                        'processed_count' => $this->processed,
+                    ]);
+
+                    // Optional: rethrow to stop execution
+                    throw $e;
+                }
             });
 
-        $this->info("\n✅ Migration complete.");
+        $this->info("\n✅ Migration complete. Total migrated: {$this->processed}");
     }
 }

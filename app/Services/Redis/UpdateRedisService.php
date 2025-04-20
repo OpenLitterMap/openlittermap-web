@@ -30,6 +30,10 @@ class UpdateRedisService
         // v1 tags
         $tags = $photo->tags;
         $customTags = $photo->custom_tags;
+
+        // v2 tags
+
+
         $country = $photo->country;
         $state = $photo->state;
         $city = $photo->city;

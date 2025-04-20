@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::table('photos', function (Blueprint $table) {
             $table->dateTime('migrated_at')->nullable();
+            $table->index('migrated_at', 'photos_migrated_at_index');
         });
     }
 
@@ -22,6 +23,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('photos', function (Blueprint $table) {
+            $table->dropIndex('photos_migrated_at_index');
             $table->dropColumn('migrated_at');
         });
     }

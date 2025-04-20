@@ -31,9 +31,9 @@ class Photo extends Model
         'datetime' => 'datetime',
         'summary' => 'array',
 
-// deprecated
-//         'tags' => 'array',
-//         'customTags' => 'array',
+        // deprecated
+        // 'tags' => 'array',
+        // 'customTags' => 'array',
     ];
 
     public function photoTags (): HasMany
@@ -109,8 +109,92 @@ class Photo extends Model
     }
 
     /**
-     * Location relationships
+     * Build and persist a single‐query JSON summary of this photo's tags + aggregates.
+     *
+     * @return $this
      */
+    public function generateSummary(): self
+    {
+        // 1) Eager‑load all PhotoTag + their extraTags
+        $tags = $this->photoTags()
+            ->with('extraTags')
+            ->get()
+            ->map(function (PhotoTag $tag) {
+                return [
+                    'photo_tag_id'             => $tag->id,
+                    'category_id'              => $tag->category_id,
+                    'litter_object_id'         => $tag->litter_object_id,
+                    'custom_tag_primary_id'    => $tag->custom_tag_primary_id,
+                    'quantity'                 => $tag->quantity,
+                    'picked_up'                => $tag->picked_up,
+                    'extra_tags'               => $tag->extraTags->map(fn($extra) => [
+                        'type'      => $extra->type,     // 'brand','material','custom_tag'
+                        'id'        => $extra->id,
+                        'key'       => $extra->key,
+                        'quantity'  => $extra->quantity,
+                    ])->toArray(),
+                ];
+            });
+
+        // 2) Initialize counters
+        $totalTags       = 0;
+        $totalObjects    = 0;
+        $byCategory      = []; // category_id => sum of quantities
+        $materialCount   = 0;
+        $brandCount      = 0;
+        $customTagCount  = 0;
+
+        // 3) Walk through items and their extra_tags to accumulate
+        foreach ($tags as $item) {
+            // Base tag quantity
+            $qty = $item['quantity'];
+            $totalTags += $qty;
+
+            // If it's an object (non‑null litter_object_id)
+            if (! is_null($item['litter_object_id'])) {
+                $totalObjects += $qty;
+            }
+
+            // Category totals
+            $cat = $item['category_id'] ?? 'uncategorized';
+            $byCategory[$cat] = ($byCategory[$cat] ?? 0) + $qty;
+
+            // Extra‐tags breakdown
+            foreach ($item['extra_tags'] as $extra) {
+                $totalTags += $extra['quantity'];
+                switch ($extra['type']) {
+                    case 'material':
+                        $materialCount += $extra['quantity'];
+                        break;
+                    case 'brand':
+                        $brandCount += $extra['quantity'];
+                        break;
+                    case 'custom_tag':
+                        $customTagCount += $extra['quantity'];
+                        break;
+                }
+            }
+        }
+
+        // 4) Structure the full summary
+        $summary = [
+            'items' => $tags->toArray(),
+            'totals' => [
+                'total_tags'       => $totalTags,
+                'total_objects'    => $totalObjects,
+                'by_category'      => $byCategory,
+                'materials'        => $materialCount,
+                'brands'           => $brandCount,
+                'custom_tags'      => $customTagCount,
+            ],
+        ];
+
+        // 5) Persist into JSON column
+        $this->update(['summary' => $summary]);
+
+        return $this;
+    }
+
     public function country ()
     {
     	return $this->hasOne('App\Models\Location\Country');
@@ -131,6 +215,8 @@ class Photo extends Model
         // Use hasOne or hasMany depending on your needs
         return $this->hasOne(AdminVerificationLog::class, 'photo_id');
     }
+
+    // ALL BELOW IS DEPRECATED
 
     /**
      * @deprecated

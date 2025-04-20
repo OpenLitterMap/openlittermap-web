@@ -36,7 +36,7 @@ class UpdateTagsService
 
         $this->createPhotoTags($photo, $parsedTags);
 
-        $photo->calculateTotalTags();
+        $photo->generateSummary();
 
         $photo->update(['migrated_at' => now()]);
     }
