@@ -99,26 +99,24 @@ jobs:
 
       - name: Laravel sees APP_KEY
         run: |
-          php -r "
-          require 'vendor/autoload.php';
-          \$app = require 'bootstrap/app.php';
-          \$app->make(Illuminate\\Contracts\\Console\\Kernel::class)->bootstrap();
-          \$key = config('app.key');
-          echo '→ Laravel config(\'app.key\'): ' . (\$key ?: '[none]') . \"\n\";
-          // check prefix
-          if (strpos(\$key, 'base64:') !== 0) {
-            echo '‼️ Missing or wrong prefix (expected base64:).'.\"\n\";
-            exit(1);
-          }
-          // base64-decode payload
-          \$payload = substr(\$key, 7);
-          \$decoded = base64_decode(\$payload, true);
-          if (\$decoded === false) {
-            echo '‼️ Payload is not valid Base64.'.\"\n\";
-            exit(1);
-          }
-          echo '→ Decoded payload length: ' . strlen(\$decoded) . \" bytes (should be 32)\" . \"\n\";
-          "
+          # extract the key from .env
+          KEY=$(grep -E '^APP_KEY=' .env | cut -d= -f2-)
+          echo "→ APP_KEY in .env: $KEY"
+
+          # check prefix
+          if [[ $KEY != base64:* ]]; then
+            echo "‼️ Missing 'base64:' prefix"
+            exit 1
+          fi
+
+          # decode and measure
+          DECODED=$(echo "${KEY#base64:}" | base64 --decode 2>/dev/null)
+          if [ $? -ne 0 ]; then
+            echo "‼️ Payload is not valid Base64"
+            exit 1
+          fi
+          LENGTH=$(echo -n "$DECODED" | wc -c)
+          echo "→ Decoded payload length: $LENGTH bytes (should be 32)"
 
       - name: Run migrations
         run: php artisan migrate --force --no-interaction -vvv
