@@ -19,17 +19,29 @@ class UpdateRedisService
     }
 
     /**
-     * Update totals
+     * Update totals using summary:
      *
-     * global:totals:photos
-     * global:totals:tags
-     * global:totals:categories:category
-     * global:totals:objects:object
-     * global:totals:brands:brand
-     * global:totals:materials:material
+     *  <scope>:totals
+     *    photos         ++
+     *    tags           += total_tags
+     *    custom_tags    += custom_tags
+     *
+     *  <scope>:totals:categories   ← categoryKey => count
+     *  <scope>:totals:objects      ← objectKey => count
+     *  <scope>:totals:materials    ← materialKey => count
+     *  <scope>:totals:brands       ← brandKey => count
+     *  <scope>:totals:custom_tags_breakdown ← customTagKey => count (optional)
      */
     protected function updateTotals(Photo $photo): void
     {
+        $summary = $photo->summary ?? [];
+        $totals  = $summary['totals'] ?? [];
+        $tags    = $summary['tags']   ?? [];
+
+        $tagsCount       = $totals['total_tags']     ?? 0;
+        $customTagsCount = $totals['custom_tags']    ?? 0;
+        $byCategory      = $totals['by_category']    ?? [];
+
         $locations = [
             'global'  => 'global',
             'country' => "country:{$photo->country->id}",
@@ -37,90 +49,62 @@ class UpdateRedisService
             'city'    => "city:{$photo->city->id}",
         ];
 
-        $totals = $photo->summary['totals'] ?? [];
-
-        $tagsCount       = $totals['total_tags']     ?? 0;
-        $customTagsCount = $totals['custom_tags']    ?? 0;
-        $byCategory      = $totals['by_category']    ?? [];
-        $byObject        = $totals['by_object']      ?? [];
-        $byMaterial      = $totals['by_material']    ?? [];
-        $byBrand         = $totals['by_brand']       ?? [];
-
         Redis::pipeline(function ($pipe) use (
             $locations,
             $tagsCount,
             $customTagsCount,
             $byCategory,
-            $byObject,
-            $byMaterial,
-            $byBrand
+            $tags
         ) {
-            foreach ($locations as $scopeKey)
-            {
-                // Overall totals
-                $pipe->hincrby("{$scopeKey}:totals", 'photos', 1);
-                $pipe->hincrby("{$scopeKey}:totals", 'tags', $tagsCount);
+            foreach ($locations as $scopeKey) {
+                // overall counters
+                $pipe->hincrby("{$scopeKey}:totals", 'photos',      1);
+                $pipe->hincrby("{$scopeKey}:totals", 'tags',        $tagsCount);
                 $pipe->hincrby("{$scopeKey}:totals", 'custom_tags', $customTagsCount);
 
-                // Categories
-                foreach ($byCategory as $categoryId => $qty) {
-                    $pipe->hincrby("{$scopeKey}:totals:categories", $categoryId, $qty);
+                // by-category
+                foreach ($byCategory as $catKey => $qty) {
+                    $pipe->hincrby("{$scopeKey}:totals:categories", $catKey, $qty);
                 }
 
-                // Objects
-                foreach ($byObject as $objectId => $qty) {
-                    $pipe->hincrby("{$scopeKey}:totals:objects", $objectId, $qty);
-                }
+                // dive into each category → object
+                foreach ($tags as $catKey => $objects) {
+                    foreach ($objects as $objKey => $data) {
+                        // objects
+                        $pipe->hincrby("{$scopeKey}:totals:objects", $objKey, $data['quantity']);
 
-                // Materials
-                foreach ($byMaterial as $materialId => $qty) {
-                    $pipe->hincrby("{$scopeKey}:totals:materials", $materialId, $qty);
-                }
+                        // materials breakdown
+                        foreach ($data['materials'] as $matKey => $matQty) {
+                            $pipe->hincrby("{$scopeKey}:totals:materials", $matKey, $matQty);
+                        }
 
-                // Brands
-                foreach ($byBrand as $brandId => $qty) {
-                    $pipe->hincrby("{$scopeKey}:totals:brands", $brandId, $qty);
-                }
+                        // brands breakdown
+                        foreach ($data['brands'] as $brandKey => $brandQty) {
+                            $pipe->hincrby("{$scopeKey}:totals:brands", $brandKey, $brandQty);
+                        }
 
-                // Custom Tags
+                        // custom-tags breakdown (if you want per-tag counts)
+                        foreach ($data['custom_tags'] as $ctKey => $ctQty) {
+                            $pipe->hincrby("{$scopeKey}:totals:custom_tags_breakdown", $ctKey, $ctQty);
+                        }
+                    }
+                }
             }
         });
     }
 
     /**
-     * Time-series
-     *
-     * global:timeseries:ppd:yyyy:mm:dd
-     * country:id:totals:timeseries:photos:yyyy:mm:dd
-     * state:id:totals:timeseries:photos:yyyy:mm:dd
-     * city:id:totals:timeseries:photos:yyyy:mm:dd
-     * user:id:totals:timeseries:photos:yyyy:mm:dd
-     *
-     * country:id:photos_per_day:yyyy:mm:dd
-     * state:id:photos_per_day:yyyy:mm:dd
-     * city:id:photos_per_day:yyyy:mm:dd
-     * user:id:photos_per_day:yyyy:mm:dd
-     *
-     * country:id:photos_per_week:yyyy:ww
-     * state:id:photos_per_week:yyyy:ww
-     * city:id:photos_per_week:yyyy:ww
-     * user:id:photos_per_week:yyyy:ww
-     *
-     * country:id:photos_per_month:yyyy:mm
-     * state:id:photos_per_month:yyyy:mm
-     * city:id:photos_per_month:yyyy:mm
-     * user:id:photos_per_month:yyyy:mm
-     *
-     * country:id:photos_per_year:yyyy
-     * state:id:photos_per_year:yyyy
-     * city:id:photos_per_year:yyyy
-     * user:id:photos_per_year:yyyy
+     * Time-series remains largely the same, using date‐buckets:
+     *   <scope>:ts:daily:photos:<YYYY-MM-DD>
+     *   <scope>:ts:weekly:photos:<YYYY-WW>
+     *   <scope>:ts:monthly:photos:<YYYY-MM>
+     *   <scope>:ts:yearly:photos:<YYYY>
      */
     protected function updateTimeSeries(Photo $photo): void
     {
         $ts    = $photo->created_at;
         $date  = $ts->format('Y-m-d');
-        $week  = $ts->format('o-W');  // ISO year-week
+        $week  = $ts->format('o-W');
         $month = $ts->format('Y-m');
         $year  = $ts->format('Y');
 
@@ -133,15 +117,11 @@ class UpdateRedisService
         ];
 
         Redis::pipeline(function ($pipe) use ($scopes, $date, $week, $month, $year) {
-            foreach ($scopes as $key) {
-                // Daily
-                $pipe->incr("{$key}:ts:daily:photos:{$date}");
-                // Weekly
-                $pipe->incr("{$key}:ts:weekly:photos:{$week}");
-                // Monthly
-                $pipe->incr("{$key}:ts:monthly:photos:{$month}");
-                // Yearly
-                $pipe->incr("{$key}:ts:yearly:photos:{$year}");
+            foreach ($scopes as $scopeKey) {
+                $pipe->incr("{$scopeKey}:ts:daily:photos:{$date}");
+                $pipe->incr("{$scopeKey}:ts:weekly:photos:{$week}");
+                $pipe->incr("{$scopeKey}:ts:monthly:photos:{$month}");
+                $pipe->incr("{$scopeKey}:ts:yearly:photos:{$year}");
             }
         });
     }
