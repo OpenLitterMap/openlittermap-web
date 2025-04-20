@@ -38,7 +38,7 @@ class GeneratePhotoSummaryTest extends TestCase
         $photo->generateSummary();
         $photo->refresh();
 
-        $this->assertSame([], $photo->summary['items']);
+        $this->assertSame([], $photo->summary['tags']);
         $this->assertSame([
             'total_tags'    => 0,
             'total_objects' => 0,
@@ -57,7 +57,7 @@ class GeneratePhotoSummaryTest extends TestCase
 
         $photo->refresh();
         $this->assertIsArray($photo->summary);
-        $this->assertEmpty($photo->summary['items'], 'Expected no items');
+        $this->assertEmpty($photo->summary['tags'], 'Expected no items');
 
         $totals = $photo->summary['totals'];
         $this->assertEquals(0, $totals['total_tags']);
@@ -92,7 +92,7 @@ class GeneratePhotoSummaryTest extends TestCase
         $summary = $photo->summary;
 
         // items count = 1
-        $this->assertCount(1, $summary['items']);
+        $this->assertCount(1, $summary['tags']);
 
         // totals
         $totals = $summary['totals'];
@@ -119,7 +119,7 @@ class GeneratePhotoSummaryTest extends TestCase
         app(UpdateTagsService::class)->updateTags($photo);
 
         $photo->refresh();
-        $item = $photo->summary['items'][0];
+        $item = $photo->summary['tags'][0];
 
         $this->assertArrayHasKey('photo_tag_id', $item);
         $this->assertArrayHasKey('category_id', $item);
@@ -150,7 +150,7 @@ class GeneratePhotoSummaryTest extends TestCase
         // ensure 'foo'=>'bar' is gone
         $this->assertArrayNotHasKey('foo', $photo->summary);
         // and real items exist
-        $this->assertNotEmpty($photo->summary['items']);
+        $this->assertNotEmpty($photo->summary['tags']);
     }
 
     /** @test */
@@ -172,7 +172,7 @@ class GeneratePhotoSummaryTest extends TestCase
         $photo->refresh();
 
         // two base items
-        $this->assertCount(2, $photo->summary['items']);
+        $this->assertCount(2, $photo->summary['tags']);
 
         // total_tags = 1 + 2 (base) + 1 (brand extra on each? merged to both?)
         // but at least >= 3
@@ -234,7 +234,7 @@ class GeneratePhotoSummaryTest extends TestCase
         $this->service->updateTags($photo);
         $photo->refresh();
 
-        $items = $photo->summary['items'];
+        $items = $photo->summary['tags'];
         $this->assertCount(2, $items);
 
         $totals = $photo->summary['totals'];
@@ -260,7 +260,7 @@ class GeneratePhotoSummaryTest extends TestCase
         $this->service->updateTags($photo);
         $photo->refresh();
 
-        $item = $photo->summary['items'][0];
+        $item = $photo->summary['tags'][0];
 
         $this->assertArrayHasKey('photo_tag_id',          $item);
         $this->assertArrayHasKey('category_id',           $item);
@@ -291,6 +291,6 @@ class GeneratePhotoSummaryTest extends TestCase
         $photo->refresh();
 
         $this->assertArrayNotHasKey('foo', $photo->summary);
-        $this->assertNotEmpty($photo->summary['items']);
+        $this->assertNotEmpty($photo->summary['tags']);
     }
 }

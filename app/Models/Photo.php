@@ -114,6 +114,38 @@ class Photo extends Model
     /**
      * Build and persist a single‑query JSON summary of this photo's tags + aggregates.
      *
+     * The summary format:
+     * [
+     *   'tags' => [
+     *     [
+     *       'photo_tag_id'          => (int)   // ID of the PhotoTag
+     *       'category_id'           => (int)   // Category ID
+     *       'litter_object_id'      => (int|null) // LitterObject ID or null
+     *       'custom_tag_primary_id' => (int|null) // Primary CustomTagNew ID or null
+     *       'quantity'              => (int)   // Base quantity
+     *       'picked_up'             => (bool)  // Whether picked up
+     *       'extra_tags'            => [      // Any extra tags
+     *         [
+     *           'type'     => (string) // 'material'|'brand'|'custom_tag'
+     *           'id'       => (int)    // ID of the extra tag
+     *           'key'      => (string) // Tag key
+     *           'quantity' => (int)    // Quantity of extra tag
+     *         ],
+     *         ...
+     *       ],
+     *     ],
+     *     ...
+     *   ],
+     *   'totals' => [
+     *     'total_tags'    => (int)       // Sum of base + extra tags
+     *     'total_objects' => (int)       // Sum of base object quantities
+     *     'by_category'   => (array)     // [categoryId=>quantity,...]
+     *     'materials'     => (int)       // Total material extras
+     *     'brands'        => (int)       // Total brand extras
+     *     'custom_tags'   => (int)       // Total custom_tag extras
+     *   ],
+     * ]
+     *
      * @return $this
      */
     public function generateSummary(): self
@@ -183,7 +215,7 @@ class Photo extends Model
 
         // 4) Structure summary
         $summary = [
-            'items' => $tags->toArray(),
+            'tags' => $tags->toArray(),
             'totals' => [
                 'total_tags'    => $totalTags,
                 'total_objects' => $totalObjects,
