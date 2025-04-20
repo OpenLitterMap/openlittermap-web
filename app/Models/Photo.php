@@ -161,17 +161,18 @@ class Photo extends Model
 
         // 2) Walk through each tag record
         foreach ($tags as $pt) {
-            $categoryKey = $pt->category->key;
+            // Use "custom" when there's no category (i.e. pure custom‑tag PhotoTags)
+            $categoryKey = $pt->category?->key ?? 'custom';
             $objectKey   = $pt->object?->key ?? 'unknown';
             $qty         = $pt->quantity;
 
             // accumulate flat totals
             $totalTags += $qty;
-            if (!is_null($pt->litter_object_id)) {
+            if (! is_null($pt->litter_object_id)) {
                 $totalObjects += $qty;
             }
 
-            // init structures
+            // init per‑category/object slots
             $grouped[$categoryKey][$objectKey]['quantity'] =
                 ($grouped[$categoryKey][$objectKey]['quantity'] ?? 0) + $qty;
             foreach (['materials', 'brands', 'custom_tags'] as $type) {
@@ -179,7 +180,7 @@ class Photo extends Model
                     $grouped[$categoryKey][$objectKey][$type] ?? [];
             }
 
-            // increment category total
+            // bump category total
             $categoryTotals[$categoryKey] =
                 ($categoryTotals[$categoryKey] ?? 0) + $qty;
 
