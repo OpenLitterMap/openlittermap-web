@@ -11,11 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
+        echo "Creating categories table...\n";
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
             $table->string('key')->unique();
             $table->timestamps();
         });
+        echo "Created categories table.\n";
     }
 
     /**
