@@ -118,7 +118,7 @@ class Photo extends Model
      */
     public function generateSummary(): self
     {
-        // 1) Eager‑load all PhotoTag + their extraTags
+        // 1) Eager‑load PhotoTag + their extraTags
         $tags = $this->photoTags()
             ->with('extraTags.extraTag')
             ->get()
@@ -142,27 +142,23 @@ class Photo extends Model
             });
 
         // 2) Initialize counters
-        $totalTags      = 0;
-        $totalObjects   = 0;
-        $byCategory     = [];
-        $byObject       = [];
-        $byMaterial     = [];
-        $byBrand        = [];
-        $customTagCount = 0;
+        $totalTags       = 0;
+        $totalObjects    = 0;
+        $byCategory      = [];
+        $materialCount   = 0;
+        $brandCount      = 0;
+        $customTagCount  = 0;
 
-        // 3) Walk through items to accumulate
+        // 3) Accumulate counts
         foreach ($tags as $item) {
             $qty = $item['quantity'];
             $totalTags += $qty;
 
-            // Objects breakdown
             if (!is_null($item['litter_object_id'])) {
                 $totalObjects += $qty;
-                $objectId = $item['litter_object_id'];
-                $byObject[$objectId] = ($byObject[$objectId] ?? 0) + $qty;
             }
 
-            // Category breakdown
+            // Category totals
             $cat = $item['category_id'] ?? 'uncategorized';
             $byCategory[$cat] = ($byCategory[$cat] ?? 0) + $qty;
 
@@ -170,12 +166,13 @@ class Photo extends Model
             foreach ($item['extra_tags'] as $extra) {
                 $extraQty = $extra['quantity'];
                 $totalTags += $extraQty;
+
                 switch ($extra['type']) {
                     case 'material':
-                        $byMaterial[$extra['id']] = ($byMaterial[$extra['id']] ?? 0) + $extraQty;
+                        $materialCount += $extraQty;
                         break;
                     case 'brand':
-                        $byBrand[$extra['id']] = ($byBrand[$extra['id']] ?? 0) + $extraQty;
+                        $brandCount += $extraQty;
                         break;
                     case 'custom_tag':
                         $customTagCount += $extraQty;
@@ -184,21 +181,20 @@ class Photo extends Model
             }
         }
 
-        // 4) Structure the full summary
+        // 4) Structure summary
         $summary = [
-            'items'  => $tags->toArray(),
+            'items' => $tags->toArray(),
             'totals' => [
-                'total_tags'      => $totalTags,
-                'total_objects'   => $totalObjects,
-                'by_category'     => $byCategory,
-                'by_object'       => $byObject,
-                'by_material'     => $byMaterial,
-                'by_brand'        => $byBrand,
-                'custom_tags'     => $customTagCount,
+                'total_tags'    => $totalTags,
+                'total_objects' => $totalObjects,
+                'by_category'   => $byCategory,
+                'materials'     => $materialCount,
+                'brands'        => $brandCount,
+                'custom_tags'   => $customTagCount,
             ],
         ];
 
-        // 5) Persist into JSON column
+        // 5) Persist JSON
         $this->update(['summary' => $summary]);
 
         return $this;
