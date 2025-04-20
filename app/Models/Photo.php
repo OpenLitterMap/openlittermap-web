@@ -112,121 +112,132 @@ class Photo extends Model
     }
 
     /**
-     * Build and persist a single‑query JSON summary of this photo's tags + aggregates.
+     * Build and persist a single‑query JSON summary of this photo's tags + aggregates,
+     * grouped first by category key, then by object key (with extra-tags nested),
+     * plus flat totals for tags, objects, materials, brands, and custom tags.
      *
-     * The summary format:
+     * Final summary format:
      * [
      *   'tags' => [
-     *     [
-     *       'photo_tag_id'          => (int)   // ID of the PhotoTag
-     *       'category_id'           => (int)   // Category ID
-     *       'litter_object_id'      => (int|null) // LitterObject ID or null
-     *       'custom_tag_primary_id' => (int|null) // Primary CustomTagNew ID or null
-     *       'quantity'              => (int)   // Base quantity
-     *       'picked_up'             => (bool)  // Whether picked up
-     *       'extra_tags'            => [      // Any extra tags
-     *         [
-     *           'type'     => (string) // 'material'|'brand'|'custom_tag'
-     *           'id'       => (int)    // ID of the extra tag
-     *           'key'      => (string) // Tag key
-     *           'quantity' => (int)    // Quantity of extra tag
-     *         ],
-     *         ...
+     *     '<categoryKey>' => [
+     *       '<objectKey>' => [
+     *         'quantity'    => (int),
+     *         'materials'   => [ '<materialKey>' => (int), ... ],
+     *         'brands'      => [ '<brandKey>'    => (int), ... ],
+     *         'custom_tags' => [ '<customKey>'   => (int), ... ],
      *       ],
+     *       ... // more objects per category
      *     ],
-     *     ...
+     *     ... // more categories
      *   ],
      *   'totals' => [
-     *     'total_tags'    => (int)       // Sum of base + extra tags
-     *     'total_objects' => (int)       // Sum of base object quantities
-     *     'by_category'   => (array)     // [categoryId=>quantity,...]
-     *     'materials'     => (int)       // Total material extras
-     *     'brands'        => (int)       // Total brand extras
-     *     'custom_tags'   => (int)       // Total custom_tag extras
+     *     'total_tags'    => (int),
+     *     'total_objects' => (int),
+     *     'by_category'   => [ '<categoryKey>' => (int), ... ],
+     *     'materials'     => (int),
+     *     'brands'        => (int),
+     *     'custom_tags'   => (int),
      *   ],
      * ]
+     *
+     * Categories and objects are ordered descending by their quantities.
      *
      * @return $this
      */
     public function generateSummary(): self
     {
-        // 1) Eager‑load PhotoTag + their extraTags
+        // 1) Eager‑load all PhotoTags with related category, object, and extraTags
         $tags = $this->photoTags()
-            ->with('extraTags.extraTag')
-            ->get()
-            ->map(function (PhotoTag $tag) {
-                return [
-                    'photo_tag_id'          => $tag->id,
-                    'category_id'           => $tag->category_id,
-                    'litter_object_id'      => $tag->litter_object_id,
-                    'custom_tag_primary_id' => $tag->custom_tag_primary_id,
-                    'quantity'              => $tag->quantity,
-                    'picked_up'             => $tag->picked_up,
-                    'extra_tags'            => $tag->extraTags->map(function ($extra) {
-                        return [
-                            'type'     => $extra->tag_type,
-                            'id'       => $extra->tag_type_id,
-                            'key'      => $extra->extraTag?->key,
-                            'quantity' => $extra->quantity,
-                        ];
-                    })->toArray(),
-                ];
-            });
+            ->with(['category', 'object', 'extraTags.extraTag'])
+            ->get();
 
-        // 2) Initialize counters
+        $grouped         = [];
+        $categoryTotals  = [];
         $totalTags       = 0;
         $totalObjects    = 0;
-        $byCategory      = [];
         $materialCount   = 0;
         $brandCount      = 0;
         $customTagCount  = 0;
 
-        // 3) Accumulate counts
-        foreach ($tags as $item) {
-            $qty = $item['quantity'];
-            $totalTags += $qty;
+        // 2) Walk through each tag record
+        foreach ($tags as $pt) {
+            $categoryKey = $pt->category->key;
+            $objectKey   = $pt->object?->key ?? 'unknown';
+            $qty         = $pt->quantity;
 
-            if (!is_null($item['litter_object_id'])) {
+            // accumulate flat totals
+            $totalTags += $qty;
+            if (!is_null($pt->litter_object_id)) {
                 $totalObjects += $qty;
             }
 
-            // Category totals
-            $cat = $item['category_id'] ?? 'uncategorized';
-            $byCategory[$cat] = ($byCategory[$cat] ?? 0) + $qty;
+            // init structures
+            $grouped[$categoryKey][$objectKey]['quantity'] =
+                ($grouped[$categoryKey][$objectKey]['quantity'] ?? 0) + $qty;
+            foreach (['materials', 'brands', 'custom_tags'] as $type) {
+                $grouped[$categoryKey][$objectKey][$type] =
+                    $grouped[$categoryKey][$objectKey][$type] ?? [];
+            }
 
-            // Extra‑tags breakdown
-            foreach ($item['extra_tags'] as $extra) {
-                $extraQty = $extra['quantity'];
+            // increment category total
+            $categoryTotals[$categoryKey] =
+                ($categoryTotals[$categoryKey] ?? 0) + $qty;
+
+            // handle extra tags
+            foreach ($pt->extraTags as $extra) {
+                $extraQty = $extra->quantity;
+                // accumulate flat and category totals
                 $totalTags += $extraQty;
+                $categoryTotals[$categoryKey] += $extraQty;
 
-                switch ($extra['type']) {
+                // type-specific counters
+                switch ($extra->tag_type) {
                     case 'material':
                         $materialCount += $extraQty;
+                        $typeKey = 'materials';
                         break;
                     case 'brand':
                         $brandCount += $extraQty;
+                        $typeKey = 'brands';
                         break;
                     case 'custom_tag':
+                    default:
                         $customTagCount += $extraQty;
+                        $typeKey = 'custom_tags';
                         break;
                 }
+
+                $tagKey = $extra->extraTag?->key;
+                $grouped[$categoryKey][$objectKey][$typeKey][$tagKey] =
+                    ($grouped[$categoryKey][$objectKey][$typeKey][$tagKey] ?? 0) + $extraQty;
             }
         }
 
-        // 4) Structure summary
-        $summary = [
-            'tags' => $tags->toArray(),
-            'totals' => [
-                'total_tags'    => $totalTags,
-                'total_objects' => $totalObjects,
-                'by_category'   => $byCategory,
-                'materials'     => $materialCount,
-                'brands'        => $brandCount,
-                'custom_tags'   => $customTagCount,
-            ],
+        // 3) Sort categories and their objects by quantity desc
+        foreach ($grouped as $catKey => &$objects) {
+            uasort($objects, fn($a, $b) => $b['quantity'] <=> $a['quantity']);
+        }
+        unset($objects);
+        uksort($grouped, fn($a, $b) =>
+            ($categoryTotals[$b] ?? 0) <=> ($categoryTotals[$a] ?? 0)
+        );
+
+        // 4) Build flat totals array
+        $totals = [
+            'total_tags'    => $totalTags,
+            'total_objects' => $totalObjects,
+            'by_category'   => $categoryTotals,
+            'materials'     => $materialCount,
+            'brands'        => $brandCount,
+            'custom_tags'   => $customTagCount,
         ];
 
-        // 5) Persist JSON
+        // 5) Persist summary JSON
+        $summary = [
+            'tags'   => $grouped,
+            'totals' => $totals,
+        ];
+
         $this->update(['summary' => $summary]);
 
         return $this;
