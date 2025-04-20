@@ -1,5 +1,10 @@
 name: Laravel CI
-on: [push, pull_request]
+
+on:
+  push:
+    branches: [ master, staging, upgrade/tagging-2025 ]
+  pull_request:
+    branches: [ master, staging ]
 
 jobs:
   tests:
@@ -15,6 +20,7 @@ jobs:
         options: >-
           --health-cmd="mysqladmin ping -h 127.0.0.1 -psecret"
           --health-interval=10s --health-timeout=5s --health-retries=3
+
       redis:
         image: redis:7
         ports: [6379:6379]
@@ -27,10 +33,12 @@ jobs:
       DB_DATABASE: olm_test
       DB_USERNAME: root
       DB_PASSWORD: secret
+
       BROADCAST_DRIVER: log
       CACHE_DRIVER: array
       QUEUE_CONNECTION: sync
       SESSION_DRIVER: array
+
       AWS_ACCESS_KEY_ID: minioadmin
       AWS_SECRET_ACCESS_KEY: minioadmin
       AWS_DEFAULT_REGION: us-east-1
@@ -45,15 +53,18 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+
       - uses: shivammathur/setup-php@v2
         with:
           php-version: 8.2
           extensions: mbstring, dom, fileinfo, mysql
 
       - uses: actions/setup-node@v3
-        with: { node-version: 18 }
+        with:
+          node-version: 18
 
-      - run: cp .env.testing .env            # already contains APP_KEY
+      - name: Copy test env
+        run: cp .env.testing .env          # already contains APP_KEY
 
       - name: Composer install
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
@@ -67,10 +78,10 @@ jobs:
           done
           exit 1
 
-      - name: Run database migrations
+      - name: Run migrations
         run: php artisan migrate --force --no-interaction -vvv
 
-      - name: NPM ci + build
+      - name: npm ci + build
         run: |
           npm ci --silent --force
           npm run build --if-present
