@@ -85,11 +85,18 @@ jobs:
 
       # 4.  Bring MinIO up and create the buckets we need
       - name: StartMinIO(test‑S3)
+        env:
+          AWS_ACCESS_KEY_ID:     minioadmin
+          AWS_SECRET_ACCESS_KEY: minioadmin
+          AWS_EC2_METADATA_DISABLED: true
         run: |
           docker run -d --name minio -p 9000:9000 \
-            -e MINIO_ACCESS_KEY=homestead \
-            -e MINIO_SECRET_KEY=secret \
+            -e MINIO_ROOT_USER=minioadmin \
+            -e MINIO_ROOT_PASSWORD=minioadmin \
             minio/minio server /data
+          # optional: wait until the service answers
+          until curl -sf http://127.0.0.1:9000/minio/health/live; do sleep 1; done
+
           aws --endpoint-url http://127.0.0.1:9000 s3 mb s3://olm-public
           aws --endpoint-url http://127.0.0.1:9000 s3 mb s3://olm-public-bbox
 
