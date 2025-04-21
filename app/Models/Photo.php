@@ -7,6 +7,7 @@ use App\Models\Litter\Categories\Brand;
 use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Teams\Team;
 use App\Models\User\User;
+use App\Services\Photos\GeneratePhotoSummaryService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -87,6 +88,12 @@ class Photo extends Model
     public function createTag (array $data): PhotoTag
     {
         return $this->photoTags()->create($data);
+    }
+
+    public function generateSummary(): self
+    {
+        app(GeneratePhotoSummaryService::class)->run($this);
+        return $this;
     }
 
     public function calculateTotalTags (): int
