@@ -97,7 +97,7 @@ jobs:
       - name: Discover packages
         run: php artisan package:discover --ansi
 
-      - name: Debug: Laravel sees APP_KEY
+      - name: Laravel sees APP_KEY
         run: |
           KEY=$(grep -E '^APP_KEY=' .env | cut -d= -f2-)
           echo "→ APP_KEY in .env: $KEY"
@@ -108,7 +108,7 @@ jobs:
           BYTES=$(echo "${KEY#base64:}" | base64 --decode 2>/dev/null | wc -c)
           echo "→ Decoded payload length: $BYTES bytes (should be 32)"
 
-      - name: Debug: Try a real encryption pass
+      - name: Try a real encryption pass
         run: |
           php -r "require 'vendor/autoload.php';
           \$app = require 'bootstrap/app.php';
@@ -133,6 +133,6 @@ jobs:
           npm run build --if-present
 
       - name: PHPUnit (verbose)
-        run: vendor/bin/phpunit --colors=always --verbose
+        run: vendor/bin/phpunit --colors=always
         env:
           REDIS_PORT: ${{ job.services.redis.ports[6379] }}
