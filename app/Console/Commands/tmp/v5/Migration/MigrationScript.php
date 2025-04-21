@@ -2,9 +2,13 @@
 
 namespace App\Console\Commands\tmp\v5\Migration;
 
+use App\Models\Litter\Tags\BrandList;
+use App\Models\Litter\Tags\LitterObject;
 use App\Models\Photo;
 use App\Services\Redis\UpdateRedisService;
 use App\Services\Tags\UpdateTagsService;
+use Database\Seeders\Tags\GenerateBrandsSeeder;
+use Database\Seeders\Tags\GenerateTagsSeeder;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -32,6 +36,20 @@ class MigrationScript extends Command
 
     public function handle(): void
     {
+        if (!DB::getSchemaBuilder()->hasColumn('photos', 'migrated_at')) {
+            $this->error('The photos.migrated_at column does not exist. Please run the migration first.');
+            return;
+        }
+
+        if (LitterObject::count() === 0) {
+            $this->info('Seeding LitterObject definitions…');
+            $this->call('db:seed', ['--class' => GenerateTagsSeeder::class]);
+        }
+        if (BrandList::count() === 0) {
+            $this->info('Seeding BrandList definitions…');
+            $this->call('db:seed', ['--class' => GenerateBrandsSeeder::class]);
+        }
+
         $this->totalPhotos = Photo::whereNull('migrated_at')->count();
 
         if ($this->totalPhotos === 0) {

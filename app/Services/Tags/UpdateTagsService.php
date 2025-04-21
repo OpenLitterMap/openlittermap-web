@@ -5,16 +5,22 @@ namespace App\Services\Tags;
 use App\Models\Photo;
 use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Litter\Tags\Category;
+use App\Services\Photos\GeneratePhotoSummaryService;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\Log;
 
 class UpdateTagsService
 {
     protected ClassifyTagsService $classifyTags;
+    protected GeneratePhotoSummaryService $generatePhotoSummaryService;
 
-    public function __construct(ClassifyTagsService $classifyTags)
+    public function __construct(
+        ClassifyTagsService $classifyTags,
+        GeneratePhotoSummaryService $generatePhotoSummaryService
+    )
     {
         $this->classifyTags = $classifyTags;
+        $this->generatePhotoSummaryService = $generatePhotoSummaryService;
     }
 
     public function updateTags(Photo $photo): void
@@ -36,7 +42,7 @@ class UpdateTagsService
 
         $this->createPhotoTags($photo, $parsedTags);
 
-        $photo->generateSummary();
+        $this->generatePhotoSummaryService->run($photo);
 
         $photo->update(['migrated_at' => now()]);
     }
@@ -46,6 +52,7 @@ class UpdateTagsService
         $tags           = $photo->tags() ?? [];
         $originalTags   = $this->mergeSingleObjectAndBrand($tags);
         $customTagsOld  = $photo->customTags ?? new EloquentCollection();
+
         return [$originalTags, $customTagsOld];
     }
 

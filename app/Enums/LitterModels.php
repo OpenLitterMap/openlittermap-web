@@ -1,6 +1,6 @@
 <?php
 
-namespace App;
+namespace App\Enums;
 
 use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Materials;

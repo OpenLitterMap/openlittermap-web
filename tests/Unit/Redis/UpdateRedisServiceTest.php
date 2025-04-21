@@ -4,8 +4,8 @@ namespace Tests\Unit\Redis;
 
 use App\Models\Photo;
 use App\Services\Redis\UpdateRedisService;
-use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Redis;
 use Tests\TestCase;
 
 class UpdateRedisServiceTest extends TestCase
@@ -31,7 +31,7 @@ class UpdateRedisServiceTest extends TestCase
         $photo->setRelation('city',    (object)['id' => 3]);
         $photo->setRelation('user',    (object)['id' => 4]);
 
-        (new UpdateRedisService())->updateRedis($photo);
+        app(UpdateRedisService::class)->updateRedis($photo);
 
         // Global totals
         $this->assertSame('1', Redis::hget('global:totals', 'photos'));
@@ -94,7 +94,7 @@ class UpdateRedisServiceTest extends TestCase
         $photo->setRelation('city',    (object)['id' => 33]);
         $photo->setRelation('user',    (object)['id' => 44]);
 
-        (new UpdateRedisService())->updateRedis($photo);
+        app(UpdateRedisService::class)->updateRedis($photo);
 
         // Global totals
         $this->assertSame('1', Redis::hget('global:totals', 'photos'));
@@ -226,7 +226,7 @@ class UpdateRedisServiceTest extends TestCase
             $photo->setRelation('city',    (object)['id' => 1]);
             $photo->setRelation('user',    (object)['id' => 1]);
 
-            (new UpdateRedisService())->updateRedis($photo);
+            app(UpdateRedisService::class)->updateRedis($photo);
         }
 
         // Assert totals

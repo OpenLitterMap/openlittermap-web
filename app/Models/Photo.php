@@ -4,9 +4,6 @@ namespace App\Models;
 
 use App\Models\AI\Annotation;
 use App\Models\Litter\Categories\Brand;
-use App\Models\Litter\Tags\BrandList;
-use App\Models\Litter\Tags\CustomTagNew;
-use App\Models\Litter\Tags\Materials;
 use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Teams\Team;
 use App\Models\User\User;
@@ -33,10 +30,7 @@ class Photo extends Model
     protected $casts = [
         'datetime' => 'datetime',
         'summary' => 'array',
-
-        // deprecated
-        // 'tags' => 'array',
-        // 'customTags' => 'array',
+        'xp'      => 'integer',
     ];
 
     public function photoTags (): HasMany
@@ -109,139 +103,6 @@ class Photo extends Model
         $this->save();
 
         return $this->total_tags;
-    }
-
-    /**
-     * Build and persist a single‑query JSON summary of this photo's tags + aggregates,
-     * grouped first by category key, then by object key (with extra-tags nested),
-     * plus flat totals for tags, objects, materials, brands, and custom tags.
-     *
-     * Final summary format:
-     * [
-     *   'tags' => [
-     *     '<categoryKey>' => [
-     *       '<objectKey>' => [
-     *         'quantity'    => (int),
-     *         'materials'   => [ '<materialKey>' => (int), ... ],
-     *         'brands'      => [ '<brandKey>'    => (int), ... ],
-     *         'custom_tags' => [ '<customKey>'   => (int), ... ],
-     *       ],
-     *       ... // more objects per category
-     *     ],
-     *     ... // more categories
-     *   ],
-     *   'totals' => [
-     *     'total_tags'    => (int),
-     *     'total_objects' => (int),
-     *     'by_category'   => [ '<categoryKey>' => (int), ... ],
-     *     'materials'     => (int),
-     *     'brands'        => (int),
-     *     'custom_tags'   => (int),
-     *   ],
-     * ]
-     *
-     * Categories and objects are ordered descending by their quantities.
-     *
-     * @return $this
-     */
-    public function generateSummary(): self
-    {
-        // 1) Eager‑load all PhotoTags with related category, object, and extraTags
-        $tags = $this->photoTags()
-            ->with(['category', 'object', 'extraTags.extraTag'])
-            ->get();
-
-        $grouped         = [];
-        $categoryTotals  = [];
-        $totalTags       = 0;
-        $totalObjects    = 0;
-        $materialCount   = 0;
-        $brandCount      = 0;
-        $customTagCount  = 0;
-
-        // 2) Walk through each tag record
-        foreach ($tags as $pt) {
-            // Use "custom" when there's no category (i.e. pure custom‑tag PhotoTags)
-            $categoryKey = $pt->category?->key ?? 'custom';
-            $objectKey   = $pt->object?->key ?? 'unknown';
-            $qty         = $pt->quantity;
-
-            // accumulate flat totals
-            $totalTags += $qty;
-            if (! is_null($pt->litter_object_id)) {
-                $totalObjects += $qty;
-            }
-
-            // init per‑category/object slots
-            $grouped[$categoryKey][$objectKey]['quantity'] =
-                ($grouped[$categoryKey][$objectKey]['quantity'] ?? 0) + $qty;
-            foreach (['materials', 'brands', 'custom_tags'] as $type) {
-                $grouped[$categoryKey][$objectKey][$type] =
-                    $grouped[$categoryKey][$objectKey][$type] ?? [];
-            }
-
-            // bump category total
-            $categoryTotals[$categoryKey] =
-                ($categoryTotals[$categoryKey] ?? 0) + $qty;
-
-            // handle extra tags
-            foreach ($pt->extraTags as $extra) {
-                $extraQty = $extra->quantity;
-                // accumulate flat and category totals
-                $totalTags += $extraQty;
-                $categoryTotals[$categoryKey] += $extraQty;
-
-                // type-specific counters
-                switch ($extra->tag_type) {
-                    case 'material':
-                        $materialCount += $extraQty;
-                        $typeKey = 'materials';
-                        break;
-                    case 'brand':
-                        $brandCount += $extraQty;
-                        $typeKey = 'brands';
-                        break;
-                    case 'custom_tag':
-                    default:
-                        $customTagCount += $extraQty;
-                        $typeKey = 'custom_tags';
-                        break;
-                }
-
-                $tagKey = $extra->extraTag?->key;
-                $grouped[$categoryKey][$objectKey][$typeKey][$tagKey] =
-                    ($grouped[$categoryKey][$objectKey][$typeKey][$tagKey] ?? 0) + $extraQty;
-            }
-        }
-
-        // 3) Sort categories and their objects by quantity desc
-        foreach ($grouped as $catKey => &$objects) {
-            uasort($objects, fn($a, $b) => $b['quantity'] <=> $a['quantity']);
-        }
-        unset($objects);
-        uksort($grouped, fn($a, $b) =>
-            ($categoryTotals[$b] ?? 0) <=> ($categoryTotals[$a] ?? 0)
-        );
-
-        // 4) Build flat totals array
-        $totals = [
-            'total_tags'    => $totalTags,
-            'total_objects' => $totalObjects,
-            'by_category'   => $categoryTotals,
-            'materials'     => $materialCount,
-            'brands'        => $brandCount,
-            'custom_tags'   => $customTagCount,
-        ];
-
-        // 5) Persist summary JSON
-        $summary = [
-            'tags'   => $grouped,
-            'totals' => $totals,
-        ];
-
-        $this->update(['summary' => $summary]);
-
-        return $this;
     }
 
     public function country ()

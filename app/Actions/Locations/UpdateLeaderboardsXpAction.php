@@ -4,20 +4,16 @@ namespace App\Actions\Locations;
 
 use Illuminate\Support\Facades\Redis;
 
+/**
+ * @deprecated
+ */
 class UpdateLeaderboardsXpAction
 {
-    /**
-     * @param int $userId
-     * @param int $incrXp
-     */
-    public function run (
-        int $userId,
-        int $incrXp
-    ) :void
+    public function run (int $userId, int $incrXp) :void
     {
-        $year = now()->year;
-        $month = now()->month;
-        $day = now()->day;
+        $year  = now()->format('Y');
+        $month = now()->format('m');
+        $day   = now()->format('d');
 
         // Update the Users total score in the Global Leaderboard
         $this->addXp("xp.users", $incrXp, $userId);

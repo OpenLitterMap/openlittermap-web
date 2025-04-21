@@ -8,6 +8,7 @@ use App\Models\Litter\Categories\Food;
 use App\Models\Litter\Categories\Smoking;
 use App\Models\Litter\Tags\Materials;
 use App\Models\Photo;
+use App\Services\Photos\GeneratePhotoSummaryService;
 use App\Services\Tags\UpdateTagsService;
 use Database\Seeders\Tags\GenerateBrandsSeeder;
 use Database\Seeders\Tags\GenerateTagsSeeder;
@@ -15,7 +16,8 @@ use Tests\TestCase;
 
 class GeneratePhotoSummaryTest extends TestCase
 {
-    protected UpdateTagsService $service;
+    protected UpdateTagsService $updateTagsService;
+    protected GeneratePhotoSummaryService $generatePhotoSummaryService;
 
     protected function setUp(): void
     {
@@ -26,14 +28,15 @@ class GeneratePhotoSummaryTest extends TestCase
             GenerateBrandsSeeder::class
         ]);
 
-        $this->service = app(UpdateTagsService::class);
+        $this->updateTagsService = app(UpdateTagsService::class);
+        $this->generatePhotoSummaryService = app(GeneratePhotoSummaryService::class);
     }
 
     /** @test */
     public function summary_empty_when_no_tags(): void
     {
         $photo = Photo::factory()->create();
-        $photo->generateSummary();
+        $this->generatePhotoSummaryService->run($photo);
         $photo->refresh();
 
         $summary = $photo->summary;
@@ -64,7 +67,7 @@ class GeneratePhotoSummaryTest extends TestCase
 
         $photo->customTags()->create(['tag' => 'street_clean']);
 
-        $this->service->updateTags($photo);
+        $this->updateTagsService->updateTags($photo);
         $photo->refresh();
         $summary = $photo->summary;
 
@@ -99,7 +102,7 @@ class GeneratePhotoSummaryTest extends TestCase
             'food_id'    => $food->id,
             'remaining'  => 0,
         ]);
-        $this->service->updateTags($photo);
+        $this->updateTagsService->updateTags($photo);
         $photo->refresh();
         $summary = $photo->summary;
 
@@ -117,7 +120,7 @@ class GeneratePhotoSummaryTest extends TestCase
         $photo   = Photo::factory()->create(['smoking_id' => $smoking->id, 'remaining' => 0]);
 
         // Perform initial migration to create PhotoTag
-        $this->service->updateTags($photo);
+        $this->updateTagsService->updateTags($photo);
         $photo->refresh();
 
         // Attach a material extra tag to the generated PhotoTag
@@ -130,7 +133,7 @@ class GeneratePhotoSummaryTest extends TestCase
         ]);
 
         // Regenerate summary with new extraTag
-        $photo->generateSummary();
+        $this->generatePhotoSummaryService->run($photo);
         $photo->refresh();
 
         $summary = $photo->summary;
@@ -150,11 +153,10 @@ class GeneratePhotoSummaryTest extends TestCase
     {
         $smoking = Smoking::create(['butts' => 2]);
         $photo   = Photo::factory()->create(['smoking_id' => $smoking->id, 'remaining' => 0]);
-        $this->service->updateTags($photo);
+        $this->updateTagsService->updateTags($photo);
 
         $photo->update(['summary' => ['foo' => 'bar']]);
-
-        $photo->refresh()->generateSummary();
+        $this->generatePhotoSummaryService->run($photo);
         $photo->refresh();
 
         $this->assertArrayHasKey('smoking', $photo->summary['tags']);
