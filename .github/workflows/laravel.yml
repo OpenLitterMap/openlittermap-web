@@ -112,6 +112,6 @@ jobs:
           npm run build --if-present
 
       - name: PHPUnit
-        run: vendor/bin/phpunit --colors=always --verbose
+        run: vendor/bin/phpunit --colors=always
         env:
           REDIS_PORT: ${{ job.services.redis.ports[6379] }}
