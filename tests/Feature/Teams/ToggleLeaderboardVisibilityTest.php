@@ -3,7 +3,7 @@
 namespace Tests\Feature\Teams;
 
 use App\Models\Teams\Team;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Tests\TestCase;
 
 class ToggleLeaderboardVisibilityTest extends TestCase

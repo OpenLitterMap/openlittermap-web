@@ -3,7 +3,7 @@
 namespace Tests\Unit\Commands;
 
 use App\Models\AI\Annotation;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Support\Facades\Redis;
 use Tests\TestCase;
 

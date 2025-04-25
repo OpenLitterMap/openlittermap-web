@@ -4,7 +4,7 @@ namespace App\Console\Commands\Users;
 
 use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 use App\Models\Photo;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Console\Command;
 
 class UpdateRedisLocationsXp extends Command

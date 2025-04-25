@@ -4,7 +4,7 @@ namespace Tests\Feature\Api\Teams;
 
 use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Tests\TestCase;
 
 class ListTeamsTest extends TestCase

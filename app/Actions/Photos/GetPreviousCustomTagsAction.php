@@ -2,7 +2,7 @@
 
 namespace App\Actions\Photos;
 
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Support\Collection;
 
 class GetPreviousCustomTagsAction

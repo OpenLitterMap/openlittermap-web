@@ -10,7 +10,7 @@ use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 use App\Events\ImageDeleted;
 use App\Models\Littercoin;
 use App\Models\Photo;
-use App\Models\User\User;
+use App\Models\Users\User;
 
 use App\Traits\AddTagsTrait;
 

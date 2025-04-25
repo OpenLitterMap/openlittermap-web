@@ -2,7 +2,7 @@
 
 namespace App\Events;
 
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Contracts\Queue\ShouldQueue;

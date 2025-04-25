@@ -3,7 +3,7 @@
 namespace App\Console\Commands\Users;
 
 use App\Actions\Locations\UpdateLeaderboardsXpAction;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Console\Command;
 
 class UpdateRedisBoundingBoxXp extends Command

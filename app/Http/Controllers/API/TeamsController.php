@@ -16,7 +16,7 @@ use App\Http\Requests\Teams\LeaveTeamRequest;
 use App\Http\Requests\Teams\UpdateTeamRequest;
 use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 

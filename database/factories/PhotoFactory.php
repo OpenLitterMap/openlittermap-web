@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Photo;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class PhotoFactory extends Factory

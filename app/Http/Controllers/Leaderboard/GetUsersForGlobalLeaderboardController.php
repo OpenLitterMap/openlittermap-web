@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Leaderboard;
 
 use App\Http\Controllers\Controller;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Support\Facades\Redis;
 
 class GetUsersForGlobalLeaderboardController extends Controller

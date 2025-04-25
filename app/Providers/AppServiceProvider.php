@@ -5,7 +5,7 @@ namespace App\Providers;
 use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\CustomTagNew;
 use App\Models\Litter\Tags\Materials;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;

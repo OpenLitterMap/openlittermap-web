@@ -3,7 +3,7 @@
 namespace App\Actions\Teams;
 
 use App\Models\Teams\Team;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Support\Facades\DB;
 
 class LeaveTeamAction

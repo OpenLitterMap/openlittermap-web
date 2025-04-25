@@ -3,7 +3,7 @@
 namespace Tests\Feature\Tags;
 
 use App\Enums\LitterModels;
-use App\Models\User\User;
+use App\Models\Users\User;
 use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\CustomTagNew;

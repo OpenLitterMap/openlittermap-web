@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Auth;
 use App\Models\Photo;
-use App\Models\User\User;
+use App\Models\Users\User;
 use App\Models\Litter\Categories\Smoking;
 use App\Models\Litter\Categories\Alcohol;
 use App\Models\Litter\Categories\Coffee;

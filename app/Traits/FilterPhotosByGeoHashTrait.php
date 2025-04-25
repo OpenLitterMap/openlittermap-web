@@ -3,7 +3,7 @@
 namespace App\Traits;
 
 use App\Models\Photo;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Database\Eloquent\Builder;
 
 trait FilterPhotosByGeoHashTrait

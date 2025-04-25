@@ -3,7 +3,7 @@
 namespace Tests\Feature\Api\Teams;
 
 use App\Models\Teams\Team;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Support\Facades\Storage;
 use Tests\Feature\HasPhotoUploads;
 use Tests\TestCase;

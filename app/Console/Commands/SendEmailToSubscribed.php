@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Subscriber;
-use App\Models\User\User;
+use App\Models\Users\User;
 use App\Jobs\Emails\DispatchEmail;
 
 use Illuminate\Console\Command;

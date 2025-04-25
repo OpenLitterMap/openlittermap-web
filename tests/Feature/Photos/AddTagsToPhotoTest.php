@@ -4,7 +4,7 @@ namespace Tests\Feature\Photos;
 
 use Tests\TestCase;
 use App\Models\Photo;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Tests\Feature\HasPhotoUploads;
 use App\Events\TagsVerifiedByAdmin;
 use Illuminate\Support\Facades\Event;

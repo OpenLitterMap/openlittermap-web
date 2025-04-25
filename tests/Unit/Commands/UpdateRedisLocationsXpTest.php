@@ -8,7 +8,7 @@ use App\Models\Location\City;
 use App\Models\Location\Country;
 use App\Models\Location\State;
 use App\Models\Photo;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Support\Facades\Redis;
 use Tests\TestCase;
 

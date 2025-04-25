@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Models\User\User;
+use App\Models\Users\User;
 use App\Mail\NewUserRegMail;
 use App\Events\UserSignedUp;
 use Illuminate\Http\Request;

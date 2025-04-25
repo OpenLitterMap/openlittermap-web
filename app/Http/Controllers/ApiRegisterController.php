@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User\User;
+use App\Models\Users\User;
 use App\Events\UserSignedUp;
 use App\Mail\NewUserRegMail;
 use Illuminate\Http\JsonResponse;

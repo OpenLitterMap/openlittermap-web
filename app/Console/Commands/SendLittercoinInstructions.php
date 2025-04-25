@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\User\User;
+use App\Models\Users\User;
 use App\Mail\LittercoinInstructions;
 use Illuminate\Console\Command;
 

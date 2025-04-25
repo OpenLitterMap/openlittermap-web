@@ -7,7 +7,7 @@ use App\Mail\Admin\AccountUpgraded;
 use App\Events\TagsVerifiedByAdmin;
 use App\Http\Controllers\Controller;
 
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;

@@ -4,7 +4,7 @@ namespace Tests\Feature\Admin;
 
 use Tests\TestCase;
 use App\Models\Photo;
-use App\Models\User\User;
+use App\Models\Users\User;
 use App\Events\ImageDeleted;
 use Spatie\Permission\Models\Role;
 use Tests\Feature\HasPhotoUploads;

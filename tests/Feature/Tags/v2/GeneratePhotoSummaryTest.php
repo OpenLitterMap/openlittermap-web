@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Tags\v2;
 
-use App\Models\Litter\Categories\Alcohol;
 use App\Models\Litter\Categories\Brand;
 use App\Models\Litter\Categories\Food;
 use App\Models\Litter\Categories\Smoking;

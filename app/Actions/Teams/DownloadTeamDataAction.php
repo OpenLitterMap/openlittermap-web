@@ -5,7 +5,7 @@ namespace App\Actions\Teams;
 use App\Exports\CreateCSVExport;
 use App\Jobs\EmailUserExportCompleted;
 use App\Models\Teams\Team;
-use App\Models\User\User;
+use App\Models\Users\User;
 
 class DownloadTeamDataAction
 {

@@ -8,7 +8,7 @@ use App\Actions\Photos\DeletePhotoAction;
 use App\Actions\Photos\DeleteTagsFromPhotoAction;
 use App\Http\Controllers\Controller;
 use App\Models\Photo;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Route;

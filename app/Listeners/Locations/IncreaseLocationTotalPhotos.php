@@ -4,7 +4,7 @@ namespace App\Listeners\Locations;
 
 use App\Actions\Locations\UpdateTotalPhotosForLocationAction;
 use App\Events\ImageUploaded;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
 class IncreaseLocationTotalPhotos implements ShouldQueue

@@ -5,7 +5,7 @@ namespace Tests\Feature\Admin;
 use Tests\TestCase;
 use Tests\Feature\HasPhotoUploads;
 use App\Models\Photo;
-use App\Models\User\User;
+use App\Models\Users\User;
 use App\Models\Litter\Categories\Smoking;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;

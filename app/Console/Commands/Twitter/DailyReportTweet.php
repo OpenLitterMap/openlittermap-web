@@ -6,7 +6,7 @@ use Carbon\Carbon;
 use App\Models\Photo;
 use Spatie\Emoji\Emoji;
 use App\Helpers\Twitter;
-use App\Models\User\User;
+use App\Models\Users\User;
 use App\Models\CustomTag;
 use App\Models\Littercoin;
 use Illuminate\Console\Command;

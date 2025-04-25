@@ -9,7 +9,7 @@ use App\Models\Location\City;
 use App\Models\Location\Country;
 use App\Models\Location\State;
 use App\Models\Teams\Team;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event;

@@ -4,7 +4,7 @@ namespace Tests\Feature\Teams;
 
 use App\Mail\ExportWithLink;
 use App\Models\Teams\Team;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Photo;
-use App\Models\User\User;
+use App\Models\Users\User;
 use App\Actions\CalculateTagsDifferenceAction;
 use App\Traits\AddTagsTrait;
 use App\Events\TagsVerifiedByAdmin;

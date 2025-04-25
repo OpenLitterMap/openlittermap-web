@@ -3,7 +3,7 @@
 namespace App\Console\Commands\Photos;
 
 use App\Models\Photo;
-use App\Models\User\User;
+use App\Models\Users\User;
 use App\Models\Location\City;
 use App\Models\Location\State;
 use App\Models\Location\Country;

@@ -5,9 +5,9 @@ namespace Database\Factories;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Litter\Tags\LitterState>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Achievements\Achievement>
  */
-class LitterTagsLitterStateFactory extends Factory
+class AchievementFactory extends Factory
 {
     /**
      * Define the model's default state.

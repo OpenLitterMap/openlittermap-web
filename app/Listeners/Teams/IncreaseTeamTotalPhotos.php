@@ -2,7 +2,7 @@
 
 namespace App\Listeners\Teams;
 
-use App\Models\User\User;
+use App\Models\Users\User;
 use App\Models\Teams\Team;
 use App\Events\ImageUploaded;
 use Illuminate\Support\Facades\DB;

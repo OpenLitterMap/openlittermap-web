@@ -4,7 +4,7 @@ namespace App\Console\Commands\tmp;
 
 use App\Models\Littercoin;
 use App\Models\Photo;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Console\Command;
 
 class ResetLittercoin extends Command

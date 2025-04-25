@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Models\User;
+namespace App\Models\Users;
 
 use App\Level;
+use App\Models\Achievements\Achievement;
+use App\Models\Achievements\UserAchievement;
 use App\Models\Badges\Badge;
 use App\Payment;
 use App\Models\Photo;
@@ -28,16 +30,6 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
-/**
- * @property Collection<Team> | array<Team> $teams
- * @property Team $team
- * @property int $active_team
- * @property int $xp
- * @property int $xp_redis
- * @property bool $picked_up
- * @property array $settings
- * @property array $social_links
- */
 class User extends Authenticatable
 {
     use Notifiable, Billable, HasApiTokens, HasRoles, LaravelPermissionToVueJS, HasFactory;
@@ -434,6 +426,17 @@ class User extends Authenticatable
     public function setPasswordAttribute ($password)
     {
         $this->attributes['password'] = bcrypt($password);
+    }
+
+    public function achievements()
+    {
+        return $this->belongsToMany(
+            Achievement::class,
+            'user_achievements'
+        )
+        ->using(UserAchievement::class)
+        ->withPivot(['unlocked_at','progress','target','snapshot'])
+        ->withTimestamps();
     }
 
     /**

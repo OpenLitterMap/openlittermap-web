@@ -5,7 +5,7 @@ namespace Tests\Feature\Api\Teams;
 use App\Events\TeamCreated;
 use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 

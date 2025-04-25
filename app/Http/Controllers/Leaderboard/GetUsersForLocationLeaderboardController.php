@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Leaderboard;
 
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Support\Facades\Redis;
 
 class GetUsersForLocationLeaderboardController

@@ -3,7 +3,7 @@
 namespace App\Listeners\User;
 
 use App\Events\TagsVerifiedByAdmin;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Carbon\Carbon;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;

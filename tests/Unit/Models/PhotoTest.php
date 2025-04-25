@@ -18,7 +18,7 @@ use App\Models\Litter\Categories\Smoking;
 use App\Models\Litter\Categories\SoftDrinks;
 use App\Models\Litter\Categories\TrashDog;
 use App\Models\Photo;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;

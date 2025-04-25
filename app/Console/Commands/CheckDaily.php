@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Carbon\Carbon;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Console\Command;
 
 class CheckDaily extends Command

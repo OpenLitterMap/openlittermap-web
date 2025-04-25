@@ -7,7 +7,7 @@ use App\Actions\Photos\AddTagsToPhotoAction;
 use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 use App\Events\TagsVerifiedByAdmin;
 use App\Models\Photo;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;

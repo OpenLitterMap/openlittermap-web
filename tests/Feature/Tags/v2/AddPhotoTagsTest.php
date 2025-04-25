@@ -9,7 +9,7 @@ use App\Models\Litter\Tags\CustomTagNew;
 use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\Materials;
 use App\Models\Photo;
-use App\Models\User\User;
+use App\Models\Users\User;
 use App\Actions\Badges\CheckLocationTypeAward;
 use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 use Illuminate\Foundation\Testing\RefreshDatabase;

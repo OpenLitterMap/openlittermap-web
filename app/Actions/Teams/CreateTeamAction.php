@@ -4,7 +4,7 @@ namespace App\Actions\Teams;
 
 use App\Events\TeamCreated;
 use App\Models\Teams\Team;
-use App\Models\User\User;
+use App\Models\Users\User;
 
 class CreateTeamAction
 {

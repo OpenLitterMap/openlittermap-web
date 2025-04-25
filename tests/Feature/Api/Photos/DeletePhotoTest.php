@@ -4,7 +4,7 @@ namespace Tests\Feature\Api\Photos;
 
 
 use App\Events\ImageDeleted;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;

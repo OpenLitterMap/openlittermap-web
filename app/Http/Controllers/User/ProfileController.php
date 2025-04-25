@@ -8,7 +8,7 @@ use App\Jobs\EmailUserExportCompleted;
 use App\Level;
 use App\Models\CustomTag;
 use App\Models\Photo;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;

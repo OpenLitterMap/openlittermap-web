@@ -12,7 +12,7 @@ use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\Materials;
 use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Photo;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Validation\ValidationException;
 
 class AddTagsToPhotoActionNew

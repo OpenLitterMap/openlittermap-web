@@ -6,7 +6,7 @@ use App\Events\ImageUploaded;
 use App\Events\Photo\IncrementPhotoMonth;
 use App\Models\Litter\Categories\Smoking;
 use App\Models\Teams\Team;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event;

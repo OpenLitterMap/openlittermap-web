@@ -7,7 +7,7 @@ use App\Actions\Photos\AddCustomTagsToPhotoAction;
 use App\Actions\Photos\AddTagsToPhotoAction;
 use App\Actions\Photos\DeleteTagsFromPhotoAction;
 use App\Models\Photo;
-use App\Models\User\User;
+use App\Models\Users\User;
 
 trait AddTagsTrait
 {

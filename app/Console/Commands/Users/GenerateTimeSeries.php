@@ -3,7 +3,7 @@
 namespace App\Console\Commands\Users;
 
 use App\Models\Photo;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 

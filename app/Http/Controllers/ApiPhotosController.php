@@ -8,7 +8,7 @@ use App\Events\NewStateAdded;
 use GeoHash;
 use Carbon\Carbon;
 use App\Models\Photo;
-use App\Models\User\User;
+use App\Models\Users\User;
 
 use App\Jobs\Api\AddTags;
 

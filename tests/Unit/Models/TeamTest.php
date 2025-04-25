@@ -3,7 +3,7 @@
 namespace Tests\Unit\Models;
 
 use App\Models\Teams\Team;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;

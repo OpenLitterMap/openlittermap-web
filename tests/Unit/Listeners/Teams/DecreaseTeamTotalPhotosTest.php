@@ -5,7 +5,7 @@ namespace Tests\Unit\Listeners\Teams;
 use App\Events\ImageDeleted;
 use App\Listeners\Teams\DecreaseTeamTotalPhotos;
 use App\Models\Teams\Team;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Carbon\Carbon;
 use Tests\TestCase;
 

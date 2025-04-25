@@ -3,7 +3,7 @@
 namespace App\Console\Commands\Tags;
 
 use App\Models\Photo;
-use App\Models\User\User;
+use App\Models\Users\User;
 use App\Models\LitterTags;
 use App\Events\TagsVerifiedByAdmin;
 

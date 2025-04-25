@@ -3,7 +3,7 @@
 namespace Database\Factories\Teams;
 
 use App\Models\Teams\Team;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class TeamFactory extends Factory

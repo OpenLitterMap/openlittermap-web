@@ -21,9 +21,8 @@ class CalculatePhotoXpTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        // seed your categories/objects/tags so UpdateTagsService can work
-        $this->seed([GenerateTagsSeeder::class, GenerateBrandsSeeder::class]);
 
+        $this->seed([GenerateTagsSeeder::class, GenerateBrandsSeeder::class]);
         $this->tagsService = app(UpdateTagsService::class);
     }
 

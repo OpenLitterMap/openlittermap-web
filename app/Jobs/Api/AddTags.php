@@ -3,7 +3,7 @@
 namespace App\Jobs\Api;
 
 use App\Models\Photo;
-use App\Models\User\User;
+use App\Models\Users\User;
 use App\Actions\Photos\AddTagsToPhotoAction;
 use App\Actions\Photos\AddCustomTagsToPhotoAction;
 use App\Actions\Locations\UpdateLeaderboardsForLocationAction;

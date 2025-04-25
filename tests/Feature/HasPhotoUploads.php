@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use App\Actions\Locations\ReverseGeocodeLocationAction;

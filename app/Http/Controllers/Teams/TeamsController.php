@@ -15,7 +15,7 @@ use App\Http\Requests\Teams\LeaveTeamRequest;
 use App\Http\Requests\Teams\UpdateTeamRequest;
 use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
-use App\Models\User\User;
+use App\Models\Users\User;
 
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;

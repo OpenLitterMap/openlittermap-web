@@ -5,7 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Littercoin;
 use App\Models\Location\Country;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Http\Request;
 
 class GlobalStatsController extends Controller

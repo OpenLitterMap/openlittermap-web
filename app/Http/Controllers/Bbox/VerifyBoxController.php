@@ -7,7 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Litterrata;
 use App\Models\AI\Annotation;
 use App\Models\Photo;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Http\Request;
 
 class VerifyBoxController extends Controller

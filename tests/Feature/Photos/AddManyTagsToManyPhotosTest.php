@@ -6,7 +6,7 @@ use App\Models\CustomTag;
 use App\Models\Litter\Categories\Alcohol;
 use App\Models\Litter\Categories\Smoking;
 use App\Models\Photo;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Tests\TestCase;
 
 class AddManyTagsToManyPhotosTest extends TestCase

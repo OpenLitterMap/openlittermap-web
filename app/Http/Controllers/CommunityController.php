@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Photo;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;

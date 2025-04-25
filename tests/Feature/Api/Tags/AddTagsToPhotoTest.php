@@ -5,7 +5,7 @@ namespace Tests\Feature\Api\Tags;
 use App\Events\TagsVerifiedByAdmin;
 use App\Models\Litter\Categories\Smoking;
 use App\Models\Photo;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;

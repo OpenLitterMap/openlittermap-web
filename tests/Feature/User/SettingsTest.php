@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\User;
 
-use App\Models\User\User;
+use App\Models\Users\User;
 use Tests\TestCase;
 
 class SettingsTest extends TestCase

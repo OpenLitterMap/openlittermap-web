@@ -37,6 +37,7 @@
         "spatie/laravel-backup": "^8.0",
         "spatie/laravel-permission": "^6.0",
         "stripe/stripe-php": "^13.0",
+        "symfony/expression-language": "^6.4",
         "youthage/laravel-geohash": "^3.1"
     },
     "require-dev": {

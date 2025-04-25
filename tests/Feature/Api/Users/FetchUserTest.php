@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Api\Users;
 
-use App\Models\User\User;
+use App\Models\Users\User;
 use Tests\TestCase;
 
 class FetchUserTest extends TestCase
