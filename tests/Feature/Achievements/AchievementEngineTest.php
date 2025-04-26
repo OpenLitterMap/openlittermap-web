@@ -14,15 +14,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\{Cache, Event, Redis};
 use Tests\TestCase;
 
-/**
- * AchievementEngine integration tests.
- *
- * Uses:
- *   – in-memory SQLite (RefreshDatabase handles it)
- *   – real tag + brand seeders
- *   – Redis swap for hgetall()
- *   – model factories for User and Photo
- */
 class AchievementEngineTest extends TestCase
 {
     use RefreshDatabase;
