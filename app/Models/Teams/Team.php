@@ -33,18 +33,18 @@ class Team extends Model
      */
     public function users ()
     {
-    	return $this->belongsToMany('App\Models\User\User');
+    	return $this->belongsToMany('App\Models\Users\User');
     }
 
     public function leader ()
     {
-    	return $this->belongsTo('App\Models\User\User', 'leader');
+    	return $this->belongsTo('App\Models\Users\User', 'leader');
     }
 
     // double check this
     public function photos ()
     {
-        return $this->hasManyThrough('App\Models\User\User', 'App\Models\Photo');
+        return $this->hasManyThrough('App\Models\Users\User', 'App\Models\Photo');
     }
 
 }

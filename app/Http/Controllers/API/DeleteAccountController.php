@@ -221,14 +221,14 @@ class DeleteAccountController extends Controller
             }
 
             $modelHasRoles = DB::table('model_has_roles')
-                ->where('model_type', 'App\Models\User\User')
+                ->where('model_type', 'App\Models\Users\User')
                 ->where('model_id', $userId)
                 ->count();
 
             if ($modelHasRoles > 0)
             {
                 DB::table('model_has_roles')
-                    ->where('model_type', 'App\Models\User\User')
+                    ->where('model_type', 'App\Models\Users\User')
                     ->where('model_id', $userId)
                     ->delete();
             }

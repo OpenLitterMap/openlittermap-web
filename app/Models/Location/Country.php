@@ -152,12 +152,12 @@ class Country extends Location
 
     // change this to firstUploader
     public function creator () {
-        return $this->belongsTo('App\Models\User\User', 'created_by');
+        return $this->belongsTo('App\Models\Users\User', 'created_by');
     }
 
     // The last user_id who uploaded
     public function lastUploader () {
-        return $this->belongsTo('App\Models\User\User', 'user_id_last_uploaded');
+        return $this->belongsTo('App\Models\Users\User', 'user_id_last_uploaded');
     }
 
     public function states () {
@@ -169,6 +169,6 @@ class Country extends Location
     }
 
     public function users () {
-        return $this->hasMany('App\Models\User\User');
+        return $this->hasMany('App\Models\Users\User');
     }
 }

@@ -46,7 +46,7 @@ final class RedisMetricsCollector
         $country  = $photo->country_id ?? $photo->country?->id;
         $state    = $photo->state_id   ?? $photo->state?->id;
         $city     = $photo->city_id    ?? $photo->city?->id;
-        $xp = (float) ($photo->xp ?? 0);                    // set by GeneratePhotoSummaryService
+        $xp = (float) ($photo->xp ?? 0);
 
         $ts       = $photo->created_at;
         $date     = $ts->format('Y-m-d');

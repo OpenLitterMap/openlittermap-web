@@ -303,10 +303,6 @@ Route::get('/privacy', function() {
 
 // Confirm Email Address, old and new
 Route::get('register/confirm/{token}', 'Auth\RegisterController@confirmEmail');
-// Route::get('a', function () {
-//     $user = \App\Models\User\User::first();
-//     return view('auth.emails.confirm', ['user' => $user]);
-//  });
 Route::get('confirm/email/{token}', 'Auth\RegisterController@confirmEmail')
     ->name('confirm-email-token');
 
