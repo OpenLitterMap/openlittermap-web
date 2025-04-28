@@ -5,6 +5,7 @@ namespace App\Console\Commands\tmp\v5\Migration;
 use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\LitterObject;
 use App\Models\Photo;
+use App\Services\Achievements\UpdateAchievementsService;
 use App\Services\Redis\UpdateRedisService;
 use App\Services\Tags\UpdateTagsService;
 use Database\Seeders\Tags\GenerateBrandsSeeder;
@@ -21,17 +22,20 @@ class MigrationScript extends Command
 
     protected UpdateTagsService $updateTagsService;
     protected UpdateRedisService $updateRedisService;
+    protected UpdateAchievementsService $achievementsService;
 
     protected int $processed = 0;
     protected int $totalPhotos = 0;
 
     public function __construct(
         UpdateTagsService $updateTagsService,
-        UpdateRedisService $updateRedisService
+        UpdateRedisService $updateRedisService,
+        UpdateAchievementsService $achievementsService
     ) {
         parent::__construct();
         $this->updateTagsService = $updateTagsService;
         $this->updateRedisService = $updateRedisService;
+        $this->achievementsService = $achievementsService;
     }
 
     public function handle(): void
@@ -61,32 +65,30 @@ class MigrationScript extends Command
 
         Photo::whereNull('migrated_at')
             ->with('customTags')
-            ->chunkById(500, function ($photos)
+            ->lazyById(500, function ($photos)
             {
                 try
                 {
-                    DB::transaction(function () use ($photos)
+                    foreach ($photos as $photo)
                     {
-                        foreach ($photos as $photo)
-                        {
-                            $this->updateTagsService->updateTags($photo);
+                        $this->updateTagsService->updateTags($photo);
 
-                            $this->updateRedisService->updateRedis($photo);
+                        $this->updateRedisService->updateRedis($photo);
 
-                            // Update Achievements
+                        $this->achievementsService->generateAchievements($photo);
 
-                            $photo->update(['migrated_at' => now()]);
-                            $this->processed++;
+                        Photo::withoutEvents(fn() => $photo->forceFill(['migrated_at' => now()])->save());
+                        $this->processed++;
 
-                            // Output percentage every 100 photos
-                            if ($this->processed % 100 === 0 || $this->processed === $this->totalPhotos) {
-                                $percent = number_format(($this->processed / $this->totalPhotos) * 100, 2);
-                                $this->line("Progress: {$this->processed}/{$this->totalPhotos} ({$percent}%)");
-                            }
+                        if ($this->processed % 100 === 0) {
+                            $percent = number_format(($this->processed / $this->totalPhotos) * 100, 2);
+                            $this->line("Progress: {$this->processed}/{$this->totalPhotos} ({$percent}%)");
                         }
+                    }
 
+                    if ( ! $photos->isEmpty()) {
                         $this->info("✅ Migrated photos {$photos->first()->id} – {$photos->last()->id}");
-                    }, 3);
+                    }
                 }
                 catch (Throwable $e)
                 {
@@ -96,14 +98,12 @@ class MigrationScript extends Command
                     $errorMessage = "❌ Error migrating photos $firstId – $lastId: " . $e->getMessage();
                     $this->error($errorMessage);
 
-                    // Write to log file
                     Log::channel('migration')->error($errorMessage, [
                         'trace' => $e->getTraceAsString(),
                         'photo_ids' => [$firstId, $lastId],
                         'processed_count' => $this->processed,
                     ]);
 
-                    // Optional: rethrow to stop execution
                     throw $e;
                 }
             });

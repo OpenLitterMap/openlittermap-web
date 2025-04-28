@@ -1,82 +1,109 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Services\Achievements;
 
 use App\Events\AchievementsUnlocked;
 use App\Models\Litter\Tags\Category;
-use App\Models\Users\User;
 use App\Models\Photo;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Redis;
+use App\Models\Users\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redis;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
+use Symfony\Component\ExpressionLanguage\ParsedExpression;
 
-class AchievementEngine
+final class AchievementEngine
 {
-    /* ─────────────────────────  Redis key patterns  ────────────────────────── */
-    private const KEY_USER_OBJECTS  = 'users:%d:totals:objects';  // hash (object_key=>qty)
-    private const KEY_USER_ACTIVITY = 'activity:users:%d';        // hash (YYYY-MM-DD=>uploads)
-    private const CACHE_GLOBAL_META = 'achievement:meta';
+    /* ───── Redis keys consistent with RedisMetricsCollector ───────── */
+    private const KEY_USER_XP       = '{u:%d}:xp';
+    private const KEY_USER_STREAK   = '{u:%d}:streak';
+    private const KEY_USER_OBJECTS  = 'users:%d:totals:objects';
+    private const KEY_USER_UPLOADS  = '{u:%d}:uploads';
 
-    /* ─────────────────────────  Internals  ─────────────────────────────────── */
+    /* ───────────────────────── Cache key ──────────────────────────── */
+    private const CACHE_META = 'achievement:meta';
+
+    /* ───────────────────────── Internals ──────────────────────────── */
     private ExpressionLanguage $el;
+    private Collection         $defs;                // config('achievements')
+    /** @var array<string,ParsedExpression> */
+    private array $compiled = [];
 
-    public function __construct()
+    public function __construct(?ExpressionLanguage $el = null)
     {
-        $this->el = new ExpressionLanguage;
+        $this->el   = $el ?? new ExpressionLanguage();
+        $this->defs = collect(config('achievements'));
+
         $this->registerDslHelpers($this->el);
     }
 
-    /* ─────────────────────────  Public API  ─────────────────────────────────── */
+    /* ───────────────────────── Public API ─────────────────────────── */
 
     /**
-     * Determine which achievement slugs should unlock after a photo is saved.
+     * Call once after a photo has been saved & queued to RedisMetricsCollector.
      */
+    public function process(Photo $photo): void
+    {
+        $slugs = $this->slugsToUnlock($photo);
+        $this->unlock($photo->user, $slugs);
+    }
+
+    /* ─────────────────────── Core mechanics ──────────────────────── */
+
     public function slugsToUnlock(Photo $photo): Collection
     {
-        $user  = $photo->user;                             // eager-loaded in your flow
-        $stats = $this->buildStats($user, $photo);         // per-user / per-photo data
-        $meta  = Cache::rememberForever(self::CACHE_GLOBAL_META, static fn () => [
+        $user  = $photo->user->loadMissing('achievements');
+        $stats = $this->buildStats($user, $photo);
+
+        $meta  = Cache::rememberForever(self::CACHE_META, static fn () => [
             'total_categories' => Category::count(),
+            // add slow-changing global metrics here
         ]);
 
-        return collect(config('achievements'))
-            ->reject(fn ($_,$slug) => $user->achievements->contains('slug', $slug))
-            ->filter(fn ($def) => $this->el->evaluate(
-                $def['when'], compact('stats','meta','user','photo')
-            ))
+        return $this->defs
+            ->reject(fn ($_ , $slug) => $user->achievements->where('slug', $slug)->isNotEmpty())
+            ->filter(fn ($def , $slug) =>
+            $this->el->evaluate($this->compiled($slug), compact('stats','meta','user','photo')))
             ->keys();
     }
 
-    /**
-     * Persist unlocks, award XP & fire the AchievementsUnlocked event.
-     */
     public function unlock(User $user, Collection $slugs): void
     {
         if ($slugs->isEmpty()) {
             return;
         }
 
-        $defs = collect(config('achievements'))->only($slugs);
+        $defs  = $this->defs->only($slugs);
+        $ids   = $defs->keys();
+        $added = $defs->sum('xp');
 
-        // attach pivot rows (timestamps handled by relationship)
-        $user->achievements()->attach($defs->keys(), [
-            'unlocked_at' => now(),
-        ]);
+        /* pivot rows – ignore duplicates raced in other workers */
+        try {
+            $user->achievements()->attach($ids, ['unlocked_at' => now()]);
+        } catch (QueryException $e) {
+            if ($e->getCode() !== '23000') {               // not duplicate key
+                Log::error('Achievement attach failed', ['msg' => $e->getMessage()]);
+                throw $e;
+            }
+        }
 
-        // XP & level-up
-        $user->increment('xp', $defs->sum('xp'));
+        /* update XP entirely in Redis */
+        Redis::incrByFloat(sprintf(self::KEY_USER_XP, $user->id), $added);
         $this->recalculateLevel($user);
 
-        // broadcast
         event(new AchievementsUnlocked($user, $defs));
     }
 
-    /* ─────────────────────────  Helpers  ────────────────────────────────────── */
+    /* ────────────────────────── Helpers ───────────────────────────── */
 
     private function recalculateLevel(User $user): void
     {
-        $newLevel = intdiv($user->xp, 1_000);
+        $xp       = (int) Redis::get(sprintf(self::KEY_USER_XP, $user->id));
+        $newLevel = intdiv($xp, 1_000);
+
         if ($newLevel > $user->level) {
             $user->forceFill([
                 'level'         => $newLevel,
@@ -86,74 +113,78 @@ class AchievementEngine
     }
 
     /**
-     * Build the $stats array passed to DSL expressions.
-     *
-     *  stats = [
-     *      'level'          => int,
-     *      'photos_total'   => int,
-     *      'current_streak' => int,
-     *      'local'      => ['objects' => [obj_key => qty, …]],
-     *      'cumulative' => ['objects' => [obj_key => qty, …]],
-     *      'summary'    => (photo.summary JSON),
-     * ]
+     * Build the `$stats` bag passed to every DSL expression.
      */
     private function buildStats(User $user, Photo $photo): array
     {
         $summary = $photo->summary ?? [];
         $tags    = $summary['tags'] ?? [];
 
-        // quantities in THIS photo
-        $localObjects = collect($tags)->map(fn ($d) => $d['quantity'])->all();
-
-        // cumulative object totals (Redis hash)
-        $cumObjects = Redis::hgetall(sprintf(self::KEY_USER_OBJECTS, $user->id));
+        $localObjects = collect($tags)               // catKey => [objKey => data]
+        ->flatten(1)                             // objKey => data
+        ->mapWithKeys(
+            static fn ($d, $obj) => [$obj => (int) ($d['quantity'] ?? 0)]
+        );
 
         return [
             'level'          => $user->level,
-            'photos_total'   => $user->photos()->count(),         // quick COUNT(*)
-            'current_streak' => $this->currentStreak($user->id),
-            'local'      => ['objects' => $localObjects],
-            'cumulative' => ['objects' => $cumObjects ],
-            'summary'    => $summary,
+            'xp'             => (int) Redis::get(sprintf(self::KEY_USER_XP, $user->id)),
+            'photos_total'   => (int) Redis::get(sprintf(self::KEY_USER_UPLOADS, $user->id)),
+            'current_streak' => (int) Redis::get(sprintf(self::KEY_USER_STREAK,  $user->id)),
+
+            'local'          => ['objects' => $localObjects],
+            'cumulative'     => ['objects' =>
+                Redis::hgetall(sprintf(self::KEY_USER_OBJECTS, $user->id))],
+
+            'summary'        => $summary,
+            // context for future achievements
+            'tod'            => $photo->created_at->format('H') < 6  ? 'night'
+                : ($photo->created_at->format('H') < 12 ? 'morning'
+                    : ($photo->created_at->format('H') < 18 ? 'afternoon' : 'evening')),
+            'dow'            => $photo->created_at->dayOfWeek, // 0-6 (Sun-Sat)
         ];
     }
 
     /**
-     * Consecutive-day streak based on Redis activity hash.
+     * Compile (and cache) an achievement DSL string.
      */
-    private function currentStreak(int $userId): int
+    private function compiled(string $slug): ParsedExpression
     {
-        $hash   = Redis::hgetall(sprintf(self::KEY_USER_ACTIVITY, $userId));
-        $streak = 0;
-        for ($i = 0; ; $i++) {
-            $date = now()->subDays($i)->toDateString();
-            if (! isset($hash[$date])) {
-                break;
-            }
-            $streak++;
-        }
-        return $streak;
+        return $this->compiled[$slug]
+            ??= $this->el->parse($this->defs[$slug]['when'], ['stats','meta','user','photo']);
     }
 
     /**
-     * Register helper functions available inside the DSL `when` strings.
+     * Global DSL helper functions.
      */
     private function registerDslHelpers(ExpressionLanguage $el): void
     {
-        // hasObject("plastic_bottle", 5)
         $el->register(
             'hasObject',
-            static fn ($obj,$qty=1) => '',
-            static fn ($vars,$obj,$qty=1) =>
-                ($vars['stats']['local']['objects'][$obj] ?? 0) >= $qty
+            static fn () => '',
+            static fn ($vars, string $object, int $qty = 1): bool =>
+                ($vars['stats']['local']['objects'][$object] ?? 0) >= $qty
         );
 
-        // objectQty("plastic_bottle")
         $el->register(
             'objectQty',
-            static fn ($obj) => '',
-            static fn ($vars,$obj) =>
-            (int) ($vars['stats']['cumulative']['objects'][$obj] ?? 0)
+            static fn () => '',
+            static fn ($vars, string $object): int =>
+            (int) ($vars['stats']['cumulative']['objects'][$object] ?? 0)
+        );
+
+        // example helper: weekend boolean
+        $el->register(
+            'isWeekend',
+            static fn () => '',
+            static fn ($vars): bool => in_array($vars['stats']['dow'], [0, 6], true)
+        );
+
+        // example helper: morning/afternoon/evening/night
+        $el->register(
+            'timeOfDay',
+            static fn () => '',
+            static fn ($vars): string => $vars['stats']['tod']
         );
     }
 }

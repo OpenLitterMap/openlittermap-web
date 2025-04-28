@@ -16,10 +16,17 @@ class UpdateRedisServiceTest extends TestCase
         Redis::flushdb();
     }
 
+    protected function tearDown(): void
+    {
+        Redis::flushdb();
+        parent::tearDown();
+    }
+
     /** @test */
     public function it_increments_photos_and_zeroes_for_empty_summary()
     {
         $photo = new Photo();
+        $photo->user_id = 4;
         $photo->forceFill(['summary' => []]);
 
         // Ensure created_at is set so timeseries won't blow up
@@ -41,6 +48,9 @@ class UpdateRedisServiceTest extends TestCase
         // No breakdown hashes
         $this->assertEmpty(Redis::hgetall('global:totals:categories'));
         $this->assertEmpty(Redis::hgetall('global:totals:objects'));
+
+        // XP counter for user-id 4 should be 0 (no xp on blank summary)
+        $this->assertSame('0', Redis::get('{u:4}:xp'));
 
         // Time-series keys for the date 2025-04-20
         $this->assertSame('1', Redis::get('global:ts:daily:photos:2025-04-20'));
@@ -86,6 +96,7 @@ class UpdateRedisServiceTest extends TestCase
         ];
 
         $photo = new Photo();
+        $photo->user_id = 4;
         $photo->forceFill(['summary' => $payload]);
         $photo->created_at = Carbon::parse('2025-04-20 15:30:00');
 
@@ -118,6 +129,9 @@ class UpdateRedisServiceTest extends TestCase
             '1',
             Redis::hget('global:totals:custom_tags_breakdown', 'cleanup')
         );
+
+        // XP counter updated (defaults to 0 in this payload)
+        $this->assertSame('0', Redis::get('{u:4}:xp'));
 
         // Time-series for this date
         $this->assertSame('1', Redis::get('global:ts:daily:photos:2025-04-20'));
@@ -219,6 +233,7 @@ class UpdateRedisServiceTest extends TestCase
 
             // create a photo skeleton and run
             $photo = new Photo();
+            $photo->user_id = 4;
             $photo->forceFill(['summary' => $summary]);
             $photo->created_at = $ts;
             $photo->setRelation('country', (object)['id' => 1]);

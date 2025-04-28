@@ -1,16 +1,17 @@
 <?php
+declare(strict_types=1);
 
 namespace Tests\Feature\Achievements;
 
 use App\Events\AchievementsUnlocked;
 use App\Models\Achievements\Achievement;
 use App\Models\Litter\Tags\Category;
+use App\Models\Litter\Tags\LitterObject;
 use App\Models\Photo;
 use App\Models\Users\User;
 use App\Services\Achievements\AchievementEngine;
-use Database\Seeders\Tags\GenerateTagsSeeder;
-use Database\Seeders\Tags\GenerateBrandsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\{Cache, Event, Redis};
 use Tests\TestCase;
 
@@ -18,195 +19,179 @@ class AchievementEngineTest extends TestCase
 {
     use RefreshDatabase;
 
+    /* ---------------------------------------------------------------------- */
+    /* Bootstrap                                                               */
+    /* ---------------------------------------------------------------------- */
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->seed([GenerateTagsSeeder::class, GenerateBrandsSeeder::class]);
+        // one category + two object keys is enough for summaries
+        Category::firstOrCreate(['key' => 'packaging']);
+        LitterObject::firstOrCreate(['key' => 'plastic_bottle']);
+        LitterObject::firstOrCreate(['key' => 'can']);
 
         Cache::forget('achievement:meta');
+        Redis::flushdb();
     }
 
-    /*──────────────────────── helpers ────────────────────────*/
-
-    /** Swap Redis connection, fake only hgetall() used by the engine. */
-    private function fakeRedis(array $maps = []): void
+    protected function tearDown(): void
     {
-        Redis::swap(new class($maps) {
-            public function __construct(private array $maps) {}
-            public function hgetall(string $key) { return $this->maps[$key] ?? []; }
-            public function __call($m,$a) {} // no-op for other commands
+        Redis::flushdb();
+        parent::tearDown();
+    }
+
+    /* ---------------------------------------------------------------------- */
+    /* Helpers                                                                 */
+    /* ---------------------------------------------------------------------- */
+
+    /** Tiny Redis stub – covers only commands hit during slugsToUnlock() */
+    private function fakeRedis(array $seed = []): void
+    {
+        Redis::swap(new class($seed)
+        {
+            public function __construct(private array $d) {}
+
+            // strings
+            public function get(string $k)              { return $this->d[$k] ?? null; }
+            public function incr(string $k,$by=1)       { $this->d[$k]=(string)(($this->d[$k]??0)+$by); }
+            public function incrByFloat(string $k,$by)  { $this->incr($k,$by); }
+
+            // hashes
+            public function hgetall(string $k)          { return $this->d[$k] ?? []; }
+
+            /* ignore the rest */
+            public function __call($m,$a)               { return null; }
         });
     }
 
-    /** Create Achievement rows so pivot inserts have FK targets. */
-    private function makeAchievement(string $slug, int $xp = 0): Achievement
+    private function createAch(string $slug,int $xp): void
     {
-        return Achievement::firstOrCreate(
-            ['slug' => $slug],
-            ['name' => $slug, 'xp' => $xp]
-        );
+        Achievement::firstOrCreate(['slug'=>$slug],['name'=>$slug,'xp'=>$xp]);
     }
 
-    /** Build a photo summary with real object keys from the seeder. */
-    private function photoFor(User $user, array $objectsQty): Photo
+    private function makePhoto(User $u,array $objects=[]): Photo
     {
-        // guarantee the category key exists (seeder created it already)
-        Category::firstOrCreate(['key' => 'packaging']);
-
-        return Photo::factory()->for($user)->create([
-            'summary' => [
-                'tags' => collect($objectsQty)->map(fn($q) => [
-                    'quantity'  => $q,
-                    'materials' => [],
-                    'brands'    => [],
-                ])->all(),
-            ],
-        ]);
+        $p              = new Photo();
+        $p->user_id     = $u->id;
+        $p->setRelation('user',$u);
+        $p->created_at  = Carbon::parse('2025-04-20 12:00:00');
+        $p->summary     = ['tags'=>collect($objects)->map(fn($q)=>['quantity'=>$q])->all()];
+        return $p;
     }
 
-    /*──────────────────────── tests ──────────────────────────*/
+    /* ---------------------------------------------------------------------- */
+    /* Tests                                                                   */
+    /* ---------------------------------------------------------------------- */
 
-    /** hasObject() unlocks slug when photo contains required qty */
-    public function test_has_object_helper_unlocks_slug(): void
+    /** hasObject() unlocks when photo contains required qty */
+    public function test_has_object_helper(): void
     {
-        config()->set('achievements', [
-            'plastic-slayer' => ['xp' => 10, 'when' => 'hasObject("plastic_bottle", 5)'],
+        config()->set('achievements',[
+            'slayer'=>['xp'=>5,'when'=>'hasObject("plastic_bottle",3)']
         ]);
-        $this->makeAchievement('plastic-slayer', 10);
+        $this->createAch('slayer',5);
+        $this->fakeRedis();                 // engine reads from stub
 
-        $this->fakeRedis();
+        $u = User::factory()->create();
+        $p = $this->makePhoto($u,['plastic_bottle'=>3]);
 
-        $user  = User::factory()->create();
-        $photo = $this->photoFor($user, ['plastic_bottle' => 5]);
-
-        $engine = new AchievementEngine;
-
-        $this->assertSame(['plastic-slayer'], $engine->slugsToUnlock($photo)->all());
+        $this->assertSame(['slayer'],(new AchievementEngine)->slugsToUnlock($p)->all());
     }
 
-    /** objectQty() uses Redis cumulative counter */
-    public function test_object_qty_helper_uses_redis(): void
+    /** objectQty() consults Redis cumulative counter */
+    public function test_object_qty_helper(): void
     {
-        config()->set('achievements', [
-            'legend' => ['xp' => 100, 'when' => 'objectQty("can") >= 1000'],
+        config()->set('achievements',[
+            'legend'=>['xp'=>50,'when'=>'objectQty("can")>=10']
         ]);
-        $this->makeAchievement('legend', 100);
+        $this->createAch('legend',50);
 
         $this->fakeRedis([
-            sprintf('users:%d:totals:objects', 1) => ['can' => 999],
+            sprintf('users:%d:totals:objects',1)=>['can'=>9],
         ]);
 
-        $user  = User::factory()->create(['id' => 1]);
-        $photo = $this->photoFor($user, ['can' => 1]);
+        $u = User::factory()->create(['id'=>1]);
+        $p = $this->makePhoto($u,['can'=>1]);
 
-        $this->assertTrue(
-            (new AchievementEngine)->slugsToUnlock($photo)->contains('legend')
-        );
+        $this->assertTrue((new AchievementEngine)->slugsToUnlock($p)->contains('legend'));
     }
 
-    /** stats.current_streak comes from Redis hash */
-    public function test_streak_from_redis_hash(): void
+    /** current_streak helper uses streak key */
+    public function test_streak_helper(): void
     {
-        config()->set('achievements', [
-            'streak-3' => ['xp' => 5, 'when' => 'stats.current_streak >= 3'],
+        config()->set('achievements',[
+            'tri'=>['xp'=>1,'when'=>'stats.current_streak>=3']
         ]);
-        $this->makeAchievement('streak-3', 5);
+        $this->createAch('tri',1);
 
         $this->fakeRedis([
-            'activity:users:1' => [
-                now()->toDateString()             => 1,
-                now()->subDay()->toDateString()   => 1,
-                now()->subDays(2)->toDateString() => 1,
-            ],
+            '{u:5}:streak'=>'3',
         ]);
 
-        $user  = User::factory()->create(['id' => 1]);
-        $photo = $this->photoFor($user, ['can' => 1]);
+        $u = User::factory()->create(['id'=>5]);
+        $p = $this->makePhoto($u);
 
-        $this->assertSame(['streak-3'], (new AchievementEngine)->slugsToUnlock($photo)->all());
+        $this->assertSame(['tri'],(new AchievementEngine)->slugsToUnlock($p)->all());
     }
 
-    /** already-owned achievements are filtered out by slugsToUnlock */
-    public function test_already_has_achievement_is_filtered(): void
+    /** Engine filters already-owned achievements */
+    public function test_already_owned_filtered(): void
     {
-        $ach = $this->makeAchievement('first-upload', 1);
-        config()->set('achievements', [
-            'first-upload' => ['xp' => 1, 'when' => 'true'],
-        ]);
+        $this->createAch('a',1);
+        config()->set('achievements',['a'=>['xp'=>1,'when'=>'true']]);
 
-        $user = User::factory()->create();
-        $user->achievements()->attach($ach->id, ['unlocked_at' => now()]);
+        $u = User::factory()->create();
+        $u->achievements()->attach(Achievement::whereSlug('a')->first(),['unlocked_at'=>now()]);
+        $p = $this->makePhoto($u);
 
-        $photo = $this->photoFor($user, ['can' => 1]);
-
-        $this->assertFalse(
-            (new AchievementEngine)->slugsToUnlock($photo)->contains('first-upload')
-        );
+        $this->assertFalse((new AchievementEngine)->slugsToUnlock($p)->contains('a'));
     }
 
-    /** unlock() writes pivot row and increments XP */
-    public function test_unlock_persists_pivot_and_xp(): void
+    /** unlock() – pivot, XP, event, idempotent */
+    public function test_unlock_flow(): void
     {
-        $ach = $this->makeAchievement('slug-a', 50);
-        config()->set('achievements', [
-            'slug-a' => ['xp' => 50, 'when' => 'true'],
-        ]);
-
-        $user = User::factory()->create(['xp' => 0]);
-
-        (new AchievementEngine)->unlock($user, collect(['slug-a']));
-
-        $this->assertEquals(50, $user->fresh()->xp);
-        $this->assertDatabaseHas('user_achievements', [
-            'user_id' => $user->id,
-            'achievement_id' => $ach->id,
-        ]);
-    }
-
-    /** unlock() levels up user when XP crosses boundary */
-    public function test_level_up_logic(): void
-    {
-        $this->makeAchievement('big', 1500);
-        config()->set('achievements', [
-            'big' => ['xp' => 1500, 'when' => 'true'],
-        ]);
-
-        $user = User::factory()->create(['xp' => 0, 'level' => 0]);
-
-        (new AchievementEngine)->unlock($user, collect(['big']));
-
-        $user->refresh();
-        $this->assertSame(1, $user->level);
-        $this->assertNotNull($user->leveled_up_at);
-    }
-
-    /** AchievementsUnlocked event is dispatched with correct payload */
-    public function test_event_is_dispatched(): void
-    {
-        $this->makeAchievement('e', 10);
-        config()->set('achievements', [
-            'e' => ['xp' => 10, 'when' => 'true'],
-        ]);
+        Redis::flushdb();                              // real redis, not fake
+        $this->createAch('x',20);
+        config()->set('achievements',['x'=>['xp'=>20,'when'=>'true']]);
 
         Event::fake();
 
-        $user = User::factory()->create();
-        (new AchievementEngine)->unlock($user, collect(['e']));
+        $u = User::factory()->create();
 
-        Event::assertDispatched(AchievementsUnlocked::class,
-            fn ($e) => $e->user->is($user) && $e->achievements->keys()->contains('e')
-        );
+        $engine = new AchievementEngine;
+        $engine->unlock($u,collect(['x']));
+        $engine->unlock($u,collect(['x']));            // duplicate ignored
+
+        $this->assertSame('20',Redis::get("{u:{$u->id}}:xp"));
+        $this->assertDatabaseCount('user_achievements',1);
+        Event::assertDispatchedTimes(AchievementsUnlocked::class,1);
     }
 
-    /** unlock() is a no-op when given an empty slug collection */
-    public function test_unlock_no_op_with_empty_slugs(): void
+    /** level recalculates from Redis XP */
+    public function test_level_up(): void
     {
-        $user = User::factory()->create(['xp' => 0]);
+        Redis::flushdb();
+        $this->createAch('big',2000);
+        config()->set('achievements',['big'=>['xp'=>2000,'when'=>'true']]);
 
-        (new AchievementEngine)->unlock($user, collect());
+        $u = User::factory()->create(['level'=>0]);
 
-        $this->assertEquals(0, $user->fresh()->xp);
-        $this->assertDatabaseCount('user_achievements', 0);
+        (new AchievementEngine)->unlock($u,collect(['big']));
+        $u->refresh();
+
+        $this->assertSame(2,$u->level); // 2000 / 1000
+    }
+
+    /** unlock() no-op with empty slug collection */
+    public function test_unlock_noop(): void
+    {
+        Redis::flushdb();
+        $u = User::factory()->create();
+
+        (new AchievementEngine)->unlock($u,collect());
+
+        $this->assertDatabaseCount('user_achievements',0);
+        $this->assertNull(Redis::get("{u:{$u->id}}:xp"));
     }
 }

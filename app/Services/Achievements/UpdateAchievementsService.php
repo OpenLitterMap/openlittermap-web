@@ -6,8 +6,10 @@ use App\Models\Photo;
 
 class UpdateAchievementsService
 {
-    public function run (Photo $photo)
+    public function generateAchievements(Photo $photo): void
     {
+        $slugs = app(AchievementEngine::class)->slugsToUnlock($photo);
 
+        app(AchievementEngine::class)->unlock($photo->user, $slugs);
     }
 }
