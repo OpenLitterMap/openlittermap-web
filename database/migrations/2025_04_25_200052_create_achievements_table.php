@@ -37,6 +37,7 @@ return new class extends Migration
             $table->unsignedInteger('target')->default(0);
             $table->json('snapshot')->nullable(); // state taken at unlock time
             $table->unique(['user_id', 'achievement_id']);
+            $table->timestamps();
         });
 
         Schema::table('users', function (Blueprint $table) {
