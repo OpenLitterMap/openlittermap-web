@@ -14,17 +14,14 @@ declare(strict_types=1);
 
 namespace App\Services\Achievements;
 
-use AllowDynamicProperties;
 use App\Events\AchievementsUnlocked;
 use App\Models\Achievements\Achievement;
 use App\Models\Litter\Tags\Category;
 use App\Models\Photo;
 use App\Models\Users\User;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
-use Illuminate\Database\QueryException;
 use Illuminate\Contracts\Redis\Factory as RedisFactory;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Log;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use Symfony\Component\ExpressionLanguage\ParsedExpression;
 
@@ -81,27 +78,62 @@ class AchievementEngine
 
     public function unlock(User $user, Collection $slugs): void
     {
-        if ($slugs->isEmpty()) { return; }
+        if ($slugs->isEmpty()) {
+            return;
+        }
 
-        // translate to numeric IDs so the pivot is valid
-        $ids   = Achievement::whereIn('slug',$slugs)->pluck('id');
-        $defs  = $this->definitions->only($slugs);
-        $added = $defs->sum('xp');
+        /* -----------------------------------------------------------------
+         | 1. Which achievements are new for this user?
+         * -----------------------------------------------------------------*/
+        // slug ➜ id   (the keys are important!)
+        $idsBySlug = Achievement::whereIn('slug', $slugs)
+            ->pluck('id', 'slug');
 
-        // attach rows, ignore duplicates
-        $user->achievements()->syncWithoutDetaching($ids->flip()->map(fn()=>[
-            'unlocked_at'=>now(),
-        ])->all());
+        // $user->achievements is an in-memory collection that becomes stale after the first unlock.
+        // query the database on every call instead?
+        $alreadyIds = $user->achievements()->pluck('achievements.id');
 
-        // update XP atomically
-        $this->redis->connection()->pipeline(fn($pipe)=>[
-            $pipe->incrby(sprintf(self::KEY_USER_XP,$user->id),$added),
-            $pipe->get(sprintf(self::KEY_USER_XP,$user->id)),
+        // keep only the ids that are NOT already attached
+        $newIds = $idsBySlug->diff($alreadyIds)->values();   // Collection<int>
+
+        if ($newIds->isEmpty()) {
+            return;   // nothing to do
+        }
+
+        // the slugs that correspond to the new ids
+        $newSlugs = $idsBySlug
+            ->flip()                // id ➜ slug
+            ->only($newIds)         // keep only the new ids
+            ->values();             // Collection<string>
+
+        /* -----------------------------------------------------------------
+         | 2. Persist pivot rows (avoids duplicates by design)
+         * -----------------------------------------------------------------*/
+        $user->achievements()->syncWithoutDetaching(
+            $newIds->flip()->map(fn () => ['unlocked_at' => now()])->all()
+        );
+
+        /* -----------------------------------------------------------------
+         | 3. Add XP for *new* achievements only
+         * -----------------------------------------------------------------*/
+        $addedXp = $this->definitions
+            ->only($newSlugs)
+            ->sum('xp');
+
+        $this->redis->connection()->pipeline(fn ($pipe) => [
+            $pipe->incrby(sprintf(self::KEY_USER_XP, $user->id), $addedXp),
+            $pipe->get(sprintf(self::KEY_USER_XP, $user->id)),
         ]);
 
         $this->recalculateLevel($user);
+
+        /* -----------------------------------------------------------------
+         | 4. Dispatch domain event with the definitions that were unlocked
+         * -----------------------------------------------------------------*/
+        $defs = $this->definitions->only($newSlugs);
         event(new AchievementsUnlocked($user, $defs));
     }
+
 
     /* ------------------------------------------------------------------ */
     /* Internals                                                           */
@@ -127,9 +159,24 @@ class AchievementEngine
             $p->hgetall(sprintf(self::KEY_USER_OBJECTS,$uid)),
         ]);
 
-        $summary=$photo->summary??[];
-        $tags=$summary['tags']??[];
-        $localObjects=collect($tags)->flatten(1)->mapWithKeys(fn($d,$obj)=>[$obj=>(int)($d['quantity']??0)])->all();
+        $summary     = $photo->summary ?? [];
+        $tagsTree    = $summary['tags'] ?? [];
+        $localObjects = [];
+
+        foreach ($tagsTree as $maybeObjKey => $maybeObjVal) {
+            // shape A: category ➜ [objectKey => {...}]
+            if (\is_array($maybeObjVal) && !isset($maybeObjVal['quantity'])) {
+                foreach ($maybeObjVal as $objKey => $data) {
+                    $qty = (int)($data['quantity'] ?? 0);
+                    $localObjects[$objKey] = ($localObjects[$objKey] ?? 0) + $qty;
+                }
+                continue;
+            }
+            // shape B: objectKey ➜ ['quantity' => n]
+            $qty = (int)($maybeObjVal['quantity'] ?? 0);
+            $localObjects[$maybeObjKey] = ($localObjects[$maybeObjKey] ?? 0) + $qty;
+        }
+
         $tod = match(true){
             $photo->created_at->hour<6=>'night',
             $photo->created_at->hour<12=>'morning',
