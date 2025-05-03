@@ -1,6 +1,6 @@
 <?php
 /**
- * OpenLitterMap – Achievement system (refactored)
+ * OpenLitterMap – Achievement system
  *
  * Key goals:
  *  - No facade coupling ⇒ easier to unit‑test
@@ -9,7 +9,6 @@
  *  - Typed DTO for the expression context
  *  - Helpers extracted to a dedicated registrar
  */
-
 declare(strict_types=1);
 
 namespace App\Services\Achievements;
@@ -17,6 +16,7 @@ namespace App\Services\Achievements;
 use App\Events\AchievementsUnlocked;
 use App\Models\Achievements\Achievement;
 use App\Models\Litter\Tags\Category;
+use App\Models\Litter\Tags\LitterObject;
 use App\Models\Photo;
 use App\Models\Users\User;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
@@ -44,9 +44,17 @@ class AchievementEngine
         private ExpressionLanguage  $el = new ExpressionLanguage(),
         ?array $definitions = null,
     ) {
-        $this->definitions = collect($definitions ?? config('achievements'));
+        $this->cache = $cache;
+        $this->redis = $redis;
+        $this->el = $el;
+
         DslHelpers::register($this->el);
-        $this->compiled = $this->definitions->mapWithKeys(fn($def,$slug)=>[
+
+        $staticDefs = collect($definitions ?? config('achievements'));
+        $dynamicDefs = $this->buildDynamicObjectMilestones();
+
+        $this->definitions = $staticDefs->merge($dynamicDefs);
+        $this->compiled = $this->definitions->mapWithKeys(fn($def, $slug) => [
             $slug => $this->el->parse($def['when'], ['stats','meta','user','photo'])
         ])->all();
     }
@@ -136,8 +144,28 @@ class AchievementEngine
 
 
     /* ------------------------------------------------------------------ */
-    /* Internals                                                           */
+    /* Internals                                                          */
     /* ------------------------------------------------------------------ */
+
+    private function buildDynamicObjectMilestones(): Collection
+    {
+        $milestones = config('achievements.milestones', []);
+        $objects = LitterObject::pluck('id', 'key');
+
+        return collect($objects)->flatMap(function ($slug) use ($milestones) {
+            return collect($milestones)->mapWithKeys(function ($count) use ($slug) {
+                $key = "{$slug}-{$count}";
+                return [
+                    $key => [
+                        'name' => ucfirst(str_replace('_', ' ', $slug)) . " x{$count}",
+                        'icon' => '🏅', // or make this dynamic later
+                        'xp' => $count * 2, // simple scaling logic
+                        'when' => "objectQty(\"$slug\") >= $count"
+                    ]
+                ];
+            });
+        });
+    }
 
     private function recalculateLevel(User $user): void
     {

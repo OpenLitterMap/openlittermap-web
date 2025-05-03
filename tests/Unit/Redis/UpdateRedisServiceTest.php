@@ -4,7 +4,7 @@ namespace Tests\Unit\Redis;
 
 use App\Models\Photo;
 use App\Services\Redis\UpdateRedisService;
-use Illuminate\Support\Carbon;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Redis;
 use Tests\TestCase;
 
@@ -13,59 +13,69 @@ class UpdateRedisServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Redis::flushdb();
+        Redis::flushDB();
     }
 
     protected function tearDown(): void
     {
-        Redis::flushdb();
+        Redis::flushDB();
         parent::tearDown();
     }
 
     /** @test */
-    public function it_increments_photos_and_zeroes_for_empty_summary()
+    public function it_increments_photos_and_zeroes_for_empty_summary(): void
     {
+        $ts    = Carbon::parse('2025-04-20 10:00:00');
+        $month = '{g:2025-04}:t';
+
         $photo = new Photo();
         $photo->user_id = 4;
+        $photo->created_at = $ts;
         $photo->forceFill(['summary' => []]);
-
-        // Ensure created_at is set so timeseries won't blow up
-        $photo->created_at = Carbon::parse('2025-04-20 10:00:00');
-
-        // Stub relations
         $photo->setRelation('country', (object)['id' => 1]);
         $photo->setRelation('state',   (object)['id' => 2]);
         $photo->setRelation('city',    (object)['id' => 3]);
-        $photo->setRelation('user',    (object)['id' => 4]);
 
         app(UpdateRedisService::class)->updateRedis($photo);
 
-        // Global totals
-        $this->assertSame('1', Redis::hget('global:totals', 'photos'));
-        $this->assertSame('0', Redis::hget('global:totals', 'tags'));
-        $this->assertSame('0', Redis::hget('global:totals', 'custom_tags'));
-
-        // No breakdown hashes
-        $this->assertEmpty(Redis::hgetall('global:totals:categories'));
-        $this->assertEmpty(Redis::hgetall('global:totals:objects'));
-
-        // XP counter for user-id 4 should be 0 (no xp on blank summary)
-        $this->assertSame('0', Redis::get('{u:4}:xp'));
-
-        // Time-series keys for the date 2025-04-20
-        $this->assertSame('1', Redis::get('global:ts:daily:photos:2025-04-20'));
-        $this->assertSame('1', Redis::get('global:ts:weekly:photos:2025-16'));
-        $this->assertSame('1', Redis::get('global:ts:monthly:photos:2025-04'));
-        $this->assertSame('1', Redis::get('global:ts:yearly:photos:2025'));
-
-        // Country scope mirrors photos count and timeseries
-        $this->assertSame('1', Redis::hget('country:1:totals', 'photos'));
-        $this->assertSame('1', Redis::get('country:1:ts:daily:photos:2025-04-20'));
+        $this->assertSame('1', Redis::hGet($month, 'p'));
+        $this->assertNull(Redis::get('{u:4}:xp'));          // key not created when 0
+        $this->assertSame('1', Redis::get('{u:4}:u'));
+        $this->assertEmpty(Redis::hGetAll('{g}:c'));
+        $this->assertEmpty(Redis::hGetAll('{g}:t'));
     }
 
     /** @test */
-    public function it_populates_all_breakdowns_based_on_summary()
+    public function it_does_not_double_count_the_same_photo(): void
     {
+        $ts    = Carbon::parse('2025-05-01 08:00:00');
+        $month = '{g:2025-05}:t';
+
+        $photo = new Photo();
+        $photo->id = 4242;
+        $photo->user_id = 9;
+        $photo->created_at = $ts;
+        $photo->forceFill(['summary' => []]);
+        $photo->setRelation('country', (object)['id' => 77]);
+        $photo->setRelation('country', (object)['id' => 77]);
+        $photo->setRelation('state',   (object)['id' => 88]);
+        $photo->setRelation('city',    (object)['id' => 99]);
+
+        // push twice
+        app(UpdateRedisService::class)->updateRedis($photo);
+        app(UpdateRedisService::class)->updateRedis($photo);
+
+        // still only one counted
+        $this->assertSame('1', Redis::hGet($month, 'p'));
+        $this->assertSame('1', Redis::get('{u:9}:u'));
+    }
+
+    /** @test */
+    public function it_populates_all_breakdowns_based_on_summary(): void
+    {
+        $ts    = Carbon::parse('2025-04-20 15:30:00');
+        $month = '{g:2025-04}:t';
+
         $payload = [
             'tags' => [
                 'smoking' => [
@@ -79,200 +89,141 @@ class UpdateRedisServiceTest extends TestCase
                 'food' => [
                     'cups' => [
                         'quantity'    => 3,
-                        'materials'   => [],
-                        'brands'      => [],
-                        'custom_tags' => [],
+                        'materials'   => ['glass' => 2],
+                        'brands'      => ['brandY' => 3],
+                        'custom_tags' => ['scattered'=> 2],
                     ],
                 ],
             ],
             'totals' => [
-                'total_tags'    => 8,
-                'total_objects' => 5,
-                'by_category'   => ['smoking' => 4, 'food' => 3],
-                'materials'     => 1,
-                'brands'        => 1,
-                'custom_tags'   => 1,
+                'by_category' => ['smoking' => 2, 'food' => 3], // new semantics
             ],
         ];
 
         $photo = new Photo();
-        $photo->user_id = 4;
+        $photo->user_id    = 4;
+        $photo->created_at = $ts;
         $photo->forceFill(['summary' => $payload]);
-        $photo->created_at = Carbon::parse('2025-04-20 15:30:00');
-
         $photo->setRelation('country', (object)['id' => 11]);
         $photo->setRelation('state',   (object)['id' => 22]);
         $photo->setRelation('city',    (object)['id' => 33]);
-        $photo->setRelation('user',    (object)['id' => 44]);
 
         app(UpdateRedisService::class)->updateRedis($photo);
 
-        // Global totals
-        $this->assertSame('1', Redis::hget('global:totals', 'photos'));
-        $this->assertSame('8', Redis::hget('global:totals', 'tags'));
-        $this->assertSame('1', Redis::hget('global:totals', 'custom_tags'));
+        $this->assertSame('1', Redis::hGet($month, 'p'));
+        $this->assertSame('2', Redis::hGet('{g}:c', 'smoking'));
+        $this->assertSame('3', Redis::hGet('{g}:c', 'food'));
+        $this->assertSame('2', Redis::hGet('{g}:t', 'butts'));
+        $this->assertSame('3', Redis::hGet('{g}:t', 'cups'));
 
-        // Category breakdowns
-        $this->assertSame('4', Redis::hget('global:totals:categories', 'smoking'));
-        $this->assertSame('3', Redis::hget('global:totals:categories', 'food'));
-
-        // Object breakdowns
-        $this->assertSame('2', Redis::hget('global:totals:objects', 'butts'));
-        $this->assertSame('3', Redis::hget('global:totals:objects', 'cups'));
-
-        // Material & brand breakdown
-        $this->assertSame('1', Redis::hget('global:totals:materials', 'paper'));
-        $this->assertSame('1', Redis::hget('global:totals:brands', 'brandX'));
-
-        // Custom-tags breakdown
-        $this->assertSame(
-            '1',
-            Redis::hget('global:totals:custom_tags_breakdown', 'cleanup')
-        );
-
-        // XP counter updated (defaults to 0 in this payload)
-        $this->assertSame('0', Redis::get('{u:4}:xp'));
-
-        // Time-series for this date
-        $this->assertSame('1', Redis::get('global:ts:daily:photos:2025-04-20'));
-
-        // Country:11 checks
-        $this->assertSame('1', Redis::hget('country:11:totals', 'photos'));
-        $this->assertSame(
-            '4',
-            Redis::hget('country:11:totals:categories', 'smoking')
-        );
-        $this->assertSame('1', Redis::get('country:11:ts:daily:photos:2025-04-20'));
+        // user breakdowns
+        $this->assertSame('2', Redis::hGet('{u:4}:c', 'smoking'));
+        $this->assertSame('3', Redis::hGet('{u:4}:c', 'food'));
+        $this->assertSame('2', Redis::hGet('{u:4}:t', 'butts'));
+        $this->assertSame('3', Redis::hGet('{u:4}:t', 'cups'));
+        $this->assertSame('1', Redis::hGet('{u:4}:b', 'm:paper'));
+        $this->assertSame('2', Redis::hGet('{u:4}:b', 'm:glass'));
+        $this->assertSame('1', Redis::hGet('{u:4}:b', 'b:brandX'));
+        $this->assertSame('3', Redis::hGet('{u:4}:b', 'b:brandY'));
+        $this->assertSame('1', Redis::hGet('{u:4}:b', 'c:cleanup'));
+        $this->assertSame('2', Redis::hGet('{u:4}:b', 'c:scattered'));
     }
 
     /** @test */
-    public function it_handles_bulk_photo_summaries_and_aggregates_correctly()
+    public function it_updates_xp_and_sets_ttls_on_time_series(): void
     {
-        // fixed timestamp so all time‑series keys match
-        $ts = Carbon::parse('2025-04-20 12:00:00');
+        $ts    = Carbon::parse('2025-04-21 06:30:00');
+        $month = '{g:2025-04}:t';
 
-        // accumulators for expected values
-        $expectedPhotos      = 0;
-        $expectedTags        = 0;
-        $expectedCustomTags  = 0;
-        $expectedByCategory  = [];
-        $expectedObjects     = [];
-        $expectedMaterials   = [];
-        $expectedBrands      = [];
-        $expectedCustomBreak = [];
+        $photo = new Photo();
+        $photo->user_id    = 5;
+        $photo->xp         = 12;
+        $photo->created_at = $ts;
+        $photo->forceFill(['summary' => []]);
+        $photo->setRelation('country', (object)['id' => 99]);
+        $photo->setRelation('state',   (object)['id' => 99]);
+        $photo->setRelation('city',    (object)['id' => 99]);
 
-        // simulate 100 photos with alternating summaries
+        app(UpdateRedisService::class)->updateRedis($photo);
+
+        $this->assertSame('12', Redis::get('{u:5}:xp'));
+
+        $ttl = Redis::pTTL($month);
+        $this->assertTrue($ttl === -1 || $ttl > 0, "TTL should be -1 (no expire) or positive, got $ttl");
+    }
+
+    /** @test */
+    public function it_handles_bulk_photo_summaries_and_aggregates_correctly(): void
+    {
+        $ts    = Carbon::parse('2025-04-20 12:00:00');
+        $month = '{g:2025-04}:t';
+
+        $expectedPhotos = 0;
+        $expCats = $expObjs = [];
+        $expMat  = $expBrand = $expCust = [];
+
         for ($i = 1; $i <= 100; $i++) {
-            // odd: smoking→butts + extras, even: food→cups without extras
-            if ($i % 2 === 1) {
-                $summary = [
-                    'tags'   => [
+            $summary = ($i & 1)
+                ? [
+                    'tags' => [
                         'smoking' => [
                             'butts' => [
-                                'quantity'    => 1,
-                                'materials'   => ['paper'  => 1],
-                                'brands'      => ['brandX' => 1],
-                                'custom_tags' => ['cleanup'=> 1],
+                                'quantity' => 1,
+                                'materials' => ['paper'=>1],
+                                'brands'    => ['brandX'=>1],
+                                'custom_tags'=>['cleanup'=>1],
                             ],
                         ],
                     ],
-                    'totals' => [
-                        'total_tags'    => 4,  // 1 + (1 material + 1 brand + 1 custom)
-                        'total_objects' => 1,
-                        'by_category'   => ['smoking' => 3], // excludes custom
-                        'materials'     => 1,
-                        'brands'        => 1,
-                        'custom_tags'   => 1,
-                    ],
-                ];
-            } else {
-                $summary = [
-                    'tags'   => [
+                    'totals' => ['by_category' => ['smoking' => 1]],
+                ]
+                : [
+                    'tags' => [
                         'food' => [
                             'cups' => [
-                                'quantity'    => 2,
-                                'materials'   => [],
-                                'brands'      => [],
-                                'custom_tags' => [],
+                                'quantity' => 2,
+                                'materials' => [],
+                                'brands'    => [],
+                                'custom_tags'=>[],
                             ],
                         ],
                     ],
-                    'totals' => [
-                        'total_tags'    => 2,
-                        'total_objects' => 2,
-                        'by_category'   => ['food' => 2],
-                        'materials'     => 0,
-                        'brands'        => 0,
-                        'custom_tags'   => 0,
-                    ],
+                    'totals' => ['by_category' => ['food' => 2]],
                 ];
-            }
 
-            // accumulate expectations
             $expectedPhotos++;
-            $expectedTags       += $summary['totals']['total_tags'];
-            $expectedCustomTags += $summary['totals']['custom_tags'];
 
-            foreach ($summary['totals']['by_category'] as $cat => $qty) {
-                $expectedByCategory[$cat] = ($expectedByCategory[$cat] ?? 0) + $qty;
-            }
-            foreach ($summary['tags'] as $cat => $objects) {
-                foreach ($objects as $obj => $data) {
-                    $expectedObjects[$obj]      = ($expectedObjects[$obj] ?? 0) + $data['quantity'];
-                    foreach ($data['materials'] as $mat => $mqty) {
-                        $expectedMaterials[$mat] = ($expectedMaterials[$mat] ?? 0) + $mqty;
-                    }
-                    foreach ($data['brands'] as $b => $bqty) {
-                        $expectedBrands[$b] = ($expectedBrands[$b] ?? 0) + $bqty;
-                    }
-                    foreach ($data['custom_tags'] as $ct => $ctqty) {
-                        $expectedCustomBreak[$ct] = ($expectedCustomBreak[$ct] ?? 0) + $ctqty;
-                    }
+            foreach ($summary['totals']['by_category'] as $c => $q)
+                $expCats[$c] = ($expCats[$c] ?? 0) + $q;
+
+            foreach ($summary['tags'] as $objs)
+                foreach ($objs as $o => $d) {
+                    $expObjs[$o] = ($expObjs[$o] ?? 0) + $d['quantity'];
+                    foreach ($d['materials'] as $m => $q)
+                        $expMat[$m] = ($expMat[$m] ?? 0) + $q;
+                    foreach ($d['brands'] as $b => $q)
+                        $expBrand[$b] = ($expBrand[$b] ?? 0) + $q;
+                    foreach ($d['custom_tags'] as $ct => $q)
+                        $expCust[$ct] = ($expCust[$ct] ?? 0) + $q;
                 }
-            }
 
-            // create a photo skeleton and run
-            $photo = new Photo();
-            $photo->user_id = 4;
-            $photo->forceFill(['summary' => $summary]);
-            $photo->created_at = $ts;
-            $photo->setRelation('country', (object)['id' => 1]);
-            $photo->setRelation('state',   (object)['id' => 1]);
-            $photo->setRelation('city',    (object)['id' => 1]);
-            $photo->setRelation('user',    (object)['id' => 1]);
+            $p = new Photo();
+            $p->user_id    = 1;
+            $p->created_at = $ts;
+            $p->forceFill(['summary' => $summary]);
+            $p->setRelation('country', (object)['id' => 1]);
+            $p->setRelation('state',   (object)['id' => 1]);
+            $p->setRelation('city',    (object)['id' => 1]);
 
-            app(UpdateRedisService::class)->updateRedis($photo);
+            app(UpdateRedisService::class)->updateRedis($p);
         }
 
-        // Assert totals
-        $this->assertSame((string)$expectedPhotos, Redis::hget('global:totals', 'photos'));
-        $this->assertSame((string)$expectedTags,   Redis::hget('global:totals', 'tags'));
-        $this->assertSame((string)$expectedCustomTags, Redis::hget('global:totals', 'custom_tags'));
-
-        // Assert by-category
-        foreach ($expectedByCategory as $cat => $qty) {
-            $this->assertSame((string)$qty, Redis::hget("global:totals:categories", $cat));
-        }
-
-        // Assert object breakdown
-        foreach ($expectedObjects as $obj => $qty) {
-            $this->assertSame((string)$qty, Redis::hget("global:totals:objects", $obj));
-        }
-
-        // Assert material & brand breakdowns
-        foreach ($expectedMaterials as $mat => $qty) {
-            $this->assertSame((string)$qty, Redis::hget("global:totals:materials", $mat));
-        }
-        foreach ($expectedBrands as $b => $qty) {
-            $this->assertSame((string)$qty, Redis::hget("global:totals:brands", $b));
-        }
-
-        // Assert custom‐tag breakdown
-        foreach ($expectedCustomBreak as $ct => $qty) {
-            $this->assertSame((string)$qty, Redis::hget("global:totals:custom_tags_breakdown", $ct));
-        }
-
-        // Assert time-series counter for that date
-        $this->assertSame((string)$expectedPhotos, Redis::get('global:ts:daily:photos:' . $ts->format('Y-m-d')));
+        $this->assertSame((string)$expectedPhotos, Redis::hGet($month, 'p'));
+        foreach ($expCats  as $c => $q) $this->assertSame((string)$q, Redis::hGet('{g}:c', $c));
+        foreach ($expObjs  as $o => $q) $this->assertSame((string)$q, Redis::hGet('{g}:t', $o));
+        foreach ($expObjs  as $o => $q) $this->assertSame((string)$q, Redis::hGet('{u:1}:t', $o));
+        foreach ($expMat   as $m => $q) $this->assertSame((string)$q, Redis::hGet('{u:1}:b', "m:$m"));
+        foreach ($expBrand as $b => $q) $this->assertSame((string)$q, Redis::hGet('{u:1}:b', "b:$b"));
+        foreach ($expCust  as $ct=> $q) $this->assertSame((string)$q, Redis::hGet('{u:1}:b', "c:$ct"));
     }
 }

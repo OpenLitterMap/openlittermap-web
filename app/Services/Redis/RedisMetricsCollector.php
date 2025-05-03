@@ -9,16 +9,10 @@ use RedisException;
 
 final class RedisMetricsCollector
 {
-    /* ─── TTLs ─────────────────────────────────────────────────────── */
-    private const DAILY_TTL   = 60 * 60 * 24 * 35;       // 35 days
-    private const MONTHLY_TTL = 60 * 60 * 24 * 365 * 3;  // 3 years
-    private const TS_TTL      = 60 * 60 * 24 * 365 * 2;  // 2 years
+    /* ─── TTLs (ms) ──────────────────────────────────────────────── */
+    private const TS_TTL_MS = 60 * 60 * 24 * 365 * 2 * 1_000; // 2 y
 
-    /* ─── Key templates ────────────────────────────────────────────── */
-    private const KEY_USER_XP      = '{u:%d}:xp';
-    private const KEY_USER_UPLOADS = '{u:%d}:uploads';
-
-    /* ─── Lua SHA cache ────────────────────────────────────────────── */
+    /* ─── Lua SHA cache ──────────────────────────────────────────── */
     private static ?string $streakSha = null;
 
     /* ----------------------------------------------------------------
@@ -31,128 +25,118 @@ final class RedisMetricsCollector
      */
     public static function queue(Photo $photo): void
     {
+        // ── idempotency gate ────────────────────────────────────────
+        if (self::alreadyProcessed($photo->id)) {
+            return;                             // duplicate photo – ignore
+        }
+
         self::bootLua();
 
-        // ——— 1. Common metadata ————————————————————————————————
-        $uid      = $photo->user_id;
-        $uidTag   = "{u:$uid}"; // hash-tag keeps all keys in a slot
-        $country  = $photo->country_id ?? $photo->country?->id;
-        $state    = $photo->state_id   ?? $photo->state?->id;
-        $city     = $photo->city_id    ?? $photo->city?->id;
-        $xp       = (float) ($photo->xp ?? 0);
+        // ── 1. Common metadata ─────────────────────────────────────
+        $uid    = $photo->user_id;
+        $uTag   = "{u:$uid}";                   // hash‑slot tag
+        $country= $photo->country_id ?? $photo->country?->id;
+        $state  = $photo->state_id   ?? $photo->state?->id;
+        $city   = $photo->city_id    ?? $photo->city?->id;
+        $xp     = (float)($photo->xp ?? 0);
 
-        $ts       = $photo->created_at; // Carbon instance
-        $date     = $ts->format('Y-m-d');
-        $year     = $ts->format('Y');
-        $month    = $ts->format('m');
-        $ym       = "$year-$month"; // safe ‘YYYY-MM’
-        $week     = $ts->format('o-W');
-        $yesterday= $ts->copy()->subDay()->format('Y-m-d');
+        $ts     = $photo->created_at;
+        $date   = $ts->format('Y-m-d');         // field for time‑series HASH
+        $monthTag = '{g:'.$ts->format('Y-m').'}'; // hot‑slot spreader
 
-        // ——— 2. Per-photo breakdown ————————————————————————————
-        $summary    = $photo->summary ?? [];
-        $tagsTree   = $summary['tags']   ?? [];
-        $totals     = $summary['totals'] ?? [];
-        $byCategory = $totals['by_category'] ?? [];
+        // ── 2. Per‑photo breakdown ─────────────────────────────────
+        $summary  = $photo->summary ?? [];
+        $tagsTree = $summary['tags'] ?? [];
+        $totals   = $summary['totals'] ?? [];
 
-        $catIncr = []; // catKey ⇒ qty
-        $tagIncr = []; // objKey ⇒ qty
-        foreach ($tagsTree as $catKey => $objects) {
-            foreach ($objects as $objKey => $data) {
-                $qty              = (int) ($data['quantity'] ?? 0);
-                $catIncr[$catKey] = ($catIncr[$catKey] ?? 0) + $qty;
-                $tagIncr[$objKey] = ($tagIncr[$objKey] ?? 0) + $qty;
+        // fast cat / obj counters
+        $catIncr = $objIncr = [];
+        foreach ($tagsTree as $cat => $objs) {
+            foreach ($objs as $obj => $data) {
+                $q = (int)($data['quantity'] ?? 0);
+                $catIncr[$cat] = ($catIncr[$cat] ?? 0) + $q;
+                $objIncr[$obj] = ($objIncr[$obj] ?? 0) + $q;
             }
         }
 
-        /* Capture only the bits we still need inside the closure   */
-        $objectsForGlobal = $tagsTree; // already trimmed above
-
-        // ——— 3. Pipeline ————————————————————————————————
+        // ── 3. Pipeline ────────────────────────────────────────────
         Redis::pipeline(static function ($pipe) use (
-            $uid, $uidTag, $xp,
-            $date, $ym, $year, $week, $yesterday,
+            $photo,
+            $uid, $uTag, $xp, $date, $monthTag,
             $country, $state, $city,
-            $catIncr, $tagIncr,
-            $totals, $byCategory, $objectsForGlobal
+            $catIncr, $objIncr, $tagsTree, $totals
         ) {
+            /* 3‑1 user‑level counters (short keys) */
+            $pipe->incr("$uTag:u");                    // uploads
+            if ($xp) $pipe->incrByFloat("$uTag:xp", $xp);
 
-            /* — 3.1 User counters ———————————————— */
-            $pipe->incr(sprintf(self::KEY_USER_UPLOADS, $uid)); // total uploads
-            $pipe->incrByFloat(sprintf(self::KEY_USER_XP, $uid), $xp); // total XP
+            foreach ($catIncr as $c => $q) $pipe->hincrBy("$uTag:c", $c, $q);
+            foreach ($objIncr as $o => $q) $pipe->hincrBy("$uTag:t", $o, $q);
 
-            foreach ($catIncr as $c => $q) $pipe->hincrby("$uidTag:cat", $c, $q);
-            foreach ($tagIncr as $t => $q) $pipe->hincrby("$uidTag:tag", $t, $q);
-
-            /* — 3.2 Streak Lua ———————————————— */
-            self::evalShaCompat($pipe, self::$streakSha, [
-                "$uidTag:uploads:$date",      // KEYS[1]
-                "$uidTag:uploads:$yesterday", // KEYS[2]
-                "$uidTag:streak",             // KEYS[3]
-            ], [self::DAILY_TTL]);
-
-            /* — 3.3 XP leaderboards —————————— */
-            self::zincrWithWindow($pipe, 'lb:xp', $xp, $uid, $date, $ym, $year);
-            self::zincrByLocation($pipe, $xp, $uid, $date, $ym, $year, [
-                ['country', $country],
-                ['state',   $state],
-                ['city',    $city],
-            ]);
-
-            /* — 3.4 Time-series buckets —————— */
-            self::bumpPhotoCounters($pipe, $date, $ym, $year, $week, [
-                'global',
-                $country ? "country:$country" : null,
-                $state   ? "state:$state"     : null,
-                $city    ? "city:$city"       : null,
-                "user:$uid",
-            ]);
-
-            /* — 3.5 Global totals ——————————— */
-            $pipe->hincrby(     'global:totals', 'photos', 1);
-            $pipe->hincrByFloat('global:totals', 'xp',     $xp);
-            $pipe->hincrby(     'global:totals', 'tags',        $totals['total_tags']  ?? 0);
-            $pipe->hincrby(     'global:totals', 'custom_tags', $totals['custom_tags'] ?? 0);
-
-            foreach ($byCategory as $cat => $q)
-                $pipe->hincrby('global:totals:categories', $cat, $q);
-
-            foreach ($objectsForGlobal as $objects) {
-                foreach ($objects as $objKey => $data) {
-                    $pipe->hincrby('global:totals:objects', $objKey, $data['quantity']);
+            /* single hash for materials / brands / custom tags */
+            foreach ($tagsTree as $objects) {
+                foreach ($objects as $data) {
                     foreach (($data['materials'] ?? []) as $k => $q)
-                        $pipe->hincrby('global:totals:materials', $k, $q);
+                        $pipe->hincrBy("$uTag:b", "m:$k", $q);
+
                     foreach (($data['brands'] ?? []) as $k => $q)
-                        $pipe->hincrby('global:totals:brands', $k, $q);
+                        $pipe->hincrBy("$uTag:b", "b:$k", $q);
+
                     foreach (($data['custom_tags'] ?? []) as $k => $q)
-                        $pipe->hincrby('global:totals:custom_tags_breakdown', $k, $q);
+                        $pipe->hincrBy("$uTag:b", "c:$k", $q);
                 }
             }
 
-            /* — 3.6 Country totals (optional) — */
-            if ($country) {
-                $p = "country:$country";
-                $pipe->hincrby($p.':totals', 'photos',      1);
-                $pipe->hincrby($p.':totals', 'tags',        $totals['total_tags']  ?? 0);
-                $pipe->hincrby($p.':totals', 'custom_tags', $totals['custom_tags'] ?? 0);
+            /* 3‑2 streak Lua (unchanged) */
+            self::evalShaCompat($pipe, self::$streakSha, [
+                "$uTag:up:$date",           // KEYS[1]
+                "$uTag:up:".\Carbon\Carbon::parse($date)->subDay()->format('Y-m-d'),
+                "$uTag:st",                 // streak key
+            ], [/* args */]);
 
-                foreach ($byCategory as $cat => $q)
-                    $pipe->hincrby("$p:totals:categories", $cat, $q);
+            /* 3‑3 global & location totals (bucketed by monthTag) */
+            $pipe->hIncrBy("$monthTag:t", 'p', 1);     // photos
+            if ($xp) $pipe->hIncrByFloat("$monthTag:t", 'xp', $xp);
 
-                foreach ($objectsForGlobal as $objects) {
-                    foreach ($objects as $objKey => $data)
-                        $pipe->hincrby("$p:totals:objects", $objKey, $data['quantity']);
-                }
+            foreach (array_filter([
+                'g'                 => null,
+                "c:$country"        => $country,
+                "s:$state"          => $state,
+                "ci:$city"          => $city,
+            ]) as $scopeKey => $id) {
+
+                $scope   = $scopeKey === 'g' ? '{g}' : $scopeKey;
+                $tsKey   = "$scope:t:p";                // HASH key
+                $pipe->hIncrBy($tsKey, $date, 1)
+                    ->pExpire($tsKey, self::TS_TTL_MS);
             }
+
+            /* 3‑4 objects / categories (global hashes) */
+            foreach ($catIncr as $c => $q)
+                $pipe->hIncrBy('{g}:c', $c, $q);
+
+            foreach ($objIncr as $o => $q)
+                $pipe->hIncrBy('{g}:t', $o, $q);
         });
     }
 
     /* ----------------------------------------------------------------
        Helper methods
     -----------------------------------------------------------------*/
+    /** true if photo already counted */
+    private static function alreadyProcessed(?int $photoId): bool
+    {
+        // NOTE: swap to BF.ADD / setBit to use Bloom / bitmap
+        if ($photoId === null) {
+            return false;
+        }
+
+        return Redis::sAdd('p:done', $photoId) === 0;
+    }
+
     private static function bootLua(): void
     {
-        if (self::$streakSha === null) {
+        if (!self::$streakSha) {
             self::$streakSha = Redis::script(
                 'load',
                 file_get_contents(base_path('app/Services/Redis/lua/streak.lua'))
@@ -160,79 +144,11 @@ final class RedisMetricsCollector
         }
     }
 
-    /**
-     * Increment a ZSET in several time windows (day, month, year).
-     */
-    private static function zincrWithWindow(
-        $pipe, string $base, float $score, int $member,
-        string $date, string $ym, string $year
-    ): void {
-        $pipe->zincrby($base, $score, $member);
-        foreach ([
-                     "$base:$date" => self::DAILY_TTL,
-                     "$base:$ym"   => self::MONTHLY_TTL,
-                     "$base:$year" => self::MONTHLY_TTL,
-                 ] as $k => $ttl) {
-            $pipe->zincrby($k, $score, $member)->pexpire($k, $ttl * 1000);
-        }
-    }
-
-    /**
-     * Leaderboards broken down by country/state/city.
-     */
-    private static function zincrByLocation(
-        $pipe, float $xp, int $uid,
-        string $date, string $ym, string $year,
-        array $tuples
-    ): void {
-        foreach ($tuples as [$type, $id]) {
-            if (!$id) continue;
-            $base = "lb:loc:$type:$id";
-            self::zincrWithWindow($pipe, "$base:total", $xp, $uid, $date, $ym, $year);
-        }
-    }
-
-    /**
-     * Increment time-series counters for each scope.
-     */
-    private static function bumpPhotoCounters(
-        $pipe, string $date, string $ym, string $year, string $week, array $scopes
-    ): void {
-        foreach (array_filter($scopes) as $scope) {
-            $pipe->incr("$scope:ts:daily:photos:$date")  ->pexpire("$scope:ts:daily:photos:$date",  self::TS_TTL * 1000);
-            $pipe->incr("$scope:ts:weekly:photos:$week") ->pexpire("$scope:ts:weekly:photos:$week", self::TS_TTL * 1000);
-            $pipe->incr("$scope:ts:monthly:photos:$ym")  ->pexpire("$scope:ts:monthly:photos:$ym",  self::TS_TTL * 1000);
-            $pipe->incr("$scope:ts:yearly:photos:$year") ->pexpire("$scope:ts:yearly:photos:$year", self::TS_TTL * 1000);
-        }
-    }
-
-    /**
-     * Call evalSha with whichever argument form the client supports.
-     *
-     * @param mixed  $pipe  PhpRedis|Predis pipeline instance
-     * @param string $sha
-     * @param array  $keys
-     * @param array  $argv
-     */
+    /** evalSha wrapper (unchanged) */
     private static function evalShaCompat($pipe, string $sha, array $keys, array $argv): void
     {
-        // try phpredis ≥ 6 or Predis-stub form: (sha, array $keys, array $args)
-        try {
-            $pipe->evalSha($sha, $keys, $argv);
-            return;
-        } catch (\TypeError|\ArgumentCountError) {
-            /* fall through */
-        }
-
-        // try phpredis ≤ 5: (sha, int $numKeys, ...$keys, ...$args)
-        try {
-            $pipe->evalSha($sha, \count($keys), ...$keys, ...$argv);
-            return;
-        } catch (\TypeError|\ArgumentCountError) {
-            /* fall through */
-        }
-
-        // very old Predis-stub: (sha, array $keys+$args merged)
+        try { $pipe->evalSha($sha, $keys, $argv); return; } catch (\Throwable) {}
+        try { $pipe->evalSha($sha, \count($keys), ...$keys, ...$argv); return; } catch (\Throwable) {}
         $pipe->evalSha($sha, array_merge($keys, $argv));
     }
 }
