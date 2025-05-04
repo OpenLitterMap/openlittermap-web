@@ -37,4 +37,28 @@ return [
         'icon' => '🏆',
         'when' => 'objectQty("plastic_bottle") >= 1000',
     ],
+
+    // ── Dynamic object-count milestones ────────────────────────────
+    'country‑pioneer' => [
+        'name' => 'Country Pioneer',
+        'xp'   => 250,
+        'icon' => '🗺️',
+        'when' => 'isFirstInCountry()',
+    ],
+
+    // ── Upload-count milestones ─────────────────────────────────
+    'streak‑7' => [
+        'name' => '7‑day streak',
+        'xp'   => 70,
+        'icon' => '🔥',
+        'when' => 'streak() >= 7',
+    ],
+
+    // ── Time-based ─────────────────────────────────────────────
+    'sunrise‑snapper' => [
+        'name' => 'Sunrise Snapper',
+        'xp'   => 50,
+        'icon' => '🌅',
+        'when' => 'timeOfDay() == "morning" && stats.photosTotal == 1',
+    ],
 ];

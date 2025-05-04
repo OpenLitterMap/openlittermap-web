@@ -146,7 +146,9 @@ class UpdateRedisServiceTest extends TestCase
 
         app(UpdateRedisService::class)->updateRedis($photo);
 
-        $this->assertSame('12', Redis::get('{u:5}:xp'));
+        $this->assertSame('12',
+            Redis::hGet(sprintf('{u:%d}:stats', 5), 'xp')
+        );
 
         $ttl = Redis::pTTL($month);
         $this->assertTrue($ttl === -1 || $ttl > 0, "TTL should be -1 (no expire) or positive, got $ttl");
