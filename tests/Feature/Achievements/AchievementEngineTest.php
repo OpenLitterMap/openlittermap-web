@@ -143,28 +143,31 @@ class AchievementEngineTest extends TestCase
         $user   = User::factory()->create(['id' => 1, 'level' => 0]);
         $engine = app(AchievementEngine::class);
 
-        $engine->unlock($user, collect(['x']));          // first time
-        $engine->unlock($user, collect(['x']));          // duplicate ignored
+        $photo = $this->makePhoto($user);
+        $engine->process($photo);
+        $engine->process($photo);
 
         /** @var RedisFactory $redis */
         $redis = app(RedisFactory::class);
-        $this->assertSame('20', $redis->connection()->hGet(sprintf('{u:%d}:stats', 1), 'xp'));
+        $this->assertEquals(20, (int) $redis->connection()->hGet(sprintf('{u:%d}:stats', 1), 'xp'));
         $this->assertDatabaseCount('user_achievements', 1);
         Event::assertDispatchedTimes(AchievementsUnlocked::class, 1);
-        $this->assertSame(0, $user->fresh()->level);       // 20 < 1000 → level unchanged
+        $this->assertSame(2, $user->fresh()->level);
     }
 
     /** @test */
     public function unlock_levels_up_when_threshold_crossed(): void
     {
-        config()->set('achievements', ['big' => ['xp' => 2000, 'when' => 'true']]);
+        config()->set('achievements', array_merge(config('achievements'), [
+            'big' => ['xp' => 2000, 'when' => 'true'],
+        ]));
         $this->createAchievement('big', 2000);
 
         $user   = User::factory()->create(['id' => 1, 'level' => 0]);
         $engine = app(AchievementEngine::class);
-
         $engine->unlock($user, collect(['big']));
-        $this->assertSame(2, $user->fresh()->level); // 2k / 1k
+
+        $this->assertSame(8, $user->refresh()->level);
     }
 
     /** @test */

@@ -146,10 +146,9 @@ final class AchievementEngine
         $r   = $this->redis->connection();
         $uid = $user->id;
 
-        [$xp,$uploads,$streak] =
-            $r->hmget(sprintf(self::K_STATS,$uid),'xp','uploads','st');
+        [$xp,$uploads,$streak] = $r->hmget(sprintf(self::K_STATS, $uid),'xp','uploads','st');
 
-        $objects = $r->hgetall(sprintf(self::K_OBJECTS,$uid));
+        $objects = $r->hgetall(sprintf(self::K_OBJECTS, $uid));
 
         $localObjects = $photo->summary['totals']['objects'] ?? [];
 
@@ -173,13 +172,18 @@ final class AchievementEngine
             default                      =>'evening',
         };
 
+        $combinedObjects = array_merge_recursive($objects, $localObjects);
+        foreach ($combinedObjects as $key => $values) {
+            $combinedObjects[$key] = array_sum((array)$values);
+        }
+
         return new Stats(
             level            : $user->level,
             xp               : (int)($xp ?? 0),
             photosTotal      : (int)($uploads ?? 0),
             currentStreak    : (int)($streak  ?? 0),
             localObjects     : $localObjects,
-            cumulativeObjects: $objects,
+            cumulativeObjects: $combinedObjects,
             summary          : $photo->summary,
             tod              : $tod,
             dow              : $photo->created_at->dayOfWeek,
@@ -195,12 +199,24 @@ final class AchievementEngine
     /* ----------------------- level calc ------------------------------------- */
     private function recalculateLevel(User $user): void
     {
-        [$xp] = $this->redis->connection()->hmget(sprintf(self::K_STATS,$user->id), 'xp');
-        $xp = (int)($xp ?? 0);
+        [$xp] = $this->redis->connection()->hmget(sprintf(self::K_STATS, $user->id), 'xp');
 
-        $lvl = intdiv($xp, config('achievements.xp_per_level',1000));
-        if ($lvl > $user->level) {
-            $user->forceFill(['level'=>$lvl,'leveled_up_at'=>now()])->save();
+        $xp = (int)($xp ?? 0);
+        $milestones = config('milestones');
+
+        $level = 0;
+        foreach ($milestones as $threshold) {
+            if ($xp >= $threshold) {
+                $level++;
+            } else {
+                break;
+            }
+        }
+
+        if ($level > $user->level) {
+            $user->level = $level;
+            $user->save();
+            $saved = $user->save();
         }
     }
 }
