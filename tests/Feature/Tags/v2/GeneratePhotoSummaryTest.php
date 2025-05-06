@@ -52,6 +52,7 @@ class GeneratePhotoSummaryTest extends TestCase
             'custom_tags'   => 0,
         ];
         $this->assertEquals($expectedTotals, $summary['totals']);
+        $this->assertEquals(0, $photo->fresh()->total_tags);
     }
 
     /** @test */
@@ -88,6 +89,7 @@ class GeneratePhotoSummaryTest extends TestCase
         $this->assertEquals(['adidas' => 1], $entry['brands']);
         $this->assertEquals([], $entry['materials']);
         $this->assertEquals(['street_clean' => 1], $entry['custom_tags']);
+        $this->assertEquals(4, $photo->total_tags);
     }
 
     /** @test */

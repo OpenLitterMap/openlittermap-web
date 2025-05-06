@@ -205,7 +205,7 @@ final class AchievementEngine
         $milestones = config('milestones');
 
         $level = 0;
-        foreach ($milestones as $threshold) {
+        foreach ($milestones as $threshold => $title) {
             if ($xp >= $threshold) {
                 $level++;
             } else {
@@ -216,7 +216,6 @@ final class AchievementEngine
         if ($level > $user->level) {
             $user->level = $level;
             $user->save();
-            $saved = $user->save();
         }
     }
 }

@@ -136,7 +136,7 @@ class AchievementEngineTest extends TestCase
     public function unlock_adds_xp_and_dispatches_event(): void
     {
         config()->set('achievements', ['x' => ['xp' => 20, 'when' => 'true']]);
-        $id = $this->createAchievement('x', 20);
+        $this->createAchievement('x', 20);
 
         Event::fake();
 
@@ -152,7 +152,7 @@ class AchievementEngineTest extends TestCase
         $this->assertEquals(20, (int) $redis->connection()->hGet(sprintf('{u:%d}:stats', 1), 'xp'));
         $this->assertDatabaseCount('user_achievements', 1);
         Event::assertDispatchedTimes(AchievementsUnlocked::class, 1);
-        $this->assertSame(2, $user->fresh()->level);
+        $this->assertSame(1, $user->fresh()->level);
     }
 
     /** @test */
@@ -167,7 +167,7 @@ class AchievementEngineTest extends TestCase
         $engine = app(AchievementEngine::class);
         $engine->unlock($user, collect(['big']));
 
-        $this->assertSame(8, $user->refresh()->level);
+        $this->assertSame(5, $user->refresh()->level);
     }
 
     /** @test */

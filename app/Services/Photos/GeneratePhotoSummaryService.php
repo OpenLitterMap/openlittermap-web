@@ -147,7 +147,6 @@ class GeneratePhotoSummaryService
                 'materials'     => 0,
                 'brands'        => 0,
                 'custom_tags'   => 0,
-
             ],
         ];
 
@@ -159,8 +158,9 @@ class GeneratePhotoSummaryService
 
         // Persist summary and XP
         $photo->update([
-            'summary' => $summary,
-            'xp'      => $xp,
+            'summary'    => $summary,
+            'xp'         => $xp,
+            'total_tags' => $totalTags,
         ]);
 
         return $photo;
