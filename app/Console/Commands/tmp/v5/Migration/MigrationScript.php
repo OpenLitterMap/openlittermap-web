@@ -69,48 +69,35 @@ class MigrationScript extends Command
 
         Photo::whereNull('migrated_at')
             ->with('customTags')
-            ->lazyById(500, function ($photos)
+            ->chunkById(500, function ($photos)
             {
-                try
+                foreach ($photos as $photo)
                 {
-                    foreach ($photos as $photo)
+                    try
                     {
                         $this->updateTagsService->updateTags($photo);
-
                         $this->updateRedisService->updateRedis($photo);
-
                         $this->timeseriesService->updateTimeSeries($photo);
-
                         $this->achievementsService->generateAchievements($photo);
+                    }
+                    catch (Throwable $e)
+                    {
+                        Log::channel('migration')->error("Failed on photo {$photo->id}", [
+                            'exception' => $e,
+                        ]);
 
-                        Photo::withoutEvents(fn() => $photo->forceFill(['migrated_at' => now()])->save());
-                        $this->processed++;
-
-                        if ($this->processed % 100 === 0) {
-                            $percent = number_format(($this->processed / $this->totalPhotos) * 100, 2);
-                            $this->line("Progress: {$this->processed}/{$this->totalPhotos} ({$percent}%)");
-                        }
+                        continue;
                     }
 
-                    if ( ! $photos->isEmpty()) {
-                        $this->info("✅ Migrated photos {$photos->first()->id} – {$photos->last()->id}");
+                    Photo::withoutEvents(fn() =>
+                        $photo->forceFill(['migrated_at' => now()])->save()
+                    );
+
+                    $this->processed++;
+                    if ($this->processed % 100 === 0) {
+                        $pct = number_format(($this->processed / $this->totalPhotos) * 100, 2);
+                        $this->line("Progress: {$this->processed}/{$this->totalPhotos} ({$pct}%)");
                     }
-                }
-                catch (Throwable $e)
-                {
-                    $firstId = $photos->first()->id ?? 'unknown';
-                    $lastId = $photos->last()->id ?? 'unknown';
-
-                    $errorMessage = "❌ Error migrating photos $firstId – $lastId: " . $e->getMessage();
-                    $this->error($errorMessage);
-
-                    Log::channel('migration')->error($errorMessage, [
-                        'trace' => $e->getTraceAsString(),
-                        'photo_ids' => [$firstId, $lastId],
-                        'processed_count' => $this->processed,
-                    ]);
-
-                    throw $e;
                 }
             });
 

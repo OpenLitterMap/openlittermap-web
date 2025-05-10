@@ -4,9 +4,11 @@ namespace Tests\Feature\Timeseries;
 
 use App\Enums\Timescale;
 use App\Models\Photo;
+use App\Repositories\PhotoMetricsRepo;
 use App\Services\Timeseries\TimeSeriesService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
@@ -197,5 +199,71 @@ class TimeSeriesServiceTest extends TestCase
             'day'       => '2025-07-04',
             'uploads'   => 2,
         ]);
+    }
+
+    /** @test */
+    public function flush_invalidates_the_bucket_cache_key(): void
+    {
+        $ts    = Carbon::create(2025, 8, 1, 9);
+        $photo = Photo::factory()->create(['created_at' => $ts]);
+
+        // Manually compute the bucket key for the daily/global/0 row
+        $dims = [
+            'timescale'     => Timescale::Daily->value,
+            'location_type' => 'global',
+            'location_id'   => 0,
+            'year'          => $ts->year,
+            'month'         => $ts->month,
+            'iso_week'      => $ts->isoWeek(),
+            'day'           => $ts->toDateString(),
+        ];
+        $bucketKey = PhotoMetricsRepo::bucketCacheKey($dims);
+
+        // Seed the cache
+        Cache::tags('timeseries')->put($bucketKey, (object)['uploads' => 999], now()->addDay());
+        $this->assertNotNull(Cache::tags('timeseries')->get($bucketKey));
+
+        // Trigger an update + flush → should forget that exact key
+        $this->svc->updateTimeSeries($photo);
+        $this->svc->flush();
+
+        $this->assertNull(Cache::tags('timeseries')->get($bucketKey), 'Bucket cache key must be invalidated');
+    }
+
+    /** @test */
+    public function flush_invalidates_daily_series_cache_for_recent_data(): void
+    {
+        $ts    = Carbon::create(2025, 8, 2, 10);
+        $photo = Photo::factory()->create(['created_at' => $ts]);
+
+        // Compute the "last-year daily series" key for global/0
+        $seriesKey = PhotoMetricsRepo::dailySeriesKey('global', 0);
+
+        // Seed the series cache
+        Cache::tags('timeseries')->put($seriesKey, collect([/* dummy */]), now()->addDay());
+        $this->assertNotNull(Cache::tags('timeseries')->get($seriesKey));
+
+        // Update + flush should drop the series
+        $this->svc->updateTimeSeries($photo);
+        $this->svc->flush();
+
+        $this->assertNull(Cache::tags('timeseries')->get($seriesKey), 'Daily series cache key must be invalidated for recent daily rows');
+    }
+
+    /** @test */
+    public function flush_does_not_invalidate_daily_series_cache_for_old_data(): void
+    {
+        // A photo older than one year (should NOT clear the last-year series)
+        $ts    = Carbon::today()->subYears(2);
+        $photo = Photo::factory()->create(['created_at' => $ts]);
+
+        $seriesKey = PhotoMetricsRepo::dailySeriesKey('global', 0);
+        Cache::tags('timeseries')->put($seriesKey, collect(['keep me']), now()->addDay());
+        $this->assertNotNull(Cache::tags('timeseries')->get($seriesKey));
+
+        $this->svc->updateTimeSeries($photo);
+        $this->svc->flush();
+
+        $this->assertNotNull(Cache::tags('timeseries')->get($seriesKey), 'Daily series cache key should survive flush for old daily rows');
     }
 }

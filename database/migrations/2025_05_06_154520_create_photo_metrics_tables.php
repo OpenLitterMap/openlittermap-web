@@ -30,7 +30,7 @@ CREATE TABLE photo_metrics (
   PRIMARY KEY (
       timescale, location_type, location_id,
       year, month, iso_week, day
-  )
+  ),
 
   KEY idx_daily_loc_day (timescale, location_type, location_id, day)
 ) ENGINE=InnoDB

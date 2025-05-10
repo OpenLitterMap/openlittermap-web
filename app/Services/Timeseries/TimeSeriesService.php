@@ -4,6 +4,9 @@ namespace App\Services\Timeseries;
 
 use App\Enums\Timescale;
 use App\Models\Photo;
+use App\Repositories\PhotoMetricsRepo;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 final class TimeSeriesService
@@ -91,6 +94,7 @@ final class TimeSeriesService
             return;
         }
 
+        // 1. Write to the database
         DB::table('photo_metrics')->upsert(
             array_values($this->bucket),
             ['timescale','location_type','location_id','year','month','iso_week','day'],
@@ -101,6 +105,20 @@ final class TimeSeriesService
                 'updated_at' => DB::raw('VALUES(updated_at)'),
             ]
         );
+
+        // 2. Update / invalidate Redis so reads are correct immediately
+        foreach ($this->bucket as $row) {
+            // 2-a.  Invalidate the cached bucket row (simple)
+            $bucketKey = PhotoMetricsRepo::bucketCacheKey($row);
+            Cache::tags('timeseries')->forget($bucketKey);
+
+            // 2-b.  If this is a daily row within the last 365 days,
+            //       keep the “whole-series” cache coherent.
+            if ($row['timescale'] === Timescale::Daily->value && Carbon::parse($row['day'])->gte(now()->subYear())) {
+                $seriesKey = PhotoMetricsRepo::dailySeriesKey($row['location_type'], $row['location_id']);
+                Cache::tags('timeseries')->forget($seriesKey);
+            }
+        }
 
         $this->bucket = []; // reset for next chunk
     }

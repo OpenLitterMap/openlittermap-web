@@ -24,6 +24,18 @@ class PhotoMetricsRepo
     /** Value stored in Redis to represent a “null” DB result. */
     private const NULL_SENTINEL = '__NULL__';
 
+    public static function bucketCacheKey(array $row): string
+    {
+        return 'ts:' .
+            $row['timescale']     . ':' .
+            $row['location_type'] . ':' .
+            $row['location_id']   . ':' .
+            $row['year']          . ':' .
+            $row['month']         . ':' .
+            $row['iso_week']      . ':' .
+            $row['day'];
+    }
+
     /* --------------------------------------------------------------------- */
     /*  Public API                                                           */
     /* --------------------------------------------------------------------- */
@@ -116,6 +128,18 @@ class PhotoMetricsRepo
             $row['month']         . ':' .
             $row['iso_week']      . ':' .
             $row['day'];
+    }
+
+    /**
+     * Key for the last-year daily series of *this* location.
+     * We only care about daily (timescale 1) because that is the
+     * high-resolution data most dashboards use.
+     */
+    public static function dailySeriesKey(string $locType, int $locId): string
+    {
+        $from = now()->subYear()->toDateString();
+        $to   = now()->toDateString();
+        return "ts:series:1:$locType:$locId:$from:$to";
     }
 
     /* --------------------------------------------------------------------- */
