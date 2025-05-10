@@ -40,8 +40,7 @@ final class PeriodAggregator
         // MONTHLY
         $sum = DB::table('photo_metrics_daily')
             ->whereYear('day', $y)->whereMonth('day', $m)
-            ->selectRaw('location_type, location_id,
-                              SUM(uploads) u, SUM(tags_total) t')
+            ->selectRaw('location_type, location_id, SUM(uploads) u, SUM(tags_total) t')
             ->groupBy('location_type','location_id')
             ->get();
 
@@ -61,8 +60,7 @@ final class PeriodAggregator
         // YEARLY
         $sum = DB::table('photo_metrics_daily')
             ->whereYear('day', $y)
-            ->selectRaw('location_type, location_id,
-                              SUM(uploads) u, SUM(tags_total) t')
+            ->selectRaw('location_type, location_id, SUM(uploads) u, SUM(tags_total) t')
             ->groupBy('location_type','location_id')
             ->get();
 

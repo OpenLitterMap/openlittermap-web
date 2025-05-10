@@ -8,6 +8,7 @@ use App\Models\Photo;
 use App\Services\Achievements\UpdateAchievementsService;
 use App\Services\Redis\UpdateRedisService;
 use App\Services\Tags\UpdateTagsService;
+use App\Services\Timeseries\TimeSeriesService;
 use Database\Seeders\Tags\GenerateBrandsSeeder;
 use Database\Seeders\Tags\GenerateTagsSeeder;
 use Illuminate\Console\Command;
@@ -22,6 +23,7 @@ class MigrationScript extends Command
 
     protected UpdateTagsService $updateTagsService;
     protected UpdateRedisService $updateRedisService;
+    protected TimeseriesService $timeseriesService;
     protected UpdateAchievementsService $achievementsService;
 
     protected int $processed = 0;
@@ -30,11 +32,13 @@ class MigrationScript extends Command
     public function __construct(
         UpdateTagsService $updateTagsService,
         UpdateRedisService $updateRedisService,
+        TimeseriesService $timeseriesService,
         UpdateAchievementsService $achievementsService
     ) {
         parent::__construct();
         $this->updateTagsService = $updateTagsService;
         $this->updateRedisService = $updateRedisService;
+        $this->timeseriesService = $timeseriesService;
         $this->achievementsService = $achievementsService;
     }
 
@@ -74,6 +78,8 @@ class MigrationScript extends Command
                         $this->updateTagsService->updateTags($photo);
 
                         $this->updateRedisService->updateRedis($photo);
+
+                        $this->timeseriesService->updateTimeSeries($photo);
 
                         $this->achievementsService->generateAchievements($photo);
 

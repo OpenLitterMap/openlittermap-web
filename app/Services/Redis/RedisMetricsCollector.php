@@ -120,8 +120,7 @@ final class RedisMetricsCollector
                 "ci:$city"   => $city,
             ]) as $scope) {
                 $tsKey = "$scope:t:p";
-                $pipe->hIncrBy($tsKey, $date, 1)
-                    ->pExpire($tsKey, self::TS_TTL_MS);
+                $pipe->hIncrBy($tsKey, $date, 1)->pExpire($tsKey, self::TS_TTL_MS);
             }
 
             /* 6. global cats / objects --------------------------------------- */

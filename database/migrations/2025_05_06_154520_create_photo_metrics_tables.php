@@ -1,44 +1,48 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        foreach (['daily','weekly','monthly','yearly'] as $grain) {
-            Schema::create("photo_metrics_{$grain}", function (Blueprint $t) use ($grain) {
-                $t->enum('location_type',['global','country','state','city']);
-                $t->unsignedBigInteger('location_id')->default(0);   // 0 = global
+        /* 1=daily 2=weekly 3=monthly 4=yearly */
+        DB::statement(<<<'SQL'
+CREATE TABLE photo_metrics (
+  timescale     TINYINT UNSIGNED NOT NULL
+                CHECK (timescale IN (1,2,3,4)),
+  location_type ENUM('global','country','state','city') NOT NULL,
+  location_id   BIGINT UNSIGNED NOT NULL,
 
-                match ($grain) {
-                    'daily'   => $t->date('day'),
-                    'weekly'  => [$t->year('year'), $t->unsignedTinyInteger('iso_week')],
-                    'monthly' => [$t->year('year'), $t->tinyInteger('month')],
-                    'yearly'  => $t->year('year'),
-                };
+  day       DATE,
+  iso_week  TINYINT UNSIGNED,
+  month     TINYINT UNSIGNED,
+  year      SMALLINT UNSIGNED NOT NULL,
 
-                $t->unsignedInteger('uploads')->default(0);
-                $t->unsignedInteger('tags_total')->default(0);
-                $t->timestamps();
+  uploads     INT UNSIGNED NOT NULL DEFAULT 0,
+  tags        INT UNSIGNED NOT NULL DEFAULT 0,
+  brands      INT UNSIGNED NOT NULL DEFAULT 0,
 
-                $pk = match ($grain) {
-                    'daily'   => ['location_type','location_id','day'],
-                    'weekly'  => ['location_type','location_id','year','iso_week'],
-                    'monthly' => ['location_type','location_id','year','month'],
-                    'yearly'  => ['location_type','location_id','year'],
-                };
-                $t->primary($pk);
-            });
-        }
+  created_at  TIMESTAMP NULL,
+  updated_at  TIMESTAMP NULL,
+
+  PRIMARY KEY (
+      timescale, location_type, location_id,
+      year, month, iso_week, day
+  )
+) ENGINE=InnoDB
+PARTITION BY LIST COLUMNS(timescale) (
+  PARTITION p_daily   VALUES IN (1),
+  PARTITION p_weekly  VALUES IN (2),
+  PARTITION p_monthly VALUES IN (3),
+  PARTITION p_yearly  VALUES IN (4)
+);
+SQL);
     }
 
     public function down(): void
     {
-        foreach (['daily','weekly','monthly','yearly'] as $grain) {
-            Schema::dropIfExists("photo_metrics_{$grain}");
-        }
+        DB::statement('DROP TABLE IF EXISTS photo_metrics');
     }
 };
