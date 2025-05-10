@@ -31,6 +31,8 @@ CREATE TABLE photo_metrics (
       timescale, location_type, location_id,
       year, month, iso_week, day
   )
+
+  KEY idx_daily_loc_day (timescale, location_type, location_id, day)
 ) ENGINE=InnoDB
 PARTITION BY LIST COLUMNS(timescale) (
   PARTITION p_daily   VALUES IN (1),
