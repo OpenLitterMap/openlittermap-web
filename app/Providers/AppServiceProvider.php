@@ -6,6 +6,7 @@ use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\CustomTagNew;
 use App\Models\Litter\Tags\Materials;
 use App\Models\Users\User;
+use App\Repositories\PhotoMetricsRepo;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -19,7 +20,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+        $this->app->singleton(PhotoMetricsRepo::class);
     }
 
     /**

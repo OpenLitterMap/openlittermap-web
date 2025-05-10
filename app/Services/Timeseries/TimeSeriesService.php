@@ -21,17 +21,22 @@ final class TimeSeriesService
 
         /* 2. Time-scales */
         $ts = $photo->created_at;
+
+        $isoWeek   = $ts->isoWeek();       // 1-53
+        $isoYear   = $ts->isoWeekYear();   // can differ from $ts->year on 28-31 Dec & 1-3 Jan
+        $weekStart = $ts->copy()->startOfWeek();   // always Monday (ISO-8601)
+
         $scales = [
             Timescale::Daily->value   => [
                 'year'     => $ts->year,
                 'month'    => $ts->month,
-                'iso_week' => $ts->isoWeek(),
+                'iso_week' => $isoWeek,
                 'day'      => $ts->toDateString(),
             ],
             Timescale::Weekly->value  => [
-                'year'     => $ts->year,
-                'month'    => $ts->month,
-                'iso_week' => $ts->isoWeek(),
+                'year'     => $isoYear,
+                'month'    => $weekStart->month,
+                'iso_week' => $isoWeek,
                 'day'      => $ts->copy()->startOfWeek()->toDateString(),
             ],
             Timescale::Monthly->value => [
@@ -67,6 +72,7 @@ final class TimeSeriesService
                         'uploads'       => 0,
                         'tags'          => 0,
                         'brands'        => 0,
+                        'created_at'    => now(),
                         'updated_at'    => now(),
                     ];
                 }

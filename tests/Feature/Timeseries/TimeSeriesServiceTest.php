@@ -96,8 +96,7 @@ class TimeSeriesServiceTest extends TestCase
     /** @test */
     public function the_partitioning_rules_match_the_primary_key(): void
     {
-        $sql = DB::selectOne("SHOW CREATE TABLE photo_metrics")
-            ->{'Create Table'};
+        $sql = DB::selectOne("SHOW CREATE TABLE photo_metrics")->{'Create Table'};
 
         $this->assertStringContainsString(
             'PARTITION BY LIST',
@@ -108,5 +107,95 @@ class TimeSeriesServiceTest extends TestCase
         foreach (['p_daily','p_weekly','p_monthly','p_yearly'] as $part) {
             $this->assertStringContainsString($part, $sql);
         }
+    }
+
+    /** @test */
+    public function weekly_bucket_uses_month_of_week_monday(): void
+    {
+        // 1 Jun 2025 is a Sunday; ISO-week 22 starts on Mon 26 May 2025 (month = 5)
+        $photo = Photo::factory()->create([
+            'created_at' => Carbon::create(2025, 6, 1, 12),
+        ]);
+
+        $this->svc->updateTimeSeries($photo);
+        $this->svc->flush();
+
+        $this->assertDatabaseHas('photo_metrics', [
+            'timescale'   => Timescale::Weekly->value,
+            'location_id' => 0,
+            'year'        => 2025,
+            'month'       => 5,                   // May, not June
+            'iso_week'    => $photo->created_at->isoWeek(),
+            'day'         => '2025-05-26',        // Monday that begins the week
+        ]);
+    }
+
+    /** @test */
+    public function weekly_bucket_uses_iso_week_year_across_year_boundary(): void
+    {
+        // 31 Dec 2025 belongs to ISO-week 1 of 2026
+        $photo = Photo::factory()->create([
+            'created_at' => Carbon::create(2025, 12, 31, 10),
+        ]);
+
+        $isoYear = $photo->created_at->isoWeekYear();   // 2026
+        $weekMon = $photo->created_at->copy()->startOfWeek();
+
+        $this->svc->updateTimeSeries($photo);
+        $this->svc->flush();
+
+        $this->assertDatabaseHas('photo_metrics', [
+            'timescale' => Timescale::Weekly->value,
+            'year'      => $isoYear,                    // 2026
+            'iso_week'  => $photo->created_at->isoWeek(),
+            'day'       => $weekMon->toDateString(),
+        ]);
+    }
+
+    /** @test */
+    public function created_at_is_set_on_insert(): void
+    {
+        $photo = Photo::factory()->create();
+
+        $this->svc->updateTimeSeries($photo);
+        $this->svc->flush();
+
+        $row = DB::table('photo_metrics')->first();
+        $this->assertNotNull($row->created_at);
+    }
+
+    /** @test */
+    public function tags_and_brands_default_to_zero(): void
+    {
+        $photo = Photo::factory()->create();   // no totals set
+
+        $this->svc->updateTimeSeries($photo);
+        $this->svc->flush();
+
+        $this->assertDatabaseHas('photo_metrics', [
+            'timescale' => Timescale::Daily,
+            'uploads'   => 1,
+            'tags'      => 0,
+            'brands'    => 0,
+        ]);
+    }
+
+    /** @test */
+    public function separate_flushes_still_increment_the_same_row(): void
+    {
+        $ts = Carbon::create(2025, 7, 4, 12);
+        [$p1, $p2] = Photo::factory()->count(2)->create(['created_at' => $ts]);
+
+        $this->svc->updateTimeSeries($p1);
+        $this->svc->flush();          // first chunk
+
+        $this->svc->updateTimeSeries($p2);
+        $this->svc->flush();          // next chunk
+
+        $this->assertDatabaseHas('photo_metrics', [
+            'timescale' => Timescale::Daily,
+            'day'       => '2025-07-04',
+            'uploads'   => 2,
+        ]);
     }
 }
