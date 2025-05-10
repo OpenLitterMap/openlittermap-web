@@ -1,5 +1,4 @@
 <?php
-// tests/Feature/Timeseries/TimeSeriesServiceTest.php
 
 namespace Tests\Feature\Timeseries;
 
@@ -37,8 +36,8 @@ class TimeSeriesServiceTest extends TestCase
             'state_id'   => 10,
             'city_id'    => 100,
         ]);
-        $photo->tags_total   = 3;
-        $photo->brands_total = 1;
+        $photo->total_tags   = 3;
+        $photo->total_brands = 1;
 
         $this->svc->updateTimeSeries($photo);
         $this->svc->flush();
@@ -61,10 +60,10 @@ class TimeSeriesServiceTest extends TestCase
     {
         $ts = Carbon::create(2025, 5, 11, 7);
         $p1 = Photo::factory()->create(['created_at' => $ts]);
-        $p1->tags_total = 2;
+        $p1->total_tags = 2;
 
         $p2 = Photo::factory()->create(['created_at' => $ts]);
-        $p2->tags_total = 5;
+        $p2->total_tags = 5;
 
         $this->svc->updateTimeSeries($p1);
         $this->svc->updateTimeSeries($p2);

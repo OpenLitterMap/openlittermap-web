@@ -134,7 +134,6 @@ class GeneratePhotoSummaryService
             'materials'     => $materialCount,
             'brands'        => $brandCount,
             'custom_tags'   => $customTagCount,
-
         ];
 
         // Default summary structure
@@ -161,6 +160,7 @@ class GeneratePhotoSummaryService
             'summary'    => $summary,
             'xp'         => $xp,
             'total_tags' => $totalTags,
+            'total_brands' => $brandCount,
         ]);
 
         return $photo;

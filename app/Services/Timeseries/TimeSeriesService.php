@@ -72,8 +72,8 @@ final class TimeSeriesService
                 }
 
                 $row['uploads']++;
-                $row['tags']   += $photo->tags_total   ?? 0;
-                $row['brands'] += $photo->brands_total ?? 0;
+                $row['tags']   += $photo->total_tags   ?? 0;
+                $row['brands'] += $photo->total_brands ?? 0;
             }
         }
     }
