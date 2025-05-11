@@ -2,7 +2,6 @@
 
 namespace App\Models\Litter\Tags;
 
-use App\Models\Litter\Categories\Brand;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,6 +9,8 @@ use Illuminate\Support\Facades\Log;
 
 class CategoryObject extends Pivot
 {
+    protected $primaryKey = 'id';
+
     public $incrementing = true;
 
     protected $table = 'category_litter_object';
@@ -43,7 +44,7 @@ class CategoryObject extends Pivot
     public function brands(): MorphToMany
     {
         return $this->morphToMany(
-            Brand::class,
+            BrandList::class,
             'taggable',
             'taggables',
             'category_litter_object_id',

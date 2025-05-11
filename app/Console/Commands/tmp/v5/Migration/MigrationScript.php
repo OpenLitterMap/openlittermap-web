@@ -73,6 +73,8 @@ class MigrationScript extends Command
             {
                 foreach ($photos as $photo)
                 {
+                    $this->info("Processing photo {$photo->id}...");
+
                     try
                     {
                         $this->updateTagsService->updateTags($photo);

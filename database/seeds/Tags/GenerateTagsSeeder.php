@@ -195,7 +195,6 @@ class GenerateTagsSeeder extends Seeder
                 'construction' => [
                     'material:clay',
                     'material:concrete',
-                    'material:paper',
                     'material:plastic',
                     'material:metal',
                     'material:fiberglass',
@@ -248,11 +247,8 @@ class GenerateTagsSeeder extends Seeder
             'sanitary' => [
                 'gloves' => [
                     'material:latex',
-                    'material:vinyl',
                     'material:rubber',
                     'material:plastic',
-                    'material:cloth',
-                    'material:cotton'
                 ],
                 'facemask' => [
                     'material:cotton',
@@ -265,6 +261,7 @@ class GenerateTagsSeeder extends Seeder
                 'sanitaryPad' => ['material:cotton', 'material:plastic'],
                 'tampon' => ['material:plastic'],
                 'deodorant_can' => ['material:aluminium'],
+                'menstrual' => ['material:plastic'],
                 'earSwabs' => ['material:plastic', 'material:cotton'],
                 'toothbrush' => ['material:plastic', 'material:nylon', 'material:bamboo', 'material:wood'],
                 'toothpasteTube' => ['material:plastic', 'material:aluminium'],
@@ -345,6 +342,7 @@ class GenerateTagsSeeder extends Seeder
                 'stapler' => ['material:metal', 'material:plastic'],
                 'paperClip' => ['material:metal'],
                 'rubberBand' => ['material:rubber'],
+                'other'
             ],
         ];
 

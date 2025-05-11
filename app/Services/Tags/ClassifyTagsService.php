@@ -143,9 +143,11 @@ class ClassifyTagsService
             'coastal_other' => ['object' => 'other'],
 
             // Coffee
-            'coffeeCups' => ['object' => 'cup', 'materials' => ['paper', 'plastic', 'foam', 'ceramic', 'metal']],
-            'coffeeLids' => ['object' => 'lid', 'materials' => ['plastic', 'paper', 'bioplastic', 'plantFiber']],
+            'coffeeCups' => ['object' => 'cup', 'materials' => ['paper']],
+            'coffeeLids' => ['object' => 'lid', 'materials' => ['plastic']],
             'coffeeOther' => ['object' => 'other'],
+
+            // Dumping
 
             // Food
             'sweetWrappers' => ['object' => 'wrapper', 'materials' => ['plastic']],
@@ -169,23 +171,25 @@ class ClassifyTagsService
             'industrial_other' => ['object' => 'other'],
 
             // Other
-            'random_litter' => ['object' => 'randomLitter'],
             'bags_litter' => ['object' => 'bagsLitter'],
-            'overflowing_bins' => ['object' => 'overflowingBins'],
-            'plastic_bags' => ['object' => 'plasticBags'],
-            'traffic_cone' => ['object' => 'trafficCone'],
-            'election_posters' => ['object' => 'posters'],
-            'forsale_posters' => ['object' => 'posters'],
-            'cable_tie' => ['object' => 'cableTie'],
-            'washing_up' => ['object' => 'washingUp'],
-            'life_buoy' => ['object' => 'life_buoy'],
-            'clothing' => ['object' => 'clothing'],
             'balloons' => ['object' => 'balloons'],
+            'cable_tie' => ['object' => 'cableTie', 'materials' => ['plastic']],
+            'clothing' => ['object' => 'clothing'],
+            'election_posters' => ['object' => 'posters', 'materials' => ['plastic']],
+            'forsale_posters' => ['object' => 'posters', 'materials' => ['plastic']],
+            'life_buoy' => ['object' => 'life_buoy', 'materials' => ['plastic']],
+            'metal' => ['object' => 'metal', 'materials' => ['metal']],
+            'overflowing_bins' => ['object' => 'overflowingBins'],
+            'plastic_bags' => ['object' => 'plasticBags', 'materials' => ['plastic']],
+            'random_litter' => ['object' => 'randomLitter'],
+            'traffic_cone' => ['object' => 'trafficCone', 'materials' => ['plastic']],
+            'plastic' => ['object' => 'plastic', 'materials' => ['plastic']],
             'umbrella' => ['object' => 'umbrella', 'materials' => ['plastic', 'metal', 'cloth']],
+            'washing_up' => ['object' => 'washingUp'],
             'other' => ['object' => 'other'],
 
             // Sanitary
-            'menstral' => ['object' => 'sanitaryPad', 'materials' => ['cotton', 'plastic']],
+            'menstral' => ['object' => 'menstrual', 'materials' => ['plastic']],
             'deodorant' => ['object' => 'deodorant_can', 'materials' => ['aluminium']],
             'ear_swabs' => ['object' => 'earSwabs', 'materials' => ['plastic', 'cotton']],
             'tooth_brush' => ['object' => 'toothbrush', 'materials' => ['plastic', 'nylon', 'bamboo', 'wood']],
@@ -195,6 +199,7 @@ class ClassifyTagsService
 
             // Smoking
             'cigaretteBox' => ['object' => 'cigarette_box', 'materials' => ['cardboard']],
+            'lighters' => ['object' => 'lighters', 'materials' => ['plastic', 'metal']],
             'skins' => ['object' => 'rollingPapers', 'materials' => ['paper']],
             'smoking_plastic' => ['object' => 'packaging', 'materials' => ['plastic']],
             'filterbox' => ['object' => 'filters', 'materials' => ['cardboard']],
@@ -226,6 +231,9 @@ class ClassifyTagsService
             'styro_cup' => ['object' => 'cup', 'materials' => ['styrofoam']],
             'broken_glass' => ['object' => 'brokenGlass', 'materials' => ['glass']],
             'softDrinkOther' => ['object' => 'other'],
+
+            // New Stationery category
+            'stationary' => [ 'object' => 'other', 'category' => 'stationery' ],
         };
     }
 

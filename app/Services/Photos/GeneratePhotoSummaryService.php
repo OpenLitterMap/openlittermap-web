@@ -138,11 +138,11 @@ class GeneratePhotoSummaryService
 
         // Default summary structure
         $defaultSummary = [
-            'tags'   => [],
+            'tags'   => new \stdClass(),
             'totals' => [
                 'total_tags'    => 0,
                 'total_objects' => 0,
-                'by_category'   => [],
+                'by_category'   => new \stdClass(),
                 'materials'     => 0,
                 'brands'        => 0,
                 'custom_tags'   => 0,
@@ -154,6 +154,8 @@ class GeneratePhotoSummaryService
             $defaultSummary,
             ['tags' => $grouped, 'totals' => $totals]
         );
+
+        echo "Summary: " . json_encode($summary, JSON_PRETTY_PRINT) . "\n";
 
         // Persist summary and XP
         $photo->update([

@@ -11,6 +11,8 @@ class Category extends Model
 {
     use HasFactory;
 
+    protected $primaryKey = 'id';
+
     protected $guarded = [];
 
     protected $hidden = ['pivot'];
@@ -39,6 +41,7 @@ class Category extends Model
             'litter_object_id'
         )
         ->using(CategoryObject::class)
+        ->withPivot('id')
         ->withTimestamps();
     }
 }

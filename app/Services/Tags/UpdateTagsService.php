@@ -31,6 +31,12 @@ class UpdateTagsService
 
         [$originalTags, $customTagsOld] = $this->getTags($photo);
 
+        echo "Original tags: " . json_encode($originalTags) . "\n";
+
+        if (!$customTagsOld->isEmpty()) {
+            echo "CustomTagsOld: " . json_encode($customTagsOld) . "\n";
+        }
+
         // If no tags at all, just mark migrated
         if (empty($originalTags) && $customTagsOld->isEmpty()) {
             Log::info("No tags to migrate for photo ID: {$photo->id}");
@@ -39,6 +45,8 @@ class UpdateTagsService
         }
 
         $parsedTags = $this->parseTags($originalTags, $customTagsOld);
+
+        echo "Parsed tags: " . json_encode($parsedTags) . "\n";
 
         $this->createPhotoTags($photo, $parsedTags);
 
@@ -208,6 +216,7 @@ class UpdateTagsService
                 ->unique('id')
                 ->values()
                 ->all();
+
             $photoTag->attachExtraTags($matchedBrands, 'brand', $index);
 
             if (! empty($object['materials'] ?? [])) {

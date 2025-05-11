@@ -107,8 +107,7 @@ class PhotoMetricsRepoTest extends TestCase
         $this->repo->daily('global', 0, '2025-05-10');
 
         // …then evict exactly that key.
-        Cache::tags('timeseries')
-            ->forget(PhotoMetricsRepo::cacheKeyFromRow($row));
+        Cache::tags('timeseries')->forget(PhotoMetricsRepo::cacheKeyFromRow($row));
 
         // Next call should touch DB again → new query appears.
         DB::flushQueryLog();
