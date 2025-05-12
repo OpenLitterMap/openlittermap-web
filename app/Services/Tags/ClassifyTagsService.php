@@ -178,8 +178,12 @@ class ClassifyTagsService
             'election_posters' => ['object' => 'posters', 'materials' => ['plastic']],
             'forsale_posters' => ['object' => 'posters', 'materials' => ['plastic']],
             'life_buoy' => ['object' => 'life_buoy', 'materials' => ['plastic']],
+
+            'magazine' => ['object' => 'magazine', 'materials' => ['paper', 'plastic']], // moved to new stationery category
+
             'metal' => ['object' => 'metal', 'materials' => ['metal']],
             'overflowing_bins' => ['object' => 'overflowingBins'],
+            'paper' => ['object' => 'paper', 'materials' => ['paper']],
             'plastic_bags' => ['object' => 'plasticBags', 'materials' => ['plastic']],
             'random_litter' => ['object' => 'randomLitter'],
             'traffic_cone' => ['object' => 'trafficCone', 'materials' => ['plastic']],

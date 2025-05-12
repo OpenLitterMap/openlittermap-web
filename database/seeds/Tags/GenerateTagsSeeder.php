@@ -225,6 +225,7 @@ class GenerateTagsSeeder extends Seeder
                 'trafficCone',
                 'metal',
                 'plasticBags',
+                'paper' => ['material:paper'],
                 'posters',
                 'cableTie',
                 'washingUp',

@@ -46,8 +46,6 @@ class UpdateTagsService
 
         $parsedTags = $this->parseTags($originalTags, $customTagsOld);
 
-        echo "Parsed tags: " . json_encode($parsedTags) . "\n";
-
         $this->createPhotoTags($photo, $parsedTags);
 
         $this->generatePhotoSummaryService->run($photo);
