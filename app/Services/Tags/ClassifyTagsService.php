@@ -137,6 +137,9 @@ class ClassifyTagsService
             'alcohol_plastic_cups' => ['object' => 'cup', 'materials' => ['plastic']],
             'alcoholOther' => ['object' => 'other'],
 
+            // Automobile
+            'tyres' => ['object' => 'tyres', 'materials' => ['rubber']],
+
             // Coastal
             'degraded_plasticbottle' => ['object' => 'bottle', 'materials' => ['plastic'], 'states' => ['degraded']],
             'degraded_plasticbag' => ['object' => 'bag', 'materials' => ['plastic'], 'states' => ['degraded']],
@@ -178,9 +181,7 @@ class ClassifyTagsService
             'election_posters' => ['object' => 'posters', 'materials' => ['plastic']],
             'forsale_posters' => ['object' => 'posters', 'materials' => ['plastic']],
             'life_buoy' => ['object' => 'life_buoy', 'materials' => ['plastic']],
-
             'magazine' => ['object' => 'magazine', 'materials' => ['paper', 'plastic']], // moved to new stationery category
-
             'metal' => ['object' => 'metal', 'materials' => ['metal']],
             'overflowing_bins' => ['object' => 'overflowingBins'],
             'paper' => ['object' => 'paper', 'materials' => ['paper']],
@@ -192,6 +193,9 @@ class ClassifyTagsService
             'washing_up' => ['object' => 'washingUp'],
             'other' => ['object' => 'other'],
 
+            // Pets
+            'dogshit_in_bag' => ['object' => 'dogshit_in_bag', 'materials' => ['plastic']],
+
             // Sanitary
             'menstral' => ['object' => 'menstrual', 'materials' => ['plastic']],
             'deodorant' => ['object' => 'deodorant_can', 'materials' => ['aluminium']],
@@ -202,6 +206,7 @@ class ClassifyTagsService
             'sanitaryOther' => ['object' => 'other'],
 
             // Smoking
+            'butts' => ['object' => 'butts', 'materials' => ['plastic', 'paper']],
             'cigaretteBox' => ['object' => 'cigarette_box', 'materials' => ['cardboard']],
             'lighters' => ['object' => 'lighters', 'materials' => ['plastic', 'metal']],
             'skins' => ['object' => 'rollingPapers', 'materials' => ['paper']],

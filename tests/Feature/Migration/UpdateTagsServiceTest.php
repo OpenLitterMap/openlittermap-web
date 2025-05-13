@@ -3,6 +3,7 @@
 namespace Tests\Feature\Migration;
 
 use App\Models\Litter\Categories\Food;
+use App\Models\Litter\Categories\SoftDrinks;
 use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\CategoryObject;
@@ -469,5 +470,41 @@ class UpdateTagsServiceTest extends TestCase
 
         // Quantity remains original (1), not updated to 5
         $this->assertEquals(1, PhotoTag::where('photo_id', $photo->id)->value('quantity'));
+    }
+
+    /** @test */
+    public function it_creates_one_plastic_tag_for_each_water_bottle_quantity(): void
+    {
+        $softdrinks = Softdrinks::create([
+            'waterBottle' => 2,   // two plastic items
+            'tinCan'      => 1,   // one aluminium item
+        ]);
+
+        $photo = Photo::factory()->create([
+            'softdrinks_id' => $softdrinks->id,
+            'remaining'     => 0,
+        ]);
+
+        $this->service->updateTags($photo);
+
+        // grab the PhotoTag for water_bottle
+        $waterBottleObjId = LitterObject::where('key', 'water_bottle')->value('id');
+        $waterBottleTag   = PhotoTag::where([
+            'photo_id'         => $photo->id,
+            'litter_object_id' => $waterBottleObjId,
+        ])->first();
+
+        // double-check the object quantity
+        $this->assertEquals(2, $waterBottleTag->quantity);
+
+        // there should be exactly ONE extra-tag row of type "material"…
+        $materialExtras = $waterBottleTag
+            ->extraTags()
+            ->where('tag_type', 'material');
+
+        $this->assertEquals(1, $materialExtras->count());
+
+        // …and its stored quantity must equal the number of bottles (2)
+        $this->assertEquals(2, $materialExtras->value('quantity'));
     }
 }

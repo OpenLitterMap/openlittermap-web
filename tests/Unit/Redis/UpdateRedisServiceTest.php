@@ -39,8 +39,10 @@ class UpdateRedisServiceTest extends TestCase
         app(UpdateRedisService::class)->updateRedis($photo);
 
         $this->assertSame('1', Redis::hGet($month, 'p'));
-        $this->assertNull(Redis::get('{u:4}:xp'));          // key not created when 0
-        $this->assertSame('1', Redis::get('{u:4}:u'));
+
+        $statsKey = sprintf('{u:%d}:stats', 4);
+        $this->assertSame('1', Redis::hGet($statsKey, 'uploads'));
+
         $this->assertEmpty(Redis::hGetAll('{g}:c'));
         $this->assertEmpty(Redis::hGetAll('{g}:t'));
     }
@@ -67,7 +69,9 @@ class UpdateRedisServiceTest extends TestCase
 
         // still only one counted
         $this->assertSame('1', Redis::hGet($month, 'p'));
-        $this->assertSame('1', Redis::get('{u:9}:u'));
+
+        $statsKey = sprintf('{u:%d}:stats', 9);
+        $this->assertSame('1', Redis::hGet($statsKey, 'uploads'));
     }
 
     /** @test */

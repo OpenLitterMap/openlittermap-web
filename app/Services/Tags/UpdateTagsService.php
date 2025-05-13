@@ -31,8 +31,6 @@ class UpdateTagsService
 
         [$originalTags, $customTagsOld] = $this->getTags($photo);
 
-        echo "Original tags: " . json_encode($originalTags) . "\n";
-
         if (!$customTagsOld->isEmpty()) {
             echo "CustomTagsOld: " . json_encode($customTagsOld) . "\n";
         }
@@ -226,7 +224,7 @@ class UpdateTagsService
                 $matchedMaterials = array_map(fn($k) => [
                     'id'       => $materialCache[$k],
                     'key'      => $k,
-                    'quantity' => 1
+                    'quantity' => $object['quantity']
                 ], $matchedMaterials);
                 $photoTag->attachExtraTags($matchedMaterials, 'material', $index);
             }
