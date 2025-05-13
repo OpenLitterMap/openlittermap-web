@@ -31,10 +31,6 @@ class UpdateTagsService
 
         [$originalTags, $customTagsOld] = $this->getTags($photo);
 
-        if (!$customTagsOld->isEmpty()) {
-            echo "CustomTagsOld: " . json_encode($customTagsOld) . "\n";
-        }
-
         // If no tags at all, just mark migrated
         if (empty($originalTags) && $customTagsOld->isEmpty()) {
             Log::info("No tags to migrate for photo ID: {$photo->id}");
@@ -216,10 +212,9 @@ class UpdateTagsService
             $photoTag->attachExtraTags($matchedBrands, 'brand', $index);
 
             if (! empty($object['materials'] ?? [])) {
-                static $materialCache;
-                if (! isset($materialCache)) {
-                    $materialCache = $this->classifyTags->materialMap();
-                }
+
+                $materialCache = $this->classifyTags->materialMap();
+
                 $matchedMaterials = array_filter($object['materials'], fn($k) => isset($materialCache[$k]));
                 $matchedMaterials = array_map(fn($k) => [
                     'id'       => $materialCache[$k],

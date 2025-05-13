@@ -72,14 +72,14 @@ class GeneratePhotoSummaryTest extends TestCase
         $summary = $photo->summary;
 
         $totals = $summary['totals'];
-        $this->assertEquals(4, $totals['total_tags']);
+        $this->assertEquals(8, $totals['total_tags']);
         $this->assertEquals(2, $totals['total_objects']);
-        $this->assertEquals(0, $totals['materials']);
+        $this->assertEquals(4, $totals['materials']);
         $this->assertEquals(1, $totals['brands']);
         $this->assertEquals(1, $totals['custom_tags']);
 
         $this->assertArrayHasKey('smoking', $totals['by_category']);
-        $this->assertEquals(4, $totals['by_category']['smoking']);
+        $this->assertEquals(8, $totals['by_category']['smoking']);
 
         $this->assertArrayHasKey('smoking', $summary['tags']);
         $objects = $summary['tags']['smoking'];
@@ -87,9 +87,9 @@ class GeneratePhotoSummaryTest extends TestCase
         $entry = reset($objects);
         $this->assertEquals(2, $entry['quantity']);
         $this->assertEquals(['adidas' => 1], $entry['brands']);
-        $this->assertEquals([], $entry['materials']);
+        $this->assertEquals(['paper' => 2, 'plastic' => 2], $entry['materials']);
         $this->assertEquals(['street_clean' => 1], $entry['custom_tags']);
-        $this->assertEquals(4, $photo->total_tags);
+        $this->assertEquals(8, $photo->total_tags);
     }
 
     /** @test */
@@ -108,10 +108,10 @@ class GeneratePhotoSummaryTest extends TestCase
         $summary = $photo->summary;
 
         $categories = array_keys($summary['tags']);
-        $this->assertEquals(['food', 'smoking'], $categories);
+        $this->assertEquals(['smoking', 'food'], $categories);
 
         $this->assertEquals(3, $summary['totals']['by_category']['food']);
-        $this->assertEquals(1, $summary['totals']['by_category']['smoking']);
+        $this->assertEquals(3, $summary['totals']['by_category']['smoking']);
     }
 
     /** @test */
@@ -142,11 +142,18 @@ class GeneratePhotoSummaryTest extends TestCase
         $objects = $summary['tags']['smoking'];
         $entry = reset($objects);
 
-        // Material grouping should include our extra
-        $this->assertEquals([$materialList->key => 2], $entry['materials']);
-        // Totals
-        $this->assertEquals(2, $summary['totals']['materials']);
-        $this->assertEquals(3, $summary['totals']['total_tags']);
+        // Should now contain the two defaults *plus* our aluminium extra
+        $expectedMaterials = [
+            $materialList->key => 2, // aluminium (manual extra)
+            'plastic'          => 1, // default from `butts`
+            'paper'            => 1, // default from `butts`
+        ];
+
+        $this->assertEqualsCanonicalizing($expectedMaterials, $entry['materials']);
+
+        // Totals: 1 object + 1 plastic + 1 paper + 2 aluminium
+        $this->assertEquals(4, $summary['totals']['materials']);
+        $this->assertEquals(5, $summary['totals']['total_tags']);
     }
 
     /** @test */

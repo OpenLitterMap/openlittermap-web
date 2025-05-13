@@ -336,17 +336,14 @@ class UpdateTagsServiceTest extends TestCase
         $photo = Photo::factory()->create(['smoking_id' => $smoking->id]);
 
         $this->service->updateTags($photo);
-        $this->service->updateTags($photo);   // second run
+        $this->service->updateTags($photo);
 
         $this->assertCount(1, PhotoTag::where('photo_id', $photo->id)->get());
-        $this->assertEquals(
-            2,
-            PhotoTag::where('photo_id', $photo->id)->value('quantity')
-        );
+        $this->assertEquals(2, PhotoTag::where('photo_id', $photo->id)->value('quantity'));
 
         // extras should also be unique
         $extraRows = DB::table('photo_tag_extra_tags')->where('photo_tag_id', PhotoTag::first()->id)->count();
-        $this->assertEquals(0, $extraRows);
+        $this->assertEquals(2, $extraRows);
     }
 
     /** @test */

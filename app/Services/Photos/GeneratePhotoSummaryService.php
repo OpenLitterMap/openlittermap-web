@@ -155,7 +155,7 @@ class GeneratePhotoSummaryService
             ['tags' => $grouped, 'totals' => $totals]
         );
 
-        echo "Summary: " . json_encode($summary, JSON_PRETTY_PRINT) . "\n";
+        // echo "Summary: " . json_encode($summary, JSON_PRETTY_PRINT) . "\n";
 
         // Persist summary and XP
         $photo->update([

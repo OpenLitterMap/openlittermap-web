@@ -67,7 +67,7 @@ class CalculatePhotoXpTest extends TestCase
         $photo->generateSummary();
         $photo->refresh();
 
-        $this->assertSame(12, $photo->xp);
+        $this->assertSame(20, $photo->xp);
     }
 
     /** @test */
