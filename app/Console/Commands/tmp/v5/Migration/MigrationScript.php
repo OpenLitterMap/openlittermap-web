@@ -84,7 +84,9 @@ class MigrationScript extends Command
                     }
                     catch (Throwable $e)
                     {
-                        Log::channel('migration')->error("Failed on photo {$photo->id}", [
+                        $this->error("photo {$photo->id}: " . $e->getMessage());
+
+                        Log::info("Failed on photo {$photo->id}", [
                             'exception' => $e,
                         ]);
 

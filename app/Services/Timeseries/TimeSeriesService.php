@@ -16,19 +16,29 @@ final class TimeSeriesService
 
     public function updateTimeSeries(Photo $photo): void
     {
-        /* 1. Location dimensions */
+        $this->buildData($photo);
+        $this->persistData();
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* 1. Build one row for each (timescale × location) bucket            */
+    /* ------------------------------------------------------------------ */
+
+    private function buildData(Photo $photo): void
+    {
+        /* ─ location dimension ─ */
         $locs = [['global', 0]];
         if ($photo->country_id) $locs[] = ['country', $photo->country_id];
         if ($photo->state_id)   $locs[] = ['state',   $photo->state_id];
         if ($photo->city_id)    $locs[] = ['city',    $photo->city_id];
 
-        /* 2. Time-scales */
-        $ts = $photo->created_at;
-
-        $isoWeek   = $ts->isoWeek();       // 1-53
-        $isoYear   = $ts->isoWeekYear();   // can differ from $ts->year on 28-31 Dec & 1-3 Jan
+        /* ─ timestamp helpers ─ */
+        $ts        = $photo->created_at;
+        $isoWeek   = $ts->isoWeek();         // 1-53
+        $isoYear   = $ts->isoWeekYear();     // may differ on 29-31 Dec & 1-3 Jan
         $weekStart = $ts->copy()->startOfWeek();   // always Monday (ISO-8601)
 
+        /* ─ four scales ─ */
         $scales = [
             Timescale::Daily->value   => [
                 'year'     => $ts->year,
@@ -37,10 +47,10 @@ final class TimeSeriesService
                 'day'      => $ts->toDateString(),
             ],
             Timescale::Weekly->value  => [
-                'year'     => $isoYear,
-                'month'    => $weekStart->month,
+                'year'     => $isoYear,          // ← ISO week-year
+                'month'    => $weekStart->month, // month that Monday falls in
                 'iso_week' => $isoWeek,
-                'day'      => $ts->copy()->startOfWeek()->toDateString(),
+                'day'      => $weekStart->toDateString(),
             ],
             Timescale::Monthly->value => [
                 'year'     => $ts->year,
@@ -56,16 +66,16 @@ final class TimeSeriesService
             ],
         ];
 
-        /* 3. Increment buckets */
-        foreach ($scales as $scaleValue => $dims) {
+        /* ─ aggregate into the in-memory bucket ─ */
+        foreach ($scales as $scale => $dims) {
             foreach ($locs as [$locType, $locId]) {
-                $key = $this->hash($scaleValue, $locType, $locId, $dims);
+                $key = $this->hash($scale, $locType, $locId, $dims);
 
                 $row =& $this->bucket[$key];
 
                 if (!isset($row)) {
                     $row = [
-                        'timescale'     => $scaleValue,   // 1-4
+                        'timescale'     => $scale,
                         'location_type' => $locType,
                         'location_id'   => $locId,
                         'year'          => $dims['year'],
@@ -87,14 +97,16 @@ final class TimeSeriesService
         }
     }
 
-    /** Flush everything that accumulated so far (call once per chunk) */
-    public function flush(): void
+    /* ------------------------------------------------------------------ */
+    /* 2. Flush the bucket to MySQL and invalidate Redis                  */
+    /* ------------------------------------------------------------------ */
+
+    private function persistData(): void
     {
         if (empty($this->bucket)) {
             return;
         }
 
-        // 1. Write to the database
         DB::table('photo_metrics')->upsert(
             array_values($this->bucket),
             ['timescale','location_type','location_id','year','month','iso_week','day'],
@@ -106,30 +118,29 @@ final class TimeSeriesService
             ]
         );
 
-        // 2. Update / invalidate Redis so reads are correct immediately
+        /* ─ redis invalidation ─ */
         foreach ($this->bucket as $row) {
-            // 2-a.  Invalidate the cached bucket row (simple)
-            $bucketKey = PhotoMetricsRepo::bucketCacheKey($row);
-            Cache::tags('timeseries')->forget($bucketKey);
+            Cache::tags('timeseries')->forget(PhotoMetricsRepo::bucketCacheKey($row));
 
-            // 2-b.  If this is a daily row within the last 365 days,
-            //       keep the “whole-series” cache coherent.
-            if ($row['timescale'] === Timescale::Daily->value && Carbon::parse($row['day'])->gte(now()->subYear())) {
-                $seriesKey = PhotoMetricsRepo::dailySeriesKey($row['location_type'], $row['location_id']);
-                Cache::tags('timeseries')->forget($seriesKey);
+            if (
+                $row['timescale'] === Timescale::Daily->value &&
+                Carbon::parse($row['day'])->gte(now()->subYear())
+            ) {
+                Cache::tags('timeseries')->forget(
+                    PhotoMetricsRepo::dailySeriesKey($row['location_type'], $row['location_id'])
+                );
             }
         }
 
-        $this->bucket = []; // reset for next chunk
+        $this->bucket = [];
     }
 
-    /* ---------------------------------------------------- */
+    /* ------------------------------------------------------------------ */
+    /*  helpers                                                           */
+    /* ------------------------------------------------------------------ */
 
-    private function hash(int $scale, string $locType, int $locId, array $dims): string {
-        return $scale.'|'.$locType.'|'.$locId.'|'
-            .($dims['year'] ?? '').'|'
-            .($dims['month'] ?? '').'|'
-            .($dims['iso_week'] ?? '').'|'
-            .($dims['day'] ?? '');
+    private function hash(int $scale, string $locType, int $locId, array $d): string
+    {
+        return "$scale|$locType|$locId|{$d['year']}|{$d['month']}|{$d['iso_week']}|{$d['day']}";
     }
 }

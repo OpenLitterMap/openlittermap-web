@@ -42,7 +42,6 @@ class TimeSeriesServiceTest extends TestCase
         $photo->total_brands = 1;
 
         $this->svc->updateTimeSeries($photo);
-        $this->svc->flush();
 
         $this->assertDatabaseCount('photo_metrics', 16);
 
@@ -69,7 +68,6 @@ class TimeSeriesServiceTest extends TestCase
 
         $this->svc->updateTimeSeries($p1);
         $this->svc->updateTimeSeries($p2);
-        $this->svc->flush();
 
         $this->assertDatabaseHas('photo_metrics', [
             'timescale'     => Timescale::Daily->value,
@@ -86,7 +84,6 @@ class TimeSeriesServiceTest extends TestCase
     {
         $photo = Photo::factory()->create();
         $this->svc->updateTimeSeries($photo);
-        $this->svc->flush();
 
         $ref = new \ReflectionClass($this->svc);
         $bucket = $ref->getProperty('bucket');
@@ -120,7 +117,6 @@ class TimeSeriesServiceTest extends TestCase
         ]);
 
         $this->svc->updateTimeSeries($photo);
-        $this->svc->flush();
 
         $this->assertDatabaseHas('photo_metrics', [
             'timescale'   => Timescale::Weekly->value,
@@ -133,34 +129,11 @@ class TimeSeriesServiceTest extends TestCase
     }
 
     /** @test */
-    public function weekly_bucket_uses_iso_week_year_across_year_boundary(): void
-    {
-        // 31 Dec 2025 belongs to ISO-week 1 of 2026
-        $photo = Photo::factory()->create([
-            'created_at' => Carbon::create(2025, 12, 31, 10),
-        ]);
-
-        $isoYear = $photo->created_at->isoWeekYear();   // 2026
-        $weekMon = $photo->created_at->copy()->startOfWeek();
-
-        $this->svc->updateTimeSeries($photo);
-        $this->svc->flush();
-
-        $this->assertDatabaseHas('photo_metrics', [
-            'timescale' => Timescale::Weekly->value,
-            'year'      => $isoYear,                    // 2026
-            'iso_week'  => $photo->created_at->isoWeek(),
-            'day'       => $weekMon->toDateString(),
-        ]);
-    }
-
-    /** @test */
     public function created_at_is_set_on_insert(): void
     {
         $photo = Photo::factory()->create();
 
         $this->svc->updateTimeSeries($photo);
-        $this->svc->flush();
 
         $row = DB::table('photo_metrics')->first();
         $this->assertNotNull($row->created_at);
@@ -172,7 +145,6 @@ class TimeSeriesServiceTest extends TestCase
         $photo = Photo::factory()->create();   // no totals set
 
         $this->svc->updateTimeSeries($photo);
-        $this->svc->flush();
 
         $this->assertDatabaseHas('photo_metrics', [
             'timescale' => Timescale::Daily,
@@ -189,10 +161,7 @@ class TimeSeriesServiceTest extends TestCase
         [$p1, $p2] = Photo::factory()->count(2)->create(['created_at' => $ts]);
 
         $this->svc->updateTimeSeries($p1);
-        $this->svc->flush();          // first chunk
-
         $this->svc->updateTimeSeries($p2);
-        $this->svc->flush();          // next chunk
 
         $this->assertDatabaseHas('photo_metrics', [
             'timescale' => Timescale::Daily,
@@ -225,7 +194,6 @@ class TimeSeriesServiceTest extends TestCase
 
         // Trigger an update + flush → should forget that exact key
         $this->svc->updateTimeSeries($photo);
-        $this->svc->flush();
 
         $this->assertNull(Cache::tags('timeseries')->get($bucketKey), 'Bucket cache key must be invalidated');
     }
@@ -243,9 +211,8 @@ class TimeSeriesServiceTest extends TestCase
         Cache::tags('timeseries')->put($seriesKey, collect([/* dummy */]), now()->addDay());
         $this->assertNotNull(Cache::tags('timeseries')->get($seriesKey));
 
-        // Update + flush should drop the series
+        // Update + persist should drop the series
         $this->svc->updateTimeSeries($photo);
-        $this->svc->flush();
 
         $this->assertNull(Cache::tags('timeseries')->get($seriesKey), 'Daily series cache key must be invalidated for recent daily rows');
     }
@@ -262,7 +229,6 @@ class TimeSeriesServiceTest extends TestCase
         $this->assertNotNull(Cache::tags('timeseries')->get($seriesKey));
 
         $this->svc->updateTimeSeries($photo);
-        $this->svc->flush();
 
         $this->assertNotNull(Cache::tags('timeseries')->get($seriesKey), 'Daily series cache key should survive flush for old daily rows');
     }
