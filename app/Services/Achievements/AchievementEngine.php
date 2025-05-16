@@ -108,17 +108,17 @@ final class AchievementEngine
 
         /* 2. atomically add XP & cache slugs via Lua ---------------------------- */
         $addedXp = $this->definitions->only($slugs)->sum('xp');
-        $r       = $this->redis->connection();
+        $redis   = $this->redis->connection();
 
-        self::bootLua($r);
+        self::bootLua($redis);
 
         $statsKey = sprintf(self::K_STATS, $user->id);
 
         if ($addedXp > 0) { // skip Lua when nothing to add
-            $r->evalSha(self::$luaSha,
-                [sprintf(self::K_ACH_SET,$user->id), $statsKey],
-                [$addedXp, ...$slugs->all()]
-            );
+            $keys = [sprintf(self::K_ACH_SET, $user->id), $statsKey];
+            $args = [$addedXp, ...$slugs->all()];
+
+            $redis->evalSha(self::$luaSha, count($keys), ...array_merge($keys, $args));
         }
 
         /* 3. maybe level‑up ----------------------------------------------------- */

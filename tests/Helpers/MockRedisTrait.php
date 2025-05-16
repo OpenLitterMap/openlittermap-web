@@ -73,9 +73,12 @@ trait MockRedisTrait
         /* ---------- Lua / script helpers -------------------------------*/
         $this->redisConn->shouldReceive('script')->andReturn('fake‑sha')->byDefault();
 
-        $alias(['evalSha', 'evalsha'], function ($sha, $keys, $argv = null) {
-            $achSetKey = $keys[0];
-            $statsKey  = $keys[1];
+        $alias(['evalSha', 'evalsha'], function ($sha, $numKeys, ...$flatArgs) {
+            $keys = array_slice($flatArgs, 0, $numKeys);
+            $argv = array_slice($flatArgs, $numKeys);
+
+            $achSetKey = $keys[0] ?? null;
+            $statsKey  = $keys[1] ?? null;
             $xpAdd     = $argv[0] ?? 0;
             $slugs     = array_slice($argv, 1);
 
@@ -90,10 +93,11 @@ trait MockRedisTrait
                     if (!isset($this->redisData[$statsKey])) {
                         $this->redisData[$statsKey] = [];
                     }
+
                     $currentXp = (int)($this->redisData[$statsKey]['xp'] ?? 0);
                     $this->redisData[$statsKey]['xp'] = (string)($currentXp + (int)$xpAdd);
 
-                    break;
+                    break; // only apply XP once per unlock
                 }
             }
 

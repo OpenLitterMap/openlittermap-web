@@ -2,7 +2,7 @@
 
 return [
     0 => 'complete noob',
-    69 => 'nice work',
+    69 => 'nice',
     420 => 'litter friendly',
     666 => 'trash overlord',
     1337 => 'gamification master',

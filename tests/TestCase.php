@@ -2,11 +2,10 @@
 
 namespace Tests;
 
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
-use Illuminate\Support\Facades\Storage;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -19,6 +18,11 @@ abstract class TestCase extends BaseTestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        if (! app()->environment('testing')) {
+            echo "Warning: Not using testing env. Please run php artisan cache:clear \n";
+            return;
+        }
 
         // Flush Redis before each test
         Redis::connection()->flushdb();
@@ -33,10 +37,5 @@ abstract class TestCase extends BaseTestCase
         Redis::connection()->flushdb();
 
         parent::tearDown();
-    }
-
-    protected function loadLitterTags(): void
-    {
-
     }
 }

@@ -8,8 +8,6 @@ class UpdateAchievementsService
 {
     public function generateAchievements(Photo $photo): void
     {
-        $slugs = app(AchievementEngine::class)->slugsToUnlock($photo);
-
-        app(AchievementEngine::class)->unlock($photo->user, $slugs);
+        app(AchievementEngine::class)->process($photo);
     }
 }

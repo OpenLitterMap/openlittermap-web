@@ -5,7 +5,7 @@ return [
         'name' => 'First Upload',
         'xp'   => 25,
         'icon' => '🍼',
-        'when' => 'stats.photos_total == 1',
+        'when' => 'stats.photosTotal == 1',
     ],
 
     // ── Object-based ─────────────────────────────────────────────────
@@ -21,7 +21,7 @@ return [
         'name' => '30-Day Streak',
         'xp'   => 300,
         'icon' => '🔥',
-        'when' => 'stats.current_streak >= 30',
+        'when' => 'stats.currentStreak >= 30',
     ],
 
     // ── Cumulative (Redis) ───────────────────────────────────────────
