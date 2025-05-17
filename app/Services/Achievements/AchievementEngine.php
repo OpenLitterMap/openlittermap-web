@@ -68,6 +68,10 @@ final class AchievementEngine
 
     public function process(Photo $photo): void
     {
+        if ($photo->summary === null || $photo->summary === []) {
+            echo "Null/empty photo.summary found, exiting. \n";
+        }
+
         $slugs = $this->slugsToUnlock($photo);
         $this->unlock($photo->user, $slugs);
     }
@@ -192,29 +196,52 @@ final class AchievementEngine
 
     /* ------------------- dynamic builders (unchanged) ----------------------- */
 
-    private function buildDynamicObjectMilestones(): Collection { return collect(); }
+    private function buildDynamicObjectMilestones(): Collection
+    {
+        $milestones = config('milestones');
+        $dimensions = ['uploads', 'objects', 'categories', 'materials', 'brands', 'customTags'];
+
+        return collect($dimensions)->flatMap(function (string $dim) use ($milestones) {
+            return collect($milestones)->mapWithKeys(function (int $m) use ($dim) {
+                $slug = "{$dim}-{$m}";
+
+                return [
+                    $slug => [
+                        'xp'  => 2,                                     // tweak!
+                        'when' => "statCount('{$dim}', {$m}) == {$m}",  // DSL helper
+                    ],
+                ];
+            });
+        });
+    }
+
     private function buildLocationFirsts(): Collection          { return collect(); }
+
     private function buildStreakMilestones(): Collection        { return collect(); }
 
     /* ----------------------- level calc ------------------------------------- */
+    /* ----------------------- level calc ------------------------------------- */
     private function recalculateLevel(User $user): void
     {
-        [$xp] = $this->redis->connection()->hmget(sprintf(self::K_STATS, $user->id), 'xp');
+        [$rawXp] = $this->redis->connection()
+            ->hmget(sprintf(self::K_STATS, $user->id), 'xp');
 
-        $xp = (int)($xp ?? 0);
-        $milestones = config('milestones');
+        $xp = (int) ($rawXp ?? 0);
 
-        $level = 0;
-        foreach ($milestones as $threshold => $title) {
-            if ($xp >= $threshold) {
-                $level++;
-            } else {
-                break;
-            }
-        }
+        /**
+         * Level N  ==  “I have crossed N different XP thresholds”
+         * - threshold list lives in config/level.php
+         */
+        $thresholds = array_keys(config('level'));
+        sort($thresholds);                       // just in case someone edits unsorted
 
-        if ($level > $user->level) {
-            $user->level = $level;
+        // count how many thresholds the player has already reached
+        $newLevel = collect($thresholds)
+            ->takeWhile(fn (int $t) => $xp >= $t)
+            ->count();                           // 0-based → nicely matches existing tests
+
+        if ($newLevel > $user->level) {
+            $user->level = $newLevel;
             $user->save();
         }
     }
