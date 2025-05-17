@@ -9,11 +9,15 @@ namespace Tests\Feature\Achievements;
 
 use App\Events\AchievementsUnlocked;
 use App\Models\Achievements\Achievement;
+use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
+use App\Models\Litter\Tags\CustomTagNew;
 use App\Models\Litter\Tags\LitterObject;
+use App\Models\Litter\Tags\Materials;
 use App\Models\Photo;
 use App\Models\Users\User;
 use App\Services\Achievements\AchievementEngine;
+use App\Services\Achievements\Tags\TagKeyCache;
 use Illuminate\Contracts\Redis\Factory as RedisFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -31,14 +35,12 @@ class AchievementEngineTest extends TestCase
     {
         parent::setUp();
 
-        static $seeded = false;
+        // Baseline tags that the feature specs expect
+        Category   ::firstOrCreate(['key' => 'packaging']);
+        LitterObject::firstOrCreate(['key' => 'plastic_bottle']);
+        LitterObject::firstOrCreate(['key' => 'can']);
 
-        if (! $seeded) {
-            Category::firstOrCreate(['key' => 'packaging']);
-            LitterObject::firstOrCreate(['key' => 'plastic_bottle']);
-            LitterObject::firstOrCreate(['key' => 'can']);
-            $seeded = true;
-        }
+        TagKeyCache::forgetAll();
 
         $this->mockRedis(['{u:1}:stats' => ['xp' => 0, 'uploads' => 0, 'st' => 0]]);
         Cache::forget('achievement:meta');
@@ -148,8 +150,8 @@ class AchievementEngineTest extends TestCase
 
         /** @var RedisFactory $redis */
         $redis = app(RedisFactory::class);
-        $this->assertEquals(22, (int) $redis->connection()->hGet(sprintf('{u:%d}:stats', 1), 'xp'));
-        $this->assertDatabaseCount('user_achievements', 1);
+        $this->assertEquals(20, (int) $redis->connection()->hGet(sprintf('{u:%d}:stats', 1), 'xp'));
+        $this->assertDatabaseCount('user_achievements', 2);
         Event::assertDispatchedTimes(AchievementsUnlocked::class, 1);
         $this->assertSame(1, $user->fresh()->level);
     }
@@ -204,11 +206,17 @@ class AchievementEngineTest extends TestCase
     /** @test */
     public function first_photo_unlocks_every_dimension_1_milestone(): void
     {
-        $slugs = [
-            'uploads-1', 'objects-1', 'categories-1',
-            'materials-1', 'customTags-1',
-            // 'brands-1', ?
-        ];
+        $uploads = ['uploads-1'];
+        $beerBottle = LitterObject::where('key', 'plastic_bottle')->first();
+        $packCat    = Category::where('key', 'packaging')->first();
+        $slugs = array_merge($uploads, [
+            "object-{$beerBottle->id}-1",
+            "category-{$packCat->id}-1",
+            // material
+            // brand
+            // customTag
+        ]);
+
         foreach ($slugs as $slug) {
             $this->createAchievement($slug, 2);
         }
@@ -274,7 +282,9 @@ class AchievementEngineTest extends TestCase
     /** @test */
     public function objects_42_milestone_triggers_when_cumulative_hits_42(): void
     {
-        $this->createAchievement('objects-42', 2);
+        $beerBottle = LitterObject::where('key', 'plastic_bottle')->first();
+        $slug = "object-{$beerBottle->id}-42";
+        /* row not needed – engine auto-creates it */
 
         // user already has 41 bottles picked
         $this->mockRedis([
@@ -291,5 +301,157 @@ class AchievementEngineTest extends TestCase
                 ->slugsToUnlock($photo)
                 ->contains('objects-42')
         );
+    }
+
+    /** @test */
+    public function milestones_increment_for_every_tag_type(): void
+    {
+        // -----------------------------------------------------------------
+        // 0.  Tag fixtures (creates one of each class)
+        // -----------------------------------------------------------------
+        $beerBottle  = LitterObject::firstOrCreate(['key' => 'beer_bottle']);
+        $alcoholCat  = Category    ::firstOrCreate(['key' => 'alcohol']);
+        $glassMat    = Materials   ::firstOrCreate(['key' => 'glass']);
+        $heineken    = BrandList   ::firstOrCreate(['key' => 'heineken']);
+        $myTag       = CustomTagNew::firstOrCreate(['key' => 'my_tag']);
+
+        // Map “dimension” → tag key we’ll inject into the first photo
+        $perDimension = [
+            'object'     => $beerBottle->id,
+            'category'   => $alcoholCat->id,
+            'material'   => $glassMat->id,
+            'brand'      => $heineken->id,
+            'customTag'  => $myTag->id,
+            'uploads'     => null,                // pseudo-dimension
+        ];
+
+        $milestones = [1, 42, 69];                // the set we want to prove
+
+        // -----------------------------------------------------------------
+        // 1.  Seed the achievements table from that map
+        // -----------------------------------------------------------------
+        $slugs42 = [];    // we’ll assert these later
+        $slugs69 = [];
+
+        foreach ($perDimension as $dim => $key) {
+            foreach ($milestones as $m) {
+                $slug = $key !== null ? "{$dim}-{$key}-{$m}" : "uploads-{$m}";
+
+                Achievement::firstOrCreate(['slug' => $slug], [
+                    'name' => $slug,
+                    'xp'   => 0,
+                ]);
+
+                if ($m === 42) $slugs42[] = $slug;
+                if ($m === 69) $slugs69[] = $slug;
+            }
+        }
+
+        // -----------------------------------------------------------------
+        // 2.  Wire Redis mock (uploads / objects / categories hashes only)
+        //     We’ll bump *all* counters in one go to save boilerplate.
+        // -----------------------------------------------------------------
+        $this->mockRedis(['{u:1}:ach' => []]);
+
+        $this->redisConn->shouldReceive('hmget')
+            ->with('{u:1}:stats', 'xp', 'uploads', 'st')
+            ->andReturn(['0','0','0'], ['0','1','0'], ['0','2','0']);
+
+        // objects hash → beer_bottle 1 → 42
+        $this->redisConn->shouldReceive('hgetall')
+            ->with('{u:1}:t')
+            ->andReturn(
+                [],
+                [$beerBottle->key => 1],
+                [$beerBottle->key => 42]
+            );
+
+        // categories hash → alcohol 1 → 42
+        $this->redisConn->shouldReceive('hgetall')
+            ->with('{u:1}:c')
+            ->andReturn(
+                [],
+                [$alcoholCat->key => 1],
+                [$alcoholCat->key => 42]
+            );
+
+        /* materials / brands / customTags live in {u:1}:b -------------*/
+        $this->redisConn->shouldReceive('hgetall')
+            ->with('{u:1}:b')
+            ->andReturn(
+                [],
+                ["m:{$glassMat->key}"   => 1,
+                    "b:{$heineken->key}"   => 1,
+                    "c:{$myTag->key}"      => 1],
+                ["m:{$glassMat->key}"   => 42,
+                    "b:{$heineken->key}"   => 42,
+                    "c:{$myTag->key}"      => 42],
+            );
+
+        // -----------------------------------------------------------------
+        // 3.  First photo (qty 1 for each tag) ----------------------------
+        // -----------------------------------------------------------------
+        $user   = User::factory()->create(['id' => 1, 'level' => 0]);
+        $engine = app(AchievementEngine::class);
+
+        $p1 = $this->makePhoto($user, [$beerBottle->key => 1]);
+        $p1->summary = $this->buildSummary($beerBottle->key, $glassMat->key, $heineken->key,  $myTag->key, 1);
+
+        $unlocked = $engine->slugsToUnlock($p1);
+        foreach ($perDimension as $dim => $k) {
+            $slug1 = $k !== null ? "{$dim}-{$k}-1" : 'uploads-1';
+            $this->assertTrue($unlocked->contains($slug1), "missing $slug1");
+        }
+
+        // -----------------------------------------------------------------
+        // 4.  Second photo (+41 each → 42) -------------------------------
+        // -----------------------------------------------------------------
+        $p2 = $this->makePhoto($user, [$beerBottle->key => 41]);
+        $p2->summary = $this->buildSummary($beerBottle->key, $glassMat->key, $heineken->key,  $myTag->key, 41);
+
+        $unlocked = $engine->slugsToUnlock($p2);
+        foreach ($slugs42 as $slug) {
+            $this->assertTrue($unlocked->contains($slug), "missing $slug (42)");
+        }
+
+        // -----------------------------------------------------------------
+        // 5.  Third photo (+27 each → 69) --------------------------------
+        // -----------------------------------------------------------------
+        $p3 = $this->makePhoto($user, [$beerBottle->key => 27]);
+        $p3->summary = $this->buildSummary($beerBottle->key, $glassMat->key, $heineken->key,  $myTag->key, 27);
+
+        $unlocked = $engine->slugsToUnlock($p3);
+        foreach ($slugs69 as $slug) {
+            $this->assertTrue($unlocked->contains($slug), "missing $slug (69)");
+        }
+    }
+
+    /* Build a summary that hits every type once with $qty */
+    private function buildSummary(
+        string $objKey,
+        string $matKey,
+        string $brandKey,
+        string $tagKey,
+        int $qty
+    ): array
+    {
+        return [
+            'tags' => [
+                'alcohol' => [
+                    $objKey => [
+                        'quantity'    => $qty,
+                        'materials'   => [$matKey  => $qty],
+                        'brands'      => [$brandKey => $qty],
+                        'custom_tags' => [$tagKey   => $qty],
+                    ],
+                ],
+            ],
+            'totals' => [
+                'total_objects' => $qty,
+                'materials'     => $qty,
+                'brands'        => $qty,
+                'custom_tags'   => $qty,
+            ],
+        ];
     }
 }

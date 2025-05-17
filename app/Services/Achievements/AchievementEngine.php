@@ -5,9 +5,14 @@ namespace App\Services\Achievements;
 
 use App\Events\AchievementsUnlocked;
 use App\Models\Achievements\Achievement;
+use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
+use App\Models\Litter\Tags\CustomTagNew;
+use App\Models\Litter\Tags\LitterObject;
+use App\Models\Litter\Tags\Materials;
 use App\Models\Photo;
 use App\Models\Users\User;
+use App\Services\Achievements\Tags\TagKeyCache;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Contracts\Redis\Factory as RedisFactory;
 use Illuminate\Support\Collection;
@@ -101,11 +106,24 @@ final class AchievementEngine
 
     public function unlock(User $user, Collection $slugs): void
     {
-        if ($slugs->isEmpty()) return;
+        if ($slugs->isEmpty()) {
+            return;
+        }
 
         /* 1. save pivot rows (DB) ------------------------------------------------ */
         $idsBySlug  = Achievement::whereIn('slug',$slugs)->pluck('id','slug');
-        $newIds     = $idsBySlug->values();
+
+        $missing = $slugs->diff($idsBySlug->keys());
+
+        foreach ($missing as $slug) {
+            $idsBySlug[$slug] = Achievement::create([
+                'slug' => $slug,
+                'name' => $slug,
+                'xp'   => 0,
+            ])->id;
+        }
+
+        $newIds = $idsBySlug->values();
         $user->achievements()->syncWithoutDetaching(
             $newIds->flip()->map(fn()=>['unlocked_at'=>now()])->all()
         );
@@ -144,23 +162,36 @@ final class AchievementEngine
         }
     }
 
-    /* ------------------------ stats ----------------------------------------- */
+    /**
+     * Build the Stats DTO for a photo.
+     */
     private function buildStats(User $user, Photo $photo): Stats
     {
         $r   = $this->redis->connection();
         $uid = $user->id;
 
-        [$xp,$uploads,$streak] = $r->hmget(sprintf(self::K_STATS, $uid),'xp','uploads','st');
+        // -----------------------------------------------------------------
+        // 1.  Core counters from Redis
+        // -----------------------------------------------------------------
+        [$xp, $uploads, $streak] = $r->hmget(
+            sprintf(self::K_STATS, $uid),
+            'xp', 'uploads', 'st'
+        );
 
+        // object totals already stored in Redis
         $objects = $r->hgetall(sprintf(self::K_OBJECTS, $uid));
 
+        // -----------------------------------------------------------------
+        // 2.  Totals for the *current* photo
+        // -----------------------------------------------------------------
         $localObjects = $photo->summary['totals']['objects'] ?? [];
 
+        // Fallback – derive the per-object quantities from the tag tree
         if (empty($localObjects) && isset($photo->summary['tags'])) {
             foreach ($photo->summary['tags'] as $maybeCat => $maybeVal) {
-                if (isset($maybeVal['quantity'])) {           // object directly
+                if (isset($maybeVal['quantity'])) {            // object directly
                     $localObjects[$maybeCat] = $maybeVal['quantity'];
-                } else {                                      // category → objects
+                } else {                                       // category → objects
                     foreach ($maybeVal as $objKey => $d) {
                         $localObjects[$objKey] = ($localObjects[$objKey] ?? 0)
                             + ($d['quantity'] ?? 0);
@@ -169,50 +200,134 @@ final class AchievementEngine
             }
         }
 
-        $tod = match(true){
-            $photo->created_at->hour<6  =>'night',
-            $photo->created_at->hour<12 =>'morning',
-            $photo->created_at->hour<18 =>'afternoon',
-            default                      =>'evening',
+        // -----------------------------------------------------------------
+        // 3.  Time-of-day / day-of-week helpers
+        // -----------------------------------------------------------------
+        $tod = match (true) {
+            $photo->created_at->hour <  6 => 'night',
+            $photo->created_at->hour < 12 => 'morning',
+            $photo->created_at->hour < 18 => 'afternoon',
+            default                       => 'evening',
         };
 
+        // -----------------------------------------------------------------
+        // 4.  Merge cumulative object counts
+        // -----------------------------------------------------------------
         $combinedObjects = array_merge_recursive($objects, $localObjects);
         foreach ($combinedObjects as $key => $values) {
-            $combinedObjects[$key] = array_sum((array)$values);
+            $combinedObjects[$key] = array_sum((array) $values);
         }
 
+        // -----------------------------------------------------------------
+        // 5.  Ensure a by_category section exists in the summary
+        //     (work on a local copy – never mutate Eloquent attributes)
+        // -----------------------------------------------------------------
+        $summary = $photo->summary;                    // shallow copy
+
+        if (! isset($summary['tags'])) {
+            $summary['tags'] = [];
+        }
+
+        if (! isset($summary['totals']['by_category'])) {
+            $summary['totals']['by_category'] = [];
+
+            foreach ($summary['tags'] as $catKey => $objs) {
+                $qty = 0;
+                foreach ($objs as $d) {
+                    if (is_array($d) && isset($d['quantity'])) {
+                        $qty += $d['quantity'];
+                    }
+                }
+                $summary['totals']['by_category'][$catKey] = $qty;
+            }
+        }
+
+        // -----------------------------------------------------------------
+        // 6.  Assemble the DTO
+        // -----------------------------------------------------------------
         return new Stats(
-            level            : $user->level,
-            xp               : (int)($xp ?? 0),
-            photosTotal      : (int)($uploads ?? 0),
-            currentStreak    : (int)($streak  ?? 0),
-            localObjects     : $localObjects,
-            cumulativeObjects: $combinedObjects,
-            summary          : $photo->summary,
-            tod              : $tod,
-            dow              : $photo->created_at->dayOfWeek,
+            userId            : $user->id,
+            level             : $user->level,
+            xp                : (int) ($xp      ?? 0),
+            photosTotal       : (int) ($uploads ?? 0),
+            currentStreak     : (int) ($streak  ?? 0),
+            localObjects      : $localObjects,
+            cumulativeObjects : $combinedObjects,
+            summary           : $summary,
+            tod               : $tod,
+            dow               : $photo->created_at->dayOfWeek,
         );
     }
 
     /* ------------------- dynamic builders (unchanged) ----------------------- */
 
+    /**
+     * Build all dynamic milestone definitions (uploads-N, objects-N,
+     * object-ID-N, category-ID-N, …).
+     */
     private function buildDynamicObjectMilestones(): Collection
     {
-        $milestones = config('milestones');
-        $dimensions = ['uploads', 'objects', 'categories', 'materials', 'brands', 'customTags'];
+        $milestones = config('milestones');         // e.g. [1, 42, 69]
 
-        return collect($dimensions)->flatMap(function (string $dim) use ($milestones) {
-            return collect($milestones)->mapWithKeys(function (int $m) use ($dim) {
-                $slug = "{$dim}-{$m}";
+        /* -----------------------------------------------------------------
+           1.  Dimension-wide uploads-N milestones
+        ------------------------------------------------------------------*/
+        $uploads = collect($milestones)->mapWithKeys(
+            fn (int $m) => [
+                "uploads-{$m}" => [
+                    'xp'   => 0,
+                    'when' => "statCount('uploads') == {$m}",
+                ],
+            ]
+        );
 
-                return [
-                    $slug => [
-                        'xp'  => 2,                                     // tweak!
-                        'when' => "statCount('{$dim}', {$m}) == {$m}",  // DSL helper
-                    ],
-                ];
-            });
-        });
+        /* -----------------------------------------------------------------
+           2.  Dimension-wide objects-N milestones (skip N = 1 – spec starts
+               at 42 and avoids a clash with per-object milestones)
+        ------------------------------------------------------------------*/
+        $objects = collect($milestones)
+            ->reject(fn (int $m) => $m === 1)
+            ->mapWithKeys(fn (int $m) => [
+                "objects-{$m}" => [
+                    'xp'   => 0,
+                    'when' => "statCount('objects') == {$m}",
+                ],
+            ]);
+
+        /* -----------------------------------------------------------------
+           3.  Per-tag milestones: object-ID-N, category-ID-N, material-ID-N,
+               brand-ID-N, customTag-ID-N
+        ------------------------------------------------------------------*/
+        $tagIds = [
+            'object'    => array_keys(TagKeyCache::get('object')),
+            'category'  => array_keys(TagKeyCache::get('category')),
+            'material'  => array_keys(TagKeyCache::get('material')),
+            'brand'     => array_keys(TagKeyCache::get('brand')),
+            'customTag' => array_keys(TagKeyCache::get('customTag')),
+        ];
+
+        $perTag = collect($tagIds)->flatMap(
+            fn (array $ids, string $dim) => collect($ids)->flatMap(
+                fn (int $id)             => collect($milestones)->mapWithKeys(
+                    function (int $m) use ($dim, $id) {
+                        $slug = "{$dim}-{$id}-{$m}";
+                        return [
+                            $slug => [
+                                'xp'   => 0,
+                                'when' => "statCountById('{$dim}', {$id}) == {$m}",
+                            ],
+                        ];
+                    }
+                )
+            )
+        );
+
+        /* -----------------------------------------------------------------
+           4.  Merge & return
+        ------------------------------------------------------------------*/
+        return $uploads
+            ->merge($objects)
+            ->merge($perTag);
     }
 
     private function buildLocationFirsts(): Collection          { return collect(); }

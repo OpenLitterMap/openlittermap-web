@@ -5,6 +5,7 @@ namespace App\Services\Achievements;
 final class Stats
 {
     public function __construct(
+        public int    $userId,
         public int    $level,
         public int    $xp,
         public int    $photosTotal,

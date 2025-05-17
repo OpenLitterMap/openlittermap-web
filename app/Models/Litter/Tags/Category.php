@@ -2,6 +2,7 @@
 
 namespace App\Models\Litter\Tags;
 
+use App\Models\Litter\Tags\Traits\InvalidatesTagKeyCache;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 class Category extends Model
 {
     use HasFactory;
+    use InvalidatesTagKeyCache;
 
     protected $primaryKey = 'id';
 
