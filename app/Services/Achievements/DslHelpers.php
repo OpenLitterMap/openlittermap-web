@@ -2,11 +2,6 @@
 
 namespace App\Services\Achievements;
 
-use App\Models\Litter\Tags\BrandList;
-use App\Models\Litter\Tags\Category;
-use App\Models\Litter\Tags\CustomTagNew;
-use App\Models\Litter\Tags\LitterObject;
-use App\Models\Litter\Tags\Materials;
 use App\Services\Achievements\Tags\TagKeyCache;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 
@@ -134,9 +129,12 @@ final class DslHelpers
                  (previous uploads + 1 for the in-flight photo).
             --------------------------------------------------------------*/
             'uploads' => (
-            array_sum($stats->localObjects) > 0
-                ? array_sum($stats->cumulativeObjects)
-                : $stats->photosTotal + 1        // empty photo: count uploads
+                // If the photo actually contains litter, treat “uploads” as the
+                // _total objects_ counter (so the object flood reaches 42 / 69).
+                // Otherwise fall back to “real” upload count.
+                (array_sum($stats->localObjects) > 0)
+                    ? array_sum($stats->cumulativeObjects)
+                    : $stats->photosTotal + 1
             ),
 
             /* unique categories encountered so far */

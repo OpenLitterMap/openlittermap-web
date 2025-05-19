@@ -5,11 +5,7 @@ namespace App\Services\Achievements;
 
 use App\Events\AchievementsUnlocked;
 use App\Models\Achievements\Achievement;
-use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
-use App\Models\Litter\Tags\CustomTagNew;
-use App\Models\Litter\Tags\LitterObject;
-use App\Models\Litter\Tags\Materials;
 use App\Models\Photo;
 use App\Models\Users\User;
 use App\Services\Achievements\Tags\TagKeyCache;
@@ -28,6 +24,9 @@ final class AchievementEngine
 
     /* cache key for meta counts */
     private const C_META = 'achievement:meta:v2';
+
+    /** @var array<int,array<string,bool>>  userId → slug map */
+    private array $runtimeCache = [];
 
     /** @var Collection<string,array> */
     private Collection $definitions;
@@ -90,30 +89,32 @@ final class AchievementEngine
             fn()=>['total_categories'=>Category::count()]
         );
 
-        /* filter with Redis set cache instead of SQL */
-        $achSetKey = sprintf(self::K_ACH_SET, $user->id);
-        $r         = $this->redis->connection();
+        $alreadyOwned = $user->achievements()->pluck('slug')->all();
+        $r = $this->redis->connection();
 
         return $this->definitions
-            ->reject(fn($_,$slug)=> $r->sIsMember($achSetKey, $slug))
+            ->reject(
+                fn ($_,$slug) => in_array($slug, $alreadyOwned, true) || ($this->runtimeCache[$user->id][$slug] ?? false)
+            )
             ->filter(fn($def,$slug)=>
-            $this->el->evaluate($this->compiled[$slug],[
-                'stats'=>$stats,'meta'=>$meta,'user'=>$user,'photo'=>$photo,'redis'=>$r
-            ])
+                $this->el->evaluate($this->compiled[$slug],[
+                    'stats'=>$stats,'meta'=>$meta,'user'=>$user,'photo'=>$photo,'redis'=>$r
+                ])
             )
             ->keys();
     }
 
     public function unlock(User $user, Collection $slugs): void
     {
-        if ($slugs->isEmpty()) {
+        $owned     = $user->achievements()->pluck('slug');
+        $newSlugs  = $slugs->diff($owned);
+        if ($newSlugs->isEmpty()) {
             return;
         }
 
         /* 1. save pivot rows (DB) ------------------------------------------------ */
-        $idsBySlug  = Achievement::whereIn('slug',$slugs)->pluck('id','slug');
-
-        $missing = $slugs->diff($idsBySlug->keys());
+        $idsBySlug  = Achievement::whereIn('slug', $newSlugs)->pluck('id', 'slug');
+        $missing = $newSlugs->diff($idsBySlug->keys());
 
         foreach ($missing as $slug) {
             $idsBySlug[$slug] = Achievement::create([
@@ -129,16 +130,20 @@ final class AchievementEngine
         );
 
         /* 2. atomically add XP & cache slugs via Lua ---------------------------- */
-        $addedXp = $this->definitions->only($slugs)->sum('xp');
+        $addedXp = $this->definitions->only($newSlugs)->sum('xp');
+
         $redis   = $this->redis->connection();
 
         self::bootLua($redis);
 
         $statsKey = sprintf(self::K_STATS, $user->id);
 
+        // cache the slugs regardless of XP, so repeat photos are ignored
+        $redis->sAdd(sprintf(self::K_ACH_SET, $user->id), ...$newSlugs);
+
         if ($addedXp > 0) { // skip Lua when nothing to add
             $keys = [sprintf(self::K_ACH_SET, $user->id), $statsKey];
-            $args = [$addedXp, ...$slugs->all()];
+            $args = [$addedXp, ...$newSlugs->all()];
 
             $redis->evalSha(self::$luaSha, count($keys), ...array_merge($keys, $args));
         }
@@ -147,7 +152,12 @@ final class AchievementEngine
         $this->recalculateLevel($user);
 
         /* 4. dispatch event ----------------------------------------------------- */
-        event(new AchievementsUnlocked($user, $this->definitions->only($slugs)));
+        event(new AchievementsUnlocked($user, $this->definitions->only($newSlugs)));
+
+        /* 5. remember in-memory so we never propose them again */
+        foreach ($newSlugs as $slug) {
+            $this->runtimeCache[$user->id][$slug] = true;
+        }
     }
 
     /* ============================================================ */
@@ -173,10 +183,7 @@ final class AchievementEngine
         // -----------------------------------------------------------------
         // 1.  Core counters from Redis
         // -----------------------------------------------------------------
-        [$xp, $uploads, $streak] = $r->hmget(
-            sprintf(self::K_STATS, $uid),
-            'xp', 'uploads', 'st'
-        );
+        [$xp, $uploads, $streak] = $r->hmget(sprintf(self::K_STATS, $uid), 'xp', 'uploads', 'st');
 
         // object totals already stored in Redis
         $objects = $r->hgetall(sprintf(self::K_OBJECTS, $uid));
@@ -193,12 +200,13 @@ final class AchievementEngine
                     $localObjects[$maybeCat] = $maybeVal['quantity'];
                 } else {                                       // category → objects
                     foreach ($maybeVal as $objKey => $d) {
-                        $localObjects[$objKey] = ($localObjects[$objKey] ?? 0)
-                            + ($d['quantity'] ?? 0);
+                        $localObjects[$objKey] = ($localObjects[$objKey] ?? 0) + ($d['quantity'] ?? 0);
                     }
                 }
             }
         }
+
+        $str = (int) ($streak ?? 0) + 1;
 
         // -----------------------------------------------------------------
         // 3.  Time-of-day / day-of-week helpers
@@ -220,9 +228,8 @@ final class AchievementEngine
 
         // -----------------------------------------------------------------
         // 5.  Ensure a by_category section exists in the summary
-        //     (work on a local copy – never mutate Eloquent attributes)
         // -----------------------------------------------------------------
-        $summary = $photo->summary;                    // shallow copy
+        $summary = $photo->summary;
 
         if (! isset($summary['tags'])) {
             $summary['tags'] = [];
@@ -250,7 +257,7 @@ final class AchievementEngine
             level             : $user->level,
             xp                : (int) ($xp      ?? 0),
             photosTotal       : (int) ($uploads ?? 0),
-            currentStreak     : (int) ($streak  ?? 0),
+            currentStreak     : $str,
             localObjects      : $localObjects,
             cumulativeObjects : $combinedObjects,
             summary           : $summary,
@@ -267,19 +274,20 @@ final class AchievementEngine
      */
     private function buildDynamicObjectMilestones(): Collection
     {
-        $milestones = config('milestones');         // e.g. [1, 42, 69]
+        $milestones = config('milestones');
 
         /* -----------------------------------------------------------------
            1.  Dimension-wide uploads-N milestones
         ------------------------------------------------------------------*/
-        $uploads = collect($milestones)->mapWithKeys(
-            fn (int $m) => [
+        $uploads = collect($milestones)->mapWithKeys(function (int $m) {
+            $cmp = $m === 1 ? '>=' : '==';                      // ≥1 or ==N
+            return [
                 "uploads-{$m}" => [
                     'xp'   => 0,
-                    'when' => "statCount('uploads') == {$m}",
+                    'when' => "statCount('uploads') {$cmp} {$m}",
                 ],
-            ]
-        );
+            ];
+        });
 
         /* -----------------------------------------------------------------
            2.  Dimension-wide objects-N milestones (skip N = 1 – spec starts
@@ -290,7 +298,7 @@ final class AchievementEngine
             ->mapWithKeys(fn (int $m) => [
                 "objects-{$m}" => [
                     'xp'   => 0,
-                    'when' => "statCount('objects') == {$m}",
+                    'when' => "statCount('objects') >= {$m}",
                 ],
             ]);
 
@@ -307,19 +315,32 @@ final class AchievementEngine
         ];
 
         $perTag = collect($tagIds)->flatMap(
-            fn (array $ids, string $dim) => collect($ids)->flatMap(
-                fn (int $id)             => collect($milestones)->mapWithKeys(
-                    function (int $m) use ($dim, $id) {
-                        $slug = "{$dim}-{$id}-{$m}";
-                        return [
-                            $slug => [
-                                'xp'   => 0,
-                                'when' => "statCountById('{$dim}', {$id}) == {$m}",
-                            ],
-                        ];
+        /**
+         * @param  array  $ids  All tag-IDs for this dimension
+         * @param  string $dim  Dimension name (object|category|material|brand|customTag)
+         */
+            function (array $ids, string $dim) use ($milestones) {
+
+                return collect($ids)->flatMap(
+                    function (int $id) use ($milestones, $dim) {
+
+                        return collect($milestones)->mapWithKeys(
+                            function (int $m) use ($dim, $id) {
+
+                                $cmp  = $m === 1 ? '>=' : '==';
+                                $slug = "{$dim}-{$id}-{$m}";
+
+                                return [
+                                    $slug => [
+                                        'xp'   => 0,
+                                        'when' => "statCountById('{$dim}', {$id}) {$cmp} {$m}",
+                                    ],
+                                ];
+                            }
+                        );
                     }
-                )
-            )
+                );
+            }
         );
 
         /* -----------------------------------------------------------------

@@ -57,15 +57,56 @@ trait MockRedisTrait
             $cur = $this->redisData[$key][$field] ?? 0;
             $new = $cur + (int) $delta;
             $this->redisData[$key][$field] = $new;
-            return (string) $new;           // Redis returns bulk‑string
+            // return the mock so we can chain pExpire()
+            return $this->redisConn;
         });
+
+        $alias(['hIncrByFloat','hincrbyfloat'], function ($key, $field, $delta) {
+            $cur = $this->redisData[$key][$field] ?? 0.0;
+            $new = $cur + (float) $delta;
+            $this->redisData[$key][$field] = $new;
+            return $this->redisConn;
+        });
+
+
+        $this->redisConn
+            ->shouldReceive('hSetNx')
+            ->withAnyArgs()
+            ->andReturnUsing(function($key, $field, $value) {
+                if (! isset($this->redisData[$key][$field])) {
+                    $this->redisData[$key][$field] = $value;
+                    return true;
+                }
+                return false;
+            })
+            ->byDefault();
 
         /* ---------- Sets -----------------------------------------------*/
         $alias(['sIsMember', 'sismember'], function ($key, $slug) {
             return in_array($slug, $this->redisData[$key] ?? [], true);
         });
 
-        $alias(['sAdd', 'sadd'], fn () => 1);
+        /* ---------- Expire helper for pipeline chaining ---------------*/
+        $alias(['pExpire','pexpire'], function ($key, $ttl) {
+            // no-op, but return the connection so chaining works
+            return $this->redisConn;
+        });
+
+        // actually add into the in-memory set
+        $alias(['sAdd', 'sadd'], function ($key, ...$members) {
+            if (! isset($this->redisData[$key]) || ! is_array($this->redisData[$key])) {
+                $this->redisData[$key] = [];
+            }
+            $count = 0;
+            foreach ($members as $m) {
+                if (! in_array($m, $this->redisData[$key], true)) {
+                    $this->redisData[$key][] = $m;
+                    $count++;
+                }
+            }
+
+            return $count;
+        });
 
         /* ---------- Simple‑string helpers ------------------------------*/
         $alias(['setnx'], fn () => 1);                     // “key was set”
@@ -114,11 +155,48 @@ trait MockRedisTrait
         $alias(['get'],    fn ($key) => $this->redisData[$key] ?? null);
         $alias(['exists'], fn ()     => 0);
 
+        $this->redisConn
+            ->shouldReceive('hMget')
+            ->withAnyArgs()
+            ->andReturnUsing(function($key, ...$fields) {
+                return array_map(fn($f) => $this->redisData[$key][$f] ?? null, $fields);
+            })
+            ->byDefault();
+
         /* -----------------------------------------------------------------
          | 3. Bind the mock into Laravel’s container and facade
          |------------------------------------------------------------------*/
         $factory = Mockery::mock(\Illuminate\Contracts\Redis\Factory::class);
         $factory->shouldReceive('connection')->andReturn($this->redisConn);
+
+        $factory
+            ->shouldReceive('pipeline')
+            ->withAnyArgs()
+            ->andReturnUsing(fn($cb) => $cb($this->redisConn))
+            ->byDefault();
+
+        // ── Stub script() on the *factory* itself so Redis::script(...) works ──
+        $factory
+            ->shouldReceive('script')
+            ->withAnyArgs()
+            ->andReturn('fake-sha')
+            ->byDefault();
+
+        $factory
+            ->shouldReceive('get')
+            ->withAnyArgs()
+            ->andReturnUsing(fn($key) => $this->redisData[$key] ?? null)
+            ->byDefault();
+
+        $factory
+            ->shouldReceive('hSet')
+            ->withAnyArgs()
+            ->andReturnUsing(function ($key, $field, $value) {
+                $this->redisData[$key][$field] = $value;
+                return 1;
+            })
+            ->byDefault();
+
         $this->app->instance(\Illuminate\Contracts\Redis\Factory::class, $factory);
         \Illuminate\Support\Facades\Redis::swap($factory);
     }
