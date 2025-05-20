@@ -48,9 +48,22 @@ trait MockRedisTrait
             isset($this->redisData[$key][$field]) ? (string) $this->redisData[$key][$field] : null
         );
 
-        $alias(['hmget'], fn ($key, ...$fields) => array_map(fn ($f) => $this->redisData[$key][$f] ?? null, $fields));
+        $alias(['hmget'], function ($key, ...$fields) {
+            // allow either hmget($key, 'a','b','c') or hmget($key, ['a','b','c'])
+            if (count($fields) === 1 && is_array($fields[0])) {
+                $fields = $fields[0];
+            }
+            return array_map(fn($f) => $this->redisData[$key][$f] ?? null, $fields);
+        });
 
         $alias(['hgetall'], fn ($key) => $this->redisData[$key] ?? []);
+
+        $alias(['hMSet','hmset'], function ($key, array $map) {
+            foreach ($map as $field => $value) {
+                $this->redisData[$key][$field] = $value;
+            }
+            return true;
+        });
 
         /* ---------- Hash writes ----------------------------------------*/
         $alias(['hIncrBy', 'hincrby'], function ($key, $field, $delta) {
@@ -159,6 +172,10 @@ trait MockRedisTrait
             ->shouldReceive('hMget')
             ->withAnyArgs()
             ->andReturnUsing(function($key, ...$fields) {
+                // same unwrap logic
+                if (count($fields) === 1 && is_array($fields[0])) {
+                    $fields = $fields[0];
+                }
                 return array_map(fn($f) => $this->redisData[$key][$f] ?? null, $fields);
             })
             ->byDefault();

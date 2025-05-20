@@ -30,7 +30,7 @@ declare(strict_types=1);
 namespace App\Services\Redis;
 
 use App\Models\Photo;
-use Carbon\Carbon;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Log;
 use RedisException;
@@ -40,15 +40,9 @@ final class RedisMetricsCollector
     /* ─── TTLs (ms) ─────────────────────────────────────────────── */
     private const TS_TTL_MS = 60 * 60 * 24 * 365 * 2 * 1000; // 2 years
 
-    /* ─── Lua SHA cache ─────────────────────────────────────────── */
-    private static ?string $streakSha = null;
-
     /* ─── Packed‑stats key pattern ──────────────────────────────── */
     private const KEY_STATS = '{u:%d}:stats';   // uploads, xp, st
 
-    /* =====================================================================
-       PUBLIC API
-       ===================================================================== */
     /**
      * Persist all Redis metrics for a single photo.
      *
@@ -56,18 +50,15 @@ final class RedisMetricsCollector
      */
     public static function queue(Photo $photo): void
     {
-        /* ── Idempotency gate – avoid double‑counting the same photo ───── */
+        // 1. Idempotency: skip if already done
         if (self::alreadyProcessed($photo->id)) {
             return;
         }
 
-        self::bootLua();
-
-        /* ── Common metadata ───────────────────────────────────────────── */
+        // 2. Common metadata
         $uid     = $photo->user_id;
         $uTag    = "{u:$uid}";
         $xp      = (float) ($photo->xp ?? 0);
-
         $ts       = $photo->created_at;
         $date     = $ts->format('Y-m-d');
         $monthTag = '{g:'.$ts->format('Y-m').'}'; // disperse global hot slot
@@ -76,10 +67,10 @@ final class RedisMetricsCollector
         $state   = $photo->state_id   ?? $photo->state?->id;
         $city    = $photo->city_id    ?? $photo->city?->id;
 
-        /* ── Derive per‑photo deltas ───────────────────────────────────── */
+        // 3. Derive per-photo deltas from the summary
         $tagsTree = $photo->summary['tags'] ?? [];
-
-        $catIncr = $objIncr = [];
+        $catIncr = [];
+        $objIncr = [];
         foreach ($tagsTree as $cat => $objs) {
             foreach ($objs as $obj => $data) {
                 $q = (int) ($data['quantity'] ?? 0);
@@ -91,22 +82,24 @@ final class RedisMetricsCollector
         /* ── Main pipeline (single round‑trip) ─────────────────────────── */
         $statsKey = sprintf(self::KEY_STATS, $uid);
 
+        // 4. Pipeline the bulk writes (no streak logic here!)
         Redis::pipeline(static function ($pipe) use (
             $statsKey, $uTag, $uid, $xp, $date, $monthTag,
             $country, $state, $city,
             $catIncr, $objIncr, $tagsTree
         ) {
-            /* 1. per‑user packed stats ----------------------------------- */
+            // 4.1 initialize stats fields if missing
             $pipe->hSetNx($statsKey, 'uploads', 0);
             $pipe->hSetNx($statsKey, 'xp',      0);
             $pipe->hSetNx($statsKey, 'st',      0);
 
-            $pipe->hIncrBy      ($statsKey, 'uploads', 1);
+            // 4.2 bump uploads & xp
+            $pipe->hIncrBy($statsKey, 'uploads', 1);
             if ($xp) {
                 $pipe->hIncrByFloat($statsKey, 'xp', $xp);
             }
 
-            /* 2. per‑category / per‑object hashes ------------------------ */
+            // 4.3 per-category and per-object hashes
             foreach ($catIncr as $c => $q) {
                 $pipe->hIncrBy("$uTag:c", $c, $q);
             }
@@ -114,7 +107,7 @@ final class RedisMetricsCollector
                 $pipe->hIncrBy("$uTag:t", $o, $q);
             }
 
-            /* 3. materials / brands / custom tags (shared hash) ---------- */
+            // 4.4 materials / brands / custom_tags in shared hash
             foreach ($tagsTree as $objects) {
                 foreach ($objects as $data) {
                     foreach ($data['materials'] ?? [] as $k => $q) {
@@ -129,17 +122,10 @@ final class RedisMetricsCollector
                 }
             }
 
-            /* 4. streak.lua updates  ------------------------------------- */
-            self::evalShaCompat($pipe, self::$streakSha, [
-                "$uTag:up:$date",                                  // KEYS[1]
-                "$uTag:up:".Carbon::parse($date)->subDay()->format('Y-m-d'), // KEYS[2]
-                "$uTag:st",                                       // KEYS[3]
-            ], []);
-
-            /* 5. global + scoped buckets --------------------------------- */
-            $pipe->hIncrBy("$monthTag:t", 'p', 1);
+            // 4.5 global + scoped daily buckets
+            $pipe->hIncrBy("{$monthTag}:t", 'p', 1);
             if ($xp) {
-                $pipe->hIncrByFloat("$monthTag:t", 'xp', $xp);
+                $pipe->hIncrByFloat("{$monthTag}:t", 'xp', $xp);
             }
 
             foreach (array_filter([
@@ -153,7 +139,7 @@ final class RedisMetricsCollector
                     ->pExpire($tsKey, self::TS_TTL_MS);
             }
 
-            /* 6. global category / object tallies ------------------------ */
+            // 4.6 global category/object tallies
             foreach ($catIncr as $c => $q) {
                 $pipe->hIncrBy('{g}:c', $c, $q);
             }
@@ -162,20 +148,22 @@ final class RedisMetricsCollector
             }
         });
 
-        /* ── patch: copy computed streak into packed stats  -------------- */
-        $streak = Redis::get("{u:$uid}:st");
-        if ($streak !== null) {
-            Redis::hSet($statsKey, 'st', $streak);
-        }
+        // 5) Now handle streak logic *outside* the pipeline on the real client
+        $upTodayKey     = "{$uTag}:up:{$date}";
+        $upYesterdayKey = "{$uTag}:up:" . Carbon::parse($date)->subDay()->format('Y-m-d');
+        $stKey          = "{$uTag}:st";
 
-        /* ── optional debug when running locally ------------------------ */
-        if (app()->isLocal()) {
-            Log::debug('[metrics] wrote stats for photo', [
-                'photo_id' => $photo->id,
-                'user_id'  => $uid,
-                'stats'    => Redis::hGetAll($statsKey),
-            ]);
-        }
+        // 5.1 mark today’s upload (key expiry in seconds)
+        Redis::setex($upTodayKey, (int)(self::TS_TTL_MS / 1000), '1');
+
+        // 5.2 compute new streak
+        $hadYesterday = Redis::exists($upYesterdayKey);
+        $oldStreak    = (int) Redis::get($stKey);
+        $newStreak    = $hadYesterday ? $oldStreak + 1 : 1;
+
+        // 5.3 write streak back to both the string key and the packed stats
+        Redis::set($stKey, $newStreak);
+        Redis::hSet($statsKey, 'st', $newStreak);
     }
 
     /* ===================================================================== */
@@ -183,27 +171,8 @@ final class RedisMetricsCollector
     /** Add photo id to processed set; returns true if it *was already* there. */
     private static function alreadyProcessed(?int $photoId): bool
     {
-        return $photoId ? Redis::sAdd('p:done', $photoId) === 0 : false;
-    }
-
-    /** Ensure streak.lua is loaded exactly once per process. */
-    private static function bootLua(): void
-    {
-        if (! self::$streakSha) {
-            self::$streakSha = Redis::script('load',
-                file_get_contents(base_path('app/Services/Redis/lua/streak.lua'))
-            );
-            if (app()->isLocal()) {
-                Log::debug('[metrics] streak.lua loaded', ['sha' => self::$streakSha]);
-            }
-        }
-    }
-
-    /** Call a Lua script while remaining compatible with older phpredis versions. */
-    private static function evalShaCompat($pipe, string $sha, array $keys, array $argv): void
-    {
-        try { $pipe->evalSha($sha, $keys,   $argv); return; } catch (\Throwable) {}
-        try { $pipe->evalSha($sha, count($keys), ...$keys, ...$argv); return; } catch (\Throwable) {}
-        $pipe->evalSha($sha, array_merge($keys, $argv));
+        return $photoId
+            ? Redis::sAdd('p:done', $photoId) === 0
+            : false;
     }
 }

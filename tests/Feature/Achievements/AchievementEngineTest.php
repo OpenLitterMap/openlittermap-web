@@ -1,7 +1,4 @@
 <?php
-/**
- * Tests for the refactored Achievement subsystem (Engine + helpers + DTO).
- */
 
 declare(strict_types=1);
 
@@ -18,22 +15,47 @@ use App\Models\Photo;
 use App\Models\Users\User;
 use App\Services\Achievements\AchievementEngine;
 use App\Services\Achievements\Tags\TagKeyCache;
+use App\Services\Redis\RedisMetricsCollector;
 use Illuminate\Contracts\Redis\Factory as RedisFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Redis;
 use Tests\Helpers\MockRedisTrait;
 use Tests\TestCase;
 
 class AchievementEngineTest extends TestCase
 {
-    use RefreshDatabase;
-    use MockRedisTrait;
+    use RefreshDatabase, MockRedisTrait;
 
     protected function setUp(): void
     {
         parent::setUp();
+
+        $this->mockRedis([
+            '{u:1}:stats' => ['xp'=>0,'uploads'=>0,'st'=>0],
+            '{u:1}:t'     => [],    // object counts
+            '{u:1}:c'     => [],    // category counts
+            '{u:1}:b'     => [],    // brand/material/custom_tag counts
+            '{u:1}:ach'   => [],    // unlocked set
+        ]);
+
+        $this->redisConn
+            ->shouldReceive('script')
+            ->with('LOAD', \Mockery::any())
+            ->andReturn('fake‐sha');
+        $this->redisConn
+            ->shouldReceive('sAdd')
+            ->andReturnUsing(fn($key, ...$slugs) => count($slugs));
+        $this->redisConn
+            ->shouldReceive('evalSha')
+            ->andReturnUsing(function($sha, $numKeys, ...$args) {
+                [$achKey, $statsKey] = array_slice($args, 0, 2);
+                $xpToAdd = $args[$numKeys] ?? 0;
+                $this->redisConn->hIncrBy($statsKey, 'xp', $xpToAdd);
+                return 1;
+            });
 
         // Baseline tags that the feature specs expect
         Category   ::firstOrCreate(['key' => 'packaging']);
@@ -42,7 +64,6 @@ class AchievementEngineTest extends TestCase
 
         TagKeyCache::forgetAll();
 
-        $this->mockRedis(['{u:1}:stats' => ['xp' => 0, 'uploads' => 0, 'st' => 0]]);
         Cache::forget('achievement:meta');
     }
 
@@ -78,13 +99,9 @@ class AchievementEngineTest extends TestCase
     {
         foreach ($redisSeed as $key => $value) {
             if (is_array($value)) {
-                $this->redisConn->shouldReceive('hgetall')
-                    ->with($key)
-                    ->andReturn($value);
+                Redis::connection()->hMSet($key, $value);
             } else {
-                $this->redisConn->shouldReceive('get')
-                    ->with($key)
-                    ->andReturn($value);
+                Redis::connection()->set($key, $value);
             }
         }
 
@@ -186,12 +203,7 @@ class AchievementEngineTest extends TestCase
         $photo = $this->makePhoto($user);
         $photo->country_id = 99;
 
-        $this->mockRedis(['{u:1}:u' => '1']);
-
-        $this->redisConn
-            ->shouldReceive('evalSha')
-            ->withAnyArgs()
-            ->andReturn(1);    // make the helper truthy
+        Redis::shouldReceive('evalSha')->andReturn(1);
 
         $engine = app(AchievementEngine::class);
         $slugs  = $engine->slugsToUnlock($photo);
@@ -221,11 +233,11 @@ class AchievementEngineTest extends TestCase
             $this->createAchievement($slug, 2);
         }
 
-        $this->mockRedis([
-            '{u:1}:stats' => ['xp' => 0, 'uploads' => 0, 'st' => 0],
-            '{u:1}:t'     => [],
-            '{u:1}:ach'   => [],
-        ]);
+        // $this->mockRedis([
+//            '{u:1}:stats' => ['xp' => 0, 'uploads' => 0, 'st' => 0],
+//            '{u:1}:t'     => [],
+//            '{u:1}:ach'   => [],
+//        ]);
 
         $user  = User::factory()->create(['id' => 1, 'level' => 0]);
         $photo = $this->makePhoto($user, ['plastic_bottle' => 1]);
@@ -265,13 +277,15 @@ class AchievementEngineTest extends TestCase
     {
         $this->createAchievement('uploads-42', 2);
 
-        $this->mockRedis([
-            '{u:1}:stats' => ['xp' => 0, 'uploads' => 41, 'st' => 0],
-            '{u:1}:ach'   => [],
-        ]);
+        $user  = User::factory()->create(['id' => 1, 'level' => 0]);
+        $photo = $this->makePhoto($user);
 
-        $user   = User::factory()->create(['id' => 1, 'level' => 0]);
-        $photo  = $this->makePhoto($user);          // 42nd upload
+        // seed 41 prior uploads
+        Redis::connection()->hIncrBy('{u:1}:stats', 'uploads', 41);
+
+        // update redis
+        RedisMetricsCollector::queue($photo);
+
         $engine = app(AchievementEngine::class);
 
         $this->assertTrue(
@@ -282,19 +296,13 @@ class AchievementEngineTest extends TestCase
     /** @test */
     public function objects_42_milestone_triggers_when_cumulative_hits_42(): void
     {
-        $beerBottle = LitterObject::where('key', 'plastic_bottle')->first();
-        $slug = "object-{$beerBottle->id}-42";
-        /* row not needed – engine auto-creates it */
-
-        // user already has 41 bottles picked
-        $this->mockRedis([
-            '{u:1}:stats' => ['xp' => 0, 'uploads' => 0, 'st' => 0],
-            '{u:1}:t'     => ['plastic_bottle' => 41],
-            '{u:1}:ach'   => [],
-        ]);
+        LitterObject::where('key', 'plastic_bottle')->first();
 
         $user  = User::factory()->create(['id' => 1, 'level' => 0]);
         $photo = $this->makePhoto($user, ['plastic_bottle' => 1]);
+
+        Redis::connection()->hIncrBy('{u:1}:t', 'plastic_bottle', 41);
+        RedisMetricsCollector::queue($photo);
 
         $this->assertTrue(
             app(AchievementEngine::class)
@@ -351,42 +359,15 @@ class AchievementEngineTest extends TestCase
         // 2.  Wire Redis mock (uploads / objects / categories hashes only)
         //     We’ll bump *all* counters in one go to save boilerplate.
         // -----------------------------------------------------------------
-        $this->mockRedis(['{u:1}:ach' => []]);
 
-        $this->redisConn->shouldReceive('hmget')
-            ->with('{u:1}:stats', 'xp', 'uploads', 'st')
-            ->andReturn(['0','0','0'], ['0','1','0'], ['0','2','0']);
-
-        // objects hash → beer_bottle 1 → 42
-        $this->redisConn->shouldReceive('hgetall')
-            ->with('{u:1}:t')
-            ->andReturn(
-                [],
-                [$beerBottle->key => 1],
-                [$beerBottle->key => 42]
-            );
-
-        // categories hash → alcohol 1 → 42
-        $this->redisConn->shouldReceive('hgetall')
-            ->with('{u:1}:c')
-            ->andReturn(
-                [],
-                [$alcoholCat->key => 1],
-                [$alcoholCat->key => 42]
-            );
-
-        /* materials / brands / customTags live in {u:1}:b -------------*/
-        $this->redisConn->shouldReceive('hgetall')
-            ->with('{u:1}:b')
-            ->andReturn(
-                [],
-                ["m:{$glassMat->key}"   => 1,
-                    "b:{$heineken->key}"   => 1,
-                    "c:{$myTag->key}"      => 1],
-                ["m:{$glassMat->key}"   => 42,
-                    "b:{$heineken->key}"   => 42,
-                    "c:{$myTag->key}"      => 42],
-            );
+        Redis::connection()->hMSet('{u:1}:stats', ['xp' => 0, 'uploads' => 1, 'st' => 0]);
+        Redis::connection()->hMSet('{u:1}:t',      ['plastic_bottle' => 41]);
+        Redis::connection()->hMSet('{u:1}:c',      ['packaging'       => 41]);
+        Redis::connection()->hMSet('{u:1}:b', [
+            "m:glass"   => 41,
+            "b:coke"    => 41,
+            "c:washed_up" => 41,
+        ]);
 
         // -----------------------------------------------------------------
         // 3.  First photo (qty 1 for each tag) ----------------------------
@@ -409,7 +390,9 @@ class AchievementEngineTest extends TestCase
         $p2 = $this->makePhoto($user, [$beerBottle->key => 41]);
         $p2->summary = $this->buildSummary($beerBottle->key, $glassMat->key, $heineken->key,  $myTag->key, 41);
 
+        RedisMetricsCollector::queue($p2);
         $unlocked = $engine->slugsToUnlock($p2);
+
         foreach ($slugs42 as $slug) {
             $this->assertTrue($unlocked->contains($slug), "missing $slug (42)");
         }
@@ -420,7 +403,9 @@ class AchievementEngineTest extends TestCase
         $p3 = $this->makePhoto($user, [$beerBottle->key => 27]);
         $p3->summary = $this->buildSummary($beerBottle->key, $glassMat->key, $heineken->key,  $myTag->key, 27);
 
+        RedisMetricsCollector::queue($p3);
         $unlocked = $engine->slugsToUnlock($p3);
+
         foreach ($slugs69 as $slug) {
             $this->assertTrue($unlocked->contains($slug), "missing $slug (69)");
         }

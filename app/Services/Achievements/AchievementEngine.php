@@ -10,8 +10,8 @@ use App\Models\Photo;
 use App\Models\Users\User;
 use App\Services\Achievements\Tags\TagKeyCache;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
-use Illuminate\Contracts\Redis\Factory as RedisFactory;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Redis;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use Symfony\Component\ExpressionLanguage\ParsedExpression;
 
@@ -37,7 +37,6 @@ final class AchievementEngine
 
     public function __construct(
         private CacheRepository    $cache,
-        private RedisFactory       $redis,
         private ExpressionLanguage $el = new ExpressionLanguage(),
         ?array $definitions = null,
     ) {
@@ -90,7 +89,7 @@ final class AchievementEngine
         );
 
         $alreadyOwned = $user->achievements()->pluck('slug')->all();
-        $r = $this->redis->connection();
+        $redis = Redis::connection();
 
         return $this->definitions
             ->reject(
@@ -98,7 +97,7 @@ final class AchievementEngine
             )
             ->filter(fn($def,$slug)=>
                 $this->el->evaluate($this->compiled[$slug],[
-                    'stats'=>$stats,'meta'=>$meta,'user'=>$user,'photo'=>$photo,'redis'=>$r
+                    'stats'=>$stats,'meta'=>$meta,'user'=>$user,'photo'=>$photo,'redis'=>$redis
                 ])
             )
             ->keys();
@@ -129,23 +128,16 @@ final class AchievementEngine
             $newIds->flip()->map(fn()=>['unlocked_at'=>now()])->all()
         );
 
-        /* 2. atomically add XP & cache slugs via Lua ---------------------------- */
+        /* 2. cache the slugs, then just bump the XP counter directly ------ */
         $addedXp = $this->definitions->only($newSlugs)->sum('xp');
-
-        $redis   = $this->redis->connection();
-
-        self::bootLua($redis);
-
+        $redis   = Redis::connection();
         $statsKey = sprintf(self::K_STATS, $user->id);
 
-        // cache the slugs regardless of XP, so repeat photos are ignored
+        // make sure repeats don’t re-unlock later:
         $redis->sAdd(sprintf(self::K_ACH_SET, $user->id), ...$newSlugs);
 
-        if ($addedXp > 0) { // skip Lua when nothing to add
-            $keys = [sprintf(self::K_ACH_SET, $user->id), $statsKey];
-            $args = [$addedXp, ...$newSlugs->all()];
-
-            $redis->evalSha(self::$luaSha, count($keys), ...array_merge($keys, $args));
+        if ($addedXp > 0) {
+            $redis->hIncrBy($statsKey, 'xp', $addedXp);
         }
 
         /* 3. maybe level‑up ----------------------------------------------------- */
@@ -160,33 +152,24 @@ final class AchievementEngine
         }
     }
 
-    /* ============================================================ */
-
-    private static function bootLua($redis): void
-    {
-        if (!self::$luaSha) {
-            $script = file_get_contents(
-                base_path('app/Services/Achievements/lua/xp_add.lua')
-            );
-            self::$luaSha = $redis->script('LOAD', $script);
-        }
-    }
-
     /**
      * Build the Stats DTO for a photo.
      */
     private function buildStats(User $user, Photo $photo): Stats
     {
-        $r   = $this->redis->connection();
+        $r   = Redis::connection();
         $uid = $user->id;
 
         // -----------------------------------------------------------------
         // 1.  Core counters from Redis
         // -----------------------------------------------------------------
-        [$xp, $uploads, $streak] = $r->hmget(sprintf(self::K_STATS, $uid), 'xp', 'uploads', 'st');
+        [$xp, $uploads, $hashStreak] = $r->hmget(
+            sprintf(self::K_STATS, $uid),
+            ['xp','uploads','st']
+        );
 
-        // object totals already stored in Redis
-        $objects = $r->hgetall(sprintf(self::K_OBJECTS, $uid));
+        $stringStreak = $r->get("{u:{$uid}}:st") ?: 0;
+        $str = max((int)$hashStreak, (int)$stringStreak);
 
         // -----------------------------------------------------------------
         // 2.  Totals for the *current* photo
@@ -206,8 +189,6 @@ final class AchievementEngine
             }
         }
 
-        $str = (int) ($streak ?? 0) + 1;
-
         // -----------------------------------------------------------------
         // 3.  Time-of-day / day-of-week helpers
         // -----------------------------------------------------------------
@@ -221,9 +202,12 @@ final class AchievementEngine
         // -----------------------------------------------------------------
         // 4.  Merge cumulative object counts
         // -----------------------------------------------------------------
-        $combinedObjects = array_merge_recursive($objects, $localObjects);
+        $combinedObjects = array_merge_recursive(
+            $r->hgetall(sprintf(self::K_OBJECTS, $uid)),      // what Redis already has
+            $localObjects                                   // plus what’s in this one photo
+        );
         foreach ($combinedObjects as $key => $values) {
-            $combinedObjects[$key] = array_sum((array) $values);
+            $combinedObjects[$key] = array_sum((array)$values);
         }
 
         // -----------------------------------------------------------------
@@ -280,7 +264,7 @@ final class AchievementEngine
            1.  Dimension-wide uploads-N milestones
         ------------------------------------------------------------------*/
         $uploads = collect($milestones)->mapWithKeys(function (int $m) {
-            $cmp = $m === 1 ? '>=' : '==';                      // ≥1 or ==N
+            $cmp = '>=';
             return [
                 "uploads-{$m}" => [
                     'xp'   => 0,
@@ -315,19 +299,17 @@ final class AchievementEngine
         ];
 
         $perTag = collect($tagIds)->flatMap(
-        /**
-         * @param  array  $ids  All tag-IDs for this dimension
-         * @param  string $dim  Dimension name (object|category|material|brand|customTag)
-         */
+            /**
+             * @param  array  $ids  All tag-IDs for this dimension
+             * @param  string $dim  Dimension name (object|category|material|brand|customTag)
+             */
             function (array $ids, string $dim) use ($milestones) {
-
                 return collect($ids)->flatMap(
                     function (int $id) use ($milestones, $dim) {
 
                         return collect($milestones)->mapWithKeys(
                             function (int $m) use ($dim, $id) {
-
-                                $cmp  = $m === 1 ? '>=' : '==';
+                                $cmp  = '>=';
                                 $slug = "{$dim}-{$id}-{$m}";
 
                                 return [
@@ -356,11 +338,10 @@ final class AchievementEngine
     private function buildStreakMilestones(): Collection        { return collect(); }
 
     /* ----------------------- level calc ------------------------------------- */
-    /* ----------------------- level calc ------------------------------------- */
     private function recalculateLevel(User $user): void
     {
-        [$rawXp] = $this->redis->connection()
-            ->hmget(sprintf(self::K_STATS, $user->id), 'xp');
+        $redis = Redis::connection();
+        [$rawXp] = $redis->hmget(sprintf(self::K_STATS, $user->id), ['xp']);
 
         $xp = (int) ($rawXp ?? 0);
 

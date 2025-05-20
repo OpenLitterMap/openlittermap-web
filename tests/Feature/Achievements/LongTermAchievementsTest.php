@@ -14,22 +14,21 @@ use App\Services\Achievements\AchievementEngine;
 use App\Services\Achievements\Tags\TagKeyCache;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Contracts\Redis\Factory as RedisFactory;
 use Illuminate\Support\Facades\Redis;
-use Tests\Helpers\InMemoryRedisFactory;
 use Tests\TestCase;
 
 class LongTermAchievementsTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
-        // Swap in our in-memory Redis for exactly these tests:
-        $fake = new InMemoryRedisFactory;
-        $this->app->instance(\Illuminate\Contracts\Redis\Factory::class, $fake);
-        Redis::swap($fake);
+        Redis::connection()->flushdb();
+
+        app(RedisFactory::class)->connection()->flushdb();
     }
 
     /** @test */
@@ -66,15 +65,31 @@ class LongTermAchievementsTest extends TestCase
         /* -------------------------------------------------------------
            1.  EXP milestones – copy the prod list but shrink XP
         --------------------------------------------------------------*/
-        config()->set('achievements', [
+        $cfg = [
             'night-owl' => ['xp' => 5,  'when' => "timeOfDay() == 'night'"],
             'weekend'   => ['xp' => 5,  'when' => 'isWeekend()'],
-        ]);
+        ];
 
-        foreach ([1, 42, 69] as $m) {
-            Achievement::updateOrCreate(['slug' => "uploads-{$m}"], [
-                'name' => "uploads {$m}", 'xp' => 2,
-            ]);
+        // also wire up our three uploads-N milestones
+        foreach ([1,42,69] as $m) {
+            $cfg["uploads-{$m}"] = [
+                'xp'   => 2,
+                'when' => "statCount('uploads') >= {$m}",
+            ];
+
+            Achievement::updateOrCreate(
+                ['slug'=>"uploads-{$m}"],
+                ['name'=>"uploads {$m}", 'xp'=>2],
+            );
+        }
+
+        config()->set('achievements', $cfg);
+
+        foreach (['night-owl','weekend'] as $slug) {
+            Achievement::updateOrCreate(
+                ['slug'=>$slug],
+                ['name'=>$slug, 'xp'=>config('achievements')[$slug]['xp']]
+            );
         }
 
         /* engine picks up dynamic milestones automatically */
@@ -146,6 +161,9 @@ class LongTermAchievementsTest extends TestCase
                 $bSprite = BrandList ::firstOrCreate(['key' => 'sprite']);
                 $mAlu    = Materials::firstOrCreate(['key' => 'aluminium']);
                 TagKeyCache::forgetAll();
+
+                // rebuild the engine to pick up the new "-1" milestones
+                $engine = app(AchievementEngine::class);
             }
 
             $photo = new Photo();
@@ -189,15 +207,20 @@ class LongTermAchievementsTest extends TestCase
         $this->assertTrue($unlocks->contains("material-{$mAlu->id}-1"));
 
         // XP total is exactly the sum of the XP in the unlocked slugs
-        $xpTotal = Achievement::whereIn('slug', $unlocks)->sum('xp');
-        $this->assertEquals($xpTotal, $unlocks->sum(
-            fn ($slug) => config('achievements')[$slug]['xp'] ?? 0
-        ));
+        // only look at each slug once
+        $uniq = $unlocks->unique();
+        $xpTotal = Achievement::whereIn('slug', $uniq)->sum('xp');
+        $this->assertEquals(
+            $xpTotal,
+            $uniq->sum(fn($slug) => config('achievements')[$slug]['xp'] ?? 0),
+        );
     }
 
     /** @test */
     public function xp_is_added_once_per_slug_even_on_repeated_photos(): void
     {
+        config()->set('milestones', []);
+
         config()->set('achievements', [
             'spam' => ['xp' => 10, 'when' => 'true'],
         ]);
@@ -213,6 +236,7 @@ class LongTermAchievementsTest extends TestCase
         $engine = app(AchievementEngine::class);
 
         /* process the *same* photo twice */
+        RedisMetricsCollector::queue($photo);
         $engine->process($photo);
         $engine->process($photo);
 
@@ -246,6 +270,12 @@ class LongTermAchievementsTest extends TestCase
         $photo->created_at = now();
         $photo->summary = ['tags'=>[],'totals'=>[]];
 
+        // simulate a 3-day streak
+        $day1 = (clone $photo)->setCreatedAt(now()->subDays(2));
+        $day2 = (clone $photo)->setCreatedAt(now()->subDay());
+        RedisMetricsCollector::queue($day1);
+        RedisMetricsCollector::queue($day2);
+        RedisMetricsCollector::queue($photo);
         $slugs = $engine->slugsToUnlock($photo);
 
         $this->assertTrue($slugs->contains('streak-3'));

@@ -22,7 +22,7 @@
         <server name="SESSION_DRIVER" value="array" />
         <server name="TELESCOPE_ENABLED" value="false" />
         <server name="BROADCAST_DRIVER" value="null" />
-        <env name="REDIS_DB" value="1" />
+        <env name="REDIS_DB" value="2" />
         <env name="REDIS_CACHE_DB" value="1" />
     </php>
 </phpunit>
