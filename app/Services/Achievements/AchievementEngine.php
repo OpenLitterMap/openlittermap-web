@@ -23,7 +23,7 @@ final class AchievementEngine
     private const K_ACH_SET = '{u:%d}:ach';     // SET unlocked slugs
 
     /* cache key for meta counts */
-    private const C_META = 'achievement:meta:v2';
+    private const C_META = 'achievement:meta';
 
     /** @var array<int,array<string,bool>>  userId → slug map */
     private array $runtimeCache = [];
@@ -43,33 +43,31 @@ final class AchievementEngine
         /* ── 1. helpers & DSL compile cache ───────────────────── */
         DslHelpers::register($this->el);
 
-        // enable Symfony cache for parsed expressions → compiled once ‑> APCu
-        // cache compiled DSL if the EL version supports it
-        if (method_exists($this->el, 'setCacheItemPool')) {
-            $this->el->setCacheItemPool(
-                app('cache')->store('array')->getPool()
-            );
+        /* ── 2. Load static definitions ────────────────────────────── */
+        $static = collect($definitions ?? config('achievements'));
+
+        // allow tests to disable the dynamic milestones
+        if (config('achievements.dynamic', true)) {
+            $dynamic = $this->buildDynamicObjectMilestones()
+                ->merge($this->buildLocationFirsts())
+                ->merge($this->buildStreakMilestones());
+            $this->definitions = $static->merge($dynamic);
+        } else {
+            $this->definitions = $static;
         }
 
-        /* ── 2. load achievement definitions (static + dynamic) ─ */
-        $static  = collect($definitions ?? config('achievements'));
-        $dynamic = $this->buildDynamicObjectMilestones()
-            ->merge($this->buildLocationFirsts())
-            ->merge($this->buildStreakMilestones());
-
-        $this->definitions = $static->merge($dynamic);
-
-        // compile DSL
-        $this->compiled = $this->definitions->mapWithKeys(
-            fn($d,$slug)=>[$slug=>$this->el->parse($d['when'],
-                ['stats','meta','user','photo','redis']
-            )]
-        )->all();
+        $this->compiled = $this->definitions
+            ->mapWithKeys(fn($def, $slug) => [
+                $slug => $this->el->parse(
+                    $def['when'],
+                    ['stats','meta','user','photo','redis']
+                )
+            ])->all();
     }
 
     /* ============================================================ */
 
-    public function process(Photo $photo): void
+    public function generateAchievements(Photo $photo): void
     {
         if ($photo->summary === null || $photo->summary === []) {
             echo "Null/empty photo.summary found, exiting. \n";
@@ -83,23 +81,21 @@ final class AchievementEngine
     {
         $user  = $photo->user;
         $stats = $this->buildStats($user, $photo);
-
         $meta  = $this->cache->rememberForever(self::C_META,
             fn()=>['total_categories'=>Category::count()]
         );
+        $vars  = [
+            'stats' => $stats,
+            'meta'  => $meta,
+            'user'  => $user,
+            'photo' => $photo,
+            'redis' => Redis::connection(),
+        ];
 
-        $alreadyOwned = $user->achievements()->pluck('slug')->all();
-        $redis = Redis::connection();
-
-        return $this->definitions
-            ->reject(
-                fn ($_,$slug) => in_array($slug, $alreadyOwned, true) || ($this->runtimeCache[$user->id][$slug] ?? false)
-            )
-            ->filter(fn($def,$slug)=>
-                $this->el->evaluate($this->compiled[$slug],[
-                    'stats'=>$stats,'meta'=>$meta,'user'=>$user,'photo'=>$photo,'redis'=>$redis
-                ])
-            )
+        $owned = $user->achievements()->pluck('slug')->all();
+        return collect($this->compiled)
+            ->reject(fn($_,$slug) => in_array($slug, $owned, true))
+            ->filter(fn($node, $slug) => $this->el->evaluate($node, $vars))
             ->keys();
     }
 
@@ -165,10 +161,10 @@ final class AchievementEngine
         // -----------------------------------------------------------------
         [$xp, $uploads, $hashStreak] = $r->hmget(
             sprintf(self::K_STATS, $uid),
-            ['xp','uploads','st']
+            ['xp','uploads','streak']
         );
 
-        $stringStreak = $r->get("{u:{$uid}}:st") ?: 0;
+        $stringStreak = $r->get("{u:{$uid}}:streak") ?: 0;
         $str = max((int)$hashStreak, (int)$stringStreak);
 
         // -----------------------------------------------------------------

@@ -21,13 +21,11 @@ class AchievementEngineStreakTest extends TestCase
     {
         parent::setUp();
 
-        // Rebind the RedisFactory interface to the real RedisManager
         $this->app->instance(
             RedisFactory::class,
             $this->app->make(RedisManager::class)
         );
 
-        // Now flush _that_ same live Redis instance
         Redis::connection()->flushdb();
     }
 
@@ -64,13 +62,13 @@ class AchievementEngineStreakTest extends TestCase
         $mockConn = Mockery::mock(RedisConnection::class);
         $mockConn
             ->shouldReceive('hmget')
-            ->with('{u:11}:stats', ['xp','uploads','st'])
+            ->with('{u:11}:stats', ['xp','uploads','streak'])
             ->andReturn([0, 0, 3]);
 
         $mockConn
-            // then it does get('{u:11}:st')
+            // then it does get('{u:11}:streak')
             ->shouldReceive('get')
-            ->with("{u:11}:st")
+            ->with("{u:11}:streak")
             ->andReturn('3');
 
         $mockConn
@@ -84,6 +82,10 @@ class AchievementEngineStreakTest extends TestCase
             ->with(sprintf('{u:%d}:t', 11))
             ->andReturn([]);
 
+        $mockConn
+            ->shouldReceive('flushdb')
+            ->andReturnNull();
+
         // 5) MOCK the RedisFactory so that ->connection() returns our fake
         $mockFactory = Mockery::mock(RedisFactory::class);
         $mockFactory
@@ -92,6 +94,10 @@ class AchievementEngineStreakTest extends TestCase
 
         // 6) Bind that fake into the container
         $this->app->instance(RedisFactory::class, $mockFactory);
+
+        // ** STUB THE FACADE **
+        Redis::shouldReceive('connection')
+            ->andReturn($mockConn);
 
         // 7) Finally, resolve & exercise the engine
         $engine = $this->app->make(AchievementEngine::class);

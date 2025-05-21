@@ -5,7 +5,7 @@ namespace App\Console\Commands\tmp\v5\Migration;
 use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\LitterObject;
 use App\Models\Photo;
-use App\Services\Achievements\UpdateAchievementsService;
+use App\Services\Achievements\AchievementEngine;
 use App\Services\Redis\UpdateRedisService;
 use App\Services\Tags\UpdateTagsService;
 use App\Services\Timeseries\TimeSeriesService;
@@ -24,7 +24,7 @@ class MigrationScript extends Command
     protected UpdateTagsService $updateTagsService;
     protected UpdateRedisService $updateRedisService;
     protected TimeseriesService $timeseriesService;
-    protected UpdateAchievementsService $achievementsService;
+    protected AchievementEngine $achievementEngine;
 
     protected int $processed = 0;
     protected int $totalPhotos = 0;
@@ -33,13 +33,13 @@ class MigrationScript extends Command
         UpdateTagsService $updateTagsService,
         UpdateRedisService $updateRedisService,
         TimeseriesService $timeseriesService,
-        UpdateAchievementsService $achievementsService
+        AchievementEngine $achievementEngine,
     ) {
         parent::__construct();
         $this->updateTagsService = $updateTagsService;
         $this->updateRedisService = $updateRedisService;
         $this->timeseriesService = $timeseriesService;
-        $this->achievementsService = $achievementsService;
+        $this->achievementEngine = $achievementEngine;
     }
 
     public function handle(): void
@@ -80,7 +80,7 @@ class MigrationScript extends Command
                         $this->updateTagsService->updateTags($photo);
                         $this->updateRedisService->updateRedis($photo);
                         $this->timeseriesService->updateTimeSeries($photo);
-                        $this->achievementsService->generateAchievements($photo);
+                        $this->achievementEngine->generateAchievements($photo);
                     }
                     catch (Throwable $e)
                     {

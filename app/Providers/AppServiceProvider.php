@@ -7,9 +7,12 @@ use App\Models\Litter\Tags\CustomTagNew;
 use App\Models\Litter\Tags\Materials;
 use App\Models\Users\User;
 use App\Repositories\PhotoMetricsRepo;
+use App\Services\Achievements\AchievementEngine;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
+use Illuminate\Contracts\Cache\Repository;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,6 +24,13 @@ class AppServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app->singleton(PhotoMetricsRepo::class);
+
+        $this->app->bind(AchievementEngine::class, function($app) {
+            return new AchievementEngine(
+                $app->make(Repository::class),
+                $app->make(ExpressionLanguage::class)
+            );
+        });
     }
 
     /**

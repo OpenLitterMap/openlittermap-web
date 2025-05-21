@@ -61,7 +61,6 @@ class AchievementEngineDynamicTest extends TestCase
         // instantiate engine manually, passing a real EL instance
         $engine = new AchievementEngine(
             app(Cache::class),
-            app(RedisFactory::class),
             new ExpressionLanguage(),
             $defs
         );

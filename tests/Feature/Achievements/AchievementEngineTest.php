@@ -163,7 +163,7 @@ class AchievementEngineTest extends TestCase
         $engine = app(AchievementEngine::class);
 
         $photo = $this->makePhoto($user);
-        $engine->process($photo);
+        $engine->generateAchievements($photo);
 
         /** @var RedisFactory $redis */
         $redis = app(RedisFactory::class);
@@ -263,7 +263,7 @@ class AchievementEngineTest extends TestCase
             ],
         ];
 
-        app(AchievementEngine::class)->process($photo);
+        app(AchievementEngine::class)->generateAchievements($photo);
 
         $unlocked = $user->fresh()->achievements->pluck('slug')->all();
         foreach ($slugs as $slug) {

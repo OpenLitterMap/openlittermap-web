@@ -151,7 +151,7 @@ final class RedisMetricsCollector
         // 5) Now handle streak logic *outside* the pipeline on the real client
         $upTodayKey     = "{$uTag}:up:{$date}";
         $upYesterdayKey = "{$uTag}:up:" . Carbon::parse($date)->subDay()->format('Y-m-d');
-        $stKey          = "{$uTag}:st";
+        $stKey          = "{$uTag}:streak";
 
         // 5.1 mark today’s upload (key expiry in seconds)
         Redis::setex($upTodayKey, (int)(self::TS_TTL_MS / 1000), '1');
@@ -163,7 +163,7 @@ final class RedisMetricsCollector
 
         // 5.3 write streak back to both the string key and the packed stats
         Redis::set($stKey, $newStreak);
-        Redis::hSet($statsKey, 'st', $newStreak);
+        Redis::hSet($statsKey, 'streak', $newStreak);
     }
 
     /* ===================================================================== */

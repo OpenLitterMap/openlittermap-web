@@ -237,8 +237,8 @@ class LongTermAchievementsTest extends TestCase
 
         /* process the *same* photo twice */
         RedisMetricsCollector::queue($photo);
-        $engine->process($photo);
-        $engine->process($photo);
+        $engine->generateAchievements($photo);
+        $engine->generateAchievements($photo);
 
         /** XP in Redis should be 10, not 20 */
         $this->assertEquals(10, app('redis')->connection()->hGet('{u:99}:stats','xp'));

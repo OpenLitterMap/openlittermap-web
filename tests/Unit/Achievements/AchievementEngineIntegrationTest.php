@@ -35,7 +35,7 @@ class AchievementEngineIntegrationTest extends TestCase
         $photo->created_at = now();
 
         RedisMetricsCollector::queue($photo);
-        app(AchievementEngine::class)->process($photo);
+        app(AchievementEngine::class)->generateAchievements($photo);
 
         $this->assertDatabaseHas('user_achievements', [
             'user_id'=>$user->id,

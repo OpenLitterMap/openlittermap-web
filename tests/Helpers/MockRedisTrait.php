@@ -168,6 +168,20 @@ trait MockRedisTrait
         $alias(['get'],    fn ($key) => $this->redisData[$key] ?? null);
         $alias(['exists'], fn ()     => 0);
 
+        /* ---------- Simple-string writes ------------------------------*/
+        $alias(['set'], function ($key, $value) {
+            // mimic a Redis SET
+            $this->redisData[$key] = $value;
+            return true;
+        });
+
+        /* ---------- Expiring writes (SETEX) ----------------------------*/
+        $alias(['setex'], function ($key, $ttl, $value) {
+            // mimic a Redis SETEX (we ignore the TTL here)
+            $this->redisData[$key] = $value;
+            return true;
+        });
+
         $this->redisConn
             ->shouldReceive('hMget')
             ->withAnyArgs()
@@ -212,6 +226,24 @@ trait MockRedisTrait
                 $this->redisData[$key][$field] = $value;
                 return 1;
             })
+            ->byDefault();
+
+        $factory
+            ->shouldReceive('setex')
+            ->withAnyArgs()
+            ->andReturnTrue()
+            ->byDefault();
+
+        $factory
+            ->shouldReceive('set')
+            ->withAnyArgs()
+            ->andReturnTrue()
+            ->byDefault();
+
+        $factory
+            ->shouldReceive('exists')
+            ->withAnyArgs()
+            ->andReturn(0)   // no “yesterday” key by default
             ->byDefault();
 
         $this->app->instance(\Illuminate\Contracts\Redis\Factory::class, $factory);
