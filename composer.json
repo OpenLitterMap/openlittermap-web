@@ -90,6 +90,7 @@
         ],
         "post-create-project-cmd": [
             "@php artisan key:generate --ansi"
-        ]
+        ],
+        "seed:tags": "php artisan db:seed --class='Database\\Seeders\\Tags\\CreateAllTagsSeeder'"
     }
 }

@@ -12,14 +12,10 @@ class Achievement extends Model
 
     protected $guarded = [];
 
-    protected $casts = [
-        'meta' => 'array',
-    ];
-
     public function users()
     {
         return $this->belongsToMany(User::class, 'user_achievements')
-            ->withPivot(['unlocked_at','progress','target','snapshot'])
+            ->withPivot(['progress'])
             ->withTimestamps();
     }
 }

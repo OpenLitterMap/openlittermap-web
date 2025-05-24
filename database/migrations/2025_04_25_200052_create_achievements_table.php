@@ -6,44 +6,47 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
+    /*
+    ┌ achievements ───────────────────────────────────────────────┐
+    │ slug        uploads-42 / object-17-100 / streak-7           │
+    │ dimension   uploads | object | category | material | brand  │
+    │ tag_id      nullable (e.g. object_id)                       │
+    │ threshold   INT                                            │
+    │ xp          INT                                            │
+    └─────────────────────────────────────────────────────────────┘
+    */
     public function up(): void
     {
-        Schema::create('achievements', function (Blueprint $table) {
-            $table->id();
-            $table->string('slug')->unique();          // e.g. "first-upload"
-            $table->string('name');
-            $table->text('description')->nullable();
-            $table->unsignedInteger('xp')->default(0); // XP granted when unlocked
-            $table->unsignedTinyInteger('tier')->default(1); // bronze/silver/gold etc.
-            $table->string('icon')->nullable();        // local path or S3 key
-            $table->string('reward_type')->nullable(); // "badge", "geonft", "ai_banner", …
-            $table->json('meta')->nullable();          // anything else
-            $table->timestamps();
+        // definition of each achievement. Pre-populated with all existing tags.
+        Schema::create('achievements', function (Blueprint $t) {
+            $t->string('slug', 191)->primary();
+            $t->string('dimension', 32)->nullable();
+            $t->unsignedBigInteger('tag_id')->nullable();
+            $t->unsignedInteger('threshold');
+            $t->unsignedInteger('xp')->default(0);
+            $t->json('meta')->nullable();          // icon / text / i18n
+            $t->timestamps();
+
+            $t->unique(['dimension', 'tag_id', 'threshold']);
+            $t->index(['dimension', 'threshold']);
         });
 
-        Schema::create('user_achievements', function (Blueprint $table) {
-            $table->id();
+        /*
+          user_achievements is purely a pivot – no progress columns
+          (progress lives in Redis and is re-computed in 2 ms).
+        */
+        Schema::create('user_achievements', function (Blueprint $t) {
+            $t->unsignedInteger('user_id');
+            $t->foreign('user_id')
+                ->references('id')->on('users')
+                ->cascadeOnDelete();
+            $t->string('achievement_slug', 191);
+            $t->timestamp('unlocked_at')->useCurrent();
 
-            $table->unsignedInteger('user_id');
-            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
-
-            $table->foreignId('achievement_id')->constrained()->cascadeOnDelete();
-
-            $table->timestamp('unlocked_at');
-            $table->unsignedInteger('progress')->default(0);
-            $table->unsignedInteger('target')->default(0);
-            $table->json('snapshot')->nullable(); // state taken at unlock time
-            $table->unique(['user_id', 'achievement_id']);
-            $table->timestamps();
-        });
-
-        Schema::table('users', function (Blueprint $table) {
-            $table->unsignedInteger('xp_new')->default(0);
-            $table->unsignedInteger('level_new')->default(0);
-            $table->timestamp('leveled_up_at')->nullable();
+            $t->primary(['user_id', 'achievement_slug']);
+            $t->foreign('achievement_slug')
+                ->references('slug')->on('achievements')
+                ->cascadeOnDelete();
         });
     }
 
@@ -54,8 +57,5 @@ return new class extends Migration
     {
         Schema::dropIfExists('user_achievements');
         Schema::dropIfExists('achievements');
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['xp_new', 'level_new', 'leveled_up_at']);
-        });
     }
 };
