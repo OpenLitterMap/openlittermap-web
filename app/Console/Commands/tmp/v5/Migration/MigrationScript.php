@@ -33,17 +33,20 @@ class MigrationScript extends Command
         UpdateTagsService $updateTagsService,
         UpdateRedisService $updateRedisService,
         TimeseriesService $timeseriesService,
-        AchievementEngine $achievementEngine,
+//        AchievementEngine $achievementEngine,
     ) {
         parent::__construct();
         $this->updateTagsService = $updateTagsService;
         $this->updateRedisService = $updateRedisService;
         $this->timeseriesService = $timeseriesService;
-        $this->achievementEngine = $achievementEngine;
+//        $this->achievementEngine = $achievementEngine;
     }
 
     public function handle(): void
     {
+        echo "testing \n";
+        $this->info("Testing 123\n");
+
         if (!DB::getSchemaBuilder()->hasColumn('photos', 'migrated_at')) {
             $this->error('The photos.migrated_at column does not exist. Please run the migration first.');
             return;
@@ -78,9 +81,13 @@ class MigrationScript extends Command
                     try
                     {
                         $this->updateTagsService->updateTags($photo);
+                        echo "tags updated\n";
                         $this->updateRedisService->updateRedis($photo);
+                        echo "redis updated\n";
                         $this->timeseriesService->updateTimeSeries($photo);
-                        $this->achievementEngine->generateAchievements($photo);
+                        echo "timeseries updated\n";
+                        //$this->achievementEngine->generateAchievements($photo);
+                        // echo "achievements generated\n";
                     }
                     catch (Throwable $e)
                     {
