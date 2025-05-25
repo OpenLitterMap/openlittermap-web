@@ -1,442 +1,391 @@
 <?php
-
 declare(strict_types=1);
 
 namespace Tests\Feature\Achievements;
 
 use App\Events\AchievementsUnlocked;
 use App\Models\Achievements\Achievement;
-use App\Models\Litter\Tags\BrandList;
-use App\Models\Litter\Tags\Category;
-use App\Models\Litter\Tags\CustomTagNew;
-use App\Models\Litter\Tags\LitterObject;
-use App\Models\Litter\Tags\Materials;
+use App\Models\Litter\Tags\{BrandList, Category, LitterObject, Materials};
+use App\Models\Location\{Country, State, City};
 use App\Models\Photo;
 use App\Models\Users\User;
 use App\Services\Achievements\AchievementEngine;
-use App\Services\Achievements\Tags\TagKeyCache;
 use App\Services\Redis\RedisMetricsCollector;
-use Illuminate\Contracts\Redis\Factory as RedisFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Redis;
-use Tests\Helpers\MockRedisTrait;
+use Illuminate\Support\Facades\{Cache, DB, Event, Redis};
 use Tests\TestCase;
 
 class AchievementEngineTest extends TestCase
 {
-    use RefreshDatabase, MockRedisTrait;
+    use RefreshDatabase;
+
+    /* ------------------------------------------------------------------
+     |  Helpers
+     * ------------------------------------------------------------------*/
+
+    /** Map token → tinyint code (keep in sync with production enum) */
+    private const DIM = [
+        // dimension-wide
+        'uploads'    => 0,
+        'objects'    => 1,
+        'categories' => 2,
+        'materials'  => 3,
+        'brands'     => 4,
+        // per-tag
+        'object'     => 5,
+        'category'   => 6,
+        'material'   => 7,
+        'brand'      => 8,
+    ];
+
+    private int $countryId;
+    private int $stateId;
+    private int $cityId;
+
+    private function dimCode(string $token): int
+    {
+        return self::DIM[$token] ?? throw new \InvalidArgumentException("Unknown dimension: $token");
+    }
+
+    /** Create an achievement definition row from a slug */
+    private function define(string $slug, int $xp): Achievement
+    {
+        $parts = explode('-', $slug);
+        if (count($parts) === 2) {
+            [$token, $threshold] = $parts;
+            $tagId = 0;
+        } elseif (count($parts) === 3) {
+            [$token, $tagId, $threshold] = $parts;
+            $tagId = (int) $tagId;
+        } else {
+            throw new \InvalidArgumentException('Bad slug: ' . $slug);
+        }
+
+        return Achievement::create([
+            'slug'      => $slug,
+            'dimension' => $this->dimCode($token),
+            'tag_id'    => $tagId,
+            'threshold' => (int) $threshold,
+            'xp'        => $xp,
+        ]);
+    }
+
+    private function makePhoto(User $user, array $summary): Photo
+    {
+        return tap(new Photo(), function (Photo $p) use ($user, $summary) {
+            $p->user_id    = $user->id;
+            $p->created_at = Carbon::parse('2025-01-20 12:00:00');
+            $p->summary    = $summary;
+            $p->filename = 'test.png';
+            $p->model = 'iphone';
+            $p->datetime = Carbon::parse('2025-01-20 12:00:00');
+
+            $p->country_id= $this->countryId;
+            $p->state_id  = $this->stateId;
+            $p->city_id   = $this->cityId;
+
+            $p->setRelation('user', $user);
+            $p->setRelation('country', null);   // avoid lazy-load queries
+            $p->setRelation('state',   null);
+            $p->setRelation('city',    null);
+            $p->setRelation('user', $user);
+
+            $p->save();
+        });
+    }
+
+    private function assertUnlocked(User $u, string $slug): void
+    {
+        $id = Achievement::where('slug', $slug)->value('id');
+        $this->assertDatabaseHas('user_achievements', [
+            'user_id'        => $u->id,
+            'achievement_id' => $id,
+        ]);
+    }
+
+    private function assertNotUnlocked(User $u, string $slug): void
+    {
+        $id = Achievement::where('slug', $slug)->value('id');
+        $this->assertDatabaseMissing('user_achievements', [
+            'user_id'        => $u->id,
+            'achievement_id' => $id,
+        ]);
+    }
+
+    /* ------------------------------------------------------------------
+     |  Bootstrap
+     * ------------------------------------------------------------------*/
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->mockRedis([
-            '{u:1}:stats' => ['xp'=>0,'uploads'=>0,'st'=>0],
-            '{u:1}:t'     => [],    // object counts
-            '{u:1}:c'     => [],    // category counts
-            '{u:1}:b'     => [],    // brand/material/custom_tag counts
-            '{u:1}:ach'   => [],    // unlocked set
-        ]);
+        Redis::flushDB();
+        Cache::flush();
 
-        $this->redisConn
-            ->shouldReceive('script')
-            ->with('LOAD', \Mockery::any())
-            ->andReturn('fake‐sha');
-        $this->redisConn
-            ->shouldReceive('sAdd')
-            ->andReturnUsing(fn($key, ...$slugs) => count($slugs));
-        $this->redisConn
-            ->shouldReceive('evalSha')
-            ->andReturnUsing(function($sha, $numKeys, ...$args) {
-                [$achKey, $statsKey] = array_slice($args, 0, 2);
-                $xpToAdd = $args[$numKeys] ?? 0;
-                $this->redisConn->hIncrBy($statsKey, 'xp', $xpToAdd);
-                return 1;
-            });
+        $country = Country::factory()->create();
+        $state = State::factory()->create(['country_id' => $country->id]);
+        $city = City::factory()->create(['country_id' => $country->id, 'state_id' => $state->id]);
+        $this->countryId = $country->id;
+        $this->stateId = $state->id;
+        $this->cityId = $city->id;
 
-        // Baseline tags that the feature specs expect
-        Category   ::firstOrCreate(['key' => 'packaging']);
+        Category::firstOrCreate(['key' => 'packaging']);
         LitterObject::firstOrCreate(['key' => 'plastic_bottle']);
         LitterObject::firstOrCreate(['key' => 'can']);
 
-        TagKeyCache::forgetAll();
-
-        Cache::forget('achievement:meta');
+        config(['achievements.milestones' => [1, 10, 42, 69, 100]]);
     }
 
-    private function createAchievement(string $slug, int $xp): int
-    {
-        return Achievement::firstOrCreate(['slug' => $slug], [
-            'name' => $slug,
-            'xp'   => $xp,
-        ])->id;
-    }
-
-    private function makePhoto(User $user, array $objects = []): Photo
-    {
-        $photo = new Photo();
-        $photo->user_id = $user->id;
-        $photo->setRelation('user', $user);
-        $photo->created_at = Carbon::parse('2025-04-20 12:00:00');
-        $photo->summary = [
-            'tags' => collect($objects)->map(fn ($q) => ['quantity' => $q])->all(),
-        ];
-        return $photo;
-    }
-
-    // ------------------------------------------------------------------
-    // Expression‑engine behaviour (data‑driven)
-    // ------------------------------------------------------------------
-
-    /**
-     * @test
-     * @dataProvider dslProvider
-     */
-    public function dsl_helpers_evaluate(string $when, array $redisSeed, array $objects, bool $expect): void
-    {
-        foreach ($redisSeed as $key => $value) {
-            if (is_array($value)) {
-                Redis::connection()->hMSet($key, $value);
-            } else {
-                Redis::connection()->set($key, $value);
-            }
-        }
-
-        config()->set('achievements', ['foo' => ['xp' => 1, 'when' => $when]]);
-        $this->createAchievement('foo', 1);
-
-        $user  = User::factory()->create(['id' => 1, 'level' => 0]);
-        $photo = $this->makePhoto($user, $objects);
-
-        $engine = app(AchievementEngine::class);
-
-        $result = $engine->slugsToUnlock($photo)->contains('foo');
-        $this->assertSame($expect, $result);
-    }
-
-    public static function dslProvider(): array
-    {
-        return [
-            'hasObject_positive' => [
-                'hasObject("plastic_bottle",3)',
-                [],
-                ['plastic_bottle' => 3],
-                true,
-            ],
-            'hasObject_negative' => [
-                'hasObject("plastic_bottle",5)',
-                [],
-                ['plastic_bottle' => 3],
-                false,
-            ],
-            'objectQty_combined' => [
-                'objectQty("can")>=10',
-                ['{u:1}:t' => ['can' => 9]],
-                ['can' => 1],
-                true,
-            ],
-            'streak' => [
-                'stats.currentStreak>=3',
-                ['{u:1}:streak' => '2'],
-                [],
-                false,
-            ],
-        ];
-    }
-
-    // ------------------------------------------------------------------
-    // Unlock flow
-    // ------------------------------------------------------------------
+    /* ------------------------------------------------------------------
+     |  Tests
+     * ------------------------------------------------------------------*/
 
     /** @test */
-    public function unlock_adds_xp_and_dispatches_event(): void
+    public function first_upload_unlocks(): void
     {
-        config()->set('achievements', ['x' => ['xp' => 20, 'when' => 'true']]);
-        $this->createAchievement('x', 24);
+        $this->define('uploads-1', 10);
+
+        $u = User::factory()->create();
+        $p = $this->makePhoto($u, [
+            'tags' => ['packaging' => ['plastic_bottle' => ['quantity' => 1]]],
+        ]);
 
         Event::fake();
+        RedisMetricsCollector::queue($p);
+        app(AchievementEngine::class)->generateAchievements($p);
 
-        $user   = User::factory()->create(['id' => 1, 'level' => 0]);
-        $engine = app(AchievementEngine::class);
-
-        $photo = $this->makePhoto($user);
-        $engine->generateAchievements($photo);
-
-        /** @var RedisFactory $redis */
-        $redis = app(RedisFactory::class);
-        $this->assertEquals(20, (int) $redis->connection()->hGet(sprintf('{u:%d}:stats', 1), 'xp'));
-        $this->assertDatabaseCount('user_achievements', 2);
-        Event::assertDispatchedTimes(AchievementsUnlocked::class, 1);
-        $this->assertSame(1, $user->fresh()->level);
+        $this->assertUnlocked($u, 'uploads-1');
+        Event::assertDispatched(AchievementsUnlocked::class);
+        $this->assertEquals(10, (int) Redis::hGet("{u:{$u->id}}:stats", 'xp'));
     }
 
     /** @test */
-    public function unlock_levels_up_when_threshold_crossed(): void
+    public function per_tag_object_milestones(): void
     {
-        config()->set('achievements', array_merge(config('achievements'), [
-            'big' => ['xp' => 2000, 'when' => 'true'],
-        ]));
-        $this->createAchievement('big', 2000);
+        $bottle = LitterObject::where('key', 'plastic_bottle')->first();
+        $this->define("object-{$bottle->id}-1", 5);
+        $this->define("object-{$bottle->id}-10", 20);
 
-        $user   = User::factory()->create(['id' => 1, 'level' => 0]);
-        $engine = app(AchievementEngine::class);
-        $engine->unlock($user, collect(['big']));
+        $u = User::factory()->create();
 
-        $this->assertSame(5, $user->refresh()->level);
+        RedisMetricsCollector::queue(
+            $this->makePhoto($u, ['tags' => ['packaging' => ['plastic_bottle' => ['quantity' => 5]]]])
+        );
+        app(AchievementEngine::class)->generateAchievements(Photo::first());
+
+        $this->assertUnlocked($u, "object-{$bottle->id}-1");
+        $this->assertNotUnlocked($u, "object-{$bottle->id}-10");
+
+        RedisMetricsCollector::queue(
+            $this->makePhoto($u, ['tags' => ['packaging' => ['plastic_bottle' => ['quantity' => 5]]]])
+        );
+        app(AchievementEngine::class)->generateAchievements(Photo::latest()->first());
+
+        $this->assertUnlocked($u, "object-{$bottle->id}-10");
     }
 
     /** @test */
-    public function first_in_country_unlocked(): void
+    public function category_milestones(): void
     {
-        config()->set('achievements', [
-            'country-pioneer' => [
-                'xp' => 10,
-                'when' => 'isFirstInCountry()',
+        $cat = Category::first();
+        $this->define("category-{$cat->id}-1", 5);
+        $this->define("category-{$cat->id}-10", 20);
+
+        $u = User::factory()->create();
+
+        $summary = [
+            'tags' => [
+                'packaging' => [
+                    'plastic_bottle' => ['quantity' => 6],
+                    'can'            => ['quantity' => 4],
+                ],
             ],
-        ]);
-        $this->createAchievement('country-pioneer', 10);
+            'totals' => ['by_category' => ['packaging' => 10]],
+        ];
 
-        $user = User::factory()->create(['id' => 1, 'level' => 0]);
-        $photo = $this->makePhoto($user);
-        $photo->country_id = 99;
+        RedisMetricsCollector::queue($this->makePhoto($u, $summary));
+        app(AchievementEngine::class)->generateAchievements(Photo::first());
 
-        Redis::shouldReceive('evalSha')->andReturn(1);
-
-        $engine = app(AchievementEngine::class);
-        $slugs  = $engine->slugsToUnlock($photo);
-
-        $this->assertTrue($slugs->contains('country-pioneer'));
+        $this->assertUnlocked($u, "category-{$cat->id}-1");
+        $this->assertUnlocked($u, "category-{$cat->id}-10");
     }
 
-    // ------------------------------------------------------------------
-    // Dynamic-milestone unlocks
-    // ------------------------------------------------------------------
-
     /** @test */
-    public function first_photo_unlocks_every_dimension_1_milestone(): void
+    public function material_and_brand_milestones(): void
     {
-        $uploads = ['uploads-1'];
-        $beerBottle = LitterObject::where('key', 'plastic_bottle')->first();
-        $packCat    = Category::where('key', 'packaging')->first();
-        $slugs = array_merge($uploads, [
-            "object-{$beerBottle->id}-1",
-            "category-{$packCat->id}-1",
-            // material
-            // brand
-            // customTag
-        ]);
+        $plastic = Materials::firstOrCreate(['key' => 'plastic']);
+        $coke    = BrandList::firstOrCreate(['key' => 'coca_cola']);
 
-        foreach ($slugs as $slug) {
-            $this->createAchievement($slug, 2);
-        }
+        $this->define("material-{$plastic->id}-1", 5);
+        $this->define("material-{$plastic->id}-10", 20);
+        $this->define("brand-{$coke->id}-1", 5);
+        $this->define("brand-{$coke->id}-10", 20);
 
-        // $this->mockRedis([
-//            '{u:1}:stats' => ['xp' => 0, 'uploads' => 0, 'st' => 0],
-//            '{u:1}:t'     => [],
-//            '{u:1}:ach'   => [],
-//        ]);
+        $u = User::factory()->create();
 
-        $user  = User::factory()->create(['id' => 1, 'level' => 0]);
-        $photo = $this->makePhoto($user, ['plastic_bottle' => 1]);
-        // one brand / material / customTag to hit every bucket
-        $photo->summary = [
+        $summary = [
             'tags' => [
                 'packaging' => [
                     'plastic_bottle' => [
-                        'quantity'    => 1,
-                        'materials'   => ['plastic'   => 1],
-                        'brands'      => ['coke'      => 1],
-                        'custom_tags' => ['washed_up' => 1],
+                        'quantity'  => 10,
+                        'materials' => ['plastic'   => 10],
+                        'brands'    => ['coca_cola' => 10],
                     ],
                 ],
             ],
-            'totals' => [
-                'total_tags'    => 1,
-                'total_objects' => 1,
-                'by_category'   => ['packaging' => 1],
-                'materials'     => 1,
-                'brands'        => 1,
-                'custom_tags'   => 1,
+        ];
+
+        RedisMetricsCollector::queue($this->makePhoto($u, $summary));
+        app(AchievementEngine::class)->generateAchievements(Photo::first());
+
+        // material
+        $this->assertUnlocked($u, "material-{$plastic->id}-1");
+        $this->assertUnlocked($u, "material-{$plastic->id}-10");
+
+        // brand
+        $this->assertUnlocked($u, "brand-{$coke->id}-1");
+        $this->assertUnlocked($u, "brand-{$coke->id}-10");
+    }
+
+    /** @test */
+    public function dimension_wide_milestones(): void
+    {
+        collect([
+            'objects-10'   => 10,
+            'objects-42'   => 20,
+            'categories-1' => 5,
+            'materials-10' => 15,
+            'brands-10'    => 15,
+        ])->each(fn ($xp, $slug) => $this->define($slug, $xp));
+
+        $u = User::factory()->create();
+
+        $summary = [
+            'tags' => [
+                'packaging' => [
+                    'plastic_bottle' => [
+                        'quantity'  => 30,
+                        'materials' => ['plastic'    => 30],
+                        'brands'    => ['coca_cola'  => 15, 'pepsi' => 15],
+                    ],
+                    'can' => [
+                        'quantity'  => 12,
+                        'materials' => ['aluminium' => 12],
+                        'brands'    => ['coca_cola' => 12],
+                    ],
+                ],
             ],
         ];
 
-        app(AchievementEngine::class)->generateAchievements($photo);
+        RedisMetricsCollector::queue($this->makePhoto($u, $summary));
+        app(AchievementEngine::class)->generateAchievements(Photo::first());
 
-        $unlocked = $user->fresh()->achievements->pluck('slug')->all();
-        foreach ($slugs as $slug) {
-            $this->assertContains($slug, $unlocked, "Missing {$slug}");
+        foreach (['objects-10', 'objects-42', 'categories-1', 'materials-10', 'brands-10'] as $s) {
+            $this->assertUnlocked($u, $s);
         }
-        $this->assertCount(count($slugs), $unlocked);
     }
 
     /** @test */
-    public function uploads_42_milestone_triggers_on_42nd_photo(): void
+    public function idempotent_unlocks(): void
     {
-        $this->createAchievement('uploads-42', 2);
+        $this->define('uploads-1', 10);
 
-        $user  = User::factory()->create(['id' => 1, 'level' => 0]);
-        $photo = $this->makePhoto($user);
-
-        // seed 41 prior uploads
-        Redis::connection()->hIncrBy('{u:1}:stats', 'uploads', 41);
-
-        // update redis
-        RedisMetricsCollector::queue($photo);
-
-        $engine = app(AchievementEngine::class);
-
-        $this->assertTrue(
-            $engine->slugsToUnlock($photo)->contains('uploads-42')
-        );
-    }
-
-    /** @test */
-    public function objects_42_milestone_triggers_when_cumulative_hits_42(): void
-    {
-        LitterObject::where('key', 'plastic_bottle')->first();
-
-        $user  = User::factory()->create(['id' => 1, 'level' => 0]);
-        $photo = $this->makePhoto($user, ['plastic_bottle' => 1]);
-
-        Redis::connection()->hIncrBy('{u:1}:t', 'plastic_bottle', 41);
-        RedisMetricsCollector::queue($photo);
-
-        $this->assertTrue(
-            app(AchievementEngine::class)
-                ->slugsToUnlock($photo)
-                ->contains('objects-42')
-        );
-    }
-
-    /** @test */
-    public function milestones_increment_for_every_tag_type(): void
-    {
-        // -----------------------------------------------------------------
-        // 0.  Tag fixtures (creates one of each class)
-        // -----------------------------------------------------------------
-        $beerBottle  = LitterObject::firstOrCreate(['key' => 'beer_bottle']);
-        $alcoholCat  = Category    ::firstOrCreate(['key' => 'alcohol']);
-        $glassMat    = Materials   ::firstOrCreate(['key' => 'glass']);
-        $heineken    = BrandList   ::firstOrCreate(['key' => 'heineken']);
-        $myTag       = CustomTagNew::firstOrCreate(['key' => 'my_tag']);
-
-        // Map “dimension” → tag key we’ll inject into the first photo
-        $perDimension = [
-            'object'     => $beerBottle->id,
-            'category'   => $alcoholCat->id,
-            'material'   => $glassMat->id,
-            'brand'      => $heineken->id,
-            'customTag'  => $myTag->id,
-            'uploads'     => null,                // pseudo-dimension
-        ];
-
-        $milestones = [1, 42, 69];                // the set we want to prove
-
-        // -----------------------------------------------------------------
-        // 1.  Seed the achievements table from that map
-        // -----------------------------------------------------------------
-        $slugs42 = [];    // we’ll assert these later
-        $slugs69 = [];
-
-        foreach ($perDimension as $dim => $key) {
-            foreach ($milestones as $m) {
-                $slug = $key !== null ? "{$dim}-{$key}-{$m}" : "uploads-{$m}";
-
-                Achievement::firstOrCreate(['slug' => $slug], [
-                    'name' => $slug,
-                    'xp'   => 0,
-                ]);
-
-                if ($m === 42) $slugs42[] = $slug;
-                if ($m === 69) $slugs69[] = $slug;
-            }
-        }
-
-        // -----------------------------------------------------------------
-        // 2.  Wire Redis mock (uploads / objects / categories hashes only)
-        //     We’ll bump *all* counters in one go to save boilerplate.
-        // -----------------------------------------------------------------
-
-        Redis::connection()->hMSet('{u:1}:stats', ['xp' => 0, 'uploads' => 1, 'st' => 0]);
-        Redis::connection()->hMSet('{u:1}:t',      ['plastic_bottle' => 41]);
-        Redis::connection()->hMSet('{u:1}:c',      ['packaging'       => 41]);
-        Redis::connection()->hMSet('{u:1}:b', [
-            "m:glass"   => 41,
-            "b:coke"    => 41,
-            "c:washed_up" => 41,
+        $u = User::factory()->create();
+        $p = $this->makePhoto($u, [
+            'tags' => ['packaging' => ['plastic_bottle' => ['quantity' => 1]]],
         ]);
 
-        // -----------------------------------------------------------------
-        // 3.  First photo (qty 1 for each tag) ----------------------------
-        // -----------------------------------------------------------------
-        $user   = User::factory()->create(['id' => 1, 'level' => 0]);
-        $engine = app(AchievementEngine::class);
+        Event::fake();
+        RedisMetricsCollector::queue($p);
+        app(AchievementEngine::class)->generateAchievements($p);
+        app(AchievementEngine::class)->generateAchievements($p);
 
-        $p1 = $this->makePhoto($user, [$beerBottle->key => 1]);
-        $p1->summary = $this->buildSummary($beerBottle->key, $glassMat->key, $heineken->key,  $myTag->key, 1);
-
-        $unlocked = $engine->slugsToUnlock($p1);
-        foreach ($perDimension as $dim => $k) {
-            $slug1 = $k !== null ? "{$dim}-{$k}-1" : 'uploads-1';
-            $this->assertTrue($unlocked->contains($slug1), "missing $slug1");
-        }
-
-        // -----------------------------------------------------------------
-        // 4.  Second photo (+41 each → 42) -------------------------------
-        // -----------------------------------------------------------------
-        $p2 = $this->makePhoto($user, [$beerBottle->key => 41]);
-        $p2->summary = $this->buildSummary($beerBottle->key, $glassMat->key, $heineken->key,  $myTag->key, 41);
-
-        RedisMetricsCollector::queue($p2);
-        $unlocked = $engine->slugsToUnlock($p2);
-
-        foreach ($slugs42 as $slug) {
-            $this->assertTrue($unlocked->contains($slug), "missing $slug (42)");
-        }
-
-        // -----------------------------------------------------------------
-        // 5.  Third photo (+27 each → 69) --------------------------------
-        // -----------------------------------------------------------------
-        $p3 = $this->makePhoto($user, [$beerBottle->key => 27]);
-        $p3->summary = $this->buildSummary($beerBottle->key, $glassMat->key, $heineken->key,  $myTag->key, 27);
-
-        RedisMetricsCollector::queue($p3);
-        $unlocked = $engine->slugsToUnlock($p3);
-
-        foreach ($slugs69 as $slug) {
-            $this->assertTrue($unlocked->contains($slug), "missing $slug (69)");
-        }
+        $this->assertUnlocked($u, 'uploads-1');
+        Event::assertDispatchedTimes(AchievementsUnlocked::class, 1);
     }
 
-    /* Build a summary that hits every type once with $qty */
-    private function buildSummary(
-        string $objKey,
-        string $matKey,
-        string $brandKey,
-        string $tagKey,
-        int $qty
-    ): array
+    /** @test */
+    public function user_levels_up_via_xp(): void
     {
-        return [
-            'tags' => [
-                'alcohol' => [
-                    $objKey => [
-                        'quantity'    => $qty,
-                        'materials'   => [$matKey  => $qty],
-                        'brands'      => [$brandKey => $qty],
-                        'custom_tags' => [$tagKey   => $qty],
-                    ],
-                ],
-            ],
-            'totals' => [
-                'total_objects' => $qty,
-                'materials'     => $qty,
-                'brands'        => $qty,
-                'custom_tags'   => $qty,
-            ],
-        ];
+        config(['level' => [0 => 0, 100 => 1, 500 => 2, 1000 => 3]]);
+        $this->define('uploads-1', 600);
+
+        $u = User::factory()->create(['level' => 0]);
+
+        RedisMetricsCollector::queue(
+            $this->makePhoto($u, ['tags' => ['packaging' => ['plastic_bottle' => ['quantity' => 1]]]])
+        );
+        app(AchievementEngine::class)->generateAchievements(Photo::first());
+
+        $this->assertEquals(3, $u->fresh()->level);
+    }
+
+    /** @test */
+    public function tag_lookup_is_cached(): void
+    {
+        $bottle = LitterObject::where('key', 'plastic_bottle')->first();
+        $this->define("object-{$bottle->id}-1", 5);
+
+        $u = User::factory()->create();
+
+        DB::enableQueryLog();
+
+        RedisMetricsCollector::queue(
+            $this->makePhoto($u, ['tags' => ['packaging' => ['plastic_bottle' => ['quantity' => 1]]]])
+        );
+        app(AchievementEngine::class)->generateAchievements(Photo::first());
+
+        $first = count(DB::getQueryLog());
+        DB::flushQueryLog();
+
+        RedisMetricsCollector::queue(
+            $this->makePhoto($u, ['tags' => ['packaging' => ['plastic_bottle' => ['quantity' => 1]]]])
+        );
+        app(AchievementEngine::class)->generateAchievements(Photo::latest()->first());
+
+        $second = count(DB::getQueryLog());
+        DB::disableQueryLog();
+
+        $this->assertLessThan($first, $second);
+    }
+
+    /** @test */
+    public function batch_queue_processing(): void
+    {
+        $this->define('uploads-1', 10);
+        $this->define('uploads-10', 50);
+
+        $users = User::factory()->count(5)->create();
+        foreach ($users as $u) {
+            Redis::hSet("{u:{$u->id}}:stats", 'uploads', 10);
+            Redis::sAdd('achievement:queue', $u->id);
+        }
+
+        Event::fake();
+        app(AchievementEngine::class)->processQueue();
+
+        foreach ($users as $u) {
+            $this->assertUnlocked($u, 'uploads-1');
+            $this->assertUnlocked($u, 'uploads-10');
+        }
+        $this->assertEquals(0, Redis::sCard('achievement:queue'));
+    }
+
+    /** @test */
+    public function missing_tags_are_ignored(): void
+    {
+        $this->define('object-99999-1', 5);
+
+        $u = User::factory()->create();
+        $p = $this->makePhoto($u, [
+            'tags' => ['packaging' => ['ghost_tag' => ['quantity' => 1]]],
+        ]);
+
+        RedisMetricsCollector::queue($p);
+        app(AchievementEngine::class)->generateAchievements($p);
+
+        $this->assertNotUnlocked($u, 'object-99999-1');
     }
 }

@@ -4,13 +4,11 @@ namespace Database\Seeders;
 
 use Database\Seeders\Tags\CreateAllTagsSeeder;
 use Illuminate\Database\Seeder;
-use Database\Seeders\Tags\GenerateTagsSeeder;
-use Database\Seeders\Tags\GenerateBrandsSeeder;
 
 class DatabaseSeeder extends Seeder
 {
     /**
-     * Populate the application's database.
+     * Populate the application's database
      */
     public function run (): void
     {

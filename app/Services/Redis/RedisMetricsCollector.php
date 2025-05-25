@@ -64,7 +64,7 @@ final class RedisMetricsCollector
         $uid      = $photo->user_id;
         $uTag     = "{u:$uid}";
         $xp       = (int) ($photo->xp ?? 0);
-        $ts       = $photo->created_at;
+        $ts       = $photo->created_at ?? now();
         $date     = $ts->format('Y-m-d');
         $monthTag = '{g}:' . $ts->format('Y-m'); // Fixed hash clustering
 

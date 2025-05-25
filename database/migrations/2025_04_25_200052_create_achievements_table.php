@@ -19,34 +19,33 @@ return new class extends Migration
     {
         // definition of each achievement. Pre-populated with all existing tags.
         Schema::create('achievements', function (Blueprint $t) {
-            $t->string('slug', 191)->primary();
-            $t->string('dimension', 32)->nullable();
-            $t->unsignedBigInteger('tag_id')->nullable();
-            $t->unsignedInteger('threshold');
-            $t->unsignedInteger('xp')->default(0);
-            $t->json('meta')->nullable();          // icon / text / i18n
+            $t->id();                                       // bigint PK, auto-increment
+            $t->string('type', 50);                         // 'uploads', 'object', 'category', etc.
+            $t->unsignedBigInteger('tag_id')->nullable();   // null for dimension-wide achievements
+            $t->unsignedInteger('threshold');               // Required count to unlock
+            $t->unsignedInteger('xp');                      // XP awarded
+            $t->json('metadata')->nullable();               // For i18n, icons, descriptions
             $t->timestamps();
 
-            $t->unique(['dimension', 'tag_id', 'threshold']);
-            $t->index(['dimension', 'threshold']);
+            // Composite unique constraint
+            $t->unique(['type', 'tag_id', 'threshold']);
+
+            // Indexes for efficient queries
+            $t->index(['type', 'threshold']);
+            $t->index('type');
         });
 
-        /*
-          user_achievements is purely a pivot – no progress columns
-          (progress lives in Redis and is re-computed in 2 ms).
-        */
         Schema::create('user_achievements', function (Blueprint $t) {
             $t->unsignedInteger('user_id');
-            $t->foreign('user_id')
-                ->references('id')->on('users')
-                ->cascadeOnDelete();
-            $t->string('achievement_slug', 191);
-            $t->timestamp('unlocked_at')->useCurrent();
+            $t->unsignedBigInteger('achievement_id');
+            $t->timestamp('created_at')->useCurrent();
+            $t->timestamp('updated_at')->nullable();
 
-            $t->primary(['user_id', 'achievement_slug']);
-            $t->foreign('achievement_slug')
-                ->references('slug')->on('achievements')
-                ->cascadeOnDelete();
+            $t->primary(['user_id', 'achievement_id']);
+            $t->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
+            $t->foreign('achievement_id')->references('id')->on('achievements')->cascadeOnDelete();
+
+            $t->index('user_id');
         });
     }
 

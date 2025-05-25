@@ -2,7 +2,7 @@
 
 namespace Database\Seeders\Tags;
 
-use Database\Seeders\Achievements\GenerateAchievementsSeeder;
+use Database\Seeders\AchievementsSeeder;
 use Illuminate\Database\Seeder;
 
 class CreateAllTagsSeeder extends Seeder
@@ -11,7 +11,7 @@ class CreateAllTagsSeeder extends Seeder
         $this->call([
             GenerateTagsSeeder::class,
             GenerateBrandsSeeder::class,
-            GenerateAchievementsSeeder::class,
+            AchievementsSeeder::class,
         ]);
     }
 }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\ApiPhotosController;
 use App\Models\Littercoin;
 
@@ -145,4 +146,24 @@ Route::prefix('/teams')->group(function () {
     Route::post('/join', 'API\TeamsController@join');
     Route::post('/leave', 'API\TeamsController@leave');
     Route::post('/leaderboard/visibility', 'Teams\TeamsLeaderboardController@toggle')->middleware('auth:api');
+});
+
+Route::middleware('auth:sanctum')->prefix('achievements')->group(function () {
+    // Get user's achievement summary
+    Route::get('/summary', [AchievementController::class, 'summary']);
+
+    // Get all achievements with pagination and filters
+    Route::get('/', [AchievementController::class, 'index']);
+
+    // Get achievements close to being unlocked
+    Route::get('/near-completion', [AchievementController::class, 'nearCompletion']);
+
+    // Get recently unlocked achievements
+    Route::get('/recent', [AchievementController::class, 'recent']);
+
+    // Get statistics for a specific achievement type
+    Route::get('/types/{type}/stats', [AchievementController::class, 'typeStats']);
+
+    // Get a single achievement with user progress
+    Route::get('/{achievement}', [AchievementController::class, 'show']);
 });
