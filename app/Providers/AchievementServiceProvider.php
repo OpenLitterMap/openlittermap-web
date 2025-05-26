@@ -3,12 +3,13 @@
 namespace App\Providers;
 
 use App\Services\Achievements\AchievementEngine;
-use App\Services\Achievements\AchievementProgressTracker;
 use App\Services\Achievements\AchievementRepository;
-use App\Services\Achievements\Strategies\DimensionWideAchievementStrategy;
-use App\Services\Achievements\Strategies\TagBasedAchievementStrategy;
-use App\Services\Achievements\Strategies\UploadsAchievementStrategy;
-use App\Services\Redis\RedisMetricsCollector;
+use App\Services\Achievements\Checkers\BrandsChecker;
+use App\Services\Achievements\Checkers\CategoriesChecker;
+use App\Services\Achievements\Checkers\CustomTagChecker;
+use App\Services\Achievements\Checkers\MaterialsChecker;
+use App\Services\Achievements\Checkers\ObjectsChecker;
+use App\Services\Achievements\Checkers\UploadsChecker;
 use Illuminate\Support\ServiceProvider;
 
 class AchievementServiceProvider extends ServiceProvider
@@ -18,20 +19,17 @@ class AchievementServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Register repository and tracker as singletons
+        // Register repository as singleton
         $this->app->singleton(AchievementRepository::class);
-        $this->app->singleton(AchievementProgressTracker::class);
 
         // Register the main engine as a singleton
         $this->app->singleton(AchievementEngine::class, function ($app) {
             $engine = new AchievementEngine(
-                $app->make(AchievementRepository::class),
-                $app->make(AchievementProgressTracker::class),
-                $app->make(RedisMetricsCollector::class)
+                $app->make(AchievementRepository::class)
             );
 
-            // Register all strategies
-            $this->registerStrategies($engine);
+            // Register all checkers
+            $this->registerCheckers($engine);
 
             return $engine;
         });
@@ -42,28 +40,34 @@ class AchievementServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // You could add event listeners here later
+        // For example, to process achievements after photo upload
     }
 
     /**
-     * Register all achievement strategies
+     * Register all achievement checkers
      */
-    private function registerStrategies(AchievementEngine $engine): void
+    private function registerCheckers(AchievementEngine $engine): void
     {
-        // Upload achievements
-        $engine->registerStrategy(new UploadsAchievementStrategy());
+        // Basic achievements
+        $engine->registerChecker(new UploadsChecker());
 
-        // Dimension-wide achievements
-        $engine->registerStrategy(new DimensionWideAchievementStrategy('objects', 'objects', true));
-        $engine->registerStrategy(new DimensionWideAchievementStrategy('categories', 'categories', false));
-        $engine->registerStrategy(new DimensionWideAchievementStrategy('materials', 'materials', true));
-        $engine->registerStrategy(new DimensionWideAchievementStrategy('brands', 'brands', true));
+        // Object achievements (both dimension-wide and per-tag)
+        $engine->registerChecker(new ObjectsChecker());
 
-        // Per-tag achievements
-        $engine->registerStrategy(new TagBasedAchievementStrategy('object', 'objects'));
-        $engine->registerStrategy(new TagBasedAchievementStrategy('category', 'categories'));
-        $engine->registerStrategy(new TagBasedAchievementStrategy('material', 'materials'));
-        $engine->registerStrategy(new TagBasedAchievementStrategy('brand', 'brands'));
-        $engine->registerStrategy(new TagBasedAchievementStrategy('customTag', 'custom_tags'));
+        // Category achievements (both dimension-wide and per-tag)
+        $engine->registerChecker(new CategoriesChecker());
+
+        // Material achievements (both dimension-wide and per-tag)
+        $engine->registerChecker(new MaterialsChecker());
+
+        // Brand achievements (both dimension-wide and per-tag)
+        $engine->registerChecker(new BrandsChecker());
+
+        $engine->registerChecker(new CustomTagChecker());
+
+        // Future checkers can be added here:
+        // $engine->registerChecker(new StreakChecker());
+        // $engine->registerChecker(new LocationChecker());
     }
 }

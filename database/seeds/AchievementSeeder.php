@@ -28,6 +28,11 @@ class AchievementsSeeder extends Seeder
 
         // Seed per-tag achievements
         $this->seedPerTag();
+
+        // Only output if running from command
+        if ($this->command) {
+            $this->command->info('Achievements seeded successfully!');
+        }
     }
 
     /**
@@ -53,6 +58,7 @@ class AchievementsSeeder extends Seeder
                     ],
                     [
                         'xp' => $this->getXpForMilestone($milestone),
+                        'metadata' => json_encode($meta),
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]
@@ -104,6 +110,7 @@ class AchievementsSeeder extends Seeder
                         ],
                         [
                             'xp' => $this->getXpForMilestone($milestone),
+                            'metadata' => json_encode(['name' => ucfirst($type) . ': ' . $tagName]),
                             'created_at' => now(),
                             'updated_at' => now(),
                         ]
@@ -111,8 +118,6 @@ class AchievementsSeeder extends Seeder
                 }
             }
         }
-
-        $this->command->info('Achievements seeded successfully!');
     }
 
     /**

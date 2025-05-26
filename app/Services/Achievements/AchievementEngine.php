@@ -1,35 +1,37 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Services\Achievements;
 
 use App\Models\Photo;
 use App\Models\Users\User;
-use App\Services\Achievements\Strategies\AchievementStrategy;
+use App\Services\Achievements\Checkers\AchievementChecker;
 use App\Services\Redis\RedisMetricsCollector;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 
 class AchievementEngine
 {
-    private array $strategies = [];
+    private array $checkers = [];
 
     public function __construct(
-        private AchievementRepository $repository,
-        private AchievementProgressTracker $tracker,
-        private RedisMetricsCollector $metrics
-    ) {}
+        private AchievementRepository $repository
+    ) {
+        $this->registerDefaultCheckers();
+    }
 
     /**
-     * Register an achievement strategy
+     * Register an achievement checker
      */
-    public function registerStrategy(AchievementStrategy $strategy): self
+    public function registerChecker(AchievementChecker $checker): self
     {
-        $this->strategies[$strategy->getType()] = $strategy;
+        $this->checkers[] = $checker;
         return $this;
     }
 
     /**
-     * Evaluate achievements for a photo (used in migration)
+     * Evaluate achievements for a photo
      */
     public function evaluate(Photo $photo): Collection
     {
@@ -37,36 +39,51 @@ class AchievementEngine
             return collect();
         }
 
-        $user = $photo->user ?? User::find($photo->user_id);
-        if (!$user) {
+        try {
+            $user = $photo->user ?? User::find($photo->user_id);
+            if (!$user) {
+                return collect();
+            }
+
+            // Get current state
+            $counts = RedisMetricsCollector::getUserCounts($user->id);
+            $unlocked = $this->repository->getUnlockedAchievementIds($user->id);
+            $definitions = $this->repository->getAchievementDefinitions();
+
+            // Check what should be unlocked
+            $toUnlock = [];
+            foreach ($this->checkers as $checker) {
+                $eligible = $checker->check($counts, $definitions, $unlocked);
+                $toUnlock = array_merge($toUnlock, $eligible);
+            }
+
+            if (empty($toUnlock)) {
+                return collect();
+            }
+
+            // Unlock and return
+            return $this->repository->unlockAchievements($user, $toUnlock);
+
+        } catch (\Throwable $e) {
+            Log::error('Achievement evaluation failed', [
+                'photo_id' => $photo->id,
+                'user_id' => $photo->user_id,
+                'error' => $e->getMessage(),
+            ]);
+
             return collect();
         }
-
-        $progressData = $this->calculateProgress($photo);
-        $toUnlock = $this->tracker->checkProgress($user->id, $progressData);
-
-        if ($toUnlock->isEmpty()) {
-            return collect();
-        }
-
-        return $this->repository->unlockAchievements($user, $toUnlock);
     }
 
     /**
-     * Calculate all progress data for a photo
+     * Register default checkers
      */
-    private function calculateProgress(Photo $photo): array
+    private function registerDefaultCheckers(): void
     {
-        $counts = $this->metrics->getUserCounts($photo->user_id);
-        $progress = [];
-
-        foreach ($this->strategies as $strategy) {
-            $strategyProgress = $strategy->calculateProgress($photo, $counts);
-            foreach ($strategyProgress as $key => $value) {
-                $progress[$key] = $value;
-            }
-        }
-
-        return $progress;
+        $this->registerChecker(new Checkers\UploadsChecker());
+        $this->registerChecker(new Checkers\ObjectsChecker());
+        $this->registerChecker(new Checkers\CategoriesChecker());
+        $this->registerChecker(new Checkers\MaterialsChecker());
+        $this->registerChecker(new Checkers\BrandsChecker());
     }
 }

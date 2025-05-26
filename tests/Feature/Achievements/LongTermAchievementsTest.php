@@ -1,192 +1,652 @@
 <?php
-declare(strict_types=1);
 
 namespace Tests\Feature\Achievements;
 
 use App\Models\Achievements\Achievement;
 use App\Models\Litter\Tags\{BrandList, Category, CustomTagNew, LitterObject, Materials};
+use App\Models\Location\{Country, State, City};
 use App\Models\Photo;
 use App\Models\Users\User;
 use App\Services\Achievements\AchievementEngine;
 use App\Services\Achievements\Tags\TagKeyCache;
 use App\Services\Redis\RedisMetricsCollector;
 use Carbon\CarbonImmutable;
-use Illuminate\Contracts\Redis\Factory as RedisFactory;
+use Database\Seeders\AchievementsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\{Cache, DB, Redis};
 use Tests\TestCase;
 
 class LongTermAchievementsTest extends TestCase
 {
     use RefreshDatabase;
 
+    private AchievementEngine $engine;
+    private array $tags = [];
+    private array $locations = [];
+
     protected function setUp(): void
     {
         parent::setUp();
-        Redis::connection()->flushDB();
-        app(RedisFactory::class)->connection()->flushDB();
+
+        Redis::flushDB();
+        Cache::flush();
+
+        $this->setupLocationData();
+        $this->setupTagUniverse();
+
+        // Configure achievements
+        config(['achievements.milestones' => [1, 10, 42, 69, 100, 420, 1337]]);
+        $this->seed(AchievementsSeeder::class);
+
+        $this->engine = app(AchievementEngine::class);
+    }
+
+    private function setupLocationData(): void
+    {
+        $country = Country::factory()->create();
+        $state = State::factory()->create(['country_id' => $country->id]);
+        $city = City::factory()->create(['country_id' => $country->id, 'state_id' => $state->id]);
+
+        $this->locations = compact('country', 'state', 'city');
+    }
+
+    private function setupTagUniverse(): void
+    {
+        // Objects
+        $this->tags['objects'] = [
+            'plastic_bottle' => LitterObject::firstOrCreate(['key' => 'plastic_bottle']),
+            'can' => LitterObject::firstOrCreate(['key' => 'can']),
+            'plastic_bag' => LitterObject::firstOrCreate(['key' => 'plastic_bag']),
+            'mask' => LitterObject::firstOrCreate(['key' => 'mask']),
+            'paper_cup' => LitterObject::firstOrCreate(['key' => 'paper_cup']),
+            'straw' => LitterObject::firstOrCreate(['key' => 'straw']),
+            'wrapper' => LitterObject::firstOrCreate(['key' => 'wrapper']),
+            'cigarette_butt' => LitterObject::firstOrCreate(['key' => 'cigarette_butt']),
+        ];
+
+        // Categories
+        $this->tags['categories'] = [
+            'food' => Category::firstOrCreate(['key' => 'food']),
+            'beverage' => Category::firstOrCreate(['key' => 'beverage']),
+            'medical' => Category::firstOrCreate(['key' => 'medical']),
+            'general' => Category::firstOrCreate(['key' => 'general']),
+            'smoking' => Category::firstOrCreate(['key' => 'smoking']),
+        ];
+
+        // Materials
+        $this->tags['materials'] = [
+            'glass' => Materials::firstOrCreate(['key' => 'glass']),
+            'plastic' => Materials::firstOrCreate(['key' => 'plastic']),
+            'paper' => Materials::firstOrCreate(['key' => 'paper']),
+            'metal' => Materials::firstOrCreate(['key' => 'metal']),
+        ];
+
+        // Brands
+        $this->tags['brands'] = [
+            'coca_cola' => BrandList::firstOrCreate(['key' => 'coca_cola']),
+            'pepsi' => BrandList::firstOrCreate(['key' => 'pepsi']),
+            'heineken' => BrandList::firstOrCreate(['key' => 'heineken']),
+            'budweiser' => BrandList::firstOrCreate(['key' => 'budweiser']),
+            'mcdonalds' => BrandList::firstOrCreate(['key' => 'mcdonalds']),
+        ];
+
+        // Custom tags
+        $this->tags['custom'] = [
+            'beach' => CustomTagNew::firstOrCreate(['key' => 'beach']),
+            'park' => CustomTagNew::firstOrCreate(['key' => 'park']),
+            'street' => CustomTagNew::firstOrCreate(['key' => 'street']),
+            'forest' => CustomTagNew::firstOrCreate(['key' => 'forest']),
+        ];
+
+        TagKeyCache::forgetAll();
     }
 
     /** @test */
-    public function engine_handles_120_photos_over_six_months(): void
+    public function engine_handles_heavy_production_load_over_six_months(): void
     {
-        /* 0. core tag universe ------------------------------------------- */
-        $oBottle   = LitterObject::firstOrCreate(['key'=>'plastic_bottle']);
-        $oCan      = LitterObject::firstOrCreate(['key'=>'can']);
-        $oBag      = LitterObject::firstOrCreate(['key'=>'plastic_bag']);
-        $oMask     = LitterObject::firstOrCreate(['key'=>'mask']);
-        $oCup      = LitterObject::firstOrCreate(['key'=>'paper_cup']);
-        $oStraw    = LitterObject::firstOrCreate(['key'=>'straw']);
-        $oWrapper  = LitterObject::firstOrCreate(['key'=>'wrapper']);
+        $user = User::factory()->create(['id' => 7, 'level' => 1]);
+        $start = CarbonImmutable::parse('2025-01-01 10:00:00');
+        $photosPerDay = 2;
+        $totalDays = 180; // 6 months
+        $totalPhotos = $photosPerDay * $totalDays;
 
-        $cFood     = Category ::firstOrCreate(['key'=>'food']);
-        $cBev      = Category ::firstOrCreate(['key'=>'beverage']);
-        $cMed      = Category ::firstOrCreate(['key'=>'medical']);
-        $cGen      = Category ::firstOrCreate(['key'=>'general']);
+        $unlockedAchievements = collect();
+        $processingTimes = [];
 
-        $mGlass    = Materials::firstOrCreate(['key'=>'glass']);
-        $mPlastic  = Materials::firstOrCreate(['key'=>'plastic']);
+        // Simulate 6 months of daily uploads
+        for ($day = 0; $day < $totalDays; $day++) {
+            $currentDate = $start->addDays($day);
 
-        $bCoke     = BrandList::firstOrCreate(['key'=>'coca_cola']);
-        $bPepsi    = BrandList::firstOrCreate(['key'=>'pepsi']);
-        $bHein     = BrandList::firstOrCreate(['key'=>'heineken']);
+            for ($upload = 0; $upload < $photosPerDay; $upload++) {
+                $startTime = microtime(true);
 
-        $tBeach    = CustomTagNew::firstOrCreate(['key'=>'beach']);
-        $tPark     = CustomTagNew::firstOrCreate(['key'=>'park']);
+                $photo = $this->createRealisticPhoto($user, $currentDate, $day * $photosPerDay + $upload);
+                RedisMetricsCollector::queue($photo);
+                $unlocked = $this->engine->evaluate($photo);
 
-        TagKeyCache::forgetAll();
+                if ($unlocked->isNotEmpty()) {
+                    $unlockedAchievements = $unlockedAchievements->merge($unlocked);
+                }
 
-        $user = User::factory()->create(['id'=>7,'level'=>0]);
+                $processingTimes[] = microtime(true) - $startTime;
 
-        /* 2. simulate 120 uploads ---------------------------------------- */
-        $engine  = app(AchievementEngine::class);
-        $unlocks = collect();
-        $start   = CarbonImmutable::parse('2025-01-01 10:00:00');
-
-        $payload = function (int $i) use ($oBottle,$oCan,$oBag,$oMask,$oCup,$oStraw,$oWrapper,
-            $cFood,$cBev,$cMed,$cGen,$mGlass,$mPlastic,$bCoke,$bPepsi,$bHein,$tBeach,$tPark)
-        {
-            $objs = [
-                [$oBottle->key=>1,$oCan->key=>1],
-                [$oBag->key=>3,$oMask->key=>2],
-                [$oCup->key=>5,$oStraw->key=>5],
-                [$oWrapper->key=>7],
-            ][$i % 4];
-
-            $cat   = [$cBev->key, $cGen->key, $cFood->key, $cMed->key][$i%4];
-            $mat   = $i%2===0 ? $mPlastic->key : $mGlass->key;
-            $brand = [$bCoke->key,$bPepsi->key,$bHein->key][$i%3];
-            $tag   = $i%2===0 ? $tBeach->key : $tPark->key;
-
-            $qty = array_sum($objs);
-
-            return [
-                'tags' => [
-                    $cat => array_map(fn($q)=>[
-                        'quantity'=>$q,
-                        'materials'=>[$mat=>$q],
-                        'brands'=>[$brand=>$q],
-                        'custom_tags'=>[$tag=>$q],
-                    ], $objs),
-                ],
-                'totals'=>[
-                    'total_objects'=>$qty,
-                    'materials'=>$qty,
-                    'brands'=>$qty,
-                    'custom_tags'=>$qty,
-                    'by_category'=>[$cat=>$qty],
-                ],
-            ];
-        };
-
-        for ($i=0;$i<120;$i++) {
-
-            if ($i===60) {
-                $bSprite = BrandList::firstOrCreate(['key'=>'sprite']);
-                $mAlu    = Materials ::firstOrCreate(['key'=>'aluminium']);
-                TagKeyCache::forgetAll();
-                $engine = app(AchievementEngine::class);     // rebuild
+                // Add some variety - occasionally skip a day
+                if ($day % 7 === 6 && $upload === 1) {
+                    $day++; // Skip next day (weekly break)
+                }
             }
 
-            $photo              = new Photo();
-            $photo->setRelation('user',$user);
-            $photo->user_id     = $user->id;
-            $photo->created_at  = $start->addDays($i);
-            $photo->summary     = $payload($i);
-
-            RedisMetricsCollector::queue($photo);           // prod pipeline
-            $unlocks = $unlocks->merge($engine->slugsToUnlock($photo));
+            // Clear caches periodically to simulate production
+            if ($day % 30 === 0) {
+                app(AchievementProgressTracker::class)->clearUserCache($user->id);
+            }
         }
 
-        /* 3. assertions --------------------------------------------------- */
-        foreach ([1,42,69] as $m) {
-            $this->assertTrue($unlocks->contains("uploads-{$m}"));
-        }
-        $this->assertTrue($unlocks->contains('objects-69'));
+        // Assertions
+        $this->assertGreaterThan(100, $unlockedAchievements->count(), 'Should unlock many achievements over 6 months');
 
-        foreach (['object','category','material','brand','customTag'] as $d) {
-            $this->assertTrue(
-                $unlocks->first(fn($s)=>str_starts_with($s,"$d-"))!==null,
-                "no unlocks for $d"
-            );
-        }
+        // Check major milestones were hit
+        $this->assertAchievementUnlocked($user, 'uploads', null, 100);
+        $this->assertAchievementUnlocked($user, 'uploads', null, 42);
+        $this->assertAchievementUnlocked($user, 'objects', null, 100);
 
-        $this->assertTrue($unlocks->contains("brand-{$bSprite->id}-1"));
-        $this->assertTrue($unlocks->contains("material-{$mAlu->id}-1"));
+        // Verify XP accumulation
+        $totalXp = (int) Redis::hGet("u:{$user->id}:stats", 'xp');
+        $this->assertGreaterThan(1000, $totalXp, 'Should accumulate significant XP');
 
-        $uniq   = $unlocks->unique();
-        $xpDB   = Achievement::whereIn('slug',$uniq)->sum('xp');
-        $xpCfg  = $uniq->sum(fn($s)=>config('achievements')[$s]['xp']??0);
-        $this->assertEquals($xpDB,$xpCfg);
+        // Performance check
+        $avgProcessingTime = array_sum($processingTimes) / count($processingTimes);
+        $this->assertLessThan(0.1, $avgProcessingTime, 'Average processing time should be under 100ms');
+
+        // Memory usage check
+        $peakMemory = memory_get_peak_usage() / 1024 / 1024;
+        $this->assertLessThan(256, $peakMemory, 'Peak memory should be under 256MB');
     }
 
     /** @test */
-    public function xp_is_added_once_per_slug_even_on_repeated_photos(): void
+    public function handles_tag_additions_during_migration(): void
     {
-        config()->set('milestones',[]);
-        config()->set('achievements',['spam'=>['xp'=>10,'when'=>'true']]);
-        Achievement::firstOrCreate(['slug'=>'spam'],['xp'=>10]);
+        $user = User::factory()->create();
+        $achievementsBefore = collect();
+        $achievementsAfter = collect();
 
-        $u     = User::factory()->create(['id'=>99]);
-        $photo = (new Photo)->forceFill(['user_id'=>$u->id,'summary'=>['tags'=>[],'totals'=>[]]]);
-        $photo->setRelation('user',$u);
+        // Process 50 photos with initial tags
+        for ($i = 0; $i < 50; $i++) {
+            $photo = $this->createRealisticPhoto($user, now()->addDays($i), $i);
+            RedisMetricsCollector::queue($photo);
+            $unlocked = $this->engine->evaluate($photo);
+            $achievementsBefore = $achievementsBefore->merge($unlocked);
+        }
 
-        $e = app(AchievementEngine::class);
-        RedisMetricsCollector::queue($photo);
-        $e->generateAchievements($photo);
-        $e->generateAchievements($photo);
+        // Add new tags mid-migration (simulating new content)
+        $newBrand = BrandList::firstOrCreate(['key' => 'starbucks']);
+        $newMaterial = Materials::firstOrCreate(['key' => 'aluminium']);
+        $newObject = LitterObject::firstOrCreate(['key' => 'coffee_cup']);
 
-        $this->assertEquals(10,(int)Redis::hGet('{u:99}:stats','xp'));
-        $this->assertDatabaseCount('user_achievements',1);
-    }
-
-    /** @test */
-    public function streak_and_country_achievements_coexist(): void
-    {
-//        config()->set('achievements',[
-//            'streak-3'=>['xp'=>5,'when'=>'stats.currentStreak==3'],
-//            'country-pioneer'=>['xp'=>5,'when'=>'isFirstInCountry()'],
-//        ]);
-//        Achievement::firstOrCreate(['slug'=>'streak-3'],['xp'=>5]);
-//        Achievement::firstOrCreate(['slug'=>'country-pioneer'],['xp'=>5]);
+        // Clear caches to pick up new tags
         TagKeyCache::forgetAll();
+        Cache::forget('achievement:definitions');
 
-        $u = User::factory()->create(['id'=>11]);
+        // Re-seed achievements for new tags
+        $this->seed(AchievementsSeeder::class);
 
-        $e = app(AchievementEngine::class);
-        $photo = (new Photo)->forceFill([
-            'user_id'=>$u->id,'country_id'=>55,'summary'=>['tags'=>[],'totals'=>[]]
-        ])->setRelation('user',$u);
+        // Recreate engine to pick up changes
+        $this->engine = app(AchievementEngine::class);
 
-        // fabricate a 3-day streak
-        $d2 = clone $photo; $d2->created_at=now()->subDay();
-        $d3 = clone $photo; $d3->created_at=now()->subDays(2);
-        RedisMetricsCollector::queue($d3);
-        RedisMetricsCollector::queue($d2);
-        RedisMetricsCollector::queue($photo);
+        // Process 50 more photos including new tags
+        for ($i = 50; $i < 100; $i++) {
+            $photo = $this->createPhotoWithNewTags($user, now()->addDays($i), $newBrand, $newMaterial, $newObject);
+            RedisMetricsCollector::queue($photo);
+            $unlocked = $this->engine->evaluate($photo);
+            $achievementsAfter = $achievementsAfter->merge($unlocked);
+        }
 
-        $slugs = $e->slugsToUnlock($photo);
-        $this->assertTrue($slugs->contains('streak-3'));
-        $this->assertTrue($slugs->contains('country-pioneer'));
+        // Should have achievements for new tags
+        $this->assertAchievementUnlocked($user, 'brand', $newBrand->id, 1);
+        $this->assertAchievementUnlocked($user, 'material', $newMaterial->id, 1);
+        $this->assertAchievementUnlocked($user, 'object', $newObject->id, 1);
+    }
+
+    /** @test */
+    public function xp_accumulation_is_consistent_across_multiple_sessions(): void
+    {
+        $user = User::factory()->create(['id' => 99]);
+        $totalExpectedXp = 0;
+
+        // Process photos in batches to simulate multiple sessions
+        $batches = 5;
+        $photosPerBatch = 20;
+
+        for ($batch = 0; $batch < $batches; $batch++) {
+            // Clear user cache between batches
+            app(AchievementProgressTracker::class)->clearUserCache($user->id);
+
+            for ($i = 0; $i < $photosPerBatch; $i++) {
+                $photo = $this->createRealisticPhoto($user, now()->addDays($batch * $photosPerBatch + $i), $batch * $photosPerBatch + $i);
+                RedisMetricsCollector::queue($photo);
+                $unlocked = $this->engine->evaluate($photo);
+
+                // Track expected XP
+                $totalExpectedXp += $unlocked->sum('xp');
+            }
+
+            // Verify XP is consistent after each batch
+            $currentXp = (int) Redis::hGet("u:{$user->id}:stats", 'xp');
+            $this->assertEquals($totalExpectedXp, $currentXp, "XP mismatch after batch {$batch}");
+        }
+
+        // Final verification
+        $finalXp = (int) Redis::hGet("u:{$user->id}:stats", 'xp');
+        $this->assertEquals($totalExpectedXp, $finalXp);
+
+        // Verify no duplicate achievements
+        $achievementCount = DB::table('user_achievements')
+            ->where('user_id', $user->id)
+            ->count();
+
+        $uniqueAchievementCount = DB::table('user_achievements')
+            ->where('user_id', $user->id)
+            ->distinct('achievement_id')
+            ->count('achievement_id');
+
+        $this->assertEquals($uniqueAchievementCount, $achievementCount, 'No duplicate achievements should exist');
+    }
+
+    /** @test */
+    public function achievement_progress_tracking_remains_accurate_under_load(): void
+    {
+        $users = User::factory()->count(10)->create();
+        $photosPerUser = 50;
+
+        // Track progress for specific achievements
+        $targetAchievements = [
+            'uploads-42' => Achievement::where('type', 'uploads')->where('threshold', 42)->first(),
+            'objects-100' => Achievement::where('type', 'objects')->where('threshold', 100)->first(),
+        ];
+
+        foreach ($users as $user) {
+            for ($i = 0; $i < $photosPerUser; $i++) {
+                $photo = $this->createRealisticPhoto($user, now()->addDays($i), $i);
+                RedisMetricsCollector::queue($photo);
+                $this->engine->evaluate($photo);
+
+                // Check progress at key milestones
+                if ($i === 41) { // Just before uploads-42
+                    $progress = $targetAchievements['uploads-42']->getProgressFor($user);
+                    $this->assertEquals(42, $progress);
+                    $percentage = $targetAchievements['uploads-42']->getProgressPercentageFor($user);
+                    $this->assertEquals(100.0, $percentage);
+                }
+            }
+        }
+
+        // Verify all users have correct final progress
+        foreach ($users as $user) {
+            $uploadsProgress = $targetAchievements['uploads-42']->getProgressFor($user);
+            $this->assertEquals($photosPerUser, $uploadsProgress);
+
+            // Check if achievement was unlocked
+            if ($photosPerUser >= 42) {
+                $this->assertTrue($targetAchievements['uploads-42']->isUnlockedBy($user));
+            }
+        }
+    }
+
+    /** @test */
+    public function handles_redis_data_consistency_with_database(): void
+    {
+        $user = User::factory()->create();
+
+        // Process initial photos
+        for ($i = 0; $i < 20; $i++) {
+            $photo = $this->createRealisticPhoto($user, now()->addDays($i), $i);
+            RedisMetricsCollector::queue($photo);
+            $this->engine->evaluate($photo);
+        }
+
+        // Get Redis data
+        $redisXp = (int) Redis::hGet("u:{$user->id}:stats", 'xp');
+        $redisUploads = (int) Redis::hGet("u:{$user->id}:stats", 'uploads');
+
+        // Get database data
+        $dbAchievements = $user->achievements()->get();
+        $dbXp = $dbAchievements->sum('xp');
+
+        // Verify consistency
+        $this->assertEquals($dbXp, $redisXp, 'XP in Redis should match database');
+        $this->assertEquals(20, $redisUploads, 'Upload count should be accurate');
+
+        // Simulate cache clear and rebuild
+        Redis::del("user:{$user->id}:achievements");
+        Cache::forget("user_achievement_summary:{$user->id}");
+
+        // Process more photos
+        for ($i = 20; $i < 30; $i++) {
+            $photo = $this->createRealisticPhoto($user, now()->addDays($i), $i);
+            RedisMetricsCollector::queue($photo);
+            $this->engine->evaluate($photo);
+        }
+
+        // Verify consistency is maintained
+        $newRedisXp = (int) Redis::hGet("u:{$user->id}:stats", 'xp');
+        $newDbXp = $user->achievements()->sum('xp');
+        $this->assertEquals($newDbXp, $newRedisXp, 'XP should remain consistent after cache rebuild');
+    }
+
+    /** @test */
+    public function stress_test_concurrent_photo_processing(): void
+    {
+        $users = User::factory()->count(5)->create();
+        $photosPerUser = 100;
+        $allPhotos = collect();
+
+        // Create all photos first
+        foreach ($users as $user) {
+            for ($i = 0; $i < $photosPerUser; $i++) {
+                $photo = $this->createRealisticPhoto($user, now()->addMinutes($i), $i);
+                $allPhotos->push($photo);
+            }
+        }
+
+        // Shuffle to simulate random processing order
+        $allPhotos = $allPhotos->shuffle();
+
+        $startTime = microtime(true);
+        $processedCount = 0;
+
+        // Process all photos
+        foreach ($allPhotos as $photo) {
+            RedisMetricsCollector::queue($photo);
+            $this->engine->evaluate($photo);
+            $processedCount++;
+
+            // Periodic cache clearing to simulate production conditions
+            if ($processedCount % 100 === 0) {
+                $userId = $photo->user_id;
+                app(AchievementProgressTracker::class)->clearUserCache($userId);
+            }
+        }
+
+        $totalTime = microtime(true) - $startTime;
+
+        // Performance assertions
+        $this->assertLessThan(30, $totalTime, 'Should process 500 photos in under 30 seconds');
+
+        // Verify data integrity
+        foreach ($users as $user) {
+            $uploads = (int) Redis::hGet("u:{$user->id}:stats", 'uploads');
+            $this->assertEquals($photosPerUser, $uploads, "User {$user->id} should have exactly {$photosPerUser} uploads");
+
+            // Verify achievements were unlocked correctly
+            $this->assertAchievementUnlocked($user, 'uploads', null, 1);
+            $this->assertAchievementUnlocked($user, 'uploads', null, 10);
+            $this->assertAchievementUnlocked($user, 'uploads', null, 42);
+            $this->assertAchievementUnlocked($user, 'uploads', null, 69);
+            $this->assertAchievementUnlocked($user, 'uploads', null, 100);
+        }
+    }
+
+    /** @test */
+    public function validates_achievement_calculations_across_all_dimensions(): void
+    {
+        $user = User::factory()->create();
+        $expectedCounts = [
+            'uploads' => 0,
+            'objects' => 0,
+            'categories' => [],
+            'materials' => 0,
+            'brands' => 0,
+        ];
+
+        // Process 50 diverse photos
+        for ($i = 0; $i < 50; $i++) {
+            $photo = $this->createRealisticPhoto($user, now()->addDays($i), $i);
+
+            // Track expected counts from photo data
+            $expectedCounts['uploads']++;
+            foreach ($photo->summary['tags'] as $category => $objects) {
+                $expectedCounts['categories'][$category] = true;
+                foreach ($objects as $object => $data) {
+                    $qty = $data['quantity'] ?? 0;
+                    $expectedCounts['objects'] += $qty;
+
+                    foreach ($data['materials'] ?? [] as $material => $mQty) {
+                        $expectedCounts['materials'] += $mQty;
+                    }
+
+                    foreach ($data['brands'] ?? [] as $brand => $bQty) {
+                        $expectedCounts['brands'] += $bQty;
+                    }
+                }
+            }
+
+            RedisMetricsCollector::queue($photo);
+            $this->engine->evaluate($photo);
+        }
+
+        // Verify Redis counts match expected
+        $actualCounts = RedisMetricsCollector::getUserCounts($user->id);
+
+        $this->assertEquals($expectedCounts['uploads'], $actualCounts['uploads']);
+        $this->assertEquals($expectedCounts['objects'], array_sum($actualCounts['objects']));
+        $this->assertEquals(count($expectedCounts['categories']), count($actualCounts['categories']));
+        $this->assertEquals($expectedCounts['materials'], array_sum($actualCounts['materials']));
+        $this->assertEquals($expectedCounts['brands'], array_sum($actualCounts['brands']));
+
+        // Verify achievements match counts
+        $this->verifyAchievementsMatchCounts($user, $actualCounts);
+    }
+
+    /** @test */
+    public function handles_edge_cases_and_data_anomalies(): void
+    {
+        $user = User::factory()->create();
+
+        // Test 1: Empty photo
+        $emptyPhoto = new Photo();
+        $emptyPhoto->user_id = $user->id;
+        $emptyPhoto->summary = ['tags' => [], 'totals' => []];
+        $emptyPhoto->created_at = now();
+        $emptyPhoto->filename = "empty.png";
+        $emptyPhoto->model = "iphone";
+        $emptyPhoto->datetime = "2025-01-01 12:00:00";
+        $emptyPhoto->country_id = $this->locations['country']->id;
+        $emptyPhoto->state_id = $this->locations['state']->id;
+        $emptyPhoto->save();
+
+        RedisMetricsCollector::queue($emptyPhoto);
+        $unlocked = $this->engine->evaluate($emptyPhoto);
+        $this->assertCount(1, $unlocked); // Should only unlock uploads-1
+
+        // Test 2: Photo with very large quantities
+        $largePhoto = $this->createPhotoWithQuantity($user, 1000);
+        RedisMetricsCollector::queue($largePhoto);
+        $unlocked = $this->engine->evaluate($largePhoto);
+        $this->assertGreaterThan(5, $unlocked->count()); // Should unlock multiple milestones
+
+        // Test 3: Photo with unknown tags (should be ignored)
+        $unknownPhoto = new Photo();
+        $unknownPhoto->user_id = $user->id;
+        $unknownPhoto->summary = [
+            'tags' => [
+                'unknown_category' => [
+                    'unknown_object' => ['quantity' => 10]
+                ]
+            ]
+        ];
+        $unknownPhoto->created_at = now();
+        $unknownPhoto->save();
+
+        RedisMetricsCollector::queue($unknownPhoto);
+        $unlocked = $this->engine->evaluate($unknownPhoto);
+        $this->assertEmpty($unlocked); // Should not unlock anything new
+
+        // Test 4: Rapid successive photos
+        for ($i = 0; $i < 10; $i++) {
+            $photo = $this->createRealisticPhoto($user, now()->addSeconds($i), 1000 + $i);
+            RedisMetricsCollector::queue($photo);
+            $this->engine->evaluate($photo);
+        }
+
+        // Verify no data corruption
+        $counts = RedisMetricsCollector::getUserCounts($user->id);
+        $this->assertIsArray($counts);
+        $this->assertArrayHasKey('uploads', $counts);
+        $this->assertGreaterThan(10, $counts['uploads']);
+    }
+
+    // Helper methods
+
+    private function createRealisticPhoto(User $user, $timestamp, int $seed): Photo
+    {
+        $photo = new Photo();
+        $photo->user_id = $user->id;
+        $photo->created_at = $timestamp;
+        $photo->country_id = $this->locations['country']->id;
+        $photo->state_id = $this->locations['state']->id;
+        $photo->city_id = $this->locations['city']->id;
+        $photo->filename = "test.png";
+
+        // Create varied but realistic litter data
+        $objectKeys = array_keys($this->tags['objects']);
+        $categoryKeys = array_keys($this->tags['categories']);
+        $materialKeys = array_keys($this->tags['materials']);
+        $brandKeys = array_keys($this->tags['brands']);
+        $customKeys = array_keys($this->tags['custom']);
+
+        // Pick 1-3 categories
+        $numCategories = ($seed % 3) + 1;
+        $selectedCategories = array_slice($categoryKeys, $seed % count($categoryKeys), $numCategories);
+
+        $tags = [];
+        foreach ($selectedCategories as $catKey) {
+            $tags[$catKey] = [];
+
+            // Pick 1-4 objects per category
+            $numObjects = ($seed % 4) + 1;
+            $selectedObjects = array_slice($objectKeys, ($seed * 2) % count($objectKeys), $numObjects);
+
+            foreach ($selectedObjects as $objKey) {
+                $quantity = (($seed + 1) % 5) + 1; // 1-5 items
+
+                $tags[$catKey][$objKey] = [
+                    'quantity' => $quantity,
+                    'materials' => [
+                        $materialKeys[$seed % count($materialKeys)] => $quantity
+                    ],
+                    'brands' => [
+                        $brandKeys[$seed % count($brandKeys)] => $quantity
+                    ],
+                    'custom_tags' => [
+                        $customKeys[$seed % count($customKeys)] => $quantity
+                    ]
+                ];
+            }
+        }
+
+        $photo->summary = ['tags' => $tags];
+        $photo->save();
+
+        return $photo;
+    }
+
+    private function createPhotoWithNewTags(User $user, $timestamp, $brand, $material, $object): Photo
+    {
+        $photo = new Photo();
+        $photo->user_id = $user->id;
+        $photo->created_at = $timestamp;
+        $photo->country_id = $this->locations['country']->id;
+        $photo->state_id = $this->locations['state']->id;
+        $photo->city_id = $this->locations['city']->id;
+
+        $photo->summary = [
+            'tags' => [
+                'beverage' => [
+                    $object->key => [
+                        'quantity' => 2,
+                        'materials' => [$material->key => 2],
+                        'brands' => [$brand->key => 2],
+                    ],
+                    'plastic_bottle' => [
+                        'quantity' => 1,
+                        'materials' => ['plastic' => 1],
+                        'brands' => ['coca_cola' => 1],
+                    ]
+                ]
+            ]
+        ];
+
+        $photo->save();
+        return $photo;
+    }
+
+    private function createPhotoWithQuantity(User $user, int $quantity): Photo
+    {
+        $photo = new Photo();
+        $photo->user_id = $user->id;
+        $photo->created_at = now();
+        $photo->country_id = $this->locations['country']->id;
+        $photo->state_id = $this->locations['state']->id;
+        $photo->city_id = $this->locations['city']->id;
+
+        $photo->summary = [
+            'tags' => [
+                'general' => [
+                    'plastic_bottle' => [
+                        'quantity' => $quantity,
+                        'materials' => ['plastic' => $quantity],
+                        'brands' => ['coca_cola' => $quantity],
+                    ]
+                ]
+            ]
+        ];
+
+        $photo->save();
+        return $photo;
+    }
+
+    private function assertAchievementUnlocked(User $user, string $type, ?int $tagId, int $threshold): void
+    {
+        $query = Achievement::where('type', $type)
+            ->where('threshold', $threshold);
+
+        if ($tagId !== null) {
+            $query->where('tag_id', $tagId);
+        } else {
+            $query->whereNull('tag_id');
+        }
+
+        $achievement = $query->first();
+        $this->assertNotNull($achievement, "Achievement {$type}-{$tagId}-{$threshold} not found");
+
+        $this->assertTrue(
+            $achievement->isUnlockedBy($user),
+            "Achievement {$type}-{$tagId}-{$threshold} should be unlocked for user {$user->id}"
+        );
+    }
+
+    private function verifyAchievementsMatchCounts(User $user, array $counts): void
+    {
+        // Check uploads achievements
+        $uploadsCount = $counts['uploads'];
+        foreach ([1, 10, 42] as $milestone) {
+            if ($uploadsCount >= $milestone) {
+                $this->assertAchievementUnlocked($user, 'uploads', null, $milestone);
+            }
+        }
+
+        // Check objects achievements
+        $objectsCount = array_sum($counts['objects']);
+        foreach ([1, 10, 42] as $milestone) {
+            if ($objectsCount >= $milestone) {
+                $this->assertAchievementUnlocked($user, 'objects', null, $milestone);
+            }
+        }
+
+        // Check categories achievements
+        $categoriesCount = count($counts['categories']);
+        if ($categoriesCount >= 1) {
+            $this->assertAchievementUnlocked($user, 'categories', null, 1);
+        }
     }
 }

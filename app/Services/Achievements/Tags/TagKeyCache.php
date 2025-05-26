@@ -1,72 +1,76 @@
 <?php
+
 namespace App\Services\Achievements\Tags;
 
-use App\Models\Litter\Tags\{BrandList, Category, CustomTagNew, LitterObject, Materials};
-use App\Services\Achievements\AchievementEngine;
-use Illuminate\Support\Facades\{App, Cache};
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
+/**
+ * Tag key cache for achievement system
+ */
 final class TagKeyCache
 {
-    /* ------------------------------------------- */
-    /*  cache keys (id → key maps)                 */
-    /* ------------------------------------------- */
-    private const CK = [
-        'object'    => 'ach:map:object',
-        'category'  => 'ach:map:category',
-        'material'  => 'ach:map:material',
-        'brand'     => 'ach:map:brand',
-        'customTag' => 'ach:map:customTag',
-    ];
-
-    /** in-memory reverse maps (key → id) for this PHP request */
     private static array $reverse = [];
 
-    /* ------------------------------------------- */
-    /*  public API                                 */
-    /* ------------------------------------------- */
-
-    /** id → key                                 */
+    /**
+     * Get tag key to ID mapping for a dimension
+     */
     public static function get(string $dim): array
     {
-        return Cache::rememberForever(self::CK[$dim], function () use ($dim) {
-            return match ($dim) {
-                'object'    => LitterObject::pluck('key', 'id')->all(),
-                'category'  => Category   ::pluck('key', 'id')->all(),
-                'material'  => Materials  ::pluck('key', 'id')->all(),
-                'brand'     => BrandList  ::pluck('key', 'id')->all(),
-                'customTag' => CustomTagNew::pluck('key', 'id')->all(),
-            };
+        return Cache::rememberForever("ach:map:{$dim}", function () use ($dim) {
+            $table = self::getTableForDimension($dim);
+            if (!$table) {
+                return [];
+            }
+
+            return DB::table($table)->pluck('key', 'id')->all();
         });
     }
 
-    /** key → id  (returns null if unknown)      */
+    /**
+     * Get tag ID for a given key
+     */
     public static function idFor(string $dim, string $key): ?int
     {
-        /* Build & memoise the reverse map only once per request */
         if (!isset(self::$reverse[$dim])) {
-            self::$reverse[$dim] = array_flip(self::get($dim)); // key ⇒ id
+            self::$reverse[$dim] = array_flip(self::get($dim));
         }
 
         return self::$reverse[$dim][$key] ?? null;
     }
 
-    /* ------------------------------------------- */
-    /*  cache invalidation helpers                */
-    /* ------------------------------------------- */
-
+    /**
+     * Forget cache for a specific dimension
+     */
     public static function forget(string $dim): void
     {
-        Cache::forget(self::CK[$dim]);
-        unset(self::$reverse[$dim]);                // drop in-memory copy
-        App::forgetInstance(AchievementEngine::class);
+        Cache::forget("ach:map:{$dim}");
+        unset(self::$reverse[$dim]);
     }
 
+    /**
+     * Clear all caches
+     */
     public static function forgetAll(): void
     {
-        foreach (array_keys(self::CK) as $dim) {
-            Cache::forget(self::CK[$dim]);
+        $dimensions = ['object', 'category', 'material', 'brand', 'customTag'];
+        foreach ($dimensions as $dim) {
+            self::forget($dim);
         }
-        self::$reverse = [];
-        App::forgetInstance(AchievementEngine::class);
+    }
+
+    /**
+     * Get database table for dimension
+     */
+    private static function getTableForDimension(string $dim): ?string
+    {
+        return match($dim) {
+            'object' => 'litter_objects',
+            'category' => 'categories',
+            'material' => 'materials',
+            'brand' => 'brandslist',
+            'customTag' => 'custom_tags',
+            default => null,
+        };
     }
 }

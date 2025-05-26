@@ -1,9 +1,14 @@
 <?php
+
 /**
  * ----------------------------------------------------------------------
- * Enhanced RedisMetricsCollector with achievements support
+ * RedisMetricsCollector with achievements support
  *
- * NEW KEYS for achievements:
+ * KEYS for achievements:
+ *  {u:<id>}:stats  HASH  ── per-user stats
+ *      • uploads    total uploads count
+ *      • xp         total XP earned
+ *      • streak     current streak of consecutive uploads
  *  {u:<id>}:m       HASH  ── per-user materials quantities  glass → 119, plastic → 234
  *  {u:<id>}:brands  HASH  ── per-user brands quantities     coke → 14, pepsi → 8
  *  {u:<id>}:last    HASH  ── last achievement check timestamps
@@ -12,10 +17,6 @@
  *      • categories UNIX timestamp of last categories check
  *      • materials  UNIX timestamp of last materials check
  *      • brands     UNIX timestamp of last brands check
- *
- *  achievement:queue SET  ── user IDs that need achievement checking
- *  {g}:m            HASH  ── global materials totals
- *  {g}:brands       HASH  ── global brands totals
  */
 
 declare(strict_types=1);
@@ -25,160 +26,185 @@ namespace App\Services\Redis;
 use App\Models\Photo;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Redis;
-use RedisException;
 
 final class RedisMetricsCollector
 {
-    /* ─── TTLs (ms) ─────────────────────────────────────────────── */
     private const TS_TTL_MS = 60 * 60 * 24 * 365 * 2 * 1000; // 2 years
-    private const UPLOAD_FLAG_TTL_SECONDS = 60 * 60 * 24 * 40; // 40 days for streak tracking
+    private const UPLOAD_FLAG_TTL_SECONDS = 60 * 60 * 24 * 40; // 40 days
 
-    /* ─── Key patterns ──────────────────────────────────────────── */
-    private const KEY_STATS = '{u:%d}:stats';   // uploads, xp, streak
-    private const KEY_CATEGORIES = '{u:%d}:c';  // category counts
-    private const KEY_OBJECTS = '{u:%d}:t';     // object counts
-    private const KEY_MATERIALS = '{u:%d}:m';   // material counts
-    private const KEY_BRANDS = '{u:%d}:brands'; // brand counts
-    private const KEY_LAST_CHECK = '{u:%d}:last'; // last achievement check
-    private const ACHIEVEMENT_QUEUE = 'achievement:queue'; // users needing checks
+    private const KEY_STATS = '{u:%d}:stats';
+    private const KEY_CATEGORIES = '{u:%d}:c';
+    private const KEY_OBJECTS = '{u:%d}:t';
+    private const KEY_MATERIALS = '{u:%d}:m';
+    private const KEY_BRANDS = '{u:%d}:brands';
+    private const KEY_CUSTOM = '{u:%d}:custom';
 
-    // Global keys
     private const GLOBAL_CATEGORIES = '{g}:c';
     private const GLOBAL_OBJECTS = '{g}:t';
     private const GLOBAL_MATERIALS = '{g}:m';
     private const GLOBAL_BRANDS = '{g}:brands';
 
     /**
-     * Persist all Redis metrics for a single photo.
-     *
-     * @throws RedisException
+     * Persist all Redis metrics for a single photo
      */
     public static function queue(Photo $photo): void
     {
-        // 1. Idempotency: skip if already done
         if (self::alreadyProcessed($photo->id)) {
             return;
         }
 
-        // 2. Common metadata
-        $uid      = $photo->user_id;
-        $uTag     = "{u:$uid}";
-        $xp       = (int) ($photo->xp ?? 0);
-        $ts       = $photo->created_at ?? now();
-        $date     = $ts->format('Y-m-d');
-        $monthTag = '{g}:' . $ts->format('Y-m'); // Fixed hash clustering
+        self::persistMetrics($photo);
+        self::updateStreak($photo);
+    }
 
-        $country = $photo->country_id ?? $photo->country?->id;
-        $state   = $photo->state_id   ?? $photo->state?->id;
-        $city    = $photo->city_id    ?? $photo->city?->id;
+    /**
+     * Persist metrics with optimized pipeline
+     */
+    private static function persistMetrics(Photo $photo): void
+    {
+        $uid = $photo->user_id;
+        $xp = (int) ($photo->xp ?? 0);
+        $ts = $photo->created_at ?? now();
+        $date = $ts->format('Y-m-d');
+        $monthTag = '{g}:' . $ts->format('Y-m');
 
-        // 3. Derive per-photo deltas from the summary
-        $tagsTree = $photo->summary['tags'] ?? [];
-        $catIncr = [];
-        $objIncr = [];
-        $matIncr = [];
-        $brandIncr = [];
+        // Extract all deltas from photo
+        $deltas = self::extractDeltas($photo);
 
-        foreach ($tagsTree as $cat => $objs) {
-            foreach ($objs as $obj => $data) {
-                $q = (int) ($data['quantity'] ?? 0);
-                $catIncr[$cat] = ($catIncr[$cat] ?? 0) + $q;
-                $objIncr[$obj] = ($objIncr[$obj] ?? 0) + $q;
+        // Single pipeline for all operations
+        Redis::pipeline(function ($pipe) use ($uid, $xp, $date, $monthTag, $deltas, $photo, $ts) {
+            $statsKey = sprintf(self::KEY_STATS, $uid);
+            $uTag = "{u:$uid}";
 
-                // Extract materials and brands separately
-                foreach ($data['materials'] ?? [] as $material => $matQ) {
-                    $matIncr[$material] = ($matIncr[$material] ?? 0) + $matQ;
-                }
-                foreach ($data['brands'] ?? [] as $brand => $brandQ) {
-                    $brandIncr[$brand] = ($brandIncr[$brand] ?? 0) + $brandQ;
-                }
-            }
-        }
-
-        /* ── Main pipeline (single round‑trip) ─────────────────────────── */
-        $statsKey = sprintf(self::KEY_STATS, $uid);
-        $categoriesKey = sprintf(self::KEY_CATEGORIES, $uid);
-        $objectsKey = sprintf(self::KEY_OBJECTS, $uid);
-        $materialsKey = sprintf(self::KEY_MATERIALS, $uid);
-        $brandsKey = sprintf(self::KEY_BRANDS, $uid);
-
-        // 4. Pipeline the bulk writes
-        Redis::pipeline(static function ($pipe) use (
-            $statsKey, $categoriesKey, $objectsKey, $materialsKey, $brandsKey,
-            $uTag, $uid, $xp, $date, $monthTag,
-            $country, $state, $city,
-            $catIncr, $objIncr, $matIncr, $brandIncr, $tagsTree
-        ) {
-            // 4.1 Initialize stats fields if missing
+            // Initialize and update stats
             $pipe->hSetNx($statsKey, 'uploads', 0);
             $pipe->hSetNx($statsKey, 'xp', 0);
             $pipe->hSetNx($statsKey, 'streak', 0);
-
-            // 4.2 Bump uploads & xp
             $pipe->hIncrBy($statsKey, 'uploads', 1);
+
             if ($xp) {
                 $pipe->hIncrByFloat($statsKey, 'xp', $xp);
             }
 
-            // 4.3 Category, object, material, brand counts
-            foreach ($catIncr as $c => $q) {
+            // Update user counts
+            foreach ($deltas['categories'] as $c => $q) {
                 $pipe->hIncrBy("$uTag:c", $c, $q);
             }
-            foreach ($objIncr as $o => $q) {
+            foreach ($deltas['objects'] as $o => $q) {
                 $pipe->hIncrBy("$uTag:t", $o, $q);
             }
-            foreach ($matIncr as $material => $q) {
-                $pipe->hIncrBy($materialsKey, $material, $q);
+            foreach ($deltas['materials'] as $m => $q) {
+                $pipe->hIncrBy("$uTag:m", $m, $q);
             }
-            foreach ($brandIncr as $brand => $q) {
-                $pipe->hIncrBy($brandsKey, $brand, $q);
+            foreach ($deltas['brands'] as $b => $q) {
+                $pipe->hIncrBy("$uTag:brands", $b, $q);
+            }
+            foreach ($deltas['custom_tags'] as $ct => $q) {
+                $pipe->hIncrBy("$uTag:custom", $ct, $q);
             }
 
-            // 4.4 Global + scoped daily buckets
+            // Update global counts
+            foreach ($deltas['categories'] as $c => $q) {
+                $pipe->hIncrBy(self::GLOBAL_CATEGORIES, $c, $q);
+            }
+            foreach ($deltas['objects'] as $o => $q) {
+                $pipe->hIncrBy(self::GLOBAL_OBJECTS, $o, $q);
+            }
+            foreach ($deltas['materials'] as $m => $q) {
+                $pipe->hIncrBy(self::GLOBAL_MATERIALS, $m, $q);
+            }
+            foreach ($deltas['brands'] as $b => $q) {
+                $pipe->hIncrBy(self::GLOBAL_BRANDS, $b, $q);
+            }
+
+            // Time series data
             $pipe->hIncrBy("{$monthTag}:t", 'p', 1);
             if ($xp) {
                 $pipe->hIncrByFloat("{$monthTag}:t", 'xp', $xp);
             }
 
-            foreach (self::geoScopes($country, $state, $city) as $scope) {
+            // Geo scoped tracking
+            foreach (self::geoScopes($photo->country_id, $photo->state_id, $photo->city_id) as $scope) {
                 $tsKey = "$scope:t:p";
-                $pipe->hIncrBy($tsKey, $date, 1)
-                    ->pExpire($tsKey, self::TS_TTL_MS);
+                $pipe->hIncrBy($tsKey, $date, 1);
+                $pipe->pExpire($tsKey, self::TS_TTL_MS);
             }
 
-            // 4.5 Global category/object/material/brand tallies
-            foreach ($catIncr as $c => $q) {
-                $pipe->hIncrBy(self::GLOBAL_CATEGORIES, $c, $q);
-            }
-            foreach ($objIncr as $o => $q) {
-                $pipe->hIncrBy(self::GLOBAL_OBJECTS, $o, $q);
-            }
-            foreach ($matIncr as $m => $q) {
-                $pipe->hIncrBy(self::GLOBAL_MATERIALS, $m, $q);
-            }
-            foreach ($brandIncr as $b => $q) {
-                $pipe->hIncrBy(self::GLOBAL_BRANDS, $b, $q);
-            }
-
-            // 4.6 Queue user for achievement checking
-            $pipe->sAdd(self::ACHIEVEMENT_QUEUE, $uid);
+            // Mark as processed
+            $pipe->sAdd('p:done', $photo->id);
+            $pipe->expire('p:done', 60 * 60 * 24 * 90);
         });
+    }
 
-        // 5. Streak logic (outside pipeline to avoid complexity)
-        $upTodayKey     = "{$uTag}:up:{$date}";
+    /**
+     * Extract deltas from photo summary
+     */
+    private static function extractDeltas(Photo $photo): array
+    {
+        $deltas = [
+            'categories' => [],
+            'objects' => [],
+            'materials' => [],
+            'brands' => [],
+            'custom_tags' => [],
+        ];
+
+        foreach ($photo->summary['tags'] ?? [] as $cat => $objs) {
+            foreach ($objs as $obj => $data) {
+
+                // Ensure quantity is a non-negative integer
+                $q = max(0, (int) ($data['quantity'] ?? 0));
+
+                if ($q > 0) {
+                    $deltas['categories'][$cat] = ($deltas['categories'][$cat] ?? 0) + $q;
+                    $deltas['objects'][$obj] = ($deltas['objects'][$obj] ?? 0) + $q;
+
+                    foreach ($data['materials'] ?? [] as $material => $matQ) {
+                        $matQ = max(0, (int) $matQ);
+                        if ($matQ > 0) {
+                            $deltas['materials'][$material] = ($deltas['materials'][$material] ?? 0) + $matQ;
+                        }
+                    }
+
+                    foreach ($data['brands'] ?? [] as $brand => $brandQ) {
+                        $brandQ = max(0, (int) $brandQ);
+                        if ($brandQ > 0) {
+                            $deltas['brands'][$brand] = ($deltas['brands'][$brand] ?? 0) + $brandQ;
+                        }
+                    }
+
+                    foreach ($data['custom_tags'] ?? [] as $customTag => $customQ) {
+                        $customQ = max(0, (int) $customQ);
+                        if ($customQ > 0) {
+                            $deltas['custom_tags'][$customTag] = ($deltas['custom_tags'][$customTag] ?? 0) + $customQ;
+                        }
+                    }
+                }
+            }
+        }
+
+        return $deltas;
+    }
+
+    /**
+     * Update streak logic
+     */
+    private static function updateStreak(Photo $photo): void
+    {
+        $uid = $photo->user_id;
+        $date = $photo->created_at->format('Y-m-d');
+        $uTag = "{u:$uid}";
+
+        $upTodayKey = "{$uTag}:up:{$date}";
         $upYesterdayKey = "{$uTag}:up:" . Carbon::parse($date)->subDay()->format('Y-m-d');
-        $stKey          = "{$uTag}:streak";
+        $statsKey = sprintf(self::KEY_STATS, $uid);
 
-        // 5.1 Mark today's upload with proper TTL
         Redis::setex($upTodayKey, self::UPLOAD_FLAG_TTL_SECONDS, '1');
 
-        // 5.2 Compute new streak
         $hadYesterday = Redis::exists($upYesterdayKey);
-        $oldStreak    = (int) (Redis::get($stKey) ?: 0);
-        $newStreak    = $hadYesterday ? $oldStreak + 1 : 1;
+        $oldStreak = (int) (Redis::hGet($statsKey, 'streak') ?: 0);
+        $newStreak = $hadYesterday ? $oldStreak + 1 : 1;
 
-        // 5.3 Write streak back to both locations (maintain backwards compatibility)
-        Redis::set($stKey, $newStreak);
         Redis::hSet($statsKey, 'streak', $newStreak);
     }
 
@@ -192,106 +218,20 @@ final class RedisMetricsCollector
         $objectsKey = sprintf(self::KEY_OBJECTS, $userId);
         $materialsKey = sprintf(self::KEY_MATERIALS, $userId);
         $brandsKey = sprintf(self::KEY_BRANDS, $userId);
+        $customKey = sprintf(self::KEY_CUSTOM, $userId);
 
         return [
             'uploads' => (int) (Redis::hGet($statsKey, 'uploads') ?: 0),
             'streak' => (int) (Redis::hGet($statsKey, 'streak') ?: 0),
+            'xp' => (float) (Redis::hGet($statsKey, 'xp') ?: 0),
             'categories' => Redis::hGetAll($categoriesKey) ?: [],
             'objects' => Redis::hGetAll($objectsKey) ?: [],
             'materials' => Redis::hGetAll($materialsKey) ?: [],
             'brands' => Redis::hGetAll($brandsKey) ?: [],
+            'custom_tags' => Redis::hGetAll($customKey) ?: [],
         ];
     }
 
-    /**
-     * Get users queued for achievement checking (atomic pop)
-     */
-    public static function getAchievementQueue(int $limit = 100): array
-    {
-        // Use SPOP for atomic removal (Redis 6.2+)
-        $userIds = Redis::sPop(self::ACHIEVEMENT_QUEUE, $limit);
-        return is_array($userIds) ? array_map('intval', $userIds) : ($userIds ? [(int) $userIds] : []);
-    }
-
-    /**
-     * Remove user from achievement queue (now redundant with SPOP, but kept for compatibility)
-     */
-    public static function removeFromAchievementQueue(int $userId): void
-    {
-        Redis::sRem(self::ACHIEVEMENT_QUEUE, $userId);
-    }
-
-    /**
-     * Batch get counts for multiple users (for background processing)
-     */
-    public static function getBatchUserCounts(array $userIds): array
-    {
-        if (empty($userIds)) {
-            return [];
-        }
-
-        $results = [];
-
-        // Use pipeline to batch all Redis calls
-        $pipelineResults = Redis::pipeline(function ($pipe) use ($userIds) {
-            $commands = [];
-            foreach ($userIds as $userId) {
-                $statsKey = sprintf(self::KEY_STATS, $userId);
-                $categoriesKey = sprintf(self::KEY_CATEGORIES, $userId);
-                $objectsKey = sprintf(self::KEY_OBJECTS, $userId);
-                $materialsKey = sprintf(self::KEY_MATERIALS, $userId);
-                $brandsKey = sprintf(self::KEY_BRANDS, $userId);
-
-                $commands[] = $pipe->hGet($statsKey, 'uploads');
-                $commands[] = $pipe->hGet($statsKey, 'streak');
-                $commands[] = $pipe->hGetAll($categoriesKey);
-                $commands[] = $pipe->hGetAll($objectsKey);
-                $commands[] = $pipe->hGetAll($materialsKey);
-                $commands[] = $pipe->hGetAll($brandsKey);
-            }
-            return $commands;
-        });
-
-        // Process pipeline results
-        $resultIndex = 0;
-        foreach ($userIds as $userId) {
-            $results[$userId] = [
-                'uploads' => (int) ($pipelineResults[$resultIndex++] ?: 0),
-                'streak' => (int) ($pipelineResults[$resultIndex++] ?: 0),
-                'categories' => $pipelineResults[$resultIndex++] ?: [],
-                'objects' => $pipelineResults[$resultIndex++] ?: [],
-                'materials' => $pipelineResults[$resultIndex++] ?: [],
-                'brands' => $pipelineResults[$resultIndex++] ?: [],
-            ];
-        }
-
-        return $results;
-    }
-
-    /**
-     * Mark user as achievement-checked for a specific dimension
-     */
-    public static function markAchievementChecked(int $userId, string $dimension): void
-    {
-        $lastCheckKey = sprintf(self::KEY_LAST_CHECK, $userId);
-        Redis::hSet($lastCheckKey, $dimension, time());
-    }
-
-    /**
-     * Get timestamp of last achievement check for a dimension
-     */
-    public static function getLastAchievementCheck(int $userId, string $dimension): ?int
-    {
-        $lastCheckKey = sprintf(self::KEY_LAST_CHECK, $userId);
-        $timestamp = Redis::hGet($lastCheckKey, $dimension);
-        return $timestamp ? (int) $timestamp : null;
-    }
-
-    /* ===================================================================== */
-
-    /**
-     * Generate geographic scopes for daily tracking
-     */
     private static function geoScopes(?int $country, ?int $state, ?int $city): array
     {
         return array_filter([
@@ -302,19 +242,12 @@ final class RedisMetricsCollector
         ]);
     }
 
-    /** Add photo id to processed set; returns true if it *was already* there. */
     private static function alreadyProcessed(?int $photoId): bool
     {
         if (!$photoId) {
             return false;
         }
 
-        // Add & set TTL in one pipeline round-trip
-        $results = Redis::pipeline(function ($pipe) use ($photoId) {
-            $pipe->sAdd('p:done', $photoId);           // idx 0
-            $pipe->expire('p:done', 60 * 60 * 24 * 90); // idx 1 - 90 day TTL
-        });
-
-        return ($results[0] ?? 0) === 0; // true → was already processed
+        return !Redis::sAdd('p:done', $photoId);
     }
 }
