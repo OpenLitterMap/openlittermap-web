@@ -3,7 +3,8 @@
 namespace Tests\Feature\Achievements;
 
 use App\Models\Achievements\Achievement;
-use App\Models\Litter\Tags\{BrandList, Category, CustomTagNew, LitterObject, Materials};
+use App\Services\Achievements\Tags\TagKeyCache;
+use App\Models\Litter\Tags\{BrandList, Category, LitterObject, Materials};
 use App\Models\Location\{Country, State, City};
 use App\Models\Photo;
 use App\Models\Users\User;
@@ -14,7 +15,7 @@ use Database\Seeders\Tags\GenerateBrandsSeeder;
 use Database\Seeders\Tags\GenerateTagsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\{Cache, DB, Log, Redis};
+use Illuminate\Support\Facades\{Cache, DB, Redis};
 use Tests\TestCase;
 
 class AchievementEngineTest extends TestCase
@@ -32,6 +33,7 @@ class AchievementEngineTest extends TestCase
 
         Redis::flushDB();
         Cache::flush();
+        TagKeyCache::forgetAll();
 
         // Create location data
         $country = Country::factory()->create();
@@ -57,29 +59,10 @@ class AchievementEngineTest extends TestCase
         $this->seed(AchievementsSeeder::class);
 
         // Cache tag IDs for performance
-        $this->cacheTagIds();
+        TagKeyCache::warmCache();
 
         // Get the engine instance
         $this->engine = app(AchievementEngine::class);
-    }
-
-    private function cacheTagIds(): void
-    {
-        // Pre-cache all tag IDs to avoid repeated queries
-        DB::table('categories')->pluck('id', 'key')
-            ->each(fn($id, $key) => Cache::put("tag:categories:{$key}", $id, 3600));
-
-        DB::table('litter_objects')->pluck('id', 'key')
-            ->each(fn($id, $key) => Cache::put("tag:litter_objects:{$key}", $id, 3600));
-
-        DB::table('materials')->pluck('id', 'key')
-            ->each(fn($id, $key) => Cache::put("tag:materials:{$key}", $id, 3600));
-
-        DB::table('brandslist')->pluck('id', 'key')
-            ->each(fn($id, $key) => Cache::put("tag:brandslist:{$key}", $id, 3600));
-
-        DB::table('custom_tags_new')->pluck('id', 'key')
-            ->each(fn($id, $key) => Cache::put("tag:custom_tags_new:{$key}", $id, 3600));
     }
 
     private function makePhoto(User $user, array $summary, ?Carbon $createdAt = null): Photo

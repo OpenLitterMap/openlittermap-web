@@ -2,9 +2,8 @@
 
 namespace App\Services\Achievements\Checkers;
 
+use App\Services\Achievements\Tags\TagKeyCache;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 
 abstract class AchievementChecker
 {
@@ -19,8 +18,7 @@ abstract class AchievementChecker
      */
     protected function getTagId(string $table, string $key): ?int
     {
-        return Cache::remember("tag:{$table}:{$key}", 3600, function () use ($table, $key) {
-            return DB::table($table)->where('key', $key)->value('id');
-        });
+        return TagKeyCache::getTagId($table, $key);
     }
+
 }

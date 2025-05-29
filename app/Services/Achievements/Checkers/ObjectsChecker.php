@@ -21,7 +21,8 @@ class ObjectsChecker extends AchievementChecker
             if ($achievement->type === 'objects' &&
                 $achievement->tag_id === null &&
                 !in_array($achievement->id, $alreadyUnlocked) &&
-                $totalObjects >= $achievement->threshold) {
+                $totalObjects >= $achievement->threshold)
+            {
                 $toUnlock[] = $achievement->id;
             }
         }
@@ -30,6 +31,7 @@ class ObjectsChecker extends AchievementChecker
         foreach ($objects as $objectKey => $count) {
             if ($count <= 0) continue;
 
+            // Get the tag ID for this object from the cache
             $tagId = $this->getTagId('litter_objects', $objectKey);
             if (!$tagId) continue;
 
@@ -37,7 +39,8 @@ class ObjectsChecker extends AchievementChecker
                 if ($achievement->type === 'object' &&
                     $achievement->tag_id == $tagId &&
                     !in_array($achievement->id, $alreadyUnlocked) &&
-                    $count >= $achievement->threshold) {
+                    $count >= $achievement->threshold)
+                {
                     $toUnlock[] = $achievement->id;
                 }
             }

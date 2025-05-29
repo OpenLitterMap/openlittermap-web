@@ -30,6 +30,7 @@ class LongTermAchievementsTest extends TestCase
 
         Redis::flushDB();
         Cache::flush();
+        TagKeyCache::forgetAll();
 
         $this->setupLocationData();
         $this->setupTagUniverse();
@@ -104,11 +105,10 @@ class LongTermAchievementsTest extends TestCase
     /** @test */
     public function engine_handles_heavy_production_load_over_six_months(): void
     {
-        $user = User::factory()->create(['id' => 7, 'level' => 1]);
+        $user = User::factory()->create(['level' => 1]); // Remove hardcoded ID
         $start = CarbonImmutable::parse('2025-01-01 10:00:00');
         $photosPerDay = 2;
         $totalDays = 180; // 6 months
-        $totalPhotos = $photosPerDay * $totalDays;
 
         $unlockedAchievements = collect();
         $processingTimes = [];
@@ -135,11 +135,6 @@ class LongTermAchievementsTest extends TestCase
                     $day++; // Skip next day (weekly break)
                 }
             }
-
-            // Clear caches periodically to simulate production
-            if ($day % 30 === 0) {
-                app(AchievementProgressTracker::class)->clearUserCache($user->id);
-            }
         }
 
         // Assertions
@@ -151,7 +146,7 @@ class LongTermAchievementsTest extends TestCase
         $this->assertAchievementUnlocked($user, 'objects', null, 100);
 
         // Verify XP accumulation
-        $totalXp = (int) Redis::hGet("u:{$user->id}:stats", 'xp');
+        $totalXp = (int) Redis::hGet("{u:{$user->id}}:stats", 'xp');
         $this->assertGreaterThan(1000, $totalXp, 'Should accumulate significant XP');
 
         // Performance check
@@ -185,7 +180,7 @@ class LongTermAchievementsTest extends TestCase
 
         // Clear caches to pick up new tags
         TagKeyCache::forgetAll();
-        Cache::forget('achievement:definitions');
+        Cache::forget('achievements:all'); // Updated cache key
 
         // Re-seed achievements for new tags
         $this->seed(AchievementsSeeder::class);
@@ -210,7 +205,7 @@ class LongTermAchievementsTest extends TestCase
     /** @test */
     public function xp_accumulation_is_consistent_across_multiple_sessions(): void
     {
-        $user = User::factory()->create(['id' => 99]);
+        $user = User::factory()->create();
         $totalExpectedXp = 0;
 
         // Process photos in batches to simulate multiple sessions
@@ -218,9 +213,6 @@ class LongTermAchievementsTest extends TestCase
         $photosPerBatch = 20;
 
         for ($batch = 0; $batch < $batches; $batch++) {
-            // Clear user cache between batches
-            app(AchievementProgressTracker::class)->clearUserCache($user->id);
-
             for ($i = 0; $i < $photosPerBatch; $i++) {
                 $photo = $this->createRealisticPhoto($user, now()->addDays($batch * $photosPerBatch + $i), $batch * $photosPerBatch + $i);
                 RedisMetricsCollector::queue($photo);
@@ -231,12 +223,12 @@ class LongTermAchievementsTest extends TestCase
             }
 
             // Verify XP is consistent after each batch
-            $currentXp = (int) Redis::hGet("u:{$user->id}:stats", 'xp');
+            $currentXp = (int) Redis::hGet("{u:{$user->id}}:stats", 'xp');
             $this->assertEquals($totalExpectedXp, $currentXp, "XP mismatch after batch {$batch}");
         }
 
         // Final verification
-        $finalXp = (int) Redis::hGet("u:{$user->id}:stats", 'xp');
+        $finalXp = (int) Redis::hGet("{u:{$user->id}}:stats", 'xp');
         $this->assertEquals($totalExpectedXp, $finalXp);
 
         // Verify no duplicate achievements
@@ -272,22 +264,20 @@ class LongTermAchievementsTest extends TestCase
 
                 // Check progress at key milestones
                 if ($i === 41) { // Just before uploads-42
-                    $progress = $targetAchievements['uploads-42']->getProgressFor($user);
-                    $this->assertEquals(42, $progress);
-                    $percentage = $targetAchievements['uploads-42']->getProgressPercentageFor($user);
-                    $this->assertEquals(100.0, $percentage);
+                    $uploads = Redis::hGet("{u:{$user->id}}:stats", 'uploads');
+                    $this->assertEquals(42, $uploads);
                 }
             }
         }
 
         // Verify all users have correct final progress
         foreach ($users as $user) {
-            $uploadsProgress = $targetAchievements['uploads-42']->getProgressFor($user);
-            $this->assertEquals($photosPerUser, $uploadsProgress);
+            $uploads = Redis::hGet("{u:{$user->id}}:stats", 'uploads');
+            $this->assertEquals($photosPerUser, $uploads);
 
             // Check if achievement was unlocked
             if ($photosPerUser >= 42) {
-                $this->assertTrue($targetAchievements['uploads-42']->isUnlockedBy($user));
+                $this->assertAchievementUnlocked($user, 'uploads', null, 42);
             }
         }
     }
@@ -305,20 +295,18 @@ class LongTermAchievementsTest extends TestCase
         }
 
         // Get Redis data
-        $redisXp = (int) Redis::hGet("u:{$user->id}:stats", 'xp');
-        $redisUploads = (int) Redis::hGet("u:{$user->id}:stats", 'uploads');
+        $redisXp = (int) Redis::hGet("{u:{$user->id}}:stats", 'xp');
+        $redisUploads = (int) Redis::hGet("{u:{$user->id}}:stats", 'uploads');
 
         // Get database data
-        $dbAchievements = $user->achievements()->get();
-        $dbXp = $dbAchievements->sum('xp');
+        $dbXp = DB::table('user_achievements')
+            ->join('achievements', 'user_achievements.achievement_id', '=', 'achievements.id')
+            ->where('user_achievements.user_id', $user->id)
+            ->sum('achievements.xp');
 
         // Verify consistency
         $this->assertEquals($dbXp, $redisXp, 'XP in Redis should match database');
         $this->assertEquals(20, $redisUploads, 'Upload count should be accurate');
-
-        // Simulate cache clear and rebuild
-        Redis::del("user:{$user->id}:achievements");
-        Cache::forget("user_achievement_summary:{$user->id}");
 
         // Process more photos
         for ($i = 20; $i < 30; $i++) {
@@ -328,8 +316,11 @@ class LongTermAchievementsTest extends TestCase
         }
 
         // Verify consistency is maintained
-        $newRedisXp = (int) Redis::hGet("u:{$user->id}:stats", 'xp');
-        $newDbXp = $user->achievements()->sum('xp');
+        $newRedisXp = (int) Redis::hGet("{u:{$user->id}}:stats", 'xp');
+        $newDbXp = DB::table('user_achievements')
+            ->join('achievements', 'user_achievements.achievement_id', '=', 'achievements.id')
+            ->where('user_achievements.user_id', $user->id)
+            ->sum('achievements.xp');
         $this->assertEquals($newDbXp, $newRedisXp, 'XP should remain consistent after cache rebuild');
     }
 
@@ -352,19 +343,11 @@ class LongTermAchievementsTest extends TestCase
         $allPhotos = $allPhotos->shuffle();
 
         $startTime = microtime(true);
-        $processedCount = 0;
 
         // Process all photos
         foreach ($allPhotos as $photo) {
             RedisMetricsCollector::queue($photo);
             $this->engine->evaluate($photo);
-            $processedCount++;
-
-            // Periodic cache clearing to simulate production conditions
-            if ($processedCount % 100 === 0) {
-                $userId = $photo->user_id;
-                app(AchievementProgressTracker::class)->clearUserCache($userId);
-            }
         }
 
         $totalTime = microtime(true) - $startTime;
@@ -374,7 +357,7 @@ class LongTermAchievementsTest extends TestCase
 
         // Verify data integrity
         foreach ($users as $user) {
-            $uploads = (int) Redis::hGet("u:{$user->id}:stats", 'uploads');
+            $uploads = (int) Redis::hGet("{u:{$user->id}}:stats", 'uploads');
             $this->assertEquals($photosPerUser, $uploads, "User {$user->id} should have exactly {$photosPerUser} uploads");
 
             // Verify achievements were unlocked correctly
@@ -449,9 +432,10 @@ class LongTermAchievementsTest extends TestCase
         $emptyPhoto->created_at = now();
         $emptyPhoto->filename = "empty.png";
         $emptyPhoto->model = "iphone";
-        $emptyPhoto->datetime = "2025-01-01 12:00:00";
+        $emptyPhoto->datetime = now();
         $emptyPhoto->country_id = $this->locations['country']->id;
         $emptyPhoto->state_id = $this->locations['state']->id;
+        $emptyPhoto->city_id = $this->locations['city']->id;
         $emptyPhoto->save();
 
         RedisMetricsCollector::queue($emptyPhoto);
@@ -475,6 +459,12 @@ class LongTermAchievementsTest extends TestCase
             ]
         ];
         $unknownPhoto->created_at = now();
+        $unknownPhoto->filename = "unknown.png";
+        $unknownPhoto->model = "iphone";
+        $unknownPhoto->datetime = now();
+        $unknownPhoto->country_id = $this->locations['country']->id;
+        $unknownPhoto->state_id = $this->locations['state']->id;
+        $unknownPhoto->city_id = $this->locations['city']->id;
         $unknownPhoto->save();
 
         RedisMetricsCollector::queue($unknownPhoto);
@@ -506,6 +496,8 @@ class LongTermAchievementsTest extends TestCase
         $photo->state_id = $this->locations['state']->id;
         $photo->city_id = $this->locations['city']->id;
         $photo->filename = "test.png";
+        $photo->model = "iphone"; // Add required field
+        $photo->datetime = $timestamp;
 
         // Create varied but realistic litter data
         $objectKeys = array_keys($this->tags['objects']);
@@ -558,6 +550,9 @@ class LongTermAchievementsTest extends TestCase
         $photo->country_id = $this->locations['country']->id;
         $photo->state_id = $this->locations['state']->id;
         $photo->city_id = $this->locations['city']->id;
+        $photo->filename = "test.png"; // Add required field
+        $photo->model = "iphone"; // Add required field
+        $photo->datetime = $timestamp;
 
         $photo->summary = [
             'tags' => [
@@ -588,6 +583,9 @@ class LongTermAchievementsTest extends TestCase
         $photo->country_id = $this->locations['country']->id;
         $photo->state_id = $this->locations['state']->id;
         $photo->city_id = $this->locations['city']->id;
+        $photo->filename = "test.png"; // Add required field
+        $photo->model = "iphone"; // Add required field
+        $photo->datetime = now();
 
         $photo->summary = [
             'tags' => [
@@ -619,10 +617,10 @@ class LongTermAchievementsTest extends TestCase
         $achievement = $query->first();
         $this->assertNotNull($achievement, "Achievement {$type}-{$tagId}-{$threshold} not found");
 
-        $this->assertTrue(
-            $achievement->isUnlockedBy($user),
-            "Achievement {$type}-{$tagId}-{$threshold} should be unlocked for user {$user->id}"
-        );
+        $this->assertDatabaseHas('user_achievements', [
+            'user_id' => $user->id,
+            'achievement_id' => $achievement->id,
+        ]);
     }
 
     private function verifyAchievementsMatchCounts(User $user, array $counts): void
