@@ -3,6 +3,7 @@
 namespace Tests\Feature\Achievements;
 
 use App\Models\Achievements\Achievement;
+use App\Services\Achievements\AchievementRepository;
 use App\Services\Achievements\Tags\TagKeyCache;
 use App\Models\Litter\Tags\{BrandList, Category, LitterObject, Materials};
 use App\Models\Location\{Country, State, City};
@@ -23,6 +24,7 @@ class AchievementEngineTest extends TestCase
     use RefreshDatabase;
 
     private AchievementEngine $engine;
+    private AchievementRepository $repository;
     private int $countryId;
     private int $stateId;
     private int $cityId;
@@ -63,6 +65,7 @@ class AchievementEngineTest extends TestCase
 
         // Get the engine instance
         $this->engine = app(AchievementEngine::class);
+        $this->repository = app(AchievementRepository::class);
     }
 
     private function makePhoto(User $user, array $summary, ?Carbon $createdAt = null): Photo
@@ -1008,5 +1011,183 @@ class AchievementEngineTest extends TestCase
             ->where('user_id', $u->id)
             ->count();
         $this->assertGreaterThan(20, $achievementCount);
+    }
+
+    /** @test */
+    public function batch_processing_is_more_efficient_than_individual(): void
+    {
+        $user = User::factory()->create();
+        $photos = collect();
+
+        // Create more photos to see a bigger difference
+        for ($i = 0; $i < 100; $i++) {
+            $photos->push($this->makePhoto($user, [
+                'tags' => ['food' => ['wrapper' => ['quantity' => 2]]]
+            ]));
+        }
+
+        // Clear Redis
+        Redis::flushDB();
+
+        // Method 1: Individual processing
+        $startTime = microtime(true);
+        foreach ($photos as $photo) {
+            RedisMetricsCollector::queue($photo);
+        }
+        $individualTime = microtime(true) - $startTime;
+        $individualCounts = RedisMetricsCollector::getUserCounts($user->id);
+
+        // Clear Redis for batch test
+        Redis::flushDB();
+
+        // Method 2: Batch processing
+        $startTime = microtime(true);
+        RedisMetricsCollector::queueBatch($user->id, $photos);
+        $batchTime = microtime(true) - $startTime;
+        $batchCounts = RedisMetricsCollector::getUserCounts($user->id);
+
+        // Batch should be at least 20% faster (more realistic expectation)
+        $this->assertLessThan($individualTime * 0.8, $batchTime,
+            "Batch time ({$batchTime}) should be at least 20% faster than individual time ({$individualTime})");
+
+        // Verify counts are identical
+        $this->assertEquals($individualCounts['objects']['wrapper'], $batchCounts['objects']['wrapper']);
+        $this->assertEquals(200, $batchCounts['objects']['wrapper']); // 100 photos * 2 quantity
+    }
+
+    /** @test */
+    public function batch_processing_handles_mixed_dates_correctly(): void
+    {
+        $user = User::factory()->create();
+        $photos = collect([
+            $this->makePhoto($user, ['tags' => ['food' => ['wrapper' => ['quantity' => 1]]]], Carbon::parse('2025-01-15')),
+            $this->makePhoto($user, ['tags' => ['food' => ['wrapper' => ['quantity' => 1]]]], Carbon::parse('2025-01-20')),
+            $this->makePhoto($user, ['tags' => ['food' => ['wrapper' => ['quantity' => 1]]]], Carbon::parse('2025-01-10')),
+        ]);
+
+        RedisMetricsCollector::queueBatch($user->id, $photos);
+
+        // Verify upload flags are set for all dates
+        $this->assertEquals(1, Redis::exists("{u:{$user->id}}:up:2025-01-10"));
+        $this->assertEquals(1, Redis::exists("{u:{$user->id}}:up:2025-01-15"));
+        $this->assertEquals(1, Redis::exists("{u:{$user->id}}:up:2025-01-20"));
+    }
+
+    /** @test */
+    public function migration_processes_photos_by_user_efficiently(): void
+    {
+        // Create 3 users with different photo counts
+        $user1 = User::factory()->create();
+        $user2 = User::factory()->create();
+        $user3 = User::factory()->create();
+
+        // User 1: 20 photos
+        Photo::factory()->count(20)->create(['user_id' => $user1->id]);
+        // User 2: 30 photos
+        Photo::factory()->count(30)->create(['user_id' => $user2->id]);
+        // User 3: 10 photos
+        Photo::factory()->count(10)->create(['user_id' => $user3->id]);
+
+        // Run migration
+        $this->artisan('olm:v5')
+            ->assertSuccessful();
+
+        // Verify all photos are marked as migrated
+        $this->assertEquals(0, Photo::whereNull('migrated_at')->count());
+
+        // Verify each user's achievements were checked only once
+        $this->assertLessThan(10,
+            DB::table('user_achievements')
+                ->where('user_id', $user1->id)
+                ->where('created_at', '>=', now()->subMinute())
+                ->count()
+        );
+    }
+
+//    /** @test */
+//    public function handles_redis_connection_failure_gracefully(): void
+//    {
+//        $user = User::factory()->create();
+//        $photo = $this->makePhoto($user, ['tags' => ['food' => ['wrapper' => ['quantity' => 1]]]]);
+//
+//        // Simulate Redis being down
+//        Redis::shouldReceive('pipeline')->andThrow(new \RedisException('Connection refused'));
+//
+//        // Should not throw exception
+//        $this->assertDoesNotThrow(function() use ($photo) {
+//            RedisMetricsCollector::queue($photo);
+//        });
+//
+//        // Photo should still be marked as processed in DB
+//        $this->assertNotNull($photo->fresh()->migrated_at);
+//    }
+
+    /** @test */
+    public function handles_concurrent_batch_processing_for_same_user(): void
+    {
+        $user = User::factory()->create();
+
+        // Simulate two workers processing different batches for same user
+        $batch1 = collect([
+            $this->makePhoto($user, ['tags' => ['food' => ['wrapper' => ['quantity' => 10]]]]),
+            $this->makePhoto($user, ['tags' => ['food' => ['wrapper' => ['quantity' => 20]]]]),
+        ]);
+
+        $batch2 = collect([
+            $this->makePhoto($user, ['tags' => ['food' => ['wrapper' => ['quantity' => 30]]]]),
+            $this->makePhoto($user, ['tags' => ['food' => ['wrapper' => ['quantity' => 40]]]]),
+        ]);
+
+        // Process concurrently (simulated)
+        RedisMetricsCollector::queueBatch($user->id, $batch1);
+        RedisMetricsCollector::queueBatch($user->id, $batch2);
+
+        // Verify total is correct (not duplicated or lost)
+        $counts = RedisMetricsCollector::getUserCounts($user->id);
+        $this->assertEquals(100, $counts['objects']['wrapper'] ?? 0);
+        $this->assertEquals(4, $counts['uploads']);
+    }
+
+    /** @test */
+    public function streak_handles_timezone_boundaries(): void
+    {
+        $user = User::factory()->create();
+
+        // Upload at 11:59 PM
+        $photo1 = $this->makePhoto($user,
+            ['tags' => ['food' => ['wrapper' => ['quantity' => 1]]]],
+            Carbon::parse('2025-01-20 23:59:00')
+        );
+
+        // Upload at 12:01 AM next day
+        $photo2 = $this->makePhoto($user,
+            ['tags' => ['food' => ['wrapper' => ['quantity' => 1]]]],
+            Carbon::parse('2025-01-21 00:01:00')
+        );
+
+        RedisMetricsCollector::queueBatch($user->id, collect([$photo1, $photo2]));
+
+        $counts = RedisMetricsCollector::getUserCounts($user->id);
+        $this->assertEquals(2, $counts['streak']); // Should count as consecutive days
+    }
+
+    /** @test */
+    public function user_achievement_cache_is_invalidated_on_unlock(): void
+    {
+        $user = User::factory()->create();
+
+        // Warm cache
+        $cached1 = $this->repository->getUnlockedAchievementIds($user->id);
+        $this->assertEmpty($cached1);
+
+        // Unlock achievement
+        $photo = $this->makePhoto($user, ['tags' => ['food' => ['wrapper' => ['quantity' => 1]]]]);
+        RedisMetricsCollector::queue($photo);
+        $this->engine->evaluate($photo);
+
+        // Cache should be invalidated
+        $cached2 = $this->repository->getUnlockedAchievementIds($user->id);
+        $this->assertNotEmpty($cached2);
+        $this->assertNotEquals($cached1, $cached2);
     }
 }

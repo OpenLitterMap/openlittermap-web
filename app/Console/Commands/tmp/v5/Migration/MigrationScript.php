@@ -5,7 +5,7 @@ namespace App\Console\Commands\tmp\v5\Migration;
 
 use App\Models\Photo;
 use App\Services\Achievements\AchievementEngine;
-use App\Services\Redis\UpdateRedisService;
+use App\Services\Redis\RedisMetricsCollector;
 use App\Services\Tags\UpdateTagsService;
 use App\Services\Timeseries\TimeSeriesService;
 use Database\Seeders\AchievementsSeeder;
@@ -24,22 +24,20 @@ class MigrationScript extends Command
 
     private int $processed = 0;
     private int $failed = 0;
-    private int $totalPhotos = 0;
-    private array $achievementStats = [
-        'total' => 0,
-        'by_user' => [],
-    ];
     private int $CACHE_TIME = 3600; // 1 hour
+    private int $BATCH_SIZE = 500;
 
     public function __construct(
         private UpdateTagsService $updateTagsService,
-        private UpdateRedisService $updateRedisService,
         private TimeSeriesService $timeseriesService,
         private AchievementEngine $achievementEngine
     ) {
         parent::__construct();
     }
 
+    /**
+     * Note: Remember to delete all existing redis keys before running this command.
+     */
     public function handle(): void
     {
         if (!DB::getSchemaBuilder()->hasColumn('photos', 'migrated_at')) {
@@ -49,22 +47,29 @@ class MigrationScript extends Command
 
         $this->setupEnvironment();
 
-        $this->totalPhotos = Photo::whereNull('migrated_at')->count();
-        if ($this->totalPhotos === 0) {
+        $totalPhotos = Photo::whereNull('migrated_at')->count();
+        if ($totalPhotos === 0) {
             $this->info('🎉 All photos are already migrated.');
             return;
         }
 
-        $this->info("Found {$this->totalPhotos} photos to migrate.\n");
+        $this->info("Found {$totalPhotos} photos to migrate.\n");
 
-        $progressBar = $this->output->createProgressBar($this->totalPhotos);
+        $progressBar = $this->output->createProgressBar($totalPhotos);
         $progressBar->start();
 
         Photo::whereNull('migrated_at')
             ->with(['customTags', 'user'])
-            ->chunkById((int) $this->option('batch'), function ($photos) use ($progressBar) {
-                $this->processBatch($photos);
-                $progressBar->advance($photos->count());
+            ->orderBy('user_id')
+            ->chunkById($this->BATCH_SIZE, function ($photos) use ($progressBar) {
+                $photosByUser = $photos->groupBy('user_id');
+                foreach ($photosByUser as $userId => $userPhotos) {
+                    $this->processUserPhotos($userId, $userPhotos);
+                    $progressBar->advance($userPhotos->count());
+                }
+
+                unset($photos);
+                gc_collect_cycles();
             });
 
         $progressBar->finish();
@@ -106,57 +111,48 @@ class MigrationScript extends Command
             ->each(fn($id, $key) => Cache::put("tag:brandslist:{$key}", $id, $this->CACHE_TIME));
     }
 
-    private function processBatch($photos): void
+    // used by a test
+    public function processUserPhotos(int $userId, $userPhotos): void
     {
         Photo::unsetEventDispatcher();
 
-        foreach ($photos as $photo) {
-            try {
-                $this->processPhoto($photo);
-                $this->processed++;
-            } catch (\Throwable $e) {
-                $this->failed++;
-                Log::error("Migration failed for photo {$photo->id}", [
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString(),
-                ]);
+        try {
+            // Process all photos for this user
+            $successfulPhotos = collect();
+
+            foreach ($userPhotos as $photo) {
+                try {
+                    // 1. Convert tags to new format
+                    $this->updateTagsService->updateTags($photo);
+
+                    // 2. Update time series
+                    $this->timeseriesService->updateTimeSeries($photo);
+
+                    $successfulPhotos->push($photo);
+                    $this->processed++;
+                } catch (\Throwable $e) {
+                    $this->failed++;
+                    Log::error("Migration failed for photo {$photo->id}", [
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                    ]);
+                }
             }
-        }
 
-        Photo::setEventDispatcher(app('events'));
+            if ($successfulPhotos->isNotEmpty()) {
+                // 3. Batch update Redis for all photos at once
+                RedisMetricsCollector::queueBatch($userId, $successfulPhotos);
 
-        // Clear memory periodically
-        if ($this->processed % 5000 === 0) {
-            gc_collect_cycles();
-        }
-    }
+                // 4. Check achievements once with final state
+                $this->achievementEngine->evaluate($userId);
 
-    private function processPhoto(Photo $photo): void
-    {
-        // 1. Convert tags to new format
-        $this->updateTagsService->updateTags($photo);
-
-        // 2. Update Redis metrics
-        $this->updateRedisService->updateRedis($photo);
-
-        // 3. Update time series
-        $this->timeseriesService->updateTimeSeries($photo);
-
-        // 4. Process achievements (synchronously)
-        if (!$this->option('skip-achievements')) {
-            $unlocked = $this->achievementEngine->evaluate($photo);
-
-            if ($unlocked->isNotEmpty()) {
-                $this->achievementStats['total'] += $unlocked->count();
-                $this->achievementStats['by_user'][$photo->user_id] =
-                    ($this->achievementStats['by_user'][$photo->user_id] ?? 0) + $unlocked->count();
+                // 5. Bulk update migrated_at
+                Photo::whereIn('id', $successfulPhotos->pluck('id'))
+                    ->update(['migrated_at' => now()]);
             }
+        } finally {
+            Photo::setEventDispatcher(app('events'));
         }
-
-        // 5. Mark as migrated
-        Photo::withoutEvents(fn() =>
-            $photo->forceFill(['migrated_at' => now()])->save()
-        );
     }
 
     private function displaySummary(): void
@@ -166,17 +162,6 @@ class MigrationScript extends Command
 
         if ($this->failed > 0) {
             $this->warn("- Failed photos: {$this->failed}");
-        }
-
-        if (!$this->option('skip-achievements')) {
-            $userCount = count($this->achievementStats['by_user']);
-            $this->info("- Achievements unlocked: {$this->achievementStats['total']}");
-            $this->info("- Users who unlocked achievements: {$userCount}");
-
-            if ($userCount > 0) {
-                $avgPerUser = round($this->achievementStats['total'] / $userCount, 2);
-                $this->info("- Average achievements per user: {$avgPerUser}");
-            }
         }
 
         $peakMemory = round(memory_get_peak_usage(true) / 1024 / 1024, 2);

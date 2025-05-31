@@ -32,7 +32,6 @@ return new class extends Migration
 
             // Indexes for efficient queries
             $t->index(['type', 'threshold']);
-            $t->index('type');
         });
 
         Schema::create('user_achievements', function (Blueprint $t) {
@@ -45,7 +44,7 @@ return new class extends Migration
             $t->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
             $t->foreign('achievement_id')->references('id')->on('achievements')->cascadeOnDelete();
 
-            $t->index('user_id');
+            $t->index(['user_id', 'created_at'], 'idx_user_achievements_user_created');
         });
     }
 

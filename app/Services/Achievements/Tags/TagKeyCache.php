@@ -71,6 +71,7 @@ final class TagKeyCache
 
     /**
      * Pre-warm all caches for migration performance
+     * Only used in tests
      */
     public static function warmCache(): void
     {

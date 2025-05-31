@@ -3,6 +3,7 @@
 namespace App\Models\Achievements;
 
 use App\Models\Users\User;
+use App\Services\Redis\RedisMetricsCollector;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -31,30 +32,6 @@ class Achievement extends Model
     }
 
     /**
-     * Scope to get achievements by type
-     */
-    public function scopeOfType($query, string $type)
-    {
-        return $query->where('type', $type);
-    }
-
-    /**
-     * Scope to get dimension-wide achievements only
-     */
-    public function scopeDimensionWide($query)
-    {
-        return $query->whereNull('tag_id');
-    }
-
-    /**
-     * Scope to get per-tag achievements only
-     */
-    public function scopePerTag($query)
-    {
-        return $query->whereNotNull('tag_id');
-    }
-
-    /**
      * Users who have unlocked this achievement
      */
     public function users(): BelongsToMany
@@ -62,72 +39,6 @@ class Achievement extends Model
         return $this->belongsToMany(User::class, 'user_achievements')
             ->withPivot(['unlocked_at'])
             ->withTimestamps();
-    }
-
-    /**
-     * Get the display name for this achievement
-     */
-    public function getDisplayNameAttribute(): string
-    {
-        return $this->metadata['name'] ?? $this->generateDefaultName();
-    }
-
-    /**
-     * Get the description for this achievement
-     */
-    public function getDescriptionAttribute(): string
-    {
-        return $this->metadata['description'] ?? $this->generateDefaultDescription();
-    }
-
-    /**
-     * Get the icon for this achievement
-     */
-    public function getIconAttribute(): string
-    {
-        return $this->metadata['icon'] ?? '🏆';
-    }
-
-    /**
-     * Generate a default name if not in metadata
-     */
-    private function generateDefaultName(): string
-    {
-        $name = ucfirst($this->type);
-
-        if ($this->tag_id && isset($this->metadata['tag_name'])) {
-            $name .= ': ' . $this->metadata['tag_name'];
-        }
-
-        $name .= ' x' . number_format($this->threshold);
-
-        return $name;
-    }
-
-    /**
-     * Generate a default description if not in metadata
-     */
-    private function generateDefaultDescription(): string
-    {
-        $action = match($this->type) {
-            'uploads' => 'Upload',
-            'objects' => 'Tag',
-            'categories' => 'Use',
-            'materials' => 'Tag',
-            'brands' => 'Tag',
-            default => 'Reach',
-        };
-
-        $target = match($this->type) {
-            'uploads' => 'photos',
-            'objects' => 'objects',
-            'categories' => 'categories',
-            'materials' => 'materials',
-            'brands' => 'brands',
-            default => 'items',
-        };
-
-        return "{$action} {$this->threshold} {$target}";
     }
 
     /**
@@ -145,7 +56,7 @@ class Achievement extends Model
      */
     public function getProgressFor(User $user): int
     {
-        $counts = \App\Services\Redis\RedisMetricsCollector::getUserCounts($user->id);
+        $counts = RedisMetricsCollector::getUserCounts($user->id);
 
         // Handle dimension-wide achievements
         if (!$this->tag_id) {
@@ -185,7 +96,7 @@ class Achievement extends Model
     private function getTagKeyForId(int $tagId): ?string
     {
         // Cache this lookup
-        return \Cache::remember("tag_key:{$this->type}:{$tagId}", 3600, function () use ($tagId) {
+        return Cache::remember("tag_key:{$this->type}:{$tagId}", 3600, function () use ($tagId) {
             $table = match($this->type) {
                 'object' => 'litter_objects',
                 'category' => 'categories',

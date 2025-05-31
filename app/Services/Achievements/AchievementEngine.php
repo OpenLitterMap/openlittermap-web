@@ -33,18 +33,13 @@ class AchievementEngine
     /**
      * Evaluate achievements for a photo
      */
-    public function evaluate(Photo $photo): Collection
+    public function evaluate(int $userId): Collection
     {
-        if (!$photo->user_id) {
+        $user = User::find($userId);
+        if (!$user) {
             return collect();
         }
-
         try {
-            $user = $photo->user ?? User::find($photo->user_id);
-            if (!$user) {
-                return collect();
-            }
-
             // Get current state
             $counts = RedisMetricsCollector::getUserCounts($user->id);
             $unlocked = $this->repository->getUnlockedAchievementIds($user->id);
@@ -66,8 +61,7 @@ class AchievementEngine
 
         } catch (\Throwable $e) {
             Log::error('Achievement evaluation failed', [
-                'photo_id' => $photo->id,
-                'user_id' => $photo->user_id,
+                'user_id' => $userId,
                 'error' => $e->getMessage(),
             ]);
 

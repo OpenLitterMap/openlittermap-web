@@ -37,10 +37,14 @@ class AchievementRepository
      */
     public function getUnlockedAchievementIds(int $userId): array
     {
-        return DB::table('user_achievements')
-            ->where('user_id', $userId)
-            ->pluck('achievement_id')
-            ->toArray();
+        return Cache::remember(
+            "user:$userId:achievements",
+            300, // 5 minutes for active users
+            fn() => DB::table('user_achievements')
+                ->where('user_id', $userId)
+                ->pluck('achievement_id')
+                ->toArray()
+        );
     }
 
     /**
@@ -57,7 +61,6 @@ class AchievementRepository
             ->whereIn('id', $achievementIds)
             ->get()
             ->map(function ($achievement) {
-                // Fix: Decode metadata JSON
                 $achievement->metadata = json_decode($achievement->metadata ?? '{}', true);
                 return $achievement;
             });
@@ -67,7 +70,6 @@ class AchievementRepository
         }
 
         DB::transaction(function () use ($user, $achievements) {
-            // Insert records (ignore duplicates)
             $data = $achievements->map(fn($a) => [
                 'user_id' => $user->id,
                 'achievement_id' => $a->id,
@@ -83,6 +85,8 @@ class AchievementRepository
                 Redis::hIncrByFloat("{u:{$user->id}}:stats", 'xp', $totalXp);
             }
         });
+
+        Cache::forget("user:{$user->id}:achievements");
 
         return $achievements;
     }
