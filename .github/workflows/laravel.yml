@@ -68,7 +68,7 @@ jobs:
       - name: Copy test fixture image
         run: |
           mkdir -p storage/framework/testing
-          cp tests/Fixtures/img_with_exif.JPG storage/framework/testing/img_with_exif.JPG
+          cp tests/Unit/img_with_exif.JPG storage/framework/testing/img_with_exif.JPG
 
       - name: Remove old config cache
         run: rm -f bootstrap/cache/config.php

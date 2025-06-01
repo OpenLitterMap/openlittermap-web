@@ -6,6 +6,9 @@ use App\Models\Litter\LitterCategory;
 use App\Models\Litter\Tags\PhotoTag;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @deprecated
+ */
 class Brand extends LitterCategory
 {
     protected $guarded = [];

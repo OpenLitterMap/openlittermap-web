@@ -6,44 +6,45 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
+    /*
+    ┌ achievements ───────────────────────────────────────────────┐
+    │ slug        uploads-42 / object-17-100 / streak-7           │
+    │ dimension   uploads | object | category | material | brand  │
+    │ tag_id      nullable (e.g. object_id)                       │
+    │ threshold   INT                                            │
+    │ xp          INT                                            │
+    └─────────────────────────────────────────────────────────────┘
+    */
     public function up(): void
     {
-        Schema::create('achievements', function (Blueprint $table) {
-            $table->id();
-            $table->string('slug')->unique();          // e.g. "first-upload"
-            $table->string('name');
-            $table->text('description')->nullable();
-            $table->unsignedInteger('xp')->default(0); // XP granted when unlocked
-            $table->unsignedTinyInteger('tier')->default(1); // bronze/silver/gold etc.
-            $table->string('icon')->nullable();        // local path or S3 key
-            $table->string('reward_type')->nullable(); // "badge", "geonft", "ai_banner", …
-            $table->json('meta')->nullable();          // anything else
-            $table->timestamps();
+        // definition of each achievement. Pre-populated with all existing tags.
+        Schema::create('achievements', function (Blueprint $t) {
+            $t->id();                                       // bigint PK, auto-increment
+            $t->string('type', 50);                         // 'uploads', 'object', 'category', etc.
+            $t->unsignedBigInteger('tag_id')->nullable();   // null for dimension-wide achievements
+            $t->unsignedInteger('threshold');               // Required count to unlock
+            $t->unsignedInteger('xp');                      // XP awarded
+            $t->json('metadata')->nullable();               // For i18n, icons, descriptions
+            $t->timestamps();
+
+            // Composite unique constraint
+            $t->unique(['type', 'tag_id', 'threshold']);
+
+            // Indexes for efficient queries
+            $t->index(['type', 'threshold']);
         });
 
-        Schema::create('user_achievements', function (Blueprint $table) {
-            $table->id();
+        Schema::create('user_achievements', function (Blueprint $t) {
+            $t->unsignedInteger('user_id');
+            $t->unsignedBigInteger('achievement_id');
+            $t->timestamp('created_at')->useCurrent();
+            $t->timestamp('updated_at')->nullable();
 
-            $table->unsignedInteger('user_id');
-            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
+            $t->primary(['user_id', 'achievement_id']);
+            $t->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
+            $t->foreign('achievement_id')->references('id')->on('achievements')->cascadeOnDelete();
 
-            $table->foreignId('achievement_id')->constrained()->cascadeOnDelete();
-
-            $table->timestamp('unlocked_at');
-            $table->unsignedInteger('progress')->default(0);
-            $table->unsignedInteger('target')->default(0);
-            $table->json('snapshot')->nullable(); // state taken at unlock time
-            $table->unique(['user_id', 'achievement_id']);
-            $table->timestamps();
-        });
-
-        Schema::table('users', function (Blueprint $table) {
-            $table->unsignedInteger('xp_new')->default(0);
-            $table->unsignedInteger('level_new')->default(0);
-            $table->timestamp('leveled_up_at')->nullable();
+            $t->index(['user_id', 'created_at'], 'idx_user_achievements_user_created');
         });
     }
 
@@ -54,8 +55,5 @@ return new class extends Migration
     {
         Schema::dropIfExists('user_achievements');
         Schema::dropIfExists('achievements');
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['xp_new', 'level_new', 'leveled_up_at']);
-        });
     }
 };

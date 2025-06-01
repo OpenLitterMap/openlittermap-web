@@ -2,14 +2,13 @@
 
 namespace Database\Seeders;
 
+use Database\Seeders\Tags\CreateAllTagsSeeder;
 use Illuminate\Database\Seeder;
-use Database\Seeders\Tags\GenerateTagsSeeder;
-use Database\Seeders\Tags\GenerateBrandsSeeder;
 
 class DatabaseSeeder extends Seeder
 {
     /**
-     * Populate the application's database.
+     * Populate the application's database
      */
     public function run (): void
     {
@@ -29,8 +28,6 @@ class DatabaseSeeder extends Seeder
         $this->call(UserSeeder::class);
         $this->call(PhotosSeeder::class);
 
-        // Populate photos with Tags v2
-        $this->call(GenerateTagsSeeder::class);
-        $this->call(GenerateBrandsSeeder::class);
+        $this->call(CreateAllTagsSeeder::class);
     }
 }

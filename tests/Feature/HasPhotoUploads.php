@@ -43,7 +43,7 @@ trait HasPhotoUploads
     private string $imageDisplayName = '10735, Carlisle Pike, Latimore Township, Adams County, Pennsylvania, 17324, USA';
 
 
-    protected function getImageAndAttributes ($mimeType = 'jpg', $withAddress = []): array
+    public function getImageAndAttributes ($mimeType = 'jpg', $withAddress = []): array
     {
         $file = new UploadedFile(
             storage_path('framework/testing/img_with_exif.JPG'),

@@ -2,9 +2,9 @@
 
 namespace Tests\Unit\Actions\Photos;
 
-use Tests\TestCase;
-use App\Models\Photo;
 use App\Actions\Photos\AddTagsToPhotoAction;
+use App\Models\Photo;
+use Tests\TestCase;
 
 class AddTagsToPhotoActionTest extends TestCase
 {

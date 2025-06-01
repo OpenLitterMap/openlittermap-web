@@ -14,8 +14,8 @@ class DropLittercoinFromPhotos extends Migration
     public function up()
     {
         Schema::table('photos', function (Blueprint $table) {
-            $table->dropForeign(['littercoin_id']);
-            $table->dropColumn('littercoin_id');
+            // $table->dropForeign(['littercoin_id']);
+            // $table->dropColumn('littercoin_id');
         });
     }
 }

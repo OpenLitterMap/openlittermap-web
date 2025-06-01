@@ -6,9 +6,10 @@ use App\Enums\XpScore;
 use App\Models\Photo;
 
 /**
- * Build and persist a single‑query JSON summary of this photo's tags + aggregates,
+ * Builds a JSON summary of this photo's tags + aggregates,
  * grouped first by category key, then by object key (with extra-tags nested),
  * plus flat totals for tags, objects, materials, brands, and custom tags.
+ * Also updates the photo's XP and total tags/brands.
  *
  * Final summary format:
  * [
@@ -156,12 +157,11 @@ class GeneratePhotoSummaryService
         );
 
         // echo "Summary: " . json_encode($summary, JSON_PRETTY_PRINT) . "\n";
-
         // Persist summary and XP
         $photo->update([
-            'summary'    => $summary,
-            'xp'         => $xp,
-            'total_tags' => $totalTags,
+            'summary'      => $summary,
+            'xp'           => $xp,
+            'total_tags'   => $totalTags,
             'total_brands' => $brandCount,
         ]);
 
