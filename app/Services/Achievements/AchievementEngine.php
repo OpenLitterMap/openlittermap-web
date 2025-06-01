@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Achievements;
 
-use App\Models\Photo;
 use App\Models\Users\User;
 use App\Services\Achievements\Checkers\AchievementChecker;
 use App\Services\Redis\RedisMetricsCollector;

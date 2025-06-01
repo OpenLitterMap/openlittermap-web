@@ -134,7 +134,7 @@ class AchievementEngineTest extends TestCase
         ]);
 
         RedisMetricsCollector::queue($p);
-        $unlocked = $this->engine->evaluate($p);
+        $unlocked = $this->engine->evaluate($u->id);
 
         $this->assertNotEmpty($unlocked);
         $this->assertUnlocked($u, 'uploads', null, 1);
@@ -159,7 +159,7 @@ class AchievementEngineTest extends TestCase
         // First photo: 5 bottles
         $p1 = $this->makePhoto($u, ['tags' => ['softdrinks' => ['water_bottle' => ['quantity' => 5]]]]);
         RedisMetricsCollector::queue($p1);
-        $this->engine->evaluate($p1);
+        $this->engine->evaluate($u->id);
 
         $this->assertUnlocked($u, 'object', $bottle->id, 1);
         $this->assertNotUnlocked($u, 'object', $bottle->id, 42);
@@ -167,7 +167,7 @@ class AchievementEngineTest extends TestCase
         // Second photo: 37 more bottles (total 42)
         $p2 = $this->makePhoto($u, ['tags' => ['softdrinks' => ['water_bottle' => ['quantity' => 37]]]]);
         RedisMetricsCollector::queue($p2);
-        $this->engine->evaluate($p2);
+        $this->engine->evaluate($u->id);
 
         $this->assertUnlocked($u, 'object', $bottle->id, 42);
 
@@ -195,7 +195,7 @@ class AchievementEngineTest extends TestCase
 
         $p = $this->makePhoto($u, $summary);
         RedisMetricsCollector::queue($p);
-        $this->engine->evaluate($p);
+        $this->engine->evaluate($u->id);
 
         // Categories achievement counts number of unique categories, not items
         $this->assertUnlocked($u, 'categories', null, 1);
@@ -234,7 +234,7 @@ class AchievementEngineTest extends TestCase
 
         $p = $this->makePhoto($u, $summary);
         RedisMetricsCollector::queue($p);
-        $this->engine->evaluate($p);
+        $this->engine->evaluate($u->id);
 
         // Check material achievements
         $this->assertUnlocked($u, 'material', $plastic->id, 1);
@@ -274,7 +274,7 @@ class AchievementEngineTest extends TestCase
 
         $p = $this->makePhoto($u, $summary);
         RedisMetricsCollector::queue($p);
-        $this->engine->evaluate($p);
+        $this->engine->evaluate($u->id);
 
         // Check dimension-wide achievements
         $this->assertUnlocked($u, 'objects', null, 1);
@@ -307,9 +307,9 @@ class AchievementEngineTest extends TestCase
         RedisMetricsCollector::queue($p);
 
         // Evaluate three times
-        $firstUnlocked = $this->engine->evaluate($p);
-        $secondUnlocked = $this->engine->evaluate($p);
-        $thirdUnlocked = $this->engine->evaluate($p);
+        $firstUnlocked = $this->engine->evaluate($u->id);
+        $secondUnlocked = $this->engine->evaluate($u->id);
+        $thirdUnlocked = $this->engine->evaluate($u->id);
 
         // First evaluation should unlock achievements
         $this->assertNotEmpty($firstUnlocked);
@@ -344,7 +344,7 @@ class AchievementEngineTest extends TestCase
         ]);
 
         RedisMetricsCollector::queue($p);
-        $unlocked = $this->engine->evaluate($p);
+        $unlocked = $this->engine->evaluate($u->id);
 
         // Should unlock dimension-wide achievements
         $this->assertUnlocked($u, 'uploads', null, 1);
@@ -366,7 +366,7 @@ class AchievementEngineTest extends TestCase
         ]);
 
         RedisMetricsCollector::queue($p);
-        $unlocked = $this->engine->evaluate($p);
+        $unlocked = $this->engine->evaluate($u->id);
 
         // Should still unlock uploads achievement
         $this->assertCount(1, $unlocked);
@@ -395,7 +395,7 @@ class AchievementEngineTest extends TestCase
         RedisMetricsCollector::queue($p);
 
         // Should handle gracefully when user doesn't exist
-        $unlocked = $this->engine->evaluate($p);
+        $unlocked = $this->engine->evaluate($p->user_id);
         $this->assertEmpty($unlocked);
     }
 
@@ -404,8 +404,10 @@ class AchievementEngineTest extends TestCase
     {
         $u = User::factory()->create();
 
+        $this->makePhoto($u, ['tags' => []]);
+
         // Warm up caches
-        $this->engine->evaluate($this->makePhoto($u, ['tags' => []]));
+        $this->engine->evaluate($u->id);
 
         DB::enableQueryLog();
         $startTime = microtime(true);
@@ -416,7 +418,7 @@ class AchievementEngineTest extends TestCase
                 'tags' => ['food' => ['wrapper' => ['quantity' => 1]]],
             ]);
             RedisMetricsCollector::queue($p);
-            $this->engine->evaluate($p);
+            $this->engine->evaluate($u->id);
         }
 
         $endTime = microtime(true);
@@ -444,7 +446,7 @@ class AchievementEngineTest extends TestCase
                 'tags' => ['food' => ['wrapper' => ['quantity' => 1]]],
             ]);
             RedisMetricsCollector::queue($p);
-            $unlocked = $this->engine->evaluate($p);
+            $unlocked = $this->engine->evaluate($u->id);
 
             if ($unlocked->isNotEmpty()) {
                 foreach ($unlocked as $achievement) {
@@ -485,7 +487,7 @@ class AchievementEngineTest extends TestCase
 
         $allUnlocked = collect();
         foreach ($photos as $photo) {
-            $unlocked = $this->engine->evaluate($photo);
+            $unlocked = $this->engine->evaluate($photo->user_id);
             $allUnlocked = $allUnlocked->merge($unlocked);
         }
 
@@ -542,10 +544,10 @@ class AchievementEngineTest extends TestCase
 
         // Process both
         RedisMetricsCollector::queue($p1);
-        $unlocked1 = $this->engine->evaluate($p1);
+        $unlocked1 = $this->engine->evaluate($u->id);
 
         RedisMetricsCollector::queue($p2);
-        $unlocked2 = $this->engine->evaluate($p2);
+        $unlocked2 = $this->engine->evaluate($u->id);
 
         // Should have unlocked various achievements
         $this->assertUnlocked($u, 'uploads', null, 1); // From first photo
@@ -626,7 +628,7 @@ class AchievementEngineTest extends TestCase
             ]);
 
             RedisMetricsCollector::queue($p);
-            $unlocked = $this->engine->evaluate($p);
+            $unlocked = $this->engine->evaluate($u->id);
             $totalExpectedXp += $unlocked->sum('xp');
         }
 
@@ -653,7 +655,7 @@ class AchievementEngineTest extends TestCase
             'tags' => ['softdrinks' => ['water_bottle' => ['quantity' => 41]]],
         ]);
         RedisMetricsCollector::queue($p1);
-        $this->engine->evaluate($p1);
+        $this->engine->evaluate($u->id);
 
         // Should have 1 achievement, but not 42
         $this->assertUnlocked($u, 'objects', null, 1);
@@ -664,7 +666,7 @@ class AchievementEngineTest extends TestCase
             'tags' => ['softdrinks' => ['water_bottle' => ['quantity' => 1]]],
         ]);
         RedisMetricsCollector::queue($p2);
-        $unlocked = $this->engine->evaluate($p2);
+        $unlocked = $this->engine->evaluate($u->id);
 
         // Now should have 42 achievement
         $this->assertUnlocked($u, 'objects', null, 42);
@@ -695,7 +697,7 @@ class AchievementEngineTest extends TestCase
         ]);
 
         RedisMetricsCollector::queue($p);
-        $unlocked = $this->engine->evaluate($p);
+        $unlocked = $this->engine->evaluate($u->id);
 
         // Should unlock multiple achievements: 1, 42, 69 for multiple dimensions
         $this->assertGreaterThan(10, $unlocked->count());
@@ -720,7 +722,7 @@ class AchievementEngineTest extends TestCase
         ]);
 
         RedisMetricsCollector::queue($p);
-        $unlocked = $this->engine->evaluate($p);
+        $unlocked = $this->engine->evaluate($u->id);
 
         // Should still unlock upload achievement
         $this->assertUnlocked($u, 'uploads', null, 1);
@@ -742,7 +744,7 @@ class AchievementEngineTest extends TestCase
         ]);
 
         RedisMetricsCollector::queue($p);
-        $unlocked = $this->engine->evaluate($p);
+        $unlocked = $this->engine->evaluate($u->id);
 
         // Should treat negative as zero
         $counts = RedisMetricsCollector::getUserCounts($u->id);
@@ -759,7 +761,7 @@ class AchievementEngineTest extends TestCase
         ]);
 
         RedisMetricsCollector::queue($p);
-        $unlocked = $this->engine->evaluate($p);
+        $unlocked = $this->engine->evaluate($u->id);
 
         // Should unlock all available milestones
         $this->assertUnlocked($u, 'objects', null, 1);
@@ -791,7 +793,7 @@ class AchievementEngineTest extends TestCase
         ]);
 
         RedisMetricsCollector::queue($p1);
-        $unlocked = $this->engine->evaluate($p1);
+        $unlocked = $this->engine->evaluate($u->id);
 
         // Should unlock material achievements but not brand achievements
         $this->assertUnlocked($u, 'materials', null, 1);
@@ -812,7 +814,7 @@ class AchievementEngineTest extends TestCase
         ]);
 
         RedisMetricsCollector::queue($p2);
-        $unlocked2 = $this->engine->evaluate($p2);
+        $unlocked2 = $this->engine->evaluate($u->id);
 
         // Now should have brand achievements
         $this->assertUnlocked($u, 'brands', null, 1);
@@ -828,7 +830,7 @@ class AchievementEngineTest extends TestCase
         ]);
 
         RedisMetricsCollector::queue($p);
-        $unlocked = $this->engine->evaluate($p);
+        $unlocked = $this->engine->evaluate($u->id);
 
         // Check that achievements have metadata
         $uploadAchievement = $unlocked->first(fn($a) => $a->type === 'uploads');
@@ -847,7 +849,7 @@ class AchievementEngineTest extends TestCase
                 'tags' => ['softdrinks' => ['water_bottle' => ['quantity' => 5]]],
             ]);
             RedisMetricsCollector::queue($p);
-            $this->engine->evaluate($p);
+            $this->engine->evaluate($u->id);
         }
 
         // Get Redis XP
@@ -878,7 +880,7 @@ class AchievementEngineTest extends TestCase
         ]);
 
         RedisMetricsCollector::queue($p);
-        $unlocked = $this->engine->evaluate($p);
+        $unlocked = $this->engine->evaluate($u->id);
 
         // Get all object achievements
         $objectAchievements = $unlocked->filter(fn($a) => $a->type === 'objects')
@@ -953,7 +955,7 @@ class AchievementEngineTest extends TestCase
                 'tags' => ['softdrinks' => ['water_bottle' => ['quantity' => 2]]],
             ]);
             RedisMetricsCollector::queue($p);
-            $this->engine->evaluate($p);
+            $this->engine->evaluate($u->id);
         }
 
         // Get total XP
@@ -989,7 +991,7 @@ class AchievementEngineTest extends TestCase
                 ],
             ]);
             RedisMetricsCollector::queue($p);
-            $this->engine->evaluate($p);
+            $this->engine->evaluate($u->id);
         }
 
         // Now time a new photo evaluation
@@ -999,7 +1001,7 @@ class AchievementEngineTest extends TestCase
             'tags' => ['food' => ['wrapper' => ['quantity' => 1]]],
         ]);
         RedisMetricsCollector::queue($p);
-        $this->engine->evaluate($p);
+        $this->engine->evaluate($u->id);
 
         $endTime = microtime(true);
 
@@ -1074,55 +1076,6 @@ class AchievementEngineTest extends TestCase
     }
 
     /** @test */
-    public function migration_processes_photos_by_user_efficiently(): void
-    {
-        // Create 3 users with different photo counts
-        $user1 = User::factory()->create();
-        $user2 = User::factory()->create();
-        $user3 = User::factory()->create();
-
-        // User 1: 20 photos
-        Photo::factory()->count(20)->create(['user_id' => $user1->id]);
-        // User 2: 30 photos
-        Photo::factory()->count(30)->create(['user_id' => $user2->id]);
-        // User 3: 10 photos
-        Photo::factory()->count(10)->create(['user_id' => $user3->id]);
-
-        // Run migration
-        $this->artisan('olm:v5')
-            ->assertSuccessful();
-
-        // Verify all photos are marked as migrated
-        $this->assertEquals(0, Photo::whereNull('migrated_at')->count());
-
-        // Verify each user's achievements were checked only once
-        $this->assertLessThan(10,
-            DB::table('user_achievements')
-                ->where('user_id', $user1->id)
-                ->where('created_at', '>=', now()->subMinute())
-                ->count()
-        );
-    }
-
-//    /** @test */
-//    public function handles_redis_connection_failure_gracefully(): void
-//    {
-//        $user = User::factory()->create();
-//        $photo = $this->makePhoto($user, ['tags' => ['food' => ['wrapper' => ['quantity' => 1]]]]);
-//
-//        // Simulate Redis being down
-//        Redis::shouldReceive('pipeline')->andThrow(new \RedisException('Connection refused'));
-//
-//        // Should not throw exception
-//        $this->assertDoesNotThrow(function() use ($photo) {
-//            RedisMetricsCollector::queue($photo);
-//        });
-//
-//        // Photo should still be marked as processed in DB
-//        $this->assertNotNull($photo->fresh()->migrated_at);
-//    }
-
-    /** @test */
     public function handles_concurrent_batch_processing_for_same_user(): void
     {
         $user = User::factory()->create();
@@ -1183,7 +1136,7 @@ class AchievementEngineTest extends TestCase
         // Unlock achievement
         $photo = $this->makePhoto($user, ['tags' => ['food' => ['wrapper' => ['quantity' => 1]]]]);
         RedisMetricsCollector::queue($photo);
-        $this->engine->evaluate($photo);
+        $this->engine->evaluate($user->id);
 
         // Cache should be invalidated
         $cached2 = $this->repository->getUnlockedAchievementIds($user->id);

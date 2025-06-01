@@ -122,7 +122,7 @@ class LongTermAchievementsTest extends TestCase
 
                 $photo = $this->createRealisticPhoto($user, $currentDate, $day * $photosPerDay + $upload);
                 RedisMetricsCollector::queue($photo);
-                $unlocked = $this->engine->evaluate($photo);
+                $unlocked = $this->engine->evaluate($user->id);
 
                 if ($unlocked->isNotEmpty()) {
                     $unlockedAchievements = $unlockedAchievements->merge($unlocked);
@@ -169,7 +169,7 @@ class LongTermAchievementsTest extends TestCase
         for ($i = 0; $i < 50; $i++) {
             $photo = $this->createRealisticPhoto($user, now()->addDays($i), $i);
             RedisMetricsCollector::queue($photo);
-            $unlocked = $this->engine->evaluate($photo);
+            $unlocked = $this->engine->evaluate($user->id);
             $achievementsBefore = $achievementsBefore->merge($unlocked);
         }
 
@@ -192,7 +192,7 @@ class LongTermAchievementsTest extends TestCase
         for ($i = 50; $i < 100; $i++) {
             $photo = $this->createPhotoWithNewTags($user, now()->addDays($i), $newBrand, $newMaterial, $newObject);
             RedisMetricsCollector::queue($photo);
-            $unlocked = $this->engine->evaluate($photo);
+            $unlocked = $this->engine->evaluate($user->id);
             $achievementsAfter = $achievementsAfter->merge($unlocked);
         }
 
@@ -216,7 +216,7 @@ class LongTermAchievementsTest extends TestCase
             for ($i = 0; $i < $photosPerBatch; $i++) {
                 $photo = $this->createRealisticPhoto($user, now()->addDays($batch * $photosPerBatch + $i), $batch * $photosPerBatch + $i);
                 RedisMetricsCollector::queue($photo);
-                $unlocked = $this->engine->evaluate($photo);
+                $unlocked = $this->engine->evaluate($user->id);
 
                 // Track expected XP
                 $totalExpectedXp += $unlocked->sum('xp');
@@ -260,7 +260,7 @@ class LongTermAchievementsTest extends TestCase
             for ($i = 0; $i < $photosPerUser; $i++) {
                 $photo = $this->createRealisticPhoto($user, now()->addDays($i), $i);
                 RedisMetricsCollector::queue($photo);
-                $this->engine->evaluate($photo);
+                $this->engine->evaluate($user->id);
 
                 // Check progress at key milestones
                 if ($i === 41) { // Just before uploads-42
@@ -291,7 +291,7 @@ class LongTermAchievementsTest extends TestCase
         for ($i = 0; $i < 20; $i++) {
             $photo = $this->createRealisticPhoto($user, now()->addDays($i), $i);
             RedisMetricsCollector::queue($photo);
-            $this->engine->evaluate($photo);
+            $this->engine->evaluate($user->id);
         }
 
         // Get Redis data
@@ -312,7 +312,7 @@ class LongTermAchievementsTest extends TestCase
         for ($i = 20; $i < 30; $i++) {
             $photo = $this->createRealisticPhoto($user, now()->addDays($i), $i);
             RedisMetricsCollector::queue($photo);
-            $this->engine->evaluate($photo);
+            $this->engine->evaluate($user->id);
         }
 
         // Verify consistency is maintained
@@ -347,7 +347,7 @@ class LongTermAchievementsTest extends TestCase
         // Process all photos
         foreach ($allPhotos as $photo) {
             RedisMetricsCollector::queue($photo);
-            $this->engine->evaluate($photo);
+            $this->engine->evaluate($photo->user_id);
         }
 
         $totalTime = microtime(true) - $startTime;
@@ -404,7 +404,7 @@ class LongTermAchievementsTest extends TestCase
             }
 
             RedisMetricsCollector::queue($photo);
-            $this->engine->evaluate($photo);
+            $this->engine->evaluate($user->id);
         }
 
         // Verify Redis counts match expected
@@ -439,13 +439,13 @@ class LongTermAchievementsTest extends TestCase
         $emptyPhoto->save();
 
         RedisMetricsCollector::queue($emptyPhoto);
-        $unlocked = $this->engine->evaluate($emptyPhoto);
+        $unlocked = $this->engine->evaluate($user->id);
         $this->assertCount(1, $unlocked); // Should only unlock uploads-1
 
         // Test 2: Photo with very large quantities
         $largePhoto = $this->createPhotoWithQuantity($user, 1000);
         RedisMetricsCollector::queue($largePhoto);
-        $unlocked = $this->engine->evaluate($largePhoto);
+        $unlocked = $this->engine->evaluate($user->id);
         $this->assertGreaterThan(5, $unlocked->count()); // Should unlock multiple milestones
 
         // Test 3: Photo with unknown tags (should be ignored)
@@ -468,14 +468,14 @@ class LongTermAchievementsTest extends TestCase
         $unknownPhoto->save();
 
         RedisMetricsCollector::queue($unknownPhoto);
-        $unlocked = $this->engine->evaluate($unknownPhoto);
+        $unlocked = $this->engine->evaluate($user->id);
         $this->assertEmpty($unlocked); // Should not unlock anything new
 
         // Test 4: Rapid successive photos
         for ($i = 0; $i < 10; $i++) {
             $photo = $this->createRealisticPhoto($user, now()->addSeconds($i), 1000 + $i);
             RedisMetricsCollector::queue($photo);
-            $this->engine->evaluate($photo);
+            $this->engine->evaluate($user->id);
         }
 
         // Verify no data corruption
