@@ -5,29 +5,16 @@ declare(strict_types=1);
 namespace App\Services\Achievements;
 
 use App\Models\Users\User;
-use App\Services\Achievements\Checkers\AchievementChecker;
 use App\Services\Redis\RedisMetricsCollector;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
 class AchievementEngine
 {
-    private array $checkers = [];
-
     public function __construct(
-        private AchievementRepository $repository
-    ) {
-        $this->registerDefaultCheckers();
-    }
-
-    /**
-     * Register an achievement checker
-     */
-    public function registerChecker(AchievementChecker $checker): self
-    {
-        $this->checkers[] = $checker;
-        return $this;
-    }
+        private AchievementRepository $repository,
+        private iterable /* AchievementChecker[] */ $checkers,
+    ) {}
 
     /**
      * Evaluate achievements for a photo
@@ -39,25 +26,21 @@ class AchievementEngine
             return collect();
         }
         try {
-            // Get current state
-            $counts = RedisMetricsCollector::getUserCounts($user->id);
-            $unlocked = $this->repository->getUnlockedAchievementIds($user->id);
+            $counts      = RedisMetricsCollector::getUserCounts($user->id);
+            $unlockedIds = $this->repository->getUnlockedAchievementIds($user->id);
             $definitions = $this->repository->getAchievementDefinitions();
 
-            // Check what should be unlocked
             $toUnlock = [];
             foreach ($this->checkers as $checker) {
-                $eligible = $checker->check($counts, $definitions, $unlocked);
-                $toUnlock = array_merge($toUnlock, $eligible);
+                $toUnlock = array_merge(
+                    $toUnlock,
+                    $checker->check($counts, $definitions, $unlockedIds)
+                );
             }
 
-            if (empty($toUnlock)) {
-                return collect();
-            }
-
-            // Unlock and return
-            return $this->repository->unlockAchievements($user, $toUnlock);
-
+            return empty($toUnlock)
+                ? collect()
+                : $this->repository->unlockAchievements($user, $toUnlock);
         } catch (\Throwable $e) {
             Log::error('Achievement evaluation failed', [
                 'user_id' => $userId,
@@ -66,17 +49,5 @@ class AchievementEngine
 
             return collect();
         }
-    }
-
-    /**
-     * Register default checkers
-     */
-    private function registerDefaultCheckers(): void
-    {
-        $this->registerChecker(new Checkers\UploadsChecker());
-        $this->registerChecker(new Checkers\ObjectsChecker());
-        $this->registerChecker(new Checkers\CategoriesChecker());
-        $this->registerChecker(new Checkers\MaterialsChecker());
-        $this->registerChecker(new Checkers\BrandsChecker());
     }
 }

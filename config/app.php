@@ -176,6 +176,10 @@ return [
         App\Providers\HorizonServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
 
+        /*
+         * Custom Achievement Service Providers
+         */
+        App\Providers\AchievementServiceProvider::class,
     ],
 
     /*
