@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Fixtures\Unit\Exports;
+namespace Tests\Unit\Exports;
 
 
 use App\Exports\CreateCSVExport;

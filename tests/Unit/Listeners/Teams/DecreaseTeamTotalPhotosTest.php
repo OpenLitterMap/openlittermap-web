@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Fixtures\Unit\Listeners\Teams;
+namespace Tests\Unit\Listeners\Teams;
 
 use App\Events\ImageDeleted;
 use App\Listeners\Teams\DecreaseTeamTotalPhotos;

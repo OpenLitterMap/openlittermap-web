@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Fixtures\Unit\Actions\Locations;
+namespace Tests\Unit\Actions\Locations;
 
 use App\Actions\Locations\AddContributorForLocationAction;
 use Illuminate\Support\Facades\Redis;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Fixtures\Unit\Models\Litter;
+namespace Tests\Unit\Models\Litter;
 
 use App\Models\Photo;
 use Illuminate\Support\Facades\Schema;

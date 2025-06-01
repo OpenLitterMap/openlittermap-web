@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Fixtures\Unit\Models;
+namespace Tests\Unit\Models;
 
 use App\Models\AI\Annotation;
 use App\Models\Litter\Categories\Alcohol;

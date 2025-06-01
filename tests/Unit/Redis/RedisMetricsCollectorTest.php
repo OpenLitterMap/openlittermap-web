@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Fixtures\Unit\Redis;
+namespace Tests\Unit\Redis;
 
 use App\Models\Photo;
 use App\Services\Redis\RedisMetricsCollector;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Fixtures\Unit\Actions\Photos;
+namespace Tests\Unit\Actions\Photos;
 
 use App\Actions\Photos\AddTagsToPhotoAction;
 use App\Models\Photo;

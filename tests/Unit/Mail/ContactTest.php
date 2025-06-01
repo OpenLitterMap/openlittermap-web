@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Fixtures\Unit\Mail;
+namespace Tests\Unit\Mail;
 
 use App\Mail\ContactMail;
 use Tests\TestCase;

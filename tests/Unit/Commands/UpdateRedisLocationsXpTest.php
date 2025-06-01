@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Fixtures\Unit\Commands;
+namespace Tests\Unit\Commands;
 
 use App\Models\Litter\Categories\Smoking;
 use App\Models\Location\City;
