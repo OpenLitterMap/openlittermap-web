@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('key')->unique();
             $table->timestamps();
+
+            $table->index(['key', 'id'], 'idx_key_id_covering');
         });
     }
 

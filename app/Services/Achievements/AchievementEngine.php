@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace App\Services\Achievements;
 
 use App\Models\Users\User;
@@ -25,18 +23,21 @@ class AchievementEngine
         if (!$user) {
             return collect();
         }
+
         try {
-            $counts      = RedisMetricsCollector::getUserCounts($user->id);
-            $unlockedIds = $this->repository->getUnlockedAchievementIds($user->id);
+            $counts = RedisMetricsCollector::getUserCounts($userId);
+            $unlockedIds = $this->repository->getUnlockedAchievementIds($userId);
             $definitions = $this->repository->getAchievementDefinitions();
 
             $toUnlock = [];
             foreach ($this->checkers as $checker) {
-                $toUnlock = array_merge(
-                    $toUnlock,
-                    $checker->check($counts, $definitions, $unlockedIds)
-                );
+                $newUnlocks = $checker->check($counts, $definitions, $unlockedIds);
+                if (!empty($newUnlocks)) {
+                    $toUnlock = array_unique(array_merge($toUnlock, $newUnlocks));
+                }
             }
+
+            $toUnlock = array_diff($toUnlock, $unlockedIds);
 
             return empty($toUnlock)
                 ? collect()
@@ -45,6 +46,7 @@ class AchievementEngine
             Log::error('Achievement evaluation failed', [
                 'user_id' => $userId,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             return collect();

@@ -23,15 +23,17 @@ return new class extends Migration
             $t->string('type', 50);                         // 'uploads', 'object', 'category', etc.
             $t->unsignedBigInteger('tag_id')->nullable();   // null for dimension-wide achievements
             $t->unsignedInteger('threshold');               // Required count to unlock
-            $t->unsignedInteger('xp');                      // XP awarded
             $t->json('metadata')->nullable();               // For i18n, icons, descriptions
             $t->timestamps();
 
             // Composite unique constraint
             $t->unique(['type', 'tag_id', 'threshold']);
 
-            // Indexes for efficient queries
-            $t->index(['type', 'threshold']);
+            // Composite index for achievement checking
+            $t->index(['type', 'tag_id', 'threshold'], 'idx_achievement_lookup');
+
+            // Additional index for progress tracking
+            $t->index(['type', 'tag_id'], 'idx_type_tag');
         });
 
         Schema::create('user_achievements', function (Blueprint $t) {
@@ -45,6 +47,7 @@ return new class extends Migration
             $t->foreign('achievement_id')->references('id')->on('achievements')->cascadeOnDelete();
 
             $t->index(['user_id', 'created_at'], 'idx_user_achievements_user_created');
+            $t->index('achievement_id', 'idx_achievement_id');
         });
     }
 

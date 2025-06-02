@@ -29,21 +29,6 @@ return [
     ],
 
     /**
-     * XP scale - threshold => XP value
-     * The XP value applies to all milestones up to and including that threshold
-     */
-    'xp_scale' => [
-        1 => 5,
-        10 => 10,
-        42 => 20,
-        69 => 30,
-        420 => 50,
-        1337 => 100,
-        42069 => 150,
-        69420 => 200,
-    ],
-
-    /**
      * Cache TTL for achievement data (in seconds)
      */
     'cache_ttl' => 86400, // 24 hours

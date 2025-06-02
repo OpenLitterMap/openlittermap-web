@@ -18,20 +18,13 @@ class Achievement extends Model
 {
     use HasFactory;
 
-    /** Allow mass-assignment on all columns (seeders use ->create()). */
     protected $guarded = [];
 
-    /** Native casts. */
     protected $casts = [
         'metadata'  => 'array',
         'threshold' => 'integer',
-        'xp'        => 'integer',
         'tag_id'    => 'integer',
     ];
-
-    /* ------------------------------------------------------------------ */
-    /*  Relationships                                                     */
-    /* ------------------------------------------------------------------ */
 
     /** Users that have already unlocked this achievement. */
     public function users(): BelongsToMany
@@ -39,25 +32,5 @@ class Achievement extends Model
         return $this->belongsToMany(User::class, 'user_achievements')
             ->withPivot('unlocked_at')
             ->withTimestamps();
-    }
-
-    /* ------------------------------------------------------------------ */
-    /*  Query scopes                                                      */
-    /* ------------------------------------------------------------------ */
-
-    /** Achievements not yet unlocked by the given user. */
-    public function scopeNotUnlockedBy($query, User $user)
-    {
-        return $query->whereDoesntHave('users', fn ($q) => $q->where('user_id', $user->id));
-    }
-
-    /* ------------------------------------------------------------------ */
-    /*  Convenience helpers                                               */
-    /* ------------------------------------------------------------------ */
-
-    /** Quick boolean (cached in the pivot relationship). */
-    public function isUnlockedBy(User $user): bool
-    {
-        return $this->users()->where('user_id', $user->id)->exists();
     }
 }

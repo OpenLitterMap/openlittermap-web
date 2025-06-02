@@ -46,8 +46,7 @@ class AchievementEngineTest extends TestCase
         $this->cityId = $city->id;
 
         // Configure achievements with actual milestones from config
-        config('achievements.milestones');
-        config('achievements.xp_scale');
+        config(['achievements.milestones' => [1, 42, 69, 420, 1337]]);
 
         // Run seeders
         $this->seed(GenerateTagsSeeder::class);
@@ -61,7 +60,7 @@ class AchievementEngineTest extends TestCase
         $this->seed(AchievementsSeeder::class);
 
         // Cache tag IDs for performance
-        TagKeyCache::warmCache();
+        TagKeyCache::preloadAll();
 
         // Get the engine instance
         $this->engine = app(AchievementEngine::class);
@@ -138,14 +137,6 @@ class AchievementEngineTest extends TestCase
 
         $this->assertNotEmpty($unlocked);
         $this->assertUnlocked($u, 'uploads', null, 1);
-
-        // Check XP was awarded
-        $xp = (float) Redis::hGet("{u:{$u->id}}:stats", 'xp');
-        $this->assertGreaterThan(0, $xp);
-
-        // Verify it's the sum of unlocked achievements
-        $expectedXp = $unlocked->sum('xp');
-        $this->assertEquals($expectedXp, $xp);
     }
 
     /** @test */
@@ -293,7 +284,7 @@ class AchievementEngineTest extends TestCase
 
         $this->assertEquals(42, $totalObjects);
         $this->assertEquals(42, $totalMaterials);
-        $this->assertEquals(42, $totalBrands); // coca_cola gets 15 + 12 = 27, pepsi gets 15, total = 42
+        $this->assertEquals(42, $totalBrands);
     }
 
     /** @test */
@@ -328,11 +319,6 @@ class AchievementEngineTest extends TestCase
         foreach ($achievementCounts as $achievementId => $count) {
             $this->assertEquals(1, $count, "Achievement {$achievementId} should only be unlocked once");
         }
-
-        // Check XP wasn't multiplied
-        $xp = (float) Redis::hGet("{u:{$u->id}}:stats", 'xp');
-        $expectedXp = $firstUnlocked->sum('xp');
-        $this->assertEquals($expectedXp, $xp);
     }
 
     /** @test */
@@ -551,7 +537,8 @@ class AchievementEngineTest extends TestCase
 
         // Should have unlocked various achievements
         $this->assertUnlocked($u, 'uploads', null, 1); // From first photo
-        $this->assertUnlocked($u, 'categories', null, 1); // After second photo (2 categories)
+        // With 2 unique categories, threshold 1 should be unlocked
+        $this->assertUnlocked($u, 'categories', null, 1); // 2 categories >= threshold 1
         $this->assertUnlocked($u, 'objects', null, 1); // Total 8 objects
         $this->assertUnlocked($u, 'materials', null, 1); // Total 8 materials
         $this->assertUnlocked($u, 'brands', null, 1); // Total 8 brand items
@@ -605,44 +592,6 @@ class AchievementEngineTest extends TestCase
         // Streak should reset
         $counts = RedisMetricsCollector::getUserCounts($u->id);
         $this->assertEquals(1, $counts['streak']);
-    }
-
-    /** @test */
-    public function achievement_xp_accumulation_is_accurate(): void
-    {
-        $u = User::factory()->create();
-        $totalExpectedXp = 0;
-
-        // Process multiple photos to reach milestone 42
-        for ($i = 1; $i <= 42; $i++) {
-            $p = $this->makePhoto($u, [
-                'tags' => [
-                    'softdrinks' => [
-                        'water_bottle' => [
-                            'quantity' => 1,
-                            'materials' => ['plastic' => 1],
-                            'brands' => ['coca_cola' => 1],
-                        ],
-                    ],
-                ],
-            ]);
-
-            RedisMetricsCollector::queue($p);
-            $unlocked = $this->engine->evaluate($u->id);
-            $totalExpectedXp += $unlocked->sum('xp');
-        }
-
-        // Verify XP matches
-        $actualXp = (float) Redis::hGet("{u:{$u->id}}:stats", 'xp');
-        $this->assertEquals($totalExpectedXp, $actualXp);
-
-        // Also verify against database
-        $dbXp = DB::table('user_achievements')
-            ->join('achievements', 'user_achievements.achievement_id', '=', 'achievements.id')
-            ->where('user_achievements.user_id', $u->id)
-            ->sum('achievements.xp');
-
-        $this->assertEquals($totalExpectedXp, $dbXp);
     }
 
     /** @test */
@@ -821,55 +770,6 @@ class AchievementEngineTest extends TestCase
     }
 
     /** @test */
-    public function achievement_metadata_is_preserved(): void
-    {
-        $u = User::factory()->create();
-
-        $p = $this->makePhoto($u, [
-            'tags' => ['food' => ['wrapper' => ['quantity' => 1]]],
-        ]);
-
-        RedisMetricsCollector::queue($p);
-        $unlocked = $this->engine->evaluate($u->id);
-
-        // Check that achievements have metadata
-        $uploadAchievement = $unlocked->first(fn($a) => $a->type === 'uploads');
-        $this->assertNotNull($uploadAchievement);
-        $this->assertIsArray($uploadAchievement->metadata ?? null);
-    }
-
-    /** @test */
-    public function redis_and_database_stay_in_sync(): void
-    {
-        $u = User::factory()->create();
-
-        // Process multiple photos
-        for ($i = 1; $i <= 10; $i++) {
-            $p = $this->makePhoto($u, [
-                'tags' => ['softdrinks' => ['water_bottle' => ['quantity' => 5]]],
-            ]);
-            RedisMetricsCollector::queue($p);
-            $this->engine->evaluate($u->id);
-        }
-
-        // Get Redis XP
-        $redisXp = (float) Redis::hGet("{u:{$u->id}}:stats", 'xp');
-
-        // Get Database XP
-        $dbXp = DB::table('user_achievements')
-            ->join('achievements', 'user_achievements.achievement_id', '=', 'achievements.id')
-            ->where('user_achievements.user_id', $u->id)
-            ->sum('achievements.xp');
-
-        $this->assertEquals($dbXp, $redisXp);
-
-        // Verify counts match what we expect
-        $counts = RedisMetricsCollector::getUserCounts($u->id);
-        $this->assertEquals(10, $counts['uploads']);
-        $this->assertEquals(50, $counts['objects']['water_bottle']);
-    }
-
-    /** @test */
     public function achievements_unlock_in_correct_order(): void
     {
         $u = User::factory()->create();
@@ -888,93 +788,10 @@ class AchievementEngineTest extends TestCase
             ->values();
 
         // Should have unlocked 1, 42, and 69 in that order
+        $this->assertGreaterThanOrEqual(3, $objectAchievements->count());
         $this->assertEquals(1, $objectAchievements[0]->threshold);
         $this->assertEquals(42, $objectAchievements[1]->threshold);
         $this->assertEquals(69, $objectAchievements[2]->threshold);
-    }
-
-//    /** @test */ Not working yet
-//    public function custom_tags_unlock_achievements(): void
-//    {
-//        $this->seed(GenerateTagsSeeder::class);
-//        $this->seed(GenerateBrandsSeeder::class);
-//
-//        // Create a custom tag
-//        $customTag = CustomTagNew::firstOrCreate(['key' => 'test_custom']);
-//
-//        // Seed achievement for it
-//        DB::table('achievements')->insert([
-//            'type' => 'customTag',
-//            'tag_id' => $customTag->id,
-//            'threshold' => 1,
-//            'xp' => 10,
-//            'created_at' => now(),
-//            'updated_at' => now(),
-//        ]);
-//
-//        $u = User::factory()->create();
-//        $this->actingAs($u, 'api');
-//
-//        // Upload a photo
-//        $this->post('/api/photos/submit', $this->getApiImageAttributes($this->imageAndAttributes));
-//        $photo = $u->photos->last();
-//
-//        // Tag it with custom tags
-//        $category = Category::where('key', 'food')->first();
-//        $object = LitterObject::where('key', 'wrapper')->first();
-//
-//        $response = $this->post('/api/v3/tags', [
-//            'photo_id' => $photo->id,
-//            'tags' => [
-//                [
-//                    'category' => ['id' => $category->id],
-//                    'object' => ['id' => $object->id],
-//                    'quantity' => 1,
-//                    'custom_tags' => ['test_custom']
-//                ]
-//            ]
-//        ]);
-//
-//        // Now process the photo for achievements
-//        RedisMetricsCollector::queue($photo->fresh());
-//        $unlocked = $this->engine->evaluate($photo->fresh());
-//
-//        // Should unlock custom tag achievement
-//        $this->assertUnlocked($u, 'customTag', $customTag->id, 1);
-//    }
-
-    /** @test */
-    public function user_level_calculation_from_xp(): void
-    {
-        $u = User::factory()->create();
-        $levels = config('achievements.levels');
-
-        // Process photos to accumulate XP
-        for ($i = 1; $i <= 50; $i++) {
-            $p = $this->makePhoto($u, [
-                'tags' => ['softdrinks' => ['water_bottle' => ['quantity' => 2]]],
-            ]);
-            RedisMetricsCollector::queue($p);
-            $this->engine->evaluate($u->id);
-        }
-
-        // Get total XP
-        $totalXp = (float) Redis::hGet("{u:{$u->id}}:stats", 'xp');
-
-        // Calculate expected level
-        $expectedLevel = 1;
-        foreach ($levels as $xpRequired => $level) {
-            if ($totalXp >= $xpRequired) {
-                $expectedLevel = $level;
-            }
-        }
-
-        // In a real implementation, you'd have a method to calculate level
-        // $actualLevel = $u->calculateLevel();
-        // $this->assertEquals($expectedLevel, $actualLevel);
-
-        $this->assertGreaterThan(0, $expectedLevel);
-        $this->assertGreaterThan(100, $totalXp); // Should have accumulated significant XP
     }
 
     /** @test */

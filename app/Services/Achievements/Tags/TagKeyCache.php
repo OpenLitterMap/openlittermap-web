@@ -13,6 +13,26 @@ final class TagKeyCache
     private static array $reverse = [];
     private static array $forward = [];
 
+    private const CACHE_TTL = 86400; // 24 hours
+
+    public static function preloadAll(): void
+    {
+        $dimensions = ['object', 'category', 'material', 'brand', 'customTag'];
+
+        foreach ($dimensions as $dim) {
+            $table = self::getTableForDimension($dim);
+            if (!$table) continue;
+
+            $mapping = DB::table($table)
+                ->select('key', 'id')
+                ->pluck('id', 'key')
+                ->all();
+
+            self::$forward[$dim] = $mapping;
+            Cache::put("ach:map:{$dim}", $mapping, 86400);
+        }
+    }
+
     /**
      * Get tag key to ID mapping for a dimension
      */
@@ -23,19 +43,86 @@ final class TagKeyCache
             return self::$forward[$dim];
         }
 
-        $mapping = Cache::rememberForever("ach:map:{$dim}", function () use ($dim) {
+        $mapping = Cache::remember("ach:map:{$dim}", self::CACHE_TTL, function () use ($dim) {
             $table = self::getTableForDimension($dim);
             if (!$table) {
                 return [];
             }
 
-            return DB::table($table)->pluck('id', 'key')->all();
+            return DB::table($table)->pluck('key', 'id')->all();
         });
 
         // Store in memory for faster subsequent access
         self::$forward[$dim] = $mapping;
+        self::$reverse[$dim] = array_flip($mapping);
 
         return $mapping;
+    }
+
+    /**
+     * Create new tag and return its ID
+     */
+    public static function createTag(string $dim, string $key): int
+    {
+        $table = self::getTableForDimension($dim);
+        if (!$table) {
+            throw new \InvalidArgumentException("Unknown dimension: $dim");
+        }
+
+        $id = DB::table($table)->insertGetId(['key' => $key]);
+
+        // Update caches
+        self::$forward[$dim][$key] = $id;
+        self::$reverse[$dim][$id] = $key;
+
+        // Invalidate Redis cache
+        Cache::forget("ach:map:{$dim}");
+
+        return $id;
+    }
+
+    /**
+     * Get or create tag ID
+     */
+    public static function getOrCreateId(string $dim, string $key): int
+    {
+        $id = self::idFor($dim, $key);
+
+        if ($id === null) {
+            $id = self::createTag($dim, $key);
+        }
+
+        return $id;
+    }
+
+    /**
+     * Get multiple tag IDs in one operation for performance
+     */
+    public static function getTagIdsBatch(string $table, array $keys): array
+    {
+        if (empty($keys)) {
+            return [];
+        }
+
+        // Map table to dimension
+        $dim = match($table) {
+            'litter_objects' => 'object',
+            'categories' => 'category',
+            'materials' => 'material',
+            'brandslist' => 'brand',
+            'custom_tags_new', 'custom_tags' => 'customTag',
+            default => null,
+        };
+
+        if (!$dim) {
+            return [];
+        }
+
+        // Get the full mapping for this dimension (uses existing cache)
+        $mapping = self::get($dim);
+
+        // Extract requested keys
+        return array_intersect_key($mapping, array_flip($keys));
     }
 
     /**
@@ -71,15 +158,11 @@ final class TagKeyCache
 
     /**
      * Pre-warm all caches for migration performance
-     * Only used in tests & migrtion script
+     * Only used in tests & migration script
      */
     public static function warmCache(): void
     {
-        $dimensions = ['object', 'category', 'material', 'brand', 'customTag'];
-
-        foreach ($dimensions as $dim) {
-            self::get($dim); // This will load and cache
-        }
+        self::preloadAll();
     }
 
     /**
@@ -117,4 +200,63 @@ final class TagKeyCache
             default => null,
         };
     }
+
+    /**
+     * Get tag key from ID (reverse lookup)
+     */
+    public static function keyFor(string $dim, int $id): ?string
+    {
+        // Check memory cache first
+        if (isset(self::$reverse[$dim][$id])) {
+            return self::$reverse[$dim][$id];
+        }
+
+        // Build reverse mapping if not cached
+        if (!isset(self::$reverse[$dim])) {
+            $forward = self::get($dim); // key => id
+            self::$reverse[$dim] = array_flip($forward); // id => key
+        }
+
+        return self::$reverse[$dim][$id] ?? null;
+    }
+
+    /**
+     * Get multiple tag keys from IDs (for display)
+     */
+    public static function getKeysForIds(string $dim, array $ids): array
+    {
+        if (empty($ids)) {
+            return [];
+        }
+
+        // Ensure reverse mapping is loaded
+        if (!isset(self::$reverse[$dim])) {
+            $forward = self::get($dim);
+            self::$reverse[$dim] = array_flip($forward);
+        }
+
+        return array_intersect_key(self::$reverse[$dim], array_flip($ids));
+    }
+
+    /**
+     * Get tag keys using table name (for compatibility)
+     */
+    public static function getTagKeysBatch(string $table, array $ids): array
+    {
+        $dim = match($table) {
+            'litter_objects' => 'object',
+            'categories' => 'category',
+            'materials' => 'material',
+            'brandslist' => 'brand',
+            'custom_tags_new', 'custom_tags' => 'customTag',
+            default => null,
+        };
+
+        if (!$dim) {
+            return [];
+        }
+
+        return self::getKeysForIds($dim, $ids);
+    }
+
 }

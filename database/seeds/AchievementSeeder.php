@@ -13,15 +13,11 @@ use App\Models\Litter\Tags\Materials;
 
 class AchievementsSeeder extends Seeder
 {
-    private const DEFAULT_MILESTONES = [1, 10, 42, 69, 420, 1337, 42069, 69420];
-
     private array $milestones;
-    private array $xpScale;
 
     public function run(): void
     {
-        $this->milestones = Config::get('achievements.milestones', self::DEFAULT_MILESTONES);
-        $this->xpScale = Config::get('achievements.xp_scale', $this->getDefaultXpScale());
+        $this->milestones = Config::get('achievements.milestones');
 
         // Seed dimension-wide achievements
         $this->seedDimensionWide();
@@ -41,14 +37,14 @@ class AchievementsSeeder extends Seeder
     private function seedDimensionWide(): void
     {
         $types = [
-            'uploads' => ['name' => 'Total Uploads'],
-            'objects' => ['name' => 'Total Objects Tagged'],
-            'categories' => ['name' => 'Unique Categories Used'],
-            'materials' => ['name' => 'Total Materials Tagged'],
-            'brands' => ['name' => 'Total Brands Tagged'],
+            'uploads',
+            'objects',
+            'categories',
+            'materials',
+            'brands',
         ];
 
-        foreach ($types as $type => $meta) {
+        foreach ($types as $type) {
             foreach ($this->milestones as $milestone) {
                 DB::table('achievements')->updateOrInsert(
                     [
@@ -57,8 +53,6 @@ class AchievementsSeeder extends Seeder
                         'threshold' => $milestone,
                     ],
                     [
-                        'xp' => $this->getXpForMilestone($milestone),
-                        'metadata' => json_encode($meta),
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]
@@ -100,8 +94,6 @@ class AchievementsSeeder extends Seeder
 
             foreach ($tags as $tag) {
                 foreach ($this->milestones as $milestone) {
-                    $tagName = $tag->{$config['name_field']} ?? 'Unknown';
-
                     DB::table('achievements')->updateOrInsert(
                         [
                             'type' => $type,
@@ -109,8 +101,6 @@ class AchievementsSeeder extends Seeder
                             'threshold' => $milestone,
                         ],
                         [
-                            'xp' => $this->getXpForMilestone($milestone),
-                            'metadata' => json_encode(['name' => ucfirst($type) . ': ' . $tagName]),
                             'created_at' => now(),
                             'updated_at' => now(),
                         ]
@@ -118,37 +108,5 @@ class AchievementsSeeder extends Seeder
                 }
             }
         }
-    }
-
-    /**
-     * Get XP value for a milestone
-     */
-    private function getXpForMilestone(int $milestone): int
-    {
-        foreach ($this->xpScale as $threshold => $xp) {
-            if ($milestone <= $threshold) {
-                return $xp;
-            }
-        }
-
-        // Default for very high milestones
-        return 200;
-    }
-
-    /**
-     * Get default XP scale
-     */
-    private function getDefaultXpScale(): array
-    {
-        return [
-            1 => 5,
-            10 => 10,
-            42 => 20,
-            69 => 30,
-            420 => 50,
-            1337 => 100,
-            42069 => 150,
-            69420 => 200,
-        ];
     }
 }

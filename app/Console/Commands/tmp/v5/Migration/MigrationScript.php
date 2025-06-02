@@ -1,30 +1,4 @@
 <?php
-/**
- *  OpenLitterMap - V5 data-migration
- *
- *  This console command walks through every **un-migrated** photo, converts its
- *  tag payload to the new schema, updates time-series counters, writes all
- *  counters to Redis in *one* call per user, recalculates that user’s
- *  achievements once, and finally marks the processed photos with
- *  `photos.migrated_at`.
- *
- *  ──────────────────────────────────────────────────────────────────────────────
- *  How it works (TL;DR)
- *  ──────────────────────────────────────────────────────────────────────────────
- *  1.  Cursor over *users*   that still own ≥ 1 un-migrated photo.
- *  2.  For each user stream their photos in mini-batches (default 500 rows).
- *  3.  For every mini-batch:
- *      • updateTags()       – converts the JSON tag blob
- *      • updateTimeSeries() – rolls time-series aggregates
- *      • queueBatch()       – ONE Lua / pipeline call to Redis
- *      • UPDATE photos SET migrated_at = NOW()
- *  4.  When all batches of that user are flushed → evaluateUser() once.
- *
- *  Guarantees:
- *      • constant memory      – never loads more than <batch> photos at a time
- *      • idempotent / resumable
- *      • safe to run multiple workers on disjoint user-id ranges
- */
 
 namespace App\Console\Commands\tmp\v5\Migration;
 
@@ -37,14 +11,13 @@ use App\Services\Timeseries\TimeSeriesService;
 use App\Services\Achievements\Tags\TagKeyCache;
 use Database\Seeders\{AchievementsSeeder, Tags\GenerateBrandsSeeder, Tags\GenerateTagsSeeder};
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\{DB, Log};
+use Illuminate\Support\Facades\{DB, Log, Cache};
 
+/**
+ * Remember to install redis-stack on production
+ */
 class MigrationScript extends Command
 {
-    /* ------------------------------------------------------------------------ */
-    /*  Artisan command metadata                                               */
-    /* ------------------------------------------------------------------------ */
-
     protected $signature = <<<SIG
         olm:v5
         {--batch=500        : Number of photos to stream per mini-batch}
@@ -52,10 +25,6 @@ class MigrationScript extends Command
     SIG;
 
     protected $description = 'Upgrade OpenLitterMap data to v5';
-
-    /* ------------------------------------------------------------------------ */
-    /*  Dependencies injected by Laravel                                       */
-    /* ------------------------------------------------------------------------ */
 
     public function __construct(
         private readonly UpdateTagsService   $updateTagsService,
@@ -65,31 +34,46 @@ class MigrationScript extends Command
         parent::__construct();
     }
 
-    /* ------------------------------------------------------------------------ */
-    /*  Internal counters (for summary)                                        */
-    /* ------------------------------------------------------------------------ */
-
     private int $processed = 0;
     private int $failed    = 0;
 
-    /* ------------------------------------------------------------------------ */
-    /*  Entry point                                                             */
-    /* ------------------------------------------------------------------------ */
-
     public function handle(): int
     {
-        /* ── 0. sanity checks ──────────────────────────────────────────────── */
-
         if (!DB::getSchemaBuilder()->hasColumn('photos', 'migrated_at')) {
             $this->error('🛑  Column photos.migrated_at missing – run the DB migration first.');
             return self::FAILURE;
         }
 
-        $this->seedReferenceTables();   // seed reference tables if missing
-        TagKeyCache::warmCache();       // warm in-memory tag-id cache once
+        $this->seedReferenceTables();
 
+        // Pre-load tag cache for performance
+        $this->info('Pre-loading tag cache...');
+        TagKeyCache::preloadAll();
 
-        /* 1. Cursor of users that still need work */
+        // Pre-warm achievement definitions
+        $this->info('Pre-warming achievement definitions...');
+        Cache::remember('achievements.definitions.v2', 86400, function () {
+            return DB::table('achievements')
+                ->select('id', 'type', 'tag_id', 'threshold', 'metadata')
+                ->orderBy('type')
+                ->orderBy('tag_id')
+                ->orderBy('threshold')
+                ->get();
+        });
+
+        // FIX 1: Count users separately from cursor creation
+        $userCount = DB::table('photos')
+            ->whereNull('migrated_at')
+            ->where('user_id', '>=', $this->option('minUser'))
+            ->distinct()
+            ->count('user_id');
+
+        if ($userCount === 0) {
+            $this->info('Nothing to migrate.');
+            return self::SUCCESS;
+        }
+
+        // Create cursor AFTER counting
         $userCursor = DB::table('photos')
             ->whereNull('migrated_at')
             ->where('user_id', '>=', $this->option('minUser'))
@@ -97,33 +81,23 @@ class MigrationScript extends Command
             ->orderBy('user_id')
             ->lazy();
 
-        $userCount = $userCursor->count();
-        if ($userCount === 0) {
-            $this->info('Nothing to migrate.');
-            return self::SUCCESS;
-        }
-
         $globalBar = $this->output->createProgressBar($userCount);
         $globalBar->setFormat('%current%/%max% [%bar%] %percent:3s%%  %elapsed:6s%  ETA:%estimated:-6s%');
         $globalBar->start();
-
-        /* ── 2. iterate user-by-user ──────────────────────────────────────── */
 
         foreach ($userCursor as $row) {
             $this->migrateSingleUser((int) $row->user_id);
             $globalBar->advance();
         }
 
-        $globalBar->advance();
+        // FIX 3: Remove extra advance() that causes off-by-one
+        // $globalBar->advance(); // REMOVED
+        $globalBar->finish();
         $this->newLine(2);
         $this->displaySummary();
 
         return self::SUCCESS;
     }
-
-    /* ------------------------------------------------------------------------ */
-    /*  Per-user migration – the workhorse                                     */
-    /* ------------------------------------------------------------------------ */
 
     private function migrateSingleUser(int $userId): void
     {
@@ -135,18 +109,28 @@ class MigrationScript extends Command
             ->whereNull('migrated_at')
             ->count();
 
+        if ($remaining === 0) {
+            $this->info("➡  {$name}  –  No photos to migrate");
+            return;
+        }
+
         $this->info("➡  {$name}  –  {$remaining}/{$totalPhotos} photos to migrate");
         $userBar = $this->output->createProgressBar($remaining);
-        $userBar->setFormat("   %current%/%max% [%bar%] %percent:3s%%  %elapsed:6s%  ETA:%estimated:-6s%");
+        $userBar->setFormat("   %current%/%max% [%bar%] %percent:3s%%  %elapsed:6s%");
         $userBar->start();
 
-        /** stream this user’s unmigrated photos in mini-batches */
+        // Track changed dimensions for this user (for future use)
+        $userChangedDimensions = [];
+
+        // FIX 2: Use chunkById instead of lazyById()->chunk()
         Photo::where('user_id', $userId)
+            ->lockForUpdate()
+            ->skipLocked()
             ->whereNull('migrated_at')
             ->with(['customTags'])
-            ->lazyById($this->option('batch'))              // stream rows
-            ->chunk($this->option('batch'), function ($photos) use ($userId, $userBar) {
-                /* 2.1 transform each photos data */
+            ->orderBy('id')
+            ->chunkById($this->option('batch'), function ($photos) use ($userId, $userBar, &$userChangedDimensions) {
+                // Transform each photo's data
                 foreach ($photos as $photo) {
                     try {
                         $this->updateTagsService->updateTags($photo);
@@ -160,12 +144,20 @@ class MigrationScript extends Command
                     }
                 }
 
-                // 2.2 Update Redis & photo.migrated_at
+                // Update Redis & mark as migrated
                 try {
-                    // single Redis round-trip
-                    RedisMetricsCollector::queueBatch($userId, $photos);
+                    // Use tracking version to capture changes (for future use)
+                    $changes = RedisMetricsCollector::queueBatchWithTracking($userId, $photos);
 
-                    // mark photos as migrated
+                    // Accumulate changed dimensions (for future optimization)
+                    if (!empty($changes['changed_dimensions'])) {
+                        $userChangedDimensions = array_unique(array_merge(
+                            $userChangedDimensions,
+                            $changes['changed_dimensions']
+                        ));
+                    }
+
+                    // Mark photos as migrated
                     Photo::whereIn('id', $photos->pluck('id'))->update(['migrated_at' => now()]);
                 } catch (\Throwable $e) {
                     $this->error("Write-phase failure for user {$userId}. Check logs for more info.");
@@ -178,18 +170,34 @@ class MigrationScript extends Command
                 $userBar->advance($photos->count());
             });
 
-        // ── 2.3 Evaluate achievements once per user ───────────────────────────
-        $this->achievementEngine->evaluate($userId);
-
         $userBar->finish();
         $this->newLine();
+
+        // Evaluate achievements for the user
+        try {
+            $startTime = microtime(true);
+            $unlocked = $this->achievementEngine->evaluate($userId);
+            $duration = round(microtime(true) - $startTime, 3);
+
+            if ($unlocked->isNotEmpty()) {
+                $this->info("  🏆 Unlocked {$unlocked->count()} achievements in {$duration}s");
+            }
+
+            // Log if evaluation was slow
+            if ($duration > 1.0) {
+                Log::warning("Slow achievement evaluation", [
+                    'user_id' => $userId,
+                    'duration' => $duration,
+                    'changed_dimensions' => $userChangedDimensions
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::error("Achievement evaluation failed for user {$userId}", [
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 
-    /* ------------------------------------------------------------------------ */
-    /*  Helpers                                                                 */
-    /* ------------------------------------------------------------------------ */
-
-    /** make sure reference tables exist */
     private function seedReferenceTables(): void
     {
         $this->callSilent('db:seed', ['--class' => GenerateTagsSeeder::class]);
@@ -197,15 +205,21 @@ class MigrationScript extends Command
         $this->callSilent('db:seed', ['--class' => AchievementsSeeder::class]);
     }
 
-    /** Final stats */
     private function displaySummary(): void
     {
         $this->info('Migration summary');
         $this->info('─────────────────');
-        $this->info('✅  Photos processed : '.$this->processed);
-        $this->info(($this->failed ? '❌' : '✅').'  Failed           : '.$this->failed);
+        $this->info('✅  Photos processed : ' . number_format($this->processed));
+        $this->info(($this->failed ? '❌' : '✅') . '  Failed           : ' . number_format($this->failed));
 
         $mem = round(memory_get_peak_usage(true) / 1024 / 1024, 1);
-        $this->info('📈  Peak memory      : '.$mem.' MB');
+        $this->info('📈  Peak memory      : ' . $mem . ' MB');
+
+        // Show achievement status
+        if ($this->option('skipAchievements')) {
+            $this->info('⏭️   Achievements    : Skipped');
+        } else {
+            $this->info('🏆  Achievements    : Evaluated');
+        }
     }
 }

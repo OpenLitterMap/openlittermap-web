@@ -14,21 +14,20 @@ class UploadsChecker extends AchievementChecker
         }
 
         $toUnlock = [];
+        $unlockedMap = array_flip($alreadyUnlocked); // O(1) lookups
 
-        foreach ($definitions as $achievement) {
-            // Skip if not uploads type or if it has a tag_id
-            if ($achievement->type !== 'uploads' || $achievement->tag_id !== null) {
-                continue;
-            }
+        // Pre-filter and sort achievements
+        $uploadAchievements = $definitions
+            ->filter(fn($a) => $a->type === 'uploads' && $a->tag_id === null && !isset($unlockedMap[$a->id]))
+            ->sortBy('threshold')
+            ->values();
 
-            // Skip if already unlocked
-            if (in_array($achievement->id, $alreadyUnlocked)) {
-                continue;
-            }
-
-            // Check if threshold is met
+        foreach ($uploadAchievements as $achievement) {
             if ($uploads >= $achievement->threshold) {
                 $toUnlock[] = $achievement->id;
+            } else {
+                // Early exit: sorted by threshold
+                break;
             }
         }
 

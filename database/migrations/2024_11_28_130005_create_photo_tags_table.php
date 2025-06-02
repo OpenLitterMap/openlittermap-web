@@ -20,6 +20,15 @@ return new class extends Migration
             $table->integer('quantity')->nullable();
             $table->boolean('picked_up')->nullable();
             $table->timestamps();
+
+            // Add composite indexes for common queries
+            $table->index(['photo_id', 'category_id'], 'idx_photo_category');
+            $table->index(['photo_id', 'litter_object_id'], 'idx_photo_object');
+            $table->index(['category_id', 'litter_object_id'], 'idx_category_object');
+
+            // Index for aggregation queries
+            $table->index(['category_id', 'quantity'], 'idx_category_quantity');
+            $table->index(['litter_object_id', 'quantity'], 'idx_object_quantity');
         });
     }
 

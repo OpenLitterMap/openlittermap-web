@@ -2,47 +2,10 @@
 
 namespace App\Services\Achievements\Checkers;
 
-use Illuminate\Support\Collection;
-
-class MaterialsChecker extends AchievementChecker
+class MaterialsChecker extends OptimizedTagBasedChecker
 {
-    public function check(array $counts, Collection $definitions, array $alreadyUnlocked): array
-    {
-        $materials = $counts['materials'] ?? [];
-        if (empty($materials)) {
-            return [];
-        }
-
-        $toUnlock = [];
-        $totalMaterials = array_sum($materials);
-
-        // Check dimension-wide achievements
-        foreach ($definitions as $achievement) {
-            if ($achievement->type === 'materials' &&
-                $achievement->tag_id === null &&
-                !in_array($achievement->id, $alreadyUnlocked) &&
-                $totalMaterials >= $achievement->threshold) {
-                $toUnlock[] = $achievement->id;
-            }
-        }
-
-        // Check per-material achievements
-        foreach ($materials as $materialKey => $count) {
-            if ($count <= 0) continue;
-
-            $tagId = $this->getTagId('materials', $materialKey);
-            if (!$tagId) continue;
-
-            foreach ($definitions as $achievement) {
-                if ($achievement->type === 'material' &&
-                    $achievement->tag_id == $tagId &&
-                    !in_array($achievement->id, $alreadyUnlocked) &&
-                    $count >= $achievement->threshold) {
-                    $toUnlock[] = $achievement->id;
-                }
-            }
-        }
-
-        return $toUnlock;
-    }
+    protected function getCountsKey(): string { return 'materials'; }
+    protected function getDimensionType(): string { return 'materials'; }
+    protected function getTagType(): string { return 'material'; }
+    protected function getTableName(): string { return 'materials'; }
 }

@@ -21,6 +21,12 @@ class AchievementServiceProvider extends ServiceProvider
     {
         $this->app->singleton(AchievementRepository::class);
 
+        $this->app->singleton(UploadsChecker::class);
+        $this->app->singleton(ObjectsChecker::class);
+        $this->app->singleton(CategoriesChecker::class);
+        $this->app->singleton(MaterialsChecker::class);
+        $this->app->singleton(BrandsChecker::class);
+
         $this->app->tag([
             UploadsChecker::class,
             ObjectsChecker::class,

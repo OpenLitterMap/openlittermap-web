@@ -18,6 +18,9 @@ return new class extends Migration
             $table->unsignedInteger('created_by')->nullable();
             $table->foreign('created_by')->references('id')->on('users')->onDelete('set null');
             $table->timestamps();
+
+            $table->index(['key', 'id'], 'idx_tag_id_covering');
+            $table->index('created_by', 'idx_user_id');
         });
     }
 

@@ -33,7 +33,11 @@ class ClassifyTagsService
         $this->objects    = LitterObject::pluck('id', 'key')->all();
         $this->materials  = Materials::pluck('id', 'key')->all();
         $this->brands     = BrandList::pluck('id', 'key')->all();
-        $this->customTags = CustomTagNew::pluck('id', 'key')->all();
+
+        // needed to fix migration
+        if ($this->customTags === null) {
+            $this->customTags = CustomTagNew::pluck('id', 'key')->all();
+        }
     }
 
     public function materialMap(): array
