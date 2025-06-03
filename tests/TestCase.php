@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use App\Services\Achievements\Tags\TagKeyCache;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
@@ -25,6 +26,9 @@ abstract class TestCase extends BaseTestCase
 
         // Flush Redis before each test
         Redis::connection()->flushdb();
+
+        // Clear all tag keys from cache
+        TagKeyCache::forgetAll();
     }
 
     /**

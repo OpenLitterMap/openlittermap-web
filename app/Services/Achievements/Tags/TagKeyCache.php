@@ -24,7 +24,7 @@ final class TagKeyCache
             if (!$table) continue;
 
             $mapping = DB::table($table)
-                ->select('key', 'id')
+                ->select('id', 'key')
                 ->pluck('id', 'key')
                 ->all();
 
@@ -49,7 +49,7 @@ final class TagKeyCache
                 return [];
             }
 
-            return DB::table($table)->pluck('key', 'id')->all();
+            return DB::table($table)->pluck('id', 'key')->all();
         });
 
         // Store in memory for faster subsequent access
