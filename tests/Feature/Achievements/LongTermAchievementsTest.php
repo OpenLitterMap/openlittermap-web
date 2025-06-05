@@ -180,7 +180,12 @@ class LongTermAchievementsTest extends TestCase
 
         // Clear caches to pick up new tags
         TagKeyCache::forgetAll();
-        Cache::forget('achievements.definitions.v2'); // Use correct cache key
+        Cache::forget('achievements.definitions.v2');
+
+        // Get the IDs that TagKeyCache will actually use
+        $brandCacheId = TagKeyCache::getOrCreateId('brand', 'starbucks');
+        $materialCacheId = TagKeyCache::getOrCreateId('material', 'aluminium');
+        $objectCacheId = TagKeyCache::getOrCreateId('object', 'coffee_cup');
 
         // Create achievements for the new tags manually
         $milestones = config('achievements.milestones', [1, 10, 42, 69, 100, 420, 1337]);
@@ -189,7 +194,7 @@ class LongTermAchievementsTest extends TestCase
         foreach ($milestones as $milestone) {
             Achievement::firstOrCreate([
                 'type' => 'brand',
-                'tag_id' => $newBrand->id,
+                'tag_id' => $brandCacheId,
                 'threshold' => $milestone,
             ], [
                 'metadata' => json_encode(['xp' => $milestone * 10])
@@ -200,7 +205,7 @@ class LongTermAchievementsTest extends TestCase
         foreach ($milestones as $milestone) {
             Achievement::firstOrCreate([
                 'type' => 'material',
-                'tag_id' => $newMaterial->id,
+                'tag_id' => $materialCacheId,
                 'threshold' => $milestone,
             ], [
                 'metadata' => json_encode(['xp' => $milestone * 10])
@@ -211,7 +216,7 @@ class LongTermAchievementsTest extends TestCase
         foreach ($milestones as $milestone) {
             Achievement::firstOrCreate([
                 'type' => 'object',
-                'tag_id' => $newObject->id,
+                'tag_id' => $objectCacheId,
                 'threshold' => $milestone,
             ], [
                 'metadata' => json_encode(['xp' => $milestone * 10])
@@ -219,7 +224,7 @@ class LongTermAchievementsTest extends TestCase
         }
 
         // Clear achievement cache to pick up new achievements
-        Cache::forget('achievements.definitions.v2');
+        Cache::forget('achievements.all');
 
         // Recreate engine to pick up changes
         $this->engine = app(AchievementEngine::class);
@@ -233,9 +238,9 @@ class LongTermAchievementsTest extends TestCase
         }
 
         // Should have achievements for new tags
-        $this->assertAchievementUnlocked($user, 'brand', $newBrand->id, 1);
-        $this->assertAchievementUnlocked($user, 'material', $newMaterial->id, 1);
-        $this->assertAchievementUnlocked($user, 'object', $newObject->id, 1);
+        $this->assertAchievementUnlocked($user, 'brand', $brandCacheId, 1);
+        $this->assertAchievementUnlocked($user, 'material', $materialCacheId, 1);
+        $this->assertAchievementUnlocked($user, 'object', $objectCacheId, 1);
     }
 
     // ... rest of the test methods remain unchanged ...

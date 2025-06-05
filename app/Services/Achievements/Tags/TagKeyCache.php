@@ -177,19 +177,30 @@ final class TagKeyCache
      */
     public static function createTag(string $dim, string $key): int
     {
+        // First check memory cache
+        if (isset(self::$forward[$dim][$key])) {
+            return self::$forward[$dim][$key];
+        }
         $table = self::getTableForDimension($dim);
         if (!$table) {
             throw new \InvalidArgumentException("Unknown dimension: $dim");
         }
 
-        $id = DB::table($table)->insertGetId(['key' => $key]);
+        $existing = DB::table($table)->where('key', $key)->first();
+        if ($existing) {
+            $id = $existing->id;
+        } else {
+            // Only insert if it doesn't exist
+            $id = DB::table($table)->insertGetId(['key' => $key]);
+        }
 
         // Update caches
         self::$forward[$dim][$key] = $id;
         self::$reverse[$dim][$id] = $key;
 
-        // Invalidate Redis cache
-        Cache::forget("ach:map:{$dim}");
+        // Update the cache with the complete current state
+        $mapping = DB::table($table)->pluck('id', 'key')->all();
+        Cache::put("ach:map:{$dim}", $mapping, self::CACHE_TTL);
 
         return $id;
     }
@@ -199,13 +210,32 @@ final class TagKeyCache
      */
     public static function getOrCreateId(string $dim, string $key): int
     {
-        $id = self::idFor($dim, $key);
-
-        if ($id === null) {
-            $id = self::createTag($dim, $key);
+        // First check memory cache
+        if (isset(self::$forward[$dim][$key])) {
+            return self::$forward[$dim][$key];
         }
 
-        return $id;
+        // Then check database directly
+        $table = self::getTableForDimension($dim);
+        if (!$table) {
+            throw new \InvalidArgumentException("Unknown dimension: $dim");
+        }
+
+        $existing = DB::table($table)->where('key', $key)->first();
+        if ($existing) {
+            // Update caches with this ID
+            self::$forward[$dim][$key] = $existing->id;
+            self::$reverse[$dim][$existing->id] = $key;
+
+            // Refresh the full cache
+            $mapping = DB::table($table)->pluck('id', 'key')->all();
+            Cache::put("ach:map:{$dim}", $mapping, self::CACHE_TTL);
+
+            return $existing->id;
+        }
+
+        // Only create if it truly doesn't exist
+        return self::createTag($dim, $key);
     }
 
     /**
