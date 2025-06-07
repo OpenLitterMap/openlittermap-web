@@ -14,7 +14,31 @@ use Illuminate\Support\Facades\Redis;
 final class RedisMetricsCollector
 {
     private const TS_TTL_MS = 60 * 60 * 24 * 365 * 2 * 1000; // 2 years
-    private const UPLOAD_FLAG_TTL_SECONDS = 60 * 60 * 24 * 40; // 40 days
+
+    /** One bit per UTC day since Unix epoch   ({u:123}:up) */
+    private const KEY_UPLOAD_BITMAP = '{u:%d}:up';
+
+    /**
+     * Atomically read yesterday’s bit and set today’s bit to 1.
+     * Works on a plain Redis connection **or** inside a pipeline.
+     *
+     * @param  mixed   $connOrPipe  Redis|Pipeline|Predis\Client
+     * @param  string  $key         Bitmap key ({u:id}:up)
+     * @param  int     $dayIdx      Days since Unix epoch (UTC)
+     * @return mixed                • outside pipeline → array [yesterdayBit, todayBit]
+     *                              • inside pipeline  → null|bool placeholder
+     */
+    private static function bitfield($connOrPipe, string $key, int $dayIdx): mixed
+    {
+        return self::sendRaw(
+            $connOrPipe,
+            [
+                'BITFIELD', $key,
+                'GET', 'u1', (string)($dayIdx - 1),   // yesterday?
+                'SET', 'u1', (string)$dayIdx, '1'     // mark today
+            ]
+        );
+    }
 
     private const KEY_STATS = '{u:%d}:stats';
     private const KEY_CATEGORIES = '{u:%d}:c';
@@ -77,6 +101,14 @@ final class RedisMetricsCollector
         }
 
         return self::$bloomAvailable;
+    }
+
+    /** Days since Unix epoch for a YYYY-MM-DD UTC string */
+    private static function dayIndex(string $date): int
+    {
+        static $epoch;   // cache Carbon instance
+        $epoch ??= Carbon::createFromTimestampUTC(0);
+        return (int)$epoch->diffInDays(Carbon::parse($date, 'UTC'));
     }
 
     /**
@@ -216,7 +248,7 @@ final class RedisMetricsCollector
             $xp = (int) ($photo->xp ?? 0);
             $totalXp += $xp;
 
-            $ts = $photo->created_at ?? now();
+            $ts   = ($photo->created_at ?? now())->setTimezone('UTC');
             $date = $ts->format('Y-m-d');
             $monthTag = '{g}:' . $ts->format('Y-m');
 
@@ -377,21 +409,20 @@ final class RedisMetricsCollector
      */
     private static function updateStreakForDate(int $userId, string $date): void
     {
-        $statsKey      = sprintf(self::KEY_STATS, $userId);
-        $upTodayKey    = "{u:$userId}:up:$date";
-        $upYesterdayKey= "{u:$userId}:up:" .
-            Carbon::parse($date)->subDay()->format('Y-m-d');
+        $statsKey   = sprintf(self::KEY_STATS, $userId);
+        $bitmapKey  = sprintf(self::KEY_UPLOAD_BITMAP, $userId);
+        $dayIdx     = self::dayIndex($date);
 
-        // Was there an upload yesterday?
-        $hadYesterday  = Redis::exists($upYesterdayKey);
-        $curStreak     = (int) Redis::hGet($statsKey, 'streak') ?: 0;
-        $newStreak     = $hadYesterday ? $curStreak + 1 : 1;
+        // Atomically read yesterday + set today
+        $res = self::bitfield(Redis::connection(), $bitmapKey, $dayIdx);
 
-        // store flag + streak counter (single round-trip ok here)
-        Redis::multi()
-            ->setex($upTodayKey, self::UPLOAD_FLAG_TTL_SECONDS, '1')
-            ->hSet($statsKey, 'streak', $newStreak)
-            ->exec();
+        $hadYesterday = ($res[0] ?? 0) === 1;
+        $curStreak    = (int) Redis::hGet($statsKey, 'streak') ?: 0;
+        $newStreak    = $hadYesterday ? $curStreak + 1 : 1;
+
+        if ($newStreak !== $curStreak) {
+            Redis::hSet($statsKey, 'streak', $newStreak);
+        }
     }
 
     /**
@@ -408,23 +439,9 @@ final class RedisMetricsCollector
             return;
         }
 
-        $statsKey = sprintf(self::KEY_STATS, $userId);
-
         // Process each date in chronological order
         foreach ($photosByDate as $date => $dailyPhotos) {
-            $upTodayKey = "{u:$userId}:up:{$date}";
-            $upYesterdayKey = "{u:$userId}:up:" . Carbon::parse($date)->subDay()->format('Y-m-d');
-
-            // Check if we had uploads yesterday
-            $hadYesterday = Redis::exists($upYesterdayKey);
-            $currentStreak = (int) Redis::hGet($statsKey, 'streak') ?: 0;
-
-            // Update streak
-            $newStreak = $hadYesterday ? $currentStreak + 1 : 1;
-
-            // Set today's flag and update streak
-            Redis::setex($upTodayKey, self::UPLOAD_FLAG_TTL_SECONDS, '1');
-            Redis::hSet($statsKey, 'streak', $newStreak);
+            self::updateStreakForDate($userId, $date);
         }
     }
 
@@ -442,21 +459,13 @@ final class RedisMetricsCollector
         // Extract all deltas from photo
         $deltas = self::extractDeltas($photo);
 
-        $upTodayKey = "{u:$uid}:up:{$date}";
-        $upYesterdayKey = "{u:$uid}:up:" . Carbon::parse($date)->subDay()->format('Y-m-d');
         $statsKey = sprintf(self::KEY_STATS, $uid);
 
         // Single pipeline for all operations
         $results = Redis::pipeline(function ($pipe) use (
-            $uid, $xp, $date, $monthTag, $deltas, $photo, $ts,
-            $upTodayKey, $upYesterdayKey,
-            $statsKey,
+            $uid, $xp, $date, $monthTag, $deltas, $photo, $ts, $statsKey
         ) {
             $uTag = "{u:$uid}";
-
-            // Streak operations first (so we know their indices)
-            $pipe->exists($upYesterdayKey);      // index 0
-            $pipe->hGet($statsKey, 'streak');    // index 1
 
             // Initialize and update stats
             $pipe->hIncrBy($statsKey, 'uploads', 1);
@@ -509,24 +518,13 @@ final class RedisMetricsCollector
                 $pipe->pExpire($tsKey, self::TS_TTL_MS);
             }
 
-            // Set today's upload flag
-            $pipe->setex($upTodayKey, self::UPLOAD_FLAG_TTL_SECONDS, '1');
-
             // Mark as processed
             self::markAsProcessed($pipe, $photo->id);
         });
 
         // Handle streak calculation after pipeline
-        $hadYesterday = $results[0];  // exists result
-        $oldStreak = (int) ($results[1] ?: 0);  // current streak
-        $newStreak = $hadYesterday ? $oldStreak + 1 : 1;
-
-        if ($newStreak !== $oldStreak) {
-            Redis::hSet($statsKey, 'streak', $newStreak);
-        }
+        self::updateStreakForDate($uid, $date);
     }
-
-    // ... rest of the methods remain the same (extractDeltas, getUserCounts, etc.)
 
     /**
      * Extract deltas from photo summary

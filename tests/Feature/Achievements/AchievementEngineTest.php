@@ -1116,17 +1116,24 @@ class AchievementEngineTest extends TestCase
     {
         $user = User::factory()->create();
         $photos = collect([
-            $this->makePhoto($user, ['tags' => ['food' => ['wrapper' => ['quantity' => 1]]]], Carbon::parse('2025-01-15')),
-            $this->makePhoto($user, ['tags' => ['food' => ['wrapper' => ['quantity' => 1]]]], Carbon::parse('2025-01-20')),
-            $this->makePhoto($user, ['tags' => ['food' => ['wrapper' => ['quantity' => 1]]]], Carbon::parse('2025-01-10')),
+            $this->makePhoto($user, ['tags' => ['food' => ['wrapper' => ['quantity' => 1]]]], Carbon::parse('2025-01-15 12:00:00', 'UTC')),
+            $this->makePhoto($user, ['tags' => ['food' => ['wrapper' => ['quantity' => 1]]]], Carbon::parse('2025-01-20 12:00:00', 'UTC')),
+            $this->makePhoto($user, ['tags' => ['food' => ['wrapper' => ['quantity' => 1]]]], Carbon::parse('2025-01-10 12:00:00', 'UTC')),
         ]);
 
         RedisMetricsCollector::queueBatch($user->id, $photos);
 
-        // Verify upload flags are set for all dates
-        $this->assertEquals(1, Redis::exists("{u:{$user->id}}:up:2025-01-10"));
-        $this->assertEquals(1, Redis::exists("{u:{$user->id}}:up:2025-01-15"));
-        $this->assertEquals(1, Redis::exists("{u:{$user->id}}:up:2025-01-20"));
+        // Calculate day indices for each date
+        $epoch = Carbon::createFromTimestampUTC(0);
+        $dayIdx1 = $epoch->diffInDays(Carbon::parse('2025-01-10', 'UTC'));
+        $dayIdx2 = $epoch->diffInDays(Carbon::parse('2025-01-15', 'UTC'));
+        $dayIdx3 = $epoch->diffInDays(Carbon::parse('2025-01-20', 'UTC'));
+
+        // Verify bits are set in the bitmap for all dates
+        $bitmapKey = "{u:{$user->id}}:up";
+        $this->assertEquals(1, Redis::getBit($bitmapKey, $dayIdx1));
+        $this->assertEquals(1, Redis::getBit($bitmapKey, $dayIdx2));
+        $this->assertEquals(1, Redis::getBit($bitmapKey, $dayIdx3));
     }
 
     /** @test */

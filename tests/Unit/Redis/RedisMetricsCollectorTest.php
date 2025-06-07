@@ -144,8 +144,12 @@ class RedisMetricsCollectorTest extends TestCase
 
     public function test_streak_increments_with_consecutive_days(): void
     {
-        $photo1 = $this->createPhoto(['id' => 101, 'created_at' => now()->subDay()]);
-        $photo2 = $this->createPhoto(['id' => 102, 'created_at' => now()]);
+        // Create photos with UTC dates to ensure they're consecutive
+        $yesterday = now()->setTimezone('UTC')->startOfDay()->subDay();
+        $today = now()->setTimezone('UTC')->startOfDay();
+
+        $photo1 = $this->createPhoto(['id' => 101, 'created_at' => $yesterday]);
+        $photo2 = $this->createPhoto(['id' => 102, 'created_at' => $today]);
 
         RedisMetricsCollector::queue($photo1);
         RedisMetricsCollector::queue($photo2);
