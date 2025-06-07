@@ -17,7 +17,7 @@ class CheckerUnitTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        TagKeyCache::warmCache();
+        TagKeyCache::preloadAll();
     }
 
     /** @test */

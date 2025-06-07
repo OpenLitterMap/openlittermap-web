@@ -41,7 +41,7 @@ class CategoriesChecker extends AchievementChecker
         }
 
         // Batch get all tag IDs
-        $tagIdMap = TagKeyCache::getTagIdsBatch('categories', array_keys($activeCategories));
+        $tagIdMap = TagKeyCache::idsBatch('categories', array_keys($activeCategories));
 
         // Check per-category achievements
         foreach ($activeCategories as $categoryKey => $count) {

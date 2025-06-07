@@ -70,7 +70,7 @@ abstract class OptimizedTagBasedChecker extends AchievementChecker
         }
 
         // Batch get all tag IDs
-        $tagIdMap = TagKeyCache::getTagIdsBatch($this->getTableName(), array_keys($activeItems));
+        $tagIdMap = TagKeyCache::idsBatch($this->getTableName(), array_keys($activeItems));
 
         // Check per-tag achievements
         foreach ($activeItems as $itemKey => $count) {

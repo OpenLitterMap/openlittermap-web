@@ -46,7 +46,7 @@ class ObjectsChecker extends AchievementChecker
         }
 
         // Batch get all tag IDs in one call
-        $tagIdMap = TagKeyCache::getTagIdsBatch('litter_objects', array_keys($activeObjects));
+        $tagIdMap = TagKeyCache::idsBatch('litter_objects', array_keys($activeObjects));
 
         // Check per-object achievements
         foreach ($activeObjects as $objectKey => $count) {

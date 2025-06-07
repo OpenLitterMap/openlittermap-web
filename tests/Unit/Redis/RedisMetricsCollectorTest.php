@@ -38,7 +38,7 @@ class RedisMetricsCollectorTest extends TestCase
         RedisMetricsCollector::resetBloomState();
 
         // Warm up the TagKeyCache and get IDs for test data
-        TagKeyCache::warmCache();
+        TagKeyCache::preloadAll();
 
         // Pre-create the tag IDs we'll need for testing
         $this->cupId = TagKeyCache::getOrCreateId('object', 'cup');
@@ -242,7 +242,7 @@ class RedisMetricsCollectorTest extends TestCase
         $this->assertContains('categories', $result['changed_dimensions']);
         $this->assertContains('objects', $result['changed_dimensions']);
         $this->assertArrayNotHasKey((string)$this->foodId, $result['previous_counts']['categories']);
-        $this->assertSame('1', $result['new_counts']['categories'][(string)$this->foodId]);
+        $this->assertSame(1, $result['new_counts']['categories'][(string)$this->foodId]);
     }
 
     public function test_queue_batch_with_tracking_detects_material_change(): void
@@ -269,7 +269,7 @@ class RedisMetricsCollectorTest extends TestCase
 
         $this->assertContains('materials', $result['changed_dimensions']);
         $this->assertArrayNotHasKey((string)$this->plasticId, $result['previous_counts']['materials']);
-        $this->assertSame('1', $result['new_counts']['materials'][(string)$this->plasticId]);
+        $this->assertSame(1, $result['new_counts']['materials'][(string)$this->plasticId]);
     }
 
     public function test_queue_batch_with_tracking_detects_brand_change(): void
@@ -296,7 +296,7 @@ class RedisMetricsCollectorTest extends TestCase
 
         $this->assertContains('brands', $result['changed_dimensions']);
         $this->assertArrayNotHasKey((string)$this->starbucksId, $result['previous_counts']['brands']);
-        $this->assertSame('1', $result['new_counts']['brands'][(string)$this->starbucksId]);
+        $this->assertSame(1, $result['new_counts']['brands'][(string)$this->starbucksId]);
     }
 
     public function test_queue_batch_with_tracking_detects_custom_tag_change(): void
@@ -323,7 +323,7 @@ class RedisMetricsCollectorTest extends TestCase
 
         $this->assertContains('custom_tags', $result['changed_dimensions']);
         $this->assertArrayNotHasKey((string)$this->biodegradableId, $result['previous_counts']['custom_tags']);
-        $this->assertSame('1', $result['new_counts']['custom_tags'][(string)$this->biodegradableId]);
+        $this->assertSame(1, $result['new_counts']['custom_tags'][(string)$this->biodegradableId]);
     }
 
     public function test_queue_batch_with_tracking_detects_multiple_dimensions(): void
@@ -357,7 +357,7 @@ class RedisMetricsCollectorTest extends TestCase
         $this->assertSame(6, $result['new_counts']['uploads']);
 
         // The new_counts shows TOTAL counts, so we should expect 6 cups total (5 from before + 1 from new batch)
-        $this->assertSame('6', $result['new_counts']['objects'][(string)$this->cupId]);
+        $this->assertSame(6, $result['new_counts']['objects'][(string)$this->cupId]);
     }
 
     public function test_queue_batch_with_tracking_no_changes_when_values_unchanged(): void
@@ -429,8 +429,8 @@ class RedisMetricsCollectorTest extends TestCase
 
         // Should accumulate all changes
         $this->assertSame(2, $result['new_counts']['uploads']);
-        $this->assertSame('5', $result['new_counts']['objects'][(string)$this->cupId]); // 2 + 3
-        $this->assertSame('1', $result['new_counts']['objects'][(string)$this->buttId]);
+        $this->assertSame(5, $result['new_counts']['objects'][(string)$this->cupId]); // 2 + 3
+        $this->assertSame(1, $result['new_counts']['objects'][(string)$this->buttId]);
         $this->assertContains('categories', $result['changed_dimensions']);
         $this->assertContains('objects', $result['changed_dimensions']);
     }
@@ -474,7 +474,7 @@ class RedisMetricsCollectorTest extends TestCase
         // Should only process photo 22, since photo 21 was already processed
         $this->assertSame(1, $result['previous_counts']['uploads']); // 1 from the first photo
         $this->assertSame(2, $result['new_counts']['uploads']); // 1 + 1 (only photo 22 processed)
-        $this->assertSame('11', $result['new_counts']['objects'][(string)$this->cupId]); // 10 + 1
+        $this->assertSame(11, $result['new_counts']['objects'][(string)$this->cupId]); // 10 + 1
     }
 
     /* ===================================================================== */

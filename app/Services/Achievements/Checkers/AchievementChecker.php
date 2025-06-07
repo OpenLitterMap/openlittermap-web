@@ -18,7 +18,20 @@ abstract class AchievementChecker
      */
     protected function getTagId(string $table, string $key): ?int
     {
-        return TagKeyCache::getTagId($table, $key);
-    }
+        // Get dimension from table name
+        $dimMap = [
+            'categories' => 'category',
+            'litter_objects' => 'object',
+            'materials' => 'material',
+            'brandslist' => 'brand',
+            'custom_tags_new' => 'customTag'
+        ];
 
+        $dimension = $dimMap[$table] ?? null;
+        if (!$dimension) {
+            return null;
+        }
+
+        return TagKeyCache::idFor($dimension, $key);
+    }
 }

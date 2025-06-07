@@ -8,6 +8,7 @@ use App\Models\Photo;
 use App\Services\Achievements\Tags\TagKeyCache;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 
 final class RedisMetricsCollector
@@ -32,6 +33,14 @@ final class RedisMetricsCollector
     private const BLOOM_CAPACITY = 100000000; // 100M items
     private static ?bool $bloomInitialized = null;
     private static ?bool $bloomAvailable = null;
+
+    private const DIM_TO_TABLE = [
+        'categories'   => 'categories',
+        'objects'      => 'litter_objects',
+        'materials'    => 'materials',
+        'brands'       => 'brandslist',
+        'custom_tags'  => 'custom_tags_new',
+    ];
 
     /**
      * Persist all Redis metrics for a single photo.
@@ -168,12 +177,17 @@ final class RedisMetricsCollector
      */
     public static function queueBatch(int $userId, Collection $photos): void
     {
-        if ($photos->isEmpty()) {
-            return;
-        }
+        if ($photos->isEmpty()) return;
 
-        // Aggregate all deltas from all photos
-        $totalDeltas = [
+        // 1. Dedupe and bloom check
+        $ids = $photos->pluck('id')->filter()->unique()->values()->all();
+        $processedMap = array_combine($ids, self::bloomCheckMany($ids));
+        $photos = $photos->reject(fn($p) => $processedMap[$p->id] ?? false);
+
+        if ($photos->isEmpty()) return;
+
+        // 2. Aggregate all data
+        $delta = [
             'categories' => [],
             'objects' => [],
             'materials' => [],
@@ -181,40 +195,35 @@ final class RedisMetricsCollector
             'custom_tags' => [],
         ];
 
+        $stringTags = [
+            'categories' => [],
+            'objects' => [],
+            'materials' => [],
+            'brands' => [],
+            'custom_tags' => []
+        ];
+
         $totalUploads = 0;
         $totalXp = 0;
         $photoIds = [];
-
-        // Group time series data by date/month
-        $timeSeriesByDate = [];
+        $dateGroups = [];
         $timeSeriesByMonth = [];
         $geoScoped = [];
 
-        // Step 1: Collect all changes
         foreach ($photos as $photo) {
-            if (self::alreadyProcessed($photo->id)) {
-                continue;
-            }
-
             $photoIds[] = $photo->id;
-            $deltas = self::extractDeltas($photo);
-            $xp = (int) ($photo->xp ?? 0);
-            $ts = $photo->created_at ?? now();
-            $date = $ts->setTimezone('UTC')->format('Y-m-d');
-            $monthTag = '{g}:' . $ts->format('Y-m');
-
-            // Merge deltas
-            foreach ($deltas as $type => $items) {
-                foreach ($items as $key => $quantity) {
-                    $totalDeltas[$type][$key] =
-                        ($totalDeltas[$type][$key] ?? 0) + $quantity;
-                }
-            }
-
             $totalUploads++;
+            $xp = (int) ($photo->xp ?? 0);
             $totalXp += $xp;
 
-            // Aggregate time series data
+            $ts = $photo->created_at ?? now();
+            $date = $ts->format('Y-m-d');
+            $monthTag = '{g}:' . $ts->format('Y-m');
+
+            // Track dates for streak
+            $dateGroups[$date] = true;
+
+            // Aggregate time series by month
             $timeSeriesByMonth[$monthTag] = [
                 'photos' => ($timeSeriesByMonth[$monthTag]['photos'] ?? 0) + 1,
                 'xp' => ($timeSeriesByMonth[$monthTag]['xp'] ?? 0) + $xp,
@@ -225,60 +234,110 @@ final class RedisMetricsCollector
                 $key = "$scope|$date";
                 $geoScoped[$key] = ($geoScoped[$key] ?? 0) + 1;
             }
+
+            // Extract tags from summary
+            foreach ($photo->summary['tags'] ?? [] as $catStr => $objects) {
+                $stringTags['categories'][$catStr] = true;
+
+                foreach ($objects as $objStr => $data) {
+                    $q = (int) ($data['quantity'] ?? 0);
+                    if ($q <= 0) continue;
+
+                    $stringTags['objects'][$objStr] = true;
+
+                    $delta['categories'][$catStr] = ($delta['categories'][$catStr] ?? 0) + $q;
+                    $delta['objects'][$objStr] = ($delta['objects'][$objStr] ?? 0) + $q;
+
+                    foreach ($data['materials'] ?? [] as $matStr => $matQ) {
+                        $matQ = (int) $matQ;
+                        if ($matQ > 0) {
+                            $stringTags['materials'][$matStr] = true;
+                            $delta['materials'][$matStr] = ($delta['materials'][$matStr] ?? 0) + $matQ;
+                        }
+                    }
+
+                    foreach ($data['brands'] ?? [] as $brStr => $brQ) {
+                        $brQ = (int) $brQ;
+                        if ($brQ > 0) {
+                            $stringTags['brands'][$brStr] = true;
+                            $delta['brands'][$brStr] = ($delta['brands'][$brStr] ?? 0) + $brQ;
+                        }
+                    }
+
+                    foreach ($data['custom_tags'] ?? [] as $ctStr => $ctQ) {
+                        $ctQ = (int) $ctQ;
+                        if ($ctQ > 0) {
+                            $stringTags['custom_tags'][$ctStr] = true;
+                            $delta['custom_tags'][$ctStr] = ($delta['custom_tags'][$ctStr] ?? 0) + $ctQ;
+                        }
+                    }
+                }
+            }
         }
 
-        if (empty($photoIds)) {
-            return; // All photos already processed
+        // 3. Batch resolve all tag strings to IDs
+        $idMaps = [];
+        foreach ($stringTags as $dim => $tagSet) {
+            $idMaps[$dim] = self::resolveTags(array_keys($tagSet), $dim);
         }
 
+        // 4. Convert string keys to numeric IDs
+        $numericDeltas = [];
+        foreach ($delta as $dim => $pairs) {
+            $numericDeltas[$dim] = [];
+            foreach ($pairs as $stringKey => $quantity) {
+                $id = $idMaps[$dim][$stringKey] ?? null;
+                if ($id === null) {
+                    Log::warning("Tag not found in {$dim}: {$stringKey}");
+                    continue;
+                }
+                $numericDeltas[$dim][$id] = $quantity;
+            }
+        }
+
+        // 5. Single pipeline for all updates
         $statsKey = sprintf(self::KEY_STATS, $userId);
         $uTag = "{u:$userId}";
 
-        // Step 2: ONE Redis pipeline for ALL updates
         Redis::pipeline(function($pipe) use (
-            $userId, $totalDeltas, $totalUploads, $totalXp, $photoIds,
-            $statsKey, $uTag, $timeSeriesByMonth, $geoScoped
+            $statsKey, $uTag, $numericDeltas, $totalUploads, $totalXp,
+            $photoIds, $timeSeriesByMonth, $geoScoped
         ) {
-            // Initialize stats if needed
-            $pipe->hSetNx($statsKey, 'uploads', 0);
-            $pipe->hSetNx($statsKey, 'xp', 0);
-            $pipe->hSetNx($statsKey, 'streak', 0);
-
-            // Update stats ONCE with totals
+            // Update stats
             $pipe->hIncrBy($statsKey, 'uploads', $totalUploads);
-            if ($totalXp) {
+            if ($totalXp > 0) {
                 $pipe->hIncrByFloat($statsKey, 'xp', $totalXp);
             }
 
             // Update user counts
-            foreach ($totalDeltas['categories'] as $c => $q) {
-                $pipe->hIncrBy("$uTag:c", (string)$c, $q);
+            foreach ($numericDeltas['categories'] as $id => $q) {
+                $pipe->hIncrBy("$uTag:c", (string)$id, $q);
             }
-            foreach ($totalDeltas['objects'] as $o => $q) {
-                $pipe->hIncrBy("$uTag:t", (string)$o, $q);
+            foreach ($numericDeltas['objects'] as $id => $q) {
+                $pipe->hIncrBy("$uTag:t", (string)$id, $q);
             }
-            foreach ($totalDeltas['materials'] as $m => $q) {
-                $pipe->hIncrBy("$uTag:m", (string)$m, $q);
+            foreach ($numericDeltas['materials'] as $id => $q) {
+                $pipe->hIncrBy("$uTag:m", (string)$id, $q);
             }
-            foreach ($totalDeltas['brands'] as $b => $q) {
-                $pipe->hIncrBy("$uTag:brands", (string)$b, $q);
+            foreach ($numericDeltas['brands'] as $id => $q) {
+                $pipe->hIncrBy("$uTag:brands", (string)$id, $q);
             }
-            foreach ($totalDeltas['custom_tags'] as $ct => $q) {
-                $pipe->hIncrBy("$uTag:custom", (string)$ct, $q);
+            foreach ($numericDeltas['custom_tags'] as $id => $q) {
+                $pipe->hIncrBy("$uTag:custom", (string)$id, $q);
             }
 
             // Update global counts
-            foreach ($totalDeltas['categories'] as $c => $q) {
-                $pipe->hIncrBy(self::GLOBAL_CATEGORIES, (string)$c, $q);
+            foreach ($numericDeltas['categories'] as $id => $q) {
+                $pipe->hIncrBy(self::GLOBAL_CATEGORIES, (string)$id, $q);
             }
-            foreach ($totalDeltas['objects'] as $o => $q) {
-                $pipe->hIncrBy(self::GLOBAL_OBJECTS, (string)$o, $q);
+            foreach ($numericDeltas['objects'] as $id => $q) {
+                $pipe->hIncrBy(self::GLOBAL_OBJECTS, (string)$id, $q);
             }
-            foreach ($totalDeltas['materials'] as $m => $q) {
-                $pipe->hIncrBy(self::GLOBAL_MATERIALS, (string)$m, $q);
+            foreach ($numericDeltas['materials'] as $id => $q) {
+                $pipe->hIncrBy(self::GLOBAL_MATERIALS, (string)$id, $q);
             }
-            foreach ($totalDeltas['brands'] as $b => $q) {
-                $pipe->hIncrBy(self::GLOBAL_BRANDS, (string)$b, $q);
+            foreach ($numericDeltas['brands'] as $id => $q) {
+                $pipe->hIncrBy(self::GLOBAL_BRANDS, (string)$id, $q);
             }
 
             // Time series data
@@ -297,14 +356,42 @@ final class RedisMetricsCollector
                 $pipe->pExpire($tsKey, self::TS_TTL_MS);
             }
 
-            // Mark all photos as processed
-            foreach ($photoIds as $photoId) {
-                self::markAsProcessed($pipe, $photoId);
-            }
+            // Mark photos as processed
+            self::bloomAddMany($pipe, $photoIds);
         });
 
-        // Step 3: Handle streak updates separately (complex logic)
-        self::updateStreakForBatch($userId, $photos);
+        // 6. Handle streak updates for each date
+        $sortedDates = array_keys($dateGroups);
+        sort($sortedDates);
+
+        foreach ($sortedDates as $date) {
+            self::updateStreakForDate($userId, $date);
+        }
+    }
+
+    /**
+     * Mark one UTC date and recompute streak for the user.
+     *
+     * @param int    $userId user id
+     * @param string $date   YYYY-MM-DD in UTC
+     */
+    private static function updateStreakForDate(int $userId, string $date): void
+    {
+        $statsKey      = sprintf(self::KEY_STATS, $userId);
+        $upTodayKey    = "{u:$userId}:up:$date";
+        $upYesterdayKey= "{u:$userId}:up:" .
+            Carbon::parse($date)->subDay()->format('Y-m-d');
+
+        // Was there an upload yesterday?
+        $hadYesterday  = Redis::exists($upYesterdayKey);
+        $curStreak     = (int) Redis::hGet($statsKey, 'streak') ?: 0;
+        $newStreak     = $hadYesterday ? $curStreak + 1 : 1;
+
+        // store flag + streak counter (single round-trip ok here)
+        Redis::multi()
+            ->setex($upTodayKey, self::UPLOAD_FLAG_TTL_SECONDS, '1')
+            ->hSet($statsKey, 'streak', $newStreak)
+            ->exec();
     }
 
     /**
@@ -372,9 +459,6 @@ final class RedisMetricsCollector
             $pipe->hGet($statsKey, 'streak');    // index 1
 
             // Initialize and update stats
-            $pipe->hSetNx($statsKey, 'uploads', 0);
-            $pipe->hSetNx($statsKey, 'xp', 0);
-            $pipe->hSetNx($statsKey, 'streak', 0);
             $pipe->hIncrBy($statsKey, 'uploads', 1);
 
             if ($xp) {
@@ -519,12 +603,22 @@ final class RedisMetricsCollector
             'uploads' => (int) ($results[0]['uploads'] ?? 0),
             'streak' => (int) ($results[0]['streak'] ?? 0),
             'xp' => (float) ($results[0]['xp'] ?? 0),
-            'categories' => $results[1] ?: [],
-            'objects' => $results[2] ?: [],
-            'materials' => $results[3] ?: [],
-            'brands' => $results[4] ?: [],
-            'custom_tags' => $results[5] ?: [],
+            'categories'  => self::castValues($results[1] ?: []),
+            'objects'     => self::castValues($results[2] ?: []),
+            'materials'   => self::castValues($results[3] ?: []),
+            'brands'      => self::castValues($results[4] ?: []),
+            'custom_tags' => self::castValues($results[5] ?: []),
         ];
+    }
+
+    // cast every hash value to int
+    private static function castValues(array $hash): array
+    {
+        // preserve keys, cast values
+        foreach ($hash as $k => $v) {
+            $hash[$k] = (int) $v;
+        }
+        return $hash;
     }
 
     private static function geoScopes(?int $country, ?int $state, ?int $city): array
@@ -642,50 +736,77 @@ final class RedisMetricsCollector
     }
 
     /**
-     * Reset bloom filter state (for testing)
-     */
-    public static function resetBloomState(): void
-    {
-        self::$bloomInitialized = null;
-        self::$bloomAvailable = null;
-    }
-
-    /**
      * Get user counts with string keys instead of numeric IDs (for display)
      */
     public static function getUserCountsWithKeys(int $userId): array
     {
         $counts = self::getUserCounts($userId);
 
-        // Map of count keys to tag dimensions
-        $dimensionMap = [
-            'categories' => 'category',
-            'objects' => 'object',
-            'materials' => 'material',
-            'brands' => 'brand',
-            'custom_tags' => 'customTag'
-        ];
-
-        // Convert numeric IDs back to string keys
-        foreach ($dimensionMap as $countKey => $dimension) {
-            if (!empty($counts[$countKey])) {
-                // Extract numeric IDs
-                $ids = array_map('intval', array_keys($counts[$countKey]));
-
-                // Get string keys for these IDs
-                $keys = TagKeyCache::getKeysForIds($dimension, $ids);
-
-                // Build new array with string keys
-                $keyedCounts = [];
-                foreach ($counts[$countKey] as $id => $count) {
-                    $key = $keys[$id] ?? "unknown_$id";
-                    $keyedCounts[$key] = $count;
-                }
-
-                $counts[$countKey] = $keyedCounts;
+        foreach (self::DIM_TO_TABLE as $dimension => $table) {
+            if (empty($counts[$dimension])) {           // <-- use dimension!
+                continue;
             }
+
+            $ids  = array_map('intval', array_keys($counts[$dimension]));
+            $keys = TagKeyCache::keysBatch($table, $ids);   // id ⇒ key
+
+            $pretty = [];
+            foreach ($counts[$dimension] as $id => $cnt) {
+                $pretty[$keys[$id] ?? "unknown_$id"] = $cnt;
+            }
+            $counts[$dimension] = $pretty;
         }
 
         return $counts;
+    }
+
+    /* --------------------------------------------------------------------- */
+    /* Tag-string → id resolution in bulk                                    */
+    /* --------------------------------------------------------------------- */
+
+    private static function resolveTags(array $strings, string $dimension): array
+    {
+        if (!$strings) return [];
+        $table = self::DIM_TO_TABLE[$dimension];
+        // [key => id]
+        return TagKeyCache::idsBatch($table, array_values($strings));
+    }
+
+
+    /* --------------------------------------------------------------------- */
+    /* Bloom helpers                                                         */
+    /* --------------------------------------------------------------------- */
+
+    private static function bloomCheckMany(array $ids): array
+    {
+        if (!$ids) return [];
+        if (self::isBloomAvailable()) {
+            return self::sendRaw(
+                Redis::connection(),
+                array_merge(['BF.MEXISTS', self::BLOOM_FILTER_KEY], $ids)
+            );
+        }
+        return Redis::command('SMISMEMBER', array_merge(['p:done'], $ids));
+    }
+
+    private static function bloomAddMany($pipe, array $ids): void
+    {
+        if (!$ids) return;
+        if (self::isBloomAvailable()) {
+            self::sendRaw($pipe,
+                array_merge(['BF.MADD', self::BLOOM_FILTER_KEY], $ids)
+            );
+        } else {
+            $pipe->sAdd('p:done', ...$ids);
+        }
+    }
+
+    /**
+     * Reset bloom filter state (for testing)
+     */
+    public static function resetBloomState(): void
+    {
+        self::$bloomInitialized = null;
+        self::$bloomAvailable = null;
     }
 }
