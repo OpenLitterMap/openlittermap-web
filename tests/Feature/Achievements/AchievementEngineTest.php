@@ -31,14 +31,14 @@ class AchievementEngineTest extends TestCase
 
     // Store tag IDs for reuse
     private int $waterBottleId;
-    private int $wrapperIid;
+    private int $wrapperId;
     private int $cupId;
     private int $packetId;
     private int $sodaCanId;
     private int $foodId;
     private int $softdrinksId;
     private int $plasticId;
-    private int $paperIid;
+    private int $paperId;
     private int $aluminiumId;
     private int $cokeId;
     private int $pepsiId;
@@ -1095,6 +1095,10 @@ class AchievementEngineTest extends TestCase
 
         // Clear Redis for batch test
         Redis::flushDB();
+
+        // IMPORTANT: Reset processed_at so photos can be processed again
+        Photo::whereIn('id', $photos->pluck('id')->toArray())
+            ->update(['processed_at' => null]);
 
         // Method 2: Batch processing
         $startTime = microtime(true);

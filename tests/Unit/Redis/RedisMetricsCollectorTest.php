@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Redis;
 
+use App\Models\Location\City;
+use App\Models\Location\Country;
+use App\Models\Location\State;
 use App\Models\Photo;
+use App\Models\Users\User;
 use App\Services\Redis\RedisMetricsCollector;
 use App\Services\Achievements\Tags\TagKeyCache;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -33,9 +37,6 @@ class RedisMetricsCollectorTest extends TestCase
 
         // Clear Redis before each test
         Redis::flushall();
-
-        // Reset bloom filter state
-        RedisMetricsCollector::resetBloomState();
 
         // Warm up the TagKeyCache and get IDs for test data
         TagKeyCache::preloadAll();
@@ -139,7 +140,25 @@ class RedisMetricsCollectorTest extends TestCase
 
         $this->assertSame('3', Redis::hGet('{u:4}:t', (string)$this->cupId));      // 1 + 2
         $this->assertSame('2', Redis::hGet('{u:4}:stats', 'uploads'));
-        $this->assertTrue(Redis::sIsMember('p:done', 2));
+
+        // Verify photo 2 was marked as processed by trying to process it again
+        $photo2Again = $this->createPhoto([
+            'id' => 2,
+            'user_id' => 4,
+            'summary' => [
+                'tags' => [
+                    'drinking' => [
+                        'cup' => ['quantity' => 10]  // Different quantity
+                    ]
+                ]
+            ]
+        ]);
+
+        RedisMetricsCollector::queue($photo2Again);
+
+        // Counts should not change since photo 2 was already processed
+        $this->assertSame('3', Redis::hGet('{u:4}:t', (string)$this->cupId));      // Still 3, not 13
+        $this->assertSame('2', Redis::hGet('{u:4}:stats', 'uploads'));             // Still 2
     }
 
     public function test_streak_increments_with_consecutive_days(): void
@@ -170,10 +189,22 @@ class RedisMetricsCollectorTest extends TestCase
 
     public function test_geo_scopes_and_ttl(): void
     {
+        // Create location records first
+        $country = Country::factory()->create(['id' => 1]);
+        $state = State::factory()->create([
+            'id' => 2,
+            'country_id' => $country->id
+        ]);
+        $city = City::factory()->create([
+            'id' => 3,
+            'country_id' => $country->id,
+            'state_id' => $state->id
+        ]);
+
         $photo = $this->createPhoto([
-            'country_id' => 1,
-            'state_id' => 2,
-            'city_id' => 3,
+            'country_id' => $country->id,
+            'state_id' => $state->id,
+            'city_id' => $city->id,
             'created_at' => now()
         ]);
 
@@ -481,40 +512,40 @@ class RedisMetricsCollectorTest extends TestCase
         $this->assertSame(11, $result['new_counts']['objects'][(string)$this->cupId]); // 10 + 1
     }
 
-    /* ===================================================================== */
-    /*  Helper – in-memory Photo                                             */
-    /* ===================================================================== */
-
     private function createPhoto(array $attributes = []): Photo
     {
-        $photo = new Photo();
+        // Extract user_id if provided, otherwise use default
+        $userId = $attributes['user_id'] ?? 3;
 
-        // Default attributes
-        $defaults = [
-            'id' => 1,
-            'user_id' => 3,
-            'xp' => 0,
-            'created_at' => now(),
-            'country_id' => null,
-            'state_id' => null,
-            'city_id' => null,
-            'summary' => [
-                'tags' => [
-                    'drinking' => [
-                        'cup' => ['quantity' => 1]
-                    ]
+        // Ensure the user exists
+        $user = User::find($userId) ?? User::factory()->create(['id' => $userId]);
+
+        // Remove user_id from attributes since we'll use the relationship
+        unset($attributes['user_id']);
+
+        // Default summary if not provided
+        $defaultSummary = [
+            'tags' => [
+                'drinking' => [
+                    'cup' => ['quantity' => 1]
                 ]
             ]
         ];
 
-        // Merge with provided attributes
-        $attributes = array_merge($defaults, $attributes);
+        // Merge default values with provided attributes
+        $photoAttributes = array_merge([
+            'summary' => $defaultSummary,
+            'xp' => 0,
+        ], $attributes);
 
-        // Set attributes on the photo model
-        foreach ($attributes as $key => $value) {
-            $photo->{$key} = $value;
+        // Check if photo already exists (for duplicate testing)
+        if (isset($photoAttributes['id']) && Photo::find($photoAttributes['id'])) {
+            return Photo::find($photoAttributes['id']);
         }
 
-        return $photo;
+        // Create photo using factory with user relationship
+        return Photo::factory()
+            ->for($user)
+            ->create($photoAttributes);
     }
 }
