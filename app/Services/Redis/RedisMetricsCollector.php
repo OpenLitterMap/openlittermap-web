@@ -167,8 +167,9 @@ final class RedisMetricsCollector
             return; // Another process might have processed them
         }
 
-        // Process only the photos that we just marked as processed
-        $toProcess = $photos->whereIn('id', $unprocessedIds);
+        // Process only unique photos that we just marked as processed
+        // Use keyBy to ensure uniqueness by ID
+        $toProcess = $photos->whereIn('id', $unprocessedIds)->keyBy('id')->values();
 
         self::processBatchMetrics($userId, $toProcess);
     }

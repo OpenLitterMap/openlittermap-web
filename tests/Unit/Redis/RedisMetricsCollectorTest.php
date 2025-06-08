@@ -412,9 +412,9 @@ class RedisMetricsCollectorTest extends TestCase
         $result = RedisMetricsCollector::queueBatchWithTracking($userId, $photos);
 
         $this->assertContains('uploads', $result['changed_dimensions']);
-        // Both instances of the same photo will be processed in the same batch
-        // because the duplicate check happens before any are marked as processed
-        $this->assertSame(2, $result['new_counts']['uploads']);
+
+        // Should only process once since it's the same photo ID
+        $this->assertSame(1, $result['new_counts']['uploads']);
     }
 
     public function test_queue_batch_with_tracking_handles_streak_changes(): void
@@ -488,21 +488,23 @@ class RedisMetricsCollectorTest extends TestCase
         ]);
         RedisMetricsCollector::queue($firstPhoto);
 
-        // Now try to process it again in a batch with a new photo
-        $photos = new Collection([
-            $this->createPhoto(['user_id' => $userId, 'id' => 21]), // Already processed - should be skipped
-            $this->createPhoto([
-                'user_id' => $userId,
-                'id' => 22,
-                'summary' => [
-                    'tags' => [
-                        'drinking' => [
-                            'cup' => ['quantity' => 1]
-                        ]
+        // Create a new photo that should be processed
+        $secondPhoto = $this->createPhoto([
+            'user_id' => $userId,
+            'id' => 22,
+            'summary' => [
+                'tags' => [
+                    'drinking' => [
+                        'cup' => ['quantity' => 1]
                     ]
                 ]
-            ])
+            ]
         ]);
+
+        // Create collection with both photos
+        // Note: We need to reload photo 21 to get the updated processed_at
+        $processedPhoto = Photo::find(21);
+        $photos = new Collection([$processedPhoto, $secondPhoto]);
 
         $result = RedisMetricsCollector::queueBatchWithTracking($userId, $photos);
 
