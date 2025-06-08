@@ -47,9 +47,74 @@ final class RedisMetricsCollector
         'custom_tags'  => Dimension::CUSTOM_TAG,
     ];
 
+    // Cached Lua script content
+    private static ?string $luaScript = null;
+
+    // Cached SHA1 of the script
+    private static ?string $luaScriptSha = null;
+
     /**
-     * Persist all Redis metrics for a single photo.
+     * Get the Lua script content
      */
+    private static function getLuaScript(): string
+    {
+        if (self::$luaScript === null) {
+            // Try multiple locations
+            $paths = [
+                resource_path('lua/redis-metrics.lua'),
+                base_path('app/Services/Redis/lua/redis-metrics.lua'),
+                __DIR__ . '/lua/redis-metrics.lua',
+            ];
+
+            $foundPath = null;
+            foreach ($paths as $path) {
+                if (file_exists($path)) {
+                    $foundPath = $path;
+                    break;
+                }
+            }
+
+            if ($foundPath === null) {
+                throw new \RuntimeException("Lua script not found in any of these locations: " . implode(', ', $paths));
+            }
+
+            self::$luaScript = file_get_contents($foundPath);
+            self::$luaScriptSha = sha1(self::$luaScript);
+        }
+
+        return self::$luaScript;
+    }
+
+    /**
+     * Get the SHA1 hash of the Lua script
+     */
+    private static function getLuaScriptSha(): string
+    {
+        if (self::$luaScriptSha === null) {
+            self::getLuaScript(); // This will populate both script and SHA
+        }
+
+        return self::$luaScriptSha;
+    }
+
+    /**
+     * Preload the Lua script into Redis (optional)
+     * Call this in a service provider or during deployment
+     */
+    public static function preloadLuaScript(): void
+    {
+        $script = self::getLuaScript();
+        $sha = self::getLuaScriptSha();
+
+        // Check if script is already loaded
+        $exists = Redis::script('exists', $sha);
+
+        if (!$exists[0]) {
+            // Load the script into Redis
+            Redis::script('load', $script);
+            Log::info('Redis metrics Lua script loaded', ['sha' => $sha]);
+        }
+    }
     public static function queue(Photo $photo): void
     {
         $updated = Photo::where('id', $photo->id)
@@ -70,25 +135,40 @@ final class RedisMetricsCollector
     {
         if ($photos->isEmpty()) return;
 
+        // Get unique IDs from the collection
+        $ids = $photos->pluck('id')->unique()->values()->all();
 
-        // 1. Grab the candidate IDs
-        $ids = $photos->pluck('id')->all();
+        // Get fresh data from database to check which are already processed
+        $dbPhotos = Photo::whereIn('id', $ids)
+            ->select('id', 'processed_at')
+            ->get()
+            ->keyBy('id');
 
-        // 2. Atomically mark as processed and keep the ones we actually changed
-        $now = now();
-        $affected = Photo::whereNull('processed_at')
-            ->whereIn('id', $ids)
-            ->update(['processed_at' => $now]);
-
-        if ($affected === 0) {
-            return;                 // nothing new
+        // Separate processed and unprocessed IDs
+        $unprocessedIds = [];
+        foreach ($ids as $id) {
+            $dbPhoto = $dbPhotos->get($id);
+            if ($dbPhoto && is_null($dbPhoto->processed_at)) {
+                $unprocessedIds[] = $id;
+            }
         }
 
-        // 3. Pick only the photos we really updated
-        $toProcess = $photos->filter(
-            fn ($p) => is_null($p->processed_at)   // value we had in memory
-                || $p->processed_at < $now     // updated right now
-        );
+        if (empty($unprocessedIds)) {
+            return; // nothing new to process
+        }
+
+        // Mark unprocessed photos as processed atomically
+        $now = now();
+        $updated = Photo::whereIn('id', $unprocessedIds)
+            ->whereNull('processed_at')
+            ->update(['processed_at' => $now]);
+
+        if ($updated === 0) {
+            return; // Another process might have processed them
+        }
+
+        // Process only the photos that we just marked as processed
+        $toProcess = $photos->whereIn('id', $unprocessedIds);
 
         self::processBatchMetrics($userId, $toProcess);
     }
@@ -98,20 +178,151 @@ final class RedisMetricsCollector
      */
     private static function processBatchMetrics(int $userId, Collection $photos): void
     {
-        // Aggregate all data
+        if ($photos->isEmpty()) {
+            return;
+        }
+
+        // 1. aggregate raw data
         $aggregated = self::aggregatePhotoData($photos);
 
-        // Batch resolve tags
+        // 2. resolve tag strings → numeric ids
         $idMaps = self::resolveAllTags($aggregated['stringTags']);
-
-        // Convert to numeric IDs
         $numericDeltas = self::convertToNumericDeltas($aggregated['deltas'], $idMaps);
 
-        // Execute Redis updates
-        self::executeRedisUpdates($userId, $aggregated, $numericDeltas);
+        // 3. single Lua script does the rest
+        self::executeBatchUpdate($userId, $aggregated, $numericDeltas);
+    }
 
-        // Update streaks
-        self::updateStreaksForDates($userId, array_keys($aggregated['dateGroups']));
+    /**
+     * One Lua round-trip for the whole batch
+     */
+    private static function executeBatchUpdate(
+        int   $userId,
+        array $aggregated,
+        array $numericDeltas
+    ): void {
+        // If no data to process, return early
+        if ($aggregated['totalUploads'] === 0) {
+            return;
+        }
+
+        // ---------- build payload ------------------------------------------------
+        $payload = [
+            'statsKey'   => sprintf(self::KEY_STATS, $userId),
+            'bitmapKey'  => sprintf(self::KEY_UPLOAD_BITMAP, $userId),
+            'uploads'    => (int)$aggregated['totalUploads'],
+            'xp'         => (float)$aggregated['totalXp'],
+            'updates'    => [],
+            'timeSeries' => [],
+            'geo'        => [],
+            'dayIdxs'    => [],
+            'ttl'        => (int)self::TS_TTL_MS,
+        ];
+
+        /*  a) user + global dimension hashes  ----------------------------------- */
+        foreach (['categories','objects','materials','brands','custom_tags'] as $dim) {
+            $userKey   = self::getUserKeyForDimension($userId, $dim);
+            $globalKey = self::getGlobalKeyForDimension($dim);
+
+            foreach ($numericDeltas[$dim] as $id => $qty) {
+                $payload['updates'][] = [$userKey, (string)$id, (int)$qty];
+                if ($globalKey) {
+                    $payload['updates'][] = [$globalKey, (string)$id, (int)$qty];
+                }
+            }
+        }
+
+        /*  b) global time-series  ---------------------------------------------- */
+        foreach ($aggregated['timeSeriesByMonth'] as $monthTag => $ts) {
+            $key = "{$monthTag}:t";
+            $payload['timeSeries'][] = [$key, 'p', (int)$ts['photos']];
+            if ($ts['xp'] > 0) {
+                $payload['timeSeries'][] = [$key, 'xp', (float)$ts['xp']];
+            }
+        }
+
+        /*  c) geo-scoped per-day counts  ---------------------------------------- */
+        foreach ($aggregated['geoScoped'] as $scopeDate => $cnt) {
+            [$scope, $date] = explode('|', $scopeDate, 2);
+            $payload['geo'][] = ["{$scope}:t:p", $date, (int)$cnt];
+        }
+
+        /*  d) streak bitmap day indices  ---------------------------------------- */
+        foreach (array_keys($aggregated['dateGroups']) as $date) {
+            $payload['dayIdxs'][] = self::dayIndex($date);
+        }
+        sort($payload['dayIdxs']); // ASC
+
+        // ---------- Try Lua script first, fallback to pipeline  ------------------
+        $jsonPayload = json_encode($payload);
+
+        try {
+            // Try EVALSHA first for better performance
+            try {
+                Redis::evalSha(self::getLuaScriptSha(), 0, $jsonPayload);
+            } catch (\Exception $e) {
+                // If NOSCRIPT error, load the script and try again
+                if (strpos($e->getMessage(), 'NOSCRIPT') !== false) {
+                    Redis::eval(self::getLuaScript(), 0, $jsonPayload);
+                } else {
+                    throw $e;
+                }
+            }
+        } catch (\Exception $e) {
+            // Fallback to pipeline approach
+            Log::warning('Lua script failed, using pipeline fallback', [
+                'error' => $e->getMessage(),
+                'userId' => $userId
+            ]);
+
+            self::executePipelineFallback($userId, $payload, $aggregated['dateGroups']);
+        }
+    }
+
+    /**
+     * Fallback implementation using Redis pipeline
+     */
+    private static function executePipelineFallback(int $userId, array $payload, array $dateGroups): void
+    {
+        $statsKey = $payload['statsKey'];
+
+        Redis::pipeline(function($pipe) use ($payload, $statsKey) {
+            // Update stats
+            if ($payload['uploads'] > 0) {
+                $pipe->hIncrBy($statsKey, 'uploads', $payload['uploads']);
+            }
+            if ($payload['xp'] > 0) {
+                $pipe->hIncrByFloat($statsKey, 'xp', $payload['xp']);
+            }
+
+            // Update dimension hashes
+            foreach ($payload['updates'] as $update) {
+                [$key, $field, $amount] = $update;
+                $pipe->hIncrBy($key, $field, $amount);
+            }
+
+            // Time series
+            foreach ($payload['timeSeries'] as $ts) {
+                [$key, $field, $amount] = $ts;
+                if ($field === 'xp') {
+                    $pipe->hIncrByFloat($key, $field, $amount);
+                } else {
+                    $pipe->hIncrBy($key, $field, $amount);
+                }
+            }
+
+            // Geo scoped
+            foreach ($payload['geo'] as $geo) {
+                [$key, $field, $amount] = $geo;
+                $pipe->hIncrBy($key, $field, $amount);
+                $pipe->pExpire($key, $payload['ttl']);
+            }
+        });
+
+        // Handle streaks separately
+        foreach (array_keys($dateGroups) as $date) {
+            self::updateStreakForDate($userId, $date);
+        }
     }
 
     /**
@@ -230,53 +441,6 @@ final class RedisMetricsCollector
     }
 
     /**
-     * Execute all Redis updates in a single pipeline
-     */
-    private static function executeRedisUpdates(int $userId, array $aggregated, array $numericDeltas): void
-    {
-        $statsKey = sprintf(self::KEY_STATS, $userId);
-
-        Redis::pipeline(function($pipe) use (
-            $statsKey, $numericDeltas, $aggregated, $userId
-        ) {
-            // Update stats
-            $pipe->hIncrBy($statsKey, 'uploads', $aggregated['totalUploads']);
-            if ($aggregated['totalXp'] > 0) {
-                $pipe->hIncrByFloat($statsKey, 'xp', $aggregated['totalXp']);
-            }
-
-            // Update user and global counts for each dimension
-            foreach (['categories', 'objects', 'materials', 'brands', 'custom_tags'] as $dim) {
-                $userKey = self::getUserKeyForDimension($userId, $dim);
-                $globalKey = self::getGlobalKeyForDimension($dim);
-
-                foreach ($numericDeltas[$dim] as $id => $quantity) {
-                    $pipe->hIncrBy($userKey, (string)$id, $quantity);
-                    if ($globalKey) {
-                        $pipe->hIncrBy($globalKey, (string)$id, $quantity);
-                    }
-                }
-            }
-
-            // Time series updates
-            foreach ($aggregated['timeSeriesByMonth'] as $monthTag => $data) {
-                $pipe->hIncrBy("{$monthTag}:t", 'p', $data['photos']);
-                if ($data['xp'] > 0) {
-                    $pipe->hIncrByFloat("{$monthTag}:t", 'xp', $data['xp']);
-                }
-            }
-
-            // Geo scoped updates
-            foreach ($aggregated['geoScoped'] as $scopeDate => $count) {
-                [$scope, $date] = explode('|', $scopeDate, 2);
-                $tsKey = "$scope:t:p";
-                $pipe->hIncrBy($tsKey, $date, $count);
-                $pipe->pExpire($tsKey, self::TS_TTL_MS);
-            }
-        });
-    }
-
-    /**
      * Get user key for dimension
      */
     private static function getUserKeyForDimension(int $userId, string $dimension): string
@@ -309,17 +473,6 @@ final class RedisMetricsCollector
     }
 
     /**
-     * Update streaks for multiple dates
-     */
-    private static function updateStreaksForDates(int $userId, array $dates): void
-    {
-        sort($dates);
-        foreach ($dates as $date) {
-            self::updateStreakForDate($userId, $date);
-        }
-    }
-
-    /**
      * Days since Unix epoch for a YYYY-MM-DD UTC string
      */
     private static function dayIndex(string $date): int
@@ -327,75 +480,6 @@ final class RedisMetricsCollector
         static $epoch;
         $epoch ??= Carbon::createFromTimestampUTC(0);
         return (int)$epoch->diffInDays(Carbon::parse($date, 'UTC'));
-    }
-
-    /**
-     * Atomically read yesterday's bit and set today's bit to 1.
-     * Works on a plain Redis connection **or** inside a pipeline.
-     *
-     * @param  mixed   $connOrPipe  Redis|Pipeline|Predis\Client
-     * @param  string  $key         Bitmap key ({u:id}:up)
-     * @param  int     $dayIdx      Days since Unix epoch (UTC)
-     * @return mixed                • outside pipeline → array [yesterdayBit, todayBit]
-     *                              • inside pipeline  → null|bool placeholder
-     */
-    private static function bitfield($connOrPipe, string $key, int $dayIdx): mixed
-    {
-        return self::sendRaw(
-            $connOrPipe,
-            [
-                'BITFIELD', $key,
-                'GET', 'u1', (string)($dayIdx - 1),   // yesterday?
-                'SET', 'u1', (string)$dayIdx, '1'     // mark today
-            ]
-        );
-    }
-
-    /**
-     * Send a module command inside or outside a pipeline.
-     */
-    private static function sendRaw($connOrPipe, array $cmd): mixed
-    {
-        // Convert all arguments to strings to avoid scalar type errors
-        $cmd = array_map(function ($arg) {
-            return (string) $arg;
-        }, $cmd);
-
-        // PhpRedis: Redis|RedisCluster|Pipeline all have rawCommand()
-        if (method_exists($connOrPipe, 'rawCommand')) {
-            return $connOrPipe->rawCommand(...$cmd);
-        }
-
-        // Predis: Client and Pipeline objects have executeRaw(array $cmd)
-        if (method_exists($connOrPipe, 'executeRaw')) {
-            return $connOrPipe->executeRaw($cmd);
-        }
-
-        throw new \RuntimeException('No raw Redis command method found');
-    }
-
-    /**
-     * Mark one UTC date and recompute streak for the user.
-     *
-     * @param int    $userId user id
-     * @param string $date   YYYY-MM-DD in UTC
-     */
-    private static function updateStreakForDate(int $userId, string $date): void
-    {
-        $statsKey   = sprintf(self::KEY_STATS, $userId);
-        $bitmapKey  = sprintf(self::KEY_UPLOAD_BITMAP, $userId);
-        $dayIdx     = self::dayIndex($date);
-
-        // Atomically read yesterday + set today
-        $res = self::bitfield(Redis::connection(), $bitmapKey, $dayIdx);
-
-        $hadYesterday = ($res[0] ?? 0) === 1;
-        $curStreak    = (int) Redis::hGet($statsKey, 'streak') ?: 0;
-        $newStreak    = $hadYesterday ? $curStreak + 1 : 1;
-
-        if ($newStreak !== $curStreak) {
-            Redis::hSet($statsKey, 'streak', $newStreak);
-        }
     }
 
     /**
@@ -475,6 +559,75 @@ final class RedisMetricsCollector
 
         // Handle streak calculation after pipeline
         self::updateStreakForDate($uid, $date);
+    }
+
+    /**
+     * Mark one UTC date and recompute streak for the user.
+     *
+     * @param int    $userId user id
+     * @param string $date   YYYY-MM-DD in UTC
+     */
+    private static function updateStreakForDate(int $userId, string $date): void
+    {
+        $statsKey   = sprintf(self::KEY_STATS, $userId);
+        $bitmapKey  = sprintf(self::KEY_UPLOAD_BITMAP, $userId);
+        $dayIdx     = self::dayIndex($date);
+
+        // Atomically read yesterday + set today
+        $res = self::bitfield(Redis::connection(), $bitmapKey, $dayIdx);
+
+        $hadYesterday = ($res[0] ?? 0) === 1;
+        $curStreak    = (int) Redis::hGet($statsKey, 'streak') ?: 0;
+        $newStreak    = $hadYesterday ? $curStreak + 1 : 1;
+
+        if ($newStreak !== $curStreak) {
+            Redis::hSet($statsKey, 'streak', $newStreak);
+        }
+    }
+
+    /**
+     * Atomically read yesterday's bit and set today's bit to 1.
+     * Works on a plain Redis connection **or** inside a pipeline.
+     *
+     * @param  mixed   $connOrPipe  Redis|Pipeline|Predis\Client
+     * @param  string  $key         Bitmap key ({u:id}:up)
+     * @param  int     $dayIdx      Days since Unix epoch (UTC)
+     * @return mixed                • outside pipeline → array [yesterdayBit, todayBit]
+     *                              • inside pipeline  → null|bool placeholder
+     */
+    private static function bitfield($connOrPipe, string $key, int $dayIdx): mixed
+    {
+        return self::sendRaw(
+            $connOrPipe,
+            [
+                'BITFIELD', $key,
+                'GET', 'u1', (string)($dayIdx - 1),   // yesterday?
+                'SET', 'u1', (string)$dayIdx, '1'     // mark today
+            ]
+        );
+    }
+
+    /**
+     * Send a module command inside or outside a pipeline.
+     */
+    private static function sendRaw($connOrPipe, array $cmd): mixed
+    {
+        // Convert all arguments to strings to avoid scalar type errors
+        $cmd = array_map(function ($arg) {
+            return (string) $arg;
+        }, $cmd);
+
+        // PhpRedis: Redis|RedisCluster|Pipeline all have rawCommand()
+        if (method_exists($connOrPipe, 'rawCommand')) {
+            return $connOrPipe->rawCommand(...$cmd);
+        }
+
+        // Predis: Client and Pipeline objects have executeRaw(array $cmd)
+        if (method_exists($connOrPipe, 'executeRaw')) {
+            return $connOrPipe->executeRaw($cmd);
+        }
+
+        throw new \RuntimeException('No raw Redis command method found');
     }
 
     /**
@@ -576,37 +729,34 @@ final class RedisMetricsCollector
     {
         $idMaps = [];
 
+        // Define the dimension type mapping for TagKeyCache
+        $dimensionTypes = [
+            'categories'   => 'category',
+            'objects'      => 'object',
+            'materials'    => 'material',
+            'brands'       => 'brand',
+            'custom_tags'  => 'customTag',
+        ];
+
         foreach ($stringTags as $dim => $tagSet) {
-
-            /** 1. Which SQL table holds this dimension? */
-            $table = self::DIM_TO_TABLE[$dim] ?? null;
-            if (!$table) {
-                $idMaps[$dim] = [];
-                continue;
-            }
-
-            $dimension = Dimension::tryFrom($dim)
-                ?? self::PLURAL_TO_ENUM[$dim]
-                ?? null;
-
-            // Skip unknown dimension keys (should not happen)
-            if (!$dimension) {
+            $dimensionType = $dimensionTypes[$dim] ?? null;
+            if (!$dimensionType) {
                 $idMaps[$dim] = [];
                 continue;
             }
 
             $strings = array_keys($tagSet);
-            if ($strings === []) {
+            if (empty($strings)) {
                 $idMaps[$dim] = [];
                 continue;
             }
 
-            // 2. Ask the cache for ids - PASS THE TABLE NAME, NOT THE DIMENSION VALUE
-            $raw = TagKeyCache::idsBatch($table, $strings);
-            $firstKey = array_key_first($raw);
-
-            // 3. Orient to string → id
-            $idMaps[$dim] = is_numeric($firstKey) ? array_flip($raw) : $raw;
+            // Get or create IDs for all strings
+            $idMaps[$dim] = [];
+            foreach ($strings as $string) {
+                $id = TagKeyCache::getOrCreateId($dimensionType, $string);
+                $idMaps[$dim][$string] = $id;
+            }
         }
 
         return $idMaps;
