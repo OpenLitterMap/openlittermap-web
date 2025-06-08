@@ -42,6 +42,7 @@ class AchievementsSeeder extends Seeder
             'categories',
             'materials',
             'brands',
+            'streak',
         ];
 
         foreach ($types as $type) {
