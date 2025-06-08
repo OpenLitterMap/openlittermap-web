@@ -230,8 +230,42 @@ final class TagKeyCache
         return array_intersect_key($map, array_flip($ids));
     }
 
+    public static function resolveBatch(string $dim, array $keys): array
+    {
+        if (empty($keys)) {
+            return [];
+        }
+
+        $existing = self::get($dim);
+        $result = [];
+        $missing = [];
+
+        // Check what we already have
+        foreach ($keys as $key) {
+            if (isset($existing[$key])) {
+                $result[$key] = $existing[$key];
+            } else {
+                $missing[] = $key;
+            }
+        }
+
+        // Create missing ones
+        foreach ($missing as $key) {
+            $result[$key] = self::getOrCreateId($dim, $key);
+        }
+
+        return $result;
+    }
+
+    public static function getKeysForIds(string $dimension, array $ids): array
+    {
+        $table = Dimension::from($dimension)->table();
+        return self::keysBatch($table, $ids);
+    }
+
+
     /* --------------------------------------------------------------------- */
-    /* Pre-warm & invalidation                                               */
+    /* Pre-warm                                  */
     /* --------------------------------------------------------------------- */
 
     public static function preload(Dimension $dimension): void
@@ -262,6 +296,10 @@ final class TagKeyCache
         }
     }
 
+    /* --------------------------------------------------------------------- */
+    /* Invalidation                                                          */
+    /* --------------------------------------------------------------------- */
+
     public static function forget(string $dim): void
     {
         $dimension = Dimension::from($dim);
@@ -281,11 +319,5 @@ final class TagKeyCache
         foreach (Dimension::cases() as $d) {
             self::forget($d->value);
         }
-    }
-
-    public static function getKeysForIds(string $dimension, array $ids): array
-    {
-        $table = Dimension::from($dimension)->table();
-        return self::keysBatch($table, $ids);
     }
 }

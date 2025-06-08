@@ -348,40 +348,96 @@ final class RedisMetricsCollector
             ],
             'totalUploads' => 0,
             'totalXp' => 0,
-            'photoIds' => [],
             'dateGroups' => [],
             'timeSeriesByMonth' => [],
             'geoScoped' => [],
-            'photosByYear' => []
         ];
 
+        // Create references once
+        $deltaCats =& $result['deltas']['categories'];
+        $deltaObjs =& $result['deltas']['objects'];
+        $deltaMats =& $result['deltas']['materials'];
+        $deltaBrands =& $result['deltas']['brands'];
+        $deltaCustom =& $result['deltas']['custom_tags'];
+
+        $stringCats =& $result['stringTags']['categories'];
+        $stringObjs =& $result['stringTags']['objects'];
+        $stringMats =& $result['stringTags']['materials'];
+        $stringBrands =& $result['stringTags']['brands'];
+        $stringCustom =& $result['stringTags']['custom_tags'];
+
         foreach ($photos as $photo) {
-            $result['photoIds'][] = $photo->id;
             $result['totalUploads']++;
             $xp = (int) ($photo->xp ?? 0);
             $result['totalXp'] += $xp;
 
-            $ts = ($photo->created_at ?? now())->setTimezone('UTC');
-            $date = $ts->format('Y-m-d');
-            $monthTag = '{g}:' . $ts->format('Y-m');
+            // Use timestamp directly
+            $ts = $photo->created_at ? $photo->created_at->getTimestamp() : time();
+            $date = gmdate('Y-m-d', $ts);
+            $monthTag = '{g}:' . gmdate('Y-m', $ts);
 
             // Track dates
             $result['dateGroups'][$date] = true;
 
-            // Time series
-            $result['timeSeriesByMonth'][$monthTag] = [
-                'photos' => ($result['timeSeriesByMonth'][$monthTag]['photos'] ?? 0) + 1,
-                'xp' => ($result['timeSeriesByMonth'][$monthTag]['xp'] ?? 0) + $xp,
-            ];
+            // Time series - use references
+            if (!isset($result['timeSeriesByMonth'][$monthTag])) {
+                $result['timeSeriesByMonth'][$monthTag] = ['photos' => 0, 'xp' => 0];
+            }
+            $result['timeSeriesByMonth'][$monthTag]['photos']++;
+            $result['timeSeriesByMonth'][$monthTag]['xp'] += $xp;
 
-            // Geo scoped
-            foreach (self::geoScopes($photo->country_id, $photo->state_id, $photo->city_id) as $scope) {
-                $key = "$scope|$date";
-                $result['geoScoped'][$key] = ($result['geoScoped'][$key] ?? 0) + 1;
+            // Geo scoped - build key once
+            if ($photo->country_id || $photo->state_id || $photo->city_id) {
+                $scopes = ['{g}'];
+                if ($photo->country_id) $scopes[] = "c:{$photo->country_id}";
+                if ($photo->state_id) $scopes[] = "s:{$photo->state_id}";
+                if ($photo->city_id) $scopes[] = "ci:{$photo->city_id}";
+
+                foreach ($scopes as $scope) {
+                    $key = "$scope|$date";
+                    $result['geoScoped'][$key] = ($result['geoScoped'][$key] ?? 0) + 1;
+                }
             }
 
-            // Extract tags with type safety
-            self::extractTagsFromPhoto($photo, $result['deltas'], $result['stringTags']);
+            // Process tags
+            foreach ($photo->summary['tags'] ?? [] as $catStr => $objects) {
+                if (!is_string($catStr)) continue;
+
+                $stringCats[$catStr] = true;
+
+                foreach ($objects as $objStr => $data) {
+                    if (!is_string($objStr)) continue;
+
+                    $q = (int) ($data['quantity'] ?? 0);
+                    if ($q <= 0) continue;
+
+                    $stringObjs[$objStr] = true;
+                    $deltaCats[$catStr] = ($deltaCats[$catStr] ?? 0) + $q;
+                    $deltaObjs[$objStr] = ($deltaObjs[$objStr] ?? 0) + $q;
+
+                    // Process sub-dimensions inline for better performance
+                    foreach ($data['materials'] ?? [] as $mat => $matQ) {
+                        if (is_string($mat) && ($matQ = (int)$matQ) > 0) {
+                            $stringMats[$mat] = true;
+                            $deltaMats[$mat] = ($deltaMats[$mat] ?? 0) + $matQ;
+                        }
+                    }
+
+                    foreach ($data['brands'] ?? [] as $brand => $brandQ) {
+                        if (is_string($brand) && ($brandQ = (int)$brandQ) > 0) {
+                            $stringBrands[$brand] = true;
+                            $deltaBrands[$brand] = ($deltaBrands[$brand] ?? 0) + $brandQ;
+                        }
+                    }
+
+                    foreach ($data['custom_tags'] ?? [] as $tag => $tagQ) {
+                        if (is_string($tag) && ($tagQ = (int)$tagQ) > 0) {
+                            $stringCustom[$tag] = true;
+                            $deltaCustom[$tag] = ($deltaCustom[$tag] ?? 0) + $tagQ;
+                        }
+                    }
+                }
+            }
         }
 
         return $result;
@@ -728,39 +784,13 @@ final class RedisMetricsCollector
      */
     private static function resolveAllTags(array $stringTags): array
     {
-        $idMaps = [];
-
-        // Define the dimension type mapping for TagKeyCache
-        $dimensionTypes = [
-            'categories'   => 'category',
-            'objects'      => 'object',
-            'materials'    => 'material',
-            'brands'       => 'brand',
-            'custom_tags'  => 'customTag',
+        return [
+            'categories' => TagKeyCache::resolveBatch('category', array_keys($stringTags['categories'] ?? [])),
+            'objects' => TagKeyCache::resolveBatch('object', array_keys($stringTags['objects'] ?? [])),
+            'materials' => TagKeyCache::resolveBatch('material', array_keys($stringTags['materials'] ?? [])),
+            'brands' => TagKeyCache::resolveBatch('brand', array_keys($stringTags['brands'] ?? [])),
+            'custom_tags' => TagKeyCache::resolveBatch('customTag', array_keys($stringTags['custom_tags'] ?? [])),
         ];
-
-        foreach ($stringTags as $dim => $tagSet) {
-            $dimensionType = $dimensionTypes[$dim] ?? null;
-            if (!$dimensionType) {
-                $idMaps[$dim] = [];
-                continue;
-            }
-
-            $strings = array_keys($tagSet);
-            if (empty($strings)) {
-                $idMaps[$dim] = [];
-                continue;
-            }
-
-            // Get or create IDs for all strings
-            $idMaps[$dim] = [];
-            foreach ($strings as $string) {
-                $id = TagKeyCache::getOrCreateId($dimensionType, $string);
-                $idMaps[$dim][$string] = $id;
-            }
-        }
-
-        return $idMaps;
     }
 
     /**
