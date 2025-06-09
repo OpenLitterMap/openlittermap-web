@@ -433,10 +433,7 @@ class User extends Authenticatable
         return $this->belongsToMany(
             Achievement::class,
             'user_achievements'
-        )
-        ->using(UserAchievement::class)
-        ->withPivot(['unlocked_at','progress','target','snapshot'])
-        ->withTimestamps();
+        );
     }
 
     /**
@@ -591,5 +588,206 @@ class User extends Authenticatable
             'linkedin' => $this->setting('social_linkedin'),
             'reddit' => $this->setting('social_reddit'),
         ]);
+    }
+
+    public function analyzePhotoSummaries($limit = 100)
+    {
+        $photos = $this->photos()
+            ->whereNotNull('summary')
+            ->orderBy('created_at', 'desc')
+            ->limit($limit)
+            ->get(['id', 'created_at', 'summary', 'xp', 'total_tags', 'total_brands']);
+
+        if ($photos->isEmpty()) {
+            echo "No photos found with summaries.\n";
+            return;
+        }
+
+        // Initialize aggregators
+        $totalStats = [
+            'photo_count' => 0,
+            'total_xp' => 0,
+            'total_tags' => 0,
+            'total_objects' => 0,
+            'total_materials' => 0,
+            'total_brands' => 0,
+            'total_custom_tags' => 0,
+            'categories' => [],
+            'objects' => [],
+            'materials' => [],
+            'brands' => [],
+            'custom_tags' => [],
+            'by_category' => [],
+        ];
+
+        echo "Analyzing {$photos->count()} photos for user {$this->name} (#{$this->id})\n";
+        echo str_repeat("=", 80) . "\n\n";
+
+        // Process each photo
+        foreach ($photos as $index => $photo) {
+            $photoNum = $index + 1;
+            $summary = $photo->summary;
+
+            echo "Photo #{$photoNum} (ID: {$photo->id}) - Created: {$photo->created_at->format('Y-m-d H:i:s')}\n";
+            echo str_repeat("-", 40) . "\n";
+
+            // Display photo totals
+            $totals = $summary['totals'] ?? [];
+            echo "  Total tags: " . ($totals['total_tags'] ?? 0) . "\n";
+            echo "  Total objects: " . ($totals['total_objects'] ?? 0) . "\n";
+            echo "  Materials: " . ($totals['materials'] ?? 0) . "\n";
+            echo "  Brands: " . ($totals['brands'] ?? 0) . "\n";
+            echo "  Custom tags: " . ($totals['custom_tags'] ?? 0) . "\n";
+            echo "  XP earned: {$photo->xp}\n";
+
+            // Show category breakdown
+            if (!empty($totals['by_category'])) {
+                echo "  Categories: ";
+                $catBreakdown = [];
+                foreach ($totals['by_category'] as $cat => $count) {
+                    $catBreakdown[] = "$cat($count)";
+                }
+                echo implode(', ', $catBreakdown) . "\n";
+            }
+
+            // Show tag details
+            if (!empty($summary['tags'])) {
+                echo "\n  Detailed breakdown:\n";
+                foreach ($summary['tags'] as $category => $objects) {
+                    foreach ($objects as $object => $data) {
+                        echo "    [{$category}] {$object}: {$data['quantity']}";
+
+                        $extras = [];
+                        if (!empty($data['materials'])) {
+                            $matList = [];
+                            foreach ($data['materials'] as $mat => $qty) {
+                                $matList[] = "$mat($qty)";
+                            }
+                            $extras[] = "materials: " . implode(', ', $matList);
+                        }
+                        if (!empty($data['brands'])) {
+                            $brandList = [];
+                            foreach ($data['brands'] as $brand => $qty) {
+                                $brandList[] = "$brand($qty)";
+                            }
+                            $extras[] = "brands: " . implode(', ', $brandList);
+                        }
+                        if (!empty($data['custom_tags'])) {
+                            $customList = [];
+                            foreach ($data['custom_tags'] as $custom => $qty) {
+                                $customList[] = "$custom($qty)";
+                            }
+                            $extras[] = "custom: " . implode(', ', $customList);
+                        }
+
+                        if (!empty($extras)) {
+                            echo " - " . implode(' | ', $extras);
+                        }
+                        echo "\n";
+                    }
+                }
+            }
+
+            echo "\n";
+
+            // Aggregate data
+            $totalStats['photo_count']++;
+            $totalStats['total_xp'] += $photo->xp;
+            $totalStats['total_tags'] += $totals['total_tags'] ?? 0;
+            $totalStats['total_objects'] += $totals['total_objects'] ?? 0;
+            $totalStats['total_materials'] += $totals['materials'] ?? 0;
+            $totalStats['total_brands'] += $totals['brands'] ?? 0;
+            $totalStats['total_custom_tags'] += $totals['custom_tags'] ?? 0;
+
+            // Aggregate by category
+            foreach ($totals['by_category'] ?? [] as $cat => $count) {
+                $totalStats['by_category'][$cat] = ($totalStats['by_category'][$cat] ?? 0) + $count;
+            }
+
+            // Aggregate individual items
+            foreach ($summary['tags'] ?? [] as $category => $objects) {
+                $totalStats['categories'][$category] = ($totalStats['categories'][$category] ?? 0) + 1;
+
+                foreach ($objects as $object => $data) {
+                    $totalStats['objects'][$object] = ($totalStats['objects'][$object] ?? 0) + $data['quantity'];
+
+                    foreach ($data['materials'] ?? [] as $mat => $qty) {
+                        $totalStats['materials'][$mat] = ($totalStats['materials'][$mat] ?? 0) + $qty;
+                    }
+
+                    foreach ($data['brands'] ?? [] as $brand => $qty) {
+                        $totalStats['brands'][$brand] = ($totalStats['brands'][$brand] ?? 0) + $qty;
+                    }
+
+                    foreach ($data['custom_tags'] ?? [] as $custom => $qty) {
+                        $totalStats['custom_tags'][$custom] = ($totalStats['custom_tags'][$custom] ?? 0) + $qty;
+                    }
+                }
+            }
+        }
+
+        // Display total report
+        echo str_repeat("=", 80) . "\n";
+        echo "TOTAL REPORT FOR {$totalStats['photo_count']} PHOTOS\n";
+        echo str_repeat("=", 80) . "\n\n";
+
+        echo "Overall Statistics:\n";
+        echo "  Total XP earned: " . number_format($totalStats['total_xp']) . "\n";
+        echo "  Total tags: " . number_format($totalStats['total_tags']) . "\n";
+        echo "  Total objects: " . number_format($totalStats['total_objects']) . "\n";
+        echo "  Total materials: " . number_format($totalStats['total_materials']) . "\n";
+        echo "  Total brands: " . number_format($totalStats['total_brands']) . "\n";
+        echo "  Total custom tags: " . number_format($totalStats['total_custom_tags']) . "\n";
+        echo "  Average tags per photo: " . round($totalStats['total_tags'] / $totalStats['photo_count'], 1) . "\n";
+        echo "  Average XP per photo: " . round($totalStats['total_xp'] / $totalStats['photo_count'], 1) . "\n";
+
+        echo "\nCategory Distribution:\n";
+        arsort($totalStats['by_category']);
+        foreach ($totalStats['by_category'] as $cat => $count) {
+            $percentage = round(($count / $totalStats['total_tags']) * 100, 1);
+            echo "  {$cat}: " . number_format($count) . " ({$percentage}%)\n";
+        }
+
+        echo "\nTop 10 Objects:\n";
+        arsort($totalStats['objects']);
+        $topObjects = array_slice($totalStats['objects'], 0, 10, true);
+        foreach ($topObjects as $obj => $count) {
+            echo "  {$obj}: " . number_format($count) . "\n";
+        }
+
+        if (!empty($totalStats['materials'])) {
+            echo "\nTop Materials:\n";
+            arsort($totalStats['materials']);
+            $topMaterials = array_slice($totalStats['materials'], 0, 10, true);
+            foreach ($topMaterials as $mat => $count) {
+                echo "  {$mat}: " . number_format($count) . "\n";
+            }
+        }
+
+        if (!empty($totalStats['brands'])) {
+            echo "\nTop Brands:\n";
+            arsort($totalStats['brands']);
+            $topBrands = array_slice($totalStats['brands'], 0, 10, true);
+            foreach ($topBrands as $brand => $count) {
+                echo "  {$brand}: " . number_format($count) . "\n";
+            }
+        }
+
+        if (!empty($totalStats['custom_tags'])) {
+            echo "\nCustom Tags:\n";
+            arsort($totalStats['custom_tags']);
+            foreach ($totalStats['custom_tags'] as $custom => $count) {
+                echo "  {$custom}: " . number_format($count) . "\n";
+            }
+        }
+
+        echo "\nUnique Counts:\n";
+        echo "  Categories used: " . count($totalStats['categories']) . "\n";
+        echo "  Unique objects: " . count($totalStats['objects']) . "\n";
+        echo "  Unique materials: " . count($totalStats['materials']) . "\n";
+        echo "  Unique brands: " . count($totalStats['brands']) . "\n";
+        echo "  Unique custom tags: " . count($totalStats['custom_tags']) . "\n";
+
+        return $totalStats;
     }
 }
