@@ -4,7 +4,6 @@ namespace App\Models\Users;
 
 use App\Level;
 use App\Models\Achievements\Achievement;
-use App\Models\Achievements\UserAchievement;
 use App\Models\Badges\Badge;
 use App\Payment;
 use App\Models\Photo;
@@ -22,7 +21,6 @@ use LaravelAndVueJS\Traits\LaravelPermissionToVueJS;
 
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

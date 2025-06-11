@@ -1,18 +1,17 @@
-import { useModalStore } from "../modal/index.js";
+import { useModalStore } from '../modal/index.js';
 
 export const requests = {
-
-    async CHECK_AUTH ()
-    {
-        await axios.get('/check-auth')
-            .then(response => {
+    async CHECK_AUTH() {
+        await axios
+            .get('/check-auth')
+            .then((response) => {
                 console.log('check_auth', response);
 
                 if (!response.data.success) {
                     this.$reset();
                 }
             })
-            .catch(error => {
+            .catch((error) => {
                 console.log('error.check_auth', error);
             });
     },
@@ -22,16 +21,16 @@ export const requests = {
      *
      * Also checks for auth on app load.
      */
-    async GET_CURRENT_USER ()
-    {
-        await axios.get('/current-user')
-            .then(response => {
+    async GET_CURRENT_USER() {
+        await axios
+            .get('/current-user')
+            .then((response) => {
                 console.log('get_current_user', response);
 
                 // context.commit('initUser', response.data);
                 // context.commit('set_default_litter_picked_up', response.data.picked_up);
             })
-            .catch(error => {
+            .catch((error) => {
                 console.log('error.get_current_user', error);
             });
     },
@@ -40,34 +39,38 @@ export const requests = {
      * Try to log the user in
      * Todo - return the user object
      */
-    async LOGIN (payload)
-    {
-        await axios.post('/login', {
-            email: payload.email,
-            password: payload.password
-        })
-            .then(response => {
-                const modalStore = useModalStore();
-                modalStore.hideModal();
-                this.auth = true;
+    async LOGIN(payload) {
+        try {
+            await axios
+                .post('/login', {
+                    email: payload.email,
+                    password: payload.password,
+                })
+                .then((response) => {
+                    const modalStore = useModalStore();
+                    modalStore.hideModal();
+                    this.auth = true;
 
-                // we need to force page refresh to put CSRF token in the session
-                window.location.href = '/upload';
-            })
-            .catch(error => {
-                console.log('error.login', error.response.data);
+                    // we need to force page refresh to put CSRF token in the session
+                    window.location.href = '/upload';
+                })
+                .catch((error) => {
+                    console.log('error.login', error.response.data);
 
-                this.errorLogin = error.response.data.email;
-            });
+                    this.errorLogin = error.response.data.email;
+                });
+        } catch (error) {
+            console.log('error.get_csrf_cookie', error);
+        }
     },
 
     /**
      * Try to log the user out
      */
-    async LOGOUT ()
-    {
-        await axios.get('/logout')
-            .then(response => {
+    async LOGOUT() {
+        await axios
+            .get('/logout')
+            .then((response) => {
                 console.log('logout', response);
 
                 this.logout();
@@ -77,8 +80,8 @@ export const requests = {
 
                 window.location.href = '/';
             })
-            .catch(error => {
+            .catch((error) => {
                 console.log('error.logout', error);
             });
     },
-}
+};

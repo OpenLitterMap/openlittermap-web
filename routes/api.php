@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Achievements\AchievementsController;
 use App\Http\Controllers\ApiPhotosController;
 use App\Models\Littercoin;
 
@@ -96,35 +97,22 @@ Route::get('/check-web-photos', [ApiPhotosController::class, 'check'])
 /**
  * Settings
  */
-Route::post('/settings/privacy/maps/name', 'ApiSettingsController@mapsName')
-    ->middleware('auth:api');
+Route::post('/settings/privacy/maps/name', 'ApiSettingsController@mapsName')->middleware('auth:api');
+Route::post('/settings/privacy/maps/username', 'ApiSettingsController@mapsUsername')->middleware('auth:api');
+Route::post('/settings/privacy/leaderboard/name', 'ApiSettingsController@leaderboardName')->middleware('auth:api');
+Route::post('/settings/privacy/leaderboard/username', 'ApiSettingsController@leaderboardUsername')->middleware('auth:api');
+Route::post('/settings/privacy/createdby/name', 'ApiSettingsController@createdByName')->middleware('auth:api');
+Route::post('/settings/privacy/createdby/username', 'ApiSettingsController@createdByUsername')->middleware('auth:api');
+Route::post('/settings/update', 'ApiSettingsController@update')->middleware('auth:api');
+Route::post('/settings/privacy/toggle-previous-tags', 'ApiSettingsController@togglePreviousTags')->middleware('auth:api');
+Route::patch('/settings', 'SettingsController@update')->middleware('auth:api');
+Route::post('/settings/delete-account', 'API\DeleteAccountController')->middleware('auth:api');
 
-Route::post('/settings/privacy/maps/username', 'ApiSettingsController@mapsUsername')
-    ->middleware('auth:api');
-
-Route::post('/settings/privacy/leaderboard/name', 'ApiSettingsController@leaderboardName')
-    ->middleware('auth:api');
-
-Route::post('/settings/privacy/leaderboard/username', 'ApiSettingsController@leaderboardUsername')
-    ->middleware('auth:api');
-
-Route::post('/settings/privacy/createdby/name', 'ApiSettingsController@createdByName')
-    ->middleware('auth:api');
-
-Route::post('/settings/privacy/createdby/username', 'ApiSettingsController@createdByUsername')
-    ->middleware('auth:api');
-
-Route::post('/settings/update', 'ApiSettingsController@update')
-    ->middleware('auth:api');
-
-Route::post('/settings/privacy/toggle-previous-tags', 'ApiSettingsController@togglePreviousTags')
-    ->middleware('auth:api');
-
-Route::patch('/settings', 'SettingsController@update')
-    ->middleware('auth:api');
-
-Route::post('/settings/delete-account', 'API\DeleteAccountController')
-    ->middleware('auth:api');
+/**
+ * Sanctum Authenticated Routes
+ */
+Route::middleware('auth:sanctum')
+    ->get('/achievements', [AchievementsController::class, 'index']);
 
 /**
  * Littercoin

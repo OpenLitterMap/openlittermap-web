@@ -13,6 +13,7 @@ import Welcome from '../views/Welcome/Welcome.vue';
 import middlewarePipeline from './middleware/middlewarePipeline';
 import auth from './middleware/auth';
 import Countries from '../views/Locations/Countries.vue';
+import Achievements from '../views/Achievements/Achievements.vue';
 
 const routes = [
     {
@@ -63,6 +64,14 @@ const routes = [
         path: '/upload',
         name: 'Upload',
         component: Upload,
+        meta: {
+            middleware: [auth],
+        },
+    },
+    {
+        path: '/achievements',
+        name: 'Achievements',
+        component: Achievements,
         meta: {
             middleware: [auth],
         },

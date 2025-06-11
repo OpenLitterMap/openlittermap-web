@@ -120,12 +120,13 @@ Route::get('/global/leaderboard', GetUsersForGlobalLeaderboardController::class)
 Route::get('/global/leaderboard/location', GetUsersForLocationLeaderboardController::class);
 
 /** Auth Routes */
-
 // Get currently auth user when logged in
 Route::get('/current-user', 'UsersController@getAuthUser');
 
 // Upload page
 Route::get('upload', HomeController::class)->name('upload');
+
+Route::get('achievements', HomeController::class);
 
 // Move more authenticated routes into this group instead of applying middleware on controllers
 Route::group(['middleware' => 'auth'], function () {

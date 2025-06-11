@@ -1,12 +1,8 @@
 <template>
     <!-- Title, Subtitle, App Icons -->
     <div class="md:flex mb-10">
-        <div class="flex-1 md:pr-10">
-            <transition
-                v-if="headings.length > 0"
-                name="slide-fade-left"
-                mode="out-in"
-            >
+        <div class="flex-1 md:pr-10 lg:pr-22">
+            <transition v-if="headings.length > 0" name="slide-fade-left" mode="out-in">
                 <h1
                     v-if="activeHeading.title"
                     class="main-title"
@@ -15,13 +11,11 @@
                 ></h1>
             </transition>
 
-            <h2 class="main-subtitle text-gray-text">
-                {{ $t('home.welcome.help-us') }}.
-            </h2>
+            <h2 class="main-subtitle text-gray-text">{{ $t('home.welcome.help-us') }}.</h2>
 
             <!-- Download app icons -->
             <div class="flex my-[-2em] md:my-0">
-                <img :src="iosIcon" class="max-h-[10rem] mr-4 cursor-pointer" @click="ios" alt="ios logo"/>
+                <img :src="iosIcon" class="max-h-[10rem] mr-4 cursor-pointer" @click="ios" alt="ios logo" />
                 <img :src="androidIcon" class="max-h-[10rem] cursor-pointer" @click="android" alt="android logo" />
             </div>
         </div>
@@ -29,11 +23,7 @@
         <div class="flex-1">
             <div class="top-image">
                 <transition name="slide-fade-right" mode="out-in">
-                    <img
-                        :key="activeHeading.title"
-                        :src="activeHeading.img"
-                        :alt="activeHeading.title"
-                    />
+                    <img :key="activeHeading.title" :src="activeHeading.img" :alt="activeHeading.title" />
                 </transition>
             </div>
         </div>
@@ -41,8 +31,8 @@
 </template>
 
 <script setup>
-import iosIcon from "@/assets/icons/ios.png";
-import androidIcon from "@/assets/icons/android.png";
+import iosIcon from '@/assets/icons/ios.png';
+import androidIcon from '@/assets/icons/android.png';
 
 import { useI18n } from 'vue-i18n';
 const { t } = useI18n();
@@ -100,60 +90,56 @@ onMounted(() => {
 });
 </script>
 
-
 <style scoped>
-
-    /* Mobile view */
-    @media (max-width: 768px) {
-        .top-image {
-            height: 400px;
-        }
+/* Mobile view */
+@media (max-width: 768px) {
+    .top-image {
+        height: 400px;
     }
+}
 
-    /* Extra small */
-    @media (max-width: 576px) {
-        .top-image {
-            height: 260px;
-        }
-
+/* Extra small */
+@media (max-width: 576px) {
+    .top-image {
+        height: 260px;
     }
+}
 
-    /** Text Animation */
+/** Text Animation */
 
-    .slide-fade-left-enter-from,
-    .slide-fade-left-leave-to {
-        transform: translateX(-100px);
-        opacity: 0;
-    }
+.slide-fade-left-enter-from,
+.slide-fade-left-leave-to {
+    transform: translateX(-100px);
+    opacity: 0;
+}
 
-    .slide-fade-left-enter-active,
-    .slide-fade-left-leave-active {
-        transition: all 0.5s ease; /* or ease-in if you prefer */
-    }
+.slide-fade-left-enter-active,
+.slide-fade-left-leave-active {
+    transition: all 0.5s ease; /* or ease-in if you prefer */
+}
 
-    .slide-fade-left-enter-to,
-    .slide-fade-left-leave-from {
-        transform: translateX(0);
-        opacity: 1;
-    }
+.slide-fade-left-enter-to,
+.slide-fade-left-leave-from {
+    transform: translateX(0);
+    opacity: 1;
+}
 
-    /** Image Animation */
+/** Image Animation */
 
-    .slide-fade-right-enter-from,
-    .slide-fade-right-leave-to {
-        transform: translateX(100px);
-        opacity: 0;
-    }
+.slide-fade-right-enter-from,
+.slide-fade-right-leave-to {
+    transform: translateX(100px);
+    opacity: 0;
+}
 
-    .slide-fade-right-enter-active,
-    .slide-fade-right-leave-active {
-        transition: all 0.5s ease;
-    }
+.slide-fade-right-enter-active,
+.slide-fade-right-leave-active {
+    transition: all 0.5s ease;
+}
 
-    .slide-fade-right-enter-to,
-    .slide-fade-right-leave-from {
-        transform: translateX(0);
-        opacity: 1;
-    }
-
+.slide-fade-right-enter-to,
+.slide-fade-right-leave-from {
+    transform: translateX(0);
+    opacity: 1;
+}
 </style>

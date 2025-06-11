@@ -13,14 +13,13 @@
 </template>
 
 <script setup>
-import Intro from "./components/Intro.vue";
-import WhyHow from "./components/WhyHow.vue";
+import Intro from './components/Intro.vue';
+import WhyHow from './components/WhyHow.vue';
 import Partners from './components/Partners.vue';
 import Footer from './components/Footer.vue';
 </script>
 
 <style scoped lang="scss">
-
 //    .c-1 {
 //        margin-bottom: 3em;
 //    }
@@ -82,5 +81,4 @@ import Footer from './components/Footer.vue';
 //    }
 //
 //
-
 </style>
