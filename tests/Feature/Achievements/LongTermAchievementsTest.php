@@ -629,7 +629,9 @@ class LongTermAchievementsTest extends TestCase
 
         RedisMetricsCollector::queue($emptyPhoto);
         $unlocked = $this->engine->evaluate($user->id);
-        $this->assertCount(1, $unlocked); // Should only unlock uploads-1
+        $this->assertCount(2, $unlocked); // Should unlock uploads-1 and streak-1
+        $this->assertTrue($unlocked->where('type', 'uploads')->isNotEmpty());
+        $this->assertTrue($unlocked->where('type', 'streak')->isNotEmpty());
 
         // Test 2: Photo with very large quantities
         $largePhoto = $this->createPhotoWithQuantity($user, 1000);
