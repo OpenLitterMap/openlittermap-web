@@ -19,7 +19,6 @@ class AchievementRepository
                 ->select('id', 'type', 'tag_id', 'threshold', 'metadata')
                 ->get()
                 ->map(function ($row) {
-                    // Decode metadata if it's stored as JSON
                     if (is_string($row->metadata)) {
                         $row->metadata = json_decode($row->metadata, true);
                     }

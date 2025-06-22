@@ -56,6 +56,18 @@
                         @mouseleave="webDropdownOpen = false"
                         class="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 group-hover:block"
                     >
+                        <router-link
+                            to="/admin/redis"
+                            class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
+                            >Admin - Redis</router-link
+                        >
+
+                        <!--                        <router-link-->
+                        <!--                            to="/admin/users"-->
+                        <!--                            class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"-->
+                        <!--                            >Admin - Users</router-link-->
+                        <!--                        >-->
+
                         <router-link to="/tag" class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
                             >Add Tags</router-link
                         >

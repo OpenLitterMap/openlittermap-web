@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\UsersController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ContactUsController;
@@ -114,10 +115,6 @@ Route::get('/global/points', [GlobalMapController::class, 'index']);
 Route::get('/global/art-data', [GlobalMapController::class, 'artData']);
 
 Route::get('/global/search/custom-tags', 'GlobalMap\Search\FindCustomTagsController');
-
-// Get data for the Global Leaderboard
-Route::get('/global/leaderboard', GetUsersForGlobalLeaderboardController::class);
-Route::get('/global/leaderboard/location', GetUsersForLocationLeaderboardController::class);
 
 /** Auth Routes */
 // Get currently auth user when logged in
@@ -388,9 +385,14 @@ Route::group(['prefix' => '/admin', 'middleware' => 'admin'], function () {
 
     // Merchants
     Route::get('/merchants', HomeController::class);
-
     Route::post('/merchants/approve', 'Littercoin\Merchants\ApproveMerchantController');
     Route::post('/merchants/delete', 'Littercoin\Merchants\DeleteMerchantController');
+
+    // Redis Data
+    Route::get('/redis', HomeController::class);
+
+    // Users routes
+    Route::get('/users', HomeController::class);
 });
 
 Route::group(['prefix' => '/bbox', 'middleware' => ['can_bbox']], function () {

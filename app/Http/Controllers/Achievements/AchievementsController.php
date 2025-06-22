@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Achievements;
 
 use App\Http\Controllers\Controller;
 use App\Models\Litter\Tags\Category;
-use App\Models\Litter\Tags\LitterObject;
 use App\Services\Achievements\AchievementRepository;
 use App\Services\Redis\RedisMetricsCollector;
 use Illuminate\Http\Request;
@@ -13,156 +12,207 @@ use Illuminate\Support\Facades\DB;
 class AchievementsController extends Controller
 {
     private const ALLOWED_TYPES = [
-        'uploads',       // dimension‑wide – no tag_id
-        'streak',        // dimension‑wide – no tag_id
-        'category',
+        'uploads',
+        'streak',
         'categories',
-        'object',
+        'category',
         'objects',
+        'object',
     ];
 
     public function __construct(private AchievementRepository $repository) {}
 
     /**
-     * Return all unlocked achievements for the user **plus** the next one
-     * that can be unlocked per (dimension, tag) pair.
-     *
-     * Excludes Brands, Materials and CustomTags – those will be brought in later.
+     * Return hierarchically organized achievements
      */
     public function index(Request $request)
     {
         $user = $request->user();
         $userId = $user->id;
 
-        // 1) caches ----------------------------------------------------------
+        // \Log::info('User counts from Redis', RedisMetricsCollector::getUserCounts($userId));
+
+        // Get cached data
         $unlockedIds = $this->repository->getUnlockedAchievementIds($userId);
-        $counts      = RedisMetricsCollector::getUserCounts($userId); // fast – hits Redis
+        $counts = RedisMetricsCollector::getUserCounts($userId);
 
-        // 2) build response ---------------------------------------------------
-        $achievements = $this->buildAchievements($unlockedIds, $counts);
+        // Build hierarchical response
+        $response = [
+            'overview' => $this->buildOverview($unlockedIds, $counts),
+            'categories' => $this->buildCategoriesWithObjects($unlockedIds, $counts),
+            'summary' => $this->buildSummary($userId)
+        ];
 
-        // 3) overall summary --------------------------------------------------
-        $total = DB::table('achievements')
-            ->whereIn('type', self::ALLOWED_TYPES)
-            ->count();
-
-        // Count only unlocked achievements of allowed types
-        $unlockedTotal = DB::table('user_achievements')
-            ->join('achievements', 'user_achievements.achievement_id', '=', 'achievements.id')
-            ->where('user_achievements.user_id', $userId)
-            ->whereIn('achievements.type', self::ALLOWED_TYPES)
-            ->count();
-
-        return response()->json([
-            'achievements' => $achievements,
-            'summary'      => [
-                'total'      => $total,
-                'unlocked'   => $unlockedTotal,
-                'percentage' => $total > 0 ? (int) round(($unlockedTotal / $total) * 100) : 0,
-            ],
-        ]);
+        return response()->json($response);
     }
 
     /**
-     * Build nested achievement array grouped by type.
+     * Build overview section (dimension-wide achievements)
      */
-    private function buildAchievements(array $unlockedIds, array $counts): array
+    private function buildOverview(array $unlockedIds, array $counts): array
     {
-        $result = [];
+        return [
+            'uploads' => $this->getDimensionProgress('uploads', null, $unlockedIds, $counts),
+            'streak' => $this->getDimensionProgress('streak', null, $unlockedIds, $counts),
+            'total_categories' => $this->getDimensionProgress('categories', null, $unlockedIds, $counts),
+            'total_objects' => $this->getDimensionProgress('objects', null, $unlockedIds, $counts),
+        ];
+    }
 
-        // Grab *all* relevant achievement definitions up‑front to avoid N+1s.
-        $definitions = DB::table('achievements')
-            ->whereIn('type', self::ALLOWED_TYPES)
-            ->orderBy('type')
-            ->orderByRaw('COALESCE(tag_id, 0)')
-            ->orderBy('threshold')
+    /**
+     * Build categories with nested objects
+     */
+    private function buildCategoriesWithObjects(array $unlockedIds, array $counts): array
+    {
+        // Get all categories with their objects
+        $categories = Category::where('crowdsourced', false)
+            ->with(['litterObjects'])
             ->get();
 
-        // Group by (type, tag_id)
-        $definitions->groupBy(function ($def) {
-            // Use 'null' string for dimension‑wide to keep array keys consistent
-            return $def->type . '|' . ($def->tag_id ?? 'null');
-        })->each(function ($group) use (&$result, $unlockedIds, $counts) {
-            /** @var \Illuminate\Support\Collection $group */
-            $first       = $group->first();
-            $type        = $first->type;
-            $tagId       = $first->tag_id; // may be null
-            $progress    = $this->getProgress($type, $tagId, $counts);
-            $entries     = [];
-            $addedNext   = false;
+        $result = [];
 
-            foreach ($group as $def) {
-                $isUnlocked = \in_array($def->id, $unlockedIds, true);
+        foreach ($categories as $category) {
+            $categoryData = [
+                'id' => $category->id,
+                'key' => $category->key,
+                'name' => $category->name ?? $category->key,
+                'achievement' => $this->getDimensionProgress('category', $category->id, $unlockedIds, $counts),
+                'objects' => []
+            ];
 
-                if ($isUnlocked) {
-                    $entries[] = $this->toPayload($def, $progress, true);
-                    continue;
-                }
-
-                if (! $addedNext) {
-                    // First locked – that's the "next" target
-                    $entries[] = $this->toPayload($def, $progress, false);
-                    $addedNext = true;
-                }
-
-                // No more locked achievements after the first one.
-                if ($addedNext) {
-                    break;
-                }
+            // Add nested objects
+            foreach ($category->litterObjects as $object) {
+                $categoryData['objects'][] = [
+                    'id' => $object->id,
+                    'key' => $object->key,
+                    'name' => $object->name ?? $object->key,
+                    'achievement' => $this->getDimensionProgress('object', $object->id, $unlockedIds, $counts)
+                ];
             }
 
-            if (!empty($entries)) {
-                if (!isset($result[$type])) {
-                    $result[$type] = [];
+            // Sort objects by progress (highest first) then by name
+            usort($categoryData['objects'], function ($a, $b) {
+                $progressDiff = $b['achievement']['progress'] - $a['achievement']['progress'];
+                if ($progressDiff !== 0) {
+                    return $progressDiff;
                 }
-                array_push($result[$type], ...$entries);
+                return strcmp($a['name'], $b['name']);
+            });
+
+            $result[] = $categoryData;
+        }
+
+        // Sort categories by progress (highest first) then by name
+        usort($result, function ($a, $b) {
+            $progressDiff = $b['achievement']['progress'] - $a['achievement']['progress'];
+            if ($progressDiff !== 0) {
+                return $progressDiff;
             }
+            return strcmp($a['name'], $b['name']);
         });
 
         return $result;
     }
 
     /**
-     * Convert DB row → API payload.
+     * Get progress for a specific dimension/tag combination
      */
-    private function toPayload(object $def, int $progress, bool $unlocked): array
+    private function getDimensionProgress(string $type, ?int $tagId, array $unlockedIds, array $counts): array
     {
+        // Get all achievements for this type/tag combo
+        $query = DB::table('achievements')->where('type', $type);
+
+        if ($tagId !== null) {
+            $query->where('tag_id', $tagId);
+        } else {
+            $query->whereNull('tag_id');
+        }
+
+        $achievements = $query->orderBy('threshold')->get();
+
+        if ($achievements->isEmpty()) {
+            return [
+                'progress' => 0,
+                'next_threshold' => null,
+                'percentage' => 0,
+                'unlocked' => [],
+                'next' => null
+            ];
+        }
+
+        // Get current progress
+        $progress = $this->getProgress($type, $tagId, $counts);
+
+        // Find unlocked and next
+        $unlocked = [];
+        $next = null;
+
+        foreach ($achievements as $achievement) {
+            if (in_array($achievement->id, $unlockedIds, true)) {
+                $unlocked[] = [
+                    'id' => $achievement->id,
+                    'threshold' => $achievement->threshold,
+                    'metadata' => is_string($achievement->metadata)
+                        ? json_decode($achievement->metadata, true)
+                        : $achievement->metadata
+                ];
+            } elseif ($next === null) {
+                // First locked achievement is the next target
+                $next = [
+                    'id' => $achievement->id,
+                    'threshold' => $achievement->threshold,
+                    'metadata' => is_string($achievement->metadata)
+                        ? json_decode($achievement->metadata, true)
+                        : $achievement->metadata,
+                    'percentage' => min(100, (int) round(($progress / $achievement->threshold) * 100))
+                ];
+            }
+        }
+
         return [
-            'id'         => $def->id,
-            'type'       => $def->type,
-            'tag_id'     => $def->tag_id,
-            'threshold'  => $def->threshold,
-            'metadata'   => is_string($def->metadata) ? json_decode($def->metadata, true) : $def->metadata,
-            'unlocked'   => $unlocked,
-            'progress'   => $progress,
-            'percentage' => min(100, (int) round(($progress / $def->threshold) * 100)),
-            'tag_name'   => $def->tag_id ? $this->getTagName($def->type, (int) $def->tag_id) : null,
+            'progress' => $progress,
+            'next_threshold' => $next ? $next['threshold'] : null,
+            'percentage' => $next ? $next['percentage'] : 100,
+            'unlocked' => $unlocked,
+            'next' => $next
         ];
     }
 
     /**
-     * Map dimension → user progress value.
+     * Get progress value for specific type/tag
      */
-    private function getProgress(string $type, ?int $tagId, array $c): int
+    private function getProgress(string $type, ?int $tagId, array $counts): int
     {
         return match ($type) {
-            'uploads'   => (int) ($c['uploads'] ?? 0),
-            'streak'    => (int) ($c['streak']  ?? 0),
-            'object', 'objects'     => (int) ($c['objects'][$tagId ?? '']    ?? 0),
-            'category', 'categories' => (int) ($c['categories'][$tagId ?? ''] ?? 0),
-            default     => 0,
+            'uploads' => (int) ($counts['uploads'] ?? 0),
+            'streak' => (int) ($counts['streak'] ?? 0),
+            'object' => (int) ($counts['objects'][$tagId ?? ''] ?? 0),
+            'objects' => array_sum($counts['objects'] ?? []),
+            'category' => (int) ($counts['categories'][$tagId ?? ''] ?? 0),
+            'categories' => array_sum($counts['categories'] ?? []),
+            default => 0,
         };
     }
 
     /**
-     * Fetch display key for category / object.
+     * Build summary statistics
      */
-    private function getTagName(string $type, int $tagId): ?string
+    private function buildSummary(int $userId): array
     {
-        return match ($type) {
-            'object', 'objects'     => LitterObject::where('id', $tagId)->value('key'),
-            'category', 'categories' => Category::where('id', $tagId)->value('key'),
-            default                 => null,
-        };
+        $total = DB::table('achievements')
+            ->whereIn('type', self::ALLOWED_TYPES)
+            ->count();
+
+        $unlockedTotal = DB::table('user_achievements')
+            ->join('achievements', 'user_achievements.achievement_id', '=', 'achievements.id')
+            ->where('user_achievements.user_id', $userId)
+            ->whereIn('achievements.type', self::ALLOWED_TYPES)
+            ->count();
+
+        return [
+            'total' => $total,
+            'unlocked' => $unlockedTotal,
+            'percentage' => $total > 0 ? (int) round(($unlockedTotal / $total) * 100) : 0,
+        ];
     }
 }

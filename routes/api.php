@@ -1,7 +1,12 @@
 <?php
 
 use App\Http\Controllers\Achievements\AchievementsController;
+use App\Http\Controllers\Admin\UsersController;
 use App\Http\Controllers\ApiPhotosController;
+use App\Http\Controllers\Leaderboard\GetUsersForGlobalLeaderboardController;
+use App\Http\Controllers\Leaderboard\GetUsersForLocationLeaderboardController;
+use App\Http\Controllers\Leaderboard\LeaderboardController;
+use App\Http\Controllers\RedisDataController;
 use App\Models\Littercoin;
 
 use Illuminate\Http\Request;
@@ -133,4 +138,21 @@ Route::prefix('/teams')->group(function () {
     Route::post('/join', 'API\TeamsController@join');
     Route::post('/leave', 'API\TeamsController@leave');
     Route::post('/leaderboard/visibility', 'Teams\TeamsLeaderboardController@toggle')->middleware('auth:api');
+});
+
+
+Route::middleware('auth:sanctum')->group(function () {
+
+    // Get data for the Global Leaderboard - deprecated
+//    Route::get('/global/leaderboard', GetUsersForGlobalLeaderboardController::class);
+//    Route::get('/global/leaderboard/location', GetUsersForLocationLeaderboardController::class);
+
+    Route::get('/leaderboard', LeaderboardController::class);
+
+    // Needs admin middleware
+    Route::get('/redis-data', [RedisDataController::class, 'index']);
+    Route::get('/redis-data/{userId}', [RedisDataController::class, 'show']);
+    Route::get('/redis-data/performance}', [RedisDataController::class, 'performance']);
+    Route::get('/redis-data/key-analysis', [RedisDataController::class, 'keyAnalysis']);
+
 });

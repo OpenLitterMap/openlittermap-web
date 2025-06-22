@@ -14,6 +14,7 @@ import middlewarePipeline from './middleware/middlewarePipeline';
 import auth from './middleware/auth';
 import Countries from '../views/Locations/Countries.vue';
 import Achievements from '../views/Achievements/Achievements.vue';
+import Redis from '../views/Admin/Redis.vue';
 
 const routes = [
     {
@@ -74,6 +75,14 @@ const routes = [
         component: Achievements,
         meta: {
             middleware: [auth],
+        },
+    },
+    {
+        path: '/admin/redis/:userId?',
+        name: 'AdminRedis',
+        component: Redis,
+        meta: {
+            middleware: [auth], // admin
         },
     },
 ];

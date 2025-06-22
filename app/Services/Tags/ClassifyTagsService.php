@@ -33,11 +33,7 @@ class ClassifyTagsService
         $this->objects    = LitterObject::pluck('id', 'key')->all();
         $this->materials  = Materials::pluck('id', 'key')->all();
         $this->brands     = BrandList::pluck('id', 'key')->all();
-
-        // needed to fix migration
-        if ($this->customTags === null) {
-            $this->customTags = CustomTagNew::pluck('id', 'key')->all();
-        }
+        $this->customTags = CustomTagNew::pluck('id', 'key')->all();
     }
 
     public function materialMap(): array
@@ -119,8 +115,22 @@ class ClassifyTagsService
             return ['type' => 'custom', 'id' => $this->customTags[$key], 'key'  => $key];
         }
 
-        Log::notice("Undefined tag classification: '{$key}'");
-        return ['type' => 'undefined', 'key'  => $key];
+        /** -----------------------------------------------------------------
+         *  Fallback: treat unknown slug as a new *object* (or custom tag)
+         * ------------------------------------------------------------------
+         * 1) create a `litter_objects` row if it does not exist
+         * 2) put the id into the in-memory cache so the next lookup is fast
+         */
+        $created = LitterObject::firstOrCreate(
+            ['key' => $key],
+            ['crowdsourced' => true]        // or other default columns
+        );
+
+        $this->objects[$key] = $created->id;  // update cache for current request
+
+        Log::info("Autocreated new object slug '{$key}' (#{$created->id})");
+
+        return ['type' => 'object', 'id' => $created->id, 'key' => $key];
     }
 
     public static function normalizeDeprecatedTag(string $key): ?array

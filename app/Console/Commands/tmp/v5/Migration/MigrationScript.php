@@ -191,18 +191,7 @@ class MigrationScript extends Command
 
                 // Memory warning
                 if ($currentMemory > 1024) {
-                    $this->warn("    ⚠️  High memory usage: {$currentMemory}MB");
-                }
-
-                // Log slow batches
-                if ($batchDuration > 5.0) {
-                    Log::warning("Slow batch detected", [
-                        'user_id' => $userId,
-                        'batch_number' => $batchNumber,
-                        'duration' => $batchDuration,
-                        'photos' => $batchSize,
-                        'photos_per_second' => $photosPerSecond
-                    ]);
+                    $this->warn("⚠️ High memory usage: {$currentMemory}MB");
                 }
             });
 
@@ -210,7 +199,7 @@ class MigrationScript extends Command
         $this->displayUserSummary($userId, $processedForUser, $failedForUser, $batchNumber, $totalBatchTime);
 
         $duration = round(microtime(true) - $startTime, 2);
-        $this->info("    ✓ Migration completed in {$duration}s");
+        $this->info("✓ Migration completed in {$duration}s");
     }
 
     private function evaluateUserAchievements(int $userId): void

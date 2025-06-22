@@ -43,15 +43,21 @@ final class TagKeyCache
     /** Get Redis connection or null if not available */
     private static function redis(): ?\Illuminate\Redis\Connections\Connection
     {
-        $store = Cache::getStore();
-        return $store instanceof \Illuminate\Cache\RedisStore
-            ? $store->connection()
-            : null;
+        return \Illuminate\Support\Facades\Redis::connection();
     }
 
     /** Remember mapping in RAM and external cache */
     private static function remember(Dimension $dim, string $key, int $id): void
     {
+        if ($id <= 0) {
+            \Log::error('TagKeyCache refused to cache non-positive id', [
+                'dimension' => $dim->value,
+                'key'       => $key,
+                'id'        => $id,
+            ]);
+            return;
+        }
+
         $d = $dim->value;
         self::$forward[$d][$key] = $id;
         self::$reverse[$d][$id]  = $key;
@@ -84,12 +90,19 @@ final class TagKeyCache
     {
         $table = $dim->table();
 
-        // Use INSERT IGNORE and then SELECT - simple and reliable
-        DB::statement("INSERT IGNORE INTO {$table} (`key`) VALUES (?)", [$key]);
+        DB::insert("
+            INSERT INTO {$table} (`key`)
+            VALUES (?)
+            ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)
+        ", [$key]);
 
-        // Now get the ID (whether it was just inserted or already existed)
-        return (int) DB::table($table)->where('key', $key)->value('id');
-    }
+        $id = (int) DB::getPdo()->lastInsertId();
+
+        if ($id === 0) {
+            $id = (int) DB::table($table)->where('key', $key)->value('id');
+        }
+
+        return $id;    }
 
     /* --------------------------------------------------------------------- */
     /* Public API                                                            */
@@ -109,7 +122,7 @@ final class TagKeyCache
         /* Redis */
         if ($redis = self::redis()) {
             $id = $redis->hget(self::key('fwd', $dimension), $key);
-            if ($id !== null) {
+            if ($id !== null && (int) $id > 0) {
                 return self::$forward[$d][$key] = (int) $id;
             }
         }

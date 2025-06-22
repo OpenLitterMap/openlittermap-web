@@ -12,6 +12,33 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 
+/**
+ * Tracks user and global metrics from photo uploads in Redis:
+ *
+ * User-specific data:
+ * - {u:ID}:stats         - Upload count, total XP, current streak
+ * - {u:ID}:up            - Bitmap tracking upload days (for streak calculation)
+ * - {u:ID}:c             - Category counts
+ * - {u:ID}:t             - Litter object counts
+ * - {u:ID}:m             - Material counts
+ * - {u:ID}:brands        - Brand counts
+ * - {u:ID}:custom        - Custom tag counts
+ *
+ * Global aggregates:
+ * - {g}:c                - Global category counts
+ * - {g}:t                - Global object counts
+ * - {g}:m                - Global material counts
+ * - {g}:brands           - Global brand counts
+ * - {g}:YYYY-MM:t        - Monthly photo/XP totals
+ *
+ * Geographic time series (2-year TTL):
+ * - {g}:t:p              - Global daily photo counts
+ * - c:{ID}:t:p           - Country daily photo counts
+ * - s:{ID}:t:p           - State daily photo counts
+ * - ci:{ID}:t:p          - City daily photo counts
+ *
+ * Deduplication via photo.processed_at timestamp ensures metrics are counted once.
+ */
 final class RedisMetricsCollector
 {
     private const TS_TTL_MS = 60 * 60 * 24 * 365 * 2 * 1000; // 2 years
@@ -59,26 +86,8 @@ final class RedisMetricsCollector
     private static function getLuaScript(): string
     {
         if (self::$luaScript === null) {
-            // Try multiple locations
-            $paths = [
-                resource_path('lua/redis-metrics.lua'),
-                base_path('app/Services/Redis/lua/redis-metrics.lua'),
-                __DIR__ . '/lua/redis-metrics.lua',
-            ];
-
-            $foundPath = null;
-            foreach ($paths as $path) {
-                if (file_exists($path)) {
-                    $foundPath = $path;
-                    break;
-                }
-            }
-
-            if ($foundPath === null) {
-                throw new \RuntimeException("Lua script not found in any of these locations: " . implode(', ', $paths));
-            }
-
-            self::$luaScript = file_get_contents($foundPath);
+            $path = base_path('app/Services/Redis/lua/metrics.lua');
+            self::$luaScript = file_get_contents($path);
             self::$luaScriptSha = sha1(self::$luaScript);
         }
 
@@ -98,8 +107,8 @@ final class RedisMetricsCollector
     }
 
     /**
-     * Preload the Lua script into Redis (optional)
-     * Call this in a service provider or during deployment
+     * Preload the Lua script into Redis
+     * Called in RedisMeticsCollectorTest.
      */
     public static function preloadLuaScript(): void
     {
@@ -115,6 +124,7 @@ final class RedisMetricsCollector
             Log::info('Redis metrics Lua script loaded', ['sha' => $sha]);
         }
     }
+
     public static function queue(Photo $photo): void
     {
         $updated = Photo::where('id', $photo->id)
@@ -197,6 +207,7 @@ final class RedisMetricsCollector
     /**
      * One Lua round-trip for the whole batch
      */
+    // 1. First, fix the executeBatchUpdate method to skip Lua and use pipeline directly:
     private static function executeBatchUpdate(
         int   $userId,
         array $aggregated,
@@ -212,7 +223,7 @@ final class RedisMetricsCollector
             'statsKey'   => sprintf(self::KEY_STATS, $userId),
             'bitmapKey'  => sprintf(self::KEY_UPLOAD_BITMAP, $userId),
             'uploads'    => (int)$aggregated['totalUploads'],
-            'xp'         => (float)$aggregated['totalXp'],
+            'xp'         => (int)$aggregated['totalXp'],
             'updates'    => [],
             'timeSeries' => [],
             'geo'        => [],
@@ -238,7 +249,7 @@ final class RedisMetricsCollector
             $key = "{$monthTag}:t";
             $payload['timeSeries'][] = [$key, 'p', (int)$ts['photos']];
             if ($ts['xp'] > 0) {
-                $payload['timeSeries'][] = [$key, 'xp', (float)$ts['xp']];
+                $payload['timeSeries'][] = [$key, 'xp', (int)$ts['xp']]; // Cast to int
             }
         }
 
@@ -254,35 +265,11 @@ final class RedisMetricsCollector
         }
         sort($payload['dayIdxs']); // ASC
 
-        // ---------- Try Lua script first, fallback to pipeline  ------------------
-        $jsonPayload = json_encode($payload);
-
-        try {
-            // Try EVALSHA first for better performance
-            try {
-                Redis::evalSha(self::getLuaScriptSha(), 0, $jsonPayload);
-            } catch (\Exception $e) {
-                // If NOSCRIPT error, load the script and try again
-                if (strpos($e->getMessage(), 'NOSCRIPT') !== false) {
-                    Redis::eval(self::getLuaScript(), 0, $jsonPayload);
-                } else {
-                    throw $e;
-                }
-            }
-        } catch (\Exception $e) {
-            // Fallback to pipeline approach
-            Log::warning('Lua script failed, using pipeline fallback', [
-                'error' => $e->getMessage(),
-                'userId' => $userId
-            ]);
-
-            self::executePipelineFallback($userId, $payload, $aggregated['dateGroups']);
-        }
+        // ---------- Use pipeline approach directly  ------------------
+        self::executePipelineFallback($userId, $payload, $aggregated['dateGroups']);
     }
 
-    /**
-     * Fallback implementation using Redis pipeline
-     */
+    // 2. Fix the executePipelineFallback method:
     private static function executePipelineFallback(int $userId, array $payload, array $dateGroups): void
     {
         $statsKey = $payload['statsKey'];
@@ -293,7 +280,7 @@ final class RedisMetricsCollector
                 $pipe->hIncrBy($statsKey, 'uploads', $payload['uploads']);
             }
             if ($payload['xp'] > 0) {
-                $pipe->hIncrByFloat($statsKey, 'xp', $payload['xp']);
+                $pipe->hIncrBy($statsKey, 'xp', $payload['xp']);
             }
 
             // Update dimension hashes
@@ -305,11 +292,7 @@ final class RedisMetricsCollector
             // Time series
             foreach ($payload['timeSeries'] as $ts) {
                 [$key, $field, $amount] = $ts;
-                if ($field === 'xp') {
-                    $pipe->hIncrByFloat($key, $field, $amount);
-                } else {
-                    $pipe->hIncrBy($key, $field, $amount);
-                }
+                $pipe->hIncrBy($key, $field, $amount);
             }
 
             // Geo scoped
@@ -320,8 +303,11 @@ final class RedisMetricsCollector
             }
         });
 
-        // Handle streaks separately
-        foreach (array_keys($dateGroups) as $date) {
+        // Handle streaks separately - process in date order
+        $sortedDates = array_keys($dateGroups);
+        sort($sortedDates);
+
+        foreach ($sortedDates as $date) {
             self::updateStreakForDate($userId, $date);
         }
     }
@@ -545,7 +531,7 @@ final class RedisMetricsCollector
     private static function persistMetrics(Photo $photo): void
     {
         $uid = $photo->user_id;
-        $xp = (int) ($photo->xp ?? 0);
+        $xp = (int) ($photo->xp ?? 0); // Already cast to int here
         $ts = $photo->created_at ?? now();
         $date = $ts->setTimezone('UTC')->format('Y-m-d');
         $monthTag = '{g}:' . $ts->format('Y-m');
@@ -565,7 +551,7 @@ final class RedisMetricsCollector
             $pipe->hIncrBy($statsKey, 'uploads', 1);
 
             if ($xp) {
-                $pipe->hIncrByFloat($statsKey, 'xp', $xp);
+                $pipe->hIncrBy($statsKey, 'xp', $xp); // Changed from hIncrByFloat
             }
 
             // Update user counts
@@ -602,7 +588,7 @@ final class RedisMetricsCollector
             // Time series data
             $pipe->hIncrBy("{$monthTag}:t", 'p', 1);
             if ($xp) {
-                $pipe->hIncrByFloat("{$monthTag}:t", 'xp', $xp);
+                $pipe->hIncrBy("{$monthTag}:t", 'xp', $xp); // Changed from hIncrByFloat
             }
 
             // Geo scoped tracking

@@ -33,6 +33,9 @@ class RedisMetricsCollectorTest extends TestCase
         // Warm up the TagKeyCache and get IDs for test data
         TagKeyCache::preloadAll();
 
+        // Preload Lua scripts for Redis metrics collector
+        RedisMetricsCollector::preloadLuaScript();
+
         // Pre-create the tag IDs we'll need
         $this->tagIds = [
             'cup' => TagKeyCache::getOrCreateId('object', 'cup'),

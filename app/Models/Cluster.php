@@ -9,12 +9,5 @@ class Cluster extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'lat',
-        'lon',
-        'point_count',
-        'point_count_abbreviated',
-        'geohash',
-        'zoom'
-    ];
+    protected $guarded = [];
 }

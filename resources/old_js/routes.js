@@ -146,6 +146,13 @@ const router = new VueRouter({
                 middleware: [auth, admin],
             },
         },
+        {
+            path: '/admin/redis/:userId?',
+            component: () => import('./views/admin/Redis.vue'),
+            meta: {
+                middleware: [auth], // admin
+            },
+        },
         // AUTH ROUTES
         {
             path: '/upload',

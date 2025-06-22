@@ -50,7 +50,7 @@ class UpdateTagsService
     protected function getTags(Photo $photo): array
     {
         $tags           = $photo->tags() ?? [];
-        $originalTags   = $this->mergeSingleObjectAndBrand($tags);
+        $originalTags   = $this->mergeSingleObjectAndBrand($photo->id, $tags);
         $customTagsOld  = $photo->customTags ?? new EloquentCollection();
 
         return [$originalTags, $customTagsOld];
@@ -140,6 +140,11 @@ class UpdateTagsService
         if ($customTagsOld->isNotEmpty()) {
             foreach ($customTagsOld as $old) {
                 $parsed = $this->classifyTags->normalizeCustomTag($old->tag);
+
+                if ($parsed['type'] !== 'custom') {
+                    continue;
+                }
+
                 $topLevelCustomTags[] = [
                     'id'           => $parsed['id'],
                     'key'          => $parsed['key'],
@@ -262,7 +267,7 @@ class UpdateTagsService
         }
     }
 
-    private function mergeSingleObjectAndBrand(array $tags): array
+    private function mergeSingleObjectAndBrand(int $photoId, array $tags): array
     {
         if (
             count($tags) === 2 &&
@@ -271,8 +276,20 @@ class UpdateTagsService
         ) {
             $keys = array_keys($tags);
             $other = $keys[0] === 'brands' ? $keys[1] : $keys[0];
-            if ($other && count($tags[$other]) === 1) {
-                Log::info("Auto‑merging single brand into '{$other}' block.");
+
+            if ($other && count($tags[$other]) === 1)
+            {
+                $objectKey   = array_key_first($tags[$other]);
+                $brandKey    = array_key_first($tags['brands']);
+
+//                Log::info(
+//                    'Merge object and brand',
+//                    [
+//                        'photo_id' => $photoId,
+//                        'object'   => $objectKey,
+//                        'brand'    => $brandKey,
+//                    ]
+//                );
                 $tags[$other] = array_merge($tags[$other], $tags['brands']);
                 unset($tags['brands']);
             }
