@@ -5,268 +5,178 @@ namespace App\Services\Clustering;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-/**
- * Pure-SQL tile clustering with atomic operations and improved error handling
- */
 class ClusteringService
 {
-    /* metres-per-pixel cache, keyed by zoom */
-    private array $mPerPx = [];
-
-    private int $pxRadius;
-    private int $minZoom;
-    private int $maxZoom;
-    private string $singletonPolicy;
-    private int $lockTimeout;
-
-    public function __construct()
-    {
-        $this->pxRadius = config('clustering.pixel_radius', 80);
-        $this->minZoom  = config('clustering.min_zoom', 2);
-        $this->maxZoom  = config('clustering.max_zoom', 16);
-        $this->singletonPolicy = config('clustering.singleton_policy', 'max_zoom_only');
-        $this->lockTimeout = config('clustering.lock_timeout', 30);
-
-        $circ = 2 * M_PI * 6378137.0;                       // earth circumference
-        for ($z = $this->minZoom; $z <= $this->maxZoom; $z++) {
-            $this->mPerPx[$z] = $circ / (256 * (1 << $z));
-        }
-    }
+    /**
+     * Grid size in degrees for each zoom level
+     *
+     * WARNING: These are in degrees, so physical distance shrinks at higher latitudes!
+     * At latitude φ, 1° longitude = 111km * cos(φ)
+     */
+    private array $zoomRadii = [
+        2 => 10.0,    // 10 degrees
+        4 => 5.0,     // 5 degrees
+        6 => 2.5,     // 2.5 degrees
+        8 => 1.0,     // 1 degree
+        10 => 0.5,    // 0.5 degrees
+        12 => 0.25,   // 0.25 degrees
+        14 => 0.1,    // 0.1 degrees
+        16 => 0.05,   // 0.05 degrees
+    ];
 
     /**
-     * @param  int         $tileKey  0·25° tile identifier
-     * @param  int|null    $year     limit to a calendar year (NULL = all)
-     * @param  string|null $dummy    kept only so the old test-suite signature lives on
-     * @return array{photos:int, clusters:int, clusters_by_zoom?:array}
+     * Cluster all photos in a tile
      */
-    public function rebuildTile(int $tileKey, ?int $year = null, ?string $dummy = null): array
+    public function clusterTile(int $tileKey, ?int $year = null): array
     {
-        // Get adjacent tiles for proper edge handling
-        $tiles = TileMath::getAdjacentTiles($tileKey);
+        $stats = ['photos' => 0, 'clusters' => 0];
 
-        // Validate we got exactly 9 tiles (3x3 grid)
-        if (count($tiles) !== 9) {
-            throw new \LogicException("Expected 9 adjacent tiles, got " . count($tiles));
-        }
-
-        $photoCount = (int) DB::table('photos')
-            ->whereIn('tile_key', $tiles)
-            ->where('verified', 2)
-            ->when($year, fn ($q) => $q->whereYear('created_at', $year))
-            ->count();
-
-        // Improved lock naming to include year
-        $lockName = sprintf("tile_%d_year_%s", $tileKey, $year ?? 'all');
-
-        // Set session lock timeout
-        DB::statement('SET SESSION innodb_lock_wait_timeout = ?', [$this->lockTimeout]);
-
-        // Retry logic for lock acquisition
-        $attempts = 0;
-        $maxAttempts = 3;
-        $lockAcquired = false;
-
-        while ($attempts < $maxAttempts && !$lockAcquired) {
-            $lockResult = DB::selectOne('SELECT GET_LOCK(?, ?) AS l', [$lockName, $this->lockTimeout]);
-            if ($lockResult && $lockResult->l === 1) {
-                $lockAcquired = true;
-                break;
-            }
-            $attempts++;
-            if ($attempts < $maxAttempts) {
-                sleep(1); // Wait before retry
-            }
-        }
+        // Add concurrency lock
+        $lockName = "cluster_tile_{$tileKey}_year_" . ($year ?? 'all');
+        $lockAcquired = DB::selectOne("SELECT GET_LOCK(?, 5) as acquired", [$lockName])->acquired;
 
         if (!$lockAcquired) {
-            throw new \RuntimeException("Could not obtain lock for tile $tileKey after $maxAttempts attempts");
+            throw new \RuntimeException("Could not acquire lock for tile $tileKey");
         }
-
-        $clustersByZoom = [];
 
         try {
-            // Use transaction for atomicity
-            DB::transaction(function() use ($tileKey, $year, $tiles, $photoCount, &$clustersByZoom) {
-                // Delete existing clusters
+            DB::transaction(function() use ($tileKey, $year, &$stats) {
+                // Delete old clusters for this tile
                 DB::table('clusters')
                     ->where('tile_key', $tileKey)
-                    ->where('year', $year ?? 0)
+                    ->where('year', $year ?? 0)  // year is now NOT NULL DEFAULT 0
                     ->delete();
 
-                // Determine singleton policy
-                $allowSingletons = $this->shouldAllowSingletons($photoCount);
+                // Count photos in this tile
+                $photoCount = DB::table('photos')
+                    ->where('tile_key', $tileKey)
+                    ->where('verified', 2)
+                    ->when($year, fn($q) => $q->whereYear('created_at', $year))
+                    ->count();
 
-                // Insert clusters for each zoom level
-                for ($z = $this->minZoom; $z <= $this->maxZoom; $z++) {
-                    $shouldAllowAtThisZoom = match($this->singletonPolicy) {
-                        'none' => false,
-                        'all' => true,
-                        'max_zoom_only' => ($z === $this->maxZoom || $photoCount > 1),
-                        default => ($z === $this->maxZoom || $photoCount > 1)
-                    };
+                $stats['photos'] = $photoCount;
 
-                    $inserted = $this->insertClusters($tileKey, $z, $year, $shouldAllowAtThisZoom, $tiles);
+                if ($photoCount == 0) {
+                    return;
+                }
 
-                    if (config('clustering.debug')) {
-                        $clustersByZoom[$z] = $inserted;
-                    }
+                // Create clusters for each zoom level
+                foreach ($this->zoomRadii as $zoom => $gridSize) {
+                    $clustersCreated = $this->createClustersForZoom(
+                        $tileKey,
+                        $zoom,
+                        $gridSize,
+                        $year
+                    );
 
-                    if ($inserted === 0 && $photoCount > 0 && config('clustering.debug')) {
-                        Log::debug('No clusters at zoom level', [
-                            'tile' => $tileKey,
-                            'zoom' => $z,
-                            'photos' => $photoCount,
-                            'singleton_policy' => $this->singletonPolicy
-                        ]);
-                    }
+                    $stats['clusters'] += $clustersCreated;
                 }
             });
-
-            $clusterCount = (int) DB::table('clusters')
-                ->where('tile_key', $tileKey)
-                ->where('year', $year ?? 0)
-                ->count();
-        } catch (\Throwable $e) {
-            // Ensure lock is released even on error
-            DB::selectOne('SELECT RELEASE_LOCK(?)', [$lockName]);
+        } catch (\Exception $e) {
+            Log::error("Failed to cluster tile $tileKey: " . $e->getMessage());
             throw $e;
         } finally {
-            DB::selectOne('SELECT RELEASE_LOCK(?)', [$lockName]);
+            DB::selectOne("SELECT RELEASE_LOCK(?)", [$lockName]);
         }
 
-        $result = ['photos' => $photoCount, 'clusters' => $clusterCount];
-
-        if (config('clustering.debug')) {
-            $result['clusters_by_zoom'] = $clustersByZoom;
-        }
-
-        return $result;
+        return $stats;
     }
 
     /**
-     * Process only tiles that actually contain photos (optimization)
+     * Create clusters for a specific zoom level
      */
-    public function rebuildAffectedTiles(int $tileKey, ?int $year = null): array
+    private function createClustersForZoom(int $tileKey, int $zoom, float $gridSize, ?int $year): int
     {
-        $adjacentTiles = TileMath::getAdjacentTiles($tileKey);
+        // Allow single photo clusters only at max zoom
+        $minPoints = ($zoom == 16) ? 1 : 2;
 
-        // Only process tiles that actually have photos
-        $affectedTiles = DB::table('photos')
-            ->whereIn('tile_key', $adjacentTiles)
-            ->where('verified', 2)
-            ->when($year, fn ($q) => $q->whereYear('created_at', $year))
-            ->distinct()
-            ->pluck('tile_key');
-
-        $results = [
-            'tiles_processed' => 0,
-            'total_photos' => 0,
-            'total_clusters' => 0
-        ];
-
-        foreach ($affectedTiles as $tile) {
-            $result = $this->rebuildTile($tile, $year);
-            $results['tiles_processed']++;
-            $results['total_photos'] += $result['photos'];
-            $results['total_clusters'] += $result['clusters'];
-        }
-
-        return $results;
-    }
-
-    private function shouldAllowSingletons(int $photoCount): bool
-    {
-        return match($this->singletonPolicy) {
-            'none' => false,
-            'all' => true,
-            'max_zoom_only' => $photoCount > 1,
-            default => $photoCount > 1
-        };
-    }
-
-    public function insertClusters(
-        int $tileKey,
-        int $zoom,
-        ?int $year,
-        bool $allowSingletons,
-        array $tiles
-    ): int {
-        $grid   = $this->mPerPx[$zoom] * $this->pxRadius;
-        $deg2   = M_PI / 180;
-        $R      = 6378137.0;
-        $maxLat = 85.0511287798;
-
-        $minPts = $allowSingletons ? 1 : 2;
-
-        // Validate tiles array size before building query
-        if (count($tiles) > 100) {
-            throw new \RuntimeException("Too many tiles provided: " . count($tiles));
-        }
-
-        /** @noinspection SqlResolve */
-        $affected = DB::affectingStatement("
-            INSERT INTO clusters
-                (tile_key, zoom, cell_x, cell_y, lat, lon, point_count, year)
-            SELECT
-                ?, ?,
-                FLOOR(p.x / ?)  AS cx,
-                FLOOR(p.y / ?)  AS cy,
-                AVG(p.lat), AVG(p.lon), COUNT(*), ?
-            FROM (
+        // Fix parameter order - build query with correct placeholder sequence
+        if ($year) {
+            $sql = "
+                INSERT INTO clusters (tile_key, zoom, year, cell_x, cell_y, lat, lon, point_count)
                 SELECT
-                    lat, lon,
-                    lon * ? * ?                                   AS x,
-                    ? * LN(TAN(RADIANS(45 +
-                        LEAST(GREATEST(lat, ?), ?)/2)))           AS y
+                    ?,
+                    ?,
+                    ?,
+                    FLOOR(lon / ?) as cell_x,
+                    FLOOR(lat / ?) as cell_y,
+                    AVG(lat) as lat,
+                    AVG(lon) as lon,
+                    COUNT(*) as point_count
                 FROM photos
-                WHERE tile_key IN (" . implode(',', array_fill(0, count($tiles), '?')) . ")
-                  AND verified  = 2
-                  AND lat IS NOT NULL AND lon IS NOT NULL"
-            . ($year ? " AND YEAR(created_at) = ?" : '') . "
-            ) AS p
-            GROUP BY cx, cy
-            HAVING COUNT(*) >= ?
-            ON DUPLICATE KEY UPDATE
-                lat         = VALUES(lat),
-                lon         = VALUES(lon),
-                point_count = VALUES(point_count),
-                updated_at  = CURRENT_TIMESTAMP
-        ", array_values(array_filter([
-            $tileKey, $zoom,
-            $grid, $grid,
-            $year ?? 0,
-            $deg2, $R,
-            $R, -$maxLat, $maxLat,
-            ...$tiles,
-            $year,
-            $minPts,
-        ], static fn ($v) => $v !== null)));
+                WHERE tile_key = ?
+                    AND verified = 2
+                    AND YEAR(created_at) = ?
+                GROUP BY cell_x, cell_y
+                HAVING COUNT(*) >= ?
+                ON DUPLICATE KEY UPDATE
+                    lat = VALUES(lat),
+                    lon = VALUES(lon),
+                    point_count = VALUES(point_count),
+                    updated_at = CURRENT_TIMESTAMP
+            ";
 
-        // Log if debug mode and no rows affected despite photos existing
-        if (config('clustering.debug') && $affected === 0) {
-            $eligiblePhotos = DB::table('photos')
-                ->whereIn('tile_key', $tiles)
-                ->where('verified', 2)
-                ->whereNotNull('lat')
-                ->whereNotNull('lon')
-                ->when($year, fn($q) => $q->whereYear('created_at', $year))
-                ->count();
+            $bindings = [
+                $tileKey,
+                $zoom,
+                $year,
+                $gridSize,
+                $gridSize,
+                $tileKey,
+                $year,
+                $minPoints
+            ];
+        } else {
+            $sql = "
+                INSERT INTO clusters (tile_key, zoom, year, cell_x, cell_y, lat, lon, point_count)
+                SELECT
+                    ?,
+                    ?,
+                    ?,
+                    FLOOR(lon / ?) as cell_x,
+                    FLOOR(lat / ?) as cell_y,
+                    AVG(lat) as lat,
+                    AVG(lon) as lon,
+                    COUNT(*) as point_count
+                FROM photos
+                WHERE tile_key = ?
+                    AND verified = 2
+                GROUP BY cell_x, cell_y
+                HAVING COUNT(*) >= ?
+                ON DUPLICATE KEY UPDATE
+                    lat = VALUES(lat),
+                    lon = VALUES(lon),
+                    point_count = VALUES(point_count),
+                    updated_at = CURRENT_TIMESTAMP
+            ";
 
-            if ($eligiblePhotos > 0) {
-                Log::debug('No clusters created despite eligible photos', [
-                    'tile' => $tileKey,
-                    'zoom' => $zoom,
-                    'eligible_photos' => $eligiblePhotos,
-                    'min_points' => $minPts,
-                    'grid_size' => $grid
-                ]);
-            }
+            $bindings = [
+                $tileKey,
+                $zoom,
+                0,
+                $gridSize,
+                $gridSize,
+                $tileKey,
+                $minPoints
+            ];
         }
 
-        return $affected;
+        return DB::affectingStatement($sql, $bindings);
     }
 
-    /* Test-suite compatibility stubs */
-    public function initWorkerTemp(): string { return 'stub_' . uniqid(); }
-    public function dropWorkerTemp(string $n): void { /* no-op */ }
+    /**
+     * Get tile bounds for a given tile key
+     */
+    public function getTileBounds(int $tileKey): array
+    {
+        $latIdx = floor($tileKey / 1440);
+        $lonIdx = $tileKey % 1440;
+
+        return [
+            'min_lat' => -90 + $latIdx * 0.25,
+            'max_lat' => -90 + ($latIdx + 1) * 0.25,
+            'min_lon' => -180 + $lonIdx * 0.25,
+            'max_lon' => -180 + ($lonIdx + 1) * 0.25,
+        ];
+    }
 }

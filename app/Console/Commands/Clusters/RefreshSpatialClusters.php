@@ -9,12 +9,12 @@ use Illuminate\Support\Facades\DB;
 class RefreshSpatialClusters extends Command
 {
     protected $signature = 'clusters:spatial-refresh
-                            {--bbox= : Process tiles within bounds (minLat,maxLat,minLon,maxLon)}
-                            {--radius= : Process tiles within radius km of a point (lat,lon,radius)}
-                            {--hours=24 : Look back N hours for changes}
-                            {--all : Rebuild all tiles}
-                            {--year= : Limit to specific year}
-                            {--parallel=1 : Number of parallel workers}';
+        {--bbox= : Process tiles within bounds (minLat,maxLat,minLon,maxLon)}
+        {--radius= : Process tiles within radius km of a point (lat,lon,radius)}
+        {--hours=24 : Look back N hours for changes}
+        {--all : Rebuild all tiles}
+        {--year= : Limit to specific year}
+        {--parallel=1 : Number of parallel workers}';
 
     protected $description = 'Rebuild clusters using spatial operations';
 

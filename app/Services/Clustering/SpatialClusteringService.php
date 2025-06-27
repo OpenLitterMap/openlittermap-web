@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 /**
  * Spatial clustering using MySQL 8's native geospatial features
  */
+
 class SpatialClusteringService
 {
     private int $minZoom;

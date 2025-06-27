@@ -1,222 +1,272 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
-/**
- * One migration that:
- *   • adds   photos.tile_key  (generated column + index)
- *   • (re-)creates the        clusters         table
- *   • creates clustering_runs audit table
- *   • adds performance indexes for clustering
- */
 return new class extends Migration
 {
-    /* ─────────────────────────────────────────────────────────────── */
-    /*  Version guard                                                 */
-    /* ─────────────────────────────────────────────────────────────── */
-    private const MIN_MYSQL = '8.0.16';
-
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
-        $this->assertVersion();
+        // Add tile_key to photos
+        if (!Schema::hasColumn('photos', 'tile_key')) {
+            Schema::table('photos', function (Blueprint $table) {
+                $table->unsignedInteger('tile_key')->nullable()->after('lon');
+                $table->index(['verified', 'tile_key', 'lat', 'lon'], 'idx_photos_clustering');
+            });
+        }
 
-        $this->addTileKeyToPhotos();
-        $this->addPerformanceIndexesToPhotos();  // NEW
-        $this->recreateClustersTable();
-        $this->createRunsTable();
+        // Create triggers for automatic tile_key maintenance
+        DB::unprepared('DROP TRIGGER IF EXISTS photos_before_insert');
+        DB::unprepared('DROP TRIGGER IF EXISTS photos_before_update');
+
+        DB::unprepared('
+            CREATE TRIGGER photos_before_insert BEFORE INSERT ON photos
+            FOR EACH ROW
+            BEGIN
+                DECLARE norm_lon DOUBLE;
+
+                IF NEW.lat IS NOT NULL AND NEW.lon IS NOT NULL THEN
+                    -- Normalize longitude to -180 to 180 range
+                    SET norm_lon = MOD(NEW.lon + 540, 360) - 180;
+                    SET NEW.tile_key = FLOOR((NEW.lat + 90) / 0.25) * 1440 +
+                                      FLOOR((norm_lon + 180) / 0.25);
+                END IF;
+            END
+        ');
+
+        DB::unprepared('
+            CREATE TRIGGER photos_before_update BEFORE UPDATE ON photos
+            FOR EACH ROW
+            proc: BEGIN
+                DECLARE norm_lon DOUBLE;
+
+                -- Check if coordinates unchanged (null-safe comparison)
+                IF (NEW.lat <=> OLD.lat) = 1 AND (NEW.lon <=> OLD.lon) = 1 THEN
+                    -- Coordinates unchanged, keep existing tile_key and exit
+                    SET NEW.tile_key = OLD.tile_key;
+                    LEAVE proc;
+                END IF;
+
+                IF NEW.lat IS NOT NULL AND NEW.lon IS NOT NULL THEN
+                    -- Normalize longitude to -180 to 180 range
+                    SET norm_lon = MOD(NEW.lon + 540, 360) - 180;
+                    SET NEW.tile_key = FLOOR((NEW.lat + 90) / 0.25) * 1440 +
+                                      FLOOR((norm_lon + 180) / 0.25);
+                ELSE
+                    SET NEW.tile_key = NULL;
+                END IF;
+            END
+        ');
+
+        // Cleanse invalid coordinates before populating tile_key
+        $this->info('Cleaning invalid coordinates...');
+        $invalid = DB::update('
+            UPDATE photos
+            SET lat = NULL, lon = NULL, tile_key = NULL
+            WHERE lat NOT BETWEEN -90 AND 90
+               OR lon NOT BETWEEN -180 AND 180
+        ');
+        if ($invalid > 0) {
+            $this->info("  ✓ Cleaned $invalid photos with invalid coordinates");
+        }
+
+        // Populate tile_key for existing photos
+        $this->info('Populating tile_key for existing photos...');
+
+        // Single atomic update - exact same formula as trigger
+        // norm_lon = MOD(lon + 540, 360) - 180, then (norm_lon + 180) / 0.25
+        // This simplifies to: FLOOR((MOD(lon + 540, 360)) / 0.25)
+        $affected = DB::update('
+            UPDATE photos
+            SET tile_key = FLOOR((lat + 90) / 0.25) * 1440 +
+                          FLOOR((MOD(lon + 540, 360)) / 0.25)
+            WHERE lat IS NOT NULL
+                AND lon IS NOT NULL
+                AND tile_key IS NULL
+        ');
+
+        if ($affected > 0) {
+            $this->info("  ✓ Updated $affected photos with tile_key");
+        }
+
+        // Add missing columns to clusters table first
+        if (!Schema::hasColumn('clusters', 'tile_key')) {
+            Schema::table('clusters', function (Blueprint $table) {
+                $table->unsignedInteger('tile_key')->nullable()->after('id');
+                $table->index('tile_key');
+            });
+        }
+
+        // Add cell_x and cell_y columns if they don't exist (SIGNED for negative values)
+        if (!Schema::hasColumn('clusters', 'cell_x')) {
+            Schema::table('clusters', function (Blueprint $table) {
+                $table->integer('cell_x')->after('zoom');  // SIGNED by default
+                $table->integer('cell_y')->after('cell_x'); // SIGNED by default
+            });
+        }
+
+        // Fix year column to be NOT NULL DEFAULT 0 (outside of any table closure)
+        DB::statement('UPDATE clusters SET year = 0 WHERE year IS NULL');
+        DB::statement('ALTER TABLE clusters MODIFY year YEAR NOT NULL DEFAULT 0');
+
+        // Add unique constraint to clusters if it doesn't exist
+        $hasUniqueKey = DB::select("
+            SELECT COUNT(*) as count
+            FROM information_schema.statistics
+            WHERE table_schema = DATABASE()
+                AND table_name = 'clusters'
+                AND index_name = 'uk_cluster'
+        ")[0]->count > 0;
+
+        if (!$hasUniqueKey) {
+            // Check for existing duplicates before adding unique constraint
+            $duplicates = DB::select("
+                SELECT tile_key, zoom, year, cell_x, cell_y, COUNT(*) as cnt
+                FROM clusters
+                WHERE tile_key IS NOT NULL
+                GROUP BY tile_key, zoom, year, cell_x, cell_y
+                HAVING COUNT(*) > 1
+            ");
+
+            if (count($duplicates) > 0) {
+                $this->info('Found ' . count($duplicates) . ' duplicate cluster combinations, removing duplicates...');
+
+                // Single set-based delete for all duplicates
+                DB::statement("
+                    DELETE c1 FROM clusters c1
+                    INNER JOIN (
+                        SELECT MIN(id) as keep_id, tile_key, zoom, year, cell_x, cell_y
+                        FROM clusters
+                        WHERE tile_key IS NOT NULL
+                        GROUP BY tile_key, zoom, year, cell_x, cell_y
+                        HAVING COUNT(*) > 1
+                    ) c2
+                    WHERE c1.tile_key = c2.tile_key
+                        AND c1.zoom = c2.zoom
+                        AND c1.year = c2.year
+                        AND c1.cell_x = c2.cell_x
+                        AND c1.cell_y = c2.cell_y
+                        AND c1.id != c2.keep_id
+                ");
+            }
+
+            Schema::table('clusters', function (Blueprint $table) {
+                $table->unique(['tile_key', 'zoom', 'year', 'cell_x', 'cell_y'], 'uk_cluster');
+            });
+        }
+
+        // Add index for efficient time-based queries
+        if (!$this->indexExists('photos', 'idx_photos_tile_verified_time')) {
+            Schema::table('photos', function (Blueprint $table) {
+                $table->index(['tile_key', 'verified', 'created_at'], 'idx_photos_tile_verified_time');
+            });
+        }
+
+        // Handle legacy columns in clusters table
+        $legacyColumns = [];
+        if (Schema::hasColumn('clusters', 'geohash')) {
+            $legacyColumns[] = 'geohash';
+        }
+        if (Schema::hasColumn('clusters', 'point_count_abbreviated')) {
+            $legacyColumns[] = 'point_count_abbreviated';
+        }
+
+        if (!empty($legacyColumns)) {
+            $this->info('Dropping legacy columns: ' . implode(', ', $legacyColumns));
+            Schema::table('clusters', function (Blueprint $table) use ($legacyColumns) {
+                $table->dropColumn($legacyColumns);
+            });
+            $this->info('✓ Dropped legacy columns');
+        }
+
+        $this->info('✓ Clustering support added successfully');
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
-        Schema::dropIfExists('clustering_runs');
-        Schema::dropIfExists('clusters');
+        // Drop triggers
+        DB::unprepared('DROP TRIGGER IF EXISTS photos_before_insert');
+        DB::unprepared('DROP TRIGGER IF EXISTS photos_before_update');
 
-        // Drop all indexes we created
-        $indexes = [
-            'idx_verified_tile',
-            'idx_clustering_updates',
-            'idx_clustering_year',
-            'idx_geo_verified'
-        ];
-
-        foreach ($indexes as $index) {
-            if ($this->indexExists('photos', $index)) {
-                DB::statement("ALTER TABLE photos DROP INDEX {$index}");
-            }
+        // Drop CHECK constraint if it exists (might have been added separately)
+        try {
+            DB::statement('ALTER TABLE photos DROP CONSTRAINT chk_photos_coordinates');
+        } catch (\Exception $e) {
+            // Constraint might not exist, ignore
         }
 
-        // Drop photo_year if it exists
-        if (Schema::hasColumn('photos', 'photo_year')) {
-            DB::statement('ALTER TABLE photos DROP COLUMN photo_year');
+        // Drop indexes - check existence outside closure
+        if ($this->indexExists('photos', 'idx_photos_clustering')) {
+            Schema::table('photos', function (Blueprint $table) {
+                $table->dropIndex('idx_photos_clustering');
+            });
         }
 
-        // Drop tile_key if it exists
+        if ($this->indexExists('photos', 'idx_photos_tile_verified_time')) {
+            Schema::table('photos', function (Blueprint $table) {
+                $table->dropIndex('idx_photos_tile_verified_time');
+            });
+        }
+
+        if ($this->indexExists('clusters', 'uk_cluster')) {
+            Schema::table('clusters', function (Blueprint $table) {
+                $table->dropUnique('uk_cluster');
+            });
+        }
+
+        // Drop columns
         if (Schema::hasColumn('photos', 'tile_key')) {
-            DB::statement('ALTER TABLE photos DROP COLUMN tile_key');
+            Schema::table('photos', function (Blueprint $table) {
+                $table->dropColumn('tile_key');
+            });
+        }
+
+        $columnsToRemove = [];
+        if (Schema::hasColumn('clusters', 'cell_x')) {
+            $columnsToRemove[] = 'cell_x';
+        }
+        if (Schema::hasColumn('clusters', 'cell_y')) {
+            $columnsToRemove[] = 'cell_y';
+        }
+        if (Schema::hasColumn('clusters', 'tile_key')) {
+            $columnsToRemove[] = 'tile_key';
+        }
+
+        if (!empty($columnsToRemove)) {
+            Schema::table('clusters', function (Blueprint $table) use ($columnsToRemove) {
+                $table->dropColumn($columnsToRemove);
+            });
+        }
+
+        // Revert year column to nullable
+        if (Schema::hasColumn('clusters', 'year')) {
+            DB::statement('ALTER TABLE clusters MODIFY year YEAR NULL');
         }
     }
 
-    /* ─────────────────────────────────────────────────────────────── */
-    /*  Step 1 – photos tile key                                      */
-    /* ─────────────────────────────────────────────────────────────── */
-    private function addTileKeyToPhotos(): void
+    private function indexExists(string $table, string $index): bool
     {
-        if (Schema::hasColumn('photos', 'tile_key')) {
-            return;
-        }
+        $result = DB::selectOne("
+            SELECT COUNT(*) as count
+            FROM information_schema.statistics
+            WHERE table_schema = DATABASE()
+                AND table_name = ?
+                AND index_name = ?
+        ", [$table, $index]);
 
-        DB::statement("
-            ALTER TABLE photos
-            ADD COLUMN tile_key INT UNSIGNED
-            GENERATED ALWAYS AS (
-                IF(lat IS NULL OR lon IS NULL,
-                   NULL,
-                   CAST(ROUND((LEAST(GREATEST(lat, -90), 89.999999) + 90) * 4) AS UNSIGNED) * 10000 +
-                   CAST(ROUND((LEAST(GREATEST(lon, -180), 179.999999) + 180) * 4) AS UNSIGNED)
-                )
-            ) STORED
-        ");
-
-        DB::statement("
-            ALTER TABLE photos
-            ADD INDEX idx_verified_tile (verified, tile_key)
-        ");
+        return $result && $result->count > 0;
     }
 
-    /* ─────────────────────────────────────────────────────────────── */
-    /*  Step 2 – performance indexes                                  */
-    /* ─────────────────────────────────────────────────────────────── */
-    private function addPerformanceIndexesToPhotos(): void
+    private function info(string $message): void
     {
-        // Add index for finding recently updated tiles
-        if (!$this->indexExists('photos', 'idx_clustering_updates')) {
-            DB::statement("
-                CREATE INDEX idx_clustering_updates
-                ON photos(verified, updated_at, tile_key)
-            ");
-        }
-
-        // Add photo_year column for efficient year-based queries
-        if (!Schema::hasColumn('photos', 'photo_year')) {
-            DB::statement("
-                ALTER TABLE photos
-                ADD COLUMN photo_year SMALLINT
-                GENERATED ALWAYS AS (YEAR(created_at)) STORED
-                AFTER created_at
-            ");
-        }
-
-        // Add index for year-based clustering
-        if (!$this->indexExists('photos', 'idx_clustering_year')) {
-            DB::statement("
-                CREATE INDEX idx_clustering_year
-                ON photos(verified, tile_key, photo_year)
-            ");
-        }
-
-        // Optional: Geographic queries
-        if (!$this->indexExists('photos', 'idx_geo_verified')) {
-            DB::statement("
-                CREATE INDEX idx_geo_verified
-                ON photos(lat, lon, verified)
-            ");
-        }
-    }
-
-    /* ─────────────────────────────────────────────────────────────── */
-    /*  Step 3 – clusters table                                       */
-    /* ─────────────────────────────────────────────────────────────── */
-    private function recreateClustersTable(): void
-    {
-        Schema::dropIfExists('clusters');
-
-        DB::statement("
-            CREATE TABLE clusters (
-                id          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                tile_key    INT UNSIGNED NOT NULL,
-                zoom        TINYINT UNSIGNED NOT NULL,
-                cell_x      INT NOT NULL,
-                cell_y      INT NOT NULL,
-                lat         DOUBLE NOT NULL,
-                lon         DOUBLE NOT NULL,
-                point_count INT UNSIGNED NOT NULL,
-                year        SMALLINT DEFAULT 0,
-                created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-
-                UNIQUE KEY uniq_cell_with_year (tile_key, zoom, cell_x, cell_y, year),
-                KEY idx_tile_zoom (tile_key, zoom),
-                KEY idx_zoom_bbox (zoom, lat, lon),
-                KEY idx_year      (year),
-                KEY idx_tile_updated (tile_key, updated_at),
-
-                CONSTRAINT chk_zoom CHECK (zoom BETWEEN 2 AND 20),
-                CONSTRAINT chk_lat  CHECK (lat BETWEEN -90  AND 90),
-                CONSTRAINT chk_lon  CHECK (lon BETWEEN -180 AND 180),
-                CONSTRAINT chk_point_count CHECK (point_count > 0)
-            ) ENGINE=InnoDB
-              CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-        ");
-    }
-
-    /* ─────────────────────────────────────────────────────────────── */
-    /*  Step 4 – audit table                                          */
-    /* ─────────────────────────────────────────────────────────────── */
-    private function createRunsTable(): void
-    {
-        if (Schema::hasTable('clustering_runs')) {
-            return;
-        }
-
-        DB::statement("
-            CREATE TABLE clustering_runs (
-                id               BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                run_type         ENUM('scheduled','manual','full_rebuild') DEFAULT 'manual',
-                status           ENUM('running','completed','failed')      DEFAULT 'running',
-                started_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                completed_at     TIMESTAMP NULL,
-                duration_seconds INT UNSIGNED GENERATED ALWAYS AS (
-                    IF(completed_at IS NULL,NULL,
-                       TIMESTAMPDIFF(SECOND,started_at,completed_at))
-                ) STORED,
-                tiles_processed  INT UNSIGNED DEFAULT 0,
-                tiles_failed     INT UNSIGNED DEFAULT 0,
-                photos_processed BIGINT UNSIGNED DEFAULT 0,
-                clusters_created BIGINT UNSIGNED DEFAULT 0,
-                peak_memory_mb   DECIMAL(8,2) DEFAULT NULL,
-                quality_metrics  JSON DEFAULT NULL,
-                error_message    TEXT,
-                KEY idx_recent (started_at DESC),
-                KEY idx_status (status, started_at DESC)
-            ) ENGINE=InnoDB
-              CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-        ");
-    }
-
-    /* ─────────────────────────────────────────────────────────────── */
-    /*  Helpers                                                       */
-    /* ─────────────────────────────────────────────────────────────── */
-    private function assertVersion(): void
-    {
-        $v = DB::selectOne("SELECT VERSION() AS v")->v;
-        $clean = preg_replace('/[^0-9.]/','', $v);
-
-        if (version_compare($clean, self::MIN_MYSQL, '<')) {
-            throw new \RuntimeException("MySQL {$v} is too old");
-        }
-    }
-
-    private function indexExists(string $t, string $i): bool
-    {
-        return (bool) DB::selectOne("
-            SELECT 1
-            FROM information_schema.STATISTICS
-            WHERE TABLE_SCHEMA = DATABASE()
-              AND TABLE_NAME   = ?
-              AND INDEX_NAME   = ?
-            LIMIT 1
-        ", [$t, $i]);
+        echo $message . PHP_EOL;
     }
 };
