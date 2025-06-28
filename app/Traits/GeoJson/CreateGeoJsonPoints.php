@@ -4,9 +4,14 @@ namespace App\Traits\GeoJson;
 
 trait CreateGeoJsonPoints {
     /**
+     * Convert a flat array of rows (each must contain lat & lon) into a
+     * GeoJSON FeatureCollection.
      *
+     * @param string $name
+     * @param $features
+     * @return array<string,mixed>
      */
-    public function createGeojsonPoints ($name, $features): array
+    public function createGeojsonPoints (string $name, $features): array
     {
         $geojson = [
             'type' => 'FeatureCollection',
@@ -22,6 +27,8 @@ trait CreateGeoJsonPoints {
 
         foreach ($features as $feature)
         {
+            $f = (array)$feature;
+
             $geojson['features'][] = [
                 'type' => 'Feature',
                 'properties' => $feature,

@@ -110,7 +110,6 @@ Route::post('/contact-us', ContactUsController::class)->name('contact');
 
 // Get data for the Global Map
 Route::get('global', HomeController::class);
-Route::get('/global/clusters', [ClusterController::class, 'index']);
 Route::get('/global/points', [GlobalMapController::class, 'index']);
 Route::get('/global/art-data', [GlobalMapController::class, 'artData']);
 

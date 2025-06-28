@@ -5,109 +5,134 @@ namespace App\Console\Commands\Clusters;
 use App\Services\Clustering\ClusteringService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class UpdateClusters extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
-    protected $signature = 'clusters:update
-        {--tile= : Specific tile key to process}
-        {--hours=24 : Number of hours to look back for changes}
-        {--all : Process all active tiles}';
+    protected $signature = 'clustering:update
+        {--populate : Populate missing tile keys}
+        {--all : Recluster all tiles}
+        {--stats : Show statistics only}';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Update photo clusters for tiles with recent changes';
+    protected $description = 'Update photo clustering';
 
-    /**
-     * Execute the console command.
-     */
-    public function handle(ClusteringService $service): int
+    private ClusteringService $service;
+
+    public function __construct(ClusteringService $service)
     {
-        $startTime = microtime(true);
+        parent::__construct();
+        $this->service = $service;
+    }
 
-        // Determine which tiles to process
-        $tiles = $this->getTilesToProcess();
-
-        if (empty($tiles)) {
-            $this->info('No tiles to process.');
+    public function handle(): int
+    {
+        // Show stats
+        if ($this->option('stats')) {
+            $this->showStats();
             return 0;
         }
 
-        $this->info("Processing " . count($tiles) . " tiles...");
+        // Populate tile keys
+        if ($this->option('populate')) {
+            $this->populateTileKeys();
+        }
 
-        $bar = $this->output->createProgressBar(count($tiles));
+        // Process clusters
+        if ($this->option('all')) {
+            $this->clusterAllTiles();
+        }
+
+        return 0;
+    }
+
+    private function populateTileKeys(): void
+    {
+        $this->info('Populating missing tile keys...');
+
+        $missing = DB::table('photos')
+            ->whereNull('tile_key')
+            ->count();
+
+        if ($missing === 0) {
+            $this->info('All photos already have tile keys!');
+            return;
+        }
+
+        $this->info("Populating $missing photos – chunking …");
+        $bar = $this->output->createProgressBar($missing);
+
+        while (true) {
+            $done = $this->service->backfillPhotoTileKeys(); // default 50 k
+            if ($done === 0) break;
+
+            $bar->advance($done);
+        }
+
+        $bar->finish();
+        $this->newLine();
+        $this->info(' ✓  tile_key back-fill complete');
+    }
+
+    private function clusterAllTiles(): void
+    {
+        $this->info('Clustering all tiles...');
+
+        $tiles = DB::table('photos')
+            ->select('tile_key', DB::raw('COUNT(*) as photo_count'))
+            ->where('verified', 2)
+            ->whereNotNull('tile_key')
+            ->groupBy('tile_key')
+            ->having('photo_count', '>=', 2)
+            ->pluck('tile_key');
+
+        $this->info("Found {$tiles->count()} tiles to cluster");
+
+        $bar = $this->output->createProgressBar($tiles->count());
         $bar->start();
 
-        $totalPhotos = 0;
-        $totalClusters = 0;
         $failed = 0;
 
         foreach ($tiles as $tileKey) {
             try {
-                $result = $service->clusterTile($tileKey);
-                $totalPhotos += $result['photos'];
-                $totalClusters += $result['clusters'];
+                $this->service->clusterTile($tileKey);
             } catch (\Exception $e) {
                 $failed++;
-                $this->error("\nFailed to process tile $tileKey: " . $e->getMessage());
+                Log::error("Error clustering tile $tileKey", [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
             }
-
             $bar->advance();
         }
 
         $bar->finish();
-        $this->newLine(2);
+        $this->newLine();
 
-        // Show results
-        $duration = round(microtime(true) - $startTime, 2);
-
-        $this->info("Completed:");
-        $this->info("  Tiles processed: " . number_format(count($tiles) - $failed));
-        $this->info("  Photos clustered: " . number_format($totalPhotos));
-        $this->info("  Clusters created: " . number_format($totalClusters));
-        $this->info("  Duration: {$duration} seconds");
-
+        $this->info('✓ Clustering complete');
         if ($failed > 0) {
-            $this->warn("  Failed tiles: $failed");
+            $this->warn("Failed to cluster $failed tiles - check logs");
         }
-
-        return $failed > 0 ? 1 : 0;
     }
 
-    /**
-     * Determine which tiles to process based on command options
-     */
-    private function getTilesToProcess(): array
+    private function showStats(): void
     {
-        // Single tile specified
-        if ($tile = $this->option('tile')) {
-            return [(int) $tile];
+        $stats = $this->service->getStats();
+
+        $this->info('Clustering Statistics:');
+        $this->info('─────────────────────');
+
+        $this->line("Total photos: " . number_format($stats['photos_total']));
+        $this->line("Photos with tile keys: " . number_format($stats['photos_with_tiles']));
+        $this->line("Verified photos: " . number_format($stats['photos_verified']));
+        $this->line("Unique tiles: " . number_format($stats['unique_tiles']));
+        $this->line("Total clusters: " . number_format($stats['clusters_total']));
+
+        if (!empty($stats['clusters_by_zoom'])) {
+            $this->newLine();
+            $this->line("Clusters by zoom:");
+            foreach ($stats['clusters_by_zoom'] as $zoom => $count) {
+                $this->line("  Zoom $zoom: " . number_format($count));
+            }
         }
-
-        // All tiles
-        if ($this->option('all')) {
-            return DB::table('active_tiles')
-                ->pluck('tile_key')
-                ->toArray();
-        }
-
-        // Default: tiles with recently changed photos
-        $hours = (int) $this->option('hours');
-
-        return DB::table('photos')
-            ->select('tile_key')
-            ->where('verified', 2)
-            ->where('updated_at', '>=', now()->subHours($hours))
-            ->whereNotNull('tile_key')
-            ->distinct()
-            ->pluck('tile_key')
-            ->toArray();
     }
 }

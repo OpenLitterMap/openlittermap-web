@@ -1,74 +1,63 @@
 <?php
 
-// config/clustering.php
-
 return [
     /*
     |--------------------------------------------------------------------------
-    | Clustering Configuration
+    | Tile Configuration
     |--------------------------------------------------------------------------
     |
-    | Configuration for the OpenLitterMap clustering system that groups
-    | photos into spatial clusters at multiple zoom levels.
+    | The size of each tile in degrees. This creates a grid across the world
+    | where each tile is 0.25° x 0.25° (approximately 28km x 28km at equator)
     |
     */
+    'tile_size' => env('CLUSTERING_TILE_SIZE', 0.25),
 
     /*
     |--------------------------------------------------------------------------
-    | Pixel Radius
+    | Zoom Level Configuration
     |--------------------------------------------------------------------------
     |
-    | Cluster radius in pixels. This determines how close photos need to be
-    | to be grouped together. Default 80 matches Supercluster's default.
-    | Smaller values = more, tighter clusters. Larger = fewer, spread out.
+    | Configuration for each zoom level:
+    | - grid: The size of clustering grid cells in degrees
+    | - min_points: Minimum photos needed to create a cluster
     |
     */
-    'pixel_radius' => env('CLUSTERING_PIXEL_RADIUS', 80),
+    'zoom_levels' => [
+        0  => ['grid' => 8.0,   'min_points' => 10],
+        2  => ['grid' =>  8.0,   'min_points' =>  8],
+        4  => ['grid' =>  4.0,   'min_points' =>  6],
+        6  => ['grid' =>  2.0,   'min_points' =>  5],
+        8  => ['grid' =>  1.0,   'min_points' =>  3],
+        10  => ['grid' =>  0.5,   'min_points' =>  3],
+        12  => ['grid' =>  0.25,  'min_points' =>  2],
+        14  => ['grid' =>  0.10,  'min_points' =>  1],
+        16  => ['grid' =>  0.05,  'min_points' =>  1],
+    ],
 
     /*
     |--------------------------------------------------------------------------
-    | Zoom Levels
+    | Processing Configuration
     |--------------------------------------------------------------------------
-    |
-    | The range of zoom levels to generate clusters for.
-    | Min: 2 (whole world view)
-    | Max: 16 (street level detail)
-    |
     */
-    'min_zoom' => env('CLUSTERING_MIN_ZOOM', 2),
-    'max_zoom' => env('CLUSTERING_MAX_ZOOM', 16),
+
+    // How long to keep dirty tiles before automatic cleanup (hours)
+    'dirty_tile_ttl' => env('CLUSTERING_DIRTY_TTL', 24),
+
+    // Cache TTL for API responses (seconds)
+    'cache_ttl' => env('CLUSTERING_CACHE_TTL', 300),
 
     /*
     |--------------------------------------------------------------------------
-    | Singleton Policy
+    | Performance Tuning
     |--------------------------------------------------------------------------
-    |
-    | How to handle single-photo clusters:
-    | - 'none': Never create single-photo clusters
-    | - 'max_zoom_only': Only at the highest zoom level (current behavior)
-    | - 'all': Allow single-photo clusters at all zoom levels
-    |
     */
-    'singleton_policy' => env('CLUSTERING_SINGLETON_POLICY', 'max_zoom_only'),
 
-    /*
-    |--------------------------------------------------------------------------
-    | Advisory Lock Timeout
-    |--------------------------------------------------------------------------
-    |
-    | How long to wait (in seconds) when trying to acquire a lock on a tile.
-    | Prevents multiple workers from processing the same tile simultaneously.
-    |
-    */
-    'lock_timeout' => env('CLUSTERING_LOCK_TIMEOUT', 30),
+    // Maximum number of photos to update tile keys per chunk
+    'update_chunk_size' => env('CLUSTERING_UPDATE_CHUNK', 1000),
 
-    /*
-    |--------------------------------------------------------------------------
-    | Debug Mode
-    |--------------------------------------------------------------------------
-    |
-    | Enable additional logging for troubleshooting clustering operations.
-    |
-    */
-    'debug' => env('CLUSTERING_DEBUG', false),
+    // Whether to use spatial indexes for queries
+    'use_spatial_index' => env('CLUSTERING_USE_SPATIAL', true),
+
+    // Maximum clusters to return in API response
+    'max_clusters_per_request' => env('CLUSTERING_MAX_RESPONSE', 5000),
 ];

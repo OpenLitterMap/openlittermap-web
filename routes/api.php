@@ -3,6 +3,7 @@
 use App\Http\Controllers\Achievements\AchievementsController;
 use App\Http\Controllers\Admin\UsersController;
 use App\Http\Controllers\ApiPhotosController;
+use App\Http\Controllers\Clusters\ClusterController;
 use App\Http\Controllers\Leaderboard\GetUsersForGlobalLeaderboardController;
 use App\Http\Controllers\Leaderboard\GetUsersForLocationLeaderboardController;
 use App\Http\Controllers\Leaderboard\LeaderboardController;
@@ -45,8 +46,10 @@ Route::group(['prefix' => 'v3', 'middleware' => ['web', 'auth:api,web']], functi
      Route::get('/user/photos/untagged', [GetUsersUntaggedPhotosController::class, 'index']);
 
      Route::post('/tags', [PhotoTagsController::class, 'store']);
-
 });
+
+Route::get('/clusters', [ClusterController::class, 'index'])
+    ->name('api.clusters.index');
 
 Route::get('/global/stats-data', 'API\GlobalStatsController@index');
 Route::get('/mobile-app-version', 'API\MobileAppVersionController');

@@ -3,180 +3,223 @@
 namespace App\Services\Clustering;
 
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class ClusteringService
 {
     /**
-     * Grid size in degrees for each zoom level
-     *
-     * WARNING: These are in degrees, so physical distance shrinks at higher latitudes!
-     * At latitude φ, 1° longitude = 111km * cos(φ)
+     * Compute tile key from coordinates
+     * Handles boundary cases properly with clamping
      */
-    private array $zoomRadii = [
-        2 => 10.0,    // 10 degrees
-        4 => 5.0,     // 5 degrees
-        6 => 2.5,     // 2.5 degrees
-        8 => 1.0,     // 1 degree
-        10 => 0.5,    // 0.5 degrees
-        12 => 0.25,   // 0.25 degrees
-        14 => 0.1,    // 0.1 degrees
-        16 => 0.05,   // 0.05 degrees
-    ];
-
-    /**
-     * Cluster all photos in a tile
-     */
-    public function clusterTile(int $tileKey, ?int $year = null): array
+    public function computeTileKey(float $lat, float $lon): ?int
     {
-        $stats = ['photos' => 0, 'clusters' => 0];
-
-        // Add concurrency lock
-        $lockName = "cluster_tile_{$tileKey}_year_" . ($year ?? 'all');
-        $lockAcquired = DB::selectOne("SELECT GET_LOCK(?, 5) as acquired", [$lockName])->acquired;
-
-        if (!$lockAcquired) {
-            throw new \RuntimeException("Could not acquire lock for tile $tileKey");
+        // Validate coordinates
+        if ($lat < -90 || $lat > 90 || $lon < -180 || $lon > 180) {
+            return null;
         }
 
-        try {
-            DB::transaction(function() use ($tileKey, $year, &$stats) {
-                // Delete old clusters for this tile
-                DB::table('clusters')
-                    ->where('tile_key', $tileKey)
-                    ->where('year', $year ?? 0)  // year is now NOT NULL DEFAULT 0
-                    ->delete();
+        // Clamp to prevent overflow (matching migration logic)
+        $lat = min($lat, 89.999999);
+        $lon = min($lon, 179.999999);
 
-                // Count photos in this tile
-                $photoCount = DB::table('photos')
-                    ->where('tile_key', $tileKey)
-                    ->where('verified', 2)
-                    ->when($year, fn($q) => $q->whereYear('created_at', $year))
-                    ->count();
+        // Use config for tile size
+        $tileSize = config('clustering.tile_size', 0.25);
+        $tileWidth = (int) (360 / $tileSize);
 
-                $stats['photos'] = $photoCount;
+        // Simple formula with origin at (-90, -180)
+        $latIndex = (int) floor(($lat + 90) / $tileSize);
+        $lonIndex = (int) floor(($lon + 180) / $tileSize);
 
-                if ($photoCount == 0) {
-                    return;
-                }
-
-                // Create clusters for each zoom level
-                foreach ($this->zoomRadii as $zoom => $gridSize) {
-                    $clustersCreated = $this->createClustersForZoom(
-                        $tileKey,
-                        $zoom,
-                        $gridSize,
-                        $year
-                    );
-
-                    $stats['clusters'] += $clustersCreated;
-                }
-            });
-        } catch (\Exception $e) {
-            Log::error("Failed to cluster tile $tileKey: " . $e->getMessage());
-            throw $e;
-        } finally {
-            DB::selectOne("SELECT RELEASE_LOCK(?)", [$lockName]);
-        }
-
-        return $stats;
+        return $latIndex * $tileWidth + $lonIndex;
     }
 
     /**
-     * Create clusters for a specific zoom level
+     * Update tile keys for a batch of photos - optimized with range queries
      */
-    private function createClustersForZoom(int $tileKey, int $zoom, float $gridSize, ?int $year): int
+    public function updatePhotoTileKeys(int $batchSize = null): int
     {
-        // Allow single photo clusters only at max zoom
-        $minPoints = ($zoom == 16) ? 1 : 2;
+        $batchSize = $batchSize ?? config('clustering.update_chunk_size', 1000);
+        $updated = 0;
+        $lastId = 0;
 
-        // Fix parameter order - build query with correct placeholder sequence
-        if ($year) {
-            $sql = "
-                INSERT INTO clusters (tile_key, zoom, year, cell_x, cell_y, lat, lon, point_count)
-                SELECT
-                    ?,
-                    ?,
-                    ?,
-                    FLOOR(lon / ?) as cell_x,
-                    FLOOR(lat / ?) as cell_y,
-                    AVG(lat) as lat,
-                    AVG(lon) as lon,
-                    COUNT(*) as point_count
-                FROM photos
-                WHERE tile_key = ?
-                    AND verified = 2
-                    AND YEAR(created_at) = ?
-                GROUP BY cell_x, cell_y
-                HAVING COUNT(*) >= ?
-                ON DUPLICATE KEY UPDATE
-                    lat = VALUES(lat),
-                    lon = VALUES(lon),
-                    point_count = VALUES(point_count),
-                    updated_at = CURRENT_TIMESTAMP
-            ";
+        do {
+            // Get max ID for this batch
+            $maxId = DB::table('photos')
+                ->where('id', '>', $lastId)
+                ->whereNull('tile_key')
+                ->whereBetween('lat', [-90, 90])
+                ->whereBetween('lon', [-180, 180])
+                ->orderBy('id')
+                ->limit($batchSize)
+                ->max('id');
 
-            $bindings = [
-                $tileKey,
-                $zoom,
-                $year,
-                $gridSize,
-                $gridSize,
-                $tileKey,
-                $year,
-                $minPoints
-            ];
-        } else {
-            $sql = "
-                INSERT INTO clusters (tile_key, zoom, year, cell_x, cell_y, lat, lon, point_count)
-                SELECT
-                    ?,
-                    ?,
-                    ?,
-                    FLOOR(lon / ?) as cell_x,
-                    FLOOR(lat / ?) as cell_y,
-                    AVG(lat) as lat,
-                    AVG(lon) as lon,
-                    COUNT(*) as point_count
-                FROM photos
-                WHERE tile_key = ?
-                    AND verified = 2
-                GROUP BY cell_x, cell_y
-                HAVING COUNT(*) >= ?
-                ON DUPLICATE KEY UPDATE
-                    lat = VALUES(lat),
-                    lon = VALUES(lon),
-                    point_count = VALUES(point_count),
-                    updated_at = CURRENT_TIMESTAMP
-            ";
+            if (!$maxId) {
+                break;
+            }
 
-            $bindings = [
-                $tileKey,
-                $zoom,
-                0,
-                $gridSize,
-                $gridSize,
-                $tileKey,
-                $minPoints
-            ];
-        }
+            // Get photos in this range
+            $photos = DB::table('photos')
+                ->whereBetween('id', [$lastId + 1, $maxId])
+                ->whereNull('tile_key')
+                ->whereBetween('lat', [-90, 90])
+                ->whereBetween('lon', [-180, 180])
+                ->get(['id', 'lat', 'lon']);
 
-        return DB::affectingStatement($sql, $bindings);
+            // Build updates
+            $updates = [];
+            foreach ($photos as $photo) {
+                $tileKey = $this->computeTileKey($photo->lat, $photo->lon);
+                if ($tileKey !== null) {
+                    $updates[] = "({$photo->id}, {$tileKey})";
+                }
+            }
+
+            // Bulk update
+            if (!empty($updates)) {
+                DB::statement("
+                    INSERT INTO photos (id, tile_key) VALUES
+                    " . implode(',', $updates) . "
+                    ON DUPLICATE KEY UPDATE tile_key = VALUES(tile_key)
+                ");
+                $updated += count($updates);
+            }
+
+            $lastId = $maxId;
+
+        } while (true);
+
+        return $updated;
     }
 
     /**
-     * Get tile bounds for a given tile key
+     * Cluster all photos in a tile for all zoom levels
+     * Uses grid_size for optimized queries
      */
-    public function getTileBounds(int $tileKey): array
+    public function clusterTile(int $tileKey): void
     {
-        $latIdx = floor($tileKey / 1440);
-        $lonIdx = $tileKey % 1440;
+        $zoomConfigs = config('clustering.zoom_levels', [
+            8 => ['grid' => 1.0, 'min_points' => 3],
+            12 => ['grid' => 0.25, 'min_points' => 2],
+            16 => ['grid' => 0.05, 'min_points' => 1],
+        ]);
 
+        foreach ($zoomConfigs as $zoom => $config) {
+            $this->clusterTileAtZoom($tileKey, $zoom, $config);
+        }
+    }
+
+    /**
+     * Cluster a single tile at a specific zoom level
+     * Uses INSERT ON DUPLICATE KEY UPDATE to avoid gaps
+     */
+    private function clusterTileAtZoom(int $tileKey, int $zoom, array $cfg): void
+    {
+        $g   = $cfg['grid'];
+        $min = $cfg['min_points'];
+
+        DB::statement("
+            INSERT INTO clusters
+                (tile_key, zoom, year, cell_x, cell_y,
+                 lat, lon, location, point_count)
+            SELECT
+                ?, ?, 0,
+                FLOOR((lon + 180)/?) AS cell_x,
+                FLOOR((lat + 90)/?)  AS cell_y,
+                AVG(lat)             AS lat,
+                AVG(lon)             AS lon,
+                ST_SRID(POINT(AVG(lon), AVG(lat)), 4326)  AS location,
+                COUNT(*)             AS point_count
+            FROM   photos
+            WHERE  tile_key = ?
+              AND  verified = 2
+              AND  lat IS NOT NULL
+              AND  lon IS NOT NULL
+            GROUP  BY cell_x, cell_y
+            HAVING COUNT(*) >= ?
+            ON DUPLICATE KEY UPDATE
+                lat         = VALUES(lat),
+                lon         = VALUES(lon),
+                location    = VALUES(location),
+                point_count = VALUES(point_count),
+                updated_at  = CURRENT_TIMESTAMP
+        ", [$tileKey, $zoom, $g, $g, $tileKey, $min]);
+    }
+
+
+    /**
+     * Mark a tile as dirty with optional backoff
+     */
+    public function markTileDirty(int $tileKey, bool $withBackoff = false): void
+    {
+        $changedAt = $withBackoff
+            ? now()->addMinutes(1) // Exponential backoff for retries
+            : now();
+
+        // Upsert with attempt increment on conflict
+        DB::statement('
+            INSERT INTO dirty_tiles (tile_key, changed_at, attempts)
+            VALUES (?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+                changed_at = IF(attempts < 3, VALUES(changed_at), changed_at + INTERVAL 5 MINUTE),
+                attempts = attempts + 1
+        ', [$tileKey, $changedAt, $withBackoff ? 1 : 0]);
+    }
+
+    /**
+     * Get clustering statistics
+     */
+    public function getStats(): array
+    {
         return [
-            'min_lat' => -90 + $latIdx * 0.25,
-            'max_lat' => -90 + ($latIdx + 1) * 0.25,
-            'min_lon' => -180 + $lonIdx * 0.25,
-            'max_lon' => -180 + ($lonIdx + 1) * 0.25,
+            'photos_total' => DB::table('photos')->count(),
+            'photos_with_tiles' => DB::table('photos')->whereNotNull('tile_key')->count(),
+            'photos_verified' => DB::table('photos')->where('verified', 2)->count(),
+            'unique_tiles' => DB::table('photos')
+                ->whereNotNull('tile_key')
+                ->where('verified', 2)
+                ->distinct('tile_key')
+                ->count('tile_key'),
+            'clusters_total' => DB::table('clusters')->count(),
+            'clusters_by_zoom' => DB::table('clusters')
+                ->select('zoom', DB::raw('COUNT(*) as count'))
+                ->groupBy('zoom')
+                ->pluck('count', 'zoom')
+                ->toArray(),
         ];
+    }
+
+    /**
+     * Fill tile_key for the next N un-processed photos.
+     *
+     * @return int rows updated
+     */
+    public function backfillPhotoTileKeys(int $chunk = 50_000): int
+    {
+        // Grab the highest id that still needs a key
+        $max = DB::table('photos')
+            ->whereNull('tile_key')
+            ->whereBetween('lat', [-90, 90])
+            ->whereBetween('lon', [-180, 180])
+            ->orderBy('id')
+            ->limit($chunk)
+            ->max('id');
+
+        if (!$max) {              // nothing left
+            return 0;
+        }
+
+        $tileSize  = config('clustering.tile_size', 0.25);
+        $tileWidth = (int)(360 / $tileSize);
+
+        // One set-based UPDATE – **no** insert, uses MySQL maths only
+        return DB::affectingStatement("
+            UPDATE photos
+            SET    tile_key =
+                   FLOOR((lat + 90) / {$tileSize}) * {$tileWidth} +
+                   FLOOR((lon + 180) / {$tileSize})
+            WHERE  id <= ?
+              AND  tile_key IS NULL
+              AND  lat BETWEEN -90 AND 90
+              AND  lon BETWEEN -180 AND 180
+        ", [$max]);
     }
 }
