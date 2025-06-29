@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Clusters;
 
-use Tests\Helpers\CreateTestClusterPhotos;
+use Tests\Helpers\CreateTestClusterPhotosTrait;
 use Tests\TestCase;
 use App\Models\Photo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -12,31 +12,18 @@ use Illuminate\Support\Facades\Log;
 
 class ClusteringTest extends TestCase
 {
-    use RefreshDatabase, CreateTestClusterPhotos;
+    use RefreshDatabase, CreateTestClusterPhotosTrait;
 
     private ClusteringService $service;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = app(ClusteringService::class);
 
-        // Ensure consistent config for tests
-        // IMPORTANT: grid_size column is DECIMAL(4,3) so max value is 9.999
-        config([
-            'clustering.tile_size' => 0.25,
-            'clustering.zoom_levels' => [
-                0  => ['grid' => 8.0,    'min_points' => 10], // Changed from 32.0
-                2  => ['grid' => 8.0,    'min_points' =>  8],
-                4  => ['grid' => 4.0,    'min_points' =>  6],
-                6  => ['grid' => 2.0,    'min_points' =>  5],
-                8  => ['grid' => 1.0,    'min_points' =>  3],
-                10 => ['grid' => 0.5,    'min_points' =>  3],
-                12 => ['grid' => 0.25,   'min_points' =>  2],
-                14 => ['grid' => 0.10,   'min_points' =>  1],
-                16 => ['grid' => 0.05,   'min_points' =>  1],
-            ],
-        ]);
+        // Reset the static test user to avoid foreign key issues
+        $this->setUpCreateTestClusterPhotos();
+
+        $this->service = app(ClusteringService::class);
     }
 
     /* -----------------------------------------------------------------

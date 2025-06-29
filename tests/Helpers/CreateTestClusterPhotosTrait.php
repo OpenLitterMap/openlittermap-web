@@ -6,12 +6,20 @@ use App\Models\Photo;
 use App\Models\Users\User;
 use Illuminate\Support\Facades\DB;
 
-trait CreateTestClusterPhotos
+trait CreateTestClusterPhotosTrait
 {
     /**
      * The test user to use for photos
      */
     protected static ?User $testUser = null;
+
+    /**
+     * Reset test user on each test
+     */
+    protected function setUpCreateTestClusterPhotos(): void
+    {
+        self::$testUser = null;
+    }
 
     /**
      * Get or create a test user for photos
@@ -44,7 +52,7 @@ trait CreateTestClusterPhotos
      */
     protected function createPhoto(array $attributes = []): Photo
     {
-        // Ensure we have a valid user_id
+        // ALWAYS ensure we have a valid user_id - don't default to 1
         $userId = $attributes['user_id'] ?? $this->getTestUser()->id;
 
         $defaults = [
