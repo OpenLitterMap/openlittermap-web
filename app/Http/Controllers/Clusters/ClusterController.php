@@ -58,8 +58,6 @@ class ClusterController extends Controller
 
         // Find the closest available zoom level
         // For zoom 2.88, we want to snap to the nearest available level (likely 2 or 4)
-        $zoom = null;
-
         // First try to find exact match or next higher
         $zoom = collect($available)->first(fn ($z) => $z >= $requestedRounded);
 
@@ -72,15 +70,6 @@ class ClusterController extends Controller
         if ($requestedRounded < $available[0]) {
             $zoom = $available[0];
         }
-
-        // DEBUG: Log zoom calculation
-        Log::info('Cluster zoom calculation', [
-            'requested_raw' => $requested,
-            'requested_rounded' => $requestedRounded,
-            'available' => $available,
-            'selected' => $zoom,
-            'config_for_selected' => config("clustering.zoom_levels.{$zoom}"),
-        ]);
 
         /* ------------------------------------------------------------
          * Parse bbox – fall back to world
@@ -107,13 +96,6 @@ class ClusterController extends Controller
                 min(180,  (float)$centerLon + $bboxSize),  // right
                 min(90,   (float)$centerLat + $bboxSize),  // top
             ];
-
-            Log::info('Created bbox from center point', [
-                'center' => ['lat' => $centerLat, 'lon' => $centerLon],
-                'zoom' => $zoom,
-                'bbox_size' => $bboxSize,
-                'bbox' => $bbox,
-            ]);
         } else {
             // Default to world bbox
             $bbox = [-180, -90, 180, 90];
@@ -123,20 +105,11 @@ class ClusterController extends Controller
 
         // Handle dateline crossing (e.g., bbox.right > 180)
         if ($maxLon > 180) {
-            Log::info('Handling dateline crossing', ['original_maxLon' => $maxLon]);
             // For now, cap at 180 - you might want more sophisticated handling
             $maxLon = 180;
         }
 
         $bboxKey = sprintf('%.4f:%.4f:%.4f:%.4f', $minLon, $minLat, $maxLon, $maxLat);
-
-        // DEBUG: Log bbox
-        Log::info('Cluster bbox', [
-            'minLon' => $minLon,
-            'minLat' => $minLat,
-            'maxLon' => $maxLon,
-            'maxLat' => $maxLat,
-        ]);
 
         /* ------------------------------------------------------------
          * Caching
@@ -150,36 +123,10 @@ class ClusterController extends Controller
             return response('', 304)->header('ETag', $etag);
         }
 
-        // DEBUG: Check what's in the database before querying
-        $clusterStats = DB::select("
-            SELECT zoom, grid_size, COUNT(*) as count
-            FROM clusters
-            GROUP BY zoom, grid_size
-            ORDER BY zoom, grid_size
-        ");
-        Log::info('Cluster stats in database', $clusterStats);
-
-        // DEBUG: Check sample clusters at requested zoom
-        $sampleClusters = DB::select("
-            SELECT zoom, grid_size, lon, lat, point_count
-            FROM clusters
-            WHERE zoom = ?
-            LIMIT 5
-        ", [$zoom]);
-        Log::info("Sample clusters at zoom {$zoom}", $sampleClusters);
-
         /* ------------------------------------------------------------
          * Fetch (or read from cache)
          * ------------------------------------------------------------ */
         $gridSize = config("clustering.zoom_levels.{$zoom}.grid");
-
-        // DEBUG: Log grid size
-        Log::info('Grid size for query', [
-            'zoom' => $zoom,
-            'gridSize' => $gridSize,
-            'ignoreGridSize' => $ignoreGridSize,
-            'config' => config("clustering.zoom_levels.{$zoom}"),
-        ]);
 
         // Clear cache for debugging - remove this line after debugging
         Cache::forget($cacheKey);
@@ -221,68 +168,10 @@ class ClusterController extends Controller
             ";
             array_push($bind, $minLon, $maxLon, $minLat, $maxLat, $limit);
 
-            // DEBUG: Log the actual query
-            Log::info('Cluster query', [
-                'sql' => $sql,
-                'bind' => $bind,
-            ]);
-
             $rows = DB::select($sql, $bind);
 
-            // DEBUG: Log query results
-            Log::info('Cluster query results', [
-                'count' => count($rows),
-                'first_5' => array_slice($rows, 0, 5),
-            ]);
-
-            // DEBUG: If no results, try diagnostic queries
-            if (empty($rows)) {
-                Log::warning('No clusters found with current query');
-
-                // Check if ANY clusters exist at this zoom
-                $anyAtZoom = DB::selectOne("
-                    SELECT COUNT(*) as count
-                    FROM clusters
-                    WHERE zoom = ?
-                ", [$zoom]);
-
-                Log::info('Total clusters at zoom', [
-                    'zoom' => $zoom,
-                    'total' => $anyAtZoom->count,
-                ]);
-
-                // Check clusters in the bbox without zoom filter
-                $inBbox = DB::select("
-                    SELECT zoom, COUNT(*) as count
-                    FROM clusters
-                    WHERE lon BETWEEN ? AND ?
-                    AND lat BETWEEN ? AND ?
-                    GROUP BY zoom
-                    ORDER BY zoom
-                ", [$minLon, $maxLon, $minLat, $maxLat]);
-
-                Log::info('Clusters in bbox by zoom', $inBbox);
-
-                // Sample of what's actually in the area
-                $samples = DB::select("
-                    SELECT zoom, grid_size, lon, lat, point_count
-                    FROM clusters
-                    WHERE lon BETWEEN ? AND ?
-                    AND lat BETWEEN ? AND ?
-                    LIMIT 10
-                ", [$minLon, $maxLon, $minLat, $maxLat]);
-
-                Log::info('Sample clusters in bbox area', $samples);
-            }
-
-            return $this->createGeoJsonPoints('clusters', $rows);
+            return $this->createGeoJsonPoints('clusters', $rows, true);
         });
-
-        // DEBUG: Log final response
-        Log::info('Cluster response', [
-            'feature_count' => count($geojson['features'] ?? []),
-            'cache_key' => $cacheKey,
-        ]);
 
         return response()
             ->json($geojson)
@@ -291,28 +180,3 @@ class ClusterController extends Controller
     }
 }
 
-/*
- * QUICK FIX OPTIONS:
- *
- * 1. To ignore grid_size filtering (if clusters have NULL or mismatched grid_size):
- *    Add to .env: CLUSTER_IGNORE_GRID_SIZE=true
- *
- * 2. To update existing clusters with correct grid_size values, run:
- *    UPDATE clusters SET grid_size = CASE
- *      WHEN zoom = 0 THEN 32.0
- *      WHEN zoom = 2 THEN 8.0
- *      WHEN zoom = 4 THEN 4.0
- *      WHEN zoom = 6 THEN 2.0
- *      WHEN zoom = 8 THEN 1.0
- *      WHEN zoom = 10 THEN 0.5
- *      WHEN zoom = 12 THEN 0.25
- *      WHEN zoom = 14 THEN 0.10
- *      WHEN zoom = 16 THEN 0.05
- *      ELSE grid_size
- *    END;
- *
- * 3. After debugging, remove:
- *    - The Cache::forget() line
- *    - The debug Log:: statements
- *    - The CLUSTER_IGNORE_GRID_SIZE check
- */
