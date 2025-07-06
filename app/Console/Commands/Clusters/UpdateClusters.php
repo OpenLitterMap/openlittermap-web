@@ -5,14 +5,14 @@ namespace App\Console\Commands\Clusters;
 use App\Services\Clustering\ClusteringService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class UpdateClusters extends Command
 {
     protected $signature = 'clustering:update
         {--populate : Populate missing tile keys}
         {--all : Recluster all tiles}
-        {--stats : Show statistics only}';
+        {--stats : Show statistics only}
+        {--explain : Show query execution plans}';
 
     protected $description = 'Update photo clustering';
 
@@ -39,7 +39,7 @@ class UpdateClusters extends Command
 
         // Process clusters
         if ($this->option('all')) {
-            $this->clusterAllTiles();
+            $this->clusterAll();
         }
 
         return 0;
@@ -58,59 +58,116 @@ class UpdateClusters extends Command
             return;
         }
 
-        $this->info("Populating $missing photos – chunking …");
+        $this->info("Populating $missing photos - chunking...");
         $bar = $this->output->createProgressBar($missing);
 
+        $totalTime = 0;
         while (true) {
-            $done = $this->service->backfillPhotoTileKeys(); // default 50 k
+            $start = microtime(true);
+            $done = $this->service->backfillPhotoTileKeys();
             if ($done === 0) break;
 
+            $totalTime += microtime(true) - $start;
             $bar->advance($done);
         }
 
         $bar->finish();
         $this->newLine();
-        $this->info(' ✓  tile_key back-fill complete');
+        $this->info(sprintf('✓ tile_key back-fill complete in %.2fs', $totalTime));
     }
 
-    private function clusterAllTiles(): void
+    private function clusterAll(): void
     {
-        $this->info('Clustering all tiles...');
+        $startTime = microtime(true);
+        $this->info('Starting clustering process...');
 
-        $tiles = DB::table('photos')
-            ->select('tile_key', DB::raw('COUNT(*) as photo_count'))
-            ->where('verified', 2)
-            ->whereNotNull('tile_key')
-            ->groupBy('tile_key')
-            ->having('photo_count', '>=', 2)
-            ->pluck('tile_key');
+        // Get zoom levels from config
+        $globalZooms = config('clustering.zoom_levels.global', [0, 2, 4, 6]);
+        $tileZooms = config('clustering.zoom_levels.tile', [8, 10, 12, 14, 16]);
 
-        $this->info("Found {$tiles->count()} tiles to cluster");
-
-        $bar = $this->output->createProgressBar($tiles->count());
-        $bar->start();
-
-        $failed = 0;
-
-        foreach ($tiles as $tileKey) {
-            try {
-                $this->service->clusterTile($tileKey);
-            } catch (\Exception $e) {
-                $failed++;
-                Log::error("Error clustering tile $tileKey", [
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
-                ]);
-            }
-            $bar->advance();
+        // Show query plan if requested
+        if ($this->option('explain')) {
+            $this->showQueryPlan();
         }
 
-        $bar->finish();
-        $this->newLine();
+        // Global clustering for low zoom levels
+        $this->info('Processing global zoom levels...');
+        $globalStats = [];
+        foreach ($globalZooms as $zoom) {
+            $start = microtime(true);
+            $count = $this->service->clusterGlobal($zoom);
+            $time = microtime(true) - $start;
+            $globalStats[] = compact('zoom', 'count', 'time');
+            $this->line(sprintf("✓ Zoom %2d: %6d clusters (%5.2fs)", $zoom, $count, $time));
+        }
 
-        $this->info('✓ Clustering complete');
-        if ($failed > 0) {
-            $this->warn("Failed to cluster $failed tiles - check logs");
+        // Batch clustering for high zoom levels
+        $this->info('Processing per-tile zoom levels (optimized batch mode)...');
+        $tileStats = [];
+        foreach ($tileZooms as $zoom) {
+            $start = microtime(true);
+            $memBefore = memory_get_usage(true);
+
+            $count = $this->service->clusterAllTilesForZoom($zoom);
+
+            $time = microtime(true) - $start;
+            $memUsed = (memory_get_usage(true) - $memBefore) / 1024 / 1024;
+            $tileStats[] = compact('zoom', 'count', 'time', 'memUsed');
+
+            $this->line(sprintf(
+                "✓ Zoom %2d: %6d clusters (%5.2fs, %.1fMB)",
+                $zoom, $count, $time, $memUsed
+            ));
+        }
+
+        $totalTime = microtime(true) - $startTime;
+        $this->newLine();
+        $this->info(sprintf("✓ Clustering complete in %.2fs", $totalTime));
+
+        // Show performance summary
+        $this->showPerformanceSummary($globalStats, $tileStats, $totalTime);
+    }
+
+    private function showQueryPlan(): void
+    {
+        $this->info('Query execution plan for deep zoom:');
+
+        $plan = DB::select("
+            EXPLAIN FORMAT=JSON
+            SELECT
+              tile_key,
+              FLOOR(cell_x / 20) AS cluster_x,
+              FLOOR(cell_y / 20) AS cluster_y,
+              COUNT(*)
+            FROM photos USE INDEX (idx_photos_fast_cluster)
+            WHERE verified = 2
+              AND tile_key IS NOT NULL
+            GROUP BY tile_key, cluster_x, cluster_y
+            LIMIT 1
+        ");
+
+        $json = json_decode($plan[0]->{'EXPLAIN'}, true);
+        $this->line(json_encode($json, JSON_PRETTY_PRINT));
+        $this->newLine();
+    }
+
+    private function showPerformanceSummary(array $globalStats, array $tileStats, float $totalTime): void
+    {
+        $this->newLine();
+        $this->info('Performance Summary:');
+        $this->info('───────────────────');
+
+        $globalTime = array_sum(array_column($globalStats, 'time'));
+        $tileTime = array_sum(array_column($tileStats, 'time'));
+        $globalClusters = array_sum(array_column($globalStats, 'count'));
+        $tileClusters = array_sum(array_column($tileStats, 'count'));
+
+        $this->line(sprintf("Global zooms: %.2fs for %d clusters", $globalTime, $globalClusters));
+        $this->line(sprintf("Tile zooms:   %.2fs for %d clusters", $tileTime, $tileClusters));
+        $this->line(sprintf("Total:        %.2fs for %d clusters", $totalTime, $globalClusters + $tileClusters));
+
+        if ($tileTime > 0) {
+            $this->line(sprintf("Throughput:   %.0f clusters/sec", $tileClusters / $tileTime));
         }
     }
 
@@ -131,8 +188,23 @@ class UpdateClusters extends Command
             $this->newLine();
             $this->line("Clusters by zoom:");
             foreach ($stats['clusters_by_zoom'] as $zoom => $count) {
-                $this->line("  Zoom $zoom: " . number_format($count));
+                $this->line(sprintf("  Zoom %2d: %s", $zoom, number_format($count)));
             }
+        }
+
+        // Verify data integrity
+        $this->newLine();
+        $this->info('Data Integrity Check:');
+        $verifiedPhotos = DB::table('photos')->where('verified', 2)->count();
+        $z16Points = DB::table('clusters')->where('zoom', 16)->sum('point_count');
+
+        if ($verifiedPhotos == $z16Points) {
+            $this->line("✓ All verified photos accounted for in zoom 16 clusters");
+        } else {
+            $this->warn(sprintf(
+                "⚠ Mismatch: %d verified photos vs %d in zoom 16 clusters",
+                $verifiedPhotos, $z16Points
+            ));
         }
     }
 }

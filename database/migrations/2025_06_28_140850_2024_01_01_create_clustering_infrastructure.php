@@ -16,7 +16,6 @@ return new class extends Migration
                 $t->unsignedInteger('tile_key')->nullable()->after('lon');
             });
 
-            // Add indexes only if they don't exist
             if (!$this->indexExists('photos', 'idx_photos_verified_tile')) {
                 Schema::table('photos', function (Blueprint $t) {
                     $t->index(['verified', 'tile_key'], 'idx_photos_verified_tile');
@@ -28,130 +27,64 @@ return new class extends Migration
                     $t->index(['tile_key', 'updated_at'], 'idx_photos_tile_updated');
                 });
             }
+
+            if (!$this->indexExists('photos', 'idx_photos_verified_lat_lon')) {
+                DB::statement('CREATE INDEX idx_photos_verified_lat_lon ON photos(verified, lat, lon)');
+            }
         }
 
-        /* ---------- clusters: add columns online, fill, then switch PK ---------- */
+        /* ---------- clusters: add columns (no backfill needed - table is empty) ---------- */
 
-        // 1. Add columns as NULL-able (instant)
+        // 1. Add columns as NOT NULL with defaults (since table is empty)
         Schema::table('clusters', function (Blueprint $t) {
             if (!Schema::hasColumn('clusters', 'tile_key')) {
-                $t->unsignedInteger('tile_key')->nullable()->after('id');
+                $t->unsignedInteger('tile_key')->default(0);
             }
             if (!Schema::hasColumn('clusters', 'cell_x')) {
-                $t->integer('cell_x')->nullable()->after('zoom');
-                $t->integer('cell_y')->nullable()->after('cell_x');
+                $t->integer('cell_x')->default(0)->after('zoom');
+                $t->integer('cell_y')->default(0)->after('cell_x');
             }
         });
 
-        // 2. Backfill with range-based updates (no gap locks)
-        $this->info('Backfilling cluster tile keys (range-based)...');
-        $batchSize = 10000;
-        $totalUpdated = 0;
-        $lastId = 0;
-
-        do {
-            // Get max ID for this batch
-            $maxId = DB::table('clusters')
-                ->where('id', '>', $lastId)
-                ->whereNull('tile_key')
-                ->orderBy('id')
-                ->limit($batchSize)
-                ->max('id');
-
-            if (!$maxId) {
-                break;
-            }
-
-            // Update using ID range (no gap locks)
-            $affected = DB::update('
-                UPDATE clusters
-                SET tile_key = FLOOR((LEAST(lat, 89.999999) + 90) / 0.25) * 1440 +
-                               FLOOR((LEAST(lon, 179.999999) + 180) / 0.25),
-                    cell_x = FLOOR((LEAST(lon, 179.999999) + 180) / 0.25),
-                    cell_y = FLOOR((LEAST(lat, 89.999999) + 90) / 0.25)
-                WHERE id > ? AND id <= ? AND tile_key IS NULL
-            ', [$lastId, $maxId]);
-
-            $totalUpdated += $affected;
-            $lastId = $maxId;
-
-            if ($affected > 0) {
-                $this->info("  Updated $totalUpdated rows...");
-            }
-        } while ($affected > 0);
-
-        $this->info("✓ Backfilled $totalUpdated cluster rows");
-
-        // 3. Make columns NOT NULL after backfill (in-place)
+        // 2. Remove defaults after adding columns
         DB::statement('ALTER TABLE clusters
             MODIFY tile_key INT UNSIGNED NOT NULL,
             MODIFY cell_x INT NOT NULL,
             MODIFY cell_y INT NOT NULL'
         );
 
-        // 4. Modify year column (in-place)
+        // 3. Modify year column
         DB::statement('ALTER TABLE clusters
             MODIFY year SMALLINT UNSIGNED NOT NULL DEFAULT 0'
         );
 
-        // 5-A  add a plain nullable POINT column first
+        // 4. Add location column
         if (!Schema::hasColumn('clusters', 'location')) {
-            DB::statement("ALTER TABLE clusters ADD COLUMN location POINT NULL AFTER lon");
+            DB::statement("ALTER TABLE clusters ADD COLUMN location POINT NOT NULL AFTER lon");
         }
 
-        /* 5-B  back-fill existing rows */
-        DB::statement("
-            UPDATE clusters
-            SET location = ST_PointFromText(CONCAT('POINT(', lon, ' ', lat, ')'))
-            WHERE lat IS NOT NULL AND lon IS NOT NULL AND location IS NULL
-        ");
+        // 5. Create spatial index
+        if (!$this->indexExists('clusters', 'idx_clusters_spatial')) {
+            DB::statement('CREATE SPATIAL INDEX idx_clusters_spatial ON clusters(location)');
+        }
 
-        /* >>> 5-C  make it NOT NULL (tiny copy, but required for the index) */
-        DB::statement("ALTER TABLE clusters MODIFY location POINT NOT NULL");
-
-
-        // 5-C  create the spatial index
-        DB::statement("CREATE SPATIAL INDEX idx_clusters_spatial ON clusters(location)");
-
-        /* -----------------------------------------------------------------
-           5-D  add the remaining keys / helper column *in a new ALTER*.
-           Older servers can’t mix SPATIAL INDEX with UNIQUE KEY + generated
-           column in one statement.  Doing it separately is safe everywhere.
-        -------------------------------------------------------------------*/
+        // 6. Add remaining indexes and columns
         DB::statement("
             ALTER TABLE clusters
               ADD UNIQUE KEY uk_cluster (tile_key, zoom, year, cell_x, cell_y),
-              ADD COLUMN grid_size DECIMAL(4,3) NULL,
+              ADD COLUMN grid_size DECIMAL(6,3) NOT NULL DEFAULT 0.25,
               ADD INDEX idx_zoom_tile (zoom, tile_key)
         ");
 
-        /* initialise grid_size once, then leave it as a normal column */
-        DB::statement("
-            UPDATE clusters
-            SET grid_size = CASE zoom
-                              WHEN 8  THEN 1.0
-                              WHEN 12 THEN 0.25
-                              WHEN 16 THEN 0.05
-                              ELSE 0.25
-                            END
-            WHERE grid_size IS NULL
-        ");
-
-        // 6. Primary key migration deferred (see separate command)
-        $this->info('');
-        $this->info('⚠️  IMPORTANT: To complete the primary key migration:');
-        $this->info('1. Deploy application code that uses the new composite key');
-        $this->info('2. Run: php artisan clustering:complete-pk-migration');
-
-        /* ---------- dirty_tiles with better queue handling ---------- */
+        /* ---------- dirty_tiles table ---------- */
 
         if (!Schema::hasTable('dirty_tiles')) {
             Schema::create('dirty_tiles', function (Blueprint $t) {
                 $t->unsignedInteger('tile_key');
                 $t->timestamp('changed_at')->useCurrent();
                 $t->unsignedTinyInteger('attempts')->default(0);
-                $t->primary('tile_key'); // Single PK for simpler queue
-                $t->index(['changed_at', 'attempts']); // For efficient queries
+                $t->primary('tile_key');
+                $t->index(['changed_at', 'attempts']);
             });
         }
     }
@@ -159,6 +92,10 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('dirty_tiles');
+
+        if ($this->primaryKeyExists('clusters')) {
+            DB::statement('ALTER TABLE clusters DROP PRIMARY KEY');
+        }
 
         // Remove columns and indexes
         if ($this->indexExists('clusters', 'uk_cluster')) {
@@ -182,6 +119,10 @@ return new class extends Migration
 
         // Drop new columns
         Schema::table('clusters', function (Blueprint $t) {
+            if (Schema::hasColumn('clusters', 'grid_size')) {
+                $t->dropColumn('grid_size');
+            }
+
             if (Schema::hasColumn('clusters', 'tile_key')) {
                 $t->dropColumn(['tile_key', 'cell_x', 'cell_y']);
             }
@@ -205,6 +146,10 @@ return new class extends Migration
                 $t->dropColumn('tile_key');
             });
         }
+
+        if ($this->indexExists('photos', 'idx_photos_verified_lat_lon')) {
+            DB::statement('DROP INDEX idx_photos_verified_lat_lon ON photos');
+        }
     }
 
     private function indexExists(string $table, string $index): bool
@@ -218,6 +163,19 @@ return new class extends Migration
         ", [$table, $index]);
 
         return $result && $result->count > 0;
+    }
+
+    private function primaryKeyExists(string $table): bool
+    {
+        $result = DB::selectOne("
+        SELECT COUNT(*) AS cnt
+        FROM information_schema.statistics
+        WHERE table_schema = DATABASE()
+          AND table_name   = ?
+          AND index_name   = 'PRIMARY'
+    ", [$table]);
+
+        return $result && $result->cnt > 0;
     }
 
     private function info(string $message): void

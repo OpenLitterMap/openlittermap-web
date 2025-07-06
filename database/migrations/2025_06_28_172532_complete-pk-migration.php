@@ -31,10 +31,13 @@ return new class extends Migration
         /* ------------------------------------------------------------------
          |  1. Make sure `id` is NOT auto-increment
          * ------------------------------------------------------------------*/
-        DB::statement("
-            ALTER TABLE clusters
-            MODIFY id BIGINT UNSIGNED NOT NULL
-        ");
+        if ($colExists('id')) {
+            DB::statement("
+                ALTER TABLE clusters
+                MODIFY id BIGINT UNSIGNED NOT NULL
+            ");
+        }
+
 
         /* ------------------------------------------------------------------
          |  2. Drop old PRIMARY KEY (if any)

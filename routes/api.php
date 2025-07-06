@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\Achievements\AchievementsController;
-use App\Http\Controllers\Admin\UsersController;
+// use App\Http\Controllers\Admin\UsersController;
 use App\Http\Controllers\ApiPhotosController;
 use App\Http\Controllers\Clusters\ClusterController;
 use App\Http\Controllers\Leaderboard\GetUsersForGlobalLeaderboardController;
@@ -48,8 +48,10 @@ Route::group(['prefix' => 'v3', 'middleware' => ['web', 'auth:api,web']], functi
      Route::post('/tags', [PhotoTagsController::class, 'store']);
 });
 
-Route::get('/clusters', [ClusterController::class, 'index'])
-    ->name('api.clusters.index');
+Route::prefix('clusters')->group(function () {
+    Route::get('/', [ClusterController::class, 'index']);
+    Route::get('/zoom-levels', [ClusterController::class, 'zoomLevels']);
+});
 
 Route::get('/global/stats-data', 'API\GlobalStatsController@index');
 Route::get('/mobile-app-version', 'API\MobileAppVersionController');
