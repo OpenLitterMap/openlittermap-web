@@ -66,7 +66,7 @@ return [
     |
     | Define custom grid sizes for each zoom level.
     | Smaller values = more clusters (finer detail)
-    | For tile zooms (8-16), these must divide evenly into 0.05
+    | For tile zooms (8-16), these must divide evenly into smallest_grid
     |
     */
     'grid_sizes' => [
@@ -76,12 +76,12 @@ return [
         4 => 5.0,       // ~555km cells - ~100-150 clusters
         6 => 2.0,       // ~222km cells - ~300-500 clusters
 
-        // Tile zooms - must result in clean integer factors with 0.05
-        8 => 0.8,       // factor 16 (0.8/0.05=16) - ~89km cells
-        10 => 0.4,      // factor 8 (0.4/0.05=8) - ~44km cells
-        12 => 0.1,      // factor 2 (0.1/0.05=2) - ~11km cells - many more clusters
-        14 => 0.05,     // factor 1 (0.05/0.05=1) - ~5.5km cells - maximum clusters
-        16 => 0.05,     // factor 1 (0.05/0.05=1) - ~5.5km cells - maximum clusters
+        // Tile zooms - must result in clean integer factors with smallest_grid
+        8 => 0.8,       // factor 80 (0.8/0.01=80) - ~89km cells
+        10 => 0.4,      // factor 40 (0.4/0.01=40) - ~44km cells
+        12 => 0.08,     // factor 8 (0.08/0.01=8) - ~8.9km cells - more clusters
+        14 => 0.02,     // factor 2 (0.02/0.01=2) - ~2.2km cells - many more clusters
+        16 => 0.01,     // factor 1 (0.01/0.01=1) - ~1.1km cells - maximum clusters
     ],
 
     /*
@@ -91,9 +91,10 @@ return [
     |
     | The smallest grid size used (for zoom 16). This determines the
     | precision of generated cell columns.
+    | IMPORTANT: If you change this, you must regenerate the cell columns!
     |
     */
-    'smallest_grid' => 0.05,  // Must match the generated columns in photos table
+    'smallest_grid' => 0.01,  // Changed from 0.05 to allow finer clustering
 
     /*
     |--------------------------------------------------------------------------

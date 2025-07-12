@@ -315,4 +315,59 @@ class ClusteringService
             'total_points_in_clusters' => $clusters->sum('point_count'),
         ];
     }
+
+    // Add this method to your ClusteringService class:
+
+    /**
+     * Cluster a specific tile across all zoom levels
+     */
+    public function clusterTile(int $tileKey): void
+    {
+        $globalTileKey = config('clustering.global_tile_key');
+
+        // Skip if this is the global tile key
+        if ($tileKey == $globalTileKey) {
+            return;
+        }
+
+        // Get all configured zoom levels
+        $tileZooms = config('clustering.zoom_levels.tile', [8, 10, 12, 14, 16]);
+
+        foreach ($tileZooms as $zoom) {
+            $min = $this->minPointsForZoom($zoom);
+            $factor = $this->getCellFactor($zoom);
+            $gridSize = $this->gridSizeForZoom($zoom);
+
+            // Delete existing clusters for this tile at this zoom
+            DB::table('clusters')
+                ->where('zoom', $zoom)
+                ->where('tile_key', $tileKey)
+                ->delete();
+
+            // Re-cluster this tile
+            DB::statement("
+            INSERT INTO clusters
+              (tile_key, zoom, year, cell_x, cell_y,
+               lat, lon, location, point_count, grid_size)
+            SELECT
+              tile_key, ?, 0,
+              cluster_x, cluster_y,
+              AVG(lat), AVG(lon),
+              ST_SRID(POINT(AVG(lon), AVG(lat)), 4326),
+              COUNT(*),
+              ?
+            FROM (
+              SELECT
+                tile_key, lat, lon,
+                FLOOR(cell_x / ?) AS cluster_x,
+                FLOOR(cell_y / ?) AS cluster_y
+              FROM photos
+              WHERE verified = 2
+                AND tile_key = ?
+            ) AS grouped_photos
+            GROUP BY tile_key, cluster_x, cluster_y
+            HAVING COUNT(*) >= ?
+        ", [$zoom, $gridSize, $factor, $factor, $tileKey, $min]);
+        }
+    }
 }
