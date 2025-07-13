@@ -548,4 +548,10 @@ export const referencesList = [
         link: 'https://link.springer.com/chapter/10.1007/978-3-031-72494-7_25#:~:text=Mapping%20TSSI%20across%20the%2027,a%20more%20sustainable%2C%20inclusive%20world.',
         author: 'Leitão et al',
     },
+    {
+        date: '2025/06/09',
+        title: 'Identification of construction and demolition waste: Leveraging deep learning and open-source imagery for advanced monitoring in developing economies',
+        link: 'https://www.researchgate.net/profile/Anjali-G-3/publication/392654486_Identification_of_construction_and_demolition_waste_Leveraging_deep_learning_and_open-source_imagery_for_advanced_monitoring_in_developing_economies/links/684bf578131a7f2849f149eb/Identification-of-construction-and-demolition-waste-Leveraging-deep-learning-and-open-source-imagery-for-advanced-monitoring-in-developing-economies.pdf',
+        author: 'HaitherAli et al',
+    },
 ];
