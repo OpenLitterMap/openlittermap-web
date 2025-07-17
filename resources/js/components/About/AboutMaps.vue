@@ -17,7 +17,7 @@ const places = [
         zoom: 16,
         titleKey: 'EU Parliament, Brussels',
         copyKey:
-            "Outside the EU Parliament—where billions in 'green' budgets are approved—volunteers logged litter the lawmakers step over every day. Click to explore the hypocrisy.",
+            "Check out this map of litter outside the EU Parliament - where billions in 'green' budgets are spent on public health and the environment, but they can't even see what's on their doorstep.",
     },
     {
         id: 'de',
@@ -25,7 +25,7 @@ const places = [
         zoom: 16,
         titleKey: 'Bundesrat, Berlin',
         copyKey:
-            "Around Germany's Bundesrat we mapped thousands of cigarette butts circling the seat of federal power. Zero fines issued, zero clean-ups scheduled.",
+            'This is what cigarette litter the Federal government buildings of Germany looks like, where billions of euro in public money is spent on public health and the education.',
     },
 ];
 
@@ -186,17 +186,46 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <section class="py-20 sm:py-32 bg-slate-900">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section
+        class="py-20 sm:py-32 bg-gradient-to-br from-slate-950 via-purple-950 to-indigo-950 relative overflow-hidden"
+    >
+        <!-- Fancy geometric background pattern -->
+        <div class="absolute inset-0 opacity-10">
+            <svg class="absolute top-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 800">
+                <defs>
+                    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                        <path
+                            d="M 40 0 L 0 0 0 40"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1"
+                            class="text-purple-500"
+                        />
+                    </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#grid)" />
+            </svg>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <!-- Header -->
             <header class="text-center mb-16">
-                <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6">
-                    {{ t('Maps communicate what others want to hide.') }}
+                <!-- Decorative element -->
+                <div class="flex items-center justify-center mb-6">
+                    <span class="w-16 h-1 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full"></span>
+                    <span class="mx-4 text-purple-400 font-medium">{{ t('Look.') }}</span>
+                    <span class="w-16 h-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"></span>
+                </div>
+
+                <h2
+                    class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 bg-gradient-to-r from-purple-300 via-pink-300 to-indigo-300 bg-clip-text text-transparent"
+                >
+                    {{ t('Maps communicate what we cannot usually see.') }}
                 </h2>
                 <p class="text-xl text-gray-300 max-w-3xl mx-auto">
                     {{
                         t(
-                            'Maps are simple yet incredibly powerful tools that communicate things about the world we cannot usually see.'
+                            'OpenLitterMap empowers you to use your device for its real-world data collection purpose and communicate your impact story with a global community who are helping to crowdsource open scientific data on the worlds litter and plastic pollution.'
                         )
                     }}
                 </p>
@@ -207,51 +236,65 @@ onBeforeUnmount(() => {
                 <div class="grid lg:grid-cols-2 gap-12 items-center">
                     <!-- Text column -->
                     <div :class="i % 2 === 0 ? 'order-2 lg:order-1' : 'lg:order-2'">
-                        <h3 class="text-2xl font-semibold text-gray-900 mb-4">
+                        <h3 class="text-2xl font-semibold text-white mb-4 flex items-center">
+                            <span
+                                class="w-2 h-2 bg-gradient-to-r from-purple-400 to-indigo-400 rounded-full mr-3 animate-pulse"
+                            ></span>
                             {{ t(place.titleKey) }}
                         </h3>
-                        <p class="text-lg text-gray-600 mb-6">
+                        <p class="text-lg text-purple-100 mb-6">
                             {{ t(place.copyKey) }}
                         </p>
 
-                        <blockquote class="italic text-red-600 mb-6">
-                            {{
-                                t(
-                                    "How can you legislate climate policy when you can't spot the trash at your front door?"
-                                )
-                            }}
-                        </blockquote>
-
+                        <!-- Fancy button -->
                         <a
                             :href="buildOsmUrl(place)"
                             target="_blank"
-                            rel="noopener"
-                            class="inline-flex items-center text-red-600 hover:text-red-700 font-medium"
+                            rel="noopener noreferrer"
+                            class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-medium rounded-xl hover:from-purple-700 hover:to-indigo-700 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-purple-500/25"
                         >
-                            {{ t('Open this spot on OpenLitterMap') }}
+                            {{ t('View on OpenLitterMap') }}
                             <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path
                                     stroke-linecap="round"
                                     stroke-linejoin="round"
                                     stroke-width="2"
-                                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002 2v-4M14 4h6m0 0v6m0-6L10 14"
-                                />
+                                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                                ></path>
                             </svg>
                         </a>
-
-                        <span class="sr-only">{{ t('Open this spot on OpenLitterMap') }}</span>
                     </div>
 
                     <!-- Map column -->
-                    <div :class="i % 2 === 0 ? 'order-1 lg:order-2' : ''">
+                    <div :class="i % 2 === 0 ? 'order-1 lg:order-2' : ''" class="relative group">
+                        <!-- Fancy border glow effect -->
                         <div
-                            :ref="(el) => (mapRefs[place.id] = el)"
-                            class="map-container rounded-2xl shadow-2xl ring-2 ring-black/20 overflow-hidden opacity-0 transition-opacity duration-400"
-                            :aria-label="`Map of litter dots outside ${place.titleKey}`"
+                            class="absolute -inset-1 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-2xl blur-md opacity-50 group-hover:opacity-75 transition duration-500"
                         ></div>
+
+                        <div class="relative">
+                            <div
+                                :ref="(el) => (mapRefs[place.id] = el)"
+                                class="map-container rounded-2xl shadow-2xl ring-2 ring-white/10 overflow-hidden opacity-0 transition-opacity duration-400 transform group-hover:scale-[1.01] transition-transform"
+                                :aria-label="`Map of litter dots outside ${place.titleKey}`"
+                            ></div>
+
+                            <!-- Map overlay gradient -->
+                            <div
+                                class="absolute inset-0 bg-gradient-to-t from-purple-900/20 to-transparent rounded-2xl pointer-events-none"
+                            ></div>
+                        </div>
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- Floating data particles animation -->
+        <div class="absolute inset-0 overflow-hidden pointer-events-none">
+            <div class="particle particle-1"></div>
+            <div class="particle particle-2"></div>
+            <div class="particle particle-3"></div>
+            <div class="particle particle-4"></div>
         </div>
     </section>
 </template>
@@ -310,6 +353,75 @@ onBeforeUnmount(() => {
     transition: opacity 0.4s ease-out;
 }
 
+/* Floating data particles */
+.particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: linear-gradient(45deg, rgba(168, 85, 247, 0.8), rgba(99, 102, 241, 0.8));
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+    animation: float-data 20s infinite ease-in-out;
+}
+
+.particle-1 {
+    left: 10%;
+    animation-delay: 0s;
+    animation-duration: 18s;
+}
+
+.particle-2 {
+    left: 30%;
+    animation-delay: 5s;
+    animation-duration: 22s;
+}
+
+.particle-3 {
+    left: 60%;
+    animation-delay: 10s;
+    animation-duration: 20s;
+}
+
+.particle-4 {
+    left: 85%;
+    animation-delay: 15s;
+    animation-duration: 24s;
+}
+
+@keyframes float-data {
+    0% {
+        transform: translateY(100vh) translateX(0) scale(0);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+        transform: translateY(90vh) translateX(10px) scale(1);
+    }
+    90% {
+        opacity: 1;
+        transform: translateY(10vh) translateX(-10px) scale(1);
+    }
+    100% {
+        transform: translateY(0) translateX(0) scale(0);
+        opacity: 0;
+    }
+}
+
+/* Pulse animation */
+@keyframes pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.animate-pulse {
+    animation: pulse 2s ease-in-out infinite;
+}
+
 /* Respect reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
     .transition-opacity {
@@ -318,6 +430,14 @@ onBeforeUnmount(() => {
 
     .opacity-0 {
         opacity: 1;
+    }
+
+    .particle {
+        animation: none;
+    }
+
+    .animate-pulse {
+        animation: none;
     }
 }
 

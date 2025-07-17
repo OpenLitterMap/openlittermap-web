@@ -6,10 +6,12 @@
         <!-- Hero Copy -->
         <div class="hero-copy">
             <h1 class="hero-title">
-                {{ $t('Every piece of litter tells a story') }}
+                {{ $t('Every piece of litter tells a story.') }}
             </h1>
             <p class="hero-subtitle">
-                {{ $t('Every photo captures location, time, brand, material, and human effort.') }}
+                {{
+                    $t('Every photo captures valuable information on its location, time, brand, material, and effort.')
+                }}
             </p>
         </div>
 
@@ -201,6 +203,7 @@ const dataFields = ref([
     @apply text-lg sm:text-xl lg:text-2xl;
     @apply text-blue-100 max-w-4xl mx-auto;
     @apply leading-relaxed;
+    font-size: 22px;
 }
 
 /* Burst container */
@@ -214,6 +217,12 @@ const dataFields = ref([
 @screen lg {
     .burst-container {
         margin-top: -1.5rem;
+    }
+}
+
+@screen sm {
+    .hero-subtitle {
+        padding: 0;
     }
 }
 

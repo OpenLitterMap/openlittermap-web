@@ -1,91 +1,407 @@
+<script setup>
+import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { useI18n } from 'vue-i18n';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import 'leaflet.glify';
+import { useGlobalMapStore } from '../../stores/maps/global/index.js';
+
+const { t } = useI18n();
+const globalMapStore = useGlobalMapStore();
+
+// Map refs and state
+const mapContainer = ref(null);
+let map = null;
+let pointLayer = null;
+
+// Default location (you can make this dynamic based on user location)
+const defaultLocation = {
+    center: [51.505, -0.09], // London as default
+    zoom: 13,
+};
+
+// Initialize map
+async function initMap() {
+    if (!mapContainer.value || map) return;
+
+    map = L.map(mapContainer.value, {
+        center: defaultLocation.center,
+        zoom: defaultLocation.zoom,
+        scrollWheelZoom: false,
+    });
+
+    // OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(map);
+
+    // Load points
+    map.on('moveend zoomend', loadPoints);
+    loadPoints();
+}
+
+// Load points with brand data
+async function loadPoints() {
+    if (!map) return;
+
+    const bounds = map.getBounds();
+    const bbox = {
+        left: bounds.getWest(),
+        bottom: bounds.getSouth(),
+        right: bounds.getEast(),
+        top: bounds.getNorth(),
+    };
+
+    try {
+        await globalMapStore.GET_POINTS({
+            zoom: Math.round(map.getZoom()),
+            bbox,
+        });
+
+        if (globalMapStore.pointsGeojson?.features?.length > 0) {
+            if (pointLayer) {
+                pointLayer.remove();
+                pointLayer = null;
+            }
+
+            const data = globalMapStore.pointsGeojson.features.map((feature) => {
+                return [feature.geometry.coordinates[0], feature.geometry.coordinates[1]];
+            });
+
+            // Create colored points based on brand
+            pointLayer = L.glify.points({
+                map: map,
+                data,
+                size: 12,
+                color: { r: 0.9, g: 0.2, b: 0.4, a: 1 },
+                click: (e, point) => {
+                    map.flyTo([point[1], point[0]], map.getZoom() + 1);
+                },
+            });
+        }
+    } catch (error) {
+        console.error('Failed to load points:', error);
+    }
+}
+
+onMounted(() => {
+    initMap();
+});
+
+onBeforeUnmount(() => {
+    if (pointLayer) pointLayer.remove();
+    if (map) {
+        map.off();
+        map.remove();
+    }
+});
+</script>
+
 <template>
-    <section class="py-20 sm:py-32 bg-gray-900 text-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6">
-                    {{ $t('about.brands.title') }}
-                </h2>
-                <p class="text-xl text-gray-300 max-w-3xl mx-auto">
-                    {{ $t('about.brands.subtitle') }}
-                </p>
-            </div>
+    <section
+        class="py-16 sm:py-20 bg-gradient-to-br from-gray-950 via-amber-950 to-orange-950 relative overflow-hidden"
+    >
+        <!-- Corporate pattern background -->
+        <div class="absolute inset-0 opacity-10">
+            <svg class="absolute top-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 800">
+                <defs>
+                    <pattern
+                        id="hexagons"
+                        width="50"
+                        height="43.4"
+                        patternUnits="userSpaceOnUse"
+                        patternTransform="scale(2) rotate(0)"
+                    >
+                        <polygon
+                            points="24.8,22 37.3,11 49.8,22 49.8,43.4 37.3,54.4 24.8,43.4"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="0.5"
+                            class="text-amber-500"
+                        />
+                        <polygon
+                            points="0,22 12.5,11 25,22 25,43.4 12.5,54.4 0,43.4"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="0.5"
+                            class="text-amber-500"
+                        />
+                        <polygon
+                            points="49.8,22 62.3,11 74.8,22 74.8,43.4 62.3,54.4 49.8,43.4"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="0.5"
+                            class="text-amber-500"
+                        />
+                    </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#hexagons)" />
+            </svg>
 
-            <!-- Brand leaderboard visualization -->
-            <div class="max-w-4xl mx-auto mb-16">
-                <div class="bg-gray-800 rounded-lg p-8">
-                    <h3 class="text-2xl font-semibold mb-6">{{ $t('about.brands.leaderboard') }}</h3>
+            <!-- Additional gradient overlay for depth -->
+            <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+        </div>
 
-                    <div class="space-y-4">
-                        <div v-for="(brand, index) in topBrands" :key="index" class="relative">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="font-semibold">{{ brand.name }}</span>
-                                <span class="text-gray-400">{{ brand.count.toLocaleString() }} items</span>
-                            </div>
-                            <div class="bg-gray-700 rounded-full h-8 relative overflow-hidden">
+        <div class="w-full mx-auto relative z-10 px-8 md:px-16 lg:px-20 xl:px-28">
+            <div class="grid lg:grid-cols-2 items-center gap-8 md:gap-16 lg:gap-20 xl:gap-28">
+                <!-- Left Column: Text -->
+                <div class="text-white">
+                    <!-- Decorative element -->
+                    <div class="flex items-center mb-6">
+                        <span
+                            class="w-16 h-1.5 bg-gradient-to-r from-amber-500 via-yellow-500 to-orange-500 rounded-full shadow-lg shadow-amber-500/50"
+                        ></span>
+                        <span class="ml-4 text-amber-400 font-semibold tracking-wider uppercase text-sm">{{
+                            t('Brand Accountability')
+                        }}</span>
+                    </div>
+
+                    <h2
+                        class="text-4xl sm:text-5xl lg:text-6xl font-black mb-8 bg-gradient-to-r from-amber-200 via-yellow-200 to-orange-200 bg-clip-text text-transparent leading-tight"
+                    >
+                        {{ t('What Brands are Polluting Your Community?') }}
+                    </h2>
+
+                    <p class="text-xl sm:text-2xl text-amber-100/90 mb-8 leading-relaxed font-light">
+                        {{
+                            t(
+                                'Every piece of litter tells a story. OpenLitterMap reveals which brands are most responsible for pollution in your area, empowering communities to hold corporations accountable.'
+                            )
+                        }}
+                    </p>
+
+                    <p class="text-lg sm:text-xl text-amber-100/80 mb-10 leading-relaxed">
+                        {{
+                            t(
+                                'From beverage containers to food packaging, our data exposes the true environmental cost of consumer products and helps drive systemic change.'
+                            )
+                        }}
+                    </p>
+
+                    <!-- Brand stats preview with enhanced styling -->
+                    <div class="grid grid-cols-3 gap-6">
+                        <div class="relative group">
+                            <div
+                                class="absolute inset-0 bg-gradient-to-r from-amber-600 to-orange-600 rounded-2xl blur-xl opacity-50 group-hover:opacity-75 transition duration-500"
+                            ></div>
+                            <div
+                                class="relative bg-gradient-to-br from-amber-900/40 to-orange-900/40 backdrop-blur-md border border-amber-600/30 rounded-2xl p-6 transform hover:scale-105 transition duration-300"
+                            >
                                 <div
-                                    :style="{ width: brand.percentage + '%' }"
-                                    class="absolute inset-y-0 left-0 bg-gradient-to-r from-red-600 to-red-500 rounded-full transition-all duration-1000 ease-out"
-                                    :class="{ 'animate-fill': isVisible }"
-                                ></div>
+                                    class="text-3xl font-black text-transparent bg-gradient-to-r from-yellow-400 to-amber-400 bg-clip-text"
+                                >
+                                    500K+
+                                </div>
+                                <div class="text-sm text-amber-200/90 mt-1">{{ t('Brands tagged') }}</div>
+                            </div>
+                        </div>
+                        <div class="relative group">
+                            <div
+                                class="absolute inset-0 bg-gradient-to-r from-amber-600 to-orange-600 rounded-2xl blur-xl opacity-50 group-hover:opacity-75 transition duration-500"
+                            ></div>
+                            <div
+                                class="relative bg-gradient-to-br from-amber-900/40 to-orange-900/40 backdrop-blur-md border border-amber-600/30 rounded-2xl p-6 transform hover:scale-105 transition duration-300"
+                            >
+                                <div
+                                    class="text-3xl font-black text-transparent bg-gradient-to-r from-yellow-400 to-amber-400 bg-clip-text"
+                                >
+                                    150+
+                                </div>
+                                <div class="text-sm text-amber-200/90 mt-1">{{ t('Countries') }}</div>
+                            </div>
+                        </div>
+                        <div class="relative group">
+                            <div
+                                class="absolute inset-0 bg-gradient-to-r from-amber-600 to-orange-600 rounded-2xl blur-xl opacity-50 group-hover:opacity-75 transition duration-500"
+                            ></div>
+                            <div
+                                class="relative bg-gradient-to-br from-amber-900/40 to-orange-900/40 backdrop-blur-md border border-amber-600/30 rounded-2xl p-6 transform hover:scale-105 transition duration-300"
+                            >
+                                <div
+                                    class="text-3xl font-black text-transparent bg-gradient-to-r from-yellow-400 to-amber-400 bg-clip-text"
+                                >
+                                    24/7
+                                </div>
+                                <div class="text-sm text-amber-200/90 mt-1">{{ t('Live tracking') }}</div>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <p class="text-gray-400 text-sm mt-6">
-                        {{ $t('about.brands.disclaimer') }}
-                    </p>
+                <!-- Right Column: Map -->
+                <div class="relative group">
+                    <!-- Enhanced glow effect with multiple layers -->
+                    <div
+                        class="absolute -inset-3 bg-gradient-to-r from-amber-600 via-yellow-500 to-orange-600 rounded-3xl blur-2xl opacity-60 group-hover:opacity-100 transition duration-700 animate-pulse"
+                    ></div>
+                    <div
+                        class="absolute -inset-2 bg-gradient-to-r from-amber-500 to-orange-500 rounded-3xl blur-lg opacity-40 group-hover:opacity-70 transition duration-500"
+                    ></div>
+
+                    <div class="relative">
+                        <div
+                            ref="mapContainer"
+                            class="rounded-3xl shadow-2xl w-full h-[500px] overflow-hidden transform group-hover:scale-[1.02] transition-all duration-500 ring-1 ring-white/10"
+                        ></div>
+
+                        <!-- Enhanced overlay gradients -->
+                        <div
+                            class="absolute inset-0 bg-gradient-to-t from-amber-950/50 via-transparent to-transparent rounded-3xl pointer-events-none"
+                        ></div>
+                        <div
+                            class="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-orange-900/30 rounded-3xl pointer-events-none"
+                        ></div>
+
+                        <!-- Enhanced map title overlay -->
+                        <div
+                            class="absolute top-6 left-6 bg-black/80 backdrop-blur-xl rounded-2xl px-5 py-3 border border-amber-500/20 shadow-2xl"
+                        >
+                            <div class="flex items-center space-x-2">
+                                <div class="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
+                                <span class="text-amber-300 text-sm font-semibold tracking-wide">{{
+                                    t('Live Brand Data')
+                                }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Additional corner accent -->
+                        <div
+                            class="absolute bottom-6 right-6 bg-gradient-to-r from-amber-500/20 to-orange-500/20 backdrop-blur-md rounded-xl px-4 py-2 border border-amber-500/20"
+                        >
+                            <span class="text-amber-300 text-xs font-medium">{{ t('Click points to zoom') }}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <!-- CTA to contribute -->
-            <div class="text-center">
-                <p class="text-xl mb-8 text-gray-300">
-                    {{ $t('about.brands.cta') }}
-                </p>
-                <router-link to="/signup">
-                    <button
-                        class="bg-red-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-red-700 transition-colors"
-                    >
-                        {{ $t('about.brands.button') }}
-                    </button>
-                </router-link>
-            </div>
+        <!-- Floating brand logos animation -->
+        <div class="absolute inset-0 overflow-hidden pointer-events-none">
+            <div class="brand-particle brand-particle-1"></div>
+            <div class="brand-particle brand-particle-2"></div>
+            <div class="brand-particle brand-particle-3"></div>
         </div>
     </section>
 </template>
 
-<script>
-export default {
-    name: 'AboutBrands',
-    data() {
-        return {
-            isVisible: false,
-            topBrands: [
-                { name: 'Coca-Cola', count: 45823, percentage: 85 },
-                { name: 'PepsiCo', count: 38291, percentage: 72 },
-                { name: 'Nestlé', count: 29384, percentage: 55 },
-                { name: 'Unilever', count: 21938, percentage: 41 },
-                { name: 'Mondelez', count: 18472, percentage: 35 },
-            ],
-        };
-    },
-    mounted() {
-        // Trigger animation when component is in view
-        setTimeout(() => {
-            this.isVisible = true;
-        }, 500);
-    },
-};
-</script>
-
 <style scoped>
-@keyframes fill {
-    from {
-        width: 0;
+/* Map styling with enhanced visual effects */
+:deep(.leaflet-container) {
+    background: linear-gradient(135deg, #0a0a0a 0%, #1a0f00 100%);
+    font-weight: 500;
+}
+
+:deep(.leaflet-control-attribution) {
+    background-color: rgba(0, 0, 0, 0.9);
+    color: #fbbf24;
+    backdrop-filter: blur(10px);
+    border-radius: 8px;
+    padding: 4px 8px;
+    border: 1px solid rgba(251, 191, 36, 0.2);
+}
+
+/* Enhanced canvas glow for brand points */
+:deep(canvas) {
+    mix-blend-mode: screen;
+    filter: drop-shadow(0 0 20px rgba(251, 191, 36, 0.8)) drop-shadow(0 0 40px rgba(251, 191, 36, 0.4))
+        drop-shadow(0 0 60px rgba(251, 191, 36, 0.2));
+}
+
+/* Enhanced brand particle animation */
+.brand-particle {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    background: radial-gradient(
+        circle,
+        rgba(251, 191, 36, 0.4) 0%,
+        rgba(251, 191, 36, 0.1) 40%,
+        rgba(251, 191, 36, 0) 70%
+    );
+    border-radius: 50%;
+    opacity: 0;
+    animation: drift 30s infinite ease-in-out;
+    filter: blur(1px);
+}
+
+.brand-particle::before {
+    content: '';
+    position: absolute;
+    inset: 25%;
+    background: radial-gradient(circle, rgba(251, 191, 36, 0.8) 0%, rgba(251, 191, 36, 0.4) 50%, transparent 70%);
+    border-radius: 50%;
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.6);
+}
+
+.brand-particle::after {
+    content: '';
+    position: absolute;
+    inset: 40%;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    animation: sparkle 2s infinite ease-in-out;
+}
+
+.brand-particle-1 {
+    left: 5%;
+    animation-delay: 0s;
+    animation-duration: 28s;
+}
+
+.brand-particle-2 {
+    left: 45%;
+    animation-delay: 10s;
+    animation-duration: 32s;
+}
+
+.brand-particle-3 {
+    left: 85%;
+    animation-delay: 20s;
+    animation-duration: 30s;
+}
+
+@keyframes drift {
+    0% {
+        transform: translateY(110vh) translateX(0) rotate(0deg) scale(0.8);
+        opacity: 0;
+    }
+    5% {
+        opacity: 0.7;
+    }
+    50% {
+        transform: translateY(50vh) translateX(80px) rotate(180deg) scale(1.2);
+        opacity: 0.9;
+    }
+    95% {
+        opacity: 0.7;
+    }
+    100% {
+        transform: translateY(-10vh) translateX(-30px) rotate(360deg) scale(0.8);
+        opacity: 0;
     }
 }
 
-.animate-fill {
-    animation: fill 1.5s ease-out;
+@keyframes sparkle {
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(0.6);
+        opacity: 0.6;
+    }
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .brand-particle {
+        animation: none;
+    }
+
+    .transform {
+        transform: none !important;
+    }
 }
 </style>
