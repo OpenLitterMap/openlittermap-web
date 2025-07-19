@@ -13,11 +13,11 @@ const globalMapStore = useGlobalMapStore();
 const places = [
     {
         id: 'eu',
-        center: [50.839771326202936, 4.373932462528583],
+        center: [50.83957919204694, 4.3740783135703065],
         zoom: 16,
         titleKey: 'EU Parliament, Brussels',
         copyKey:
-            "Check out this map of litter outside the EU Parliament - where billions in 'green' budgets are spent on public health and the environment, but they can't even see what's on their doorstep.",
+            "Check out this map of litter outside the EU Parliament - where they debate how to spend billions in 'green' budgets on public health, education, and the environment, but they can't even see what's on their doorstep.",
     },
     {
         id: 'de',
@@ -210,13 +210,6 @@ onBeforeUnmount(() => {
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <!-- Header -->
             <header class="text-center mb-16">
-                <!-- Decorative element -->
-                <div class="flex items-center justify-center mb-6">
-                    <span class="w-16 h-1 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full"></span>
-                    <span class="mx-4 text-purple-400 font-medium">{{ t('Look.') }}</span>
-                    <span class="w-16 h-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"></span>
-                </div>
-
                 <h2
                     class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 bg-gradient-to-r from-purple-300 via-pink-300 to-indigo-300 bg-clip-text text-transparent"
                 >

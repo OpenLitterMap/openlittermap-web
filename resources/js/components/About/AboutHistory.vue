@@ -9,42 +9,51 @@ const timeline = [
     {
         year: '2008',
         title: 'Introduced to GIS',
-        description: 'The journey begins with Geographic Information Systems',
+        description: 'The idea for a real-world data collection game was born',
         icon: '🗺️',
         color: 'from-blue-500 to-indigo-500',
     },
     {
+        year: '2011',
+        title: 'Undergraduate Dissertation',
+        description: '2H2 undergraduate dissertation on walkability and mapping anti-social behaviour',
+        icon: '📚',
+        color: 'from-indigo-500 to-purple-500',
+    },
+    {
         year: '2012',
         title: 'Inspired by tropics',
-        description: 'Environmental awareness sparked by tropical experiences',
+        description: 'Worked as a divemaster in Koh Tao where I was inspired to facilitate citizen science',
         icon: '🌴',
         color: 'from-green-500 to-emerald-500',
     },
     {
         year: '2013',
-        title: 'Introduced to OpenStreetMap',
-        description: 'Discovered open mapping during MSc GIS',
+        title: 'Masters in GIS. Introduced to OpenStreetMap',
+        description:
+            'Inspired by OpenStreetMap and its vibrant research community, the idea for OpenLitterMap was born as its real-time data collection layer.',
         icon: '🌍',
         color: 'from-emerald-500 to-teal-500',
     },
     {
         year: '2015',
-        title: 'Finished 2nd MSc',
-        description: '1H1 OpenLitterMap dissertation completed',
+        title: 'Finished 2nd MSc in Coastal & Marine Environments',
+        description: '1H1 OpenLitterMap dissertation',
         icon: '🎓',
         color: 'from-purple-500 to-pink-500',
     },
     {
         year: '2016',
-        title: 'Learned to code',
-        description: 'Self-taught programming to build the vision',
+        title: 'Started teaching myself how to code',
+        description:
+            'After watching many video tutorials I wrote stacks of code with pen & paper and started building OpenLitterMap',
         icon: '💻',
         color: 'from-pink-500 to-red-500',
     },
     {
         year: '2017',
-        title: 'Launched OLM v1.0',
-        description: 'OpenLitterMap goes live to the world',
+        title: '15th April 2017 - Launched OpenLitterMap.com',
+        description: 'OpenLitterMap goes live to the world and starts collecting data globally immediately',
         icon: '🚀',
         color: 'from-red-500 to-orange-500',
     },
@@ -157,19 +166,6 @@ onMounted(() => {
         <div class="w-full mx-auto relative z-10 px-8 md:px-16 lg:px-20 xl:px-28">
             <!-- Header -->
             <div class="text-center mb-16">
-                <!-- Decorative element -->
-                <div class="flex items-center justify-center mb-8">
-                    <span
-                        class="w-20 h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full shadow-lg shadow-purple-500/50"
-                    ></span>
-                    <span class="mx-4 text-purple-400 font-semibold tracking-wider uppercase text-sm">{{
-                        t('Our Journey')
-                    }}</span>
-                    <span
-                        class="w-20 h-1.5 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 rounded-full shadow-lg shadow-purple-500/50"
-                    ></span>
-                </div>
-
                 <h2 class="text-5xl sm:text-6xl lg:text-7xl font-black mb-6 leading-tight">
                     <span
                         class="bg-gradient-to-r from-indigo-200 via-purple-200 to-pink-200 bg-clip-text text-transparent"
@@ -181,10 +177,6 @@ onMounted(() => {
                         {{ t('of Research + Development') }}
                     </span>
                 </h2>
-
-                <p class="text-xl sm:text-2xl text-purple-100/70 max-w-3xl mx-auto">
-                    {{ t("From a GIS student to building the world's most advanced open litter mapping platform") }}
-                </p>
             </div>
 
             <!-- Timeline -->

@@ -5,7 +5,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-    <section class="py-16 sm:py-24 bg-gradient-to-br from-black via-red-950 to-orange-950 relative overflow-hidden">
+    <section class="py-16 sm:py-20 bg-gradient-to-br from-black via-red-950 to-orange-950 relative overflow-hidden">
         <!-- Fancy smoke/wave background pattern -->
         <div class="absolute inset-0 opacity-10">
             <svg class="absolute bottom-0 w-full h-48" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
@@ -17,23 +17,27 @@ const { t } = useI18n();
             </svg>
         </div>
 
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div class="grid lg:grid-cols-2 gap-8 items-center">
+        <div class="w-full mx-auto relative z-10 px-8 md:px-16 lg:px-20 xl:px-28">
+            <div class="grid lg:grid-cols-2 items-center gap-8 md:gap-16 lg:gap-20 xl:gap-28">
                 <!-- Left Column: Text -->
                 <div class="text-white">
                     <!-- Decorative element -->
-                    <div class="flex items-center mb-4">
-                        <span class="w-12 h-1 bg-gradient-to-r from-red-500 to-orange-500 rounded-full"></span>
-                        <span class="ml-3 text-red-400 font-medium">{{ t('Environmental Impact') }}</span>
+                    <div class="flex items-center mb-6">
+                        <span
+                            class="w-16 h-1.5 bg-gradient-to-r from-red-500 to-orange-500 rounded-full shadow-lg shadow-red-500/50"
+                        ></span>
+                        <span class="ml-4 text-red-400 font-semibold tracking-wider uppercase text-sm">{{
+                            t('Environmental Impact')
+                        }}</span>
                     </div>
 
                     <h2
-                        class="text-3xl sm:text-4xl lg:text-5xl font-extrabold mb-6 bg-gradient-to-r from-red-300 to-orange-300 bg-clip-text text-transparent"
+                        class="text-4xl sm:text-5xl lg:text-6xl font-black mb-8 bg-gradient-to-r from-red-300 to-orange-300 bg-clip-text text-transparent leading-tight"
                     >
                         {{ t('Trillions of cigarette butts leech toxic chemicals into the environment.') }}
                     </h2>
 
-                    <p class="text-lg sm:text-xl text-red-100 mb-6">
+                    <p class="text-xl sm:text-2xl text-red-100/90 mb-8 leading-relaxed font-light">
                         {{
                             t(
                                 'They poison water and release nicotine, arsenic, and microplastics into plants and animals.'
@@ -42,40 +46,64 @@ const { t } = useI18n();
                     </p>
 
                     <!-- Fancy stats boxes -->
-                    <div class="grid grid-cols-2 gap-4 mt-8">
-                        <div
-                            class="bg-red-900/30 backdrop-blur-sm border border-red-700/50 rounded-xl p-4 transform hover:scale-105 transition duration-300"
-                        >
-                            <div class="text-3xl font-bold text-orange-400">4.5T</div>
-                            <div class="text-sm text-red-200">{{ t('Butts per year') }}</div>
+                    <div class="grid grid-cols-2 gap-6 mt-10">
+                        <div class="relative group">
+                            <div
+                                class="absolute inset-0 bg-gradient-to-r from-red-600 to-orange-600 rounded-2xl blur-xl opacity-50 group-hover:opacity-75 transition duration-500"
+                            ></div>
+                            <div
+                                class="relative bg-gradient-to-br from-red-900/40 to-orange-900/40 backdrop-blur-md border border-red-600/30 rounded-2xl p-6 transform hover:scale-105 transition duration-300"
+                            >
+                                <div
+                                    class="text-3xl font-black text-transparent bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text"
+                                >
+                                    4.5T
+                                </div>
+                                <div class="text-sm text-red-200/90 mt-1">{{ t('Butts per year') }}</div>
+                            </div>
                         </div>
-                        <div
-                            class="bg-red-900/30 backdrop-blur-sm border border-red-700/50 rounded-xl p-4 transform hover:scale-105 transition duration-300"
-                        >
-                            <div class="text-3xl font-bold text-orange-400">700+</div>
-                            <div class="text-sm text-red-200">{{ t('Toxic chemicals') }}</div>
+                        <div class="relative group">
+                            <div
+                                class="absolute inset-0 bg-gradient-to-r from-red-600 to-orange-600 rounded-2xl blur-xl opacity-50 group-hover:opacity-75 transition duration-500"
+                            ></div>
+                            <div
+                                class="relative bg-gradient-to-br from-red-900/40 to-orange-900/40 backdrop-blur-md border border-red-600/30 rounded-2xl p-6 transform hover:scale-105 transition duration-300"
+                            >
+                                <div
+                                    class="text-3xl font-black text-transparent bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text"
+                                >
+                                    700+
+                                </div>
+                                <div class="text-sm text-red-200/90 mt-1">{{ t('Toxic chemicals') }}</div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Right Column: Image -->
                 <div class="relative group">
-                    <!-- Fancy border glow effect -->
+                    <!-- Enhanced multi-layer glow effect -->
                     <div
-                        class="absolute -inset-1 bg-gradient-to-r from-red-500 to-orange-500 rounded-2xl blur-md opacity-75 group-hover:opacity-100 transition duration-500"
+                        class="absolute -inset-3 bg-gradient-to-r from-red-500 via-orange-400 to-red-500 rounded-3xl blur-2xl opacity-60 group-hover:opacity-100 transition duration-700 animate-pulse"
+                    ></div>
+                    <div
+                        class="absolute -inset-2 bg-gradient-to-r from-red-400 to-orange-500 rounded-3xl blur-lg opacity-40 group-hover:opacity-70 transition duration-500"
                     ></div>
 
                     <div class="relative">
                         <img
                             src="/resources/js/assets/images/butts.png"
                             alt="Cigarette butts"
-                            class="rounded-2xl shadow-2xl w-full h-[400px] object-cover transform group-hover:scale-[1.02] transition duration-500"
+                            class="rounded-3xl shadow-2xl w-full h-[500px] object-cover transform group-hover:scale-[1.02] transition-all duration-500 ring-1 ring-white/10"
                             loading="lazy"
                         />
 
-                        <!-- Fancy overlay gradient -->
+                        <!-- Enhanced overlay gradients -->
                         <div
-                            class="absolute inset-0 bg-gradient-to-t from-red-900/50 to-transparent rounded-2xl pointer-events-none"
+                            class="absolute inset-0 bg-gradient-to-t from-red-950/60 via-transparent to-transparent rounded-3xl pointer-events-none"
+                        ></div>
+                        <div
+                            class="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-orange-900/30 rounded-3xl pointer-events-none"
                         ></div>
                     </div>
                 </div>
@@ -139,6 +167,36 @@ const { t } = useI18n();
     100% {
         transform: translateY(-10vh) translateX(-20px) scale(1.5);
         opacity: 0;
+    }
+}
+
+/* Pulse animation */
+@keyframes pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.animate-pulse {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+    .smoke {
+        animation: none;
+    }
+
+    .animate-pulse {
+        animation: none;
+    }
+
+    .transform {
+        transform: none !important;
     }
 }
 </style>

@@ -175,7 +175,7 @@ const dataFields = ref([
 <style scoped>
 /* Base styles */
 .hero-section {
-    @apply relative min-h-screen;
+    @apply relative min-h-screen lg:min-h-[80vh];
     @apply bg-gradient-to-br from-slate-900 via-blue-900 to-blue-800;
     @apply flex flex-col items-center justify-center;
     @apply py-12 px-4 sm:px-6 lg:px-8;

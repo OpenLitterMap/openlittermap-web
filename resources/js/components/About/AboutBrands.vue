@@ -153,7 +153,7 @@ onBeforeUnmount(() => {
                             class="w-16 h-1.5 bg-gradient-to-r from-amber-500 via-yellow-500 to-orange-500 rounded-full shadow-lg shadow-amber-500/50"
                         ></span>
                         <span class="ml-4 text-amber-400 font-semibold tracking-wider uppercase text-sm">{{
-                            t('Brand Accountability')
+                            t('Accountability')
                         }}</span>
                     </div>
 

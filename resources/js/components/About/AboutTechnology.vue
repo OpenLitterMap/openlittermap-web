@@ -53,7 +53,9 @@ const { t } = useI18n();
                 <h2
                     class="text-4xl sm:text-5xl lg:text-6xl font-black mb-8 bg-gradient-to-r from-violet-200 via-purple-200 to-pink-200 bg-clip-text text-transparent leading-tight"
                 >
-                    {{ t('Your device is not just a phone, its a supercomputer.') }}
+                    {{ t('Your device is not just a phone.') }}
+                    <br />
+                    {{ t("it's a supercomputer.") }}
                 </h2>
 
                 <!-- Main stat with animation -->
@@ -64,10 +66,10 @@ const { t } = useI18n();
                     <div
                         class="relative text-7xl sm:text-8xl lg:text-9xl font-black text-transparent bg-gradient-to-r from-violet-400 via-purple-400 to-pink-400 bg-clip-text"
                     >
-                        5/8
+                        5/8 billion
                     </div>
                     <div class="text-2xl sm:text-3xl text-purple-300 font-light mt-2">
-                        {{ t('billion people connected online') }}
+                        {{ t('people connected online') }}
                     </div>
                 </div>
 
@@ -112,7 +114,7 @@ const { t } = useI18n();
                                     >✗</span
                                 >
                                 <span class="text-red-100/90 text-lg">{{
-                                    t('Honeypot for governments and corporations.')
+                                    t('Honeypot for governments, corporations, perverts & attackers.')
                                 }}</span>
                             </li>
                             <li class="flex items-start group/item">
@@ -120,7 +122,7 @@ const { t } = useI18n();
                                     >✗</span
                                 >
                                 <span class="text-red-100/90 text-lg">{{
-                                    t('Human connection becomes increasingly synthetic and augmented.')
+                                    t('Social connection becomes increasingly synthetic and electronic.')
                                 }}</span>
                             </li>
                             <li class="flex items-start group/item">
@@ -159,7 +161,7 @@ const { t } = useI18n();
                                 >
                                 <span class="text-green-100/90 text-lg">{{
                                     t(
-                                        'Safer, more ethical, and more productive than doomscrolling and comparing yourself to others.'
+                                        'Safer, more ethical, and more productive use of your time than doomscrolling on the metaverse.'
                                     )
                                 }}</span>
                             </li>
@@ -169,9 +171,7 @@ const { t } = useI18n();
                                     >✓</span
                                 >
                                 <span class="text-green-100/90 text-lg">{{
-                                    t(
-                                        'Engage with in-world data collection to overcome passive electronic information consumption.'
-                                    )
+                                    t('Rediscover the nature of reality through immersive in-world gamification.')
                                 }}</span>
                             </li>
                             <li class="flex items-start group/item">
@@ -180,7 +180,7 @@ const { t } = useI18n();
                                     >✓</span
                                 >
                                 <span class="text-green-100/90 text-lg">{{
-                                    t('Measurable environmental impact.')
+                                    t('Map and communicate your positive impact to inspire others and leave a legacy.')
                                 }}</span>
                             </li>
                             <li class="flex items-start group/item">

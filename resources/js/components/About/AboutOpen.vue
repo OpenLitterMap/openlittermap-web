@@ -112,7 +112,11 @@ const formatNumber = (num) => {
                                     {{ t('The Problem') }}
                                 </h3>
                                 <p class="text-gray-300 text-lg">
-                                    {{ t('Most systems are locked away, allowing few people to participate.') }}
+                                    {{
+                                        t(
+                                            'Most systems are locked away, allowing few people to participate in decision-making, auditing, direction, and understanding. Closed systems restrict your choices and limit societies freedom.'
+                                        )
+                                    }}
                                 </p>
                             </div>
                         </div>
@@ -137,7 +141,7 @@ const formatNumber = (num) => {
                                 <p class="text-gray-300 text-lg">
                                     {{
                                         t(
-                                            'We made OpenLitterMap entirely open source so that anyone can participate in the data collection, coding, direction, or analysis. OpenLitterMap is the academic precursor to a global real-time data collection experience that intends to transform our relationship with technology, education, and institutions.'
+                                            'We made OpenLitterMap entirely open source so that anyone can participate in every aspect of it. Anyone can participate in the data collection, coding, feature development, forking all our work and taking it in any other direction, data analysis, etc. OpenLitterMap is the academic precursor to a global real-time interventional experience for society that intends to transform our relationship with technology, education, institutions & the environment.'
                                         )
                                     }}
                                 </p>
@@ -164,7 +168,7 @@ const formatNumber = (num) => {
                                 <p class="text-gray-300 text-lg">
                                     {{
                                         t(
-                                            'Real-time impact data on litter & plastic pollution that enables anyone in society to shape our understanding of reality.'
+                                            'Real-time impact data on litter & plastic pollution that enables anyone in society to participate in Science, Technology, Environment and Memes and shape our understanding of reality.'
                                         )
                                     }}
                                 </p>
