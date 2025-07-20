@@ -106,7 +106,9 @@ const { t } = useI18n();
                                 >
                                     5.25T
                                 </div>
-                                <div class="text-sm text-blue-200/90 mt-1">{{ t('Plastic pieces') }}</div>
+                                <div class="text-sm text-blue-200/90 mt-1">
+                                    {{ t('Plastics floating on the ocean surface (2014)') }}
+                                </div>
                             </div>
                         </div>
                         <div class="relative group">
@@ -121,7 +123,9 @@ const { t } = useI18n();
                                 >
                                     1M+
                                 </div>
-                                <div class="text-sm text-blue-200/90 mt-1">{{ t('Species affected') }}</div>
+                                <div class="text-sm text-blue-200/90 mt-1">
+                                    {{ t('Birds choking to death every year') }}
+                                </div>
                             </div>
                         </div>
                         <div class="relative group">
@@ -136,7 +140,9 @@ const { t } = useI18n();
                                 >
                                     2050
                                 </div>
-                                <div class="text-sm text-blue-200/90 mt-1">{{ t('More plastic than fish') }}</div>
+                                <div class="text-sm text-blue-200/90 mt-1">
+                                    {{ t('More plastic than fish by weight') }}
+                                </div>
                             </div>
                         </div>
                     </div>

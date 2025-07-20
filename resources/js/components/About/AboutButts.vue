@@ -34,13 +34,13 @@ const { t } = useI18n();
                     <h2
                         class="text-4xl sm:text-5xl lg:text-6xl font-black mb-8 bg-gradient-to-r from-red-300 to-orange-300 bg-clip-text text-transparent leading-tight"
                     >
-                        {{ t('Trillions of cigarette butts leech toxic chemicals into the environment.') }}
+                        {{ t('Trillions of cigarette butts are leeching toxic chemicals into the environment.') }}
                     </h2>
 
                     <p class="text-xl sm:text-2xl text-red-100/90 mb-8 leading-relaxed font-light">
                         {{
                             t(
-                                'They poison water and release nicotine, arsenic, and microplastics into plants and animals.'
+                                'They are poisoning water and releasing nicotine, arsenic, and microplastics into plants and animals.'
                             )
                         }}
                     </p>
@@ -57,9 +57,9 @@ const { t } = useI18n();
                                 <div
                                     class="text-3xl font-black text-transparent bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text"
                                 >
-                                    4.5T
+                                    ~150,000
                                 </div>
-                                <div class="text-sm text-red-200/90 mt-1">{{ t('Butts per year') }}</div>
+                                <div class="text-sm text-red-200/90 mt-1">{{ t('dropped per second') }}</div>
                             </div>
                         </div>
                         <div class="relative group">

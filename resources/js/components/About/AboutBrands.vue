@@ -166,7 +166,7 @@ onBeforeUnmount(() => {
                     <p class="text-xl sm:text-2xl text-amber-100/90 mb-8 leading-relaxed font-light">
                         {{
                             t(
-                                'Every piece of litter tells a story. OpenLitterMap reveals which brands are most responsible for pollution in your area, empowering communities to hold corporations accountable.'
+                                'Taxpayers and volunteers have to work long hours to cleanup the waste by super-profitable ocean-polluting megacorporations.'
                             )
                         }}
                     </p>
@@ -174,7 +174,7 @@ onBeforeUnmount(() => {
                     <p class="text-lg sm:text-xl text-amber-100/80 mb-10 leading-relaxed">
                         {{
                             t(
-                                'From beverage containers to food packaging, our data exposes the true environmental cost of consumer products and helps drive systemic change.'
+                                'Your participation in citizen science can help map and quantify what brands are responsible for pollution management in your community.'
                             )
                         }}
                     </p>
@@ -191,9 +191,9 @@ onBeforeUnmount(() => {
                                 <div
                                     class="text-3xl font-black text-transparent bg-gradient-to-r from-yellow-400 to-amber-400 bg-clip-text"
                                 >
-                                    500K+
+                                    1500+
                                 </div>
-                                <div class="text-sm text-amber-200/90 mt-1">{{ t('Brands tagged') }}</div>
+                                <div class="text-sm text-amber-200/90 mt-1">{{ t('Brands identified') }}</div>
                             </div>
                         </div>
                         <div class="relative group">
@@ -206,7 +206,7 @@ onBeforeUnmount(() => {
                                 <div
                                     class="text-3xl font-black text-transparent bg-gradient-to-r from-yellow-400 to-amber-400 bg-clip-text"
                                 >
-                                    150+
+                                    100+
                                 </div>
                                 <div class="text-sm text-amber-200/90 mt-1">{{ t('Countries') }}</div>
                             </div>

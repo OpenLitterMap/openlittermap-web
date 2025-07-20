@@ -2,6 +2,7 @@
     <section class="hero-section">
         <!-- Background pattern -->
         <div class="hero-bg-pattern"></div>
+        <div class="hero-bg-glow"></div>
 
         <!-- Hero Copy -->
         <div class="hero-copy">
@@ -10,13 +11,18 @@
             </h1>
             <p class="hero-subtitle">
                 {{
-                    $t('Every photo captures valuable information on its location, time, brand, material, and effort.')
+                    $t(
+                        'Every photo captures valuable information on its location, time, brand, object, material, and effort.'
+                    )
                 }}
             </p>
         </div>
 
         <!-- Desktop burst visualization -->
         <div v-if="!isMobile" class="burst-container">
+            <!-- Subtle pulse ring -->
+            <div class="pulse-ring"></div>
+
             <!-- Central image -->
             <div class="central-image">
                 <div class="image-glow"></div>
@@ -144,7 +150,7 @@ const dataFields = ref([
         key: 'brand',
         emoji: '🏷️',
         label: t('Brand'),
-        value: 'Coca-Cola Original',
+        value: 'Coca-Cola',
         offsetX: '-2em',
         cardWidth: '15rem',
     },
@@ -173,7 +179,7 @@ const dataFields = ref([
 </script>
 
 <style scoped>
-/* Base styles */
+/* Base styles - Enhanced but preserved */
 .hero-section {
     @apply relative min-h-screen lg:min-h-[80vh];
     @apply bg-gradient-to-br from-slate-900 via-blue-900 to-blue-800;
@@ -182,21 +188,28 @@ const dataFields = ref([
     @apply overflow-hidden;
 }
 
-/* Optimized background pattern */
+/* Enhanced background pattern */
 .hero-bg-pattern {
     @apply absolute inset-0 opacity-20 pointer-events-none;
     background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpattern id='dots' x='0' y='0' width='40' height='40' patternUnits='userSpaceOnUse'%3E%3Ccircle cx='20' cy='20' r='1' fill='%2360A5FA'/%3E%3C/pattern%3E%3Crect width='100%25' height='100%25' fill='url(%23dots)'/%3E%3C/svg%3E");
 }
 
-/* Hero copy - REDUCED BOTTOM MARGIN */
+/* Subtle background glow */
+.hero-bg-glow {
+    @apply absolute inset-0 pointer-events-none;
+    background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 60%);
+}
+
+/* Hero copy - Enhanced typography */
 .hero-copy {
-    @apply text-center relative z-10; /* was mb-12 lg:mb-16 */
+    @apply text-center relative z-10 mb-8 lg:mb-12;
 }
 
 .hero-title {
     @apply text-4xl sm:text-5xl lg:text-6xl xl:text-7xl;
-    @apply font-bold text-white lg:mb-6;
+    @apply font-bold text-white mb-4 lg:mb-6;
     @apply leading-tight;
+    text-shadow: 0 2px 20px rgba(59, 130, 246, 0.3);
 }
 
 .hero-subtitle {
@@ -204,13 +217,35 @@ const dataFields = ref([
     @apply text-blue-100 max-w-4xl mx-auto;
     @apply leading-relaxed;
     font-size: 22px;
+    opacity: 0.9;
 }
 
-/* Burst container */
+/* Burst container - Preserved */
 .burst-container {
     @apply relative mx-auto;
     width: min(700px, 90vw);
     height: min(700px, 90vw);
+}
+
+/* Subtle pulse ring */
+.pulse-ring {
+    @apply absolute inset-0;
+    @apply border border-blue-500/10 rounded-full;
+    animation: pulse-subtle 4s ease-out infinite;
+}
+
+@keyframes pulse-subtle {
+    0% {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+    50% {
+        opacity: 0.2;
+    }
+    100% {
+        transform: scale(1.2);
+        opacity: 0;
+    }
 }
 
 /* Pull burst upward on large screens */
@@ -226,7 +261,7 @@ const dataFields = ref([
     }
 }
 
-/* Central image */
+/* Central image - Enhanced glow */
 .central-image {
     @apply absolute left-1/2 top-1/2;
     @apply transform -translate-x-1/2 -translate-y-1/2;
@@ -235,15 +270,29 @@ const dataFields = ref([
 
 .image-glow {
     @apply absolute inset-0;
-    @apply bg-blue-500/20 blur-2xl scale-125;
+    @apply bg-blue-500/30 blur-3xl scale-150;
     @apply pointer-events-none;
+    animation: glow-subtle 3s ease-in-out infinite;
+}
+
+@keyframes glow-subtle {
+    0%,
+    100% {
+        opacity: 0.3;
+    }
+    50% {
+        opacity: 0.5;
+    }
 }
 
 .image-wrapper {
     @apply relative;
-    @apply bg-gray-900/60 backdrop-blur-sm;
+    @apply bg-gray-900/80 backdrop-blur-md;
     @apply p-4 lg:p-6 rounded-2xl;
-    @apply border border-gray-700;
+    @apply border border-gray-600/50;
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        0 0 60px rgba(59, 130, 246, 0.2);
 }
 
 .litter-image {
@@ -251,7 +300,7 @@ const dataFields = ref([
     @apply object-contain;
 }
 
-/* Burst lines */
+/* Burst lines - Enhanced but preserved structure */
 .burst-line {
     --angle: calc((360deg / var(--total)) * var(--index));
     --line-length: clamp(8rem, 25vw, 12rem);
@@ -267,25 +316,32 @@ const dataFields = ref([
 .line-inner {
     @apply relative;
     width: var(--line-length);
-    height: 1px;
-    background: linear-gradient(90deg, transparent 0%, rgba(96, 165, 250, 0.4) 30%, rgba(96, 165, 250, 0.1) 100%);
+    height: 2px;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(96, 165, 250, 0.5) 30%,
+        rgba(59, 130, 246, 0.3) 70%,
+        rgba(96, 165, 250, 0.1) 100%
+    );
 }
 
 .line-flow {
     @apply absolute inset-y-0 left-0;
-    @apply w-8 h-full;
-    background: linear-gradient(90deg, transparent 0%, rgba(96, 165, 250, 0.8) 50%, transparent 100%);
+    @apply w-12 h-full;
+    background: linear-gradient(90deg, transparent 0%, rgba(147, 197, 253, 1) 50%, transparent 100%);
 }
 
 .line-dot {
     @apply absolute;
-    @apply w-2 h-2 bg-blue-400 rounded-full;
-    right: -4px;
+    @apply w-3 h-3 bg-gradient-to-r from-blue-400 to-blue-300 rounded-full;
+    right: -6px;
     top: 50%;
     transform: translateY(-50%);
+    box-shadow: 0 0 12px rgba(96, 165, 250, 0.6);
 }
 
-/* Data cards positioning */
+/* Data cards positioning - PRESERVED EXACTLY */
 .burst-card {
     --radius: clamp(10rem, 30vw, 15rem);
     position: absolute;
@@ -294,28 +350,36 @@ const dataFields = ref([
         rotate(calc(-1 * (360deg / var(--total)) * var(--index))) translateX(var(--offset-x));
 }
 
-/* Data cards */
+/* Data cards - Enhanced styling */
 .data-card {
     @apply flex items-center space-x-3 lg:space-x-4;
-    @apply bg-gray-900/90 backdrop-blur-sm;
+    @apply bg-gray-900/95 backdrop-blur-md;
     @apply rounded-xl px-4 py-4 lg:py-6;
-    @apply border border-gray-600;
+    @apply border border-gray-600/50;
     @apply opacity-0 animate-fade-in;
     @apply cursor-pointer;
     line-height: 1.6;
     z-index: 20;
+    box-shadow:
+        0 4px 20px rgba(0, 0, 0, 0.3),
+        0 0 40px rgba(59, 130, 246, 0.1);
+    transition: all 0.3s ease;
 }
 
-/* Hover state without transitions or scale */
+/* Hover state */
 .data-card:hover {
     @apply border-blue-500/50;
-    @apply bg-gray-900/95;
+    @apply bg-gray-900;
+    box-shadow:
+        0 6px 30px rgba(0, 0, 0, 0.4),
+        0 0 50px rgba(59, 130, 246, 0.2);
+    transform: translateY(-2px);
 }
 
-/* Icons without transitions */
 .card-icon,
 .row-icon {
     @apply text-2xl lg:text-3xl;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
 .card-text,
@@ -326,7 +390,7 @@ const dataFields = ref([
 .card-label,
 .row-label {
     @apply text-[10px] lg:text-xs;
-    @apply text-gray-400 uppercase tracking-wider font-medium;
+    @apply text-blue-300 uppercase tracking-wider font-semibold;
     @apply mb-0.5;
 }
 
@@ -337,90 +401,33 @@ const dataFields = ref([
     @apply truncate;
 }
 
-/* Mobile list */
+/* Mobile list - Enhanced */
 .mobile-list {
     @apply space-y-4 max-w-sm mx-auto mt-12;
     @apply list-none;
 }
 
-/* Mobile rows - INCREASED PADDING, NO TRANSITIONS */
 .data-row {
     @apply flex items-center space-x-4;
-    @apply bg-gray-900/90 backdrop-blur-sm;
-    @apply rounded-xl px-6 py-5; /* Increased padding */
-    @apply border border-gray-600;
-    line-height: 1.6; /* Better line spacing */
+    @apply bg-gray-900/95 backdrop-blur-md;
+    @apply rounded-xl px-6 py-5;
+    @apply border border-gray-600/50;
+    line-height: 1.6;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
 }
 
-/* Hover state without transitions */
 .data-row:hover {
     @apply border-blue-500/50;
-    @apply bg-gray-900/95;
+    @apply bg-gray-900;
+    transform: translateX(4px);
 }
 
-/* Summary section */
-.summary-section {
-    @apply max-w-4xl mx-auto mt-16 text-center;
-}
-
-.summary-card {
-    @apply bg-gray-900/60 backdrop-blur-xl;
-    @apply rounded-2xl border border-gray-600;
-    @apply p-6 lg:p-8 mb-8 lg:mb-12;
-}
-
-.summary-highlight {
-    @apply text-lg lg:text-xl text-blue-200 mb-2 lg:mb-4;
-}
-
-.summary-text {
-    @apply text-sm lg:text-base text-gray-300;
-}
-
-.summary-multiplier {
-    @apply text-xl lg:text-2xl text-blue-200;
-    @apply mb-6 lg:mb-8;
-    @apply leading-relaxed;
-}
-
-/* CTA Button */
-.cta-container {
-    @apply text-center mt-8;
-}
-
-.cta-button {
-    @apply relative;
-    @apply bg-gradient-to-r from-blue-600 to-blue-500;
-    @apply px-8 lg:px-10 py-4 lg:py-5;
-    @apply rounded-xl;
-    @apply text-white font-bold;
-    @apply transform transition-all duration-200;
-    @apply shadow-2xl;
-}
-
-.cta-button:hover {
-    @apply from-blue-500 to-blue-400;
-    @apply scale-105;
-}
-
-.cta-button:focus {
-    @apply outline-none ring-4 ring-blue-500/50;
-}
-
-.cta-text {
-    @apply block text-base lg:text-lg;
-}
-
-.cta-helper {
-    @apply block text-sm opacity-90 mt-1;
-    @apply font-normal;
-}
-
-/* Animations */
+/* Animations - Preserved */
 @keyframes fade-in {
     from {
         opacity: 0;
-        transform: inherit scale(0.8);
+        transform: inherit scale(0.9);
     }
     to {
         opacity: 1;
@@ -439,7 +446,7 @@ const dataFields = ref([
     }
 
     .line-dot {
-        @apply animate-pulse;
+        animation: pulse-dot 2s ease-in-out infinite;
     }
 }
 
@@ -457,6 +464,18 @@ const dataFields = ref([
     }
     to {
         transform: translateX(calc(var(--line-length) + 100%));
+    }
+}
+
+@keyframes pulse-dot {
+    0%,
+    100% {
+        opacity: 1;
+        transform: translateY(-50%) scale(1);
+    }
+    50% {
+        opacity: 0.7;
+        transform: translateY(-50%) scale(0.8);
     }
 }
 </style>

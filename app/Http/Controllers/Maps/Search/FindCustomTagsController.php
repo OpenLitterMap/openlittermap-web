@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\GlobalMap\Search;
+namespace App\Http\Controllers\Maps\Search;
 
 use App\Models\CustomTag;
 use Illuminate\Http\JsonResponse;

@@ -1,12 +1,12 @@
 <?php
 
-namespace Tests\Feature\Clusters;
+namespace Tests\Feature\Map\Clusters;
 
 use App\Services\Clustering\ClusteringService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Tests\TestCase;
 use Tests\Helpers\CreateTestClusterPhotosTrait;
+use Tests\TestCase;
 
 class ClusteringConfigurationTest extends TestCase
 {

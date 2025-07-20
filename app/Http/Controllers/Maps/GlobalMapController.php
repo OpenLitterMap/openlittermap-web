@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\GlobalMap;
+namespace App\Http\Controllers\Maps;
 
 use App\Models\Photo;
 use App\Traits\FilterPhotosByGeoHashTrait;
@@ -14,6 +14,7 @@ class GlobalMapController extends Controller
     use FilterPhotosByGeoHashTrait;
 
     /**
+     * @deprecated
      * Return the Art data for the global map
      *
      * @return array points

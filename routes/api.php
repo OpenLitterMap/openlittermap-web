@@ -46,6 +46,8 @@ Route::group(['prefix' => 'v3', 'middleware' => ['web', 'auth:api,web']], functi
      Route::get('/user/photos/untagged', [GetUsersUntaggedPhotosController::class, 'index']);
 
      Route::post('/tags', [PhotoTagsController::class, 'store']);
+
+    // Route::get('/points', [PointsController::class, 'index']);
 });
 
 Route::prefix('clusters')->group(function () {

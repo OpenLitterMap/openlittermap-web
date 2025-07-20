@@ -25,7 +25,7 @@ const places = [
         zoom: 16,
         titleKey: 'Bundesrat, Berlin',
         copyKey:
-            'This is what cigarette litter the Federal government buildings of Germany looks like, where billions of euro in public money is spent on public health and the education.',
+            'Check out this map of cigarette litter around the Bundesrat (the Federal government buildings of Germany), where billions of euro of public money is spent on public health, education and the environment.',
     },
 ];
 
@@ -213,12 +213,12 @@ onBeforeUnmount(() => {
                 <h2
                     class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 bg-gradient-to-r from-purple-300 via-pink-300 to-indigo-300 bg-clip-text text-transparent"
                 >
-                    {{ t('Maps communicate what we cannot usually see.') }}
+                    {{ t('Maps tell a story about the world.') }}
                 </h2>
                 <p class="text-xl text-gray-300 max-w-3xl mx-auto">
                     {{
                         t(
-                            'OpenLitterMap empowers you to use your device for its real-world data collection purpose and communicate your impact story with a global community who are helping to crowdsource open scientific data on the worlds litter and plastic pollution.'
+                            'Maps are powerful tools that make explaining things easy to see and understand. OpenLitterMap empowers you to use your device for its real-world data collection purpose and communicate your story about the worlds litter and plastic pollution.'
                         )
                     }}
                 </p>
