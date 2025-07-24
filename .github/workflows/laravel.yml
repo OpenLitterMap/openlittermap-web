@@ -15,7 +15,7 @@ jobs:
       APP_ENV: testing
       DB_DATABASE: olm_test
       DB_USERNAME: root
-      DB_PASSWORD: password
+      DB_PASSWORD: secret
       BROADCAST_DRIVER: log
       CACHE_DRIVER: array
       QUEUE_CONNECTION: sync
@@ -35,7 +35,7 @@ jobs:
         image: mysql:5.7
         env:
           MYSQL_ALLOW_EMPTY_PASSWORD: false
-          MYSQL_ROOT_PASSWORD: password
+          MYSQL_ROOT_PASSWORD: secret
           MYSQL_ROOT_HOST: '%'
           MYSQL_DATABASE: olm_test
         ports:
