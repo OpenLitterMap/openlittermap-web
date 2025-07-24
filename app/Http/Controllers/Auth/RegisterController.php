@@ -64,7 +64,7 @@ class RegisterController extends Controller
             'name' => 'required|min:3|max:25',
             'username' => 'required|min:3|max:20|unique:users|different:password',
             'email' => 'required|email|max:75|unique:users',
-            'password' => ['required', Password::min(5)->uncompromised()]
+            'password' => ['required', Password::min(5)]
 //            'g-recaptcha-response' => 'required|captcha'
         ]);
 
