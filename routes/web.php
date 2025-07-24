@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\UsersController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ContactUsController;
+use App\Http\Controllers\Maps\Search\FindCustomTagsController;
 use App\Http\Controllers\SubscribersController;
 use App\Http\Controllers\Maps\ClusterController;
 use App\Http\Controllers\Uploads\UploadPhotoController;
@@ -113,7 +114,7 @@ Route::get('global', HomeController::class);
 Route::get('/global/points', [GlobalMapController::class, 'index']);
 Route::get('/global/art-data', [GlobalMapController::class, 'artData']);
 
-Route::get('/global/search/custom-tags', 'GlobalMap\Search\FindCustomTagsController');
+Route::get('/global/search/custom-tags', [FindCustomTagsController::class]);
 
 /** Auth Routes */
 // Get currently auth user when logged in
