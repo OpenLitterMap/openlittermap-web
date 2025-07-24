@@ -36,6 +36,7 @@ jobs:
         env:
           MYSQL_ALLOW_EMPTY_PASSWORD: false
           MYSQL_ROOT_PASSWORD: password
+          MYSQL_ROOT_HOST: '%'
           MYSQL_DATABASE: olm_test
         ports:
           - 3306/tcp
