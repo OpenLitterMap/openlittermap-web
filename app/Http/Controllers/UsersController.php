@@ -73,7 +73,7 @@ class UsersController extends Controller
     {
         $this->validate($request, [
             'oldpassword' => 'required',
-            'password' => 'required|confirmed|min:6|case_diff|numbers|letters|symbols'
+            'password' => 'required|confirmed|min:5'
         ]);
 
         $user = Auth::user();
