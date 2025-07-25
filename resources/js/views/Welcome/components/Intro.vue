@@ -11,7 +11,11 @@
                 ></h1>
             </transition>
 
-            <h2 class="main-subtitle text-gray-text">{{ $t('home.welcome.help-us') }}.</h2>
+            <h2 class="main-subtitle text-gray-text">
+                {{
+                    $t("Help us create the world's most advanced open database on litter, brands & plastic pollution.")
+                }}
+            </h2>
 
             <!-- Download app icons -->
             <div class="flex my-[-2em] md:my-0">
@@ -73,15 +77,15 @@ const startHeadingsAnimation = () => {
 onMounted(() => {
     headings.value = [
         {
-            title: t('home.welcome.plastic-pollution-out-of-control'),
+            title: t('Plastic pollution is out of control.'),
             img: '/assets/plastic_bottles.jpg',
         },
         {
-            title: t('home.welcome.fires-out-of-control'),
+            title: t('Cigarette butts can start fires.'),
             img: '/assets/forest_fire.jpg',
         },
         {
-            title: t('home.welcome.glass-hurts-pets'),
+            title: t('Broken glass hurts animals.'),
             img: '/assets/dog.jpeg',
         },
     ];

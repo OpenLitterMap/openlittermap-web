@@ -12,7 +12,7 @@
             <p class="hero-subtitle">
                 {{
                     $t(
-                        'Every photo captures valuable information on its location, time, brand, object, material, and effort.'
+                        'Every photo captures valuable information about its location, time, brand, object, material, and effort.'
                     )
                 }}
             </p>
@@ -29,7 +29,7 @@
                 <div class="image-wrapper">
                     <img
                         src="/resources/js/assets/images/can.png"
-                        :alt="$t('Example of litter found and documented')"
+                        :alt="$t('Taking a photo of litter')"
                         class="litter-image"
                         loading="eager"
                     />
@@ -158,7 +158,7 @@ const dataFields = ref([
         key: 'material',
         emoji: '♻️',
         label: t('Material'),
-        value: t('Aluminum, Paint, Plastic'),
+        value: t('Aluminum, Plastic'),
         cardWidth: '18rem',
     },
     {
@@ -202,7 +202,7 @@ const dataFields = ref([
 
 /* Hero copy - Enhanced typography */
 .hero-copy {
-    @apply text-center relative z-10 mb-8 lg:mb-12;
+    @apply text-center relative z-10;
 }
 
 .hero-title {
@@ -357,23 +357,11 @@ const dataFields = ref([
     @apply rounded-xl px-4 py-4 lg:py-6;
     @apply border border-gray-600/50;
     @apply opacity-0 animate-fade-in;
-    @apply cursor-pointer;
     line-height: 1.6;
     z-index: 20;
     box-shadow:
         0 4px 20px rgba(0, 0, 0, 0.3),
         0 0 40px rgba(59, 130, 246, 0.1);
-    transition: all 0.3s ease;
-}
-
-/* Hover state */
-.data-card:hover {
-    @apply border-blue-500/50;
-    @apply bg-gray-900;
-    box-shadow:
-        0 6px 30px rgba(0, 0, 0, 0.4),
-        0 0 50px rgba(59, 130, 246, 0.2);
-    transform: translateY(-2px);
 }
 
 .card-icon,
@@ -414,13 +402,6 @@ const dataFields = ref([
     @apply border border-gray-600/50;
     line-height: 1.6;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    transition: all 0.3s ease;
-}
-
-.data-row:hover {
-    @apply border-blue-500/50;
-    @apply bg-gray-900;
-    transform: translateX(4px);
 }
 
 /* Animations - Preserved */

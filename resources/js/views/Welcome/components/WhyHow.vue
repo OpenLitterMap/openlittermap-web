@@ -1,7 +1,7 @@
 <template>
     <!-- Why -->
     <div class="mb-10">
-        <h1 class="main-title">{{ $t('home.welcome.why-collect-data') }}?</h1>
+        <h1 class="main-title">{{ $t('Why should we collect data?') }}?</h1>
         <div v-for="(why, index) in whyItems" :key="index" class="md:flex mb-10 md:mb-20">
             <div class="flex-4 pr-20 pl-20 mb-10 md:mb-0">
                 <img :src="why.icon" class="h-[10em]" alt="why icon" />
@@ -18,7 +18,7 @@
         <h1 class="main-title">{{ $t('home.welcome.how-does-it-work') }}?</h1>
         <div v-for="(step, index) in howItWorksItems" :key="index" class="md:flex mb-10 md:mb-20">
             <div class="flex-4 pr-20 pl-20 mb-10 md:mb-0">
-                <img :src="step.icon" class="h-[10em]" alt="icon"/>
+                <img :src="step.icon" class="h-[10em]" alt="icon" />
             </div>
             <div class="flex-1 ma">
                 <h2 class="why-how-title">{{ step.title }}</h2>
@@ -35,40 +35,42 @@ const { t } = useI18n();
 const whyItems = [
     {
         icon: '../../assets/icons/home/world.png',
-        title: `1. ${t('home.welcome.visibility')}`,
-        subtitle: t('home.welcome.our-maps-reveal-litter-normality'),
+        title: `1. ${t('Visibility')}`,
+        subtitle: t(
+            'For many people, litter has become normal and invisible. Maps are powerful because they communicate what we cannot usually see.'
+        ),
     },
     {
         icon: '../../assets/icons/home/microscope.png',
-        title: `2. ${t('home.welcome.science')}`,
-        subtitle: t('home.welcome.our-data-open-source'),
+        title: `2. ${t('Problem solving')}`,
+        subtitle: t(
+            'Our code & data is open and accessible. Everyone has equal, open and unlimited rights to use it for any purpose because open science is the real science.'
+        ),
     },
     {
         icon: '../../assets/icons/home/tree.png',
-        title: `3. ${t('home.welcome.community')}`,
-        subtitle: t('home.welcome.must-work-together'),
+        title: `3. ${t('Community')}`,
+        subtitle: t('We need your help to create a paradigm shift in how we understand and respond to pollution.\n'),
     },
 ];
 
 const howItWorksItems = [
     {
         icon: '../../assets/icons/home/camera.png',
-        title: `1. ${t('home.welcome.take-a-photo')}`,
-        subtitle: t('home.welcome.device-captures-info'),
+        title: `1. ${t('Take a photo')}`,
+        subtitle: t(
+            'Your device can capture valuable information about the location, time, object, material and brand.'
+        ),
     },
     {
         icon: '../../assets/icons/home/phone.png',
-        title: `2. ${t('home.welcome.tag-the-litter')}`,
-        subtitle: `${t('home.welcome.tag-litter-you-see')}!`,
+        title: `2. ${t('Tag what you see')}`,
+        subtitle: `${t("Just tag what litter you see in the photo. You can tag if the litter has been picked up or if it's still there. You can upload your photos anytime!")}!`,
     },
     {
         icon: '../../assets/icons/twitter2.png',
-        title: `3. ${t('home.welcome.share-results')}`,
-        subtitle: `${t('home.welcome.share')}!`,
+        title: `3. ${t('Share your results')}`,
+        subtitle: `${t("Share the maps or download our data. Let's show everyone how badly polluted the world really is!")}`,
     },
 ];
 </script>
-
-<style scoped>
-
-</style>

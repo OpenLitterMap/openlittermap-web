@@ -34,13 +34,13 @@ const { t } = useI18n();
                     <h2
                         class="text-4xl sm:text-5xl lg:text-6xl font-black mb-8 bg-gradient-to-r from-red-300 to-orange-300 bg-clip-text text-transparent leading-tight"
                     >
-                        {{ t('Trillions of cigarette butts are leeching toxic chemicals into the environment.') }}
+                        {{ t('Trillions of cigarette butts leech toxic chemicals into the environment.') }}
                     </h2>
 
                     <p class="text-xl sm:text-2xl text-red-100/90 mb-8 leading-relaxed font-light">
                         {{
                             t(
-                                'They are poisoning water and releasing nicotine, arsenic, and microplastics into plants and animals.'
+                                'They poison water and release nicotine, arsenic, and microplastics that bioaccumulate in plants and animals.'
                             )
                         }}
                     </p>

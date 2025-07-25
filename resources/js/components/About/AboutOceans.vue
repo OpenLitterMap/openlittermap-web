@@ -79,7 +79,7 @@ const { t } = useI18n();
                     >
                         {{
                             t(
-                                'There is about 300 million tonnes of plastic starting to fragment exponentially across the worlds oceans.'
+                                'There is about 300 million tonnes of plastic starting to fragment exponentially in the worlds oceans.'
                             )
                         }}
                     </h2>

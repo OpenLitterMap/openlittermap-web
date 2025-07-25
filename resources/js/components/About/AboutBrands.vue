@@ -166,7 +166,7 @@ onBeforeUnmount(() => {
                     <p class="text-xl sm:text-2xl text-amber-100/90 mb-8 leading-relaxed font-light">
                         {{
                             t(
-                                'Taxpayers and volunteers have to work long hours to cleanup the waste by super-profitable ocean-polluting megacorporations.'
+                                'Taxpayers and volunteers have to work long hours to cleanup the waste produced by super-profitable ocean-polluting megacorporations.'
                             )
                         }}
                     </p>
@@ -174,7 +174,7 @@ onBeforeUnmount(() => {
                     <p class="text-lg sm:text-xl text-amber-100/80 mb-10 leading-relaxed">
                         {{
                             t(
-                                'Your participation in citizen science can help map and quantify what brands are responsible for pollution management in your community.'
+                                'They privatize all the gains and socialize all the losses, leaving communities to deal with the mess they benefit from.'
                             )
                         }}
                     </p>
@@ -252,18 +252,6 @@ onBeforeUnmount(() => {
                         <div
                             class="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-orange-900/30 rounded-3xl pointer-events-none"
                         ></div>
-
-                        <!-- Enhanced map title overlay -->
-                        <div
-                            class="absolute top-6 left-6 bg-black/80 backdrop-blur-xl rounded-2xl px-5 py-3 border border-amber-500/20 shadow-2xl"
-                        >
-                            <div class="flex items-center space-x-2">
-                                <div class="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
-                                <span class="text-amber-300 text-sm font-semibold tracking-wide">{{
-                                    t('Live Brand Data')
-                                }}</span>
-                            </div>
-                        </div>
 
                         <!-- Additional corner accent -->
                         <div

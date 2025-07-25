@@ -122,9 +122,6 @@ async function loadPoints(placeId) {
                 data,
                 size: 10,
                 color: getPointColor(),
-                click: (e, point) => {
-                    map.flyTo([point[1], point[0]], map.getZoom() + 1);
-                },
             });
         }
     } catch (error) {
@@ -213,12 +210,13 @@ onBeforeUnmount(() => {
                 <h2
                     class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 bg-gradient-to-r from-purple-300 via-pink-300 to-indigo-300 bg-clip-text text-transparent"
                 >
-                    {{ t('Maps tell a story about the world.') }}
+                    {{ t('Tell a story about the world.') }}
                 </h2>
                 <p class="text-xl text-gray-300 max-w-3xl mx-auto">
                     {{
                         t(
-                            'Maps are powerful tools that make explaining things easy to see and understand. OpenLitterMap empowers you to use your device for its real-world data collection purpose and communicate your story about the worlds litter and plastic pollution.'
+                            'Maps are powerful tools that helps us see and understand the world. ' +
+                                'OpenLitterMap empowers you to use your device for its real-world data collection purpose and communicate your story about litter and plastic pollution with the world.'
                         )
                     }}
                 </p>

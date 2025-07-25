@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Photo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Arr;
 use Carbon\Carbon;
 
 class PointsController extends Controller
@@ -14,20 +15,36 @@ class PointsController extends Controller
     {
         $validated = $request->validate([
             'zoom' => 'required|integer|min:16|max:20',
-            'bbox.left' => 'required|numeric',
-            'bbox.bottom' => 'required|numeric',
-            'bbox.right' => 'required|numeric',
-            'bbox.top' => 'required|numeric',
+            'bbox.left' => 'required|numeric|between:-180,180',
+            'bbox.bottom' => 'required|numeric|between:-90,90',
+            'bbox.right' => 'required|numeric|between:-180,180',
+            'bbox.top' => 'required|numeric|between:-90,90',
             'categories' => 'array',
-            'categories.*' => 'string',
+            'categories.*' => 'string|exists:categories,key',
+            'litter_objects' => 'array',
+            'litter_objects.*' => 'string|exists:litter_objects,key',
+            'materials' => 'array',
+            'materials.*' => 'string|exists:materials,name',
+            'brands' => 'array',
+            'brands.*' => 'string|exists:brandslist,key',
+            'custom_tags' => 'array',
+            'custom_tags.*' => 'string|exists:custom_tags_new,key',
             'per_page' => 'integer|min:1|max:500',
+            'page' => 'integer|min:1',
             'from' => 'date_format:Y-m-d',
             'to' => 'date_format:Y-m-d',
             'username' => 'string'
         ]);
 
-        // Simple caching for public requests
-        if (empty($request->username) && $request->zoom <= 17) {
+        // Additional custom validation
+        $this->validateBbox($validated);
+
+        // Don't cache requests with user-specific filters or high detail zoom
+        $shouldCache = empty($validated['username']) &&
+            ($validated['zoom'] ?? 17) <= 17 &&
+            empty($validated['custom_tags']);
+
+        if ($shouldCache) {
             $cacheKey = $this->buildCacheKey($validated);
             return Cache::remember($cacheKey, 60, function () use ($validated) {
                 return $this->getPhotos($validated);
@@ -37,53 +54,68 @@ class PointsController extends Controller
         return $this->getPhotos($validated);
     }
 
+    private function validateBbox(array $params)
+    {
+        $bbox = $params['bbox'];
+
+        // Validate bbox ordering
+        if ($bbox['left'] >= $bbox['right'] || $bbox['bottom'] >= $bbox['top']) {
+            abort(422, 'Invalid bounding box: left must be < right and bottom must be < top');
+        }
+
+        // Validate bbox size based on zoom level
+        $width = $bbox['right'] - $bbox['left'];
+        $height = $bbox['top'] - $bbox['bottom'];
+        $area = $width * $height;
+
+        $maxAreas = [
+            16 => 25,    // 5° x 5°
+            17 => 10,    // ~3° x 3°
+            18 => 4,     // 2° x 2°
+            19 => 1,     // 1° x 1°
+            20 => 0.25   // 0.5° x 0.5°
+        ];
+
+        if ($area > $maxAreas[$params['zoom']]) {
+            abort(422, 'Bounding box too large for zoom level ' . $params['zoom']);
+        }
+    }
+
     private function getPhotos(array $params)
     {
         $bbox = $params['bbox'];
 
         $query = Photo::query()
             ->select([
-                'id',
-                'verified',
-                'user_id',
-                'team_id',
-                'filename',
-                'lat',
-                'lon',
-                'datetime',
-                'remaining'
+                'photos.id',
+                'photos.verified',
+                'photos.user_id',
+                'photos.team_id',
+                'photos.filename',
+                'photos.lat',
+                'photos.lon',
+                'photos.datetime',
+                'photos.remaining',
+                'photos.total_litter'
             ])
             ->with([
                 'user:id,name,username,show_username_maps,show_name_maps',
                 'team:id,name'
             ]);
 
-        // Apply bounding box filter (critical fix)
-        $query->whereBetween('lat', [$bbox['bottom'], $bbox['top']])
+        // Apply spatial filter with index optimization
+        $query->whereNotNull('lat')
+            ->whereNotNull('lon')
+            ->whereBetween('lat', [$bbox['bottom'], $bbox['top']])
             ->whereBetween('lon', [$bbox['left'], $bbox['right']]);
 
-        // Apply category filter if requested
-        if (!empty($params['categories'])) {
-            $query->whereHas('photoTags.category', function ($q) use ($params) {
-                $q->whereIn('key', $params['categories']);
-            });
-        }
+        // Apply all filters
+        $this->applyFilters($query, $params);
 
-        // Date filtering
-        if (!empty($params['from']) || !empty($params['to'])) {
-            $from = $params['from'] ? Carbon::parse($params['from'])->startOfDay() : null;
-            $to = $params['to'] ? Carbon::parse($params['to'])->endOfDay() : null;
+        // Apply date range
+        $this->applyDateFilter($query, $params);
 
-            if ($from && $to) {
-                $query->whereBetween('datetime', [$from, $to]);
-            } elseif ($from) {
-                $query->where('datetime', '>=', $from);
-            } elseif ($to) {
-                $query->where('datetime', '<=', $to);
-            }
-        }
-
-        // Username filter
+        // Apply username filter
         if (!empty($params['username'])) {
             $query->whereHas('user', function ($q) use ($params) {
                 $q->where('show_username_maps', true)
@@ -91,27 +123,143 @@ class PointsController extends Controller
             });
         }
 
-        // Paginate results
+        // For high zoom levels, consider returning all results without pagination
+        if ($params['zoom'] >= 19) {
+            $photos = $query->get();
+            return $this->formatCollectionResponse($photos, $params);
+        }
+
+        // Paginate for lower zoom levels
         $perPage = $params['per_page'] ?? 300;
         $photos = $query->paginate($perPage);
 
-        return $this->formatResponse($photos);
+        return $this->formatPaginatedResponse($photos, $params);
     }
 
-    private function formatResponse($photos)
+    private function applyFilters($query, array $params)
     {
-        $features = $photos->map(function ($photo) {
+        // Note: This assumes Photo has a relationship to CategoryObject
+        // You'll need to define this relationship in your Photo model:
+        // public function categoryObjects() {
+        //     return $this->belongsToMany(CategoryObject::class, 'photo_category_objects');
+        // }
+
+        $hasFilters = !empty($params['categories']) ||
+            !empty($params['litter_objects']) ||
+            !empty($params['materials']) ||
+            !empty($params['brands']) ||
+            !empty($params['custom_tags']);
+
+        if (!$hasFilters) {
+            return;
+        }
+
+        // Apply filters using AND logic (all conditions must match)
+
+        // Categories filter
+        if (!empty($params['categories'])) {
+            $query->whereHas('categoryObjects.category', function ($q) use ($params) {
+                $q->whereIn('key', $params['categories']);
+            });
+        }
+
+        // Litter objects filter
+        if (!empty($params['litter_objects'])) {
+            $query->whereHas('categoryObjects.litterObject', function ($q) use ($params) {
+                $q->whereIn('key', $params['litter_objects']);
+            });
+        }
+
+        // Materials filter
+        if (!empty($params['materials'])) {
+            $query->whereHas('categoryObjects.materials', function ($q) use ($params) {
+                $q->whereIn('name', $params['materials']);
+            });
+        }
+
+        // Brands filter
+        if (!empty($params['brands'])) {
+            $query->whereHas('categoryObjects.brands', function ($q) use ($params) {
+                $q->whereIn('key', $params['brands']);
+            });
+        }
+
+        // Custom tags filter
+        if (!empty($params['custom_tags'])) {
+            $query->whereHas('categoryObjects.customTags', function ($q) use ($params) {
+                $q->whereIn('key', $params['custom_tags'])
+                    ->where('approved', true); // Only show approved custom tags
+            });
+        }
+    }
+
+    private function applyDateFilter($query, array $params)
+    {
+        if (empty($params['from']) && empty($params['to'])) {
+            return;
+        }
+
+        $from = $params['from'] ? Carbon::parse($params['from'])->startOfDay() : null;
+        $to = $params['to'] ? Carbon::parse($params['to'])->endOfDay() : null;
+
+        if ($from && $to) {
+            $query->whereBetween('datetime', [$from, $to]);
+        } elseif ($from) {
+            $query->where('datetime', '>=', $from);
+        } elseif ($to) {
+            $query->where('datetime', '<=', $to);
+        }
+    }
+
+    private function formatPaginatedResponse($photos, array $params)
+    {
+        $features = $this->formatFeatures($photos);
+
+        return [
+            'type' => 'FeatureCollection',
+            'features' => $features,
+            'meta' => $this->buildMetadata($params, [
+                'page' => $photos->currentPage(),
+                'per_page' => $photos->perPage(),
+                'total' => $photos->total(),
+                'total_pages' => $photos->lastPage(),
+                'returned' => $photos->count(),
+            ])
+        ];
+    }
+
+    private function formatCollectionResponse($photos, array $params)
+    {
+        $features = $this->formatFeatures($photos);
+
+        return [
+            'type' => 'FeatureCollection',
+            'features' => $features,
+            'meta' => $this->buildMetadata($params, [
+                'page' => 1,
+                'per_page' => count($photos),
+                'total' => count($photos),
+                'total_pages' => 1,
+                'returned' => count($photos),
+            ])
+        ];
+    }
+
+    private function formatFeatures($photos)
+    {
+        return $photos->map(function ($photo) {
             return [
                 'type' => 'Feature',
                 'geometry' => [
                     'type' => 'Point',
-                    'coordinates' => [(float)$photo->lon, (float)$photo->lat] // Fixed order
+                    'coordinates' => [(float)$photo->lon, (float)$photo->lat]
                 ],
                 'properties' => [
                     'id' => $photo->id,
                     'datetime' => $photo->datetime,
                     'verified' => $photo->verified,
-                    'picked_up' => !$photo->remaining, // Computed, not selected
+                    'picked_up' => !$photo->remaining,
+                    'total_litter' => $photo->total_litter,
                     'filename' => $this->getFilename($photo),
                     'username' => $photo->user && $photo->user->show_username_maps
                         ? $photo->user->username : null,
@@ -121,37 +269,51 @@ class PointsController extends Controller
                 ]
             ];
         });
+    }
 
-        return [
-            'type' => 'FeatureCollection',
-            'features' => $features,
-            'meta' => [
-                'total' => $photos->total(),
-                'per_page' => $photos->perPage(),
-                'current_page' => $photos->currentPage()
-            ]
-        ];
+    private function buildMetadata(array $params, array $paginationData)
+    {
+        return array_merge([
+            'bbox' => [
+                $params['bbox']['left'],
+                $params['bbox']['bottom'],
+                $params['bbox']['right'],
+                $params['bbox']['top']
+            ],
+            'zoom' => $params['zoom'],
+            'categories' => $params['categories'] ?? null,
+            'litter_objects' => $params['litter_objects'] ?? null,
+            'materials' => $params['materials'] ?? null,
+            'brands' => $params['brands'] ?? null,
+            'custom_tags' => $params['custom_tags'] ?? null,
+            'from' => $params['from'] ?? null,
+            'to' => $params['to'] ?? null,
+            'username' => $params['username'] ?? null,
+            'generated_at' => now()->toIso8601String()
+        ], $paginationData);
     }
 
     private function getFilename($photo)
     {
-        if ($photo->verified >= 2 || ($photo->user && $photo->user->is_trusted)) {
+        // Only show actual filename if photo is verified (level 2 or higher)
+        if ($photo->verified >= 2) {
             return $photo->filename;
         }
+
+        // For unverified photos, always show waiting image
         return '/assets/images/waiting.png';
     }
 
     private function buildCacheKey(array $params): string
     {
-        $key = 'points:v2:';
+        $key = 'points:v3:';
         $key .= 'z' . $params['zoom'];
-        $key .= ':' . md5(json_encode($params['bbox']));
 
-        if (!empty($params['categories'])) {
-            $cats = $params['categories'];
-            sort($cats); // Fix: sort array properly
-            $key .= ':c' . md5(implode(',', $cats));
-        }
+        // Sort parameters for consistent cache keys
+        $sortedParams = Arr::sortRecursive($params);
+
+        // Create a hash of all parameters
+        $key .= ':' . md5(json_encode($sortedParams));
 
         return $key;
     }

@@ -7,6 +7,7 @@ use App\Http\Controllers\Clusters\ClusterController;
 use App\Http\Controllers\Leaderboard\GetUsersForGlobalLeaderboardController;
 use App\Http\Controllers\Leaderboard\GetUsersForLocationLeaderboardController;
 use App\Http\Controllers\Leaderboard\LeaderboardController;
+use App\Http\Controllers\Maps\PointsController;
 use App\Http\Controllers\RedisDataController;
 use App\Models\Littercoin;
 
@@ -21,8 +22,8 @@ use App\Http\Controllers\Photos\GetUsersUntaggedPhotosController;
 
 Route::get('/tags', [GetTagsController::class, 'index']);
 Route::get('/tags/all', [GetTagsController::class, 'getAllTags']);
-
 // Route::post('/tags', [UploadTagsController::class, 'upload']);
+Route::get('/points', [PointsController::class, 'index']);
 
 Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function(){
 
@@ -41,13 +42,11 @@ Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function(){
     // Route::get('/uploads/history', 'API\GetMyPaginatedUploadsController');
 });
 
-Route::group(['prefix' => 'v3', 'middleware' => ['web', 'auth:api,web']], function () {
 
+Route::group(['prefix' => 'v3', 'middleware' => ['web', 'auth:api,web']], function () {
      Route::get('/user/photos/untagged', [GetUsersUntaggedPhotosController::class, 'index']);
 
      Route::post('/tags', [PhotoTagsController::class, 'store']);
-
-    // Route::get('/points', [PointsController::class, 'index']);
 });
 
 Route::prefix('clusters')->group(function () {
