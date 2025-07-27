@@ -9,9 +9,13 @@ use App\Models\Teams\Team;
 use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\CategoryObject;
-use App\Models\Litter\Tags\Materials;
 use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\CustomTagNew;
+use App\Models\Litter\Tags\Materials;
+use App\Models\Litter\Tags\PhotoTag;
+use App\Models\Litter\Tags\PhotoTagExtraTags;
+use Database\Seeders\Tags\GenerateTagsSeeder;
+use Database\Seeders\Tags\GenerateBrandsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 
@@ -25,6 +29,12 @@ class PointsTest extends TestCase
     {
         parent::setUp();
         Cache::flush();
+
+        // Seed the database with tags and brands
+        $this->seed([
+            GenerateTagsSeeder::class,
+            GenerateBrandsSeeder::class
+        ]);
     }
 
     /** @test */
@@ -131,39 +141,47 @@ class PointsTest extends TestCase
     /** @test */
     public function it_filters_photos_by_categories()
     {
-        // Create categories
-        $smoking = Category::create(['key' => 'smoking']);
-        $alcohol = Category::create(['key' => 'alcohol']);
-        $food = Category::create(['key' => 'food']);
+        // Get categories from seeded data
+        $smoking = Category::where('key', 'smoking')->first();
+        $alcohol = Category::where('key', 'alcohol')->first();
 
-        // Create litter objects
-        $cigarettes = LitterObject::create(['key' => 'cigarette_butts']);
-        $bottles = LitterObject::create(['key' => 'alcohol_bottles']);
+        // Get litter objects from seeded data
+        $cigarettes = LitterObject::where('key', 'butts')->first();
+        $bottles = LitterObject::where('key', 'beer_bottle')->first();
 
-        // Create category-object relationships
-        $smokingCigs = $smoking->litterObjects()->attach($cigarettes);
-        $alcoholBottles = $alcohol->litterObjects()->attach($bottles);
-
-        // Get the pivot models (CategoryObject)
-        $smokingPivot = CategoryObject::where('category_id', $smoking->id)
-            ->where('litter_object_id', $cigarettes->id)
-            ->first();
-
-        $alcoholPivot = CategoryObject::where('category_id', $alcohol->id)
-            ->where('litter_object_id', $bottles->id)
-            ->first();
-
-        // Create photos
+        // Create photos with tags
         $photoSmoking = Photo::factory()->create(['lat' => 52.145, 'lon' => 4.420, 'datetime' => now()]);
         $photoAlcohol = Photo::factory()->create(['lat' => 52.145, 'lon' => 4.421, 'datetime' => now()]);
         $photoFood = Photo::factory()->create(['lat' => 52.145, 'lon' => 4.422, 'datetime' => now()]);
 
-        // TODO: Connect photos to category objects
-        // This depends on your actual pivot table structure
-        // Example: $photoSmoking->categoryObjects()->attach($smokingPivot->id);
+        // Create PhotoTags
+        PhotoTag::create([
+            'photo_id' => $photoSmoking->id,
+            'category_id' => $smoking->id,
+            'litter_object_id' => $cigarettes->id,
+            'quantity' => 1,
+            'picked_up' => false
+        ]);
 
-        // For now, mark as incomplete until we know the photo-categoryObject relationship
-        $this->markTestIncomplete('Need to implement photo->categoryObjects relationship');
+        PhotoTag::create([
+            'photo_id' => $photoAlcohol->id,
+            'category_id' => $alcohol->id,
+            'litter_object_id' => $bottles->id,
+            'quantity' => 1,
+            'picked_up' => false
+        ]);
+
+        $response = $this->getJson($this->endpoint . '?' . http_build_query([
+                'zoom' => 17,
+                'bbox' => ['left' => 4.41, 'bottom' => 52.14, 'right' => 4.43, 'top' => 52.15],
+                'categories' => ['smoking']
+            ]));
+
+        $response->assertOk();
+
+        $ids = collect($response->json('features'))->pluck('properties.id');
+        $this->assertCount(1, $ids);
+        $this->assertTrue($ids->contains($photoSmoking->id));
     }
 
     /** @test */
@@ -669,59 +687,97 @@ class PointsTest extends TestCase
     /** @test */
     public function it_filters_photos_by_litter_objects()
     {
-        // Create litter objects
-        $cigarettes = LitterObject::create(['key' => 'cigarette_butts']);
-        $bottles = LitterObject::create(['key' => 'plastic_bottles']);
-
-        // Create category
-        $smoking = Category::create(['key' => 'smoking']);
-
-        // Create category-object relationship
-        $smoking->litterObjects()->attach($cigarettes);
-
-        // Get the pivot model
-        $categoryObject = CategoryObject::where('category_id', $smoking->id)
-            ->where('litter_object_id', $cigarettes->id)
-            ->first();
+        // Get categories and objects from seeded data
+        $smoking = Category::where('key', 'smoking')->first();
+        $cigarettes = LitterObject::where('key', 'butts')->first();
+        $bottles = LitterObject::where('key', 'beer_bottle')->first();
 
         // Create photos
         $photo1 = Photo::factory()->create(['lat' => 52.145, 'lon' => 4.420, 'datetime' => now()]);
         $photo2 = Photo::factory()->create(['lat' => 52.145, 'lon' => 4.421, 'datetime' => now()]);
 
-        // TODO: Connect photo to category object
-        // $photo1->categoryObjects()->attach($categoryObject->id);
+        // Create PhotoTags
+        PhotoTag::create([
+            'photo_id' => $photo1->id,
+            'category_id' => $smoking->id,
+            'litter_object_id' => $cigarettes->id,
+            'quantity' => 1,
+            'picked_up' => false
+        ]);
 
-        $this->markTestIncomplete('Need to implement photo->categoryObjects relationship');
+        PhotoTag::create([
+            'photo_id' => $photo2->id,
+            'category_id' => Category::where('key', 'alcohol')->first()->id,
+            'litter_object_id' => $bottles->id,
+            'quantity' => 1,
+            'picked_up' => false
+        ]);
+
+        $response = $this->getJson($this->endpoint . '?' . http_build_query([
+                'zoom' => 17,
+                'bbox' => ['left' => 4.41, 'bottom' => 52.14, 'right' => 4.43, 'top' => 52.15],
+                'litter_objects' => ['butts']
+            ]));
+
+        $response->assertOk();
+
+        $ids = collect($response->json('features'))->pluck('properties.id');
+        $this->assertCount(1, $ids);
+        $this->assertTrue($ids->contains($photo1->id));
     }
 
     /** @test */
     public function it_filters_photos_by_brands()
     {
-        // Create brands
-        $cocaCola = BrandList::create(['key' => 'coca-cola']);
-        $pepsi = BrandList::create(['key' => 'pepsi']);
-
-        // Create category and litter object
-        $category = Category::create(['key' => 'softdrinks']);
-        $bottle = LitterObject::create(['key' => 'bottle']);
-
-        // Create category-object relationship
-        $category->litterObjects()->attach($bottle);
-        $categoryObject = CategoryObject::where('category_id', $category->id)
-            ->where('litter_object_id', $bottle->id)
-            ->first();
-
-        // Attach brand to category object
-        $categoryObject->brands()->attach($cocaCola->id, ['quantity' => 1]);
+        // Get data from seeded database
+        $category = Category::where('key', 'softdrinks')->first();
+        $bottle = LitterObject::where('key', 'water_bottle')->first();
 
         // Create photos
         $photo1 = Photo::factory()->create(['lat' => 52.145, 'lon' => 4.420, 'datetime' => now()]);
         $photo2 = Photo::factory()->create(['lat' => 52.145, 'lon' => 4.421, 'datetime' => now()]);
 
-        // TODO: Connect photo to category object
-        // $photo1->categoryObjects()->attach($categoryObject->id);
+        // Create PhotoTag for photo1 with brand extra tag
+        $photoTag1 = PhotoTag::create([
+            'photo_id' => $photo1->id,
+            'category_id' => $category->id,
+            'litter_object_id' => $bottle->id,
+            'quantity' => 1,
+            'picked_up' => false
+        ]);
 
-        $this->markTestIncomplete('Need to implement photo->categoryObjects relationship');
+        // Get or create a brand
+        $cocaCola = BrandList::firstOrCreate(['key' => 'coca-cola']);
+
+        // Add brand as extra tag
+        PhotoTagExtraTags::create([
+            'photo_tag_id' => $photoTag1->id,
+            'tag_type' => 'brand',
+            'tag_type_id' => $cocaCola->id,
+            'index' => 0,
+            'quantity' => 1
+        ]);
+
+        // Create PhotoTag for photo2 without brand
+        PhotoTag::create([
+            'photo_id' => $photo2->id,
+            'category_id' => $category->id,
+            'litter_object_id' => $bottle->id,
+            'quantity' => 1,
+            'picked_up' => false
+        ]);
+
+        $response = $this->getJson($this->endpoint . '?' . http_build_query([
+                'zoom' => 17,
+                'bbox' => ['left' => 4.41, 'bottom' => 52.14, 'right' => 4.43, 'top' => 52.15],
+                'brands' => ['coca-cola']
+            ]));
+
+        $response->assertOk();
+
+        $ids = collect($response->json('features'))->pluck('properties.id');
+        $this->assertCount(1, $ids);
+        $this->assertTrue($ids->contains($photo1->id));
     }
 
     /** @test */
@@ -735,7 +791,21 @@ class PointsTest extends TestCase
         $photo1 = Photo::factory()->create(['lat' => 52.145, 'lon' => 4.420, 'datetime' => now()]);
         $photo2 = Photo::factory()->create(['lat' => 52.145, 'lon' => 4.421, 'datetime' => now()]);
 
-        // TODO: Associate photos with custom tags based on your actual schema
+        // Create PhotoTag with primary custom tag
+        PhotoTag::create([
+            'photo_id' => $photo1->id,
+            'custom_tag_primary_id' => $tag1->id,
+            'quantity' => 1,
+            'picked_up' => false
+        ]);
+
+        // Create PhotoTag with different custom tag
+        PhotoTag::create([
+            'photo_id' => $photo2->id,
+            'custom_tag_primary_id' => $tag2->id,
+            'quantity' => 1,
+            'picked_up' => false
+        ]);
 
         $response = $this->getJson($this->endpoint . '?' . http_build_query([
                 'zoom' => 17,
@@ -744,5 +814,239 @@ class PointsTest extends TestCase
             ]));
 
         $response->assertOk();
+
+        $ids = collect($response->json('features'))->pluck('properties.id');
+        $this->assertCount(1, $ids);
+        $this->assertTrue($ids->contains($photo1->id));
+    }
+
+    /** @test */
+    public function it_filters_photos_by_materials()
+    {
+        // Get data from seeded database
+        $category = Category::where('key', 'softdrinks')->first();
+        $bottle = LitterObject::where('key', 'water_bottle')->first();
+        $plastic = Materials::where('key', 'plastic')->first();
+        $glass = Materials::where('key', 'glass')->first();
+
+        // Create photos
+        $photo1 = Photo::factory()->create(['lat' => 52.145, 'lon' => 4.420, 'datetime' => now()]);
+        $photo2 = Photo::factory()->create(['lat' => 52.145, 'lon' => 4.421, 'datetime' => now()]);
+
+        // Create PhotoTag for photo1
+        $photoTag1 = PhotoTag::create([
+            'photo_id' => $photo1->id,
+            'category_id' => $category->id,
+            'litter_object_id' => $bottle->id,
+            'quantity' => 1,
+            'picked_up' => false
+        ]);
+
+        // Add plastic material as extra tag
+        PhotoTagExtraTags::create([
+            'photo_tag_id' => $photoTag1->id,
+            'tag_type' => 'material',
+            'tag_type_id' => $plastic->id,
+            'index' => 0,
+            'quantity' => 1
+        ]);
+
+        // Create PhotoTag for photo2 with different material
+        $photoTag2 = PhotoTag::create([
+            'photo_id' => $photo2->id,
+            'category_id' => $category->id,
+            'litter_object_id' => $bottle->id,
+            'quantity' => 1,
+            'picked_up' => false
+        ]);
+
+        // Add glass material as extra tag
+        PhotoTagExtraTags::create([
+            'photo_tag_id' => $photoTag2->id,
+            'tag_type' => 'material',
+            'tag_type_id' => $glass->id,
+            'index' => 0,
+            'quantity' => 1
+        ]);
+
+        $response = $this->getJson($this->endpoint . '?' . http_build_query([
+                'zoom' => 17,
+                'bbox' => ['left' => 4.41, 'bottom' => 52.14, 'right' => 4.43, 'top' => 52.15],
+                'materials' => ['plastic']
+            ]));
+
+        $response->assertOk();
+
+        $ids = collect($response->json('features'))->pluck('properties.id');
+        $this->assertCount(1, $ids);
+        $this->assertTrue($ids->contains($photo1->id));
+    }
+
+    /** @test */
+    public function filters_require_same_photo_tag_to_match_all_selected_criteria()
+    {
+        // Arrange: one photo with two PhotoTags that split category/object
+        $smoking = Category::where('key', 'smoking')->first();
+        $alcohol = Category::where('key', 'alcohol')->first();
+        $butts = LitterObject::where('key', 'butts')->first();
+        $beer = LitterObject::where('key', 'beer_bottle')->first();
+
+        $photo = Photo::factory()->create(['lat' => 52.145, 'lon' => 4.420, 'datetime' => now()]);
+
+        // Tag #1: category smoking + beer bottle (mismatched object)
+        PhotoTag::create([
+            'photo_id' => $photo->id,
+            'category_id' => $smoking->id,
+            'litter_object_id' => $beer->id,
+            'quantity' => 1,
+            'picked_up' => false
+        ]);
+
+        // Tag #2: category alcohol + butts (mismatched category)
+        PhotoTag::create([
+            'photo_id' => $photo->id,
+            'category_id' => $alcohol->id,
+            'litter_object_id' => $butts->id,
+            'quantity' => 1,
+            'picked_up' => false
+        ]);
+
+        // Act: filter smoking + butts together
+        $response = $this->getJson($this->endpoint . '?' . http_build_query([
+                'zoom' => 17,
+                'bbox' => ['left' => 4.41, 'bottom' => 52.14, 'right' => 4.43, 'top' => 52.15],
+                'categories' => ['smoking'],
+                'litter_objects' => ['butts'],
+            ]));
+
+        // Assert: should be excluded unless a single PhotoTag matches both
+        $response->assertOk();
+        $ids = collect($response->json('features'))->pluck('properties.id');
+        $this->assertCount(0, $ids); // Should find nothing since no single tag matches both criteria
+
+        // Now create a photo with correct matching
+        $photo2 = Photo::factory()->create(['lat' => 52.145, 'lon' => 4.421, 'datetime' => now()]);
+        PhotoTag::create([
+            'photo_id' => $photo2->id,
+            'category_id' => $smoking->id,
+            'litter_object_id' => $butts->id,
+            'quantity' => 1,
+            'picked_up' => false
+        ]);
+
+        // This one should be included
+        $response2 = $this->getJson($this->endpoint . '?' . http_build_query([
+                'zoom' => 17,
+                'bbox' => ['left' => 4.41, 'bottom' => 52.14, 'right' => 4.43, 'top' => 52.15],
+                'categories' => ['smoking'],
+                'litter_objects' => ['butts'],
+            ]));
+
+        $ids2 = collect($response2->json('features'))->pluck('properties.id');
+        $this->assertCount(1, $ids2); // Should find exactly one
+        $this->assertTrue($ids2->contains($photo2->id));
+    }
+
+    /** @test */
+    public function it_validates_date_range_order()
+    {
+        $response = $this->getJson($this->endpoint . '?' . http_build_query([
+                'zoom' => 17,
+                'bbox' => ['left' => 4.41, 'bottom' => 52.14, 'right' => 4.43, 'top' => 52.15],
+                'from' => '2024-12-31',
+                'to' => '2024-01-01'
+            ]));
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['to']);
+    }
+
+    /** @test */
+    public function it_excludes_unapproved_custom_tags()
+    {
+        // Create an unapproved custom tag
+        $unapprovedTag = CustomTagNew::create(['key' => 'unapproved-tag', 'approved' => false]);
+        $approvedTag = CustomTagNew::create(['key' => 'approved-tag', 'approved' => true]);
+
+        // Create photos with these tags
+        $photo1 = Photo::factory()->create(['lat' => 52.145, 'lon' => 4.420, 'datetime' => now()]);
+        $photo2 = Photo::factory()->create(['lat' => 52.145, 'lon' => 4.421, 'datetime' => now()]);
+
+        PhotoTag::create([
+            'photo_id' => $photo1->id,
+            'custom_tag_primary_id' => $unapprovedTag->id,
+            'quantity' => 1,
+            'picked_up' => false
+        ]);
+
+        PhotoTag::create([
+            'photo_id' => $photo2->id,
+            'custom_tag_primary_id' => $approvedTag->id,
+            'quantity' => 1,
+            'picked_up' => false
+        ]);
+
+        // Filter by unapproved tag
+        $response = $this->getJson($this->endpoint . '?' . http_build_query([
+                'zoom' => 17,
+                'bbox' => ['left' => 4.41, 'bottom' => 52.14, 'right' => 4.43, 'top' => 52.15],
+                'custom_tags' => ['unapproved-tag']
+            ]));
+
+        $response->assertOk();
+        $ids = collect($response->json('features'))->pluck('properties.id');
+        $this->assertCount(0, $ids); // Should not find any
+
+        // Filter by approved tag
+        $response2 = $this->getJson($this->endpoint . '?' . http_build_query([
+                'zoom' => 17,
+                'bbox' => ['left' => 4.41, 'bottom' => 52.14, 'right' => 4.43, 'top' => 52.15],
+                'custom_tags' => ['approved-tag']
+            ]));
+
+        $ids2 = collect($response2->json('features'))->pluck('properties.id');
+        $this->assertCount(1, $ids2);
+        $this->assertTrue($ids2->contains($photo2->id));
+    }
+
+    /** @test */
+    public function it_returns_deterministic_ordering_for_pagination()
+    {
+        // Create photos with same datetime
+        $datetime = now();
+        $photos = [];
+        for ($i = 0; $i < 5; $i++) {
+            $photos[] = Photo::factory()->create([
+                'lat' => 52.145,
+                'lon' => 4.420 + ($i * 0.001),
+                'datetime' => $datetime,
+                'id' => 100 + $i // Set specific IDs for predictable ordering
+            ]);
+        }
+
+        $params = [
+            'zoom' => 17,
+            'bbox' => ['left' => 4.41, 'bottom' => 52.14, 'right' => 4.43, 'top' => 52.15],
+            'per_page' => 2
+        ];
+
+        // Get page 1
+        $response1 = $this->getJson($this->endpoint . '?' . http_build_query($params));
+        $ids1 = collect($response1->json('features'))->pluck('properties.id');
+
+        // Get page 2
+        $params['page'] = 2;
+        $response2 = $this->getJson($this->endpoint . '?' . http_build_query($params));
+        $ids2 = collect($response2->json('features'))->pluck('properties.id');
+
+        // Verify no overlap and deterministic ordering
+        $this->assertCount(2, $ids1);
+        $this->assertCount(2, $ids2);
+        $this->assertTrue($ids1->intersect($ids2)->isEmpty());
+
+        // Verify order is by datetime DESC, then id ASC
+        // Since all have same datetime, should be ordered by id ASC
+        $this->assertEquals([100, 101], $ids1->sort()->values()->toArray());
+        $this->assertEquals([102, 103], $ids2->sort()->values()->toArray());
     }
 }

@@ -8,8 +8,6 @@ return new class extends Migration
 {
     public function up(): void
     {
-        $this->info('Adding clustering performance optimizations...');
-
         // Add generated columns for cell coordinates
         if (!Schema::hasColumn('photos', 'cell_x')) {
             DB::statement('

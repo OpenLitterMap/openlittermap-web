@@ -20,19 +20,19 @@ class PointsController extends Controller
             'bbox.right' => 'required|numeric|between:-180,180',
             'bbox.top' => 'required|numeric|between:-90,90',
             'categories' => 'array',
-            'categories.*' => 'string|exists:categories,key',
+            'categories.*' => 'string|distinct|exists:categories,key',
             'litter_objects' => 'array',
-            'litter_objects.*' => 'string|exists:litter_objects,key',
+            'litter_objects.*' => 'string|distinct|exists:litter_objects,key',
             'materials' => 'array',
-            'materials.*' => 'string|exists:materials,name',
+            'materials.*' => 'string|distinct|exists:materials,key',
             'brands' => 'array',
-            'brands.*' => 'string|exists:brandslist,key',
+            'brands.*' => 'string|distinct|exists:brandslist,key',
             'custom_tags' => 'array',
-            'custom_tags.*' => 'string|exists:custom_tags_new,key',
+            'custom_tags.*' => 'string|distinct|exists:custom_tags_new,key',
             'per_page' => 'integer|min:1|max:500',
             'page' => 'integer|min:1',
-            'from' => 'date_format:Y-m-d',
-            'to' => 'date_format:Y-m-d',
+            'from' => 'nullable|date_format:Y-m-d',
+            'to' => 'nullable|date_format:Y-m-d|after_or_equal:from',
             'username' => 'string'
         ]);
 
@@ -123,6 +123,9 @@ class PointsController extends Controller
             });
         }
 
+        // Apply deterministic ordering for stable pagination
+        $query->orderByDesc('datetime')->orderBy('id');
+
         // For high zoom levels, consider returning all results without pagination
         if ($params['zoom'] >= 19) {
             $photos = $query->get();
@@ -138,12 +141,6 @@ class PointsController extends Controller
 
     private function applyFilters($query, array $params)
     {
-        // Note: This assumes Photo has a relationship to CategoryObject
-        // You'll need to define this relationship in your Photo model:
-        // public function categoryObjects() {
-        //     return $this->belongsToMany(CategoryObject::class, 'photo_category_objects');
-        // }
-
         $hasFilters = !empty($params['categories']) ||
             !empty($params['litter_objects']) ||
             !empty($params['materials']) ||
@@ -154,43 +151,55 @@ class PointsController extends Controller
             return;
         }
 
-        // Apply filters using AND logic (all conditions must match)
+        // Apply filters using AND logic within the same PhotoTag
+        $query->whereHas('photoTags', function ($pt) use ($params) {
 
-        // Categories filter
-        if (!empty($params['categories'])) {
-            $query->whereHas('categoryObjects.category', function ($q) use ($params) {
-                $q->whereIn('key', $params['categories']);
-            });
-        }
+            // Categories filter
+            if (!empty($params['categories'])) {
+                $pt->whereHas('category', function ($q) use ($params) {
+                    $q->whereIn('key', $params['categories']);
+                });
+            }
 
-        // Litter objects filter
-        if (!empty($params['litter_objects'])) {
-            $query->whereHas('categoryObjects.litterObject', function ($q) use ($params) {
-                $q->whereIn('key', $params['litter_objects']);
-            });
-        }
+            // Litter objects filter
+            if (!empty($params['litter_objects'])) {
+                $pt->whereHas('object', function ($q) use ($params) {
+                    $q->whereIn('key', $params['litter_objects']);
+                });
+            }
 
-        // Materials filter
-        if (!empty($params['materials'])) {
-            $query->whereHas('categoryObjects.materials', function ($q) use ($params) {
-                $q->whereIn('name', $params['materials']);
-            });
-        }
+            // Materials filter - using extraTags relationship
+            if (!empty($params['materials'])) {
+                $pt->whereHas('extraTags', function ($q) use ($params) {
+                    $q->where('tag_type', 'material')
+                        ->whereIn('tag_type_id', function ($subquery) use ($params) {
+                            $subquery->select('id')
+                                ->from('materials')
+                                ->whereIn('key', $params['materials']);
+                        });
+                });
+            }
 
-        // Brands filter
-        if (!empty($params['brands'])) {
-            $query->whereHas('categoryObjects.brands', function ($q) use ($params) {
-                $q->whereIn('key', $params['brands']);
-            });
-        }
+            // Brands filter
+            if (!empty($params['brands'])) {
+                $pt->whereHas('extraTags', function ($q) use ($params) {
+                    $q->where('tag_type', 'brand')
+                        ->whereIn('tag_type_id', function ($subquery) use ($params) {
+                            $subquery->select('id')
+                                ->from('brandslist')
+                                ->whereIn('key', $params['brands']);
+                        });
+                });
+            }
 
-        // Custom tags filter
-        if (!empty($params['custom_tags'])) {
-            $query->whereHas('categoryObjects.customTags', function ($q) use ($params) {
-                $q->whereIn('key', $params['custom_tags'])
-                    ->where('approved', true); // Only show approved custom tags
-            });
-        }
+            // Custom tags filter
+            if (!empty($params['custom_tags'])) {
+                $pt->whereHas('primaryCustomTag', function ($q) use ($params) {
+                    $q->whereIn('key', $params['custom_tags'])
+                        ->where('approved', true);
+                });
+            }
+        });
     }
 
     private function applyDateFilter($query, array $params)

@@ -215,8 +215,8 @@ onBeforeUnmount(() => {
                 <p class="text-xl text-gray-300 max-w-3xl mx-auto">
                     {{
                         t(
-                            'Maps are powerful tools that helps us see and understand the world. ' +
-                                'OpenLitterMap empowers you to use your device for its real-world data collection purpose and communicate your story about litter and plastic pollution with the world.'
+                            'Maps are powerful tools that help us see and understand the world. ' +
+                                'OpenLitterMap empowers you to use your device for its data collection purpose and communicate your story with the world.'
                         )
                     }}
                 </p>

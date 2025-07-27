@@ -11,8 +11,6 @@ return new class extends Migration
      */
     public function up(): void
     {
-        $this->info('Updating cell columns from 0.05 to 0.01 grid size...');
-
         // First, drop the covering index that depends on the generated columns
         if ($this->indexExists('photos', 'idx_photos_fast_cluster')) {
             DB::statement('DROP INDEX idx_photos_fast_cluster ON photos');
@@ -39,8 +37,6 @@ return new class extends Migration
             CREATE INDEX idx_photos_fast_cluster
             ON photos(verified, tile_key, cell_x, cell_y)
         ');
-
-        $this->info('Cell columns updated successfully!');
     }
 
     /**
@@ -48,8 +44,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        $this->info('Reverting cell columns back to 0.05 grid size...');
-
         // Drop the covering index
         if ($this->indexExists('photos', 'idx_photos_fast_cluster')) {
             DB::statement('DROP INDEX idx_photos_fast_cluster ON photos');
@@ -76,8 +70,6 @@ return new class extends Migration
             CREATE INDEX idx_photos_fast_cluster
             ON photos(verified, tile_key, cell_x, cell_y)
         ');
-
-        $this->info('Cell columns reverted successfully!');
     }
 
     private function indexExists(string $table, string $index): bool
