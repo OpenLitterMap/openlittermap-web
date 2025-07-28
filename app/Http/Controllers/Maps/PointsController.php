@@ -39,10 +39,14 @@ class PointsController extends Controller
         // Additional custom validation
         $this->validateBbox($validated);
 
-        // Don't cache requests with user-specific filters or high detail zoom
-        $shouldCache = empty($validated['username']) &&
-            ($validated['zoom'] ?? 17) <= 17 &&
-            empty($validated['custom_tags']);
+        // Don't cache requests with user-specific filters, high detail zoom, or any filters
+        $shouldCache = empty($validated['username'])
+            && (($validated['zoom'] ?? 17) <= 17)
+            && empty($validated['custom_tags'])
+            && empty($validated['categories'])
+            && empty($validated['litter_objects'])
+            && empty($validated['materials'])
+            && empty($validated['brands']);
 
         if ($shouldCache) {
             $cacheKey = $this->buildCacheKey($validated);
@@ -103,11 +107,17 @@ class PointsController extends Controller
                 'team:id,name'
             ]);
 
-        // Apply spatial filter with index optimization
-        $query->whereNotNull('lat')
-            ->whereNotNull('lon')
-            ->whereBetween('lat', [$bbox['bottom'], $bbox['top']])
-            ->whereBetween('lon', [$bbox['left'], $bbox['right']]);
+        // Apply spatial filter using the spatial index (MySQL/MariaDB compatible)
+        $query->whereRaw(
+            'MBRContains(ST_GeomFromText(?, 4326), photos.geom)',
+            [sprintf('POLYGON((%F %F, %F %F, %F %F, %F %F, %F %F))',
+                $bbox['left'], $bbox['bottom'],
+                $bbox['right'], $bbox['bottom'],
+                $bbox['right'], $bbox['top'],
+                $bbox['left'], $bbox['top'],
+                $bbox['left'], $bbox['bottom']
+            )]
+        );
 
         // Apply all filters
         $this->applyFilters($query, $params);
@@ -151,54 +161,63 @@ class PointsController extends Controller
             return;
         }
 
-        // Apply filters using AND logic within the same PhotoTag
+        // Apply filters - each filter type requires the photo to have matching PhotoTags
         $query->whereHas('photoTags', function ($pt) use ($params) {
-
-            // Categories filter
-            if (!empty($params['categories'])) {
-                $pt->whereHas('category', function ($q) use ($params) {
-                    $q->whereIn('key', $params['categories']);
-                });
-            }
-
-            // Litter objects filter
-            if (!empty($params['litter_objects'])) {
-                $pt->whereHas('object', function ($q) use ($params) {
-                    $q->whereIn('key', $params['litter_objects']);
-                });
-            }
-
-            // Materials filter - using extraTags relationship
-            if (!empty($params['materials'])) {
-                $pt->whereHas('extraTags', function ($q) use ($params) {
-                    $q->where('tag_type', 'material')
-                        ->whereIn('tag_type_id', function ($subquery) use ($params) {
-                            $subquery->select('id')
-                                ->from('materials')
-                                ->whereIn('key', $params['materials']);
+            $pt->where(function ($q) use ($params) {
+                // If we have both categories AND objects, they must be in the same PhotoTag
+                if (!empty($params['categories']) && !empty($params['litter_objects'])) {
+                    $q->whereHas('category', function ($cat) use ($params) {
+                        $cat->whereIn('key', $params['categories']);
+                    })->whereHas('object', function ($obj) use ($params) {
+                        $obj->whereIn('key', $params['litter_objects']);
+                    });
+                }
+                // Otherwise handle them separately
+                else {
+                    if (!empty($params['categories'])) {
+                        $q->orWhereHas('category', function ($cat) use ($params) {
+                            $cat->whereIn('key', $params['categories']);
                         });
-                });
-            }
+                    }
 
-            // Brands filter
-            if (!empty($params['brands'])) {
-                $pt->whereHas('extraTags', function ($q) use ($params) {
-                    $q->where('tag_type', 'brand')
-                        ->whereIn('tag_type_id', function ($subquery) use ($params) {
-                            $subquery->select('id')
-                                ->from('brandslist')
-                                ->whereIn('key', $params['brands']);
+                    if (!empty($params['litter_objects'])) {
+                        $q->orWhereHas('object', function ($obj) use ($params) {
+                            $obj->whereIn('key', $params['litter_objects']);
                         });
-                });
-            }
+                    }
+                }
 
-            // Custom tags filter
-            if (!empty($params['custom_tags'])) {
-                $pt->whereHas('primaryCustomTag', function ($q) use ($params) {
-                    $q->whereIn('key', $params['custom_tags'])
-                        ->where('approved', true);
-                });
-            }
+                // Handle extra tags (materials, brands)
+                if (!empty($params['materials'])) {
+                    $q->orWhereHas('extraTags', function ($et) use ($params) {
+                        $et->where('tag_type', 'material')
+                            ->whereIn('tag_type_id', function ($subquery) use ($params) {
+                                $subquery->select('id')
+                                    ->from('materials')
+                                    ->whereIn('key', $params['materials']);
+                            });
+                    });
+                }
+
+                if (!empty($params['brands'])) {
+                    $q->orWhereHas('extraTags', function ($et) use ($params) {
+                        $et->where('tag_type', 'brand')
+                            ->whereIn('tag_type_id', function ($subquery) use ($params) {
+                                $subquery->select('id')
+                                    ->from('brandslist')
+                                    ->whereIn('key', $params['brands']);
+                            });
+                    });
+                }
+
+                // Custom tags
+                if (!empty($params['custom_tags'])) {
+                    $q->orWhereHas('primaryCustomTag', function ($ct) use ($params) {
+                        $ct->whereIn('key', $params['custom_tags'])
+                            ->where('approved', true);
+                    });
+                }
+            });
         });
     }
 

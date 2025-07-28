@@ -11,20 +11,19 @@ return new class extends Migration
         // Clean up any previous attempts (idempotent)
         DB::unprepared("DROP TRIGGER IF EXISTS `photos_bi_geom`");
         DB::unprepared("DROP TRIGGER IF EXISTS `photos_bu_geom`");
+
         if ($this->indexExists('photos', 'photos_geom_sidx')) {
             DB::statement("ALTER TABLE `photos` DROP INDEX `photos_geom_sidx`");
-        }
-        if (Schema::hasColumn('photos', 'geom')) {
-            DB::statement("ALTER TABLE `photos` DROP COLUMN `geom`");
         }
 
         // 1) Add a regular POINT column with SRID 4326 (nullable first)
         DB::statement("ALTER TABLE `photos` ADD COLUMN `geom` POINT SRID 4326 NULL");
 
-        // 2) Backfill from existing lon/lat (assumes they’re all present)
+        // 2) Backfill from existing lon/lat - CORRECT ORDER: POINT(lon, lat)
         DB::statement("
             UPDATE `photos`
             SET `geom` = ST_SRID(POINT(`lon`, `lat`), 4326)
+            WHERE `lon` IS NOT NULL AND `lat` IS NOT NULL
         ");
 
         // 3) Make NOT NULL (required for SPATIAL index)
@@ -34,15 +33,17 @@ return new class extends Migration
         DB::statement("ALTER TABLE `photos` ADD SPATIAL INDEX `photos_geom_sidx` (`geom`)");
 
         // 5) Keep geom in sync on future writes via triggers
+        // Using WKT format for clarity and compatibility
         DB::unprepared("
             CREATE TRIGGER `photos_bi_geom`
             BEFORE INSERT ON `photos` FOR EACH ROW
-            SET NEW.`geom` = ST_SRID(POINT(NEW.`lon`, NEW.`lat`), 4326)
+            SET NEW.`geom` = ST_GeomFromText(CONCAT('POINT(', NEW.`lon`, ' ', NEW.`lat`, ')'), 4326)
         ");
+
         DB::unprepared("
             CREATE TRIGGER `photos_bu_geom`
             BEFORE UPDATE ON `photos` FOR EACH ROW
-            SET NEW.`geom` = ST_SRID(POINT(NEW.`lon`, NEW.`lat`), 4326)
+            SET NEW.`geom` = ST_GeomFromText(CONCAT('POINT(', NEW.`lon`, ' ', NEW.`lat`, ')'), 4326)
         ");
     }
 
@@ -56,6 +57,7 @@ return new class extends Migration
         if ($this->indexExists('photos', 'photos_geom_sidx')) {
             DB::statement("ALTER TABLE `photos` DROP INDEX `photos_geom_sidx`");
         }
+
         if (Schema::hasColumn('photos', 'geom')) {
             DB::statement("ALTER TABLE `photos` DROP COLUMN `geom`");
         }

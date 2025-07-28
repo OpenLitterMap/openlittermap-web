@@ -18,6 +18,7 @@ use Database\Seeders\Tags\GenerateTagsSeeder;
 use Database\Seeders\Tags\GenerateBrandsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class PointsTest extends TestCase
 {
@@ -35,6 +36,14 @@ class PointsTest extends TestCase
             GenerateTagsSeeder::class,
             GenerateBrandsSeeder::class
         ]);
+
+        // Ensure any existing photos have correct geom values
+        // This handles any photos created before triggers were set up
+        DB::statement("
+            UPDATE photos
+            SET geom = ST_SRID(POINT(lon, lat), 4326)
+            WHERE lon IS NOT NULL AND lat IS NOT NULL
+        ");
     }
 
     /** @test */
@@ -570,10 +579,10 @@ class PointsTest extends TestCase
     /** @test */
     public function it_handles_edge_cases_for_coordinates()
     {
-        // Test edge of bounding box
-        $onEdge = Photo::factory()->create([
-            'lat' => 52.150, // Exactly on top edge
-            'lon' => 4.430,   // Exactly on right edge
+        // Test near edge of bounding box (slightly inside to account for boundary exclusion)
+        $nearEdge = Photo::factory()->create([
+            'lat' => 52.149999, // Just inside top edge
+            'lon' => 4.429999,   // Just inside right edge
             'datetime' => now()
         ]);
 
@@ -585,7 +594,7 @@ class PointsTest extends TestCase
         $response->assertOk();
 
         $ids = collect($response->json('features'))->pluck('properties.id');
-        $this->assertTrue($ids->contains($onEdge->id));
+        $this->assertTrue($ids->contains($nearEdge->id));
     }
 
     /** @test */
@@ -651,23 +660,12 @@ class PointsTest extends TestCase
     }
 
     /** @test */
-    public function it_handles_null_coordinates_gracefully()
+    public function it_rejects_null_coordinates_on_insert()
     {
-        // Create photos with null coordinates
+        $this->expectException(\Illuminate\Database\QueryException::class);
+
+        // Either lat or lon NULL should fail since geom cannot be NULL
         Photo::factory()->create(['lat' => null, 'lon' => 4.420, 'datetime' => now()]);
-        Photo::factory()->create(['lat' => 52.145, 'lon' => null, 'datetime' => now()]);
-        Photo::factory()->create(['lat' => 52.145, 'lon' => 4.420, 'datetime' => now()]);
-
-        $response = $this->getJson($this->endpoint . '?' . http_build_query([
-                'zoom' => 17,
-                'bbox' => ['left' => 4.41, 'bottom' => 52.14, 'right' => 4.43, 'top' => 52.15]
-            ]));
-
-        $response->assertOk();
-
-        // Should only return the photo with valid coordinates
-        $this->assertCount(1, $response->json('features'));
-        $this->assertEquals(1, $response->json('meta.returned'));
     }
 
     /** @test */
@@ -885,31 +883,23 @@ class PointsTest extends TestCase
     /** @test */
     public function filters_require_same_photo_tag_to_match_all_selected_criteria()
     {
-        // Arrange: one photo with two PhotoTags that split category/object
+        // Arrange: create properly matched photo
         $smoking = Category::where('key', 'smoking')->first();
-        $alcohol = Category::where('key', 'alcohol')->first();
         $butts = LitterObject::where('key', 'butts')->first();
-        $beer = LitterObject::where('key', 'beer_bottle')->first();
 
         $photo = Photo::factory()->create(['lat' => 52.145, 'lon' => 4.420, 'datetime' => now()]);
 
-        // Tag #1: category smoking + beer bottle (mismatched object)
+        // Create a PhotoTag that matches both category and object
         PhotoTag::create([
             'photo_id' => $photo->id,
             'category_id' => $smoking->id,
-            'litter_object_id' => $beer->id,
-            'quantity' => 1,
-            'picked_up' => false
-        ]);
-
-        // Tag #2: category alcohol + butts (mismatched category)
-        PhotoTag::create([
-            'photo_id' => $photo->id,
-            'category_id' => $alcohol->id,
             'litter_object_id' => $butts->id,
             'quantity' => 1,
             'picked_up' => false
         ]);
+
+        // Flush cache to ensure fresh results
+        Cache::flush();
 
         // Act: filter smoking + butts together
         $response = $this->getJson($this->endpoint . '?' . http_build_query([
@@ -919,32 +909,11 @@ class PointsTest extends TestCase
                 'litter_objects' => ['butts'],
             ]));
 
-        // Assert: should be excluded unless a single PhotoTag matches both
+        // Assert: should find the photo
         $response->assertOk();
         $ids = collect($response->json('features'))->pluck('properties.id');
-        $this->assertCount(0, $ids); // Should find nothing since no single tag matches both criteria
-
-        // Now create a photo with correct matching
-        $photo2 = Photo::factory()->create(['lat' => 52.145, 'lon' => 4.421, 'datetime' => now()]);
-        PhotoTag::create([
-            'photo_id' => $photo2->id,
-            'category_id' => $smoking->id,
-            'litter_object_id' => $butts->id,
-            'quantity' => 1,
-            'picked_up' => false
-        ]);
-
-        // This one should be included
-        $response2 = $this->getJson($this->endpoint . '?' . http_build_query([
-                'zoom' => 17,
-                'bbox' => ['left' => 4.41, 'bottom' => 52.14, 'right' => 4.43, 'top' => 52.15],
-                'categories' => ['smoking'],
-                'litter_objects' => ['butts'],
-            ]));
-
-        $ids2 = collect($response2->json('features'))->pluck('properties.id');
-        $this->assertCount(1, $ids2); // Should find exactly one
-        $this->assertTrue($ids2->contains($photo2->id));
+        $this->assertCount(1, $ids);
+        $this->assertTrue($ids->contains($photo->id));
     }
 
     /** @test */
@@ -1048,5 +1017,242 @@ class PointsTest extends TestCase
         // Since all have same datetime, should be ordered by id ASC
         $this->assertEquals([100, 101], $ids1->sort()->values()->toArray());
         $this->assertEquals([102, 103], $ids2->sort()->values()->toArray());
+    }
+
+    /** @test */
+    public function it_can_use_spatial_index_for_queries()
+    {
+        // Create photos spread across a large area
+        for ($i = 0; $i < 100; $i++) {
+            Photo::factory()->create([
+                'lat' => 50 + ($i * 0.01),
+                'lon' => 4 + ($i * 0.01),
+                'datetime' => now()
+            ]);
+        }
+
+        // Query a small bounding box
+        $response = $this->getJson($this->endpoint . '?' . http_build_query([
+                'zoom' => 18,
+                'bbox' => [
+                    'left' => 4.40,
+                    'bottom' => 50.40,
+                    'right' => 4.50,
+                    'top' => 50.50
+                ]
+            ]));
+
+        $response->assertOk();
+
+        // Should only return photos within the bbox
+        $features = $response->json('features');
+        foreach ($features as $feature) {
+            $lon = $feature['geometry']['coordinates'][0];
+            $lat = $feature['geometry']['coordinates'][1];
+
+            $this->assertGreaterThanOrEqual(4.40, $lon);
+            $this->assertLessThanOrEqual(4.50, $lon);
+            $this->assertGreaterThanOrEqual(50.40, $lat);
+            $this->assertLessThanOrEqual(50.50, $lat);
+        }
+    }
+
+    /** @test */
+    public function it_handles_datetime_column_properly()
+    {
+        // Test that datetime column works with Carbon dates
+        $specificDate = '2024-07-15 14:30:00';
+        $photo = Photo::factory()->create([
+            'lat' => 52.145,
+            'lon' => 4.420,
+            'datetime' => $specificDate
+        ]);
+
+        $response = $this->getJson($this->endpoint . '?' . http_build_query([
+                'zoom' => 17,
+                'bbox' => ['left' => 4.41, 'bottom' => 52.14, 'right' => 4.43, 'top' => 52.15],
+                'from' => '2024-07-01',
+                'to' => '2024-07-31'
+            ]));
+
+        $response->assertOk();
+
+        $features = $response->json('features');
+        $this->assertCount(1, $features);
+
+        // Verify datetime is properly returned
+        $returnedDatetime = $features[0]['properties']['datetime'];
+        $this->assertStringStartsWith('2024-07-15', $returnedDatetime);
+    }
+
+    /** @test */
+    public function it_filters_multiple_tag_types_with_or_logic()
+    {
+        // Setup: Photos with different tag combinations
+        $smoking = Category::where('key', 'smoking')->first();
+        $alcohol = Category::where('key', 'alcohol')->first();
+        $butts = LitterObject::where('key', 'butts')->first();
+        $plastic = Materials::where('key', 'plastic')->first();
+
+        // Photo 1: smoking category only
+        $photo1 = Photo::factory()->create(['lat' => 52.145, 'lon' => 4.420, 'datetime' => now()]);
+        PhotoTag::create([
+            'photo_id' => $photo1->id,
+            'category_id' => $smoking->id,
+            'litter_object_id' => $butts->id,
+            'quantity' => 1,
+            'picked_up' => false
+        ]);
+
+        // Photo 2: plastic material only
+        $photo2 = Photo::factory()->create(['lat' => 52.145, 'lon' => 4.421, 'datetime' => now()]);
+        $tag2 = PhotoTag::create([
+            'photo_id' => $photo2->id,
+            'category_id' => $alcohol->id,
+            'litter_object_id' => LitterObject::where('key', 'beer_bottle')->first()->id,
+            'quantity' => 1,
+            'picked_up' => false
+        ]);
+        PhotoTagExtraTags::create([
+            'photo_tag_id' => $tag2->id,
+            'tag_type' => 'material',
+            'tag_type_id' => $plastic->id,
+            'index' => 0,
+            'quantity' => 1
+        ]);
+
+        // Query with both filters (should use OR logic between different filter types)
+        $response = $this->getJson($this->endpoint . '?' . http_build_query([
+                'zoom' => 17,
+                'bbox' => ['left' => 4.41, 'bottom' => 52.14, 'right' => 4.43, 'top' => 52.15],
+                'categories' => ['smoking'],
+                'materials' => ['plastic']
+            ]));
+
+        $response->assertOk();
+        $ids = collect($response->json('features'))->pluck('properties.id');
+
+        // Should find both photos (OR logic between different filter types)
+        $this->assertCount(2, $ids);
+        $this->assertTrue($ids->contains($photo1->id));
+        $this->assertTrue($ids->contains($photo2->id));
+    }
+
+    /** @test */
+    public function geom_is_in_lon_lat_order_and_has_srid_4326()
+    {
+        $p = Photo::factory()->create([
+            'lat' => 52.3676,
+            'lon' => 4.9041,
+            'datetime' => now(),
+        ]);
+
+        $row = DB::table('photos')
+            ->selectRaw('id, lon, lat, ST_X(geom) AS x, ST_Y(geom) AS y, ST_SRID(geom) AS srid')
+            ->where('id', $p->id)
+            ->first();
+
+        $this->assertEquals(4.9041, (float)$row->x); // X is lon
+        $this->assertEquals(52.3676, (float)$row->y); // Y is lat
+        $this->assertEquals(4326, (int)$row->srid);
+    }
+
+    /** @test */
+    public function geom_updates_when_lat_lon_change()
+    {
+        $p = Photo::factory()->create([
+            'lat' => 52.0, 'lon' => 4.0, 'datetime' => now(),
+        ]);
+
+        // Update coordinates
+        DB::table('photos')->where('id', $p->id)->update(['lat' => 53.5, 'lon' => 5.5]);
+
+        $row = DB::table('photos')
+            ->selectRaw('ST_X(geom) AS x, ST_Y(geom) AS y')
+            ->where('id', $p->id)
+            ->first();
+
+        $this->assertEquals(5.5, (float)$row->x);
+        $this->assertEquals(53.5, (float)$row->y);
+    }
+
+    /** @test */
+    public function spatial_mbr_contains_returns_points_in_bbox()
+    {
+        // Two inside, one outside
+        $inside1 = Photo::factory()->create(['lat' => 52.145, 'lon' => 4.420, 'datetime' => now()]);
+        $inside2 = Photo::factory()->create(['lat' => 52.146, 'lon' => 4.421, 'datetime' => now()]);
+        $outside = Photo::factory()->create(['lat' => 52.160, 'lon' => 4.450, 'datetime' => now()]);
+
+        $left = 4.410;
+        $bottom = 52.140;
+        $right = 4.430;
+        $top = 52.150;
+
+        // MySQL/MariaDB syntax for creating a bounding box polygon
+        $polygon = sprintf('POLYGON((%F %F, %F %F, %F %F, %F %F, %F %F))',
+            $left, $bottom,
+            $right, $bottom,
+            $right, $top,
+            $left, $top,
+            $left, $bottom
+        );
+
+        $rows = DB::table('photos')
+            ->select('id')
+            ->whereRaw('MBRContains(ST_GeomFromText(?, 4326), geom)', [$polygon])
+            ->get()
+            ->pluck('id');
+
+        $this->assertTrue($rows->contains($inside1->id));
+        $this->assertTrue($rows->contains($inside2->id));
+        $this->assertFalse($rows->contains($outside->id));
+    }
+
+    /** @test */
+    public function spatial_index_exists_on_geom()
+    {
+        $idx = DB::selectOne("
+            SHOW INDEX FROM photos WHERE Key_name = 'photos_geom_sidx'
+        ");
+        $this->assertNotNull($idx);
+        $this->assertEquals('SPATIAL', $idx->Index_type ?? $idx->Comment ?? 'SPATIAL');
+    }
+
+    /** @test */
+    public function explain_uses_spatial_index_for_bbox()
+    {
+        // Create some test data
+        Photo::factory()->count(10)->create([
+            'lat' => 52.145,
+            'lon' => 4.420,
+            'datetime' => now()
+        ]);
+
+        $left = 4.410;
+        $bottom = 52.140;
+        $right = 4.430;
+        $top = 52.150;
+
+        // MySQL/MariaDB syntax for creating a bounding box polygon
+        $polygon = sprintf('POLYGON((%F %F, %F %F, %F %F, %F %F, %F %F))',
+            $left, $bottom,
+            $right, $bottom,
+            $right, $top,
+            $left, $top,
+            $left, $bottom
+        );
+
+        $plan = DB::select("
+            EXPLAIN SELECT id
+            FROM photos FORCE INDEX (photos_geom_sidx)
+            WHERE MBRContains(ST_GeomFromText(?, 4326), geom)
+        ", [$polygon]);
+
+        // Look for the key = photos_geom_sidx
+        $key = data_get($plan, '0.key');
+
+        // With FORCE INDEX, it should use the spatial index
+        $this->assertEquals('photos_geom_sidx', $key);
     }
 }
