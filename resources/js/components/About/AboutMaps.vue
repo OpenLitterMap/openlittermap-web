@@ -1,13 +1,11 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount, reactive } from 'vue';
+import { ref, onMounted, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import 'leaflet.glify';
-import { useGlobalMapStore } from '../../stores/maps/global/index.js';
+import axios from 'axios';
 
 const { t } = useI18n();
-const globalMapStore = useGlobalMapStore();
 
 // Place definitions
 const places = [
@@ -29,10 +27,10 @@ const places = [
     },
 ];
 
-// Map refs and state
+// State
 const mapRefs = reactive({});
 const maps = reactive({});
-const pointLayers = reactive({});
+const pointsData = reactive({});
 const visibleMaps = reactive({});
 
 // Build OpenLitterMap URL
@@ -40,144 +38,143 @@ function buildOsmUrl(place) {
     return `https://openlittermap.com/global?lat=${place.center[0]}&lon=${place.center[1]}&zoom=${place.zoom}`;
 }
 
-// Initialize map with dark tiles
-async function initMap(element, place) {
-    if (!element || maps[place.id]) return;
+// Initialize a single map
+async function initMap(mapEl, place) {
+    if (!mapEl || maps[place.id]) return;
 
-    // Ensure element has dimensions using requestAnimationFrame
-    await new Promise((r) => requestAnimationFrame(r));
-
-    const map = L.map(element, {
+    // Create map
+    const map = L.map(mapEl, {
         center: place.center,
         zoom: place.zoom,
         scrollWheelZoom: false,
     });
 
-    // OpenStreetMap tiles
-    const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // Add tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        attribution: '© OpenStreetMap contributors',
     }).addTo(map);
 
-    // Remove opacity on first tile load
-    tileLayer.once('tileload', () => {
-        element.classList.remove('opacity-0');
-    });
-
-    // Force size recalculation
-    map.whenReady(() => map.invalidateSize());
-
+    // Store map reference
     maps[place.id] = map;
 
-    // Load points initially and on map movement
-    map.on('moveend zoomend', () => loadPoints(place.id));
-
-    // Initial load after tiles are ready
-    tileLayer.once('tileload', () => {
-        loadPoints(place.id);
+    // Remove opacity once loaded
+    map.whenReady(() => {
+        mapEl.classList.remove('opacity-0');
     });
+
+    // Load smoking data
+    await loadSmokingData(place.id);
+
+    // Reload on map move
+    map.on('moveend', () => loadSmokingData(place.id));
 }
 
-// Color function for points
-function getPointColor() {
-    // Bright red for all points
-    return { r: 1, g: 0, b: 0.2, a: 1 };
-}
-
-// Load points for a map
-async function loadPoints(placeId) {
+// Load smoking category data for a specific map
+async function loadSmokingData(placeId) {
     const map = maps[placeId];
-    if (!map || !map.getContainer()) return;
+    if (!map) return;
 
     const bounds = map.getBounds();
-    const bbox = {
-        left: bounds.getWest(),
-        bottom: bounds.getSouth(),
-        right: bounds.getEast(),
-        top: bounds.getNorth(),
-    };
 
     try {
-        // Note: The API doesn't use layers parameter, just bbox and zoom
-        await globalMapStore.GET_POINTS({
-            zoom: Math.round(map.getZoom()),
-            bbox,
+        // First, try without any filters to see if there's any data at all
+        console.log(`Loading data for ${placeId} at bounds:`, {
+            left: bounds.getWest(),
+            bottom: bounds.getSouth(),
+            right: bounds.getEast(),
+            top: bounds.getNorth(),
         });
 
-        if (globalMapStore.pointsGeojson?.features?.length > 0) {
-            // Remove existing points if any
-            if (pointLayers[placeId]) {
-                pointLayers[placeId].remove();
-                pointLayers[placeId] = null;
+        const response = await axios.get('/api/points', {
+            params: {
+                zoom: Math.round(map.getZoom()),
+                'bbox[left]': bounds.getWest(),
+                'bbox[bottom]': bounds.getSouth(),
+                'bbox[right]': bounds.getEast(),
+                'bbox[top]': bounds.getNorth(),
+                // Temporarily removed categories filter to see all data
+            },
+        });
+
+        console.log(`Response for ${placeId}:`, response.data.meta);
+
+        // Store the data
+        pointsData[placeId] = response.data;
+
+        // Clear existing markers
+        map.eachLayer((layer) => {
+            if (layer instanceof L.CircleMarker) {
+                map.removeLayer(layer);
             }
+        });
 
-            // Build array for glify
-            const data = globalMapStore.pointsGeojson.features.map((feature) => {
-                return [feature.geometry.coordinates[0], feature.geometry.coordinates[1]];
+        // Add red markers for smoking litter
+        response.data.features.forEach((feature) => {
+            const [lon, lat] = feature.geometry.coordinates;
+            L.circleMarker([lat, lon], {
+                radius: 6,
+                fillColor: '#ff0000',
+                color: '#ff0000',
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.8,
+            }).addTo(map);
+        });
+
+        console.log(`Loaded ${response.data.features.length} points for ${placeId}`);
+
+        // If we got data without filters, try again with smoking filter
+        if (response.data.features.length > 0) {
+            console.log('Found data, now trying with smoking filter...');
+
+            const smokingResponse = await axios.get('/api/points', {
+                params: {
+                    zoom: Math.round(map.getZoom()),
+                    'bbox[left]': bounds.getWest(),
+                    'bbox[bottom]': bounds.getSouth(),
+                    'bbox[right]': bounds.getEast(),
+                    'bbox[top]': bounds.getNorth(),
+                    'categories[]': 'smoking',
+                },
             });
 
-            // Create red points
-            pointLayers[placeId] = L.glify.points({
-                map: map,
-                data,
-                size: 10,
-                color: getPointColor(),
-            });
+            console.log(`Smoking filter returned ${smokingResponse.data.features.length} points`);
         }
     } catch (error) {
-        console.error('Failed to load points:', error);
+        console.error(`Error loading data for ${placeId}:`, error);
+        if (error.response) {
+            console.error('Error response:', error.response.data);
+        }
     }
 }
 
-// Intersection Observer for lazy loading
-function setupIntersectionObserver() {
-    const options = {
-        root: null,
-        rootMargin: '100px',
-        threshold: 0.1,
-    };
-
-    const observer = new IntersectionObserver(async (entries) => {
-        for (const entry of entries) {
-            const placeId = entry.target.dataset.placeId;
-            if (entry.isIntersecting && !visibleMaps[placeId]) {
-                visibleMaps[placeId] = true;
-                const place = places.find((p) => p.id === placeId);
-                if (place && mapRefs[placeId]) {
-                    initMap(mapRefs[placeId], place);
+// Set up intersection observer for lazy loading
+onMounted(() => {
+    const observer = new IntersectionObserver(
+        (entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    const placeId = entry.target.dataset.placeId;
+                    if (!visibleMaps[placeId]) {
+                        visibleMaps[placeId] = true;
+                        const place = places.find((p) => p.id === placeId);
+                        if (place && mapRefs[placeId]) {
+                            initMap(mapRefs[placeId], place);
+                        }
+                    }
                 }
-            }
-        }
-    }, options);
+            });
+        },
+        { rootMargin: '100px' }
+    );
 
     // Observe all map containers
-    places.forEach((place) => {
-        const element = mapRefs[place.id];
-        if (element) {
-            element.dataset.placeId = place.id;
-            observer.observe(element);
+    Object.keys(mapRefs).forEach((placeId) => {
+        if (mapRefs[placeId]) {
+            mapRefs[placeId].dataset.placeId = placeId;
+            observer.observe(mapRefs[placeId]);
         }
-    });
-
-    return observer;
-}
-
-let observer = null;
-
-onMounted(() => {
-    // Small delay to ensure refs are populated
-    setTimeout(() => {
-        observer = setupIntersectionObserver();
-    }, 100);
-});
-
-onBeforeUnmount(() => {
-    observer?.disconnect();
-
-    Object.values(pointLayers).forEach((layer) => layer?.remove());
-    Object.values(maps).forEach((map) => {
-        map.off();
-        map.remove();
     });
 });
 </script>
@@ -220,6 +217,11 @@ onBeforeUnmount(() => {
                         )
                     }}
                 </p>
+                <!-- Add indicator for filtered data -->
+                <p class="text-sm text-purple-400 mt-4">
+                    <i class="fas fa-smoking-ban mr-2"></i>
+                    {{ t('Showing smoking-related litter') }}
+                </p>
             </header>
 
             <!-- Map sections -->
@@ -236,6 +238,12 @@ onBeforeUnmount(() => {
                         <p class="text-lg text-purple-100 mb-6">
                             {{ t(place.copyKey) }}
                         </p>
+
+                        <!-- Stats indicator -->
+                        <div v-if="pointsData[place.id]" class="mb-6 text-sm text-purple-300">
+                            <i class="fas fa-map-marker-alt mr-2"></i>
+                            {{ pointsData[place.id]?.features?.length || 0 }} {{ t('smoking litter points found') }}
+                        </div>
 
                         <!-- Fancy button -->
                         <a
@@ -267,13 +275,24 @@ onBeforeUnmount(() => {
                             <div
                                 :ref="(el) => (mapRefs[place.id] = el)"
                                 class="map-container rounded-2xl shadow-2xl ring-2 ring-white/10 overflow-hidden opacity-0 transition-opacity duration-400 transform group-hover:scale-[1.01] transition-transform"
-                                :aria-label="`Map of litter dots outside ${place.titleKey}`"
+                                :aria-label="`Map of smoking-related litter outside ${place.titleKey}`"
                             ></div>
 
                             <!-- Map overlay gradient -->
                             <div
                                 class="absolute inset-0 bg-gradient-to-t from-purple-900/20 to-transparent rounded-2xl pointer-events-none"
                             ></div>
+
+                            <!-- Loading indicator -->
+                            <div
+                                v-if="visibleMaps[place.id] && !pointsData[place.id]"
+                                class="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl"
+                            >
+                                <div class="text-purple-400">
+                                    <i class="fas fa-spinner fa-spin mr-2"></i>
+                                    {{ t('Loading smoking data...') }}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

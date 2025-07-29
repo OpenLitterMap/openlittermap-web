@@ -42,6 +42,7 @@ async function initMap() {
 }
 
 // Load points with brand data
+// Load points with brand data
 async function loadPoints() {
     if (!map) return;
 
@@ -54,9 +55,16 @@ async function loadPoints() {
     };
 
     try {
+        // For demonstrating brand filtering at the specific location
+        // You can uncomment this to filter by specific brands
+        // globalMapStore.setFilters({ brands: ['coca-cola', 'pepsi', 'marlboro'] });
+
         await globalMapStore.GET_POINTS({
             zoom: Math.round(map.getZoom()),
             bbox,
+            from: null, // Add date filtering if needed
+            to: null,
+            username: null, // Add username filtering if needed
         });
 
         if (globalMapStore.pointsGeojson?.features?.length > 0) {
@@ -65,18 +73,39 @@ async function loadPoints() {
                 pointLayer = null;
             }
 
+            // Extract coordinates and properties for enhanced visualization
             const data = globalMapStore.pointsGeojson.features.map((feature) => {
-                return [feature.geometry.coordinates[0], feature.geometry.coordinates[1]];
+                return {
+                    coords: [feature.geometry.coordinates[0], feature.geometry.coordinates[1]],
+                    properties: feature.properties,
+                };
             });
 
-            // Create colored points based on brand
+            // Create colored points - you could vary color based on properties
             pointLayer = L.glify.points({
                 map: map,
-                data,
-                size: 12,
-                color: { r: 0.9, g: 0.2, b: 0.4, a: 1 },
-                click: (e, point) => {
-                    map.flyTo([point[1], point[0]], map.getZoom() + 1);
+                data: data.map((d) => d.coords),
+                size: function (zoom) {
+                    // Dynamic sizing based on zoom
+                    return zoom < 17 ? 8 : zoom < 19 ? 12 : 16;
+                },
+                color: function (index, point) {
+                    // You could vary color based on properties
+                    // For now, keep the brand-themed amber color
+                    return { r: 0.9, g: 0.2, b: 0.4, a: 1 };
+                },
+                click: (e, point, xy) => {
+                    // Enhanced click handling
+                    const index = data.findIndex((d) => d.coords[0] === point[0] && d.coords[1] === point[1]);
+
+                    if (index !== -1) {
+                        const feature = globalMapStore.pointsGeojson.features[index];
+                        console.log('Clicked photo:', feature.properties);
+
+                        // You could show a popup with photo details
+                        // or emit an event to show photo details
+                        map.flyTo([point[1], point[0]], Math.min(map.getZoom() + 1, 20));
+                    }
                 },
             });
         }

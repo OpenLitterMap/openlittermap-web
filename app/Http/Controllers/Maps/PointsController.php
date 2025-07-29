@@ -107,7 +107,7 @@ class PointsController extends Controller
                 'team:id,name'
             ]);
 
-        // Apply spatial filter using the spatial index (MySQL/MariaDB compatible)
+        // Apply spatial filter using the spatial index
         $query->whereRaw(
             'MBRContains(ST_GeomFromText(?, 4326), photos.geom)',
             [sprintf('POLYGON((%F %F, %F %F, %F %F, %F %F, %F %F))',

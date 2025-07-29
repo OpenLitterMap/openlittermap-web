@@ -1,29 +1,51 @@
-import { defineStore } from "pinia";
-import { requests } from "./requests.js";
+import { defineStore } from 'pinia';
+import { requests } from './requests.js';
 
-export const useGlobalMapStore = defineStore("globalMap", {
-
+export const useGlobalMapStore = defineStore('globalMap', {
     state: () => {
         return {
             artData: [],
             clustersGeojson: {
                 type: 'FeatureCollection',
-                features: []
+                features: [],
             },
             pointsGeojson: {
                 type: 'FeatureCollection',
-                features: []
+                features: [],
             },
             currentDate: 'today',
-            loading: true, // reload component
-            datesOpen: false, // change dates box on global map
+            loading: true,
+            datesOpen: false,
             langsOpen: false,
-            customTagsFound: []
-        }
+            customTagsFound: [],
+            // New state for filters
+            activeFilters: {
+                categories: [],
+                litter_objects: [],
+                materials: [],
+                brands: [],
+                custom_tags: [],
+            },
+        };
     },
 
     actions: {
         ...requests,
-    }
 
+        // Helper to set filters
+        setFilters(filters) {
+            this.activeFilters = { ...this.activeFilters, ...filters };
+        },
+
+        // Helper to clear filters
+        clearFilters() {
+            this.activeFilters = {
+                categories: [],
+                litter_objects: [],
+                materials: [],
+                brands: [],
+                custom_tags: [],
+            };
+        },
+    },
 });
