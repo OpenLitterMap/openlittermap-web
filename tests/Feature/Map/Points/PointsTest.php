@@ -1148,12 +1148,16 @@ class PointsTest extends TestCase
         ]);
 
         $row = DB::table('photos')
-            ->selectRaw('id, lon, lat, ST_X(geom) AS x, ST_Y(geom) AS y, ST_SRID(geom) AS srid')
+            ->selectRaw('id, lon, lat,
+                ST_Longitude(geom) AS lon_val,
+                ST_Latitude(geom)  AS lat_val,
+                ST_SRID(geom) AS srid'
+            )
             ->where('id', $p->id)
             ->first();
 
-        $this->assertEquals(4.9041, (float)$row->x); // X is lon
-        $this->assertEquals(52.3676, (float)$row->y); // Y is lat
+        $this->assertEquals(4.9041, (float)$row->lon_val);
+        $this->assertEquals(52.3676, (float)$row->lat_val);
         $this->assertEquals(4326, (int)$row->srid);
     }
 
@@ -1168,12 +1172,12 @@ class PointsTest extends TestCase
         DB::table('photos')->where('id', $p->id)->update(['lat' => 53.5, 'lon' => 5.5]);
 
         $row = DB::table('photos')
-            ->selectRaw('ST_X(geom) AS x, ST_Y(geom) AS y')
+            ->selectRaw('ST_Longitude(geom) AS lon_val, ST_Latitude(geom) AS lat_val')
             ->where('id', $p->id)
             ->first();
 
-        $this->assertEquals(5.5, (float)$row->x);
-        $this->assertEquals(53.5, (float)$row->y);
+        $this->assertEquals(5.5, (float)$row->lon_val);
+        $this->assertEquals(53.5, (float)$row->lat_val);
     }
 
     /** @test */
@@ -1200,7 +1204,7 @@ class PointsTest extends TestCase
 
         $rows = DB::table('photos')
             ->select('id')
-            ->whereRaw('MBRContains(ST_GeomFromText(?, 4326), geom)', [$polygon])
+            ->whereRaw('MBRContains(ST_GeomFromText(?, 4326, "axis-order=long-lat"), geom)', [$polygon])
             ->get()
             ->pluck('id');
 

@@ -65,9 +65,6 @@ async function initMap(mapEl, place) {
 
     // Load smoking data
     await loadSmokingData(place.id);
-
-    // Reload on map move
-    map.on('moveend', () => loadSmokingData(place.id));
 }
 
 // Load smoking category data for a specific map

@@ -109,7 +109,7 @@ class PointsController extends Controller
 
         // Apply spatial filter using the spatial index
         $query->whereRaw(
-            'MBRContains(ST_GeomFromText(?, 4326), photos.geom)',
+            "MBRContains(ST_GeomFromText(?, 4326, 'axis-order=long-lat'), photos.geom)",
             [sprintf('POLYGON((%F %F, %F %F, %F %F, %F %F, %F %F))',
                 $bbox['left'], $bbox['bottom'],
                 $bbox['right'], $bbox['bottom'],
