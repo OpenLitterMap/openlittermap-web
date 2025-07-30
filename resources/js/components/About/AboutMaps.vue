@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, reactive } from 'vue';
+import { ref, onMounted, reactive, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -32,6 +32,105 @@ const mapRefs = reactive({});
 const maps = reactive({});
 const pointsData = reactive({});
 const visibleMaps = reactive({});
+const dataTimeRange = reactive({});
+
+// Format date with time and day name
+const formatDateTime = (dateStr) => {
+    const date = new Date(dateStr);
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const months = [
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December',
+    ];
+
+    const dayName = days[date.getDay()];
+    const day = date.getDate();
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+
+    // Add ordinal suffix
+    const ordinal = (d) => {
+        if (d > 3 && d < 21) return 'th';
+        switch (d % 10) {
+            case 1:
+                return 'st';
+            case 2:
+                return 'nd';
+            case 3:
+                return 'rd';
+            default:
+                return 'th';
+        }
+    };
+
+    // Format time
+    let hours = date.getHours();
+    const minutes = date.getMinutes();
+    const ampm = hours >= 12 ? 'pm' : 'am';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // 0 should be 12
+    const minutesStr = minutes < 10 ? '0' + minutes : minutes;
+    const timeStr = hours + ':' + minutesStr + ampm;
+
+    return {
+        time: timeStr,
+        fullDate: `${dayName} ${day}${ordinal(day)} ${month} ${year}`,
+        isSameDay: (otherDate) => {
+            const other = new Date(otherDate);
+            return (
+                date.getDate() === other.getDate() &&
+                date.getMonth() === other.getMonth() &&
+                date.getFullYear() === other.getFullYear()
+            );
+        },
+    };
+};
+
+// Calculate cigarette butts per hour and minute
+const calculateRates = (placeId) => {
+    if (!pointsData[placeId] || !dataTimeRange[placeId]) return null;
+
+    const { earliest, latest } = dataTimeRange[placeId];
+    const totalButts = pointsData[placeId].features.length;
+
+    if (!earliest || !latest || totalButts === 0) return null;
+
+    const timeDiffMs = new Date(latest) - new Date(earliest);
+    const hours = timeDiffMs / (1000 * 60 * 60);
+    const minutes = timeDiffMs / (1000 * 60);
+
+    if (hours <= 0) return null;
+
+    const earliestFormatted = formatDateTime(earliest);
+    const latestFormatted = formatDateTime(latest);
+
+    // Format the date range string
+    let dateRangeStr;
+    if (earliestFormatted.isSameDay(latest)) {
+        // Same day: "From 2pm to 3:30pm on Monday 29th August 2024"
+        dateRangeStr = `From ${earliestFormatted.time} to ${latestFormatted.time} on ${earliestFormatted.fullDate}`;
+    } else {
+        // Different days: show full range
+        dateRangeStr = `From ${earliestFormatted.time} on ${earliestFormatted.fullDate} to ${latestFormatted.time} on ${latestFormatted.fullDate}`;
+    }
+
+    return {
+        perHour: (totalButts / hours).toFixed(1),
+        perMinute: (totalButts / minutes).toFixed(2),
+        totalHours: hours.toFixed(1),
+        dateRange: dateRangeStr,
+    };
+};
 
 // Build OpenLitterMap URL
 function buildOsmUrl(place) {
@@ -75,14 +174,6 @@ async function loadSmokingData(placeId) {
     const bounds = map.getBounds();
 
     try {
-        // First, try without any filters to see if there's any data at all
-        console.log(`Loading data for ${placeId} at bounds:`, {
-            left: bounds.getWest(),
-            bottom: bounds.getSouth(),
-            right: bounds.getEast(),
-            top: bounds.getNorth(),
-        });
-
         const response = await axios.get('/api/points', {
             params: {
                 zoom: Math.round(map.getZoom()),
@@ -90,14 +181,23 @@ async function loadSmokingData(placeId) {
                 'bbox[bottom]': bounds.getSouth(),
                 'bbox[right]': bounds.getEast(),
                 'bbox[top]': bounds.getNorth(),
-                // Temporarily removed categories filter to see all data
             },
         });
-
-        console.log(`Response for ${placeId}:`, response.data.meta);
-
         // Store the data
         pointsData[placeId] = response.data;
+
+        // Calculate time range
+        if (response.data.features && response.data.features.length > 0) {
+            const dates = response.data.features
+                .map((f) => f.properties.datetime)
+                .filter((d) => d)
+                .sort();
+
+            dataTimeRange[placeId] = {
+                earliest: dates[0],
+                latest: dates[dates.length - 1],
+            };
+        }
 
         // Clear existing markers
         map.eachLayer((layer) => {
@@ -110,7 +210,7 @@ async function loadSmokingData(placeId) {
         response.data.features.forEach((feature) => {
             const [lon, lat] = feature.geometry.coordinates;
             L.circleMarker([lat, lon], {
-                radius: 6,
+                radius: 2,
                 fillColor: '#ff0000',
                 color: '#ff0000',
                 weight: 1,
@@ -118,26 +218,6 @@ async function loadSmokingData(placeId) {
                 fillOpacity: 0.8,
             }).addTo(map);
         });
-
-        console.log(`Loaded ${response.data.features.length} points for ${placeId}`);
-
-        // If we got data without filters, try again with smoking filter
-        if (response.data.features.length > 0) {
-            console.log('Found data, now trying with smoking filter...');
-
-            const smokingResponse = await axios.get('/api/points', {
-                params: {
-                    zoom: Math.round(map.getZoom()),
-                    'bbox[left]': bounds.getWest(),
-                    'bbox[bottom]': bounds.getSouth(),
-                    'bbox[right]': bounds.getEast(),
-                    'bbox[top]': bounds.getNorth(),
-                    'categories[]': 'smoking',
-                },
-            });
-
-            console.log(`Smoking filter returned ${smokingResponse.data.features.length} points`);
-        }
     } catch (error) {
         console.error(`Error loading data for ${placeId}:`, error);
         if (error.response) {
@@ -204,7 +284,7 @@ onMounted(() => {
                 <h2
                     class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 bg-gradient-to-r from-purple-300 via-pink-300 to-indigo-300 bg-clip-text text-transparent"
                 >
-                    {{ t('Tell a story about the world.') }}
+                    {{ t('Use OpenLitterMap to Tell A Story About The World.') }}
                 </h2>
                 <p class="text-xl text-gray-300 max-w-3xl mx-auto">
                     {{
@@ -213,11 +293,6 @@ onMounted(() => {
                                 'OpenLitterMap empowers you to use your device for its data collection purpose and communicate your story with the world.'
                         )
                     }}
-                </p>
-                <!-- Add indicator for filtered data -->
-                <p class="text-sm text-purple-400 mt-4">
-                    <i class="fas fa-smoking-ban mr-2"></i>
-                    {{ t('Showing smoking-related litter') }}
                 </p>
             </header>
 
@@ -233,13 +308,64 @@ onMounted(() => {
                             {{ t(place.titleKey) }}
                         </h3>
                         <p class="text-lg text-purple-100 mb-6">
-                            {{ t(place.copyKey) }}
+                            <template v-if="place.id === 'de'">
+                                {{ t('Check out this map of cigarette litter around the') }}
+                                <a
+                                    href="https://en.wikipedia.org/wiki/German_Bundesrat"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="text-purple-300 hover:text-purple-200 underline"
+                                >
+                                    {{ t('Bundesrat') }}
+                                </a>
+                                {{
+                                    t(
+                                        ' (the Federal government buildings of Germany), where billions of euro of public money is spent on public health, education and the environment.'
+                                    )
+                                }}
+                            </template>
+                            <template v-else-if="place.id === 'eu'">
+                                {{ t('Check out this map of litter outside the') }}
+                                <a
+                                    href="https://en.wikipedia.org/wiki/European_Parliament"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="text-purple-300 hover:text-purple-200 underline"
+                                >
+                                    {{ t('EU Parliament') }}
+                                </a>
+                                {{
+                                    t(
+                                        " - where they debate how to spend billions in 'green' budgets on public health, education, and the environment, but they can't even see what's on their doorstep."
+                                    )
+                                }}
+                            </template>
+                            <template v-else>
+                                {{ t(place.copyKey) }}
+                            </template>
                         </p>
 
-                        <!-- Stats indicator -->
-                        <div v-if="pointsData[place.id]" class="mb-6 text-sm text-purple-300">
-                            <i class="fas fa-map-marker-alt mr-2"></i>
-                            {{ pointsData[place.id]?.features?.length || 0 }} {{ t('smoking litter points found') }}
+                        <!-- Stats indicators -->
+                        <div v-if="pointsData[place.id]" class="mb-6 space-y-2">
+                            <div class="text-sm text-purple-300">
+                                <i class="fas fa-map-marker-alt mr-2"></i>
+                                {{ pointsData[place.id]?.features?.length || 0 }} {{ t('smoking litter points found') }}
+                            </div>
+
+                            <!-- Cigarette butt rates -->
+                            <div v-if="calculateRates(place.id)" class="text-sm text-purple-300 space-y-1">
+                                <div>
+                                    <i class="fas fa-clock mr-2"></i>
+                                    {{ t('Rate:') }}
+                                    <span class="font-semibold">{{ calculateRates(place.id).perHour }}</span>
+                                    {{ t('butts/hour') }},
+                                    <span class="font-semibold">{{ calculateRates(place.id).perMinute }}</span>
+                                    {{ t('butts/minute') }}
+                                </div>
+                                <div class="text-xs text-purple-400">
+                                    {{ calculateRates(place.id).dateRange }}
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Fancy button -->

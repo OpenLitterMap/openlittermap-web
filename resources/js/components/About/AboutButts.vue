@@ -5,7 +5,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-    <section class="py-16 sm:py-20 bg-gradient-to-br from-black via-red-950 to-orange-950 relative overflow-hidden">
+    <section class="py-32 sm:py-20 bg-gradient-to-br from-black via-red-950 to-orange-950 relative overflow-hidden">
         <!-- Fancy smoke/wave background pattern -->
         <div class="absolute inset-0 opacity-10">
             <svg class="absolute bottom-0 w-full h-48" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">

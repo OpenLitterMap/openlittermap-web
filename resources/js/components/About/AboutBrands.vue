@@ -14,10 +14,10 @@ const mapContainer = ref(null);
 let map = null;
 let pointLayer = null;
 
-// Default location (you can make this dynamic based on user location)
+// Set the specific location you requested
 const defaultLocation = {
-    center: [51.505, -0.09], // London as default
-    zoom: 13,
+    center: [52.14299569196593, 4.41278747870765], // Specific coordinates
+    zoom: 15, // Zoom level 15 as requested
 };
 
 // Initialize map
@@ -42,7 +42,6 @@ async function initMap() {
 }
 
 // Load points with brand data
-// Load points with brand data
 async function loadPoints() {
     if (!map) return;
 
@@ -62,9 +61,6 @@ async function loadPoints() {
         await globalMapStore.GET_POINTS({
             zoom: Math.round(map.getZoom()),
             bbox,
-            from: null, // Add date filtering if needed
-            to: null,
-            username: null, // Add username filtering if needed
         });
 
         if (globalMapStore.pointsGeojson?.features?.length > 0) {

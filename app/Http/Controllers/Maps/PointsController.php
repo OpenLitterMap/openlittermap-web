@@ -5,16 +5,15 @@ namespace App\Http\Controllers\Maps;
 use App\Http\Controllers\Controller;
 use App\Models\Photo;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Arr;
 use Carbon\Carbon;
 
 class PointsController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): array
     {
         $validated = $request->validate([
-            'zoom' => 'required|integer|min:16|max:20',
+            'zoom' => 'required|integer|min:15|max:20',
             'bbox.left' => 'required|numeric|between:-180,180',
             'bbox.bottom' => 'required|numeric|between:-90,90',
             'bbox.right' => 'required|numeric|between:-180,180',
@@ -36,29 +35,12 @@ class PointsController extends Controller
             'username' => 'string'
         ]);
 
-        // Additional custom validation
         $this->validateBbox($validated);
-
-        // Don't cache requests with user-specific filters, high detail zoom, or any filters
-        $shouldCache = empty($validated['username'])
-            && (($validated['zoom'] ?? 17) <= 17)
-            && empty($validated['custom_tags'])
-            && empty($validated['categories'])
-            && empty($validated['litter_objects'])
-            && empty($validated['materials'])
-            && empty($validated['brands']);
-
-        if ($shouldCache) {
-            $cacheKey = $this->buildCacheKey($validated);
-            return Cache::remember($cacheKey, 60, function () use ($validated) {
-                return $this->getPhotos($validated);
-            });
-        }
 
         return $this->getPhotos($validated);
     }
 
-    private function validateBbox(array $params)
+    private function validateBbox(array $params): void
     {
         $bbox = $params['bbox'];
 
@@ -85,7 +67,7 @@ class PointsController extends Controller
         }
     }
 
-    private function getPhotos(array $params)
+    private function getPhotos(array $params): array
     {
         $bbox = $params['bbox'];
 
@@ -143,13 +125,13 @@ class PointsController extends Controller
         }
 
         // Paginate for lower zoom levels
-        $perPage = $params['per_page'] ?? 300;
+        $perPage = $params['per_page'] ?? 1000;
         $photos = $query->paginate($perPage);
 
         return $this->formatPaginatedResponse($photos, $params);
     }
 
-    private function applyFilters($query, array $params)
+    private function applyFilters($query, array $params): void
     {
         $hasFilters = !empty($params['categories']) ||
             !empty($params['litter_objects']) ||
@@ -221,7 +203,7 @@ class PointsController extends Controller
         });
     }
 
-    private function applyDateFilter($query, array $params)
+    private function applyDateFilter($query, array $params): void
     {
         if (empty($params['from']) && empty($params['to'])) {
             return;
@@ -239,7 +221,7 @@ class PointsController extends Controller
         }
     }
 
-    private function formatPaginatedResponse($photos, array $params)
+    private function formatPaginatedResponse($photos, array $params): array
     {
         $features = $this->formatFeatures($photos);
 
@@ -256,7 +238,7 @@ class PointsController extends Controller
         ];
     }
 
-    private function formatCollectionResponse($photos, array $params)
+    private function formatCollectionResponse($photos, array $params): array
     {
         $features = $this->formatFeatures($photos);
 
