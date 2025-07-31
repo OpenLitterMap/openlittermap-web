@@ -1,10 +1,9 @@
 <template>
     <div class="flex flex-col md:flex-row justify-between max-w-3xl mx-auto mb-4">
-        <!-- Total Verified Litter -->
         <div class="p-3 flex-1">
             <h1 class="text-lg text-center">
                 <strong class="text-black font-extrabold">
-                    {{ t('location.total-verified-litter') }}
+                    {{ t('Tags') }}
                 </strong>
             </h1>
             <h1 class="text-2xl md:text-4xl text-center text-white">
@@ -23,11 +22,10 @@
             </h1>
         </div>
 
-        <!-- Total Verified Photos -->
         <div class="p-3 flex-1">
             <h1 class="text-lg text-center">
                 <strong class="text-black font-extrabold">
-                    {{ t('location.total-verified-photos') }}
+                    {{ t('Photos') }}
                 </strong>
             </h1>
             <h1 class="text-2xl md:text-4xl text-center text-white">
@@ -46,11 +44,10 @@
             </h1>
         </div>
 
-        <!-- Total Littercoin Issued -->
         <div class="p-3 flex-1">
             <h1 class="text-lg text-center">
                 <strong class="text-black font-extrabold">
-                    {{ t('location.total-littercoin-issued') }}
+                    {{ t('Littercoin') }}
                 </strong>
             </h1>
             <h1 class="text-2xl md:text-4xl text-center text-white">

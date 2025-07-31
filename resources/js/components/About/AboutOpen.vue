@@ -230,21 +230,21 @@ const formatNumber = (num) => {
                                 </svg>
 
                                 <!-- Animated data points -->
-                                <div class="absolute inset-0 flex items-center justify-center">
-                                    <div class="text-center">
-                                        <div
-                                            class="text-5xl font-black text-transparent bg-gradient-to-r from-emerald-400 to-lime-400 bg-clip-text mb-2"
-                                        >
-                                            {{ formatNumber(dataPoints) }}+
-                                        </div>
-                                        <div class="text-emerald-300 text-sm font-medium">
-                                            {{ t('Open Data Points') }}
-                                        </div>
-                                        <div class="text-lime-400/60 text-xs mt-1">
-                                            {{ t('Inspired by OpenStreetMap') }}
-                                        </div>
-                                    </div>
-                                </div>
+                                <!--                                <div class="absolute inset-0 flex items-center justify-center">-->
+                                <!--                                    <div class="text-center">-->
+                                <!--                                        <div-->
+                                <!--                                            class="text-5xl font-black text-transparent bg-gradient-to-r from-emerald-400 to-lime-400 bg-clip-text mb-2"-->
+                                <!--                                        >-->
+                                <!--                                            {{ formatNumber(dataPoints) }}+-->
+                                <!--                                        </div>-->
+                                <!--                                        <div class="text-emerald-300 text-sm font-medium">-->
+                                <!--                                            {{ t('Open Data Points') }}-->
+                                <!--                                        </div>-->
+                                <!--                                        <div class="text-lime-400/60 text-xs mt-1">-->
+                                <!--                                            {{ t('Inspired by OpenStreetMap') }}-->
+                                <!--                                        </div>-->
+                                <!--                                    </div>-->
+                                <!--                                </div>-->
 
                                 <!-- Orbiting elements -->
                                 <div class="absolute inset-0 animate-spin-slow">
@@ -336,9 +336,12 @@ const formatNumber = (num) => {
                         <p class="text-emerald-300/80 text-sm italic">
                             {{
                                 t(
-                                    '"When systes are open, innovation is democratised, and unlimited change is possible."'
+                                    '"When systems are open, innovation is democratised, and unlimited change is possible."'
                                 )
                             }}
+                        </p>
+                        <p class="text-emerald-300/80 text-sm italic">
+                            {{ t('- Seán Lynch, founder of OpenLitterMap.') }}
                         </p>
                     </div>
                 </div>

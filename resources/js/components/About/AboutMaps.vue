@@ -284,7 +284,7 @@ onMounted(() => {
                 <h2
                     class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 bg-gradient-to-r from-purple-300 via-pink-300 to-indigo-300 bg-clip-text text-transparent"
                 >
-                    {{ t('Use OpenLitterMap to Tell A Story About The World.') }}
+                    {{ t('OpenLitterMap Tells A Story About The World.') }}
                 </h2>
                 <p class="text-xl text-gray-300 max-w-3xl mx-auto">
                     {{

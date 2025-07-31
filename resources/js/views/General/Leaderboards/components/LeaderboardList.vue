@@ -1,24 +1,18 @@
 <template>
     <div class="w-[800px] mx-auto px-4 py-8">
-
-        <LeaderboardFilters
-            :location-id="locationId"
-            :location-type="locationType"
-        />
+        <LeaderboardFilters :location-id="locationId" :location-type="locationType" />
 
         <!-- Empty Leaderboard Message. Needs translation -->
-        <p
-            v-if="leaders.length === 0"
-            class="text-white font-semibold text-3xl text-center mt-4"
-        >Nobody has uploaded yet!</p>
+        <p v-if="leaders.length === 0" class="text-white font-semibold text-3xl text-center mt-4">
+            {{ t('Nobody has uploaded yet!') }}
+        </p>
 
         <!-- Leaderboard List -->
         <div
             v-else
             v-for="(leader, index) in leaders"
             :key="index"
-            class="relative bg-white rounded-lg shadow-md px-2 py-4 mb-4 flex items-center
-            text-[#011638]  text-sm md:text-base transition-transform duration-150 hover:scale-105"
+            class="relative bg-white rounded-lg shadow-md px-2 py-4 mb-4 flex items-center text-[#011638] text-sm md:text-base transition-transform duration-150 hover:scale-105"
         >
             <!-- Medal -->
             <div class="medal absolute top-[-12px] left-[-12px] w-8">
@@ -43,18 +37,13 @@
             <!-- User & Team -->
             <div class="details flex-1 ml-4">
                 <div class="name font-medium">
-                    {{ leader.name || leader.username || t('common.anonymous') }}
+                    {{ leader.name || leader.username || t('Anonymous') }}
                 </div>
-                <div v-if="leader.team" class="text-sm text-gray-500">
-                    {{ t('common.team') }} {{ leader.team }}
-                </div>
+                <div v-if="leader.team" class="text-sm text-gray-500">{{ t('Team') }} {{ leader.team }}</div>
             </div>
 
             <!-- Social Icons -->
-            <div
-                v-if="leader.social"
-                class="flex flex-wrap gap-4 mx-6"
-            >
+            <div v-if="leader.social" class="flex flex-wrap gap-4 mx-6">
                 <a
                     v-for="(link, type) in leader.social"
                     :key="type"
@@ -77,13 +66,13 @@
 
 <script setup>
 import { defineProps } from 'vue';
-import { useI18n } from "vue-i18n";
-import LeaderboardFilters from "./LeaderboardFilters.vue";
+import { useI18n } from 'vue-i18n';
+import LeaderboardFilters from './LeaderboardFilters.vue';
 
 const { t } = useI18n();
-import goldMedal from "@/assets/icons/medals/gold-medal-2.png";
-import silverMedal from "@/assets/icons/medals/silver-medal-2.png";
-import bronzeMedal from "@/assets/icons/medals/bronze-medal-2.png";
+import goldMedal from '@/assets/icons/medals/gold-medal-2.png';
+import silverMedal from '@/assets/icons/medals/silver-medal-2.png';
+import bronzeMedal from '@/assets/icons/medals/bronze-medal-2.png';
 
 defineProps({
     leaders: {
@@ -93,12 +82,12 @@ defineProps({
     locationId: {
         type: [String, Number],
         required: false,
-        default: 0
+        default: 0,
     },
     locationType: {
         type: String,
         required: false,
-        default: ''
+        default: '',
     },
 });
 

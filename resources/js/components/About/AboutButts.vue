@@ -40,7 +40,7 @@ const { t } = useI18n();
                     <p class="text-xl sm:text-2xl text-red-100/90 mb-8 leading-relaxed font-light">
                         {{
                             t(
-                                'They poison water and release nicotine, arsenic, and microplastics that bioaccumulate in plants and animals.'
+                                'They poison water by releasing nicotine, arsenic, and microplastics that bioaccumulate in plants and animals.'
                             )
                         }}
                     </p>

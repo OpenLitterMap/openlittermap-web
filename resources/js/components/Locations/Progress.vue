@@ -4,14 +4,14 @@
             <!-- XP bar variables -->
             <div class="flex mb-1">
                 <h4 class="flex-1 text-white">
-                    {{ t('location.previous-target') }}:
+                    {{ t('Previous Target') }}:
                     <br />
-                    <strong class="text-white"> {{ commas(previousXp) }} {{ t('location.litter') }} </strong>
+                    <strong class="text-white"> {{ commas(previousXp) }} {{ t('Tags') }} </strong>
                 </h4>
                 <h4 class="text-white">
-                    {{ t('location.next-target') }}:
+                    {{ t('Next Target') }}:
                     <br />
-                    <strong class="text-white"> {{ commas(nextXp) }} {{ t('location.litter') }} </strong>
+                    <strong class="text-white"> {{ commas(nextXp) }} {{ t('Tags') }} </strong>
                 </h4>
             </div>
 

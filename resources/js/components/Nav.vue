@@ -16,19 +16,17 @@
 
             <!-- Links -->
             <div :class="['md:space-x-6', mobileNavOpen ? 'md:block' : 'hidden md:flex items-center']">
-                <router-link to="/about" class="nav-item">About</router-link>
+                <router-link to="/about" class="nav-item">{{ t('About') }}</router-link>
                 <!--                <router-link to="/cleanups" class="nav-item">Cleanups</router-link>-->
                 <!--                <router-link to="/history" class="nav-item">History</router-link>-->
-                <router-link to="/leaderboard" class="nav-item">Leaderboard</router-link>
-                <router-link to="/global" class="nav-item">Global Map</router-link>
-                <router-link to="/references" class="nav-item">References</router-link>
+                <router-link to="/leaderboard" class="nav-item">{{ t('Leaderboard') }}</router-link>
+                <router-link to="/global" class="nav-item">{{ t('Global Map') }}</router-link>
+                <router-link to="/references" class="nav-item">{{ t('References') }}</router-link>
                 <!--                <router-link to="/community" class="nav-item">Community</router-link>-->
-                <router-link to="/world" class="nav-item">World Cup</router-link>
+                <router-link to="/world" class="nav-item">{{ t('World Cup') }}</router-link>
 
                 <div v-if="auth" class="flex items-center space-x-4">
-                    <router-link to="/upload" class="nav-item">
-                        {{ $t('nav.upload') }}
-                    </router-link>
+                    <router-link to="/upload" class="nav-item">{{ t('Upload') }}</router-link>
                 </div>
             </div>
 
@@ -98,6 +96,8 @@
 import { ref, computed } from 'vue';
 import { useModalStore } from '../stores/modal/index.js';
 import { useUserStore } from '../stores/user/index.js';
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
 
 const modalStore = useModalStore();
 const userStore = useUserStore();

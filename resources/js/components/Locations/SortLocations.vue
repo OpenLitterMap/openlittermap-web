@@ -1,7 +1,5 @@
 <template>
-    <!-- The outer container uses Tailwind utility classes for flex layout and a gradient background -->
     <section :class="['flex-1 bg-green-500 bg-gradient-to-br from-green-400 to-green-600', container]">
-        <!-- Location Navbar -->
         <LocationNavbar />
 
         <Location

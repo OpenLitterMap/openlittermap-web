@@ -537,6 +537,12 @@ export const referencesList = [
         author: 'Lavergne et al',
     },
     {
+        date: '2025/01/23',
+        title: 'Development of Datasets to Detect and Classify the Waste by Using Deep Learning',
+        link: 'https://ieeexplore.ieee.org/abstract/document/11020299/',
+        author: 'Rangaiah et al',
+    },
+    {
         date: '2025/02/18',
         title: 'A novel blockchain-based clustering model for linked open data storage and retrieval',
         link: 'https://www.nature.com/articles/s41598-024-81915-9',

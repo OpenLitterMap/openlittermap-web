@@ -54,10 +54,6 @@ async function loadPoints() {
     };
 
     try {
-        // For demonstrating brand filtering at the specific location
-        // You can uncomment this to filter by specific brands
-        // globalMapStore.setFilters({ brands: ['coca-cola', 'pepsi', 'marlboro'] });
-
         await globalMapStore.GET_POINTS({
             zoom: Math.round(map.getZoom()),
             bbox,

@@ -365,7 +365,7 @@ const steps = [
                 <h3
                     class="text-3xl sm:text-4xl font-bold mb-8 text-transparent bg-gradient-to-r from-cyan-300 to-blue-300 bg-clip-text"
                 >
-                    {{ t('Ready to Make a Difference?') }}
+                    {{ t('Ready to begin your journey?') }}
                 </h3>
                 <button
                     class="group relative inline-flex items-center px-10 py-5 overflow-hidden rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-bold text-xl shadow-2xl transform transition-all duration-300 hover:scale-105 hover:shadow-cyan-500/50"
