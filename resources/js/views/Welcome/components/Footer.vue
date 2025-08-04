@@ -186,9 +186,11 @@
         <div class="md:flex justify-center py-4 text-center mt-10">
             <p class="flex-[0.5] text-blue-100 border-t border-blue-400 pt-8">
                 OpenLitterMap is the academic precursor to a global engagement platform. Starting pre-iPhone in 2008
-                with crowdsourced litter & plastic pollution monitoring, we are still looking for the fundamental
-                research funding to transform global public education and unlock societies real-world data collection
-                capacity.
+                with crowdsourced litter & plastic pollution monitoring, we are still looking for a single
+                category-defining fundamental research funding opportunity to transform global public education and
+                unlock societies real-world data collection capacity through scientific inclusion. Unfortunately
+                OpenLitterMap is being developed in Ireland & Europe. Our systems are completely broken and run by
+                unqualified idiots.
             </p>
         </div>
     </footer>

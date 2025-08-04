@@ -3,7 +3,7 @@
         <div class="container mx-auto px-4 flex justify-between items-center py-4">
             <div class="flex items-center space-x-4">
                 <router-link to="/" class="flex items-center text-3xl">
-                    <span class="md:block">#OpenLitterMap</span>
+                    #OpenLitterMap<sup aria-label="version five" style="font-size: 0.45em; line-height: 1">v5.0</sup>
                 </router-link>
             </div>
 

@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import axios from 'axios';
 import { requests } from './requests.js';
 
 export const useGlobalMapStore = defineStore('globalMap', {
@@ -26,6 +27,15 @@ export const useGlobalMapStore = defineStore('globalMap', {
                 brands: [],
                 custom_tags: [],
             },
+            // Pagination state
+            pointsPagination: {
+                current_page: 1,
+                last_page: 1,
+                per_page: 300,
+                total: 0,
+                has_more: false,
+            },
+            isLoadingMorePoints: false,
         };
     },
 
@@ -46,6 +56,39 @@ export const useGlobalMapStore = defineStore('globalMap', {
                 brands: [],
                 custom_tags: [],
             };
+        },
+
+        // Reset pagination when filters change
+        resetPagination() {
+            this.pointsPagination = {
+                current_page: 1,
+                last_page: 1,
+                per_page: 300,
+                total: 0,
+                has_more: false,
+            };
+            this.pointsGeojson = {
+                type: 'FeatureCollection',
+                features: [],
+            };
+        },
+
+        // Load more points (for pagination)
+        async loadMorePoints(params) {
+            if (this.isLoadingMorePoints || !this.pointsPagination.has_more) return;
+
+            this.isLoadingMorePoints = true;
+            const nextPage = this.pointsPagination.current_page + 1;
+
+            try {
+                await this.GET_POINTS({
+                    ...params,
+                    page: nextPage,
+                    append: true,
+                });
+            } finally {
+                this.isLoadingMorePoints = false;
+            }
         },
     },
 });

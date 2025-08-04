@@ -1,14 +1,6 @@
 <template>
     <section class="bg-blue-bg olm-full">
         <div class="font-bold px-4 py-2 sm:px-6 md:px-8 h-full">
-            <!-- Go Back to the World Cup -->
-            <div class="flex items-center justify-center gap-4 mt-8 mb-2 cursor-pointer" @click="openWorldCup">
-                <i class="fa fa-arrow-left text-white text-xl transition-transform transform hover:-translate-x-4"></i>
-                <h3 class="text-4xl text-center text-white">
-                    {{ t('Global Leaderboard') }}
-                </h3>
-            </div>
-
             <Loading :active="isLoading" :can-cancel="false" color="#ffffff" background="rgba(0, 0, 0, 0.8)" />
 
             <div v-if="!isLoading">

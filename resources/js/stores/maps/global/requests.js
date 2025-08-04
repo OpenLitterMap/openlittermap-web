@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 export const requests = {
     /**
      * Get the art point data for the global map
@@ -34,24 +36,43 @@ export const requests = {
     /**
      * Get points for the global map using the new API
      */
-    async GET_POINTS({ zoom, bbox, from = null, to = null, username = null, filters = null }) {
+    async GET_POINTS({
+        zoom,
+        bbox,
+        year = null,
+        fromDate = null,
+        toDate = null,
+        username = null,
+        layers = null,
+        filters = null,
+        page = 1,
+        per_page = 300,
+        append = false,
+    }) {
         // Prepare parameters for the new API
         const params = {
-            zoom: Math.round(zoom), // API requires integer zoom
+            zoom: Math.round(zoom),
             bbox: {
                 left: bbox.left || bbox._sw?.lng,
                 bottom: bbox.bottom || bbox._sw?.lat,
                 right: bbox.right || bbox._ne?.lng,
                 top: bbox.top || bbox._ne?.lat,
             },
+            page,
+            per_page,
         };
 
-        // Add date filters if provided
-        if (from) {
-            params.from = from; // Should be YYYY-MM-DD format
+        // Add year filter if provided
+        if (year) {
+            params.year = year;
         }
-        if (to) {
-            params.to = to; // Should be YYYY-MM-DD format
+
+        // Add date filters if provided
+        if (fromDate) {
+            params.from = fromDate; // Should be YYYY-MM-DD format
+        }
+        if (toDate) {
+            params.to = toDate; // Should be YYYY-MM-DD format
         }
 
         // Add username filter if provided
@@ -62,10 +83,15 @@ export const requests = {
         // Use provided filters or fall back to store's active filters
         const appliedFilters = filters || this.activeFilters;
 
-        // Add filters from either source
-        if (appliedFilters.categories?.length > 0) {
+        // Convert layers array to filter structure if provided
+        if (layers && layers.length > 0) {
+            // Assuming layers is an array of category names
+            params.categories = layers;
+        } else if (appliedFilters.categories?.length > 0) {
             params.categories = appliedFilters.categories;
         }
+
+        // Add other filters
         if (appliedFilters.litter_objects?.length > 0) {
             params.litter_objects = appliedFilters.litter_objects;
         }
@@ -79,21 +105,27 @@ export const requests = {
             params.custom_tags = appliedFilters.custom_tags;
         }
 
-        // Optional: Add pagination for lower zoom levels
-        // params.per_page = 300; // Default is 300
-        // params.page = 1;
-
         await axios
             .get('/api/points', { params })
             .then((response) => {
                 console.log('get_points', response);
 
-                this.pointsGeojson = response.data;
+                // Handle append mode for pagination
+                if (append && this.pointsGeojson.features.length > 0) {
+                    this.pointsGeojson.features = [...this.pointsGeojson.features, ...response.data.features];
+                } else {
+                    this.pointsGeojson = response.data;
+                }
 
-                // Handle metadata if needed
+                // Update pagination metadata
                 if (response.data.meta) {
-                    console.log('Points metadata:', response.data.meta);
-                    // You can store metadata in state if needed
+                    this.pointsPagination = {
+                        current_page: response.data.meta.current_page || page,
+                        last_page: response.data.meta.last_page || 1,
+                        per_page: response.data.meta.per_page || per_page,
+                        total: response.data.meta.total || 0,
+                        has_more: response.data.meta.has_more_pages || false,
+                    };
                 }
             })
             .catch((error) => {

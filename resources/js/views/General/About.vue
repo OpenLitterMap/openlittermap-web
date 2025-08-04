@@ -9,7 +9,7 @@
         <AboutOpen />
         <AboutHistory />
         <AboutHow />
-        <!--        <AboutFooter />-->
+        <AboutFooter />
     </div>
 </template>
 

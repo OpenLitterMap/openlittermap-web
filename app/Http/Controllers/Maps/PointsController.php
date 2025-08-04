@@ -32,7 +32,8 @@ class PointsController extends Controller
             'page' => 'integer|min:1',
             'from' => 'nullable|date_format:Y-m-d',
             'to' => 'nullable|date_format:Y-m-d|after_or_equal:from',
-            'username' => 'string'
+            'username' => 'string',
+            'year' => 'nullable|integer|min:2017|max:' . date('Y')
         ]);
 
         $this->validateBbox($validated);
@@ -55,6 +56,7 @@ class PointsController extends Controller
         $area = $width * $height;
 
         $maxAreas = [
+            15 => 100,   // 10° x 10°
             16 => 25,    // 5° x 5°
             17 => 10,    // ~3° x 3°
             18 => 4,     // 2° x 2°
@@ -82,7 +84,8 @@ class PointsController extends Controller
                 'photos.lon',
                 'photos.datetime',
                 'photos.remaining',
-                'photos.total_litter'
+                'photos.total_litter',
+                'photos.summary'
             ])
             ->with([
                 'user:id,name,username,show_username_maps,show_name_maps',
@@ -104,7 +107,7 @@ class PointsController extends Controller
         // Apply all filters
         $this->applyFilters($query, $params);
 
-        // Apply date range
+        // Apply date range (including year filter)
         $this->applyDateFilter($query, $params);
 
         // Apply username filter
@@ -116,7 +119,8 @@ class PointsController extends Controller
         }
 
         // Apply deterministic ordering for stable pagination
-        $query->orderByDesc('datetime')->orderBy('id');
+        // Order by datetime descending (newest first), then by id for consistency
+        $query->orderByDesc('datetime')->orderByDesc('id');
 
         // For high zoom levels, consider returning all results without pagination
         if ($params['zoom'] >= 19) {
@@ -125,7 +129,7 @@ class PointsController extends Controller
         }
 
         // Paginate for lower zoom levels
-        $perPage = $params['per_page'] ?? 1000;
+        $perPage = $params['per_page'] ?? 300;
         $photos = $query->paginate($perPage);
 
         return $this->formatPaginatedResponse($photos, $params);
@@ -205,6 +209,17 @@ class PointsController extends Controller
 
     private function applyDateFilter($query, array $params): void
     {
+        // Handle year filter
+        if (!empty($params['year'])) {
+            $year = $params['year'];
+            $startOfYear = Carbon::createFromDate($year, 1, 1)->startOfYear();
+            $endOfYear = Carbon::createFromDate($year, 12, 31)->endOfYear();
+
+            $query->whereBetween('datetime', [$startOfYear, $endOfYear]);
+            return;
+        }
+
+        // Handle date range filters
         if (empty($params['from']) && empty($params['to'])) {
             return;
         }
@@ -229,11 +244,13 @@ class PointsController extends Controller
             'type' => 'FeatureCollection',
             'features' => $features,
             'meta' => $this->buildMetadata($params, [
-                'page' => $photos->currentPage(),
+                'current_page' => $photos->currentPage(),
+                'last_page' => $photos->lastPage(),
                 'per_page' => $photos->perPage(),
                 'total' => $photos->total(),
-                'total_pages' => $photos->lastPage(),
-                'returned' => $photos->count(),
+                'from' => $photos->firstItem(),
+                'to' => $photos->lastItem(),
+                'has_more_pages' => $photos->hasMorePages(),
             ])
         ];
     }
@@ -246,11 +263,13 @@ class PointsController extends Controller
             'type' => 'FeatureCollection',
             'features' => $features,
             'meta' => $this->buildMetadata($params, [
-                'page' => 1,
+                'current_page' => 1,
+                'last_page' => 1,
                 'per_page' => count($photos),
                 'total' => count($photos),
-                'total_pages' => 1,
-                'returned' => count($photos),
+                'from' => 1,
+                'to' => count($photos),
+                'has_more_pages' => false,
             ])
         ];
     }
@@ -275,7 +294,8 @@ class PointsController extends Controller
                         ? $photo->user->username : null,
                     'name' => $photo->user && $photo->user->show_name_maps
                         ? $photo->user->name : null,
-                    'team' => $photo->team ? $photo->team->name : null
+                    'team' => $photo->team ? $photo->team->name : null,
+                    'summary' => $photo->summary
                 ]
             ];
         });
@@ -299,6 +319,7 @@ class PointsController extends Controller
             'from' => $params['from'] ?? null,
             'to' => $params['to'] ?? null,
             'username' => $params['username'] ?? null,
+            'year' => $params['year'] ?? null,
             'generated_at' => now()->toIso8601String()
         ], $paginationData);
     }
@@ -316,7 +337,7 @@ class PointsController extends Controller
 
     private function buildCacheKey(array $params): string
     {
-        $key = 'points:v3:';
+        $key = 'points:v4:';
         $key .= 'z' . $params['zoom'];
 
         // Sort parameters for consistent cache keys
