@@ -1,14 +1,10 @@
 <template>
-    <!-- Title, Subtitle, App Icons -->
-    <div class="md:flex mb-10">
-        <div class="flex-1 md:pr-10 lg:pr-22">
-            <transition v-if="headings.length > 0" name="slide-fade-left" mode="out-in">
-                <h1
-                    v-if="activeHeading.title"
-                    class="main-title"
-                    :key="activeHeading.title"
-                    v-html="activeHeading.title"
-                ></h1>
+    <div class="md:flex mb-10 overflow-x-hidden">
+        <div class="flex-1 min-w-0 md:pr-10 lg:pr-22 overflow-x-hidden">
+            <transition name="slide-fade-left" mode="out-in">
+                <div :key="activeHeadingIndex">
+                    <h1 class="main-title" v-html="activeHeading.title"></h1>
+                </div>
             </transition>
 
             <h2 class="main-subtitle text-gray-text">
@@ -17,17 +13,23 @@
                 }}
             </h2>
 
-            <!-- Download app icons -->
             <div class="flex my-[-2em] md:my-0">
                 <img :src="iosIcon" class="max-h-[10rem] mr-4 cursor-pointer" @click="ios" alt="ios logo" />
                 <img :src="androidIcon" class="max-h-[10rem] cursor-pointer" @click="android" alt="android logo" />
             </div>
         </div>
 
-        <div class="flex-1">
-            <div class="top-image">
+        <div class="flex-1 min-w-0">
+            <div class="top-image overflow-hidden">
                 <transition name="slide-fade-right" mode="out-in">
-                    <img :key="activeHeading.title" :src="activeHeading.img" :alt="activeHeading.title" />
+                    <!-- Always exactly one child -->
+                    <div :key="activeHeadingIndex" class="w-full h-full">
+                        <img
+                            :src="activeHeading.img"
+                            :alt="activeHeading.title"
+                            class="block w-full h-full object-cover"
+                        />
+                    </div>
                 </transition>
             </div>
         </div>
