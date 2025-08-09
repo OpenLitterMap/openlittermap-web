@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 
 import About from '../views/General/About.vue';
 import AddTags from '../views/General/Tagging/AddTags.vue';
+import CreateAccount from '../views/Account/CreateAccount.vue';
 import GlobalMap from '../views/Maps/GlobalMap.vue';
 import History from '../views/General/History.vue';
 import Leaderboard from '../views/General/Leaderboards/Leaderboard.vue';
@@ -51,6 +52,11 @@ const routes = [
         path: '/',
         name: 'Welcome',
         component: Welcome,
+    },
+    {
+        path: '/signup',
+        name: 'CreateAccount',
+        component: CreateAccount,
     },
     // Auth Routes
     {

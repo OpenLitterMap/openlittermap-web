@@ -52,7 +52,8 @@
     "vue-number-animation": "^2.0.2",
     "vue-router": "^4.5.0",
     "vue-toastification": "^2.0.0-rc.5",
-    "vue-virtual-scroller": "^2.0.0-beta.8"
+    "vue-virtual-scroller": "^2.0.0-beta.8",
+    "vue3-recaptcha-v2": "^2.1.0"
   },
   "devDependencies": {
     "@tailwindcss/forms": "^0.5.9",
