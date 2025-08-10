@@ -16,4 +16,5 @@ export default defineConfig({
             '@css': '/resources/css',
         },
     },
+    assetsInclude: ['**/*.JPG', '**/*.jpg', '**/*.jpeg', '**/*.png', '**/*.gif', '**/*.svg'],
 });

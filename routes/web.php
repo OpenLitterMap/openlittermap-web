@@ -291,13 +291,8 @@ Route::get('/user/profile/download', 'User\ProfileController@download');
 Route::get('/emails/unsubscribe/{token}', 'EmailSubController@unsubEmail');
 Route::get('/unsubscribe/{token}', 'UsersController@unsubscribeEmail');
 
-Route::get('/terms', function() {
-    return view('pages.terms');
-});
-
-Route::get('/privacy', function() {
-    return view('pages.privacy');
-});
+Route::get('/terms', HomeController::class);
+Route::get('/privacy', HomeController::class);
 
 // Confirm Email Address, old and new
 Route::get('register/confirm/{token}', 'Auth\RegisterController@confirmEmail');

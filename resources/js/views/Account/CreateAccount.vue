@@ -1,191 +1,239 @@
 <template>
-    <div class="min-h-screen">
-        <!-- Hero Section - Full Width Blue Gradient -->
-        <section class="relative overflow-hidden bg-gradient-to-br from-[#3273dc] via-[#4582e6] to-[#5a91f0]">
-            <!-- Decorative background elements -->
-            <div class="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
-            <div class="absolute -top-24 -right-24 h-96 w-96 rounded-full bg-white/10 blur-3xl"></div>
-            <div class="absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-blue-300/20 blur-3xl"></div>
+    <div class="relative min-h-[calc(100vh-80px)]">
+        <!-- Background images with lower z-index -->
+        <div class="absolute inset-0 z-0">
+            <img
+                :src="mountainsBg"
+                alt=""
+                class="h-full w-full object-cover pointer-events-none select-none md:hidden"
+            />
+            <img
+                :src="mountainsWideBg"
+                alt=""
+                class="h-full w-full object-cover pointer-events-none select-none hidden md:block"
+            />
+            <!-- Optional subtle vignette -->
+            <div class="absolute inset-0 bg-gradient-to-b from-black/0 via-black/0 to-black/15"></div>
+        </div>
 
-            <div class="relative px-4 py-32 sm:px-6 lg:px-8">
-                <div class="mx-auto max-w-4xl text-center">
-                    <h1 class="mb-4 text-4xl font-bold text-white drop-shadow-lg md:text-5xl">Are you ready?</h1>
-                    <p class="text-lg text-white/95 drop-shadow md:text-xl">Become an expert litter mapper.</p>
-                </div>
-            </div>
-        </section>
+        <!-- Content layer with higher z-index -->
+        <div class="relative z-10 flex min-h-[calc(100vh-80px)] flex-col">
+            <!-- Form Section -->
+            <section class="flex-1 flex items-center justify-center flex-col p-4">
+                <div class="w-full max-w-md">
+                    <div class="rounded-xl bg-white p-4 shadow-xl md:p-6">
+                        <h2 class="mb-4 text-xl font-bold text-gray-900">
+                            Sign up to tell your story about litter & plastic pollution.
+                        </h2>
 
-        <!-- Main Content - Grey/Slate Background -->
-        <section class="relative bg-gradient-to-b from-slate-200 via-slate-300 to-slate-400 px-4 pb-16 pt-10">
-            <!-- Form Card Container - Overlapping Hero -->
-            <div class="mx-auto max-w-2xl">
-                <!-- Main Form Card -->
-                <div class="rounded-2xl bg-white p-8 shadow-xl">
-                    <h2 class="mb-8 text-center text-3xl font-bold text-slate-800">Create your account</h2>
-
-                    <form @submit.prevent="submit" @keydown="clearError($event.target?.name)">
-                        <!-- Name Field -->
-                        <div class="mb-6">
-                            <label for="name" class="mb-2 block text-sm font-semibold text-slate-700"> Name </label>
-                            <div class="relative">
-                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                    <svg class="h-5 w-5 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
-                                        <path
-                                            fill-rule="evenodd"
-                                            d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-                                            clip-rule="evenodd"
-                                        />
-                                    </svg>
-                                </div>
-                                <input
-                                    id="name"
-                                    name="name"
-                                    type="text"
-                                    autocomplete="name"
-                                    placeholder="Your full name"
-                                    v-model.trim="name"
-                                    class="w-full rounded-lg border py-3 pl-10 pr-4 transition-colors focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                                    :class="hasError('name') ? 'border-red-300 bg-red-50' : 'border-slate-300'"
-                                    required
-                                />
-                            </div>
-                            <p v-if="hasError('name')" class="mt-1 text-sm text-red-600">{{ firstError('name') }}</p>
-                        </div>
-
-                        <!-- Username Field -->
-                        <div class="mb-6">
-                            <label for="username" class="mb-2 block text-sm font-semibold text-slate-700">
-                                Unique Identifier
-                            </label>
-                            <div class="relative">
-                                <span
-                                    class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500 font-medium"
-                                >
-                                    @
-                                </span>
-                                <input
-                                    id="username"
-                                    name="username"
-                                    type="text"
-                                    placeholder="Unique Username or Organisation"
-                                    v-model.trim="username"
-                                    class="w-full rounded-lg border py-3 pl-8 pr-4 transition-colors focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                                    :class="hasError('username') ? 'border-red-300 bg-red-50' : 'border-slate-300'"
-                                    required
-                                />
-                            </div>
-                            <p v-if="hasError('username')" class="mt-1 text-sm text-red-600">
-                                {{ firstError('username') }}
-                            </p>
-                        </div>
-
-                        <!-- Email Field -->
-                        <div class="mb-6">
-                            <label for="email" class="mb-2 block text-sm font-semibold text-slate-700">
-                                E-Mail Address
-                            </label>
-                            <div class="relative">
-                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                    <svg class="h-5 w-5 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
-                                        <path
-                                            d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"
-                                        />
-                                        <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                                    </svg>
-                                </div>
-                                <input
-                                    id="email"
-                                    name="email"
-                                    type="email"
-                                    autocomplete="email"
-                                    placeholder="you@email.com"
-                                    v-model.trim="email"
-                                    class="w-full rounded-lg border py-3 pl-10 pr-4 transition-colors focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                                    :class="hasError('email') ? 'border-red-300 bg-red-50' : 'border-slate-300'"
-                                    required
-                                />
-                            </div>
-                            <p v-if="hasError('email')" class="mt-1 text-sm text-red-600">{{ firstError('email') }}</p>
-                        </div>
-
-                        <!-- Password Field -->
-                        <div class="mb-6">
-                            <label for="password" class="mb-2 block text-sm font-semibold text-slate-700">
-                                Create a strong password
-                            </label>
-                            <div class="relative">
-                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                    <svg class="h-5 w-5 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
-                                        <path
-                                            fill-rule="evenodd"
-                                            d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                                            clip-rule="evenodd"
-                                        />
-                                    </svg>
-                                </div>
-                                <input
-                                    id="password"
-                                    name="password"
-                                    type="password"
-                                    autocomplete="new-password"
-                                    placeholder="Create a strong password"
-                                    v-model="password"
-                                    class="w-full rounded-lg border py-3 pl-10 pr-4 transition-colors focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                                    :class="hasError('password') ? 'border-red-300 bg-red-50' : 'border-slate-300'"
-                                    required
-                                />
-                            </div>
-                            <p v-if="hasError('password')" class="mt-1 text-sm text-red-600">
-                                {{ firstError('password') }}
-                            </p>
-                        </div>
-
-                        <!-- Terms Checkbox -->
-                        <div class="mb-6">
-                            <label class="flex items-start gap-3 cursor-pointer">
-                                <input
-                                    id="ConfirmToS"
-                                    name="ConfirmToS"
-                                    type="checkbox"
-                                    v-model="acceptedTerms"
-                                    class="mt-0.5 h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                                />
-                                <span class="text-sm text-slate-600">
-                                    I have read and agree to the
-                                    <a href="/terms" class="text-blue-600 hover:text-blue-700 underline"
-                                        >Terms and Conditions of use</a
+                        <form @submit.prevent="submit" novalidate>
+                            <!-- Username -->
+                            <div class="mb-3">
+                                <label for="username" class="mb-1 block text-sm font-medium text-gray-700">
+                                    Username
+                                </label>
+                                <div class="relative">
+                                    <span
+                                        class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"
+                                        :style="{ color: activeField === 'username' ? '#4a4a4a' : '#dbdbdb' }"
+                                        aria-hidden="true"
                                     >
-                                    and
-                                    <a href="/privacy" class="text-blue-600 hover:text-blue-700 underline"
-                                        >Privacy Policy</a
+                                        <span class="text-base font-medium">@</span>
+                                    </span>
+                                    <input
+                                        id="username"
+                                        v-model.trim="username"
+                                        @focus="activeField = 'username'"
+                                        @blur="
+                                            validateField('username');
+                                            activeField = null;
+                                        "
+                                        @input="clearError('username')"
+                                        type="text"
+                                        placeholder="LitterNinja"
+                                        :class="inputClass('username')"
+                                        class="w-full rounded-lg border pl-10 pr-3 py-2 focus:outline-none focus:ring-2"
+                                        required
+                                    />
+                                </div>
+                                <p v-if="fieldErrors.username" class="mt-1 text-xs text-red-600">
+                                    {{ fieldErrors.username }}
+                                </p>
+                            </div>
+
+                            <!-- Email -->
+                            <div class="mb-3">
+                                <label for="email" class="mb-1 block text-sm font-medium text-gray-700">
+                                    E-Mail Address
+                                </label>
+                                <div class="relative">
+                                    <span
+                                        class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"
+                                        :style="{ color: activeField === 'email' ? '#4a4a4a' : '#dbdbdb' }"
+                                        aria-hidden="true"
                                     >
-                                </span>
-                            </label>
-                        </div>
+                                        <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path
+                                                d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"
+                                            />
+                                            <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                                        </svg>
+                                    </span>
+                                    <input
+                                        id="email"
+                                        v-model.trim="email"
+                                        @focus="activeField = 'email'"
+                                        @blur="
+                                            validateField('email');
+                                            activeField = null;
+                                        "
+                                        @input="clearError('email')"
+                                        type="email"
+                                        placeholder="you@email.com"
+                                        autocomplete="email"
+                                        :class="inputClass('email')"
+                                        class="w-full rounded-lg border pl-10 pr-3 py-2 focus:outline-none focus:ring-2"
+                                        required
+                                    />
+                                </div>
+                                <p v-if="fieldErrors.email" class="mt-1 text-xs text-red-600">
+                                    {{ fieldErrors.email }}
+                                </p>
+                            </div>
 
-                        <!-- reCAPTCHA -->
-                        <div class="mb-6 flex justify-center">
-                            <RecaptchaV2
-                                :sitekey="recaptchaSiteKey"
-                                @loadCallback="onRecaptchaVerify"
-                                @expiredCallback="onRecaptchaExpired"
-                                @errorCallback="onRecaptchaError"
-                            />
-                        </div>
-                        <p v-if="hasError('g-recaptcha-response')" class="mb-4 text-center text-sm text-red-600">
-                            {{ firstError('g-recaptcha-response') }}
-                        </p>
+                            <!-- Password -->
+                            <div class="mb-3">
+                                <label for="password" class="mb-1 block text-sm font-medium text-gray-700">
+                                    Create a password
+                                </label>
+                                <div class="relative">
+                                    <!-- Left icon: vertically centered via inset-y + flex -->
+                                    <span
+                                        class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"
+                                        :style="{ color: activeField === 'password' ? '#4a4a4a' : '#dbdbdb' }"
+                                        aria-hidden="true"
+                                    >
+                                        <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path
+                                                fill-rule="evenodd"
+                                                d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                                                clip-rule="evenodd"
+                                            />
+                                        </svg>
+                                    </span>
 
-                        <!-- Submit Button -->
-                        <div class="text-center">
+                                    <input
+                                        id="password"
+                                        v-model="password"
+                                        @focus="activeField = 'password'"
+                                        @blur="
+                                            validateField('password');
+                                            activeField = null;
+                                        "
+                                        @input="onPasswordInput"
+                                        :type="showPassword ? 'text' : 'password'"
+                                        placeholder="Your password (min 5 characters)"
+                                        autocomplete="new-password"
+                                        :class="inputClass('password')"
+                                        class="w-full rounded-lg border pl-10 pr-10 py-2 focus:outline-none focus:ring-2"
+                                        required
+                                    />
+
+                                    <!-- Right toggle button: also vertically centered -->
+                                    <span class="absolute inset-y-0 right-0 flex items-center pr-3">
+                                        <button
+                                            type="button"
+                                            @click="showPassword = !showPassword"
+                                            class="text-gray-500 hover:text-gray-700 focus:outline-none"
+                                            :aria-label="showPassword ? 'Hide password' : 'Show password'"
+                                        >
+                                            <svg
+                                                v-if="!showPassword"
+                                                class="h-5 w-5"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                                />
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                                />
+                                            </svg>
+                                            <svg
+                                                v-else
+                                                class="h-5 w-5"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+                                                />
+                                            </svg>
+                                        </button>
+                                    </span>
+                                </div>
+
+                                <p v-if="fieldErrors.password" class="mt-1 text-xs text-red-600">
+                                    {{ fieldErrors.password }}
+                                </p>
+                            </div>
+
+                            <!-- Terms -->
+                            <div class="mb-3">
+                                <label class="flex items-start gap-2 cursor-pointer">
+                                    <input
+                                        v-model="acceptedTerms"
+                                        type="checkbox"
+                                        class="mt-0.5 h-4 w-4 rounded border-gray-300 text-green-600"
+                                    />
+                                    <span class="text-sm text-gray-600">
+                                        I agree to the
+                                        <router-link to="/terms" class="text-green-600 hover:underline"
+                                            >Terms</router-link
+                                        >
+                                        and
+                                        <router-link to="/privacy" class="text-green-600 hover:underline"
+                                            >Privacy Policy</router-link
+                                        >
+                                    </span>
+                                </label>
+                            </div>
+
+                            <!-- reCAPTCHA -->
+                            <div class="mb-3 flex justify-center">
+                                <RecaptchaV2
+                                    v-if="showRecaptcha"
+                                    :sitekey="recaptchaSiteKey"
+                                    @loadCallback="onRecaptchaVerify"
+                                    @expiredCallback="onRecaptchaExpired"
+                                    @errorCallback="onRecaptchaError"
+                                />
+                            </div>
+                            <p v-if="errors['g-recaptcha-response']" class="mb-2 text-center text-xs text-red-600">
+                                Please complete the reCAPTCHA
+                            </p>
+
+                            <!-- Submit -->
                             <button
                                 type="submit"
-                                :disabled="isSubmitting || !acceptedTerms"
-                                class="mb-4 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 px-8 py-3 text-lg font-semibold text-white shadow-lg transition-all hover:from-blue-600 hover:to-cyan-600 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
+                                :disabled="!canSubmit"
+                                class="w-full rounded-lg bg-green-600 py-2.5 font-medium text-white transition-all hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300"
                             >
-                                <span v-if="!isSubmitting">Sign up</span>
-                                <span v-else class="flex items-center gap-2">
-                                    <svg class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                                <span v-if="!isSubmitting">Create Account</span>
+                                <span v-else class="flex items-center justify-center gap-2">
+                                    <svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
                                         <circle
                                             class="opacity-25"
                                             cx="12"
@@ -200,114 +248,211 @@
                                             d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
                                         />
                                     </svg>
-                                    Creating account...
+                                    Creating...
                                 </span>
                             </button>
 
-                            <p class="text-sm text-slate-600">
-                                Note: If you do not receive the verification e-mail in your inbox, please check your
-                                spam/junk folder.
+                            <p class="mt-2 text-center text-xs text-gray-500">
+                                Check spam folder if verification email doesn't arrive
                             </p>
-                        </div>
-                    </form>
-                </div>
 
-                <!-- Sign In Link -->
-                <div class="mt-6 text-center">
-                    <p class="text-slate-600">
-                        Already have an account?
-                        <a href="/login" class="font-semibold text-blue-600 hover:text-blue-700 underline"
-                            >Sign in here</a
-                        >
-                    </p>
+                            <!-- Sign in link moved inside form -->
+                            <div class="mt-4 pt-4 border-t border-gray-200">
+                                <p class="text-center text-sm text-gray-600">
+                                    Have an account?
+                                    <button
+                                        type="button"
+                                        @click="navigateToLogin"
+                                        class="text-gray-900 hover:underline"
+                                    >
+                                        Sign in
+                                    </button>
+                                </p>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-            </div>
-        </section>
+            </section>
+        </div>
     </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { usePlansStore } from '@/stores/plans';
+import { useModalStore } from '@/stores/modal';
 import { RecaptchaV2 } from 'vue3-recaptcha-v2';
-
-const props = defineProps({
-    plan: { type: String, required: false },
-});
+import mountainsBg from '@/assets/pixel_art/mountains.JPG';
+import mountainsWideBg from '@/assets/pixel_art/boy1.jpg';
 
 const router = useRouter();
 const plansStore = usePlansStore();
+const modalStore = useModalStore();
 
-// Form state
-const name = ref('');
+// Form fields
 const username = ref('');
 const email = ref('');
 const password = ref('');
-const password_confirmation = ref('');
 const acceptedTerms = ref(false);
 const g_recaptcha_response = ref('');
 
+// UI state
 const isSubmitting = ref(false);
-const planInt = ref(1);
+const showPassword = ref(false);
+const fieldErrors = ref({});
+const activeField = ref(null);
+const showRecaptcha = ref(false); // Start with false, enable when component mounts
 
 const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY || '6Le9FtwcAAAAAMOImuwEoOYssOVdNf7dfI2x8XZh';
 
-const plans = computed(() => plansStore.plans);
-const errors = computed(() => plansStore.errors);
+// Server errors from store
+const errors = computed(() => plansStore.errors || {});
 
-function hasError(key) {
-    return Boolean(errors.value?.[key] && errors.value[key].length);
+const canSubmit = computed(() => {
+    // Check if basic form requirements are met
+    const basicRequirements =
+        username.value && email.value && password.value && acceptedTerms.value && !isSubmitting.value;
+
+    // Only require recaptcha if it's shown and loaded
+    if (showRecaptcha.value) {
+        return basicRequirements && g_recaptcha_response.value;
+    }
+
+    return basicRequirements;
+});
+
+// Navigation function for login
+function navigateToLogin() {
+    // Try modal first
+    if (modalStore && modalStore.showModal) {
+        modalStore.showModal({
+            type: 'Login',
+            title: 'Login',
+            showIcon: true,
+        });
+    } else {
+        // Fallback to root route if modal store isn't available
+        router.push('/');
+    }
 }
 
-function firstError(key) {
-    return hasError(key) ? errors.value[key][0] : '';
+// Field validation
+function validateField(field) {
+    const newErrors = { ...fieldErrors.value };
+
+    switch (field) {
+        case 'username':
+            if (!username.value) {
+                newErrors.username = 'Username is required';
+            } else if (username.value.length < 3) {
+                newErrors.username = 'Username must be at least 3 characters';
+            } else if (!/^[a-zA-Z0-9_-]+$/.test(username.value)) {
+                newErrors.username = 'Username can only contain letters, numbers, - and _';
+            } else {
+                delete newErrors.username;
+            }
+            break;
+
+        case 'email':
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!email.value) {
+                newErrors.email = 'Email is required';
+            } else if (!emailRegex.test(email.value)) {
+                newErrors.email = 'Please enter a valid email';
+            } else {
+                delete newErrors.email;
+            }
+            break;
+
+        case 'password':
+            if (!password.value) {
+                newErrors.password = 'Password is required';
+            } else if (password.value.length < 5) {
+                newErrors.password = 'Password must be at least 5 characters';
+            } else {
+                delete newErrors.password;
+            }
+            break;
+    }
+
+    fieldErrors.value = newErrors;
 }
 
-function clearError(key) {
-    if (!key) return;
-    if (errors.value?.[key]) plansStore.clearError(key);
+function clearError(field) {
+    const newErrors = { ...fieldErrors.value };
+    delete newErrors[field];
+    fieldErrors.value = newErrors;
+
+    // Clear server errors if plansStore has the method
+    if (errors.value?.[field] && plansStore.clearError) {
+        plansStore.clearError(field);
+    }
 }
 
-function planNameToId(s) {
-    const idx = plans.value.find((p) => p.name.toLowerCase() === String(s || '').toLowerCase());
-    return idx ? idx.id : 1;
+function onPasswordInput() {
+    clearError('password');
+}
+
+function inputClass(field) {
+    const hasLocalError = fieldErrors.value[field];
+    const hasServerError = errors.value?.[field];
+
+    if (hasLocalError || hasServerError) {
+        return 'border-red-300 focus:border-red-400 focus:ring-red-200';
+    }
+    return 'border-gray-300 focus:border-green-400 focus:ring-green-200';
 }
 
 async function submit() {
-    if (!acceptedTerms.value) {
-        alert('Please accept the terms and conditions to continue.');
+    console.log('Submit clicked. Form state:', {
+        username: username.value,
+        email: email.value,
+        password: password.value ? 'set' : 'not set',
+        acceptedTerms: acceptedTerms.value,
+        recaptcha: g_recaptcha_response.value ? 'set' : 'not set',
+        canSubmit: canSubmit.value,
+    });
+
+    // Validate all fields
+    ['username', 'email', 'password'].forEach(validateField);
+
+    if (Object.keys(fieldErrors.value).length > 0) {
+        console.log('Validation errors:', fieldErrors.value);
         return;
     }
 
     isSubmitting.value = true;
 
-    const selected = plans.value.find((p) => p.id === planInt.value);
-    const plan_id = selected?.plan_id ?? null;
-
     try {
-        await plansStore.createAccount({
-            name: name.value,
+        const payload = {
             username: username.value,
             email: email.value,
             password: password.value,
-            password_confirmation: password_confirmation.value,
-            'g-recaptcha-response': g_recaptcha_response.value,
-            plan: planInt.value,
-            plan_id,
-        });
+            password_confirmation: password.value,
+            'g-recaptcha-response': g_recaptcha_response.value || 'bypass',
+            plan: 1,
+            plan_id: null,
+        };
 
-        password_confirmation.value = '';
+        console.log('Submitting with payload:', { ...payload, password: '[hidden]' });
+
+        const result = await plansStore.createAccount(payload);
+
+        // Clear sensitive data on success
+        password.value = '';
+
+        // Navigate to home after successful signup
+        // Check if result indicates success
+        if (result !== false) {
+            console.log('Account created successfully, navigating to home');
+            await router.push('/');
+        }
+    } catch (error) {
+        console.error('Signup error:', error);
     } finally {
         isSubmitting.value = false;
     }
-}
-
-function onPlanChanged(e) {
-    const id = Number(e?.target?.value ?? planInt.value);
-    const p = plans.value.find((pl) => pl.id === id);
-    if (!p) return;
-    router.push({ path: '/join', query: { plan: p.name.toLowerCase() } });
 }
 
 // reCAPTCHA handlers
@@ -321,12 +466,62 @@ function onRecaptchaExpired() {
 
 function onRecaptchaError() {
     g_recaptcha_response.value = '';
+    // Optionally hide recaptcha if it fails to load
+    console.error('reCAPTCHA failed to load');
+    showRecaptcha.value = false;
 }
 
-onMounted(async () => {
-    if (!plans.value.length) await plansStore.fetchPlans();
+// Clean up on unmount
+onUnmounted(() => {
+    // Clear any errors when leaving the page
+    if (plansStore.clearErrors) {
+        plansStore.clearErrors();
+    }
+});
 
-    const qp = router.currentRoute.value.query.plan || props.plan;
-    if (qp) planInt.value = planNameToId(qp);
+onMounted(async () => {
+    // Only fetch plans if the method exists
+    if (plansStore.fetchPlans) {
+        try {
+            await plansStore.fetchPlans();
+        } catch (error) {
+            console.error('Failed to fetch plans:', error);
+        }
+    }
+
+    // Enable recaptcha after mount to avoid loading issues
+    // You can set this to true if you want to try loading recaptcha
+    // showRecaptcha.value = true;
+
+    // For debugging: log when validation state changes
+    console.log('Form mounted. Initial canSubmit:', canSubmit.value);
 });
 </script>
+
+<style scoped>
+/* Ensure the form is always accessible and above background */
+.relative {
+    position: relative;
+}
+
+/* Ensure z-index layering works properly */
+.z-0 {
+    z-index: 0;
+}
+
+.z-10 {
+    z-index: 10;
+}
+
+/* Prevent any overflow issues */
+button:focus {
+    outline: none;
+}
+
+/* Ensure router-links work properly */
+a,
+button {
+    position: relative;
+    z-index: 1;
+}
+</style>

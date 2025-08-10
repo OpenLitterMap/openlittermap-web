@@ -16,12 +16,24 @@ import auth from './middleware/auth';
 import Countries from '../views/Locations/Countries.vue';
 import Achievements from '../views/Achievements/Achievements.vue';
 import Redis from '../views/Admin/Redis.vue';
+import Terms from '../views/General/Terms.vue';
+import Privacy from '../views/General/Privacy.vue';
 
 const routes = [
     {
         path: '/about',
         name: 'About',
         component: About,
+    },
+    {
+        path: '/terms',
+        name: 'Terms',
+        component: Terms,
+    },
+    {
+        path: '/privacy',
+        name: 'Privacy',
+        component: Privacy,
     },
     {
         path: '/world',
