@@ -7,7 +7,7 @@ use App\Models\Litter\Categories\Brand;
 use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Teams\Team;
 use App\Models\Users\User;
-use App\Services\Photos\GeneratePhotoSummaryService;
+use App\Services\Tags\GeneratePhotoSummaryService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

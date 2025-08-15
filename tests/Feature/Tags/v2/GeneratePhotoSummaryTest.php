@@ -7,7 +7,7 @@ use App\Models\Litter\Categories\Food;
 use App\Models\Litter\Categories\Smoking;
 use App\Models\Litter\Tags\Materials;
 use App\Models\Photo;
-use App\Services\Photos\GeneratePhotoSummaryService;
+use App\Services\Tags\GeneratePhotoSummaryService;
 use App\Services\Tags\UpdateTagsService;
 use Database\Seeders\Tags\GenerateBrandsSeeder;
 use Database\Seeders\Tags\GenerateTagsSeeder;

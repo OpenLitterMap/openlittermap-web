@@ -1,11 +1,12 @@
 <script setup>
-import { ref, onMounted, reactive, computed } from 'vue';
+import { onMounted, nextTick, shallowReactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import axios from 'axios';
+import { usePointsStore } from '../../stores/points/index.js';
 
 const { t } = useI18n();
+const pointsStore = usePointsStore();
 
 // Place definitions
 const places = [
@@ -15,7 +16,7 @@ const places = [
         zoom: 16,
         titleKey: 'EU Parliament, Brussels',
         copyKey:
-            "Check out this map of litter outside the EU Parliament - where they debate how to spend billions in 'green' budgets on public health, education, and the environment, but they can't even see what's on their doorstep.",
+            "Check out this map of litter outside the EU Parliament - where they debate policy budgets on public health, education, and the environment but they can't even see whats on their doorstep.",
     },
     {
         id: 'de',
@@ -23,16 +24,16 @@ const places = [
         zoom: 16,
         titleKey: 'Bundesrat, Berlin',
         copyKey:
-            'Check out this map of cigarette litter around the Bundesrat (the Federal government buildings of Germany), where billions of euro of public money is spent on public health, education and the environment.',
+            'Behold this map of cigarette litter around the Bundesrat (the Federal government buildings of Germany), where billions of euro of public money is spent on public health, education and the environment.',
     },
 ];
 
 // State
-const mapRefs = reactive({});
-const maps = reactive({});
-const pointsData = reactive({});
-const visibleMaps = reactive({});
-const dataTimeRange = reactive({});
+const mapRefs = shallowReactive({});
+const maps = shallowReactive({});
+const visibleMaps = shallowReactive({});
+const layerGroups = shallowReactive({});
+const loadingStates = ref({}); // Track loading state per place
 
 // Format date with time and day name
 const formatDateTime = (dateStr) => {
@@ -98,13 +99,12 @@ const formatDateTime = (dateStr) => {
 
 // Calculate cigarette butts per hour and minute
 const calculateRates = (placeId) => {
-    if (!pointsData[placeId] || !dataTimeRange[placeId]) return null;
+    const timeRange = pointsStore.getTimeRange(`smoking:${placeId}`);
+    const pointsCount = pointsStore.getCategoryPointsCount(`smoking:${placeId}`);
 
-    const { earliest, latest } = dataTimeRange[placeId];
-    const totalButts = pointsData[placeId].features.length;
+    if (!timeRange || pointsCount === 0) return null;
 
-    if (!earliest || !latest || totalButts === 0) return null;
-
+    const { earliest, latest } = timeRange;
     const timeDiffMs = new Date(latest) - new Date(earliest);
     const hours = timeDiffMs / (1000 * 60 * 60);
     const minutes = timeDiffMs / (1000 * 60);
@@ -125,8 +125,8 @@ const calculateRates = (placeId) => {
     }
 
     return {
-        perHour: (totalButts / hours).toFixed(1),
-        perMinute: (totalButts / minutes).toFixed(2),
+        perHour: (pointsCount / hours).toFixed(1),
+        perMinute: (pointsCount / minutes).toFixed(2),
         totalHours: hours.toFixed(1),
         dateRange: dateRangeStr,
     };
@@ -146,6 +146,7 @@ async function initMap(mapEl, place) {
         center: place.center,
         zoom: place.zoom,
         scrollWheelZoom: false,
+        preferCanvas: true, // Use canvas renderer for better performance
     });
 
     // Add tiles
@@ -154,8 +155,9 @@ async function initMap(mapEl, place) {
         attribution: '© OpenStreetMap contributors',
     }).addTo(map);
 
-    // Store map reference
+    // Store map reference and create layer group
     maps[place.id] = map;
+    layerGroups[place.id] = L.layerGroup().addTo(map);
 
     // Remove opacity once loaded
     map.whenReady(() => {
@@ -171,63 +173,89 @@ async function loadSmokingData(placeId) {
     const map = maps[placeId];
     if (!map) return;
 
+    // Set loading state for this specific place
+    loadingStates.value[placeId] = true;
+
     const bounds = map.getBounds();
+    const bbox = {
+        left: bounds.getWest(),
+        bottom: bounds.getSouth(),
+        right: bounds.getEast(),
+        top: bounds.getNorth(),
+    };
+
+    console.log(`Loading data for ${placeId}...`);
+    console.log('Bbox:', bbox);
 
     try {
-        const response = await axios.get('/api/points', {
-            params: {
-                zoom: Math.round(map.getZoom()),
-                'bbox[left]': bounds.getWest(),
-                'bbox[bottom]': bounds.getSouth(),
-                'bbox[right]': bounds.getEast(),
-                'bbox[top]': bounds.getNorth(),
-            },
+        // Just load ALL data - single request
+        const data = await pointsStore.GET_POINTS({
+            zoom: Math.round(map.getZoom()),
+            bbox,
         });
-        // Store the data
-        pointsData[placeId] = response.data;
 
-        // Calculate time range
-        if (response.data.features && response.data.features.length > 0) {
-            const dates = response.data.features
-                .map((f) => f.properties.datetime)
-                .filter((d) => d)
-                .sort();
+        console.log(`Points loaded for ${placeId}: ${data?.features?.length || 0}`);
 
-            dataTimeRange[placeId] = {
-                earliest: dates[0],
-                latest: dates[dates.length - 1],
-            };
+        // Store in categoryData for the component to access
+        pointsStore.categoryData[`smoking:${placeId}`] = data;
+
+        // Calculate time range for this data
+        if (data?.features?.length > 0) {
+            pointsStore.calculateTimeRange(data.features, `smoking:${placeId}`);
         }
 
-        // Clear existing markers
-        map.eachLayer((layer) => {
-            if (layer instanceof L.CircleMarker) {
-                map.removeLayer(layer);
-            }
-        });
+        // Clear existing markers using layer group
+        if (layerGroups[placeId]) {
+            layerGroups[placeId].clearLayers();
+        }
 
-        // Add red markers for smoking litter
-        response.data.features.forEach((feature) => {
-            const [lon, lat] = feature.geometry.coordinates;
-            L.circleMarker([lat, lon], {
-                radius: 2,
-                fillColor: '#ff0000',
-                color: '#ff0000',
-                weight: 1,
-                opacity: 1,
-                fillOpacity: 0.8,
-            }).addTo(map);
-        });
+        // Add markers to layer group with smaller size
+        if (data?.features?.length > 0) {
+            data.features.forEach((feature) => {
+                const [lon, lat] = feature.geometry.coordinates;
+                const marker = L.circleMarker([lat, lon], {
+                    radius: 2, // Smaller size
+                    fillColor: '#ef4444', // red-500 for smoking theme
+                    color: '#dc2626', // red-600
+                    weight: 1,
+                    opacity: 0.8,
+                    fillOpacity: 0.6,
+                });
+
+                // Add popup with details
+                if (feature.properties) {
+                    const props = feature.properties;
+                    let popupContent = '<div style="font-size: 12px;">';
+                    if (props.datetime) {
+                        popupContent += `<strong>Date:</strong> ${new Date(props.datetime).toLocaleDateString()}<br>`;
+                    }
+                    if (props.total_litter) {
+                        popupContent += `<strong>Items:</strong> ${props.total_litter}<br>`;
+                    }
+                    if (props.username) {
+                        popupContent += `<strong>User:</strong> ${props.username}<br>`;
+                    }
+                    popupContent += '</div>';
+                    marker.bindPopup(popupContent);
+                }
+
+                marker.addTo(layerGroups[placeId]);
+            });
+        }
+
+        console.log(`Finished rendering ${data?.features?.length || 0} markers for ${placeId}`);
     } catch (error) {
         console.error(`Error loading data for ${placeId}:`, error);
-        if (error.response) {
-            console.error('Error response:', error.response.data);
-        }
+    } finally {
+        // Always clear loading state
+        loadingStates.value[placeId] = false;
     }
 }
 
 // Set up intersection observer for lazy loading
-onMounted(() => {
+onMounted(async () => {
+    await nextTick();
+
     const observer = new IntersectionObserver(
         (entries) => {
             entries.forEach((entry) => {
@@ -246,11 +274,11 @@ onMounted(() => {
         { rootMargin: '100px' }
     );
 
-    // Observe all map containers
-    Object.keys(mapRefs).forEach((placeId) => {
-        if (mapRefs[placeId]) {
-            mapRefs[placeId].dataset.placeId = placeId;
-            observer.observe(mapRefs[placeId]);
+    // Observe all map containers using the static places array
+    places.forEach((place) => {
+        if (mapRefs[place.id]) {
+            mapRefs[place.id].dataset.placeId = place.id;
+            observer.observe(mapRefs[place.id]);
         }
     });
 });
@@ -284,15 +312,10 @@ onMounted(() => {
                 <h2
                     class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 bg-gradient-to-r from-purple-300 via-pink-300 to-indigo-300 bg-clip-text text-transparent"
                 >
-                    {{ t('OpenLitterMap Tells A Story About The World.') }}
+                    {{ t('Tell A Story About The World.') }}
                 </h2>
                 <p class="text-xl text-gray-300 max-w-3xl mx-auto">
-                    {{
-                        t(
-                            'Maps are powerful tools that help us see and understand the world. ' +
-                                'OpenLitterMap empowers you to use your device for its data collection purpose and communicate your story with the world.'
-                        )
-                    }}
+                    {{ t('Maps are powerful tools that help us see and understand the world.') }}
                 </p>
             </header>
 
@@ -346,26 +369,60 @@ onMounted(() => {
                         </p>
 
                         <!-- Stats indicators -->
-                        <div v-if="pointsData[place.id]" class="mb-6 space-y-2">
-                            <div class="text-sm text-purple-300">
-                                <i class="fas fa-map-marker-alt mr-2"></i>
-                                {{ pointsData[place.id]?.features?.length || 0 }} {{ t('smoking litter points found') }}
+                        <div
+                            v-if="pointsStore.getCategoryPointsCount(`smoking:${place.id}`) > 0"
+                            class="mb-6 bg-purple-900/20 border border-purple-500/20 rounded-lg p-4"
+                        >
+                            <div class="text-purple-200 font-semibold mb-2">
+                                <i class="fas fa-smoking mr-2"></i>
+                                {{ pointsStore.getCategoryPointsCount(`smoking:${place.id}`) }}
+                                {{ t('smoking litter points found') }}
                             </div>
 
                             <!-- Cigarette butt rates -->
-                            <div v-if="calculateRates(place.id)" class="text-sm text-purple-300 space-y-1">
-                                <div>
-                                    <i class="fas fa-clock mr-2"></i>
+                            <div v-if="calculateRates(place.id)" class="space-y-1">
+                                <div class="text-purple-300">
+                                    <i class="fas fa-chart-line mr-2"></i>
                                     {{ t('Rate:') }}
-                                    <span class="font-semibold">{{ calculateRates(place.id).perHour }}</span>
+                                    <span class="font-bold text-purple-200">{{
+                                        calculateRates(place.id).perHour
+                                    }}</span>
                                     {{ t('butts/hour') }},
-                                    <span class="font-semibold">{{ calculateRates(place.id).perMinute }}</span>
+                                    <span class="font-bold text-purple-200">{{
+                                        calculateRates(place.id).perMinute
+                                    }}</span>
                                     {{ t('butts/minute') }}
                                 </div>
-                                <div class="text-xs text-purple-400">
+                                <div class="text-sm text-purple-400">
+                                    <i class="fas fa-calendar-alt mr-2"></i>
                                     {{ calculateRates(place.id).dateRange }}
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- Loading indicator (only show for specific place) -->
+                        <div v-if="loadingStates[place.id]" class="mb-6 flex items-center text-purple-300">
+                            <svg
+                                class="animate-spin -ml-1 mr-3 h-5 w-5"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                            >
+                                <circle
+                                    class="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    stroke-width="4"
+                                ></circle>
+                                <path
+                                    class="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                ></path>
+                            </svg>
+                            {{ t('Loading smoking data...') }}
                         </div>
 
                         <!-- Fancy button -->
@@ -395,21 +452,23 @@ onMounted(() => {
                         ></div>
 
                         <div class="relative">
-                            <div
-                                :ref="(el) => (mapRefs[place.id] = el)"
-                                class="map-container rounded-2xl shadow-2xl ring-2 ring-white/10 overflow-hidden opacity-0 transition-opacity duration-400 transform group-hover:scale-[1.01] transition-transform"
-                                :aria-label="`Map of smoking-related litter outside ${place.titleKey}`"
-                            ></div>
+                            <div class="map-container">
+                                <div
+                                    :ref="(el) => (mapRefs[place.id] = el)"
+                                    class="absolute inset-0 rounded-2xl shadow-2xl ring-2 ring-white/10 overflow-hidden opacity-0 transition-opacity duration-400 transform group-hover:scale-[1.01] transition-transform"
+                                    :aria-label="`Map of smoking-related litter outside ${place.titleKey}`"
+                                ></div>
+                            </div>
 
                             <!-- Map overlay gradient -->
                             <div
                                 class="absolute inset-0 bg-gradient-to-t from-purple-900/20 to-transparent rounded-2xl pointer-events-none"
                             ></div>
 
-                            <!-- Loading indicator -->
+                            <!-- Loading indicator overlay (only show while loading) -->
                             <div
-                                v-if="visibleMaps[place.id] && !pointsData[place.id]"
-                                class="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl"
+                                v-if="visibleMaps[place.id] && loadingStates[place.id]"
+                                class="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl z-20"
                             >
                                 <div class="text-purple-400">
                                     <i class="fas fa-spinner fa-spin mr-2"></i>
@@ -433,41 +492,27 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* Animated gradient background */
-@keyframes gradient {
-    0%,
-    100% {
-        background-position: 0% 50%;
-    }
-    50% {
-        background-position: 100% 50%;
-    }
-}
-
-.animate-gradient {
-    background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-    background-size: 400% 400%;
-    animation: gradient 15s ease infinite;
-}
-
 /* Map container with proper width and height */
 .map-container {
     position: relative;
     width: 100%;
-    height: 0;
-    padding-bottom: 56.25%; /* 16:9 ratio */
+    height: 420px;
     background: #111;
 }
 
 .map-container > :deep(.leaflet-container) {
     position: absolute;
     inset: 0;
+    z-index: 1;
 }
 
-/* Canvas glow and blend mode */
-:deep(canvas) {
-    mix-blend-mode: screen;
-    filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.6));
+/* Ensure map layers are visible */
+:deep(.leaflet-pane) {
+    z-index: 400;
+}
+
+:deep(.leaflet-marker-pane) {
+    z-index: 600;
 }
 
 /* Improve label contrast on dark maps */
@@ -479,6 +524,17 @@ onMounted(() => {
 :deep(.leaflet-control-attribution) {
     background-color: rgba(0, 0, 0, 0.7);
     color: #ccc;
+}
+
+/* Popup styling */
+:deep(.leaflet-popup-content-wrapper) {
+    background: rgba(0, 0, 0, 0.9);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+:deep(.leaflet-popup-tip) {
+    background: rgba(0, 0, 0, 0.9);
 }
 
 /* Fade in animation */
@@ -572,9 +628,5 @@ onMounted(() => {
     .animate-pulse {
         animation: none;
     }
-}
-
-:deep(.leaflet-container) {
-    background-color: #111;
 }
 </style>

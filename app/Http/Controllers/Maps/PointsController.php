@@ -129,7 +129,7 @@ class PointsController extends Controller
         }
 
         // Paginate for lower zoom levels
-        $perPage = $params['per_page'] ?? 300;
+        $perPage = $params['per_page'] ?? 1000;
         $photos = $query->paginate($perPage);
 
         return $this->formatPaginatedResponse($photos, $params);

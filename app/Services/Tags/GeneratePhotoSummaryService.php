@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Photos;
+namespace App\Services\Tags;
 
 use App\Enums\XpScore;
 use App\Models\Photo;

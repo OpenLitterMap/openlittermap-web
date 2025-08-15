@@ -2,10 +2,9 @@
 
 namespace App\Services\Tags;
 
-use App\Models\Photo;
-use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Litter\Tags\Category;
-use App\Services\Photos\GeneratePhotoSummaryService;
+use App\Models\Litter\Tags\PhotoTag;
+use App\Models\Photo;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\Log;
 

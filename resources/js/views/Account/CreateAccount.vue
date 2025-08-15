@@ -435,8 +435,6 @@ async function submit() {
             plan_id: null,
         };
 
-        console.log('Submitting with payload:', { ...payload, password: '[hidden]' });
-
         const result = await plansStore.createAccount(payload);
 
         // Clear sensitive data on success

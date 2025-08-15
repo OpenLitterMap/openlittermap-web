@@ -15,7 +15,9 @@ use Illuminate\Support\Facades\{DB, Log};
 
 class MigrationScript extends Command
 {
-    protected $signature = 'olm:v5 {--batch=500 : Number of photos to process per chunk}';
+    protected $signature = 'olm:v5
+                            {--batch=500 : Number of photos to process per chunk}
+                            {--user= : Process only this user ID}';
 
     protected $description = 'Upgrade OpenLitterMap data to v5';
 
@@ -47,20 +49,42 @@ class MigrationScript extends Command
         $memoryLimit = ini_get('memory_limit');
         $this->info("Memory limit: {$memoryLimit}");
 
-        $userIds = DB::table('photos')
-            ->whereNull('migrated_at')
-            ->distinct()
-            ->pluck('user_id')
-            ->sort()
-            ->values();
+        // Check if specific user requested
+        $specificUserId = $this->option('user');
 
-        if ($userIds->isEmpty()) {
-            $this->info('Nothing to migrate.');
-            return self::SUCCESS;
+        if ($specificUserId) {
+            // Single user mode
+            $userIds = collect([(int)$specificUserId]);
+
+            // Verify user exists and has unmigrated photos
+            $photoCount = DB::table('photos')
+                ->where('user_id', $specificUserId)
+                ->whereNull('migrated_at')
+                ->count();
+
+            if ($photoCount === 0) {
+                $this->info("User #{$specificUserId} has no photos to migrate.");
+                return self::SUCCESS;
+            }
+
+            $this->info("Processing single user #{$specificUserId} with {$photoCount} photos");
+        } else {
+            // All users mode
+            $userIds = DB::table('photos')
+                ->whereNull('migrated_at')
+                ->distinct()
+                ->pluck('user_id')
+                ->sort()
+                ->values();
+
+            if ($userIds->isEmpty()) {
+                $this->info('Nothing to migrate.');
+                return self::SUCCESS;
+            }
         }
 
         $this->totalUsers = $userIds->count();
-        $this->info("Found {$this->totalUsers} users to migrate");
+        $this->info("Found {$this->totalUsers} user(s) to migrate");
         $this->info("Processing batch size: {$this->option('batch')} photos");
 
         $this->globalStartTime = microtime(true);
@@ -68,8 +92,8 @@ class MigrationScript extends Command
         foreach ($userIds as $index => $userId) {
             $this->newLine();
 
-            // Calculate and display ETA
-            if ($index > 0) {
+            // Calculate and display ETA (only for multiple users)
+            if (!$specificUserId && $index > 0) {
                 $elapsed = microtime(true) - $this->globalStartTime;
                 $avgTimePerUser = $elapsed / $index;
                 $remainingUsers = $this->totalUsers - $index;
@@ -78,7 +102,8 @@ class MigrationScript extends Command
 
                 $this->info("[User " . ($index + 1) . "/{$this->totalUsers}] Processing user #{$userId} (ETA: {$etaFormatted})");
             } else {
-                $this->info("[User " . ($index + 1) . "/{$this->totalUsers}] Processing user #{$userId}");
+                $userLabel = $specificUserId ? "Processing user #{$userId}" : "[User " . ($index + 1) . "/{$this->totalUsers}] Processing user #{$userId}";
+                $this->info($userLabel);
             }
 
             $this->migrateSingleUser($userId);
@@ -111,6 +136,7 @@ class MigrationScript extends Command
         $processedForUser = 0;
         $failedForUser = 0;
         $startTime = microtime(true);
+        $totalBatchTime = 0;
 
         $batchNumber = 0;
 
