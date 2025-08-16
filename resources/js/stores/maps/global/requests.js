@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+// maps/global/requests.js
 export const requests = {
     /**
      * Get the art point data for the global map

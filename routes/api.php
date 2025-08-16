@@ -1,13 +1,11 @@
 <?php
 
 use App\Http\Controllers\Achievements\AchievementsController;
-// use App\Http\Controllers\Admin\UsersController;
 use App\Http\Controllers\ApiPhotosController;
 use App\Http\Controllers\Clusters\ClusterController;
-use App\Http\Controllers\Leaderboard\GetUsersForGlobalLeaderboardController;
-use App\Http\Controllers\Leaderboard\GetUsersForLocationLeaderboardController;
 use App\Http\Controllers\Leaderboard\LeaderboardController;
-use App\Http\Controllers\Maps\PointsController;
+use App\Http\Controllers\Points\PointsController;
+use App\Http\Controllers\Points\PointsStatsController;
 use App\Http\Controllers\RedisDataController;
 use App\Models\Littercoin;
 
@@ -24,6 +22,7 @@ Route::get('/tags', [GetTagsController::class, 'index']);
 Route::get('/tags/all', [GetTagsController::class, 'getAllTags']);
 // Route::post('/tags', [UploadTagsController::class, 'upload']);
 Route::get('/points', [PointsController::class, 'index']);
+Route::get('/points/stats', [PointsStatsController::class, 'index']);
 
 Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function(){
 

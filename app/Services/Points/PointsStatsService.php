@@ -27,7 +27,7 @@ class PointsStatsService
             if ($totalCount > self::MAX_TEMP_TABLE_ROWS) {
                 // Use sampling for very large datasets
                 return $this->sampledAggregate($params, $totalCount);
-            } elseif ($totalCount > 1000) {
+            } elseif ($totalCount > 5000) {
                 // Use TEMP table for medium datasets
                 return $this->tempTableAggregate($params, $totalCount);
             } else {

@@ -1,7 +1,12 @@
 <template>
     <div class="map-drawer-container" :class="{ open: isOpen }">
         <!-- Drawer Toggle Button -->
-        <button class="drawer-toggle" @click="toggleDrawer" :title="isOpen ? 'Close data panel' : 'Open data panel'">
+        <button
+            class="drawer-toggle"
+            @click.stop="toggleDrawer"
+            :disabled="isUpdatingURL"
+            :title="isOpen ? 'Close data panel' : 'Open data panel'"
+        >
             <i class="fas" :class="isOpen ? 'fa-chevron-left' : 'fa-chart-bar'"></i>
         </button>
 
@@ -10,7 +15,7 @@
             <!-- Header -->
             <div class="drawer-header">
                 <h3>Data Analysis</h3>
-                <button class="close-btn" @click="isOpen = false">
+                <button class="close-btn" @click.stop="closeDrawer" :disabled="isUpdatingURL">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -176,7 +181,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import moment from 'moment';
 
 const props = defineProps({
@@ -188,9 +193,95 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    currentZoom: {
+        type: Number,
+        default: 2,
+    },
+    clusterZoomThreshold: {
+        type: Number,
+        default: 15,
+    },
 });
 
 const isOpen = ref(false);
+const isUpdatingURL = ref(false);
+
+// Check if drawer should be open based on current conditions
+const shouldDrawerBeOpen = computed(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const openParam = urlParams.get('open');
+    const hasPoints = props.pointsData?.features?.length > 0;
+    const isInPointsView = props.currentZoom >= props.clusterZoomThreshold;
+
+    return openParam === 'true' && isInPointsView && hasPoints;
+});
+
+// Check for open parameter in URL on mount
+onMounted(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const shouldOpen = urlParams.get('open') === 'true';
+
+    console.log('MapDataDrawer mounted:', {
+        shouldOpen,
+        currentZoom: props.currentZoom,
+        clusterZoomThreshold: props.clusterZoomThreshold,
+        hasFeatures: props.pointsData?.features?.length > 0,
+    });
+
+    // Set initial state based on URL and current conditions
+    if (shouldDrawerBeOpen.value) {
+        isOpen.value = true;
+    }
+});
+
+// Main watcher - handles all drawer state changes
+watch(
+    [shouldDrawerBeOpen, () => props.currentZoom],
+    ([newShouldBeOpen, newZoom], [oldShouldBeOpen, oldZoom]) => {
+        console.log('Main drawer watcher:', {
+            newShouldBeOpen,
+            oldShouldBeOpen,
+            newZoom,
+            oldZoom,
+            currentIsOpen: isOpen.value,
+            hasFeatures: props.pointsData?.features?.length > 0,
+        });
+
+        // Auto-open when transitioning to points view with open=true
+        if (newShouldBeOpen && !isOpen.value) {
+            console.log('Auto-opening drawer');
+            isOpen.value = true;
+        }
+
+        // Close drawer when zooming out of points view
+        if (newZoom < props.clusterZoomThreshold && isOpen.value) {
+            console.log('Auto-closing drawer due to zoom out');
+            isOpen.value = false;
+            updateOpenInURL(false);
+        }
+    },
+    { immediate: true }
+);
+
+// Watch specifically for points data changes
+watch(
+    () => props.pointsData?.features?.length,
+    (newLength, oldLength) => {
+        console.log('Points data changed:', {
+            newLength,
+            oldLength,
+            shouldBeOpen: shouldDrawerBeOpen.value,
+            currentIsOpen: isOpen.value,
+        });
+
+        // If points just loaded and drawer should be open, open it
+        if (newLength > 0 && shouldDrawerBeOpen.value && !isOpen.value) {
+            console.log('Opening drawer after points loaded');
+            isOpen.value = true;
+        }
+    },
+    { immediate: false }
+);
 
 // Category colors
 const categoryColors = [
@@ -207,29 +298,29 @@ const categoryColors = [
 ];
 
 // Computed statistics
-const totalPoints = computed(() => props.pointsData.features?.length || 0);
+const totalPoints = computed(() => props.pointsData?.features?.length || 0);
 
 const totalLitterItems = computed(() => {
-    return (
-        props.pointsData.features?.reduce((sum, f) => {
-            if (f.properties.summary?.totals?.total_tags) {
-                return sum + f.properties.summary.totals.total_tags;
-            }
-            return sum + (f.properties.total_litter || 0);
-        }, 0) || 0
-    );
+    if (!props.pointsData?.features) return 0;
+
+    return props.pointsData.features.reduce((sum, f) => {
+        if (f.properties.summary?.totals?.total_tags) {
+            return sum + f.properties.summary.totals.total_tags;
+        }
+        return sum + (f.properties.total_litter || 0);
+    }, 0);
 });
 
 const pickedUpCount = computed(() => {
-    return props.pointsData.features?.filter((f) => f.properties.picked_up).length || 0;
+    return props.pointsData?.features?.filter((f) => f.properties.picked_up).length || 0;
 });
 
 const verifiedCount = computed(() => {
-    return props.pointsData.features?.filter((f) => f.properties.verified >= 2).length || 0;
+    return props.pointsData?.features?.filter((f) => f.properties.verified >= 2).length || 0;
 });
 
 const dateRange = computed(() => {
-    if (!props.pointsData.features?.length) {
+    if (!props.pointsData?.features?.length) {
         return { start: 'N/A', end: 'N/A' };
     }
 
@@ -243,9 +334,11 @@ const dateRange = computed(() => {
 
 // Analyze categories from summary data
 const categoryData = computed(() => {
+    if (!props.pointsData?.features) return [];
+
     const categories = {};
 
-    props.pointsData.features?.forEach((f) => {
+    props.pointsData.features.forEach((f) => {
         if (f.properties.summary?.totals?.by_category) {
             Object.entries(f.properties.summary.totals.by_category).forEach(([category, count]) => {
                 categories[category] = (categories[category] || 0) + count;
@@ -263,9 +356,11 @@ const maxCategoryCount = computed(() => Math.max(...categoryData.value.map((c) =
 
 // Analyze top litter items from summary data
 const topLitterItems = computed(() => {
+    if (!props.pointsData?.features) return [];
+
     const items = {};
 
-    props.pointsData.features?.forEach((f) => {
+    props.pointsData.features.forEach((f) => {
         if (f.properties.summary?.tags) {
             Object.entries(f.properties.summary.tags).forEach(([category, objects]) => {
                 Object.entries(objects).forEach(([objectKey, data]) => {
@@ -284,9 +379,11 @@ const topLitterItems = computed(() => {
 
 // Analyze brands from summary data
 const topBrands = computed(() => {
+    if (!props.pointsData?.features) return [];
+
     const brands = {};
 
-    props.pointsData.features?.forEach((f) => {
+    props.pointsData.features.forEach((f) => {
         if (f.properties.summary?.tags) {
             Object.values(f.properties.summary.tags).forEach((objects) => {
                 Object.values(objects).forEach((data) => {
@@ -307,9 +404,11 @@ const topBrands = computed(() => {
 });
 
 const topContributors = computed(() => {
+    if (!props.pointsData?.features) return [];
+
     const contributors = {};
 
-    props.pointsData.features?.forEach((f) => {
+    props.pointsData.features.forEach((f) => {
         const name = f.properties.username || f.properties.name || 'Anonymous';
         if (!contributors[name]) {
             contributors[name] = {
@@ -328,9 +427,11 @@ const topContributors = computed(() => {
 });
 
 const teamsData = computed(() => {
+    if (!props.pointsData?.features) return [];
+
     const teams = {};
 
-    props.pointsData.features?.forEach((f) => {
+    props.pointsData.features.forEach((f) => {
         if (f.properties.team) {
             teams[f.properties.team] = (teams[f.properties.team] || 0) + 1;
         }
@@ -350,14 +451,79 @@ const formatItemName = (name) => {
     return name.replace('.', ' → ').replace(/_/g, ' ');
 };
 
+// Update URL parameter for open state
+const updateOpenInURL = async (open) => {
+    // Prevent multiple simultaneous updates
+    if (isUpdatingURL.value) {
+        console.log('URL update already in progress, skipping');
+        return;
+    }
+
+    isUpdatingURL.value = true;
+
+    try {
+        // Wait for next tick to ensure DOM has updated
+        await nextTick();
+
+        const url = new URL(window.location.href);
+        const currentOpen = url.searchParams.get('open');
+
+        console.log('updateOpenInURL called:', {
+            open,
+            currentOpen,
+            willUpdate: currentOpen !== (open ? 'true' : 'false'),
+        });
+
+        // Only update if the value is actually changing
+        if (currentOpen !== (open ? 'true' : 'false')) {
+            if (open) {
+                url.searchParams.set('open', 'true');
+                url.searchParams.set('load', 'true'); // Always include load=true when opening
+            } else {
+                url.searchParams.set('open', 'false'); // Set to false instead of deleting
+                // Keep load=true to maintain the load behavior
+            }
+
+            console.log('URL updated to:', url.toString());
+            window.history.pushState(null, '', url.toString());
+        } else {
+            console.log('URL not updated - value unchanged');
+        }
+    } finally {
+        // Reset the flag after a short delay
+        setTimeout(() => {
+            isUpdatingURL.value = false;
+        }, 100);
+    }
+};
+
 // Toggle drawer
-const toggleDrawer = () => {
+const toggleDrawer = async () => {
+    console.log('toggleDrawer called - before:', { isOpen: isOpen.value });
+
     isOpen.value = !isOpen.value;
+
+    console.log('toggleDrawer called - after:', { isOpen: isOpen.value });
+
+    // Update URL immediately
+    await updateOpenInURL(isOpen.value);
+};
+
+// Close drawer
+const closeDrawer = async () => {
+    console.log('closeDrawer called - before:', { isOpen: isOpen.value });
+
+    if (isOpen.value) {
+        isOpen.value = false;
+        await updateOpenInURL(false);
+    }
+
+    console.log('closeDrawer called - after:', { isOpen: isOpen.value });
 };
 
 // Export functions
 const exportCSV = () => {
-    if (!props.pointsData.features?.length) return;
+    if (!props.pointsData?.features?.length) return;
 
     const headers = [
         'ID',
@@ -396,7 +562,7 @@ const exportCSV = () => {
 };
 
 const exportJSON = () => {
-    if (!props.pointsData.features?.length) return;
+    if (!props.pointsData?.features?.length) return;
 
     // Create a clean export without filename
     const exportData = {
@@ -423,7 +589,7 @@ const exportJSON = () => {
 };
 
 const exportSummaryReport = () => {
-    if (!props.pointsData.features?.length) return;
+    if (!props.pointsData?.features?.length) return;
 
     // Detailed category breakdown with items
     const categoryBreakdown = {};
@@ -498,6 +664,8 @@ const exportSummaryReport = () => {
 
 // Helper functions for temporal analysis
 const getPhotosByDate = () => {
+    if (!props.pointsData?.features) return {};
+
     const byDate = {};
     props.pointsData.features.forEach((f) => {
         const date = moment(f.properties.datetime).format('YYYY-MM-DD');
@@ -507,6 +675,8 @@ const getPhotosByDate = () => {
 };
 
 const getPhotosByHour = () => {
+    if (!props.pointsData?.features) return [];
+
     const byHour = new Array(24).fill(0);
     props.pointsData.features.forEach((f) => {
         const hour = moment(f.properties.datetime).hour();
@@ -516,6 +686,8 @@ const getPhotosByHour = () => {
 };
 
 const getPhotosByDayOfWeek = () => {
+    if (!props.pointsData?.features) return [];
+
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const byDay = new Array(7).fill(0);
     props.pointsData.features.forEach((f) => {
@@ -569,6 +741,11 @@ const downloadFile = (content, filename, mimeType) => {
     background: #f3f4f6;
 }
 
+.drawer-toggle:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
 .drawer-content {
     position: absolute;
     left: -350px;
@@ -615,6 +792,11 @@ const downloadFile = (content, filename, mimeType) => {
 
 .close-btn:hover {
     color: #374151;
+}
+
+.close-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
 }
 
 .drawer-loading {

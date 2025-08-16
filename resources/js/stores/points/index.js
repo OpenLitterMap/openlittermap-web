@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { requests } from './requests.js';
 
+// points/index.js
 export const usePointsStore = defineStore('points', {
     state: () => {
         return {

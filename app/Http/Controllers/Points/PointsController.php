@@ -1,72 +1,20 @@
 <?php
 
-namespace App\Http\Controllers\Maps;
+namespace App\Http\Controllers\Points;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Points\PointsRequest;
 use App\Models\Photo;
-use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Carbon\Carbon;
 
 class PointsController extends Controller
 {
-    public function index(Request $request): array
+    public function index(PointsRequest $request): array
     {
-        $validated = $request->validate([
-            'zoom' => 'required|integer|min:15|max:20',
-            'bbox.left' => 'required|numeric|between:-180,180',
-            'bbox.bottom' => 'required|numeric|between:-90,90',
-            'bbox.right' => 'required|numeric|between:-180,180',
-            'bbox.top' => 'required|numeric|between:-90,90',
-            'categories' => 'array',
-            'categories.*' => 'string|distinct|exists:categories,key',
-            'litter_objects' => 'array',
-            'litter_objects.*' => 'string|distinct|exists:litter_objects,key',
-            'materials' => 'array',
-            'materials.*' => 'string|distinct|exists:materials,key',
-            'brands' => 'array',
-            'brands.*' => 'string|distinct|exists:brandslist,key',
-            'custom_tags' => 'array',
-            'custom_tags.*' => 'string|distinct|exists:custom_tags_new,key',
-            'per_page' => 'integer|min:1|max:500',
-            'page' => 'integer|min:1',
-            'from' => 'nullable|date_format:Y-m-d',
-            'to' => 'nullable|date_format:Y-m-d|after_or_equal:from',
-            'username' => 'string',
-            'year' => 'nullable|integer|min:2017|max:' . date('Y')
-        ]);
-
-        $this->validateBbox($validated);
+        $validated = $request->validated();
 
         return $this->getPhotos($validated);
-    }
-
-    private function validateBbox(array $params): void
-    {
-        $bbox = $params['bbox'];
-
-        // Validate bbox ordering
-        if ($bbox['left'] >= $bbox['right'] || $bbox['bottom'] >= $bbox['top']) {
-            abort(422, 'Invalid bounding box: left must be < right and bottom must be < top');
-        }
-
-        // Validate bbox size based on zoom level
-        $width = $bbox['right'] - $bbox['left'];
-        $height = $bbox['top'] - $bbox['bottom'];
-        $area = $width * $height;
-
-        $maxAreas = [
-            15 => 100,   // 10° x 10°
-            16 => 25,    // 5° x 5°
-            17 => 10,    // ~3° x 3°
-            18 => 4,     // 2° x 2°
-            19 => 1,     // 1° x 1°
-            20 => 0.25   // 0.5° x 0.5°
-        ];
-
-        if ($area > $maxAreas[$params['zoom']]) {
-            abort(422, 'Bounding box too large for zoom level ' . $params['zoom']);
-        }
     }
 
     private function getPhotos(array $params): array
@@ -128,10 +76,8 @@ class PointsController extends Controller
             return $this->formatCollectionResponse($photos, $params);
         }
 
-        // Paginate for lower zoom levels
-        $perPage = $params['per_page'] ?? 1000;
+        $perPage = 1000;
         $photos = $query->paginate($perPage);
-
         return $this->formatPaginatedResponse($photos, $params);
     }
 

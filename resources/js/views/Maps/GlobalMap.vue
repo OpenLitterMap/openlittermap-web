@@ -3,8 +3,14 @@
         <!-- The map & data -->
         <div id="openlittermap" ref="openlittermap" />
 
-        <!-- Data Drawer -->
-        <MapDataDrawer v-if="showDataDrawer" :points-data="globalMapStore.pointsGeojson" :is-loading="isLoadingData" />
+        <!-- Data Drawer - Always render so it can respond to URL parameters -->
+        <MapDataDrawer
+            :points-data="pointsStore.pointsGeojson"
+            :stats-data="pointsStats"
+            :current-zoom="currentZoom"
+            :cluster-zoom-threshold="CLUSTER_ZOOM_THRESHOLD"
+            :is-loading="isLoadingData"
+        />
 
         <!-- Search Custom Tags -->
         <LiveEvents @fly-to-location="handleFlyToLocation" :mapInstance="mapInstance" />
@@ -35,39 +41,6 @@
                 <i v-else class="fas fa-spinner fa-spin"></i>
             </button>
         </div>
-
-        <!-- Playback Controls -->
-        <div v-if="showPlaybackControls" class="playback-controls">
-            <button
-                @click="togglePlayback"
-                class="playback-btn"
-                :class="{ playing: isPlaying }"
-                :title="isPlaying ? 'Pause visualization' : 'Play visualization'"
-            >
-                <i class="fas" :class="isPlaying ? 'fa-pause' : 'fa-play'"></i>
-            </button>
-
-            <div class="playback-info">
-                <span class="playback-counter">{{ playbackIndex + 1 }} / {{ sortedPoints.length }}</span>
-                <span class="playback-date" v-if="currentPlaybackPoint">
-                    {{ formatPlaybackDate(currentPlaybackPoint.properties.datetime) }}
-                </span>
-            </div>
-
-            <div class="playback-speed">
-                <label>Speed:</label>
-                <select v-model="playbackSpeed" @change="updatePlaybackSpeed">
-                    <option :value="1000">Slow</option>
-                    <option :value="500">Normal</option>
-                    <option :value="250">Fast</option>
-                    <option :value="100">Very Fast</option>
-                </select>
-            </div>
-
-            <button @click="resetPlayback" class="playback-btn reset-btn" title="Reset visualization">
-                <i class="fas fa-redo"></i>
-            </button>
-        </div>
     </div>
 </template>
 
@@ -78,18 +51,17 @@ import { useI18n } from 'vue-i18n';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useRouter, useRoute } from 'vue-router';
-import moment from 'moment';
 
 import { CLUSTER_ZOOM_THRESHOLD, MAX_ZOOM, MIN_ZOOM } from './helpers/constants.js';
 import { flyToLocationFromURL, updateUrlPhotoIdAndFlyToLocation } from './helpers/urlHelpers.js';
-import { createClusterIcon, onEachFeature } from './helpers/layerHelpers.js';
-import { initializeGlify, removeGlifyPoints } from './helpers/glifyHelpers.js';
+import { initializeGlify } from './helpers/glifyHelpers.js';
 import { mapHelper } from './helpers/mapHelper.js';
+import { pointsHelper } from './helpers/points.js';
+import { clustersHelper } from './helpers/clusters.js';
 import './helpers/SmoothWheelZoom.js';
 
 import { useGlobalMapStore } from '../../stores/maps/global/index.js';
-import { useCleanupStore } from '../../stores/cleanups/index.js';
-import { useMerchantStore } from '../../stores/littercoin/merchants/index.js';
+import { usePointsStore } from '../../stores/points/index.js';
 
 import LiveEvents from '../../components/Websockets/GlobalMap/LiveEvents.vue';
 import MapDataDrawer from './components/MapDataDrawer.vue';
@@ -111,40 +83,26 @@ const isLoadingPage = ref(false);
 const currentZoom = ref(MIN_ZOOM);
 const isLoadingData = ref(false);
 
-// Playback state
-const isPlaying = ref(false);
-const playbackIndex = ref(0);
-const playbackSpeed = ref(500);
-const playbackInterval = ref(null);
-const playbackMarkers = ref([]);
-const sortedPoints = ref([]);
-const currentPlaybackPoint = ref(null);
+// Stats state
+const pointsStats = ref(null);
+const isLoadingStats = ref(false);
 
-const globalMapStore = useGlobalMapStore();
-const cleanupStore = useCleanupStore();
-const merchantStore = useMerchantStore();
+// Request management
+const updateTimeout = ref(null);
+const currentPointsRequest = ref(null);
+const currentStatsRequest = ref(null);
+
+// Stores
+const globalMapStore = useGlobalMapStore(); // For clusters
+const pointsStore = usePointsStore(); // For points
 
 // Computed properties for pagination
 const showPaginationControls = computed(() => {
     return (
-        mapInstance.value && currentZoom.value >= CLUSTER_ZOOM_THRESHOLD && totalPages.value > 1 && !isLoadingPage.value
-    );
-});
-
-const showDataDrawer = computed(() => {
-    return (
         mapInstance.value &&
-        currentZoom.value >= CLUSTER_ZOOM_THRESHOLD &&
-        globalMapStore.pointsGeojson?.features?.length > 0
-    );
-});
-
-const showPlaybackControls = computed(() => {
-    return (
-        mapInstance.value &&
-        currentZoom.value >= CLUSTER_ZOOM_THRESHOLD &&
-        globalMapStore.pointsGeojson?.features?.length > 0 &&
-        !isLoadingData.value
+        pointsHelper.shouldShowPoints(currentZoom.value) &&
+        totalPages.value > 1 &&
+        !isLoadingPage.value
     );
 });
 
@@ -154,14 +112,15 @@ const canLoadNext = computed(() => currentPage.value < totalPages.value);
 onMounted(async () => {
     const loader = $loading.show({ container: null });
     const urlParams = new URLSearchParams(window.location.search);
-    const year = parseInt(urlParams.get('year')) || null;
+    const clusterFilters = clustersHelper.getClusterFiltersFromURL();
     const initialPage = parseInt(urlParams.get('page')) || 1;
 
-    // To do - consider moving this to 1 request
-    await globalMapStore.GET_CLUSTERS({ zoom: 2, year });
-    // await globalMapStore.GET_ART_DATA();
-    // await cleanupStore.GET_CLEANUPS();
-    // await merchantStore.GET_MERCHANTS_GEOJSON();
+    // Load initial cluster data
+    await clustersHelper.loadClusters({
+        globalMapStore,
+        zoom: 2,
+        year: clusterFilters.year,
+    });
 
     mapInstance.value = L.map('openlittermap', {
         center: [0, 0],
@@ -187,8 +146,13 @@ onMounted(async () => {
         const lon = parseFloat(urlParams.get('lon'));
         const zoom = parseFloat(urlParams.get('zoom'));
 
+        console.log('Loading map instantly at:', { lat, lon, zoom });
+
         // Set the initial view without animation
         mapInstance.value.setView([lat, lon], zoom, { animate: false });
+
+        // Update current zoom immediately
+        currentZoom.value = zoom;
     }
 
     const mapLink = '<a href="https://openstreetmap.org">OpenStreetMap</a>';
@@ -198,14 +162,16 @@ onMounted(async () => {
         minZoom: MIN_ZOOM,
     }).addTo(mapInstance.value);
 
-    // Initialise & add layers
+    // Initialize clusters layer
     clusters.value = L.geoJSON(null, {
-        pointToLayer: createClusterIcon,
-        onEachFeature: (feature, layer) => onEachFeature(feature, layer, mapInstance.value),
+        pointToLayer: clustersHelper.createClusterIcon,
+        onEachFeature: (feature, layer) => clustersHelper.onEachFeature(feature, layer, mapInstance.value),
     });
 
-    if (globalMapStore.clustersGeojson.features.length > 0) {
-        clusters.value.addData(globalMapStore.clustersGeojson);
+    // Add initial cluster data if available
+    const clustersData = clustersHelper.getClustersData(globalMapStore);
+    if (clustersData?.features?.length > 0) {
+        clustersHelper.addClustersToMap(clusters.value, clustersData);
         mapInstance.value.addLayer(clusters.value);
     }
 
@@ -223,17 +189,19 @@ onMounted(async () => {
         // Update current zoom level
         currentZoom.value = Math.round(mapInstance.value.getZoom());
 
+        console.log('Zoom changed to:', currentZoom.value);
+
         // Remove glify points immediately when zooming
-        if (points.value && points.value.remove) {
-            points.value.remove();
-            points.value = null;
+        if (points.value) {
+            points.value = pointsHelper.clearPoints(points.value, mapInstance.value);
         }
 
         // Reset pagination when zooming out of points view
-        if (currentZoom.value < CLUSTER_ZOOM_THRESHOLD) {
+        if (clustersHelper.shouldShowClusters(currentZoom.value)) {
             currentPage.value = 1;
             totalPages.value = 1;
-            removePageFromURL();
+            pointsStats.value = null; // Clear stats when zooming out
+            pointsHelper.removePageFromURL();
         }
     });
 
@@ -241,34 +209,35 @@ onMounted(async () => {
 
     // If there is lat + long + zoom in the url, fly to that location
     flyToLocationFromURL(mapInstance.value);
-
-    // Remove the load parameter after initial load
-    const currentUrl = new URL(window.location.href);
-    if (currentUrl.searchParams.has('load')) {
-        currentUrl.searchParams.delete('load');
-        window.history.replaceState(null, '', currentUrl.toString());
-    }
 });
 
 /**
  * Remove map & layers when unmounting
  */
 onBeforeUnmount(() => {
-    // Stop playback if running
-    if (isPlaying.value) {
-        stopPlayback();
+    // Cancel any pending requests
+    if (updateTimeout.value) {
+        clearTimeout(updateTimeout.value);
+    }
+
+    if (currentPointsRequest.value) {
+        currentPointsRequest.value.abort();
+    }
+
+    if (currentStatsRequest.value) {
+        currentStatsRequest.value.abort();
     }
 
     if (mapInstance.value) {
         mapInstance.value.off('moveend', mapUpdated);
 
         // Remove glify points if present
-        removeGlifyPoints(points.value, mapInstance.value);
+        if (points.value) {
+            pointsHelper.clearPoints(points.value, mapInstance.value);
+        }
 
         // Remove clusters
-        if (clusters.value) {
-            clusters.value.clearLayers();
-        }
+        clustersHelper.clearClusters(clusters.value);
 
         // Finally remove the map
         mapInstance.value.remove();
@@ -281,13 +250,35 @@ onBeforeUnmount(() => {
 
 /**
  * The user dragged or zoomed the map, or changed a category
+ * Debounced to prevent excessive requests
  */
 const mapUpdated = async () => {
-    // Stop playback if running
-    if (isPlaying.value) {
-        stopPlayback();
+    // Cancel any pending updates
+    if (updateTimeout.value) {
+        clearTimeout(updateTimeout.value);
     }
 
+    // Cancel any ongoing requests
+    if (currentPointsRequest.value) {
+        currentPointsRequest.value.abort();
+        currentPointsRequest.value = null;
+    }
+
+    if (currentStatsRequest.value) {
+        currentStatsRequest.value.abort();
+        currentStatsRequest.value = null;
+    }
+
+    // Debounce the actual update
+    updateTimeout.value = setTimeout(async () => {
+        await performMapUpdate();
+    }, 300); // 300ms debounce
+};
+
+/**
+ * Perform the actual map update with request tracking
+ */
+const performMapUpdate = async () => {
     // Update current zoom
     currentZoom.value = Math.round(mapInstance.value.getZoom());
 
@@ -301,38 +292,61 @@ const mapUpdated = async () => {
     } else {
         // Reset to page 1 for new map movements
         currentPage.value = 1;
-        updatePageInURL(1);
+        pointsHelper.updatePageInURL(1);
     }
 
     isLoadingData.value = true;
 
-    const result = await mapHelper.handleMapUpdate({
-        mapInstance: mapInstance.value,
-        globalMapStore,
-        clusters: clusters.value,
-        points: points.value,
-        prevZoom: prevZoom.value,
-        t,
-        page: currentPage.value,
-    });
+    try {
+        // Create abort controller for points request
+        const pointsController = new AbortController();
+        currentPointsRequest.value = pointsController;
 
-    points.value = result.points;
-    prevZoom.value = result.prevZoom;
-    isLoadingData.value = false;
+        const result = await mapHelper.handleMapUpdate({
+            mapInstance: mapInstance.value,
+            globalMapStore,
+            pointsStore,
+            clusters: clusters.value,
+            points: points.value,
+            prevZoom: prevZoom.value,
+            t,
+            page: currentPage.value,
+            abortSignal: pointsController.signal,
+        });
 
-    // Update pagination info from the store
-    if (globalMapStore.pointsPagination && currentZoom.value >= CLUSTER_ZOOM_THRESHOLD) {
-        currentPage.value = globalMapStore.pointsPagination.current_page || 1;
-        totalPages.value = globalMapStore.pointsPagination.last_page || 1;
+        // Clear the request reference if it completed successfully
+        if (currentPointsRequest.value === pointsController) {
+            currentPointsRequest.value = null;
+        }
 
-        // Sort points by datetime for playback
-        updateSortedPoints();
-    } else {
-        // Reset pagination when in cluster view
-        totalPages.value = 1;
-        // Remove page param when in cluster view
-        removePageFromURL();
-        sortedPoints.value = [];
+        points.value = result.points;
+        prevZoom.value = result.prevZoom;
+
+        // Update pagination info from the points store
+        const paginationData = pointsHelper.getPaginationData(pointsStore);
+        if (paginationData && pointsHelper.shouldShowPoints(currentZoom.value)) {
+            currentPage.value = paginationData.current_page || 1;
+            totalPages.value = paginationData.last_page || 1;
+
+            // Load stats after points are loaded, but only if points request wasn't cancelled
+            if (currentPointsRequest.value === null || currentPointsRequest.value === pointsController) {
+                await loadPointsStats();
+            }
+        } else {
+            // Reset pagination when in cluster view
+            totalPages.value = 1;
+            pointsStats.value = null; // Clear stats when not in points view
+            // Remove page param when in cluster view
+            pointsHelper.removePageFromURL();
+        }
+    } catch (error) {
+        if (error.name !== 'AbortError') {
+            console.error('Map update error:', error);
+        }
+        // Clear request reference on any error
+        currentPointsRequest.value = null;
+    } finally {
+        isLoadingData.value = false;
     }
 };
 
@@ -344,10 +358,11 @@ const loadPreviousPage = async () => {
 
     isLoadingPage.value = true;
     currentPage.value--;
-    updatePageInURL(currentPage.value);
+    pointsHelper.updatePageInURL(currentPage.value);
 
     try {
         await loadPageData();
+        await loadPointsStats(); // Load stats after page data
     } finally {
         isLoadingPage.value = false;
     }
@@ -361,45 +376,29 @@ const loadNextPage = async () => {
 
     isLoadingPage.value = true;
     currentPage.value++;
-    updatePageInURL(currentPage.value);
+    pointsHelper.updatePageInURL(currentPage.value);
 
     try {
         await loadPageData();
+        await loadPointsStats(); // Load stats after page data
     } finally {
         isLoadingPage.value = false;
     }
 };
 
 /**
- * Update page parameter in URL
- */
-const updatePageInURL = (page) => {
-    const url = new URL(window.location.href);
-    if (page > 1) {
-        url.searchParams.set('page', page.toString());
-    } else {
-        url.searchParams.delete('page');
-    }
-    window.history.pushState(null, '', url.toString());
-};
-
-/**
- * Remove page parameter from URL
- */
-const removePageFromURL = () => {
-    const url = new URL(window.location.href);
-    url.searchParams.delete('page');
-    window.history.pushState(null, '', url.toString());
-};
-
-/**
  * Load data for the current page
  */
 const loadPageData = async () => {
+    // Cancel any ongoing requests first
+    if (currentPointsRequest.value) {
+        currentPointsRequest.value.abort();
+        currentPointsRequest.value = null;
+    }
+
     // Clear existing points before loading new page
     if (points.value) {
-        removeGlifyPoints(points.value, mapInstance.value);
-        points.value = null;
+        points.value = pointsHelper.clearPoints(points.value, mapInstance.value);
     }
 
     const bounds = mapInstance.value.getBounds();
@@ -412,33 +411,105 @@ const loadPageData = async () => {
     const zoom = Math.round(mapInstance.value.getZoom());
 
     // Get filters from URL
-    const searchParams = new URLSearchParams(window.location.search);
-    const year = parseInt(searchParams.get('year')) || null;
-    const fromDate = searchParams.get('fromDate') || null;
-    const toDate = searchParams.get('toDate') || null;
-    const username = searchParams.get('username') || null;
+    const filters = pointsHelper.getFiltersFromURL();
 
-    const result = await mapHelper.handlePointsView({
-        mapInstance: mapInstance.value,
-        globalMapStore,
-        clusters: clusters.value,
-        prevZoom: prevZoom.value,
-        zoom,
-        bbox,
-        year,
-        fromDate,
-        toDate,
-        username,
-        t,
-        page: currentPage.value,
-    });
+    // Create abort controller for this request
+    const controller = new AbortController();
+    currentPointsRequest.value = controller;
 
-    points.value = result;
+    try {
+        const result = await pointsHelper.loadPointsData({
+            mapInstance: mapInstance.value,
+            pointsStore,
+            zoom,
+            bbox,
+            year: filters.year,
+            fromDate: filters.fromDate,
+            toDate: filters.toDate,
+            username: filters.username,
+            page: currentPage.value,
+            abortSignal: controller.signal,
+        });
 
-    // Update pagination info
-    if (globalMapStore.pointsPagination) {
-        currentPage.value = globalMapStore.pointsPagination.current_page || 1;
-        totalPages.value = globalMapStore.pointsPagination.last_page || 1;
+        // Only update if this request is still current
+        if (currentPointsRequest.value === controller) {
+            points.value = result;
+
+            // Update pagination info
+            const paginationData = pointsHelper.getPaginationData(pointsStore);
+            if (paginationData) {
+                currentPage.value = paginationData.current_page || 1;
+                totalPages.value = paginationData.last_page || 1;
+            }
+
+            currentPointsRequest.value = null;
+        }
+    } catch (error) {
+        if (error.name !== 'AbortError') {
+            console.error('Load page data error:', error);
+        }
+        // Clear request reference on any error
+        if (currentPointsRequest.value === controller) {
+            currentPointsRequest.value = null;
+        }
+    }
+};
+
+/**
+ * Load statistics for the current points view
+ */
+const loadPointsStats = async () => {
+    if (clustersHelper.shouldShowClusters(currentZoom.value)) {
+        pointsStats.value = null;
+        return;
+    }
+
+    // Cancel any ongoing stats request
+    if (currentStatsRequest.value) {
+        currentStatsRequest.value.abort();
+    }
+
+    isLoadingStats.value = true;
+
+    try {
+        // Create abort controller for stats request
+        const statsController = new AbortController();
+        currentStatsRequest.value = statsController;
+
+        const zoom = Math.round(mapInstance.value.getZoom());
+
+        // Get filters from URL (same as points request)
+        const filters = pointsHelper.getFiltersFromURL();
+
+        const stats = await pointsHelper.loadPointsStats({
+            mapInstance: mapInstance.value,
+            zoom,
+            year: filters.year,
+            fromDate: filters.fromDate,
+            toDate: filters.toDate,
+            username: filters.username,
+            abortSignal: statsController.signal,
+        });
+
+        // Only process response if this request is still current
+        if (currentStatsRequest.value === statsController) {
+            pointsStats.value = stats;
+            console.log('Loaded points stats:', pointsStats.value);
+
+            // Clear the request reference
+            currentStatsRequest.value = null;
+        }
+    } catch (error) {
+        if (error.name !== 'AbortError') {
+            console.error('Error loading points stats:', error);
+            pointsStats.value = null;
+        }
+        // Clear request reference on any error
+        if (currentStatsRequest.value) {
+            currentStatsRequest.value = null;
+        }
+    } finally {
+        isLoadingStats.value = false;
     }
 };
 
@@ -450,174 +521,6 @@ const handleFlyToLocation = (location) => {
         ...location,
         mapInstance: mapInstance.value,
     });
-};
-
-/**
- * Update sorted points for playback
- */
-const updateSortedPoints = () => {
-    if (globalMapStore.pointsGeojson?.features?.length > 0) {
-        sortedPoints.value = [...globalMapStore.pointsGeojson.features].sort((a, b) => {
-            return new Date(a.properties.datetime) - new Date(b.properties.datetime);
-        });
-    } else {
-        sortedPoints.value = [];
-    }
-};
-
-/**
- * Toggle playback
- */
-const togglePlayback = () => {
-    if (isPlaying.value) {
-        pausePlayback();
-    } else {
-        startPlayback();
-    }
-};
-
-/**
- * Start playback visualization
- */
-const startPlayback = () => {
-    if (sortedPoints.value.length === 0) return;
-
-    // Hide regular points
-    if (points.value) {
-        removeGlifyPoints(points.value, mapInstance.value);
-        points.value = null;
-    }
-
-    isPlaying.value = true;
-
-    // Start from current index or beginning
-    if (playbackIndex.value >= sortedPoints.value.length) {
-        playbackIndex.value = 0;
-    }
-
-    // Start the interval
-    playbackInterval.value = setInterval(() => {
-        if (playbackIndex.value < sortedPoints.value.length) {
-            showNextPoint();
-        } else {
-            // Reached the end
-            pausePlayback();
-        }
-    }, playbackSpeed.value);
-};
-
-/**
- * Pause playback
- */
-const pausePlayback = () => {
-    isPlaying.value = false;
-    if (playbackInterval.value) {
-        clearInterval(playbackInterval.value);
-        playbackInterval.value = null;
-    }
-};
-
-/**
- * Stop playback and restore normal view
- */
-const stopPlayback = () => {
-    pausePlayback();
-    clearPlaybackMarkers();
-    playbackIndex.value = 0;
-    currentPlaybackPoint.value = null;
-
-    // Restore regular points
-    if (globalMapStore.pointsGeojson?.features?.length > 0) {
-        points.value = addGlifyPoints(globalMapStore.pointsGeojson, mapInstance.value, t);
-    }
-};
-
-/**
- * Reset playback to beginning
- */
-const resetPlayback = () => {
-    const wasPlaying = isPlaying.value;
-    stopPlayback();
-
-    if (wasPlaying) {
-        startPlayback();
-    }
-};
-
-/**
- * Update playback speed
- */
-const updatePlaybackSpeed = () => {
-    if (isPlaying.value) {
-        pausePlayback();
-        startPlayback();
-    }
-};
-
-/**
- * Show next point in sequence
- */
-const showNextPoint = () => {
-    if (playbackIndex.value >= sortedPoints.value.length) return;
-
-    const point = sortedPoints.value[playbackIndex.value];
-    currentPlaybackPoint.value = point;
-
-    // Add marker for this point
-    const marker = L.circleMarker([point.geometry.coordinates[1], point.geometry.coordinates[0]], {
-        radius: 8,
-        fillColor: '#14d145',
-        color: '#fff',
-        weight: 2,
-        opacity: 1,
-        fillOpacity: 0.8,
-    });
-
-    // Add click handler
-    marker.on('click', () => {
-        renderLeafletPopup(point, [point.geometry.coordinates[1], point.geometry.coordinates[0]], t, mapInstance.value);
-    });
-
-    marker.addTo(mapInstance.value);
-    playbackMarkers.value.push(marker);
-
-    // Fade older markers
-    if (playbackMarkers.value.length > 20) {
-        playbackMarkers.value.forEach((m, i) => {
-            const age = playbackMarkers.value.length - i;
-            const opacity = Math.max(0.1, 1 - age / 20);
-            m.setStyle({
-                fillOpacity: opacity * 0.8,
-                opacity: opacity,
-            });
-        });
-    }
-
-    // Pan to point if it's outside current view
-    const bounds = mapInstance.value.getBounds();
-    const latLng = L.latLng(point.geometry.coordinates[1], point.geometry.coordinates[0]);
-    if (!bounds.contains(latLng)) {
-        mapInstance.value.panTo(latLng);
-    }
-
-    playbackIndex.value++;
-};
-
-/**
- * Clear all playback markers
- */
-const clearPlaybackMarkers = () => {
-    playbackMarkers.value.forEach((marker) => {
-        mapInstance.value.removeLayer(marker);
-    });
-    playbackMarkers.value = [];
-};
-
-/**
- * Format playback date
- */
-const formatPlaybackDate = (datetime) => {
-    return moment(datetime).format('MMM D, YYYY HH:mm');
 };
 </script>
 
@@ -824,5 +727,29 @@ const formatPlaybackDate = (datetime) => {
         font-size: 12px;
         min-width: 80px;
     }
+}
+
+/* Individual Point Markers */
+::v-deep(.verified-dot) {
+    width: 8px;
+    height: 8px;
+    background-color: #14d145;
+    border-radius: 50%;
+    border: 1px solid white;
+}
+
+::v-deep(.unverified-dot) {
+    width: 8px;
+    height: 8px;
+    background-color: #6b7280;
+    border-radius: 50%;
+    border: 1px solid white;
+}
+
+/* Target the <span> inside any cluster icon */
+::v-deep(.leaflet-marker-icon.marker-cluster-large .mi span),
+::v-deep(.leaflet-marker-icon.marker-cluster-medium .mi span),
+::v-deep(.leaflet-marker-icon.marker-cluster-small .mi span) {
+    color: #4a4a4a !important;
 }
 </style>

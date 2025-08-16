@@ -1,10 +1,9 @@
 import axios from 'axios';
 
+// points/requests.js
 export const requests = {
     // Get points for a specific bounding box and zoom level
     async GET_POINTS({ zoom, bbox }) {
-        console.log('GET_POINTS called with:', { zoom, bbox });
-
         try {
             this.setLoading(true);
             this.setError(null);

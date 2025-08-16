@@ -1,5 +1,5 @@
 import glify from 'leaflet.glify';
-import { renderLeafletPopup } from './layerHelpers.js';
+import { popupHelper } from './popup.js';
 
 /**
  * Add glify points to the map
@@ -20,7 +20,7 @@ export function addGlifyPoints(pointsGeojson, mapInstance, t) {
     });
 
     // Create glify points
-    const points = glify.points({
+    return glify.points({
         map: mapInstance,
         data: data,
         size: 10,
@@ -40,11 +40,9 @@ export function addGlifyPoints(pointsGeojson, mapInstance, t) {
             url.searchParams.set('photo', feature.properties.id);
             window.history.pushState(null, '', url);
 
-            return renderLeafletPopup(feature, e.latlng, t, mapInstance);
+            return popupHelper.renderLeafletPopup(feature, e.latlng, t, mapInstance);
         },
     });
-
-    return points;
 }
 
 /**
