@@ -5,6 +5,7 @@ namespace App\Console\Commands\Twitter;
 use App\Helpers\Twitter;
 use Illuminate\Console\Command;
 use Spatie\Browsershot\Browsershot;
+use App\Services\InstagramService;
 
 class WeeklyImpactReportTweet extends Command
 {
@@ -37,11 +38,15 @@ class WeeklyImpactReportTweet extends Command
         $msg = "Weekly Impact Report for week $week of $year. Join us at openlittermap.com #litter #citizenscience #impact #openlittermap";
 
         // Tweet the image
-        Twitter::sendTweetWithImage($msg, $path);
+        // Twitter::sendTweetWithImage($msg, $path);
+
+        // Post to Instagram bot
+        $instagramService = new InstagramService();
+        $instagramService->postToInstagram($path, $msg);
 
         $this->info("Tweet sent");
 
         // Delete the image
-        unlink($path);
+        // unlink($path);
     }
 }
