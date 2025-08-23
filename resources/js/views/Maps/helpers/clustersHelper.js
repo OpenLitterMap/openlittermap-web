@@ -23,7 +23,7 @@ const grey_dot = L.divIcon({
 
 export const clustersHelper = {
     /**
-     * Create cluster icon for map markers - restored original functionality
+     * Create cluster icon for map markers
      */
     createClusterIcon: (feature, latLng) => {
         // Check if this is an individual point (not a cluster)
@@ -39,7 +39,7 @@ export const clustersHelper = {
 
         const icon = L.divIcon({
             html:
-                '<div class="mi"><span class="mx-auto my-auto">' +
+                '<div class="mi"><span class="mx-auto my-auto" style="color: #4a4a4a !important;">' +
                 feature.properties.point_count_abbreviated +
                 '</span></div>',
             className: 'marker-cluster-' + size,
@@ -50,40 +50,27 @@ export const clustersHelper = {
     },
 
     /**
-     * Get icon size based on cluster count - legacy support
-     */
-    getIconSize: (count) => {
-        if (count < MEDIUM_CLUSTER_SIZE) return 30;
-        if (count < LARGE_CLUSTER_SIZE) return 40;
-        return 50;
-    },
-
-    /**
-     * Get icon CSS class based on cluster count - legacy support
-     */
-    getIconClass: (count) => {
-        if (count < MEDIUM_CLUSTER_SIZE) return 'cluster-small';
-        if (count < LARGE_CLUSTER_SIZE) return 'cluster-medium';
-        return 'cluster-large';
-    },
-
-    /**
      * Handle each feature when adding to cluster layer
      */
     onEachFeature: (feature, layer, mapInstance) => {
         // Only add click handler for clusters (not individual points)
         if (feature.properties && (feature.properties.cluster || feature.properties.point_count)) {
-            // This is a cluster - add click handler to zoom in
             layer.on('click', () => {
-                const zoom = mapInstance.getZoom() + 2;
-                mapInstance.setView([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], zoom);
+                // FIX: Reduced zoom step from +2 to +1 for smoother transition
+                const currentZoom = mapInstance.getZoom();
+                const targetZoom = Math.min(currentZoom + 1, CLUSTER_ZOOM_THRESHOLD);
+                mapInstance.setView([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], targetZoom, {
+                    animate: true,
+                    duration: 0.5,
+                });
             });
         }
     },
+
     /**
      * Handle cluster view (zoom < CLUSTER_ZOOM_THRESHOLD)
      */
-    async handleClusterView({ globalMapStore, clusters, zoom, bbox, year, points, mapInstance }) {
+    async handleClusterView({ clustersStore, clusters, zoom, bbox, year, points, mapInstance }) {
         // Remove any remaining glify points
         if (points) {
             removeGlifyPoints(points, mapInstance);
@@ -93,18 +80,10 @@ export const clustersHelper = {
         this.cleanupClustersURL();
 
         try {
-            await globalMapStore.GET_CLUSTERS({ zoom, bbox, year });
-
-            console.log('Clusters data loaded:', globalMapStore.clustersGeojson);
-            console.log('Number of cluster features:', globalMapStore.clustersGeojson?.features?.length || 0);
-
-            // Log first few features to see their structure
-            if (globalMapStore.clustersGeojson?.features?.length > 0) {
-                console.log('Sample cluster feature:', globalMapStore.clustersGeojson.features[0]);
-            }
+            await clustersStore.GET_CLUSTERS({ zoom, bbox, year });
 
             clusters.clearLayers();
-            clusters.addData(globalMapStore.clustersGeojson);
+            clusters.addData(clustersStore.clustersGeojson);
         } catch (error) {
             console.error('get clusters error', error);
         }
@@ -115,10 +94,10 @@ export const clustersHelper = {
     /**
      * Load cluster data
      */
-    async loadClusters({ globalMapStore, zoom, bbox = null, year = null }) {
+    async loadClusters({ clustersStore, zoom, bbox = null, year = null }) {
         try {
-            await globalMapStore.GET_CLUSTERS({ zoom, bbox, year });
-            return globalMapStore.clustersGeojson;
+            await clustersStore.GET_CLUSTERS({ zoom, bbox, year });
+            return clustersStore.clustersGeojson;
         } catch (error) {
             console.error('Failed to load clusters:', error);
             throw error;
@@ -167,13 +146,12 @@ export const clustersHelper = {
     /**
      * Get cluster data from store
      */
-    getClustersData(globalMapStore) {
-        return globalMapStore.clustersGeojson;
+    getClustersData(clustersStore) {
+        return clustersStore.clustersGeojson;
     },
 
     /**
      * Check if zoom level should trigger cluster reload
-     * We don't want to make a request at zoom level 2-5 if the user is just panning
      */
     shouldReloadClusters(zoom, prevZoom) {
         // Skip reload if just panning at low zoom levels

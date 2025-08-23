@@ -114,7 +114,7 @@ const router = new VueRouter({
         // Countries
         {
             path: '/world',
-            component: () => import('./views/Locations/Countries.vue'),
+            component: () => import('./views/Locations/World.vue'),
         },
         // States
         {

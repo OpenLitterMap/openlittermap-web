@@ -4,6 +4,7 @@ use App\Http\Controllers\Achievements\AchievementsController;
 use App\Http\Controllers\ApiPhotosController;
 use App\Http\Controllers\Clusters\ClusterController;
 use App\Http\Controllers\Leaderboard\LeaderboardController;
+use App\Http\Controllers\Location\LocationController;
 use App\Http\Controllers\Points\PointsController;
 use App\Http\Controllers\Points\PointsStatsController;
 use App\Http\Controllers\RedisDataController;
@@ -47,6 +48,14 @@ Route::group(['prefix' => 'v3', 'middleware' => ['web', 'auth:api,web']], functi
 
      Route::post('/tags', [PhotoTagsController::class, 'store']);
 });
+
+Route::get('/locations/global', [LocationController::class, 'global']);
+Route::get('/locations/world-cup', [LocationController::class, 'worldCup']);
+Route::get('/locations/{type}', [LocationController::class, 'index']);
+Route::get('/locations/{type}/{id}', [LocationController::class, 'show']);
+Route::get('/locations/{type}/{id}/categories', [LocationController::class, 'categories']);
+Route::get('/locations/{type}/{id}/timeseries', [LocationController::class, 'timeseries']);
+Route::get('/locations/{type}/{id}/leaderboard', [LocationController::class, 'leaderboard']);
 
 Route::prefix('clusters')->group(function () {
     Route::get('/', [ClusterController::class, 'index']);

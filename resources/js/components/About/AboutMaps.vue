@@ -3,7 +3,7 @@ import { onMounted, nextTick, shallowReactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { usePointsStore } from '../../stores/points/index.js';
+import { usePointsStore } from '../../stores/maps/points/index.js';
 
 const { t } = useI18n();
 const pointsStore = usePointsStore();

@@ -1,6 +1,6 @@
-import { addGlifyPoints, removeGlifyPoints } from './glifyHelpers.js';
-import { popupHelper } from './popup.js';
 import { CLUSTER_ZOOM_THRESHOLD } from './constants.js';
+import { addGlifyPoints, removeGlifyPoints, clearGlifyReferences } from './glifyHelpers.js';
+import { popupHelper } from './popup.js';
 
 export const pointsHelper = {
     /**
@@ -26,12 +26,11 @@ export const pointsHelper = {
             clusters.clearLayers();
         }
 
-        // const layers = getActiveLayers();
         const layers = [];
 
         try {
-            // Use pointsStore for points data
-            await pointsStore.GET_POINTS({
+            // Use pointsStore for points data with proper pagination
+            const response = await pointsStore.GET_POINTS({
                 zoom,
                 bbox,
                 layers,
@@ -49,13 +48,13 @@ export const pointsHelper = {
             const urlParams = new URLSearchParams(window.location.search);
             const photoId = parseInt(urlParams.get('photo'));
 
-            if (photoId && pointsStore.pointsGeojson.features.length) {
-                const feature = pointsStore.pointsGeojson.features.find((f) => f.properties.id === photoId);
+            if (photoId && pointsStore.pointsGeojson?.features?.length) {
+                const feature = pointsStore.pointsGeojson.features.find((f) => f.properties?.id === photoId);
 
                 if (feature) {
                     popupHelper.renderLeafletPopup(
                         feature,
-                        [feature.geometry.coordinates[1], feature.geometry.coordinates[0]], // [lat, lng] for Leaflet
+                        [feature.geometry.coordinates[1], feature.geometry.coordinates[0]],
                         t,
                         mapInstance
                     );
@@ -116,21 +115,9 @@ export const pointsHelper = {
     clearPoints(points, mapInstance) {
         if (points) {
             removeGlifyPoints(points, mapInstance);
+            clearGlifyReferences(); // Clear stored references
         }
         return null;
-    },
-
-    /**
-     * Remove points-related URL parameters when zooming out
-     */
-    cleanupPointsURL() {
-        const url = new URL(window.location.href);
-        url.searchParams.delete('fromDate');
-        url.searchParams.delete('toDate');
-        url.searchParams.delete('username');
-        url.searchParams.delete('photo');
-        url.searchParams.delete('page');
-        window.history.pushState(null, '', url);
     },
 
     /**
@@ -168,20 +155,27 @@ export const pointsHelper = {
         if (toDate) params.append('to', toDate);
         if (username) params.append('username', username);
 
-        const response = await fetch(`/api/points/stats?${params.toString()}`, {
-            method: 'GET',
-            headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
-            },
-            signal: abortSignal,
-        });
+        try {
+            const response = await fetch(`/api/points/stats?${params.toString()}`, {
+                method: 'GET',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                signal: abortSignal,
+            });
 
-        if (response.ok) {
-            const data = await response.json();
-            return data.data;
-        } else {
-            console.error('Failed to load points stats:', response.status);
+            if (response.ok) {
+                const data = await response.json();
+                return data.data || null;
+            } else {
+                console.error('Failed to load points stats:', response.status);
+                return null;
+            }
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                console.error('Error loading points stats:', error);
+            }
             return null;
         }
     },
@@ -204,29 +198,36 @@ export const pointsHelper = {
      * Get pagination data from store
      */
     getPaginationData(pointsStore) {
-        return pointsStore.pointsPagination;
-    },
-
-    /**
-     * Update pagination in URL
-     */
-    updatePageInURL(page) {
-        const url = new URL(window.location.href);
-        if (page > 1) {
-            url.searchParams.set('page', page.toString());
-        } else {
-            url.searchParams.delete('page');
+        // Check for pagination in multiple possible locations
+        if (pointsStore.pointsPagination) {
+            return pointsStore.pointsPagination;
         }
-        window.history.pushState(null, '', url.toString());
-    },
 
-    /**
-     * Remove page parameter from URL
-     */
-    removePageFromURL() {
-        const url = new URL(window.location.href);
-        url.searchParams.delete('page');
-        window.history.pushState(null, '', url.toString());
+        if (pointsStore.pagination) {
+            return pointsStore.pagination;
+        }
+
+        // Check in the geojson meta
+        if (pointsStore.pointsGeojson?.meta) {
+            return {
+                current_page: pointsStore.pointsGeojson.meta.current_page || 1,
+                last_page: pointsStore.pointsGeojson.meta.last_page || 1,
+                per_page: pointsStore.pointsGeojson.meta.per_page || 300,
+                total: pointsStore.pointsGeojson.meta.total || 0,
+            };
+        }
+
+        // Check if pagination is at root of pointsGeojson
+        if (pointsStore.pointsGeojson?.current_page !== undefined) {
+            return {
+                current_page: pointsStore.pointsGeojson.current_page || 1,
+                last_page: pointsStore.pointsGeojson.last_page || 1,
+                per_page: pointsStore.pointsGeojson.per_page || 300,
+                total: pointsStore.pointsGeojson.total || 0,
+            };
+        }
+
+        return null;
     },
 
     /**

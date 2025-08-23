@@ -18,6 +18,7 @@ import Achievements from '../views/Achievements/Achievements.vue';
 import Redis from '../views/Admin/Redis.vue';
 import Terms from '../views/General/Terms.vue';
 import Privacy from '../views/General/Privacy.vue';
+import World from '../views/Locations/World.vue';
 
 const routes = [
     {
@@ -38,7 +39,7 @@ const routes = [
     {
         path: '/world',
         name: 'World',
-        component: Countries,
+        component: World,
     },
     {
         path: '/history',

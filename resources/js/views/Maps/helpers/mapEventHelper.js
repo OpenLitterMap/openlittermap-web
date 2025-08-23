@@ -1,26 +1,58 @@
-import { updateLocationInURL } from './urlHelpers.js';
 import { clustersHelper } from './clustersHelper.js';
 import { pointsHelper } from './pointsHelper.js';
+import { urlHelper } from './urlHelper.js';
 
-export const mapHelper = {
+export const mapEventHelper = {
     /**
-     * Handle map updates when user drags or zooms
-     * Delegates to appropriate helper based on zoom level
+     * Setup all map event handlers
      */
-    async handleMapUpdate({
-        mapInstance,
-        globalMapStore,
-        pointsStore,
-        clusters,
-        points,
-        prevZoom,
-        t,
-        page = 1,
-        abortSignal = null,
-    }) {
+    setupMapEvents({ mapInstance, onMoveEnd, onPopupClose, onZoom }) {
+        mapInstance.on('moveend', onMoveEnd);
+        mapInstance.on('popupclose', onPopupClose);
+        mapInstance.on('zoom', onZoom);
+    },
+
+    /**
+     * Clear points from map
+     */
+    clearPoints(points, mapInstance) {
+        return pointsHelper.clearPoints(points, mapInstance);
+    },
+
+    /**
+     * Debounce map updates to prevent excessive requests
+     * Now properly updates the references
+     */
+    debounceMapUpdate({ state, callback }) {
+        // Cancel any pending updates
+        if (state.updateTimeout) {
+            clearTimeout(state.updateTimeout);
+        }
+
+        // Cancel any ongoing requests
+        if (state.currentPointsRequest) {
+            state.currentPointsRequest.abort();
+            state.currentPointsRequest = null;
+        }
+
+        if (state.currentStatsRequest) {
+            state.currentStatsRequest.abort();
+            state.currentStatsRequest = null;
+        }
+
+        // Set new timeout
+        state.updateTimeout = setTimeout(async () => {
+            await callback();
+        }, 300);
+    },
+
+    /**
+     * Perform the actual map update
+     */
+    async performUpdate({ mapInstance, clustersStore, pointsStore, clusters, points, prevZoom, currentPage, t }) {
         if (!mapInstance) return { points, prevZoom };
 
-        updateLocationInURL(mapInstance);
+        urlHelper.updateLocationInURL(mapInstance);
 
         const bounds = mapInstance.getBounds();
         const bbox = {
@@ -56,7 +88,7 @@ export const mapHelper = {
         // Load appropriate data based on zoom level
         if (clustersHelper.shouldShowClusters(zoom)) {
             points = await clustersHelper.handleClusterView({
-                globalMapStore,
+                clustersStore,
                 clusters,
                 zoom,
                 bbox,
@@ -64,6 +96,12 @@ export const mapHelper = {
                 points,
                 mapInstance,
             });
+
+            return {
+                points,
+                prevZoom: zoom,
+                paginationData: null,
+            };
         } else {
             points = await pointsHelper.handlePointsView({
                 mapInstance,
@@ -77,29 +115,23 @@ export const mapHelper = {
                 toDate: filters.toDate,
                 username: filters.username,
                 t,
-                page,
-                abortSignal,
+                page: currentPage,
             });
-        }
 
-        return { points, prevZoom: zoom };
+            const paginationData = pointsHelper.getPaginationData(pointsStore);
+
+            return {
+                points,
+                prevZoom: zoom,
+                paginationData,
+            };
+        }
     },
 
     /**
-     * Utility method to determine current view type
+     * Get current view type
      */
     getCurrentViewType(zoom) {
         return pointsHelper.shouldShowPoints(zoom) ? 'points' : 'clusters';
-    },
-
-    /**
-     * Get data for current view
-     */
-    getCurrentViewData(zoom, globalMapStore, pointsStore) {
-        if (pointsHelper.shouldShowPoints(zoom)) {
-            return pointsHelper.getPointsData(pointsStore);
-        } else {
-            return clustersHelper.getClustersData(globalMapStore);
-        }
     },
 };

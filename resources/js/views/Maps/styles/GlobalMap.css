@@ -1,0 +1,212 @@
+/* GlobalMap.css */
+
+/* Main Container */
+.global-map-container {
+    height: calc(100% - 80px);
+    margin: 0;
+    position: relative;
+    z-index: 1;
+}
+
+#openlittermap {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    position: relative;
+}
+
+/* Keep map full width - drawer overlays on top */
+/* No margin adjustments when drawer opens/closes */
+
+/* Leaflet Popup Styles */
+.leaflet-popup-content {
+    margin: 0;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    overflow-y: auto;
+}
+
+.leaflet-popup-content-wrapper {
+    padding: 0 !important;
+}
+
+.leaflet-popup-content div:last-of-type {
+    margin-bottom: 0 !important;
+}
+
+.leaflet-popup-content div:first-of-type {
+    margin-top: 0 !important;
+}
+
+.leaflet-pane .leaflet-shadow-pane {
+    display: none;
+}
+
+.leaflet-popup-close-button {
+    display: none !important;
+}
+
+/* Litter Image Styles */
+.leaflet-litter-img-container {
+    position: relative;
+    padding: 1.2em;
+}
+
+.leaflet-litter-img-container div {
+    color: black !important;
+    font-size: 12px;
+    word-break: break-word;
+    max-width: 220px;
+    margin: 4px 0;
+}
+
+.leaflet-litter-img-container .team {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+}
+
+.leaflet-litter-img-container .link {
+    position: absolute;
+    bottom: 10px;
+    right: 16px;
+    font-size: 1.2rem;
+}
+
+.leaflet-litter-img-container .social-container {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    transform: translate(0, 5px);
+}
+
+.leaflet-litter-img-container .social-container a {
+    width: 1.5rem;
+    font-size: 1.2rem;
+    margin-top: 0.25rem;
+}
+
+.leaflet-litter-img-container .link:hover,
+.leaflet-litter-img-container .social-container a:hover {
+    transform: scale(1.1);
+}
+
+.leaflet-litter-img {
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    object-fit: cover;
+    cursor: pointer;
+}
+
+/* Tablet and Above */
+@media (min-width: 768px) {
+    .leaflet-litter-img-container div {
+        font-size: 14px;
+        max-width: 300px;
+        margin: 10px 0;
+    }
+
+    .leaflet-litter-img-container .team {
+        max-width: 280px;
+    }
+
+    .leaflet-popup-content {
+        min-width: 350px;
+        max-width: 600px;
+        max-height: 800px;
+    }
+}
+
+@media (max-width: 767px) {
+    .leaflet-popup-content {
+        min-width: 200px;
+        max-height: 500px;
+    }
+}
+
+/* Point Markers */
+.verified-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #14d145;
+    border-radius: 50%;
+    border: 1px solid white;
+}
+
+.unverified-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #6b7280;
+    border-radius: 50%;
+    border: 1px solid white;
+}
+
+/* Cluster Markers */
+.marker-cluster-small,
+.marker-cluster-medium,
+.marker-cluster-large,
+.leaflet-marker-icon.marker-cluster-small,
+.leaflet-marker-icon.marker-cluster-medium,
+.leaflet-marker-icon.marker-cluster-large {
+    background-clip: padding-box;
+    border-radius: 20px;
+    color: #4d4c4b !important; /* Set color at parent level */
+}
+
+.marker-cluster-small {
+    background-color: rgba(181, 226, 140, 0.6);
+}
+
+.marker-cluster-small div {
+    background-color: rgba(110, 204, 57, 0.6);
+}
+
+.marker-cluster-medium {
+    background-color: rgba(241, 211, 87, 0.6);
+}
+
+.marker-cluster-medium div {
+    background-color: rgba(240, 194, 12, 0.6);
+}
+
+.marker-cluster-large {
+    background-color: rgba(253, 156, 115, 0.6);
+}
+
+.marker-cluster-large div {
+    background-color: rgba(241, 128, 23, 0.6);
+}
+
+.marker-cluster-small .mi,
+.marker-cluster-medium .mi,
+.marker-cluster-large .mi {
+    width: 30px;
+    height: 30px;
+    margin-left: 5px;
+    margin-top: 5px;
+    text-align: center;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.marker-cluster-small .mi span,
+.marker-cluster-medium .mi span,
+.marker-cluster-large .mi span,
+.marker-cluster-small span.mx-auto,
+.marker-cluster-medium span.mx-auto,
+.marker-cluster-large span.mx-auto,
+.leaflet-marker-icon .mi span,
+.leaflet-marker-icon span.mx-auto.my-auto,
+.leaflet-marker-icon.marker-cluster-small span,
+.leaflet-marker-icon.marker-cluster-medium span,
+.leaflet-marker-icon.marker-cluster-large span,
+.marker-cluster-small *,
+.marker-cluster-medium *,
+.marker-cluster-large * {
+    color: #4d4c4b !important;
+    font-weight: bold;
+    font-size: 12px;
+}

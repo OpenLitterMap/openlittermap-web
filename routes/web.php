@@ -1,17 +1,13 @@
 <?php
 
-use App\Http\Controllers\Admin\UsersController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ContactUsController;
 use App\Http\Controllers\Maps\Search\FindCustomTagsController;
 use App\Http\Controllers\SubscribersController;
-use App\Http\Controllers\Maps\ClusterController;
 use App\Http\Controllers\Uploads\UploadPhotoController;
 use App\Http\Controllers\Maps\GlobalMapController;
 use App\Http\Controllers\Reports\GenerateImpactReportController;
-use App\Http\Controllers\Leaderboard\GetUsersForGlobalLeaderboardController;
-use App\Http\Controllers\Leaderboard\GetUsersForLocationLeaderboardController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
