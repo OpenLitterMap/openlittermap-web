@@ -383,15 +383,11 @@ class MigrationScript extends Command
         $lastChar = substr($limit, -1);
         $value = (int) substr($limit, 0, -1);
 
-        switch ($lastChar) {
-            case 'G':
-                return $value * 1024;
-            case 'M':
-                return $value;
-            case 'K':
-                return (int) ($value / 1024);
-            default:
-                return (int) ($limit / 1024 / 1024);
-        }
+        return match ($lastChar) {
+            'G' => $value * 1024,
+            'M' => $value,
+            'K' => (int)($value / 1024),
+            default => (int)($limit / 1024 / 1024),
+        };
     }
 }

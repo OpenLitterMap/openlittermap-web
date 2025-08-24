@@ -266,7 +266,7 @@ class RedisMetricsCollectorTest extends TestCase
     }
 
     /**
-     * Test geographic scoping
+     * Test geographic scoping works
      */
     public function test_geographic_scoping_works(): void
     {
@@ -492,5 +492,196 @@ class RedisMetricsCollectorTest extends TestCase
         $this->assertEquals('10', Redis::hGet($currentKey, 'xp'));  // XP stored as int
         $this->assertEquals('1', Redis::hGet($lastKey, 'p'));
         $this->assertEquals('20', Redis::hGet($lastKey, 'xp'));  // XP stored as int
+    }
+
+    // ============= NEW TESTS FOR LOCATION-SCOPED FUNCTIONALITY =============
+
+    /**
+     * Test location-scoped stats are written
+     */
+    public function test_location_stats_are_written(): void
+    {
+        $country = Country::factory()->create();
+        $state = State::factory()->create(['country_id' => $country->id]);
+        $city = City::factory()->create([
+            'country_id' => $country->id,
+            'state_id' => $state->id
+        ]);
+
+        $user = User::factory()->create();
+        $photo = Photo::factory()->for($user)->create([
+            'country_id' => $country->id,
+            'state_id' => $state->id,
+            'city_id' => $city->id,
+        ]);
+
+        RedisMetricsCollector::queue($photo);
+
+        // Check location stats
+        $this->assertEquals('1', Redis::hGet("c:{$country->id}:stats", 'photos'));
+        $this->assertEquals('1', Redis::hGet("s:{$state->id}:stats", 'photos'));
+        $this->assertEquals('1', Redis::hGet("ci:{$city->id}:stats", 'photos'));
+    }
+
+    /**
+     * Test location-scoped user sets
+     */
+    public function test_location_user_sets_are_maintained(): void
+    {
+        $country = Country::factory()->create();
+        $user1 = User::factory()->create();
+        $user2 = User::factory()->create();
+
+        // User 1 uploads
+        $photo1 = Photo::factory()->for($user1)->create([
+            'country_id' => $country->id,
+        ]);
+        RedisMetricsCollector::queue($photo1);
+
+        // User 2 uploads
+        $photo2 = Photo::factory()->for($user2)->create([
+            'country_id' => $country->id,
+        ]);
+        RedisMetricsCollector::queue($photo2);
+
+        // Check both users are in the set
+        $this->assertEquals(2, Redis::sCard("c:{$country->id}:users"));
+        $this->assertTrue(Redis::sIsMember("c:{$country->id}:users", (string)$user1->id));
+        $this->assertTrue(Redis::sIsMember("c:{$country->id}:users", (string)$user2->id));
+    }
+
+    /**
+     * Test location-scoped dimension hashes
+     */
+    public function test_location_dimension_hashes_are_written(): void
+    {
+        $country = Country::factory()->create();
+        $user = User::factory()->create();
+
+        $photo = Photo::factory()->for($user)->create([
+            'country_id' => $country->id,
+            'summary' => [
+                'tags' => [
+                    'drinking' => [
+                        'cup' => [
+                            'quantity' => 3,
+                            'materials' => ['plastic' => 2],
+                            'brands' => ['starbucks' => 1],
+                        ]
+                    ]
+                ]
+            ]
+        ]);
+
+        RedisMetricsCollector::queue($photo);
+
+        // Check location dimensions
+        $this->assertEquals('3', Redis::hGet("c:{$country->id}:c", (string)$this->tagIds['drinking']));
+        $this->assertEquals('3', Redis::hGet("c:{$country->id}:t", (string)$this->tagIds['cup']));
+        $this->assertEquals('2', Redis::hGet("c:{$country->id}:m", (string)$this->tagIds['plastic']));
+        $this->assertEquals('1', Redis::hGet("c:{$country->id}:brands", (string)$this->tagIds['starbucks']));
+    }
+
+    /**
+     * Test location monthly aggregates
+     */
+    public function test_location_monthly_aggregates(): void
+    {
+        $country = Country::factory()->create();
+        $user = User::factory()->create();
+
+        $photo = Photo::factory()->for($user)->create([
+            'country_id' => $country->id,
+            'xp' => 15,
+            'created_at' => now()
+        ]);
+
+        RedisMetricsCollector::queue($photo);
+
+        $month = now()->format('Y-m');
+        $monthKey = "c:{$country->id}:$month:t";
+
+        $this->assertEquals('1', Redis::hGet($monthKey, 'p'));
+        $this->assertEquals('15', Redis::hGet($monthKey, 'xp'));
+    }
+
+    /**
+     * Test batch processing with location data
+     */
+    public function test_batch_processing_with_location_data(): void
+    {
+        $country = Country::factory()->create();
+        $state = State::factory()->create(['country_id' => $country->id]);
+
+        $user = User::factory()->create();
+        $photos = collect([
+            Photo::factory()->for($user)->create([
+                'country_id' => $country->id,
+                'state_id' => $state->id,
+                'summary' => [
+                    'tags' => [
+                        'drinking' => [
+                            'cup' => ['quantity' => 2]
+                        ]
+                    ]
+                ]
+            ]),
+            Photo::factory()->for($user)->create([
+                'country_id' => $country->id,
+                'state_id' => $state->id,
+                'summary' => [
+                    'tags' => [
+                        'drinking' => [
+                            'cup' => ['quantity' => 3]
+                        ]
+                    ]
+                ]
+            ]),
+        ]);
+
+        RedisMetricsCollector::queueBatch($user->id, $photos);
+
+        // Check location stats accumulated correctly
+        $this->assertEquals('2', Redis::hGet("c:{$country->id}:stats", 'photos'));
+        $this->assertEquals('2', Redis::hGet("s:{$state->id}:stats", 'photos'));
+
+        // Check location dimensions accumulated
+        $this->assertEquals('5', Redis::hGet("c:{$country->id}:t", (string)$this->tagIds['cup']));
+        $this->assertEquals('5', Redis::hGet("s:{$state->id}:t", (string)$this->tagIds['cup']));
+
+        // Check user is in location sets
+        $this->assertTrue(Redis::sIsMember("c:{$country->id}:users", (string)$user->id));
+        $this->assertTrue(Redis::sIsMember("s:{$state->id}:users", (string)$user->id));
+    }
+
+    /**
+     * Test global scope doesn't write location-specific keys
+     */
+    public function test_global_scope_skips_location_specific_keys(): void
+    {
+        $user = User::factory()->create();
+
+        // Photo with no location (only global scope)
+        $photo = Photo::factory()->for($user)->create([
+            'country_id' => null,
+            'state_id' => null,
+            'city_id' => null,
+            'summary' => [
+                'tags' => [
+                    'drinking' => [
+                        'cup' => ['quantity' => 1]
+                    ]
+                ]
+            ]
+        ]);
+
+        RedisMetricsCollector::queue($photo);
+
+        // Global keys should exist
+        $this->assertEquals('1', Redis::hGet('{g}:t', (string)$this->tagIds['cup']));
+
+        // But no global:stats or global:users (we skip these for {g} scope)
+        $this->assertFalse(Redis::hExists('{g}:stats', 'photos'));
+        $this->assertEquals(0, Redis::sCard('{g}:users'));
     }
 }

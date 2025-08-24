@@ -5,6 +5,7 @@ use App\Http\Controllers\ApiPhotosController;
 use App\Http\Controllers\Clusters\ClusterController;
 use App\Http\Controllers\Leaderboard\LeaderboardController;
 use App\Http\Controllers\Location\LocationController;
+use App\Http\Controllers\Location\TagController;
 use App\Http\Controllers\Points\PointsController;
 use App\Http\Controllers\Points\PointsStatsController;
 use App\Http\Controllers\RedisDataController;
@@ -56,6 +57,14 @@ Route::get('/locations/{type}/{id}', [LocationController::class, 'show']);
 Route::get('/locations/{type}/{id}/categories', [LocationController::class, 'categories']);
 Route::get('/locations/{type}/{id}/timeseries', [LocationController::class, 'timeseries']);
 Route::get('/locations/{type}/{id}/leaderboard', [LocationController::class, 'leaderboard']);
+
+Route::prefix('locations/{type}/{id}/tags')->group(function () {
+    Route::get('/top', [TagController::class, 'top']);
+    Route::get('/summary', [TagController::class, 'summary']);
+    Route::get('/by-category', [TagController::class, 'byCategory']);
+    Route::get('/cleanup', [TagController::class, 'cleanup']);
+    Route::get('/trending', [TagController::class, 'trending']);
+});
 
 Route::prefix('clusters')->group(function () {
     Route::get('/', [ClusterController::class, 'index']);
